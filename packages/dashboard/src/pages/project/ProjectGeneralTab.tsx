@@ -41,7 +41,7 @@ export function ProjectGeneralTab() {
         // If it's a new project, we have to provide dummy models to satisfy the API backend currently.
         // We will update the backend soon to make models optional, but for now:
         routingModelId: project?.routingModelId || 'gpt-4o',
-        modelIds: project?.models.map(m => m.modelId) || ['gpt-4o'],
+        models: project?.models.map(m => ({ modelId: m.modelId })) || [{ modelId: 'gpt-4o' }],
         timeoutMs: parseInt(form.timeoutMs),
       };
 
