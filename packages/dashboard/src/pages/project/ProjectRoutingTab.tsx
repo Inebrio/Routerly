@@ -232,6 +232,7 @@ export function ProjectRoutingTab() {
   if (loading) return <div className="loading-center"><div className="spinner" /></div>;
 
   return (
+    <>
     <form onSubmit={handleSubmit} style={{ maxWidth: 800 }}>
       {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
 
@@ -467,5 +468,6 @@ export function ProjectRoutingTab() {
     </form>
 
     {isBlocked && <UnsavedChangesModal onConfirm={proceed} onCancel={reset} />}
+    </>
   );
 }
