@@ -55,13 +55,29 @@ export function ProjectRoutingTab() {
     }
   }, [project]);
 
+  // --- Helpers for used model IDs ---
+  function getUsedFallbackModelIds(excludeIdx: number): Set<string> {
+    const used = new Set<string>();
+    used.add(routingModelId);
+    fallbackModels.forEach((m, i) => { if (i !== excludeIdx) used.add(m.modelId); });
+    return used;
+  }
+
+  function getUsedTargetModelIds(excludeIdx: number): Set<string> {
+    const used = new Set<string>();
+    targetModels.forEach((m, i) => { if (i !== excludeIdx) used.add(m.modelId); });
+    return used;
+  }
+
   // --- Fallback Models Handlers ---
   function addFallbackModel() {
+    const usedIds = new Set([routingModelId, ...fallbackModels.map(f => f.modelId)]);
+    const firstAvailable = availableModels.find(m => !usedIds.has(m.id));
     setFallbackModels(prev => [
       ...prev,
       {
         internalId: Math.random().toString(36).substring(7),
-        modelId: availableModels[0]?.id || ''
+        modelId: firstAvailable?.id || availableModels[0]?.id || ''
       }
     ]);
   }
@@ -103,11 +119,13 @@ export function ProjectRoutingTab() {
 
   // --- Target Models Handlers ---
   function addTargetModel() {
+    const usedIds = new Set(targetModels.map(t => t.modelId));
+    const firstAvailable = availableModels.find(m => !usedIds.has(m.id));
     setTargetModels(prev => [
       ...prev,
       {
         internalId: Math.random().toString(36).substring(7),
-        modelId: availableModels[0]?.id || '',
+        modelId: firstAvailable?.id || availableModels[0]?.id || '',
         prompt: '',
       }
     ]);
@@ -154,6 +172,25 @@ export function ProjectRoutingTab() {
     e.preventDefault();
     if (!project) return;
     setErr('');
+
+    // Validate: fallback models cannot repeat or equal base routing model
+    const fallbackIds = fallbackModels.map(f => f.modelId);
+    if (fallbackIds.includes(routingModelId)) {
+      setErr('A fallback model cannot be the same as the base routing model.');
+      return;
+    }
+    if (new Set(fallbackIds).size !== fallbackIds.length) {
+      setErr('Fallback models cannot contain duplicates.');
+      return;
+    }
+
+    // Validate: target models cannot repeat
+    const targetIds = targetModels.map(t => t.modelId);
+    if (new Set(targetIds).size !== targetIds.length) {
+      setErr('Target models cannot contain duplicates.');
+      return;
+    }
+
     setSaving(true);
     try {
       const payload: Parameters<typeof updateProject>[1] = {
@@ -237,7 +274,9 @@ export function ProjectRoutingTab() {
                   required
                 >
                   <option value="" disabled>Select model</option>
-                  {availableModels.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
+                  {availableModels
+                    .filter(m => m.id === item.modelId || !getUsedFallbackModelIds(idx).has(m.id))
+                    .map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
                 </select>
                 <button
                   type="button"
@@ -253,11 +292,13 @@ export function ProjectRoutingTab() {
           <button
             type="button"
             onClick={addFallbackModel}
+            disabled={availableModels.filter(m => m.id !== routingModelId && !fallbackModels.some(f => f.modelId === m.id)).length === 0}
             style={{
               display: 'flex', alignItems: 'center', gap: 4,
               padding: '6px', marginTop: fallbackModels.length > 0 ? 8 : 0,
               background: 'none', border: '1px dashed var(--border)', borderRadius: 6,
               color: 'var(--text-secondary)', fontSize: '0.8rem', cursor: 'pointer',
+              opacity: availableModels.filter(m => m.id !== routingModelId && !fallbackModels.some(f => f.modelId === m.id)).length === 0 ? 0.4 : 1,
             }}
           >
             <Plus size={14} /> Add Fallback
@@ -335,7 +376,9 @@ export function ProjectRoutingTab() {
                     style={{ padding: '6px 10px', fontSize: '0.9rem' }}
                   >
                     <option value="" disabled>Select model</option>
-                    {availableModels.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
+                    {availableModels
+                      .filter(m => m.id === item.modelId || !getUsedTargetModelIds(idx).has(m.id))
+                      .map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
                   </select>
                 </div>
 
@@ -378,12 +421,14 @@ export function ProjectRoutingTab() {
         <button
           type="button"
           onClick={addTargetModel}
+          disabled={availableModels.filter(m => !targetModels.some(t => t.modelId === m.id)).length === 0}
           style={{
             display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center',
             width: '100%', padding: '10px', marginTop: 12,
             background: 'none', border: '1.5px dashed var(--border)', borderRadius: 8,
             color: 'var(--text-secondary)', fontSize: '0.9rem', cursor: 'pointer',
             transition: 'all 0.2s',
+            opacity: availableModels.filter(m => !targetModels.some(t => t.modelId === m.id)).length === 0 ? 0.4 : 1,
           }}
           onMouseEnter={e => {
             (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--primary)';
