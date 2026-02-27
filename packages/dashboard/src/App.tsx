@@ -1,0 +1,112 @@
+import { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom';
+import { useAuth } from './AuthContext';
+import { checkSetupStatus } from './api';
+import { LoginPage } from './pages/LoginPage';
+import { SetupPage } from './pages/SetupPage';
+import { OverviewPage } from './pages/OverviewPage';
+import { ModelsPage } from './pages/ModelsPage';
+import { ProjectsPage } from './pages/ProjectsPage';
+import { UsersPage } from './pages/UsersPage';
+import { UsagePage } from './pages/UsagePage';
+import { LayoutDashboard, Cpu, FolderOpen, Users, BarChart2, LogOut } from 'lucide-react';
+
+function Sidebar() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  function handleLogout() { logout(); navigate('/dashboard/login'); }
+
+  const navItems = [
+    { to: '/dashboard/overview', icon: <LayoutDashboard size={17} />, label: 'Overview' },
+    { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
+    { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
+    { to: '/dashboard/users', icon: <Users size={17} />, label: 'Users' },
+    { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
+  ];
+
+  return (
+    <aside className="sidebar">
+      <div className="sidebar-logo">
+        <div className="logo-name">LocalRouter</div>
+        <div className="logo-tag">LLM API Gateway</div>
+      </div>
+      <nav className="sidebar-nav">
+        {navItems.map(item => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+          >
+            {item.icon}
+            {item.label}
+          </NavLink>
+        ))}
+      </nav>
+      <div className="sidebar-footer">
+        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 10 }}>
+          {user?.email}
+        </div>
+        <button className="nav-item" style={{ color: 'var(--danger)' }} onClick={handleLogout}>
+          <LogOut size={15} /> Sign Out
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function ProtectedLayout() {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return <div className="loading-center"><div className="spinner" /></div>;
+  if (!user) return <Navigate to="/dashboard/login" replace />;
+  return (
+    <div className="app-shell">
+      <Sidebar />
+      <main className="main-content">
+        <Routes>
+          <Route path="overview" element={<OverviewPage />} />
+          <Route path="models" element={<ModelsPage />} />
+          <Route path="projects" element={<ProjectsPage />} />
+          <Route path="users" element={<UsersPage />} />
+          <Route path="usage" element={<UsagePage />} />
+          <Route path="*" element={<Navigate to="overview" replace />} />
+        </Routes>
+      </main>
+    </div>
+  );
+}
+
+/** Checks setup status once on first load and redirects to /dashboard/setup if needed. */
+function SetupGuard({ children }: { children: React.ReactNode }) {
+  const [checking, setChecking] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    checkSetupStatus()
+      .then(({ needsSetup }) => {
+        if (needsSetup) navigate('/dashboard/setup', { replace: true });
+      })
+      .catch(() => { /* service not reachable – let the normal flow handle it */ })
+      .finally(() => setChecking(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (checking) return <div className="loading-center"><div className="spinner" /></div>;
+  return <>{children}</>;
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <SetupGuard>
+        <Routes>
+          <Route path="/dashboard/setup" element={<SetupPage />} />
+          <Route path="/dashboard/login" element={<LoginPage />} />
+          <Route path="/dashboard/*" element={<ProtectedLayout />} />
+          <Route path="/" element={<Navigate to="/dashboard/overview" replace />} />
+        </Routes>
+      </SetupGuard>
+    </BrowserRouter>
+  );
+}
+
