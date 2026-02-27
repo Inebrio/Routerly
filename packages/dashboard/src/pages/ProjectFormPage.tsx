@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Copy, Check } from 'lucide-react';
-import { createProject, updateProject, getProjects, getModels, type Model } from '../api';
+import { ArrowLeft, Copy, Check, RefreshCw } from 'lucide-react';
+import { createProject, updateProject, rotateToken, getProjects, getModels, type Model, type Project } from '../api';
 
 export function ProjectFormPage() {
   const navigate = useNavigate();
@@ -9,10 +9,12 @@ export function ProjectFormPage() {
   const isEdit = Boolean(id);
 
   const [models, setModels] = useState<Model[]>([]);
+  const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [rotating, setRotating] = useState(false);
   const [err, setErr] = useState('');
-  const [newToken, setNewToken] = useState<{ name: string; token: string } | null>(null);
+  const [revealedToken, setRevealedToken] = useState<{ name: string; token: string; isNew: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const [form, setForm] = useState({
@@ -29,6 +31,7 @@ export function ProjectFormPage() {
       if (isEdit && id) {
         const proj = ps.find(p => p.id === id);
         if (proj) {
+          setProject(proj);
           setForm({
             name: proj.name,
             routingModelId: proj.routingModelId,
@@ -70,7 +73,7 @@ export function ProjectFormPage() {
       } else {
         const proj = await createProject(payload);
         if (proj.token) {
-          setNewToken({ name: proj.name, token: proj.token });
+          setRevealedToken({ name: proj.name, token: proj.token, isNew: false });
         } else {
           navigate('/dashboard/projects');
         }
@@ -82,46 +85,29 @@ export function ProjectFormPage() {
     }
   }
 
+  async function handleRotateToken() {
+    if (!id) return;
+    if (!confirm('This will immediately revoke the current token. Any application using it will stop working until updated. Continue?')) return;
+    setErr('');
+    setRotating(true);
+    try {
+      const result = await rotateToken(id);
+      setProject(p => p ? { ...p, tokenSnippet: result.tokenSnippet ?? '' } : p);
+      setRevealedToken({ name: result.name, token: result.token, isNew: true });
+    } catch (err) {
+      setErr(err instanceof Error ? err.message : 'Error rotating token');
+    } finally {
+      setRotating(false);
+    }
+  }
+
   async function copyToken(token: string) {
     await navigator.clipboard.writeText(token);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
-  if (newToken) {
-    return (
-      <>
-        <div className="page-header">
-          <h1>🎉 Project Created</h1>
-          <p>Save this token now — it won't be shown again.</p>
-        </div>
-        <div className="page-body" style={{ maxWidth: 640 }}>
-          <div className="form-group">
-            <label className="form-label">Project</label>
-            <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1rem' }}>
-              {newToken.name}
-            </div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">API Token</label>
-            <div className="token-box">{newToken.token}</div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 8 }}>
-              Use this as the Bearer token in your API requests. It won't be shown again.
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-            <button className="btn btn-secondary" onClick={() => copyToken(newToken.token)}>
-              {copied ? <Check size={15} /> : <Copy size={15} />}
-              {copied ? 'Copied!' : 'Copy Token'}
-            </button>
-            <button className="btn btn-primary" onClick={() => navigate('/dashboard/projects')}>
-              Done
-            </button>
-          </div>
-        </div>
-      </>
-    );
-  }
+
 
   return (
     <>
@@ -141,82 +127,139 @@ export function ProjectFormPage() {
         {loading ? (
           <div className="loading-center"><div className="spinner" /></div>
         ) : (
-          <form onSubmit={handleSubmit}>
-            {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
+          <>
+            <form onSubmit={handleSubmit}>
+              {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
 
-            <div className="form-group">
-              <label className="form-label">Name</label>
-              <input
-                className="form-input"
-                value={form.name}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                placeholder="My App"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Routing Model</label>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
-                The model used to decide which backend model to route each request to.
-              </p>
-              <select
-                className="form-input"
-                value={form.routingModelId}
-                onChange={e => setForm(f => ({ ...f, routingModelId: e.target.value }))}
-                required
-              >
-                {models.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Allowed Models</label>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
-                Select which models this project can use. The routing model is always included.
-              </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {models.map(m => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    className={`btn btn-sm ${form.modelIds.includes(m.id) || m.id === form.routingModelId ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => toggleModel(m.id)}
-                    disabled={m.id === form.routingModelId}
-                  >
-                    {m.id}
-                  </button>
-                ))}
+              <div className="form-group">
+                <label className="form-label">Name</label>
+                <input
+                  className="form-input"
+                  value={form.name}
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="My App"
+                  required
+                />
               </div>
-            </div>
 
-            <div className="form-group">
-              <label className="form-label">Timeout (ms)</label>
-              <input
-                className="form-input"
-                type="number"
-                value={form.timeoutMs}
-                onChange={e => setForm(f => ({ ...f, timeoutMs: e.target.value }))}
-                min={1000}
-                max={300000}
-              />
-            </div>
+              <div className="form-group">
+                <label className="form-label">Routing Model</label>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
+                  The model used to decide which backend model to route each request to.
+                </p>
+                <select
+                  className="form-input"
+                  value={form.routingModelId}
+                  onChange={e => setForm(f => ({ ...f, routingModelId: e.target.value }))}
+                  required
+                >
+                  {models.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
+                </select>
+              </div>
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => navigate('/dashboard/projects')}
-              >
-                Cancel
-              </button>
-              <button type="submit" className="btn btn-primary" disabled={saving}>
-                {saving ? <span className="spinner" /> : isEdit ? 'Save Changes' : 'Create Project'}
-              </button>
-            </div>
-          </form>
+              <div className="form-group">
+                <label className="form-label">Allowed Models</label>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
+                  Select which models this project can use. The routing model is always included.
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {models.map(m => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      className={`btn btn-sm ${form.modelIds.includes(m.id) || m.id === form.routingModelId ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => toggleModel(m.id)}
+                      disabled={m.id === form.routingModelId}
+                    >
+                      {m.id}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Timeout (ms)</label>
+                <input
+                  className="form-input"
+                  type="number"
+                  value={form.timeoutMs}
+                  onChange={e => setForm(f => ({ ...f, timeoutMs: e.target.value }))}
+                  min={1000}
+                  max={300000}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                <button type="button" className="btn btn-secondary" onClick={() => navigate('/dashboard/projects')}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? <span className="spinner" /> : isEdit ? 'Save Changes' : 'Create Project'}
+                </button>
+              </div>
+            </form>
+
+            {/* Token section — only in edit mode */}
+            {isEdit && project && (
+              <div style={{
+                marginTop: 32,
+                paddingTop: 24,
+                borderTop: '1px solid var(--border)',
+              }}>
+                <h3 style={{ margin: '0 0 4px', fontSize: '0.95rem', color: 'var(--text-primary)' }}>API Token</h3>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 12px' }}>
+                  Rotating the token immediately revokes the current one.
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span className="mono" style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', letterSpacing: '0.04em' }}>
+                    {project.tokenSnippet ? `${project.tokenSnippet}...` : '••••••••••'}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleRotateToken}
+                    disabled={rotating}
+                    style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                  >
+                    {rotating ? <span className="spinner" /> : <RefreshCw size={14} />}
+                    Rotate Token
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
+
+      {/* Token reveal modal */}
+      {revealedToken && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h2 className="modal-title">
+              {revealedToken.isNew ? '🔑 New Token' : '🎉 Project Created'}
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: 12 }}>
+              Copy this token now — it won't be shown again.
+            </p>
+            <div className="token-box" style={{ marginBottom: 12 }}>{revealedToken.token}</div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => copyToken(revealedToken.token)}>
+                {copied ? <Check size={15} /> : <Copy size={15} />}
+                {copied ? 'Copied!' : 'Copy Token'}
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setRevealedToken(null);
+                  if (!revealedToken.isNew) navigate('/dashboard/projects');
+                }}
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

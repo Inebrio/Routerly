@@ -92,6 +92,7 @@ export const updateProject = (id: string, data: {
   name: string; routingModelId: string; modelIds: string[]; timeoutMs?: number;
 }) => request<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteProject = (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' });
+export const rotateToken = (id: string) => request<Project & { token: string }>(`/projects/${id}/rotate-token`, { method: 'POST' });
 
 // ── Users ─────────────────────────────────────────────────────────────────
 export interface User {

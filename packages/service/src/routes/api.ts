@@ -223,6 +223,22 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.status(204).send();
   });
 
+  fastify.post<{ Params: { id: string } }>('/api/projects/:id/rotate-token', async (req, reply) => {
+    const projects = await readConfig('projects');
+    const index = projects.findIndex(p => p.id === req.params.id);
+    if (index === -1) return reply.status(404).send({ error: 'Not found' });
+    const rawToken = `sk-lr-${randomBytes(32).toString('hex')}`;
+    const existing = projects[index]!;
+    const updated: ProjectConfig = {
+      ...existing,
+      encryptedToken: encrypt(rawToken),
+      tokenSnippet: rawToken.substring(0, 10),
+    };
+    projects[index] = updated;
+    await writeConfig('projects', projects);
+    return reply.send({ ...updated, encryptedToken: undefined, token: rawToken });
+  });
+
   // ══════════════════════════════════════════════════════════════════════════════
   // USERS
   // ══════════════════════════════════════════════════════════════════════════════
