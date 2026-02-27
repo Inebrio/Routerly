@@ -67,7 +67,7 @@ export function ProjectsPage() {
                       {p.models.map(m => m.modelId).join(', ')}
                     </td>
                     <td style={{ display: 'flex', gap: 6 }}>
-                      <button className="btn-icon" onClick={() => navigate(`/dashboard/projects/${p.id}/edit`)} title="Edit project">
+                      <button className="btn-icon" onClick={() => navigate(`/dashboard/projects/${p.id}`)} title="Edit project">
                         <Pencil size={15} />
                       </button>
                       <button className="btn-icon danger" onClick={() => handleDelete(p.id)} title="Delete project">
