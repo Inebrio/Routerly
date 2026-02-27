@@ -10,7 +10,7 @@ export function ProjectsPage() {
   const [newToken, setNewToken] = useState<{ name: string; token: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [form, setForm] = useState({
-    name: '', slug: '', routingModelId: '', modelIds: [] as string[], timeoutMs: '30000',
+    name: '', routingModelId: '', modelIds: [] as string[], timeoutMs: '30000',
   });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
@@ -37,13 +37,13 @@ export function ProjectsPage() {
     setErr(''); setSaving(true);
     try {
       const proj = await createProject({
-        name: form.name, slug: form.slug,
+        name: form.name,
         routingModelId: form.routingModelId,
         modelIds: [...new Set([...form.modelIds, form.routingModelId])],
         timeoutMs: parseInt(form.timeoutMs),
       });
       setShowModal(false);
-      setForm({ name: '', slug: '', routingModelId: models[0]?.id ?? '', modelIds: [], timeoutMs: '30000' });
+      setForm({ name: '', routingModelId: models[0]?.id ?? '', modelIds: [], timeoutMs: '30000' });
       if (proj.token) setNewToken({ name: proj.name, token: proj.token });
       await load();
     } catch (e) { setErr(e instanceof Error ? e.message : 'Error'); }
@@ -52,8 +52,12 @@ export function ProjectsPage() {
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this project?')) return;
-    await deleteProject(id);
-    setProjects(p => p.filter(x => x.id !== id));
+    try {
+      await deleteProject(id);
+      setProjects(p => p.filter(x => x.id !== id));
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : 'Error deleting project');
+    }
   }
 
   async function copyToken(token: string) {
@@ -68,6 +72,7 @@ export function ProjectsPage() {
         <h1>Projects</h1>
         <p>Client applications that access LocalRouter</p>
       </div>
+      {err && <div className="form-error" style={{ margin: '0 20px' }}>{err}</div>}
       <div className="page-body">
         <div className="toolbar">
           <span className="toolbar-title">{projects.length} project{projects.length !== 1 ? 's' : ''}</span>
@@ -84,19 +89,23 @@ export function ProjectsPage() {
           <div className="table-wrap">
             <table>
               <thead>
-                <tr><th>Name</th><th>Slug</th><th>Routing Model</th><th>Models</th><th></th></tr>
+                <tr><th>Name</th><th>Token Snippet</th><th>Routing Model</th><th>Models</th><th></th></tr>
               </thead>
               <tbody>
                 {projects.map(p => (
                   <tr key={p.id}>
                     <td><strong style={{ color: 'var(--text-primary)' }}>{p.name}</strong></td>
-                    <td><span className="mono">{p.slug}</span></td>
+                    <td>
+                      <span className="mono" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        {p.tokenSnippet ? `${p.tokenSnippet}...` : '••••••••••'}
+                      </span>
+                    </td>
                     <td><span className="mono" style={{ fontSize: '0.78rem' }}>{p.routingModelId}</span></td>
                     <td style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
                       {p.models.map(m => m.modelId).join(', ')}
                     </td>
                     <td>
-                      <button className="btn-icon danger" onClick={() => handleDelete(p.id)} title="Delete">
+                      <button className="btn-icon danger" onClick={() => handleDelete(p.id)} title="Delete project">
                         <Trash2 size={15} />
                       </button>
                     </td>
@@ -116,15 +125,10 @@ export function ProjectsPage() {
             <form onSubmit={handleAdd}>
               {err && <div className="form-error">{err}</div>}
               <div className="form-row">
-                <div className="form-group">
+                <div className="form-group" style={{ flex: 1 }}>
                   <label className="form-label">Name</label>
                   <input className="form-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                     placeholder="My App" required />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Slug</label>
-                  <input className="form-input" value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') }))}
-                    placeholder="my-app" required />
                 </div>
               </div>
               <div className="form-group">
@@ -146,7 +150,11 @@ export function ProjectsPage() {
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                <button type="button" className="btn btn-secondary" onClick={() => {
+                  setShowModal(false);
+                  setForm({ name: '', routingModelId: models[0]?.id ?? '', modelIds: [], timeoutMs: '30000' });
+                  setErr('');
+                }}>Cancel</button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
                   {saving ? <span className="spinner" /> : 'Create Project'}
                 </button>

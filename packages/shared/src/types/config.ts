@@ -54,10 +54,10 @@ export interface ProjectConfig {
   id: string;
   name: string;
   description?: string;
-  /** e.g. "my-project" → endpoint prefix /projects/my-project */
-  slug: string;
   /** AES-256-GCM encrypted project token */
   encryptedToken: string;
+  /** Excerpt of the first 10 characters of the token */
+  tokenSnippet?: string;
   /** ID of the ModelConfig to use for routing decisions */
   routingModelId: string;
   models: ProjectModelRef[];

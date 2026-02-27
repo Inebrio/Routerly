@@ -66,18 +66,26 @@ export const createModel = (data: {
   pricingTiers?: PricingTier[];
   dailyBudget?: number; monthlyBudget?: number;
 }) => request<Model>('/models', { method: 'POST', body: JSON.stringify(data) });
-export const deleteModel = (id: string) => request<void>(`/models/${id}`, { method: 'DELETE' });
+export const updateModel = (id: string, data: {
+  name?: string; provider: string; endpoint: string; apiKey?: string;
+  inputPerMillion: number; outputPerMillion: number;
+  cachePerMillion?: number;
+  pricingTiers?: PricingTier[];
+  dailyBudget?: number; monthlyBudget?: number;
+}) => request<Model>(`/models/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteModel = (id: string) => request<void>(`/models/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
 // ── Projects ──────────────────────────────────────────────────────────────
 export interface Project {
-  id: string; name: string; slug: string; routingModelId: string;
+  id: string; name: string; routingModelId: string;
   models: { modelId: string }[];
   token?: string;
+  tokenSnippet?: string;
 }
 
 export const getProjects = () => request<Project[]>('/projects');
 export const createProject = (data: {
-  name: string; slug: string; routingModelId: string; modelIds: string[]; timeoutMs?: number;
+  name: string; routingModelId: string; modelIds: string[]; timeoutMs?: number;
 }) => request<Project>('/projects', { method: 'POST', body: JSON.stringify(data) });
 export const deleteProject = (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' });
 

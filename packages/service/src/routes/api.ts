@@ -118,6 +118,46 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.status(201).send({ ...model, encryptedApiKey: undefined });
   });
 
+  fastify.put<{
+    Params: { id: string };
+    Body: {
+      name?: string; provider: string; endpoint: string;
+      apiKey?: string; inputPerMillion: number; outputPerMillion: number;
+      cachePerMillion?: number;
+      pricingTiers?: PricingTier[];
+      dailyBudget?: number; monthlyBudget?: number;
+    }
+  }>('/api/models/:id', async (req, reply) => {
+    const models = await readConfig('models');
+    const index = models.findIndex(m => m.id === req.params.id);
+    if (index === -1) {
+      return reply.status(404).send({ error: 'Not found' });
+    }
+    const existing = models[index]!;
+    const model: ModelConfig = {
+      ...existing,
+      name: req.body.name ?? existing.name,
+      provider: req.body.provider as Provider,
+      endpoint: req.body.endpoint,
+      encryptedApiKey: req.body.apiKey ? encrypt(req.body.apiKey) : existing.encryptedApiKey,
+      cost: {
+        inputPerMillion: req.body.inputPerMillion,
+        outputPerMillion: req.body.outputPerMillion,
+        ...(req.body.cachePerMillion !== undefined ? { cachePerMillion: req.body.cachePerMillion } : {}),
+        ...(req.body.pricingTiers?.length ? { pricingTiers: req.body.pricingTiers } : {}),
+      },
+      globalThresholds: (req.body.dailyBudget !== undefined || req.body.monthlyBudget !== undefined)
+        ? {
+          ...(req.body.dailyBudget !== undefined ? { daily: req.body.dailyBudget } : {}),
+          ...(req.body.monthlyBudget !== undefined ? { monthly: req.body.monthlyBudget } : {}),
+        }
+        : undefined,
+    };
+    models[index] = model;
+    await writeConfig('models', models);
+    return reply.send({ ...model, encryptedApiKey: undefined });
+  });
+
   fastify.delete<{ Params: { id: string } }>('/api/models/:id', async (req, reply) => {
     const models = await readConfig('models');
     const filtered = models.filter(m => m.id !== req.params.id);
@@ -136,18 +176,15 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.post<{
-    Body: { name: string; slug: string; routingModelId: string; modelIds: string[]; timeoutMs?: number }
+    Body: { name: string; routingModelId: string; modelIds: string[]; timeoutMs?: number }
   }>('/api/projects', async (req, reply) => {
     const projects = await readConfig('projects');
-    if (projects.find(p => p.slug === req.body.slug)) {
-      return reply.status(409).send({ error: `Slug "${req.body.slug}" already in use` });
-    }
-    const rawToken = randomBytes(32).toString('hex');
+    const rawToken = `sk-lr-${randomBytes(32).toString('hex')}`;
     const project: ProjectConfig = {
       id: uuidv4(),
       name: req.body.name,
-      slug: req.body.slug,
       encryptedToken: encrypt(rawToken),
+      tokenSnippet: rawToken.substring(0, 10),
       routingModelId: req.body.routingModelId,
       models: req.body.modelIds.map(id => ({ modelId: id })),
       timeoutMs: req.body.timeoutMs ?? 30000,

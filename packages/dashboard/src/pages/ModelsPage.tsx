@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Trash2, Server, Eye, EyeOff, ChevronDown, X } from 'lucide-react';
-import { getModels, createModel, deleteModel, type Model, type PricingTier } from '../api';
+import { Plus, Trash2, Server, Eye, EyeOff, ChevronDown, X, Edit2 } from 'lucide-react';
+import { getModels, createModel, deleteModel, updateModel, type Model, type PricingTier } from '../api';
 import providersConf from '../conf/providers.json';
 
 type Provider = keyof typeof providersConf;
@@ -84,6 +84,7 @@ export function ModelsPage() {
   const [err, setErr] = useState('');
   const [showToken, setShowToken] = useState(false);
   const [isCustomModel, setIsCustomModel] = useState(false);
+  const [editingModelId, setEditingModelId] = useState<string | null>(null);
 
   useEffect(() => { load(); }, []);
 
@@ -141,11 +142,46 @@ export function ModelsPage() {
   }
 
   function openModal() {
+    setEditingModelId(null);
     const firstModel = PROVIDER_MODELS.openai?.[0];
     setIsCustomModel(false); setShowAdvanced(false);
     setErr(''); setShowToken(false); setTierRows([]);
     setForm({ ...EMPTY_FORM, id: firstModel?.id ?? '' });
     if (firstModel) applyPreset('openai', firstModel.id);
+    setShowModal(true);
+  }
+
+  function editModel(model: Model) {
+    setEditingModelId(model.id);
+    setIsCustomModel(true);
+    setErr(''); setShowToken(false);
+
+    setForm({
+      id: model.id,
+      customId: '',
+      provider: model.provider as Provider,
+      endpoint: model.endpoint,
+      apiKey: '',
+      inputPerMillion: String(model.cost.inputPerMillion),
+      outputPerMillion: String(model.cost.outputPerMillion),
+      cachePerMillion: model.cost.cachePerMillion != null ? String(model.cost.cachePerMillion) : '',
+      dailyBudget: model.globalThresholds?.daily != null ? String(model.globalThresholds.daily) : '',
+      monthlyBudget: model.globalThresholds?.monthly != null ? String(model.globalThresholds.monthly) : '',
+    });
+
+    if (model.cost.pricingTiers?.length) {
+      setTierRows(model.cost.pricingTiers.map(t => ({
+        metric: t.metric,
+        above: String(t.above),
+        input: String(t.inputPerMillion),
+        output: String(t.outputPerMillion),
+        cache: t.cachePerMillion != null ? String(t.cachePerMillion) : '',
+      })));
+      setShowAdvanced(true);
+    } else {
+      setTierRows([]); setShowAdvanced(false);
+    }
+
     setShowModal(true);
   }
 
@@ -170,7 +206,7 @@ export function ModelsPage() {
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     setErr(''); setSaving(true);
-    const finalId = effectiveId();
+    const finalId = editingModelId || effectiveId();
     if (!finalId) { setErr('Model ID required'); setSaving(false); return; }
 
     const pricingTiersPayload: PricingTier[] = tierRows
@@ -184,7 +220,7 @@ export function ModelsPage() {
       }));
 
     try {
-      await createModel({
+      const payload = {
         id: finalId,
         provider: form.provider,
         endpoint: form.endpoint,
@@ -195,7 +231,13 @@ export function ModelsPage() {
         ...(pricingTiersPayload.length ? { pricingTiers: pricingTiersPayload } : {}),
         ...(form.dailyBudget ? { dailyBudget: parseFloat(form.dailyBudget) } : {}),
         ...(form.monthlyBudget ? { monthlyBudget: parseFloat(form.monthlyBudget) } : {}),
-      });
+      };
+
+      if (editingModelId) {
+        await updateModel(editingModelId, payload);
+      } else {
+        await createModel(payload);
+      }
       setShowModal(false); await load();
     } catch (e) { setErr(e instanceof Error ? e.message : 'Error'); }
     finally { setSaving(false); }
@@ -247,7 +289,10 @@ export function ModelsPage() {
                     <td>${m.cost.outputPerMillion}</td>
                     <td>{m.cost.cachePerMillion != null ? `$${m.cost.cachePerMillion}` : <span className="text-muted">—</span>}</td>
                     <td>{m.globalThresholds?.monthly ? `$${m.globalThresholds.monthly}` : <span className="text-muted">—</span>}</td>
-                    <td>
+                    <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                      <button className="btn-icon" onClick={() => editModel(m)} title="Edit">
+                        <Edit2 size={15} />
+                      </button>
                       <button className="btn-icon danger" onClick={() => handleDelete(m.id)} title="Remove">
                         <Trash2 size={15} />
                       </button>
@@ -263,48 +308,54 @@ export function ModelsPage() {
       {showModal && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
           <div className="modal" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 className="modal-title">Add Model</h2>
+            <h2 className="modal-title">{editingModelId ? 'Edit Model' : 'Add Model'}</h2>
             <form onSubmit={handleAdd} autoComplete="off">
               {err && <div className="form-error">{err}</div>}
 
               {/* ID */}
               <div className="form-group">
                 <label className="form-label">
-                  ID <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional — default: <code style={{ fontSize: '0.78rem' }}>{autoId || `${form.provider}/model`}</code>)</span>
+                  ID {editingModelId ? '' : <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional — default: <code style={{ fontSize: '0.78rem' }}>{autoId || `${form.provider}/model`}</code>)</span>}
                 </label>
-                <input className="form-input" value={form.customId} name="modelId" autoComplete="off"
-                  onChange={e => setForm(f => ({ ...f, customId: e.target.value }))}
-                  placeholder={autoId || `${form.provider}/model`} />
+                {editingModelId ? (
+                  <input className="form-input" value={editingModelId} disabled style={{ opacity: 0.7 }} />
+                ) : (
+                  <input className="form-input" value={form.customId} name="modelId" autoComplete="off"
+                    onChange={e => setForm(f => ({ ...f, customId: e.target.value }))}
+                    placeholder={autoId || `${form.provider}/model`} />
+                )}
               </div>
 
               {/* Provider */}
               <div className="form-group">
                 <label className="form-label">Provider</label>
-                <select className="form-input" value={form.provider}
+                <select className="form-input" value={form.provider} disabled={!!editingModelId} style={{ opacity: editingModelId ? 0.7 : 1 }}
                   onChange={e => handleProviderChange(e.target.value as Provider)}>
                   {PROVIDERS.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
 
               {/* Model */}
-              <div className="form-group">
-                <label className="form-label">Model</label>
-                {providerModels.length > 0 ? (
-                  <select className="form-input" value={isCustomModel ? '__custom__' : form.id}
-                    onChange={e => handleModelChange(e.target.value)}>
-                    {providerModels.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
-                    <option value="__custom__">— custom model ID —</option>
-                  </select>
-                ) : null}
-                {(isCustomModel || providerModels.length === 0) && (
-                  <input className="form-input" style={{ marginTop: providerModels.length > 0 ? 6 : 0 }}
-                    value={form.id} onChange={e => setForm(f => ({ ...f, id: e.target.value }))}
-                    placeholder="e.g. my-fine-tuned-model" required autoFocus />
-                )}
-                {!isCustomModel && selectedPreset?.notes && (
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>{selectedPreset.notes}</div>
-                )}
-              </div>
+              {!editingModelId && (
+                <div className="form-group">
+                  <label className="form-label">Model</label>
+                  {providerModels.length > 0 ? (
+                    <select className="form-input" value={isCustomModel ? '__custom__' : form.id}
+                      onChange={e => handleModelChange(e.target.value)}>
+                      {providerModels.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
+                      <option value="__custom__">— custom model ID —</option>
+                    </select>
+                  ) : null}
+                  {(isCustomModel || providerModels.length === 0) && (
+                    <input className="form-input" style={{ marginTop: providerModels.length > 0 ? 6 : 0 }}
+                      value={form.id} onChange={e => setForm(f => ({ ...f, id: e.target.value }))}
+                      placeholder="e.g. my-fine-tuned-model" required autoFocus />
+                  )}
+                  {!isCustomModel && selectedPreset?.notes && (
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>{selectedPreset.notes}</div>
+                  )}
+                </div>
+              )}
 
               {/* API Key */}
               <div className="form-group">
@@ -313,7 +364,7 @@ export function ModelsPage() {
                   <input className="form-input" type={showToken ? 'text' : 'password'}
                     name="apiKey" autoComplete="new-password"
                     value={form.apiKey} onChange={e => setForm(f => ({ ...f, apiKey: e.target.value }))}
-                    placeholder={form.provider === 'ollama' ? 'not required for local models' : 'sk-…'}
+                    placeholder={editingModelId ? 'Leave blank to keep existing key' : (form.provider === 'ollama' ? 'not required for local models' : 'sk-…')}
                     style={{ paddingRight: 40 }} />
                   <button type="button" onClick={() => setShowToken(v => !v)}
                     style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>
@@ -438,7 +489,7 @@ export function ModelsPage() {
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? <span className="spinner" /> : 'Add Model'}
+                  {saving ? <span className="spinner" /> : (editingModelId ? 'Save Changes' : 'Add Model')}
                 </button>
               </div>
             </form>
