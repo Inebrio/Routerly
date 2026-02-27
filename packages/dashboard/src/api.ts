@@ -14,6 +14,14 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       ...(init.headers as Record<string, string> ?? {}),
     },
   });
+
+  if (res.status === 401 && path !== '/auth/login') {
+    localStorage.removeItem('lr_token');
+    localStorage.removeItem('lr_user');
+    window.location.href = '/dashboard/login';
+    throw new Error('Unauthorized');
+  }
+
   if (res.status === 204) return undefined as T;
   const data = await res.json() as T;
   if (!res.ok) throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
@@ -36,9 +44,17 @@ export const setupFirstAdmin = (email: string, password: string) =>
   );
 
 // ── Models ────────────────────────────────────────────────────────────────
+export interface PricingTier {
+  metric: string;
+  above: number;
+  inputPerMillion: number;
+  outputPerMillion: number;
+  cachePerMillion?: number;
+}
+
 export interface Model {
   id: string; name: string; provider: string; endpoint: string;
-  cost: { inputPerMillion: number; outputPerMillion: number };
+  cost: { inputPerMillion: number; outputPerMillion: number; cachePerMillion?: number; pricingTiers?: PricingTier[] };
   globalThresholds?: { daily?: number; monthly?: number };
 }
 
@@ -46,6 +62,8 @@ export const getModels = () => request<Model[]>('/models');
 export const createModel = (data: {
   id: string; name?: string; provider: string; endpoint: string; apiKey?: string;
   inputPerMillion: number; outputPerMillion: number;
+  cachePerMillion?: number;
+  pricingTiers?: PricingTier[];
   dailyBudget?: number; monthlyBudget?: number;
 }) => request<Model>('/models', { method: 'POST', body: JSON.stringify(data) });
 export const deleteModel = (id: string) => request<void>(`/models/${id}`, { method: 'DELETE' });

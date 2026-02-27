@@ -5,7 +5,7 @@ import { randomBytes } from 'node:crypto';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { encrypt, decrypt } from '@localrouter/shared';
 import { createSessionToken, verifyToken } from '../plugins/jwt.js';
-import type { ModelConfig, ProjectConfig, UserConfig, Provider, TokenCost } from '@localrouter/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, Provider, TokenCost, PricingTier } from '@localrouter/shared';
 
 function hashPassword(p: string): string {
   return createHash('sha256').update(p).digest('hex');
@@ -85,6 +85,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     Body: {
       id: string; name?: string; provider: string; endpoint: string;
       apiKey?: string; inputPerMillion: number; outputPerMillion: number;
+      cachePerMillion?: number;
+      pricingTiers?: PricingTier[];
       dailyBudget?: number; monthlyBudget?: number;
     }
   }>('/api/models', async (req, reply) => {
@@ -98,7 +100,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       provider: req.body.provider as Provider,
       endpoint: req.body.endpoint,
       encryptedApiKey: req.body.apiKey ? encrypt(req.body.apiKey) : undefined,
-      cost: { inputPerMillion: req.body.inputPerMillion, outputPerMillion: req.body.outputPerMillion },
+      cost: {
+        inputPerMillion: req.body.inputPerMillion,
+        outputPerMillion: req.body.outputPerMillion,
+        ...(req.body.cachePerMillion !== undefined ? { cachePerMillion: req.body.cachePerMillion } : {}),
+        ...(req.body.pricingTiers?.length ? { pricingTiers: req.body.pricingTiers } : {}),
+      },
       globalThresholds: (req.body.dailyBudget !== undefined || req.body.monthlyBudget !== undefined)
         ? {
           ...(req.body.dailyBudget !== undefined ? { daily: req.body.dailyBudget } : {}),

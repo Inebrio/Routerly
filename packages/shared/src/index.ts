@@ -1,6 +1,7 @@
 // Types
 export type {
   Provider,
+  PricingTier,
   TokenCost,
   BudgetThresholds,
   ModelConfig,

@@ -1,0 +1,506 @@
+[
+  {
+    "provider": "OpenAI",
+    "model": "gpt-5.2",
+    "tier": "standard",
+    "context_tokens": null,
+    "input_cost_per_million_tokens_usd": 1.75,
+    "cached_input_cost_per_million_tokens_usd": 0.175,
+    "output_cost_per_million_tokens_usd": 14.0,
+    "notes": "Flagship GPT\u20115.2 model"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "gpt-5.1",
+    "tier": "standard",
+    "context_tokens": null,
+    "input_cost_per_million_tokens_usd": 1.25,
+    "cached_input_cost_per_million_tokens_usd": 0.125,
+    "output_cost_per_million_tokens_usd": 10.0,
+    "notes": "High\u2011capacity GPT\u20115.1 model"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "gpt-5",
+    "tier": "standard",
+    "context_tokens": null,
+    "input_cost_per_million_tokens_usd": 1.25,
+    "cached_input_cost_per_million_tokens_usd": 0.125,
+    "output_cost_per_million_tokens_usd": 10.0,
+    "notes": "Base GPT\u20115 model"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "gpt-5-mini",
+    "tier": "standard",
+    "context_tokens": null,
+    "input_cost_per_million_tokens_usd": 0.25,
+    "cached_input_cost_per_million_tokens_usd": 0.025,
+    "output_cost_per_million_tokens_usd": 2.0,
+    "notes": "Smaller GPT\u20115 variant for cost\u2011sensitive tasks"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "gpt-5-nano",
+    "tier": "standard",
+    "context_tokens": null,
+    "input_cost_per_million_tokens_usd": 0.05,
+    "cached_input_cost_per_million_tokens_usd": 0.005,
+    "output_cost_per_million_tokens_usd": 0.4,
+    "notes": "Ultra\u2011compact GPT\u20115 variant"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "gpt-4.1",
+    "tier": "standard",
+    "context_tokens": null,
+    "input_cost_per_million_tokens_usd": 2.0,
+    "cached_input_cost_per_million_tokens_usd": 0.5,
+    "output_cost_per_million_tokens_usd": 8.0,
+    "notes": "GPT\u20114.1 text model"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "gpt-4.1-mini",
+    "tier": "standard",
+    "context_tokens": null,
+    "input_cost_per_million_tokens_usd": 0.4,
+    "cached_input_cost_per_million_tokens_usd": 0.1,
+    "output_cost_per_million_tokens_usd": 1.6,
+    "notes": "Smaller GPT\u20114.1 variant"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "gpt-4.1-nano",
+    "tier": "standard",
+    "context_tokens": null,
+    "input_cost_per_million_tokens_usd": 0.1,
+    "cached_input_cost_per_million_tokens_usd": 0.025,
+    "output_cost_per_million_tokens_usd": 0.4,
+    "notes": "Ultra\u2011compact GPT\u20114.1 variant"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "gpt-4o",
+    "tier": "standard",
+    "context_tokens": null,
+    "input_cost_per_million_tokens_usd": 2.5,
+    "cached_input_cost_per_million_tokens_usd": 1.25,
+    "output_cost_per_million_tokens_usd": 10.0,
+    "notes": "GPT\u20114o (Omni) multimodal model"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "gpt-4o-mini",
+    "tier": "standard",
+    "context_tokens": null,
+    "input_cost_per_million_tokens_usd": 0.15,
+    "cached_input_cost_per_million_tokens_usd": 0.075,
+    "output_cost_per_million_tokens_usd": 0.6,
+    "notes": "Mini variant of GPT\u20114o"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "gpt-realtime",
+    "tier": "standard",
+    "context_tokens": null,
+    "input_cost_per_million_tokens_usd": 4.0,
+    "cached_input_cost_per_million_tokens_usd": 0.4,
+    "output_cost_per_million_tokens_usd": 16.0,
+    "notes": "Low\u2011latency GPT model for streaming"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "gpt-realtime-mini",
+    "tier": "standard",
+    "context_tokens": null,
+    "input_cost_per_million_tokens_usd": 0.6,
+    "cached_input_cost_per_million_tokens_usd": 0.06,
+    "output_cost_per_million_tokens_usd": 2.4,
+    "notes": "Compact realtime model"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "o1",
+    "tier": "standard",
+    "context_tokens": null,
+    "input_cost_per_million_tokens_usd": 15.0,
+    "cached_input_cost_per_million_tokens_usd": 7.5,
+    "output_cost_per_million_tokens_usd": 60.0,
+    "notes": "Large agentic model (o1)"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "o3",
+    "tier": "standard",
+    "context_tokens": null,
+    "input_cost_per_million_tokens_usd": 2.0,
+    "cached_input_cost_per_million_tokens_usd": 0.5,
+    "output_cost_per_million_tokens_usd": 8.0,
+    "notes": "Reasoning model (o3)"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "o4-mini",
+    "tier": "standard",
+    "context_tokens": null,
+    "input_cost_per_million_tokens_usd": 1.1,
+    "cached_input_cost_per_million_tokens_usd": 0.275,
+    "output_cost_per_million_tokens_usd": 4.4,
+    "notes": "Reinforcement-tuned mini model"
+  },
+  {
+    "provider": "Anthropic",
+    "model": "Claude Opus 4.6",
+    "tier": "standard (<=200K context)",
+    "context_tokens": "200K",
+    "input_cost_per_million_tokens_usd": 5.0,
+    "output_cost_per_million_tokens_usd": 25.0,
+    "cached_write_cost_per_million_tokens_usd": 18.75,
+    "cached_read_cost_per_million_tokens_usd": 1.5,
+    "notes": "Premium Claude model; pricing from Finout and official announcement"
+  },
+  {
+    "provider": "Anthropic",
+    "model": "Claude Opus 4.6",
+    "tier": "1M context (Beta)",
+    "context_tokens": "1M",
+    "input_cost_per_million_tokens_usd": 10.0,
+    "output_cost_per_million_tokens_usd": 37.5,
+    "cached_write_cost_per_million_tokens_usd": 18.75,
+    "cached_read_cost_per_million_tokens_usd": 1.5,
+    "notes": "Opus with expanded 1M token context window"
+  },
+  {
+    "provider": "Anthropic",
+    "model": "Claude Sonnet 4.6",
+    "tier": "standard",
+    "context_tokens": "200K",
+    "input_cost_per_million_tokens_usd": 3.0,
+    "output_cost_per_million_tokens_usd": 15.0,
+    "cached_write_cost_per_million_tokens_usd": 3.75,
+    "cached_read_cost_per_million_tokens_usd": 0.3,
+    "notes": "Mid\u2011range Claude model"
+  },
+  {
+    "provider": "Anthropic",
+    "model": "Claude Sonnet 4.5",
+    "tier": "<=200K context",
+    "context_tokens": "200K",
+    "input_cost_per_million_tokens_usd": 3.0,
+    "output_cost_per_million_tokens_usd": 15.0,
+    "cached_write_cost_per_million_tokens_usd": 3.75,
+    "cached_read_cost_per_million_tokens_usd": 0.3,
+    "notes": "Legacy Sonnet 4.5 for context up to 200K tokens"
+  },
+  {
+    "provider": "Anthropic",
+    "model": "Claude Sonnet 4.5",
+    "tier": ">200K context",
+    "context_tokens": ">200K",
+    "input_cost_per_million_tokens_usd": 6.0,
+    "output_cost_per_million_tokens_usd": 22.5,
+    "cached_write_cost_per_million_tokens_usd": 7.5,
+    "cached_read_cost_per_million_tokens_usd": 0.6,
+    "notes": "Higher context window pricing for Sonnet 4.5"
+  },
+  {
+    "provider": "Anthropic",
+    "model": "Claude Haiku 4.5",
+    "tier": "standard",
+    "context_tokens": "200K",
+    "input_cost_per_million_tokens_usd": 1.0,
+    "output_cost_per_million_tokens_usd": 5.0,
+    "cached_write_cost_per_million_tokens_usd": 1.25,
+    "cached_read_cost_per_million_tokens_usd": 0.1,
+    "notes": "Entry\u2011level Claude model"
+  },
+  {
+    "provider": "Anthropic",
+    "model": "Claude Opus 4.1",
+    "tier": "legacy",
+    "context_tokens": "200K",
+    "input_cost_per_million_tokens_usd": 15.0,
+    "output_cost_per_million_tokens_usd": 75.0,
+    "cached_write_cost_per_million_tokens_usd": 18.75,
+    "cached_read_cost_per_million_tokens_usd": 1.5,
+    "notes": "Older Opus model pricing"
+  },
+  {
+    "provider": "Anthropic",
+    "model": "Claude Sonnet 4.1",
+    "tier": "legacy",
+    "context_tokens": "200K",
+    "input_cost_per_million_tokens_usd": 3.0,
+    "output_cost_per_million_tokens_usd": 15.0,
+    "cached_write_cost_per_million_tokens_usd": 3.75,
+    "cached_read_cost_per_million_tokens_usd": 0.3,
+    "notes": "Older Sonnet model pricing"
+  },
+  {
+    "provider": "Google",
+    "model": "Gemini 2.5 Pro",
+    "tier": "<=200K tokens",
+    "context_tokens": "200K",
+    "input_cost_per_million_tokens_usd": 1.25,
+    "output_cost_per_million_tokens_usd": 10.0,
+    "cached_input_cost_per_million_tokens_usd": 0.125,
+    "notes": "Standard Gemini 2.5 Pro pricing for up to 200K context"
+  },
+  {
+    "provider": "Google",
+    "model": "Gemini 2.5 Pro",
+    "tier": ">200K tokens",
+    "context_tokens": ">200K",
+    "input_cost_per_million_tokens_usd": 2.5,
+    "output_cost_per_million_tokens_usd": 15.0,
+    "cached_input_cost_per_million_tokens_usd": 0.25,
+    "notes": "Higher context pricing for Gemini 2.5 Pro"
+  },
+  {
+    "provider": "Google",
+    "model": "Gemini 2.5 Flash",
+    "tier": "standard",
+    "context_tokens": "200K",
+    "input_cost_per_million_tokens_usd": 0.3,
+    "output_cost_per_million_tokens_usd": 2.5,
+    "cached_input_cost_per_million_tokens_usd": 0.03,
+    "notes": "Fast inference version of Gemini 2.5"
+  },
+  {
+    "provider": "Google",
+    "model": "Gemini 2.5 Flash-Lite",
+    "tier": "standard",
+    "context_tokens": "200K",
+    "input_cost_per_million_tokens_usd": 0.1,
+    "output_cost_per_million_tokens_usd": 0.4,
+    "cached_input_cost_per_million_tokens_usd": 0.01,
+    "notes": "Lightweight version of Gemini Flash"
+  },
+  {
+    "provider": "Google",
+    "model": "Gemini 3.1 Pro Preview",
+    "tier": "<=200K tokens",
+    "context_tokens": "200K",
+    "input_cost_per_million_tokens_usd": 2.0,
+    "output_cost_per_million_tokens_usd": 12.0,
+    "cached_input_cost_per_million_tokens_usd": 0.2,
+    "notes": "Preview of Gemini 3.1 Pro with standard context"
+  },
+  {
+    "provider": "Google",
+    "model": "Gemini 3.1 Pro Preview",
+    "tier": ">200K tokens",
+    "context_tokens": ">200K",
+    "input_cost_per_million_tokens_usd": 4.0,
+    "output_cost_per_million_tokens_usd": 18.0,
+    "cached_input_cost_per_million_tokens_usd": 0.4,
+    "notes": "Large context pricing for Gemini 3.1 Pro preview"
+  },
+  {
+    "provider": "Google",
+    "model": "Gemini 3 Pro Preview",
+    "tier": "<=200K tokens",
+    "context_tokens": "200K",
+    "input_cost_per_million_tokens_usd": 2.0,
+    "output_cost_per_million_tokens_usd": 12.0,
+    "cached_input_cost_per_million_tokens_usd": 0.2,
+    "notes": "Previous iteration of Gemini 3 Pro"
+  },
+  {
+    "provider": "Google",
+    "model": "Gemini 3 Pro Preview",
+    "tier": ">200K tokens",
+    "context_tokens": ">200K",
+    "input_cost_per_million_tokens_usd": 4.0,
+    "output_cost_per_million_tokens_usd": 18.0,
+    "cached_input_cost_per_million_tokens_usd": 0.4,
+    "notes": "Large context pricing for Gemini 3 Pro preview"
+  },
+  {
+    "provider": "Google",
+    "model": "Gemini 3 Flash Preview",
+    "tier": "standard",
+    "context_tokens": "200K",
+    "input_cost_per_million_tokens_usd": 0.5,
+    "output_cost_per_million_tokens_usd": 3.0,
+    "cached_input_cost_per_million_tokens_usd": 0.05,
+    "notes": "Preview of Gemini 3 Flash"
+  },
+  {
+    "provider": "Google",
+    "model": "Gemini 2.0 Flash-Lite",
+    "tier": "standard",
+    "context_tokens": "200K",
+    "input_cost_per_million_tokens_usd": 0.075,
+    "output_cost_per_million_tokens_usd": 0.3,
+    "cached_input_cost_per_million_tokens_usd": 0.0,
+    "notes": "Earlier version of Flash-Lite (no caching)"
+  },
+  {
+    "provider": "Mistral",
+    "model": "Mistral Small 3.1",
+    "tier": "standard",
+    "context_tokens": "128K",
+    "input_cost_per_million_tokens_usd": 0.1,
+    "output_cost_per_million_tokens_usd": 0.3,
+    "notes": "Small Mistral model (pricing from blog)"
+  },
+  {
+    "provider": "Mistral",
+    "model": "Mistral Medium 3",
+    "tier": "standard",
+    "context_tokens": "128K",
+    "input_cost_per_million_tokens_usd": 0.4,
+    "output_cost_per_million_tokens_usd": 2.0,
+    "notes": "Medium\u2011sized Mistral model (official or model card)"
+  },
+  {
+    "provider": "Mistral",
+    "model": "Mistral Large 2",
+    "tier": "standard",
+    "context_tokens": "128K",
+    "input_cost_per_million_tokens_usd": 2.0,
+    "output_cost_per_million_tokens_usd": 6.0,
+    "notes": "Large Mistral model (pricing from model card)"
+  },
+  {
+    "provider": "Mistral",
+    "model": "Codestral",
+    "tier": "coding",
+    "context_tokens": "256K",
+    "input_cost_per_million_tokens_usd": 1.0,
+    "output_cost_per_million_tokens_usd": 3.0,
+    "notes": "Mistral code\u2011specialized model"
+  },
+  {
+    "provider": "Mistral",
+    "model": "Mixtral 8x7B",
+    "tier": "mixture of experts",
+    "context_tokens": "65K",
+    "input_cost_per_million_tokens_usd": 0.7,
+    "output_cost_per_million_tokens_usd": 0.7,
+    "notes": "Mixture\u2011of\u2011experts Mistral model (approximate pricing)"
+  },
+  {
+    "provider": "Cohere",
+    "model": "Command",
+    "tier": "legacy",
+    "context_tokens": "",
+    "input_cost_per_million_tokens_usd": 1.0,
+    "output_cost_per_million_tokens_usd": 2.0,
+    "notes": "Original Command model pricing"
+  },
+  {
+    "provider": "Cohere",
+    "model": "Command-light",
+    "tier": "legacy",
+    "context_tokens": "",
+    "input_cost_per_million_tokens_usd": 0.3,
+    "output_cost_per_million_tokens_usd": 0.6,
+    "notes": "Lightweight Command variant"
+  },
+  {
+    "provider": "Cohere",
+    "model": "Command R (03\u20112024)",
+    "tier": "standard",
+    "context_tokens": "128K",
+    "input_cost_per_million_tokens_usd": 0.5,
+    "output_cost_per_million_tokens_usd": 1.5,
+    "notes": "Early Command R release (March 2024)"
+  },
+  {
+    "provider": "Cohere",
+    "model": "Command R+ (04\u20112024)",
+    "tier": "standard",
+    "context_tokens": "128K",
+    "input_cost_per_million_tokens_usd": 3.0,
+    "output_cost_per_million_tokens_usd": 15.0,
+    "notes": "First R+ release (April 2024)"
+  },
+  {
+    "provider": "Cohere",
+    "model": "Command R+ (08\u20112024)",
+    "tier": "standard",
+    "context_tokens": "128K",
+    "input_cost_per_million_tokens_usd": 2.5,
+    "output_cost_per_million_tokens_usd": 10.0,
+    "notes": "Updated R+ pricing (August 2024)"
+  },
+  {
+    "provider": "Cohere",
+    "model": "Command R",
+    "tier": "standard",
+    "context_tokens": "128K",
+    "input_cost_per_million_tokens_usd": 0.15,
+    "output_cost_per_million_tokens_usd": 0.6,
+    "notes": "Current Command R pricing (08\u20112024)"
+  },
+  {
+    "provider": "Cohere",
+    "model": "Command R (fine\u2011tuned)",
+    "tier": "fine\u2011tuned",
+    "context_tokens": "128K",
+    "input_cost_per_million_tokens_usd": 0.3,
+    "output_cost_per_million_tokens_usd": 1.2,
+    "training_cost_per_million_tokens_usd": 3.0,
+    "notes": "Fine\u2011tuned variant of Command R"
+  },
+  {
+    "provider": "Cohere",
+    "model": "Command R7B",
+    "tier": "edge",
+    "context_tokens": "128K",
+    "input_cost_per_million_tokens_usd": 0.0375,
+    "output_cost_per_million_tokens_usd": 0.15,
+    "notes": "Edge\u2011optimized 7B parameter model"
+  },
+  {
+    "provider": "Cohere",
+    "model": "Command A",
+    "tier": "advanced",
+    "context_tokens": "256K",
+    "input_cost_per_million_tokens_usd": 2.5,
+    "output_cost_per_million_tokens_usd": 10.0,
+    "notes": "Agentic and multilingual model"
+  },
+  {
+    "provider": "xAI",
+    "model": "Grok 4.1 Fast",
+    "tier": "standard",
+    "context_tokens": "2M",
+    "input_cost_per_million_tokens_usd": 0.2,
+    "output_cost_per_million_tokens_usd": 0.5,
+    "cached_input_cost_per_million_tokens_usd": 0.1,
+    "notes": "Grok reasoning model with 2M context window"
+  },
+  {
+    "provider": "xAI",
+    "model": "Grok 4",
+    "tier": "standard",
+    "context_tokens": "256K",
+    "input_cost_per_million_tokens_usd": 3.0,
+    "output_cost_per_million_tokens_usd": 15.0,
+    "cached_input_cost_per_million_tokens_usd": 0.75,
+    "notes": "Flagship Grok model (Grok 4)"
+  },
+  {
+    "provider": "xAI",
+    "model": "Grok 3",
+    "tier": "standard",
+    "context_tokens": "128K",
+    "input_cost_per_million_tokens_usd": 2.0,
+    "output_cost_per_million_tokens_usd": 10.0,
+    "cached_input_cost_per_million_tokens_usd": 0.5,
+    "notes": "Previous generation Grok model"
+  },
+  {
+    "provider": "xAI",
+    "model": "Grok 3 Mini",
+    "tier": "mini",
+    "context_tokens": "128K",
+    "input_cost_per_million_tokens_usd": 0.1,
+    "output_cost_per_million_tokens_usd": 0.3,
+    "notes": "Compact Grok model for simple tasks"
+  }
+]

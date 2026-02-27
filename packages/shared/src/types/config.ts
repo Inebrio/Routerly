@@ -1,12 +1,29 @@
 // ─── Config types ────────────────────────────────────────────────────────────
 
-export type Provider = 'openai' | 'anthropic' | 'gemini' | 'ollama' | 'custom';
+export type Provider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom';
+
+export interface PricingTier {
+  /** What dimension is being measured, e.g. "context_tokens" */
+  metric: string;
+  /** Threshold above which this tier's pricing applies */
+  above: number;
+  /** Cost per 1M input tokens in USD for this tier */
+  inputPerMillion: number;
+  /** Cost per 1M output tokens in USD for this tier */
+  outputPerMillion: number;
+  /** Cost per 1M cached tokens in USD for this tier (optional) */
+  cachePerMillion?: number;
+}
 
 export interface TokenCost {
-  /** Cost per 1M input tokens in USD */
+  /** Cost per 1M input tokens in USD (base / default) */
   inputPerMillion: number;
-  /** Cost per 1M output tokens in USD */
+  /** Cost per 1M output tokens in USD (base / default) */
   outputPerMillion: number;
+  /** Cost per 1M cached input tokens in USD (prompt caching, optional) */
+  cachePerMillion?: number;
+  /** Pricing overrides: when metric exceeds threshold, these prices apply instead */
+  pricingTiers?: PricingTier[];
 }
 
 export interface BudgetThresholds {
