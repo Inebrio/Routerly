@@ -7,6 +7,7 @@ import { SetupPage } from './pages/SetupPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { ModelsPage } from './pages/ModelsPage';
 import { ProjectsPage } from './pages/ProjectsPage';
+import { ProjectFormPage } from './pages/ProjectFormPage';
 import { UsersPage } from './pages/UsersPage';
 import { UsagePage } from './pages/UsagePage';
 import { LayoutDashboard, Cpu, FolderOpen, Users, BarChart2, LogOut } from 'lucide-react';
@@ -67,6 +68,8 @@ function ProtectedLayout() {
           <Route path="overview" element={<OverviewPage />} />
           <Route path="models" element={<ModelsPage />} />
           <Route path="projects" element={<ProjectsPage />} />
+          <Route path="projects/new" element={<ProjectFormPage />} />
+          <Route path="projects/:id/edit" element={<ProjectFormPage />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="usage" element={<UsagePage />} />
           <Route path="*" element={<Navigate to="overview" replace />} />

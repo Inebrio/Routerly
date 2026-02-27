@@ -195,6 +195,26 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.status(201).send({ ...project, encryptedToken: undefined, token: rawToken });
   });
 
+  fastify.put<{
+    Params: { id: string };
+    Body: { name: string; routingModelId: string; modelIds: string[]; timeoutMs?: number };
+  }>('/api/projects/:id', async (req, reply) => {
+    const projects = await readConfig('projects');
+    const index = projects.findIndex(p => p.id === req.params.id);
+    if (index === -1) return reply.status(404).send({ error: 'Not found' });
+    const existing = projects[index]!;
+    const updated: ProjectConfig = {
+      ...existing,
+      name: req.body.name,
+      routingModelId: req.body.routingModelId,
+      models: req.body.modelIds.map(id => ({ modelId: id })),
+      timeoutMs: req.body.timeoutMs ?? existing.timeoutMs ?? 30000,
+    };
+    projects[index] = updated;
+    await writeConfig('projects', projects);
+    return reply.send({ ...updated, encryptedToken: undefined });
+  });
+
   fastify.delete<{ Params: { id: string } }>('/api/projects/:id', async (req, reply) => {
     const projects = await readConfig('projects');
     const filtered = projects.filter(p => p.id !== req.params.id);
