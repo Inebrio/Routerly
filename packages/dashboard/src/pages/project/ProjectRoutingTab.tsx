@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Trash2, GripVertical, Info } from 'lucide-react';
 import { updateProject, getModels, type Model, type Project } from '../../api';
 import { useProject } from './ProjectLayout';
+import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
 
 type TargetModel = {
   internalId: string; // for React keys
@@ -54,6 +55,21 @@ export function ProjectRoutingTab() {
       })));
     }
   }, [project]);
+
+  const isDirty = (() => {
+    if (!project) return false;
+    if (routingModelId !== project.routingModelId) return true;
+    if (autoRouting !== (project.autoRouting ?? true)) return true;
+    const savedFallbacks = project.fallbackRoutingModelIds || [];
+    if (fallbackModels.length !== savedFallbacks.length) return true;
+    if (fallbackModels.some((f, i) => f.modelId !== savedFallbacks[i])) return true;
+    const savedTargets = project.models || [];
+    if (targetModels.length !== savedTargets.length) return true;
+    if (targetModels.some((t, i) => t.modelId !== savedTargets[i].modelId || t.prompt !== (savedTargets[i].prompt || ''))) return true;
+    return false;
+  })();
+
+  const { isBlocked, proceed, reset } = useUnsavedChanges(isDirty);
 
   // --- Helpers for used model IDs ---
   function getUsedFallbackModelIds(excludeIdx: number): Set<string> {
@@ -444,10 +460,12 @@ export function ProjectRoutingTab() {
       </div>
 
       <div style={{ marginTop: 32 }}>
-        <button type="submit" className="btn btn-primary" disabled={saving}>
+        <button type="submit" className="btn btn-primary" disabled={saving || !isDirty}>
           {saving ? <span className="spinner" /> : 'Save Routing Configuration'}
         </button>
       </div>
-    </form >
+    </form>
+
+    {isBlocked && <UnsavedChangesModal onConfirm={proceed} onCancel={reset} />}
   );
 }

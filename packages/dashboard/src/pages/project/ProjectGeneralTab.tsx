@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Copy, Check, ChevronDown } from 'lucide-react';
 import { createProject, updateProject } from '../../api';
 import { useProject } from './ProjectLayout';
+import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
 
 export function ProjectGeneralTab() {
   const navigate = useNavigate();
@@ -30,6 +31,12 @@ export function ProjectGeneralTab() {
       });
     }
   }, [project]);
+
+  const isDirty = isEdit
+    ? form.name !== (project?.name ?? '') || form.timeoutMs !== String(project?.timeoutMs ?? 30000)
+    : form.name !== '';
+
+  const { isBlocked, proceed, reset } = useUnsavedChanges(isDirty);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -117,11 +124,13 @@ export function ProjectGeneralTab() {
         </div>
 
         <div style={{ marginTop: 24 }}>
-          <button type="submit" className="btn btn-primary" disabled={saving}>
+          <button type="submit" className="btn btn-primary" disabled={saving || (isEdit && !isDirty)}>
             {saving ? <span className="spinner" /> : isEdit ? 'Save Changes' : 'Create Project'}
           </button>
         </div>
       </form>
+
+      {isBlocked && <UnsavedChangesModal onConfirm={proceed} onCancel={reset} />}
 
 
       {/* Token reveal modal */}
