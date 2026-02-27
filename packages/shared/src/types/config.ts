@@ -46,6 +46,7 @@ export interface ModelConfig {
 
 export interface ProjectModelRef {
   modelId: string;
+  prompt?: string;
   /** Per-project budget overrides (take priority over global) */
   thresholds?: BudgetThresholds;
 }
@@ -60,6 +61,10 @@ export interface ProjectConfig {
   tokenSnippet?: string;
   /** ID of the ModelConfig to use for routing decisions */
   routingModelId: string;
+  /** Whether auto-routing via prompt is enabled. If false, typical load-balancing/fallback logic may apply instead. */
+  autoRouting?: boolean;
+  /** Optional fallback routing models used if the primary routing model fails */
+  fallbackRoutingModelIds?: string[];
   models: ProjectModelRef[];
   /** Timeout in ms for each individual model attempt */
   timeoutMs?: number;

@@ -78,18 +78,32 @@ export const deleteModel = (id: string) => request<void>(`/models/${encodeURICom
 // ── Projects ──────────────────────────────────────────────────────────────
 export interface Project {
   id: string; name: string; routingModelId: string;
-  models: { modelId: string }[];
+  autoRouting?: boolean;
+  fallbackRoutingModelIds?: string[];
+  models: { modelId: string; prompt?: string }[];
   token?: string;
   tokenSnippet?: string;
   timeoutMs?: number;
 }
 
 export const getProjects = () => request<Project[]>('/projects');
+
 export const createProject = (data: {
-  name: string; routingModelId: string; modelIds: string[]; timeoutMs?: number;
+  name: string;
+  routingModelId: string;
+  autoRouting?: boolean;
+  fallbackRoutingModelIds?: string[];
+  models: { modelId: string; prompt?: string }[];
+  timeoutMs?: number;
 }) => request<Project>('/projects', { method: 'POST', body: JSON.stringify(data) });
+
 export const updateProject = (id: string, data: {
-  name: string; routingModelId: string; modelIds: string[]; timeoutMs?: number;
+  name: string;
+  routingModelId: string;
+  autoRouting?: boolean;
+  fallbackRoutingModelIds?: string[];
+  models: { modelId: string; prompt?: string }[];
+  timeoutMs?: number;
 }) => request<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteProject = (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' });
 export const rotateToken = (id: string) => request<Project & { token: string }>(`/projects/${id}/rotate-token`, { method: 'POST' });

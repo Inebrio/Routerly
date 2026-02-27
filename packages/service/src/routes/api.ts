@@ -176,7 +176,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.post<{
-    Body: { name: string; routingModelId: string; modelIds: string[]; timeoutMs?: number }
+    Body: {
+      name: string;
+      routingModelId: string;
+      autoRouting?: boolean;
+      fallbackRoutingModelIds?: string[];
+      models: { modelId: string; prompt?: string }[];
+      timeoutMs?: number;
+    }
   }>('/api/projects', async (req, reply) => {
     const projects = await readConfig('projects');
     const rawToken = `sk-lr-${randomBytes(32).toString('hex')}`;
@@ -186,7 +193,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       encryptedToken: encrypt(rawToken),
       tokenSnippet: rawToken.substring(0, 10),
       routingModelId: req.body.routingModelId,
-      models: req.body.modelIds.map(id => ({ modelId: id })),
+      autoRouting: req.body.autoRouting ?? true,
+      ...(req.body.fallbackRoutingModelIds !== undefined && { fallbackRoutingModelIds: req.body.fallbackRoutingModelIds }),
+      models: req.body.models.map(m => ({
+        modelId: m.modelId,
+        ...(m.prompt ? { prompt: m.prompt } : {}),
+      })),
       timeoutMs: req.body.timeoutMs ?? 30000,
     };
     projects.push(project);
@@ -197,7 +209,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.put<{
     Params: { id: string };
-    Body: { name: string; routingModelId: string; modelIds: string[]; timeoutMs?: number };
+    Body: {
+      name: string;
+      routingModelId: string;
+      autoRouting?: boolean;
+      fallbackRoutingModelIds?: string[];
+      models: { modelId: string; prompt?: string }[];
+      timeoutMs?: number;
+    };
   }>('/api/projects/:id', async (req, reply) => {
     const projects = await readConfig('projects');
     const index = projects.findIndex(p => p.id === req.params.id);
@@ -207,7 +226,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...existing,
       name: req.body.name,
       routingModelId: req.body.routingModelId,
-      models: req.body.modelIds.map(id => ({ modelId: id })),
+      autoRouting: req.body.autoRouting ?? true,
+      ...(req.body.fallbackRoutingModelIds !== undefined && { fallbackRoutingModelIds: req.body.fallbackRoutingModelIds }),
+      models: req.body.models.map(m => ({
+        modelId: m.modelId,
+        ...(m.prompt ? { prompt: m.prompt } : {}),
+      })),
       timeoutMs: req.body.timeoutMs ?? existing.timeoutMs ?? 30000,
     };
     projects[index] = updated;
