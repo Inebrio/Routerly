@@ -177,7 +177,6 @@ export function ModelFormPage() {
     const provider = model.provider as Provider;
     const providerPresets = PROVIDER_MODELS[provider] ?? [];
 
-    // Try to see if current ID matches the standard provider/model preset pattern
     const prefix = `${provider}/`;
     let presetId = '';
     let customId = model.id;
@@ -187,7 +186,7 @@ export function ModelFormPage() {
       const candidate = model.id.slice(prefix.length);
       if (providerPresets.some(m => m.id === candidate)) {
         presetId = candidate;
-        customId = ''; // It's a standard ID, not an override
+        customId = '';
         customModel = false;
       }
     }
@@ -209,6 +208,12 @@ export function ModelFormPage() {
       weeklyBudget: model.globalThresholds?.weekly != null ? String(model.globalThresholds.weekly) : '',
       monthlyBudget: model.globalThresholds?.monthly != null ? String(model.globalThresholds.monthly) : '',
     });
+
+    if (model.globalThresholds?.daily || model.globalThresholds?.weekly || model.globalThresholds?.monthly) {
+      setShowBudget(true);
+    } else {
+      setShowBudget(false);
+    }
 
     if (model.cost.pricingTiers?.length) {
       setTierRows(model.cost.pricingTiers.map(t => ({
@@ -411,30 +416,6 @@ export function ModelFormPage() {
             </div>
           </div>
 
-          {/* ── Section: Budgets ─────────────────────────────── */}
-          <div className="form-section">
-            <h3 className="section-title">Budget limits</h3>
-            <p className="section-desc">Maximum spend allowed per period to prevent unexpected costs.</p>
-
-            <div className="grid-3">
-              <div className="form-group">
-                <label className="form-label">Daily budget <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(USD)</span></label>
-                <input className="form-input" type="number" step="any" value={form.dailyBudget}
-                  onChange={e => setForm(f => ({ ...f, dailyBudget: e.target.value }))} placeholder="—" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Weekly budget <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(USD)</span></label>
-                <input className="form-input" type="number" step="any" value={form.weeklyBudget}
-                  onChange={e => setForm(f => ({ ...f, weeklyBudget: e.target.value }))} placeholder="—" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Monthly budget <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(USD)</span></label>
-                <input className="form-input" type="number" step="any" value={form.monthlyBudget}
-                  onChange={e => setForm(f => ({ ...f, monthlyBudget: e.target.value }))} placeholder="—" />
-              </div>
-            </div>
-          </div>
-
           {/* ── Advanced: Pricing Tiers ─────────────────────────── */}
           <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
             <button type="button" onClick={() => setShowAdvanced(v => !v)}
@@ -445,12 +426,12 @@ export function ModelFormPage() {
                 <span style={{ marginLeft: 6, background: 'var(--accent)', color: '#fff', fontSize: '0.75rem', borderRadius: 12, padding: '2px 8px' }}>{tierRows.length}</span>
               )}
             </button>
+            <p className="section-desc" style={{ marginTop: 8 }}>
+              Override pricing when a metric exceeds a threshold. For example: "Above 200 000 context tokens, prices change."
+            </p>
 
             {showAdvanced && (
               <div style={{ marginTop: 16 }}>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 16 }}>
-                  Override pricing when a metric exceeds a threshold. For example: "Above 200 000 context tokens, prices change."
-                </p>
 
                 {tierRows.map((tier, idx) => (
                   <div key={idx} style={{ background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--border)', borderRadius: 8, padding: '16px', marginBottom: 12, position: 'relative' }}>
@@ -502,6 +483,36 @@ export function ModelFormPage() {
                   onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLButtonElement).style.background = 'none'; }}>
                   <Plus size={16} /> Add pricing tier
                 </button>
+              </div>
+            )}
+          </div>
+
+          {/* ── Section: Budgets ─────────────────────────────── */}
+          <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+            <button type="button" onClick={() => setShowBudget(v => !v)}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 500, padding: '4px 0', userSelect: 'none' }}>
+              <ChevronDown size={18} style={{ transform: showBudget ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
+              Budget limits
+            </button>
+            <p className="section-desc" style={{ marginTop: 8 }}>Maximum spend allowed per period to prevent unexpected costs.</p>
+
+            {showBudget && (
+              <div className="grid-3" style={{ marginTop: 16 }}>
+                <div className="form-group">
+                  <label className="form-label">Daily budget <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(USD)</span></label>
+                  <input className="form-input" type="number" step="any" value={form.dailyBudget}
+                    onChange={e => setForm(f => ({ ...f, dailyBudget: e.target.value }))} placeholder="—" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Weekly budget <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(USD)</span></label>
+                  <input className="form-input" type="number" step="any" value={form.weeklyBudget}
+                    onChange={e => setForm(f => ({ ...f, weeklyBudget: e.target.value }))} placeholder="—" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Monthly budget <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(USD)</span></label>
+                  <input className="form-input" type="number" step="any" value={form.monthlyBudget}
+                    onChange={e => setForm(f => ({ ...f, monthlyBudget: e.target.value }))} placeholder="—" />
+                </div>
               </div>
             )}
           </div>
