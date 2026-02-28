@@ -313,94 +313,103 @@ export function ModelFormPage() {
         <form onSubmit={handleSave} autoComplete="off" style={{ maxWidth: 800 }}>
           {err && <div className="form-error">{err}</div>}
 
-          {/* ID */}
-          <div className="form-group">
-            <label className="form-label">
-              ID <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional — default: <code style={{ fontSize: '0.78rem' }}>{autoId || `${form.provider}/model`}</code>)</span>
-            </label>
-            <input className="form-input" value={form.customId} name="modelId" autoComplete="off"
-              onChange={e => setForm(f => ({ ...f, customId: e.target.value }))}
-              placeholder={autoId || `${form.provider}/model`} />
-          </div>
+          {/* ── Section: Model Information ────────────────────── */}
+          <div className="form-section">
+            <h3 className="section-title">Model Identification</h3>
+            <p className="section-desc">Unique identifier and provider settings for this model configuration.</p>
+            <div className="form-group">
+              <label className="form-label">
+                Custom ID <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional — default: <code style={{ fontSize: '0.78rem' }}>{autoId || `${form.provider}/model`}</code>)</span>
+              </label>
+              <input className="form-input" value={form.customId} name="modelId" autoComplete="off"
+                onChange={e => setForm(f => ({ ...f, customId: e.target.value }))}
+                placeholder={autoId || `${form.provider}/model`} />
+            </div>
 
-          {/* Provider */}
-          <div className="form-group">
-            <label className="form-label">Provider</label>
-            <select className="form-input" value={form.provider}
-              onChange={e => handleProviderChange(e.target.value as Provider)}>
-              {PROVIDERS.map(p => <option key={p} value={p}>{p}</option>)}
-            </select>
-          </div>
-
-          {/* Model */}
-          <div className="form-group">
-            <label className="form-label">Model</label>
-            {providerModels.length > 0 ? (
-              <select className="form-input" value={isCustomModel ? '__custom__' : form.id}
-                onChange={e => handleModelChange(e.target.value)}>
-                {providerModels.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
-                <option value="__custom__">— custom model ID —</option>
+            <div className="form-group">
+              <label className="form-label">Provider</label>
+              <select className="form-input" value={form.provider}
+                onChange={e => handleProviderChange(e.target.value as Provider)}>
+                {PROVIDERS.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
-            ) : null}
-            {(isCustomModel || providerModels.length === 0) && (
-              <input className="form-input" style={{ marginTop: providerModels.length > 0 ? 6 : 0 }}
-                value={form.id} onChange={e => setForm(f => ({ ...f, id: e.target.value }))}
-                placeholder="e.g. my-fine-tuned-model" required autoFocus />
-            )}
-            {!isCustomModel && selectedPreset?.notes && (
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>{selectedPreset.notes}</div>
-            )}
-          </div>
+            </div>
 
-          {/* API Key */}
-          <div className="form-group">
-            <label className="form-label">Token (API Key)</label>
-            <div style={{ position: 'relative' }}>
-              <input className="form-input" type={showToken ? 'text' : 'password'}
-                name="apiKey" autoComplete="new-password"
-                value={form.apiKey} onChange={e => setForm(f => ({ ...f, apiKey: e.target.value }))}
-                placeholder={editingModelId ? 'Leave blank to keep existing key' : (form.provider === 'ollama' ? 'not required for local models' : 'sk-…')}
-                style={{ paddingRight: 40 }} />
-              <button type="button" onClick={() => setShowToken(v => !v)}
-                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>
-                {showToken ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+            <div className="form-group">
+              <label className="form-label">Model Preset</label>
+              {providerModels.length > 0 ? (
+                <select className="form-input" value={isCustomModel ? '__custom__' : form.id}
+                  onChange={e => handleModelChange(e.target.value)}>
+                  {providerModels.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
+                  <option value="__custom__">— custom model name —</option>
+                </select>
+              ) : null}
+              {(isCustomModel || providerModels.length === 0) && (
+                <input className="form-input" style={{ marginTop: providerModels.length > 0 ? 6 : 0 }}
+                  value={form.id} onChange={e => setForm(f => ({ ...f, id: e.target.value }))}
+                  placeholder="e.g. my-fine-tuned-model" required autoFocus />
+              )}
+              {!isCustomModel && selectedPreset?.notes && (
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>{selectedPreset.notes}</div>
+              )}
             </div>
           </div>
 
-          {/* Endpoint */}
-          <div className="form-group">
-            <label className="form-label">Endpoint</label>
-            <input className="form-input" value={form.endpoint}
-              onChange={e => setForm(f => ({ ...f, endpoint: e.target.value }))} required />
+          {/* ── Section: Connection ───────────────────────────── */}
+          <div className="form-section">
+            <h3 className="section-title">Connection details</h3>
+            <p className="section-desc">API endpoint and authentication credentials required to perform requests.</p>
+            <div className="form-group">
+              <label className="form-label">Endpoint URL</label>
+              <input className="form-input" value={form.endpoint}
+                onChange={e => setForm(f => ({ ...f, endpoint: e.target.value }))} required />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">API Key / Token</label>
+              <div style={{ position: 'relative' }}>
+                <input className="form-input" type={showToken ? 'text' : 'password'}
+                  name="apiKey" autoComplete="new-password"
+                  value={form.apiKey} onChange={e => setForm(f => ({ ...f, apiKey: e.target.value }))}
+                  placeholder={editingModelId ? 'Leave blank to keep existing key' : (form.provider === 'ollama' ? 'not required for local models' : 'sk-…')}
+                  style={{ paddingRight: 40 }} />
+                <button type="button" onClick={() => setShowToken(v => !v)}
+                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>
+                  {showToken ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
           </div>
 
-          {/* ── Base Pricing ───────────────────────────────────── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
-            <div className="form-group" style={{ margin: 0 }}>
+          {/* ── Section: Pricing ─────────────────────────────── */}
+          <div className="form-section">
+            <h3 className="section-title">Pricing & context</h3>
+            <p className="section-desc">Cost parameters and processing limits used for billing and routing.</p>
+            <div className="form-group">
               <label className="form-label">Input $/1M</label>
               <input className="form-input" type="number" step="any" value={form.inputPerMillion}
                 onChange={e => setForm(f => ({ ...f, inputPerMillion: e.target.value }))} placeholder="5.00" required />
             </div>
-            <div className="form-group" style={{ margin: 0 }}>
+            <div className="form-group">
               <label className="form-label">Output $/1M</label>
               <input className="form-input" type="number" step="any" value={form.outputPerMillion}
                 onChange={e => setForm(f => ({ ...f, outputPerMillion: e.target.value }))} placeholder="15.00" required />
             </div>
-            <div className="form-group" style={{ margin: 0 }}>
+            <div className="form-group">
               <label className="form-label">Cache $/1M <span style={{ color: 'var(--text-muted)' }}>(opt.)</span></label>
               <input className="form-input" type="number" step="any" value={form.cachePerMillion}
                 onChange={e => setForm(f => ({ ...f, cachePerMillion: e.target.value }))} placeholder="—" />
             </div>
-          </div>
-
-          {/* ── Context & Budget ───────────────────────────────── */}
-          <div className="form-row">
             <div className="form-group">
               <label className="form-label">Context Window <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(tokens, optional)</span></label>
               <input className="form-input" type="number" step="1000" value={form.contextWindow}
                 onChange={e => setForm(f => ({ ...f, contextWindow: e.target.value }))} placeholder="128000" />
             </div>
+          </div>
+
+          {/* ── Section: Budgets ─────────────────────────────── */}
+          <div className="form-section">
+            <h3 className="section-title">Budget limits</h3>
+            <p className="section-desc">Maximum spend allowed per period to prevent unexpected costs.</p>
             <div className="form-group">
               <label className="form-label">Daily budget USD <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opt.)</span></label>
               <input className="form-input" type="number" step="any" value={form.dailyBudget}
@@ -461,22 +470,20 @@ export function ModelFormPage() {
 
                     {/* Tier pricing */}
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Override pricing</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-                      <div className="form-group" style={{ margin: 0 }}>
-                        <label className="form-label" style={{ fontSize: '0.75rem' }}>Input $/1M</label>
-                        <input className="form-input" type="number" step="any" value={tier.input}
-                          onChange={e => updateTier(idx, 'input', e.target.value)} placeholder="10.00" />
-                      </div>
-                      <div className="form-group" style={{ margin: 0 }}>
-                        <label className="form-label" style={{ fontSize: '0.75rem' }}>Output $/1M</label>
-                        <input className="form-input" type="number" step="any" value={tier.output}
-                          onChange={e => updateTier(idx, 'output', e.target.value)} placeholder="37.50" />
-                      </div>
-                      <div className="form-group" style={{ margin: 0 }}>
-                        <label className="form-label" style={{ fontSize: '0.75rem' }}>Cache $/1M <span style={{ color: 'var(--text-muted)' }}>(opt.)</span></label>
-                        <input className="form-input" type="number" step="any" value={tier.cache}
-                          onChange={e => updateTier(idx, 'cache', e.target.value)} placeholder="—" />
-                      </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Input $/1M</label>
+                      <input className="form-input" type="number" step="any" value={tier.input}
+                        onChange={e => updateTier(idx, 'input', e.target.value)} placeholder="10.00" />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Output $/1M</label>
+                      <input className="form-input" type="number" step="any" value={tier.output}
+                        onChange={e => updateTier(idx, 'output', e.target.value)} placeholder="37.50" />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Cache $/1M <span style={{ color: 'var(--text-muted)' }}>(opt.)</span></label>
+                      <input className="form-input" type="number" step="any" value={tier.cache}
+                        onChange={e => updateTier(idx, 'cache', e.target.value)} placeholder="—" />
                     </div>
                   </div>
                 ))}
