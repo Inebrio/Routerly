@@ -23,9 +23,23 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
 
   if (res.status === 204) return undefined as T;
-  const data = await res.json() as T;
+
+  const text = await res.text();
+  if (!text) {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return undefined as T;
+  }
+
+  let data: any;
+  try {
+    data = JSON.parse(text);
+  } catch (err) {
+    console.error('Failed to parse API response as JSON:', text);
+    throw new Error('Invalid JSON response from server');
+  }
+
   if (!res.ok) throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
-  return data;
+  return data as T;
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────

@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage';
 import { SetupPage } from './pages/SetupPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { ModelsPage } from './pages/ModelsPage';
+import { ModelFormPage } from './pages/ModelFormPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { ProjectLayout } from './pages/project/ProjectLayout';
 import { ProjectGeneralTab } from './pages/project/ProjectGeneralTab';
@@ -109,6 +110,8 @@ const router = createBrowserRouter([
         children: [
           { path: 'overview', element: <OverviewPage /> },
           { path: 'models', element: <ModelsPage /> },
+          { path: 'models/new', element: <ModelFormPage /> },
+          { path: 'models/:id', element: <ModelFormPage /> },
           { path: 'projects', element: <ProjectsPage /> },
           {
             path: 'projects/new',
