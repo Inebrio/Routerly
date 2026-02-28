@@ -129,49 +129,64 @@ export function ProjectTokenTab() {
             <p>No API tokens yet. Create one to start authenticating requests.</p>
           </div>
         ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Token</th>
-                  <th>Created</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {tokens.map(token => (
-                  <tr key={token.id}>
-                    <td>
-                      <span className="mono" style={{ fontSize: '0.85rem' }}>{token.tokenSnippet}••••••••</span>
-                      {token.labels?.length ? (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
-                          {token.labels.map(l => (
-                            <span key={l} style={{
-                              background: 'rgba(255,255,255,0.06)', padding: '2px 8px',
-                              borderRadius: 4, fontSize: '0.72rem', color: 'var(--text-secondary)',
-                            }}>{l}</span>
-                          ))}
-                        </div>
-                      ) : null}
-                      {token.models?.length ? (
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>Has budget overrides</div>
-                      ) : null}
-                    </td>
-                    <td style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {tokens.map(token => (
+              <div key={token.id} style={{
+                background: 'var(--surface)', border: '1px solid var(--border)',
+                borderRadius: 8, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                gap: 16
+              }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Key size={16} style={{ color: 'var(--text-muted)' }} />
+                      <span className="mono" style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--text-primary)' }}>
+                        {token.tokenSnippet}<span style={{ opacity: 0.5 }}>••••••••</span>
+                      </span>
+                    </div>
+                    {token.models && token.models.length > 0 && (
+                      <span style={{
+                        display: 'flex', alignItems: 'center', gap: 4,
+                        background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8',
+                        padding: '2px 8px', borderRadius: 12, fontSize: '0.7rem', fontWeight: 600, border: '1px solid rgba(56, 189, 248, 0.2)'
+                      }}>
+                        Budget Overrides
+                      </span>
+                    )}
+                  </div>
+
+                  {token.labels && token.labels.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {token.labels.map(l => (
+                        <span key={l} style={{
+                          background: 'var(--surface-active)', border: '1px solid var(--border)',
+                          padding: '2px 10px', borderRadius: 12, fontSize: '0.75rem', color: 'var(--text-secondary)'
+                        }}>
+                          {l}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+                  <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Created</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                       {new Date(token.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-                    </td>
-                    <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                      <button className="btn-icon" onClick={() => openEdit(token.id)} disabled={loading} title="Edit">
-                        <Edit2 size={15} />
-                      </button>
-                      <button className="btn-icon danger" onClick={() => handleDelete(token.id, token.tokenSnippet || '')} disabled={loading} title="Revoke">
-                        <Trash2 size={15} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn-icon" onClick={() => openEdit(token.id)} disabled={loading} title="Edit Configuration">
+                      <Edit2 size={16} />
+                    </button>
+                    <button className="btn-icon danger" onClick={() => handleDelete(token.id, token.tokenSnippet || '')} disabled={loading} title="Revoke Token">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
