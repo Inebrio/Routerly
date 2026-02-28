@@ -89,6 +89,7 @@ export function ModelFormPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [tierRows, setTierRows] = useState<TierRow[]>([]);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showBudget, setShowBudget] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const [showToken, setShowToken] = useState(false);
@@ -384,21 +385,25 @@ export function ModelFormPage() {
           <div className="form-section">
             <h3 className="section-title">Pricing & context</h3>
             <p className="section-desc">Cost parameters and processing limits used for billing and routing.</p>
-            <div className="form-group">
-              <label className="form-label">Input $/1M</label>
-              <input className="form-input" type="number" step="any" value={form.inputPerMillion}
-                onChange={e => setForm(f => ({ ...f, inputPerMillion: e.target.value }))} placeholder="5.00" required />
+
+            <div className="grid-3">
+              <div className="form-group">
+                <label className="form-label">Input $/1M</label>
+                <input className="form-input" type="number" step="any" value={form.inputPerMillion}
+                  onChange={e => setForm(f => ({ ...f, inputPerMillion: e.target.value }))} placeholder="5.00" required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Output $/1M</label>
+                <input className="form-input" type="number" step="any" value={form.outputPerMillion}
+                  onChange={e => setForm(f => ({ ...f, outputPerMillion: e.target.value }))} placeholder="15.00" required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Cache $/1M <span style={{ color: 'var(--text-muted)' }}>(opt.)</span></label>
+                <input className="form-input" type="number" step="any" value={form.cachePerMillion}
+                  onChange={e => setForm(f => ({ ...f, cachePerMillion: e.target.value }))} placeholder="—" />
+              </div>
             </div>
-            <div className="form-group">
-              <label className="form-label">Output $/1M</label>
-              <input className="form-input" type="number" step="any" value={form.outputPerMillion}
-                onChange={e => setForm(f => ({ ...f, outputPerMillion: e.target.value }))} placeholder="15.00" required />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Cache $/1M <span style={{ color: 'var(--text-muted)' }}>(opt.)</span></label>
-              <input className="form-input" type="number" step="any" value={form.cachePerMillion}
-                onChange={e => setForm(f => ({ ...f, cachePerMillion: e.target.value }))} placeholder="—" />
-            </div>
+
             <div className="form-group">
               <label className="form-label">Context Window <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(tokens, optional)</span></label>
               <input className="form-input" type="number" step="1000" value={form.contextWindow}
@@ -410,20 +415,23 @@ export function ModelFormPage() {
           <div className="form-section">
             <h3 className="section-title">Budget limits</h3>
             <p className="section-desc">Maximum spend allowed per period to prevent unexpected costs.</p>
-            <div className="form-group">
-              <label className="form-label">Daily budget USD <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opt.)</span></label>
-              <input className="form-input" type="number" step="any" value={form.dailyBudget}
-                onChange={e => setForm(f => ({ ...f, dailyBudget: e.target.value }))} placeholder="—" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Weekly budget USD <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opt.)</span></label>
-              <input className="form-input" type="number" step="any" value={form.weeklyBudget}
-                onChange={e => setForm(f => ({ ...f, weeklyBudget: e.target.value }))} placeholder="—" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Monthly budget USD <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opt.)</span></label>
-              <input className="form-input" type="number" step="any" value={form.monthlyBudget}
-                onChange={e => setForm(f => ({ ...f, monthlyBudget: e.target.value }))} placeholder="—" />
+
+            <div className="grid-3">
+              <div className="form-group">
+                <label className="form-label">Daily budget <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(USD)</span></label>
+                <input className="form-input" type="number" step="any" value={form.dailyBudget}
+                  onChange={e => setForm(f => ({ ...f, dailyBudget: e.target.value }))} placeholder="—" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Weekly budget <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(USD)</span></label>
+                <input className="form-input" type="number" step="any" value={form.weeklyBudget}
+                  onChange={e => setForm(f => ({ ...f, weeklyBudget: e.target.value }))} placeholder="—" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Monthly budget <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(USD)</span></label>
+                <input className="form-input" type="number" step="any" value={form.monthlyBudget}
+                  onChange={e => setForm(f => ({ ...f, monthlyBudget: e.target.value }))} placeholder="—" />
+              </div>
             </div>
           </div>
 
