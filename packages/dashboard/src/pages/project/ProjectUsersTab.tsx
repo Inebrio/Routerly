@@ -108,13 +108,13 @@ export function ProjectUsersTab() {
           <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>Add New Member</h4>
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
             <div style={{ flex: 1 }}>
-              <select className="input" value={newUserId} onChange={e => setNewUserId(e.target.value)} disabled={loading}>
+              <select className="form-input" value={newUserId} onChange={e => setNewUserId(e.target.value)} disabled={loading}>
                 <option value="" disabled>Select a user...</option>
                 {availableUsers.map(u => <option key={u.id} value={u.id}>{u.email}</option>)}
               </select>
             </div>
             <div style={{ width: 140 }}>
-              <select className="input" value={newRole} onChange={e => setNewRole(e.target.value)} disabled={loading}>
+              <select className="form-input" value={newRole} onChange={e => setNewRole(e.target.value)} disabled={loading}>
                 <option value="viewer">Viewer</option>
                 <option value="editor">Editor</option>
                 <option value="admin">Admin</option>
@@ -157,7 +157,7 @@ export function ProjectUsersTab() {
                     <td>
                       {isEditing ? (
                         <select
-                          className="input"
+                          className="form-input"
                           value={editRole}
                           onChange={e => setEditRole(e.target.value)}
                           disabled={loading}

@@ -141,8 +141,8 @@ export function ProjectTokenTab() {
 
         <div className="card" style={{ padding: 24 }}>
           <div className="form-group">
-            <label>Token Prefix</label>
-            <div className="mono input disabled" style={{ fontSize: '0.9rem', padding: '10px 12px', opacity: 0.8 }}>
+            <label className="form-label">Token Prefix</label>
+            <div className="mono form-input disabled" style={{ fontSize: '0.9rem', padding: '10px 12px', opacity: 0.8 }}>
               {editingToken.tokenSnippet}••••••••
             </div>
             <p className="form-help">For security reasons, full tokens cannot be viewed after creation.</p>
@@ -189,8 +189,8 @@ export function ProjectTokenTab() {
                       {isEnabled && (
                         <div style={{ padding: '0 16px 16px 16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16 }}>
                           <div className="form-group" style={{ margin: 0 }}>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Daily Budget ($)</label>
-                            <input type="number" step="0.01" min="0" className="input" placeholder="No limit"
+                            <label className="form-label">Daily budget USD <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+                            <input type="number" step="0.01" min="0" className="form-input" placeholder="No limit"
                               value={override.thresholds?.daily ?? ''}
                               onChange={e => {
                                 let val: number | undefined = parseFloat(e.target.value);
@@ -200,8 +200,8 @@ export function ProjectTokenTab() {
                             />
                           </div>
                           <div className="form-group" style={{ margin: 0 }}>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Weekly Budget ($)</label>
-                            <input type="number" step="0.01" min="0" className="input" placeholder="No limit"
+                            <label className="form-label">Weekly budget USD <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+                            <input type="number" step="0.01" min="0" className="form-input" placeholder="No limit"
                               value={override.thresholds?.weekly ?? ''}
                               onChange={e => {
                                 let val: number | undefined = parseFloat(e.target.value);
@@ -211,8 +211,8 @@ export function ProjectTokenTab() {
                             />
                           </div>
                           <div className="form-group" style={{ margin: 0 }}>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Monthly Budget ($)</label>
-                            <input type="number" step="0.01" min="0" className="input" placeholder="No limit"
+                            <label className="form-label">Monthly budget USD <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+                            <input type="number" step="0.01" min="0" className="form-input" placeholder="No limit"
                               value={override.thresholds?.monthly ?? ''}
                               onChange={e => {
                                 let val: number | undefined = parseFloat(e.target.value);
