@@ -55,6 +55,7 @@ export interface PricingTier {
 export interface Model {
   id: string; name: string; provider: string; endpoint: string;
   cost: { inputPerMillion: number; outputPerMillion: number; cachePerMillion?: number; pricingTiers?: PricingTier[] };
+  contextWindow?: number;
   globalThresholds?: { daily?: number; monthly?: number };
 }
 
@@ -63,6 +64,7 @@ export const createModel = (data: {
   id: string; name?: string; provider: string; endpoint: string; apiKey?: string;
   inputPerMillion: number; outputPerMillion: number;
   cachePerMillion?: number;
+  contextWindow?: number;
   pricingTiers?: PricingTier[];
   dailyBudget?: number; monthlyBudget?: number;
 }) => request<Model>('/models', { method: 'POST', body: JSON.stringify(data) });
@@ -70,16 +72,24 @@ export const updateModel = (id: string, data: {
   name?: string; provider: string; endpoint: string; apiKey?: string;
   inputPerMillion: number; outputPerMillion: number;
   cachePerMillion?: number;
+  contextWindow?: number;
   pricingTiers?: PricingTier[];
   dailyBudget?: number; monthlyBudget?: number;
 }) => request<Model>(`/models/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteModel = (id: string) => request<void>(`/models/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
-// ── Projects ──────────────────────────────────────────────────────────────
+export interface RoutingPolicy {
+  type: 'context' | 'cheapest' | 'health' | 'fallback' | 'llm';
+  enabled: boolean;
+  weight: number;
+  config?: any;
+}
+
 export interface Project {
-  id: string; name: string; routingModelId: string;
+  id: string; name: string; routingModelId?: string;
   autoRouting?: boolean;
   fallbackRoutingModelIds?: string[];
+  policies?: RoutingPolicy[];
   models: { modelId: string; prompt?: string }[];
   token?: string;
   tokenSnippet?: string;
@@ -90,18 +100,20 @@ export const getProjects = () => request<Project[]>('/projects');
 
 export const createProject = (data: {
   name: string;
-  routingModelId: string;
+  routingModelId?: string;
   autoRouting?: boolean;
   fallbackRoutingModelIds?: string[];
+  policies?: RoutingPolicy[];
   models: { modelId: string; prompt?: string }[];
   timeoutMs?: number;
 }) => request<Project>('/projects', { method: 'POST', body: JSON.stringify(data) });
 
 export const updateProject = (id: string, data: {
   name: string;
-  routingModelId: string;
+  routingModelId?: string;
   autoRouting?: boolean;
   fallbackRoutingModelIds?: string[];
+  policies?: RoutingPolicy[];
   models: { modelId: string; prompt?: string }[];
   timeoutMs?: number;
 }) => request<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) });

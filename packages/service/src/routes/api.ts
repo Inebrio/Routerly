@@ -5,7 +5,7 @@ import { randomBytes } from 'node:crypto';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { encrypt, decrypt } from '@localrouter/shared';
 import { createSessionToken, verifyToken } from '../plugins/jwt.js';
-import type { ModelConfig, ProjectConfig, UserConfig, Provider, TokenCost, PricingTier } from '@localrouter/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, Provider, TokenCost, PricingTier, RoutingPolicy } from '@localrouter/shared';
 
 function hashPassword(p: string): string {
   return createHash('sha256').update(p).digest('hex');
@@ -86,6 +86,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       id: string; name?: string; provider: string; endpoint: string;
       apiKey?: string; inputPerMillion: number; outputPerMillion: number;
       cachePerMillion?: number;
+      contextWindow?: number;
       pricingTiers?: PricingTier[];
       dailyBudget?: number; monthlyBudget?: number;
     }
@@ -112,6 +113,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
           ...(req.body.monthlyBudget !== undefined ? { monthly: req.body.monthlyBudget } : {}),
         }
         : undefined,
+      ...(req.body.contextWindow !== undefined ? { contextWindow: req.body.contextWindow } : {}),
     };
     models.push(model);
     await writeConfig('models', models);
@@ -124,6 +126,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       name?: string; provider: string; endpoint: string;
       apiKey?: string; inputPerMillion: number; outputPerMillion: number;
       cachePerMillion?: number;
+      contextWindow?: number;
       pricingTiers?: PricingTier[];
       dailyBudget?: number; monthlyBudget?: number;
     }
@@ -152,6 +155,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
           ...(req.body.monthlyBudget !== undefined ? { monthly: req.body.monthlyBudget } : {}),
         }
         : undefined,
+      ...(req.body.contextWindow !== undefined ? { contextWindow: req.body.contextWindow } : existing.contextWindow !== undefined ? { contextWindow: existing.contextWindow } : {}),
     };
     models[index] = model;
     await writeConfig('models', models);
@@ -178,9 +182,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{
     Body: {
       name: string;
-      routingModelId: string;
+      routingModelId?: string;
       autoRouting?: boolean;
       fallbackRoutingModelIds?: string[];
+      policies?: RoutingPolicy[];
       models: { modelId: string; prompt?: string }[];
       timeoutMs?: number;
     }
@@ -192,9 +197,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       name: req.body.name,
       encryptedToken: encrypt(rawToken),
       tokenSnippet: rawToken.substring(0, 10),
-      routingModelId: req.body.routingModelId,
+      ...(req.body.routingModelId !== undefined ? { routingModelId: req.body.routingModelId } : {}),
       autoRouting: req.body.autoRouting ?? true,
       ...(req.body.fallbackRoutingModelIds !== undefined && { fallbackRoutingModelIds: req.body.fallbackRoutingModelIds }),
+      ...(req.body.policies !== undefined && { policies: req.body.policies }),
       models: req.body.models.map(m => ({
         modelId: m.modelId,
         ...(m.prompt ? { prompt: m.prompt } : {}),
@@ -211,9 +217,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     Params: { id: string };
     Body: {
       name: string;
-      routingModelId: string;
+      routingModelId?: string;
       autoRouting?: boolean;
       fallbackRoutingModelIds?: string[];
+      policies?: RoutingPolicy[];
       models: { modelId: string; prompt?: string }[];
       timeoutMs?: number;
     };
@@ -225,9 +232,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const updated: ProjectConfig = {
       ...existing,
       name: req.body.name,
-      routingModelId: req.body.routingModelId,
-      autoRouting: req.body.autoRouting ?? true,
+      ...(req.body.routingModelId !== undefined ? { routingModelId: req.body.routingModelId } : existing.routingModelId !== undefined ? { routingModelId: existing.routingModelId } : {}),
+      autoRouting: req.body.autoRouting ?? existing.autoRouting ?? true,
       ...(req.body.fallbackRoutingModelIds !== undefined && { fallbackRoutingModelIds: req.body.fallbackRoutingModelIds }),
+      ...(req.body.policies !== undefined && { policies: req.body.policies }),
       models: req.body.models.map(m => ({
         modelId: m.modelId,
         ...(m.prompt ? { prompt: m.prompt } : {}),

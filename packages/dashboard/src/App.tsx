@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, NavLink, Navigate, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { checkSetupStatus } from './api';
 import { LoginPage } from './pages/LoginPage';
@@ -70,33 +70,14 @@ function ProtectedLayout() {
     <div className="app-shell">
       <Sidebar />
       <main className="main-content">
-        <Routes>
-          <Route path="overview" element={<OverviewPage />} />
-          <Route path="models" element={<ModelsPage />} />
-          <Route path="projects" element={<ProjectsPage />} />
-          <Route path="projects/new" element={<ProjectLayout />}>
-            <Route index element={<ProjectGeneralTab />} />
-          </Route>
-          <Route path="projects/:id" element={<ProjectLayout />}>
-            <Route index element={<ProjectGeneralTab />} />
-            <Route path="general" element={<ProjectGeneralTab />} />
-            <Route path="routing" element={<ProjectRoutingTab />} />
-            <Route path="token" element={<ProjectTokenTab />} />
-            <Route path="users" element={<ProjectUsersTab />} />
-            <Route path="test" element={<ProjectTestTab />} />
-            <Route path="logs" element={<ProjectLogsTab />} />
-          </Route>
-          <Route path="users" element={<UsersPage />} />
-          <Route path="usage" element={<UsagePage />} />
-          <Route path="*" element={<Navigate to="overview" replace />} />
-        </Routes>
+        <Outlet />
       </main>
     </div>
   );
 }
 
 /** Checks setup status once on first load and redirects to /dashboard/setup if needed. */
-function SetupGuard({ children }: { children: React.ReactNode }) {
+function SetupGuard() {
   const [checking, setChecking] = useState(true);
   const navigate = useNavigate();
 
@@ -111,21 +92,52 @@ function SetupGuard({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (checking) return <div className="loading-center"><div className="spinner" /></div>;
-  return <>{children}</>;
+  return <Outlet />;
 }
+
+const router = createBrowserRouter([
+  {
+    element: <SetupGuard />,
+    children: [
+      { path: '/dashboard/setup', element: <SetupPage /> },
+      { path: '/dashboard/login', element: <LoginPage /> },
+      {
+        path: '/dashboard',
+        element: <ProtectedLayout />,
+        children: [
+          { path: 'overview', element: <OverviewPage /> },
+          { path: 'models', element: <ModelsPage /> },
+          { path: 'projects', element: <ProjectsPage /> },
+          {
+            path: 'projects/new',
+            element: <ProjectLayout />,
+            children: [
+              { index: true, element: <ProjectGeneralTab /> },
+            ],
+          },
+          {
+            path: 'projects/:id',
+            element: <ProjectLayout />,
+            children: [
+              { index: true, element: <ProjectGeneralTab /> },
+              { path: 'general', element: <ProjectGeneralTab /> },
+              { path: 'routing', element: <ProjectRoutingTab /> },
+              { path: 'token', element: <ProjectTokenTab /> },
+              { path: 'users', element: <ProjectUsersTab /> },
+              { path: 'test', element: <ProjectTestTab /> },
+              { path: 'logs', element: <ProjectLogsTab /> },
+            ],
+          },
+          { path: 'users', element: <UsersPage /> },
+          { path: 'usage', element: <UsagePage /> },
+          { path: '*', element: <Navigate to="overview" replace /> },
+        ],
+      },
+      { path: '/', element: <Navigate to="/dashboard/overview" replace /> },
+    ],
+  },
+]);
 
 export default function App() {
-  return (
-    <BrowserRouter>
-      <SetupGuard>
-        <Routes>
-          <Route path="/dashboard/setup" element={<SetupPage />} />
-          <Route path="/dashboard/login" element={<LoginPage />} />
-          <Route path="/dashboard/*" element={<ProtectedLayout />} />
-          <Route path="/" element={<Navigate to="/dashboard/overview" replace />} />
-        </Routes>
-      </SetupGuard>
-    </BrowserRouter>
-  );
+  return <RouterProvider router={router} />;
 }
-

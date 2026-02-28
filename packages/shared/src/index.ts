@@ -7,6 +7,8 @@ export type {
   ModelConfig,
   ProjectModelRef,
   ProjectConfig,
+  RoutingPolicy,
+  RoutingPolicyType,
   UserConfig,
   RoleConfig,
   Permission,

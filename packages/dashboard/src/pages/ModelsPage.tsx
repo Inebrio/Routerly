@@ -9,6 +9,7 @@ type ProviderModel = {
   input: number;
   output: number;
   cache?: number;
+  contextWindow?: number;
   notes?: string;
   pricingTiers?: Array<{
     metric: string;
@@ -68,6 +69,7 @@ const EMPTY_FORM = {
   inputPerMillion: '',
   outputPerMillion: '',
   cachePerMillion: '',
+  contextWindow: '',
   dailyBudget: '',
   monthlyBudget: '',
 };
@@ -106,6 +108,7 @@ export function ModelsPage() {
       inputPerMillion: String(preset.input),
       outputPerMillion: String(preset.output),
       cachePerMillion: preset.cache != null ? String(preset.cache) : '',
+      contextWindow: preset.contextWindow != null ? String(preset.contextWindow) : '',
     }));
     if (preset.pricingTiers?.length) {
       setTierRows(preset.pricingTiers.map(t => ({
@@ -132,7 +135,7 @@ export function ModelsPage() {
   function handleModelChange(modelId: string) {
     if (modelId === '__custom__') {
       setIsCustomModel(true);
-      setForm(f => ({ ...f, id: '', inputPerMillion: '', outputPerMillion: '', cachePerMillion: '', customId: '' }));
+      setForm(f => ({ ...f, id: '', inputPerMillion: '', outputPerMillion: '', cachePerMillion: '', contextWindow: '', customId: '' }));
       setTierRows([]); setShowAdvanced(false);
       return;
     }
@@ -165,6 +168,7 @@ export function ModelsPage() {
       inputPerMillion: String(model.cost.inputPerMillion),
       outputPerMillion: String(model.cost.outputPerMillion),
       cachePerMillion: model.cost.cachePerMillion != null ? String(model.cost.cachePerMillion) : '',
+      contextWindow: model.contextWindow != null ? String(model.contextWindow) : '',
       dailyBudget: model.globalThresholds?.daily != null ? String(model.globalThresholds.daily) : '',
       monthlyBudget: model.globalThresholds?.monthly != null ? String(model.globalThresholds.monthly) : '',
     });
@@ -228,6 +232,7 @@ export function ModelsPage() {
         inputPerMillion: parseFloat(form.inputPerMillion) || 0,
         outputPerMillion: parseFloat(form.outputPerMillion) || 0,
         ...(form.cachePerMillion ? { cachePerMillion: parseFloat(form.cachePerMillion) } : {}),
+        ...(form.contextWindow ? { contextWindow: parseInt(form.contextWindow, 10) } : {}),
         ...(pricingTiersPayload.length ? { pricingTiers: pricingTiersPayload } : {}),
         ...(form.dailyBudget ? { dailyBudget: parseFloat(form.dailyBudget) } : {}),
         ...(form.monthlyBudget ? { monthlyBudget: parseFloat(form.monthlyBudget) } : {}),
@@ -276,7 +281,7 @@ export function ModelsPage() {
               <thead>
                 <tr>
                   <th>ID</th><th>Provider</th><th>Endpoint</th>
-                  <th>Input $/1M</th><th>Output $/1M</th><th>Cache $/1M</th><th>Monthly Budget</th><th></th>
+                  <th>Input $/1M</th><th>Output $/1M</th><th>Cache $/1M</th><th>Context Size</th><th>Monthly Budget</th><th></th>
                 </tr>
               </thead>
               <tbody>
@@ -288,6 +293,7 @@ export function ModelsPage() {
                     <td>${m.cost.inputPerMillion}</td>
                     <td>${m.cost.outputPerMillion}</td>
                     <td>{m.cost.cachePerMillion != null ? `$${m.cost.cachePerMillion}` : <span className="text-muted">—</span>}</td>
+                    <td>{m.contextWindow != null ? `${(m.contextWindow / 1000).toFixed(0)}k` : <span className="text-muted">—</span>}</td>
                     <td>{m.globalThresholds?.monthly ? `$${m.globalThresholds.monthly}` : <span className="text-muted">—</span>}</td>
                     <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                       <button className="btn-icon" onClick={() => editModel(m)} title="Edit">
@@ -399,8 +405,13 @@ export function ModelsPage() {
                 </div>
               </div>
 
-              {/* ── Budget ─────────────────────────────────────────── */}
+              {/* ── Context & Budget ───────────────────────────────── */}
               <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Context Window <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(tokens, optional)</span></label>
+                  <input className="form-input" type="number" step="1000" value={form.contextWindow}
+                    onChange={e => setForm(f => ({ ...f, contextWindow: e.target.value }))} placeholder="128000" />
+                </div>
                 <div className="form-group">
                   <label className="form-label">Daily budget USD <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
                   <input className="form-input" type="number" step="any" value={form.dailyBudget}

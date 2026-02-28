@@ -1,20 +1,9 @@
 import type { ChatCompletionRequest, ProjectConfig, RoutingResponse } from '@localrouter/shared';
 import { readConfig } from '../config/loader.js';
-import { getProviderAdapter } from '../providers/index.js';
-
-const ROUTING_SYSTEM_PROMPT = `You are a request router for an LLM gateway.
-Given a user's request, you must select the best models from the available list and return them in order of preference.
-Always respond with ONLY a JSON object in this exact format:
-{
-  "models": [
-    { "model": "<model_id>", "weight": <0.0-1.0> },
-    ...
-  ]
-}
-Do not include any explanation, only the JSON object.`;
+import { applyContextPolicy, applyCheapestPolicy, applyHealthPolicy, applyFallbackPolicy, applyLlmPolicy } from './policies.js';
 
 /**
- * Invokes the project's routing model to get a weighted list of candidate models.
+ * Invokes the project's routing policies to get a weighted list of candidate models.
  */
 export async function routeRequest(
   originalRequest: ChatCompletionRequest,
@@ -22,50 +11,80 @@ export async function routeRequest(
 ): Promise<RoutingResponse> {
   const allModels = await readConfig('models');
 
-  const routingModel = allModels.find((m) => m.id === project.routingModelId);
-  if (!routingModel) {
-    throw new Error(
-      `Routing model "${project.routingModelId}" not found for project "${project.id}"`,
-    );
+  // Load candidate models based on project's model references
+  const projectModelIds = project.models.map(m => m.modelId);
+  const candidates = allModels
+    .filter(m => projectModelIds.includes(m.id))
+    .map(m => ({ model: m, weight: 1.0 }));
+
+  if (candidates.length === 0) {
+    throw new Error(`Project "${project.id}" has no valid models configured.`);
   }
 
-  // Build the list of available model IDs for the routing model to choose from
-  const availableModelIds = project.models.map((ref) => ref.modelId).join(', ');
+  // If policies exist, push candidates through the pipeline
+  let pipelineCandidates = candidates;
+  if (project.policies && project.policies.length > 0) {
+    for (const policy of project.policies) {
+      if (!policy.enabled) continue;
 
-  const routingRequest: ChatCompletionRequest = {
-    model: routingModel.id,
-    messages: [
-      {
-        role: 'system',
-        content: `${ROUTING_SYSTEM_PROMPT}\n\nAvailable model IDs: ${availableModelIds}`,
-      },
-      {
-        role: 'user',
-        content: `Route this request. Original model requested: "${originalRequest.model}". Message count: ${originalRequest.messages.length}. First message role: "${originalRequest.messages[0]?.role ?? 'unknown'}"`,
-      },
-    ],
-    temperature: 0,
-    max_tokens: 256,
+      switch (policy.type) {
+        case 'context':
+          pipelineCandidates = applyContextPolicy(pipelineCandidates, originalRequest, policy);
+          break;
+        case 'cheapest':
+          pipelineCandidates = applyCheapestPolicy(pipelineCandidates, policy);
+          break;
+        case 'health':
+          pipelineCandidates = await applyHealthPolicy(pipelineCandidates, policy);
+          break;
+        case 'fallback':
+          pipelineCandidates = applyFallbackPolicy(pipelineCandidates, policy);
+          break;
+        case 'llm':
+          if (!policy.config?.autoRouting) {
+            pipelineCandidates = await applyLlmPolicy(pipelineCandidates, originalRequest, project, policy);
+          }
+          // The UI nests fallback models into the LLM policy
+          if (policy.config?.fallbackModelIds && policy.config.fallbackModelIds.length > 0) {
+            pipelineCandidates = applyFallbackPolicy(pipelineCandidates, {
+              type: 'fallback',
+              enabled: true,
+              weight: policy.weight,
+              config: { fallbackModelIds: policy.config.fallbackModelIds }
+            });
+          }
+          break;
+        default:
+          console.warn(`Unknown routing policy type: ${policy.type}`);
+      }
+    }
+  } else {
+    // Legacy routing / graceful migration
+    if (!project.autoRouting && project.routingModelId) {
+      // Simulate LLM routing policy
+      pipelineCandidates = await applyLlmPolicy(
+        pipelineCandidates,
+        originalRequest,
+        project,
+        { type: 'llm', enabled: true, weight: 1.0 }
+      );
+    }
+    if (project.fallbackRoutingModelIds && project.fallbackRoutingModelIds.length > 0) {
+      // Simulate Fallback policy
+      pipelineCandidates = applyFallbackPolicy(
+        pipelineCandidates,
+        { type: 'fallback', enabled: true, weight: 1.0, config: { fallbackModelIds: project.fallbackRoutingModelIds } }
+      );
+    }
+  }
+
+  // Sort final response by weight descending
+  pipelineCandidates.sort((a, b) => b.weight - a.weight);
+
+  return {
+    models: pipelineCandidates.map(c => ({
+      model: c.model.id,
+      weight: c.weight,
+    }))
   };
-
-  const adapter = getProviderAdapter(routingModel);
-  const response = await adapter.chatCompletion(routingRequest, routingModel);
-
-  const rawContent = response.choices[0]?.message.content;
-  if (typeof rawContent !== 'string') {
-    throw new Error('Routing model returned no content');
-  }
-
-  // Extract JSON from response (may be wrapped in markdown code block)
-  const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-  if (!jsonMatch || !jsonMatch[0]) {
-    throw new Error(`Routing model returned invalid JSON: ${rawContent}`);
-  }
-
-  const parsed = JSON.parse(jsonMatch[0]) as RoutingResponse;
-  if (!Array.isArray(parsed.models)) {
-    throw new Error('Routing model JSON missing "models" array');
-  }
-
-  return parsed;
 }

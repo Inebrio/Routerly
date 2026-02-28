@@ -40,6 +40,8 @@ export interface ModelConfig {
   /** AES-256-GCM encrypted API key */
   encryptedApiKey?: string | undefined;
   cost: TokenCost;
+  /** Maximum context window size in tokens */
+  contextWindow?: number;
   /** Global budget thresholds for this model */
   globalThresholds?: BudgetThresholds | undefined;
 }
@@ -51,6 +53,18 @@ export interface ProjectModelRef {
   thresholds?: BudgetThresholds;
 }
 
+export type RoutingPolicyType = 'context' | 'cheapest' | 'health' | 'fallback' | 'llm';
+
+export interface RoutingPolicy {
+  type: RoutingPolicyType;
+  /** Whether this policy should be checked when routing */
+  enabled: boolean;
+  /** Weight scalar applied by this policy. 0.0 - 1.0 (with >1 allowed for priority multipliers) */
+  weight: number;
+  /** Optional policy-specific settings */
+  config?: any;
+}
+
 export interface ProjectConfig {
   id: string;
   name: string;
@@ -59,12 +73,15 @@ export interface ProjectConfig {
   encryptedToken: string;
   /** Excerpt of the first 10 characters of the token */
   tokenSnippet?: string;
-  /** ID of the ModelConfig to use for routing decisions */
-  routingModelId: string;
-  /** Whether auto-routing via prompt is enabled. If false, typical load-balancing/fallback logic may apply instead. */
+  /** ID of the ModelConfig to use for routing decisions (deprecated, use policies instead) */
+  routingModelId?: string;
+  /** Whether auto-routing via prompt is enabled. If false, typical load-balancing/fallback logic may apply instead. (deprecated) */
   autoRouting?: boolean;
-  /** Optional fallback routing models used if the primary routing model fails */
+  /** Optional fallback routing models used if the primary routing model fails (deprecated) */
   fallbackRoutingModelIds?: string[];
+
+  /** Ordered list of routing policies applied to requests */
+  policies?: RoutingPolicy[];
   models: ProjectModelRef[];
   /** Timeout in ms for each individual model attempt */
   timeoutMs?: number;
