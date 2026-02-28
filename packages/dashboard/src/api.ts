@@ -85,14 +85,27 @@ export interface RoutingPolicy {
   config?: any;
 }
 
+export interface ProjectToken {
+  id: string;
+  tokenSnippet?: string;
+  createdAt: string;
+  models?: any[];
+}
+
+export interface ProjectMember {
+  userId: string;
+  role: string;
+}
+
 export interface Project {
   id: string; name: string; routingModelId?: string;
   autoRouting?: boolean;
   fallbackRoutingModelIds?: string[];
   policies?: RoutingPolicy[];
   models: { modelId: string; prompt?: string }[];
+  tokens?: ProjectToken[];
+  members?: ProjectMember[];
   token?: string;
-  tokenSnippet?: string;
   timeoutMs?: number;
 }
 
@@ -118,7 +131,13 @@ export const updateProject = (id: string, data: {
   timeoutMs?: number;
 }) => request<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteProject = (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' });
-export const rotateToken = (id: string) => request<Project & { token: string }>(`/projects/${id}/rotate-token`, { method: 'POST' });
+export const createProjectToken = (id: string) => request<{ token: string; tokenInfo: ProjectToken }>(`/projects/${id}/tokens`, { method: 'POST' });
+export const updateProjectToken = (id: string, tokenId: string, models?: any[]) => request<ProjectToken>(`/projects/${id}/tokens/${tokenId}`, { method: 'PUT', body: JSON.stringify({ models }) });
+export const deleteProjectToken = (id: string, tokenId: string) => request<void>(`/projects/${id}/tokens/${tokenId}`, { method: 'DELETE' });
+
+export const addProjectMember = (id: string, userId: string, role: string) => request<ProjectMember>(`/projects/${id}/members`, { method: 'POST', body: JSON.stringify({ userId, role }) });
+export const updateProjectMember = (id: string, userId: string, role: string) => request<ProjectMember>(`/projects/${id}/members/${userId}`, { method: 'PUT', body: JSON.stringify({ role }) });
+export const removeProjectMember = (id: string, userId: string) => request<void>(`/projects/${id}/members/${userId}`, { method: 'DELETE' });
 
 // ── Users ─────────────────────────────────────────────────────────────────
 export interface User {

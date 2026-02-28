@@ -5,7 +5,7 @@ import { randomBytes } from 'node:crypto';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { encrypt, decrypt } from '@localrouter/shared';
 import { createSessionToken, verifyToken } from '../plugins/jwt.js';
-import type { ModelConfig, ProjectConfig, UserConfig, Provider, TokenCost, PricingTier, RoutingPolicy } from '@localrouter/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, Provider, TokenCost, PricingTier, RoutingPolicy, TokenModelRef } from '@localrouter/shared';
 
 function hashPassword(p: string): string {
   return createHash('sha256').update(p).digest('hex');
@@ -176,7 +176,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get('/api/projects', async (_req, reply) => {
     const projects = await readConfig('projects');
-    return reply.send(projects.map(p => ({ ...p, encryptedToken: undefined })));
+    return reply.send(projects.map(p => ({
+      ...p,
+      tokens: p.tokens?.map(t => ({ ...t, encryptedToken: undefined })) || []
+    })));
   });
 
   fastify.post<{
@@ -192,11 +195,18 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   }>('/api/projects', async (req, reply) => {
     const projects = await readConfig('projects');
     const rawToken = `sk-lr-${randomBytes(32).toString('hex')}`;
+    const userId = requireAdmin(req.headers.authorization) || 'system';
+
     const project: ProjectConfig = {
       id: uuidv4(),
       name: req.body.name,
-      encryptedToken: encrypt(rawToken),
-      tokenSnippet: rawToken.substring(0, 10),
+      tokens: [{
+        id: uuidv4(),
+        encryptedToken: encrypt(rawToken),
+        tokenSnippet: rawToken.substring(0, 10),
+        createdAt: new Date().toISOString()
+      }],
+      members: [{ userId, role: 'admin' }],
       ...(req.body.routingModelId !== undefined ? { routingModelId: req.body.routingModelId } : {}),
       autoRouting: req.body.autoRouting ?? true,
       ...(req.body.fallbackRoutingModelIds !== undefined && { fallbackRoutingModelIds: req.body.fallbackRoutingModelIds }),
@@ -210,7 +220,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     projects.push(project);
     await writeConfig('projects', projects);
     // Return the raw token once (not stored in plain text after this)
-    return reply.status(201).send({ ...project, encryptedToken: undefined, token: rawToken });
+    return reply.status(201).send({ ...project, tokens: project.tokens.map(t => ({ ...t, encryptedToken: undefined })), token: rawToken });
   });
 
   fastify.put<{
@@ -244,7 +254,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     };
     projects[index] = updated;
     await writeConfig('projects', projects);
-    return reply.send({ ...updated, encryptedToken: undefined });
+    return reply.send({
+      ...updated,
+      tokens: updated.tokens?.map(t => ({ ...t, encryptedToken: undefined })) || []
+    });
   });
 
   fastify.delete<{ Params: { id: string } }>('/api/projects/:id', async (req, reply) => {
@@ -255,20 +268,110 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.status(204).send();
   });
 
-  fastify.post<{ Params: { id: string } }>('/api/projects/:id/rotate-token', async (req, reply) => {
+  fastify.post<{ Params: { id: string } }>('/api/projects/:id/tokens', async (req, reply) => {
     const projects = await readConfig('projects');
     const index = projects.findIndex(p => p.id === req.params.id);
     if (index === -1) return reply.status(404).send({ error: 'Not found' });
+
     const rawToken = `sk-lr-${randomBytes(32).toString('hex')}`;
-    const existing = projects[index]!;
-    const updated: ProjectConfig = {
-      ...existing,
+
+    const newToken = {
+      id: uuidv4(),
       encryptedToken: encrypt(rawToken),
       tokenSnippet: rawToken.substring(0, 10),
+      createdAt: new Date().toISOString()
     };
+
+    const updated = { ...projects[index]! };
+    if (!updated.tokens) updated.tokens = [];
+    updated.tokens.push(newToken);
+
     projects[index] = updated;
     await writeConfig('projects', projects);
-    return reply.send({ ...updated, encryptedToken: undefined, token: rawToken });
+    return reply.send({ token: rawToken, tokenInfo: { ...newToken, encryptedToken: undefined } });
+  });
+
+  fastify.put<{ Params: { id: string, tokenId: string }; Body: { models?: TokenModelRef[] } }>('/api/projects/:id/tokens/:tokenId', async (req, reply) => {
+    const projects = await readConfig('projects');
+    const index = projects.findIndex(p => p.id === req.params.id);
+    if (index === -1) return reply.status(404).send({ error: 'Project not found' });
+
+    const project = projects[index]!;
+    if (!project.tokens) return reply.status(404).send({ error: 'Token not found' });
+
+    const token = project.tokens.find(t => t.id === req.params.tokenId);
+    if (!token) return reply.status(404).send({ error: 'Token not found' });
+
+    if (req.body.models !== undefined) token.models = req.body.models;
+    await writeConfig('projects', projects);
+
+    return reply.send(token);
+  });
+
+  fastify.delete<{ Params: { id: string, tokenId: string } }>('/api/projects/:id/tokens/:tokenId', async (req, reply) => {
+    const projects = await readConfig('projects');
+    const index = projects.findIndex(p => p.id === req.params.id);
+    if (index === -1) return reply.status(404).send({ error: 'Project not found' });
+
+    const project = projects[index]!;
+    if (!project.tokens) return reply.status(404).send({ error: 'Token not found' });
+
+    const tokenIndex = project.tokens.findIndex(t => t.id === req.params.tokenId);
+    if (tokenIndex === -1) return reply.status(404).send({ error: 'Token not found' });
+
+    project.tokens.splice(tokenIndex, 1);
+    await writeConfig('projects', projects);
+    return reply.status(204).send();
+  });
+
+  fastify.post<{ Params: { id: string }; Body: { userId: string; role: string } }>('/api/projects/:id/members', async (req, reply) => {
+    const projects = await readConfig('projects');
+    const index = projects.findIndex(p => p.id === req.params.id);
+    if (index === -1) return reply.status(404).send({ error: 'Project not found' });
+
+    const users = await readConfig('users');
+    if (!users.find(u => u.id === req.body.userId)) return reply.status(404).send({ error: 'User not found' });
+
+    const project = projects[index]!;
+    if (!project.members) project.members = [];
+    if (project.members.find(m => m.userId === req.body.userId)) {
+      return reply.status(409).send({ error: 'User is already a member' });
+    }
+
+    project.members.push({ userId: req.body.userId, role: req.body.role as any });
+    await writeConfig('projects', projects);
+    return reply.status(201).send({ userId: req.body.userId, role: req.body.role });
+  });
+
+  fastify.put<{ Params: { id: string, userId: string }; Body: { role: string } }>('/api/projects/:id/members/:userId', async (req, reply) => {
+    const projects = await readConfig('projects');
+    const index = projects.findIndex(p => p.id === req.params.id);
+    if (index === -1) return reply.status(404).send({ error: 'Project not found' });
+
+    const project = projects[index]!;
+    if (!project.members) return reply.status(404).send({ error: 'Member not found' });
+    const member = project.members.find(m => m.userId === req.params.userId);
+    if (!member) return reply.status(404).send({ error: 'Member not found' });
+
+    member.role = req.body.role as any;
+    await writeConfig('projects', projects);
+    return reply.send(member);
+  });
+
+  fastify.delete<{ Params: { id: string, userId: string } }>('/api/projects/:id/members/:userId', async (req, reply) => {
+    const projects = await readConfig('projects');
+    const index = projects.findIndex(p => p.id === req.params.id);
+    if (index === -1) return reply.status(404).send({ error: 'Project not found' });
+
+    const project = projects[index]!;
+    if (!project.members) return reply.status(404).send({ error: 'Member not found' });
+
+    const memberIndex = project.members.findIndex(m => m.userId === req.params.userId);
+    if (memberIndex === -1) return reply.status(404).send({ error: 'Member not found' });
+
+    project.members.splice(memberIndex, 1);
+    await writeConfig('projects', projects);
+    return reply.status(204).send();
   });
 
   // ══════════════════════════════════════════════════════════════════════════════

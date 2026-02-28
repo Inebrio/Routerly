@@ -1,18 +1,20 @@
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { fastifyPlugin as fp } from 'fastify-plugin';
 import { decrypt } from '@localrouter/shared';
-import type { ProjectConfig } from '@localrouter/shared';
+import type { ProjectConfig, ProjectToken } from '@localrouter/shared';
 import { readConfig } from '../config/loader.js';
 
-// Augment FastifyRequest to carry the resolved project
+// Augment FastifyRequest to carry the resolved project and token
 declare module 'fastify' {
   interface FastifyRequest {
     project: ProjectConfig;
+    token: ProjectToken;
   }
 }
 
 const authPlugin: FastifyPluginAsync = async (fastify) => {
   fastify.decorateRequest('project', null);
+  fastify.decorateRequest('token', null);
 
   fastify.addHook('preHandler', async (request: FastifyRequest, reply) => {
     // Skip auth for non-LLM-proxy routes (health check, dashboard UI, dashboard API)
@@ -31,16 +33,19 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 
     const projects = await readConfig('projects');
     for (const project of projects) {
-      let decryptedToken: string;
-      try {
-        decryptedToken = decrypt(project.encryptedToken);
-      } catch {
-        // Skip projects with unreadable tokens (wrong key, corruption)
-        continue;
-      }
-      if (decryptedToken === incomingToken) {
-        request.project = project;
-        return;
+      for (const token of project.tokens || []) {
+        let decryptedToken: string;
+        try {
+          decryptedToken = decrypt(token.encryptedToken);
+        } catch {
+          // Skip tokens with unreadable data (wrong key, corruption)
+          continue;
+        }
+        if (decryptedToken === incomingToken) {
+          request.project = project;
+          request.token = token;
+          return;
+        }
       }
     }
 

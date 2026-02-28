@@ -65,14 +65,37 @@ export interface RoutingPolicy {
   config?: any;
 }
 
-export interface ProjectConfig {
+export type ProjectRole = 'viewer' | 'editor' | 'admin';
+
+export interface ProjectMember {
+  userId: string;
+  role: ProjectRole;
+}
+
+export interface TokenModelRef {
+  modelId: string;
+  /** Per-token budget overrides for this model */
+  thresholds?: BudgetThresholds;
+}
+
+export interface ProjectToken {
   id: string;
-  name: string;
-  description?: string;
   /** AES-256-GCM encrypted project token */
   encryptedToken: string;
   /** Excerpt of the first 10 characters of the token */
   tokenSnippet?: string;
+  createdAt: string; // ISO 8601
+  /** Per-token model-specific budget overrides */
+  models?: TokenModelRef[];
+}
+
+export interface ProjectConfig {
+  id: string;
+  name: string;
+  slug?: string;
+  description?: string;
+  tokens: ProjectToken[];
+  members: ProjectMember[];
   /** ID of the ModelConfig to use for routing decisions (deprecated, use policies instead) */
   routingModelId?: string;
   /** Whether auto-routing via prompt is enabled. If false, typical load-balancing/fallback logic may apply instead. (deprecated) */

@@ -58,7 +58,13 @@ export function makeProjectCommand(): Command {
         id: uuidv4(),
         name: opts.name,
         slug: opts.slug,
-        encryptedToken: encryptValue(rawToken),
+        tokens: [{
+          id: uuidv4(),
+          encryptedToken: encryptValue(rawToken),
+          tokenSnippet: rawToken.substring(0, 10),
+          createdAt: new Date().toISOString()
+        }],
+        members: [{ userId: 'system', role: 'admin' }],
         routingModelId: opts.routingModel,
         models: modelRefs,
         timeoutMs: 30000,
@@ -110,12 +116,16 @@ export function makeProjectCommand(): Command {
       const thresholds: BudgetThresholds | undefined =
         opts.dailyBudget || opts.monthlyBudget
           ? {
-            daily: opts.dailyBudget ? parseFloat(opts.dailyBudget) : undefined,
-            monthly: opts.monthlyBudget ? parseFloat(opts.monthlyBudget) : undefined,
+            ...(opts.dailyBudget ? { daily: parseFloat(opts.dailyBudget) } : {}),
+            ...(opts.monthlyBudget ? { monthly: parseFloat(opts.monthlyBudget) } : {}),
           }
           : undefined;
 
-      project.models.push({ modelId: opts.model, thresholds });
+      if (thresholds) {
+        project.models.push({ modelId: opts.model, thresholds });
+      } else {
+        project.models.push({ modelId: opts.model });
+      }
       await writeStore('projects', projects);
       console.log(chalk.green(`✓ Model "${opts.model}" added to project "${project.name}".`));
     });

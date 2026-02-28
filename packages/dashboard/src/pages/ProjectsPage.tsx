@@ -51,15 +51,15 @@ export function ProjectsPage() {
           <div className="table-wrap">
             <table>
               <thead>
-                <tr><th>Name</th><th>Token</th><th>Routing Model</th><th>Models</th><th></th></tr>
+                <tr><th>Name</th><th>Tokens</th><th>Routing Model</th><th>Models</th><th></th></tr>
               </thead>
               <tbody>
                 {projects.map(p => (
                   <tr key={p.id}>
                     <td><strong style={{ color: 'var(--text-primary)' }}>{p.name}</strong></td>
                     <td>
-                      <span className="mono" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                        {p.tokenSnippet ? `${p.tokenSnippet}...` : '••••••••••'}
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        {p.tokens?.length || 0} token{p.tokens?.length !== 1 ? 's' : ''}
                       </span>
                     </td>
                     <td><span className="mono" style={{ fontSize: '0.78rem' }}>{p.routingModelId}</span></td>
