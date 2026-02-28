@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Copy, Check, ChevronDown } from 'lucide-react';
+import { Copy, Check, ChevronDown, ArrowRight } from 'lucide-react';
 import { createProject, updateProject } from '../../api';
 import { useProject } from './ProjectLayout';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
@@ -79,6 +79,40 @@ export function ProjectGeneralTab() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  // ── Token reveal view (after project creation) ───────────────────────────────
+  if (revealedToken) {
+    return (
+      <div style={{ maxWidth: 480 }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: '1.05rem', fontWeight: 600 }}>Project Created</h2>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 28 }}>
+          Copy your API token now — it won't be shown again.
+        </p>
+
+        <div className="form-group">
+          <label className="form-label">API Token</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div className="token-box" style={{ flex: 1, margin: 0, wordBreak: 'break-all', fontSize: '0.82rem' }}>
+              {revealedToken.token}
+            </div>
+            <button type="button" className="btn btn-secondary" onClick={() => copyToken(revealedToken.token)} style={{ flexShrink: 0 }}>
+              {copied ? <Check size={15} /> : <Copy size={15} />}
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="btn btn-primary"
+          style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}
+          onClick={() => navigate(`/dashboard/projects/${project?.id ?? ''}/general`)}
+        >
+          Go to project <ArrowRight size={15} />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <>
       <form onSubmit={handleSubmit} style={{ maxWidth: 480 }}>
@@ -131,41 +165,6 @@ export function ProjectGeneralTab() {
       </form>
 
       {isBlocked && <UnsavedChangesModal onConfirm={proceed} onCancel={reset} />}
-
-
-      {/* Token reveal modal */}
-      {revealedToken && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h2 className="modal-title">
-              {revealedToken.isNew ? '🔑 New Token' : '🎉 Project Created'}
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: 12 }}>
-              Copy this token now — it won't be shown again.
-            </p>
-            <div className="token-box" style={{ marginBottom: 12 }}>{revealedToken.token}</div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => copyToken(revealedToken.token)}>
-                {copied ? <Check size={15} /> : <Copy size={15} />}
-                {copied ? 'Copied!' : 'Copy Token'}
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={() => {
-                  setRevealedToken(null);
-                  if (!revealedToken.isNew && project) {
-                    navigate(`/dashboard/projects/${project.id}/token`); // redirect to token tab to see it again if needed
-                  } else if (!revealedToken.isNew) {
-                    navigate('/dashboard/projects');
-                  }
-                }}
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
