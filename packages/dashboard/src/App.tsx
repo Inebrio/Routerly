@@ -14,6 +14,8 @@ import { ProjectTokenTab } from './pages/project/ProjectTokenTab';
 import { ProjectUsersTab } from './pages/project/ProjectUsersTab';
 import { ProjectTestTab } from './pages/project/ProjectTestTab';
 import { ProjectLogsTab } from './pages/project/ProjectLogsTab';
+import { ProjectTokenCreatePage } from './pages/project/ProjectTokenCreatePage';
+import { ProjectTokenEditPage } from './pages/project/ProjectTokenEditPage';
 import { UsersPage } from './pages/UsersPage';
 import { UsagePage } from './pages/UsagePage';
 import { LayoutDashboard, Cpu, FolderOpen, Users, BarChart2, LogOut } from 'lucide-react';
@@ -114,6 +116,20 @@ const router = createBrowserRouter([
             children: [
               { index: true, element: <ProjectGeneralTab /> },
             ],
+          },
+          {
+            path: 'projects/:id/token/new',
+            element: <ProjectLayout />,
+            children: [
+              { index: true, element: <ProjectTokenCreatePage /> },
+            ]
+          },
+          {
+            path: 'projects/:id/token/:tokenId',
+            element: <ProjectLayout />,
+            children: [
+              { index: true, element: <ProjectTokenEditPage /> },
+            ]
           },
           {
             path: 'projects/:id',
