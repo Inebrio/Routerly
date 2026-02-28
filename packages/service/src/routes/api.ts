@@ -88,7 +88,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       cachePerMillion?: number;
       contextWindow?: number;
       pricingTiers?: PricingTier[];
-      dailyBudget?: number; monthlyBudget?: number;
+      dailyBudget?: number; weeklyBudget?: number; monthlyBudget?: number;
     }
   }>('/api/models', async (req, reply) => {
     const models = await readConfig('models');
@@ -107,9 +107,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...(req.body.cachePerMillion !== undefined ? { cachePerMillion: req.body.cachePerMillion } : {}),
         ...(req.body.pricingTiers?.length ? { pricingTiers: req.body.pricingTiers } : {}),
       },
-      globalThresholds: (req.body.dailyBudget !== undefined || req.body.monthlyBudget !== undefined)
+      globalThresholds: (req.body.dailyBudget !== undefined || req.body.weeklyBudget !== undefined || req.body.monthlyBudget !== undefined)
         ? {
           ...(req.body.dailyBudget !== undefined ? { daily: req.body.dailyBudget } : {}),
+          ...(req.body.weeklyBudget !== undefined ? { weekly: req.body.weeklyBudget } : {}),
           ...(req.body.monthlyBudget !== undefined ? { monthly: req.body.monthlyBudget } : {}),
         }
         : undefined,
@@ -123,12 +124,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.put<{
     Params: { id: string };
     Body: {
+      id?: string;
       name?: string; provider: string; endpoint: string;
       apiKey?: string; inputPerMillion: number; outputPerMillion: number;
       cachePerMillion?: number;
       contextWindow?: number;
       pricingTiers?: PricingTier[];
-      dailyBudget?: number; monthlyBudget?: number;
+      dailyBudget?: number; weeklyBudget?: number; monthlyBudget?: number;
     }
   }>('/api/models/:id', async (req, reply) => {
     const models = await readConfig('models');
@@ -137,8 +139,16 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(404).send({ error: 'Not found' });
     }
     const existing = models[index]!;
+
+    // Handle ID change
+    const newId = req.body.id || req.params.id;
+    if (newId !== req.params.id && models.find(m => m.id === newId)) {
+      return reply.status(409).send({ error: `Model "${newId}" already exists` });
+    }
+
     const model: ModelConfig = {
       ...existing,
+      id: newId,
       name: req.body.name ?? existing.name,
       provider: req.body.provider as Provider,
       endpoint: req.body.endpoint,
@@ -149,9 +159,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...(req.body.cachePerMillion !== undefined ? { cachePerMillion: req.body.cachePerMillion } : {}),
         ...(req.body.pricingTiers?.length ? { pricingTiers: req.body.pricingTiers } : {}),
       },
-      globalThresholds: (req.body.dailyBudget !== undefined || req.body.monthlyBudget !== undefined)
+      globalThresholds: (req.body.dailyBudget !== undefined || req.body.weeklyBudget !== undefined || req.body.monthlyBudget !== undefined)
         ? {
           ...(req.body.dailyBudget !== undefined ? { daily: req.body.dailyBudget } : {}),
+          ...(req.body.weeklyBudget !== undefined ? { weekly: req.body.weeklyBudget } : {}),
           ...(req.body.monthlyBudget !== undefined ? { monthly: req.body.monthlyBudget } : {}),
         }
         : undefined,

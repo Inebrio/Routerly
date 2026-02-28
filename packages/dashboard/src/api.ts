@@ -70,7 +70,7 @@ export interface Model {
   id: string; name: string; provider: string; endpoint: string;
   cost: { inputPerMillion: number; outputPerMillion: number; cachePerMillion?: number; pricingTiers?: PricingTier[] };
   contextWindow?: number;
-  globalThresholds?: { daily?: number; monthly?: number };
+  globalThresholds?: { daily?: number; weekly?: number; monthly?: number };
 }
 
 export const getModels = () => request<Model[]>('/models');
@@ -80,15 +80,16 @@ export const createModel = (data: {
   cachePerMillion?: number;
   contextWindow?: number;
   pricingTiers?: PricingTier[];
-  dailyBudget?: number; monthlyBudget?: number;
+  dailyBudget?: number; weeklyBudget?: number; monthlyBudget?: number;
 }) => request<Model>('/models', { method: 'POST', body: JSON.stringify(data) });
 export const updateModel = (id: string, data: {
+  id?: string;
   name?: string; provider: string; endpoint: string; apiKey?: string;
   inputPerMillion: number; outputPerMillion: number;
   cachePerMillion?: number;
   contextWindow?: number;
   pricingTiers?: PricingTier[];
-  dailyBudget?: number; monthlyBudget?: number;
+  dailyBudget?: number; weeklyBudget?: number; monthlyBudget?: number;
 }) => request<Model>(`/models/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteModel = (id: string) => request<void>(`/models/${encodeURIComponent(id)}`, { method: 'DELETE' });
 

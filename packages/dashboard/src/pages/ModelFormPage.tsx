@@ -62,6 +62,7 @@ const EMPTY_FORM = {
   cachePerMillion: '',
   contextWindow: '',
   dailyBudget: '',
+  weeklyBudget: '',
   monthlyBudget: '',
 };
 
@@ -172,13 +173,31 @@ export function ModelFormPage() {
   }
 
   function editModel(model: Model) {
-    setIsCustomModel(true);
+    const provider = model.provider as Provider;
+    const providerPresets = PROVIDER_MODELS[provider] ?? [];
+
+    // Try to see if current ID matches the standard provider/model preset pattern
+    const prefix = `${provider}/`;
+    let presetId = '';
+    let customId = model.id;
+    let customModel = true;
+
+    if (model.id.startsWith(prefix)) {
+      const candidate = model.id.slice(prefix.length);
+      if (providerPresets.some(m => m.id === candidate)) {
+        presetId = candidate;
+        customId = ''; // It's a standard ID, not an override
+        customModel = false;
+      }
+    }
+
+    setIsCustomModel(customModel);
     setErr(''); setShowToken(false);
 
     setForm({
-      id: model.id,
-      customId: '',
-      provider: model.provider as Provider,
+      id: presetId || model.id,
+      customId: customId,
+      provider,
       endpoint: model.endpoint,
       apiKey: '',
       inputPerMillion: String(model.cost.inputPerMillion),
@@ -186,6 +205,7 @@ export function ModelFormPage() {
       cachePerMillion: model.cost.cachePerMillion != null ? String(model.cost.cachePerMillion) : '',
       contextWindow: model.contextWindow != null ? String(model.contextWindow) : '',
       dailyBudget: model.globalThresholds?.daily != null ? String(model.globalThresholds.daily) : '',
+      weeklyBudget: model.globalThresholds?.weekly != null ? String(model.globalThresholds.weekly) : '',
       monthlyBudget: model.globalThresholds?.monthly != null ? String(model.globalThresholds.monthly) : '',
     });
 
@@ -224,7 +244,7 @@ export function ModelFormPage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setErr(''); setSaving(true);
-    const finalId = editingModelId || effectiveId();
+    const finalId = form.customId.trim() || generateId(form.provider, form.id, models.filter(m => m.id !== editingModelId).map(m => m.id));
     if (!finalId) { setErr('Model ID required'); setSaving(false); return; }
 
     const pricingTiersPayload: PricingTier[] = tierRows
@@ -249,6 +269,7 @@ export function ModelFormPage() {
         ...(form.contextWindow ? { contextWindow: parseInt(form.contextWindow, 10) } : {}),
         ...(pricingTiersPayload.length ? { pricingTiers: pricingTiersPayload } : {}),
         ...(form.dailyBudget ? { dailyBudget: parseFloat(form.dailyBudget) } : {}),
+        ...(form.weeklyBudget ? { weeklyBudget: parseFloat(form.weeklyBudget) } : {}),
         ...(form.monthlyBudget ? { monthlyBudget: parseFloat(form.monthlyBudget) } : {}),
       };
 
@@ -295,47 +316,41 @@ export function ModelFormPage() {
           {/* ID */}
           <div className="form-group">
             <label className="form-label">
-              ID {editingModelId ? '' : <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional — default: <code style={{ fontSize: '0.78rem' }}>{autoId || `${form.provider}/model`}</code>)</span>}
+              ID <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional — default: <code style={{ fontSize: '0.78rem' }}>{autoId || `${form.provider}/model`}</code>)</span>
             </label>
-            {editingModelId ? (
-              <input className="form-input" value={editingModelId} disabled style={{ opacity: 0.7 }} />
-            ) : (
-              <input className="form-input" value={form.customId} name="modelId" autoComplete="off"
-                onChange={e => setForm(f => ({ ...f, customId: e.target.value }))}
-                placeholder={autoId || `${form.provider}/model`} />
-            )}
+            <input className="form-input" value={form.customId} name="modelId" autoComplete="off"
+              onChange={e => setForm(f => ({ ...f, customId: e.target.value }))}
+              placeholder={autoId || `${form.provider}/model`} />
           </div>
 
           {/* Provider */}
           <div className="form-group">
             <label className="form-label">Provider</label>
-            <select className="form-input" value={form.provider} disabled={!!editingModelId} style={{ opacity: editingModelId ? 0.7 : 1 }}
+            <select className="form-input" value={form.provider}
               onChange={e => handleProviderChange(e.target.value as Provider)}>
               {PROVIDERS.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
 
           {/* Model */}
-          {!editingModelId && (
-            <div className="form-group">
-              <label className="form-label">Model</label>
-              {providerModels.length > 0 ? (
-                <select className="form-input" value={isCustomModel ? '__custom__' : form.id}
-                  onChange={e => handleModelChange(e.target.value)}>
-                  {providerModels.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
-                  <option value="__custom__">— custom model ID —</option>
-                </select>
-              ) : null}
-              {(isCustomModel || providerModels.length === 0) && (
-                <input className="form-input" style={{ marginTop: providerModels.length > 0 ? 6 : 0 }}
-                  value={form.id} onChange={e => setForm(f => ({ ...f, id: e.target.value }))}
-                  placeholder="e.g. my-fine-tuned-model" required autoFocus />
-              )}
-              {!isCustomModel && selectedPreset?.notes && (
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>{selectedPreset.notes}</div>
-              )}
-            </div>
-          )}
+          <div className="form-group">
+            <label className="form-label">Model</label>
+            {providerModels.length > 0 ? (
+              <select className="form-input" value={isCustomModel ? '__custom__' : form.id}
+                onChange={e => handleModelChange(e.target.value)}>
+                {providerModels.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
+                <option value="__custom__">— custom model ID —</option>
+              </select>
+            ) : null}
+            {(isCustomModel || providerModels.length === 0) && (
+              <input className="form-input" style={{ marginTop: providerModels.length > 0 ? 6 : 0 }}
+                value={form.id} onChange={e => setForm(f => ({ ...f, id: e.target.value }))}
+                placeholder="e.g. my-fine-tuned-model" required autoFocus />
+            )}
+            {!isCustomModel && selectedPreset?.notes && (
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>{selectedPreset.notes}</div>
+            )}
+          </div>
 
           {/* API Key */}
           <div className="form-group">
@@ -387,12 +402,17 @@ export function ModelFormPage() {
                 onChange={e => setForm(f => ({ ...f, contextWindow: e.target.value }))} placeholder="128000" />
             </div>
             <div className="form-group">
-              <label className="form-label">Daily budget USD <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+              <label className="form-label">Daily budget USD <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opt.)</span></label>
               <input className="form-input" type="number" step="any" value={form.dailyBudget}
                 onChange={e => setForm(f => ({ ...f, dailyBudget: e.target.value }))} placeholder="—" />
             </div>
             <div className="form-group">
-              <label className="form-label">Monthly budget USD <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+              <label className="form-label">Weekly budget USD <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opt.)</span></label>
+              <input className="form-input" type="number" step="any" value={form.weeklyBudget}
+                onChange={e => setForm(f => ({ ...f, weeklyBudget: e.target.value }))} placeholder="—" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Monthly budget USD <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opt.)</span></label>
               <input className="form-input" type="number" step="any" value={form.monthlyBudget}
                 onChange={e => setForm(f => ({ ...f, monthlyBudget: e.target.value }))} placeholder="—" />
             </div>
