@@ -14,9 +14,11 @@ export function ProjectTokenTab() {
   // Edit Mode State
   const [editingTokenId, setEditingTokenId] = useState<string | null>(null);
   const [editModels, setEditModels] = useState<any[]>([]);
+  const [editLabels, setEditLabels] = useState<string[]>([]);
 
   // Create Mode State
   const [isCreating, setIsCreating] = useState(false);
+  const [createLabels, setCreateLabels] = useState<string[]>([]);
 
   // Modal State
   const [revealedToken, setRevealedToken] = useState<{ token: string } | null>(null);
@@ -36,7 +38,7 @@ export function ProjectTokenTab() {
     setErr('');
     setLoading(true);
     try {
-      const result = await createProjectToken(project.id);
+      const result = await createProjectToken(project.id, createLabels);
       setProject(p => {
         if (!p) return p;
         const tokens = p.tokens ? [...p.tokens] : [];
@@ -45,6 +47,7 @@ export function ProjectTokenTab() {
       });
       setRevealedToken({ token: result.token });
       setIsCreating(false);
+      setCreateLabels([]);
       showSuccess('Token created successfully.');
     } catch (e) {
       showError(e, 'Error creating token');
@@ -85,7 +88,7 @@ export function ProjectTokenTab() {
         return { modelId: m.modelId, thresholds: Object.keys(t).length > 0 ? t : undefined };
       });
 
-      const updated = await updateProjectToken(project.id, editingTokenId!, cleanedModels);
+      const updated = await updateProjectToken(project.id, editingTokenId!, cleanedModels, editLabels);
       setProject(p => {
         if (!p) return p;
         const tokens = p.tokens?.map(t => t.id === editingTokenId ? updated : t) || [];
@@ -113,130 +116,14 @@ export function ProjectTokenTab() {
 
   const tokens = project.tokens || [];
   const editingToken = tokens.find(t => t.id === editingTokenId);
+  const allLabels = Array.from(new Set(tokens.flatMap(t => t.labels || []))).sort();
 
-  // ─── Render: Edit View ───────────────────────────────────────────────────────
-  if (editingToken) {
-    return (
-      <div style={{ maxWidth: 700, animation: 'fadeIn 0.2s ease-out' }}>
-        {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
-        {successMsg && <div className="form-success" style={{ marginBottom: 16, padding: '12px 16px', backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#4ade80', borderRadius: 6, border: '1px solid rgba(34, 197, 94, 0.2)' }}>{successMsg}</div>}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-          <button className="btn-icon" onClick={() => { setEditingTokenId(null); setErr(''); setSuccessMsg(''); }} title="Back to tokens">
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <h3 style={{ margin: '0 0 4px', fontSize: '1.05rem', color: 'var(--text-primary)' }}>Edit Token</h3>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Configure token name and budget limits.
-            </p>
-          </div>
-          <div style={{ marginLeft: 'auto' }}>
-            <button className="btn btn-primary" disabled={loading} onClick={handleUpdateToken}>
-              {loading ? <span className="spinner" /> : <Save size={16} />}
-              Save Changes
-            </button>
-          </div>
-        </div>
-
-        <div className="card" style={{ padding: 24 }}>
-          <div className="form-group">
-            <label className="form-label">Token Prefix</label>
-            <div className="mono form-input disabled" style={{ fontSize: '0.9rem', padding: '10px 12px', opacity: 0.8 }}>
-              {editingToken.tokenSnippet}••••••••
-            </div>
-            <p className="form-help">For security reasons, full tokens cannot be viewed after creation.</p>
-          </div>
-
-          <div style={{ marginTop: 32, borderTop: '1px solid var(--border)', paddingTop: 24 }}>
-            <div style={{ marginBottom: 16 }}>
-              <h4 style={{ margin: '0 0 4px', fontSize: '0.95rem' }}>Model Budget Overrides</h4>
-              <p className="form-help" style={{ margin: 0 }}>
-                Limits set here override global and project-level budgets for requests authenticated with this token.
-              </p>
-            </div>
-
-            {(!project.models || project.models.length === 0) ? (
-              <div style={{ padding: '24px', border: '1px dashed var(--border)', borderRadius: 8, color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center' }}>
-                Add API models to your project first to configure per-model token overrides.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {project.models.map(pm => {
-                  const override = editModels.find(m => m.modelId === pm.modelId);
-                  const isEnabled = !!override;
-                  return (
-                    <div key={pm.modelId} style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', background: isEnabled ? 'rgba(255,255,255,0.02)' : 'transparent', transition: 'all 0.2s' }}>
-                      <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <div style={{ fontWeight: 500, color: isEnabled ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                            <span className="mono" style={{ fontSize: '0.85rem' }}>{pm.modelId}</span>
-                          </div>
-                        </div>
-                        <label className="switch">
-                          <input
-                            type="checkbox"
-                            checked={isEnabled}
-                            onChange={e => {
-                              if (e.target.checked) setEditModels([...editModels, { modelId: pm.modelId, thresholds: {} }]);
-                              else setEditModels(editModels.filter(m => m.modelId !== pm.modelId));
-                            }}
-                          />
-                          <span className="slider round"></span>
-                        </label>
-                      </div>
-
-                      {isEnabled && (
-                        <div style={{ padding: '0 16px 16px 16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16 }}>
-                          <div className="form-group" style={{ margin: 0 }}>
-                            <label className="form-label">Daily budget USD <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
-                            <input type="number" step="0.01" min="0" className="form-input" placeholder="No limit"
-                              value={override.thresholds?.daily ?? ''}
-                              onChange={e => {
-                                let val: number | undefined = parseFloat(e.target.value);
-                                if (isNaN(val)) val = undefined;
-                                setEditModels(editModels.map(m => m.modelId === pm.modelId ? { ...m, thresholds: { ...m.thresholds, daily: val } } : m));
-                              }}
-                            />
-                          </div>
-                          <div className="form-group" style={{ margin: 0 }}>
-                            <label className="form-label">Weekly budget USD <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
-                            <input type="number" step="0.01" min="0" className="form-input" placeholder="No limit"
-                              value={override.thresholds?.weekly ?? ''}
-                              onChange={e => {
-                                let val: number | undefined = parseFloat(e.target.value);
-                                if (isNaN(val)) val = undefined;
-                                setEditModels(editModels.map(m => m.modelId === pm.modelId ? { ...m, thresholds: { ...m.thresholds, weekly: val } } : m));
-                              }}
-                            />
-                          </div>
-                          <div className="form-group" style={{ margin: 0 }}>
-                            <label className="form-label">Monthly budget USD <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
-                            <input type="number" step="0.01" min="0" className="form-input" placeholder="No limit"
-                              value={override.thresholds?.monthly ?? ''}
-                              onChange={e => {
-                                let val: number | undefined = parseFloat(e.target.value);
-                                if (isNaN(val)) val = undefined;
-                                setEditModels(editModels.map(m => m.modelId === pm.modelId ? { ...m, thresholds: { ...m.thresholds, monthly: val } } : m));
-                              }}
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // ─── Render: List View ───────────────────────────────────────────────────────
   return (
     <div style={{ maxWidth: 800, animation: 'fadeIn 0.2s ease-out' }}>
+      <datalist id="all-labels">{allLabels.map(l => <option key={l} value={l} />)}</datalist>
       {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
       {successMsg && <div className="form-success" style={{ marginBottom: 16, padding: '12px 16px', backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#4ade80', borderRadius: 6, border: '1px solid rgba(34, 197, 94, 0.2)' }}>{successMsg}</div>}
 
@@ -255,20 +142,54 @@ export function ProjectTokenTab() {
       </div>
 
       {isCreating && (
-        <form onSubmit={(e) => { e.preventDefault(); handleCreateToken(); }} className="card" style={{ padding: 20, marginBottom: 20, border: '1px solid var(--primary)' }}>
-          <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>Create New Token</h4>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
-            Generate a new token for API authentication. For security reasons, the full token will only be shown once.
+        <div className="card" style={{ padding: 16, marginBottom: 16, border: '1px dashed var(--border)', background: 'var(--surface-active)' }}>
+          <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>Add New Token</h4>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
+            Generate a new token for API authentication. The full token will only be shown once.
           </p>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? <span className="spinner" /> : 'Create Token'}
-            </button>
-            <button type="button" className="btn btn-secondary" onClick={() => { setIsCreating(false); setErr(''); }} disabled={loading}>
-              Cancel
-            </button>
-          </div>
-        </form>
+
+          <form onSubmit={(e) => { e.preventDefault(); handleCreateToken(); }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '8px 12px', background: 'var(--bg-default)', border: '1px solid var(--border)', borderRadius: 6, minHeight: 40, alignItems: 'center' }}>
+                  {createLabels.map(label => (
+                    <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--surface-active)', border: '1px solid var(--border)', padding: '2px 8px', borderRadius: 12, fontSize: '0.8rem' }}>
+                      {label}
+                      <button type="button" onClick={() => setCreateLabels(createLabels.filter(l => l !== label))} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0, display: 'flex' }}>
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    type="text"
+                    placeholder="Add label (optional)..."
+                    list="all-labels"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ',') {
+                        e.preventDefault();
+                        const val = (e.currentTarget.value || '').trim();
+                        if (val && !createLabels.includes(val)) {
+                          setCreateLabels([...createLabels, val]);
+                        }
+                        e.currentTarget.value = '';
+                      }
+                    }}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', flex: 1, minWidth: 120, fontSize: '0.85rem' }}
+                  />
+                </div>
+                <p className="form-help" style={{ marginTop: 6, fontSize: '0.75rem' }}>Press Enter or comma to add a label.</p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="submit" className="btn btn-primary" disabled={loading}>
+                  {loading ? <span className="spinner" /> : 'Create'}
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={() => { setIsCreating(false); setErr(''); setCreateLabels([]); }} disabled={loading}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
       )}
 
       {tokens.length === 0 && !isCreating ? (
@@ -296,8 +217,15 @@ export function ProjectTokenTab() {
                         <div style={{ display: 'inline-flex', padding: '4px 8px', background: 'rgba(255,255,255,0.05)', borderRadius: 4, border: '1px solid var(--border)' }}>
                           <span className="mono" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{token.tokenSnippet}••••••••</span>
                         </div>
+                        {token.labels && token.labels.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
+                            {token.labels.map(l => (
+                              <span key={l} style={{ background: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: 4, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{l}</span>
+                            ))}
+                          </div>
+                        )}
                         {token.models?.length ? (
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>Has budget overrides</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>Has budget overrides</div>
                         ) : null}
                       </td>
                       <td style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
@@ -307,9 +235,9 @@ export function ProjectTokenTab() {
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
                           <button
                             className="btn-icon"
-                            onClick={() => { setEditingTokenId(token.id); setEditModels(token.models || []); setErr(''); setSuccessMsg(''); }}
+                            onClick={() => { setEditingTokenId(token.id); setEditModels(token.models || []); setEditLabels(token.labels || []); setErr(''); setSuccessMsg(''); }}
                             disabled={loading}
-                            title="Edit Budgets"
+                            title="Edit Token Details"
                           >
                             <Edit2 size={16} />
                           </button>
@@ -332,48 +260,139 @@ export function ProjectTokenTab() {
         )
       )}
 
-      {/* ─── Token Reveal Modal ─── */}
-      {revealedToken && (
-        <div className="modal-overlay" style={{ animation: 'fadeIn 0.2s ease-out' }}>
-          <div className="modal" style={{ maxWidth: 500 }}>
-            <h2 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Check size={20} color="#4ade80" /> Token Generated
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 20, lineHeight: 1.5 }}>
-              Your new token is ready. Please copy it below and store it securely. For security reasons, <strong>it will not be shown again</strong>.
-            </p>
+      {/* ─── Token Edit Modal ─── */}
+      {editingToken && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setEditingTokenId(null)}>
+          <div className="modal" style={{ maxWidth: 650, maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 className="modal-title" style={{ margin: 0 }}>Edit Token</h2>
+              <button className="btn-icon" onClick={() => setEditingTokenId(null)}><X size={20} /></button>
+            </div>
 
-            <div className="form-group" style={{ marginBottom: 24 }}>
-              <div style={{
-                display: 'flex',
-                background: 'rgba(0,0,0,0.3)',
-                border: '1px solid var(--border)',
-                borderRadius: 6,
-                padding: '12px',
-                alignItems: 'center',
-                gap: 12
-              }}>
-                <span className="mono" style={{ flex: 1, fontSize: '0.9rem', wordBreak: 'break-all', userSelect: 'all' }}>
-                  {revealedToken.token}
-                </span>
-                <button
-                  className="btn-icon"
-                  style={{ background: copied ? 'rgba(74, 222, 128, 0.2)' : 'var(--border)', color: copied ? '#4ade80' : 'inherit' }}
-                  onClick={() => copyToken(revealedToken.token)}
-                  title="Copy to clipboard"
-                >
-                  {copied ? <Check size={16} /> : <Copy size={16} />}
-                </button>
+            {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
+            {successMsg && <div className="form-success" style={{ marginBottom: 16, padding: '12px 16px', backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#4ade80', borderRadius: 6, border: '1px solid rgba(34, 197, 94, 0.2)' }}>{successMsg}</div>}
+
+            <div className="form-group">
+              <label className="form-label">Token Prefix</label>
+              <div className="mono form-input disabled" style={{ fontSize: '0.9rem', padding: '10px 12px', opacity: 0.8, background: 'var(--surface-active)' }}>
+                {editingToken.tokenSnippet}••••••••
               </div>
             </div>
 
-            <div className="modal-footer" style={{ marginTop: 0 }}>
-              <button
-                className="btn btn-primary"
-                style={{ width: '100%' }}
-                onClick={() => { setRevealedToken(null); setCopied(false); }}
-              >
-                I have copied my token securely
+            <div className="form-group" style={{ marginTop: 20 }}>
+              <label className="form-label">Labels / Tags</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '8px 12px', background: 'var(--bg-default)', border: '1px solid var(--border)', borderRadius: 6, minHeight: 40, alignItems: 'center' }}>
+                {editLabels.map(label => (
+                  <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--surface-active)', border: '1px solid var(--border)', padding: '2px 8px', borderRadius: 12, fontSize: '0.8rem' }}>
+                    {label}
+                    <button type="button" onClick={() => setEditLabels(editLabels.filter(l => l !== label))} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0, display: 'flex' }}>
+                      &times;
+                    </button>
+                  </span>
+                ))}
+                <input
+                  type="text"
+                  placeholder="Add label (optional)..."
+                  list="all-labels"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ',') {
+                      e.preventDefault();
+                      const val = (e.currentTarget.value || '').trim();
+                      if (val && !editLabels.includes(val)) {
+                        setEditLabels([...editLabels, val]);
+                      }
+                      e.currentTarget.value = '';
+                    }
+                  }}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', flex: 1, minWidth: 120, fontSize: '0.85rem' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 20 }}>
+              <div style={{ marginBottom: 16 }}>
+                <h4 style={{ margin: '0 0 4px', fontSize: '0.95rem' }}>Model Budget Overrides</h4>
+                <p className="form-help" style={{ margin: 0 }}>
+                  Limits set here override global and project-level budgets for requests authenticated with this token.
+                </p>
+              </div>
+
+              {(!project.models || project.models.length === 0) ? (
+                <div style={{ padding: '24px', border: '1px dashed var(--border)', borderRadius: 8, color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center' }}>
+                  Add API models to your project first to configure per-model token overrides.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {project.models.map(pm => {
+                    const override = editModels.find(m => m.modelId === pm.modelId);
+                    const isEnabled = !!override;
+                    return (
+                      <div key={pm.modelId} style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', background: isEnabled ? 'var(--surface-active)' : 'transparent', transition: 'all 0.2s' }}>
+                        <label style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', margin: 0 }}>
+                          <input
+                            type="checkbox"
+                            checked={isEnabled}
+                            onChange={e => {
+                              if (e.target.checked) setEditModels([...editModels, { modelId: pm.modelId, thresholds: {} }]);
+                              else setEditModels(editModels.filter(m => m.modelId !== pm.modelId));
+                            }}
+                            style={{ width: 16, height: 16, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                          />
+                          <div style={{ fontWeight: 500, color: isEnabled ? 'var(--text-primary)' : 'var(--text-secondary)', flex: 1 }}>
+                            <span className="mono" style={{ fontSize: '0.85rem' }}>{pm.modelId}</span>
+                          </div>
+                        </label>
+
+                        {isEnabled && (
+                          <div style={{ padding: '0 16px 16px 16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
+                            <div className="form-group" style={{ margin: 0 }}>
+                              <label className="form-label" style={{ fontSize: '0.75rem' }}>Daily budget ($)</label>
+                              <input type="number" step="0.01" min="0" className="form-input" placeholder="No limit"
+                                value={override.thresholds?.daily ?? ''}
+                                onChange={e => {
+                                  let val: number | undefined = parseFloat(e.target.value);
+                                  if (isNaN(val)) val = undefined;
+                                  setEditModels(editModels.map(m => m.modelId === pm.modelId ? { ...m, thresholds: { ...m.thresholds, daily: val } } : m));
+                                }}
+                              />
+                            </div>
+                            <div className="form-group" style={{ margin: 0 }}>
+                              <label className="form-label" style={{ fontSize: '0.75rem' }}>Weekly budget ($)</label>
+                              <input type="number" step="0.01" min="0" className="form-input" placeholder="No limit"
+                                value={override.thresholds?.weekly ?? ''}
+                                onChange={e => {
+                                  let val: number | undefined = parseFloat(e.target.value);
+                                  if (isNaN(val)) val = undefined;
+                                  setEditModels(editModels.map(m => m.modelId === pm.modelId ? { ...m, thresholds: { ...m.thresholds, weekly: val } } : m));
+                                }}
+                              />
+                            </div>
+                            <div className="form-group" style={{ margin: 0 }}>
+                              <label className="form-label" style={{ fontSize: '0.75rem' }}>Monthly budget ($)</label>
+                              <input type="number" step="0.01" min="0" className="form-input" placeholder="No limit"
+                                value={override.thresholds?.monthly ?? ''}
+                                onChange={e => {
+                                  let val: number | undefined = parseFloat(e.target.value);
+                                  if (isNaN(val)) val = undefined;
+                                  setEditModels(editModels.map(m => m.modelId === pm.modelId ? { ...m, thresholds: { ...m.thresholds, monthly: val } } : m));
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer" style={{ marginTop: 24 }}>
+              <button className="btn btn-secondary" onClick={() => { setEditingTokenId(null); setErr(''); setSuccessMsg(''); }} disabled={loading}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={handleUpdateToken} disabled={loading}>
+                {loading ? <span className="spinner" /> : 'Save Changes'}
               </button>
             </div>
           </div>
@@ -384,4 +403,4 @@ export function ProjectTokenTab() {
 }
 
 // Ensure lucide icon is available for empty state
-import { Key } from 'lucide-react';
+import { Key, X } from 'lucide-react';

@@ -87,6 +87,8 @@ export interface ProjectToken {
   createdAt: string; // ISO 8601
   /** Per-token model-specific budget overrides */
   models?: TokenModelRef[];
+  /** Optional labels/tags to identify this token's usage */
+  labels?: string[];
 }
 
 export interface ProjectConfig {

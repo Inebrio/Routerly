@@ -268,7 +268,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.status(204).send();
   });
 
-  fastify.post<{ Params: { id: string } }>('/api/projects/:id/tokens', async (req, reply) => {
+  fastify.post<{ Params: { id: string }, Body: { labels?: string[] } }>('/api/projects/:id/tokens', async (req, reply) => {
     const projects = await readConfig('projects');
     const index = projects.findIndex(p => p.id === req.params.id);
     if (index === -1) return reply.status(404).send({ error: 'Not found' });
@@ -279,7 +279,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       id: uuidv4(),
       encryptedToken: encrypt(rawToken),
       tokenSnippet: rawToken.substring(0, 10),
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      ...(req.body.labels ? { labels: req.body.labels } : {})
     };
 
     const updated = { ...projects[index]! };
@@ -291,7 +292,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send({ token: rawToken, tokenInfo: { ...newToken, encryptedToken: undefined } });
   });
 
-  fastify.put<{ Params: { id: string, tokenId: string }; Body: { models?: TokenModelRef[] } }>('/api/projects/:id/tokens/:tokenId', async (req, reply) => {
+  fastify.put<{ Params: { id: string, tokenId: string }; Body: { models?: TokenModelRef[], labels?: string[] } }>('/api/projects/:id/tokens/:tokenId', async (req, reply) => {
     const projects = await readConfig('projects');
     const index = projects.findIndex(p => p.id === req.params.id);
     if (index === -1) return reply.status(404).send({ error: 'Project not found' });
@@ -303,6 +304,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!token) return reply.status(404).send({ error: 'Token not found' });
 
     if (req.body.models !== undefined) token.models = req.body.models;
+    if (req.body.labels !== undefined) token.labels = req.body.labels;
     await writeConfig('projects', projects);
 
     return reply.send(token);
