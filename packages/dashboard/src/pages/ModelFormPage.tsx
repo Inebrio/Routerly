@@ -178,24 +178,24 @@ export function ModelFormPage() {
     const providerPresets = PROVIDER_MODELS[provider] ?? [];
 
     const prefix = `${provider}/`;
-    let presetId = '';
-    let customId = model.id;
+    let formId = '';
+    let customId = '';
     let customModel = true;
 
     if (model.id.startsWith(prefix)) {
-      const candidate = model.id.slice(prefix.length);
-      if (providerPresets.some(m => m.id === candidate)) {
-        presetId = candidate;
-        customId = '';
+      formId = model.id.slice(prefix.length);
+      if (providerPresets.some(m => m.id === formId)) {
         customModel = false;
       }
+    } else {
+      customId = model.id;
     }
 
     setIsCustomModel(customModel);
     setErr(''); setShowToken(false);
 
     setForm({
-      id: presetId || model.id,
+      id: formId,
       customId: customId,
       provider,
       endpoint: model.endpoint,
@@ -244,7 +244,7 @@ export function ModelFormPage() {
 
   function effectiveId(): string {
     if (form.customId.trim()) return form.customId.trim();
-    return generateId(form.provider, form.id, models.map(m => m.id));
+    return generateId(form.provider, form.id, models.filter(m => m.id !== editingModelId).map(m => m.id));
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -295,7 +295,7 @@ export function ModelFormPage() {
 
   const providerModels = PROVIDER_MODELS[form.provider] ?? [];
   const selectedPreset = providerModels.find(m => m.id === form.id);
-  const autoId = form.id ? generateId(form.provider, form.id, models.map(m => m.id)) : '';
+  const autoId = form.id ? generateId(form.provider, form.id, models.filter(m => m.id !== editingModelId).map(m => m.id)) : '';
 
   if (loading) {
     return (
