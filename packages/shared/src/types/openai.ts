@@ -18,11 +18,14 @@ export interface Message {
 export interface ChatCompletionRequest {
   model: string;
   messages: Message[];
+  input?: Message[]; // /v1/responses compatibility
   stream?: boolean;
   temperature?: number;
   top_p?: number;
   n?: number;
   max_tokens?: number;
+  max_completion_tokens?: number;
+  max_output_tokens?: number;
   stop?: string | string[];
   presence_penalty?: number;
   frequency_penalty?: number;

@@ -111,19 +111,14 @@ export function ProjectTokenTab() {
 
   return (
     <>
-      <div style={{ maxWidth: 720 }}>
-        {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
+        <button className="btn btn-primary" onClick={openCreate} disabled={loading}>
+          <Plus size={16} /> New Token
+        </button>
+      </div>
 
-        <div className="toolbar" style={{ marginBottom: 24 }}>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-            API tokens authenticate programmatic requests to this project.
-          </p>
-          <button className="btn btn-primary" onClick={openCreate} disabled={loading}>
-            <Plus size={16} /> New Token
-          </button>
-        </div>
-
-        {tokens.length === 0 ? (
+      {
+        tokens.length === 0 ? (
           <div className="empty-state">
             <Key size={36} />
             <p>No API tokens yet. Create one to start authenticating requests.</p>
@@ -188,9 +183,8 @@ export function ProjectTokenTab() {
               </div>
             ))}
           </div>
-        )}
-      </div>
-
+        )
+      }
     </>
   );
 }

@@ -82,23 +82,15 @@ export function ProjectGeneralTab() {
   // ── Token reveal view (after project creation) ───────────────────────────────
   if (revealedToken) {
     return (
-      <div style={{ maxWidth: 480 }}>
-        <h2 style={{ margin: '0 0 4px', fontSize: '1.05rem', fontWeight: 600 }}>Project Created</h2>
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 28 }}>
-          Copy your API token now — it won't be shown again.
-        </p>
-
-        <div className="form-group">
-          <label className="form-label">API Token</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div className="token-box" style={{ flex: 1, margin: 0, wordBreak: 'break-all', fontSize: '0.82rem' }}>
-              {revealedToken.token}
-            </div>
-            <button type="button" className="btn btn-secondary" onClick={() => copyToken(revealedToken.token)} style={{ flexShrink: 0 }}>
-              {copied ? <Check size={15} /> : <Copy size={15} />}
-              {copied ? 'Copied!' : 'Copy'}
-            </button>
+      <>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="token-box" style={{ flex: 1, margin: 0, wordBreak: 'break-all', fontSize: '0.82rem' }}>
+            {revealedToken.token}
           </div>
+          <button type="button" className="btn btn-secondary" onClick={() => copyToken(revealedToken.token)} style={{ flexShrink: 0 }}>
+            {copied ? <Check size={15} /> : <Copy size={15} />}
+            {copied ? 'Copied!' : 'Copy'}
+          </button>
         </div>
 
         <button
@@ -109,7 +101,7 @@ export function ProjectGeneralTab() {
         >
           Go to project <ArrowRight size={15} />
         </button>
-      </div>
+      </>
     );
   }
 

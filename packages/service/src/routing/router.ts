@@ -12,9 +12,21 @@ export async function routeRequest(
   const allModels = await readConfig('models');
 
   // Load candidate models based on project's model references
-  const projectModelIds = project.models.map(m => m.modelId);
+  const projectModelIds = new Set(project.models.map(m => m.modelId));
+
+  if (project.policies) {
+    for (const policy of project.policies) {
+      if ((policy.type === 'llm' || policy.type === 'fallback') && policy.config?.fallbackModelIds) {
+        (policy.config.fallbackModelIds as string[]).forEach(id => projectModelIds.add(id));
+      }
+    }
+  }
+  if (project.fallbackRoutingModelIds) {
+    project.fallbackRoutingModelIds.forEach(id => projectModelIds.add(id));
+  }
+
   const candidates = allModels
-    .filter(m => projectModelIds.includes(m.id))
+    .filter(m => projectModelIds.has(m.id))
     .map(m => ({ model: m, weight: 1.0 }));
 
   if (candidates.length === 0) {
@@ -41,7 +53,7 @@ export async function routeRequest(
           pipelineCandidates = applyFallbackPolicy(pipelineCandidates, policy);
           break;
         case 'llm':
-          if (!policy.config?.autoRouting) {
+          if (policy.config?.autoRouting !== false) {
             pipelineCandidates = await applyLlmPolicy(pipelineCandidates, originalRequest, project, policy);
           }
           // The UI nests fallback models into the LLM policy

@@ -85,7 +85,7 @@ export function ProjectUsersTab() {
   const availableUsers = users.filter(u => !members.find(m => m.userId === u.id));
 
   return (
-    <div style={{ maxWidth: 700 }}>
+    <div style={{ maxWidth: 768, animation: 'fade-in 0.2s ease' }}>
       {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>

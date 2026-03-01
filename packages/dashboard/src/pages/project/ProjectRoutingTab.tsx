@@ -213,7 +213,11 @@ export function ProjectRoutingTab() {
   const isAutoRoutingEnabled = policies.find(p => p.type === 'llm')?.config?.autoRouting ?? true;
   const showPromptInput = isAiRoutingEnabled && !isAutoRoutingEnabled;
 
-  if (loading) return <div className="loading-center"><div className="spinner" /></div>;
+  if (loading) return (
+    <div style={{ maxWidth: 768, animation: 'fade-in 0.2s ease' }} className="loading-center">
+      <div className="spinner" />
+    </div>
+  );
 
   return (
     <>

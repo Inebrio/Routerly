@@ -17,6 +17,16 @@ export class OpenAIAdapter implements ProviderAdapter {
     });
   }
 
+  // Helper to extract the actual upstream model string
+  private getUpstreamModelId(model: ModelConfig): string {
+    // If the ID contains a slash (e.g., 'openai/gpt-4o'), take the part after the slash
+    if (model.id.includes('/')) {
+      return model.id.split('/').slice(1).join('/');
+    }
+    // Otherwise fallback to ID or name
+    return model.id;
+  }
+
   async chatCompletion(
     request: ChatCompletionRequest,
     model: ModelConfig,
@@ -24,8 +34,11 @@ export class OpenAIAdapter implements ProviderAdapter {
     const client = this.getClient(model);
     const { stream: _stream, ...rest } = request;
 
+    // Override the requested model with the actual selected candidate model ID
+    const upstreamModel = this.getUpstreamModelId(model);
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = await client.chat.completions.create({ ...rest, stream: false } as any);
+    const response = await client.chat.completions.create({ ...rest, model: upstreamModel, stream: false } as any);
 
     return response as unknown as ChatCompletionResponse;
   }
@@ -37,8 +50,10 @@ export class OpenAIAdapter implements ProviderAdapter {
     const client = this.getClient(model);
     const { stream: _stream, ...rest } = request;
 
+    const upstreamModel = this.getUpstreamModelId(model);
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stream = await client.chat.completions.create({ ...rest, stream: true } as any);
+    const stream: any = await client.chat.completions.create({ ...rest, model: upstreamModel, stream: true } as any);
     for await (const chunk of stream) {
       yield chunk as unknown as StreamChunk;
     }

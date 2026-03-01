@@ -120,7 +120,7 @@ export function ProjectLayout() {
         </div>
       </div>
 
-      <div className="page-body" style={{ maxWidth: 768, paddingTop: 32 }}>
+      <div className="page-body" style={{ paddingTop: 32 }}>
         {loading ? (
           <div className="loading-center"><div className="spinner" /></div>
         ) : (

@@ -19,6 +19,15 @@ export class AnthropicAdapter implements ProviderAdapter {
     });
   }
 
+  // Helper to extract the actual upstream model string
+  private getUpstreamModelId(model: ModelConfig): string {
+    // If the ID contains a slash (e.g., 'anthropic/claude-opus'), take the part after the slash
+    if (model.id.includes('/')) {
+      return model.id.split('/').slice(1).join('/');
+    }
+    return model.id;
+  }
+
   async chatCompletion(
     request: ChatCompletionRequest,
     model: ModelConfig,
@@ -29,15 +38,21 @@ export class AnthropicAdapter implements ProviderAdapter {
     const systemMessage = request.messages.find((m) => m.role === 'system');
     const userMessages = request.messages.filter((m) => m.role !== 'system');
 
-    const response = await client.messages.create({
-      model: request.model,
+    const upstreamModel = this.getUpstreamModelId(model);
+
+    const params: any = {
+      model: upstreamModel,
       max_tokens: request.max_tokens ?? 4096,
-      system: typeof systemMessage?.content === 'string' ? systemMessage.content : undefined,
       messages: userMessages.map((m) => ({
         role: m.role as 'user' | 'assistant',
         content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
       })),
-    });
+    };
+    if (systemMessage?.content && typeof systemMessage.content === 'string') {
+      params.system = systemMessage.content;
+    }
+
+    const response = await client.messages.create(params);
 
     // Convert Anthropic response to OpenAI format
     const textContent = response.content.find((b) => b.type === 'text');
@@ -74,17 +89,22 @@ export class AnthropicAdapter implements ProviderAdapter {
 
   async messages(request: MessagesRequest, model: ModelConfig): Promise<MessagesResponse> {
     const client = this.getClient(model);
+    const upstreamModel = this.getUpstreamModelId(model);
 
-    const response = await client.messages.create({
-      model: request.model,
+    const params: any = {
+      model: upstreamModel,
       max_tokens: request.max_tokens,
-      system: request.system,
       messages: request.messages.map((m) => ({
         role: m.role,
         content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
       })),
       stream: false,
-    });
+    };
+    if (request.system) {
+      params.system = request.system;
+    }
+
+    const response = await client.messages.create(params);
 
     return response as unknown as MessagesResponse;
   }

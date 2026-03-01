@@ -1,6 +1,6 @@
 export function ProjectLogsTab() {
   return (
-    <div className="empty-state" style={{ padding: 40 }}>
+    <div className="empty-state" style={{ padding: 40, maxWidth: 768 }}>
       <h3>Request Logs</h3>
       <p style={{ color: 'var(--text-secondary)', marginTop: 8 }}>
         Recent API requests routed by this project will appear here.
