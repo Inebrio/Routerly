@@ -60,9 +60,9 @@ export function ProjectTestTab() {
     setError(null);
 
     const payload = {
-      model: project?.routingModelId || 'gpt-4o', // Gateway will route it
+      model: project?.routingModelId || 'gpt-4o',
       messages: newMessages,
-      stream: false,
+      stream: true,
     };
 
     setDebugReq(payload);
@@ -70,28 +70,109 @@ export function ProjectTestTab() {
 
     try {
       const t0 = performance.now();
+
+      // Clean the API key from accidental whitespace and smart quotes that break HTTP headers
+      const cleanKey = apiKey.trim().replace(/[\u2018\u2019\u201C\u201D"']/g, '');
+
       const res = await fetch('/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          'Authorization': `Bearer ${cleanKey}`
         },
         body: JSON.stringify(payload)
       });
-      const t1 = performance.now();
 
-      const data = await res.json();
-      setDebugRes({ status: res.status, latencyMs: Math.round(t1 - t0), data });
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        // Fallback or non-streaming error
+        const data = await res.json();
+        const t1 = performance.now();
+        setDebugRes({ status: res.status, latencyMs: Math.round(t1 - t0), data });
 
-      if (!res.ok) {
-        throw new Error(data.error?.message || `HTTP ${res.status}`);
-      }
+        if (!res.ok) {
+          throw new Error(data.error?.message || data.error || `HTTP ${res.status}`);
+        }
 
-      const assistantMessage = data.choices?.[0]?.message;
-      if (assistantMessage) {
-        setMessages(prev => [...prev, assistantMessage]);
+        const assistantMessage = data.choices?.[0]?.message;
+        if (assistantMessage) {
+          setMessages(prev => [...prev, assistantMessage]);
+        } else {
+          throw new Error('No message returned from API');
+        }
       } else {
-        throw new Error('No message returned from API');
+        if (!res.ok) {
+          let msg = `HTTP ${res.status}`;
+          try {
+            const errData = await res.json();
+            msg = errData.error?.message || msg;
+          } catch { }
+          throw new Error(msg);
+        }
+
+        // Prepare an empty assistant message slot
+        const initialAssistantMessage: Message = { role: 'assistant', content: '' };
+        setMessages(prev => [...prev, initialAssistantMessage]);
+
+        if (!res.body) throw new Error('Response body is missing');
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let done = false;
+        let finalContent = '';
+        let usageInfo: any = null;
+
+        while (!done) {
+          const { value, done: readerDone } = await reader.read();
+          done = readerDone;
+          if (value) {
+            const chunkStr = decoder.decode(value, { stream: true });
+            const lines = chunkStr.split('\n');
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const dataStr = line.substring(6).trim();
+                if (dataStr === '[DONE]') continue;
+                if (dataStr) {
+                  try {
+                    const data = JSON.parse(dataStr);
+                    if (data.error) {
+                      throw new Error(data.error);
+                    }
+
+                    // Extract delta
+                    const deltaContent = data.choices?.[0]?.delta?.content || '';
+                    if (deltaContent) {
+                      finalContent += deltaContent;
+                      // Update the last message
+                      setMessages(prev => {
+                        const updated = [...prev];
+                        updated[updated.length - 1] = { role: 'assistant', content: finalContent };
+                        return updated;
+                      });
+                    }
+
+                    // Capture usage if present
+                    if (data.usage && Object.keys(data.usage).length > 0) {
+                      usageInfo = data.usage;
+                    }
+                  } catch (e) {
+                    if (e instanceof Error && e.message !== "Unexpected end of JSON input") {
+                      throw e; // re-throw actual errors parsed from SSE
+                    }
+                    console.warn('Failed to parse SSE line', line, e);
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        const t1 = performance.now();
+        setDebugRes({
+          status: res.status,
+          latencyMs: Math.round(t1 - t0),
+          data: { streamed: true, content_length: finalContent.length, usage: usageInfo }
+        });
       }
 
     } catch (e) {
