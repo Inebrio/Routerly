@@ -51,6 +51,8 @@ export interface ModelConfig {
   globalThresholds?: BudgetThresholds | undefined;
   /** Optional capability flags for special features */
   capabilities?: ModelCapabilities;
+  /** Request timeout in milliseconds (default: 60000) */
+  timeout?: number;
 }
 
 export interface ProjectModelRef {

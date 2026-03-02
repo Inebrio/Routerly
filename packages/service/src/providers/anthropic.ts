@@ -16,7 +16,7 @@ export class AnthropicAdapter implements ProviderAdapter {
     return new Anthropic({
       apiKey,
       baseURL: model.endpoint || 'https://api.anthropic.com',
-      timeout: 10000, // 10s timeout to prevent routing deadlocks
+      timeout: model.timeout ?? 60000,
     });
   }
 

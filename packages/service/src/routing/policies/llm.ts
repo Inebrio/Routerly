@@ -175,6 +175,18 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
       }
 
       log?.info({ modelId, routing }, 'llm policy: output');
+      emit?.({
+        panel: 'router-response',
+        message: 'llm-policy:scores',
+        details: {
+          routingModel: modelId,
+          scores: routing.map(r => ({
+            model: r.model,
+            point: r.point,
+            ...(r.reason ? { reason: r.reason } : {}),
+          })),
+        },
+      });
       return { routing };
     } catch (err) {
       const errMsg = String(err);

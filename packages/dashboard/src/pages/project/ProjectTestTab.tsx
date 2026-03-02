@@ -6,6 +6,7 @@ interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string | any[];
   thinking?: string;
+  model?: string;
 }
 
 export function ProjectTestTab() {
@@ -137,6 +138,7 @@ export function ProjectTestTab() {
       let done = false;
       let finalContent = '';
       let thinkingAccum = '';
+      let modelName = '';
       let assistantMessageAdded = false;
 
       while (!done) {
@@ -174,11 +176,14 @@ export function ProjectTestTab() {
                     throw new Error(data.message || data.error?.message || data.error || 'Service error');
                   }
 
+                  // ── Cattura modello ───────────────────────────────────────
+                  if (data.model && !modelName) modelName = data.model as string;
+
                   // ── Thinking delta (extended thinking Anthropic) ──────────
                   const thinkingDelta: string | undefined = data.choices?.[0]?.delta?.thinking;
                   if (thinkingDelta) {
                     if (!assistantMessageAdded) {
-                      setMessages(prev => [...prev, { role: 'assistant', content: '', thinking: '' }]);
+                      setMessages(prev => [...prev, { role: 'assistant', content: '', thinking: '', model: modelName }]);
                       assistantMessageAdded = true;
                     }
                     thinkingAccum += thinkingDelta;
@@ -195,7 +200,7 @@ export function ProjectTestTab() {
                   const deltaContent = data.choices?.[0]?.delta?.content || '';
                   if (deltaContent) {
                     if (!assistantMessageAdded) {
-                      setMessages(prev => [...prev, { role: 'assistant', content: '', thinking: thinkingAccum || undefined }]);
+                      setMessages(prev => [...prev, { role: 'assistant', content: '', thinking: thinkingAccum || undefined, model: modelName }]);
                       assistantMessageAdded = true;
                     }
                     finalContent += deltaContent;
@@ -366,8 +371,13 @@ export function ProjectTestTab() {
                     </>
                   )}
                 </div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 4, textTransform: 'capitalize' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 4, textTransform: 'capitalize', display: 'flex', alignItems: 'center', gap: 6 }}>
                   {msg.role}
+                  {msg.role === 'assistant' && msg.model && (
+                    <span style={{ textTransform: 'none', fontFamily: 'monospace', fontSize: '0.68rem', color: 'var(--text-muted)', opacity: 0.8 }}>
+                      — {msg.model}
+                    </span>
+                  )}
                 </div>
               </div>
             ))
