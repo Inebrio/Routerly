@@ -5,15 +5,6 @@ import { getProviderAdapter } from '../providers/index.js';
 import { trackUsage } from '../cost/tracker.js';
 import { readConfig } from '../config/loader.js';
 import { isAllowed } from '../cost/budget.js';
-import { randomUUID } from 'node:crypto';
-import { saveTrace } from '../routing/traces.js';
-import fs from 'node:fs';
-
-function debugLog(...args: any[]) {
-  const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
-  console.log(msg);
-  try { fs.appendFileSync('/tmp/localrouter-debug.log', msg + '\n'); } catch (e) { }
-}
 
 export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/chat/completions ───────────────────────────────────────────────
@@ -57,17 +48,13 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // Helper functions for the completion logic
   async function handleOpenAICompletion(request: any, reply: any) {
-    debugLog('[API] New Request Started. Model:', request.body.model, 'Stream:', request.body.stream);
     const project = request.project;
     const body = request.body;
 
     let routingResponse;
     try {
-      debugLog('[API] Routing request...');
       routingResponse = await routeRequest(body, project);
-      debugLog('[API] Routing successful. Candidates:', routingResponse.models);
     } catch (err: unknown) {
-      debugLog('[API] Routing failed:', err);
       const msg = err instanceof Error ? err.message : String(err);
       request.log.error({ err }, 'Routing model failed');
       return reply.status(503).send({
@@ -78,17 +65,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     const candidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
 
     if (body.stream === true) {
-      debugLog('[API] Proceeding with streaming path');
-
       const allModelsList = await readConfig('models');
       const sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
-
-      // Save trace once upfront — it is valid regardless of which inference model succeeds
-      let traceId: string | null = null;
-      if (routingResponse.trace && routingResponse.trace.length > 0) {
-        traceId = randomUUID();
-        saveTrace(traceId, routingResponse.trace);
-      }
 
       let headersCommitted = false;
 
@@ -102,7 +80,6 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           continue;
         }
 
-        debugLog('[API] Attempting streaming with model:', model.id);
         const adapter = getProviderAdapter(model);
         const t0 = Date.now();
         let inputTokens = 0;
@@ -142,10 +119,6 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           reply.raw.setHeader('Content-Type', 'text/event-stream');
           reply.raw.setHeader('Cache-Control', 'no-cache');
           reply.raw.setHeader('Connection', 'keep-alive');
-          if (traceId) {
-            reply.raw.setHeader('x-localrouter-trace-id', traceId);
-            reply.header('x-localrouter-trace-id', traceId);
-          }
         }
 
         const processChunk = (chunk: any) => {
@@ -158,7 +131,6 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           reply.raw.write(`data: ${JSON.stringify(chunk)}\n\n`);
         };
 
-        debugLog('[API] Received first chunk from provider, committing stream');
         processChunk(firstResult.value);
 
         try {
@@ -232,12 +204,6 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           latencyMs: Date.now() - t0,
           outcome: 'success',
         });
-
-        if (routingResponse.trace && routingResponse.trace.length > 0) {
-          const traceId = randomUUID();
-          saveTrace(traceId, routingResponse.trace);
-          reply.header('x-localrouter-trace-id', traceId);
-        }
 
         return reply.send(response);
       } catch (err: unknown) {

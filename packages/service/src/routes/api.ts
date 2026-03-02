@@ -5,7 +5,6 @@ import { randomBytes } from 'node:crypto';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { encrypt, decrypt } from '@localrouter/shared';
 import { createSessionToken, verifyToken } from '../plugins/jwt.js';
-import { getTrace } from '../routing/traces.js';
 import type { ModelConfig, ProjectConfig, UserConfig, Provider, TokenCost, PricingTier, RoutingPolicy, TokenModelRef } from '@localrouter/shared';
 
 function hashPassword(p: string): string {
@@ -476,15 +475,4 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
-  // ══════════════════════════════════════════════════════════════════════════════
-  // TRACES
-  // ══════════════════════════════════════════════════════════════════════════════
-
-  fastify.get<{ Params: { id: string } }>('/api/traces/:id', async (req, reply) => {
-    const trace = getTrace(req.params.id);
-    if (!trace) {
-      return reply.status(404).send({ error: 'Trace not found or expired' });
-    }
-    return reply.send({ trace });
-  });
 };

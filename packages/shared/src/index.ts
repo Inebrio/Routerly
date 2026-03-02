@@ -49,7 +49,7 @@ export type {
   MessagesResponse,
 } from './types/anthropic.js';
 
-export type { RoutingCandidate, RoutingResponse, RoutingTraceLog } from './types/routing.js';
+export type { RoutingCandidate, RoutingResponse } from './types/routing.js';
 
 // Crypto utilities
 export { encrypt, decrypt, generateKey } from './crypto.js';
