@@ -94,9 +94,8 @@ export const updateModel = (id: string, data: {
 export const deleteModel = (id: string) => request<void>(`/models/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
 export interface RoutingPolicy {
-  type: 'context' | 'cheapest' | 'health' | 'fallback' | 'llm';
+  type: 'context' | 'cheapest' | 'health' | 'llm';
   enabled: boolean;
-  weight: number;
   config?: any;
 }
 

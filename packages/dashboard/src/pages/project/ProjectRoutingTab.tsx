@@ -44,10 +44,10 @@ export function ProjectRoutingTab() {
       } else {
         // Initialize default policies
         setPolicies([
-          { internalId: Math.random().toString(36).substring(7), type: 'context', enabled: true, weight: 1.0 },
-          { internalId: Math.random().toString(36).substring(7), type: 'health', enabled: true, weight: 1.0 },
-          { internalId: Math.random().toString(36).substring(7), type: 'cheapest', enabled: false, weight: 0.5 },
-          { internalId: Math.random().toString(36).substring(7), type: 'llm', enabled: true, weight: 2.0, config: { routingModelId: project.routingModelId || '', fallbackModelIds: project.fallbackRoutingModelIds || [], autoRouting: project.autoRouting ?? true } }
+          { internalId: Math.random().toString(36).substring(7), type: 'context', enabled: true },
+          { internalId: Math.random().toString(36).substring(7), type: 'health', enabled: true },
+          { internalId: Math.random().toString(36).substring(7), type: 'cheapest', enabled: false },
+          { internalId: Math.random().toString(36).substring(7), type: 'llm', enabled: true, config: { routingModelId: project.routingModelId || '', fallbackModelIds: project.fallbackRoutingModelIds || [], autoRouting: project.autoRouting ?? true } }
         ]);
       }
 
@@ -68,7 +68,7 @@ export function ProjectRoutingTab() {
     for (let i = 0; i < policies.length; i++) {
       const p1 = policies[i]!;
       const p2 = savedPolicies[i]!;
-      if (p1.type !== p2.type || p1.enabled !== p2.enabled || p1.weight !== p2.weight) return true;
+      if (p1.type !== p2.type || p1.enabled !== p2.enabled) return true;
       if (JSON.stringify(p1.config || {}) !== JSON.stringify(p2.config || {})) return true;
     }
 
@@ -255,10 +255,6 @@ export function ProjectRoutingTab() {
                     </div>
                     <div style={{ fontSize: '0.9rem', fontWeight: 600, flex: 1, textTransform: 'capitalize' }}>
                       {policy.type === 'llm' ? 'AI Routing' : policy.type} Policy
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Weight</label>
-                      <input className="form-input" type="number" step="0.1" value={policy.weight} onChange={e => updatePolicy(idx, 'weight', parseFloat(e.target.value))} style={{ width: 60, padding: '4px 8px', fontSize: '0.8rem', minHeight: 0 }} />
                     </div>
                   </div>
 

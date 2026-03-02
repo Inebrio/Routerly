@@ -53,14 +53,12 @@ export interface ProjectModelRef {
   thresholds?: BudgetThresholds;
 }
 
-export type RoutingPolicyType = 'context' | 'cheapest' | 'health' | 'fallback' | 'llm';
+export type RoutingPolicyType = 'context' | 'cheapest' | 'health' | 'llm';
 
 export interface RoutingPolicy {
   type: RoutingPolicyType;
   /** Whether this policy should be checked when routing */
   enabled: boolean;
-  /** Weight scalar applied by this policy. 0.0 - 1.0 (with >1 allowed for priority multipliers) */
-  weight: number;
   /** Optional policy-specific settings */
   config?: any;
 }

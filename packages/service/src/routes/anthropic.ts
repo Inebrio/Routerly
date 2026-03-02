@@ -24,7 +24,7 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
     // 1. Route request
     let routingResponse;
     try {
-      routingResponse = await routeRequest(openAICompatBody, project);
+      routingResponse = await routeRequest(openAICompatBody, project, request.log);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       request.log.error({ err }, 'Routing model failed');
