@@ -17,15 +17,14 @@ export async function buildServer() {
   const fastify = Fastify({
     logger: {
       level: settings.logLevel,
-      transport:
-        process.env['NODE_ENV'] !== 'production'
-          ? { target: 'pino-pretty', options: { colorize: true } }
-          : undefined,
+      ...(process.env['NODE_ENV'] !== 'production'
+        ? { transport: { target: 'pino-pretty', options: { colorize: true } } }
+        : {}),
     },
   });
 
   // ─── Plugins ─────────────────────────────────────────────────────────────────
-  await fastify.register(cors, { origin: true });
+  await fastify.register(cors, { origin: true, exposedHeaders: ['x-localrouter-trace-id'] });
 
   // ─── Dashboard static files (served before auth plugin) ───────────────────
   if (settings.dashboardEnabled) {

@@ -14,6 +14,7 @@ export class OpenAIAdapter implements ProviderAdapter {
     return new OpenAI({
       apiKey,
       baseURL: model.endpoint || 'https://api.openai.com/v1',
+      timeout: 10000, // 10s timeout to prevent routing deadlocks
     });
   }
 

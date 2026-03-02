@@ -15,7 +15,8 @@ export class AnthropicAdapter implements ProviderAdapter {
     const apiKey = model.encryptedApiKey ? decrypt(model.encryptedApiKey) : '';
     return new Anthropic({
       apiKey,
-      baseURL: model.endpoint !== 'https://api.anthropic.com' ? model.endpoint : undefined,
+      baseURL: model.endpoint || 'https://api.anthropic.com',
+      timeout: 10000, // 10s timeout to prevent routing deadlocks
     });
   }
 
@@ -80,11 +81,95 @@ export class AnthropicAdapter implements ProviderAdapter {
   }
 
   async *streamCompletion(
-    _request: ChatCompletionRequest,
-    _model: ModelConfig,
+    request: ChatCompletionRequest,
+    model: ModelConfig,
   ): AsyncIterable<StreamChunk> {
-    // TODO: implement Anthropic streaming
-    throw new Error('Anthropic streaming not yet implemented');
+    const client = this.getClient(model);
+    const upstreamModel = this.getUpstreamModelId(model);
+
+    const systemMessage = request.messages.find((m) => m.role === 'system');
+    const userMessages = request.messages.filter((m) => m.role !== 'system');
+
+    const params: any = {
+      model: upstreamModel,
+      max_tokens: request.max_tokens ?? 4096,
+      messages: userMessages.map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
+      })),
+      stream: true,
+    };
+    if (systemMessage?.content && typeof systemMessage.content === 'string') {
+      params.system = systemMessage.content;
+    }
+
+    const stream = await client.messages.create(params) as unknown as AsyncIterable<any>;
+
+    let id = `chatcmpl-${Math.random().toString(36).substring(2, 10)}`;
+    const created = Math.floor(Date.now() / 1000);
+    const responseModel = upstreamModel;
+    let inputTokens = 0;
+
+    for await (const event of stream) {
+      if (event.type === 'message_start') {
+        id = event.message.id;
+        inputTokens = event.message.usage.input_tokens;
+        yield {
+          id,
+          object: 'chat.completion.chunk',
+          created,
+          model: responseModel,
+          choices: [
+            {
+              index: 0,
+              delta: { role: 'assistant', content: '' },
+              finish_reason: null,
+            },
+          ],
+        } as unknown as StreamChunk;
+      } else if (event.type === 'content_block_delta') {
+        if (event.delta.type === 'text_delta') {
+          yield {
+            id,
+            object: 'chat.completion.chunk',
+            created,
+            model: responseModel,
+            choices: [
+              {
+                index: 0,
+                delta: { content: event.delta.text },
+                finish_reason: null,
+              },
+            ],
+          } as unknown as StreamChunk;
+        }
+      } else if (event.type === 'message_delta') {
+        const outputTokens = event.usage?.output_tokens ?? 0;
+        let finish_reason = null;
+        if (event.delta.stop_reason === 'end_turn') finish_reason = 'stop';
+        else if (event.delta.stop_reason === 'max_tokens') finish_reason = 'length';
+        else if (event.delta.stop_reason === 'stop_sequence') finish_reason = 'stop';
+
+        yield {
+          id,
+          object: 'chat.completion.chunk',
+          created,
+          model: responseModel,
+          choices: [
+            {
+              index: 0,
+              delta: {},
+              finish_reason,
+            },
+          ],
+          usage: {
+            prompt_tokens: inputTokens,
+            completion_tokens: outputTokens,
+            total_tokens: inputTokens + outputTokens,
+          },
+        } as unknown as StreamChunk;
+      }
+    }
   }
 
   async messages(request: MessagesRequest, model: ModelConfig): Promise<MessagesResponse> {

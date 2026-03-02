@@ -1,147 +1,26 @@
 import type { FastifyPluginAsync } from 'fastify';
 import type { ChatCompletionRequest, ModelObject } from '@localrouter/shared';
 import { routeRequest } from '../routing/router.js';
-import { selectModel } from '../routing/selector.js';
 import { getProviderAdapter } from '../providers/index.js';
 import { trackUsage } from '../cost/tracker.js';
 import { readConfig } from '../config/loader.js';
 import { isAllowed } from '../cost/budget.js';
+import { randomUUID } from 'node:crypto';
+import { saveTrace } from '../routing/traces.js';
+import fs from 'node:fs';
+
+function debugLog(...args: any[]) {
+  const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+  console.log(msg);
+  try { fs.appendFileSync('/tmp/localrouter-debug.log', msg + '\n'); } catch (e) { }
+}
 
 export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/chat/completions ───────────────────────────────────────────────
   fastify.post<{ Body: ChatCompletionRequest }>(
     '/v1/chat/completions',
     async (request, reply) => {
-      const project = request.project;
-      const body = request.body;
-
-      // 1. Ask routing model for weighted candidate list
-      let routingResponse;
-      try {
-        routingResponse = await routeRequest(body, project);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        request.log.error({ err }, 'Routing model failed');
-        return reply.status(503).send({
-          error: { type: 'routing_failed', message: `Routing model failed: ${msg}` },
-        });
-      }
-
-      // Sort candidates by weight descending
-      const candidates = [...routingResponse.models].sort((a, b) => b.weight - a.weight);
-
-      // 2. Streaming path
-      if (body.stream === true) {
-        // Select first eligible model
-        const selectedModel = await selectModel(routingResponse, project);
-        if (!selectedModel) {
-          return reply.status(503).send({
-            error: {
-              type: 'no_model_available',
-              message: 'All candidate models are budget-exhausted. Try again later.',
-            },
-          });
-        }
-
-        reply.raw.setHeader('Content-Type', 'text/event-stream');
-        reply.raw.setHeader('Cache-Control', 'no-cache');
-        reply.raw.setHeader('Connection', 'keep-alive');
-
-        let inputTokens = 0;
-        let outputTokens = 0;
-        const t0 = Date.now();
-
-        try {
-          const adapter = getProviderAdapter(selectedModel);
-          for await (const chunk of adapter.streamCompletion(body, selectedModel)) {
-            // Capture usage if present (some providers send it in the last chunk)
-            const chunkAny = chunk as unknown as Record<string, unknown>;
-            if (chunkAny['usage'] && typeof chunkAny['usage'] === 'object') {
-              const usage = chunkAny['usage'] as { prompt_tokens?: number; completion_tokens?: number };
-              inputTokens = usage.prompt_tokens ?? inputTokens;
-              outputTokens = usage.completion_tokens ?? outputTokens;
-            }
-            reply.raw.write(`data: ${JSON.stringify(chunk)}\n\n`);
-          }
-          reply.raw.write('data: [DONE]\n\n');
-
-          await trackUsage({
-            projectId: project.id,
-            model: selectedModel,
-            inputTokens,
-            outputTokens,
-            latencyMs: Date.now() - t0,
-            outcome: 'success',
-          });
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : String(err);
-          request.log.error({ err, modelId: selectedModel.id }, 'Streaming error');
-          await trackUsage({
-            projectId: project.id,
-            model: selectedModel,
-            inputTokens,
-            outputTokens,
-            latencyMs: Date.now() - t0,
-            outcome: 'error',
-            errorMessage: msg,
-          });
-          if (!reply.sent) {
-            reply.raw.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
-          }
-        }
-        reply.raw.end();
-        return;
-      }
-
-      // 3. Non-streaming path with per-candidate fallback
-      const allModels = await readConfig('models');
-
-      for (const candidate of candidates) {
-        const model = allModels.find((m) => m.id === candidate.model);
-        if (!model) continue;
-
-        // Check budget for this specific candidate
-        const allowed = await isAllowed(model, project);
-        if (!allowed) {
-          request.log.info({ modelId: model.id }, 'Model budget exhausted, skipping');
-          continue;
-        }
-
-        const adapter = getProviderAdapter(model);
-        const t0 = Date.now();
-        try {
-          const response = await adapter.chatCompletion(body, model);
-          await trackUsage({
-            projectId: project.id,
-            model,
-            inputTokens: response.usage.prompt_tokens,
-            outputTokens: response.usage.completion_tokens,
-            latencyMs: Date.now() - t0,
-            outcome: 'success',
-          });
-          return reply.send(response);
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : String(err);
-          request.log.warn({ err, modelId: model.id }, 'Model failed, trying next candidate');
-          await trackUsage({
-            projectId: project.id,
-            model,
-            inputTokens: 0,
-            outputTokens: 0,
-            latencyMs: Date.now() - t0,
-            outcome: 'error',
-            errorMessage: msg,
-          });
-          // Continue to next candidate
-        }
-      }
-
-      return reply.status(503).send({
-        error: {
-          type: 'all_models_failed',
-          message: 'All candidate models failed or are budget-exhausted.',
-        },
-      });
+      return handleOpenAICompletion(request, reply);
     },
   );
 
@@ -178,13 +57,17 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // Helper functions for the completion logic
   async function handleOpenAICompletion(request: any, reply: any) {
+    debugLog('[API] New Request Started. Model:', request.body.model, 'Stream:', request.body.stream);
     const project = request.project;
     const body = request.body;
 
     let routingResponse;
     try {
+      debugLog('[API] Routing request...');
       routingResponse = await routeRequest(body, project);
+      debugLog('[API] Routing successful. Candidates:', routingResponse.models);
     } catch (err: unknown) {
+      debugLog('[API] Routing failed:', err);
       const msg = err instanceof Error ? err.message : String(err);
       request.log.error({ err }, 'Routing model failed');
       return reply.status(503).send({
@@ -195,58 +78,133 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     const candidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
 
     if (body.stream === true) {
-      const selectedModel = await selectModel(routingResponse, project);
-      if (!selectedModel) {
-        return reply.status(503).send({
-          error: { type: 'no_model_available', message: 'All candidate models are budget-exhausted. Try again later.' },
-        });
+      debugLog('[API] Proceeding with streaming path');
+
+      const allModelsList = await readConfig('models');
+      const sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
+
+      // Save trace once upfront — it is valid regardless of which inference model succeeds
+      let traceId: string | null = null;
+      if (routingResponse.trace && routingResponse.trace.length > 0) {
+        traceId = randomUUID();
+        saveTrace(traceId, routingResponse.trace);
       }
 
-      reply.raw.setHeader('Content-Type', 'text/event-stream');
-      reply.raw.setHeader('Cache-Control', 'no-cache');
-      reply.raw.setHeader('Connection', 'keep-alive');
+      let headersCommitted = false;
 
-      let inputTokens = 0;
-      let outputTokens = 0;
-      const t0 = Date.now();
+      for (const candidate of sortedCandidates) {
+        const model = allModelsList.find((m: any) => m.id === candidate.model);
+        if (!model) continue;
 
-      try {
-        const adapter = getProviderAdapter(selectedModel);
-        for await (const chunk of adapter.streamCompletion(body, selectedModel)) {
-          const chunkAny = chunk as unknown as Record<string, unknown>;
+        const allowed = await isAllowed(model, project);
+        if (!allowed) {
+          request.log.info({ modelId: model.id }, 'Model budget exhausted, skipping');
+          continue;
+        }
+
+        debugLog('[API] Attempting streaming with model:', model.id);
+        const adapter = getProviderAdapter(model);
+        const t0 = Date.now();
+        let inputTokens = 0;
+        let outputTokens = 0;
+
+        // Obtain the async iterator without committing SSE headers yet.
+        // If the provider throws on the first .next() call (auth/network error),
+        // we can still fall back to the next candidate transparently.
+        const streamIter = adapter.streamCompletion(body, model)[Symbol.asyncIterator]();
+
+        let firstResult: IteratorResult<any>;
+        try {
+          firstResult = await streamIter.next();
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          request.log.warn({ err, modelId: model.id }, 'Stream failed before first chunk, trying next candidate');
+          await trackUsage({
+            projectId: project.id,
+            model,
+            inputTokens: 0,
+            outputTokens: 0,
+            latencyMs: Date.now() - t0,
+            outcome: 'error',
+            errorMessage: msg,
+          });
+          continue; // Headers not yet committed — safe to try next
+        }
+
+        if (firstResult.done) {
+          // Provider returned an empty stream — try next candidate
+          continue;
+        }
+
+        // First chunk received — now commit SSE headers
+        if (!headersCommitted) {
+          headersCommitted = true;
+          reply.raw.setHeader('Content-Type', 'text/event-stream');
+          reply.raw.setHeader('Cache-Control', 'no-cache');
+          reply.raw.setHeader('Connection', 'keep-alive');
+          if (traceId) {
+            reply.raw.setHeader('x-localrouter-trace-id', traceId);
+            reply.header('x-localrouter-trace-id', traceId);
+          }
+        }
+
+        const processChunk = (chunk: any) => {
+          const chunkAny = chunk as Record<string, unknown>;
           if (chunkAny['usage'] && typeof chunkAny['usage'] === 'object') {
             const usage = chunkAny['usage'] as { prompt_tokens?: number; completion_tokens?: number };
             inputTokens = usage.prompt_tokens ?? inputTokens;
             outputTokens = usage.completion_tokens ?? outputTokens;
           }
           reply.raw.write(`data: ${JSON.stringify(chunk)}\n\n`);
-        }
-        reply.raw.write('data: [DONE]\n\n');
+        };
 
-        await trackUsage({
-          projectId: project.id,
-          model: selectedModel,
-          inputTokens,
-          outputTokens,
-          latencyMs: Date.now() - t0,
-          outcome: 'success',
-        });
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        request.log.error({ err, modelId: selectedModel.id }, 'Streaming error');
-        await trackUsage({
-          projectId: project.id,
-          model: selectedModel,
-          inputTokens,
-          outputTokens,
-          latencyMs: Date.now() - t0,
-          outcome: 'error',
-          errorMessage: msg,
-        });
-        if (!reply.sent) {
-          reply.raw.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
+        debugLog('[API] Received first chunk from provider, committing stream');
+        processChunk(firstResult.value);
+
+        try {
+          let result = await streamIter.next();
+          while (!result.done) {
+            processChunk(result.value);
+            result = await streamIter.next();
+          }
+          reply.raw.write('data: [DONE]\n\n');
+          await trackUsage({
+            projectId: project.id,
+            model,
+            inputTokens,
+            outputTokens,
+            latencyMs: Date.now() - t0,
+            outcome: 'success',
+          });
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          request.log.error({ err, modelId: model.id }, 'Streaming error mid-stream');
+          await trackUsage({
+            projectId: project.id,
+            model,
+            inputTokens,
+            outputTokens,
+            latencyMs: Date.now() - t0,
+            outcome: 'error',
+            errorMessage: msg,
+          });
+          // Already streaming to client — cannot retry a different model silently
+          if (!reply.sent) {
+            reply.raw.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
+          }
         }
+
+        reply.raw.end();
+        return;
       }
+
+      // All candidates exhausted without starting a stream
+      if (!headersCommitted) {
+        return reply.status(503).send({
+          error: { type: 'no_model_available', message: 'All candidate models are unavailable or budget-exhausted.' },
+        });
+      }
+
       reply.raw.end();
       return;
     }
@@ -274,6 +232,13 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           latencyMs: Date.now() - t0,
           outcome: 'success',
         });
+
+        if (routingResponse.trace && routingResponse.trace.length > 0) {
+          const traceId = randomUUID();
+          saveTrace(traceId, routingResponse.trace);
+          reply.header('x-localrouter-trace-id', traceId);
+        }
+
         return reply.send(response);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);

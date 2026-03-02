@@ -314,9 +314,87 @@ export function ProjectRoutingTab() {
                           />
                           Auto Routing
                         </label>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginLeft: 22, lineHeight: 1.4 }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginLeft: 22, lineHeight: 1.4, marginBottom: 12 }}>
                           If enabled, traffic is distributed without custom prompts. If disabled, you can write specific prompts instructing the AI when to select each target model.
                         </p>
+                      </div>
+
+                      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                        <div style={{ fontWeight: 500, fontSize: '0.85rem', marginBottom: 8, marginTop: 4 }}>Advanced Settings</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
+                          <div>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--text-secondary)', cursor: 'pointer', marginBottom: policy.config?.enableSystemPromptOverwrite ? 6 : 0 }}>
+                              <input
+                                type="checkbox"
+                                checked={policy.config?.enableSystemPromptOverwrite ?? false}
+                                onChange={(e) => updatePolicyConfig(idx, { enableSystemPromptOverwrite: e.target.checked })}
+                                style={{ width: 13, height: 13, accentColor: 'var(--primary)', cursor: 'pointer', margin: 0 }}
+                              />
+                              Overwrite System Prompt
+                            </label>
+                            {policy.config?.enableSystemPromptOverwrite && (
+                              <>
+                                <textarea
+                                  className="form-input"
+                                  value={policy.config?.systemPrompt || ''}
+                                  onChange={e => updatePolicyConfig(idx, { systemPrompt: e.target.value })}
+                                  placeholder="Overwrite the default system prompt used to instruct the routing model..."
+                                  rows={3}
+                                  style={{ width: '100%', padding: '8px', fontSize: '0.85rem', resize: 'vertical' }}
+                                />
+                                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 4 }}>Available models and target model instructions (if auto routing is off) are always appended.</p>
+                              </>
+                            )}
+                          </div>
+                          <div>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--text-secondary)', cursor: 'pointer', marginBottom: policy.config?.enableUserPromptOverwrite ? 6 : 0 }}>
+                              <input
+                                type="checkbox"
+                                checked={policy.config?.enableUserPromptOverwrite ?? false}
+                                onChange={(e) => updatePolicyConfig(idx, { enableUserPromptOverwrite: e.target.checked })}
+                                style={{ width: 13, height: 13, accentColor: 'var(--primary)', cursor: 'pointer', margin: 0 }}
+                              />
+                              Overwrite User Prompt
+                            </label>
+                            {policy.config?.enableUserPromptOverwrite && (
+                              <textarea
+                                className="form-input"
+                                value={policy.config?.userPrompt || ''}
+                                onChange={e => updatePolicyConfig(idx, { userPrompt: e.target.value })}
+                                placeholder="Overwrite the default user prompt..."
+                                rows={2}
+                                style={{ width: '100%', padding: '8px', fontSize: '0.85rem', resize: 'vertical' }}
+                              />
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', gap: 16 }}>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Temperature</label>
+                              <input
+                                className="form-input"
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="2"
+                                value={policy.config?.temperature ?? 0}
+                                onChange={e => updatePolicyConfig(idx, { temperature: parseFloat(e.target.value) })}
+                                style={{ width: '100%', padding: '4px 8px', fontSize: '0.8rem', minHeight: 0 }}
+                              />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Max Tokens</label>
+                              <input
+                                className="form-input"
+                                type="number"
+                                step="1"
+                                min="1"
+                                value={policy.config?.maxTokens ?? 256}
+                                onChange={e => updatePolicyConfig(idx, { maxTokens: parseInt(e.target.value, 10) })}
+                                style={{ width: '100%', padding: '4px 8px', fontSize: '0.8rem', minHeight: 0 }}
+                              />
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
