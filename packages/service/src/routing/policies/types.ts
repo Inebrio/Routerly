@@ -1,4 +1,5 @@
 import type { ChatCompletionRequest, BudgetThresholds, ModelConfig } from '@localrouter/shared';
+import type { TraceEntry } from '../traceStore.js';
 
 /** Rappresenta un modello candidato con il peso accumulato durante la pipeline */
 export interface CandidateModel {
@@ -28,6 +29,8 @@ export interface PolicyInput {
   config?: any;
   /** Logger opzionale (da Fastify request.log) */
   log?: Logger;
+  /** Emette una entry di trace in real-time sullo stream SSE */
+  emit?: (entry: TraceEntry) => void;
 }
 
 /** Output standard restituito da ogni policy */

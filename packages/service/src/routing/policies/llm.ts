@@ -103,7 +103,7 @@ Return ONLY a valid JSON object with no text before or after it, no markdown, no
   }
 }
 
-export const llmPolicy: PolicyFn = async ({ request, candidates, config, log }) => {
+export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, emit }) => {
   log?.info(
     {
       request: {
@@ -140,6 +140,7 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log }) 
     const model = allModels.find(m => m.id === modelId);
     if (!model) {
       log?.info({ modelId, reason: 'model not found' }, 'llm policy: skipping model');
+      emit?.({ panel: 'router-response', message: 'llm-policy:skip', details: { modelId, reason: 'model not found in config' } });
       continue;
     }
 
@@ -169,13 +170,16 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log }) 
 
       if (!routing) {
         log?.info({ modelId, reason: 'repair failed' }, 'llm policy: skipping model');
+        emit?.({ panel: 'router-response', message: 'llm-policy:skip', details: { modelId, reason: 'parse + repair failed' } });
         continue;
       }
 
       log?.info({ modelId, routing }, 'llm policy: output');
       return { routing };
     } catch (err) {
-      log?.info({ modelId, err: String(err), reason: 'call failed' }, 'llm policy: skipping model');
+      const errMsg = String(err);
+      log?.info({ modelId, err: errMsg, reason: 'call failed' }, 'llm policy: skipping model');
+      emit?.({ panel: 'router-response', message: 'llm-policy:error', details: { modelId, error: errMsg } });
     }
   }
 

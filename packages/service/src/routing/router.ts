@@ -74,7 +74,7 @@ export async function routeRequest(
     policiesWithWeight.map(({ type, weight, config }, i) => {
       const fn = POLICY_MAP[type];
       const p = fn
-        ? fn({ request, candidates, config, log }).then(out => ({ weight, routing: out.routing }))
+        ? fn({ request, candidates, config, log, emit }).then(out => ({ weight, routing: out.routing }))
         : Promise.resolve({ weight, routing: candidates.map(c => ({ model: c.model.id, point: 1.0 })) });
 
       return p.then(result => {
