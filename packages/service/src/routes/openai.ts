@@ -1,10 +1,12 @@
 import type { FastifyPluginAsync } from 'fastify';
+import { randomUUID } from 'node:crypto';
 import type { ChatCompletionRequest, ModelObject } from '@localrouter/shared';
 import { routeRequest } from '../routing/router.js';
 import { getProviderAdapter } from '../providers/index.js';
 import { trackUsage } from '../cost/tracker.js';
 import { readConfig } from '../config/loader.js';
 import { isAllowed } from '../cost/budget.js';
+import { setTrace } from '../routing/traceStore.js';
 
 export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/chat/completions ───────────────────────────────────────────────
@@ -62,7 +64,15 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       });
     }
 
+    const traceId = randomUUID();
+    setTrace(traceId, routingResponse.trace);
+    reply.header('x-localrouter-trace-id', traceId);
+
     const candidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
+
+    if (process.env.ROUTING_DRY_RUN === 'true') {
+      return reply.status(200).send({ routing_dry_run: true, candidates });
+    }
 
     if (body.stream === true) {
       const allModelsList = await readConfig('models');

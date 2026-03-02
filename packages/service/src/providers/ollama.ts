@@ -17,14 +17,22 @@ export class OllamaAdapter implements ProviderAdapter {
     return new OpenAI({ apiKey: 'ollama', baseURL });
   }
 
+  private getUpstreamModelId(model: ModelConfig): string {
+    if (model.id.includes('/')) {
+      return model.id.split('/').slice(1).join('/');
+    }
+    return model.id;
+  }
+
   async chatCompletion(
     request: ChatCompletionRequest,
     model: ModelConfig,
   ): Promise<ChatCompletionResponse> {
     const client = this.getClient(model);
     const { stream: _stream, ...rest } = request;
+    const upstreamModel = this.getUpstreamModelId(model);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = await client.chat.completions.create({ ...rest, stream: false } as any);
+    const response = await client.chat.completions.create({ ...rest, model: upstreamModel, stream: false } as any);
     return response as unknown as ChatCompletionResponse;
   }
 
@@ -34,8 +42,9 @@ export class OllamaAdapter implements ProviderAdapter {
   ): AsyncIterable<StreamChunk> {
     const client = this.getClient(model);
     const { stream: _stream, ...rest } = request;
+    const upstreamModel = this.getUpstreamModelId(model);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stream = await client.chat.completions.create({ ...rest, stream: true } as any);
+    const stream = await client.chat.completions.create({ ...rest, model: upstreamModel, stream: true } as any);
     for await (const chunk of stream) {
       yield chunk as unknown as StreamChunk;
     }

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Trash2, GripVertical, Info } from 'lucide-react';
+import { Plus, Trash2, GripVertical } from 'lucide-react';
 import { updateProject, getModels, type Model, type Project, type RoutingPolicy } from '../../api';
 import { useProject } from './ProjectLayout';
+import { SearchableSelect } from '../../components/SearchableSelect';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
 
 type TargetModel = {
@@ -27,6 +28,7 @@ export function ProjectRoutingTab() {
   // Drag state
   const [draggedTargetIdx, setDraggedTargetIdx] = useState<number | null>(null);
   const [draggedPolicyIdx, setDraggedPolicyIdx] = useState<number | null>(null);
+  const [draggedLlmModelIdx, setDraggedLlmModelIdx] = useState<number | null>(null);
 
   useEffect(() => {
     getModels()
@@ -85,6 +87,48 @@ export function ProjectRoutingTab() {
     const used = new Set<string>();
     targetModels.forEach((m, i) => { if (i !== excludeIdx) used.add(m.modelId); });
     return used;
+  }
+
+  // --- LLM Routing Model Helpers ---
+  function getLlmModelIds(policy: PolicyItem): string[] {
+    const primary = policy.config?.routingModelId;
+    const fallbacks: string[] = policy.config?.fallbackModelIds ?? [];
+    return primary ? [primary, ...fallbacks] : fallbacks;
+  }
+
+  function setLlmModelIds(policyIdx: number, newIds: string[]) {
+    updatePolicyConfig(policyIdx, {
+      routingModelId: newIds[0] ?? '',
+      fallbackModelIds: newIds.slice(1),
+    });
+  }
+
+  function onDragStartLlmModel(e: React.DragEvent, mIdx: number) {
+    setDraggedLlmModelIdx(mIdx);
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => {
+      const el = document.getElementById(`llm-model-row-${mIdx}`);
+      if (el) el.style.opacity = '0.4';
+    }, 0);
+  }
+
+  function onDragEnterLlmModel(e: React.DragEvent, policyIdx: number, targetIdx: number) {
+    e.preventDefault();
+    if (draggedLlmModelIdx === null || draggedLlmModelIdx === targetIdx) return;
+    const policy = policies[policyIdx]!;
+    const ids = getLlmModelIds(policy);
+    const copy = [...ids];
+    const dragged = copy[draggedLlmModelIdx]!;
+    copy.splice(draggedLlmModelIdx, 1);
+    copy.splice(targetIdx, 0, dragged);
+    setLlmModelIds(policyIdx, copy);
+    setDraggedLlmModelIdx(targetIdx);
+  }
+
+  function onDragEndLlmModel(_e: React.DragEvent, mIdx: number) {
+    setDraggedLlmModelIdx(null);
+    const el = document.getElementById(`llm-model-row-${mIdx}`);
+    if (el) el.style.opacity = '1';
   }
 
   // --- Policy Handlers ---
@@ -262,42 +306,69 @@ export function ProjectRoutingTab() {
                   {policy.type === 'llm' && policy.enabled && (
                     <div style={{ paddingLeft: 30, paddingTop: 4, display: 'flex', flexDirection: 'column', gap: 12 }}>
                       <div>
-                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Routing Model</label>
-                        <select className="form-input" value={policy.config?.routingModelId || ''} onChange={e => updatePolicyConfig(idx, { routingModelId: e.target.value })} style={{ padding: '4px 8px', fontSize: '0.8rem', minHeight: 0 }}>
-                          <option value="" disabled>Select model</option>
-                          {availableModels.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
-                        </select>
-                      </div>
-
-                      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Fallback Models (Ordered, Optional)</label>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Routing Models</label>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 8, marginTop: -4 }}>The first model is the primary. The others are tried in order if the primary fails.</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          {(policy.config?.fallbackModelIds || []).map((fid: string, fIdx: number) => (
-                            <div key={fIdx} style={{ display: 'flex', gap: 6 }}>
-                              <select className="form-input" value={fid} onChange={e => {
-                                const newIds = [...(policy.config?.fallbackModelIds || [])];
-                                newIds[fIdx] = e.target.value;
-                                updatePolicyConfig(idx, { fallbackModelIds: newIds });
-                              }} style={{ padding: '4px 8px', fontSize: '0.8rem', minHeight: 0, flex: 1 }}>
-                                <option value="" disabled>Select model</option>
-                                {availableModels
-                                  .filter(m => m.id === fid || (!((policy.config?.fallbackModelIds || []).includes(m.id)) && m.id !== policy.config?.routingModelId))
-                                  .map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
-                              </select>
-                              <button type="button" className="btn-icon danger" onClick={() => {
-                                const newIds = (policy.config?.fallbackModelIds || []).filter((_: any, i: number) => i !== fIdx);
-                                updatePolicyConfig(idx, { fallbackModelIds: newIds });
-                              }} style={{ padding: 4 }}><Trash2 size={14} /></button>
-                            </div>
-                          ))}
-                          <button type="button" onClick={() => {
-                            const currentIds = policy.config?.fallbackModelIds || [];
-                            const firstAvail = availableModels.find(m => !currentIds.includes(m.id) && m.id !== policy.config?.routingModelId);
-                            if (firstAvail) updatePolicyConfig(idx, { fallbackModelIds: [...currentIds, firstAvail.id] });
-                          }} disabled={availableModels.filter(m => !(policy.config?.fallbackModelIds || []).includes(m.id) && m.id !== policy.config?.routingModelId).length === 0} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px', background: 'none', border: '1px dashed var(--border)', borderRadius: 4, color: 'var(--text-secondary)', fontSize: '0.75rem', cursor: 'pointer', opacity: availableModels.filter(m => !(policy.config?.fallbackModelIds || []).includes(m.id) && m.id !== policy.config?.routingModelId).length === 0 ? 0.4 : 1, width: 'fit-content' }}>
-                            <Plus size={12} /> Add Fallback
-                          </button>
+                          {getLlmModelIds(policy).map((modelId, mIdx) => {
+                            const usedIds = new Set(getLlmModelIds(policy).filter((_, i) => i !== mIdx));
+                            const opts = availableModels
+                              .filter(m => !usedIds.has(m.id))
+                              .map(m => ({ value: m.id, label: m.id }));
+                            return (
+                              <div
+                                key={mIdx}
+                                id={`llm-model-row-${mIdx}`}
+                                draggable
+                                onDragStart={e => onDragStartLlmModel(e, mIdx)}
+                                onDragEnter={e => onDragEnterLlmModel(e, idx, mIdx)}
+                                onDragEnd={e => onDragEndLlmModel(e, mIdx)}
+                                onDragOver={e => e.preventDefault()}
+                                style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'grab', transition: 'opacity 0.2s' }}
+                              >
+                                <div style={{ color: 'var(--text-muted)', flexShrink: 0 }}><GripVertical size={14} /></div>
+                                <SearchableSelect
+                                  options={opts}
+                                  value={modelId}
+                                  onChange={val => {
+                                    const ids = getLlmModelIds(policy);
+                                    const copy = [...ids];
+                                    copy[mIdx] = val;
+                                    setLlmModelIds(idx, copy);
+                                  }}
+                                  placeholder="Select model"
+                                  style={{ flex: 1 }}
+                                />
+                                {mIdx === 0 && (
+                                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', flexShrink: 0, minWidth: 48, textAlign: 'right' }}>primary</span>
+                                )}
+                                <button
+                                  type="button"
+                                  className="btn-icon danger"
+                                  disabled={getLlmModelIds(policy).length === 1}
+                                  onClick={() => {
+                                    const ids = getLlmModelIds(policy).filter((_, i) => i !== mIdx);
+                                    setLlmModelIds(idx, ids);
+                                  }}
+                                  style={{ padding: 4, flexShrink: 0, opacity: getLlmModelIds(policy).length === 1 ? 0.3 : 1 }}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            );
+                          })}
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const usedIds = new Set(getLlmModelIds(policy));
+                            const firstAvail = availableModels.find(m => !usedIds.has(m.id));
+                            if (firstAvail) setLlmModelIds(idx, [...getLlmModelIds(policy), firstAvail.id]);
+                          }}
+                          disabled={availableModels.filter(m => !new Set(getLlmModelIds(policy)).has(m.id)).length === 0}
+                          style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', background: 'none', border: '1px dashed var(--border)', borderRadius: 4, color: 'var(--text-secondary)', fontSize: '0.75rem', cursor: 'pointer', marginTop: 6, width: 'fit-content', opacity: availableModels.filter(m => !new Set(getLlmModelIds(policy)).has(m.id)).length === 0 ? 0.4 : 1 }}
+                        >
+                          <Plus size={12} /> Add Fallback Model
+                        </button>
                       </div>
 
                       <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>

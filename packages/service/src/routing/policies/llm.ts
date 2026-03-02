@@ -5,25 +5,30 @@ import type { PolicyFn } from './types.js';
 
 function buildSystemPrompt(candidates: { id: string; prompt?: string }[]): string {
   const modelList = candidates
-    .map(c => `- ${c.id}${c.prompt ? `: ${c.prompt}` : ''}`)
+    .map(c => `- id: "${c.id}"${c.prompt ? `\n  description: "${c.prompt}"` : ''}`)
     .join('\n');
 
-  return [
-    'You are a routing assistant. Your task is to analyze the user\'s request and assign a relevance score to each available AI model.',
-    '',
-    'Available models:',
-    modelList,
-    '',
-    'Respond ONLY with a valid JSON object — no markdown, no explanation — in this exact format:',
-    '{',
-    '  "routing": [',
-    '    { "model": "<model_id>", "point": <0.0-1.0> },',
-    '    ...',
-    '  ]',
-    '}',
-    '',
-    'Include ALL models. Assign point 1.0 to the best match and 0.0 to the worst.',
-  ].join('\n');
+  const exampleRouting = candidates
+    .map(c => `    { "model": "${c.id}", "point": 0.8, "reason": "suitable for this type of request" }`)
+    .join(',\n');
+
+  return `You are a routing assistant. Given a user request, score each available AI model by relevance (0.0 = worst, 1.0 = best).
+
+Available models:
+${modelList}
+
+Your response MUST be a single JSON object, with no text before or after it, no markdown, no code fences. Example format:
+{
+  "routing": [
+${exampleRouting}
+  ]
+}
+
+Rules:
+- Include ALL models listed above, using their exact id strings.
+- "point" must be a number between 0.0 and 1.0.
+- "reason" must be a single short sentence explaining the score.
+- Do not output anything outside the JSON object.`;
 }
 
 function buildUserMessage(request: { messages: { role: string; content: unknown }[] }): string {
@@ -38,7 +43,7 @@ function buildUserMessage(request: { messages: { role: string; content: unknown 
   return `User request:\n${content}`;
 }
 
-function parseRoutingResponse(text: string): { model: string; point: number }[] | null {
+function parseRoutingResponse(text: string): { model: string; point: number; reason?: string }[] | null {
   // strip markdown code fences if present
   const cleaned = text.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/, '').trim();
   try {
@@ -60,20 +65,18 @@ async function repairRoutingResponse(
   invalidResponse: string,
   log?: { info: (obj: object, msg?: string) => void },
 ): Promise<{ model: string; point: number }[] | null> {
-  const repairUserMessage = [
-    'Your previous response was not valid JSON or did not match the expected structure.',
-    '',
-    'Previous response:',
-    invalidResponse,
-    '',
-    'Return ONLY the corrected JSON object with no markdown, no explanation:',
-    '{',
-    '  "routing": [',
-    '    { "model": "<model_id>", "point": <0.0-1.0> },',
-    '    ...',
-    '  ]',
-    '}',
-  ].join('\n');
+  const repairUserMessage = `Your previous response was not valid JSON or did not match the expected structure.
+
+Previous response:
+${invalidResponse}
+
+Return ONLY a valid JSON object with no text before or after it, no markdown, no code fences:
+{
+  "routing": [
+    { "model": "<model_id>", "point": <0.0-1.0>, "reason": "<brief reason>" },
+    ...
+  ]
+}`;
 
   try {
     const repairResponse = await adapter.chatCompletion(
@@ -85,8 +88,7 @@ async function repairRoutingResponse(
           { role: 'assistant', content: invalidResponse },
           { role: 'user', content: repairUserMessage },
         ],
-        temperature: 0,
-        max_tokens: 512,
+        max_completion_tokens: 2048,
         stream: false,
       },
       model,
@@ -150,15 +152,14 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log }) 
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userMessage },
           ],
-          temperature: 0,
-          max_tokens: 512,
+          max_completion_tokens: 2048,
           stream: false,
         },
         model,
       );
 
       const text = response.choices?.[0]?.message?.content ?? '';
-      log?.info({ modelId, raw: text }, 'llm policy: raw response');
+      log?.info({ modelId, raw: text, fullResponse: JSON.stringify(response) }, 'llm policy: raw response');
 
       let routing = parseRoutingResponse(text);
       if (!routing) {

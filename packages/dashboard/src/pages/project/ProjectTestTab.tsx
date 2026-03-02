@@ -32,27 +32,20 @@ export function ProjectTestTab() {
   const routerResPanelEndRef = useRef<HTMLDivElement>(null);
   const resPanelEndRef = useRef<HTMLDivElement>(null);
 
-  // Router Request: the entry that describes what was sent TO the routing model
+  // Router Request: configurazioni delle policy di routing per questa richiesta
   const routerRequestHistory = useMemo(() =>
     debugTraceHistory.map(trace => {
       if (!trace) return null;
-      // Structural match: the "query" entry always has details.systemPrompt
-      const reqLog = trace.find((t: any) => t.policy === 'llm' && t.details?.systemPrompt);
-      return reqLog?.details ?? null;
+      const entry = (trace as any[]).find(t => t.message === 'router:request');
+      return entry?.details ?? null;
     }), [debugTraceHistory]);
 
-  // Router Response: all 'llm' entries that are NOT the query entry, in order
+  // Router Response: risultato combinato del routing (per-policy + final candidates)
   const routerResponseHistory = useMemo(() =>
     debugTraceHistory.map(trace => {
       if (!trace) return null;
-      // Exclude the "query" entries (they have systemPrompt in details)
-      const resLogs = trace.filter((t: any) => t.policy === 'llm' && !t.details?.systemPrompt);
-      if (resLogs.length === 0) return null;
-      // Prefer the success entry (has parsedWeights), otherwise collect all outcomes
-      const successLog = resLogs.find((t: any) => t.details?.parsedWeights);
-      return successLog
-        ? { outcome: 'success', ...successLog.details }
-        : { outcome: 'failed', events: resLogs.map((t: any) => ({ message: t.message, details: t.details })) };
+      const entry = (trace as any[]).find(t => t.message === 'router:result');
+      return entry?.details ?? null;
     }), [debugTraceHistory]);
 
   useEffect(() => {

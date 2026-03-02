@@ -1,4 +1,4 @@
-import type { ChatCompletionRequest, ModelConfig, ProjectConfig, RoutingResponse } from '@localrouter/shared';
+import type { ChatCompletionRequest, ModelConfig, ProjectConfig, RoutingCandidate } from '@localrouter/shared';
 import { readConfig } from '../config/loader.js';
 import type { CandidateModel } from './policies/types.js';
 import { contextPolicy } from './policies/context.js';
@@ -6,6 +6,12 @@ import { cheapestPolicy } from './policies/cheapest.js';
 import { healthPolicy } from './policies/health.js';
 import { llmPolicy } from './policies/llm.js';
 import type { PolicyFn } from './policies/types.js';
+import type { TraceEntry } from './traceStore.js';
+
+export interface RouteResult {
+  models: RoutingCandidate[];
+  trace: TraceEntry[];
+}
 
 type Logger = { info: (obj: object, msg?: string) => void };
 
@@ -20,7 +26,7 @@ export async function routeRequest(
   request: ChatCompletionRequest,
   project: ProjectConfig,
   log?: Logger,
-): Promise<RoutingResponse> {
+): Promise<RouteResult> {
   const enabledPolicies = (project.policies ?? []).filter(p => p.enabled);
 
   // Peso normalizzato [0,1]: posizione 0 → 1.0, ultima → 1/N
@@ -59,10 +65,50 @@ export async function routeRequest(
     }
   }
 
+  const totalWeight = policiesWithWeight.reduce((sum, p) => sum + p.weight, 0);
+
   const finalCandidates = candidates
-    .map(c => ({ model: c.model.id, weight: pointMap.get(c.model.id) ?? 0 }))
+    .map(c => ({ model: c.model.id, weight: totalWeight > 0 ? +((pointMap.get(c.model.id) ?? 0) / totalWeight).toFixed(4) : 0 }))
     .sort((a, b) => b.weight - a.weight);
 
-  return { models: finalCandidates };
+  log?.info(
+    {
+      policies: policiesWithWeight.map(({ type, weight }, i) => ({
+        type,
+        weight,
+        routing: results[i]?.routing.map(r => ({ model: r.model, point: r.point, contribution: +(r.point * weight).toFixed(4) })),
+      })),
+      final: finalCandidates,
+    },
+    'routing: result',
+  );
+
+  const traceRequest: TraceEntry = {
+    policy: 'router',
+    message: 'router:request',
+    details: {
+      policies: policiesWithWeight.map(({ type, weight, config }) => ({ type, weight, config })),
+      candidates: candidates.map(c => c.model.id),
+    },
+  };
+
+  const traceResult: TraceEntry = {
+    policy: 'router',
+    message: 'router:result',
+    details: {
+      policies: policiesWithWeight.map(({ type, weight }, i) => ({
+        type,
+        weight,
+        routing: results[i]?.routing.map(r => ({
+          model: r.model,
+          point: r.point,
+          contribution: +(r.point * weight).toFixed(4),
+        })),
+      })),
+      final: finalCandidates,
+    },
+  };
+
+  return { models: finalCandidates, trace: [traceRequest, traceResult] };
 }
 

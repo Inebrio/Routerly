@@ -6,6 +6,7 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { encrypt, decrypt } from '@localrouter/shared';
 import { createSessionToken, verifyToken } from '../plugins/jwt.js';
 import type { ModelConfig, ProjectConfig, UserConfig, Provider, TokenCost, PricingTier, RoutingPolicy, TokenModelRef } from '@localrouter/shared';
+import { getTrace } from '../routing/traceStore.js';
 
 function hashPassword(p: string): string {
   return createHash('sha256').update(p).digest('hex');
@@ -473,6 +474,17 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       timeline: Object.entries(timeline).sort(([a], [b]) => a.localeCompare(b)).slice(-30),
       records: filtered.slice(-100).reverse(),
     });
+  });
+
+  // ─── GET /api/traces/:id ─────────────────────────────────────────────────────
+  fastify.get<{ Params: { id: string } }>('/api/traces/:id', async (req, reply) => {
+    const userId = requireAdmin(req.headers.authorization);
+    if (!userId) return reply.status(401).send({ error: 'Unauthorized' });
+
+    const trace = getTrace(req.params.id);
+    if (!trace) return reply.status(404).send({ error: 'Trace not found' });
+
+    return reply.send({ trace });
   });
 
 };

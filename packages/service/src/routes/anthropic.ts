@@ -1,9 +1,11 @@
 import type { FastifyPluginAsync } from 'fastify';
+import { randomUUID } from 'node:crypto';
 import type { MessagesRequest } from '@localrouter/shared';
 import { routeRequest } from '../routing/router.js';
 import { selectModel } from '../routing/selector.js';
 import { getProviderAdapter } from '../providers/index.js';
 import { trackUsage } from '../cost/tracker.js';
+import { setTrace } from '../routing/traceStore.js';
 
 export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/messages ────────────────────────────────────────────────────────
@@ -34,7 +36,16 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
       });
     }
 
+    const traceId = randomUUID();
+    setTrace(traceId, routingResponse.trace);
+    reply.header('x-localrouter-trace-id', traceId);
+
     // 2. Select model
+    if (process.env.ROUTING_DRY_RUN === 'true') {
+      const candidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
+      return reply.status(200).send({ routing_dry_run: true, candidates });
+    }
+
     const selectedModel = await selectModel(routingResponse, project);
     if (!selectedModel) {
       return reply.status(503).send({
