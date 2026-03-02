@@ -5,7 +5,8 @@ import { routeRequest } from '../routing/router.js';
 import { selectModel } from '../routing/selector.js';
 import { getProviderAdapter } from '../providers/index.js';
 import { trackUsage } from '../cost/tracker.js';
-import { setTrace } from '../routing/traceStore.js';
+import { setTrace, appendTrace } from '../routing/traceStore.js';
+import type { TraceEntry } from '../routing/traceStore.js';
 
 export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/messages ────────────────────────────────────────────────────────
@@ -23,26 +24,41 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
       max_tokens: body.max_tokens,
     };
 
+    // ── Avvia SSE immediatamente, prima che il routing inizi ─────────────────
+    const traceId = randomUUID();
+    setTrace(traceId, []);
+
+    reply.hijack();
+    reply.raw.setHeader('Content-Type', 'text/event-stream');
+    reply.raw.setHeader('Cache-Control', 'no-cache');
+    reply.raw.setHeader('Connection', 'keep-alive');
+    reply.raw.setHeader('x-localrouter-trace-id', traceId);
+    reply.raw.flushHeaders();
+
+    const emit = (entry: TraceEntry) => {
+      appendTrace(traceId, [entry]);
+      reply.raw.write(`data: ${JSON.stringify({ type: 'trace', entry })}\n\n`);
+    };
+
     // 1. Route request
     let routingResponse;
     try {
-      routingResponse = await routeRequest(openAICompatBody, project, request.log);
+      routingResponse = await routeRequest(openAICompatBody, project, request.log, emit);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       request.log.error({ err }, 'Routing model failed');
-      return reply.status(503).send({
-        type: 'error',
-        error: { type: 'overloaded_error', message: `Routing failed: ${msg}` },
-      });
+      reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: `Routing failed: ${msg}` })}\n\n`);
+      reply.raw.write('data: [DONE]\n\n');
+      reply.raw.end();
+      return;
     }
-
-    const traceId = randomUUID();
-    setTrace(traceId, routingResponse.trace);
-    reply.header('x-localrouter-trace-id', traceId);
 
     // 2. Routing completato — risposta immediata senza chiamare il modello finale
     const candidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
-    return reply.status(200).send({ candidates });
+    reply.raw.write(`data: ${JSON.stringify({ type: 'result', candidates })}\n\n`);
+    reply.raw.write('data: [DONE]\n\n');
+    reply.raw.end();
+    return; // routing-only mode: fine handler
 
     // eslint-disable-next-line no-unreachable
     const selectedModel = await selectModel(routingResponse, project);

@@ -32,6 +32,11 @@ export interface BudgetThresholds {
   monthly?: number;
 }
 
+export interface ModelCapabilities {
+  /** Whether the model supports extended thinking (e.g. claude-3-7-sonnet, claude-opus-4) */
+  thinking?: boolean;
+}
+
 export interface ModelConfig {
   id: string;
   name: string;
@@ -44,6 +49,8 @@ export interface ModelConfig {
   contextWindow?: number;
   /** Global budget thresholds for this model */
   globalThresholds?: BudgetThresholds | undefined;
+  /** Optional capability flags for special features */
+  capabilities?: ModelCapabilities;
 }
 
 export interface ProjectModelRef {

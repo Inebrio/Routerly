@@ -7,6 +7,7 @@ import { trackUsage } from '../cost/tracker.js';
 import { readConfig } from '../config/loader.js';
 import { isAllowed } from '../cost/budget.js';
 import { setTrace, appendTrace } from '../routing/traceStore.js';
+import type { TraceEntry } from '../routing/traceStore.js';
 
 export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/chat/completions ───────────────────────────────────────────────
@@ -53,34 +54,40 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     const project = request.project;
     const body = request.body;
 
+    // ── Avvia SSE immediatamente, prima che il routing inizi ─────────────────
+    const traceId = randomUUID();
+    setTrace(traceId, []);
+
+    reply.hijack();
+    reply.raw.setHeader('Content-Type', 'text/event-stream');
+    reply.raw.setHeader('Cache-Control', 'no-cache');
+    reply.raw.setHeader('Connection', 'keep-alive');
+    reply.raw.setHeader('x-localrouter-trace-id', traceId);
+    reply.raw.flushHeaders();
+
+    const emit = (entry: TraceEntry) => {
+      appendTrace(traceId, [entry]);
+      reply.raw.write(`data: ${JSON.stringify({ type: 'trace', entry })}\n\n`);
+    };
+
     let routingResponse;
     try {
-      routingResponse = await routeRequest(body, project, request.log);
+      routingResponse = await routeRequest(body, project, request.log, emit);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       request.log.error({ err }, 'Routing model failed');
-      return reply.status(503).send({
-        error: { type: 'routing_failed', message: `Routing model failed: ${msg}` },
-      });
+      reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: `Routing model failed: ${msg}` })}\n\n`);
+      reply.raw.write('data: [DONE]\n\n');
+      reply.raw.end();
+      return;
     }
 
-    const traceId = randomUUID();
-    setTrace(traceId, routingResponse.trace);
-    reply.header('x-localrouter-trace-id', traceId);
+    // ── Model call ───────────────────────────────────────────────────────────
+    const allModelsList = await readConfig('models');
+    const sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
+    const isStream = body.stream !== false;
 
-    const candidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
-
-    return reply.status(200).send({ candidates });
-  }
-
-  // dead code below — kept for when final model call is re-enabled
-  async function _callFinalModel(traceId: string, body: any, project: any, routingResponse: any, reply: any, request: any) {
-    if (body.stream === true) {
-      const allModelsList = await readConfig('models');
-      const sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
-
-      let headersCommitted = false;
-
+    if (isStream) {
       for (const candidate of sortedCandidates) {
         const model = allModelsList.find((m: any) => m.id === candidate.model);
         if (!model) continue;
@@ -88,7 +95,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         const allowed = await isAllowed(model, project);
         if (!allowed) {
           request.log.info({ modelId: model.id }, 'Model budget exhausted, skipping');
-          appendTrace(traceId, [{ panel: 'response', message: 'model:skipped', details: { modelId: model.id, reason: 'budget_exhausted' } }]);
+          emit({ panel: 'response', message: 'model:skipped', details: { modelId: model.id, reason: 'budget_exhausted' } });
           continue;
         }
 
@@ -96,52 +103,39 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         const t0 = Date.now();
         let inputTokens = 0;
         let outputTokens = 0;
+        let thinkingAccum = '';     // accumulates thinking text across delta chunks
+        let thinkingEmitted = false;
 
-        appendTrace(traceId, [{ panel: 'request', message: 'model:request', details: { modelId: model.id, provider: model.provider, stream: true, messages: body.messages?.length ?? 0 } }]);
+        emit({ panel: 'request', message: 'model:request', details: { modelId: model.id, provider: model.provider, stream: true, messages: body.messages?.length ?? 0 } });
 
-        // Obtain the async iterator without committing SSE headers yet.
-        // If the provider throws on the first .next() call (auth/network error),
-        // we can still fall back to the next candidate transparently.
         const streamIter = adapter.streamCompletion(body, model)[Symbol.asyncIterator]();
-
         let firstResult: IteratorResult<any>;
         try {
           firstResult = await streamIter.next();
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           request.log.warn({ err, modelId: model.id }, 'Stream failed before first chunk, trying next candidate');
-          appendTrace(traceId, [{ panel: 'response', message: 'model:error', details: { modelId: model.id, error: msg, latencyMs: Date.now() - t0 } }]);
-          await trackUsage({
-            projectId: project.id,
-            model,
-            inputTokens: 0,
-            outputTokens: 0,
-            latencyMs: Date.now() - t0,
-            outcome: 'error',
-            errorMessage: msg,
-          });
-          continue; // Headers not yet committed — safe to try next
-        }
-
-        if (firstResult.done) {
-          // Provider returned an empty stream — try next candidate
+          emit({ panel: 'response', message: 'model:error', details: { modelId: model.id, error: msg, latencyMs: Date.now() - t0 } });
+          await trackUsage({ projectId: project.id, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - t0, outcome: 'error', errorMessage: msg });
           continue;
         }
 
-        // First chunk received — now commit SSE headers
-        if (!headersCommitted) {
-          headersCommitted = true;
-          reply.raw.setHeader('Content-Type', 'text/event-stream');
-          reply.raw.setHeader('Cache-Control', 'no-cache');
-          reply.raw.setHeader('Connection', 'keep-alive');
-        }
+        if (firstResult.done) continue;
 
         const processChunk = (chunk: any) => {
-          const chunkAny = chunk as Record<string, unknown>;
-          if (chunkAny['usage'] && typeof chunkAny['usage'] === 'object') {
-            const usage = chunkAny['usage'] as { prompt_tokens?: number; completion_tokens?: number };
-            inputTokens = usage.prompt_tokens ?? inputTokens;
-            outputTokens = usage.completion_tokens ?? outputTokens;
+          const u = chunk.usage;
+          if (u) {
+            inputTokens = u.prompt_tokens ?? inputTokens;
+            outputTokens = u.completion_tokens ?? outputTokens;
+          }
+          const delta = chunk?.choices?.[0]?.delta as any;
+          if (delta?.thinking !== undefined) {
+            // Thinking delta — accumulate for trace, forward for FE animation
+            thinkingAccum += delta.thinking as string;
+          } else if (delta?.content !== undefined && !thinkingEmitted && thinkingAccum) {
+            // First text chunk after thinking — emit accumulated thinking as one trace entry
+            emit({ panel: 'response', message: 'model:thinking', details: { modelId: model.id, text: thinkingAccum } });
+            thinkingEmitted = true;
           }
           reply.raw.write(`data: ${JSON.stringify(chunk)}\n\n`);
         };
@@ -154,97 +148,76 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
             processChunk(result.value);
             result = await streamIter.next();
           }
+          // Emit thinking trace if not yet emitted (e.g. model only thought, no text)
+          if (thinkingAccum && !thinkingEmitted) {
+            emit({ panel: 'response', message: 'model:thinking', details: { modelId: model.id, text: thinkingAccum } });
+          }
           reply.raw.write('data: [DONE]\n\n');
-          appendTrace(traceId, [{ panel: 'response', message: 'model:success', details: { modelId: model.id, inputTokens, outputTokens, latencyMs: Date.now() - t0 } }]);
-          await trackUsage({
-            projectId: project.id,
-            model,
-            inputTokens,
-            outputTokens,
-            latencyMs: Date.now() - t0,
-            outcome: 'success',
-          });
+          emit({ panel: 'response', message: 'model:success', details: { modelId: model.id, inputTokens, outputTokens, latencyMs: Date.now() - t0 } });
+          await trackUsage({ projectId: project.id, model, inputTokens, outputTokens, latencyMs: Date.now() - t0, outcome: 'success' });
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           request.log.error({ err, modelId: model.id }, 'Streaming error mid-stream');
-          appendTrace(traceId, [{ panel: 'response', message: 'model:error', details: { modelId: model.id, error: msg, latencyMs: Date.now() - t0 } }]);
-          await trackUsage({
-            projectId: project.id,
-            model,
-            inputTokens,
-            outputTokens,
-            latencyMs: Date.now() - t0,
-            outcome: 'error',
-            errorMessage: msg,
-          });
-          // Already streaming to client — cannot retry a different model silently
-          if (!reply.sent) {
-            reply.raw.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
-          }
+          emit({ panel: 'response', message: 'model:error', details: { modelId: model.id, error: msg, latencyMs: Date.now() - t0 } });
+          await trackUsage({ projectId: project.id, model, inputTokens, outputTokens, latencyMs: Date.now() - t0, outcome: 'error', errorMessage: msg });
+          reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: msg })}\n\n`);
         }
 
         reply.raw.end();
         return;
       }
 
-      // All candidates exhausted without starting a stream
-      if (!headersCommitted) {
-        return reply.status(503).send({
-          error: { type: 'no_model_available', message: 'All candidate models are unavailable or budget-exhausted.' },
-        });
-      }
-
+      // All candidates exhausted
+      emit({ panel: 'response', message: 'model:error', details: { error: 'All candidates unavailable or budget-exhausted' } });
+      reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: 'All candidate models are unavailable or budget-exhausted.' })}\n\n`);
+      reply.raw.write('data: [DONE]\n\n');
       reply.raw.end();
       return;
     }
 
-    const allModels = await readConfig('models');
-    for (const candidate of candidates) {
-      const model = allModels.find((m: any) => m.id === candidate.model);
+    // ── Non-streaming path ───────────────────────────────────────────────────
+    for (const candidate of sortedCandidates) {
+      const model = allModelsList.find((m: any) => m.id === candidate.model);
       if (!model) continue;
 
       const allowed = await isAllowed(model, project);
       if (!allowed) {
-        request.log.info({ modelId: model.id }, 'Model budget exhausted, skipping');
-        appendTrace(traceId, [{ panel: 'response', message: 'model:skipped', details: { modelId: model.id, reason: 'budget_exhausted' } }]);
+        emit({ panel: 'response', message: 'model:skipped', details: { modelId: model.id, reason: 'budget_exhausted' } });
         continue;
       }
 
       const adapter = getProviderAdapter(model);
       const t0 = Date.now();
-      appendTrace(traceId, [{ panel: 'request', message: 'model:request', details: { modelId: model.id, provider: model.provider, stream: false, messages: body.messages?.length ?? 0 } }]);
+      emit({ panel: 'request', message: 'model:request', details: { modelId: model.id, provider: model.provider, stream: false, messages: body.messages?.length ?? 0 } });
+
       try {
         const response = await adapter.chatCompletion(body, model);
-        appendTrace(traceId, [{ panel: 'response', message: 'model:success', details: { modelId: model.id, inputTokens: response.usage.prompt_tokens, outputTokens: response.usage.completion_tokens, latencyMs: Date.now() - t0 } }]);
-        await trackUsage({
-          projectId: project.id,
-          model,
-          inputTokens: response.usage.prompt_tokens,
-          outputTokens: response.usage.completion_tokens,
-          latencyMs: Date.now() - t0,
-          outcome: 'success',
-        });
-
-        return reply.send(response);
+        emit({ panel: 'response', message: 'model:success', details: { modelId: model.id, inputTokens: response.usage.prompt_tokens, outputTokens: response.usage.completion_tokens, latencyMs: Date.now() - t0 } });
+        await trackUsage({ projectId: project.id, model, inputTokens: response.usage.prompt_tokens, outputTokens: response.usage.completion_tokens, latencyMs: Date.now() - t0, outcome: 'success' });
+        // Emit as a fake SSE chunk so the FE can read it uniformly
+        const fakeChunk = {
+          id: response.id,
+          object: 'chat.completion.chunk',
+          created: response.created,
+          model: response.model,
+          choices: [{ index: 0, delta: { role: 'assistant', content: response.choices[0]?.message.content ?? '' }, finish_reason: 'stop' }],
+          usage: response.usage,
+        };
+        reply.raw.write(`data: ${JSON.stringify(fakeChunk)}\n\n`);
+        reply.raw.write('data: [DONE]\n\n');
+        reply.raw.end();
+        return;
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         request.log.warn({ err, modelId: model.id }, 'Model failed, trying next candidate');
-        appendTrace(traceId, [{ panel: 'response', message: 'model:error', details: { modelId: model.id, error: msg, latencyMs: Date.now() - t0 } }]);
-        await trackUsage({
-          projectId: project.id,
-          model,
-          inputTokens: 0,
-          outputTokens: 0,
-          latencyMs: Date.now() - t0,
-          outcome: 'error',
-          errorMessage: msg,
-        });
+        emit({ panel: 'response', message: 'model:error', details: { modelId: model.id, error: msg, latencyMs: Date.now() - t0 } });
+        await trackUsage({ projectId: project.id, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - t0, outcome: 'error', errorMessage: msg });
       }
     }
 
-    return reply.status(503).send({
-      error: { type: 'all_models_failed', message: 'All candidate models failed or are budget-exhausted.' },
-    });
+    reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: 'All candidate models failed or are budget-exhausted.' })}\n\n`);
+    reply.raw.write('data: [DONE]\n\n');
+    reply.raw.end();
   }
 
   // ─── GET /v1/models ───────────────────────────────────────────────────────────

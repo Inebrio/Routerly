@@ -30,6 +30,7 @@ export async function routeRequest(
   request: ChatCompletionRequest,
   project: ProjectConfig,
   log?: Logger,
+  emit?: (entry: TraceEntry) => void,
 ): Promise<RouteResult> {
   const enabledPolicies = (project.policies ?? []).filter(p => p.enabled);
 
@@ -51,16 +52,49 @@ export async function routeRequest(
     })
     .filter((m): m is NonNullable<typeof m> => m !== null);
 
-  // Esegue tutte le policy in parallelo — il tempo totale è quello della policy più lenta
-  const results = await Promise.all(
-    policiesWithWeight.map(({ type, weight, config }) => {
+  // ── Emit intake subito ────────────────────────────────────────────────────
+  const intakeEntry = te('router-request', 'router:intake', {
+    model: request.model,
+    messageCount: request.messages?.length ?? 0,
+    projectId: project.id,
+  });
+  emit?.(intakeEntry);
+
+  // ── Emit policy config subito dopo ───────────────────────────────────────
+  const policiesEntry = te('router-request', 'router:policies', {
+    policies: policiesWithWeight.map(({ type, weight, config }) => ({ type, weight, config })),
+    candidates: candidates.map(c => c.model.id),
+  });
+  emit?.(policiesEntry);
+
+  // ── Esegue le policy in parallelo, emettendo ogni risultato appena pronto ─
+  const results = [] as Array<{ weight: number; routing: { model: string; point: number }[] }>;
+
+  await Promise.all(
+    policiesWithWeight.map(({ type, weight, config }, i) => {
       const fn = POLICY_MAP[type];
-      if (!fn) return Promise.resolve({ weight, routing: candidates.map(c => ({ model: c.model.id, point: 1.0 })) });
-      return fn({ request, candidates, config, log }).then(out => ({ weight, routing: out.routing }));
-    })
+      const p = fn
+        ? fn({ request, candidates, config, log }).then(out => ({ weight, routing: out.routing }))
+        : Promise.resolve({ weight, routing: candidates.map(c => ({ model: c.model.id, point: 1.0 })) });
+
+      return p.then(result => {
+        results[i] = result;
+        const entry = te('router-response', 'policy:result', {
+          type,
+          weight,
+          routing: result.routing.map(r => ({
+            model: r.model,
+            point: r.point,
+            contribution: +(r.point * weight).toFixed(4),
+          })),
+        });
+        emit?.(entry);
+      });
+    }),
   );
 
-  // Combina i risultati: per ogni modello somma i contributi pesati (point * policyWeight) di ogni policy
+
+  // ── Combina i risultati: per ogni modello somma i contributi pesati ────────
   const pointMap = new Map<string, number>();
   for (const { weight: policyWeight, routing } of results) {
     for (const entry of routing) {
@@ -87,19 +121,15 @@ export async function routeRequest(
     'routing: result',
   );
 
+  // ── Emit risultato finale ─────────────────────────────────────────────────
+  const resultEntry = te('router-response', 'router:result', {
+    final: finalCandidates,
+  });
+  emit?.(resultEntry);
+
   const trace: TraceEntry[] = [
-    // ── Router Request: presa in carico ──────────────────────────────────────
-    te('router-request', 'router:intake', {
-      model: request.model,
-      messageCount: request.messages?.length ?? 0,
-      projectId: project.id,
-    }),
-    // ── Router Request: policy caricate ──────────────────────────────────────
-    te('router-request', 'router:policies', {
-      policies: policiesWithWeight.map(({ type, weight, config }) => ({ type, weight, config })),
-      candidates: candidates.map(c => c.model.id),
-    }),
-    // ── Router Response: risultato per ogni policy ────────────────────────────
+    intakeEntry,
+    policiesEntry,
     ...policiesWithWeight.map(({ type, weight }, i) =>
       te('router-response', 'policy:result', {
         type,
@@ -111,10 +141,7 @@ export async function routeRequest(
         })) ?? [],
       })
     ),
-    // ── Router Response: punteggio finale combinato ───────────────────────────
-    te('router-response', 'router:result', {
-      final: finalCandidates,
-    }),
+    resultEntry,
   ];
 
   return { models: finalCandidates, trace };

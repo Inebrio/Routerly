@@ -103,12 +103,22 @@ export class AnthropicAdapter implements ProviderAdapter {
       params.system = systemMessage.content;
     }
 
+    // Extended thinking — requires min 16k max_tokens per Anthropic spec
+    const thinkingEnabled = model.capabilities?.thinking === true;
+    if (thinkingEnabled) {
+      params.thinking = { type: 'enabled', budget_tokens: 10000 };
+      if ((params.max_tokens as number) < 16000) params.max_tokens = 16000;
+    }
+
     const stream = await client.messages.create(params) as unknown as AsyncIterable<any>;
 
     let id = `chatcmpl-${Math.random().toString(36).substring(2, 10)}`;
     const created = Math.floor(Date.now() / 1000);
     const responseModel = upstreamModel;
     let inputTokens = 0;
+
+    // Track which content block index is which type (thinking vs text)
+    const blockTypes = new Map<number, 'thinking' | 'text'>();
 
     for await (const event of stream) {
       if (event.type === 'message_start') {
@@ -127,8 +137,28 @@ export class AnthropicAdapter implements ProviderAdapter {
             },
           ],
         } as unknown as StreamChunk;
+      } else if (event.type === 'content_block_start') {
+        // Register block type so we know how to handle its deltas
+        blockTypes.set(event.index as number, event.content_block?.type === 'thinking' ? 'thinking' : 'text');
       } else if (event.type === 'content_block_delta') {
-        if (event.delta.type === 'text_delta') {
+        const blockType = blockTypes.get(event.index as number) ?? 'text';
+
+        if (blockType === 'thinking' && event.delta.type === 'thinking_delta') {
+          // Thinking chunk — use custom field `thinking` on the delta
+          yield {
+            id,
+            object: 'chat.completion.chunk',
+            created,
+            model: responseModel,
+            choices: [
+              {
+                index: 0,
+                delta: { thinking: event.delta.thinking } as any,
+                finish_reason: null,
+              },
+            ],
+          } as unknown as StreamChunk;
+        } else if (blockType === 'text' && event.delta.type === 'text_delta') {
           yield {
             id,
             object: 'chat.completion.chunk',

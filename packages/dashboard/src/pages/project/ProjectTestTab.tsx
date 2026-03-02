@@ -5,6 +5,7 @@ import { useProject } from './ProjectLayout';
 interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string | any[];
+  thinking?: string;
 }
 
 export function ProjectTestTab() {
@@ -106,10 +107,12 @@ export function ProjectTestTab() {
     };
 
     const turnIndex = debugTraceHistory.length;
-    setDebugTraceHistory(prev => [...prev, null]);
+    // Inizializza il slot con array vuoto — si popola in real-time via SSE
+    setDebugTraceHistory(prev => [...prev, []]);
 
     try {
       const t0 = performance.now();
+      void t0;
 
       // Clean the API key from accidental whitespace and smart quotes that break HTTP headers
       const cleanKey = apiKey.trim().replace(/[\u2018\u2019\u201C\u201D"']/g, '');
@@ -123,105 +126,96 @@ export function ProjectTestTab() {
         body: JSON.stringify(payload)
       });
 
-      const contentType = res.headers.get('content-type') || '';
-      const traceId = res.headers.get('x-localrouter-trace-id');
-
-      if (traceId) {
-        const adminJwt = localStorage.getItem('lr_token');
-        fetch(`/api/traces/${traceId}`, {
-          headers: adminJwt ? { 'Authorization': `Bearer ${adminJwt}` } : {}
-        })
-          .then(r => r.json())
-          .then(td => {
-            if (td.trace) setDebugTraceHistory(prev => {
-              const updated = [...prev];
-              updated[turnIndex] = td.trace;
-              return updated;
-            });
-          })
-          .catch(e => console.warn('Failed to fetch trace:', e));
+      if (!res.ok && !res.body) {
+        throw new Error(`HTTP ${res.status}`);
       }
 
-      if (contentType.includes('application/json')) {
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error?.message || data.error || `HTTP ${res.status}`);
-        }
-        const assistantMessage = data.choices?.[0]?.message;
-        if (assistantMessage) {
-          setMessages(prev => [...prev, assistantMessage]);
-        }
-      } else {
-        if (!res.ok) {
-          let msg = `HTTP ${res.status}`;
-          try {
-            const errData = await res.json();
-            msg = errData.error?.message || msg;
-          } catch { }
-          throw new Error(msg);
-        }
+      if (!res.body) throw new Error('Response body is missing');
 
-        // Prepare an empty assistant message slot
-        const initialAssistantMessage: Message = { role: 'assistant', content: '' };
-        setMessages(prev => [...prev, initialAssistantMessage]);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      let finalContent = '';
+      let thinkingAccum = '';
+      let assistantMessageAdded = false;
 
-        if (!res.body) throw new Error('Response body is missing');
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        if (value) {
+          const chunkStr = decoder.decode(value, { stream: true });
+          const lines = chunkStr.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const dataStr = line.substring(6).trim();
+              if (dataStr === '[DONE]') continue;
+              if (dataStr) {
+                try {
+                  const data = JSON.parse(dataStr);
 
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let done = false;
-        let finalContent = '';
-        let usageInfo: any = null;
-
-        while (!done) {
-          const { value, done: readerDone } = await reader.read();
-          done = readerDone;
-          if (value) {
-            const chunkStr = decoder.decode(value, { stream: true });
-            const lines = chunkStr.split('\n');
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const dataStr = line.substring(6).trim();
-                if (dataStr === '[DONE]') continue;
-                if (dataStr) {
-                  try {
-                    const data = JSON.parse(dataStr);
-                    if (data.error) {
-                      throw new Error(data.error);
-                    }
-
-                    // (Out-of-band trace fetching is handled before stream parsing)
-
-                    // Extract delta
-                    const deltaContent = data.choices?.[0]?.delta?.content || '';
-                    if (deltaContent) {
-                      finalContent += deltaContent;
-                      // Update the last message
-                      setMessages(prev => {
-                        const updated = [...prev];
-                        updated[updated.length - 1] = { role: 'assistant', content: finalContent };
-                        return updated;
-                      });
-                    }
-
-                    // Capture usage if present
-                    if (data.usage && Object.keys(data.usage).length > 0) {
-                      usageInfo = data.usage;
-                    }
-                  } catch (e) {
-                    if (e instanceof Error && e.message !== "Unexpected end of JSON input") {
-                      throw e; // re-throw actual errors parsed from SSE
-                    }
-                    console.warn('Failed to parse SSE line', line, e);
+                  // ── Evento trace in real-time ─────────────────────────────
+                  if (data.type === 'trace') {
+                    setDebugTraceHistory(prev => {
+                      const updated = [...prev];
+                      const current = (updated[turnIndex] as any[]) ?? [];
+                      updated[turnIndex] = [...current, data.entry];
+                      return updated;
+                    });
+                    continue;
                   }
+
+                  // ── Routing completato (routing-only mode) ────────────────
+                  if (data.type === 'result') {
+                    continue;
+                  }
+
+                  // ── Errore dal service ────────────────────────────────────
+                  if (data.type === 'error' || data.error) {
+                    throw new Error(data.message || data.error?.message || data.error || 'Service error');
+                  }
+
+                  // ── Thinking delta (extended thinking Anthropic) ──────────
+                  const thinkingDelta: string | undefined = data.choices?.[0]?.delta?.thinking;
+                  if (thinkingDelta) {
+                    if (!assistantMessageAdded) {
+                      setMessages(prev => [...prev, { role: 'assistant', content: '', thinking: '' }]);
+                      assistantMessageAdded = true;
+                    }
+                    thinkingAccum += thinkingDelta;
+                    setMessages(prev => {
+                      const updated = [...prev];
+                      const last = updated[updated.length - 1] as Message;
+                      updated[updated.length - 1] = { ...last, thinking: thinkingAccum };
+                      return updated;
+                    });
+                    continue;
+                  }
+
+                  // ── Delta model streaming (contenuto testo) ───────────────
+                  const deltaContent = data.choices?.[0]?.delta?.content || '';
+                  if (deltaContent) {
+                    if (!assistantMessageAdded) {
+                      setMessages(prev => [...prev, { role: 'assistant', content: '', thinking: thinkingAccum || undefined }]);
+                      assistantMessageAdded = true;
+                    }
+                    finalContent += deltaContent;
+                    setMessages(prev => {
+                      const updated = [...prev];
+                      const last = updated[updated.length - 1] as Message;
+                      updated[updated.length - 1] = { ...last, content: finalContent };
+                      return updated;
+                    });
+                  }
+                } catch (e) {
+                  if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
+                    throw e;
+                  }
+                  console.warn('Failed to parse SSE line', line, e);
                 }
               }
             }
           }
         }
-
-        const t1 = performance.now();
-        void t1; // la latenza ora viene tracciata dal backend
       }
 
     } catch (e) {
@@ -328,6 +322,27 @@ export function ProjectTestTab() {
                 flexDirection: 'column',
                 alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
               }}>
+                {/* Thinking block — only for assistant with thinking content */}
+                {msg.role === 'assistant' && msg.thinking && (
+                  <details style={{ marginBottom: 6, width: '100%' }}>
+                    <summary style={{
+                      cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)',
+                      userSelect: 'none', padding: '4px 10px',
+                      background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                      borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 5,
+                    }}>
+                      💭 Reasoning {loading && i === messages.filter(m => m.role !== 'system').length - 1 && <span className="spinner" style={{ width: 10, height: 10, borderWidth: 1.5 }} />}
+                    </summary>
+                    <div style={{
+                      marginTop: 4, padding: '10px 14px',
+                      background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                      borderRadius: 8, fontSize: '0.82rem', color: 'var(--text-secondary)',
+                      fontStyle: 'italic', whiteSpace: 'pre-wrap', lineHeight: 1.55,
+                    }}>
+                      {msg.thinking}
+                    </div>
+                  </details>
+                )}
                 <div style={{
                   background: msg.role === 'user' ? 'var(--primary)' : 'var(--bg-elevated)',
                   color: msg.role === 'user' ? '#fff' : 'var(--text-primary)',
@@ -450,7 +465,7 @@ export function ProjectTestTab() {
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No request sent yet.</span>
               ) : routerRequestHistory.map((entries, i) => (
                 <div key={i}>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {entries === null && '⏳'}</div>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {loading && i === debugTraceHistory.length - 1 && '⏳'}</div>
                   {entries?.map((e: any, j: number) => (
                     <div key={j} style={{ marginBottom: 4 }}>
                       <div style={{ fontSize: '0.6rem', color: 'var(--accent)', marginBottom: 2, fontWeight: 600 }}>{e.message}</div>
@@ -475,7 +490,7 @@ export function ProjectTestTab() {
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No request sent yet.</span>
               ) : routerResponseHistory.map((entries, i) => (
                 <div key={i}>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {entries === null && '⏳'}</div>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {loading && i === debugTraceHistory.length - 1 && '⏳'}</div>
                   {entries?.map((e: any, j: number) => (
                     <div key={j} style={{ marginBottom: 4 }}>
                       <div style={{ fontSize: '0.6rem', color: 'var(--accent)', marginBottom: 2, fontWeight: 600 }}>{e.message}</div>
@@ -500,7 +515,7 @@ export function ProjectTestTab() {
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No request sent yet.</span>
               ) : requestHistory.map((entries, i) => (
                 <div key={i}>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {entries === null && '⏳'}</div>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {loading && i === debugTraceHistory.length - 1 && '⏳'}</div>
                   {entries?.length === 0 && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No model calls (routing only)</span>}
                   {entries?.map((e: any, j: number) => (
                     <div key={j} style={{ marginBottom: 4 }}>
@@ -526,16 +541,32 @@ export function ProjectTestTab() {
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No request sent yet.</span>
               ) : responseHistory.map((entries, i) => (
                 <div key={i}>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {entries === null && '⏳'}</div>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {loading && i === debugTraceHistory.length - 1 && '⏳'}</div>
                   {entries?.length === 0 && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No model calls (routing only)</span>}
-                  {entries?.map((e: any, j: number) => (
-                    <div key={j} style={{ marginBottom: 4 }}>
-                      <div style={{ fontSize: '0.6rem', color: e.message === 'model:error' ? 'var(--danger)' : 'var(--accent)', marginBottom: 2, fontWeight: 600 }}>{e.message}</div>
-                      <pre style={{ margin: 0, padding: 10, background: 'var(--bg-surface)', border: e.message === 'model:error' ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: e.message === 'model:error' ? 'var(--danger)' : 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                        {JSON.stringify(e.details, null, 2)}
-                      </pre>
-                    </div>
-                  ))}
+                  {entries?.map((e: any, j: number) => {
+                    const isError = e.message === 'model:error';
+                    const isThinking = e.message === 'model:thinking';
+                    const labelColor = isError ? 'var(--danger)' : isThinking ? '#a78bfa' : 'var(--accent)';
+                    return (
+                      <div key={j} style={{ marginBottom: 4 }}>
+                        <div style={{ fontSize: '0.6rem', color: labelColor, marginBottom: 2, fontWeight: 600 }}>{e.message}</div>
+                        {isThinking ? (
+                          <details>
+                            <summary style={{ fontSize: '0.68rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
+                              {String(e.details?.text ?? '').substring(0, 80)}{String(e.details?.text ?? '').length > 80 ? '…' : ''}
+                            </summary>
+                            <pre style={{ margin: '4px 0 0', padding: 10, background: 'var(--bg-surface)', border: '1px solid rgba(167,139,250,0.3)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
+                              {String(e.details?.text ?? '')}
+                            </pre>
+                          </details>
+                        ) : (
+                          <pre style={{ margin: 0, padding: 10, background: 'var(--bg-surface)', border: isError ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: isError ? 'var(--danger)' : 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
+                            {JSON.stringify(e.details, null, 2)}
+                          </pre>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
               <div ref={resPanelEndRef} />
