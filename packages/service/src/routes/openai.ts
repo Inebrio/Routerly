@@ -6,7 +6,7 @@ import { getProviderAdapter } from '../providers/index.js';
 import { trackUsage } from '../cost/tracker.js';
 import { readConfig } from '../config/loader.js';
 import { isAllowed } from '../cost/budget.js';
-import { setTrace } from '../routing/traceStore.js';
+import { setTrace, appendTrace } from '../routing/traceStore.js';
 
 export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/chat/completions ───────────────────────────────────────────────
@@ -70,10 +70,11 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
     const candidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
 
-    if (process.env.ROUTING_DRY_RUN === 'true') {
-      return reply.status(200).send({ routing_dry_run: true, candidates });
-    }
+    return reply.status(200).send({ candidates });
+  }
 
+  // dead code below — kept for when final model call is re-enabled
+  async function _callFinalModel(traceId: string, body: any, project: any, routingResponse: any, reply: any, request: any) {
     if (body.stream === true) {
       const allModelsList = await readConfig('models');
       const sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
@@ -87,6 +88,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         const allowed = await isAllowed(model, project);
         if (!allowed) {
           request.log.info({ modelId: model.id }, 'Model budget exhausted, skipping');
+          appendTrace(traceId, [{ panel: 'response', message: 'model:skipped', details: { modelId: model.id, reason: 'budget_exhausted' } }]);
           continue;
         }
 
@@ -94,6 +96,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         const t0 = Date.now();
         let inputTokens = 0;
         let outputTokens = 0;
+
+        appendTrace(traceId, [{ panel: 'request', message: 'model:request', details: { modelId: model.id, provider: model.provider, stream: true, messages: body.messages?.length ?? 0 } }]);
 
         // Obtain the async iterator without committing SSE headers yet.
         // If the provider throws on the first .next() call (auth/network error),
@@ -106,6 +110,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           request.log.warn({ err, modelId: model.id }, 'Stream failed before first chunk, trying next candidate');
+          appendTrace(traceId, [{ panel: 'response', message: 'model:error', details: { modelId: model.id, error: msg, latencyMs: Date.now() - t0 } }]);
           await trackUsage({
             projectId: project.id,
             model,
@@ -150,6 +155,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
             result = await streamIter.next();
           }
           reply.raw.write('data: [DONE]\n\n');
+          appendTrace(traceId, [{ panel: 'response', message: 'model:success', details: { modelId: model.id, inputTokens, outputTokens, latencyMs: Date.now() - t0 } }]);
           await trackUsage({
             projectId: project.id,
             model,
@@ -161,6 +167,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           request.log.error({ err, modelId: model.id }, 'Streaming error mid-stream');
+          appendTrace(traceId, [{ panel: 'response', message: 'model:error', details: { modelId: model.id, error: msg, latencyMs: Date.now() - t0 } }]);
           await trackUsage({
             projectId: project.id,
             model,
@@ -199,13 +206,16 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       const allowed = await isAllowed(model, project);
       if (!allowed) {
         request.log.info({ modelId: model.id }, 'Model budget exhausted, skipping');
+        appendTrace(traceId, [{ panel: 'response', message: 'model:skipped', details: { modelId: model.id, reason: 'budget_exhausted' } }]);
         continue;
       }
 
       const adapter = getProviderAdapter(model);
       const t0 = Date.now();
+      appendTrace(traceId, [{ panel: 'request', message: 'model:request', details: { modelId: model.id, provider: model.provider, stream: false, messages: body.messages?.length ?? 0 } }]);
       try {
         const response = await adapter.chatCompletion(body, model);
+        appendTrace(traceId, [{ panel: 'response', message: 'model:success', details: { modelId: model.id, inputTokens: response.usage.prompt_tokens, outputTokens: response.usage.completion_tokens, latencyMs: Date.now() - t0 } }]);
         await trackUsage({
           projectId: project.id,
           model,
@@ -219,6 +229,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         request.log.warn({ err, modelId: model.id }, 'Model failed, trying next candidate');
+        appendTrace(traceId, [{ panel: 'response', message: 'model:error', details: { modelId: model.id, error: msg, latencyMs: Date.now() - t0 } }]);
         await trackUsage({
           projectId: project.id,
           model,

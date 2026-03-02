@@ -40,12 +40,11 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
     setTrace(traceId, routingResponse.trace);
     reply.header('x-localrouter-trace-id', traceId);
 
-    // 2. Select model
-    if (process.env.ROUTING_DRY_RUN === 'true') {
-      const candidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
-      return reply.status(200).send({ routing_dry_run: true, candidates });
-    }
+    // 2. Routing completato — risposta immediata senza chiamare il modello finale
+    const candidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
+    return reply.status(200).send({ candidates });
 
+    // eslint-disable-next-line no-unreachable
     const selectedModel = await selectModel(routingResponse, project);
     if (!selectedModel) {
       return reply.status(503).send({

@@ -22,39 +22,38 @@ export function ProjectTestTab() {
 
   const [showKey, setShowKey] = useState(false);
 
-  const [debugReqHistory, setDebugReqHistory] = useState<any[]>([]);
   const [debugTraceHistory, setDebugTraceHistory] = useState<(any[] | null)[]>([]);
-  const [debugResHistory, setDebugResHistory] = useState<(any | null)[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const reqPanelEndRef = useRef<HTMLDivElement>(null);
   const routerReqPanelEndRef = useRef<HTMLDivElement>(null);
   const routerResPanelEndRef = useRef<HTMLDivElement>(null);
+  const reqPanelEndRef = useRef<HTMLDivElement>(null);
   const resPanelEndRef = useRef<HTMLDivElement>(null);
 
-  // Router Request: configurazioni delle policy di routing per questa richiesta
+  // Ogni pannello filtra le entry del trace per panel field
   const routerRequestHistory = useMemo(() =>
-    debugTraceHistory.map(trace => {
-      if (!trace) return null;
-      const entry = (trace as any[]).find(t => t.message === 'router:request');
-      return entry?.details ?? null;
-    }), [debugTraceHistory]);
+    debugTraceHistory.map(trace =>
+      trace ? (trace as any[]).filter(t => t.panel === 'router-request') : null
+    ), [debugTraceHistory]);
 
-  // Router Response: risultato combinato del routing (per-policy + final candidates)
   const routerResponseHistory = useMemo(() =>
-    debugTraceHistory.map(trace => {
-      if (!trace) return null;
-      const entry = (trace as any[]).find(t => t.message === 'router:result');
-      return entry?.details ?? null;
-    }), [debugTraceHistory]);
+    debugTraceHistory.map(trace =>
+      trace ? (trace as any[]).filter(t => t.panel === 'router-response') : null
+    ), [debugTraceHistory]);
+
+  const requestHistory = useMemo(() =>
+    debugTraceHistory.map(trace =>
+      trace ? (trace as any[]).filter(t => t.panel === 'request') : null
+    ), [debugTraceHistory]);
+
+  const responseHistory = useMemo(() =>
+    debugTraceHistory.map(trace =>
+      trace ? (trace as any[]).filter(t => t.panel === 'response') : null
+    ), [debugTraceHistory]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  useEffect(() => {
-    reqPanelEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [debugReqHistory]);
 
   useEffect(() => {
     routerReqPanelEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -65,8 +64,12 @@ export function ProjectTestTab() {
   }, [routerResponseHistory]);
 
   useEffect(() => {
+    reqPanelEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [requestHistory]);
+
+  useEffect(() => {
     resPanelEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [debugResHistory]);
+  }, [responseHistory]);
 
   // We no longer persist the API key per user request
 
@@ -102,10 +105,8 @@ export function ProjectTestTab() {
       stream: true,
     };
 
-    const turnIndex = debugReqHistory.length;
-    setDebugReqHistory(prev => [...prev, payload]);
+    const turnIndex = debugTraceHistory.length;
     setDebugTraceHistory(prev => [...prev, null]);
-    setDebugResHistory(prev => [...prev, null]);
 
     try {
       const t0 = performance.now();
@@ -126,7 +127,6 @@ export function ProjectTestTab() {
       const traceId = res.headers.get('x-localrouter-trace-id');
 
       if (traceId) {
-        // Fetch the out-of-band trace using the admin JWT (project token is not valid for /api/ routes)
         const adminJwt = localStorage.getItem('lr_token');
         fetch(`/api/traces/${traceId}`, {
           headers: adminJwt ? { 'Authorization': `Bearer ${adminJwt}` } : {}
@@ -143,24 +143,13 @@ export function ProjectTestTab() {
       }
 
       if (contentType.includes('application/json')) {
-        // Fallback or non-streaming error
         const data = await res.json();
-        const t1 = performance.now();
-        setDebugResHistory(prev => {
-          const updated = [...prev];
-          updated[turnIndex] = { status: res.status, latencyMs: Math.round(t1 - t0), data };
-          return updated;
-        });
-
         if (!res.ok) {
           throw new Error(data.error?.message || data.error || `HTTP ${res.status}`);
         }
-
         const assistantMessage = data.choices?.[0]?.message;
         if (assistantMessage) {
           setMessages(prev => [...prev, assistantMessage]);
-        } else {
-          throw new Error('No message returned from API');
         }
       } else {
         if (!res.ok) {
@@ -232,15 +221,7 @@ export function ProjectTestTab() {
         }
 
         const t1 = performance.now();
-        setDebugResHistory(prev => {
-          const updated = [...prev];
-          updated[turnIndex] = {
-            status: res.status,
-            latencyMs: Math.round(t1 - t0),
-            data: { streamed: true, content_length: finalContent.length, usage: usageInfo, content: finalContent }
-          };
-          return updated;
-        });
+        void t1; // la latenza ora viene tracciata dal backend
       }
 
     } catch (e) {
@@ -446,9 +427,9 @@ export function ProjectTestTab() {
         {/* Debug Header */}
         <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>Debug Log</h3>
-          {debugReqHistory.length > 0 && (
+          {debugTraceHistory.length > 0 && (
             <button
-              onClick={() => { setDebugReqHistory([]); setDebugTraceHistory([]); setDebugResHistory([]); }}
+              onClick={() => { setDebugTraceHistory([]); }}
               style={{ fontSize: '0.7rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}
             >
               Clear
@@ -465,16 +446,19 @@ export function ProjectTestTab() {
               <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Router Request</span>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {routerRequestHistory.filter(Boolean).length === 0 ? (
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                  {debugReqHistory.length === 0 ? 'No request sent yet.' : 'Awaiting routing...'}
-                </span>
-              ) : routerRequestHistory.map((req, i) => req && (
+              {debugTraceHistory.length === 0 ? (
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No request sent yet.</span>
+              ) : routerRequestHistory.map((entries, i) => (
                 <div key={i}>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1}</div>
-                  <pre style={{ margin: 0, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                    {JSON.stringify(req, null, 2)}
-                  </pre>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {entries === null && '⏳'}</div>
+                  {entries?.map((e: any, j: number) => (
+                    <div key={j} style={{ marginBottom: 4 }}>
+                      <div style={{ fontSize: '0.6rem', color: 'var(--accent)', marginBottom: 2, fontWeight: 600 }}>{e.message}</div>
+                      <pre style={{ margin: 0, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
+                        {JSON.stringify(e.details, null, 2)}
+                      </pre>
+                    </div>
+                  ))}
                 </div>
               ))}
               <div ref={routerReqPanelEndRef} />
@@ -487,16 +471,19 @@ export function ProjectTestTab() {
               <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Router Response</span>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {routerResponseHistory.filter(Boolean).length === 0 ? (
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                  {debugReqHistory.length === 0 ? 'No request sent yet.' : 'Awaiting routing response...'}
-                </span>
-              ) : routerResponseHistory.map((res, i) => res && (
+              {debugTraceHistory.length === 0 ? (
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No request sent yet.</span>
+              ) : routerResponseHistory.map((entries, i) => (
                 <div key={i}>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1}</div>
-                  <pre style={{ margin: 0, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                    {JSON.stringify(res, null, 2)}
-                  </pre>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {entries === null && '⏳'}</div>
+                  {entries?.map((e: any, j: number) => (
+                    <div key={j} style={{ marginBottom: 4 }}>
+                      <div style={{ fontSize: '0.6rem', color: 'var(--accent)', marginBottom: 2, fontWeight: 600 }}>{e.message}</div>
+                      <pre style={{ margin: 0, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
+                        {JSON.stringify(e.details, null, 2)}
+                      </pre>
+                    </div>
+                  ))}
                 </div>
               ))}
               <div ref={routerResPanelEndRef} />
@@ -509,14 +496,20 @@ export function ProjectTestTab() {
               <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Request</span>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {debugReqHistory.length === 0 ? (
+              {debugTraceHistory.length === 0 ? (
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No request sent yet.</span>
-              ) : debugReqHistory.map((req, i) => (
+              ) : requestHistory.map((entries, i) => (
                 <div key={i}>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1}</div>
-                  <pre style={{ margin: 0, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                    {JSON.stringify(req, null, 2)}
-                  </pre>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {entries === null && '⏳'}</div>
+                  {entries?.length === 0 && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No model calls (routing only)</span>}
+                  {entries?.map((e: any, j: number) => (
+                    <div key={j} style={{ marginBottom: 4 }}>
+                      <div style={{ fontSize: '0.6rem', color: 'var(--accent)', marginBottom: 2, fontWeight: 600 }}>{e.message}</div>
+                      <pre style={{ margin: 0, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
+                        {JSON.stringify(e.details, null, 2)}
+                      </pre>
+                    </div>
+                  ))}
                 </div>
               ))}
               <div ref={reqPanelEndRef} />
@@ -529,19 +522,20 @@ export function ProjectTestTab() {
               <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Response</span>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {debugResHistory.filter(Boolean).length === 0 ? (
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                  {debugReqHistory.length === 0 ? 'No request sent yet.' : 'Awaiting response...'}
-                </span>
-              ) : debugResHistory.map((res, i) => res && (
+              {debugTraceHistory.length === 0 ? (
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No request sent yet.</span>
+              ) : responseHistory.map((entries, i) => (
                 <div key={i}>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3, display: 'flex', justifyContent: 'space-between' }}>
-                    <span>#{i + 1}</span>
-                    {res.latencyMs && <span>{res.latencyMs}ms</span>}
-                  </div>
-                  <pre style={{ margin: 0, padding: 10, background: 'var(--bg-surface)', border: res.status >= 400 ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: res.status >= 400 ? 'var(--danger)' : 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                    {JSON.stringify(res.data, null, 2)}
-                  </pre>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {entries === null && '⏳'}</div>
+                  {entries?.length === 0 && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No model calls (routing only)</span>}
+                  {entries?.map((e: any, j: number) => (
+                    <div key={j} style={{ marginBottom: 4 }}>
+                      <div style={{ fontSize: '0.6rem', color: e.message === 'model:error' ? 'var(--danger)' : 'var(--accent)', marginBottom: 2, fontWeight: 600 }}>{e.message}</div>
+                      <pre style={{ margin: 0, padding: 10, background: 'var(--bg-surface)', border: e.message === 'model:error' ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: e.message === 'model:error' ? 'var(--danger)' : 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
+                        {JSON.stringify(e.details, null, 2)}
+                      </pre>
+                    </div>
+                  ))}
                 </div>
               ))}
               <div ref={resPanelEndRef} />

@@ -1,10 +1,18 @@
 /**
  * In-memory trace store per le richieste di routing.
  * Ogni entry viene eliminata dopo MAX_AGE_MS.
+ *
+ * panel mapping:
+ *   'router-request'  → Router Request panel  (intake + policy configs)
+ *   'router-response' → Router Response panel (policy results + final score)
+ *   'request'         → Request panel          (payload adattato per ogni modello)
+ *   'response'        → Response panel         (risposta / errore di ogni modello)
  */
 
+export type TracePanel = 'router-request' | 'router-response' | 'request' | 'response';
+
 export interface TraceEntry {
-  policy: string;
+  panel: TracePanel;
   message: string;
   details: Record<string, unknown>;
 }
@@ -28,6 +36,12 @@ function cleanup(): void {
 export function setTrace(id: string, trace: TraceEntry[]): void {
   cleanup();
   store.set(id, { trace, ts: Date.now() });
+}
+
+export function appendTrace(id: string, entries: TraceEntry[]): void {
+  const rec = store.get(id);
+  if (!rec) return;
+  rec.trace.push(...entries);
 }
 
 export function getTrace(id: string): TraceEntry[] | null {

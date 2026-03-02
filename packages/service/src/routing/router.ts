@@ -6,7 +6,11 @@ import { cheapestPolicy } from './policies/cheapest.js';
 import { healthPolicy } from './policies/health.js';
 import { llmPolicy } from './policies/llm.js';
 import type { PolicyFn } from './policies/types.js';
-import type { TraceEntry } from './traceStore.js';
+import type { TraceEntry, TracePanel } from './traceStore.js';
+
+function te(panel: TracePanel, message: string, details: Record<string, unknown>): TraceEntry {
+  return { panel, message, details };
+}
 
 export interface RouteResult {
   models: RoutingCandidate[];
@@ -83,32 +87,36 @@ export async function routeRequest(
     'routing: result',
   );
 
-  const traceRequest: TraceEntry = {
-    policy: 'router',
-    message: 'router:request',
-    details: {
+  const trace: TraceEntry[] = [
+    // ── Router Request: presa in carico ──────────────────────────────────────
+    te('router-request', 'router:intake', {
+      model: request.model,
+      messageCount: request.messages?.length ?? 0,
+      projectId: project.id,
+    }),
+    // ── Router Request: policy caricate ──────────────────────────────────────
+    te('router-request', 'router:policies', {
       policies: policiesWithWeight.map(({ type, weight, config }) => ({ type, weight, config })),
       candidates: candidates.map(c => c.model.id),
-    },
-  };
-
-  const traceResult: TraceEntry = {
-    policy: 'router',
-    message: 'router:result',
-    details: {
-      policies: policiesWithWeight.map(({ type, weight }, i) => ({
+    }),
+    // ── Router Response: risultato per ogni policy ────────────────────────────
+    ...policiesWithWeight.map(({ type, weight }, i) =>
+      te('router-response', 'policy:result', {
         type,
         weight,
         routing: results[i]?.routing.map(r => ({
           model: r.model,
           point: r.point,
           contribution: +(r.point * weight).toFixed(4),
-        })),
-      })),
+        })) ?? [],
+      })
+    ),
+    // ── Router Response: punteggio finale combinato ───────────────────────────
+    te('router-response', 'router:result', {
       final: finalCandidates,
-    },
-  };
+    }),
+  ];
 
-  return { models: finalCandidates, trace: [traceRequest, traceResult] };
+  return { models: finalCandidates, trace };
 }
 
