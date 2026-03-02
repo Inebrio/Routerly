@@ -108,6 +108,7 @@ const router = createBrowserRouter([
         path: '/dashboard',
         element: <ProtectedLayout />,
         children: [
+          { index: true, element: <Navigate to="overview" replace /> },
           { path: 'overview', element: <OverviewPage /> },
           { path: 'models', element: <ModelsPage /> },
           { path: 'models/new', element: <ModelFormPage /> },

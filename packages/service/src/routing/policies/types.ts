@@ -16,6 +16,8 @@ export interface PolicyRoutingEntry {
   [key: string]: any; // campi extra opzionali specifici della policy
 }
 
+type Logger = { info: (obj: object, msg?: string) => void };
+
 /** Input ricevuto da ogni policy */
 export interface PolicyInput {
   /** Payload originale della richiesta del client */
@@ -24,6 +26,8 @@ export interface PolicyInput {
   candidates: CandidateModel[];
   /** Configurazione specifica della policy (da ProjectConfig.policies[n].config) */
   config?: any;
+  /** Logger opzionale (da Fastify request.log) */
+  log?: Logger;
 }
 
 /** Output standard restituito da ogni policy */

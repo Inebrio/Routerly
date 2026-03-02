@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Plus, X, ChevronDown, EyeOff, Eye, ArrowLeft } from 'lucide-react';
 import { getModels, createModel, updateModel, type Model, type PricingTier } from '../api';
-import providersConf from '../conf/providers.json';
+import { providersConf } from '@localrouter/shared';
 
 type Provider = keyof typeof providersConf;
 type ProviderModel = {

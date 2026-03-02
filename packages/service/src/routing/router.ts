@@ -41,22 +41,12 @@ export async function routeRequest(
     })
     .filter((m): m is NonNullable<typeof m> => m !== null);
 
-  log?.info(
-    {
-      projectId: project.id,
-      projectName: project.name,
-      enabledPolicies: policiesWithWeight,
-      projectModels: candidates.map(m => ({ id: m.model.id, provider: m.model.provider, prompt: m.prompt, thresholds: m.thresholds })),
-    },
-    'routing: context loaded',
-  );
-
   // Esegue tutte le policy in parallelo — il tempo totale è quello della policy più lenta
   const results = await Promise.all(
     policiesWithWeight.map(({ type, weight, config }) => {
       const fn = POLICY_MAP[type];
       if (!fn) return Promise.resolve({ weight, routing: candidates.map(c => ({ model: c.model.id, point: 1.0 })) });
-      return fn({ request, candidates, config }).then(out => ({ weight, routing: out.routing }));
+      return fn({ request, candidates, config, log }).then(out => ({ weight, routing: out.routing }));
     })
   );
 
@@ -72,8 +62,6 @@ export async function routeRequest(
   const finalCandidates = candidates
     .map(c => ({ model: c.model.id, weight: pointMap.get(c.model.id) ?? 0 }))
     .sort((a, b) => b.weight - a.weight);
-
-  log?.info({ finalCandidates }, 'routing: candidates computed');
 
   return { models: finalCandidates };
 }

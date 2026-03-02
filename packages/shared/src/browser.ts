@@ -1,4 +1,14 @@
-// Types
+/**
+ * Browser-safe entry point for @localrouter/shared.
+ * Exports only static JSON data and type-only definitions — no Node.js APIs.
+ */
+
+// Static configuration data (JSON, safe in any environment)
+import providersConf from './conf/providers.json';
+import llmApiPricing from './conf/llm_api_pricing.json';
+export { providersConf, llmApiPricing };
+
+// Re-export all types (erased at compile time, no runtime cost)
 export type {
   Provider,
   PricingTier,
@@ -50,11 +60,3 @@ export type {
 } from './types/anthropic.js';
 
 export type { RoutingCandidate, RoutingResponse } from './types/routing.js';
-
-// Crypto utilities
-export { encrypt, decrypt, generateKey } from './crypto.js';
-
-// Static configuration data
-import providersConf from './conf/providers.json';
-import llmApiPricing from './conf/llm_api_pricing.json';
-export { providersConf, llmApiPricing };
