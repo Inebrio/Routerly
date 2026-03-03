@@ -19,6 +19,7 @@ import { ProjectTokenCreatePage } from './pages/project/ProjectTokenCreatePage';
 import { ProjectTokenEditPage } from './pages/project/ProjectTokenEditPage';
 import { UsersPage } from './pages/UsersPage';
 import { UsagePage } from './pages/UsagePage';
+import { UsageRecordPage } from './pages/UsageRecordPage';
 import { LayoutDashboard, Cpu, FolderOpen, Users, BarChart2, LogOut } from 'lucide-react';
 
 function Sidebar() {
@@ -150,6 +151,7 @@ const router = createBrowserRouter([
           },
           { path: 'users', element: <UsersPage /> },
           { path: 'usage', element: <UsagePage /> },
+          { path: 'usage/:id', element: <UsageRecordPage /> },
           { path: '*', element: <Navigate to="overview" replace /> },
         ],
       },

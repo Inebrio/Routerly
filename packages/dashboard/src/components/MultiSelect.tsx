@@ -40,7 +40,7 @@ export function MultiSelect({ options, value, onChange, placeholder = 'Select...
   return (
     <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
       <div
-        className={`input ${disabled ? 'disabled' : ''}`}
+        className={`form-input ${disabled ? 'disabled' : ''}`}
         style={{
           minHeight: 38,
           display: 'flex',
@@ -62,7 +62,7 @@ export function MultiSelect({ options, value, onChange, placeholder = 'Select...
               display: 'flex',
               alignItems: 'center',
               gap: 4,
-              background: 'var(--surface-active)',
+              background: 'var(--bg-elevated)',
               border: '1px solid var(--border)',
               borderRadius: 4,
               padding: '2px 8px',
@@ -80,14 +80,14 @@ export function MultiSelect({ options, value, onChange, placeholder = 'Select...
       {open && (
         <div style={{
           position: 'absolute', top: '100%', left: 0, right: 0,
-          background: 'var(--bg-primary)',
+          background: 'var(--bg-elevated)',
           border: '1px solid var(--border)',
           borderRadius: 4,
           marginTop: 4,
           maxHeight: 250,
           overflowY: 'auto',
-          zIndex: 50,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+          zIndex: 200,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
         }}>
           {unselectedOptions.length === 0 ? (
             <div style={{ padding: '8px 12px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>No remaining options</div>
@@ -96,7 +96,7 @@ export function MultiSelect({ options, value, onChange, placeholder = 'Select...
               <div
                 key={opt.value}
                 style={{ padding: '10px 12px', cursor: 'pointer', fontSize: '0.85rem', borderBottom: '1px solid var(--border)' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-active)')}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-surface)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 onClick={() => toggleOption(opt.value)}
               >

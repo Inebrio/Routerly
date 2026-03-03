@@ -165,15 +165,34 @@ export const createUser = (data: { email: string; password: string; roleId?: str
 export const deleteUser = (id: string) => request<void>(`/users/${id}`, { method: 'DELETE' });
 
 // ── Usage Stats ───────────────────────────────────────────────────────────
-export interface UsageStats {
-  summary: { totalCost: number; totalCalls: number; successCalls: number; errorCalls: number };
-  byModel: Record<string, { calls: number; inputTokens: number; outputTokens: number; cost: number; errors: number }>;
-  timeline: [string, number][];
-  records: Array<{
-    id: string; timestamp: string; projectId: string; modelId: string;
-    inputTokens: number; outputTokens: number; cost: number; latencyMs: number; outcome: string;
-  }>;
+export interface TraceEntry {
+  panel: string;
+  message: string;
+  details: Record<string, unknown>;
 }
 
-export const getUsage = (period = 'monthly', projectId?: string) =>
-  request<UsageStats>(`/usage?period=${period}${projectId ? `&projectId=${projectId}` : ''}`);
+export interface UsageRecord {
+  id: string; timestamp: string; projectId: string; modelId: string;
+  inputTokens: number; outputTokens: number; cost: number; latencyMs: number; outcome: string;
+  callType?: 'routing' | 'completion';
+  errorMessage?: string;
+  trace?: TraceEntry[];
+}
+
+export interface UsageStats {
+  summary: { totalCost: number; totalCalls: number; successCalls: number; errorCalls: number; routingCalls: number; completionCalls: number; routingCost: number; completionCost: number };
+  byModel: Record<string, { calls: number; inputTokens: number; outputTokens: number; cost: number; errors: number }>;
+  timeline: [string, number][];
+  records: Array<UsageRecord>;
+}
+
+export const getUsage = (period = 'monthly', projectId?: string, from?: string, to?: string) => {
+  const params = new URLSearchParams({ period });
+  if (projectId) params.set('projectId', projectId);
+  if (from) params.set('from', from);
+  if (to)   params.set('to', to);
+  return request<UsageStats>(`/usage?${params.toString()}`);
+};
+
+export const getUsageRecord = (id: string) =>
+  request<UsageRecord>(`/usage/${id}`);

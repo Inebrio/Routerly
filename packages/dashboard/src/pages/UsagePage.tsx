@@ -1,24 +1,75 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getUsage, getProjects, type UsageStats, type Project } from '../api';
+import { MultiSelect } from '../components/MultiSelect';
+import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
+
+function FilterLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span style={{ fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+      {children}
+    </span>
+  );
+}
 
 export function UsagePage() {
-  const [stats, setStats] = useState<UsageStats | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [period, setPeriod] = useState('monthly');
-  const [projectId, setProjectId] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [stats, setStats]               = useState<UsageStats | null>(null);
+  const [projects, setProjects]         = useState<Project[]>([]);
+  const [dateRange, setDateRange]       = useState<DateRange>({ from: '', to: '', label: 'This month' });
+  const [projectIds, setProjectIds]     = useState<string[]>([]);
+  const [modelIds, setModelIds]         = useState<string[]>([]);
+  const [callTypeFilter, setCallTypeFilter] = useState<'all' | 'completion' | 'routing'>('all');
+  const [outcomeFilter, setOutcomeFilter]   = useState<'all' | 'success' | 'error'>('all');
+  const [loading, setLoading]           = useState(true);
+  const navigate = useNavigate();
+
+  // Initialize to "This month" preset on mount
+  useEffect(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const from = start.toISOString().slice(0, 10);
+    const to   = now.toISOString().slice(0, 10);
+    setDateRange({ from, to, label: 'This month' });
+  }, []);
 
   useEffect(() => {
     getProjects().then(setProjects).catch(console.error);
   }, []);
 
   useEffect(() => {
+    const period = dateRange.from || dateRange.to ? 'custom' : 'all';
     setLoading(true);
-    getUsage(period, projectId || undefined)
+    getUsage(period, undefined, dateRange.from || undefined, dateRange.to || undefined)
       .then(setStats)
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [period, projectId]);
+  }, [dateRange]);
+
+  // Available model options — derived from all records in the current period
+  const modelOptions = useMemo(() => {
+    if (!stats) return [];
+    const ids = Array.from(new Set(stats.records.map(r => r.modelId))).sort();
+    return ids.map(id => ({ value: id, label: id }));
+  }, [stats]);
+
+  const projectOptions = useMemo(
+    () => projects.map(p => ({ value: p.id, label: p.name })),
+    [projects],
+  );
+
+  const filteredRecords = useMemo(() => {
+    if (!stats) return [];
+    return stats.records.filter(r => {
+      if (projectIds.length > 0 && !projectIds.includes(r.projectId)) return false;
+      if (modelIds.length > 0 && !modelIds.includes(r.modelId)) return false;
+      if (callTypeFilter !== 'all' && (r.callType ?? 'completion') !== callTypeFilter) return false;
+      if (outcomeFilter !== 'all' && r.outcome !== outcomeFilter) return false;
+      return true;
+    });
+  }, [stats, projectIds, modelIds, callTypeFilter, outcomeFilter]);
+
+  const hasActiveFilters = projectIds.length > 0 || modelIds.length > 0 || callTypeFilter !== 'all' || outcomeFilter !== 'all';
+  const hasReset = hasActiveFilters;
 
   return (
     <>
@@ -28,19 +79,74 @@ export function UsagePage() {
       </div>
       <div className="page-body">
         {/* Filters */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {(['daily', 'weekly', 'monthly', 'all'] as const).map(p => (
-              <button key={p} className={`btn btn-sm ${period === p ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setPeriod(p)}>
-                {p.charAt(0).toUpperCase() + p.slice(1)}
-              </button>
-            ))}
+        <div className="card" style={{ padding: '14px 18px', marginBottom: 20 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
+
+            {/* Date range picker */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <FilterLabel>Period</FilterLabel>
+              <DateRangePicker value={dateRange} onChange={setDateRange} />
+            </div>
+
+            {/* Project multi-select */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 200 }}>
+              <FilterLabel>Project</FilterLabel>
+              <MultiSelect
+                options={projectOptions}
+                value={projectIds}
+                onChange={setProjectIds}
+                placeholder="All Projects"
+              />
+            </div>
+
+            {/* Model multi-select */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 200 }}>
+              <FilterLabel>Model</FilterLabel>
+              <MultiSelect
+                options={modelOptions}
+                value={modelIds}
+                onChange={setModelIds}
+                placeholder="All Models"
+              />
+            </div>
+
+            {/* Call type */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <FilterLabel>Type</FilterLabel>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {(['all', 'completion', 'routing'] as const).map(f => (
+                  <button key={f} className={`btn btn-sm ${callTypeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setCallTypeFilter(f)}>
+                    {f === 'all' ? 'All' : f === 'completion' ? 'Completion' : 'Router'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Outcome */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <FilterLabel>Status</FilterLabel>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {(['all', 'success', 'error'] as const).map(f => (
+                  <button key={f} className={`btn btn-sm ${outcomeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setOutcomeFilter(f)}>
+                    {f === 'all' ? 'All' : f === 'success' ? 'Success' : 'Error'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Reset */}
+            {hasReset && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <FilterLabel>&nbsp;</FilterLabel>
+                <button className="btn btn-sm btn-secondary"
+                  onClick={() => { setProjectIds([]); setModelIds([]); setCallTypeFilter('all'); setOutcomeFilter('all'); }}>
+                  Reset filters
+                </button>
+              </div>
+            )}
           </div>
-          <select className="form-input" style={{ maxWidth: 200 }} value={projectId} onChange={e => setProjectId(e.target.value)}>
-            <option value="">All Projects</option>
-            {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
         </div>
 
         {loading ? (
@@ -54,8 +160,26 @@ export function UsagePage() {
                 <div className="stat-value">${stats.summary.totalCost.toFixed(4)}</div>
               </div>
               <div className="stat-card">
-                <div className="stat-label">Calls</div>
+                <div className="stat-label">Total Calls</div>
                 <div className="stat-value">{stats.summary.totalCalls}</div>
+              </div>
+              <div className="stat-card" style={{ cursor: 'pointer', outline: callTypeFilter === 'completion' ? '2px solid var(--primary)' : 'none', outlineOffset: 2 }}
+                onClick={() => setCallTypeFilter(f => f === 'completion' ? 'all' : 'completion')}>
+                <div className="stat-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)', display: 'inline-block' }} />
+                  Completion Calls
+                </div>
+                <div className="stat-value">{stats.summary.completionCalls ?? stats.summary.totalCalls}</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>${(stats.summary.completionCost ?? stats.summary.totalCost).toFixed(4)}</div>
+              </div>
+              <div className="stat-card" style={{ cursor: 'pointer', outline: callTypeFilter === 'routing' ? '2px solid var(--accent)' : 'none', outlineOffset: 2 }}
+                onClick={() => setCallTypeFilter(f => f === 'routing' ? 'all' : 'routing')}>
+                <div className="stat-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }} />
+                  Router Calls
+                </div>
+                <div className="stat-value">{stats.summary.routingCalls ?? 0}</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>${(stats.summary.routingCost ?? 0).toFixed(4)}</div>
               </div>
               <div className="stat-card">
                 <div className="stat-label">Errors</div>
@@ -92,48 +216,69 @@ export function UsagePage() {
             )}
 
             {/* Recent calls */}
-            {stats.records.length > 0 && (
-              <>
-                <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
-                  Recent Calls
-                </h3>
+            <>
+              <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px' }}>
+                Recent Calls
+                <span style={{ fontWeight: 400, marginLeft: 8, color: 'var(--text-muted)' }}>({filteredRecords.length})</span>
+              </h3>
+
+              {filteredRecords.length === 0 ? (
+                <div className="empty-state">
+                  <p>{stats.records.length === 0 ? 'No usage records for this period.' : 'No records match the active filters.'}</p>
+                </div>
+              ) : (
                 <div className="table-wrap">
                   <table>
                     <thead>
                       <tr>
-                        <th>Time</th><th>Model</th><th>In</th><th>Out</th>
+                        <th>Time</th><th>Project</th><th>Model</th><th>Type</th><th>In</th><th>Out</th>
                         <th>Cost</th><th>Latency</th><th>Status</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {stats.records.map((r, i) => (
-                        <tr key={i}>
-                          <td style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                            {new Date(r.timestamp).toLocaleString()}
-                          </td>
-                          <td><span className="mono" style={{ fontSize: '0.78rem' }}>{r.modelId}</span></td>
-                          <td>{r.inputTokens}</td>
-                          <td>{r.outputTokens}</td>
-                          <td className="mono" style={{ fontSize: '0.78rem' }}>${r.cost.toFixed(6)}</td>
-                          <td style={{ color: 'var(--text-muted)' }}>{r.latencyMs}ms</td>
-                          <td>
-                            <span className={`badge ${r.outcome === 'success' ? 'badge-success' : 'badge-error'}`}>
-                              {r.outcome}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                      {filteredRecords.map((r, i) => {
+                        const isRouting = (r.callType ?? 'completion') === 'routing';
+                        return (
+                          <tr
+                            key={i}
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => navigate(`/dashboard/usage/${r.id}`, { state: { record: r } })}
+                          >
+                            <td style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                              {new Date(r.timestamp).toLocaleString()}
+                            </td>
+                            <td style={{ fontSize: '0.78rem' }}>
+                              {projects.find(p => p.id === r.projectId)?.name ?? <span className="mono" style={{ fontSize: '0.72rem' }}>{r.projectId}</span>}
+                            </td>
+                            <td><span className="mono" style={{ fontSize: '0.78rem' }}>{r.modelId}</span></td>
+                            <td>
+                              <span style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 4,
+                                fontSize: '0.72rem', fontWeight: 600, padding: '2px 7px',
+                                borderRadius: 99,
+                                background: isRouting ? 'rgba(99,102,241,0.12)' : 'rgba(59,130,246,0.12)',
+                                color: isRouting ? 'var(--accent)' : 'var(--primary)',
+                              }}>
+                                {isRouting ? 'router' : 'completion'}
+                              </span>
+                            </td>
+                            <td>{r.inputTokens}</td>
+                            <td>{r.outputTokens}</td>
+                            <td className="mono" style={{ fontSize: '0.78rem' }}>${r.cost.toFixed(6)}</td>
+                            <td style={{ color: 'var(--text-muted)' }}>{r.latencyMs}ms</td>
+                            <td>
+                              <span className={`badge ${r.outcome === 'success' ? 'badge-success' : 'badge-error'}`}>
+                                {r.outcome}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
-              </>
-            )}
-
-            {stats.records.length === 0 && (
-              <div className="empty-state">
-                <p>No usage records for this period.</p>
-              </div>
-            )}
+              )}
+            </>
           </>
         )}
       </div>

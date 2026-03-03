@@ -428,12 +428,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // USAGE STATS
   // ══════════════════════════════════════════════════════════════════════════════
 
-  fastify.get<{ Querystring: { period?: string; projectId?: string } }>('/api/usage', async (req, reply) => {
+  fastify.get<{ Querystring: { period?: string; projectId?: string; from?: string; to?: string } }>('/api/usage', async (req, reply) => {
     const records = await readConfig('usage');
-    const { period = 'monthly', projectId } = req.query;
+    const { period = 'monthly', projectId, from, to } = req.query;
 
     const now = new Date();
     let since = new Date(0);
+    let until = new Date(now.getTime() + 86400000); // tomorrow
     if (period === 'daily') { since = new Date(now); since.setHours(0, 0, 0, 0); }
     else if (period === 'weekly') {
       since = new Date(now);
@@ -441,8 +442,15 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       since.setDate(since.getDate() - (d === 0 ? 6 : d - 1));
       since.setHours(0, 0, 0, 0);
     } else if (period === 'monthly') { since = new Date(now); since.setDate(1); since.setHours(0, 0, 0, 0); }
+    else if (period === 'custom') {
+      if (from) { since = new Date(from); since.setHours(0, 0, 0, 0); }
+      if (to)   { until = new Date(to);  until.setHours(23, 59, 59, 999); }
+    }
 
-    let filtered = records.filter(r => new Date(r.timestamp) >= since);
+    let filtered = records.filter(r => {
+      const ts = new Date(r.timestamp);
+      return ts >= since && ts <= until;
+    });
     if (projectId) filtered = filtered.filter(r => r.projectId === projectId);
 
     // Aggregate by model
@@ -457,6 +465,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       byModel[r.modelId] = entry;
     }
 
+    // Aggregate by callType
+    const routingCalls = filtered.filter(r => r.callType === 'routing').length;
+    const completionCalls = filtered.filter(r => r.callType !== 'routing').length;
+    const routingCost = filtered.filter(r => r.callType === 'routing' && r.outcome === 'success').reduce((s, r) => s + r.cost, 0);
+    const completionCost = filtered.filter(r => r.callType !== 'routing' && r.outcome === 'success').reduce((s, r) => s + r.cost, 0);
+
     // Daily timeline (last 30 days)
     const timeline: Record<string, number> = {};
     for (const r of records.filter(r => r.outcome === 'success')) {
@@ -469,11 +483,20 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const successCalls = filtered.filter(r => r.outcome === 'success').length;
 
     return reply.send({
-      summary: { totalCost, totalCalls, successCalls, errorCalls: totalCalls - successCalls },
+      summary: { totalCost, totalCalls, successCalls, errorCalls: totalCalls - successCalls, routingCalls, completionCalls, routingCost, completionCost },
       byModel,
       timeline: Object.entries(timeline).sort(([a], [b]) => a.localeCompare(b)).slice(-30),
-      records: filtered.slice(-100).reverse(),
+      // Strip trace from list response to keep payload small
+      records: filtered.slice(-100).reverse().map(({ trace: _trace, ...r }) => r),
     });
+  });
+
+  // ─── GET /api/usage/:id ────────────────────────────────────────────────────
+  fastify.get<{ Params: { id: string } }>('/api/usage/:id', async (req, reply) => {
+    const records = await readConfig('usage');
+    const record = records.find(r => r.id === req.params.id);
+    if (!record) return reply.status(404).send({ error: 'Record not found' });
+    return reply.send(record);
   });
 
   // ─── GET /api/traces/:id ─────────────────────────────────────────────────────

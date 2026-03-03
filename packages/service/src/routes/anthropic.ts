@@ -93,6 +93,7 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
         outputTokens: response.usage.output_tokens,
         latencyMs: Date.now() - t0,
         outcome: 'success',
+        callType: 'completion',
       });
       return reply.send(response);
     } catch (err: unknown) {
@@ -106,6 +107,7 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
         latencyMs: Date.now() - t0,
         outcome: 'error',
         errorMessage: msg,
+        callType: 'completion',
       });
       return reply.status(503).send({
         type: 'error',

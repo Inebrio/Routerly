@@ -31,6 +31,8 @@ export interface PolicyInput {
   log?: Logger;
   /** Emette una entry di trace in real-time sullo stream SSE */
   emit?: (entry: TraceEntry) => void;
+  /** ID del progetto che ha originato la richiesta (per tracciare le chiamate di routing) */
+  projectId?: string;
 }
 
 /** Output standard restituito da ogni policy */

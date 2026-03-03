@@ -18,6 +18,8 @@ export type {
   Permission,
   Settings,
   CallOutcome,
+  CallType,
+  TraceEntry,
   UsageRecord,
 } from './types/config.js';
 

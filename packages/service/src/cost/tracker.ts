@@ -1,6 +1,7 @@
-import type { UsageRecord } from '@localrouter/shared';
+import type { UsageRecord, CallType } from '@localrouter/shared';
 import { appendUsageRecord } from '../config/loader.js';
 import { calculateCost } from './calculator.js';
+import { getTrace } from '../routing/traceStore.js';
 import type { ModelConfig } from '@localrouter/shared';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -12,6 +13,8 @@ export interface TrackUsageParams {
   latencyMs: number;
   outcome: UsageRecord['outcome'];
   errorMessage?: string;
+  callType?: CallType;
+  traceId?: string;
 }
 
 /**
@@ -30,7 +33,9 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     cost,
     latencyMs: params.latencyMs,
     outcome: params.outcome,
-    errorMessage: params.errorMessage,
+    ...(params.errorMessage !== undefined ? { errorMessage: params.errorMessage } : {}),
+    callType: params.callType ?? 'completion',
+    ...(params.traceId ? { trace: getTrace(params.traceId) ?? undefined } : {}),
   };
 
   await appendUsageRecord(record);

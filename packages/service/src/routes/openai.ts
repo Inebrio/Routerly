@@ -108,7 +108,10 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
         emit({ panel: 'request', message: 'model:request', details: { modelId: model.id, provider: model.provider, stream: true, messages: body.messages?.length ?? 0 } });
 
-        const streamIter = adapter.streamCompletion(body, model)[Symbol.asyncIterator]();
+        // Request usage stats in the final stream chunk (OpenAI-compatible standard)
+        const streamBody = { ...body, stream_options: { include_usage: true } };
+
+        const streamIter = adapter.streamCompletion(streamBody, model)[Symbol.asyncIterator]();
         let firstResult: IteratorResult<any>;
         try {
           firstResult = await streamIter.next();
@@ -116,7 +119,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           const msg = err instanceof Error ? err.message : String(err);
           request.log.warn({ err, modelId: model.id }, 'Stream failed before first chunk, trying next candidate');
           emit({ panel: 'response', message: 'model:error', details: { modelId: model.id, error: msg, latencyMs: Date.now() - t0 } });
-          await trackUsage({ projectId: project.id, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - t0, outcome: 'error', errorMessage: msg });
+          await trackUsage({ projectId: project.id, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - t0, outcome: 'error', errorMessage: msg, callType: 'completion', traceId });
           continue;
         }
 
@@ -154,12 +157,12 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           }
           reply.raw.write('data: [DONE]\n\n');
           emit({ panel: 'response', message: 'model:success', details: { modelId: model.id, inputTokens, outputTokens, latencyMs: Date.now() - t0 } });
-          await trackUsage({ projectId: project.id, model, inputTokens, outputTokens, latencyMs: Date.now() - t0, outcome: 'success' });
+          await trackUsage({ projectId: project.id, model, inputTokens, outputTokens, latencyMs: Date.now() - t0, outcome: 'success', callType: 'completion', traceId });
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           request.log.error({ err, modelId: model.id }, 'Streaming error mid-stream');
           emit({ panel: 'response', message: 'model:error', details: { modelId: model.id, error: msg, latencyMs: Date.now() - t0 } });
-          await trackUsage({ projectId: project.id, model, inputTokens, outputTokens, latencyMs: Date.now() - t0, outcome: 'error', errorMessage: msg });
+          await trackUsage({ projectId: project.id, model, inputTokens, outputTokens, latencyMs: Date.now() - t0, outcome: 'error', errorMessage: msg, callType: 'completion', traceId });
           reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: msg })}\n\n`);
         }
 
@@ -193,7 +196,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       try {
         const response = await adapter.chatCompletion(body, model);
         emit({ panel: 'response', message: 'model:success', details: { modelId: model.id, inputTokens: response.usage.prompt_tokens, outputTokens: response.usage.completion_tokens, latencyMs: Date.now() - t0 } });
-        await trackUsage({ projectId: project.id, model, inputTokens: response.usage.prompt_tokens, outputTokens: response.usage.completion_tokens, latencyMs: Date.now() - t0, outcome: 'success' });
+        await trackUsage({ projectId: project.id, model, inputTokens: response.usage.prompt_tokens, outputTokens: response.usage.completion_tokens, latencyMs: Date.now() - t0, outcome: 'success', callType: 'completion', traceId });
         // Emit as a fake SSE chunk so the FE can read it uniformly
         const fakeChunk = {
           id: response.id,
@@ -211,7 +214,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         const msg = err instanceof Error ? err.message : String(err);
         request.log.warn({ err, modelId: model.id }, 'Model failed, trying next candidate');
         emit({ panel: 'response', message: 'model:error', details: { modelId: model.id, error: msg, latencyMs: Date.now() - t0 } });
-        await trackUsage({ projectId: project.id, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - t0, outcome: 'error', errorMessage: msg });
+        await trackUsage({ projectId: project.id, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - t0, outcome: 'error', errorMessage: msg, callType: 'completion', traceId });
       }
     }
 

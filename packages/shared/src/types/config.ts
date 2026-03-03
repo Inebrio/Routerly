@@ -153,9 +153,20 @@ export interface Settings {
   logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error';
 }
 
+// ─── Trace types ─────────────────────────────────────────────────────────────
+
+/** A single entry in a request trace log */
+export interface TraceEntry {
+  panel: string;
+  message: string;
+  details: Record<string, unknown>;
+}
+
 // ─── Usage & Cost types ───────────────────────────────────────────────────────
 
 export type CallOutcome = 'success' | 'error' | 'budget_exceeded' | 'timeout';
+
+export type CallType = 'routing' | 'completion';
 
 export interface UsageRecord {
   id: string;
@@ -170,4 +181,8 @@ export interface UsageRecord {
   latencyMs: number;
   outcome: CallOutcome;
   errorMessage?: string;
+  /** Whether this call was made by the router (LLM decision) or by the user request */
+  callType?: CallType;
+  /** Full trace captured at tracking time (router + model call events) */
+  trace?: TraceEntry[];
 }

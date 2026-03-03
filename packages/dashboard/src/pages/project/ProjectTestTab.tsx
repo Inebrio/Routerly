@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Send, Paperclip, AlertCircle, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { Send, Square, Paperclip, AlertCircle, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { useProject } from './ProjectLayout';
 
 interface Message {
@@ -25,6 +25,8 @@ export function ProjectTestTab() {
   const [showKey, setShowKey] = useState(false);
 
   const [debugTraceHistory, setDebugTraceHistory] = useState<(any[] | null)[]>([]);
+
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const routerReqPanelEndRef = useRef<HTMLDivElement>(null);
@@ -101,6 +103,9 @@ export function ProjectTestTab() {
     setLoading(true);
     setError(null);
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     const payload = {
       model: project?.routingModelId || 'gpt-4o',
       messages: newMessages,
@@ -124,7 +129,8 @@ export function ProjectTestTab() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${cleanKey}`
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: controller.signal
       });
 
       if (!res.ok && !res.body) {
@@ -224,10 +230,19 @@ export function ProjectTestTab() {
       }
 
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error occurred');
+      if (e instanceof Error && e.name === 'AbortError') {
+        // Stop requested by user — not an error
+      } else {
+        setError(e instanceof Error ? e.message : 'Unknown error occurred');
+      }
     } finally {
+      abortControllerRef.current = null;
       setLoading(false);
     }
+  }
+
+  function handleStop() {
+    abortControllerRef.current?.abort();
   }
 
   function handleFileAttach(e: React.ChangeEvent<HTMLInputElement>) {
@@ -439,9 +454,15 @@ export function ProjectTestTab() {
                 }
               }}
             />
-            <button className="btn btn-primary" title="Send (Enter)" onClick={handleSend} disabled={loading || !input.trim() || !apiKey}>
-              <Send size={16} />
-            </button>
+            {loading ? (
+              <button className="btn btn-danger" title="Stop generation" onClick={handleStop}>
+                <Square size={16} />
+              </button>
+            ) : (
+              <button className="btn btn-primary" title="Send (Enter)" onClick={handleSend} disabled={!input.trim() || !apiKey}>
+                <Send size={16} />
+              </button>
+            )}
           </div>
         </div>
       </div>

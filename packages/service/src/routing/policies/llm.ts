@@ -1,6 +1,7 @@
 import type { ModelConfig } from '@localrouter/shared';
 import { readConfig } from '../../config/loader.js';
 import { getProviderAdapter } from '../../providers/index.js';
+import { trackUsage } from '../../cost/tracker.js';
 import type { PolicyFn } from './types.js';
 
 function buildSystemPrompt(candidates: { id: string; prompt?: string }[]): string {
@@ -103,7 +104,7 @@ Return ONLY a valid JSON object with no text before or after it, no markdown, no
   }
 }
 
-export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, emit }) => {
+export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, emit, projectId }) => {
   log?.info(
     {
       request: {
@@ -144,8 +145,9 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
       continue;
     }
 
+    const adapter = getProviderAdapter(model);
+    const t0 = Date.now();
     try {
-      const adapter = getProviderAdapter(model);
       const response = await adapter.chatCompletion(
         {
           model: model.id,
@@ -158,6 +160,19 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
         },
         model,
       );
+
+      const latencyMs = Date.now() - t0;
+      if (projectId) {
+        await trackUsage({
+          projectId,
+          model,
+          inputTokens: response.usage?.prompt_tokens ?? 0,
+          outputTokens: response.usage?.completion_tokens ?? 0,
+          latencyMs,
+          outcome: 'success',
+          callType: 'routing',
+        }).catch(() => { /* non bloccare il routing per un errore di tracking */ });
+      }
 
       const text = response.choices?.[0]?.message?.content ?? '';
       log?.info({ modelId, raw: text, fullResponse: JSON.stringify(response) }, 'llm policy: raw response');
@@ -192,6 +207,18 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
       const errMsg = String(err);
       log?.info({ modelId, err: errMsg, reason: 'call failed' }, 'llm policy: skipping model');
       emit?.({ panel: 'router-response', message: 'llm-policy:error', details: { modelId, error: errMsg } });
+      if (projectId) {
+        await trackUsage({
+          projectId,
+          model,
+          inputTokens: 0,
+          outputTokens: 0,
+          latencyMs: Date.now() - t0,
+          outcome: 'error',
+          errorMessage: errMsg,
+          callType: 'routing',
+        }).catch(() => {});
+      }
     }
   }
 
