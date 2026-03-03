@@ -72,7 +72,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
     let routingResponse;
     try {
-      routingResponse = await routeRequest(body, project, request.log, emit);
+      routingResponse = await routeRequest(body, project, request.log, emit, request.token);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       request.log.error({ err }, 'Routing model failed');
@@ -92,10 +92,11 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         const model = allModelsList.find((m: any) => m.id === candidate.model);
         if (!model) continue;
 
-        const allowed = await isAllowed(model, project);
+        const allowed = await isAllowed(model, project, request.token);
         if (!allowed) {
           request.log.info({ modelId: model.id }, 'Model budget exhausted, skipping');
           emit({ panel: 'response', message: 'model:skipped', details: { modelId: model.id, reason: 'budget_exhausted' } });
+          await trackUsage({ projectId: project.id, model, inputTokens: 0, outputTokens: 0, latencyMs: 0, outcome: 'error', errorMessage: 'budget_exceeded', callType: 'completion', traceId });
           continue;
         }
 
@@ -185,9 +186,10 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       const model = allModelsList.find((m: any) => m.id === candidate.model);
       if (!model) continue;
 
-      const allowed = await isAllowed(model, project);
+      const allowed = await isAllowed(model, project, request.token);
       if (!allowed) {
         emit({ panel: 'response', message: 'model:skipped', details: { modelId: model.id, reason: 'budget_exhausted' } });
+        await trackUsage({ projectId: project.id, model, inputTokens: 0, outputTokens: 0, latencyMs: 0, outcome: 'budget_exceeded', callType: 'completion', traceId });
         continue;
       }
 

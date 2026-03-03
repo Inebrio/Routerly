@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { updateProjectToken } from '../../api';
+import { updateProjectToken, getModels } from '../../api';
+import type { Model } from '../../api';
 import { useProject } from './ProjectLayout';
 import { LabelInput } from './ProjectTokenTab'; // Will be exported next
 
@@ -12,6 +13,9 @@ export function ProjectTokenEditPage() {
 
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
+  const [allModels, setAllModels] = useState<Model[]>([]);
+
+  useEffect(() => { getModels().then(setAllModels).catch(() => {}); }, []);
 
   // Form state
   const [editModels, setEditModels] = useState<any[]>([]);
@@ -104,6 +108,25 @@ export function ProjectTokenEditPage() {
                 {project.models.map(pm => {
                   const override = editModels.find(m => m.modelId === pm.modelId);
                   const isEnabled = !!override;
+                  const fullModel = allModels.find(m => m.id === pm.modelId);
+
+                  // Effective inherited thresholds: project-level override > global model
+                  const inherited = (period: 'daily' | 'weekly' | 'monthly'): string => {
+                    const v = pm.thresholds?.[period] ?? fullModel?.globalThresholds?.[period];
+                    return v != null ? `${v}` : 'No limits';
+                  };
+
+                  const thresholdParts: string[] = [];
+                  if (isEnabled && override?.thresholds) {
+                    if (override.thresholds.daily != null && !isNaN(override.thresholds.daily))
+                      thresholdParts.push(`daily $${override.thresholds.daily}`);
+                    if (override.thresholds.weekly != null && !isNaN(override.thresholds.weekly))
+                      thresholdParts.push(`weekly $${override.thresholds.weekly}`);
+                    if (override.thresholds.monthly != null && !isNaN(override.thresholds.monthly))
+                      thresholdParts.push(`monthly $${override.thresholds.monthly}`);
+                  }
+                  const thresholdLabel = thresholdParts.length > 0 ? thresholdParts.join(' · ') : 'No limits';
+
                   return (
                     <div key={pm.modelId} style={{
                       border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden',
@@ -118,8 +141,11 @@ export function ProjectTokenEditPage() {
                           }}
                           style={{ width: 15, height: 15, accentColor: 'var(--primary)', cursor: 'pointer' }}
                         />
-                        <span className="mono" style={{ fontSize: '0.85rem', color: isEnabled ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                        <span className="mono" style={{ fontSize: '0.85rem', color: isEnabled ? 'var(--text-primary)' : 'var(--text-secondary)', flex: 1 }}>
                           {pm.modelId}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: thresholdParts.length > 0 ? 'var(--primary)' : 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                          {thresholdLabel}
                         </span>
                       </label>
                       {isEnabled && (
@@ -128,7 +154,7 @@ export function ProjectTokenEditPage() {
                             <div key={period} className="form-group" style={{ margin: 0 }}>
                               <label className="form-label" style={{ fontSize: '0.75rem', textTransform: 'capitalize' }}>{period} ($)</label>
                               <input
-                                type="number" step="0.01" min="0" className="form-input" placeholder="No limit"
+                                type="number" step="0.01" min="0" className="form-input" placeholder={inherited(period)}
                                 value={override.thresholds?.[period] ?? ''}
                                 onChange={e => {
                                   const val = parseFloat(e.target.value);

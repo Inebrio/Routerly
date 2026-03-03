@@ -1,4 +1,4 @@
-import type { ChatCompletionRequest, BudgetThresholds, ModelConfig } from '@localrouter/shared';
+import type { ChatCompletionRequest, BudgetThresholds, ModelConfig, ProjectToken } from '@localrouter/shared';
 import type { TraceEntry } from '../traceStore.js';
 
 /** Rappresenta un modello candidato con il peso accumulato durante la pipeline */
@@ -33,6 +33,8 @@ export interface PolicyInput {
   emit?: (entry: TraceEntry) => void;
   /** ID del progetto che ha originato la richiesta (per tracciare le chiamate di routing) */
   projectId?: string;
+  /** Token del progetto che ha originato la richiesta (per rispettare gli override per-token) */
+  token?: ProjectToken;
 }
 
 /** Output standard restituito da ogni policy */

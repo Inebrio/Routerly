@@ -1,4 +1,4 @@
-import type { ChatCompletionRequest, ModelConfig, ProjectConfig, RoutingCandidate } from '@localrouter/shared';
+import type { ChatCompletionRequest, ModelConfig, ProjectConfig, ProjectToken, RoutingCandidate } from '@localrouter/shared';
 import { readConfig } from '../config/loader.js';
 import type { CandidateModel } from './policies/types.js';
 import { contextPolicy } from './policies/context.js';
@@ -31,6 +31,7 @@ export async function routeRequest(
   project: ProjectConfig,
   log?: Logger,
   emit?: (entry: TraceEntry) => void,
+  token?: ProjectToken,
 ): Promise<RouteResult> {
   const enabledPolicies = (project.policies ?? []).filter(p => p.enabled);
 
@@ -74,7 +75,7 @@ export async function routeRequest(
     policiesWithWeight.map(({ type, weight, config }, i) => {
       const fn = POLICY_MAP[type];
       const p = fn
-        ? fn({ request, candidates, config, log, emit, projectId: project.id }).then(out => ({ weight, routing: out.routing }))
+        ? fn({ request, candidates, config, log, emit, projectId: project.id, token }).then(out => ({ weight, routing: out.routing }))
         : Promise.resolve({ weight, routing: candidates.map(c => ({ model: c.model.id, point: 1.0 })) });
 
       return p.then(result => {

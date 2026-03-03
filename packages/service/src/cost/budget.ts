@@ -1,4 +1,4 @@
-import type { ModelConfig, ProjectConfig, UsageRecord } from '@localrouter/shared';
+import type { ModelConfig, ProjectConfig, ProjectToken, UsageRecord } from '@localrouter/shared';
 import { readConfig } from '../config/loader.js';
 
 type Period = 'daily' | 'weekly' | 'monthly';
@@ -21,18 +21,58 @@ function startOf(period: Period, now: Date): Date {
 }
 
 /**
+ * Returns true if a model can be used for routing/internal calls,
+ * checking only the model's globalThresholds against usage for the given project.
+ * Used when the model is not necessarily a project candidate (e.g. llm routing model).
+ */
+export async function isAllowedForRoutingModel(
+  model: ModelConfig,
+  projectId: string,
+): Promise<boolean> {
+  const thresholds = model.globalThresholds;
+  if (!thresholds) return true;
+
+  const records = await readConfig('usage');
+  const now = new Date();
+
+  const relevant = records.filter(
+    (r: UsageRecord) =>
+      r.projectId === projectId && r.modelId === model.id && r.outcome === 'success',
+  );
+
+  const periods: Period[] = ['daily', 'weekly', 'monthly'];
+  for (const period of periods) {
+    const limit = thresholds[period];
+    if (limit === undefined) continue;
+
+    const start = startOf(period, now);
+    const spent = relevant
+      .filter((r: UsageRecord) => new Date(r.timestamp) >= start)
+      .reduce((sum: number, r: UsageRecord) => sum + r.cost, 0);
+
+    if (spent >= limit) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
  * Returns true if a model can be used without exceeding any budget thresholds.
- * Project-level thresholds take priority over global model thresholds.
+ * Priority: token-level > project-level > global model thresholds.
  */
 export async function isAllowed(
   model: ModelConfig,
   project: ProjectConfig,
+  token?: ProjectToken,
 ): Promise<boolean> {
   const projectModelRef = project.models.find((m) => m.modelId === model.id);
   if (!projectModelRef) return false; // model not associated with this project
 
-  // Determine effective thresholds: project overrides > global
-  const thresholds = projectModelRef.thresholds ?? model.globalThresholds;
+  // Determine effective thresholds: token overrides > project overrides > global
+  const tokenModelRef = token?.models?.find((m) => m.modelId === model.id);
+  const thresholds = tokenModelRef?.thresholds ?? projectModelRef.thresholds ?? model.globalThresholds;
   if (!thresholds) return true; // no limits configured
 
   const records = await readConfig('usage');

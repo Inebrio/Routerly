@@ -1,7 +1,8 @@
-import type { ModelConfig } from '@localrouter/shared';
+import type { ModelConfig, ProjectConfig } from '@localrouter/shared';
 import { readConfig } from '../../config/loader.js';
 import { getProviderAdapter } from '../../providers/index.js';
 import { trackUsage } from '../../cost/tracker.js';
+import { isAllowed, isAllowedForRoutingModel } from '../../cost/budget.js';
 import type { PolicyFn } from './types.js';
 
 function buildSystemPrompt(candidates: { id: string; prompt?: string }[]): string {
@@ -104,7 +105,7 @@ Return ONLY a valid JSON object with no text before or after it, no markdown, no
   }
 }
 
-export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, emit, projectId }) => {
+export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, emit, projectId, token }) => {
   log?.info(
     {
       request: {
@@ -143,6 +144,34 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
       log?.info({ modelId, reason: 'model not found' }, 'llm policy: skipping model');
       emit?.({ panel: 'router-response', message: 'llm-policy:skip', details: { modelId, reason: 'model not found in config' } });
       continue;
+    }
+
+    // ── Budget check before routing call ─────────────────────────────────
+    // If the routing model is also a project candidate, use the full per-project
+    // threshold check (which respects per-project overrides). Otherwise fall back
+    // to globalThresholds only, so budget is always enforced regardless.
+    if (projectId) {
+      const allProjects: ProjectConfig[] = await readConfig('projects');
+      const project = allProjects.find((p: ProjectConfig) => p.id === projectId);
+      const isCandidate = project?.models.some((m: any) => m.modelId === modelId) ?? false;
+      const budgetAllowed = isCandidate && project
+        ? await isAllowed(model, project, token)
+        : await isAllowedForRoutingModel(model, projectId);
+      if (!budgetAllowed) {
+        log?.info({ modelId, reason: 'budget_exhausted' }, 'llm policy: skipping model');
+        emit?.({ panel: 'router-response', message: 'llm-policy:skip', details: { modelId, reason: 'budget_exhausted' } });
+        await trackUsage({
+          projectId,
+          model,
+          inputTokens: 0,
+          outputTokens: 0,
+          latencyMs: 0,
+          outcome: 'error',
+          errorMessage: 'budget_exceeded',
+          callType: 'routing',
+        }).catch(() => {});
+        continue;
+      }
     }
 
     const adapter = getProviderAdapter(model);
