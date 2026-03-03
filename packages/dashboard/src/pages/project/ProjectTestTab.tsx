@@ -206,7 +206,7 @@ export function ProjectTestTab() {
                   const deltaContent = data.choices?.[0]?.delta?.content || '';
                   if (deltaContent) {
                     if (!assistantMessageAdded) {
-                      setMessages(prev => [...prev, { role: 'assistant', content: '', thinking: thinkingAccum || undefined, model: modelName }]);
+                      setMessages(prev => [...prev, { role: 'assistant', content: '', ...(thinkingAccum ? { thinking: thinkingAccum } : {}), model: modelName }]);
                       assistantMessageAdded = true;
                     }
                     finalContent += deltaContent;

@@ -13,14 +13,14 @@ import { ProjectGeneralTab } from './pages/project/ProjectGeneralTab';
 import { ProjectRoutingTab } from './pages/project/ProjectRoutingTab';
 import { ProjectTokenTab } from './pages/project/ProjectTokenTab';
 import { ProjectUsersTab } from './pages/project/ProjectUsersTab';
-import { ProjectTestTab } from './pages/project/ProjectTestTab';
 import { ProjectLogsTab } from './pages/project/ProjectLogsTab';
 import { ProjectTokenCreatePage } from './pages/project/ProjectTokenCreatePage';
 import { ProjectTokenEditPage } from './pages/project/ProjectTokenEditPage';
 import { UsersPage } from './pages/UsersPage';
 import { UsagePage } from './pages/UsagePage';
 import { UsageRecordPage } from './pages/UsageRecordPage';
-import { LayoutDashboard, Cpu, FolderOpen, Users, BarChart2, LogOut } from 'lucide-react';
+import { TestPage } from './pages/TestPage';
+import { LayoutDashboard, Cpu, FolderOpen, Users, BarChart2, FlaskConical, LogOut } from 'lucide-react';
 
 function Sidebar() {
   const { user, logout } = useAuth();
@@ -34,6 +34,7 @@ function Sidebar() {
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
     { to: '/dashboard/users', icon: <Users size={17} />, label: 'Users' },
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
+    { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Test' },
   ];
 
   return (
@@ -145,12 +146,12 @@ const router = createBrowserRouter([
               { path: 'routing', element: <ProjectRoutingTab /> },
               { path: 'token', element: <ProjectTokenTab /> },
               { path: 'users', element: <ProjectUsersTab /> },
-              { path: 'test', element: <ProjectTestTab /> },
               { path: 'logs', element: <ProjectLogsTab /> },
             ],
           },
           { path: 'users', element: <UsersPage /> },
           { path: 'usage', element: <UsagePage /> },
+          { path: 'test', element: <TestPage /> },
           { path: 'usage/:id', element: <UsageRecordPage /> },
           { path: '*', element: <Navigate to="overview" replace /> },
         ],

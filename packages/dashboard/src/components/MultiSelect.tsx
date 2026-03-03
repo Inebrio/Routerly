@@ -86,7 +86,7 @@ export function MultiSelect({ options, value, onChange, placeholder = 'Select...
           marginTop: 4,
           maxHeight: 250,
           overflowY: 'auto',
-          zIndex: 200,
+          zIndex: 1000,
           boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
         }}>
           {unselectedOptions.length === 0 ? (

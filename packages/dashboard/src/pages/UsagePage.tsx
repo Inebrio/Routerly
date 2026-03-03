@@ -29,7 +29,7 @@ export function UsagePage() {
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     const from = start.toISOString().slice(0, 10);
     const to   = now.toISOString().slice(0, 10);
-    setDateRange({ from, to, label: 'This month' });
+    setDateRange({ from, to, label: 'Questo mese' });
   }, []);
 
   useEffect(() => {
@@ -79,7 +79,7 @@ export function UsagePage() {
       </div>
       <div className="page-body">
         {/* Filters */}
-        <div className="card" style={{ padding: '14px 18px', marginBottom: 20 }}>
+        <div className="card" style={{ padding: '14px 18px', marginBottom: 20, position: 'relative', zIndex: 10 }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
 
             {/* Date range picker */}
