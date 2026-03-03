@@ -226,6 +226,8 @@ export function UsageRecordPage() {
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 20 }}>
               <Field label="Latency" value={`${record.latencyMs} ms`} />
+              <Field label="TTFT" value={record.ttftMs != null ? `${record.ttftMs} ms` : '—'} />
+              <Field label="Tok/s" value={record.tokensPerSec != null ? `${record.tokensPerSec} tok/s` : '—'} />
               <Field
                 label="Outcome"
                 value={

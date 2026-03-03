@@ -125,6 +125,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
         if (firstResult.done) continue;
 
+        const ttftMs = Date.now() - t0;
+
         const processChunk = (chunk: any) => {
           const u = chunk.usage;
           if (u) {
@@ -157,12 +159,12 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           }
           reply.raw.write('data: [DONE]\n\n');
           emit({ panel: 'response', message: 'model:success', details: { modelId: model.id, inputTokens, outputTokens, latencyMs: Date.now() - t0 } });
-          await trackUsage({ projectId: project.id, model, inputTokens, outputTokens, latencyMs: Date.now() - t0, outcome: 'success', callType: 'completion', traceId });
+          await trackUsage({ projectId: project.id, model, inputTokens, outputTokens, latencyMs: Date.now() - t0, ttftMs, outcome: 'success', callType: 'completion', traceId });
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           request.log.error({ err, modelId: model.id }, 'Streaming error mid-stream');
           emit({ panel: 'response', message: 'model:error', details: { modelId: model.id, error: msg, latencyMs: Date.now() - t0 } });
-          await trackUsage({ projectId: project.id, model, inputTokens, outputTokens, latencyMs: Date.now() - t0, outcome: 'error', errorMessage: msg, callType: 'completion', traceId });
+          await trackUsage({ projectId: project.id, model, inputTokens, outputTokens, latencyMs: Date.now() - t0, ttftMs, outcome: 'error', errorMessage: msg, callType: 'completion', traceId });
           reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: msg })}\n\n`);
         }
 

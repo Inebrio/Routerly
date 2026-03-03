@@ -173,7 +173,7 @@ export interface TraceEntry {
 
 export interface UsageRecord {
   id: string; timestamp: string; projectId: string; modelId: string;
-  inputTokens: number; outputTokens: number; cost: number; latencyMs: number; outcome: string;
+  inputTokens: number; outputTokens: number; cost: number; latencyMs: number; ttftMs?: number; tokensPerSec?: number; outcome: string;
   callType?: 'routing' | 'completion';
   errorMessage?: string;
   trace?: TraceEntry[];

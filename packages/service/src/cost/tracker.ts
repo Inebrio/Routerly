@@ -11,6 +11,7 @@ export interface TrackUsageParams {
   inputTokens: number;
   outputTokens: number;
   latencyMs: number;
+  ttftMs?: number;
   outcome: UsageRecord['outcome'];
   errorMessage?: string;
   callType?: CallType;
@@ -32,6 +33,8 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     outputTokens: params.outputTokens,
     cost,
     latencyMs: params.latencyMs,
+    ...(params.ttftMs !== undefined ? { ttftMs: params.ttftMs } : {}),
+    ...(params.latencyMs > 0 ? { tokensPerSec: Math.round((params.inputTokens + params.outputTokens) / (params.latencyMs / 1000)) } : {}),
     outcome: params.outcome,
     ...(params.errorMessage !== undefined ? { errorMessage: params.errorMessage } : {}),
     callType: params.callType ?? 'completion',

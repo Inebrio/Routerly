@@ -232,7 +232,7 @@ export function UsagePage() {
                     <thead>
                       <tr>
                         <th>Time</th><th>Project</th><th>Model</th><th>Type</th><th>In</th><th>Out</th>
-                        <th>Cost</th><th>Latency</th><th>Status</th>
+                        <th>Cost</th><th>Latency</th><th>TTFT</th><th>Tok/s</th><th>Status</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -266,6 +266,8 @@ export function UsagePage() {
                             <td>{r.outputTokens}</td>
                             <td className="mono" style={{ fontSize: '0.78rem' }}>${r.cost.toFixed(6)}</td>
                             <td style={{ color: 'var(--text-muted)' }}>{r.latencyMs}ms</td>
+                            <td style={{ color: 'var(--text-muted)' }}>{r.ttftMs != null ? `${r.ttftMs}ms` : '—'}</td>
+                            <td style={{ color: 'var(--text-muted)' }}>{r.tokensPerSec != null ? `${r.tokensPerSec}` : '—'}</td>
                             <td>
                               <span className={`badge ${r.outcome === 'success' ? 'badge-success' : 'badge-error'}`}>
                                 {r.outcome}

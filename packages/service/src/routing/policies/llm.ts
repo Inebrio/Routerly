@@ -147,35 +147,62 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
 
     const adapter = getProviderAdapter(model);
     const t0 = Date.now();
+    let ttftMs: number | undefined;
     try {
-      const response = await adapter.chatCompletion(
-        {
-          model: model.id,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userMessage },
-          ],
-          max_completion_tokens: 2048,
-          stream: false,
-        },
-        model,
-      );
+      // Use streaming to capture TTFT for routing calls
+      const streamBody = {
+        model: model.id,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage },
+        ],
+        max_completion_tokens: 2048,
+        stream: true,
+        stream_options: { include_usage: true },
+      };
+      const streamIter = adapter.streamCompletion(streamBody, model)[Symbol.asyncIterator]();
+      const firstChunk = await streamIter.next();
+      ttftMs = Date.now() - t0;
+
+      let textAccum = '';
+      let inputTokens = 0;
+      let outputTokens = 0;
+
+      const processChunk = (chunk: any) => {
+        const u = chunk?.usage;
+        if (u) {
+          inputTokens = u.prompt_tokens ?? inputTokens;
+          outputTokens = u.completion_tokens ?? outputTokens;
+        }
+        const delta = chunk?.choices?.[0]?.delta;
+        if (typeof delta?.content === 'string') textAccum += delta.content;
+      };
+
+      if (!firstChunk.done) {
+        processChunk(firstChunk.value);
+        let result = await streamIter.next();
+        while (!result.done) {
+          processChunk(result.value);
+          result = await streamIter.next();
+        }
+      }
 
       const latencyMs = Date.now() - t0;
       if (projectId) {
         await trackUsage({
           projectId,
           model,
-          inputTokens: response.usage?.prompt_tokens ?? 0,
-          outputTokens: response.usage?.completion_tokens ?? 0,
+          inputTokens,
+          outputTokens,
           latencyMs,
+          ttftMs,
           outcome: 'success',
           callType: 'routing',
         }).catch(() => { /* non bloccare il routing per un errore di tracking */ });
       }
 
-      const text = response.choices?.[0]?.message?.content ?? '';
-      log?.info({ modelId, raw: text, fullResponse: JSON.stringify(response) }, 'llm policy: raw response');
+      const text = textAccum;
+      log?.info({ modelId, raw: text }, 'llm policy: raw response');
 
       let routing = parseRoutingResponse(text);
       if (!routing) {
@@ -214,6 +241,7 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
           inputTokens: 0,
           outputTokens: 0,
           latencyMs: Date.now() - t0,
+          ...(ttftMs !== undefined ? { ttftMs } : {}),
           outcome: 'error',
           errorMessage: errMsg,
           callType: 'routing',

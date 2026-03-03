@@ -179,6 +179,10 @@ export interface UsageRecord {
   cost: number;
   /** Latency in ms (from forwarding start to last byte received) */
   latencyMs: number;
+  /** Time to first token in ms (streaming only) */
+  ttftMs?: number;
+  /** Tokens per second: (inputTokens + outputTokens) / (latencyMs / 1000) */
+  tokensPerSec?: number;
   outcome: CallOutcome;
   errorMessage?: string;
   /** Whether this call was made by the router (LLM decision) or by the user request */
