@@ -581,3 +581,66 @@ td .badge {
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
+
+/* Markdown content inside chat bubbles */
+.md-content { line-height: 1.6; }
+.md-content > *:first-child { margin-top: 0; }
+.md-content > *:last-child { margin-bottom: 0; }
+.md-content p { margin: 0 0 0.5em; }
+.md-content p:last-child { margin-bottom: 0; }
+.md-content h1, .md-content h2, .md-content h3,
+.md-content h4, .md-content h5, .md-content h6 {
+  margin: 0.8em 0 0.3em;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.md-content h1 { font-size: 1.2em; }
+.md-content h2 { font-size: 1.1em; }
+.md-content h3 { font-size: 1em; }
+.md-content ul, .md-content ol {
+  margin: 0.4em 0 0.4em 1.4em;
+  padding: 0;
+}
+.md-content li { margin: 0.15em 0; }
+.md-content code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.82em;
+  background: rgba(0,0,0,0.12);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+.md-content pre {
+  margin: 0.5em 0;
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.14);
+  border-radius: 8px;
+  overflow-x: auto;
+}
+.md-content pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.83em;
+}
+.md-content blockquote {
+  margin: 0.5em 0;
+  padding: 4px 12px;
+  border-left: 3px solid var(--border);
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.md-content table {
+  border-collapse: collapse;
+  margin: 0.5em 0;
+  font-size: 0.85em;
+  width: 100%;
+}
+.md-content th, .md-content td {
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  text-align: left;
+}
+.md-content th { background: rgba(0,0,0,0.08); font-weight: 600; }
+.md-content a { color: var(--primary); text-decoration: underline; }
+.md-content hr { border: none; border-top: 1px solid var(--border); margin: 0.6em 0; }
+.md-content strong { font-weight: 600; }
+.md-content em { font-style: italic; }

@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Send, Square, Paperclip, AlertCircle, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { getProjects, type Project } from '../api';
 
@@ -341,19 +343,28 @@ export function TestPage() {
                       border: msg.role === 'user' ? 'none' : '1px solid var(--border)',
                       fontSize: '0.9rem',
                       lineHeight: 1.5,
-                      whiteSpace: 'pre-wrap',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 8,
+                      ...(msg.role === 'user' ? { whiteSpace: 'pre-wrap' as const, display: 'flex' as const, flexDirection: 'column' as const, gap: 8 } : {}),
                     }}>
-                      {typeof msg.content === 'string' ? msg.content : (
-                        <>
-                          {msg.content.map((c, idx) => {
-                            if (c.type === 'text') return <span key={idx}>{c.text}</span>;
-                            if (c.type === 'image_url') return <img key={idx} src={c.image_url.url} alt="Attached" style={{ maxWidth: 200, borderRadius: 8 }} />;
-                            return null;
-                          })}
-                        </>
+                      {msg.role === 'assistant' ? (
+                        typeof msg.content === 'string'
+                          ? <div className="md-content"><ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown></div>
+                          : <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              {(msg.content as any[]).map((c, idx) => {
+                                if (c.type === 'text') return <div key={idx} className="md-content"><ReactMarkdown remarkPlugins={[remarkGfm]}>{c.text}</ReactMarkdown></div>;
+                                if (c.type === 'image_url') return <img key={idx} src={c.image_url.url} alt="Attached" style={{ maxWidth: 200, borderRadius: 8 }} />;
+                                return null;
+                              })}
+                            </div>
+                      ) : (
+                        typeof msg.content === 'string' ? msg.content : (
+                          <>
+                            {(msg.content as any[]).map((c, idx) => {
+                              if (c.type === 'text') return <span key={idx}>{c.text}</span>;
+                              if (c.type === 'image_url') return <img key={idx} src={c.image_url.url} alt="Attached" style={{ maxWidth: 200, borderRadius: 8 }} />;
+                              return null;
+                            })}
+                          </>
+                        )
                       )}
                     </div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 4, textTransform: 'capitalize', display: 'flex', alignItems: 'center', gap: 6 }}>
