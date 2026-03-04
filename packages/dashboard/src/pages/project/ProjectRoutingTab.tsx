@@ -44,12 +44,12 @@ export function ProjectRoutingTab() {
           internalId: Math.random().toString(36).substring(7)
         })));
       } else {
-        // Initialize default policies
+        // No saved policies — show all available but none enabled
         setPolicies([
-          { internalId: Math.random().toString(36).substring(7), type: 'context', enabled: true },
-          { internalId: Math.random().toString(36).substring(7), type: 'health', enabled: true },
+          { internalId: Math.random().toString(36).substring(7), type: 'context', enabled: false },
+          { internalId: Math.random().toString(36).substring(7), type: 'health', enabled: false },
           { internalId: Math.random().toString(36).substring(7), type: 'cheapest', enabled: false },
-          { internalId: Math.random().toString(36).substring(7), type: 'llm', enabled: true, config: { routingModelId: project.routingModelId || '', fallbackModelIds: project.fallbackRoutingModelIds || [], autoRouting: project.autoRouting ?? true } }
+          { internalId: Math.random().toString(36).substring(7), type: 'llm', enabled: false, config: { routingModelId: project.routingModelId || '', fallbackModelIds: project.fallbackRoutingModelIds || [], autoRouting: project.autoRouting ?? true } }
         ]);
       }
 

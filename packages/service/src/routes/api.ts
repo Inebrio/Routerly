@@ -203,17 +203,22 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       autoRouting?: boolean;
       fallbackRoutingModelIds?: string[];
       policies?: RoutingPolicy[];
-      models: { modelId: string; prompt?: string }[];
+      models?: { modelId: string; prompt?: string }[];
       timeoutMs?: number;
     }
   }>('/api/projects', async (req, reply) => {
     const projects = await readConfig('projects');
+    const trimmedName = req.body.name.trim();
+    if (!trimmedName) return reply.status(400).send({ error: 'Project name cannot be empty' });
+    if (projects.some(p => p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
+      return reply.status(409).send({ error: `A project named "${trimmedName}" already exists` });
+    }
     const rawToken = `sk-lr-${randomBytes(32).toString('hex')}`;
     const userId = requireAdmin(req.headers.authorization) || 'system';
 
     const project: ProjectConfig = {
       id: uuidv4(),
-      name: req.body.name,
+      name: trimmedName,
       tokens: [{
         id: uuidv4(),
         encryptedToken: encrypt(rawToken),
@@ -224,8 +229,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...(req.body.routingModelId !== undefined ? { routingModelId: req.body.routingModelId } : {}),
       autoRouting: req.body.autoRouting ?? true,
       ...(req.body.fallbackRoutingModelIds !== undefined && { fallbackRoutingModelIds: req.body.fallbackRoutingModelIds }),
-      ...(req.body.policies !== undefined && { policies: req.body.policies }),
-      models: req.body.models.map(m => ({
+      ...(req.body.policies !== undefined && req.body.policies.length > 0 ? { policies: req.body.policies } : {}),
+      models: (req.body.models ?? []).map(m => ({
         modelId: m.modelId,
         ...(m.prompt ? { prompt: m.prompt } : {}),
       })),
@@ -252,10 +257,15 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const projects = await readConfig('projects');
     const index = projects.findIndex(p => p.id === req.params.id);
     if (index === -1) return reply.status(404).send({ error: 'Not found' });
+    const trimmedName = req.body.name.trim();
+    if (!trimmedName) return reply.status(400).send({ error: 'Project name cannot be empty' });
+    if (projects.some(p => p.id !== req.params.id && p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
+      return reply.status(409).send({ error: `A project named "${trimmedName}" already exists` });
+    }
     const existing = projects[index]!;
     const updated: ProjectConfig = {
       ...existing,
-      name: req.body.name,
+      name: trimmedName,
       ...(req.body.routingModelId !== undefined ? { routingModelId: req.body.routingModelId } : existing.routingModelId !== undefined ? { routingModelId: existing.routingModelId } : {}),
       autoRouting: req.body.autoRouting ?? existing.autoRouting ?? true,
       ...(req.body.fallbackRoutingModelIds !== undefined && { fallbackRoutingModelIds: req.body.fallbackRoutingModelIds }),

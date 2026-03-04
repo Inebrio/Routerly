@@ -51,7 +51,7 @@ export function ProjectsPage() {
           <div className="table-wrap">
             <table>
               <thead>
-                <tr><th>Name</th><th>Tokens</th><th>Routing Model</th><th>Models</th><th></th></tr>
+                <tr><th>Name</th><th>Tokens</th><th>Policies</th><th>Models</th><th></th></tr>
               </thead>
               <tbody>
                 {projects.map(p => (
@@ -62,7 +62,19 @@ export function ProjectsPage() {
                         {p.tokens?.length || 0} token{p.tokens?.length !== 1 ? 's' : ''}
                       </span>
                     </td>
-                    <td><span className="mono" style={{ fontSize: '0.78rem' }}>{p.routingModelId}</span></td>
+                    <td>
+                      {p.policies && p.policies.filter(pol => pol.enabled).length > 0 ? (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                          {p.policies.filter(pol => pol.enabled).map(pol => (
+                            <span key={pol.type} style={{ fontSize: '0.72rem', fontWeight: 500, padding: '2px 7px', borderRadius: 4, background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
+                              {pol.type}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>—</span>
+                      )}
+                    </td>
                     <td style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
                       {p.models.map(m => m.modelId).join(', ')}
                     </td>
