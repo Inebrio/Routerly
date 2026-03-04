@@ -13,6 +13,7 @@ const DEFAULTS: Record<string, unknown> = {
     dashboardEnabled: true,
     defaultTimeoutMs: 30000,
     logLevel: 'info',
+    publicUrl: 'http://localhost:3000',
   } satisfies Settings,
   models: [] as ModelConfig[],
   projects: [] as ProjectConfig[],

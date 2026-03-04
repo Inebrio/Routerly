@@ -151,6 +151,13 @@ export interface Settings {
   /** Default timeout per model attempt in ms */
   defaultTimeoutMs: number;
   logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error';
+  /**
+   * Public base URL of the service (e.g. https://localrouter.example.com).
+   * Used in the dashboard "How to connect" section when the dashboard is served
+   * from a different host/port than the service itself.
+   * If omitted, the dashboard falls back to window.location.origin.
+   */
+  publicUrl?: string;
   /** Optional notification channels configuration */
   notifications?: NotificationsConfig;
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Save, AlertTriangle, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, Globe } from 'lucide-react';
+import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, Globe } from 'lucide-react';
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
 import { getSettings, updateSettings, getSystemInfo, testNotificationChannel } from '../api';
 import type { Settings, SystemInfo } from '../api';
@@ -23,7 +23,7 @@ export function SettingsGeneralTab() {
     try {
       const s = await getSettings();
       setSettings(s);
-      setForm({ defaultTimeoutMs: s.defaultTimeoutMs, logLevel: s.logLevel, dashboardEnabled: s.dashboardEnabled, ...(s.notifications ? { notifications: s.notifications } : {}) });
+      setForm({ defaultTimeoutMs: s.defaultTimeoutMs, logLevel: s.logLevel, publicUrl: s.publicUrl || `http://localhost:${s.port}`, ...(s.notifications ? { notifications: s.notifications } : {}) });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load settings');
     } finally {
@@ -74,6 +74,22 @@ export function SettingsGeneralTab() {
         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 8 }}>
           Host and port are configured via environment variables or the settings file and cannot be changed here.
         </p>
+        <div className="form-group" style={{ marginTop: 14 }}>
+          <label className="form-label" htmlFor="s-publicurl">Service Host</label>
+          <input
+            id="s-publicurl"
+            className="form-input"
+            type="url"
+            placeholder={`http://${settings?.host === '0.0.0.0' ? '<your-ip>' : (settings?.host ?? 'localhost')}:${settings?.port ?? 3000}`}
+            value={form.publicUrl ?? ''}
+            onChange={e => field('publicUrl', e.target.value)}
+          />
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+            Base URL at which the service is reachable from external clients (e.g. <code>http://192.168.1.10:3000</code>).
+            Used in the <strong>How to connect</strong> section of each project.
+            Useful when the dashboard runs on a different machine or port than the service.
+          </p>
+        </div>
       </div>
 
       <div style={{ marginBottom: 28 }}>
@@ -114,32 +130,6 @@ export function SettingsGeneralTab() {
           </p>
         </div>
 
-        <div className="form-group">
-          <label className="form-label">Dashboard</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
-            <input
-              id="s-dashboard"
-              type="checkbox"
-              checked={form.dashboardEnabled ?? true}
-              onChange={e => field('dashboardEnabled', e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: 'var(--accent)', cursor: 'pointer' }}
-            />
-            <label htmlFor="s-dashboard" style={{ cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text-primary)' }}>
-              Enable dashboard UI at <code style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>/dashboard</code>
-            </label>
-          </div>
-          {form.dashboardEnabled === false && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              marginTop: 10, padding: '8px 12px',
-              background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
-              borderRadius: 8, fontSize: '0.78rem', color: 'var(--warning, #f59e0b)',
-            }}>
-              <AlertTriangle size={14} />
-              Disabling the dashboard will prevent you from accessing this UI after saving.
-            </div>
-          )}
-        </div>
       </div>
 
       {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Copy, Check, ChevronDown, ArrowRight, Plug } from 'lucide-react';
-import { createProject, updateProject } from '../../api';
+import { createProject, updateProject, getSettings } from '../../api';
 import { useProject } from './ProjectLayout';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
 
@@ -13,6 +13,17 @@ export function ProjectGeneralTab() {
   const [saving, setSaving] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [err, setErr] = useState('');
+  const [servicePublicUrl, setServicePublicUrl] = useState<string>('');
+
+  // Fetch publicUrl from settings once so "How to connect" shows the correct endpoint
+  // even when the dashboard is served from a different host/port than the service.
+  useEffect(() => {
+    getSettings().then(s => {
+      const url = s.publicUrl?.replace(/\/$/, '') ||
+        `${window.location.protocol}//${window.location.hostname}:${s.port}`;
+      setServicePublicUrl(url);
+    }).catch(() => {});
+  }, []);
 
   // For the new token reveal modal
   const [revealedToken, setRevealedToken] = useState<{ name: string; token: string; isNew: boolean; projectId: string } | null>(null);
@@ -130,7 +141,9 @@ export function ProjectGeneralTab() {
     <>
       {/* ── Connection info (only when editing an existing project) ────────────── */}
       {isEdit && project && (() => {
-        const baseUrl = `${window.location.origin}/v1`;
+        // Use admin-configured publicUrl (Settings → Public URL).
+        // Falls back to window.location.origin while the fetch is in flight or if unset.
+        const baseUrl = (servicePublicUrl || window.location.origin) + '/v1';
         return (
           <div style={{ marginBottom: 28, padding: '12px 16px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, maxWidth: 480 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>

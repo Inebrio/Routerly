@@ -232,6 +232,8 @@ export interface Settings {
   dashboardEnabled: boolean;
   defaultTimeoutMs: number;
   logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error';
+  /** Public base URL of the service — used in "How to connect" when dashboard runs on a different host. */
+  publicUrl?: string;
   notifications?: NotificationsConfig;
 }
 

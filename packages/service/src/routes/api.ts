@@ -604,6 +604,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       'logLevel',
       'dashboardEnabled',
       'notifications',
+      'publicUrl',
     ];
     const updated = { ...current };
     for (const key of allowed) {
