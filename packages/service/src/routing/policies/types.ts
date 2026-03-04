@@ -17,7 +17,11 @@ export interface PolicyRoutingEntry {
   [key: string]: any; // campi extra opzionali specifici della policy
 }
 
-type Logger = { info: (obj: object, msg?: string) => void };
+type Logger = {
+  info: (obj: object, msg?: string) => void;
+  warn: (obj: object, msg?: string) => void;
+  error: (obj: object, msg?: string) => void;
+};
 
 /** Input ricevuto da ogni policy */
 export interface PolicyInput {

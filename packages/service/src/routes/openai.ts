@@ -2,12 +2,11 @@ import type { FastifyPluginAsync } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import type { ChatCompletionRequest, ModelObject } from '@localrouter/shared';
 import { routeRequest } from '../routing/router.js';
-import { getProviderAdapter } from '../providers/index.js';
-import { trackUsage } from '../cost/tracker.js';
 import { readConfig } from '../config/loader.js';
-import { isAllowed } from '../cost/budget.js';
 import { setTrace, appendTrace } from '../routing/traceStore.js';
 import type { TraceEntry } from '../routing/traceStore.js';
+import { llmChat, llmStream, BudgetExceededError } from '../llm/executor.js';
+import type { LLMCallContext } from '../llm/executor.js';
 
 export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/chat/completions ───────────────────────────────────────────────
@@ -92,88 +91,47 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         const model = allModelsList.find((m: any) => m.id === candidate.model);
         if (!model) continue;
 
-        const allowed = await isAllowed(model, project, request.token);
-        if (!allowed) {
-          request.log.info({ modelId: model.id }, 'Model budget exhausted, skipping');
-          emit({ panel: 'response', message: 'model:skipped', details: { modelId: model.id, reason: 'budget_exhausted' } });
-          await trackUsage({ projectId: project.id, model, inputTokens: 0, outputTokens: 0, latencyMs: 0, outcome: 'error', errorMessage: 'budget_exceeded', callType: 'completion', traceId });
-          continue;
-        }
-
-        const adapter = getProviderAdapter(model);
-        const t0 = Date.now();
-        let inputTokens = 0;
-        let outputTokens = 0;
-        let thinkingAccum = '';     // accumulates thinking text across delta chunks
-        let thinkingEmitted = false;
-
-        emit({ panel: 'request', message: 'model:request', details: { modelId: model.id, provider: model.provider, stream: true, messages: body.messages?.length ?? 0 } });
-
-        // Request usage stats in the final stream chunk (OpenAI-compatible standard)
-        const streamBody = { ...body, stream_options: { include_usage: true } };
-
-        const streamIter = adapter.streamCompletion(streamBody, model)[Symbol.asyncIterator]();
-        let firstResult: IteratorResult<any>;
-        try {
-          firstResult = await streamIter.next();
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : String(err);
-          request.log.warn({ err, modelId: model.id }, 'Stream failed before first chunk, trying next candidate');
-          emit({ panel: 'response', message: 'model:error', details: { modelId: model.id, error: msg, latencyMs: Date.now() - t0 } });
-          await trackUsage({ projectId: project.id, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - t0, outcome: 'error', errorMessage: msg, callType: 'completion', traceId });
-          continue;
-        }
-
-        if (firstResult.done) continue;
-
-        const ttftMs = Date.now() - t0;
-
-        const processChunk = (chunk: any) => {
-          const u = chunk.usage;
-          if (u) {
-            inputTokens = u.prompt_tokens ?? inputTokens;
-            outputTokens = u.completion_tokens ?? outputTokens;
-          }
-          const delta = chunk?.choices?.[0]?.delta as any;
-          if (delta?.thinking !== undefined) {
-            // Thinking delta — accumulate for trace, forward for FE animation
-            thinkingAccum += delta.thinking as string;
-          } else if (delta?.content !== undefined && !thinkingEmitted && thinkingAccum) {
-            // First text chunk after thinking — emit accumulated thinking as one trace entry
-            emit({ panel: 'response', message: 'model:thinking', details: { modelId: model.id, text: thinkingAccum } });
-            thinkingEmitted = true;
-          }
-          reply.raw.write(`data: ${JSON.stringify(chunk)}\n\n`);
+        const ctx: LLMCallContext = {
+          projectId: project.id,
+          project,
+          token: request.token,
+          callType: 'completion',
+          traceId,
+          emit,
+          log: request.log,
         };
 
-        processChunk(firstResult.value);
-
+        // llmStream gestisce internamente budget, tracking, TTFT e trace.
+        // Lancia BudgetExceededError o un errore pre-stream → passa al candidato successivo.
+        let streamResult: Awaited<ReturnType<typeof llmStream>>;
         try {
-          let result = await streamIter.next();
-          while (!result.done) {
-            processChunk(result.value);
-            result = await streamIter.next();
+          streamResult = await llmStream(body, model, ctx);
+        } catch (err: unknown) {
+          if (!(err instanceof BudgetExceededError)) {
+            request.log.warn({ err, modelId: model.id }, 'Stream failed before first chunk, trying next candidate');
           }
-          // Emit thinking trace if not yet emitted (e.g. model only thought, no text)
-          if (thinkingAccum && !thinkingEmitted) {
-            emit({ panel: 'response', message: 'model:thinking', details: { modelId: model.id, text: thinkingAccum } });
+          continue;
+        }
+
+        // Il generator emette tutti i chunk; tracking completato nel suo finally.
+        try {
+          for await (const chunk of streamResult.chunks) {
+            reply.raw.write(`data: ${JSON.stringify(chunk)}\n\n`);
           }
           reply.raw.write('data: [DONE]\n\n');
-          emit({ panel: 'response', message: 'model:success', details: { modelId: model.id, inputTokens, outputTokens, latencyMs: Date.now() - t0 } });
-          await trackUsage({ projectId: project.id, model, inputTokens, outputTokens, latencyMs: Date.now() - t0, ttftMs, outcome: 'success', callType: 'completion', traceId });
         } catch (err: unknown) {
+          // Errore mid-stream: già tracciato dall'executor; chiudiamo la connessione.
           const msg = err instanceof Error ? err.message : String(err);
           request.log.error({ err, modelId: model.id }, 'Streaming error mid-stream');
-          emit({ panel: 'response', message: 'model:error', details: { modelId: model.id, error: msg, latencyMs: Date.now() - t0 } });
-          await trackUsage({ projectId: project.id, model, inputTokens, outputTokens, latencyMs: Date.now() - t0, ttftMs, outcome: 'error', errorMessage: msg, callType: 'completion', traceId });
           reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: msg })}\n\n`);
+          reply.raw.write('data: [DONE]\n\n');
         }
 
         reply.raw.end();
         return;
       }
 
-      // All candidates exhausted
+      // Tutti i candidati esauriti
       emit({ panel: 'response', message: 'model:error', details: { error: 'All candidates unavailable or budget-exhausted' } });
       reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: 'All candidate models are unavailable or budget-exhausted.' })}\n\n`);
       reply.raw.write('data: [DONE]\n\n');
@@ -186,22 +144,19 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       const model = allModelsList.find((m: any) => m.id === candidate.model);
       if (!model) continue;
 
-      const allowed = await isAllowed(model, project, request.token);
-      if (!allowed) {
-        emit({ panel: 'response', message: 'model:skipped', details: { modelId: model.id, reason: 'budget_exhausted' } });
-        await trackUsage({ projectId: project.id, model, inputTokens: 0, outputTokens: 0, latencyMs: 0, outcome: 'budget_exceeded', callType: 'completion', traceId });
-        continue;
-      }
-
-      const adapter = getProviderAdapter(model);
-      const t0 = Date.now();
-      emit({ panel: 'request', message: 'model:request', details: { modelId: model.id, provider: model.provider, stream: false, messages: body.messages?.length ?? 0 } });
+      const ctx: LLMCallContext = {
+        projectId: project.id,
+        project,
+        token: request.token,
+        callType: 'completion',
+        traceId,
+        emit,
+        log: request.log,
+      };
 
       try {
-        const response = await adapter.chatCompletion(body, model);
-        emit({ panel: 'response', message: 'model:success', details: { modelId: model.id, inputTokens: response.usage.prompt_tokens, outputTokens: response.usage.completion_tokens, latencyMs: Date.now() - t0 } });
-        await trackUsage({ projectId: project.id, model, inputTokens: response.usage.prompt_tokens, outputTokens: response.usage.completion_tokens, latencyMs: Date.now() - t0, outcome: 'success', callType: 'completion', traceId });
-        // Emit as a fake SSE chunk so the FE can read it uniformly
+        const response = await llmChat(body, model, ctx);
+        // Invia come fake SSE chunk per uniformità con il path streaming
         const fakeChunk = {
           id: response.id,
           object: 'chat.completion.chunk',
@@ -215,10 +170,10 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         reply.raw.end();
         return;
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        request.log.warn({ err, modelId: model.id }, 'Model failed, trying next candidate');
-        emit({ panel: 'response', message: 'model:error', details: { modelId: model.id, error: msg, latencyMs: Date.now() - t0 } });
-        await trackUsage({ projectId: project.id, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - t0, outcome: 'error', errorMessage: msg, callType: 'completion', traceId });
+        // BudgetExceededError o errore del provider: già tracciato dall'executor.
+        if (!(err instanceof BudgetExceededError)) {
+          request.log.warn({ err, modelId: model.id }, 'Model failed, trying next candidate');
+        }
       }
     }
 

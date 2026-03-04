@@ -1,8 +1,8 @@
 import type { ModelConfig, ProjectConfig } from '@localrouter/shared';
 import { readConfig } from '../../config/loader.js';
 import { getProviderAdapter } from '../../providers/index.js';
-import { trackUsage } from '../../cost/tracker.js';
-import { isAllowed, isAllowedForRoutingModel } from '../../cost/budget.js';
+import { llmChat, BudgetExceededError } from '../../llm/executor.js';
+import type { LLMCallContext } from '../../llm/executor.js';
 import type { PolicyFn } from './types.js';
 
 function buildSystemPrompt(candidates: { id: string; prompt?: string }[]): string {
@@ -127,12 +127,20 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
   }
 
   const allModels: ModelConfig[] = await readConfig('models');
+  const allProjects: ProjectConfig[] = await readConfig('projects');
+  // Se il progetto non è trovato, usa un oggetto vuoto: checkBudget ricadrà
+  // su isAllowedForRoutingModel (globalThresholds only).
+  const project = allProjects.find((p: ProjectConfig) => p.id === projectId)
+    ?? { id: projectId ?? '', models: [], name: '' } as ProjectConfig;
 
   const fallbackModelIds: string[] = config?.fallbackModelIds ?? [];
   const candidateModelIds = [routingModelId, ...fallbackModelIds];
 
   const systemPrompt = buildSystemPrompt(
-    candidates.map(c => ({ id: c.model.id, prompt: c.prompt })),
+    candidates.map(c => ({
+      id: c.model.id as string,
+      ...(c.prompt !== undefined ? { prompt: c.prompt } : {}),
+    })),
   );
   const userMessage = buildUserMessage(request);
 
@@ -146,38 +154,17 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
       continue;
     }
 
-    // ── Budget check before routing call ─────────────────────────────────
-    // If the routing model is also a project candidate, use the full per-project
-    // threshold check (which respects per-project overrides). Otherwise fall back
-    // to globalThresholds only, so budget is always enforced regardless.
-    if (projectId) {
-      const allProjects: ProjectConfig[] = await readConfig('projects');
-      const project = allProjects.find((p: ProjectConfig) => p.id === projectId);
-      const isCandidate = project?.models.some((m: any) => m.modelId === modelId) ?? false;
-      const budgetAllowed = isCandidate && project
-        ? await isAllowed(model, project, token)
-        : await isAllowedForRoutingModel(model, projectId);
-      if (!budgetAllowed) {
-        log?.info({ modelId, reason: 'budget_exhausted' }, 'llm policy: skipping model');
-        emit?.({ panel: 'router-response', message: 'llm-policy:skip', details: { modelId, reason: 'budget_exhausted' } });
-        await trackUsage({
-          projectId,
-          model,
-          inputTokens: 0,
-          outputTokens: 0,
-          latencyMs: 0,
-          outcome: 'error',
-          errorMessage: 'budget_exceeded',
-          callType: 'routing',
-        }).catch(() => {});
-        continue;
-      }
-    }
+    const ctx: LLMCallContext = {
+      projectId: projectId ?? '',
+      project,
+      callType: 'routing' as const,
+      ...(token !== undefined ? { token } : {}),
+      ...(emit !== undefined ? { emit } : {}),
+      ...(log !== undefined ? { log } : {}),
+    };
 
-    const adapter = getProviderAdapter(model);
-    const t0 = Date.now();
     try {
-      const response = await adapter.chatCompletion(
+      const response = await llmChat(
         {
           model: model.id,
           messages: [
@@ -188,26 +175,13 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
           stream: false,
         },
         model,
+        ctx,
       );
-
-      const latencyMs = Date.now() - t0;
-      if (projectId) {
-        await trackUsage({
-          projectId,
-          model,
-          inputTokens: response.usage?.prompt_tokens ?? 0,
-          outputTokens: response.usage?.completion_tokens ?? 0,
-          latencyMs,
-          // Non-streaming: tutta la latenza = tempo al primo token
-          ttftMs: latencyMs,
-          outcome: 'success',
-          callType: 'routing',
-        }).catch(() => { /* non bloccare il routing per un errore di tracking */ });
-      }
 
       const text = response.choices?.[0]?.message?.content ?? '';
       log?.info({ modelId, raw: text }, 'llm policy: raw response');
 
+      const adapter = getProviderAdapter(model);
       let routing = parseRoutingResponse(text);
       if (!routing) {
         log?.info({ modelId, reason: 'parse failed, attempting repair' }, 'llm policy: repair');
@@ -234,22 +208,16 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
         },
       });
       return { routing };
-    } catch (err) {
-      const errMsg = String(err);
+    } catch (err: unknown) {
+      if (err instanceof BudgetExceededError) {
+        // L'executor ha già emesso model:skipped e tracciato l'evento
+        log?.info({ modelId, reason: 'budget_exhausted' }, 'llm policy: skipping model');
+        continue;
+      }
+      // Errore del provider: l'executor ha già tracciato + emesso model:error
+      const errMsg = err instanceof Error ? err.message : String(err);
       log?.info({ modelId, err: errMsg, reason: 'call failed' }, 'llm policy: skipping model');
       emit?.({ panel: 'router-response', message: 'llm-policy:error', details: { modelId, error: errMsg } });
-      if (projectId) {
-        await trackUsage({
-          projectId,
-          model,
-          inputTokens: 0,
-          outputTokens: 0,
-          latencyMs: Date.now() - t0,
-          outcome: 'error',
-          errorMessage: errMsg,
-          callType: 'routing',
-        }).catch(() => {});
-      }
     }
   }
 
