@@ -20,7 +20,11 @@ import { UsersPage } from './pages/UsersPage';
 import { UsagePage } from './pages/UsagePage';
 import { UsageRecordPage } from './pages/UsageRecordPage';
 import { TestPage } from './pages/TestPage';
-import { LayoutDashboard, Cpu, FolderOpen, Users, BarChart2, FlaskConical, LogOut } from 'lucide-react';
+import { SettingsPage } from './pages/SettingsPage';
+import { SettingsGeneralTab, SettingsAboutTab, SettingsNotificationsTab } from './pages/SettingsPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { UserEditPage } from './pages/UserEditPage';
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, Settings as SettingsIcon, UserCircle, LogOut } from 'lucide-react';
 
 function Sidebar() {
   const { user, logout } = useAuth();
@@ -32,7 +36,6 @@ function Sidebar() {
     { to: '/dashboard/overview', icon: <LayoutDashboard size={17} />, label: 'Overview' },
     { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
-    { to: '/dashboard/users', icon: <Users size={17} />, label: 'Users' },
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
     { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Test' },
   ];
@@ -56,9 +59,18 @@ function Sidebar() {
         ))}
       </nav>
       <div className="sidebar-footer">
-        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 10 }}>
-          {user?.email}
-        </div>
+        <NavLink
+          to="/dashboard/profile"
+          className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+        >
+          <UserCircle size={15} /> {user?.email}
+        </NavLink>
+        <NavLink
+          to="/dashboard/settings"
+          className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+        >
+          <SettingsIcon size={15} /> Settings
+        </NavLink>
         <button className="nav-item" style={{ color: 'var(--danger)' }} onClick={handleLogout}>
           <LogOut size={15} /> Sign Out
         </button>
@@ -149,9 +161,21 @@ const router = createBrowserRouter([
               { path: 'logs', element: <ProjectLogsTab /> },
             ],
           },
-          { path: 'users', element: <UsersPage /> },
           { path: 'usage', element: <UsagePage /> },
           { path: 'test', element: <TestPage /> },
+          {
+            path: 'settings',
+            element: <SettingsPage />,
+            children: [
+              { index: true, element: <Navigate to="general" replace /> },
+              { path: 'general', element: <SettingsGeneralTab /> },
+              { path: 'notifications', element: <SettingsNotificationsTab /> },
+              { path: 'users', element: <UsersPage /> },
+              { path: 'users/:userId', element: <UserEditPage /> },
+              { path: 'about', element: <SettingsAboutTab /> },
+            ],
+          },
+          { path: 'profile', element: <ProfilePage /> },
           { path: 'usage/:id', element: <UsageRecordPage /> },
           { path: '*', element: <Navigate to="overview" replace /> },
         ],

@@ -151,7 +151,69 @@ export interface Settings {
   /** Default timeout per model attempt in ms */
   defaultTimeoutMs: number;
   logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error';
+  /** Optional notification channels configuration */
+  notifications?: NotificationsConfig;
 }
+
+// ─── Notification config types ────────────────────────────────────────────────
+
+/** Top-level notifications config. Add more channels here in future (slack, webhook…) */
+export interface NotificationsConfig {
+  /** Outbound email transport */
+  email?: EmailConfig;
+}
+
+// ─── Email config types ───────────────────────────────────────────────────────
+
+export type EmailProvider = 'smtp' | 'ses' | 'sendgrid' | 'azure' | 'google';
+
+interface EmailBase {
+  provider: EmailProvider;
+  fromAddress: string;
+  fromName?: string;
+}
+
+export interface SmtpEmailConfig extends EmailBase {
+  provider: 'smtp';
+  host: string;
+  port: number;
+  /** Use TLS/SSL */
+  secure: boolean;
+  username?: string;
+  password?: string;
+}
+
+export interface SesEmailConfig extends EmailBase {
+  provider: 'ses';
+  region: string;
+  /** Optional if using IAM instance role */
+  accessKeyId?: string;
+  secretAccessKey?: string;
+}
+
+export interface SendGridEmailConfig extends EmailBase {
+  provider: 'sendgrid';
+  apiKey: string;
+}
+
+export interface AzureEmailConfig extends EmailBase {
+  provider: 'azure';
+  connectionString: string;
+}
+
+export interface GoogleEmailConfig extends EmailBase {
+  provider: 'google';
+  clientId: string;
+  clientSecret: string;
+  refreshToken: string;
+}
+
+export type EmailConfig =
+  | SmtpEmailConfig
+  | SesEmailConfig
+  | SendGridEmailConfig
+  | AzureEmailConfig
+  | GoogleEmailConfig;
 
 // ─── Trace types ─────────────────────────────────────────────────────────────
 

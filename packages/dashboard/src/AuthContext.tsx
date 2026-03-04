@@ -8,6 +8,7 @@ interface AuthCtx {
   login: (email: string, password: string) => Promise<void>;
   loginDirect: (token: string, user: AuthUser) => void;
   logout: () => void;
+  updateUser: (partial: Partial<AuthUser>) => void;
 }
 
 const AuthContext = createContext<AuthCtx | null>(null);
@@ -53,8 +54,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }
 
+  function updateUser(partial: Partial<AuthUser>) {
+    setUser(prev => {
+      if (!prev) return prev;
+      const next = { ...prev, ...partial };
+      localStorage.setItem('lr_user', JSON.stringify(next));
+      return next;
+    });
+  }
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, loginDirect, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, loginDirect, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

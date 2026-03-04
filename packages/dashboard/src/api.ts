@@ -162,6 +162,8 @@ export interface User {
 export const getUsers = () => request<User[]>('/users');
 export const createUser = (data: { email: string; password: string; roleId?: string }) =>
   request<User>('/users', { method: 'POST', body: JSON.stringify(data) });
+export const updateUser = (id: string, data: { email?: string; roleId?: string; newPassword?: string }) =>
+  request<User>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteUser = (id: string) => request<void>(`/users/${id}`, { method: 'DELETE' });
 
 // ── Usage Stats ───────────────────────────────────────────────────────────
@@ -196,3 +198,53 @@ export const getUsage = (period = 'monthly', projectId?: string, from?: string, 
 
 export const getUsageRecord = (id: string) =>
   request<UsageRecord>(`/usage/${id}`);
+
+// ── Settings ──────────────────────────────────────────────────────────────
+export type EmailProvider = 'smtp' | 'ses' | 'sendgrid' | 'azure' | 'google';
+
+export interface SmtpEmailConfig   { provider: 'smtp';      fromAddress: string; fromName?: string; host: string; port: number; secure: boolean; username?: string; password?: string; }
+export interface SesEmailConfig    { provider: 'ses';       fromAddress: string; fromName?: string; region: string; accessKeyId?: string; secretAccessKey?: string; }
+export interface SendGridEmailConfig { provider: 'sendgrid'; fromAddress: string; fromName?: string; apiKey: string; }
+export interface AzureEmailConfig  { provider: 'azure';     fromAddress: string; fromName?: string; connectionString: string; }
+export interface GoogleEmailConfig { provider: 'google';    fromAddress: string; fromName?: string; clientId: string; clientSecret: string; refreshToken: string; }
+export type EmailConfig = SmtpEmailConfig | SesEmailConfig | SendGridEmailConfig | AzureEmailConfig | GoogleEmailConfig;
+
+export interface NotificationsConfig {
+  email?: EmailConfig;
+}
+
+export interface Settings {
+  port: number;
+  host: string;
+  dashboardEnabled: boolean;
+  defaultTimeoutMs: number;
+  logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error';
+  notifications?: NotificationsConfig;
+}
+
+export const getSettings = () => request<Settings>('/settings');
+export const updateSettings = (data: Partial<Settings>) =>
+  request<Settings>('/settings', { method: 'PUT', body: JSON.stringify(data) });
+
+// ── System info ──────────────────────────────────────────────────────────────
+export interface SystemInfo {
+  version: string;
+  nodeVersion: string;
+  platform: string;
+  configDir: string;
+  dataDir: string;
+  uptimeSeconds: number;
+}
+
+export const getSystemInfo = () => request<SystemInfo>('/system/info');
+
+// ── Profile (current user) ────────────────────────────────────────────────
+export interface Me {
+  id: string;
+  email: string;
+  roleId: string;
+}
+
+export const getMe = () => request<Me>('/me');
+export const updateMe = (data: { currentPassword: string; newPassword: string }) =>
+  request<Me>('/me', { method: 'PUT', body: JSON.stringify(data) });

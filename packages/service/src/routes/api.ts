@@ -3,9 +3,10 @@ import { createHash } from 'node:crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
 import { readConfig, writeConfig } from '../config/loader.js';
+import { CONFIG_PATHS } from '../config/paths.js';
 import { encrypt, decrypt } from '@localrouter/shared';
 import { createSessionToken, verifyToken } from '../plugins/jwt.js';
-import type { ModelConfig, ProjectConfig, UserConfig, Provider, TokenCost, PricingTier, RoutingPolicy, TokenModelRef } from '@localrouter/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, Provider, TokenCost, PricingTier, RoutingPolicy, TokenModelRef, Settings } from '@localrouter/shared';
 import { getTrace } from '../routing/traceStore.js';
 
 function hashPassword(p: string): string {
@@ -389,6 +390,48 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // ══════════════════════════════════════════════════════════════════════════════
+  // CURRENT USER (me)
+  // ══════════════════════════════════════════════════════════════════════════════
+
+  fastify.get('/api/me', async (req, reply) => {
+    const userId = requireAdmin(req.headers.authorization);
+    if (!userId) return reply.status(401).send({ error: 'Unauthorized' });
+    const users = await readConfig('users');
+    const user = users.find(u => u.id === userId);
+    if (!user) return reply.status(404).send({ error: 'User not found' });
+    return reply.send({ id: user.id, email: user.email, roleId: user.roleId });
+  });
+
+  fastify.put<{
+    Body: { currentPassword: string; newEmail?: string; newPassword?: string };
+  }>('/api/me', async (req, reply) => {
+    const userId = requireAdmin(req.headers.authorization);
+    if (!userId) return reply.status(401).send({ error: 'Unauthorized' });
+    const { currentPassword, newEmail, newPassword } = req.body;
+    if (!currentPassword) return reply.status(400).send({ error: 'Current password is required' });
+    const users = await readConfig('users');
+    const idx = users.findIndex(u => u.id === userId);
+    if (idx === -1) return reply.status(404).send({ error: 'User not found' });
+    const user = users[idx];
+    if (user.passwordHash !== hashPassword(currentPassword)) {
+      return reply.status(401).send({ error: 'Current password is incorrect' });
+    }
+    if (newEmail && newEmail !== user.email) {
+      if (users.find(u => u.email === newEmail)) {
+        return reply.status(409).send({ error: 'Email already in use' });
+      }
+      users[idx] = { ...user, email: newEmail };
+    }
+    if (newPassword) {
+      if (newPassword.length < 8) return reply.status(400).send({ error: 'Password must be at least 8 characters' });
+      users[idx] = { ...users[idx], passwordHash: hashPassword(newPassword) };
+    }
+    await writeConfig('users', users);
+    const updated = users[idx];
+    return reply.send({ id: updated.id, email: updated.email, roleId: updated.roleId });
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════════
   // USERS
   // ══════════════════════════════════════════════════════════════════════════════
 
@@ -414,6 +457,29 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     users.push(user);
     await writeConfig('users', users);
     return reply.status(201).send({ ...user, passwordHash: undefined });
+  });
+
+  fastify.put<{
+    Params: { id: string };
+    Body: { email?: string; roleId?: string; newPassword?: string };
+  }>('/api/users/:id', async (req, reply) => {
+    const users = await readConfig('users');
+    const idx = users.findIndex(u => u.id === req.params.id);
+    if (idx === -1) return reply.status(404).send({ error: 'User not found' });
+    const user = users[idx];
+    const { email, roleId, newPassword } = req.body;
+    if (email && email !== user.email) {
+      if (users.find(u => u.email === email)) return reply.status(409).send({ error: 'Email already in use' });
+      users[idx] = { ...users[idx], email };
+    }
+    if (roleId) users[idx] = { ...users[idx], roleId };
+    if (newPassword) {
+      if (newPassword.length < 8) return reply.status(400).send({ error: 'Password must be at least 8 characters' });
+      users[idx] = { ...users[idx], passwordHash: hashPassword(newPassword) };
+    }
+    await writeConfig('users', users);
+    const updated = users[idx];
+    return reply.send({ id: updated.id, email: updated.email, roleId: updated.roleId, projectIds: updated.projectIds });
   });
 
   fastify.delete<{ Params: { id: string } }>('/api/users/:id', async (req, reply) => {
@@ -497,6 +563,45 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const record = records.find(r => r.id === req.params.id);
     if (!record) return reply.status(404).send({ error: 'Record not found' });
     return reply.send(record);
+  });
+
+  // ─── GET /api/system/info ───────────────────────────────────────────────────
+  fastify.get('/api/system/info', async (_req, reply) => {
+    return reply.send({
+      version: '0.0.1',
+      nodeVersion: process.version,
+      platform: process.platform,
+      configDir: CONFIG_PATHS.config,
+      dataDir: CONFIG_PATHS.data,
+      uptimeSeconds: Math.floor(process.uptime()),
+    });
+  });
+
+  // ─── GET /api/settings ─────────────────────────────────────────────────────
+  fastify.get('/api/settings', async (_req, reply) => {
+    const settings = await readConfig('settings');
+    return reply.send(settings);
+  });
+
+  // ─── PUT /api/settings ─────────────────────────────────────────────────────
+  fastify.put<{
+    Body: Partial<Settings>;
+  }>('/api/settings', async (req, reply) => {
+    const current = await readConfig('settings');
+    const allowed: (keyof Settings)[] = [
+      'defaultTimeoutMs',
+      'logLevel',
+      'dashboardEnabled',
+      'notifications',
+    ];
+    const updated = { ...current };
+    for (const key of allowed) {
+      if ((req.body as Partial<Settings>)[key] !== undefined) {
+        (updated as any)[key] = (req.body as Partial<Settings>)[key];
+      }
+    }
+    await writeConfig('settings', updated);
+    return reply.send(updated);
   });
 
   // ─── GET /api/traces/:id ─────────────────────────────────────────────────────
