@@ -200,18 +200,31 @@ export const getUsageRecord = (id: string) =>
   request<UsageRecord>(`/usage/${id}`);
 
 // ── Settings ──────────────────────────────────────────────────────────────
-export type EmailProvider = 'smtp' | 'ses' | 'sendgrid' | 'azure' | 'google';
+export type EmailProvider   = 'smtp' | 'ses' | 'sendgrid' | 'azure' | 'google';
+export type ChannelProvider = EmailProvider | 'webhook';
 
-export interface SmtpEmailConfig   { provider: 'smtp';      fromAddress: string; fromName?: string; host: string; port: number; secure: boolean; username?: string; password?: string; }
-export interface SesEmailConfig    { provider: 'ses';       fromAddress: string; fromName?: string; region: string; accessKeyId?: string; secretAccessKey?: string; }
-export interface SendGridEmailConfig { provider: 'sendgrid'; fromAddress: string; fromName?: string; apiKey: string; }
-export interface AzureEmailConfig  { provider: 'azure';     fromAddress: string; fromName?: string; connectionString: string; }
-export interface GoogleEmailConfig { provider: 'google';    fromAddress: string; fromName?: string; clientId: string; clientSecret: string; refreshToken: string; }
-export type EmailConfig = SmtpEmailConfig | SesEmailConfig | SendGridEmailConfig | AzureEmailConfig | GoogleEmailConfig;
+export interface SmtpChannelConfig   { id: string; name?: string; provider: 'smtp';      fromAddress: string; fromName?: string; host: string; port: number; secure: boolean; username?: string; password?: string; }
+export interface SesChannelConfig    { id: string; name?: string; provider: 'ses';       fromAddress: string; fromName?: string; region: string; accessKeyId?: string; secretAccessKey?: string; }
+export interface SendGridChannelConfig { id: string; name?: string; provider: 'sendgrid'; fromAddress: string; fromName?: string; apiKey: string; }
+export interface AzureChannelConfig  { id: string; name?: string; provider: 'azure';     fromAddress: string; fromName?: string; connectionString: string; }
+export interface GoogleChannelConfig { id: string; name?: string; provider: 'google';    fromAddress: string; fromName?: string; clientId: string; clientSecret: string; refreshToken: string; }
+export interface WebhookChannelConfig { id: string; name?: string; provider: 'webhook'; url: string; method?: 'POST' | 'GET'; secret?: string; }
+
+export type NotificationChannel =
+  | SmtpChannelConfig | SesChannelConfig | SendGridChannelConfig
+  | AzureChannelConfig | GoogleChannelConfig | WebhookChannelConfig;
 
 export interface NotificationsConfig {
-  email?: EmailConfig;
+  channels?: NotificationChannel[];
 }
+
+// backward-compat aliases
+export type SmtpEmailConfig     = SmtpChannelConfig;
+export type SesEmailConfig      = SesChannelConfig;
+export type SendGridEmailConfig = SendGridChannelConfig;
+export type AzureEmailConfig    = AzureChannelConfig;
+export type GoogleEmailConfig   = GoogleChannelConfig;
+export type EmailConfig = SmtpChannelConfig | SesChannelConfig | SendGridChannelConfig | AzureChannelConfig | GoogleChannelConfig;
 
 export interface Settings {
   port: number;
@@ -237,6 +250,12 @@ export interface SystemInfo {
 }
 
 export const getSystemInfo = () => request<SystemInfo>('/system/info');
+
+export const testNotificationChannel = (channelId: string, to: string) =>
+  request<{ ok: boolean; message: string; fixedSecure?: boolean }>('/notifications/test', {
+    method: 'POST',
+    body: JSON.stringify({ channelId, to }),
+  });
 
 // ── Profile (current user) ────────────────────────────────────────────────
 export interface Me {

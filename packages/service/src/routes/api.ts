@@ -8,6 +8,7 @@ import { encrypt, decrypt } from '@localrouter/shared';
 import { createSessionToken, verifyToken } from '../plugins/jwt.js';
 import type { ModelConfig, ProjectConfig, UserConfig, Provider, TokenCost, PricingTier, RoutingPolicy, TokenModelRef, Settings } from '@localrouter/shared';
 import { getTrace } from '../routing/traceStore.js';
+import { sendTestNotification } from '../notifications/sender.js';
 
 function hashPassword(p: string): string {
   return createHash('sha256').update(p).digest('hex');
@@ -602,6 +603,29 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
     await writeConfig('settings', updated);
     return reply.send(updated);
+  });
+
+  // ─── POST /api/notifications/test ─────────────────────────────────────────
+  fastify.post<{ Body: { channelId: string; to: string } }>('/api/notifications/test', async (req, reply) => {
+    const userId = requireAdmin(req.headers.authorization);
+    if (!userId) return reply.status(401).send({ error: 'Unauthorized' });
+
+    const { channelId, to } = req.body;
+    if (!channelId) return reply.status(400).send({ error: 'channelId is required' });
+
+    const settings = await readConfig('settings');
+    const channels  = (settings.notifications?.channels ?? []) as Array<{ id: string; provider: string; [k: string]: unknown }>;
+    const channel   = channels.find(ch => ch.id === channelId);
+    if (!channel) return reply.status(400).send({ error: `Channel "${channelId}" not found` });
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await sendTestNotification(channel as any, to ?? '');
+      return reply.send(result);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return reply.send({ ok: false, message: msg });
+    }
   });
 
   // ─── GET /api/traces/:id ─────────────────────────────────────────────────────

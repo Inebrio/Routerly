@@ -157,33 +157,32 @@ export interface Settings {
 
 // ─── Notification config types ────────────────────────────────────────────────
 
-/** Top-level notifications config. Add more channels here in future (slack, webhook…) */
-export interface NotificationsConfig {
-  /** Outbound email transport */
-  email?: EmailConfig;
+export type EmailProvider   = 'smtp' | 'ses' | 'sendgrid' | 'azure' | 'google';
+export type ChannelProvider = EmailProvider | 'webhook';
+
+interface ChannelBase {
+  /** Unique channel identifier generated client-side */
+  id: string;
+  /** User-defined label shown in the UI */
+  name?: string;
 }
 
-// ─── Email config types ───────────────────────────────────────────────────────
-
-export type EmailProvider = 'smtp' | 'ses' | 'sendgrid' | 'azure' | 'google';
-
-interface EmailBase {
-  provider: EmailProvider;
+interface EmailChannelBase extends ChannelBase {
   fromAddress: string;
   fromName?: string;
 }
 
-export interface SmtpEmailConfig extends EmailBase {
+export interface SmtpChannelConfig extends EmailChannelBase {
   provider: 'smtp';
   host: string;
   port: number;
-  /** Use TLS/SSL */
+  /** Use TLS/SSL (direct SSL on 465) vs STARTTLS (587/25) */
   secure: boolean;
   username?: string;
   password?: string;
 }
 
-export interface SesEmailConfig extends EmailBase {
+export interface SesChannelConfig extends EmailChannelBase {
   provider: 'ses';
   region: string;
   /** Optional if using IAM instance role */
@@ -191,29 +190,56 @@ export interface SesEmailConfig extends EmailBase {
   secretAccessKey?: string;
 }
 
-export interface SendGridEmailConfig extends EmailBase {
+export interface SendGridChannelConfig extends EmailChannelBase {
   provider: 'sendgrid';
   apiKey: string;
 }
 
-export interface AzureEmailConfig extends EmailBase {
+export interface AzureChannelConfig extends EmailChannelBase {
   provider: 'azure';
   connectionString: string;
 }
 
-export interface GoogleEmailConfig extends EmailBase {
+export interface GoogleChannelConfig extends EmailChannelBase {
   provider: 'google';
   clientId: string;
   clientSecret: string;
   refreshToken: string;
 }
 
+export interface WebhookChannelConfig extends ChannelBase {
+  provider: 'webhook';
+  url: string;
+  method?: 'POST' | 'GET';
+  /** Optional HMAC-SHA256 signing secret sent as X-LocalRouter-Signature */
+  secret?: string;
+}
+
+export type NotificationChannel =
+  | SmtpChannelConfig
+  | SesChannelConfig
+  | SendGridChannelConfig
+  | AzureChannelConfig
+  | GoogleChannelConfig
+  | WebhookChannelConfig;
+
+/** Top-level notifications configuration */
+export interface NotificationsConfig {
+  channels?: NotificationChannel[];
+}
+
+// ── Backward-compat aliases (used by service code) ────────────────────────────
+export type SmtpEmailConfig     = SmtpChannelConfig;
+export type SesEmailConfig      = SesChannelConfig;
+export type SendGridEmailConfig = SendGridChannelConfig;
+export type AzureEmailConfig    = AzureChannelConfig;
+export type GoogleEmailConfig   = GoogleChannelConfig;
 export type EmailConfig =
-  | SmtpEmailConfig
-  | SesEmailConfig
-  | SendGridEmailConfig
-  | AzureEmailConfig
-  | GoogleEmailConfig;
+  | SmtpChannelConfig
+  | SesChannelConfig
+  | SendGridChannelConfig
+  | AzureChannelConfig
+  | GoogleChannelConfig;
 
 // ─── Trace types ─────────────────────────────────────────────────────────────
 
