@@ -24,7 +24,7 @@ const PANEL_LABELS: Record<string, string> = {
 };
 
 const PANEL_COLORS: Record<string, string> = {
-  'router-request':  '#6366f1',
+  'router-request':  '#3d75f5',
   'router-response': '#8b5cf6',
   'request':         '#3b82f6',
   'response':        '#0ea5e9',

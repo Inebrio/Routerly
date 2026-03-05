@@ -25,8 +25,9 @@ function applyTheme(theme: Theme) {
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    return stored === 'light' || stored === 'dark' || stored === 'auto' ? stored : 'auto';
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const valid: Theme[] = ['light', 'dark', 'auto'];
+    return stored && valid.includes(stored as Theme) ? (stored as Theme) : 'auto';
   });
 
   useEffect(() => {

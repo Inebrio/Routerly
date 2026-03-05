@@ -5,7 +5,7 @@ import {
 import { Activity, DollarSign, CheckCircle, XCircle } from 'lucide-react';
 import { getUsage, getModels, getProjects, type UsageStats } from '../api';
 
-const PALETTE = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#3b82f6', '#8b5cf6'];
+const PALETTE = ['#3d75f5', '#10b981', '#f59e0b', '#ec4899', '#3b82f6', '#8b5cf6'];
 
 export function OverviewPage() {
   const [stats, setStats] = useState<UsageStats | null>(null);
@@ -71,8 +71,8 @@ export function OverviewPage() {
               <AreaChart data={timelineData}>
                 <defs>
                   <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#3d75f5" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#3d75f5" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="date" tick={{ fill: '#4b5563', fontSize: 11 }} axisLine={false} tickLine={false} />
@@ -82,7 +82,7 @@ export function OverviewPage() {
                   labelStyle={{ color: '#94a3b8' }}
                   formatter={(v: number) => [`$${v.toFixed(6)}`, 'Cost']}
                 />
-                <Area type="monotone" dataKey="cost" stroke="#6366f1" fill="url(#grad)" strokeWidth={2} />
+                <Area type="monotone" dataKey="cost" stroke="#3d75f5" fill="url(#grad)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           </div>

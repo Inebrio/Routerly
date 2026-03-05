@@ -62,7 +62,7 @@ export function ProfilePage() {
         }}>
           <div style={{
             width: 44, height: 44, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            background: 'linear-gradient(135deg, #3d75f5, #5a90f8)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
           }}>

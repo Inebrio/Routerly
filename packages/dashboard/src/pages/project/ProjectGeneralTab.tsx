@@ -71,9 +71,10 @@ export function ProjectGeneralTab() {
 
       if (isEdit && project) {
         await updateProject(project.id, payload);
-        // Sync context so isDirty becomes false before navigating (avoids blocker)
-        setProject({ ...project, name: form.name, timeoutMs: parseInt(form.timeoutMs) });
-        navigate('.', { replace: true }); // stay
+        // Update context and reset form so isDirty becomes false — no navigation needed
+        const updated = { ...project, name: form.name, timeoutMs: parseInt(form.timeoutMs) };
+        setProject(updated);
+        setForm({ name: updated.name, timeoutMs: String(updated.timeoutMs) });
       } else {
         const proj = await createProject(payload);
         if (proj.token) {
