@@ -77,7 +77,7 @@ export function ProjectLogsTab() {
     <div style={{ padding: '24px 0', maxWidth: 1100 }}>
 
       {/* ── Filters ── */}
-      <div className="card" style={{ padding: '14px 18px', marginBottom: 20 }}>
+      <div className="card" style={{ padding: '14px 18px', marginBottom: 20, position: 'relative', zIndex: 10 }}>
         {lastUpdated && (
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 10 }}>
             Aggiornato automaticamente ogni 30 s &middot; ultimo aggiornamento: {lastUpdated.toLocaleTimeString()}

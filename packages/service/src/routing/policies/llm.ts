@@ -6,13 +6,24 @@ import type { LLMCallContext } from '../../llm/executor.js';
 import type { PolicyFn } from './types.js';
 
 function buildSystemPrompt(candidates: { id: string; prompt?: string }[]): string {
+  const hasAnyPrompt = candidates.some(c => c.prompt);
+
   const modelList = candidates
-    .map(c => `- id: "${c.id}"${c.prompt ? `\n  description: "${c.prompt}"` : ''}`)
+    .map(c => {
+      const guidance = c.prompt
+        ? `\n  routing_guidance: "${c.prompt}"`
+        : '';
+      return `- id: "${c.id}"${guidance}`;
+    })
     .join('\n');
 
   const exampleRouting = candidates
     .map(c => `    { "model": "${c.id}", "point": 0.8, "reason": "suitable for this type of request" }`)
     .join(',\n');
+
+  const guidanceRule = hasAnyPrompt
+    ? `- When a model has a "routing_guidance" field, treat it as a direct instruction from the operator about when that model should be preferred. Weight it heavily in your scoring: a request that matches the guidance should receive a high score (≥ 0.8), while a request that clearly contradicts it should receive a low score (≤ 0.3).`
+    : '';
 
   return `You are a routing assistant. Given a user request, score each available AI model by relevance (0.0 = worst, 1.0 = best).
 
@@ -29,7 +40,7 @@ ${exampleRouting}
 Rules:
 - Include ALL models listed above, using their exact id strings.
 - "point" must be a number between 0.0 and 1.0.
-- "reason" must be a single short sentence explaining the score.
+- "reason" must be a single short sentence explaining the score.${guidanceRule ? `\n- ${guidanceRule.slice(2)}` : ''}
 - Do not output anything outside the JSON object.`;
 }
 

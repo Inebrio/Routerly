@@ -29,6 +29,7 @@ export function ProjectRoutingTab() {
   const [draggedTargetIdx, setDraggedTargetIdx] = useState<number | null>(null);
   const [draggedPolicyIdx, setDraggedPolicyIdx] = useState<number | null>(null);
   const [draggedLlmModelIdx, setDraggedLlmModelIdx] = useState<number | null>(null);
+  const [promptHoverIdx, setPromptHoverIdx] = useState<number | null>(null);
 
   useEffect(() => {
     getModels()
@@ -422,7 +423,7 @@ export function ProjectRoutingTab() {
               <div
                 key={item.internalId}
                 id={`target-row-${idx}`}
-                draggable
+                draggable={promptHoverIdx !== idx}
                 onDragStart={(e) => onDragStartTarget(e, idx)}
                 onDragEnter={(e) => onDragEnterTarget(e, idx)}
                 onDragEnd={(e) => onDragEndTarget(e, idx)}
@@ -434,7 +435,7 @@ export function ProjectRoutingTab() {
                   padding: '12px 12px 12px 6px',
                   borderRadius: 8,
                   border: '1px solid var(--border)',
-                  cursor: 'grab',
+                  cursor: promptHoverIdx === idx ? 'default' : 'grab',
                   transition: 'opacity 0.2s'
                 }}
               >
@@ -460,7 +461,12 @@ export function ProjectRoutingTab() {
                   </div>
 
                   {showPromptInput && (
-                    <div className="form-group" style={{ margin: 0 }}>
+                    <div
+                      className="form-group"
+                      style={{ margin: 0 }}
+                      onMouseEnter={() => setPromptHoverIdx(idx)}
+                      onMouseLeave={() => setPromptHoverIdx(null)}
+                    >
                       <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>Prompt Definition</label>
                       <textarea
                         className="form-input"
@@ -469,7 +475,6 @@ export function ProjectRoutingTab() {
                         placeholder="Describe exactly when and why the router should pick this model..."
                         rows={2}
                         style={{ fontSize: '0.9rem', resize: 'vertical', minHeight: '60px' }}
-                        required={showPromptInput}
                       />
                     </div>
                   )}
