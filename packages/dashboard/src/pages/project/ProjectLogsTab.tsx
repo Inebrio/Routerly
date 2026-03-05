@@ -26,8 +26,17 @@ export function ProjectLogsTab() {
   const [callTypeFilter, setCallTypeFilter] = useState<'all' | 'completion' | 'routing'>('all');
   const [outcomeFilter, setOutcomeFilter]   = useState<'all' | 'success' | 'error'>('all');
   const [lastUpdated, setLastUpdated]       = useState<Date | null>(null);
+  const [pollInterval, setPollInterval]     = useState<number>(30_000);
+  const [refreshing, setRefreshing]         = useState(false);
 
-  const POLL_INTERVAL = 30_000;
+  const POLL_OPTIONS: { label: string; value: number }[] = [
+    { label: 'Off',  value: 0 },
+    { label: '5s',   value: 5_000 },
+    { label: '15s',  value: 15_000 },
+    { label: '30s',  value: 30_000 },
+    { label: '1m',   value: 60_000 },
+    { label: '5m',   value: 300_000 },
+  ];
 
   // Initialise date to "This month"
   useEffect(() => {
@@ -48,12 +57,18 @@ export function ProjectLogsTab() {
       .catch(console.error);
   }, [projectId, dateRange]);
 
+  const handleRefreshNow = useCallback(() => {
+    setRefreshing(true);
+    fetchStats().finally(() => setRefreshing(false));
+  }, [fetchStats]);
+
   useEffect(() => {
     setLoading(true);
     fetchStats().finally(() => setLoading(false));
-    const id = setInterval(fetchStats, POLL_INTERVAL);
+    if (pollInterval === 0) return;
+    const id = setInterval(fetchStats, pollInterval);
     return () => clearInterval(id);
-  }, [fetchStats]);
+  }, [fetchStats, pollInterval]);
 
   const modelOptions = useMemo(() => {
     if (!stats) return [];
@@ -78,11 +93,35 @@ export function ProjectLogsTab() {
 
       {/* ── Filters ── */}
       <div className="card" style={{ padding: '14px 18px', marginBottom: 20, position: 'relative', zIndex: 10 }}>
-        {lastUpdated && (
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 10 }}>
-            Aggiornato automaticamente ogni 30 s &middot; ultimo aggiornamento: {lastUpdated.toLocaleTimeString()}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+            {pollInterval === 0
+              ? 'Auto-refresh disabilitato'
+              : `Auto-refresh ogni ${POLL_OPTIONS.find(o => o.value === pollInterval)?.label}`}
+            {lastUpdated && <> &middot; ultimo aggiornamento: {lastUpdated.toLocaleTimeString()}</>}
           </div>
-        )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>Refresh</span>
+            {POLL_OPTIONS.map(o => (
+              <button
+                key={o.value}
+                className={`btn btn-sm ${pollInterval === o.value ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setPollInterval(o.value)}
+              >
+                {o.label}
+              </button>
+            ))}
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={handleRefreshNow}
+              disabled={refreshing}
+              title="Aggiorna subito"
+              style={{ marginLeft: 4 }}
+            >
+              {refreshing ? '…' : '↻ Now'}
+            </button>
+          </div>
+        </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>

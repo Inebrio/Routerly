@@ -181,7 +181,15 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
     })),
   );
 
-  log?.info({ systemPrompt, userMessage }, 'llm policy: prompts');
+  // Il messaggio utente viene oscurato nei log per garantire la privacy
+  log?.info(
+    {
+      systemPrompt,
+      userMessage: '[redacted]',
+    },
+    'llm policy: prompts',
+  );
+
   for (const modelId of candidateModelIds) {
     const model = allModels.find(m => m.id === modelId);
     if (!model) {
@@ -198,6 +206,23 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
       ...(emit !== undefined ? { emit } : {}),
       ...(log !== undefined ? { log } : {}),
     };
+
+    // Log della request inviata al modello di routing (utente oscurato per privacy)
+    log?.info(
+      {
+        routingModel: modelId,
+        request: {
+          model: model.id,
+          max_completion_tokens: 2048,
+          stream: false,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: '[redacted]' },
+          ],
+        },
+      },
+      'llm policy: routing request',
+    );
 
     try {
       const response = await llmChat(

@@ -22,9 +22,18 @@ export function UsagePage() {
   const [outcomeFilter, setOutcomeFilter]   = useState<'all' | 'success' | 'error'>('all');
   const [loading, setLoading]           = useState(true);
   const [lastUpdated, setLastUpdated]   = useState<Date | null>(null);
+  const [pollInterval, setPollInterval] = useState<number>(30_000);
+  const [refreshing, setRefreshing]     = useState(false);
   const navigate = useNavigate();
 
-  const POLL_INTERVAL = 30_000;
+  const POLL_OPTIONS: { label: string; value: number }[] = [
+    { label: 'Off',  value: 0 },
+    { label: '5s',   value: 5_000 },
+    { label: '15s',  value: 15_000 },
+    { label: '30s',  value: 30_000 },
+    { label: '1m',   value: 60_000 },
+    { label: '5m',   value: 300_000 },
+  ];
 
   // Initialize to "This month" preset on mount
   useEffect(() => {
@@ -46,12 +55,18 @@ export function UsagePage() {
       .catch(console.error);
   }, [dateRange]);
 
+  const handleRefreshNow = useCallback(() => {
+    setRefreshing(true);
+    fetchStats().finally(() => setRefreshing(false));
+  }, [fetchStats]);
+
   useEffect(() => {
     setLoading(true);
     fetchStats().finally(() => setLoading(false));
-    const id = setInterval(fetchStats, POLL_INTERVAL);
+    if (pollInterval === 0) return;
+    const id = setInterval(fetchStats, pollInterval);
     return () => clearInterval(id);
-  }, [fetchStats]);
+  }, [fetchStats, pollInterval]);
 
   // Available model options — derived from all records in the current period
   const modelOptions = useMemo(() => {
@@ -90,6 +105,26 @@ export function UsagePage() {
               · aggiornato alle {lastUpdated.toLocaleTimeString()}
             </span>
           )}
+          <span style={{ marginLeft: 16, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            {POLL_OPTIONS.map(o => (
+              <button
+                key={o.value}
+                className={`btn btn-sm ${pollInterval === o.value ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setPollInterval(o.value)}
+              >
+                {o.label}
+              </button>
+            ))}
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={handleRefreshNow}
+              disabled={refreshing}
+              title="Aggiorna subito"
+              style={{ marginLeft: 4 }}
+            >
+              {refreshing ? '…' : '↻ Now'}
+            </button>
+          </span>
         </p>
       </div>
       <div className="page-body">

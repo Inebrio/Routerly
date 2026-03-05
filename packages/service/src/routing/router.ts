@@ -96,9 +96,9 @@ export async function routeRequest(
       { modelId: only.model.id, totalCandidates: candidates.length },
       'routing: single valid model — bypassing policies, forwarding directly',
     );
-    const singleResult: RoutingCandidate = { model: only.model.id, weight: 1 };
+    const singleResult: RoutingCandidate = { model: only.model.id, weight: 1, ...(only.prompt ? { prompt: only.prompt } : {}) };
     const bypassEntry = te('router-response', 'router:result', {
-      final: [singleResult],
+      final: [{ model: singleResult.model, weight: singleResult.weight, hasPrompt: !!singleResult.prompt }],
       note: 'single_candidate_bypass',
     });
     emit?.(bypassEntry);
@@ -124,7 +124,7 @@ export async function routeRequest(
 
       return p.then(result => {
         results[i] = result;
-        const entry = te('router-response', 'policy:result', {
+        const entry = te('router-response', `policy:result:${type}`, {
           type,
           weight,
           routing: result.routing.map(r => ({
@@ -150,13 +150,18 @@ export async function routeRequest(
 
   const totalWeight = policiesWithWeight.reduce((sum, p) => sum + p.weight, 0);
 
-  const finalCandidates = validCandidates
-    .map(c => ({ model: c.model.id, weight: totalWeight > 0 ? +((pointMap.get(c.model.id) ?? 0) / totalWeight).toFixed(4) : 0 }))
+  const finalCandidates: RoutingCandidate[] = validCandidates
+    .map(c => ({
+      model: c.model.id,
+      weight: totalWeight > 0 ? +((pointMap.get(c.model.id) ?? 0) / totalWeight).toFixed(4) : 0,
+      ...(c.prompt ? { prompt: c.prompt } : {}),
+    }))
     .sort((a, b) => b.weight - a.weight);
 
   log?.info(
     {
-      policies: policiesWithWeight.map(({ type, weight }, i) => ({
+      promptsConfigured: validCandidates.filter(c => c.prompt).map(c => c.model.id),
+    policies: policiesWithWeight.map(({ type, weight }, i) => ({
         type,
         weight,
         routing: results[i]?.routing.map(r => ({ model: r.model, point: r.point, contribution: +(r.point * weight).toFixed(4) })),
@@ -168,7 +173,13 @@ export async function routeRequest(
 
   // ── Emit risultato finale ─────────────────────────────────────────────────
   const resultEntry = te('router-response', 'router:result', {
-    final: finalCandidates,
+    final: finalCandidates.map(c => ({
+      model: c.model,
+      weight: c.weight,
+      ...(c.prompt
+        ? { prompt: c.prompt.length > 120 ? c.prompt.slice(0, 120) + '…' : c.prompt }
+        : {}),
+    })),
   });
   emit?.(resultEntry);
 
@@ -176,7 +187,7 @@ export async function routeRequest(
     intakeEntry,
     policiesEntry,
     ...policiesWithWeight.map(({ type, weight }, i) =>
-      te('router-response', 'policy:result', {
+      te('router-response', `policy:result:${type}`, {
         type,
         weight,
         routing: results[i]?.routing.map(r => ({
