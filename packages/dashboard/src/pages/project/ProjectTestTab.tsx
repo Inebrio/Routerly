@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Send, Square, Paperclip, AlertCircle, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { useProject } from './ProjectLayout';
+import { TraceEntryRenderer } from '../../components/TraceEntryRenderer';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -508,14 +509,7 @@ export function ProjectTestTab() {
               ) : routerRequestHistory.map((entries, i) => (
                 <div key={i}>
                   <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {loading && i === debugTraceHistory.length - 1 && '⏳'}</div>
-                  {entries?.map((e: any, j: number) => (
-                    <div key={j} style={{ marginBottom: 4 }}>
-                      <div style={{ fontSize: '0.6rem', color: 'var(--accent)', marginBottom: 2, fontWeight: 600 }}>{e.message}</div>
-                      <pre style={{ margin: 0, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                        {JSON.stringify(e.details, null, 2)}
-                      </pre>
-                    </div>
-                  ))}
+                  {entries?.map((e: any, j: number) => <TraceEntryRenderer key={j} entry={e} />)}
                 </div>
               ))}
               <div ref={routerReqPanelEndRef} />
@@ -533,14 +527,7 @@ export function ProjectTestTab() {
               ) : routerResponseHistory.map((entries, i) => (
                 <div key={i}>
                   <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {loading && i === debugTraceHistory.length - 1 && '⏳'}</div>
-                  {entries?.map((e: any, j: number) => (
-                    <div key={j} style={{ marginBottom: 4 }}>
-                      <div style={{ fontSize: '0.6rem', color: 'var(--accent)', marginBottom: 2, fontWeight: 600 }}>{e.message}</div>
-                      <pre style={{ margin: 0, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                        {JSON.stringify(e.details, null, 2)}
-                      </pre>
-                    </div>
-                  ))}
+                  {entries?.map((e: any, j: number) => <TraceEntryRenderer key={j} entry={e} />)}
                 </div>
               ))}
               <div ref={routerResPanelEndRef} />
@@ -559,14 +546,7 @@ export function ProjectTestTab() {
                 <div key={i}>
                   <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {loading && i === debugTraceHistory.length - 1 && '⏳'}</div>
                   {entries?.length === 0 && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No model calls (routing only)</span>}
-                  {entries?.map((e: any, j: number) => (
-                    <div key={j} style={{ marginBottom: 4 }}>
-                      <div style={{ fontSize: '0.6rem', color: 'var(--accent)', marginBottom: 2, fontWeight: 600 }}>{e.message}</div>
-                      <pre style={{ margin: 0, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                        {JSON.stringify(e.details, null, 2)}
-                      </pre>
-                    </div>
-                  ))}
+                  {entries?.map((e: any, j: number) => <TraceEntryRenderer key={j} entry={e} />)}
                 </div>
               ))}
               <div ref={reqPanelEndRef} />

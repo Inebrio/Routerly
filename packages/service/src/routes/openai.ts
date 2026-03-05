@@ -71,7 +71,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
     let routingResponse;
     try {
-      routingResponse = await routeRequest(body, project, request.log, emit, request.token);
+      routingResponse = await routeRequest(body, project, request.log, emit, request.token, traceId);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       request.log.error({ err }, 'Routing model failed');

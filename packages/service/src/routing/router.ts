@@ -5,6 +5,7 @@ import type { CandidateModel } from './policies/types.js';
 import { contextPolicy } from './policies/context.js';
 import { cheapestPolicy } from './policies/cheapest.js';
 import { healthPolicy } from './policies/health.js';
+import { performancePolicy } from './policies/performance.js';
 import { llmPolicy } from './policies/llm.js';
 import type { PolicyFn } from './policies/types.js';
 import type { TraceEntry, TracePanel } from './traceStore.js';
@@ -24,6 +25,7 @@ const POLICY_MAP: Record<string, PolicyFn> = {
   context: contextPolicy,
   cheapest: cheapestPolicy,
   health: healthPolicy,
+  performance: performancePolicy,
   llm: llmPolicy,
 };
 
@@ -33,6 +35,7 @@ export async function routeRequest(
   log?: Logger,
   emit?: (entry: TraceEntry) => void,
   token?: ProjectToken,
+  traceId?: string,
 ): Promise<RouteResult> {
   const enabledPolicies = (project.policies ?? []).filter(p => p.enabled);
 
@@ -119,7 +122,7 @@ export async function routeRequest(
     policiesWithWeight.map(({ type, weight, config }, i) => {
       const fn = POLICY_MAP[type];
       const p = fn
-        ? fn({ request, candidates: validCandidates, config, log, emit, projectId: project.id, token }).then(out => ({ weight, routing: out.routing }))
+        ? fn({ request, candidates: validCandidates, config, log, emit, projectId: project.id, token, traceId }).then(out => ({ weight, routing: out.routing }))
         : Promise.resolve({ weight, routing: validCandidates.map(c => ({ model: c.model.id, point: 1.0 })) });
 
       return p.then(result => {

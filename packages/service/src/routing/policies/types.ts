@@ -39,6 +39,8 @@ export interface PolicyInput {
   projectId?: string;
   /** Token del progetto che ha originato la richiesta (per rispettare gli override per-token) */
   token?: ProjectToken;
+  /** ID della traccia corrente, da propagare alle chiamate LLM interne alla policy */
+  traceId?: string;
 }
 
 /** Output standard restituito da ogni policy */

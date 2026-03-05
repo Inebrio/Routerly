@@ -118,7 +118,7 @@ export interface ProjectModelRef {
   thresholds?: BudgetThresholds;
 }
 
-export type RoutingPolicyType = 'context' | 'cheapest' | 'health' | 'llm';
+export type RoutingPolicyType = 'context' | 'cheapest' | 'health' | 'performance' | 'llm';
 
 export interface RoutingPolicy {
   type: RoutingPolicyType;

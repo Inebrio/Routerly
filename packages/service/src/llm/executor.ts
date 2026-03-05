@@ -140,7 +140,10 @@ export async function llmChat(
       modelId: model.id,
       provider: model.provider,
       stream: false,
-      messages: request.messages?.length ?? 0,
+      messageCount: request.messages?.length ?? 0,
+      ...(request.max_completion_tokens != null ? { maxTokens: request.max_completion_tokens } : {}),
+      ...(request.max_tokens != null ? { maxTokens: request.max_tokens } : {}),
+      ...(request.temperature != null ? { temperature: request.temperature } : {}),
     },
   });
 
@@ -243,7 +246,10 @@ export async function llmStream(
       modelId: model.id,
       provider: model.provider,
       stream: true,
-      messages: request.messages?.length ?? 0,
+      messageCount: request.messages?.length ?? 0,
+      ...(request.max_completion_tokens != null ? { maxTokens: request.max_completion_tokens } : {}),
+      ...(request.max_tokens != null ? { maxTokens: request.max_tokens } : {}),
+      ...(request.temperature != null ? { temperature: request.temperature } : {}),
     },
   });
 
@@ -285,6 +291,7 @@ export async function llmStream(
     let cacheCreationInputTokens = 0;
     let thinkingAccum = '';
     let thinkingEmitted = false;
+    let contentAccum = '';
     let outcome: 'success' | 'error' = 'success';
     let errorMessage: string | undefined;
 
@@ -308,6 +315,9 @@ export async function llmStream(
           details: { modelId: model.id, text: thinkingAccum },
         });
         thinkingEmitted = true;
+      }
+      if (delta?.content) {
+        contentAccum += delta.content as string;
       }
     }
 
@@ -348,7 +358,13 @@ export async function llmStream(
         emit?.({
           panel: res,
           message: 'model:success',
-          details: { modelId: model.id, inputTokens, cachedInputTokens: cachedInputTokens > 0 ? cachedInputTokens : undefined, outputTokens, latencyMs },
+          details: {
+            modelId: model.id,
+            inputTokens,
+            cachedInputTokens: cachedInputTokens > 0 ? cachedInputTokens : undefined,
+            outputTokens,
+            latencyMs,
+          },
         });
       }
       await trackUsage({

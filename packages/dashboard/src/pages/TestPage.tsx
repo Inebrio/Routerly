@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Send, Square, Paperclip, AlertCircle, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { getProjects, type Project } from '../api';
+import { TraceEntryRenderer } from '../components/TraceEntryRenderer';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -466,14 +467,7 @@ export function TestPage() {
                   ) : routerRequestHistory.map((entries, i) => (
                     <div key={i}>
                       <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {loading && i === debugTraceHistory.length - 1 && '⏳'}</div>
-                      {entries?.map((e: any, j: number) => (
-                        <div key={j} style={{ marginBottom: 4 }}>
-                          <div style={{ fontSize: '0.6rem', color: 'var(--accent)', marginBottom: 2, fontWeight: 600 }}>{e.message}</div>
-                          <pre style={{ margin: 0, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                            {JSON.stringify(e.details, null, 2)}
-                          </pre>
-                        </div>
-                      ))}
+                      {entries?.map((e: any, j: number) => <TraceEntryRenderer key={j} entry={e} />)}
                     </div>
                   ))}
                   <div ref={routerReqPanelEndRef} />
@@ -491,14 +485,7 @@ export function TestPage() {
                   ) : routerResponseHistory.map((entries, i) => (
                     <div key={i}>
                       <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {loading && i === debugTraceHistory.length - 1 && '⏳'}</div>
-                      {entries?.map((e: any, j: number) => (
-                        <div key={j} style={{ marginBottom: 4 }}>
-                          <div style={{ fontSize: '0.6rem', color: 'var(--accent)', marginBottom: 2, fontWeight: 600 }}>{e.message}</div>
-                          <pre style={{ margin: 0, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                            {JSON.stringify(e.details, null, 2)}
-                          </pre>
-                        </div>
-                      ))}
+                      {entries?.map((e: any, j: number) => <TraceEntryRenderer key={j} entry={e} />)}
                     </div>
                   ))}
                   <div ref={routerResPanelEndRef} />
@@ -517,14 +504,7 @@ export function TestPage() {
                     <div key={i}>
                       <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {loading && i === debugTraceHistory.length - 1 && '⏳'}</div>
                       {entries?.length === 0 && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No model calls (routing only)</span>}
-                      {entries?.map((e: any, j: number) => (
-                        <div key={j} style={{ marginBottom: 4 }}>
-                          <div style={{ fontSize: '0.6rem', color: 'var(--accent)', marginBottom: 2, fontWeight: 600 }}>{e.message}</div>
-                          <pre style={{ margin: 0, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                            {JSON.stringify(e.details, null, 2)}
-                          </pre>
-                        </div>
-                      ))}
+                      {entries?.map((e: any, j: number) => <TraceEntryRenderer key={j} entry={e} />)}
                     </div>
                   ))}
                   <div ref={reqPanelEndRef} />
@@ -543,30 +523,7 @@ export function TestPage() {
                     <div key={i}>
                       <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {loading && i === debugTraceHistory.length - 1 && '⏳'}</div>
                       {entries?.length === 0 && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No model calls (routing only)</span>}
-                      {entries?.map((e: any, j: number) => {
-                        const isError = e.message === 'model:error';
-                        const isThinking = e.message === 'model:thinking';
-                        const labelColor = isError ? 'var(--danger)' : isThinking ? '#a78bfa' : 'var(--accent)';
-                        return (
-                          <div key={j} style={{ marginBottom: 4 }}>
-                            <div style={{ fontSize: '0.6rem', color: labelColor, marginBottom: 2, fontWeight: 600 }}>{e.message}</div>
-                            {isThinking ? (
-                              <details>
-                                <summary style={{ fontSize: '0.68rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
-                                  {String(e.details?.text ?? '').substring(0, 80)}{String(e.details?.text ?? '').length > 80 ? '…' : ''}
-                                </summary>
-                                <pre style={{ margin: '4px 0 0', padding: 10, background: 'var(--bg-surface)', border: '1px solid rgba(167,139,250,0.3)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                                  {String(e.details?.text ?? '')}
-                                </pre>
-                              </details>
-                            ) : (
-                              <pre style={{ margin: 0, padding: 10, background: 'var(--bg-surface)', border: isError ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: isError ? 'var(--danger)' : 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                                {JSON.stringify(e.details, null, 2)}
-                              </pre>
-                            )}
-                          </div>
-                        );
-                      })}
+                      {entries?.map((e: any, j: number) => <TraceEntryRenderer key={j} entry={e} />)}
                     </div>
                   ))}
                   <div ref={resPanelEndRef} />

@@ -1,7 +1,8 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'; // useState still used for record/projects/loading state
 import { ArrowLeft } from 'lucide-react';
 import { getProjects, getUsageRecord, type Project, type UsageRecord, type TraceEntry } from '../api';
+import { TraceEntryRenderer } from '../components/TraceEntryRenderer';
 
 function Field({ label, value, mono = false }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
@@ -31,69 +32,31 @@ const PANEL_COLORS: Record<string, string> = {
 };
 
 function TracePanel({ entries }: { entries: TraceEntry[] }) {
-  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
-
   if (entries.length === 0) return null;
 
+  // Group by panel for readability
+  const panels = ['router-request', 'router-response', 'request', 'response'] as const;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {entries.map((e, i) => {
-        const color = PANEL_COLORS[e.panel] ?? '#6b7280';
-        const label = PANEL_LABELS[e.panel] ?? e.panel;
-        const isExpanded = expandedIdx === i;
-        const hasDetails = Object.keys(e.details).length > 0;
-
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {panels.map(panel => {
+        const panelEntries = entries.filter(e => e.panel === panel);
+        if (panelEntries.length === 0) return null;
+        const color = PANEL_COLORS[panel] ?? '#6b7280';
+        const label = PANEL_LABELS[panel] ?? panel;
         return (
-          <div
-            key={i}
-            style={{
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              overflow: 'hidden',
-              background: 'var(--bg-surface)',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '8px 12px',
-                cursor: hasDetails ? 'pointer' : 'default',
-                userSelect: 'none',
-              }}
-              onClick={() => hasDetails && setExpandedIdx(isExpanded ? null : i)}
-            >
-              <span style={{
-                fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase',
-                letterSpacing: '0.06em', padding: '2px 7px', borderRadius: 4,
-                background: `${color}1a`, color,
-                flexShrink: 0,
-              }}>
-                {label}
-              </span>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontFamily: 'monospace', flex: 1 }}>
-                {e.message}
-              </span>
-              {hasDetails && (
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', flexShrink: 0 }}>
-                  {isExpanded ? '▲' : '▼'}
-                </span>
-              )}
+          <div key={panel}>
+            <div style={{
+              fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase',
+              letterSpacing: '0.06em', marginBottom: 8,
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0, display: 'inline-block' }} />
+              <span style={{ color }}>{label}</span>
             </div>
-
-            {isExpanded && hasDetails && (
-              <div style={{ borderTop: '1px solid var(--border)' }}>
-                <pre style={{
-                  margin: 0, padding: '12px 14px',
-                  fontSize: '0.75rem', lineHeight: 1.55,
-                  color: 'var(--text-secondary)',
-                  background: 'var(--bg-base)',
-                  whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                  overflowX: 'auto',
-                }}>
-                  {JSON.stringify(e.details, null, 2)}
-                </pre>
-              </div>
-            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingLeft: 16, borderLeft: `2px solid ${color}30` }}>
+              {panelEntries.map((e, i) => <TraceEntryRenderer key={i} entry={e} />)}
+            </div>
           </div>
         );
       })}

@@ -132,7 +132,7 @@ Return ONLY a valid JSON object with no text before or after it, no markdown, no
   }
 }
 
-export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, emit, projectId, token }) => {
+export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, emit, projectId, token, traceId }) => {
   log?.info(
     {
       request: {
@@ -203,6 +203,7 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
       project,
       callType: 'routing' as const,
       ...(token !== undefined ? { token } : {}),
+      ...(traceId !== undefined ? { traceId } : {}),
       ...(emit !== undefined ? { emit } : {}),
       ...(log !== undefined ? { log } : {}),
     };
