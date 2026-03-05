@@ -15,6 +15,18 @@ type PolicyItem = RoutingPolicy & {
   internalId: string;
 };
 
+const POLICY_DESCRIPTIONS: Record<string, string> = {
+  context:          'Scores models based on available context window. Assigns 0 to models whose context window is smaller than the estimated request length, preventing truncation errors.',
+  cheapest:         'Scores models inversely proportional to their token cost. The cheapest model gets 1.0, the most expensive gets 0.0, helping reduce API spend across requests.',
+  health:           'Scores models based on their recent error rate using exponential decay (recent errors weigh more). Applies a circuit breaker that sets the score to 0 when the weighted error rate exceeds a critical threshold.',
+  performance:      'Scores models based on their recent average latency using exponential decay. The fastest model gets 1.0, the slowest gets 0.0. Models without recent data default to 1.0.',
+  llm:              'Uses an AI model to score candidates based on the semantic content of the request. Supports routing guidance prompts per model and considers budget headroom when limits are configured.',
+  capability:       'Hard filter: assigns 0 to models that explicitly lack a feature required by the request (vision, function calling, JSON mode). Models without explicit capability declarations are not penalized.',
+  'rate-limit':     'Penalizes models with a high recent call frequency to reduce the risk of hitting provider rate limits (HTTP 429). Supports a configurable hard threshold that forces the score to 0.',
+  fairness:         'Distributes traffic evenly by penalizing models that received more successful calls recently. Acts as a soft round-robin to prevent load from concentrating on a single model.',
+  'budget-remaining': 'Scores models based on remaining budget headroom across all configured limits. Prefers models with more room before their thresholds are hit, spreading consumption proactively.',
+};
+
 export function ProjectRoutingTab() {
   const { project, setProject } = useProject();
   const [availableModels, setAvailableModels] = useState<Model[]>([]);
@@ -40,12 +52,30 @@ export function ProjectRoutingTab() {
   useEffect(() => {
     if (project) {
       const mkId = () => Math.random().toString(36).substring(7);
+      // Suggested pipeline order (users can reorder via drag-and-drop):
+      // Phase 1 – hard filters: eliminate candidates that cannot serve the request
+      //   health       → drop unreachable / unhealthy models first
+      //   context      → drop models whose context window is too small
+      //   capability   → drop models missing required features
+      // Phase 2 – operational constraints: penalise models under pressure
+      //   budget-remaining → penalise models approaching budget exhaustion
+      //   rate-limit       → penalise models approaching their rate limits
+      // Phase 3 – semantic scoring: the core routing intelligence
+      //   llm          → AI-based relevance scoring
+      // Phase 4 – cost/quality optimisation: tiebreakers
+      //   performance  → favour low-latency, high-reliability models
+      //   fairness     → balance load across models
+      //   cheapest     → final cost tiebreaker
       const defaultPolicies: PolicyItem[] = [
-        { internalId: mkId(), type: 'context', enabled: false },
-        { internalId: mkId(), type: 'health', enabled: false },
-        { internalId: mkId(), type: 'performance', enabled: false },
-        { internalId: mkId(), type: 'cheapest', enabled: false },
-        { internalId: mkId(), type: 'llm', enabled: false, config: { routingModelId: project.routingModelId || '', fallbackModelIds: project.fallbackRoutingModelIds || [], autoRouting: project.autoRouting ?? true } },
+        { internalId: mkId(), type: 'health',           enabled: false },
+        { internalId: mkId(), type: 'context',          enabled: false },
+        { internalId: mkId(), type: 'capability',       enabled: false },
+        { internalId: mkId(), type: 'budget-remaining', enabled: false },
+        { internalId: mkId(), type: 'rate-limit',       enabled: false },
+        { internalId: mkId(), type: 'llm',              enabled: false, config: { routingModelId: project.routingModelId || '', fallbackModelIds: project.fallbackRoutingModelIds || [], autoRouting: project.autoRouting ?? true } },
+        { internalId: mkId(), type: 'performance',      enabled: false },
+        { internalId: mkId(), type: 'fairness',         enabled: false },
+        { internalId: mkId(), type: 'cheapest',         enabled: false },
       ];
 
       if (project.policies && project.policies.length > 0) {
@@ -309,8 +339,18 @@ export function ProjectRoutingTab() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <input type="checkbox" checked={policy.enabled} onChange={e => updatePolicy(idx, 'enabled', e.target.checked)} style={{ width: 14, height: 14, accentColor: 'var(--primary)' }} />
                     </div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 600, flex: 1, textTransform: 'capitalize' }}>
-                      {policy.type === 'llm' ? 'AI Routing' : policy.type} Policy
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 600, textTransform: 'capitalize' }}>
+                        {policy.type === 'llm' ? 'AI Routing'
+                          : policy.type === 'rate-limit' ? 'Rate Limit'
+                          : policy.type === 'budget-remaining' ? 'Budget Remaining'
+                          : policy.type} Policy
+                      </div>
+                      {POLICY_DESCRIPTIONS[policy.type] && (
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.45 }}>
+                          {POLICY_DESCRIPTIONS[policy.type]}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -401,18 +441,51 @@ export function ProjectRoutingTab() {
                     </div>
                   )}
 
-                  {policy.type === 'context' && policy.enabled && (
-                    <div style={{ paddingLeft: 30, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Filters out models with a context window smaller than the prompt length.</div>
+                  {policy.type === 'fairness' && policy.enabled && (
+                    <div style={{ paddingLeft: 30, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Window (minutes)</label>
+                        <input
+                          type="number" min={1} max={1440}
+                          className="form-input"
+                          style={{ width: 80, padding: '4px 8px', fontSize: '0.8rem' }}
+                          value={policy.config?.windowMinutes ?? 60}
+                          onChange={e => updatePolicyConfig(idx, { windowMinutes: Number(e.target.value) })}
+                        />
+                      </div>
+                    </div>
                   )}
-                  {policy.type === 'cheapest' && policy.enabled && (
-                    <div style={{ paddingLeft: 30, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Increases selection chance for models with lower baseline costs.</div>
+                  {policy.type === 'rate-limit' && policy.enabled && (
+                    <div style={{ paddingLeft: 30, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Window (minutes)</label>
+                          <input
+                            type="number" min={1} max={60}
+                            className="form-input"
+                            style={{ width: 80, padding: '4px 8px', fontSize: '0.8rem' }}
+                            value={policy.config?.windowMinutes ?? 1}
+                            onChange={e => updatePolicyConfig(idx, { windowMinutes: Number(e.target.value) })}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Max calls per window</label>
+                          <input
+                            type="number" min={1}
+                            className="form-input"
+                            style={{ width: 80, padding: '4px 8px', fontSize: '0.8rem' }}
+                            placeholder="none"
+                            value={policy.config?.maxCallsPerWindow ?? ''}
+                            onChange={e => {
+                              const v = e.target.value;
+                              updatePolicyConfig(idx, { maxCallsPerWindow: v === '' ? undefined : Number(v) });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   )}
-                  {policy.type === 'health' && policy.enabled && (
-                    <div style={{ paddingLeft: 30, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Decreases selection chance for models with a high recent error rate.</div>
-                  )}
-                  {policy.type === 'performance' && policy.enabled && (
-                    <div style={{ paddingLeft: 30, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Prefers models with lower average latency based on recent successful calls.</div>
-                  )}
+
 
                 </div>
               ))}

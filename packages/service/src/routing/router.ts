@@ -7,6 +7,10 @@ import { cheapestPolicy } from './policies/cheapest.js';
 import { healthPolicy } from './policies/health.js';
 import { performancePolicy } from './policies/performance.js';
 import { llmPolicy } from './policies/llm.js';
+import { capabilityPolicy } from './policies/capability.js';
+import { rateLimitPolicy } from './policies/rate-limit.js';
+import { fairnessPolicy } from './policies/fairness.js';
+import { budgetRemainingPolicy } from './policies/budget-remaining.js';
 import type { PolicyFn } from './policies/types.js';
 import type { TraceEntry, TracePanel } from './traceStore.js';
 
@@ -27,6 +31,10 @@ const POLICY_MAP: Record<string, PolicyFn> = {
   health: healthPolicy,
   performance: performancePolicy,
   llm: llmPolicy,
+  capability: capabilityPolicy,
+  'rate-limit': rateLimitPolicy,
+  fairness: fairnessPolicy,
+  'budget-remaining': budgetRemainingPolicy,
 };
 
 export async function routeRequest(

@@ -27,10 +27,6 @@ function buildSystemPrompt(
     })
     .join('\n');
 
-  const exampleRouting = candidates
-    .map(c => `    { "model": "${c.id}", "point": 0.8, "reason": "suitable for this type of request" }`)
-    .join(',\n');
-
   const guidanceRule = hasAnyPrompt
     ? `- When a model has a "routing_guidance" field, treat it as a direct instruction from the operator about when that model should be preferred. Weight it heavily in your scoring: a request that matches the guidance should receive a high score (≥ 0.8), while a request that clearly contradicts it should receive a low score (≤ 0.3).`
     : '';
@@ -49,14 +45,18 @@ ${modelList}
 Your response MUST be a single JSON object, with no text before or after it, no markdown, no code fences. Example format:
 {
   "routing": [
-${exampleRouting}
+    { "model": "<model_id>", "point": <0.0-1.0>, "reason": "<brief reason>" },
+    ...
   ]
 }
 
 Rules:
-- Include ALL models listed above, using their exact id strings.
-- "point" must be a number between 0.0 and 1.0.
-- "reason" must be a single short sentence explaining the score.${extraRules ? `\n${extraRules}` : ''}
+- Include ALL models listed above in the "routing" array, using their exact id strings.
+- "point" must be a floating-point number between 0.0 and 1.0 (e.g. 0.35, 0.72, 0.95).
+- "reason" must be a single short sentence explaining the score based on the request content.
+- Score each model INDEPENDENTLY based solely on how well it fits the specific request. Do NOT copy or anchor to the example values above.
+- Scores MUST reflect real differentiation: if models differ in suitability, their scores must differ meaningfully. Avoid assigning the same or near-identical score to all models unless they are genuinely equivalent for this request.
+- Do not apply a default or uniform score (e.g. all 0.8). Uniform scoring is incorrect.${extraRules ? `\n${extraRules}` : ''}
 - Do not output anything outside the JSON object.`;
 }
 

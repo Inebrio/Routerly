@@ -85,6 +85,12 @@ export interface BudgetThresholds {
 export interface ModelCapabilities {
   /** Whether the model supports extended thinking (e.g. claude-3-7-sonnet, claude-opus-4) */
   thinking?: boolean;
+  /** Whether the model supports image/vision inputs */
+  vision?: boolean;
+  /** Whether the model supports tool/function calling */
+  functionCalling?: boolean;
+  /** Whether the model supports JSON-mode output (response_format: json_object) */
+  json?: boolean;
 }
 
 export interface ModelConfig {
@@ -118,7 +124,7 @@ export interface ProjectModelRef {
   thresholds?: BudgetThresholds;
 }
 
-export type RoutingPolicyType = 'context' | 'cheapest' | 'health' | 'performance' | 'llm';
+export type RoutingPolicyType = 'context' | 'cheapest' | 'health' | 'performance' | 'llm' | 'capability' | 'rate-limit' | 'fairness' | 'budget-remaining';
 
 export interface RoutingPolicy {
   type: RoutingPolicyType;
