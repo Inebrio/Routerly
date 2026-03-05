@@ -29,6 +29,7 @@
   --shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.6);
 
   --sidebar-width: 240px;
+  --sidebar-width-collapsed: 60px;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
@@ -121,20 +122,83 @@ input, select, textarea { font-family: inherit; }
   position: fixed;
   top: 0; left: 0; bottom: 0;
   z-index: 100;
+  transition: width 0.22s ease;
+  overflow: hidden;
+}
+
+.sidebar--collapsed {
+  width: var(--sidebar-width-collapsed);
 }
 
 .sidebar-logo {
-  padding: 24px 20px 20px;
+  padding: 18px 12px 18px;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 64px;
+  flex-shrink: 0;
+}
+
+.sidebar-logo-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .sidebar-logo .logo-name {
-  font-size: 1.15rem;
+  font-size: 1rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #5a90f8, #86b3fa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.logo-full {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.logo-name-full {
+  font-size: 1.05rem;
   font-weight: 700;
   background: linear-gradient(135deg, #5a90f8, #86b3fa);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  white-space: nowrap;
+}
+
+.sidebar-toggle {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 5px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.sidebar-toggle:hover {
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+}
+
+.sidebar--collapsed .sidebar-toggle {
+  margin: 0 auto;
+}
+
+.sidebar-footer-icons {
+  margin-bottom: 6px;
 }
 
 .sidebar-logo .logo-tag {
@@ -179,6 +243,15 @@ input, select, textarea { font-family: inherit; }
 }
 
 .nav-item svg { flex-shrink: 0; }
+
+.sidebar--collapsed .nav-item {
+  justify-content: center;
+  padding: 9px;
+}
+
+.sidebar--collapsed .nav-label {
+  display: none;
+}
 
 .sidebar-footer {
   padding: 14px;
@@ -233,6 +306,11 @@ input, select, textarea { font-family: inherit; }
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  transition: margin-left 0.22s ease;
+}
+
+.sidebar-collapsed .main-content {
+  margin-left: var(--sidebar-width-collapsed);
 }
 
 .page-header {

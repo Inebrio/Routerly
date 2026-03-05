@@ -25,7 +25,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { SettingsGeneralTab, SettingsAboutTab, SettingsNotificationsTab } from './pages/SettingsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { UserEditPage } from './pages/UserEditPage';
-import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor } from 'lucide-react';
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 const THEME_OPTIONS: { value: Theme; icon: ReactNode; label: string }[] = [
   { value: 'auto',  icon: <Monitor size={14} />, label: 'Auto' },
@@ -52,7 +52,26 @@ function ThemeSelector() {
   );
 }
 
-function Sidebar() {
+function ThemeCycleButton() {
+  const { theme, setTheme } = useTheme();
+  const order: Theme[] = ['auto', 'dark', 'light'];
+  const icons: Record<Theme, ReactNode> = {
+    auto: <Monitor size={15} />,
+    dark: <Moon size={15} />,
+    light: <Sun size={15} />,
+  };
+  function cycle() {
+    const next = order[(order.indexOf(theme) + 1) % order.length];
+    setTheme(next);
+  }
+  return (
+    <button className="nav-item" title={`Theme: ${theme}`} onClick={cycle}>
+      {icons[theme]}
+    </button>
+  );
+}
+
+function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -67,39 +86,58 @@ function Sidebar() {
   ];
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${collapsed ? ' sidebar--collapsed' : ''}`}>
       <div className="sidebar-logo">
-        <div className="logo-name">LocalRouter</div>
-        <div className="logo-tag">LLM API Gateway</div>
+        <div className="sidebar-logo-inner">
+          <div className="logo-name">LR</div>
+          <span className="nav-label logo-full">
+            <span className="logo-name-full">LocalRouter</span>
+            <span className="logo-tag">LLM API Gateway</span>
+          </span>
+        </div>
+        <button className="sidebar-toggle" onClick={onToggle} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+          {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
+        </button>
       </div>
       <nav className="sidebar-nav">
         {navItems.map(item => (
           <NavLink
             key={item.to}
             to={item.to}
+            title={collapsed ? item.label : undefined}
             className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
           >
             {item.icon}
-            {item.label}
+            <span className="nav-label">{item.label}</span>
           </NavLink>
         ))}
       </nav>
       <div className="sidebar-footer">
-        <ThemeSelector />
+        {!collapsed && <ThemeSelector />}
+        {collapsed && (
+          <div className="sidebar-footer-icons">
+            <ThemeCycleButton />
+          </div>
+        )}
         <NavLink
           to="/dashboard/profile"
+          title={collapsed ? user?.email : undefined}
           className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
         >
-          <UserCircle size={15} /> {user?.email}
+          <UserCircle size={15} />
+          <span className="nav-label">{user?.email}</span>
         </NavLink>
         <NavLink
           to="/dashboard/settings"
+          title={collapsed ? 'Settings' : undefined}
           className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
         >
-          <SettingsIcon size={15} /> Settings
+          <SettingsIcon size={15} />
+          <span className="nav-label">Settings</span>
         </NavLink>
-        <button className="nav-item" style={{ color: 'var(--danger)' }} onClick={handleLogout}>
-          <LogOut size={15} /> Sign Out
+        <button className="nav-item" style={{ color: 'var(--danger)' }} title={collapsed ? 'Sign Out' : undefined} onClick={handleLogout}>
+          <LogOut size={15} />
+          <span className="nav-label">Sign Out</span>
         </button>
       </div>
     </aside>
@@ -108,11 +146,21 @@ function Sidebar() {
 
 function ProtectedLayout() {
   const { user, isLoading } = useAuth();
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('lr-sidebar') === 'collapsed');
+
+  function handleToggle() {
+    setCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('lr-sidebar', next ? 'collapsed' : 'expanded');
+      return next;
+    });
+  }
+
   if (isLoading) return <div className="loading-center"><div className="spinner" /></div>;
   if (!user) return <Navigate to="/dashboard/login" replace />;
   return (
-    <div className="app-shell">
-      <Sidebar />
+    <div className={`app-shell${collapsed ? ' sidebar-collapsed' : ''}`}>
+      <Sidebar collapsed={collapsed} onToggle={handleToggle} />
       <main className="main-content">
         <Outlet />
       </main>
