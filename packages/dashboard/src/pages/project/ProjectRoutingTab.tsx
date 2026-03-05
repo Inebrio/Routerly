@@ -39,19 +39,24 @@ export function ProjectRoutingTab() {
 
   useEffect(() => {
     if (project) {
+      const mkId = () => Math.random().toString(36).substring(7);
+      const defaultPolicies: PolicyItem[] = [
+        { internalId: mkId(), type: 'context', enabled: false },
+        { internalId: mkId(), type: 'health', enabled: false },
+        { internalId: mkId(), type: 'performance', enabled: false },
+        { internalId: mkId(), type: 'cheapest', enabled: false },
+        { internalId: mkId(), type: 'llm', enabled: false, config: { routingModelId: project.routingModelId || '', fallbackModelIds: project.fallbackRoutingModelIds || [], autoRouting: project.autoRouting ?? true } },
+      ];
+
       if (project.policies && project.policies.length > 0) {
-        setPolicies(project.policies.map(p => ({
-          ...p,
-          internalId: Math.random().toString(36).substring(7)
-        })));
+        const saved: PolicyItem[] = project.policies.map(p => ({ ...p, internalId: mkId() }));
+        const savedTypes = new Set(saved.map(p => p.type));
+        // Append any policy types not yet in the saved list (disabled by default)
+        const missing = defaultPolicies.filter(d => !savedTypes.has(d.type));
+        setPolicies([...saved, ...missing]);
       } else {
         // No saved policies — show all available but none enabled
-        setPolicies([
-          { internalId: Math.random().toString(36).substring(7), type: 'context', enabled: false },
-          { internalId: Math.random().toString(36).substring(7), type: 'health', enabled: false },
-          { internalId: Math.random().toString(36).substring(7), type: 'cheapest', enabled: false },
-          { internalId: Math.random().toString(36).substring(7), type: 'llm', enabled: false, config: { routingModelId: project.routingModelId || '', fallbackModelIds: project.fallbackRoutingModelIds || [], autoRouting: project.autoRouting ?? true } }
-        ]);
+        setPolicies(defaultPolicies);
       }
 
       setTargetModels(project.models.map(m => ({
@@ -65,11 +70,17 @@ export function ProjectRoutingTab() {
   const isDirty = (() => {
     if (!project) return false;
 
-    // Check policies
     const savedPolicies = project.policies || [];
-    if (policies.length !== savedPolicies.length) return true;
-    for (let i = 0; i < policies.length; i++) {
-      const p1 = policies[i]!;
+    const savedTypes = new Set(savedPolicies.map(p => p.type));
+
+    // Appended-but-still-disabled policies (not in saved) are not considered dirty
+    // unless the user has enabled or configured them
+    const newUntouched = policies.filter(p => !savedTypes.has(p.type) && !p.enabled && !p.config);
+    const effectivePolicies = policies.filter(p => !newUntouched.includes(p));
+
+    if (effectivePolicies.length !== savedPolicies.length) return true;
+    for (let i = 0; i < effectivePolicies.length; i++) {
+      const p1 = effectivePolicies[i]!;
       const p2 = savedPolicies[i]!;
       if (p1.type !== p2.type || p1.enabled !== p2.enabled) return true;
       if (JSON.stringify(p1.config || {}) !== JSON.stringify(p2.config || {})) return true;
@@ -398,6 +409,9 @@ export function ProjectRoutingTab() {
                   )}
                   {policy.type === 'health' && policy.enabled && (
                     <div style={{ paddingLeft: 30, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Decreases selection chance for models with a high recent error rate.</div>
+                  )}
+                  {policy.type === 'performance' && policy.enabled && (
+                    <div style={{ paddingLeft: 30, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Prefers models with lower average latency based on recent successful calls.</div>
                   )}
 
                 </div>

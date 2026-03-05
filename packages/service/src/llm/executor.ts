@@ -133,6 +133,11 @@ export async function llmChat(
   const adapter = getProviderAdapter(model);
   const t0 = Date.now();
 
+  const isRouting = callType === 'routing';
+  const systemMsg = isRouting
+    ? request.messages?.find((m: { role: string }) => m.role === 'system')
+    : undefined;
+
   emit?.({
     panel: req,
     message: 'model:request',
@@ -144,12 +149,17 @@ export async function llmChat(
       ...(request.max_completion_tokens != null ? { maxTokens: request.max_completion_tokens } : {}),
       ...(request.max_tokens != null ? { maxTokens: request.max_tokens } : {}),
       ...(request.temperature != null ? { temperature: request.temperature } : {}),
+      ...(systemMsg != null ? { systemPrompt: (systemMsg as { role: string; content: string }).content } : {}),
     },
   });
 
   try {
     const response = await adapter.chatCompletion(request, model);
     const latencyMs = Date.now() - t0;
+    const responseText = isRouting
+      ? (response.choices?.[0]?.message?.content ?? undefined)
+      : undefined;
+    const responseJSON = isRouting ? response : undefined;
 
     emit?.({
       panel: res,
@@ -160,6 +170,8 @@ export async function llmChat(
         cachedInputTokens: response.usage?.prompt_tokens_details?.cached_tokens,
         outputTokens: response.usage?.completion_tokens,
         latencyMs,
+        ...(responseText != null ? { responseText } : {}),
+        ...(responseJSON != null ? { responseJSON } : {}),
       },
     });
 

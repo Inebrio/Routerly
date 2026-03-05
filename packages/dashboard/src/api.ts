@@ -111,7 +111,7 @@ export const updateModel = (id: string, data: {
 export const deleteModel = (id: string) => request<void>(`/models/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
 export interface RoutingPolicy {
-  type: 'context' | 'cheapest' | 'health' | 'llm';
+  type: 'context' | 'cheapest' | 'health' | 'performance' | 'llm';
   enabled: boolean;
   config?: any;
 }
