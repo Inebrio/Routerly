@@ -58,6 +58,21 @@ export const setupFirstAdmin = (email: string, password: string) =>
   );
 
 // ── Models ────────────────────────────────────────────────────────────────
+// ── Limits ───────────────────────────────────────────────────────────────────
+export type LimitMetric = 'cost' | 'calls' | 'input_tokens' | 'output_tokens' | 'total_tokens';
+export type LimitPeriod = 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly';
+export type RollingUnit = 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month';
+export type LimitsMode = 'replace' | 'extend' | 'disable';
+export interface Limit {
+  metric: LimitMetric;
+  /** 'period': calendar-fixed (resets at midnight/Monday/1st…), 'rolling': sliding window */
+  windowType: 'period' | 'rolling';
+  period?: LimitPeriod;
+  rollingAmount?: number;
+  rollingUnit?: RollingUnit;
+  value: number;
+}
+
 export interface PricingTier {
   metric: string;
   above: number;
@@ -70,7 +85,8 @@ export interface Model {
   id: string; name: string; provider: string; endpoint: string;
   cost: { inputPerMillion: number; outputPerMillion: number; cachePerMillion?: number; pricingTiers?: PricingTier[] };
   contextWindow?: number;
-  globalThresholds?: { daily?: number; weekly?: number; monthly?: number };
+  limits?: Limit[];
+  /** @deprecated use limits */ globalThresholds?: { daily?: number; weekly?: number; monthly?: number };
 }
 
 export const getModels = () => request<Model[]>('/models');
@@ -81,7 +97,7 @@ export const createModel = (data: {
   cachePerMillion?: number;
   contextWindow?: number;
   pricingTiers?: PricingTier[];
-  dailyBudget?: number; weeklyBudget?: number; monthlyBudget?: number;
+  limits?: Limit[];
 }) => request<Model>('/models', { method: 'POST', body: JSON.stringify(data) });
 export const updateModel = (id: string, data: {
   id?: string;
@@ -90,7 +106,7 @@ export const updateModel = (id: string, data: {
   cachePerMillion?: number;
   contextWindow?: number;
   pricingTiers?: PricingTier[];
-  dailyBudget?: number; weeklyBudget?: number; monthlyBudget?: number;
+  limits?: Limit[];
 }) => request<Model>(`/models/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteModel = (id: string) => request<void>(`/models/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
@@ -104,7 +120,7 @@ export interface ProjectToken {
   id: string;
   tokenSnippet?: string;
   createdAt: string;
-  models?: any[];
+  models?: Array<{ modelId: string; limitsMode?: LimitsMode; limits?: Limit[] }>;
   labels?: string[];
 }
 
@@ -148,7 +164,7 @@ export const updateProject = (id: string, data: {
 }) => request<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteProject = (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' });
 export const createProjectToken = (id: string, labels?: string[]) => request<{ token: string; tokenInfo: ProjectToken }>(`/projects/${id}/tokens`, { method: 'POST', body: JSON.stringify({ labels }) });
-export const updateProjectToken = (id: string, tokenId: string, models?: any[], labels?: string[]) => request<ProjectToken>(`/projects/${id}/tokens/${tokenId}`, { method: 'PUT', body: JSON.stringify({ models, labels }) });
+export const updateProjectToken = (id: string, tokenId: string, models?: Array<{ modelId: string; limitsMode?: LimitsMode; limits?: Limit[] }>, labels?: string[]) => request<ProjectToken>(`/projects/${id}/tokens/${tokenId}`, { method: 'PUT', body: JSON.stringify({ models, labels }) });
 export const deleteProjectToken = (id: string, tokenId: string) => request<void>(`/projects/${id}/tokens/${tokenId}`, { method: 'DELETE' });
 
 export const addProjectMember = (id: string, userId: string, role: string) => request<ProjectMember>(`/projects/${id}/members`, { method: 'POST', body: JSON.stringify({ userId, role }) });

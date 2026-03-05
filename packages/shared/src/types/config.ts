@@ -28,6 +28,54 @@ export interface TokenCost {
   pricingTiers?: PricingTier[];
 }
 
+/** What dimension is being measured for a limit */
+export type LimitMetric = 'cost' | 'calls' | 'input_tokens' | 'output_tokens' | 'total_tokens';
+
+/**
+ * How a limit override at a given level interacts with parent limits.
+ * - 'replace': this level's limits completely replace the parent's (default)
+ * - 'extend':  this level's limits are stacked on top of the parent's (all must pass)
+ * - 'disable': explicitly disables all limits at this level, ignoring the parent entirely
+ */
+export type LimitsMode = 'replace' | 'extend' | 'disable';
+
+/**
+ * Calendar-fixed periods — the window resets at a natural boundary.
+ * e.g. 'daily' = 00:00:00 → 23:59:59 of the current day
+ */
+export type LimitPeriod = 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly';
+
+/** Time unit for rolling (sliding) windows */
+export type RollingUnit = 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month';
+
+/**
+ * A single usage limit rule.
+ * Two window modes:
+ *  - 'period': calendar-fixed (e.g., daily resets at midnight every day)
+ *  - 'rolling': sliding window of the last N units (e.g., last 24 hours)
+ *
+ * Examples:
+ *   { metric: 'cost',         windowType: 'period',  period: 'daily',  value: 5    }  → max $5/day (resets at midnight)
+ *   { metric: 'cost',         windowType: 'rolling', rollingAmount: 24, rollingUnit: 'hour', value: 5 }  → max $5 in any 24 h window
+ *   { metric: 'calls',        windowType: 'period',  period: 'monthly', value: 1000 }  → max 1000 calls/month
+ *   { metric: 'calls',        windowType: 'rolling', rollingAmount: 60, rollingUnit: 'second', value: 10 }  → max 10 req/min
+ *   { metric: 'input_tokens', windowType: 'period',  period: 'daily',  value: 500000 }  → max 500k input tokens/day
+ *   { metric: 'total_tokens', windowType: 'rolling', rollingAmount: 1, rollingUnit: 'hour', value: 200000 }  → max 200k tokens per hour
+ */
+export interface Limit {
+  metric: LimitMetric;
+  /** 'period': calendar-fixed boundary, 'rolling': sliding window */
+  windowType: 'period' | 'rolling';
+  /** Calendar period — used when windowType === 'period' */
+  period?: LimitPeriod;
+  /** Number of units for rolling window — used when windowType === 'rolling' */
+  rollingAmount?: number;
+  /** Time unit for rolling window — used when windowType === 'rolling' */
+  rollingUnit?: RollingUnit;
+  value: number;
+}
+
+/** @deprecated Use Limit[] instead */
 export interface BudgetThresholds {
   daily?: number;
   weekly?: number;
@@ -49,7 +97,9 @@ export interface ModelConfig {
   cost: TokenCost;
   /** Maximum context window size in tokens */
   contextWindow?: number;
-  /** Global budget thresholds for this model */
+  /** Global usage limits for this model */
+  limits?: Limit[];
+  /** @deprecated use limits instead */
   globalThresholds?: BudgetThresholds | undefined;
   /** Optional capability flags for special features */
   capabilities?: ModelCapabilities;
@@ -60,7 +110,11 @@ export interface ModelConfig {
 export interface ProjectModelRef {
   modelId: string;
   prompt?: string;
-  /** Per-project budget overrides (take priority over global) */
+  /** How these limits interact with the global model limits */
+  limitsMode?: LimitsMode;
+  /** Per-project usage limit overrides (take priority over global) */
+  limits?: Limit[];
+  /** @deprecated use limits instead */
   thresholds?: BudgetThresholds;
 }
 
@@ -83,7 +137,11 @@ export interface ProjectMember {
 
 export interface TokenModelRef {
   modelId: string;
-  /** Per-token budget overrides for this model */
+  /** How these limits interact with the project/global limits */
+  limitsMode?: LimitsMode;
+  /** Per-token usage limit overrides for this model */
+  limits?: Limit[];
+  /** @deprecated use limits instead */
   thresholds?: BudgetThresholds;
 }
 

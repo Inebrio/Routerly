@@ -6,7 +6,7 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../config/paths.js';
 import { encrypt, decrypt } from '@localrouter/shared';
 import { createSessionToken, verifyToken } from '../plugins/jwt.js';
-import type { ModelConfig, ProjectConfig, UserConfig, Provider, TokenCost, PricingTier, RoutingPolicy, TokenModelRef, Settings } from '@localrouter/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, Provider, TokenCost, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit } from '@localrouter/shared';
 import { getTrace } from '../routing/traceStore.js';
 import { sendTestNotification } from '../notifications/sender.js';
 
@@ -91,13 +91,28 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       cachePerMillion?: number;
       contextWindow?: number;
       pricingTiers?: PricingTier[];
-      dailyBudget?: number; weeklyBudget?: number; monthlyBudget?: number;
+      limits?: Limit[];
+      /** @deprecated use limits */ dailyBudget?: number;
+      /** @deprecated use limits */ weeklyBudget?: number;
+      /** @deprecated use limits */ monthlyBudget?: number;
     }
   }>('/api/models', async (req, reply) => {
     const models = await readConfig('models');
     if (models.find(m => m.id === req.body.id)) {
       return reply.status(409).send({ error: `Model "${req.body.id}" already exists` });
     }
+
+    // Resolve limits: prefer new limits array, fall back to legacy budget fields
+    const resolvedLimits: Limit[] | undefined = req.body.limits?.length
+      ? req.body.limits
+      : (req.body.dailyBudget !== undefined || req.body.weeklyBudget !== undefined || req.body.monthlyBudget !== undefined)
+        ? [
+          ...(req.body.dailyBudget   !== undefined ? [{ metric: 'cost' as const, windowType: 'period' as const, period: 'daily'   as const, value: req.body.dailyBudget   }] : []),
+          ...(req.body.weeklyBudget  !== undefined ? [{ metric: 'cost' as const, windowType: 'period' as const, period: 'weekly'  as const, value: req.body.weeklyBudget  }] : []),
+          ...(req.body.monthlyBudget !== undefined ? [{ metric: 'cost' as const, windowType: 'period' as const, period: 'monthly' as const, value: req.body.monthlyBudget }] : []),
+        ]
+        : undefined;
+
     const model: ModelConfig = {
       id: req.body.id,
       name: req.body.name ?? req.body.id,
@@ -114,13 +129,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...(req.body.cachePerMillion !== undefined ? { cachePerMillion: req.body.cachePerMillion } : {}),
         ...(req.body.pricingTiers?.length ? { pricingTiers: req.body.pricingTiers } : {}),
       },
-      globalThresholds: (req.body.dailyBudget !== undefined || req.body.weeklyBudget !== undefined || req.body.monthlyBudget !== undefined)
-        ? {
-          ...(req.body.dailyBudget !== undefined ? { daily: req.body.dailyBudget } : {}),
-          ...(req.body.weeklyBudget !== undefined ? { weekly: req.body.weeklyBudget } : {}),
-          ...(req.body.monthlyBudget !== undefined ? { monthly: req.body.monthlyBudget } : {}),
-        }
-        : undefined,
+      ...(resolvedLimits?.length ? { limits: resolvedLimits } : {}),
       ...(req.body.contextWindow !== undefined ? { contextWindow: req.body.contextWindow } : {}),
     };
     models.push(model);
@@ -137,7 +146,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       cachePerMillion?: number;
       contextWindow?: number;
       pricingTiers?: PricingTier[];
-      dailyBudget?: number; weeklyBudget?: number; monthlyBudget?: number;
+      limits?: Limit[];
+      /** @deprecated use limits */ dailyBudget?: number;
+      /** @deprecated use limits */ weeklyBudget?: number;
+      /** @deprecated use limits */ monthlyBudget?: number;
     }
   }>('/api/models/:id', async (req, reply) => {
     const models = await readConfig('models');
@@ -153,6 +165,17 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(409).send({ error: `Model "${newId}" already exists` });
     }
 
+    // Resolve limits: prefer new limits array, fall back to legacy budget fields
+    const resolvedLimits: Limit[] | undefined = req.body.limits?.length
+      ? req.body.limits
+      : (req.body.dailyBudget !== undefined || req.body.weeklyBudget !== undefined || req.body.monthlyBudget !== undefined)
+        ? [
+          ...(req.body.dailyBudget   !== undefined ? [{ metric: 'cost' as const, windowType: 'period' as const, period: 'daily'   as const, value: req.body.dailyBudget   }] : []),
+          ...(req.body.weeklyBudget  !== undefined ? [{ metric: 'cost' as const, windowType: 'period' as const, period: 'weekly'  as const, value: req.body.weeklyBudget  }] : []),
+          ...(req.body.monthlyBudget !== undefined ? [{ metric: 'cost' as const, windowType: 'period' as const, period: 'monthly' as const, value: req.body.monthlyBudget }] : []),
+        ]
+        : undefined;
+
     const model: ModelConfig = {
       ...existing,
       id: newId,
@@ -166,13 +189,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...(req.body.cachePerMillion !== undefined ? { cachePerMillion: req.body.cachePerMillion } : {}),
         ...(req.body.pricingTiers?.length ? { pricingTiers: req.body.pricingTiers } : {}),
       },
-      globalThresholds: (req.body.dailyBudget !== undefined || req.body.weeklyBudget !== undefined || req.body.monthlyBudget !== undefined)
-        ? {
-          ...(req.body.dailyBudget !== undefined ? { daily: req.body.dailyBudget } : {}),
-          ...(req.body.weeklyBudget !== undefined ? { weekly: req.body.weeklyBudget } : {}),
-          ...(req.body.monthlyBudget !== undefined ? { monthly: req.body.monthlyBudget } : {}),
-        }
-        : undefined,
+      limits: resolvedLimits?.length ? resolvedLimits : undefined,
+      // clear legacy field when updating
+      globalThresholds: undefined,
       ...(req.body.contextWindow !== undefined ? { contextWindow: req.body.contextWindow } : existing.contextWindow !== undefined ? { contextWindow: existing.contextWindow } : {}),
     };
     models[index] = model;

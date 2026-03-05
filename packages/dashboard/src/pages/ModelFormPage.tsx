@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Plus, X, ChevronDown, EyeOff, Eye, ArrowLeft } from 'lucide-react';
-import { getModels, createModel, updateModel, type Model, type PricingTier } from '../api';
+import { getModels, createModel, updateModel, type Model, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit } from '../api';
 import { providersConf } from '@localrouter/shared';
 
 type Provider = keyof typeof providersConf;
@@ -34,6 +34,67 @@ const METRIC_OPTIONS = [
   { value: 'context_tokens', label: 'Context tokens' },
 ];
 
+// ── Limit types ────────────────────────────────────────────────────────────────
+type LimitRow = {
+  metric: LimitMetric;
+  windowType: 'period' | 'rolling';
+  period: LimitPeriod;
+  rollingAmount: string;
+  rollingUnit: RollingUnit;
+  value: string;
+};
+
+const LIMIT_METRIC_OPTIONS: { value: LimitMetric; label: string }[] = [
+  { value: 'cost',          label: 'Cost (USD)'      },
+  { value: 'calls',         label: 'Requests'        },
+  { value: 'input_tokens',  label: 'Input tokens'    },
+  { value: 'output_tokens', label: 'Output tokens'   },
+  { value: 'total_tokens',  label: 'Total tokens'    },
+];
+
+const PERIOD_OPTIONS: { value: LimitPeriod; label: string }[] = [
+  { value: 'hourly',   label: 'Hourly'   },
+  { value: 'daily',    label: 'Daily'    },
+  { value: 'weekly',   label: 'Weekly'   },
+  { value: 'monthly',  label: 'Monthly'  },
+  { value: 'yearly',   label: 'Yearly'   },
+];
+
+const ROLLING_UNIT_OPTIONS: { value: RollingUnit; label: string }[] = [
+  { value: 'second', label: 'seconds' },
+  { value: 'minute', label: 'minutes' },
+  { value: 'hour',   label: 'hours'   },
+  { value: 'day',    label: 'days'    },
+  { value: 'week',   label: 'weeks'   },
+  { value: 'month',  label: 'months'  },
+];
+
+const EMPTY_LIMIT_ROW: LimitRow = {
+  metric: 'cost', windowType: 'period', period: 'monthly',
+  rollingAmount: '24', rollingUnit: 'hour', value: '',
+};
+
+/** Convert a row to the API Limit object */
+function rowToLimit(r: LimitRow): Limit {
+  if (r.windowType === 'rolling') {
+    return { metric: r.metric, windowType: 'rolling', rollingAmount: parseInt(r.rollingAmount) || 1, rollingUnit: r.rollingUnit, value: parseFloat(r.value) };
+  }
+  return { metric: r.metric, windowType: 'period', period: r.period, value: parseFloat(r.value) };
+}
+
+/** Convert a saved Limit back to a row (handles old `window` field for backward compat) */
+function limitToRow(l: Limit): LimitRow {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const legacyWindow = (l as any).window as string | undefined;
+  const legacyPeriodMap: Record<string, LimitPeriod> = {
+    minute: 'hourly', hour: 'hourly', day: 'daily', week: 'weekly', month: 'monthly', year: 'yearly',
+  };
+  if (l.windowType === 'rolling') {
+    return { metric: l.metric, windowType: 'rolling', period: 'daily', rollingAmount: String(l.rollingAmount ?? 24), rollingUnit: l.rollingUnit ?? 'hour', value: String(l.value) };
+  }
+  return { metric: l.metric, windowType: 'period', period: l.period ?? (legacyWindow ? legacyPeriodMap[legacyWindow] : undefined) ?? 'monthly', rollingAmount: '24', rollingUnit: 'hour', value: String(l.value) };
+}
+
 // ── Types ──────────────────────────────────────────────────────────────────────
 type TierRow = {
   metric: string;
@@ -61,9 +122,6 @@ const EMPTY_FORM = {
   outputPerMillion: '',
   cachePerMillion: '',
   contextWindow: '',
-  dailyBudget: '',
-  weeklyBudget: '',
-  monthlyBudget: '',
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -91,8 +149,9 @@ export function ModelFormPage() {
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [tierRows, setTierRows] = useState<TierRow[]>([]);
+  const [limitRows, setLimitRows] = useState<LimitRow[]>([]);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [showBudget, setShowBudget] = useState(false);
+  const [showLimits, setShowLimits] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const [showToken, setShowToken] = useState(false);
@@ -206,7 +265,8 @@ export function ModelFormPage() {
     setIsCustomModel(customModel);
     setErr(''); setShowToken(false);
 
-    setForm({
+    setForm(f => ({
+      ...f,
       id: formId,
       customId: customId,
       provider,
@@ -216,16 +276,19 @@ export function ModelFormPage() {
       outputPerMillion: String(model.cost.outputPerMillion),
       cachePerMillion: model.cost.cachePerMillion != null ? String(model.cost.cachePerMillion) : '',
       contextWindow: model.contextWindow != null ? String(model.contextWindow) : '',
-      dailyBudget: model.globalThresholds?.daily != null ? String(model.globalThresholds.daily) : '',
-      weeklyBudget: model.globalThresholds?.weekly != null ? String(model.globalThresholds.weekly) : '',
-      monthlyBudget: model.globalThresholds?.monthly != null ? String(model.globalThresholds.monthly) : '',
-    });
+    }));
 
-    if (model.globalThresholds?.daily || model.globalThresholds?.weekly || model.globalThresholds?.monthly) {
-      setShowBudget(true);
-    } else {
-      setShowBudget(false);
-    }
+    // Resolve limits: prefer new `limits`, fall back to legacy `globalThresholds`
+    const resolvedLimits: LimitRow[] = model.limits?.length
+      ? model.limits.map(limitToRow)
+      : [
+          ...(model.globalThresholds?.daily   != null ? [limitToRow({ metric: 'cost', windowType: 'period', period: 'daily',   value: model.globalThresholds.daily   })] : []),
+          ...(model.globalThresholds?.weekly  != null ? [limitToRow({ metric: 'cost', windowType: 'period', period: 'weekly',  value: model.globalThresholds.weekly  })] : []),
+          ...(model.globalThresholds?.monthly != null ? [limitToRow({ metric: 'cost', windowType: 'period', period: 'monthly', value: model.globalThresholds.monthly })] : []),
+        ];
+
+    setLimitRows(resolvedLimits);
+    setShowLimits(resolvedLimits.length > 0);
 
     if (model.cost.pricingTiers?.length) {
       setTierRows(model.cost.pricingTiers.map(t => ({
@@ -288,9 +351,9 @@ export function ModelFormPage() {
         ...(form.cachePerMillion ? { cachePerMillion: parseFloat(form.cachePerMillion) } : {}),
         ...(form.contextWindow ? { contextWindow: parseInt(form.contextWindow, 10) } : {}),
         ...(pricingTiersPayload.length ? { pricingTiers: pricingTiersPayload } : {}),
-        ...(form.dailyBudget ? { dailyBudget: parseFloat(form.dailyBudget) } : {}),
-        ...(form.weeklyBudget ? { weeklyBudget: parseFloat(form.weeklyBudget) } : {}),
-        ...(form.monthlyBudget ? { monthlyBudget: parseFloat(form.monthlyBudget) } : {}),
+        limits: limitRows
+          .filter(l => l.value !== '' && !isNaN(parseFloat(l.value)))
+          .map(rowToLimit),
       };
 
       if (editingModelId) {
@@ -501,32 +564,91 @@ export function ModelFormPage() {
             )}
           </div>
 
-          {/* ── Section: Budgets ─────────────────────────────── */}
+          {/* ── Section: Limits ───────────────────────────────── */}
           <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
-            <button type="button" onClick={() => setShowBudget(v => !v)}
+            <button type="button" onClick={() => setShowLimits(v => !v)}
               style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 500, padding: '4px 0', userSelect: 'none' }}>
-              <ChevronDown size={18} style={{ transform: showBudget ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
-              Budget limits
+              <ChevronDown size={18} style={{ transform: showLimits ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
+              Limits
+              {limitRows.filter(l => l.value !== '').length > 0 && (
+                <span style={{ marginLeft: 6, background: 'var(--accent)', color: '#fff', fontSize: '0.75rem', borderRadius: 12, padding: '2px 8px' }}>
+                  {limitRows.filter(l => l.value !== '').length}
+                </span>
+              )}
             </button>
-            <p className="section-desc" style={{ marginTop: 8 }}>Maximum spend allowed per period to prevent unexpected costs.</p>
+            <p className="section-desc" style={{ marginTop: 8 }}>Usage limits for this model. Multiple rules can be combined.</p>
 
-            {showBudget && (
-              <div className="grid-3" style={{ marginTop: 16 }}>
-                <div className="form-group">
-                  <label className="form-label">Daily budget <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(USD)</span></label>
-                  <input className="form-input" type="number" step="any" value={form.dailyBudget}
-                    onChange={e => setForm(f => ({ ...f, dailyBudget: e.target.value }))} placeholder="—" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Weekly budget <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(USD)</span></label>
-                  <input className="form-input" type="number" step="any" value={form.weeklyBudget}
-                    onChange={e => setForm(f => ({ ...f, weeklyBudget: e.target.value }))} placeholder="—" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Monthly budget <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(USD)</span></label>
-                  <input className="form-input" type="number" step="any" value={form.monthlyBudget}
-                    onChange={e => setForm(f => ({ ...f, monthlyBudget: e.target.value }))} placeholder="—" />
-                </div>
+            {showLimits && (
+              <div style={{ marginTop: 16 }}>
+                {limitRows.map((lim, idx) => {
+                  const upd = (patch: Partial<LimitRow>) =>
+                    setLimitRows(rows => rows.map((r, i) => i === idx ? { ...r, ...patch } : r));
+                  return (
+                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: '130px 110px 1fr 100px auto', gap: 10, alignItems: 'flex-end', marginBottom: 12, background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px' }}>
+                      {/* Metric */}
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '0.75rem' }}>Metric</label>
+                        <select className="form-input" value={lim.metric}
+                          onChange={e => upd({ metric: e.target.value as LimitMetric })}>
+                          {LIMIT_METRIC_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
+                      </div>
+                      {/* Window type */}
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '0.75rem' }}>Type</label>
+                        <select className="form-input" value={lim.windowType}
+                          onChange={e => upd({ windowType: e.target.value as 'period' | 'rolling' })}>
+                          <option value="period">Period</option>
+                          <option value="rolling">Rolling</option>
+                        </select>
+                      </div>
+                      {/* Period selector OR rolling amount+unit */}
+                      {lim.windowType === 'period' ? (
+                        <div className="form-group" style={{ margin: 0 }}>
+                          <label className="form-label" style={{ fontSize: '0.75rem' }}>Period</label>
+                          <select className="form-input" value={lim.period}
+                            onChange={e => upd({ period: e.target.value as LimitPeriod })}>
+                            {PERIOD_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                          </select>
+                        </div>
+                      ) : (
+                        <div className="form-group" style={{ margin: 0 }}>
+                          <label className="form-label" style={{ fontSize: '0.75rem' }}>Every</label>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <input className="form-input" type="number" min="1" step="1" value={lim.rollingAmount}
+                              onChange={e => upd({ rollingAmount: e.target.value })}
+                              style={{ width: 64 }} placeholder="24" />
+                            <select className="form-input" value={lim.rollingUnit}
+                              onChange={e => upd({ rollingUnit: e.target.value as RollingUnit })}>
+                              {ROLLING_UNIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                      )}
+                      {/* Max value */}
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '0.75rem' }}>
+                        {lim.metric === 'cost' ? 'Max ($)' : lim.metric === 'calls' ? 'Max (n.)' : 'Max (tokens)'}
+                        </label>
+                        <input className="form-input" type="number" step="any" min="0" value={lim.value}
+                          onChange={e => upd({ value: e.target.value })}
+                          placeholder={lim.metric === 'cost' ? '10.00' : lim.metric === 'calls' ? '100' : '100000'} />
+                      </div>
+                      <button type="button" onClick={() => setLimitRows(rows => rows.filter((_, i) => i !== idx))}
+                        style={{ padding: 8, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', alignSelf: 'flex-end', display: 'flex', alignItems: 'center', borderRadius: 6 }}>
+                        <X size={16} />
+                      </button>
+                    </div>
+                  );
+                })}
+
+                <button type="button"
+                  onClick={() => { setLimitRows(rows => [...rows, { ...EMPTY_LIMIT_ROW }]); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1.5px dashed var(--border)', borderRadius: 8, cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '10px 16px', width: '100%', justifyContent: 'center', transition: 'all 0.15s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--accent)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(74, 144, 226, 0.05)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLButtonElement).style.background = 'none'; }}>
+                  <Plus size={16} /> Add limit
+                </button>
               </div>
             )}
           </div>

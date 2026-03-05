@@ -3,17 +3,27 @@ import { readConfig } from '../../config/loader.js';
 import { getProviderAdapter } from '../../providers/index.js';
 import { llmChat, BudgetExceededError } from '../../llm/executor.js';
 import type { LLMCallContext } from '../../llm/executor.js';
+import { getLimitUsageSnapshot } from '../../cost/budget.js';
+import type { LimitSnapshot } from '../../cost/budget.js';
 import type { PolicyFn } from './types.js';
 
-function buildSystemPrompt(candidates: { id: string; prompt?: string }[]): string {
-  const hasAnyPrompt = candidates.some(c => c.prompt);
+function buildSystemPrompt(
+  candidates: { id: string; prompt?: string; limits?: LimitSnapshot[] }[],
+): string {
+  const hasAnyPrompt  = candidates.some(c => c.prompt);
+  const hasAnyLimits  = candidates.some(c => c.limits && c.limits.length > 0);
 
   const modelList = candidates
     .map(c => {
       const guidance = c.prompt
         ? `\n  routing_guidance: "${c.prompt}"`
         : '';
-      return `- id: "${c.id}"${guidance}`;
+      const limitsBlock = (c.limits && c.limits.length > 0)
+        ? '\n  limits:\n' + c.limits.map(l =>
+            `    - { metric: "${l.metric}", window: "${l.window}", limit: ${l.value}, current: ${l.current}, remaining: ${l.remaining} }`,
+          ).join('\n')
+        : '';
+      return `- id: "${c.id}"${guidance}${limitsBlock}`;
     })
     .join('\n');
 
@@ -24,6 +34,12 @@ function buildSystemPrompt(candidates: { id: string; prompt?: string }[]): strin
   const guidanceRule = hasAnyPrompt
     ? `- When a model has a "routing_guidance" field, treat it as a direct instruction from the operator about when that model should be preferred. Weight it heavily in your scoring: a request that matches the guidance should receive a high score (≥ 0.8), while a request that clearly contradicts it should receive a low score (≤ 0.3).`
     : '';
+
+  const limitsRule = hasAnyLimits
+    ? `- When a model has a "limits" block, each entry shows the current consumption vs the configured threshold for a given window. A model with low "remaining" quota is approaching exhaustion: prefer models with more headroom, unless other factors strongly favour the constrained model.`
+    : '';
+
+  const extraRules = [guidanceRule, limitsRule].filter(Boolean).map(r => `- ${r.replace(/^- /, '')}`).join('\n');
 
   return `You are a routing assistant. Given a user request, score each available AI model by relevance (0.0 = worst, 1.0 = best).
 
@@ -40,7 +56,7 @@ ${exampleRouting}
 Rules:
 - Include ALL models listed above, using their exact id strings.
 - "point" must be a number between 0.0 and 1.0.
-- "reason" must be a single short sentence explaining the score.${guidanceRule ? `\n- ${guidanceRule.slice(2)}` : ''}
+- "reason" must be a single short sentence explaining the score.${extraRules ? `\n${extraRules}` : ''}
 - Do not output anything outside the JSON object.`;
 }
 
@@ -147,16 +163,25 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
   const fallbackModelIds: string[] = config?.fallbackModelIds ?? [];
   const candidateModelIds = [routingModelId, ...fallbackModelIds];
 
+  // Calcola gli snapshot dei consumi correnti per i candidati che hanno limiti configurati
+  const limitsMap: Record<string, LimitSnapshot[]> = {};
+  await Promise.all(
+    candidates.map(async c => {
+      const snapshots = await getLimitUsageSnapshot(c.model, project, token);
+      if (snapshots.length > 0) limitsMap[c.model.id as string] = snapshots;
+    }),
+  );
+
+  const userMessage = buildUserMessage(request);
   const systemPrompt = buildSystemPrompt(
     candidates.map(c => ({
       id: c.model.id as string,
       ...(c.prompt !== undefined ? { prompt: c.prompt } : {}),
+      ...(limitsMap[c.model.id as string]?.length ? { limits: limitsMap[c.model.id as string] } : {}),
     })),
   );
-  const userMessage = buildUserMessage(request);
 
   log?.info({ systemPrompt, userMessage }, 'llm policy: prompts');
-
   for (const modelId of candidateModelIds) {
     const model = allModels.find(m => m.id === modelId);
     if (!model) {
