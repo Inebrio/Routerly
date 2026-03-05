@@ -37,6 +37,8 @@ export interface UsageInfo {
   prompt_tokens: number;
   completion_tokens: number;
   total_tokens: number;
+  /** Breakdown of prompt tokens (e.g. cached tokens for OpenAI prompt caching) */
+  prompt_tokens_details?: { cached_tokens?: number };
 }
 
 export interface Choice {

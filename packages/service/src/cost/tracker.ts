@@ -10,6 +10,10 @@ export interface TrackUsageParams {
   model: ModelConfig;
   inputTokens: number;
   outputTokens: number;
+  /** Input tokens served from prompt cache read (subset of inputTokens, billed at cachePerMillion rate) */
+  cachedInputTokens?: number;
+  /** Input tokens written to prompt cache — Anthropic only (billed at cacheWritePerMillion rate) */
+  cacheCreationInputTokens?: number;
   latencyMs: number;
   ttftMs?: number;
   outcome: UsageRecord['outcome'];
@@ -22,7 +26,13 @@ export interface TrackUsageParams {
  * Records a usage event to usage.json after each API call.
  */
 export async function trackUsage(params: TrackUsageParams): Promise<void> {
-  const cost = calculateCost(params.inputTokens, params.outputTokens, params.model);
+  const cost = calculateCost(
+    params.inputTokens,
+    params.outputTokens,
+    params.model,
+    params.cachedInputTokens,
+    params.cacheCreationInputTokens,
+  );
 
   const record: UsageRecord = {
     id: uuidv4(),
@@ -31,6 +41,8 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     modelId: params.model.id,
     inputTokens: params.inputTokens,
     outputTokens: params.outputTokens,
+    ...(params.cachedInputTokens ? { cachedInputTokens: params.cachedInputTokens } : {}),
+    ...(params.cacheCreationInputTokens ? { cacheCreationInputTokens: params.cacheCreationInputTokens } : {}),
     cost,
     latencyMs: params.latencyMs,
     ...(params.ttftMs !== undefined ? { ttftMs: params.ttftMs } : {}),

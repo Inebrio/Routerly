@@ -3,17 +3,23 @@ import type { ModelConfig } from '@localrouter/shared';
 /**
  * Calculates the cost of a single API call in USD.
  *
- * @param inputTokens - Number of prompt/input tokens consumed
- * @param outputTokens - Number of completion/output tokens consumed
- * @param model - The model config with pricing (cost per 1M tokens)
- * @returns Cost in USD
+ * Token pricing tiers (all optional):
+ *  - inputTokens (minus cached and creation) → inputPerMillion
+ *  - cachedInputTokens (cache read)          → cachePerMillion  (fallback: inputPerMillion)
+ *  - cacheCreationInputTokens (cache write)  → cacheWritePerMillion (fallback: inputPerMillion)
+ *  - outputTokens                            → outputPerMillion
  */
 export function calculateCost(
   inputTokens: number,
   outputTokens: number,
   model: ModelConfig,
+  cachedInputTokens = 0,
+  cacheCreationInputTokens = 0,
 ): number {
-  const inputCost = (inputTokens / 1_000_000) * model.cost.inputPerMillion;
-  const outputCost = (outputTokens / 1_000_000) * model.cost.outputPerMillion;
-  return Math.round((inputCost + outputCost) * 1_000_000) / 1_000_000; // Round to 6 decimal places
+  const plainInput = inputTokens - cachedInputTokens - cacheCreationInputTokens;
+  const inputCost        = (plainInput               / 1_000_000) * model.cost.inputPerMillion;
+  const cachedCost       = (cachedInputTokens         / 1_000_000) * (model.cost.cachePerMillion       ?? model.cost.inputPerMillion);
+  const cacheCreateCost  = (cacheCreationInputTokens  / 1_000_000) * (model.cost.cacheWritePerMillion  ?? model.cost.inputPerMillion);
+  const outputCost       = (outputTokens              / 1_000_000) * model.cost.outputPerMillion;
+  return Math.round((inputCost + cachedCost + cacheCreateCost + outputCost) * 1_000_000) / 1_000_000;
 }

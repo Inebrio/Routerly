@@ -154,16 +154,21 @@ export async function llmChat(
       details: {
         modelId: model.id,
         inputTokens: response.usage?.prompt_tokens,
+        cachedInputTokens: response.usage?.prompt_tokens_details?.cached_tokens,
         outputTokens: response.usage?.completion_tokens,
         latencyMs,
       },
     });
 
+    const cachedInputTokens = response.usage?.prompt_tokens_details?.cached_tokens ?? 0;
+    const cacheCreationInputTokens = (response.usage as any)?.prompt_tokens_details?.cache_creation_tokens ?? 0;
     await trackUsage({
       projectId,
       model,
       inputTokens: response.usage?.prompt_tokens ?? 0,
       outputTokens: response.usage?.completion_tokens ?? 0,
+      ...(cachedInputTokens > 0 ? { cachedInputTokens } : {}),
+      ...(cacheCreationInputTokens > 0 ? { cacheCreationInputTokens } : {}),
       latencyMs,
       ttftMs: latencyMs,     // non-streaming: tutta la latenza ≡ TTFT
       outcome: 'success',
@@ -276,6 +281,8 @@ export async function llmStream(
   async function* makeGenerator(): AsyncGenerator<StreamChunk> {
     let inputTokens = 0;
     let outputTokens = 0;
+    let cachedInputTokens = 0;
+    let cacheCreationInputTokens = 0;
     let thinkingAccum = '';
     let thinkingEmitted = false;
     let outcome: 'success' | 'error' = 'success';
@@ -287,6 +294,8 @@ export async function llmStream(
       if (u) {
         inputTokens = u.prompt_tokens ?? inputTokens;
         outputTokens = u.completion_tokens ?? outputTokens;
+        cachedInputTokens = u.prompt_tokens_details?.cached_tokens ?? cachedInputTokens;
+        cacheCreationInputTokens = u.prompt_tokens_details?.cache_creation_tokens ?? cacheCreationInputTokens;
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const delta = (chunk as any)?.choices?.[0]?.delta as any;
@@ -339,12 +348,11 @@ export async function llmStream(
         emit?.({
           panel: res,
           message: 'model:success',
-          details: { modelId: model.id, inputTokens, outputTokens, latencyMs },
+          details: { modelId: model.id, inputTokens, cachedInputTokens: cachedInputTokens > 0 ? cachedInputTokens : undefined, outputTokens, latencyMs },
         });
       }
       await trackUsage({
-        projectId, model, inputTokens, outputTokens, latencyMs, ttftMs,
-        outcome,
+        projectId, model, inputTokens, outputTokens, latencyMs, ttftMs,        ...(cachedInputTokens > 0 ? { cachedInputTokens } : {}),        outcome,
         ...(errorMessage !== undefined ? { errorMessage } : {}),
         callType,
         ...(traceId !== undefined ? { traceId } : {}),

@@ -20,8 +20,10 @@ export interface TokenCost {
   inputPerMillion: number;
   /** Cost per 1M output tokens in USD (base / default) */
   outputPerMillion: number;
-  /** Cost per 1M cached input tokens in USD (prompt caching, optional) */
+  /** Cost per 1M cached input tokens in USD (prompt cache read — Anthropic ~0.1×, OpenAI ~0.5×) */
   cachePerMillion?: number;
+  /** Cost per 1M cache-write input tokens in USD (Anthropic cache creation ~1.25× base; not used by OpenAI) */
+  cacheWritePerMillion?: number;
   /** Pricing overrides: when metric exceeds threshold, these prices apply instead */
   pricingTiers?: PricingTier[];
 }
@@ -270,6 +272,10 @@ export interface UsageRecord {
   modelId: string;
   inputTokens: number;
   outputTokens: number;
+  /** Input tokens served from prompt cache read (subset of inputTokens, charged at cachePerMillion rate) */
+  cachedInputTokens?: number;
+  /** Input tokens written to prompt cache (Anthropic only; charged at cacheWritePerMillion rate) */
+  cacheCreationInputTokens?: number;
   /** Cost in USD */
   cost: number;
   /** Latency in ms (from forwarding start to last byte received) */

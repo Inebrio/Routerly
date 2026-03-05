@@ -76,6 +76,7 @@ export interface Model {
 export const getModels = () => request<Model[]>('/models');
 export const createModel = (data: {
   id: string; name?: string; provider: string; endpoint: string; apiKey?: string;
+  cloneFrom?: string;
   inputPerMillion: number; outputPerMillion: number;
   cachePerMillion?: number;
   contextWindow?: number;
@@ -175,7 +176,7 @@ export interface TraceEntry {
 
 export interface UsageRecord {
   id: string; timestamp: string; projectId: string; modelId: string;
-  inputTokens: number; outputTokens: number; cost: number; latencyMs: number; ttftMs?: number; tokensPerSec?: number; outcome: string;
+  inputTokens: number; outputTokens: number; cachedInputTokens?: number; cost: number; latencyMs: number; ttftMs?: number; tokensPerSec?: number; outcome: string;
   callType?: 'routing' | 'completion';
   errorMessage?: string;
   trace?: TraceEntry[];
@@ -183,7 +184,7 @@ export interface UsageRecord {
 
 export interface UsageStats {
   summary: { totalCost: number; totalCalls: number; successCalls: number; errorCalls: number; routingCalls: number; completionCalls: number; routingCost: number; completionCost: number };
-  byModel: Record<string, { calls: number; inputTokens: number; outputTokens: number; cost: number; errors: number }>;
+  byModel: Record<string, { calls: number; inputTokens: number; outputTokens: number; cachedInputTokens: number; cost: number; errors: number }>;
   timeline: [string, number][];
   records: Array<UsageRecord>;
 }

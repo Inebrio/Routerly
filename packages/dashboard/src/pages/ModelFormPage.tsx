@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Plus, X, ChevronDown, EyeOff, Eye, ArrowLeft } from 'lucide-react';
 import { getModels, createModel, updateModel, type Model, type PricingTier } from '../api';
 import { providersConf } from '@localrouter/shared';
@@ -80,7 +80,10 @@ function generateId(provider: string, modelId: string, existingIds: string[]): s
 export function ModelFormPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
+  const [searchParams] = useSearchParams();
+  const cloneSourceId = searchParams.get('clone') ? decodeURIComponent(searchParams.get('clone')!) : null;
   const isEditing = Boolean(id);
+  const isCloning = Boolean(cloneSourceId);
   const editingModelId = isEditing ? decodeURIComponent(id!) : null;
 
   const [models, setModels] = useState<Model[]>([]);
@@ -107,6 +110,15 @@ export function ModelFormPage() {
             editModel(model);
           } else {
             setErr('Model not found');
+          }
+        } else if (isCloning && cloneSourceId) {
+          const source = allModels.find(m => m.id === cloneSourceId);
+          if (source) {
+            editModel(source);
+            // Clear the ID so the user must choose a new one
+            setForm(f => ({ ...f, customId: '' }));
+          } else {
+            setErr('Source model not found');
           }
         } else {
           // Initialize new
@@ -252,6 +264,7 @@ export function ModelFormPage() {
     setErr(''); setSaving(true);
     const finalId = form.customId.trim() || generateId(form.provider, form.id, models.filter(m => m.id !== editingModelId).map(m => m.id));
     if (!finalId) { setErr('Model ID required'); setSaving(false); return; }
+    if (isCloning && models.some(m => m.id === finalId)) { setErr(`Model "${finalId}" already exists — set a different Custom ID`); setSaving(false); return; }
 
     const pricingTiersPayload: PricingTier[] = tierRows
       .filter(t => t.above && t.input && t.output)
@@ -269,6 +282,7 @@ export function ModelFormPage() {
         provider: form.provider,
         endpoint: form.endpoint,
         ...(form.apiKey ? { apiKey: form.apiKey } : {}),
+        ...(isCloning && cloneSourceId && !form.apiKey ? { cloneFrom: cloneSourceId } : {}),
         inputPerMillion: parseFloat(form.inputPerMillion) || 0,
         outputPerMillion: parseFloat(form.outputPerMillion) || 0,
         ...(form.cachePerMillion ? { cachePerMillion: parseFloat(form.cachePerMillion) } : {}),
@@ -311,8 +325,8 @@ export function ModelFormPage() {
         <button className="btn-icon" onClick={goBack} style={{ marginBottom: 16, display: 'inline-flex', padding: 4, width: 'fit-content' }}>
           <ArrowLeft size={16} /><span style={{ marginLeft: 6, fontSize: '0.8rem', fontWeight: 500 }}>Back to Models</span>
         </button>
-        <h1>{editingModelId ? 'Edit Model' : 'Add Model'}</h1>
-        <p>{editingModelId ? `Modifying configuration for ${editingModelId}` : 'Register a new LLM provider model'}</p>
+        <h1>{editingModelId ? 'Edit Model' : isCloning ? 'Clone Model' : 'Add Model'}</h1>
+        <p>{editingModelId ? `Modifying configuration for ${editingModelId}` : isCloning ? `Cloning from ${cloneSourceId} — assign a new ID to save` : 'Register a new LLM provider model'}</p>
       </div>
 
       <div className="page-body">
@@ -376,7 +390,7 @@ export function ModelFormPage() {
                 <input className="form-input" type={showToken ? 'text' : 'password'}
                   name="apiKey" autoComplete="new-password"
                   value={form.apiKey} onChange={e => setForm(f => ({ ...f, apiKey: e.target.value }))}
-                  placeholder={editingModelId ? 'Leave blank to keep existing key' : (form.provider === 'ollama' ? 'not required for local models' : 'sk-…')}
+                  placeholder={editingModelId ? 'Leave blank to keep existing key' : isCloning ? 'Leave blank to keep existing key' : (form.provider === 'ollama' ? 'not required for local models' : 'sk-…')}
                   style={{ paddingRight: 40 }} />
                 <button type="button" onClick={() => setShowToken(v => !v)}
                   style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>
@@ -520,7 +534,7 @@ export function ModelFormPage() {
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-start', marginTop: 32, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
             <button type="button" className="btn btn-secondary" onClick={goBack} disabled={saving}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? <span className="spinner" /> : (editingModelId ? 'Save Changes' : 'Create Model')}
+              {saving ? <span className="spinner" /> : (editingModelId ? 'Save Changes' : isCloning ? 'Create Clone' : 'Create Model')}
             </button>
           </div>
         </form>

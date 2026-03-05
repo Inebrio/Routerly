@@ -87,7 +87,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{
     Body: {
       id: string; name?: string; provider: string; endpoint: string;
-      apiKey?: string; inputPerMillion: number; outputPerMillion: number;
+      apiKey?: string; cloneFrom?: string; inputPerMillion: number; outputPerMillion: number;
       cachePerMillion?: number;
       contextWindow?: number;
       pricingTiers?: PricingTier[];
@@ -103,7 +103,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       name: req.body.name ?? req.body.id,
       provider: req.body.provider as Provider,
       endpoint: req.body.endpoint,
-      encryptedApiKey: req.body.apiKey ? encrypt(req.body.apiKey) : undefined,
+      encryptedApiKey: req.body.apiKey
+        ? encrypt(req.body.apiKey)
+        : req.body.cloneFrom
+          ? (models.find(m => m.id === req.body.cloneFrom)?.encryptedApiKey ?? undefined)
+          : undefined,
       cost: {
         inputPerMillion: req.body.inputPerMillion,
         outputPerMillion: req.body.outputPerMillion,
@@ -174,6 +178,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     models[index] = model;
     await writeConfig('models', models);
     return reply.send({ ...model, encryptedApiKey: undefined });
+  });
+
+  fastify.get<{ Params: { id: string } }>('/api/models/:id/apikey', async (req, reply) => {
+    const models = await readConfig('models');
+    const model = models.find(m => m.id === req.params.id);
+    if (!model) return reply.status(404).send({ error: 'Not found' });
+    const apiKey = model.encryptedApiKey ? decrypt(model.encryptedApiKey) : null;
+    return reply.send({ apiKey });
   });
 
   fastify.delete<{ Params: { id: string } }>('/api/models/:id', async (req, reply) => {
@@ -531,12 +543,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (projectId) filtered = filtered.filter(r => r.projectId === projectId);
 
     // Aggregate by model
-    const byModel: Record<string, { calls: number; inputTokens: number; outputTokens: number; cost: number; errors: number }> = {};
+    const byModel: Record<string, { calls: number; inputTokens: number; outputTokens: number; cachedInputTokens: number; cost: number; errors: number }> = {};
     for (const r of filtered) {
-      const entry = byModel[r.modelId] ?? { calls: 0, inputTokens: 0, outputTokens: 0, cost: 0, errors: 0 };
+      const entry = byModel[r.modelId] ?? { calls: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cost: 0, errors: 0 };
       entry.calls++;
       entry.inputTokens += r.inputTokens;
       entry.outputTokens += r.outputTokens;
+      entry.cachedInputTokens += r.cachedInputTokens ?? 0;
       entry.cost += r.cost;
       if (r.outcome !== 'success') entry.errors++;
       byModel[r.modelId] = entry;

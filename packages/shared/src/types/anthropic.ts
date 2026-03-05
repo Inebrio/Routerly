@@ -42,6 +42,10 @@ export interface MessagesRequest {
 export interface AnthropicUsage {
   input_tokens: number;
   output_tokens: number;
+  /** Tokens read from prompt cache (charged at reduced rate) */
+  cache_read_input_tokens?: number;
+  /** Tokens written to prompt cache (charged at slightly higher rate) */
+  cache_creation_input_tokens?: number;
 }
 
 export type AnthropicStopReason =
