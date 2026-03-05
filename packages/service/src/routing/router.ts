@@ -47,12 +47,13 @@ export async function routeRequest(
 ): Promise<RouteResult> {
   const enabledPolicies = (project.policies ?? []).filter(p => p.enabled);
 
-  // Peso normalizzato [0,1]: posizione 0 → 1.0, ultima → 1/N
-  const total = enabledPolicies.length;
+  // Peso uguale per ogni policy: la posizione indica priorità concettuale
+  // (definita dall'utente nell'ordinamento), ma non crea più un bias 9:1
+  // che azzera le policy in coda.
   const policiesWithWeight = enabledPolicies.map((p, idx) => ({
     position: idx + 1,
     type: p.type,
-    weight: total > 1 ? (total - idx) / total : 1,
+    weight: 1,
     config: p.config,
   }));
 
@@ -150,21 +151,67 @@ export async function routeRequest(
   );
 
 
-  // ── Combina i risultati: per ogni modello somma i contributi pesati ────────
-  const pointMap = new Map<string, number>();
+  // ── Combina i risultati: media pesata degli score raw ────────────────────
+  //
+  // Ogni policy restituisce già score in [0,1] con semantica coerente
+  // (0 = inadatto, 1 = ottimo). Non si applica min-max normalization perché:
+  //   - amplificherebbe errori della LLM policy (es. 0.35 → 0.0)
+  //   - policy che danno tutti 1.0 (health, context) diventerebbero rumore
+  //     che gonfia o smorza il segnale reale invece di essere neutrali
+  //
+  // Policy non discriminanti (range < 0.05 su più modelli) vengono escluse
+  // dalla media: non aggiungono informazione e diluirebbero le policy che
+  // effettivamente distinguono i candidati.
+  //
+  // Modelli assenti dall'output di una policy ricevono la media della policy
+  // (fill neutro), non 0.
+
+  const allCandidateIds = validCandidates.map(c => c.model.id);
+  const scoreAccumulator = new Map<string, number>();
+  allCandidateIds.forEach(id => scoreAccumulator.set(id, 0));
+
+  let totalWeight = 0;
+
   for (const { weight: policyWeight, routing } of results) {
-    for (const entry of routing) {
-      const current = pointMap.get(entry.model) ?? 0;
-      pointMap.set(entry.model, current + entry.point * policyWeight);
+    if (routing.length === 0) continue;
+
+    const vals = routing.map(r => r.point);
+    const min = Math.min(...vals);
+    const max = Math.max(...vals);
+    const range = max - min;
+
+    // Policy non discriminante su più modelli → skip (non aggiunge informazione)
+    if (routing.length > 1 && range < 0.05) continue;
+
+    const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
+
+    for (const r of routing) {
+      scoreAccumulator.set(r.model, (scoreAccumulator.get(r.model) ?? 0) + r.point * policyWeight);
     }
+    // Fill neutro (media policy) per modelli non coperti
+    allCandidateIds.forEach(id => {
+      if (!routing.some(r => r.model === id)) {
+        scoreAccumulator.set(id, (scoreAccumulator.get(id) ?? 0) + mean * policyWeight);
+      }
+    });
+
+    totalWeight += policyWeight;
   }
 
-  const totalWeight = policiesWithWeight.reduce((sum, p) => sum + p.weight, 0);
+  // Fallback: se nessuna policy ha discriminato, usa tutte con score raw
+  if (totalWeight === 0) {
+    for (const { weight: policyWeight, routing } of results) {
+      for (const r of routing) {
+        scoreAccumulator.set(r.model, (scoreAccumulator.get(r.model) ?? 0) + r.point * policyWeight);
+      }
+      totalWeight += policyWeight;
+    }
+  }
 
   const finalCandidates: RoutingCandidate[] = validCandidates
     .map(c => ({
       model: c.model.id,
-      weight: totalWeight > 0 ? +((pointMap.get(c.model.id) ?? 0) / totalWeight).toFixed(4) : 0,
+      weight: totalWeight > 0 ? +((scoreAccumulator.get(c.model.id) ?? 0) / totalWeight).toFixed(4) : 0,
       ...(c.prompt ? { prompt: c.prompt } : {}),
     }))
     .sort((a, b) => b.weight - a.weight);
@@ -181,6 +228,23 @@ export async function routeRequest(
     },
     'routing: result',
   );
+
+  // ── Emit recap: vincitore per policy + classifica finale ─────────────────
+  const recapEntry = te('router-response', 'router:recap', {
+    policies: policiesWithWeight.map(({ type, weight }, i) => {
+      const routing = results[i]?.routing ?? [];
+      const sorted = [...routing].sort((a, b) => b.point - a.point);
+      const winner = sorted[0];
+      return {
+        type,
+        weight: +weight.toFixed(3),
+        winner: winner ? { model: winner.model, point: winner.point } : null,
+        scores: sorted.map(r => ({ model: r.model, point: r.point })),
+      };
+    }),
+    final: finalCandidates.map((c, rank) => ({ rank: rank + 1, model: c.model, score: c.weight })),
+  });
+  emit?.(recapEntry);
 
   // ── Emit risultato finale ─────────────────────────────────────────────────
   const resultEntry = te('router-response', 'router:result', {
@@ -208,6 +272,7 @@ export async function routeRequest(
         })) ?? [],
       })
     ),
+    recapEntry,
     resultEntry,
   ];
 

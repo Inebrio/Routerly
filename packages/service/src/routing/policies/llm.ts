@@ -37,27 +37,25 @@ function buildSystemPrompt(
 
   const extraRules = [guidanceRule, limitsRule].filter(Boolean).map(r => `- ${r.replace(/^- /, '')}`).join('\n');
 
-  return `You are a routing assistant. Given a user request, score each available AI model by relevance (0.0 = worst, 1.0 = best).
+  return `You are a routing assistant. Score each model by how well it fits the request (0.0 = worst, 1.0 = best).
+
+"Best fit" is the most appropriate model, not the most powerful. Match task complexity to model capability: simple tasks suit smaller models; complex tasks need stronger ones. Using a flagship model for a trivial task is a poor fit.
 
 Available models:
 ${modelList}
 
-Your response MUST be a single JSON object, with no text before or after it, no markdown, no code fences. Example format:
+Rules:
+- Return ONLY a JSON object — no markdown, no extra text.
+- Include ALL models using their exact id strings.
+- Scores must reflect real differences; avoid uniform or near-identical values.${extraRules ? `\n${extraRules}` : ''}
+
+Format:
 {
   "routing": [
     { "model": "<model_id>", "point": <0.0-1.0>, "reason": "<brief reason>" },
     ...
   ]
-}
-
-Rules:
-- Include ALL models listed above in the "routing" array, using their exact id strings.
-- "point" must be a floating-point number between 0.0 and 1.0 (e.g. 0.35, 0.72, 0.95).
-- "reason" must be a single short sentence explaining the score based on the request content.
-- Score each model INDEPENDENTLY based solely on how well it fits the specific request. Do NOT copy or anchor to the example values above.
-- Scores MUST reflect real differentiation: if models differ in suitability, their scores must differ meaningfully. Avoid assigning the same or near-identical score to all models unless they are genuinely equivalent for this request.
-- Do not apply a default or uniform score (e.g. all 0.8). Uniform scoring is incorrect.${extraRules ? `\n${extraRules}` : ''}
-- Do not output anything outside the JSON object.`;
+}`;
 }
 
 function buildUserMessage(request: { messages: { role: string; content: unknown }[] }): string {
