@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getUsage, type UsageStats, type UsageRecord } from '../../api';
 import { DateRangePicker, type DateRange } from '../../components/DateRangePicker';
@@ -25,6 +25,9 @@ export function ProjectLogsTab() {
   const [modelIds, setModelIds]   = useState<string[]>([]);
   const [callTypeFilter, setCallTypeFilter] = useState<'all' | 'completion' | 'routing'>('all');
   const [outcomeFilter, setOutcomeFilter]   = useState<'all' | 'success' | 'error'>('all');
+  const [lastUpdated, setLastUpdated]       = useState<Date | null>(null);
+
+  const POLL_INTERVAL = 30_000;
 
   // Initialise date to "This month"
   useEffect(() => {
@@ -37,16 +40,20 @@ export function ProjectLogsTab() {
     });
   }, []);
 
-  // Fetch usage for this project whenever date range changes
-  useEffect(() => {
-    if (!projectId) return;
+  const fetchStats = useCallback(() => {
+    if (!projectId) return Promise.resolve();
     const period = dateRange.from || dateRange.to ? 'custom' : 'all';
-    setLoading(true);
-    getUsage(period, projectId, dateRange.from || undefined, dateRange.to || undefined)
-      .then(setStats)
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    return getUsage(period, projectId, dateRange.from || undefined, dateRange.to || undefined)
+      .then(data => { setStats(data); setLastUpdated(new Date()); })
+      .catch(console.error);
   }, [projectId, dateRange]);
+
+  useEffect(() => {
+    setLoading(true);
+    fetchStats().finally(() => setLoading(false));
+    const id = setInterval(fetchStats, POLL_INTERVAL);
+    return () => clearInterval(id);
+  }, [fetchStats]);
 
   const modelOptions = useMemo(() => {
     if (!stats) return [];
@@ -71,6 +78,11 @@ export function ProjectLogsTab() {
 
       {/* ── Filters ── */}
       <div className="card" style={{ padding: '14px 18px', marginBottom: 20 }}>
+        {lastUpdated && (
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 10 }}>
+            Aggiornato automaticamente ogni 30 s &middot; ultimo aggiornamento: {lastUpdated.toLocaleTimeString()}
+          </div>
+        )}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>

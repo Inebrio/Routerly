@@ -71,8 +71,8 @@ export function ProjectGeneralTab() {
 
       if (isEdit && project) {
         await updateProject(project.id, payload);
-        // show success briefly or just stay
-        navigate(`/dashboard/projects/${project.id}/routing`); // Auto-advance maybe? Or stay.
+        // Sync context so isDirty becomes false before navigating (avoids blocker)
+        setProject({ ...project, name: form.name, timeoutMs: parseInt(form.timeoutMs) });
         navigate('.', { replace: true }); // stay
       } else {
         const proj = await createProject(payload);

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { createBrowserRouter, RouterProvider, NavLink, Navigate, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import { ThemeProvider, useTheme, type Theme } from './ThemeContext';
 import { checkSetupStatus } from './api';
 import { LoginPage } from './pages/LoginPage';
 import { SetupPage } from './pages/SetupPage';
@@ -24,7 +25,32 @@ import { SettingsPage } from './pages/SettingsPage';
 import { SettingsGeneralTab, SettingsAboutTab, SettingsNotificationsTab } from './pages/SettingsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { UserEditPage } from './pages/UserEditPage';
-import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, Settings as SettingsIcon, UserCircle, LogOut } from 'lucide-react';
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor } from 'lucide-react';
+
+const THEME_OPTIONS: { value: Theme; icon: ReactNode; label: string }[] = [
+  { value: 'auto',  icon: <Monitor size={14} />, label: 'Auto' },
+  { value: 'dark',  icon: <Moon size={14} />, label: 'Dark' },
+  { value: 'light', icon: <Sun size={14} />, label: 'Light' },
+];
+
+function ThemeSelector() {
+  const { theme, setTheme } = useTheme();
+  return (
+    <div className="theme-selector">
+      {THEME_OPTIONS.map(opt => (
+        <button
+          key={opt.value}
+          title={opt.label}
+          className={`theme-btn${theme === opt.value ? ' active' : ''}`}
+          onClick={() => setTheme(opt.value)}
+        >
+          {opt.icon}
+          <span>{opt.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function Sidebar() {
   const { user, logout } = useAuth();
@@ -59,6 +85,7 @@ function Sidebar() {
         ))}
       </nav>
       <div className="sidebar-footer">
+        <ThemeSelector />
         <NavLink
           to="/dashboard/profile"
           className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
@@ -186,5 +213,9 @@ const router = createBrowserRouter([
 ]);
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <ThemeProvider>
+      <RouterProvider router={router} />
+    </ThemeProvider>
+  );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUsage, getProjects, type UsageStats, type Project } from '../api';
 import { MultiSelect } from '../components/MultiSelect';
@@ -21,7 +21,10 @@ export function UsagePage() {
   const [callTypeFilter, setCallTypeFilter] = useState<'all' | 'completion' | 'routing'>('all');
   const [outcomeFilter, setOutcomeFilter]   = useState<'all' | 'success' | 'error'>('all');
   const [loading, setLoading]           = useState(true);
+  const [lastUpdated, setLastUpdated]   = useState<Date | null>(null);
   const navigate = useNavigate();
+
+  const POLL_INTERVAL = 30_000;
 
   // Initialize to "This month" preset on mount
   useEffect(() => {
@@ -36,14 +39,19 @@ export function UsagePage() {
     getProjects().then(setProjects).catch(console.error);
   }, []);
 
-  useEffect(() => {
+  const fetchStats = useCallback(() => {
     const period = dateRange.from || dateRange.to ? 'custom' : 'all';
-    setLoading(true);
-    getUsage(period, undefined, dateRange.from || undefined, dateRange.to || undefined)
-      .then(setStats)
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    return getUsage(period, undefined, dateRange.from || undefined, dateRange.to || undefined)
+      .then(data => { setStats(data); setLastUpdated(new Date()); })
+      .catch(console.error);
   }, [dateRange]);
+
+  useEffect(() => {
+    setLoading(true);
+    fetchStats().finally(() => setLoading(false));
+    const id = setInterval(fetchStats, POLL_INTERVAL);
+    return () => clearInterval(id);
+  }, [fetchStats]);
 
   // Available model options — derived from all records in the current period
   const modelOptions = useMemo(() => {
@@ -75,7 +83,14 @@ export function UsagePage() {
     <>
       <div className="page-header">
         <h1>Usage</h1>
-        <p>Detailed call logs and per-model breakdown</p>
+        <p>
+          Detailed call logs and per-model breakdown
+          {lastUpdated && (
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: 12 }}>
+              · aggiornato alle {lastUpdated.toLocaleTimeString()}
+            </span>
+          )}
+        </p>
       </div>
       <div className="page-body">
         {/* Filters */}
