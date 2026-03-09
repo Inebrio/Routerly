@@ -47,13 +47,16 @@ export async function routeRequest(
 ): Promise<RouteResult> {
   const enabledPolicies = (project.policies ?? []).filter(p => p.enabled);
 
-  // Peso uguale per ogni policy: la posizione indica priorità concettuale
-  // (definita dall'utente nell'ordinamento), ma non crea più un bias 9:1
-  // che azzera le policy in coda.
+  // Decay lineare leggero: la prima policy vale 1.5×l'ultima.
+  // Con spread fissa a 0.5/(N-1) per step, il rapporto max:min è sempre
+  // 1.5:1 indipendentemente dal numero di policy abilitate — abbastanza
+  // da dare priorità all'ordinamento dell'utente, senza azzerare le policy
+  // in coda (il vecchio approccio dava ratio 9:1 con 9 policy).
+  const total = enabledPolicies.length;
   const policiesWithWeight = enabledPolicies.map((p, idx) => ({
     position: idx + 1,
     type: p.type,
-    weight: 1,
+    weight: total > 1 ? 1 + ((total - 1 - idx) / (total - 1)) * 0.5 : 1,
     config: p.config,
   }));
 
@@ -131,7 +134,15 @@ export async function routeRequest(
     policiesWithWeight.map(({ type, weight, config }, i) => {
       const fn = POLICY_MAP[type];
       const p = fn
-        ? fn({ request, candidates: validCandidates, config, log, emit, projectId: project.id, token, traceId }).then(out => ({ weight, routing: out.routing }))
+        ? fn({ request, candidates: validCandidates, config, log, emit, projectId: project.id, token, traceId })
+            .then(out => ({ weight, routing: out.routing }))
+            .catch(err => {
+              const errMsg = err instanceof Error ? err.message : String(err);
+              log?.error({ type, err: errMsg }, 'routing: policy failed');
+              emit?.(te('router-response', `policy:error:${type}`, { type, error: errMsg }));
+              // Fallback: tutti i modelli con score neutro
+              return { weight, routing: validCandidates.map(c => ({ model: c.model.id, point: 1.0 })) };
+            })
         : Promise.resolve({ weight, routing: validCandidates.map(c => ({ model: c.model.id, point: 1.0 })) });
 
       return p.then(result => {
@@ -141,8 +152,8 @@ export async function routeRequest(
           weight,
           routing: result.routing.map(r => ({
             model: r.model,
-            point: r.point,
-            contribution: +(r.point * weight).toFixed(4),
+            point: typeof r.point === 'number' && !isNaN(r.point) ? r.point : 1.0,
+            contribution: +((typeof r.point === 'number' && !isNaN(r.point) ? r.point : 1.0) * weight).toFixed(4),
           })),
         });
         emit?.(entry);
@@ -153,18 +164,11 @@ export async function routeRequest(
 
   // ── Combina i risultati: media pesata degli score raw ────────────────────
   //
-  // Ogni policy restituisce già score in [0,1] con semantica coerente
-  // (0 = inadatto, 1 = ottimo). Non si applica min-max normalization perché:
-  //   - amplificherebbe errori della LLM policy (es. 0.35 → 0.0)
-  //   - policy che danno tutti 1.0 (health, context) diventerebbero rumore
-  //     che gonfia o smorza il segnale reale invece di essere neutrali
-  //
-  // Policy non discriminanti (range < 0.05 su più modelli) vengono escluse
-  // dalla media: non aggiungono informazione e diluirebbero le policy che
-  // effettivamente distinguono i candidati.
-  //
-  // Modelli assenti dall'output di una policy ricevono la media della policy
-  // (fill neutro), non 0.
+  // Ogni policy gira come le altre — nessun caso speciale.
+  // Il peso di ciascuna policy è dato dalla sua posizione nell'array (decay
+  // lineare: prima policy peso massimo, ultima peso minimo — vedi sopra).
+  // Modelli assenti dall'output di una policy ricevono la media di quella
+  // policy come fill neutro (non 0, che penalizzerebbe arbitrariamente).
 
   const allCandidateIds = validCandidates.map(c => c.model.id);
   const scoreAccumulator = new Map<string, number>();
@@ -176,19 +180,12 @@ export async function routeRequest(
     if (routing.length === 0) continue;
 
     const vals = routing.map(r => r.point);
-    const min = Math.min(...vals);
-    const max = Math.max(...vals);
-    const range = max - min;
-
-    // Policy non discriminante su più modelli → skip (non aggiunge informazione)
-    if (routing.length > 1 && range < 0.05) continue;
-
     const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
 
     for (const r of routing) {
       scoreAccumulator.set(r.model, (scoreAccumulator.get(r.model) ?? 0) + r.point * policyWeight);
     }
-    // Fill neutro (media policy) per modelli non coperti
+    // Fill neutro per modelli non coperti da questa policy
     allCandidateIds.forEach(id => {
       if (!routing.some(r => r.model === id)) {
         scoreAccumulator.set(id, (scoreAccumulator.get(id) ?? 0) + mean * policyWeight);
@@ -198,22 +195,21 @@ export async function routeRequest(
     totalWeight += policyWeight;
   }
 
-  // Fallback: se nessuna policy ha discriminato, usa tutte con score raw
-  if (totalWeight === 0) {
-    for (const { weight: policyWeight, routing } of results) {
-      for (const r of routing) {
-        scoreAccumulator.set(r.model, (scoreAccumulator.get(r.model) ?? 0) + r.point * policyWeight);
-      }
-      totalWeight += policyWeight;
-    }
-  }
+  // Bonus posizionale modelli: gap fisso per ogni step di posizione.
+  // #1 vs #2 vale sempre POSITION_STEP indipendentemente dal numero di modelli.
+  const POSITION_STEP = 0.01;
+  const N = validCandidates.length;
 
   const finalCandidates: RoutingCandidate[] = validCandidates
-    .map(c => ({
-      model: c.model.id,
-      weight: totalWeight > 0 ? +((scoreAccumulator.get(c.model.id) ?? 0) / totalWeight).toFixed(4) : 0,
-      ...(c.prompt ? { prompt: c.prompt } : {}),
-    }))
+    .map((c, idx) => {
+      const baseScore = totalWeight > 0 ? (scoreAccumulator.get(c.model.id) ?? 0) / totalWeight : 0;
+      const posBonus = POSITION_STEP * (N - 1 - idx);
+      return {
+        model: c.model.id,
+        weight: +(baseScore + posBonus).toFixed(4),
+        ...(c.prompt ? { prompt: c.prompt } : {}),
+      };
+    })
     .sort((a, b) => b.weight - a.weight);
 
   log?.info(
@@ -238,11 +234,21 @@ export async function routeRequest(
       return {
         type,
         weight: +weight.toFixed(3),
-        winner: winner ? { model: winner.model, point: winner.point } : null,
-        scores: sorted.map(r => ({ model: r.model, point: r.point })),
+        winner: winner ? { 
+          model: winner.model, 
+          point: typeof winner.point === 'number' && !isNaN(winner.point) ? winner.point : 1.0 
+        } : null,
+        scores: sorted.map(r => ({ 
+          model: r.model, 
+          point: typeof r.point === 'number' && !isNaN(r.point) ? r.point : 1.0 
+        })),
       };
     }),
-    final: finalCandidates.map((c, rank) => ({ rank: rank + 1, model: c.model, score: c.weight })),
+    final: finalCandidates.map((c, rank) => ({ 
+      rank: rank + 1, 
+      model: c.model, 
+      score: typeof c.weight === 'number' && !isNaN(c.weight) ? c.weight : 1.0 
+    })),
   });
   emit?.(recapEntry);
 

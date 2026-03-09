@@ -76,7 +76,12 @@ function parseRoutingResponse(text: string): { model: string; point: number; rea
   try {
     const parsed = JSON.parse(cleaned);
     if (Array.isArray(parsed?.routing)) {
-      return parsed.routing;
+      // Assicurati che point sia sempre un numero valido
+      return parsed.routing.map((r: any) => ({
+        model: r.model,
+        point: typeof r.point === 'number' && !isNaN(r.point) ? r.point : 0,
+        ...(r.reason ? { reason: r.reason } : {}),
+      }));
     }
   } catch {
     // ignore
@@ -153,8 +158,6 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
 
   const allModels: ModelConfig[] = await readConfig('models');
   const allProjects: ProjectConfig[] = await readConfig('projects');
-  // Se il progetto non è trovato, usa un oggetto vuoto: checkBudget ricadrà
-  // su isAllowedForRoutingModel (globalThresholds only).
   const project = allProjects.find((p: ProjectConfig) => p.id === projectId)
     ?? { id: projectId ?? '', models: [], name: '' } as ProjectConfig;
 
@@ -179,7 +182,6 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
     })),
   );
 
-  // Il messaggio utente viene oscurato nei log per garantire la privacy
   log?.info(
     {
       systemPrompt,
@@ -206,7 +208,6 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
       ...(log !== undefined ? { log } : {}),
     };
 
-    // Log della request inviata al modello di routing (utente oscurato per privacy)
     log?.info(
       {
         routingModel: modelId,
@@ -270,11 +271,9 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
       return { routing };
     } catch (err: unknown) {
       if (err instanceof BudgetExceededError) {
-        // L'executor ha già emesso model:skipped e tracciato l'evento
         log?.info({ modelId, reason: 'budget_exhausted' }, 'llm policy: skipping model');
         continue;
       }
-      // Errore del provider: l'executor ha già tracciato + emesso model:error
       const errMsg = err instanceof Error ? err.message : String(err);
       log?.info({ modelId, err: errMsg, reason: 'call failed' }, 'llm policy: skipping model');
       emit?.({ panel: 'router-response', message: 'llm-policy:error', details: { modelId, error: errMsg } });

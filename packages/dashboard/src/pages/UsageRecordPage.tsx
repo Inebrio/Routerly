@@ -32,7 +32,9 @@ const PANEL_COLORS: Record<string, string> = {
 };
 
 function TracePanel({ entries }: { entries: TraceEntry[] }) {
-  if (entries.length === 0) return null;
+  // router:recap has its own dedicated section
+  const filteredEntries = entries.filter(e => e.message !== 'router:recap');
+  if (filteredEntries.length === 0) return null;
 
   // Group by panel for readability
   const panels = ['router-request', 'router-response', 'request', 'response'] as const;
@@ -40,7 +42,7 @@ function TracePanel({ entries }: { entries: TraceEntry[] }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {panels.map(panel => {
-        const panelEntries = entries.filter(e => e.panel === panel);
+        const panelEntries = filteredEntries.filter(e => e.panel === panel);
         if (panelEntries.length === 0) return null;
         const color = PANEL_COLORS[panel] ?? '#6b7280';
         const label = PANEL_LABELS[panel] ?? panel;
@@ -212,6 +214,19 @@ export function UsageRecordPage() {
               </div>
             )}
           </div>
+
+          {/* Router Recap */}
+          {record.trace && record.trace.some(e => e.message === 'router:recap') && (
+            <div className="card" style={{ padding: 24 }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Router Recap
+              </h3>
+              {record.trace
+                .filter(e => e.message === 'router:recap')
+                .map((e, i) => <TraceEntryRenderer key={i} entry={e} />)
+              }
+            </div>
+          )}
 
           {/* Trace Log */}
           <div className="card" style={{ padding: 24 }}>
