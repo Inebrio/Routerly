@@ -6,12 +6,19 @@ import type { UsageRecord } from '@localrouter/shared';
  * Policy: performance
  *
  * Valuta i modelli candidati in base alla **latenza media** delle chiamate
- * riuscite. La latenza viene normalizzata con range min–max tra tutti i
- * candidati, così il modello più veloce ottiene 1.0 e il più lento 0.0.
+ * riuscite, usando confronto relativo tra i candidati con dati sufficienti.
+ *
+ * Score = minLatency / avgLatency  (il più veloce prende 1.0, gli altri scalano):
+ *  - modello più veloce           → 1.0
+ *  - modello 2× più lento         → 0.5
+ *  - modello 5× più lento         → 0.2
+ *
+ * Se 0 o 1 solo modello ha dati sufficienti, tutti ricevono 1.0
+ * (il confronto su un singolo punto è privo di significato e causerebbe
+ * auto-confronto: l'unico modello confrontato con se stesso ottiene sempre 1.0).
  *
  * Le chiamate con outcome `error` o `timeout` vengono escluse dal calcolo.
- * I modelli senza dati sufficienti ricevono punteggio 1.0 (nessun segnale
- * negativo — vengono preferiti rispetto a quelli con latenza nota elevata).
+ * I modelli senza dati sufficienti ricevono punteggio 1.0 (esplorazione attiva).
  *
  * Configurazione (policy.config, tutti opzionali):
  *  - windowMinutes    {number}  Durata della finestra temporale osservata  (default: 20)
@@ -19,13 +26,11 @@ import type { UsageRecord } from '@localrouter/shared';
  *                               Usa 0 per una media semplice senza decay.
  *  - minSamples       {number}  Campioni minimi per considerare il modello  (default: 1)
  *                               I modelli con meno campioni ottengono 1.0.
- *
- * Modelli senza record recenti ottengono punto 1.0 (benefit of the doubt).
  */
 export const performancePolicy: PolicyFn = async ({ candidates, config }) => {
-  const windowMinutes: number   = config?.windowMinutes   ?? 20;
-  const halfLifeMinutes: number = config?.halfLifeMinutes ?? 5;
-  const minSamples: number      = config?.minSamples      ?? 1;
+  const windowMinutes: number    = config?.windowMinutes    ?? 20;
+  const halfLifeMinutes: number  = config?.halfLifeMinutes  ?? 5;
+  const minSamples: number       = config?.minSamples       ?? 1;
 
   const records: UsageRecord[] = await readConfig('usage');
   const now                    = Date.now();
@@ -65,17 +70,20 @@ export const performancePolicy: PolicyFn = async ({ candidates, config }) => {
     return { modelId: c.model.id, avgLatencyMs, sampleCount: modelRecords.length };
   });
 
-  // ── Normalizza latenza tra i candidati (range min–max) ───────────────────
-  const latencies   = stats.map(s => s.avgLatencyMs).filter((v): v is number => v !== null);
-  const minLatency  = latencies.length > 0 ? Math.min(...latencies) : 0;
-  const maxLatency  = latencies.length > 0 ? Math.max(...latencies) : 0;
-  const latencyRange = maxLatency - minLatency;
+  // ── Confronto relativo: il modello più veloce = 1.0 ────────────────────
+  // Se meno di 2 modelli hanno dati, il confronto è privo di significato
+  // (auto-confronto su singolo punto → 1.0 garantito). In quel caso tutti
+  // ricevono 1.0 per favorire l'esplorazione.
+  const withData = stats.filter(s => s.avgLatencyMs !== null);
+  const minLatency = withData.length >= 2
+    ? Math.min(...withData.map(s => s.avgLatencyMs!))
+    : null;
 
   const routing = stats.map(s => {
     const latencyScore =
-      s.avgLatencyMs === null || latencyRange === 0
-        ? 1.0  // nessun dato o tutti identici → punteggio neutro
-        : 1 - (s.avgLatencyMs - minLatency) / latencyRange;
+      s.avgLatencyMs === null || minLatency === null
+        ? 1.0  // nessun dato o confronto impossibile → favorito (esplorazione)
+        : minLatency / s.avgLatencyMs;
 
     return {
       model:         s.modelId,

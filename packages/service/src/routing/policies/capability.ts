@@ -54,5 +54,6 @@ export const capabilityPolicy: PolicyFn = async ({ request, candidates }) => {
     };
   });
 
-  return { routing };
+  const excludes = routing.filter(r => r.point === 0.0).map(r => r.model);
+  return { routing, ...(excludes.length > 0 ? { excludes } : {}) };
 };

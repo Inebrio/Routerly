@@ -14,16 +14,12 @@ import { readConfig } from '../../config/loader.js';
  *  2. Calcola il rapporto di headroom per ogni limite attivo:
  *       headroom = (value - current) / value
  *  3. Prende il minimo headroom tra tutti i limiti del modello (il collo di bottiglia).
- *  4. Normalizzazione range min–max tra i candidati: il modello con più
- *     headroom ottiene 1.0, quello con meno ottiene 0.0.
+ *  4. Usa il valore di headroom direttamente come punteggio (0–1).
  *
  * Casi speciali:
  *  - Nessun limite configurato     → headroom = 1.0 (capacità illimitata)
  *  - Limite già superato           → headroom = 0.0 (già escluso dal pre-filtro,
  *                                    ma incluso per completezza)
- *
- * Nota: questa policy *non* esclude modelli (non sostituisce il pre-filtro del
- * router). È un segnale morbido che anticipa l'esaurimento del budget.
  */
 export const budgetRemainingPolicy: PolicyFn = async ({ candidates, config: _, token, projectId }) => {
   const allProjects = await readConfig('projects');
@@ -33,13 +29,7 @@ export const budgetRemainingPolicy: PolicyFn = async ({ candidates, config: _, t
 
   const headrooms = await Promise.all(
     candidates.map(async c => {
-      // Trova il primo progetto che contiene questo modello
-      const project = (allProjects as any[]).find(
-        (p: any) => Array.isArray(p.models) && p.models.some((m: any) => m.modelId === c.model.id),
-      );
-
       if (!project) {
-        // Modello non associato a nessun progetto con limiti noti → nessun segnale
         return { modelId: c.model.id, minHeadroom: 1.0, snapshotCount: 0 };
       }
 
@@ -59,22 +49,18 @@ export const budgetRemainingPolicy: PolicyFn = async ({ candidates, config: _, t
     }),
   );
 
-  // ── Normalizzazione range min–max ────────────────────────────────────────
-  const values      = headrooms.map(h => h.minHeadroom);
-  const minHeadroom = Math.min(...values);
-  const maxHeadroom = Math.max(...values);
-  const range       = maxHeadroom - minHeadroom;
+  // ── Punteggio diretto dall'headroom ───────────────────────────────────────
+  // L'headroom è già un valore 0–1 con semantica chiara:
+  //   1.0 = budget intatto, 0.0 = budget esaurito.
+  // Usarlo direttamente preserva l'informazione assoluta (un modello al 70%
+  // di budget rimane 0.7, non diventa 0.0 perché un altro ha il 90%).
 
-  const routing = headrooms.map(({ modelId, minHeadroom: mh, snapshotCount }) => {
-    const point = range === 0 ? 1.0 : (mh - minHeadroom) / range;
-
-    return {
-      model:          modelId,
-      point:          Math.max(0, Math.min(1, point)),
-      minHeadroom:    +mh.toFixed(4),
-      snapshotCount,
-    };
-  });
+  const routing = headrooms.map(({ modelId, minHeadroom: mh, snapshotCount }) => ({
+    model:          modelId,
+    point:          Math.max(0, Math.min(1, mh)),
+    minHeadroom:    +mh.toFixed(4),
+    snapshotCount,
+  }));
 
   return { routing };
 };

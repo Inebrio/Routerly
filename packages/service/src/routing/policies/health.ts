@@ -18,7 +18,7 @@ import type { UsageRecord } from '@localrouter/shared';
  *  - pseudoCounts     {number}  Pseudo-conteggi Bayesiani (smoothing)    (default: 2)
  *  - circuitBreaker   {number}  Soglia error rate pesato → point = 0     (default: 0.9)
  *
- * Modelli senza record recenti ottengono punto 1.0 (nessun segnale di degrado).
+ * Modelli senza record recenti ottengono punto 1.0 (nessun segnale di degrado, esplorazione attiva).
  */
 export const healthPolicy: PolicyFn = async ({ candidates, config }) => {
   const windowMinutes: number   = config?.windowMinutes   ?? 20;
@@ -73,5 +73,6 @@ export const healthPolicy: PolicyFn = async ({ candidates, config }) => {
     };
   });
 
-  return { routing };
+  const excludes = routing.filter(r => r.point === 0.0).map(r => r.model);
+  return { routing, ...(excludes.length > 0 ? { excludes } : {}) };
 };

@@ -57,5 +57,6 @@ export const contextPolicy: PolicyFn = async ({ request, candidates }) => {
     return { model: c.model.id, point, estimatedTokens, contextWindow: ctx ?? null };
   });
 
-  return { routing };
+  const excludes = routing.filter(r => r.point === 0.0).map(r => r.model);
+  return { routing, ...(excludes.length > 0 ? { excludes } : {}) };
 };

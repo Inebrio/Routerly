@@ -11,14 +11,15 @@ import type { UsageRecord } from '@localrouter/shared';
  * Funzionamento:
  *  1. I modelli SENZA limiti di tipo 'calls' configurati ricevono sempre 1.0.
  *  2. Conta le chiamate per modello nell'ultima finestra temporale breve.
- *  3. Se la soglia opzionale `maxCallsPerWindow` è definita e superata → point = 0.
- *  4. Bonus posizionale (range 0.7-1.0): ordina i modelli per utilizzo e
- *     assegna punteggi decrescenti. Più severo di fairness (30% vs 20%).
+ *  3. Se la soglia opzionale `maxCallsPerWindow` è definita e superata →
+ *     il modello viene escluso (hard filter via `excludes`).
+ *  4. Usa il rapporto proporzionale (minCount / count): il modello meno
+ *     usato ottiene 1.0, uno usato 3x tanto ottiene 0.33.
  *  5. I modelli senza chiamate recenti ottengono 1.0.
  *
  * Configurazione (policy.config, tutti opzionali):
  *  - windowMinutes      {number}  Durata della finestra           (default: 1)
- *  - maxCallsPerWindow  {number}  Hard threshold → point = 0      (default: nessuno)
+ *  - maxCallsPerWindow  {number}  Hard threshold → excludes        (default: nessuno)
  *
  * Nota: questa policy agisce sulla frequenza di invio, non sul budget. Per
  * la gestione del budget usa la policy `budget-remaining`.
@@ -52,20 +53,14 @@ export const rateLimitPolicy: PolicyFn = async ({ candidates, config }) => {
       : [],
   );
 
-  // ── Normalizzazione con bonus posizionale ────────────────────────────────
-  // Escludi modelli senza rate limits dalla competizione (riceveranno sempre 1.0)
+  // ── Punteggio proporzionale per modelli con rate limits ──────────────────
+  // Usa il rapporto (minCount / count) per riflettere la pressione reale.
   const eligibleCounts = counts
     .filter(c => c.hasLimit && !overThreshold.has(c.modelId))
     .map(c => ({ modelId: c.modelId, callCount: c.callCount }));
 
-  // Ordina per callCount crescente: il meno usato primo
-  const sorted = [...eligibleCounts].sort((a, b) => a.callCount - b.callCount);
-
-  // Distribuzione lineare: da 1.0 (meno usato) a 0.7 (più usato)
-  // Più severa di fairness perché i rate limits sono critici
-  const MIN_SCORE = 0.7;
-  const SCORE_RANGE = 0.3; // range 0.7-1.0
-  const n = sorted.length;
+  const nonZeroEligible = eligibleCounts.map(c => c.callCount).filter(n => n > 0);
+  const minEligibleCount = nonZeroEligible.length > 0 ? Math.min(...nonZeroEligible) : 0;
 
   const routing = counts.map(({ modelId, callCount, hasLimit }) => {
     // Modelli senza rate limits: sempre punteggio massimo
@@ -77,25 +72,19 @@ export const rateLimitPolicy: PolicyFn = async ({ candidates, config }) => {
       return { model: modelId, point: 0.0, callCount, rateLimited: true };
     }
 
-    // Trova la posizione di questo modello nell'ordinamento
-    const position = sorted.findIndex(s => s.modelId === modelId);
-
-    if (position === -1 || n === 0) {
-      return { model: modelId, point: 1.0, callCount, rateLimited: false };
-    }
-
-    // Bonus posizionale: primo (meno usato) = 1.0, ultimo = 0.7
-    const point = n > 1
-      ? MIN_SCORE + (SCORE_RANGE * (n - 1 - position) / (n - 1))
-      : 1.0;
+    // Nessuna chiamata → massimo punteggio
+    const point = callCount === 0
+      ? 1.0
+      : minEligibleCount / callCount;
 
     return {
       model: modelId,
-      point: Math.max(MIN_SCORE, Math.min(1, point)),
+      point: Math.max(0, Math.min(1, point)),
       callCount,
       rateLimited: false,
     };
   });
 
-  return { routing };
+  const excludes = [...overThreshold];
+  return { routing, ...(excludes.length > 0 ? { excludes } : {}) };
 };

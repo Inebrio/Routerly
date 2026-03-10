@@ -46,6 +46,8 @@ export interface PolicyInput {
 /** Output standard restituito da ogni policy */
 export interface PolicyOutput {
   routing: PolicyRoutingEntry[];
+  /** Models excluded by this policy (hard filter — removed from candidate pool) */
+  excludes?: string[];
 }
 
 /** Interfaccia che ogni policy deve implementare */

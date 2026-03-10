@@ -2,8 +2,15 @@ import type { PolicyFn } from './types.js';
 
 /**
  * Policy: cheapest
- * Normalizza il costo medio per token tra tutti i candidati e assegna
- * punto 1.0 al più economico, 0.0 al più costoso.
+ *
+ * Assegna un punteggio di efficienza di costo proporzionale: il modello più
+ * economico ottiene 1.0 e gli altri ricevono il rapporto (minCost / theirCost).
+ *
+ * Questo evita il problema della normalizzazione min-max che assegnava 0.0
+ * al modello più costoso, rendendo impossibile per le altre policy compensare.
+ * Con il rapporto proporzionale un modello 2x più caro ottiene 0.5, uno 10x
+ * più caro ottiene 0.1 — il segnale è graduale, non binario.
+ *
  * Costo medio = (inputPerMillion + outputPerMillion) / 2.
  */
 export const cheapestPolicy: PolicyFn = async ({ candidates }) => {
@@ -12,13 +19,17 @@ export const cheapestPolicy: PolicyFn = async ({ candidates }) => {
     avgCost: (c.model.cost.inputPerMillion + c.model.cost.outputPerMillion) / 2,
   }));
 
-  const min = Math.min(...costs.map(c => c.avgCost));
-  const max = Math.max(...costs.map(c => c.avgCost));
-  const range = max - min;
+  // Reference minimo solo tra modelli a pagamento (costo > 0).
+  // Se usassimo il minimo globale e ci fosse un modello gratuito (es. Ollama),
+  // min === 0 → 0/qualsiasi = 0 per tutti i modelli a pagamento.
+  const paidCosts = costs.map(c => c.avgCost).filter(v => v > 0);
+  const minPaid   = paidCosts.length > 0 ? Math.min(...paidCosts) : 0;
 
   const routing = costs.map(({ id, avgCost }) => ({
     model: id,
-    point: range === 0 ? 1.0 : 1 - (avgCost - min) / range,
+    point: avgCost === 0
+      ? 1.0                    // modello gratuito (es. Ollama locale) → massimo
+      : minPaid / avgCost,     // rapporto proporzionale tra modelli a pagamento
     avgCostPerMillion: avgCost,
   }));
 

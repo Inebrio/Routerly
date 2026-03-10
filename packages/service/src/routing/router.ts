@@ -23,7 +23,11 @@ export interface RouteResult {
   trace: TraceEntry[];
 }
 
-type Logger = { info: (obj: object, msg?: string) => void };
+type Logger = {
+  info: (obj: object, msg?: string) => void;
+  warn: (obj: object, msg?: string) => void;
+  error: (obj: object, msg?: string) => void;
+};
 
 const POLICY_MAP: Record<string, PolicyFn> = {
   context: contextPolicy,
@@ -47,11 +51,9 @@ export async function routeRequest(
 ): Promise<RouteResult> {
   const enabledPolicies = (project.policies ?? []).filter(p => p.enabled);
 
-  // Decay lineare leggero: la prima policy vale 1.5×l'ultima.
-  // Con spread fissa a 0.5/(N-1) per step, il rapporto max:min è sempre
-  // 1.5:1 indipendentemente dal numero di policy abilitate — abbastanza
-  // da dare priorità all'ordinamento dell'utente, senza azzerare le policy
-  // in coda (il vecchio approccio dava ratio 9:1 con 9 policy).
+  // Peso posizionale: la prima policy vale 1.5× l'ultima.
+  // Spread fisso 0.5/(N-1) per step → rapporto max:min sempre 1.5:1
+  // indipendentemente dal numero di policy abilitate.
   const total = enabledPolicies.length;
   const policiesWithWeight = enabledPolicies.map((p, idx) => ({
     position: idx + 1,
@@ -127,112 +129,107 @@ export async function routeRequest(
   });
   emit?.(policiesEntry);
 
-  // ── Esegue le policy in parallelo, emettendo ogni risultato appena pronto ─
-  const results = [] as Array<{ weight: number; routing: { model: string; point: number }[] }>;
-
-  await Promise.all(
-    policiesWithWeight.map(({ type, weight, config }, i) => {
+  // ── Esegue le policy in parallelo ─────────────────────────────────────────
+  const policyResults = await Promise.all(
+    policiesWithWeight.map(async ({ type, weight, config }) => {
       const fn = POLICY_MAP[type];
-      const p = fn
-        ? fn({ request, candidates: validCandidates, config, log, emit, projectId: project.id, token, traceId })
-            .then(out => ({ weight, routing: out.routing }))
-            .catch(err => {
-              const errMsg = err instanceof Error ? err.message : String(err);
-              log?.error({ type, err: errMsg }, 'routing: policy failed');
-              emit?.(te('router-response', `policy:error:${type}`, { type, error: errMsg }));
-              // Fallback: tutti i modelli con score neutro
-              return { weight, routing: validCandidates.map(c => ({ model: c.model.id, point: 1.0 })) };
-            })
-        : Promise.resolve({ weight, routing: validCandidates.map(c => ({ model: c.model.id, point: 1.0 })) });
-
-      return p.then(result => {
-        results[i] = result;
-        const entry = te('router-response', `policy:result:${type}`, {
-          type,
-          weight,
-          routing: result.routing.map(r => ({
-            model: r.model,
-            point: typeof r.point === 'number' && !isNaN(r.point) ? r.point : 1.0,
-            contribution: +((typeof r.point === 'number' && !isNaN(r.point) ? r.point : 1.0) * weight).toFixed(4),
-          })),
-        });
-        emit?.(entry);
-      });
+      if (!fn) {
+        log?.info({ type }, 'routing: unknown policy type, skipping');
+        return { type, weight, routing: [] as { model: string; point: number }[], excludes: [] as string[], failed: true };
+      }
+      try {
+        const out = await fn({ request, candidates: validCandidates, config, log, emit, projectId: project.id, token, traceId });
+        return { type, weight, routing: out.routing, excludes: out.excludes ?? [], failed: false };
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        log?.info({ type, err: errMsg }, 'routing: policy failed');
+        emit?.(te('router-response', `policy:error:${type}`, { type, error: errMsg }));
+        return { type, weight, routing: [] as { model: string; point: number }[], excludes: [] as string[], failed: true };
+      }
     }),
   );
 
+  // Emit risultato di ogni policy
+  for (const r of policyResults) {
+    if (!r.failed) {
+      emit?.(te('router-response', `policy:result:${r.type}`, {
+        type: r.type,
+        weight: r.weight,
+        routing: r.routing.map(e => ({
+          model: e.model,
+          point: typeof e.point === 'number' && !isNaN(e.point) ? e.point : 0.5,
+          contribution: +((typeof e.point === 'number' && !isNaN(e.point) ? e.point : 0.5) * r.weight).toFixed(4),
+        })),
+        ...(r.excludes.length > 0 ? { excludes: r.excludes } : {}),
+      }));
+    }
+  }
 
-  // ── Combina i risultati: media pesata normalizzata ───────────────────────
+  // ── Fase 1: raccolta esclusioni hard ──────────────────────────────────────
+  const policyExcludes = new Set<string>();
+  const excludeReasons = new Map<string, string[]>();
+  for (const r of policyResults) {
+    for (const id of r.excludes) {
+      policyExcludes.add(id);
+      if (!excludeReasons.has(id)) excludeReasons.set(id, []);
+      excludeReasons.get(id)!.push(r.type);
+    }
+  }
+
+  if (policyExcludes.size > 0) {
+    log?.info(
+      { excluded: Object.fromEntries(excludeReasons) },
+      'routing: models excluded by policies',
+    );
+    emit?.(te('router-response', 'router:excludes', {
+      excluded: Object.fromEntries(excludeReasons),
+    }));
+  }
+
+  const scoringCandidates = validCandidates.filter(c => !policyExcludes.has(c.model.id));
+
+  if (scoringCandidates.length === 0) {
+    throw new Error('all_models_excluded_by_policies');
+  }
+
+  // ── Fase 2: media pesata dei punteggi raw (senza normalizzazione) ─────────
   //
-  // Strategia:
-  // 1. Normalizza gli score di ogni policy tra 0 e 1 (min-max normalization)
-  // 2. Solo i voti espliciti contribuiscono (no fill neutro)
-  // 3. Ogni modello riceve la media pesata solo delle policy che lo hanno votato
-  // 4. Bonus posizionale controllato per mantenere score finale ≤ 1
-  // 5. Identificazione esplicita dei pari merito
-
-  const allCandidateIds = validCandidates.map(c => c.model.id);
-
-  // Normalizza ogni policy: trasforma i suoi punteggi in range 0-1
-  const normalizedResults = results.map(({ weight: policyWeight, routing }) => {
-    if (routing.length === 0) return { weight: policyWeight, routing: [] };
-
-    const vals = routing.map(r => r.point);
-    const min = Math.min(...vals);
-    const max = Math.max(...vals);
-    const range = max - min;
-
-    // Se tutti i punteggi sono uguali, assegna 0.5 a tutti
-    const normalized = range > 0.0001
-      ? routing.map(r => ({ model: r.model, point: (r.point - min) / range }))
-      : routing.map(r => ({ model: r.model, point: 0.5 }));
-
-    return { weight: policyWeight, routing: normalized };
-  });
-
-  // Accumula score pesati + tieni traccia dei pesi effettivi per modello
+  // Le policy restituiscono già punteggi 0–1 con semantica propria.
+  // Il router li combina direttamente senza ri-normalizzare, preservando
+  // l'informazione dei punteggi assoluti (un 0.8 dalla health policy
+  // rimane 0.8, non diventa 0.0 perché è il peggiore tra i candidati).
+  const scoringIds = new Set(scoringCandidates.map(c => c.model.id));
   const scoreAccumulator = new Map<string, number>();
   const weightAccumulator = new Map<string, number>();
-  allCandidateIds.forEach(id => {
-    scoreAccumulator.set(id, 0);
-    weightAccumulator.set(id, 0);
-  });
+  for (const c of scoringCandidates) {
+    scoreAccumulator.set(c.model.id, 0);
+    weightAccumulator.set(c.model.id, 0);
+  }
 
-  for (const { weight: policyWeight, routing } of normalizedResults) {
+  const successfulResults = policyResults.filter(r => !r.failed);
+
+  for (const { weight: policyWeight, routing } of successfulResults) {
     for (const r of routing) {
-      scoreAccumulator.set(r.model, (scoreAccumulator.get(r.model) ?? 0) + r.point * policyWeight);
+      if (!scoringIds.has(r.model)) continue;
+      const point = typeof r.point === 'number' && !isNaN(r.point) ? r.point : 0.5;
+      scoreAccumulator.set(r.model, (scoreAccumulator.get(r.model) ?? 0) + point * policyWeight);
       weightAccumulator.set(r.model, (weightAccumulator.get(r.model) ?? 0) + policyWeight);
     }
   }
 
-  // Calcola media pesata: dividi per la somma dei pesi delle policy che hanno votato
-  const baseScores = new Map<string, number>();
-  allCandidateIds.forEach(id => {
-    const totalScore = scoreAccumulator.get(id) ?? 0;
-    const totalWeight = weightAccumulator.get(id) ?? 0;
-    baseScores.set(id, totalWeight > 0 ? totalScore / totalWeight : 0);
-  });
-
-  // Bonus posizionale: riflette la rilevanza dell'ordine configurato
-  // Il primo modello è il più rilevante, l'ultimo il meno rilevante
-  // Scala per non superare mai 1.0
-  const maxBase = Math.max(...Array.from(baseScores.values()));
-  const POSITION_BONUS_MAX = Math.min(0.10, 1.0 - maxBase); // Max 10% o quello che serve per restare sotto 1
-  const N = validCandidates.length;
-
-  const finalCandidates: RoutingCandidate[] = validCandidates
-    .map((c, idx) => {
-      const baseScore = baseScores.get(c.model.id) ?? 0;
-      const posBonus = N > 1 ? (POSITION_BONUS_MAX * (N - 1 - idx)) / (N - 1) : 0;
+  const finalCandidates: RoutingCandidate[] = scoringCandidates
+    .map(c => {
+      const totalScore = scoreAccumulator.get(c.model.id) ?? 0;
+      const totalWeight = weightAccumulator.get(c.model.id) ?? 0;
+      const score = totalWeight > 0 ? totalScore / totalWeight : 0.5;
       return {
         model: c.model.id,
-        weight: Math.min(1.0, +(baseScore + posBonus).toFixed(4)),
+        weight: +score.toFixed(4),
         ...(c.prompt ? { prompt: c.prompt } : {}),
       };
     })
     .sort((a, b) => b.weight - a.weight);
 
-  // Identifica pari merito: modelli con lo stesso score entro tolleranza di 0.0001
   const TIED_TOLERANCE = 0.0001;
   const topScore = finalCandidates[0]?.weight ?? 0;
   const tiedWinners = finalCandidates.filter(c => Math.abs(c.weight - topScore) < TIED_TOLERANCE);
@@ -240,43 +237,40 @@ export async function routeRequest(
 
   log?.info(
     {
-      promptsConfigured: validCandidates.filter(c => c.prompt).map(c => c.model.id),
-      policies: policiesWithWeight.map(({ type, weight }, i) => ({
-        type,
-        weight,
-        routing: normalizedResults[i]?.routing.map(r => ({ model: r.model, point: r.point, contribution: +(r.point * weight).toFixed(4) })),
+      policies: successfulResults.map(r => ({
+        type: r.type,
+        weight: r.weight,
+        routing: r.routing
+          .filter(e => scoringIds.has(e.model))
+          .map(e => ({ model: e.model, point: e.point, contribution: +(e.point * r.weight).toFixed(4) })),
       })),
       final: finalCandidates,
       ...(hasTie ? { tied: tiedWinners.map(c => c.model) } : {}),
+      ...(policyExcludes.size > 0 ? { excluded: Object.fromEntries(excludeReasons) } : {}),
     },
     'routing: result',
   );
 
-  // ── Emit recap: vincitore per policy + classifica finale ─────────────────
+  // ── Emit recap ────────────────────────────────────────────────────────────
   const recapEntry = te('router-response', 'router:recap', {
-    policies: policiesWithWeight.map(({ type, weight }, i) => {
-      const routing = normalizedResults[i]?.routing ?? [];
-      const sorted = [...routing].sort((a, b) => b.point - a.point);
+    policies: successfulResults.map(r => {
+      const scorable = r.routing.filter(e => scoringIds.has(e.model));
+      const sorted = [...scorable].sort((a, b) => b.point - a.point);
       const winner = sorted[0];
       return {
-        type,
-        weight: +weight.toFixed(3),
-        winner: winner ? {
-          model: winner.model,
-          point: typeof winner.point === 'number' && !isNaN(winner.point) ? winner.point : 1.0
-        } : null,
-        scores: sorted.map(r => ({
-          model: r.model,
-          point: typeof r.point === 'number' && !isNaN(r.point) ? r.point : 1.0
-        })),
+        type: r.type,
+        weight: +r.weight.toFixed(3),
+        winner: winner ? { model: winner.model, point: winner.point } : null,
+        scores: sorted.map(s => ({ model: s.model, point: s.point })),
       };
     }),
     final: finalCandidates.map((c, rank) => ({
       rank: rank + 1,
       model: c.model,
-      score: typeof c.weight === 'number' && !isNaN(c.weight) ? c.weight : 1.0
+      score: c.weight,
     })),
     ...(hasTie ? { tie: { count: tiedWinners.length, models: tiedWinners.map(c => c.model) } } : {}),
+    ...(policyExcludes.size > 0 ? { excluded: Object.fromEntries(excludeReasons) } : {}),
   });
   emit?.(recapEntry);
 
@@ -296,15 +290,17 @@ export async function routeRequest(
   const trace: TraceEntry[] = [
     intakeEntry,
     policiesEntry,
-    ...policiesWithWeight.map(({ type, weight }, i) =>
-      te('router-response', `policy:result:${type}`, {
-        type,
-        weight,
-        routing: results[i]?.routing.map(r => ({
-          model: r.model,
-          point: r.point,
-          contribution: +(r.point * weight).toFixed(4),
-        })) ?? [],
+    ...successfulResults.map(r =>
+      te('router-response', `policy:result:${r.type}`, {
+        type: r.type,
+        weight: r.weight,
+        routing: r.routing
+          .filter(e => scoringIds.has(e.model))
+          .map(e => ({
+            model: e.model,
+            point: e.point,
+            contribution: +(e.point * r.weight).toFixed(4),
+          })),
       })
     ),
     recapEntry,
