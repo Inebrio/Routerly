@@ -162,65 +162,92 @@ export async function routeRequest(
   );
 
 
-  // ── Combina i risultati: media pesata degli score raw ────────────────────
+  // ── Combina i risultati: media pesata normalizzata ───────────────────────
   //
-  // Ogni policy gira come le altre — nessun caso speciale.
-  // Il peso di ciascuna policy è dato dalla sua posizione nell'array (decay
-  // lineare: prima policy peso massimo, ultima peso minimo — vedi sopra).
-  // Modelli assenti dall'output di una policy ricevono la media di quella
-  // policy come fill neutro (non 0, che penalizzerebbe arbitrariamente).
+  // Strategia:
+  // 1. Normalizza gli score di ogni policy tra 0 e 1 (min-max normalization)
+  // 2. Solo i voti espliciti contribuiscono (no fill neutro)
+  // 3. Ogni modello riceve la media pesata solo delle policy che lo hanno votato
+  // 4. Bonus posizionale controllato per mantenere score finale ≤ 1
+  // 5. Identificazione esplicita dei pari merito
 
   const allCandidateIds = validCandidates.map(c => c.model.id);
-  const scoreAccumulator = new Map<string, number>();
-  allCandidateIds.forEach(id => scoreAccumulator.set(id, 0));
 
-  let totalWeight = 0;
-
-  for (const { weight: policyWeight, routing } of results) {
-    if (routing.length === 0) continue;
+  // Normalizza ogni policy: trasforma i suoi punteggi in range 0-1
+  const normalizedResults = results.map(({ weight: policyWeight, routing }) => {
+    if (routing.length === 0) return { weight: policyWeight, routing: [] };
 
     const vals = routing.map(r => r.point);
-    const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
+    const min = Math.min(...vals);
+    const max = Math.max(...vals);
+    const range = max - min;
 
+    // Se tutti i punteggi sono uguali, assegna 0.5 a tutti
+    const normalized = range > 0.0001
+      ? routing.map(r => ({ model: r.model, point: (r.point - min) / range }))
+      : routing.map(r => ({ model: r.model, point: 0.5 }));
+
+    return { weight: policyWeight, routing: normalized };
+  });
+
+  // Accumula score pesati + tieni traccia dei pesi effettivi per modello
+  const scoreAccumulator = new Map<string, number>();
+  const weightAccumulator = new Map<string, number>();
+  allCandidateIds.forEach(id => {
+    scoreAccumulator.set(id, 0);
+    weightAccumulator.set(id, 0);
+  });
+
+  for (const { weight: policyWeight, routing } of normalizedResults) {
     for (const r of routing) {
       scoreAccumulator.set(r.model, (scoreAccumulator.get(r.model) ?? 0) + r.point * policyWeight);
+      weightAccumulator.set(r.model, (weightAccumulator.get(r.model) ?? 0) + policyWeight);
     }
-    // Fill neutro per modelli non coperti da questa policy
-    allCandidateIds.forEach(id => {
-      if (!routing.some(r => r.model === id)) {
-        scoreAccumulator.set(id, (scoreAccumulator.get(id) ?? 0) + mean * policyWeight);
-      }
-    });
-
-    totalWeight += policyWeight;
   }
 
-  // Bonus posizionale modelli: gap fisso per ogni step di posizione.
-  // #1 vs #2 vale sempre POSITION_STEP indipendentemente dal numero di modelli.
-  const POSITION_STEP = 0.01;
+  // Calcola media pesata: dividi per la somma dei pesi delle policy che hanno votato
+  const baseScores = new Map<string, number>();
+  allCandidateIds.forEach(id => {
+    const totalScore = scoreAccumulator.get(id) ?? 0;
+    const totalWeight = weightAccumulator.get(id) ?? 0;
+    baseScores.set(id, totalWeight > 0 ? totalScore / totalWeight : 0);
+  });
+
+  // Bonus posizionale: riflette la rilevanza dell'ordine configurato
+  // Il primo modello è il più rilevante, l'ultimo il meno rilevante
+  // Scala per non superare mai 1.0
+  const maxBase = Math.max(...Array.from(baseScores.values()));
+  const POSITION_BONUS_MAX = Math.min(0.10, 1.0 - maxBase); // Max 10% o quello che serve per restare sotto 1
   const N = validCandidates.length;
 
   const finalCandidates: RoutingCandidate[] = validCandidates
     .map((c, idx) => {
-      const baseScore = totalWeight > 0 ? (scoreAccumulator.get(c.model.id) ?? 0) / totalWeight : 0;
-      const posBonus = POSITION_STEP * (N - 1 - idx);
+      const baseScore = baseScores.get(c.model.id) ?? 0;
+      const posBonus = N > 1 ? (POSITION_BONUS_MAX * (N - 1 - idx)) / (N - 1) : 0;
       return {
         model: c.model.id,
-        weight: +(baseScore + posBonus).toFixed(4),
+        weight: Math.min(1.0, +(baseScore + posBonus).toFixed(4)),
         ...(c.prompt ? { prompt: c.prompt } : {}),
       };
     })
     .sort((a, b) => b.weight - a.weight);
 
+  // Identifica pari merito: modelli con lo stesso score entro tolleranza di 0.0001
+  const TIED_TOLERANCE = 0.0001;
+  const topScore = finalCandidates[0]?.weight ?? 0;
+  const tiedWinners = finalCandidates.filter(c => Math.abs(c.weight - topScore) < TIED_TOLERANCE);
+  const hasTie = tiedWinners.length > 1;
+
   log?.info(
     {
       promptsConfigured: validCandidates.filter(c => c.prompt).map(c => c.model.id),
-    policies: policiesWithWeight.map(({ type, weight }, i) => ({
+      policies: policiesWithWeight.map(({ type, weight }, i) => ({
         type,
         weight,
-        routing: results[i]?.routing.map(r => ({ model: r.model, point: r.point, contribution: +(r.point * weight).toFixed(4) })),
+        routing: normalizedResults[i]?.routing.map(r => ({ model: r.model, point: r.point, contribution: +(r.point * weight).toFixed(4) })),
       })),
       final: finalCandidates,
+      ...(hasTie ? { tied: tiedWinners.map(c => c.model) } : {}),
     },
     'routing: result',
   );
@@ -228,27 +255,28 @@ export async function routeRequest(
   // ── Emit recap: vincitore per policy + classifica finale ─────────────────
   const recapEntry = te('router-response', 'router:recap', {
     policies: policiesWithWeight.map(({ type, weight }, i) => {
-      const routing = results[i]?.routing ?? [];
+      const routing = normalizedResults[i]?.routing ?? [];
       const sorted = [...routing].sort((a, b) => b.point - a.point);
       const winner = sorted[0];
       return {
         type,
         weight: +weight.toFixed(3),
-        winner: winner ? { 
-          model: winner.model, 
-          point: typeof winner.point === 'number' && !isNaN(winner.point) ? winner.point : 1.0 
+        winner: winner ? {
+          model: winner.model,
+          point: typeof winner.point === 'number' && !isNaN(winner.point) ? winner.point : 1.0
         } : null,
-        scores: sorted.map(r => ({ 
-          model: r.model, 
-          point: typeof r.point === 'number' && !isNaN(r.point) ? r.point : 1.0 
+        scores: sorted.map(r => ({
+          model: r.model,
+          point: typeof r.point === 'number' && !isNaN(r.point) ? r.point : 1.0
         })),
       };
     }),
-    final: finalCandidates.map((c, rank) => ({ 
-      rank: rank + 1, 
-      model: c.model, 
-      score: typeof c.weight === 'number' && !isNaN(c.weight) ? c.weight : 1.0 
+    final: finalCandidates.map((c, rank) => ({
+      rank: rank + 1,
+      model: c.model,
+      score: typeof c.weight === 'number' && !isNaN(c.weight) ? c.weight : 1.0
     })),
+    ...(hasTie ? { tie: { count: tiedWinners.length, models: tiedWinners.map(c => c.model) } } : {}),
   });
   emit?.(recapEntry);
 
@@ -261,6 +289,7 @@ export async function routeRequest(
         ? { prompt: c.prompt.length > 120 ? c.prompt.slice(0, 120) + '…' : c.prompt }
         : {}),
     })),
+    ...(hasTie ? { tiedWinners: tiedWinners.map(c => c.model) } : {}),
   });
   emit?.(resultEntry);
 

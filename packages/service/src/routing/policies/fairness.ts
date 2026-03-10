@@ -11,16 +11,17 @@ import type { UsageRecord } from '@localrouter/shared';
  *
  * Funzionamento:
  *  1. Conta le chiamate *riuscite* per modello nell'ultima finestra.
- *  2. Normalizzazione inversa (range min–max): il modello meno usato
- *     ottiene 1.0, quello più usato ottiene 0.0.
- *  3. I modelli senza chiamate recenti ottengono 1.0 (vengono preferiti).
+ *  2. Bonus posizionale (range 0.8-1.0): ordina i modelli per utilizzo e
+ *     assegna punteggi decrescenti. Il meno usato 1.0, il più usato 0.8.
+ *  3. Penalizzazione molto graduale: massima differenza 20% tra primo e ultimo.
  *
  * Configurazione (policy.config, tutti opzionali):
  *  - windowMinutes  {number}  Finestra temporale osservata   (default: 60)
  *
  * Combinata con altre policy (es. health, performance) assicura che il carico
  * non si concentri sempre sullo stesso modello anche quando i punteggi degli
- * altri criteri sono tutti identici.
+ * altri criteri sono tutti identici. Non considera il costo: per quello usa
+ * la policy 'cheapest' o 'budget-remaining'.
  */
 export const fairnessPolicy: PolicyFn = async ({ candidates, config }) => {
   const windowMinutes: number = config?.windowMinutes ?? 60;
@@ -41,20 +42,27 @@ export const fairnessPolicy: PolicyFn = async ({ candidates, config }) => {
     callCount: recent.filter(r => r.modelId === c.model.id).length,
   }));
 
-  const values     = counts.map(c => c.callCount);
-  const minCalls   = Math.min(...values);
-  const maxCalls   = Math.max(...values);
-  const callsRange = maxCalls - minCalls;
+  // Ordina per callCount crescente: il meno usato primo
+  const sorted = [...counts].sort((a, b) => a.callCount - b.callCount);
+
+  // Distribuzione lineare gentile: da 1.0 (meno usato) a 0.8 (più usato)
+  // Così c'è sempre differenziazione ma molto graduale
+  const MIN_SCORE = 0.8;
+  const SCORE_RANGE = 0.2; // range 0.8-1.0
+  const n = sorted.length;
 
   const routing = counts.map(({ modelId, callCount }) => {
-    // Inversione: meno chiamate → punto più alto
-    const point = callsRange === 0
-      ? 1.0
-      : 1 - (callCount - minCalls) / callsRange;
+    // Trova la posizione di questo modello nell'ordinamento
+    const position = sorted.findIndex(s => s.modelId === modelId);
+
+    // Bonus posizionale: primo (meno usato) = 1.0, ultimo = 0.8
+    const point = n > 1
+      ? MIN_SCORE + (SCORE_RANGE * (n - 1 - position) / (n - 1))
+      : 1.0;
 
     return {
       model: modelId,
-      point: Math.max(0, Math.min(1, point)),
+      point: Math.max(MIN_SCORE, Math.min(1, point)),
       callCount,
     };
   });
