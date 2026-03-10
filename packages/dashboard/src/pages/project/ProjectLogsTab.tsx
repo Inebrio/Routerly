@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getUsage, type UsageStats, type UsageRecord } from '../../api';
 import { DateRangePicker, type DateRange } from '../../components/DateRangePicker';
 import { MultiSelect } from '../../components/MultiSelect';
+import { useFilterState } from '../../hooks/useFilterState';
 
 function FilterLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -21,12 +22,12 @@ export function ProjectLogsTab() {
 
   const [stats, setStats]         = useState<UsageStats | null>(null);
   const [loading, setLoading]     = useState(true);
-  const [dateRange, setDateRange] = useState<DateRange>({ from: '', to: '', label: 'This month' });
-  const [modelIds, setModelIds]   = useState<string[]>([]);
-  const [callTypeFilter, setCallTypeFilter] = useState<'all' | 'completion' | 'routing'>('all');
-  const [outcomeFilter, setOutcomeFilter]   = useState<'all' | 'success' | 'error'>('all');
+  const [dateRange, setDateRange] = useFilterState<DateRange>({ key: `project-${projectId}-filters-dateRange`, defaultValue: { from: '', to: '', label: 'This month' } });
+  const [modelIds, setModelIds]   = useFilterState<string[]>({ key: `project-${projectId}-filters-modelIds`, defaultValue: [] });
+  const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing'>({ key: `project-${projectId}-filters-callType`, defaultValue: 'all' });
+  const [outcomeFilter, setOutcomeFilter]   = useFilterState<'all' | 'success' | 'error'>({ key: `project-${projectId}-filters-outcome`, defaultValue: 'all' });
   const [lastUpdated, setLastUpdated]       = useState<Date | null>(null);
-  const [pollInterval, setPollInterval]     = useState<number>(30_000);
+  const [pollInterval, setPollInterval]     = useFilterState<number>({ key: `project-${projectId}-filters-pollInterval`, defaultValue: 30_000 });
   const [refreshing, setRefreshing]         = useState(false);
 
   const POLL_OPTIONS: { label: string; value: number }[] = [
@@ -38,15 +39,17 @@ export function ProjectLogsTab() {
     { label: '5m',   value: 300_000 },
   ];
 
-  // Initialise date to "This month"
+  // Initialize date range to "This month" if not already set
   useEffect(() => {
-    const now   = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    setDateRange({
-      from:  start.toISOString().slice(0, 10),
-      to:    now.toISOString().slice(0, 10),
-      label: 'This month',
-    });
+    if (!dateRange.from && !dateRange.to) {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      setDateRange({
+        from: start.toISOString().slice(0, 10),
+        to: now.toISOString().slice(0, 10),
+        label: 'This month',
+      });
+    }
   }, []);
 
   const fetchStats = useCallback(() => {

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getUsage, getProjects, type UsageStats, type Project } from '../api';
 import { MultiSelect } from '../components/MultiSelect';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
+import { useFilterState } from '../hooks/useFilterState';
 
 function FilterLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -15,14 +16,14 @@ function FilterLabel({ children }: { children: React.ReactNode }) {
 export function UsagePage() {
   const [stats, setStats]               = useState<UsageStats | null>(null);
   const [projects, setProjects]         = useState<Project[]>([]);
-  const [dateRange, setDateRange]       = useState<DateRange>({ from: '', to: '', label: 'This month' });
-  const [projectIds, setProjectIds]     = useState<string[]>([]);
-  const [modelIds, setModelIds]         = useState<string[]>([]);
-  const [callTypeFilter, setCallTypeFilter] = useState<'all' | 'completion' | 'routing'>('all');
-  const [outcomeFilter, setOutcomeFilter]   = useState<'all' | 'success' | 'error'>('all');
+  const [dateRange, setDateRange]       = useFilterState<DateRange>({ key: 'usage-filters-dateRange', defaultValue: { from: '', to: '', label: 'This month' } });
+  const [projectIds, setProjectIds]     = useFilterState<string[]>({ key: 'usage-filters-projectIds', defaultValue: [] });
+  const [modelIds, setModelIds]         = useFilterState<string[]>({ key: 'usage-filters-modelIds', defaultValue: [] });
+  const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing'>({ key: 'usage-filters-callType', defaultValue: 'all' });
+  const [outcomeFilter, setOutcomeFilter]   = useFilterState<'all' | 'success' | 'error'>({ key: 'usage-filters-outcome', defaultValue: 'all' });
   const [loading, setLoading]           = useState(true);
   const [lastUpdated, setLastUpdated]   = useState<Date | null>(null);
-  const [pollInterval, setPollInterval] = useState<number>(30_000);
+  const [pollInterval, setPollInterval] = useFilterState<number>({ key: 'usage-filters-pollInterval', defaultValue: 30_000 });
   const [refreshing, setRefreshing]     = useState(false);
   const navigate = useNavigate();
 
@@ -35,13 +36,15 @@ export function UsagePage() {
     { label: '5m',   value: 300_000 },
   ];
 
-  // Initialize to "This month" preset on mount
+  // Initialize date range to "This month" if not already set
   useEffect(() => {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const from = start.toISOString().slice(0, 10);
-    const to   = now.toISOString().slice(0, 10);
-    setDateRange({ from, to, label: 'Questo mese' });
+    if (!dateRange.from && !dateRange.to) {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const from = start.toISOString().slice(0, 10);
+      const to = now.toISOString().slice(0, 10);
+      setDateRange({ from, to, label: 'Questo mese' });
+    }
   }, []);
 
   useEffect(() => {
