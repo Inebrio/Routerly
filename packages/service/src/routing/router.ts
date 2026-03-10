@@ -51,14 +51,16 @@ export async function routeRequest(
 ): Promise<RouteResult> {
   const enabledPolicies = (project.policies ?? []).filter(p => p.enabled);
 
-  // Peso posizionale: la prima policy vale 1.5× l'ultima.
-  // Spread fisso 0.5/(N-1) per step → rapporto max:min sempre 1.5:1
-  // indipendentemente dal numero di policy abilitate.
+  // Peso posizionale per rank: la policy in posizione 1 vale N volte,
+  // l'ultima vale 1. Formula: weight = total - idx (rank decrescente).
+  // Nessuna costante hardcoded: il rapporto max:min cresce con N,
+  // riflettendo naturalmente l'intenzione dell'utente nell'ordinarle.
+  // Con 1 policy: weight=1. Con 3: 3,2,1. Con 5: 5,4,3,2,1.
   const total = enabledPolicies.length;
   const policiesWithWeight = enabledPolicies.map((p, idx) => ({
     position: idx + 1,
     type: p.type,
-    weight: total > 1 ? 1 + ((total - 1 - idx) / (total - 1)) * 0.5 : 1,
+    weight: total - idx,
     config: p.config,
   }));
 
