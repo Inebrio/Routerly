@@ -91,16 +91,6 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         const model = allModelsList.find((m: any) => m.id === candidate.model);
         if (!model) continue;
 
-        // Inietta il prompt di sistema per-progetto se presente, mantenendo
-        // eventuali system message già presenti in coda.
-        const effectiveBody = candidate.prompt
-          ? { ...body, messages: [{ role: 'system', content: candidate.prompt }, ...(body.messages ?? [])] }
-          : body;
-
-        if (candidate.prompt) {
-          emit({ panel: 'request', message: 'model:prompt', details: { modelId: model.id, prompt: candidate.prompt } });
-        }
-
         const ctx: LLMCallContext = {
           projectId: project.id,
           project,
@@ -115,7 +105,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         // Lancia BudgetExceededError o un errore pre-stream → passa al candidato successivo.
         let streamResult: Awaited<ReturnType<typeof llmStream>>;
         try {
-          streamResult = await llmStream(effectiveBody, model, ctx);
+          streamResult = await llmStream(body, model, ctx);
         } catch (err: unknown) {
           if (!(err instanceof BudgetExceededError)) {
             request.log.warn({ err, modelId: model.id }, 'Stream failed before first chunk, trying next candidate');
@@ -154,14 +144,6 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       const model = allModelsList.find((m: any) => m.id === candidate.model);
       if (!model) continue;
 
-      const effectiveBody = candidate.prompt
-        ? { ...body, messages: [{ role: 'system', content: candidate.prompt }, ...(body.messages ?? [])] }
-        : body;
-
-      if (candidate.prompt) {
-        emit({ panel: 'request', message: 'model:prompt', details: { modelId: model.id, prompt: candidate.prompt } });
-      }
-
       const ctx: LLMCallContext = {
         projectId: project.id,
         project,
@@ -173,7 +155,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       };
 
       try {
-        const response = await llmChat(effectiveBody, model, ctx);
+        const response = await llmChat(body, model, ctx);
         // Invia come fake SSE chunk per uniformità con il path streaming
         const fakeChunk = {
           id: response.id,
