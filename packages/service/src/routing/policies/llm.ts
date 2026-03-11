@@ -9,6 +9,7 @@ import type { PolicyFn } from './types.js';
 
 function buildSystemPrompt(
   candidates: { id: string; prompt?: string; limits?: LimitSnapshot[] }[],
+  additionalPromptInfo?: string,
 ): string {
   const hasAnyPrompt  = candidates.some(c => c.prompt);
   const hasAnyLimits  = candidates.some(c => c.limits && c.limits.length > 0);
@@ -37,6 +38,10 @@ function buildSystemPrompt(
 
   const extraRules = [guidanceRule, limitsRule].filter(Boolean).map(r => `- ${r.replace(/^- /, '')}`).join('\n');
 
+  const additionalBlock = additionalPromptInfo?.trim()
+    ? `\n\nAdditional context:\n${additionalPromptInfo.trim()}`
+    : '';
+
   return `You are a routing assistant. Score each model by how well it fits the request (0.0 = worst, 1.0 = best).
 
 "Best fit" is the most appropriate model, not the most powerful. Match task complexity to model capability: simple tasks suit smaller models; complex tasks need stronger ones. Using a flagship model for a trivial task is a poor fit.
@@ -55,10 +60,13 @@ Format:
     { "model": "<model_id>", "point": <0.0-1.0>, "reason": "<brief reason>" },
     ...
   ]
-}`;
+}${additionalBlock}`;
 }
 
-function buildUserMessage(request: { messages: { role: string; content: unknown }[] }): string {
+function buildUserMessage(
+  request: { messages: { role: string; content: unknown }[] },
+  memoryMessages?: { role: string; content: unknown }[],
+): string {
   const lastUserMsg = [...request.messages]
     .reverse()
     .find(m => m.role === 'user');
@@ -66,6 +74,16 @@ function buildUserMessage(request: { messages: { role: string; content: unknown 
   const content = typeof lastUserMsg?.content === 'string'
     ? lastUserMsg.content
     : JSON.stringify(lastUserMsg?.content ?? '');
+
+  if (memoryMessages && memoryMessages.length > 0) {
+    const historyBlock = memoryMessages
+      .map(m => {
+        const c = typeof m.content === 'string' ? m.content : JSON.stringify(m.content);
+        return `[assistant]: ${c}`;
+      })
+      .join('\n');
+    return `Previous assistant responses (most recent last):\n${historyBlock}\n\nCurrent user request:\n${content}`;
+  }
 
   return `User request:\n${content}`;
 }
@@ -173,13 +191,28 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
     }),
   );
 
-  const userMessage = buildUserMessage(request);
+  const additionalPromptInfo: string | undefined = config?.additionalPromptInfo;
+
+  // Memory: include the last N assistant responses from the conversation
+  let memoryMessages: { role: string; content: unknown }[] | undefined;
+  if (config?.memory === true) {
+    const memoryCount: number = typeof config?.memoryCount === 'number' && config.memoryCount > 0 ? config.memoryCount : 5;
+    const msgs = request.messages as Array<{ role: string; content: unknown }>;
+    const lastUserIdx = msgs.map((m: { role: string }) => m.role).lastIndexOf('user');
+    const historySlice = (lastUserIdx > 0 ? msgs.slice(0, lastUserIdx) : []) as Array<{ role: string; content: unknown }>;
+    const assistantOnly = historySlice.filter((m: { role: string }) => m.role === 'assistant');
+    const sliced = assistantOnly.slice(-memoryCount);
+    memoryMessages = sliced.length > 0 ? sliced : undefined;
+  }
+
+  const userMessage = buildUserMessage(request, memoryMessages);
   const systemPrompt = buildSystemPrompt(
     candidates.map(c => ({
       id: c.model.id as string,
       ...(c.prompt !== undefined ? { prompt: c.prompt } : {}),
       ...(limitsMap[c.model.id as string]?.length ? { limits: limitsMap[c.model.id as string] } : {}),
     })),
+    additionalPromptInfo,
   );
 
   log?.info(

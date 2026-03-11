@@ -197,9 +197,9 @@ export async function routeRequest(
   // ── Fase 2: media pesata dei punteggi raw (senza normalizzazione) ─────────
   //
   // Le policy restituiscono già punteggi 0–1 con semantica propria.
-  // Il router li combina direttamente senza ri-normalizzare, preservando
-  // l'informazione dei punteggi assoluti (un 0.8 dalla health policy
-  // rimane 0.8, non diventa 0.0 perché è il peggiore tra i candidati).
+  // Una policy in cui tutti i candidati hanno lo stesso punteggio non ha
+  // potere discriminante: viene ignorata (astensione). Se conteggiata,
+  // diluirebbe le policy che differenziano senza aggiungere informazione.
   const scoringIds = new Set(scoringCandidates.map(c => c.model.id));
   const scoreAccumulator = new Map<string, number>();
   const weightAccumulator = new Map<string, number>();
@@ -209,14 +209,31 @@ export async function routeRequest(
   }
 
   const successfulResults = policyResults.filter(r => !r.failed);
+  const abstainedPolicies: string[] = [];
 
-  for (const { weight: policyWeight, routing } of successfulResults) {
-    for (const r of routing) {
-      if (!scoringIds.has(r.model)) continue;
+  for (const { type, weight: policyWeight, routing } of successfulResults) {
+    const eligible = routing.filter(r => scoringIds.has(r.model));
+
+    // Astensione: se tutti i validi hanno lo stesso punteggio (±0.0001),
+    // la policy non contribuisce alla media pesata.
+    const points = eligible.map(r => (typeof r.point === 'number' && !isNaN(r.point) ? r.point : 0.5));
+    const min = Math.min(...points);
+    const max = Math.max(...points);
+    if (eligible.length === 0 || max - min < 0.0001) {
+      abstainedPolicies.push(type);
+      continue;
+    }
+
+    for (const r of eligible) {
       const point = typeof r.point === 'number' && !isNaN(r.point) ? r.point : 0.5;
       scoreAccumulator.set(r.model, (scoreAccumulator.get(r.model) ?? 0) + point * policyWeight);
       weightAccumulator.set(r.model, (weightAccumulator.get(r.model) ?? 0) + policyWeight);
     }
+  }
+
+  if (abstainedPolicies.length > 0) {
+    log?.info({ abstained: abstainedPolicies }, 'routing: policies abstained (no discriminating signal)');
+    emit?.(te('router-response', 'router:abstained', { policies: abstainedPolicies }));
   }
 
   const finalCandidates: RoutingCandidate[] = scoringCandidates

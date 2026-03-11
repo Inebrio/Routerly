@@ -433,9 +433,54 @@ export function ProjectRoutingTab() {
                           />
                           Auto Routing
                         </label>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginLeft: 22, lineHeight: 1.4, marginBottom: 12 }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginLeft: 22, lineHeight: 1.4, marginBottom: !(policy.config?.autoRouting ?? true) ? 8 : 12 }}>
                           If enabled, traffic is distributed without custom prompts. If disabled, you can write specific prompts instructing the AI when to select each target model.
                         </p>
+                        {!(policy.config?.autoRouting ?? true) && (
+                          <div style={{ marginLeft: 22, marginBottom: 12 }}>
+                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Additional Prompt Info <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+                            <textarea
+                              className="form-input"
+                              rows={3}
+                              placeholder="Extra instructions to include in the routing prompt..."
+                              value={policy.config?.additionalPromptInfo ?? ''}
+                              onChange={e => updatePolicyConfig(idx, { additionalPromptInfo: e.target.value })}
+                              onMouseDown={e => e.stopPropagation()}
+                              onDragStart={e => e.preventDefault()}
+                              style={{ width: '100%', resize: 'vertical', fontSize: '0.8rem', fontFamily: 'inherit', lineHeight: 1.5, boxSizing: 'border-box', cursor: 'text' }}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>
+                          <input
+                            type="checkbox"
+                            checked={policy.config?.memory ?? false}
+                            onChange={(e) => updatePolicyConfig(idx, { memory: e.target.checked })}
+                            style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                          />
+                          Memory
+                        </label>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginLeft: 22, lineHeight: 1.4, marginBottom: (policy.config?.memory ?? false) ? 8 : 12 }}>
+                          If enabled, the last N messages from the conversation history are included in the routing prompt to give the AI router additional context.
+                        </p>
+                        {(policy.config?.memory ?? false) && (
+                          <div style={{ marginLeft: 22, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Previous messages</label>
+                            <input
+                              type="number"
+                              min={1}
+                              max={50}
+                              className="form-input"
+                              style={{ width: 70, padding: '4px 8px', fontSize: '0.8rem' }}
+                              value={policy.config?.memoryCount ?? 5}
+                              onChange={e => updatePolicyConfig(idx, { memoryCount: Math.max(1, Number(e.target.value)) })}
+                              onMouseDown={e => e.stopPropagation()}
+                            />
+                          </div>
+                        )}
                       </div>
 
                     </div>
