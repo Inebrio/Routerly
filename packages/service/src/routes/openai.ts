@@ -52,41 +52,39 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
   async function handleOpenAICompletion(request: any, reply: any) {
     const project = request.project;
     const body = request.body;
+    const isStream = body.stream === true;
 
-    // ── Avvia SSE immediatamente, prima che il routing inizi ─────────────────
     const traceId = randomUUID();
     setTrace(traceId, []);
 
-    reply.hijack();
-    reply.raw.setHeader('Content-Type', 'text/event-stream');
-    reply.raw.setHeader('Cache-Control', 'no-cache');
-    reply.raw.setHeader('Connection', 'keep-alive');
-    reply.raw.setHeader('x-localrouter-trace-id', traceId);
-    reply.raw.flushHeaders();
-
-    const emit = (entry: TraceEntry) => {
-      appendTrace(traceId, [entry]);
-      reply.raw.write(`data: ${JSON.stringify({ type: 'trace', entry })}\n\n`);
-    };
-
-    let routingResponse;
-    try {
-      routingResponse = await routeRequest(body, project, request.log, emit, request.token, traceId);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      request.log.error({ err }, 'Routing model failed');
-      reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: `Routing model failed: ${msg}` })}\n\n`);
-      reply.raw.write('data: [DONE]\n\n');
-      reply.raw.end();
-      return;
-    }
-
-    // ── Model call ───────────────────────────────────────────────────────────
-    const allModelsList = await readConfig('models');
-    const sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
-    const isStream = body.stream !== false;
-
     if (isStream) {
+      // ── Streaming path: avvia SSE subito ──────────────────────────────────
+      reply.hijack();
+      reply.raw.setHeader('Content-Type', 'text/event-stream');
+      reply.raw.setHeader('Cache-Control', 'no-cache');
+      reply.raw.setHeader('Connection', 'keep-alive');
+      reply.raw.setHeader('x-localrouter-trace-id', traceId);
+      reply.raw.flushHeaders();
+
+      const emit = (entry: TraceEntry) => {
+        appendTrace(traceId, [entry]);
+      };
+
+      let routingResponse;
+      try {
+        routingResponse = await routeRequest(body, project, request.log, emit, request.token, traceId);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        request.log.error({ err }, 'Routing model failed');
+        reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: `Routing model failed: ${msg}` })}\n\n`);
+        reply.raw.write('data: [DONE]\n\n');
+        reply.raw.end();
+        return;
+      }
+
+      const allModelsList = await readConfig('models');
+      const sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
+
       for (const candidate of sortedCandidates) {
         const model = allModelsList.find((m: any) => m.id === candidate.model);
         if (!model) continue;
@@ -101,8 +99,6 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           log: request.log,
         };
 
-        // llmStream gestisce internamente budget, tracking, TTFT e trace.
-        // Lancia BudgetExceededError o un errore pre-stream → passa al candidato successivo.
         let streamResult: Awaited<ReturnType<typeof llmStream>>;
         try {
           streamResult = await llmStream(body, model, ctx);
@@ -113,14 +109,12 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           continue;
         }
 
-        // Il generator emette tutti i chunk; tracking completato nel suo finally.
         try {
           for await (const chunk of streamResult.chunks) {
             reply.raw.write(`data: ${JSON.stringify(chunk)}\n\n`);
           }
           reply.raw.write('data: [DONE]\n\n');
         } catch (err: unknown) {
-          // Errore mid-stream: già tracciato dall'executor; chiudiamo la connessione.
           const msg = err instanceof Error ? err.message : String(err);
           request.log.error({ err, modelId: model.id }, 'Streaming error mid-stream');
           reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: msg })}\n\n`);
@@ -139,7 +133,23 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       return;
     }
 
-    // ── Non-streaming path ───────────────────────────────────────────────────
+    // ── Non-streaming path: risposta JSON standard ───────────────────────────
+    const emit = (entry: TraceEntry) => {
+      appendTrace(traceId, [entry]);
+    };
+
+    let routingResponse;
+    try {
+      routingResponse = await routeRequest(body, project, request.log, emit, request.token, traceId);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      request.log.error({ err }, 'Routing model failed');
+      return reply.code(500).send({ error: { message: `Routing model failed: ${msg}`, type: 'server_error' } });
+    }
+
+    const allModelsList = await readConfig('models');
+    const sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
+
     for (const candidate of sortedCandidates) {
       const model = allModelsList.find((m: any) => m.id === candidate.model);
       if (!model) continue;
@@ -156,30 +166,16 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
       try {
         const response = await llmChat(body, model, ctx);
-        // Invia come fake SSE chunk per uniformità con il path streaming
-        const fakeChunk = {
-          id: response.id,
-          object: 'chat.completion.chunk',
-          created: response.created,
-          model: response.model,
-          choices: [{ index: 0, delta: { role: 'assistant', content: response.choices[0]?.message.content ?? '' }, finish_reason: 'stop' }],
-          usage: response.usage,
-        };
-        reply.raw.write(`data: ${JSON.stringify(fakeChunk)}\n\n`);
-        reply.raw.write('data: [DONE]\n\n');
-        reply.raw.end();
-        return;
+        reply.header('x-localrouter-trace-id', traceId);
+        return reply.send(response);
       } catch (err: unknown) {
-        // BudgetExceededError o errore del provider: già tracciato dall'executor.
         if (!(err instanceof BudgetExceededError)) {
           request.log.warn({ err, modelId: model.id }, 'Model failed, trying next candidate');
         }
       }
     }
 
-    reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: 'All candidate models failed or are budget-exhausted.' })}\n\n`);
-    reply.raw.write('data: [DONE]\n\n');
-    reply.raw.end();
+    return reply.code(503).send({ error: { message: 'All candidate models failed or are budget-exhausted.', type: 'server_error' } });
   }
 
   // ─── GET /v1/models ───────────────────────────────────────────────────────────

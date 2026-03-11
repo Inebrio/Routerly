@@ -22,14 +22,20 @@ export const cheapestPolicy: PolicyFn = async ({ candidates }) => {
   // Reference minimo solo tra modelli a pagamento (costo > 0).
   // Se usassimo il minimo globale e ci fosse un modello gratuito (es. Ollama),
   // min === 0 → 0/qualsiasi = 0 per tutti i modelli a pagamento.
+  const hasFreeModel = costs.some(c => c.avgCost === 0);
   const paidCosts = costs.map(c => c.avgCost).filter(v => v > 0);
   const minPaid   = paidCosts.length > 0 ? Math.min(...paidCosts) : 0;
+
+  // Quando esistono modelli gratuiti, i modelli a pagamento vengono scalati
+  // al massimo a 0.999 così un modello a $0 supera sempre qualsiasi modello
+  // a pagamento, anche il più economico (che altrimenti otterrebbe 1.0).
+  const paidCeiling = hasFreeModel ? 0.999 : 1.0;
 
   const routing = costs.map(({ id, avgCost }) => ({
     model: id,
     point: avgCost === 0
-      ? 1.0                    // modello gratuito (es. Ollama locale) → massimo
-      : minPaid / avgCost,     // rapporto proporzionale tra modelli a pagamento
+      ? 1.0                                       // modello gratuito → massimo assoluto
+      : paidCeiling * (minPaid / avgCost),         // rapporto proporzionale, < 1 se esiste un modello gratuito
     avgCostPerMillion: avgCost,
   }));
 
