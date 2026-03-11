@@ -67,13 +67,21 @@ function buildUserMessage(
   request: { messages: { role: string; content: unknown }[] },
   memoryMessages?: { role: string; content: unknown }[],
 ): string {
-  const lastUserMsg = [...request.messages]
-    .reverse()
-    .find(m => m.role === 'user');
+  const msgs = request.messages as Array<{ role: string; content: unknown }>;
 
-  const content = typeof lastUserMsg?.content === 'string'
+  const systemMsg = msgs.find(m => m.role === 'system');
+  const systemContent = systemMsg
+    ? (typeof systemMsg.content === 'string' ? systemMsg.content : JSON.stringify(systemMsg.content))
+    : undefined;
+
+  const lastUserMsg = [...msgs].reverse().find(m => m.role === 'user');
+  const userContent = typeof lastUserMsg?.content === 'string'
     ? lastUserMsg.content
     : JSON.stringify(lastUserMsg?.content ?? '');
+
+  const systemBlock = systemContent
+    ? `System prompt:\n${systemContent}\n\n`
+    : '';
 
   if (memoryMessages && memoryMessages.length > 0) {
     const historyBlock = memoryMessages
@@ -82,10 +90,10 @@ function buildUserMessage(
         return `[assistant]: ${c}`;
       })
       .join('\n');
-    return `Previous assistant responses (most recent last):\n${historyBlock}\n\nCurrent user request:\n${content}`;
+    return `${systemBlock}Previous assistant responses (most recent last):\n${historyBlock}\n\nCurrent user request:\n${userContent}`;
   }
 
-  return `User request:\n${content}`;
+  return `${systemBlock}User request:\n${userContent}`;
 }
 
 function parseRoutingResponse(text: string): { model: string; point: number; reason?: string }[] | null {
