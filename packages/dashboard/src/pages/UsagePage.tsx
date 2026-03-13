@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUsage, getProjects, type UsageStats, type Project } from '../api';
 import { MultiSelect } from '../components/MultiSelect';
-import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
+import { DateRangePicker, PRESETS, type DateRange } from '../components/DateRangePicker';
 import { useFilterState } from '../hooks/useFilterState';
 
 function FilterLabel({ children }: { children: React.ReactNode }) {
@@ -22,6 +22,7 @@ export function UsagePage() {
   const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing'>({ key: 'usage-filters-callType', defaultValue: 'all' });
   const [outcomeFilter, setOutcomeFilter]   = useFilterState<'all' | 'success' | 'error'>({ key: 'usage-filters-outcome', defaultValue: 'all' });
   const [loading, setLoading]           = useState(true);
+  const [fetchError, setFetchError]     = useState<string | null>(null);
   const [lastUpdated, setLastUpdated]   = useState<Date | null>(null);
   const [pollInterval, setPollInterval] = useFilterState<number>({ key: 'usage-filters-pollInterval', defaultValue: 30_000 });
   const [refreshing, setRefreshing]     = useState(false);
@@ -36,14 +37,19 @@ export function UsagePage() {
     { label: '5m',   value: 300_000 },
   ];
 
-  // Initialize date range to "This month" if not already set
+  // Initialize date range to "This month" if not already set,
+  // or re-apply stale relative presets (e.g. "Questo mese" saved on a previous day).
   useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
     if (!dateRange.from && !dateRange.to) {
+      // First visit: default to this month
       const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth(), 1);
-      const from = start.toISOString().slice(0, 10);
-      const to = now.toISOString().slice(0, 10);
-      setDateRange({ from, to, label: 'Questo mese' });
+      const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+      setDateRange({ from, to: today, label: 'Questo mese' });
+    } else if (dateRange.to && dateRange.to < today) {
+      // Stale "to" date — if this was a relative preset, recompute it
+      const preset = PRESETS.find(p => p.label === dateRange.label);
+      if (preset) setDateRange(preset.range());
     }
   }, []);
 
@@ -54,8 +60,12 @@ export function UsagePage() {
   const fetchStats = useCallback(() => {
     const period = dateRange.from || dateRange.to ? 'custom' : 'all';
     return getUsage(period, undefined, dateRange.from || undefined, dateRange.to || undefined)
-      .then(data => { setStats(data); setLastUpdated(new Date()); })
-      .catch(console.error);
+      .then(data => { setStats(data); setLastUpdated(new Date()); setFetchError(null); })
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        setFetchError(msg);
+        console.error('Failed to load usage stats:', msg);
+      });
   }, [dateRange]);
 
   const handleRefreshNow = useCallback(() => {
@@ -204,6 +214,11 @@ export function UsagePage() {
 
         {loading ? (
           <div className="loading-center"><div className="spinner" /></div>
+        ) : fetchError ? (
+          <div className="empty-state" style={{ color: 'var(--danger)' }}>
+            <p>Failed to load usage data: <strong>{fetchError}</strong></p>
+            <button className="btn btn-sm btn-secondary" style={{ marginTop: 8 }} onClick={handleRefreshNow}>Retry</button>
+          </div>
         ) : !stats ? null : (
           <>
             {/* Summary */}

@@ -34,6 +34,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         body.max_output_tokens = body.max_completion_tokens;
         delete body.max_completion_tokens;
       }
+      // Responses API always streams
+      body.stream = true;
 
       // We can reuse the exact same routing and tracking logic from chat/completions
       // by simply forwarding the normalized body
@@ -68,6 +70,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
       const emit = (entry: TraceEntry) => {
         appendTrace(traceId, [entry]);
+        reply.raw.write(`data: ${JSON.stringify({ type: 'trace', entry })}\n\n`);
       };
 
       let routingResponse;
@@ -84,6 +87,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
       const allModelsList = await readConfig('models');
       const sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
+
+      reply.raw.write(`data: ${JSON.stringify({ type: 'result', candidates: sortedCandidates })}\n\n`);
 
       for (const candidate of sortedCandidates) {
         const model = allModelsList.find((m: any) => m.id === candidate.model);

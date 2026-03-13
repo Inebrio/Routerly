@@ -42,7 +42,7 @@ function addDays(d: Date, n: number) {
   return r;
 }
 
-const PRESETS: { label: string; range: () => DateRange }[] = [
+export const PRESETS: { label: string; range: () => DateRange }[] = [
   {
     label: 'Oggi',
     range: () => { const t = fmt(new Date()); return { from: t, to: t, label: 'Oggi' }; },

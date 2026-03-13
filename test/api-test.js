@@ -165,6 +165,7 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
     model: 'auto',
     messages: [{ role: 'user', content }],
     max_tokens: maxTokens,
+    stream: true,
   };
 }
 
@@ -183,6 +184,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
   // ══════════════════════════════════════════════════════════════════════════════
   header('1 · Health Check');
 
+  // Checks that the service is running and responds with { status: "ok" }.
+  // Returns version and uptime for a quick visual sanity check.
   await test('GET /health → 200 with status:ok', async () => {
     const res = await get('/health');
     assertStatus(res, 200);
@@ -196,21 +199,25 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
   // ══════════════════════════════════════════════════════════════════════════════
   header('2 · Auth Guard');
 
+  // Request with no Authorization header: must be rejected with 401.
   await test('POST /v1/chat/completions without token → 401', async () => {
     const res = await post('/v1/chat/completions', chatPayload());
     assertStatus(res, 401);
   });
 
+  // Same guard on the Anthropic endpoint: no token → 401.
   await test('POST /v1/messages without token → 401', async () => {
     const res = await post('/v1/messages', { model: 'auto', messages: [], max_tokens: 10 });
     assertStatus(res, 401);
   });
 
+  // Syntactically valid token that is not registered: must return 401.
   await test('POST /v1/chat/completions with wrong token → 401', async () => {
     const res = await post('/v1/chat/completions', chatPayload(), bearerHeader('sk-lr-bad-token-000'));
     assertStatus(res, 401);
   });
 
+  // Ensures admin /api/* routes also require authentication.
   await test('GET /api/models without token → 401', async () => {
     const res = await get('/api/models');
     assertStatus(res, 401);
@@ -223,6 +230,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
 
   let capturedTraceId = null;
 
+  // Checks that the response is HTTP 200 with Content-Type text/event-stream
+  // and that the x-localrouter-trace-id header is present for tracing.
   await test('POST /v1/chat/completions → HTTP 200, Content-Type: text/event-stream', async () => {
     const res = await post('/v1/chat/completions', chatPayload(), bearerHeader(PROJECT_TOKEN));
     assertStatus(res, 200);
@@ -234,6 +243,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
     return `trace-id: ${capturedTraceId.substring(0, 8)}...`;
   });
 
+  // Verifies the SSE stream contains at least one parseable JSON event
+  // (e.g. trace, result, or text chunk produced by the model).
   await test('POST /v1/chat/completions → SSE stream contains events', async () => {
     const res = await post('/v1/chat/completions', chatPayload('Say hello.', 20), bearerHeader(PROJECT_TOKEN));
     assertStatus(res, 200);
@@ -244,6 +255,9 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
     return `${events.length} events · types: [${types.join(', ')}]`;
   });
 
+  // Verifies that the SSE stream contains type:"trace" events covering at least
+  // one of the expected panels (router-request, router-response, request, response),
+  // confirming that routing trace data is forwarded to the client.
   await test('POST /v1/chat/completions → SSE contains "trace" events with correct panels', async () => {
     const res = await post('/v1/chat/completions', chatPayload('Routing test.', 15), bearerHeader(PROJECT_TOKEN));
     assertStatus(res, 200);
@@ -261,6 +275,9 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
     return `${traceEvents.length} trace events · panels: [${[...panels].join(', ')}]`;
   });
 
+  // Verifies the stream contains a routing result event listing the selected candidates
+  // (either a type:"result" event or a trace with message "router:result"),
+  // including the model name and weight for each candidate.
   await test('POST /v1/chat/completions → routing "result" candidates present', async () => {
     const res = await post('/v1/chat/completions', chatPayload('What is 2+2?', 10), bearerHeader(PROJECT_TOKEN));
     assertStatus(res, 200);
@@ -286,6 +303,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
   // ── OpenAI Responses API ─────────────────────────────────────────────────
   header('4 · LLM Proxy — OpenAI /v1/responses');
 
+  // Verifies the Responses API accepts the "input" field (instead of "messages")
+  // and still replies with a valid SSE stream.
   await test('POST /v1/responses with input field → SSE stream', async () => {
     const res = await post(
       '/v1/responses',
@@ -300,6 +319,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
     return `${events.length} event(s)`;
   });
 
+  // Checks backwards compatibility: the service must accept the legacy "max_tokens"
+  // field and normalise it internally to "max_output_tokens".
   await test('POST /v1/responses with max_tokens → normalized as max_output_tokens', async () => {
     // Server should accept max_tokens and internally map it
     const res = await post(
@@ -314,6 +335,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
   // ── Anthropic format ─────────────────────────────────────────────────────
   header('5 · LLM Proxy — Anthropic /v1/messages');
 
+  // Verifies the Anthropic endpoint returns SSE with the x-localrouter-trace-id header
+  // and that the stream contains at least one parseable event.
   await test('POST /v1/messages with valid token → SSE stream + trace-id', async () => {
     const res = await post(
       '/v1/messages',
@@ -330,6 +353,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
     return `trace-id: ${traceId.substring(0, 8)}... · ${events.length} event(s)`;
   });
 
+  // Verifies the Anthropic stream also includes routing metadata
+  // (type:"trace" or type:"result" events) in addition to response chunks.
   await test('POST /v1/messages → SSE contains routing trace or result', async () => {
     const res = await post(
       '/v1/messages',
@@ -349,6 +374,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
   // ══════════════════════════════════════════════════════════════════════════════
   header(`6 · Concurrency — ${CONCURRENCY} parallel requests`);
 
+  // Fires CONCURRENCY requests simultaneously: all must complete with HTTP 200.
+  // Validates server stability under parallel load.
   await test(`POST /v1/chat/completions × ${CONCURRENCY} in parallel → all 200`, async () => {
     const start = Date.now();
     const results = await Promise.all(
@@ -369,6 +396,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
     return `all ${CONCURRENCY} returned 200 in ${elapsed}ms`;
   });
 
+  // Each concurrent request must receive its own unique trace ID
+  // in the x-localrouter-trace-id header, with no collisions.
   await test(`${CONCURRENCY} parallel requests → all get unique trace IDs`, async () => {
     const results = await Promise.all(
       Array.from({ length: CONCURRENCY }, (_, i) =>
@@ -386,6 +415,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
     return `${unique.size} distinct trace IDs`;
   });
 
+  // Mix of OpenAI and Anthropic requests in parallel: both formats must be
+  // handled simultaneously without interfering with each other.
   await test(`${CONCURRENCY} parallel OpenAI + Anthropic mixed → all succeed`, async () => {
     const half = Math.floor(CONCURRENCY / 2);
     const openaiReqs = Array.from({ length: half }, () =>
@@ -401,6 +432,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
     return `${half} openai + ${CONCURRENCY - half} anthropic all 200`;
   });
 
+  // Three SSE streams opened in parallel must be fully independent:
+  // distinct trace IDs and no event leakage between streams.
   await test('Concurrent requests produce independent SSE streams (no cross-contamination)', async () => {
     const prompts = ['Alpha', 'Beta', 'Gamma'];
     const responses = await Promise.all(
@@ -444,6 +477,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
     ];
     for (const name of adminTests) skip(name, 'provide --admin-email and --admin-password');
   } else {
+    // Login with valid credentials: must return a JWT and the user object.
+    // The token is saved for subsequent admin tests.
     await test('POST /api/auth/login with valid credentials → JWT token', async () => {
       const res = await post('/api/auth/login', { email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
       assertStatus(res, 200);
@@ -454,6 +489,7 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
       return `role: ${body.user.role}`;
     });
 
+    // Wrong password: login must be rejected with 401.
     await test('POST /api/auth/login with wrong password → 401', async () => {
       const res = await post('/api/auth/login', { email: ADMIN_EMAIL, password: '__wrong__' });
       assertStatus(res, 401);
@@ -465,14 +501,20 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
       // ── Models ──────────────────────────────────────────────────────────────
       header('8 · Admin API — Models');
 
+      let availableModels = [];
+
+      // Fetches the full list of configured models.
+      // Stores the result in availableModels for use by later tests (e.g. section 10).
       await test('GET /api/models → array', async () => {
         const res = await get('/api/models', adminHdr);
         assertStatus(res, 200);
         const body = await res.json();
         assert(Array.isArray(body), 'Expected array');
+        availableModels = body;
         return `${body.length} model(s)`;
       });
 
+      // Ensures provider API keys are never exposed in any model response.
       await test('GET /api/models → no apiKey in response', async () => {
         const res = await get('/api/models', adminHdr);
         const models = await res.json();
@@ -483,6 +525,7 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
       // ── Users ────────────────────────────────────────────────────────────────
       header('9 · Admin API — Users & Me');
 
+      // User list: must be an array and must not include the passwordHash field.
       await test('GET /api/users → array without passwordHash', async () => {
         const res = await get('/api/users', adminHdr);
         assertStatus(res, 200);
@@ -493,6 +536,7 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
         return `${users.length} user(s)`;
       });
 
+      // Authenticated user profile: the email must match the one used to log in.
       await test('GET /api/me → returns own email', async () => {
         const res = await get('/api/me', adminHdr);
         assertStatus(res, 200);
@@ -509,6 +553,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
       let testToken2      = null;  // second token created on the test project
       let testTokenId2    = null;
 
+      // Creates a temporary project with a timestamp-based unique name.
+      // The response must include an id, a default token, and the raw token value (returned only at creation time).
       await test('POST /api/projects → create test project', async () => {
         const res = await post('/api/projects', { name: testProjectName }, adminHdr);
         assertStatus(res, 201);
@@ -522,6 +568,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
         return `id: ${testProjectId.substring(0, 8)}...`;
       });
 
+      // Verifies the newly created project appears in the list and that
+      // raw token values are not exposed in the listing response.
       await test('GET /api/projects → new project present in list', async () => {
         const res = await get('/api/projects', adminHdr);
         assertStatus(res, 200);
@@ -535,12 +583,14 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
         return 'found in project list, no token leak';
       });
 
+      // Renames the project and enables autoRouting with one assigned model.
+      // The response body must reflect the new name.
       await test('PUT /api/projects/:id → rename project', async () => {
         if (!testProjectId) throw new Error('No project ID from previous step');
         const newName = testProjectName + '_renamed';
         const res = await put(
           `/api/projects/${testProjectId}`,
-          { name: newName, autoRouting: true, models: [] },
+          { name: newName, autoRouting: true, models: availableModels.slice(0, 1).map(m => ({ modelId: m.id })) },
           adminHdr,
         );
         assertStatus(res, 200);
@@ -550,6 +600,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
         return `renamed to "${newName}"`;
       });
 
+      // Adds a second token to the project with a custom label.
+      // The raw token value is saved for subsequent tests.
       await test('POST /api/projects/:id/tokens → add a second token', async () => {
         if (!testProjectId) throw new Error('No project ID');
         const res = await post(`/api/projects/${testProjectId}/tokens`, { labels: ['test-label'] }, adminHdr);
@@ -562,6 +614,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
         return `token: ${testToken2.substring(0, 14)}... · id: ${testTokenId2.substring(0, 8)}...`;
       });
 
+      // Uses the newly created second token to make a real LLM call:
+      // it must succeed and return a valid SSE stream.
       await test('Use second project token → POST /v1/chat/completions → 200', async () => {
         if (!testToken2) throw new Error('No second token');
         const res = await post('/v1/chat/completions', chatPayload('Token test.', 5), bearerHeader(testToken2));
@@ -571,24 +625,28 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
         await res.body?.cancel();
       });
 
+      // Revokes the second token: response must be 204 No Content.
       await test('DELETE /api/projects/:id/tokens/:tokenId → revoke second token', async () => {
         if (!testProjectId || !testTokenId2) throw new Error('Missing IDs');
         const res = await del(`/api/projects/${testProjectId}/tokens/${testTokenId2}`, adminHdr);
         assertStatus(res, 204);
       });
 
+      // The just-revoked token must be immediately rejected with 401.
       await test('Use revoked token → POST /v1/chat/completions → 401', async () => {
         if (!testToken2) throw new Error('No revoked token');
         const res = await post('/v1/chat/completions', chatPayload('Revoked.', 5), bearerHeader(testToken2));
         assertStatus(res, 401);
       });
 
+      // Deletes the test project: response must be 204 No Content.
       await test('DELETE /api/projects/:id → delete test project', async () => {
         if (!testProjectId) throw new Error('No project ID');
         const res = await del(`/api/projects/${testProjectId}`, adminHdr);
         assertStatus(res, 204);
       });
 
+      // Verifies the deleted project no longer appears in the list.
       await test('GET /api/projects → test project no longer in list', async () => {
         const res = await get('/api/projects', adminHdr);
         assertStatus(res, 200);
@@ -600,6 +658,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
       // ── Trace lookup ─────────────────────────────────────────────────────────
       header('11 · Admin API — Trace & Usage');
 
+      // Fires a real LLM request, then fetches its trace via the API:
+      // must return a non-empty array with the expected panels.
       await test('GET /api/traces/:id → returns trace for recent request', async () => {
         // fire a fresh request to get a fresh trace ID
         const r = await post('/v1/chat/completions', chatPayload('trace lookup test', 10), bearerHeader(PROJECT_TOKEN));
@@ -617,11 +677,14 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
         return `${body.trace.length} entries · panels: [${panels.join(', ')}]`;
       });
 
+      // Non-existent trace ID: must return 404.
       await test('GET /api/traces/:id → 404 for unknown id', async () => {
         const res = await get('/api/traces/00000000-0000-0000-0000-000000000000', adminHdr);
         assertStatus(res, 404);
       });
 
+      // Validates the /api/usage response structure:
+      // must include summary (totalCost, totalCalls), records array, and timeline array.
       await test('GET /api/usage → summary object with correct fields', async () => {
         const res = await get('/api/usage', adminHdr);
         assertStatus(res, 200);
@@ -634,6 +697,7 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
         return `calls: ${body.summary.totalCalls} · cost: $${body.summary.totalCost.toFixed(6)}`;
       });
 
+      // Usage records must not expose the "trace" field (internal routing data).
       await test('GET /api/usage → records have no trace field (stripped)', async () => {
         const res = await get('/api/usage', adminHdr);
         const body = await res.json();
@@ -641,12 +705,14 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
         assert(withTrace.length === 0, `${withTrace.length} usage records leak trace data`);
       });
 
+      // A malformed JWT must be rejected with 401 on all admin endpoints.
       await test('GET /api/usage with invalid token → 401', async () => {
         const res = await get('/api/usage', bearerHeader('bad.token'));
         assertStatus(res, 401);
       });
 
       if (adminToken) {
+        // Non-existent usage record ID: must return 404.
         await test('GET /api/usage/:id → 404 for unknown record', async () => {
           const res = await get('/api/usage/nonexistent-id-000', adminHdr);
           assertStatus(res, 404);
@@ -656,6 +722,7 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
       // ── System info & settings ───────────────────────────────────────────────
       header('12 · Admin API — System Info & Settings');
 
+      // Checks the system endpoint returns version, Node.js version, and uptime.
       await test('GET /api/system/info → version and platform info', async () => {
         const res = await get('/api/system/info', adminHdr);
         assertStatus(res, 200);
@@ -666,6 +733,7 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
         return `node: ${body.nodeVersion} · uptime: ${body.uptimeSeconds}s`;
       });
 
+      // Checks that runtime settings (port, log level, etc.) are exposed correctly.
       await test('GET /api/settings → settings object with port field', async () => {
         const res = await get('/api/settings', adminHdr);
         assertStatus(res, 200);
@@ -682,6 +750,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
   // ══════════════════════════════════════════════════════════════════════════════
   header('13 · Setup API');
 
+  // Checks whether the setup endpoint correctly reports if the service still
+  // requires initial configuration (first run) or is already operational.
   await test('GET /api/setup/status → needsSetup boolean', async () => {
     const res = await get('/api/setup/status');
     assertStatus(res, 200);
