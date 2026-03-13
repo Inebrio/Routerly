@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
-import { getUsers, updateUser } from '../api';
-import type { User } from '../api';
+import { getUsers, updateUser, getRoles } from '../api';
+import type { User, Role } from '../api';
 
 type EditForm = { email: string; roleId: string; newPassword: string };
 
@@ -11,6 +11,7 @@ export function UserEditPage() {
   const navigate    = useNavigate();
 
   const [user, setUser]       = useState<User | null>(null);
+  const [roles, setRoles]     = useState<Role[]>([]);
   const [form, setForm]       = useState<EditForm>({ email: '', roleId: '', newPassword: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
@@ -18,11 +19,12 @@ export function UserEditPage() {
   const [error, setError]     = useState('');
 
   useEffect(() => {
-    getUsers()
-      .then(users => {
+    Promise.all([getUsers(), getRoles()])
+      .then(([users, allRoles]) => {
         const u = users.find(u => u.id === userId);
         if (!u) { navigate('/dashboard/settings/users', { replace: true }); return; }
         setUser(u);
+        setRoles(allRoles);
         setForm({ email: u.email, roleId: u.roleId, newPassword: '' });
       })
       .catch(e => setError(e instanceof Error ? e.message : 'Failed to load user'))
@@ -81,8 +83,9 @@ export function UserEditPage() {
               <label className="form-label">Role</label>
               <select className="form-input" value={form.roleId}
                 onChange={e => setForm(f => ({ ...f, roleId: e.target.value }))}>
-                <option value="admin">Admin</option>
-                <option value="viewer">Viewer</option>
+                {roles.map(r => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
               </select>
             </div>
           </div>

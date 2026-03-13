@@ -23,6 +23,7 @@ import { UsageRecordPage } from './pages/UsageRecordPage';
 import { TestPage } from './pages/TestPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SettingsGeneralTab, SettingsAboutTab, SettingsNotificationsTab } from './pages/SettingsPage';
+import { RolesPage } from './pages/RolesPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { UserEditPage } from './pages/UserEditPage';
 import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
@@ -247,6 +248,7 @@ const router = createBrowserRouter([
               { path: 'notifications', element: <SettingsNotificationsTab /> },
               { path: 'users', element: <UsersPage /> },
               { path: 'users/:userId', element: <UserEditPage /> },
+              { path: 'roles', element: <RolesPage /> },
               { path: 'about', element: <SettingsAboutTab /> },
             ],
           },

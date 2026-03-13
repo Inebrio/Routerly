@@ -661,6 +661,7 @@ const TABS = [
   { path: 'general',       label: 'General' },
   { path: 'notifications', label: 'Notifications' },
   { path: 'users',         label: 'Users' },
+  { path: 'roles',         label: 'Roles' },
   { path: 'about',         label: 'About' },
 ];
 

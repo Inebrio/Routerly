@@ -5,6 +5,7 @@ import { makeAuthCommand } from './commands/auth.js';
 import { makeModelCommand } from './commands/model.js';
 import { makeProjectCommand } from './commands/project.js';
 import { makeUserCommand } from './commands/user.js';
+import { makeRoleCommand } from './commands/role.js';
 import { makeReportCommand } from './commands/report.js';
 import { makeServiceCommand } from './commands/service.js';
 
@@ -22,6 +23,7 @@ program.addCommand(makeAuthCommand());
 program.addCommand(makeModelCommand());
 program.addCommand(makeProjectCommand());
 program.addCommand(makeUserCommand());
+program.addCommand(makeRoleCommand());
 program.addCommand(makeReportCommand());
 program.addCommand(makeServiceCommand());
 

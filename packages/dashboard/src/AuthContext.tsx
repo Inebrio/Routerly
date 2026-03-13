@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { login as apiLogin } from './api';
 
-interface AuthUser { id: string; email: string; role: string; }
+interface AuthUser { id: string; email: string; role: string; permissions?: string[]; }
 interface AuthCtx {
   user: AuthUser | null;
   isLoading: boolean;
@@ -9,6 +9,7 @@ interface AuthCtx {
   loginDirect: (token: string, user: AuthUser) => void;
   logout: () => void;
   updateUser: (partial: Partial<AuthUser>) => void;
+  can: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthCtx | null>(null);
@@ -63,8 +64,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }
 
+  function can(permission: string): boolean {
+    if (!user) return false;
+    // admin role has all permissions
+    if (user.role === 'admin') return true;
+    return user.permissions?.includes(permission) ?? false;
+  }
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, loginDirect, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, isLoading, login, loginDirect, logout, updateUser, can }}>
       {children}
     </AuthContext.Provider>
   );

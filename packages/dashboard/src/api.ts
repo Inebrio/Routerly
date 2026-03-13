@@ -44,7 +44,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 // ── Auth ──────────────────────────────────────────────────────────────────
 export const login = (email: string, password: string) =>
-  request<{ token: string; user: { id: string; email: string; role: string } }>(
+  request<{ token: string; user: { id: string; email: string; role: string; permissions: string[] } }>(
     '/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }
   );
 
@@ -174,6 +174,7 @@ export const removeProjectMember = (id: string, userId: string) => request<void>
 // ── Users ─────────────────────────────────────────────────────────────────
 export interface User {
   id: string; email: string; roleId: string; projectIds: string[];
+  permissions?: string[];
 }
 
 export const getUsers = () => request<User[]>('/users');
@@ -182,6 +183,30 @@ export const createUser = (data: { email: string; password: string; roleId?: str
 export const updateUser = (id: string, data: { email?: string; roleId?: string; newPassword?: string }) =>
   request<User>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteUser = (id: string) => request<void>(`/users/${id}`, { method: 'DELETE' });
+
+// ── Roles ───────────────────────────────────────────────────────────────────────────────────
+export const ALL_PERMISSIONS = [
+  'project:read', 'project:write',
+  'model:read', 'model:write',
+  'user:read', 'user:write',
+  'report:read',
+] as const;
+export type Permission = typeof ALL_PERMISSIONS[number];
+
+export interface Role {
+  id: string;
+  name: string;
+  permissions: Permission[];
+  builtin: boolean;
+}
+
+export const getRoles = () => request<Role[]>('/roles');
+export const createRole = (data: { id: string; name: string; permissions: Permission[] }) =>
+  request<Role>('/roles', { method: 'POST', body: JSON.stringify(data) });
+export const updateRole = (id: string, data: { name?: string; permissions?: Permission[] }) =>
+  request<Role>(`/roles/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteRole = (id: string) =>
+  request<void>(`/roles/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
 // ── Usage Stats ───────────────────────────────────────────────────────────
 export interface TraceEntry {
