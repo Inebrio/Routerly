@@ -4,7 +4,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../config/paths.js';
-import { encrypt, decrypt } from '@localrouter/shared';
 import { createSessionToken, verifyToken } from '../plugins/jwt.js';
 import type { ModelConfig, ProjectConfig, UserConfig, Provider, TokenCost, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit } from '@localrouter/shared';
 import { getTrace } from '../routing/traceStore.js';
@@ -80,8 +79,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get('/api/models', async (_req, reply) => {
     const models = await readConfig('models');
-    // Strip encrypted keys before sending to client
-    return reply.send(models.map(m => ({ ...m, encryptedApiKey: undefined })));
+    // Strip API keys before sending to client (use /api/models/:id/apikey to retrieve)
+    return reply.send(models.map(m => ({ ...m, apiKey: undefined })));
   });
 
   fastify.post<{
@@ -118,10 +117,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       name: req.body.name ?? req.body.id,
       provider: req.body.provider as Provider,
       endpoint: req.body.endpoint,
-      encryptedApiKey: req.body.apiKey
-        ? encrypt(req.body.apiKey)
+      apiKey: req.body.apiKey
+        ? req.body.apiKey
         : req.body.cloneFrom
-          ? (models.find(m => m.id === req.body.cloneFrom)?.encryptedApiKey ?? undefined)
+          ? (models.find(m => m.id === req.body.cloneFrom)?.apiKey ?? undefined)
           : undefined,
       cost: {
         inputPerMillion: req.body.inputPerMillion,
@@ -134,7 +133,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     };
     models.push(model);
     await writeConfig('models', models);
-    return reply.status(201).send({ ...model, encryptedApiKey: undefined });
+    return reply.status(201).send({ ...model, apiKey: undefined });
   });
 
   fastify.put<{
@@ -182,7 +181,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       name: req.body.name ?? existing.name,
       provider: req.body.provider as Provider,
       endpoint: req.body.endpoint,
-      encryptedApiKey: req.body.apiKey ? encrypt(req.body.apiKey) : existing.encryptedApiKey,
+      apiKey: req.body.apiKey ? req.body.apiKey : existing.apiKey,
       cost: {
         inputPerMillion: req.body.inputPerMillion,
         outputPerMillion: req.body.outputPerMillion,
@@ -196,15 +195,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     };
     models[index] = model;
     await writeConfig('models', models);
-    return reply.send({ ...model, encryptedApiKey: undefined });
+    return reply.send({ ...model, apiKey: undefined });
   });
 
   fastify.get<{ Params: { id: string } }>('/api/models/:id/apikey', async (req, reply) => {
     const models = await readConfig('models');
     const model = models.find(m => m.id === req.params.id);
     if (!model) return reply.status(404).send({ error: 'Not found' });
-    const apiKey = model.encryptedApiKey ? decrypt(model.encryptedApiKey) : null;
-    return reply.send({ apiKey });
+    return reply.send({ apiKey: model.apiKey ?? null });
   });
 
   fastify.delete<{ Params: { id: string } }>('/api/models/:id', async (req, reply) => {
@@ -221,9 +219,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get('/api/projects', async (_req, reply) => {
     const projects = await readConfig('projects');
+    // Strip the full token; clients use tokenSnippet for display
     return reply.send(projects.map(p => ({
       ...p,
-      tokens: p.tokens?.map(t => ({ ...t, encryptedToken: undefined })) || []
+      tokens: p.tokens?.map(t => ({ ...t, token: undefined })) || []
     })));
   });
 
@@ -252,7 +251,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       name: trimmedName,
       tokens: [{
         id: uuidv4(),
-        encryptedToken: encrypt(rawToken),
+        token: rawToken,
         tokenSnippet: rawToken.substring(0, 10),
         createdAt: new Date().toISOString()
       }],
@@ -269,8 +268,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     };
     projects.push(project);
     await writeConfig('projects', projects);
-    // Return the raw token once (not stored in plain text after this)
-    return reply.status(201).send({ ...project, tokens: project.tokens.map(t => ({ ...t, encryptedToken: undefined })), token: rawToken });
+    return reply.status(201).send({ ...project, token: rawToken });
   });
 
   fastify.put<{
@@ -311,7 +309,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     await writeConfig('projects', projects);
     return reply.send({
       ...updated,
-      tokens: updated.tokens?.map(t => ({ ...t, encryptedToken: undefined })) || []
+      tokens: updated.tokens?.map(t => ({ ...t, token: undefined })) || []
     });
   });
 
@@ -332,7 +330,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
     const newToken = {
       id: uuidv4(),
-      encryptedToken: encrypt(rawToken),
+      token: rawToken,
       tokenSnippet: rawToken.substring(0, 10),
       createdAt: new Date().toISOString(),
       ...(req.body.labels ? { labels: req.body.labels } : {})
@@ -344,7 +342,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
     projects[index] = updated;
     await writeConfig('projects', projects);
-    return reply.send({ token: rawToken, tokenInfo: { ...newToken, encryptedToken: undefined } });
+    return reply.send({ token: rawToken, tokenInfo: { ...newToken, token: undefined } });
   });
 
   fastify.put<{ Params: { id: string, tokenId: string }; Body: { models?: TokenModelRef[], labels?: string[] } }>('/api/projects/:id/tokens/:tokenId', async (req, reply) => {

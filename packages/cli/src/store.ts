@@ -1,60 +1,115 @@
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { encrypt, decrypt } from '@localrouter/shared';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Settings, UsageRecord } from '@localrouter/shared';
 
-const base = process.env['LOCALROUTER_HOME'] ?? join(homedir(), '.localrouter');
+// ─── CLI config lives in the user's home dir, independent of the service ─────
+// Multiple users on the same machine each have their own config.
+// The service config lives elsewhere (e.g. /etc/localrouter or ~/.localrouter).
 
-export const PATHS = {
-  config: join(base, 'config'),
-  data: join(base, 'data'),
-  settings: join(base, 'config', 'settings.json'),
-  models: join(base, 'config', 'models.json'),
-  projects: join(base, 'config', 'projects.json'),
-  users: join(base, 'config', 'users.json'),
-  roles: join(base, 'config', 'roles.json'),
-  usage: join(base, 'data', 'usage.json'),
-};
+const CLI_DIR = join(homedir(), '.localrouter', 'cli');
+const CLI_CONFIG_PATH = join(CLI_DIR, 'config.json');
 
-type StoreMap = {
-  settings: Settings;
-  models: ModelConfig[];
-  projects: ProjectConfig[];
-  users: UserConfig[];
-  roles: RoleConfig[];
-  usage: UsageRecord[];
-};
-
-const DEFAULTS: StoreMap = {
-  settings: { port: 3000, host: '0.0.0.0', dashboardEnabled: true, defaultTimeoutMs: 30000, logLevel: 'info' },
-  models: [],
-  projects: [],
-  users: [],
-  roles: [],
-  usage: [],
-};
-
-async function ensureDirs() {
-  await mkdir(PATHS.config, { recursive: true });
-  await mkdir(PATHS.data, { recursive: true });
+export interface AccountEntry {
+  /** Friendly alias chosen at login, e.g. "home", "work" */
+  alias: string;
+  /** Base URL of the LocalRouter service, e.g. http://localhost:3000 */
+  serverUrl: string;
+  /** Email used to log in */
+  email: string;
+  /** Session token returned by POST /api/auth/login */
+  token: string;
+  /** Token expiry timestamp (ms since epoch) */
+  expiresAt: number;
 }
 
-export async function readStore<K extends keyof StoreMap>(key: K): Promise<StoreMap[K]> {
-  await ensureDirs();
-  const path = PATHS[key];
+export interface CliConfig {
+  accounts: AccountEntry[];
+  /** Alias of the currently active account */
+  currentAlias: string | null;
+}
+
+async function ensureDir(): Promise<void> {
+  await mkdir(CLI_DIR, { recursive: true });
+}
+
+async function readCliConfig(): Promise<CliConfig> {
+  await ensureDir();
   try {
-    const raw = await readFile(path, 'utf-8');
-    return JSON.parse(raw) as StoreMap[K];
+    const raw = await readFile(CLI_CONFIG_PATH, 'utf-8');
+    return JSON.parse(raw) as CliConfig;
   } catch {
-    return DEFAULTS[key] as StoreMap[K];
+    return { accounts: [], currentAlias: null };
   }
 }
 
-export async function writeStore<K extends keyof StoreMap>(key: K, data: StoreMap[K]): Promise<void> {
-  await ensureDirs();
-  await writeFile(PATHS[key], JSON.stringify(data, null, 2), 'utf-8');
+async function writeCliConfig(config: CliConfig): Promise<void> {
+  await ensureDir();
+  await writeFile(CLI_CONFIG_PATH, JSON.stringify(config, null, 2), { encoding: 'utf-8', mode: 0o600 });
 }
 
-export function encryptValue(v: string): string { return encrypt(v); }
-export function decryptValue(v: string): string { return decrypt(v); }
+// ─── Public API ───────────────────────────────────────────────────────────────
+
+export async function listAccounts(): Promise<AccountEntry[]> {
+  const cfg = await readCliConfig();
+  return cfg.accounts;
+}
+
+export async function getCurrentAccount(): Promise<AccountEntry | null> {
+  const cfg = await readCliConfig();
+  if (!cfg.currentAlias) return null;
+  return cfg.accounts.find(a => a.alias === cfg.currentAlias) ?? null;
+}
+
+export async function getAccount(alias: string): Promise<AccountEntry | null> {
+  const cfg = await readCliConfig();
+  return cfg.accounts.find(a => a.alias === alias) ?? null;
+}
+
+export async function saveAccount(entry: AccountEntry): Promise<void> {
+  const cfg = await readCliConfig();
+  const idx = cfg.accounts.findIndex(a => a.alias === entry.alias);
+  if (idx >= 0) {
+    cfg.accounts[idx] = entry;
+  } else {
+    cfg.accounts.push(entry);
+  }
+  // Automatically activate if it's the first account, or replace current alias's entry
+  if (!cfg.currentAlias || cfg.currentAlias === entry.alias) {
+    cfg.currentAlias = entry.alias;
+  }
+  await writeCliConfig(cfg);
+}
+
+export async function removeAccount(alias: string): Promise<boolean> {
+  const cfg = await readCliConfig();
+  const before = cfg.accounts.length;
+  cfg.accounts = cfg.accounts.filter(a => a.alias !== alias);
+  if (cfg.accounts.length === before) return false;
+  if (cfg.currentAlias === alias) {
+    cfg.currentAlias = cfg.accounts[0]?.alias ?? null;
+  }
+  await writeCliConfig(cfg);
+  return true;
+}
+
+export async function switchAccount(alias: string): Promise<boolean> {
+  const cfg = await readCliConfig();
+  if (!cfg.accounts.find(a => a.alias === alias)) return false;
+  cfg.currentAlias = alias;
+  await writeCliConfig(cfg);
+  return true;
+}
+
+/** Returns the active account or exits with a helpful message. */
+export async function requireAccount(): Promise<AccountEntry> {
+  const account = await getCurrentAccount();
+  if (!account) {
+    console.error('Not logged in. Run: localrouter auth login');
+    process.exit(1);
+  }
+  if (account.expiresAt < Date.now()) {
+    console.error(`Session for "${account.alias}" has expired. Run: localrouter auth login`);
+    process.exit(1);
+  }
+  return account;
+}

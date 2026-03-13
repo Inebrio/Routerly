@@ -1,6 +1,14 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { readStore, writeStore, PATHS } from '../store.js';
+import { api, ApiError } from '../api.js';
+import { getCurrentAccount } from '../store.js';
+import type { Settings } from '@localrouter/shared';
+
+interface SystemInfo {
+  version: string;
+  uptime: number;
+  nodeVersion: string;
+}
 
 export function makeServiceCommand(): Command {
   const cmd = new Command('service').description('Control the LocalRouter service');
@@ -8,21 +16,38 @@ export function makeServiceCommand(): Command {
   cmd.command('status')
     .description('Show current service configuration')
     .action(async () => {
-      const settings = await readStore('settings');
-      const models = await readStore('models');
-      const projects = await readStore('projects');
+      const account = await getCurrentAccount();
+      if (!account) {
+        console.log(chalk.yellow('Not logged in. Run: localrouter auth login'));
+        return;
+      }
 
-      console.log(chalk.bold('\nLocalRouter Service Configuration\n'));
-      console.log(`  ${chalk.cyan('Port:')}          ${settings.port}`);
-      console.log(`  ${chalk.cyan('Host:')}          ${settings.host}`);
-      console.log(`  ${chalk.cyan('Dashboard:')}     ${settings.dashboardEnabled ? chalk.green('enabled') : chalk.gray('disabled')}`);
-      console.log(`  ${chalk.cyan('Log level:')}     ${settings.logLevel}`);
-      console.log(`  ${chalk.cyan('Timeout:')}       ${settings.defaultTimeoutMs}ms`);
-      console.log(`  ${chalk.cyan('Config dir:')}    ${PATHS.config}`);
-      console.log(`  ${chalk.cyan('Data dir:')}      ${PATHS.data}`);
-      console.log(`  ${chalk.cyan('Models:')}        ${models.length}`);
-      console.log(`  ${chalk.cyan('Projects:')}      ${projects.length}`);
-      console.log();
+      try {
+        const [info, settings, models, projects] = await Promise.all([
+          api<SystemInfo>('GET', '/api/system/info').catch(() => null),
+          api<Settings>('GET', '/api/settings'),
+          api<unknown[]>('GET', '/api/models'),
+          api<unknown[]>('GET', '/api/projects'),
+        ]);
+
+        console.log(chalk.bold('\nLocalRouter Service Status\n'));
+        console.log(`  ${chalk.cyan('Server:')}        ${account.serverUrl}`);
+        if (info) {
+          console.log(`  ${chalk.cyan('Version:')}       ${info.version}`);
+          console.log(`  ${chalk.cyan('Uptime:')}        ${Math.floor(info.uptime / 60)}m ${info.uptime % 60}s`);
+        }
+        console.log(`  ${chalk.cyan('Port:')}          ${settings.port}`);
+        console.log(`  ${chalk.cyan('Host:')}          ${settings.host}`);
+        console.log(`  ${chalk.cyan('Dashboard:')}     ${settings.dashboardEnabled ? chalk.green('enabled') : chalk.gray('disabled')}`);
+        console.log(`  ${chalk.cyan('Log level:')}     ${settings.logLevel}`);
+        console.log(`  ${chalk.cyan('Timeout:')}       ${settings.defaultTimeoutMs}ms`);
+        console.log(`  ${chalk.cyan('Models:')}        ${models.length}`);
+        console.log(`  ${chalk.cyan('Projects:')}      ${projects.length}`);
+        console.log();
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
     });
 
   cmd.command('configure')
@@ -36,16 +61,29 @@ export function makeServiceCommand(): Command {
       port?: string; host?: string; dashboard?: string;
       logLevel?: string; timeout?: string;
     }) => {
-      const settings = await readStore('settings');
+      const patch: Partial<Settings> = {};
+      if (opts.port) patch.port = parseInt(opts.port, 10);
+      if (opts.host) patch.host = opts.host;
+      if (opts.dashboard !== undefined) patch.dashboardEnabled = opts.dashboard === 'true';
+      if (opts.logLevel) patch.logLevel = opts.logLevel as Settings['logLevel'];
+      if (opts.timeout) patch.defaultTimeoutMs = parseInt(opts.timeout, 10);
 
-      if (opts.port) settings.port = parseInt(opts.port, 10);
-      if (opts.host) settings.host = opts.host;
-      if (opts.dashboard !== undefined) settings.dashboardEnabled = opts.dashboard === 'true';
-      if (opts.logLevel) settings.logLevel = opts.logLevel as typeof settings.logLevel;
-      if (opts.timeout) settings.defaultTimeoutMs = parseInt(opts.timeout, 10);
+      if (Object.keys(patch).length === 0) {
+        console.log(chalk.yellow('No settings provided. Use --port, --host, --dashboard, --log-level, or --timeout.'));
+        return;
+      }
 
-      await writeStore('settings', settings);
-      console.log(chalk.green('✓ Settings updated.'));
+      try {
+        await api<void>('PUT', '/api/settings', patch);
+        console.log(chalk.green('✓ Settings updated.'));
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          console.error(chalk.red('Admin privileges required.'));
+        } else {
+          console.error(chalk.red(`Error: ${(err as Error).message}`));
+        }
+        process.exit(1);
+      }
     });
 
   return cmd;

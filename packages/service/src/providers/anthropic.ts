@@ -1,5 +1,4 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { decrypt } from '@localrouter/shared';
 import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
@@ -12,7 +11,7 @@ import type { ProviderAdapter } from './types.js';
 
 export class AnthropicAdapter implements ProviderAdapter {
   private getClient(model: ModelConfig): Anthropic {
-    const apiKey = model.encryptedApiKey ? decrypt(model.encryptedApiKey) : '';
+    const apiKey = model.apiKey ?? '';
     return new Anthropic({
       apiKey,
       baseURL: model.endpoint || 'https://api.anthropic.com',

@@ -432,7 +432,7 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
       'POST /api/auth/login',
       'POST /api/auth/login wrong password → 401',
       'GET  /api/models → array',
-      'GET  /api/models → no encryptedApiKey',
+      'GET  /api/models → no apiKey in response',
       'GET  /api/users → no passwordHash',
       'GET  /api/me',
       'GET  /api/usage summary',
@@ -473,11 +473,11 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
         return `${body.length} model(s)`;
       });
 
-      await test('GET /api/models → no encryptedApiKey exposed', async () => {
+      await test('GET /api/models → no apiKey in response', async () => {
         const res = await get('/api/models', adminHdr);
         const models = await res.json();
-        const exposed = models.filter(m => m.encryptedApiKey !== undefined);
-        assert(exposed.length === 0, `${exposed.length} model(s) leak encryptedApiKey`);
+        const exposed = models.filter(m => m.apiKey !== undefined);
+        assert(exposed.length === 0, `${exposed.length} model(s) leak apiKey`);
       });
 
       // ── Users ────────────────────────────────────────────────────────────────
@@ -528,11 +528,11 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
         const projects = await res.json();
         const found = projects.find(p => p.id === testProjectId);
         assert(found, `Project ${testProjectId} not found in list`);
-        // verify encryptedToken is NOT leaked
+        // verify token is NOT leaked in list response
         for (const t of found.tokens ?? []) {
-          assert(t.encryptedToken === undefined, 'encryptedToken should not be exposed');
+          assert(t.token === undefined, 'token should not be exposed in list');
         }
-        return 'found in project list, no encryptedToken leak';
+        return 'found in project list, no token leak';
       });
 
       await test('PUT /api/projects/:id → rename project', async () => {

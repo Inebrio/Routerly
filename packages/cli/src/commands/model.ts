@@ -1,9 +1,8 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
-import { v4 as uuidv4 } from 'uuid';
-import { readStore, writeStore, encryptValue } from '../store.js';
-import type { ModelConfig, Provider, TokenCost } from '@localrouter/shared';
+import { api, ApiError } from '../api.js';
+import type { ModelConfig, TokenCost } from '@localrouter/shared';
 
 // ─── Known model pricing presets (cost per 1M tokens in USD) ─────────────────
 const PRICING_PRESETS: Record<string, TokenCost> = {
@@ -25,18 +24,23 @@ export function makeModelCommand(): Command {
   cmd.command('list')
     .description('List all registered models')
     .action(async () => {
-      const models = await readStore('models');
-      if (models.length === 0) {
-        console.log(chalk.yellow('No models registered yet. Use `localrouter model add` to add one.'));
-        return;
+      try {
+        const models = await api<ModelConfig[]>('GET', '/api/models');
+        if (models.length === 0) {
+          console.log(chalk.yellow('No models registered yet. Use `localrouter model add` to add one.'));
+          return;
+        }
+        const table = new Table({
+          head: ['ID', 'Provider', 'Endpoint', 'Input $/1M', 'Output $/1M'].map(h => chalk.cyan(h)),
+        });
+        for (const m of models) {
+          table.push([m.id, m.provider, m.endpoint, `$${m.cost.inputPerMillion}`, `$${m.cost.outputPerMillion}`]);
+        }
+        console.log(table.toString());
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
       }
-      const table = new Table({
-        head: ['ID', 'Provider', 'Endpoint', 'Input $/1M', 'Output $/1M'].map(h => chalk.cyan(h)),
-      });
-      for (const m of models) {
-        table.push([m.id, m.provider, m.endpoint, `$${m.cost.inputPerMillion}`, `$${m.cost.outputPerMillion}`]);
-      }
-      console.log(table.toString());
     });
 
   // ── model add ──
@@ -45,7 +49,7 @@ export function makeModelCommand(): Command {
     .requiredOption('--id <id>', 'Unique model ID (e.g. gpt-4o)')
     .requiredOption('--provider <provider>', 'Provider: openai | anthropic | gemini | ollama | custom')
     .option('--endpoint <url>', 'Custom API endpoint (uses provider default if omitted)')
-    .option('--api-key <key>', 'API key (will be encrypted at rest)')
+    .option('--api-key <key>', 'API key (stored plaintext; file permissions protect it)')
     .option('--input-price <usd>', 'Cost per 1M input tokens in USD')
     .option('--output-price <usd>', 'Cost per 1M output tokens in USD')
     .option('--daily-budget <usd>', 'Global daily spend limit in USD')
@@ -54,13 +58,6 @@ export function makeModelCommand(): Command {
       id: string; provider: string; endpoint?: string; apiKey?: string;
       inputPrice?: string; outputPrice?: string; dailyBudget?: string; monthlyBudget?: string;
     }) => {
-      const models = await readStore('models');
-
-      if (models.find(m => m.id === opts.id)) {
-        console.error(chalk.red(`Model "${opts.id}" already exists. Use \`model remove\` first.`));
-        process.exit(1);
-      }
-
       const preset = PRICING_PRESETS[opts.id];
       const cost: TokenCost = {
         inputPerMillion: opts.inputPrice ? parseFloat(opts.inputPrice) : (preset?.inputPerMillion ?? 0),
@@ -74,12 +71,12 @@ export function makeModelCommand(): Command {
         ollama: 'http://localhost:11434/v1',
       };
 
-      const model: ModelConfig = {
+      const body = {
         id: opts.id,
         name: opts.id,
-        provider: opts.provider as Provider,
+        provider: opts.provider,
         endpoint: opts.endpoint ?? providerEndpoints[opts.provider] ?? '',
-        encryptedApiKey: opts.apiKey ? encryptValue(opts.apiKey) : undefined,
+        apiKey: opts.apiKey,
         cost,
         globalThresholds: {
           daily: opts.dailyBudget ? parseFloat(opts.dailyBudget) : undefined,
@@ -87,23 +84,34 @@ export function makeModelCommand(): Command {
         },
       };
 
-      models.push(model);
-      await writeStore('models', models);
-      console.log(chalk.green(`✓ Model "${opts.id}" registered.`) + (preset ? chalk.gray(' (pricing from preset)') : ''));
+      try {
+        await api<ModelConfig>('POST', '/api/models', body);
+        console.log(chalk.green(`✓ Model "${opts.id}" registered.`) + (preset ? chalk.gray(' (pricing from preset)') : ''));
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 409) {
+          console.error(chalk.red(`Model "${opts.id}" already exists. Use \`model remove\` first.`));
+        } else {
+          console.error(chalk.red(`Error: ${(err as Error).message}`));
+        }
+        process.exit(1);
+      }
     });
 
   // ── model remove ──
   cmd.command('remove <id>')
     .description('Remove a registered model')
     .action(async (id: string) => {
-      const models = await readStore('models');
-      const filtered = models.filter(m => m.id !== id);
-      if (filtered.length === models.length) {
-        console.error(chalk.red(`Model "${id}" not found.`));
+      try {
+        await api<void>('DELETE', `/api/models/${encodeURIComponent(id)}`);
+        console.log(chalk.green(`✓ Model "${id}" removed.`));
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) {
+          console.error(chalk.red(`Model "${id}" not found.`));
+        } else {
+          console.error(chalk.red(`Error: ${(err as Error).message}`));
+        }
         process.exit(1);
       }
-      await writeStore('models', filtered);
-      console.log(chalk.green(`✓ Model "${id}" removed.`));
     });
 
   return cmd;

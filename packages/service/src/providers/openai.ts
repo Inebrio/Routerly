@@ -1,5 +1,4 @@
 import OpenAI from 'openai';
-import { decrypt } from '@localrouter/shared';
 import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
@@ -10,7 +9,7 @@ import type { ProviderAdapter } from './types.js';
 
 export class OpenAIAdapter implements ProviderAdapter {
   private getClient(model: ModelConfig): OpenAI {
-    const apiKey = model.encryptedApiKey ? decrypt(model.encryptedApiKey) : '';
+    const apiKey = model.apiKey ?? '';
     return new OpenAI({
       apiKey,
       baseURL: model.endpoint || 'https://api.openai.com/v1',

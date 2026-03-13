@@ -7,6 +7,7 @@
     "declarationDir": "./dist"
   },
   "include": [
-    "src"
+    "src/**/*.ts",
+    "src/**/*.json"
   ]
 }

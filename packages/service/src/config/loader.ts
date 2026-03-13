@@ -1,5 +1,6 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, chmod } from 'node:fs/promises';
 import { dirname } from 'node:path';
+import { randomBytes } from 'node:crypto';
 import lockfile from 'proper-lockfile';
 import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Settings, UsageRecord } from '@localrouter/shared';
 import { CONFIG_PATHS } from './paths.js';
@@ -98,6 +99,26 @@ export async function appendUsageRecord(record: UsageRecord): Promise<void> {
   const existing = await readConfig('usage');
   existing.push(record);
   await writeConfig('usage', existing);
+}
+
+/**
+ * Reads the signing secret from the config directory, generating one if it
+ * does not exist yet. The file is created with mode 0600 (owner read/write only).
+ */
+export async function getOrCreateSecret(): Promise<string> {
+  const filePath = CONFIG_PATHS.secret;
+  await mkdir(CONFIG_PATHS.config, { recursive: true });
+  try {
+    return (await readFile(filePath, 'utf-8')).trim();
+  } catch (err: unknown) {
+    if (isNodeError(err) && err.code === 'ENOENT') {
+      const secret = randomBytes(32).toString('hex');
+      await writeFile(filePath, secret, { encoding: 'utf-8', mode: 0o600 });
+      await chmod(filePath, 0o600);
+      return secret;
+    }
+    throw err;
+  }
 }
 
 function isNodeError(err: unknown): err is NodeJS.ErrnoException {

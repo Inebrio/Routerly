@@ -1,6 +1,5 @@
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { fastifyPlugin as fp } from 'fastify-plugin';
-import { decrypt } from '@localrouter/shared';
 import type { ProjectConfig, ProjectToken } from '@localrouter/shared';
 import { readConfig } from '../config/loader.js';
 
@@ -34,14 +33,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
     const projects = await readConfig('projects');
     for (const project of projects) {
       for (const token of project.tokens || []) {
-        let decryptedToken: string;
-        try {
-          decryptedToken = decrypt(token.encryptedToken);
-        } catch {
-          // Skip tokens with unreadable data (wrong key, corruption)
-          continue;
-        }
-        if (decryptedToken === incomingToken) {
+        if (token.token === incomingToken) {
           request.project = project;
           request.token = token;
           return;

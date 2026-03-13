@@ -4,6 +4,7 @@ import staticFiles from '@fastify/static';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import authPlugin from './plugins/auth.js';
+import { loadSecret } from './plugins/jwt.js';
 import { openaiRoutes } from './routes/openai.js';
 import { anthropicRoutes } from './routes/anthropic.js';
 import { apiRoutes } from './routes/api.js';
@@ -70,6 +71,7 @@ export async function buildServer() {
 
 export async function startServer() {
   await initConfigDirs();
+  await loadSecret();
   const settings = await readConfig('settings');
   const server = await buildServer();
 

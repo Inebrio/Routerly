@@ -1,5 +1,4 @@
 import OpenAI from 'openai';
-import { decrypt } from '@localrouter/shared';
 import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
@@ -14,7 +13,7 @@ import type { ProviderAdapter } from './types.js';
  */
 export class CustomAdapter implements ProviderAdapter {
   private getClient(model: ModelConfig): OpenAI {
-    const apiKey = model.encryptedApiKey ? decrypt(model.encryptedApiKey) : 'custom';
+    const apiKey = model.apiKey ?? 'custom';
     if (!model.endpoint) {
       throw new Error(`Custom provider model "${model.id}" has no endpoint configured.`);
     }

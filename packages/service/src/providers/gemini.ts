@@ -1,5 +1,4 @@
 import OpenAI from 'openai';
-import { decrypt } from '@localrouter/shared';
 import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
@@ -15,7 +14,7 @@ import type { ProviderAdapter } from './types.js';
  */
 export class GeminiAdapter implements ProviderAdapter {
   private getClient(model: ModelConfig): OpenAI {
-    const apiKey = model.encryptedApiKey ? decrypt(model.encryptedApiKey) : '';
+    const apiKey = model.apiKey ?? '';
     const baseURL =
       model.endpoint || 'https://generativelanguage.googleapis.com/v1beta/openai/';
     return new OpenAI({ apiKey, baseURL });

@@ -98,8 +98,8 @@ export interface ModelConfig {
   name: string;
   provider: Provider;
   endpoint: string;
-  /** AES-256-GCM encrypted API key */
-  encryptedApiKey?: string | undefined;
+  /** Provider API key (stored in plaintext; file permissions protect it) */
+  apiKey?: string | undefined;
   cost: TokenCost;
   /** Maximum context window size in tokens */
   contextWindow?: number;
@@ -153,9 +153,9 @@ export interface TokenModelRef {
 
 export interface ProjectToken {
   id: string;
-  /** AES-256-GCM encrypted project token */
-  encryptedToken: string;
-  /** Excerpt of the first 10 characters of the token */
+  /** Project token (stored in plaintext; file permissions protect it) */
+  token: string;
+  /** First 10 characters of the token, for display purposes */
   tokenSnippet?: string;
   createdAt: string; // ISO 8601
   /** Per-token model-specific budget overrides */
