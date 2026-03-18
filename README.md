@@ -187,25 +187,34 @@ message = client.messages.create(
 
 ## Quick Start
 
+**macOS / Linux:**
 ```bash
-# 1. Clone and install
-git clone https://github.com/your-org/routerly.git && cd routerly && npm install
+curl -fsSL https://github.com/routerly/routerly/releases/latest/download/install.sh | bash
+```
 
-# 2. Generate an encryption key (keep this safe, everything is encrypted with it)
-export ROUTERLY_SECRET_KEY="$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")"
-echo "export ROUTERLY_SECRET_KEY=\"$ROUTERLY_SECRET_KEY\"" >> ~/.zshrc
+**Windows (PowerShell):**
+```powershell
+powershell -c "irm https://github.com/routerly/routerly/releases/latest/download/install.ps1 | iex"
+```
 
-# 3. Register a model (pricing preset applied automatically for known models)
-npx routerly model add --id gpt-4o --provider openai --api-key sk-YOUR_KEY
+The installer detects your platform, checks for Node.js 20+ (offering to install it if missing), downloads the latest release, builds the packages, generates your encryption key, optionally sets up an auto-start daemon, and walks you through adding a model, creating a project, and creating an admin user.
 
-# 4. Create a project (prints your Bearer token)
-npx routerly project add --name "My App" --slug my-app --routing-model gpt-4o --models gpt-4o
+Once installed, the three steps to go live:
 
-# 5. Start the gateway
-npx routerly start
+```bash
+# 1. Register a model (pricing preset applied automatically for known models)
+routerly model add --id gpt-4o --provider openai --api-key sk-YOUR_KEY
+
+# 2. Create a project (prints your Bearer token, save it)
+routerly project add --name "My App" --slug my-app --routing-model gpt-4o --models gpt-4o
+
+# 3. Start the gateway (skip if you configured auto-start during install)
+routerly start
 ```
 
 That's it. Point your existing app at `http://localhost:3000` and use the project token as the API key.
+
+> Need more control? See [Installation options](docs/getting-started/installation.md) for flags, non-interactive mode, system-wide install, and manual setup.
 
 ---
 

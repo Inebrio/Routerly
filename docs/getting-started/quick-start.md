@@ -2,6 +2,9 @@
 
 This guide gets you from zero to your first routed AI response in under 5 minutes.
 
+> **Prerequisites:** Routerly installed and the `routerly` CLI in your PATH.
+> Not installed yet? Run: `curl -fsSL https://github.com/routerly/routerly/releases/latest/download/install.sh | bash`
+
 ## Overview
 
 ```
@@ -17,7 +20,7 @@ common models, pricing is applied automatically when the model ID matches.
 
 **OpenAI (with auto-pricing):**
 ```bash
-node --import tsx/esm packages/cli/src/index.ts model add \
+routerly model add \
   --id gpt-4o \
   --provider openai \
   --api-key sk-YOUR_OPENAI_KEY
@@ -25,7 +28,7 @@ node --import tsx/esm packages/cli/src/index.ts model add \
 
 **Anthropic:**
 ```bash
-node --import tsx/esm packages/cli/src/index.ts model add \
+routerly model add \
   --id claude-3-5-sonnet-20241022 \
   --provider anthropic \
   --api-key sk-ant-YOUR_ANTHROPIC_KEY
@@ -33,7 +36,7 @@ node --import tsx/esm packages/cli/src/index.ts model add \
 
 **Ollama (local, no key):**
 ```bash
-node --import tsx/esm packages/cli/src/index.ts model add \
+routerly model add \
   --id llama3 \
   --provider ollama \
   --input-price 0 \
@@ -42,7 +45,7 @@ node --import tsx/esm packages/cli/src/index.ts model add \
 
 Verify models were registered:
 ```bash
-node --import tsx/esm packages/cli/src/index.ts model list
+routerly model list
 ```
 
 ---
@@ -52,7 +55,7 @@ node --import tsx/esm packages/cli/src/index.ts model list
 A project is an isolated workspace with its own API token, set of models, and routing configuration.
 
 ```bash
-node --import tsx/esm packages/cli/src/index.ts project add \
+routerly project add \
   --name "My App" \
   --slug my-app \
   --routing-model gpt-4o-mini \
@@ -77,13 +80,21 @@ Endpoint prefix: /projects/my-app/v1/
 
 ## Step 3: Start the Service
 
+If you configured auto-start during installation, the service is already running. Otherwise:
+
 ```bash
-npm run dev
-# or in production:
-node --import tsx/esm packages/service/src/index.ts
+routerly start
+```
+
+Or start it directly with Node.js:
+
+```bash
+node ~/.routerly/app/packages/service/dist/index.js
 ```
 
 The service listens on `http://localhost:3000` by default.
+
+> **Development mode:** If working from source, use `npm run dev` instead.
 
 ---
 

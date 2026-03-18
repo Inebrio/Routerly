@@ -2,13 +2,14 @@
 
 Routerly is configured through environment variables and JSON files stored under `~/.routerly/`.
 
+> **If you used the installer**, `ROUTERLY_HOME` is already set in your shell profile and `settings.json` is pre-populated with the values you chose during setup. You can skip straight to [settings.json](#settingsjson).
+
 ---
 
 ## Environment Variables
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `ROUTERLY_SECRET_KEY` | **Yes** | - | Base64-encoded 256-bit AES key used to encrypt API keys and tokens at rest. Generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` |
 | `ROUTERLY_HOME` | No | `~/.routerly` | Override the storage directory for all config and data files |
 | `NODE_ENV` | No | - | Set to `production` to disable pino-pretty log formatting |
 
@@ -73,7 +74,6 @@ ROUTERLY_HOME=/opt/routerly node --import tsx/esm packages/service/src/index.ts
 
 Before running in production:
 
-- [ ] `ROUTERLY_SECRET_KEY` is set and stored securely
 - [ ] `settings.json` has `"host": "0.0.0.0"` if the service needs to be network-accessible
 - [ ] `ROUTERLY_HOME` directory has appropriate file permissions (readable only by the service user)
 - [ ] `NODE_ENV=production` is set (disables pretty-print logs, improves performance)

@@ -142,7 +142,7 @@ function bearerHeader(token) {
 // ─── SSE stream consumer ──────────────────────────────────────────────────────
 // Returns { events, traceId } — consumeSSE reads the full body text
 async function consumeSSE(res) {
-  const traceId = res.headers.get('x-localrouter-trace-id') ?? null;
+  const traceId = res.headers.get('x-routerly-trace-id') ?? null;
   const events = [];
   const text = await res.text();
   for (const line of text.split('\n')) {
@@ -231,14 +231,14 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
   let capturedTraceId = null;
 
   // Checks that the response is HTTP 200 with Content-Type text/event-stream
-  // and that the x-localrouter-trace-id header is present for tracing.
+  // and that the x-routerly-trace-id header is present for tracing.
   await test('POST /v1/chat/completions → HTTP 200, Content-Type: text/event-stream', async () => {
     const res = await post('/v1/chat/completions', chatPayload(), bearerHeader(PROJECT_TOKEN));
     assertStatus(res, 200);
     const ct = res.headers.get('content-type') ?? '';
     assert(ct.includes('text/event-stream'), `Expected SSE content-type, got "${ct}"`);
-    capturedTraceId = res.headers.get('x-localrouter-trace-id');
-    assert(capturedTraceId, 'Missing x-localrouter-trace-id header');
+    capturedTraceId = res.headers.get('x-routerly-trace-id');
+    assert(capturedTraceId, 'Missing x-routerly-trace-id header');
     await res.body?.cancel(); // discard body — we captured traceId
     return `trace-id: ${capturedTraceId.substring(0, 8)}...`;
   });
@@ -335,7 +335,7 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
   // ── Anthropic format ─────────────────────────────────────────────────────
   header('5 · LLM Proxy — Anthropic /v1/messages');
 
-  // Verifies the Anthropic endpoint returns SSE with the x-localrouter-trace-id header
+  // Verifies the Anthropic endpoint returns SSE with the x-routerly-trace-id header
   // and that the stream contains at least one parseable event.
   await test('POST /v1/messages with valid token → SSE stream + trace-id', async () => {
     const res = await post(
@@ -346,8 +346,8 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
     assertStatus(res, 200);
     const ct = res.headers.get('content-type') ?? '';
     assert(ct.includes('text/event-stream'), `Expected SSE, got "${ct}"`);
-    const traceId = res.headers.get('x-localrouter-trace-id');
-    assert(traceId, 'Missing x-localrouter-trace-id header');
+    const traceId = res.headers.get('x-routerly-trace-id');
+    assert(traceId, 'Missing x-routerly-trace-id header');
     const { events } = await consumeSSE(res);
     assert(events.length > 0, 'Expected SSE events');
     return `trace-id: ${traceId.substring(0, 8)}... · ${events.length} event(s)`;
@@ -397,18 +397,18 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
   });
 
   // Each concurrent request must receive its own unique trace ID
-  // in the x-localrouter-trace-id header, with no collisions.
+  // in the x-routerly-trace-id header, with no collisions.
   await test(`${CONCURRENCY} parallel requests → all get unique trace IDs`, async () => {
     const results = await Promise.all(
       Array.from({ length: CONCURRENCY }, (_, i) =>
         post('/v1/chat/completions', chatPayload(`Unique trace ${i}.`, 5), bearerHeader(PROJECT_TOKEN))
       )
     );
-    const traceIds = results.map(r => r.headers.get('x-localrouter-trace-id'));
+    const traceIds = results.map(r => r.headers.get('x-routerly-trace-id'));
     await Promise.all(results.map(r => r.body?.cancel()));
 
     const nullCount = traceIds.filter(id => !id).length;
-    assert(nullCount === 0, `${nullCount} requests missing x-localrouter-trace-id`);
+    assert(nullCount === 0, `${nullCount} requests missing x-routerly-trace-id`);
 
     const unique = new Set(traceIds);
     assert(unique.size === CONCURRENCY, `Expected ${CONCURRENCY} unique trace IDs, got ${unique.size}`);
@@ -664,7 +664,7 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
         // fire a fresh request to get a fresh trace ID
         const r = await post('/v1/chat/completions', chatPayload('trace lookup test', 10), bearerHeader(PROJECT_TOKEN));
         assertStatus(r, 200);
-        const traceId = r.headers.get('x-localrouter-trace-id');
+        const traceId = r.headers.get('x-routerly-trace-id');
         assert(traceId, 'Missing trace-id header');
         await consumeSSE(r); // drain stream so trace is fully written
 

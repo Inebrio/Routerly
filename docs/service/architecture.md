@@ -148,4 +148,4 @@ Routerly does not use a database. All state is stored in JSON files:
     └── usage.json       # UsageRecord[], full call history
 ```
 
-Sensitive values (API keys, project tokens) are encrypted at rest using AES-256-CBC with the key from `ROUTERLY_SECRET_KEY`.
+Sensitive values (API keys, project tokens) are stored in the JSON config files. Passwords are hashed with bcrypt.

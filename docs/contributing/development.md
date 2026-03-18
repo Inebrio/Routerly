@@ -9,7 +9,6 @@ enough to contribute.
 
 - Node.js ≥ 20
 - npm ≥ 10 (comes with Node.js 20)
-- A `ROUTERLY_SECRET_KEY` environment variable (see [Installation](../getting-started/installation.md))
 
 ---
 
@@ -204,7 +203,6 @@ Both run across all packages. CI will reject PRs that fail lint or have formatti
 ## Environment Variables (Development)
 
 ```bash
-export ROUTERLY_SECRET_KEY="$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")"
 export ROUTERLY_HOME="$HOME/.routerly-dev"  # optional: use a separate dev config dir
 export NODE_ENV="development"               # enables pino-pretty logs
 ```

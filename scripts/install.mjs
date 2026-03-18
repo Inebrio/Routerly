@@ -1,0 +1,736 @@
+#!/usr/bin/env node
+// ────────────────────────────────────────────────────────────────────────────
+// Routerly — Node.js installer (zero external dependencies)
+// Called by install.sh / install.ps1 after extracting the source tarball.
+// Requires Node.js >= 20.
+// ────────────────────────────────────────────────────────────────────────────
+
+import { createRequire }  from 'node:module';
+import { createInterface } from 'node:readline';
+import { randomBytes }    from 'node:crypto';
+import { promisify }      from 'node:util';
+import { exec as execCb } from 'node:child_process';
+import * as fs            from 'node:fs';
+import * as fsp           from 'node:fs/promises';
+import * as path          from 'node:path';
+import * as os            from 'node:os';
+import * as http          from 'node:http';
+
+const exec = promisify(execCb);
+
+// ─── Colors ───────────────────────────────────────────────────────────────────
+const isTTY = process.stdout.isTTY;
+const c = {
+  bold:    s => isTTY ? `\x1b[1m${s}\x1b[0m`  : s,
+  dim:     s => isTTY ? `\x1b[2m${s}\x1b[0m`  : s,
+  green:   s => isTTY ? `\x1b[32m${s}\x1b[0m` : s,
+  yellow:  s => isTTY ? `\x1b[33m${s}\x1b[0m` : s,
+  red:     s => isTTY ? `\x1b[31m${s}\x1b[0m` : s,
+  cyan:    s => isTTY ? `\x1b[36m${s}\x1b[0m` : s,
+  magenta: s => isTTY ? `\x1b[35m${s}\x1b[0m` : s,
+};
+
+const info    = (...a) => console.log(c.cyan(c.bold('→')) + ' ' + a.join(' '));
+const success = (...a) => console.log(c.green(c.bold('✓')) + ' ' + a.join(' '));
+const warn    = (...a) => console.log(c.yellow(c.bold('!')) + ' ' + a.join(' '));
+const step    = (n, t, ...a) => console.log(`\n${c.bold(c.cyan(`[${n}]`))} ${c.bold(t)}`, ...a);
+const die     = (...a) => { console.error(c.red(c.bold('✗')) + ' ' + a.join(' ')); process.exit(1); };
+
+// ─── Parse CLI args ────────────────────────────────────────────────────────────
+const args   = process.argv.slice(2);
+const getArg = (name) => {
+  const prefix = `--${name}=`;
+  const entry  = args.find(a => a.startsWith(prefix));
+  return entry ? entry.slice(prefix.length) : null;
+};
+const hasFlag = (name) => args.includes(`--${name}`);
+
+const SOURCE_DIR     = getArg('source-dir') ?? path.resolve(path.dirname(process.argv[1]), '..');
+const YES            = hasFlag('yes') || process.env.ROUTERLY_YES === '1';
+const FLAG_NO_SVC    = hasFlag('no-service');
+const FLAG_NO_CLI    = hasFlag('no-cli');
+const FLAG_NO_DASH   = hasFlag('no-dashboard');
+const FLAG_NO_DAEMON = hasFlag('no-daemon');
+const FLAG_SCOPE     = getArg('scope')       ?? process.env.ROUTERLY_SCOPE       ?? '';
+const FLAG_PORT      = getArg('port')        ?? process.env.ROUTERLY_PORT        ?? '';
+const FLAG_URL       = getArg('public-url')  ?? process.env.ROUTERLY_PUBLIC_URL  ?? '';
+
+// From env vars (--yes mode)
+const ENV_INSTALL_SVC  = process.env.ROUTERLY_INSTALL_SERVICE;
+const ENV_INSTALL_CLI  = process.env.ROUTERLY_INSTALL_CLI;
+const ENV_INSTALL_DASH = process.env.ROUTERLY_INSTALL_DASHBOARD;
+const ENV_DAEMON       = process.env.ROUTERLY_DAEMON;
+
+// ─── Platform ─────────────────────────────────────────────────────────────────
+const PLATFORM = process.platform; // 'linux' | 'darwin' | 'win32'
+const HOME     = os.homedir();
+
+// ─── Interactive readline ─────────────────────────────────────────────────────
+const rl = createInterface({ input: process.stdin, output: process.stdout });
+const question = (q) => new Promise(resolve => rl.question(q, resolve));
+
+async function ask(prompt, defaultValue, { hint = '' } = {}) {
+  if (YES) return defaultValue;
+  const hintStr = hint  ? c.dim(` (${hint})`) : '';
+  const defStr  = defaultValue !== ''
+    ? ` ${c.dim('[' + defaultValue + ']')}`
+    : '';
+  const answer  = (await question(`  ${prompt}${hintStr}${defStr}: `)).trim();
+  return answer === '' ? defaultValue : answer;
+}
+
+async function confirm(prompt, defaultYes = true) {
+  if (YES) return defaultYes;
+  const choices = defaultYes ? c.dim('[Y/n]') : c.dim('[y/N]');
+  const answer  = (await question(`  ${prompt} ${choices} `)).trim().toLowerCase();
+  if (answer === '') return defaultYes;
+  return answer === 'y' || answer === 'yes';
+}
+
+// ─── Banner ───────────────────────────────────────────────────────────────────
+console.log('\n' + c.bold(c.cyan('  Routerly')) + c.dim('  Installer') + '\n');
+console.log(c.dim('  Self-hosted LLM gateway — https://github.com/routerly/routerly\n'));
+
+// ─── Detect existing install ──────────────────────────────────────────────────
+const routerlyHome = process.env.ROUTERLY_HOME ?? path.join(HOME, '.routerly');
+const isUpgrade = fs.existsSync(path.join(routerlyHome, 'config', 'settings.json'));
+if (isUpgrade) {
+  warn(`Existing Routerly installation detected at ${c.bold(routerlyHome)}`);
+  const go = await confirm('Continue with upgrade?', true);
+  if (!go) { rl.close(); process.exit(0); }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// PHASE 1: Configuration
+// ════════════════════════════════════════════════════════════════════════════
+step('1', 'Configuration');
+
+// ── Scope ─────────────────────────────────────────────────────────────────────
+let scope;
+if (FLAG_SCOPE) {
+  scope = FLAG_SCOPE;
+} else if (YES) {
+  scope = 'user';
+} else {
+  console.log();
+  console.log('  Installation scope:');
+  console.log(`    ${c.bold('1')}  ${c.cyan('User')}    — installs in your home directory (no sudo needed)`);
+  console.log(`    ${c.bold('2')}  ${c.cyan('System')}  — installs system-wide (requires sudo / admin)`);
+  console.log();
+  const choice = (await question('  Choose scope [1]: ')).trim();
+  scope = choice === '2' ? 'system' : 'user';
+}
+if (scope !== 'user' && scope !== 'system') {
+  die(`Invalid scope "${scope}". Must be "user" or "system".`);
+}
+success(`Scope: ${c.bold(scope)}`);
+
+// ── Components ────────────────────────────────────────────────────────────────
+let installService, installCli, installDashboard;
+
+if (YES) {
+  installService   = ENV_INSTALL_SVC  !== '0' && !FLAG_NO_SVC;
+  installCli       = ENV_INSTALL_CLI  !== '0' && !FLAG_NO_CLI;
+  installDashboard = ENV_INSTALL_DASH !== '0' && !FLAG_NO_DASH && installService;
+} else {
+  console.log('\n  Which components do you want to install?\n');
+  installService   = !FLAG_NO_SVC  && await confirm('  Install the Routerly service (API gateway)?', true);
+  installCli       = !FLAG_NO_CLI  && await confirm('  Install the Routerly CLI?', true);
+  installDashboard = installService && !FLAG_NO_DASH
+    && await confirm('  Install the web dashboard?', true);
+}
+
+if (!installService && !installCli) {
+  die('Nothing to install. Select at least the service or the CLI.');
+}
+
+// ── Remote service URL (when service not installed) ───────────────────────────
+let remoteServiceUrl = '';
+if (!installService && installCli) {
+  remoteServiceUrl = await ask(
+    'Remote Routerly service URL',
+    'http://localhost:3000',
+    { hint: 'used by the CLI to reach the service' }
+  );
+}
+
+// ── Port & URL ────────────────────────────────────────────────────────────────
+let port = 3000;
+let publicUrl = '';
+if (installService) {
+  port = parseInt(
+    FLAG_PORT || await ask('Service port', '3000'),
+    10
+  );
+  if (isNaN(port) || port < 1 || port > 65535) die(`Invalid port: ${port}`);
+  publicUrl = FLAG_URL || await ask('Public URL', `http://localhost:${port}`);
+}
+
+// ── Daemon ────────────────────────────────────────────────────────────────────
+let setupDaemon = false;
+if (installService) {
+  if (FLAG_NO_DAEMON) {
+    setupDaemon = false;
+  } else if (YES) {
+    setupDaemon = ENV_DAEMON !== '0';
+  } else {
+    setupDaemon = await confirm(
+      `  Configure Routerly to start automatically at boot?`,
+      true
+    );
+  }
+}
+
+// ── Summary ───────────────────────────────────────────────────────────────────
+console.log('\n' + c.bold('  Summary:'));
+console.log(`    Scope:       ${c.cyan(scope)}`);
+console.log(`    Service:     ${installService   ? c.green('yes') : c.dim('no')}`);
+if (installService) {
+  console.log(`    Port:        ${port}`);
+  console.log(`    Public URL:  ${publicUrl}`);
+  console.log(`    Dashboard:   ${installDashboard ? c.green('yes') : c.dim('no')}`);
+  console.log(`    Auto-start:  ${setupDaemon      ? c.green('yes') : c.dim('no')}`);
+}
+console.log(`    CLI:         ${installCli ? c.green('yes') : c.dim('no')}`);
+if (!installService && remoteServiceUrl) {
+  console.log(`    Service URL: ${remoteServiceUrl}`);
+}
+console.log();
+
+if (!YES) {
+  const go = await confirm('Proceed with installation?', true);
+  if (!go) { rl.close(); process.exit(0); }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// PHASE 2: Directories
+// ════════════════════════════════════════════════════════════════════════════
+step('2', 'Preparing directories');
+
+// Where the app files live
+const APP_DIR = scope === 'user'
+  ? path.join(HOME, '.routerly', 'app')
+  : (PLATFORM === 'win32' ? 'C:\\Program Files\\Routerly' : '/opt/routerly');
+
+// Where the bin wrapper lives
+const BIN_DIR = scope === 'user'
+  ? (PLATFORM === 'win32'
+      ? path.join(HOME, 'AppData', 'Local', 'Microsoft', 'WindowsApps')
+      : path.join(HOME, '.local', 'bin'))
+  : (PLATFORM === 'win32' ? 'C:\\Windows\\System32' : '/usr/local/bin');
+
+await fsp.mkdir(APP_DIR,   { recursive: true });
+await fsp.mkdir(BIN_DIR,   { recursive: true });
+await fsp.mkdir(path.join(routerlyHome, 'config'), { recursive: true });
+await fsp.mkdir(path.join(routerlyHome, 'data'),   { recursive: true });
+
+success(`App directory:  ${c.dim(APP_DIR)}`);
+success(`Bin directory:  ${c.dim(BIN_DIR)}`);
+success(`Data directory: ${c.dim(routerlyHome)}`);
+
+// ════════════════════════════════════════════════════════════════════════════
+// PHASE 3: Copy source & install dependencies
+// ════════════════════════════════════════════════════════════════════════════
+step('3', 'Copying files & installing dependencies');
+
+// Copy source tree to APP_DIR
+info(`Copying source from ${c.dim(SOURCE_DIR)} to ${c.dim(APP_DIR)}...`);
+await copyDir(SOURCE_DIR, APP_DIR);
+success('Source files copied');
+
+// npm install --omit=dev
+info('Installing production dependencies...');
+await runCmd('npm install --omit=dev', APP_DIR);
+success('Dependencies installed');
+
+// ── Build packages ─────────────────────────────────────────────────────────
+step('4', 'Building packages');
+
+// Always build shared (everything depends on it)
+info('Building @routerly/shared...');
+await runCmd('npm run build --workspace=packages/shared', APP_DIR);
+success('@routerly/shared built');
+
+if (installService) {
+  info('Building @routerly/service...');
+  await runCmd('npm run build --workspace=packages/service', APP_DIR);
+  success('@routerly/service built');
+}
+
+if (installDashboard) {
+  info('Building @routerly/dashboard...');
+  await runCmd('npm run build --workspace=packages/dashboard', APP_DIR);
+  success('@routerly/dashboard built');
+}
+
+if (installCli) {
+  info('Building @routerly/cli...');
+  await runCmd('npm run build --workspace=packages/cli', APP_DIR);
+  success('@routerly/cli built');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// PHASE 5: Generate secret key & write settings
+// ════════════════════════════════════════════════════════════════════════════
+step('5', 'Writing configuration');
+
+// Write settings.json only on fresh install (don't overwrite existing config)
+const settingsPath = path.join(routerlyHome, 'config', 'settings.json');
+if (!fs.existsSync(settingsPath)) {
+  const settings = {
+    port,
+    host: '0.0.0.0',
+    dashboardEnabled: installDashboard,
+    defaultTimeoutMs: 30000,
+    logLevel: 'info',
+    publicUrl,
+  };
+  await fsp.writeFile(settingsPath, JSON.stringify(settings, null, 2));
+  success('settings.json written');
+} else {
+  info('Existing settings.json kept (upgrade mode)');
+}
+
+// ── Persist ROUTERLY_HOME to shell profile ────────────────────────────────────
+const envLine = `\n# Routerly\nexport ROUTERLY_HOME="${routerlyHome}"\n`;
+
+if (PLATFORM !== 'win32') {
+  const profiles = [
+    path.join(HOME, '.zshrc'),
+    path.join(HOME, '.bashrc'),
+    path.join(HOME, '.profile'),
+  ];
+  // Write to the first profile file that exists, otherwise create .profile
+  let profilePath = profiles.find(p => fs.existsSync(p)) ?? profiles[2];
+
+  // Check if already present (upgrade)
+  const existing = fs.existsSync(profilePath)
+    ? await fsp.readFile(profilePath, 'utf-8')
+    : '';
+  if (!existing.includes('ROUTERLY_HOME')) {
+    await fsp.appendFile(profilePath, envLine);
+    success(`ROUTERLY_HOME added to ${c.dim(profilePath)}`);
+  } else {
+    info('ROUTERLY_HOME already in shell profile, skipping');
+  }
+} else {
+  // Windows: set via setx (user-level, persistent)
+  try {
+    await runCmd(`setx ROUTERLY_HOME "${routerlyHome}"`, APP_DIR);
+    success('ROUTERLY_HOME set via setx');
+  } catch {
+    warn('Could not set ROUTERLY_HOME via setx. Set it manually.');
+  }
+}
+
+// ── Also export for the remainder of this process so post-install wizard works
+process.env.ROUTERLY_HOME = routerlyHome;
+
+// ════════════════════════════════════════════════════════════════════════════
+// PHASE 6: Install CLI wrapper
+// ════════════════════════════════════════════════════════════════════════════
+if (installCli) {
+  step('6', 'Installing CLI');
+
+  const cliEntry = path.join(APP_DIR, 'packages', 'cli', 'dist', 'index.js');
+
+  if (PLATFORM === 'win32') {
+    // .cmd wrapper for Windows
+    const binPath = path.join(BIN_DIR, 'routerly.cmd');
+    const wrapper = `@echo off\nset ROUTERLY_HOME=${routerlyHome}\nnode "${cliEntry}" %*\n`;
+    await fsp.writeFile(binPath, wrapper);
+    success(`CLI wrapper installed at ${c.dim(binPath)}`);
+  } else {
+    // Shell wrapper for Unix
+    const binPath = path.join(BIN_DIR, 'routerly');
+    const wrapper = `#!/bin/sh\nexport ROUTERLY_HOME="${routerlyHome}"\nexec node "${cliEntry}" "$@"\n`;
+    await fsp.writeFile(binPath, wrapper, { mode: 0o755 });
+    success(`CLI wrapper installed at ${c.dim(binPath)}`);
+
+    // Ensure BIN_DIR is on PATH (add to shell profile if not already there)
+    if (!process.env.PATH?.split(':').includes(BIN_DIR)) {
+      const pathLine = `\nexport PATH="${BIN_DIR}:$PATH"\n`;
+      const profiles = [
+        path.join(HOME, '.zshrc'),
+        path.join(HOME, '.bashrc'),
+        path.join(HOME, '.profile'),
+      ];
+      const profilePath = profiles.find(p => fs.existsSync(p)) ?? profiles[2];
+      const existing    = fs.existsSync(profilePath)
+        ? await fsp.readFile(profilePath, 'utf-8')
+        : '';
+      if (!existing.includes(BIN_DIR)) {
+        await fsp.appendFile(profilePath, pathLine);
+        info(`Added ${c.dim(BIN_DIR)} to PATH in ${c.dim(profilePath)}`);
+      }
+    }
+  }
+
+  // Remote URL config for CLI-only installs
+  if (!installService && remoteServiceUrl) {
+    const cliConfigPath = path.join(routerlyHome, 'config', 'cli.json');
+    await fsp.writeFile(
+      cliConfigPath,
+      JSON.stringify({ serviceUrl: remoteServiceUrl }, null, 2)
+    );
+    success(`CLI remote URL saved to ${c.dim(cliConfigPath)}`);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// PHASE 7: Daemon / auto-start
+// ════════════════════════════════════════════════════════════════════════════
+if (installService && setupDaemon) {
+  step('7', 'Configuring auto-start daemon');
+
+  const serviceEntry = path.join(APP_DIR, 'packages', 'service', 'dist', 'index.js');
+  const nodeExe      = process.execPath;
+
+  if (PLATFORM === 'linux') {
+    await setupSystemdService({ scope, serviceEntry, nodeExe, routerlyHome, port });
+  } else if (PLATFORM === 'darwin') {
+    await setupLaunchdService({ scope, serviceEntry, nodeExe, routerlyHome, port });
+  } else if (PLATFORM === 'win32') {
+    await setupWindowsService({ serviceEntry, nodeExe, routerlyHome, port });
+  } else {
+    warn('Auto-start not supported on this platform. Start the service manually with:');
+    console.log(`  node ${serviceEntry}`);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// PHASE 8: Post-install setup wizard (optional)
+// ════════════════════════════════════════════════════════════════════════════
+if (installService) {
+  console.log('\n' + '─'.repeat(60));
+  info(c.bold('Optional: Initial Setup Wizard'));
+  console.log(c.dim('  Configure a model, project, and admin user to get started quickly.'));
+  console.log(c.dim('  You can always do this later with the `routerly` CLI.\n'));
+
+  const doWizard = await confirm('  Run the setup wizard now?', !YES);
+  if (doWizard) {
+    await setupWizard({ port, routerlyHome, APP_DIR, installCli });
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Done
+// ════════════════════════════════════════════════════════════════════════════
+console.log('\n' + '─'.repeat(60));
+console.log(c.green(c.bold('\n  Routerly installed successfully!\n')));
+
+if (installService) {
+  if (setupDaemon) {
+    console.log(`  The service will start automatically at boot.`);
+  } else {
+    console.log(c.bold('  To start the service manually:'));
+    if (PLATFORM === 'win32') {
+      console.log(`    node ${path.join(APP_DIR, 'packages', 'service', 'dist', 'index.js')}`);
+    } else {
+      console.log(`    source ~/.zshrc   ${c.dim('# or restart your terminal')}`);
+      console.log(`    node ${path.join(APP_DIR, 'packages', 'service', 'dist', 'index.js')}`);
+    }
+    console.log();
+  }
+  console.log(`  Service URL:   ${c.cyan(publicUrl)}`);
+  if (installDashboard) {
+    console.log(`  Dashboard:     ${c.cyan(publicUrl + '/dashboard/')}`);
+  }
+  console.log(`  Health check:  ${c.dim('curl ' + publicUrl + '/health')}`);
+}
+
+if (installCli) {
+  console.log();
+  console.log(`  CLI:           ${c.cyan('routerly --help')}  ${c.dim('(restart terminal to use)')}`);
+}
+
+console.log('\n' + c.dim('  Docs: https://github.com/routerly/routerly/tree/main/docs') + '\n');
+
+rl.close();
+process.exit(0);
+
+// ════════════════════════════════════════════════════════════════════════════
+// Helpers
+// ════════════════════════════════════════════════════════════════════════════
+
+/** Run a shell command, piping output to console. */
+async function runCmd(cmd, cwd) {
+  try {
+    const { stdout, stderr } = await exec(cmd, { cwd });
+    if (stdout) process.stdout.write(c.dim(stdout));
+    if (stderr) process.stderr.write(c.dim(stderr));
+  } catch (err) {
+    die(`Command failed: ${cmd}\n  ${err.message}`);
+  }
+}
+
+/** Recursively copy a directory (Node.js built-in, no deps). */
+async function copyDir(src, dest) {
+  await fsp.mkdir(dest, { recursive: true });
+  const entries = await fsp.readdir(src, { withFileTypes: true });
+  for (const entry of entries) {
+    // Skip heavy dirs that aren't needed in the install target
+    if (entry.isDirectory() && ['node_modules', '.git', '.github', '.vscode', 'spec'].includes(entry.name)) {
+      continue;
+    }
+    const srcPath  = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      await copyDir(srcPath, destPath);
+    } else {
+      await fsp.copyFile(srcPath, destPath);
+    }
+  }
+}
+
+// ── systemd (Linux) ───────────────────────────────────────────────────────────
+async function setupSystemdService({ scope, serviceEntry, nodeExe, routerlyHome, port }) {
+  const isSystem = scope === 'system';
+  const unitName = 'routerly.service';
+
+  const unitContent = [
+    '[Unit]',
+    'Description=Routerly LLM API Gateway',
+    'After=network.target',
+    '',
+    '[Service]',
+    'Type=simple',
+    `ExecStart=${nodeExe} ${serviceEntry}`,
+    `Environment=ROUTERLY_HOME=${routerlyHome}`,
+    `Environment=NODE_ENV=production`,
+    `WorkingDirectory=${path.dirname(serviceEntry)}`,
+    'Restart=on-failure',
+    'RestartSec=5s',
+    '',
+    '[Install]',
+    `WantedBy=${isSystem ? 'multi-user.target' : 'default.target'}`,
+  ].join('\n');
+
+  let unitPath;
+  if (isSystem) {
+    unitPath = path.join('/etc/systemd/system', unitName);
+    await fsp.writeFile(unitPath, unitContent);
+    info('Enabling and starting systemd service (may require sudo)...');
+    await runCmd(`systemctl daemon-reload`, '/');
+    await runCmd(`systemctl enable --now ${unitName}`, '/');
+  } else {
+    const systemdUserDir = path.join(HOME, '.config', 'systemd', 'user');
+    await fsp.mkdir(systemdUserDir, { recursive: true });
+    unitPath = path.join(systemdUserDir, unitName);
+    await fsp.writeFile(unitPath, unitContent);
+    info('Enabling and starting user systemd service...');
+    try {
+      await runCmd(`systemctl --user daemon-reload`, '/');
+      await runCmd(`systemctl --user enable --now ${unitName}`, '/');
+    } catch {
+      warn('Could not auto-start via systemctl. Run manually:');
+      console.log(`  systemctl --user enable --now ${unitName}`);
+    }
+  }
+  success(`systemd unit written to ${c.dim(unitPath)}`);
+}
+
+// ── launchd (macOS) ───────────────────────────────────────────────────────────
+async function setupLaunchdService({ scope, serviceEntry, nodeExe, routerlyHome, port }) {
+  const isSystem = scope === 'system';
+  const label    = 'ai.routerly.service';
+  const plistContent = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>${label}</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>${nodeExe}</string>
+    <string>${serviceEntry}</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>ROUTERLY_HOME</key>
+    <string>${routerlyHome}</string>
+    <key>NODE_ENV</key>
+    <string>production</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>${routerlyHome}/service.log</string>
+  <key>StandardErrorPath</key>
+  <string>${routerlyHome}/service-error.log</string>
+</dict>
+</plist>`;
+
+  let plistDir, plistPath;
+  if (isSystem) {
+    plistDir  = '/Library/LaunchDaemons';
+    plistPath = path.join(plistDir, `${label}.plist`);
+    await fsp.writeFile(plistPath, plistContent);
+    await fsp.chmod(plistPath, 0o644);
+    info('Loading launchd daemon (may require sudo)...');
+    try {
+      await runCmd(`launchctl load -w "${plistPath}"`, '/');
+    } catch {
+      warn('Could not load daemon automatically. Run: sudo launchctl load -w ' + plistPath);
+    }
+  } else {
+    plistDir  = path.join(HOME, 'Library', 'LaunchAgents');
+    plistPath = path.join(plistDir, `${label}.plist`);
+    await fsp.mkdir(plistDir, { recursive: true });
+    await fsp.writeFile(plistPath, plistContent);
+    info('Loading launchd agent...');
+    try {
+      await runCmd(`launchctl load -w "${plistPath}"`, '/');
+    } catch {
+      warn('Could not load agent automatically. Run: launchctl load -w ' + plistPath);
+    }
+  }
+  success(`launchd plist written to ${c.dim(plistPath)}`);
+}
+
+// ── Windows SCM ───────────────────────────────────────────────────────────────
+async function setupWindowsService({ serviceEntry, nodeExe, routerlyHome, port }) {
+  const svcName = 'routerly';
+  const binPath = `"${nodeExe}" "${serviceEntry}"`;
+  info('Registering Windows Service via sc.exe...');
+  try {
+    // Try to delete an existing service first (ignore error if not found)
+    await exec(`sc.exe delete ${svcName}`).catch(() => {});
+    await runCmd(
+      `sc.exe create ${svcName} binPath= "${binPath}" start= auto DisplayName= "Routerly LLM Gateway"`,
+      '/'
+    );
+    // Set environment variables via the registry
+    const regPath = `HKLM\\SYSTEM\\CurrentControlSet\\Services\\${svcName}`;
+    const envLine  = `ROUTERLY_HOME=${routerlyHome}\0NODE_ENV=production\0`;
+    await runCmd(`reg add "${regPath}" /v Environment /t REG_MULTI_SZ /d "${envLine}" /f`, '/');
+    await runCmd(`sc.exe start ${svcName}`, '/');
+    success(`Windows Service "${svcName}" created and started`);
+  } catch {
+    warn('Could not create Windows Service automatically (may need admin privileges).');
+    warn('To start manually, run in an elevated prompt:');
+    console.log(`  set ROUTERLY_HOME=${routerlyHome}`);
+    console.log(`  node "${serviceEntry}"`);
+  }
+}
+
+// ── Setup wizard ──────────────────────────────────────────────────────────────
+async function setupWizard({ port, routerlyHome, APP_DIR, installCli }) {
+  const baseUrl = `http://localhost:${port}`;
+
+  // Give the service a moment to boot if the daemon was just started
+  info('Waiting for service to be ready...');
+  const ready = await waitForService(baseUrl + '/health', 15, 1000);
+  if (!ready) {
+    warn('Service is not responding yet. The wizard requires the service to be running.');
+    warn('Start it manually with: routerly start');
+    warn('Then run: routerly model add --id <id> --provider openai --api-key <key>');
+    return;
+  }
+  success('Service is up');
+
+  // ── Add a model ──
+  console.log('\n' + c.bold('  Step 1: Add an LLM model') + '\n');
+  console.log('  Supported providers: openai, anthropic, gemini, ollama, custom\n');
+  const addModel = await confirm('  Add a model now?', true);
+  if (addModel) {
+    const modelId   = await ask('  Model ID', 'gpt-4o', { hint: 'e.g. gpt-4o, claude-3-5-sonnet-20241022' });
+    const provider  = await ask('  Provider', 'openai', { hint: 'openai | anthropic | gemini | ollama | custom' });
+    const needsKey  = provider !== 'ollama';
+    const apiKey    = needsKey
+      ? await ask(`  API key for ${provider}`, '', { hint: 'will be stored encrypted' })
+      : '';
+    const endpoint  = await ask('  Custom endpoint (leave blank for default)', '');
+
+    const cliArgs = [
+      `--id "${modelId}"`,
+      `--provider ${provider}`,
+      apiKey    ? `--api-key "${apiKey}"` : '',
+      endpoint  ? `--endpoint "${endpoint}"` : '',
+    ].filter(Boolean).join(' ');
+
+    try {
+      await runCliOrApi('model', 'add', cliArgs, { baseUrl, routerlyHome, APP_DIR, installCli });
+      success(`Model ${c.bold(modelId)} registered`);
+    } catch {
+      warn('Could not add model via CLI. Run manually: routerly model add ' + cliArgs);
+    }
+  }
+
+  // ── Create a project ──
+  console.log('\n' + c.bold('  Step 2: Create a project') + '\n');
+  const addProject = await confirm('  Create a project now?', true);
+  if (addProject) {
+    const projName = await ask('  Project name', 'My App');
+    const projSlug = await ask('  Project slug', projName.toLowerCase().replace(/\s+/g, '-'));
+
+    const cliArgs = `--name "${projName}" --slug "${projSlug}"`;
+    try {
+      await runCliOrApi('project', 'add', cliArgs, { baseUrl, routerlyHome, APP_DIR, installCli });
+      success(`Project ${c.bold(projName)} created`);
+    } catch {
+      warn('Could not create project via CLI. Run manually: routerly project add ' + cliArgs);
+    }
+  }
+
+  // ── Create admin user ──
+  console.log('\n' + c.bold('  Step 3: Create a dashboard admin user') + '\n');
+  const addUser = await confirm('  Create an admin user now?', true);
+  if (addUser) {
+    const email    = await ask('  Email', 'admin@localhost');
+    const password = await ask('  Password', '', { hint: 'min 8 characters' });
+    if (!password || password.length < 8) {
+      warn('Password too short. Skipping user creation — run: routerly user add --email ... --password ...');
+    } else {
+      const cliArgs = `--email "${email}" --password "${password}" --role admin`;
+      try {
+        await runCliOrApi('user', 'add', cliArgs, { baseUrl, routerlyHome, APP_DIR, installCli });
+        success(`Admin user ${c.bold(email)} created`);
+      } catch {
+        warn('Could not create user via CLI. Run manually: routerly user add ' + cliArgs);
+      }
+    }
+  }
+}
+
+/** Tries to run a CLI command, falling back to direct API call. */
+async function runCliOrApi(resource, action, args, { baseUrl, routerlyHome, APP_DIR, installCli }) {
+  if (installCli) {
+    const cliEntry = path.join(APP_DIR, 'packages', 'cli', 'dist', 'index.js');
+    await exec(
+      `ROUTERLY_HOME="${routerlyHome}" ROUTERLY_BASE_URL="${baseUrl}" node "${cliEntry}" ${resource} ${action} ${args}`,
+    );
+  } else {
+    throw new Error('CLI not installed');
+  }
+}
+
+/** Poll a URL until it responds 200 or timeout. */
+async function waitForService(url, maxAttempts, delayMs) {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      await new Promise((resolve, reject) => {
+        const parsed = new URL(url);
+        const req = http.get({
+          hostname: parsed.hostname,
+          port:     parseInt(parsed.port) || 3000,
+          path:     parsed.pathname || '/health',
+        }, res => {
+          if (res.statusCode === 200) resolve(true);
+          else reject(new Error(`Status ${res.statusCode}`));
+        });
+        req.on('error', reject);
+        req.end();
+      });
+      return true;
+    } catch {
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+  return false;
+}

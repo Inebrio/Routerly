@@ -1,82 +1,174 @@
 # Installation
 
-This guide walks you through installing Routerly and getting it ready to run.
+This guide walks you through installing Routerly. The recommended path is the one-line installer; a manual path is also documented for contributors and advanced setups.
 
-## Prerequisites
+---
+
+## Automated Install (recommended)
+
+The installer handles everything: Node.js check, download, build, encryption key generation, shell profile update, optional daemon setup, and an interactive setup wizard.
+
+**macOS / Linux:**
+```bash
+curl -fsSL https://github.com/routerly/routerly/releases/latest/download/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+powershell -c "irm https://github.com/routerly/routerly/releases/latest/download/install.ps1 | iex"
+```
+
+### What the installer does
+
+1. Verifies (or installs) Node.js 20+
+2. Downloads and extracts the latest release tarball from GitHub
+3. Prompts for component selection and config options
+4. Builds all selected packages
+5. Writes `~/.routerly/config/settings.json`
+6. Installs the `routerly` CLI wrapper in `~/.local/bin`
+7. Optionally configures an auto-start daemon (systemd / launchd / Windows Service)
+8. Optionally runs a setup wizard to add a model, create a project, and create an admin user
+
+---
+
+## Installer options
+
+All flags can be passed after `--` when piping through bash:
+
+```bash
+curl -fsSL .../install.sh | bash -s -- [flags]
+```
+
+Or run the script file directly after downloading:
+
+```bash
+bash install.sh [flags]
+```
+
+| Flag | Description | Default |
+|------|--------------|---------|
+| `--yes` | Non-interactive, accept all defaults | off |
+| `--scope=user\|system` | Install for current user or system-wide (system requires sudo) | `user` |
+| `--port=N` | Service port | `3000` |
+| `--public-url=URL` | Public URL for the service | `http://localhost:PORT` |
+| `--no-service` | Skip service installation | off |
+| `--no-cli` | Skip CLI installation | off |
+| `--no-dashboard` | Skip dashboard build | off |
+| `--no-daemon` | Skip auto-start daemon setup | off |
+
+### Non-interactive mode
+
+Useful for CI/CD pipelines and automated provisioning:
+
+```bash
+curl -fsSL .../install.sh | bash -s -- --yes
+```
+
+For full control, combine `--yes` with environment variables:
+
+| Variable | Values | Description |
+|----------|--------|-------------|
+| `ROUTERLY_SCOPE` | `user` / `system` | Installation scope |
+| `ROUTERLY_PORT` | number | Service port |
+| `ROUTERLY_PUBLIC_URL` | URL | Public URL |
+| `ROUTERLY_INSTALL_SERVICE` | `1` / `0` | Install the service |
+| `ROUTERLY_INSTALL_CLI` | `1` / `0` | Install the CLI |
+| `ROUTERLY_INSTALL_DASHBOARD` | `1` / `0` | Build and install the dashboard |
+| `ROUTERLY_DAEMON` | `1` / `0` | Configure auto-start daemon |
+
+```bash
+ROUTERLY_SCOPE=system \
+ROUTERLY_PORT=8080 \
+ROUTERLY_DAEMON=0 \
+bash install.sh --yes
+```
+
+### Installation directories
+
+| | User scope | System scope |
+|---|---|---|
+| App files | `~/.routerly/app/` | `/opt/routerly/` |
+| CLI binary | `~/.local/bin/routerly` | `/usr/local/bin/routerly` |
+| Config & data | `~/.routerly/` | `~/.routerly/` (per user) |
+
+### Auto-start daemon
+
+When daemon setup is selected, the installer configures the appropriate mechanism for your OS:
+
+| OS | Scope | Mechanism |
+|----|-------|-----------|
+| Linux | user | systemd user unit (`~/.config/systemd/user/routerly.service`) |
+| Linux | system | systemd system unit (`/etc/systemd/system/routerly.service`) |
+| macOS | user | launchd agent (`~/Library/LaunchAgents/ai.routerly.service.plist`) |
+| macOS | system | launchd daemon (`/Library/LaunchDaemons/ai.routerly.service.plist`) |
+| Windows | — | Windows Service via `sc.exe` |
+
+---
+
+## Upgrade
+
+Re-run the installer to upgrade. It detects an existing installation and asks for confirmation before proceeding. Existing configuration files are preserved; only the app files and built artifacts are replaced.
+
+```bash
+curl -fsSL https://github.com/routerly/routerly/releases/latest/download/install.sh | bash
+```
+
+---
+
+## Verify installation
+
+After installation (restart your terminal first to pick up the updated PATH):
+
+```bash
+routerly --version
+curl http://localhost:3000/health
+# {"status":"ok","version":"..."}
+```
+
+---
+
+## Manual install (for contributors / development)
+
+If you want to work on Routerly itself or prefer a hand-crafted setup:
+
+### Prerequisites
 
 | Requirement | Version | Notes |
 |-------------|---------|-------|
 | **Node.js** | ≥ 20 | Required for all packages |
 | **npm** | ≥ 10 | Comes with Node.js |
-| **LLM provider API keys** | - | At least one key (OpenAI, Anthropic, Gemini, etc.) unless using Ollama |
-
-To check your versions:
+| **LLM provider API keys** | — | At least one key unless using Ollama |
 
 ```bash
 node --version   # should print v20 or higher
 npm --version
 ```
 
----
-
-## Install Dependencies
-
-Clone the repository and install all workspace dependencies:
+### Clone and install
 
 ```bash
-git clone https://github.com/your-org/routerly.git
+git clone https://github.com/routerly/routerly.git
 cd routerly
 npm install
 ```
 
-This installs dependencies for all four packages (`shared`, `service`, `cli`, `dashboard`) via npm workspaces.
-
----
-
-## Generate a Secret Key
-
-Routerly encrypts all sensitive data (API keys, project tokens) at rest using AES-256.
-You must set a `ROUTERLY_SECRET_KEY` before doing anything else.
-
-```bash
-# Generate a random 256-bit key
-ROUTERLY_SECRET_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")
-export ROUTERLY_SECRET_KEY
-
-# Persist it in your shell profile
-echo "export ROUTERLY_SECRET_KEY=\"$ROUTERLY_SECRET_KEY\"" >> ~/.zshrc
-# or for bash:
-echo "export ROUTERLY_SECRET_KEY=\"$ROUTERLY_SECRET_KEY\"" >> ~/.bashrc
-```
-
-> **Important:** If this key is lost or changes, all stored API keys and tokens will become unreadable.
-> Store the key securely (e.g. in a password manager or secrets manager).
-
----
-
-## Verify Installation
-
-Start the service to confirm everything is working:
+### Start in development mode
 
 ```bash
 npm run dev
 ```
 
-You should see:
-
-```
-[INFO] Server listening at http://127.0.0.1:3000
-```
-
-Hit the health endpoint to confirm:
+This starts the service with `tsx` in watch mode. The service, CLI, and dashboard all run from source.
 
 ```bash
+# Health check
 curl http://localhost:3000/health
 # {"status":"ok","version":"0.0.1","timestamp":"..."}
 ```
 
 ---
 
-## Next Steps
+## Next steps
 
 → [Quick Start](quick-start.md): register a model, create a project, make your first API call
+→ [Configuration](configuration.md): ports, log levels, custom storage path
