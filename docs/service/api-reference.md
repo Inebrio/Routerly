@@ -240,7 +240,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 | `PUT` | `/api/models/:id` | `model:write` | Update a model |
 | `DELETE` | `/api/models/:id` | `model:write` | Remove a model |
 
-**GET /api/models — Response**
+**GET /api/models: Response**
 
 ```json
 [
@@ -255,7 +255,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 ]
 ```
 
-**POST /api/models — Request**
+**POST /api/models: Request**
 
 ```json
 {
@@ -293,7 +293,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 | `GET` | `/api/usage` | `report:read` | Query usage records (supports filters) |
 | `GET` | `/api/usage/summary` | `report:read` | Aggregated cost/token summary |
 
-**GET /api/usage — Query Parameters**
+**GET /api/usage: Query Parameters**
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -311,7 +311,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 |--------|------|-------------|
 | `GET` | `/api/traces/:traceId` | Retrieve all trace entries for a request |
 
-**GET /api/traces/:traceId — Response**
+**GET /api/traces/:traceId: Response**
 
 ```json
 [

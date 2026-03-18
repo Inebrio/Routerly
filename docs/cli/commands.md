@@ -180,7 +180,7 @@ routerly project add \
   --models gpt-4o,claude-3-5-sonnet-20241022,llama3
 ```
 
-The command prints the **project API token** (shown only once — save it).
+The command prints the **project API token** (shown only once, save it).
 
 ### project remove
 

@@ -111,12 +111,12 @@ All records are stored in:
 ~/.routerly/data/usage.json
 ```
 
-This is an append-only JSON array. It grows over time — for long-running deployments, consider
+This is an append-only JSON array. It grows over time, for long-running deployments, consider
 archiving or rotating it periodically.
 
 ---
 
 ## See Also
 
-- [CLI: report commands](../cli/commands.md#report) — generate cost reports from the terminal
-- [Budgets & Limits](../service/budgets-and-limits.md) — enforce spend caps based on usage
+- [CLI: report commands](../cli/commands.md#report): generate cost reports from the terminal
+- [Budgets & Limits](../service/budgets-and-limits.md): enforce spend caps based on usage

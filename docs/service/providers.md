@@ -14,9 +14,9 @@ provider's native API.
 | Anthropic | `anthropic` | `https://api.anthropic.com` | API key | Claude 3.5 Sonnet, Claude 3 Opus, etc. |
 | Google Gemini | `gemini` | `https://generativelanguage.googleapis.com/v1beta/openai/` | API key | Gemini 1.5 Pro, Gemini 1.5 Flash, etc. |
 | Ollama | `ollama` | `http://localhost:11434/v1` | None | Local models: Llama 3, Mistral, Phi-3, etc. |
-| Mistral | `mistral` | — | API key | Mistral Large, Mistral Small, etc. |
-| Cohere | `cohere` | — | API key | Command R+, Command R, etc. |
-| xAI | `xai` | — | API key | Grok models |
+| Mistral | `mistral` | - | API key | Mistral Large, Mistral Small, etc. |
+| Cohere | `cohere` | - | API key | Command R+, Command R, etc. |
+| xAI | `xai` | - | API key | Grok models |
 | Custom | `custom` | User-specified | Optional API key | Any OpenAI-compatible endpoint |
 
 ---
@@ -26,7 +26,7 @@ provider's native API.
 Models are registered with the CLI `model add` command or via the Dashboard > Models page.
 
 ```bash
-# OpenAI — pricing preset applied automatically for known model IDs
+# OpenAI, pricing preset applied automatically for known model IDs
 routerly model add --id gpt-4o --provider openai --api-key sk-...
 
 # Anthropic

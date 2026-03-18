@@ -22,7 +22,7 @@ If it fails (timeout, error), Routerly falls back to the next candidate automati
 
 ## The Routing Model
 
-Every project has a designated **routing model** — an LLM that is invoked first to analyze the
+Every project has a designated **routing model**, an LLM that is invoked first to analyze the
 incoming request and assign initial weights to each candidate model. This is typically a small,
 fast, inexpensive model (e.g. `gpt-4o-mini`).
 
@@ -141,6 +141,6 @@ If the selected model fails (network error, timeout, provider error):
 
 ## See Also
 
-- [Routing Policies Reference](../reference/../service/../cli/../service/routing.md) — detailed per-policy documentation
-- [Budgets & Limits](budgets-and-limits.md) — how budget pre-filtering works
-- [Projects](../dashboard/projects.md) — how to configure policies per-project in the dashboard
+- [Routing Policies Reference](../reference/../service/../cli/../service/routing.md): detailed per-policy documentation
+- [Budgets & Limits](budgets-and-limits.md): how budget pre-filtering works
+- [Projects](../dashboard/projects.md): how to configure policies per-project in the dashboard

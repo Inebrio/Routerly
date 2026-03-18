@@ -41,10 +41,10 @@ The service restarts automatically on TypeScript file changes.
 To run the dashboard in watch mode simultaneously:
 
 ```bash
-# Terminal 1 — service
+# Terminal 1, service
 npm run dev
 
-# Terminal 2 — dashboard
+# Terminal 2, dashboard
 npm run dev --workspace=packages/dashboard
 ```
 
@@ -101,7 +101,7 @@ Each package extends it with its own `tsconfig.json`.
 
 Key settings:
 - `"moduleResolution": "bundler"` / `"node16"` depending on package
-- `"strict": true` — all strict checks enabled
+- `"strict": true`, all strict checks enabled
 - ESM output (`"module": "ES2022"` or `"NodeNext"`)
 
 ---
@@ -193,8 +193,8 @@ Test files follow the `*.test.ts` naming convention.
 ## Linting & Formatting
 
 ```bash
-npm run lint      # ESLint — TypeScript-aware rules
-npm run format    # Prettier — auto-format all .ts files
+npm run lint      # ESLint, TypeScript-aware rules
+npm run format    # Prettier, auto-format all .ts files
 ```
 
 Both run across all packages. CI will reject PRs that fail lint or have formatting issues.

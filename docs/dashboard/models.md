@@ -60,10 +60,10 @@ If the Model ID matches a known preset, pricing is filled in automatically:
 
 Check the relevant boxes to tell the routing engine what this model supports:
 
-- **Vision** — accepts image inputs
-- **Function calling** — supports tool/function calls
-- **Thinking** — extended reasoning mode (e.g. claude-3-7-sonnet)
-- **JSON mode** — reliable JSON output (`response_format: json_object`)
+- **Vision**, accepts image inputs
+- **Function calling**, supports tool/function calls
+- **Thinking**, extended reasoning mode (e.g. claude-3-7-sonnet)
+- **JSON mode**, reliable JSON output (`response_format: json_object`)
 
 ### Global Limits
 
@@ -95,5 +95,5 @@ Click the **Delete** (trash) icon. A confirmation dialog is shown.
 
 ## See Also
 
-- [CLI: model commands](../cli/commands.md#model) — manage models from the terminal
-- [Providers](../service/providers.md) — supported providers and default endpoints
+- [CLI: model commands](../cli/commands.md#model): manage models from the terminal
+- [Providers](../service/providers.md): supported providers and default endpoints

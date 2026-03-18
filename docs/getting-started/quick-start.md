@@ -10,10 +10,10 @@ This guide gets you from zero to your first routed AI response in under 5 minute
 
 ---
 
-## Step 1 — Register a Model
+## Step 1: Register a Model
 
 Use the CLI to register at least one LLM model. Routerly includes built-in pricing presets for
-common models — pricing is applied automatically when the model ID matches.
+common models, pricing is applied automatically when the model ID matches.
 
 **OpenAI (with auto-pricing):**
 ```bash
@@ -47,7 +47,7 @@ node --import tsx/esm packages/cli/src/index.ts model list
 
 ---
 
-## Step 2 — Create a Project
+## Step 2: Create a Project
 
 A project is an isolated workspace with its own API token, set of models, and routing configuration.
 
@@ -59,12 +59,12 @@ node --import tsx/esm packages/cli/src/index.ts project add \
   --models gpt-4o,llama3
 ```
 
-The command prints your **project token** — this is shown only once. Save it:
+The command prints your **project token**, this is shown only once. Save it:
 
 ```
 ✓ Project "My App" created.
 
-Project token (save this — shown only once):
+Project token (save this, shown only once):
 rly_abc123def456...
 
 Endpoint prefix: /projects/my-app/v1/
@@ -75,7 +75,7 @@ Endpoint prefix: /projects/my-app/v1/
 
 ---
 
-## Step 3 — Start the Service
+## Step 3: Start the Service
 
 ```bash
 npm run dev
@@ -87,7 +87,7 @@ The service listens on `http://localhost:3000` by default.
 
 ---
 
-## Step 4 — Make Your First Request
+## Step 4: Make Your First Request
 
 Routerly is a **drop-in replacement** for the OpenAI API. Point your existing client at Routerly
 and use your project token as the API key.
@@ -147,14 +147,14 @@ When your request arrives:
 2. The **routing model** (`gpt-4o-mini` in this example) analyzes the request and scores candidate models
 3. Budget and limit checks are applied to filter out over-budget models
 4. The highest-scoring candidate within budget receives your request
-5. The response is returned to your client — usage is recorded automatically
+5. The response is returned to your client, usage is recorded automatically
 6. If the selected model fails, Routerly falls back to the next candidate
 
 ---
 
 ## Next Steps
 
-- [Configuration](configuration.md) — tune ports, log levels, storage paths
-- [Budgets & Limits](../service/budgets-and-limits.md) — add per-project spend caps
-- [Routing Engine](../service/routing.md) — understand and customize routing policies
-- [Dashboard](../dashboard/README.md) — manage everything via browser UI
+- [Configuration](configuration.md): tune ports, log levels, storage paths
+- [Budgets & Limits](../service/budgets-and-limits.md): add per-project spend caps
+- [Routing Engine](../service/routing.md): understand and customize routing policies
+- [Dashboard](../dashboard/README.md): manage everything via browser UI

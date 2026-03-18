@@ -8,7 +8,7 @@ This guide walks you through installing Routerly and getting it ready to run.
 |-------------|---------|-------|
 | **Node.js** | ≥ 20 | Required for all packages |
 | **npm** | ≥ 10 | Comes with Node.js |
-| **LLM provider API keys** | — | At least one key (OpenAI, Anthropic, Gemini, etc.) unless using Ollama |
+| **LLM provider API keys** | - | At least one key (OpenAI, Anthropic, Gemini, etc.) unless using Ollama |
 
 To check your versions:
 
@@ -79,4 +79,4 @@ curl http://localhost:3000/health
 
 ## Next Steps
 
-→ [Quick Start](quick-start.md) — register a model, create a project, make your first API call
+→ [Quick Start](quick-start.md): register a model, create a project, make your first API call

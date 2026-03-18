@@ -39,7 +39,7 @@ How a limit at one level interacts with limits at the parent level:
 | Mode | Behavior |
 |------|---------|
 | `replace` | (default) This level's limits completely replace the parent's |
-| `extend` | This level's limits are stacked on top of the parent's — **all** must pass |
+| `extend` | This level's limits are stacked on top of the parent's, **all** must pass |
 | `disable` | Explicitly disables all limits at this level, ignoring the parent entirely |
 
 ---
@@ -152,6 +152,6 @@ A complete `Limit` object:
 
 ## See Also
 
-- [CLI: model add](../cli/commands.md#model-add) — set global limits via CLI
-- [CLI: project add-model](../cli/commands.md#project-add-model) — set project limits via CLI
-- [Dashboard: Projects](../dashboard/projects.md) — manage limits via UI
+- [CLI: model add](../cli/commands.md#model-add): set global limits via CLI
+- [CLI: project add-model](../cli/commands.md#project-add-model): set project limits via CLI
+- [Dashboard: Projects](../dashboard/projects.md): manage limits via UI

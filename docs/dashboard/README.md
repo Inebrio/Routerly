@@ -1,7 +1,7 @@
 # Dashboard
 
 The Routerly dashboard is a React web application that provides a visual interface for managing
-all aspects of your Routerly installation — models, projects, users, roles, and usage analytics.
+all aspects of your Routerly installation, models, projects, users, roles, and usage analytics.
 
 ---
 
@@ -77,7 +77,7 @@ cd packages/dashboard && npm run build
 
 ## Dashboard Documentation
 
-- [Models](models.md) — register, edit, and delete LLM models
-- [Projects](projects.md) — create projects, configure routing and budgets
-- [Users & Roles](users-and-roles.md) — manage access control
-- [Usage Analytics](usage-analytics.md) — explore cost and usage data
+- [Models](models.md): register, edit, and delete LLM models
+- [Projects](projects.md): create projects, configure routing and budgets
+- [Users & Roles](users-and-roles.md): manage access control
+- [Usage Analytics](usage-analytics.md): explore cost and usage data

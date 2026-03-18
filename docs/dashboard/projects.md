@@ -29,7 +29,7 @@ Click **New Project** to open the creation form.
 | **Routing model** | The LLM used to analyze requests and score candidate models. A small, fast model (e.g. `gpt-4o-mini`) is recommended |
 | **Models** | Initial set of models to associate with this project |
 
-After creation, the **project API token** is displayed once. Copy it — it cannot be retrieved later.
+After creation, the **project API token** is displayed once. Copy it, it cannot be retrieved later.
 
 ---
 
@@ -45,7 +45,7 @@ Displays the project's basic information (name, slug, description, token preview
 
 Configure the routing policies applied to requests in this project.
 
-Policies are shown in an ordered list — the order determines their weight (first = highest weight). You can:
+Policies are shown in an ordered list, the order determines their weight (first = highest weight). You can:
 - Enable or disable individual policies with a toggle
 - Drag to reorder policies (changes their scoring weight)
 
@@ -70,9 +70,9 @@ See [Routing Engine](../service/routing.md) for detailed policy descriptions.
 Manage API tokens for this project. Multiple tokens can be created for finer-grained access
 control or to meter individual consumers.
 
-- **Create token** — generates a new unique API token
-- **Edit token** — add per-model limits for a specific token
-- **Delete token** — immediately revokes access for that token
+- **Create token**, generates a new unique API token
+- **Edit token**, add per-model limits for a specific token
+- **Delete token**, immediately revokes access for that token
 
 Each token can have its own `limits` per model (overriding project/global limits):
 
@@ -103,7 +103,7 @@ Displays recent request traces for this project. Each row shows:
 - Latency
 - Routing trace (expandable)
 
-Click on any row to expand the full routing trace — showing which policies ran, what scores were assigned, and why a model was chosen.
+Click on any row to expand the full routing trace, showing which policies ran, what scores were assigned, and why a model was chosen.
 
 ---
 
@@ -118,6 +118,6 @@ Open the project and click **Delete Project** in the General tab. This:
 
 ## See Also
 
-- [CLI: project commands](../cli/commands.md#project) — create and manage projects from the terminal
-- [Budgets & Limits](../service/budgets-and-limits.md) — full limit configuration reference
-- [Routing Engine](../service/routing.md) — how routing policies are scored
+- [CLI: project commands](../cli/commands.md#project): create and manage projects from the terminal
+- [Budgets & Limits](../service/budgets-and-limits.md): full limit configuration reference
+- [Routing Engine](../service/routing.md): how routing policies are scored

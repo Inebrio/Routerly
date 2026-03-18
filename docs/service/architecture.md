@@ -140,12 +140,12 @@ Routerly does not use a database. All state is stored in JSON files:
 ~/.routerly/             (overridable with ROUTERLY_HOME)
 ├── config/
 │   ├── settings.json    # port, logLevel, dashboardEnabled
-│   ├── models.json      # ModelConfig[] — API keys encrypted with AES-256
-│   ├── projects.json    # ProjectConfig[] — tokens encrypted with AES-256
-│   ├── users.json       # UserConfig[] — passwords stored as SHA-256 hashes
-│   └── roles.json       # RoleConfig[] — custom RBAC roles
+│   ├── models.json      # ModelConfig[], API keys encrypted with AES-256
+│   ├── projects.json    # ProjectConfig[], tokens encrypted with AES-256
+│   ├── users.json       # UserConfig[], passwords stored as SHA-256 hashes
+│   └── roles.json       # RoleConfig[], custom RBAC roles
 └── data/
-    └── usage.json       # UsageRecord[] — full call history
+    └── usage.json       # UsageRecord[], full call history
 ```
 
 Sensitive values (API keys, project tokens) are encrypted at rest using AES-256-CBC with the key from `ROUTERLY_SECRET_KEY`.

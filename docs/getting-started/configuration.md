@@ -8,9 +8,9 @@ Routerly is configured through environment variables and JSON files stored under
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `ROUTERLY_SECRET_KEY` | **Yes** | — | Base64-encoded 256-bit AES key used to encrypt API keys and tokens at rest. Generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` |
+| `ROUTERLY_SECRET_KEY` | **Yes** | - | Base64-encoded 256-bit AES key used to encrypt API keys and tokens at rest. Generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` |
 | `ROUTERLY_HOME` | No | `~/.routerly` | Override the storage directory for all config and data files |
-| `NODE_ENV` | No | — | Set to `production` to disable pino-pretty log formatting |
+| `NODE_ENV` | No | - | Set to `production` to disable pino-pretty log formatting |
 
 ---
 
@@ -30,7 +30,7 @@ All configuration is stored in JSON files under `$ROUTERLY_HOME/config/`:
     └── usage.json       # per-call usage records (tokens, cost, latency)
 ```
 
-These files are managed automatically by the service and CLI — you do not need to edit them manually.
+These files are managed automatically by the service and CLI, you do not need to edit them manually.
 
 ---
 

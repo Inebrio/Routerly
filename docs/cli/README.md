@@ -84,4 +84,4 @@ routerly start
 
 ## See Also
 
-- [Commands Reference](commands.md) — full documentation for every command and option
+- [Commands Reference](commands.md): full documentation for every command and option

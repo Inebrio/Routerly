@@ -6,12 +6,12 @@ The **service** is the core of Routerly. It is a Fastify-based HTTP server that 
 
 ## What It Does
 
-- **Drop-in API compatibility** — implements the OpenAI Chat Completions API and the Anthropic Messages API, so existing clients work without code changes
-- **Intelligent routing** — uses a configurable routing engine with 9 pluggable policies to select the best model for each request
-- **Cost tracking** — records every call (tokens, cost, latency) to `~/.routerly/data/usage.json`
-- **Budget enforcement** — blocks requests that would exceed configured spend limits before they hit providers
-- **Project isolation** — each project has its own API token, model list, and routing configuration
-- **Optional dashboard** — serves the React SPA at `/dashboard/` when enabled
+- **Drop-in API compatibility**, implements the OpenAI Chat Completions API and the Anthropic Messages API, so existing clients work without code changes
+- **Intelligent routing**, uses a configurable routing engine with 9 pluggable policies to select the best model for each request
+- **Cost tracking**, records every call (tokens, cost, latency) to `~/.routerly/data/usage.json`
+- **Budget enforcement**, blocks requests that would exceed configured spend limits before they hit providers
+- **Project isolation**, each project has its own API token, model list, and routing configuration
+- **Optional dashboard**, serves the React SPA at `/dashboard/` when enabled
 
 ---
 
@@ -75,8 +75,8 @@ The service uses two separate authentication systems:
 
 ## Documentation
 
-- [Architecture](architecture.md) — how the packages fit together, request flow
-- [Routing Engine](routing.md) — policies, scoring, trace system
-- [Providers](providers.md) — supported providers and their configuration
-- [Budgets & Limits](budgets-and-limits.md) — spend control and quota enforcement
-- [API Reference](api-reference.md) — full HTTP endpoint reference with examples
+- [Architecture](architecture.md): how the packages fit together, request flow
+- [Routing Engine](routing.md): policies, scoring, trace system
+- [Providers](providers.md): supported providers and their configuration
+- [Budgets & Limits](budgets-and-limits.md): spend control and quota enforcement
+- [API Reference](api-reference.md): full HTTP endpoint reference with examples

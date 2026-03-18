@@ -106,6 +106,6 @@ for a specific project they own.
 
 ## See Also
 
-- [CLI: user commands](../cli/commands.md#user) — manage users from the terminal
-- [CLI: role commands](../cli/commands.md#role) — manage roles from the terminal
-- [Projects: Users tab](projects.md#users) — managing project membership
+- [CLI: user commands](../cli/commands.md#user): manage users from the terminal
+- [CLI: role commands](../cli/commands.md#role): manage roles from the terminal
+- [Projects: Users tab](projects.md#users): managing project membership
