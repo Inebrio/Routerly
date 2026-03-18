@@ -2,10 +2,10 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import type { ProjectConfig, BudgetThresholds } from '@localrouter/shared';
+import type { ProjectConfig, BudgetThresholds } from '@routerly/shared';
 
 export function makeProjectCommand(): Command {
-  const cmd = new Command('project').description('Manage LocalRouter projects');
+  const cmd = new Command('project').description('Manage Routerly projects');
 
   // ── project list ──
   cmd.command('list')
@@ -14,7 +14,7 @@ export function makeProjectCommand(): Command {
       try {
         const projects = await api<ProjectConfig[]>('GET', '/api/projects');
         if (projects.length === 0) {
-          console.log(chalk.yellow('No projects yet. Use `localrouter project add` to create one.'));
+          console.log(chalk.yellow('No projects yet. Use `routerly project add` to create one.'));
           return;
         }
         const table = new Table({

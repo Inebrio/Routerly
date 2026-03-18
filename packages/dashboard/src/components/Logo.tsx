@@ -6,7 +6,7 @@ export function Logo({ size = 32, className }: { size?: number; className?: stri
       viewBox="435 166 652 652"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      aria-label="LocalRouter"
+      aria-label="Routerly"
     >
       <defs>
         <linearGradient id="lr-logo-grad" x1="0%" y1="100%" x2="100%" y2="0%">

@@ -1,4 +1,4 @@
-import type { ModelConfig, ProjectConfig, RoutingResponse } from '@localrouter/shared';
+import type { ModelConfig, ProjectConfig, RoutingResponse } from '@routerly/shared';
 
 /**
  * Selects the best available model from a routing response,

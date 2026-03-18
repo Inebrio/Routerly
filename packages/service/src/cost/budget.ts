@@ -1,4 +1,4 @@
-import type { Limit, LimitPeriod, LimitsMode, RollingUnit, ModelConfig, ProjectConfig, ProjectToken, UsageRecord } from '@localrouter/shared';
+import type { Limit, LimitPeriod, LimitsMode, RollingUnit, ModelConfig, ProjectConfig, ProjectToken, UsageRecord } from '@routerly/shared';
 import { readConfig } from '../config/loader.js';
 
 // ─── Window helpers ────────────────────────────────────────────────────────────

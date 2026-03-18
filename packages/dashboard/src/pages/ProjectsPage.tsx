@@ -32,7 +32,7 @@ export function ProjectsPage() {
     <>
       <div className="page-header">
         <h1>Projects</h1>
-        <p>Client applications that access LocalRouter</p>
+        <p>Client applications that access Routerly</p>
       </div>
       {err && <div className="form-error" style={{ margin: '0 20px' }}>{err}</div>}
       <div className="page-body">

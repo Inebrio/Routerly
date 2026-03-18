@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { randomUUID } from 'node:crypto';
-import type { ChatCompletionRequest, ModelObject } from '@localrouter/shared';
+import type { ChatCompletionRequest, ModelObject } from '@routerly/shared';
 import { routeRequest } from '../routing/router.js';
 import { readConfig } from '../config/loader.js';
 import { setTrace, appendTrace } from '../routing/traceStore.js';
@@ -65,7 +65,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       reply.raw.setHeader('Content-Type', 'text/event-stream');
       reply.raw.setHeader('Cache-Control', 'no-cache');
       reply.raw.setHeader('Connection', 'keep-alive');
-      reply.raw.setHeader('x-localrouter-trace-id', traceId);
+      reply.raw.setHeader('x-routerly-trace-id', traceId);
       reply.raw.flushHeaders();
 
       const emit = (entry: TraceEntry) => {
@@ -171,7 +171,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
       try {
         const response = await llmChat(body, model, ctx);
-        reply.header('x-localrouter-trace-id', traceId);
+        reply.header('x-routerly-trace-id', traceId);
         return reply.send(response);
       } catch (err: unknown) {
         if (!(err instanceof BudgetExceededError)) {

@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile, chmod } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import lockfile from 'proper-lockfile';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Settings, UsageRecord } from '@localrouter/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Settings, UsageRecord } from '@routerly/shared';
 import { CONFIG_PATHS } from './paths.js';
 
 // ─── Default configs ──────────────────────────────────────────────────────────

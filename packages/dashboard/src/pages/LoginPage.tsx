@@ -5,7 +5,7 @@ import { checkSetupStatus } from '../api';
 import { Logo } from '../components/Logo';
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,6 +14,7 @@ export function LoginPage() {
   const [checkingSetup, setCheckingSetup] = useState(true);
 
   useEffect(() => {
+    if (user) { navigate('/dashboard/overview', { replace: true }); return; }
     checkSetupStatus()
       .then(({ needsSetup }) => {
         if (needsSetup) navigate('/dashboard/setup', { replace: true });
@@ -44,8 +45,8 @@ export function LoginPage() {
       <div className="login-card">
         <div className="login-logo">
           <Logo size={52} />
-          <h1>LocalRouter</h1>
-          <p>Self-hosted LLM API Gateway</p>
+          <h1>Routerly</h1>
+          <p>Smart routing for all your AI models</p>
         </div>
         <form onSubmit={handleSubmit}>
           {error && <div className="form-error">{error}</div>}

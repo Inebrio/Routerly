@@ -4,7 +4,7 @@ import type {
   ChatCompletionResponse,
   ModelConfig,
   StreamChunk,
-} from '@localrouter/shared';
+} from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
 
 export class OpenAIAdapter implements ProviderAdapter {

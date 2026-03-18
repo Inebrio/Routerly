@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="docs/logo.svg" width="110" alt="LocalRouter" />
-  <h1>LocalRouter</h1>
-  <p><strong>Self-hosted API gateway for LLMs.</strong> Drop-in replacement for the OpenAI and Anthropic APIs with intelligent routing, cost tracking, budget enforcement, and multi-provider support.</p>
+  <img src="docs/logo.svg" width="110" alt="Routerly" />
+  <h1>Routerly</h1>
+  <p><strong>Smart routing for all your AI models.</strong> Drop-in replacement for the OpenAI and Anthropic APIs with intelligent routing, cost tracking, budget enforcement, and multi-provider support.</p>
 </div>
 
 ## Quick Start
@@ -17,17 +17,17 @@ All API keys and tokens are encrypted at rest. Generate a secret before doing an
 
 ```bash
 # Generate and set the key
-LOCALROUTER_SECRET_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")
-export LOCALROUTER_SECRET_KEY
+ROUTERLY_SECRET_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")
+export ROUTERLY_SECRET_KEY
 
 # Save to your shell profile for persistence
-echo "export LOCALROUTER_SECRET_KEY=\"$LOCALROUTER_SECRET_KEY\"" >> ~/.zshrc
+echo "export ROUTERLY_SECRET_KEY=\"$ROUTERLY_SECRET_KEY\"" >> ~/.zshrc
 ```
 
 ### 3. Install CLI deps and register your first model
 
 ```bash
-cd /Users/carlosatta/Documents/lavoro/code/personal/localrouter
+cd /Users/carlosatta/Documents/lavoro/code/personal/routerly
 npm install
 
 # Register an OpenAI model (pricing preset applied automatically)
@@ -83,30 +83,30 @@ response = client.chat.completions.create(
 ## CLI Reference
 
 ```
-localrouter model list                            # list registered models
-localrouter model add --id gpt-4o --provider openai --api-key sk-...
-localrouter model remove gpt-4o
+routerly model list                            # list registered models
+routerly model add --id gpt-4o --provider openai --api-key sk-...
+routerly model remove gpt-4o
 
-localrouter project list
-localrouter project add --name "X" --slug x --routing-model gpt-4o
-localrouter project add-model --project x --model llama3 --monthly-budget 5.00
-localrouter project remove <slug>
+routerly project list
+routerly project add --name "X" --slug x --routing-model gpt-4o
+routerly project add-model --project x --model llama3 --monthly-budget 5.00
+routerly project remove <slug>
 
-localrouter user list
-localrouter user add --email admin@example.com --password secret
-localrouter user remove admin@example.com
+routerly user list
+routerly user add --email admin@example.com --password secret
+routerly user remove admin@example.com
 
-localrouter report usage --period monthly
-localrouter report calls --limit 50 --project my-app
+routerly report usage --period monthly
+routerly report calls --limit 50 --project my-app
 
-localrouter service status
-localrouter service configure --port 3000 --log-level debug
+routerly service status
+routerly service configure --port 3000 --log-level debug
 ```
 
 ## Architecture
 
 ```
-localrouter/
+routerly/
 ├── packages/
 │   ├── shared/       # TypeScript types + AES-256 crypto
 │   ├── service/      # Fastify proxy (OpenAI + Anthropic API)
@@ -122,16 +122,16 @@ localrouter/
 4. Routing model returns a weighted list of candidate models
 5. Service selects the first candidate within budget
 6. Request is forwarded to the selected provider
-7. Response returned to client; usage recorded to `~/.localrouter/data/usage.json`
+7. Response returned to client; usage recorded to `~/.routerly/data/usage.json`
 8. If a model errors → fallback to next candidate; all fail → HTTP 503
 
 ## Config Location
 
-All config is stored in `~/.localrouter/` by default.
-Override with `LOCALROUTER_HOME=/custom/path`.
+All config is stored in `~/.routerly/` by default.
+Override with `ROUTERLY_HOME=/custom/path`.
 
 ```
-~/.localrouter/
+~/.routerly/
   config/
     settings.json    # port, host, log level, dashboard toggle
     models.json      # providers + encrypted API keys + pricing

@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import type { UserConfig } from '@localrouter/shared';
+import type { UserConfig } from '@routerly/shared';
 
 export function makeUserCommand(): Command {
   const cmd = new Command('user').description('Manage dashboard users');
@@ -14,7 +14,7 @@ export function makeUserCommand(): Command {
       try {
         const users = await api<UserConfig[]>('GET', '/api/users');
         if (users.length === 0) {
-          console.log(chalk.yellow('No users yet. Use `localrouter user add` to create one.'));
+          console.log(chalk.yellow('No users yet. Use `routerly user add` to create one.'));
           return;
         }
         const table = new Table({

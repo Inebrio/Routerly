@@ -1,6 +1,6 @@
 import type { PolicyFn } from './types.js';
 import { readConfig } from '../../config/loader.js';
-import type { UsageRecord } from '@localrouter/shared';
+import type { UsageRecord } from '@routerly/shared';
 
 /**
  * Policy: performance

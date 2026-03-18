@@ -4,15 +4,15 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 
 // ─── CLI config lives in the user's home dir, independent of the service ─────
 // Multiple users on the same machine each have their own config.
-// The service config lives elsewhere (e.g. /etc/localrouter or ~/.localrouter).
+// The service config lives elsewhere (e.g. /etc/routerly or ~/.routerly).
 
-const CLI_DIR = join(homedir(), '.localrouter', 'cli');
+const CLI_DIR = join(homedir(), '.routerly', 'cli');
 const CLI_CONFIG_PATH = join(CLI_DIR, 'config.json');
 
 export interface AccountEntry {
   /** Friendly alias chosen at login, e.g. "home", "work" */
   alias: string;
-  /** Base URL of the LocalRouter service, e.g. http://localhost:3000 */
+  /** Base URL of the Routerly service, e.g. http://localhost:3000 */
   serverUrl: string;
   /** Email used to log in */
   email: string;
@@ -104,11 +104,11 @@ export async function switchAccount(alias: string): Promise<boolean> {
 export async function requireAccount(): Promise<AccountEntry> {
   const account = await getCurrentAccount();
   if (!account) {
-    console.error('Not logged in. Run: localrouter auth login');
+    console.error('Not logged in. Run: routerly auth login');
     process.exit(1);
   }
   if (account.expiresAt < Date.now()) {
-    console.error(`Session for "${account.alias}" has expired. Run: localrouter auth login`);
+    console.error(`Session for "${account.alias}" has expired. Run: routerly auth login`);
     process.exit(1);
   }
   return account;

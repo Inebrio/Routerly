@@ -1,5 +1,5 @@
 {
-  "name": "@localrouter/dashboard",
+  "name": "@routerly/dashboard",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@localrouter/shared": "*",
+    "@routerly/shared": "*",
     "lucide-react": "^0.378.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

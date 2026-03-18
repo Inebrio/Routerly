@@ -25,7 +25,7 @@ export async function buildServer() {
   });
 
   // ─── Plugins ─────────────────────────────────────────────────────────────────
-  await fastify.register(cors, { origin: true, exposedHeaders: ['x-localrouter-trace-id'] });
+  await fastify.register(cors, { origin: true, exposedHeaders: ['x-routerly-trace-id'] });
 
   // ─── Dashboard static files (served before auth plugin) ───────────────────
   if (settings.dashboardEnabled) {

@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { fastifyPlugin as fp } from 'fastify-plugin';
-import type { ProjectConfig, ProjectToken } from '@localrouter/shared';
+import type { ProjectConfig, ProjectToken } from '@routerly/shared';
 import { readConfig } from '../config/loader.js';
 
 // Augment FastifyRequest to carry the resolved project and token

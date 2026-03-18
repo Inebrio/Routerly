@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Plus, X, ChevronDown, EyeOff, Eye, ArrowLeft } from 'lucide-react';
 import { getModels, createModel, updateModel, type Model, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit } from '../api';
-import { providersConf } from '@localrouter/shared';
+import { providersConf } from '@routerly/shared';
 
 type Provider = keyof typeof providersConf;
 type ProviderModel = {

@@ -1,5 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="435 166 652 652">
-  <g transform="translate(0,1024) scale(0.1,-0.1)" fill="#1e293b" stroke="none">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#5a90f8"/>
+      <stop offset="100%" stop-color="#a78bfa"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(0,1024) scale(0.1,-0.1)" fill="url(#g)" stroke="none">
     <path d="M7429 8270 c-548 -36 -1090 -230 -1554 -555 -500 -351 -892 -855
 -1092 -1405 -312 -860 -198 -1804 312 -2575 402 -606 1065 -1081 1760 -1260
 307 -79 608 -111 935 -102 485 15 882 113 1295 320 895 448 1498 1264 1650

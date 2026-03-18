@@ -201,7 +201,7 @@ export function ProjectGeneralTab() {
               <div className="form-group">
                 <label className="form-label">Global Timeout (ms)</label>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
-                  Maximum time an API request can take before LocalRouter aborts it.
+                  Maximum time an API request can take before Routerly aborts it.
                 </p>
                 <input
                   className="form-input"

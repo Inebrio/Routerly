@@ -1,4 +1,4 @@
-import type { ModelConfig, ProjectConfig } from '@localrouter/shared';
+import type { ModelConfig, ProjectConfig } from '@routerly/shared';
 import { readConfig } from '../../config/loader.js';
 import { getProviderAdapter } from '../../providers/index.js';
 import { llmChat, BudgetExceededError } from '../../llm/executor.js';

@@ -360,7 +360,7 @@ export function SettingsNotificationsTab() {
         <div className="form-group" style={{ margin: 0 }}>
           <label className="form-label">From Name <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
           <input className="form-input" value={c.fromName ?? ''}
-            onChange={e => uf(ch.id, 'fromName', e.target.value || undefined)} placeholder="LocalRouter" />
+            onChange={e => uf(ch.id, 'fromName', e.target.value || undefined)} placeholder="Routerly" />
         </div>
       </div>
     );
@@ -670,7 +670,7 @@ export function SettingsPage() {
     <>
       <div className="page-header" style={{ paddingBottom: 0 }}>
         <h1>Settings</h1>
-        <p>Configuration for LocalRouter</p>
+        <p>Configuration for Routerly</p>
 
         <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--border)', marginTop: 16 }}>
           {TABS.map(t => (

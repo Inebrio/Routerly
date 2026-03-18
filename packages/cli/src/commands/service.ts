@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { api, ApiError } from '../api.js';
 import { getCurrentAccount } from '../store.js';
-import type { Settings } from '@localrouter/shared';
+import type { Settings } from '@routerly/shared';
 
 interface SystemInfo {
   version: string;
@@ -11,14 +11,14 @@ interface SystemInfo {
 }
 
 export function makeServiceCommand(): Command {
-  const cmd = new Command('service').description('Control the LocalRouter service');
+  const cmd = new Command('service').description('Control the Routerly service');
 
   cmd.command('status')
     .description('Show current service configuration')
     .action(async () => {
       const account = await getCurrentAccount();
       if (!account) {
-        console.log(chalk.yellow('Not logged in. Run: localrouter auth login'));
+        console.log(chalk.yellow('Not logged in. Run: routerly auth login'));
         return;
       }
 
@@ -30,7 +30,7 @@ export function makeServiceCommand(): Command {
           api<unknown[]>('GET', '/api/projects'),
         ]);
 
-        console.log(chalk.bold('\nLocalRouter Service Status\n'));
+        console.log(chalk.bold('\nRouterly Service Status\n'));
         console.log(`  ${chalk.cyan('Server:')}        ${account.serverUrl}`);
         if (info) {
           console.log(`  ${chalk.cyan('Version:')}       ${info.version}`);

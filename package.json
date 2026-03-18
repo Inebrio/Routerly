@@ -1,5 +1,5 @@
 {
-  "name": "localrouter",
+  "name": "routerly",
   "version": "0.0.1",
   "private": true,
   "description": "Self-hosted API gateway for LLMs with intelligent routing, cost tracking and multi-provider support",

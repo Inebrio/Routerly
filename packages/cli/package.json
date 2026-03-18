@@ -1,10 +1,10 @@
 {
-  "name": "@localrouter/cli",
+  "name": "@routerly/cli",
   "version": "0.0.1",
   "private": true,
   "type": "module",
   "bin": {
-    "localrouter": "./src/index.ts"
+    "routerly": "./src/index.ts"
   },
   "scripts": {
     "dev": "tsx src/index.ts",
@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@localrouter/shared": "*",
+    "@routerly/shared": "*",
     "commander": "^12.0.0",
     "inquirer": "^9.2.20",
     "chalk": "^5.3.0",

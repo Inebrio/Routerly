@@ -1,17 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { setupFirstAdmin } from '../api';
+import { setupFirstAdmin, checkSetupStatus } from '../api';
 import { useAuth } from '../AuthContext';
 import { Logo } from '../components/Logo';
 
 export function SetupPage() {
   const navigate = useNavigate();
-  const { loginDirect } = useAuth();
+  const { loginDirect, user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Redirect away if already logged in or setup already completed
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard/overview', { replace: true });
+      return;
+    }
+    checkSetupStatus().then(({ needsSetup }) => {
+      if (!needsSetup) navigate('/dashboard/login', { replace: true });
+    }).catch(() => {});
+  }, [user, navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,8 +46,8 @@ export function SetupPage() {
       <div className="login-card" style={{ maxWidth: 420 }}>
         <div className="login-logo">
           <Logo size={52} />
-          <h1>LocalRouter</h1>
-          <p>Self-hosted LLM API Gateway</p>
+          <h1>Routerly</h1>
+          <p>Smart routing for all your AI models</p>
         </div>
 
         <div style={{
@@ -52,7 +63,7 @@ export function SetupPage() {
             Welcome! Let's get you set up.
           </div>
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginTop: 4 }}>
-            Create the first admin account to start managing LocalRouter.
+            Create the first admin account to start managing Routerly.
           </div>
         </div>
 

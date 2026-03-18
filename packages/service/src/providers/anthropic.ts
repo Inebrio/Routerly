@@ -6,7 +6,7 @@ import type {
   StreamChunk,
   MessagesRequest,
   MessagesResponse,
-} from '@localrouter/shared';
+} from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
 
 export class AnthropicAdapter implements ProviderAdapter {
@@ -75,7 +75,7 @@ export class AnthropicAdapter implements ProviderAdapter {
     });
   }
 
-  private convertMessages(messages: import('@localrouter/shared').Message[]): any[] {
+  private convertMessages(messages: import('@routerly/shared').Message[]): any[] {
     const result: any[] = [];
 
     for (const m of messages) {

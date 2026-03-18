@@ -1,12 +1,12 @@
-# LocalRouter – Specification Document
+# Routerly – Specification Document
 
 ---
 
 ## 1. Descrizione ad Alto Livello
 
-LocalRouter è un API gateway auto-hostato per Large Language Models (LLM). Il suo scopo è fare da proxy intelligente tra le applicazioni client e i provider di modelli AI (OpenAI, Anthropic, Google Gemini, Ollama, e altri), esponendo endpoint completamente compatibili con le API standard di OpenAI e Anthropic.
+Routerly è un API gateway auto-hostato per Large Language Models (LLM). Il suo scopo è fare da proxy intelligente tra le applicazioni client e i provider di modelli AI (OpenAI, Anthropic, Google Gemini, Ollama, e altri), esponendo endpoint completamente compatibili con le API standard di OpenAI e Anthropic.
 
-L'idea centrale è che un'applicazione già integrata con OpenAI non debba subire alcuna modifica al codice: è sufficiente cambiare l'host e il token di autenticazione per iniziare a usare LocalRouter. Da quel momento, il sistema si occupa in modo trasparente di decidere quale modello effettivamente soddisferà la richiesta, tracciare i costi, rispettare i budget configurati e garantire la continuità del servizio tramite fallback automatici.
+L'idea centrale è che un'applicazione già integrata con OpenAI non debba subire alcuna modifica al codice: è sufficiente cambiare l'host e il token di autenticazione per iniziare a usare Routerly. Da quel momento, il sistema si occupa in modo trasparente di decidere quale modello effettivamente soddisferà la richiesta, tracciare i costi, rispettare i budget configurati e garantire la continuità del servizio tramite fallback automatici.
 
 Il routing delle richieste è delegato a un LLM scelto dall'utente (il "modello di routing"). Questo modello riceve la richiesta in ingresso e risponde con una lista pesata di modelli candidati. Il proxy scorre questa lista in ordine di peso decrescente e utilizza il primo modello disponibile che non abbia esaurito il budget configurato. Se tutti i candidati falliscono o sono a budget esaurito, la richiesta viene rigettata con un errore esplicito.
 
@@ -58,7 +58,7 @@ Il sistema deve essere gestibile tramite CLI (per utenti tecnici con accesso all
 
 ### 3.1 Obiettivo del Prodotto
 
-LocalRouter risolve il problema della gestione centralizzata di più provider LLM in contesti multi-progetto, offrendo controllo sui costi, routing automatico e compatibilità totale con gli SDK esistenti.
+Routerly risolve il problema della gestione centralizzata di più provider LLM in contesti multi-progetto, offrendo controllo sui costi, routing automatico e compatibilità totale con gli SDK esistenti.
 
 ### 3.2 Utenti Target
 
@@ -217,10 +217,10 @@ Le impostazioni sensibili (chiave di cifratura, porta del service) devono poter 
 
 ### 4.4 Struttura dei File di Configurazione
 
-La configurazione è salvata in `~/.localrouter/` per convenzione, seguendo lo standard delle applicazioni self-hosted Unix-like. Il percorso può essere sovrascritto tramite la variabile d'ambiente `LOCALROUTER_HOME`.
+La configurazione è salvata in `~/.routerly/` per convenzione, seguendo lo standard delle applicazioni self-hosted Unix-like. Il percorso può essere sovrascritto tramite la variabile d'ambiente `ROUTERLY_HOME`.
 
 ```
-~/.localrouter/
+~/.routerly/
   config/
     settings.json       # configurazione generale del service (porta, timeout, ecc.)
     models.json         # modelli registrati (credenziali cifrate)
@@ -231,7 +231,7 @@ La configurazione è salvata in `~/.localrouter/` per convenzione, seguendo lo s
     usage.json          # log aggregati di consumo e costi
 ```
 
-La chiave di cifratura per le credenziali deve essere fornita tramite variabile d'ambiente (`LOCALROUTER_SECRET_KEY`) e non deve mai comparire nei file di configurazione.
+La chiave di cifratura per le credenziali deve essere fornita tramite variabile d'ambiente (`ROUTERLY_SECRET_KEY`) e non deve mai comparire nei file di configurazione.
 
 ### 4.5 Vincoli Tecnici
 

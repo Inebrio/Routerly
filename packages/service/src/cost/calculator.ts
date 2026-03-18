@@ -1,4 +1,4 @@
-import type { ModelConfig } from '@localrouter/shared';
+import type { ModelConfig } from '@routerly/shared';
 
 /**
  * Calculates the cost of a single API call in USD.

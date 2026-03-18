@@ -5,7 +5,7 @@ import { randomBytes } from 'node:crypto';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../config/paths.js';
 import { createSessionToken, verifyToken } from '../plugins/jwt.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit } from '@localrouter/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit } from '@routerly/shared';
 import { getTrace } from '../routing/traceStore.js';
 import { sendTestNotification } from '../notifications/sender.js';
 

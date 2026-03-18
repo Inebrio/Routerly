@@ -10,7 +10,7 @@ export default defineConfig({
   base: '/dashboard/',
   resolve: {
     alias: {
-      '@localrouter/shared': path.resolve(__dirname, '../shared/src/browser.ts'),
+      '@routerly/shared': path.resolve(__dirname, '../shared/src/browser.ts'),
     },
   },
   server: {

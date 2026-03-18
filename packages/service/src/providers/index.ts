@@ -1,4 +1,4 @@
-import type { ModelConfig } from '@localrouter/shared';
+import type { ModelConfig } from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
 import { OpenAIAdapter } from './openai.js';
 import { AnthropicAdapter } from './anthropic.js';

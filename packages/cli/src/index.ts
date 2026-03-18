@@ -12,9 +12,9 @@ import { makeServiceCommand } from './commands/service.js';
 const program = new Command();
 
 program
-  .name('localrouter')
+  .name('routerly')
   .description(
-    chalk.bold('LocalRouter') + ' — Self-hosted LLM API gateway\n' +
+    chalk.bold('Routerly') + ' — Self-hosted LLM API gateway\n' +
     chalk.gray('Proxy, route and cost-track AI model calls from OpenAI/Anthropic-compatible clients.')
   )
   .version('0.0.1');
@@ -29,7 +29,7 @@ program.addCommand(makeServiceCommand());
 
 // ── Utility: start service (for convenience) ─────────────────────────────────
 program.command('start')
-  .description('Start the LocalRouter service (shortcut for `node packages/service/dist/index.js`)')
+  .description('Start the Routerly service (shortcut for `node packages/service/dist/index.js`)')
   .action(async () => {
     const { startServer } = await import('../../service/src/server.js');
     await startServer();

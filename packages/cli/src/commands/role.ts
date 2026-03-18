@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api } from '../api.js';
-import type { RoleConfig, Permission } from '@localrouter/shared';
+import type { RoleConfig, Permission } from '@routerly/shared';
 
 interface RoleWithBuiltin extends RoleConfig {
   builtin?: boolean;

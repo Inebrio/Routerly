@@ -7,7 +7,7 @@ import type {
   GoogleChannelConfig,
   WebhookChannelConfig,
   NotificationChannel,
-} from '@localrouter/shared';
+} from '@routerly/shared';
 
 interface SendResult {
   ok: boolean;
@@ -16,8 +16,8 @@ interface SendResult {
   fixedSecure?: boolean;
 }
 
-const TEST_SUBJECT = 'LocalRouter – Test notification';
-const TEST_BODY    = 'This is a test message sent from LocalRouter to verify your notification channel is configured correctly.';
+const TEST_SUBJECT = 'Routerly – Test notification';
+const TEST_BODY    = 'This is a test message sent from Routerly to verify your notification channel is configured correctly.';
 
 // ── SMTP ─────────────────────────────────────────────────────────────────────────────
 async function sendSmtp(cfg: SmtpChannelConfig, to: string): Promise<SendResult> {
@@ -161,12 +161,12 @@ async function sendGoogle(cfg: GoogleChannelConfig, to: string): Promise<SendRes
 
 // ── Webhook ───────────────────────────────────────────────────────────────────────────
 async function sendWebhook(cfg: WebhookChannelConfig): Promise<SendResult> {
-  const payload = { event: 'test', source: 'LocalRouter', timestamp: new Date().toISOString() };
+  const payload = { event: 'test', source: 'Routerly', timestamp: new Date().toISOString() };
   const body    = JSON.stringify(payload);
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (cfg.secret) {
     const { createHmac } = await import('node:crypto');
-    headers['X-LocalRouter-Signature'] = `sha256=${createHmac('sha256', cfg.secret).update(body).digest('hex')}`;
+    headers['X-Routerly-Signature'] = `sha256=${createHmac('sha256', cfg.secret).update(body).digest('hex')}`;
   }
   const method = cfg.method ?? 'POST';
   const res = await fetch(cfg.url, {

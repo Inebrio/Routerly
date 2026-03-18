@@ -80,7 +80,7 @@ export function ModelsPage() {
     <>
       <div className="page-header">
         <h1>Models</h1>
-        <p>LLM providers registered with LocalRouter</p>
+        <p>LLM providers registered with Routerly</p>
       </div>
       <div className="page-body">
         <div className="toolbar">

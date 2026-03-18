@@ -1,4 +1,4 @@
-import type { ChatCompletionRequest, ModelConfig, ProjectConfig, ProjectToken, RoutingCandidate } from '@localrouter/shared';
+import type { ChatCompletionRequest, ModelConfig, ProjectConfig, ProjectToken, RoutingCandidate } from '@routerly/shared';
 import { readConfig } from '../config/loader.js';
 import { isAllowed } from '../cost/budget.js';
 import type { CandidateModel } from './policies/types.js';

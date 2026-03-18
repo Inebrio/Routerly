@@ -5,7 +5,7 @@ import type {
   StreamChunk,
   MessagesRequest,
   MessagesResponse,
-} from '@localrouter/shared';
+} from '@routerly/shared';
 
 /**
  * Common interface that all provider adapters must implement.

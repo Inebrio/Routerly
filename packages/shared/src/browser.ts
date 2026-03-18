@@ -1,5 +1,5 @@
 /**
- * Browser-safe entry point for @localrouter/shared.
+ * Browser-safe entry point for @routerly/shared.
  * Exports only static JSON data and type-only definitions — no Node.js APIs.
  */
 

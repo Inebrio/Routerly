@@ -218,7 +218,7 @@ export interface Settings {
   defaultTimeoutMs: number;
   logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error';
   /**
-   * Public base URL of the service (e.g. https://localrouter.example.com).
+   * Public base URL of the service (e.g. https://routerly.example.com).
    * Used in the dashboard "How to connect" section when the dashboard is served
    * from a different host/port than the service itself.
    * If omitted, the dashboard falls back to window.location.origin.
@@ -284,7 +284,7 @@ export interface WebhookChannelConfig extends ChannelBase {
   provider: 'webhook';
   url: string;
   method?: 'POST' | 'GET';
-  /** Optional HMAC-SHA256 signing secret sent as X-LocalRouter-Signature */
+  /** Optional HMAC-SHA256 signing secret sent as X-Routerly-Signature */
   secret?: string;
 }
 

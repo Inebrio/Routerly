@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import type { ModelConfig, TokenCost } from '@localrouter/shared';
+import type { ModelConfig, TokenCost } from '@routerly/shared';
 
 // ─── Known model pricing presets (cost per 1M tokens in USD) ─────────────────
 const PRICING_PRESETS: Record<string, TokenCost> = {
@@ -27,7 +27,7 @@ export function makeModelCommand(): Command {
       try {
         const models = await api<ModelConfig[]>('GET', '/api/models');
         if (models.length === 0) {
-          console.log(chalk.yellow('No models registered yet. Use `localrouter model add` to add one.'));
+          console.log(chalk.yellow('No models registered yet. Use `routerly model add` to add one.'));
           return;
         }
         const table = new Table({

@@ -21,7 +21,7 @@ import type {
   ProjectToken,
   StreamChunk,
   CallType,
-} from '@localrouter/shared';
+} from '@routerly/shared';
 import { getProviderAdapter } from '../providers/index.js';
 import { isAllowed, isAllowedForRoutingModel } from '../cost/budget.js';
 import { trackUsage } from '../cost/tracker.js';

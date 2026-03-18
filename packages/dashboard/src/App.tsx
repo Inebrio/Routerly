@@ -93,7 +93,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
         <div className="sidebar-logo-inner">
           <Logo size={28} className="sidebar-logo-icon" />
           <span className="nav-label logo-full">
-            <span className="logo-name-full">LocalRouter</span>
+            <span className="logo-name-full">Routerly</span>
             <span className="logo-tag">LLM API Gateway</span>
           </span>
         </div>

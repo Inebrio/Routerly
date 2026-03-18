@@ -1,7 +1,7 @@
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-const base = process.env['LOCALROUTER_HOME'] ?? join(homedir(), '.localrouter');
+const base = process.env['ROUTERLY_HOME'] ?? join(homedir(), '.routerly');
 
 export const CONFIG_PATHS = {
   base,

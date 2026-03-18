@@ -23,11 +23,11 @@ interface MeResponse {
 }
 
 export function makeAuthCommand(): Command {
-  const cmd = new Command('auth').description('Manage LocalRouter server accounts');
+  const cmd = new Command('auth').description('Manage Routerly server accounts');
 
   // ── auth login ──────────────────────────────────────────────────────────────
   cmd.command('login')
-    .description('Log in to a LocalRouter server and save the session')
+    .description('Log in to a Routerly server and save the session')
     .option('--url <url>', 'Server base URL', 'http://localhost:3000')
     .option('--email <email>', 'Account email')
     .option('--password <password>', 'Account password')
@@ -120,7 +120,7 @@ export function makeAuthCommand(): Command {
       const current = await getCurrentAccount();
 
       if (accounts.length === 0) {
-        console.log(chalk.yellow('No accounts saved. Run: localrouter auth login'));
+        console.log(chalk.yellow('No accounts saved. Run: routerly auth login'));
         return;
       }
 
@@ -153,7 +153,7 @@ export function makeAuthCommand(): Command {
     .action(async (alias: string) => {
       const ok = await switchAccount(alias);
       if (!ok) {
-        console.error(chalk.red(`Account "${alias}" not found. Run \`localrouter auth ps\` to list accounts.`));
+        console.error(chalk.red(`Account "${alias}" not found. Run \`routerly auth ps\` to list accounts.`));
         process.exit(1);
       }
       const acc = await getAccount(alias);
@@ -166,7 +166,7 @@ export function makeAuthCommand(): Command {
     .action(async () => {
       const current = await getCurrentAccount();
       if (!current) {
-        console.log(chalk.yellow('Not logged in. Run: localrouter auth login'));
+        console.log(chalk.yellow('Not logged in. Run: routerly auth login'));
         return;
       }
 
@@ -178,7 +178,7 @@ export function makeAuthCommand(): Command {
         console.log(chalk.gray(`  Expires: ${new Date(current.expiresAt).toLocaleString()}`));
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
-          console.error(chalk.red('Session expired. Run: localrouter auth login'));
+          console.error(chalk.red('Session expired. Run: routerly auth login'));
         } else {
           console.error(chalk.red(`Error: ${(err as Error).message}`));
         }
