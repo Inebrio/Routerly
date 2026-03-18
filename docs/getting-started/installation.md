@@ -1,6 +1,6 @@
 # Installation
 
-This guide walks you through installing Routerly. The recommended path is the one-line installer; a manual path is also documented for contributors and advanced setups.
+This guide walks you through installing Routerly. Three paths are available: the one-line installer (recommended), Docker (best for servers and containerised stacks), and a manual setup for contributors.
 
 ---
 
@@ -123,6 +123,92 @@ After installation (restart your terminal first to pick up the updated PATH):
 routerly --version
 curl http://localhost:3000/health
 # {"status":"ok","version":"..."}
+```
+
+---
+
+## Docker
+
+Docker is the simplest way to run Routerly on a server or inside an existing containerised stack — no Node.js required on the host.
+
+### Quick start with Docker Compose
+
+```bash
+# clone the repository (or download docker-compose.yml individually)
+git clone https://github.com/routerly/routerly.git
+cd routerly
+
+docker compose up -d
+```
+
+The service will be available at `http://localhost:3000`.
+Config and data are automatically persisted in a named Docker volume (`routerly_data`).
+
+### Manual Docker run
+
+Build the image yourself:
+
+```bash
+docker build -t routerly .
+```
+
+Then start a container:
+
+```bash
+docker run -d \
+  --name routerly \
+  -p 3000:3000 \
+  -v routerly_data:/data \
+  -e NODE_ENV=production \
+  -e ROUTERLY_HOME=/data \
+  routerly
+```
+
+### Persistent data
+
+| Inside container | Host (named volume) | Purpose |
+|-----------------|---------------------|---------|
+| `/data` | `routerly_data` | Config files, token store, SQLite database |
+
+All state lives under `ROUTERLY_HOME`, which defaults to `/data` in the Docker image.
+You can substitute a bind-mount path for the named volume if you prefer to manage the directory yourself:
+
+```bash
+-v /your/local/path:/data
+```
+
+### Using the CLI inside Docker
+
+The `routerly` CLI is bundled in the image and available via `docker exec`:
+
+```bash
+docker exec routerly routerly --help
+docker exec routerly routerly model list
+docker exec routerly routerly project list
+```
+
+### Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NODE_ENV` | `production` | Node environment |
+| `ROUTERLY_HOME` | `/data` | Config and data directory |
+| `ROUTERLY_PORT` | `3000` | Listening port (override `ports:` mapping too) |
+
+### Health check
+
+Docker polls the built-in health endpoint automatically:
+
+```bash
+docker inspect --format='{{.State.Health.Status}}' routerly
+# healthy
+```
+
+Or manually:
+
+```bash
+curl http://localhost:3000/health
+# {"status":"ok","version":"0.0.1","timestamp":"..."}
 ```
 
 ---

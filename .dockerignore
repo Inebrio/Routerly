@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs (rebuilt inside Docker)
+dist/
+**/dist/
+build/
+out/
+*.tsbuildinfo
+
+# Git
+.git/
+.gitignore
+
+# Docker files themselves
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# Data & database
+data/
+*.db
+*.sqlite
+
+# IDE / OS
+.DS_Store
+.vscode/
+*.swp
+*.swo
+
+# Test files
+test/
+spec/
+*.test.ts
+*.spec.ts
+coverage/

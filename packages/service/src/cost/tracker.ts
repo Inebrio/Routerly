@@ -50,7 +50,7 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     outcome: params.outcome,
     ...(params.errorMessage !== undefined ? { errorMessage: params.errorMessage } : {}),
     callType: params.callType ?? 'completion',
-    ...(params.traceId ? { trace: getTrace(params.traceId) ?? undefined } : {}),
+    ...(params.traceId ? { trace: getTrace(params.traceId) ?? [] } : {}),
   };
 
   await appendUsageRecord(record);

@@ -31,7 +31,7 @@ program.addCommand(makeServiceCommand());
 program.command('start')
   .description('Start the Routerly service (shortcut for `node packages/service/dist/index.js`)')
   .action(async () => {
-    const { startServer } = await import('../../service/src/server.js');
+    const { startServer } = await import('../../service/dist/server.js');
     await startServer();
   });
 

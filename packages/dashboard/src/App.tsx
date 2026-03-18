@@ -63,7 +63,7 @@ function ThemeCycleButton() {
     light: <Sun size={15} />,
   };
   function cycle() {
-    const next = order[(order.indexOf(theme) + 1) % order.length];
+    const next = order[(order.indexOf(theme) + 1) % order.length]!;
     setTheme(next);
   }
   return (

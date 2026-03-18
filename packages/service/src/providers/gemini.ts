@@ -38,7 +38,7 @@ export class GeminiAdapter implements ProviderAdapter {
     const client = this.getClient(model);
     const { stream: _stream, ...rest } = request;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stream = await client.chat.completions.create({ ...rest, stream: true } as any);
+    const stream: any = await client.chat.completions.create({ ...rest, stream: true } as any);
     for await (const chunk of stream) {
       yield chunk as unknown as StreamChunk;
     }

@@ -44,7 +44,7 @@ export class OllamaAdapter implements ProviderAdapter {
     const { stream: _stream, ...rest } = request;
     const upstreamModel = this.getUpstreamModelId(model);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stream = await client.chat.completions.create({ ...rest, model: upstreamModel, stream: true } as any);
+    const stream: any = await client.chat.completions.create({ ...rest, model: upstreamModel, stream: true } as any);
     for await (const chunk of stream) {
       yield chunk as unknown as StreamChunk;
     }

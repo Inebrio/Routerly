@@ -80,6 +80,8 @@ Run from the workspace root:
 | `npm test` | Run tests across all packages |
 | `npm run lint` | Lint TypeScript files with ESLint |
 | `npm run format` | Format with Prettier |
+| `npm run changeset` | Crea un changeset per la feature/fix corrente |
+| `npm run version` | Applica i changeset pendenti (bumpa versioni + CHANGELOG) |
 
 Per-package:
 
@@ -206,3 +208,97 @@ Both run across all packages. CI will reject PRs that fail lint or have formatti
 export ROUTERLY_HOME="$HOME/.routerly-dev"  # optional: use a separate dev config dir
 export NODE_ENV="development"               # enables pino-pretty logs
 ```
+
+---
+
+## Commit Convention
+
+Questo progetto adotta **[Conventional Commits](https://www.conventionalcommits.org/)**.
+Il formato obbligatorio è:
+
+```
+<type>(<scope>): <descrizione in minuscolo>
+
+[body opzionale]
+
+[BREAKING CHANGE: <descrizione> — solo se introduce incompatibilità]
+```
+
+### Tipi ammessi
+
+| Tipo | Quando usarlo |
+|------|---------------|
+| `feat` | Nuova funzionalità |
+| `fix` | Correzione di un bug |
+| `docs` | Solo documentazione |
+| `style` | Formattazione, spazi, punto e virgola — nessun cambiamento logico |
+| `refactor` | Refactoring senza fix né feature |
+| `perf` | Miglioramento delle performance |
+| `test` | Aggiunta o modifica di test |
+| `build` | Build system o dipendenze esterne (es. npm) |
+| `ci` | Configurazione CI/CD |
+| `chore` | Manutenzione generica |
+| `revert` | Revert di un commit precedente |
+
+### Scope (opzionale, consigliato)
+
+Usare il nome del pacchetto: `service`, `dashboard`, `cli`, `shared`, `docs`.
+
+```bash
+feat(service): add streaming support for gemini provider
+fix(cli): handle missing auth token gracefully
+docs: update quick-start guide
+```
+
+### Impatto sul versioning
+
+| Commit | Bump di versione |
+|--------|-----------------|
+| `fix:` | **patch** — es. `0.1.0` → `0.1.1` |
+| `feat:` | **minor** — es. `0.1.0` → `0.2.0` |
+| `BREAKING CHANGE:` nel footer | **major** — es. `0.1.0` → `1.0.0` |
+
+Il hook `commit-msg` (via Husky + commitlint) rifiuterà commit non conformi.
+
+---
+
+## Release Process
+
+Tutti i pacchetti condividono la stessa versione (versioning unificato).
+Il flusso è gestito da **[Changesets](https://github.com/changesets/changesets)**.
+
+### Durante lo sviluppo — creare un changeset
+
+Dopo aver completato una feature o un fix, **prima di fare il commit finale**:
+
+```bash
+npm run changeset
+```
+
+Si aprirà un wizard interattivo che chiede:
+1. Quali pacchetti sono stati modificati (seleziona con spazio)
+2. Il tipo di bump (`major` / `minor` / `patch`)
+3. Una descrizione delle modifiche (questa finirà nel CHANGELOG)
+
+Viene creato un file in `.changeset/xyz.md`. **Fai commit anche di questo file** insieme al codice.
+
+### Quando rilasciare
+
+Non serve fare nulla di speciale: GitHub Actions monitora ogni push su `main`.
+
+- Se ci sono changeset in sospeso → apre/aggiorna automaticamente una PR chiamata **"chore: version packages"** che contiene:
+  - `package.json` con le versioni bumpate
+  - `CHANGELOG.md` aggiornato
+- Quando sei pronto a rilasciare → **mergia la PR**
+- GitHub Actions crea il tag Git (`v1.2.0`), la GitHub Release e allega il tarball
+
+### Simulare il release in locale
+
+```bash
+# Vedere i changeset pendenti
+npx changeset status
+
+# Applicare i changeset (bumpa versioni e aggiorna CHANGELOG) — non fa commit
+npm run version
+```
+

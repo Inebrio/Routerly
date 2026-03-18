@@ -52,7 +52,7 @@ export class AnthropicAdapter implements ProviderAdapter {
         if (url.startsWith('data:')) {
           // data URI → base64
           const [header, data] = url.split(',', 2);
-          const media_type = header.replace('data:', '').replace(';base64', '') as any;
+          const media_type = (header ?? '').replace('data:', '').replace(';base64', '') as any;
           return { type: 'image', source: { type: 'base64', media_type, data }, ...rest };
         }
         return { type: 'image', source: { type: 'url', url }, ...rest };

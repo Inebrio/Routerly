@@ -213,6 +213,7 @@ export function ProjectTokenEditPage() {
       if (m.modelId !== modelId) return m;
       const updated = m.limitRows.map((r, i) => i === idx ? { ...r, ...patch } : r);
       const candidate = updated[idx];
+      if (!candidate) return m;
       const isDup = updated.some((r, i) => i !== idx && rowKey(r) === rowKey(candidate));
       if (isDup) return m; // blocca aggiornamento che creerebbe un duplicato
       return { ...m, limitRows: updated };

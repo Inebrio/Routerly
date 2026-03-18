@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-typecheck:
+    name: Build & Typecheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck — shared
+        run: npm run typecheck --workspace=packages/shared
+
+      - name: Typecheck — service
+        run: npm run typecheck --workspace=packages/service
+
+      - name: Typecheck — cli
+        run: npm run typecheck --workspace=packages/cli
+
+      - name: Typecheck — dashboard
+        run: npm run typecheck --workspace=packages/dashboard
+
+      - name: Build all packages
+        run: npm run build
