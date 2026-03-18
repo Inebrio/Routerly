@@ -69,7 +69,7 @@ export async function routeRequest(
   const candidates: CandidateModel[] = project.models
     .map(ref => {
       const model = allModels.find(m => m.id === ref.modelId);
-      return model ? { model, prompt: ref.prompt, thresholds: ref.thresholds } : null;
+      return model ? { model, ...(ref.prompt !== undefined ? { prompt: ref.prompt } : {}), ...(ref.thresholds !== undefined ? { thresholds: ref.thresholds } : {}) } : null;
     })
     .filter((m): m is NonNullable<typeof m> => m !== null);
 
@@ -140,7 +140,7 @@ export async function routeRequest(
         return { type, weight, routing: [] as { model: string; point: number }[], excludes: [] as string[], failed: true };
       }
       try {
-        const out = await fn({ request, candidates: validCandidates, config, log, emit, projectId: project.id, token, traceId });
+        const out = await fn({ request, candidates: validCandidates, config, ...(log !== undefined ? { log } : {}), ...(emit !== undefined ? { emit } : {}), projectId: project.id, ...(token !== undefined ? { token } : {}), ...(traceId !== undefined ? { traceId } : {}) });
         return { type, weight, routing: out.routing, excludes: out.excludes ?? [], failed: false };
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
