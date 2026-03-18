@@ -2,18 +2,71 @@
 
 This guide gets you from zero to your first routed AI response in under 5 minutes.
 
-> **Prerequisites:** Routerly installed and the `routerly` CLI in your PATH.
-> Not installed yet? Run: `curl -fsSL https://github.com/routerly/routerly/releases/latest/download/install.sh | bash`
+---
+
+## Step 0: Install Routerly
+
+Choose the method that suits your environment.
+
+**macOS / Linux (one-liner):**
+```bash
+curl -fsSL https://github.com/routerly/routerly/releases/latest/download/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+powershell -c "irm https://github.com/routerly/routerly/releases/latest/download/install.ps1 | iex"
+```
+
+**Node.js cross-platform installer:**
+```bash
+curl -fsSL https://github.com/routerly/routerly/releases/latest/download/install.mjs -o install.mjs
+node install.mjs
+```
+
+**Docker (no Node.js required):**
+```bash
+git clone https://github.com/routerly/routerly.git
+cd routerly
+docker compose up -d
+```
+
+**From source:**
+```bash
+git clone https://github.com/routerly/routerly.git
+cd routerly
+npm install
+npm run build
+```
+
+After installation the `routerly` binary will be available in your PATH (or via `docker exec routerly routerly <command>` if using Docker).
+
+---
 
 ## Overview
 
 ```
-1. Register a model → 2. Create a project → 3. Start the service → 4. Send a request
+0. Install → 1. Login → 2. Register a model → 3. Create a project → 4. Start the service → 5. Send a request
 ```
 
 ---
 
-## Step 1: Register a Model
+## Step 1: Log In to the CLI
+
+Before running any CLI command you need to authenticate against the running service. If the service is not yet started, launch it first (see Step 4 below), then come back here.
+
+```bash
+routerly auth login \
+  --url http://localhost:3000 \
+  --email admin@example.com \
+  --password your-password
+```
+
+Omit `--email` and `--password` to be prompted interactively. The session is saved locally; you only need to log in once per server.
+
+---
+
+## Step 2: Register a Model
 
 Use the CLI to register at least one LLM model. Routerly includes built-in pricing presets for
 common models, pricing is applied automatically when the model ID matches.
@@ -50,7 +103,7 @@ routerly model list
 
 ---
 
-## Step 2: Create a Project
+## Step 3: Create a Project
 
 A project is an isolated workspace with its own API token, set of models, and routing configuration.
 
@@ -78,7 +131,7 @@ Endpoint prefix: /projects/my-app/v1/
 
 ---
 
-## Step 3: Start the Service
+## Step 4: Start the Service
 
 If you configured auto-start during installation, the service is already running. Otherwise:
 
@@ -92,13 +145,17 @@ Or start it directly with Node.js:
 node ~/.routerly/app/packages/service/dist/index.js
 ```
 
+**Docker:** if you installed via Docker Compose the service is already up after `docker compose up -d`.
+
 The service listens on `http://localhost:3000` by default.
+
+> **Note (Docker):** Run CLI commands with `docker exec routerly routerly <command>` instead of calling `routerly` directly. Steps 2 and 3 above can also be run this way.
 
 > **Development mode:** If working from source, use `npm run dev` instead.
 
 ---
 
-## Step 4: Make Your First Request
+## Step 5: Make Your First Request
 
 Routerly is a **drop-in replacement** for the OpenAI API. Point your existing client at Routerly
 and use your project token as the API key.
