@@ -581,7 +581,15 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       if (users.find(u => u.email === email)) return reply.status(409).send({ error: 'Email already in use' });
       users[idx] = { ...users[idx], email };
     }
-    if (roleId) users[idx] = { ...users[idx], roleId };
+    if (roleId) {
+      // Ensure at least one admin remains
+      const isLastAdmin = user!.roleId === 'admin' && roleId !== 'admin' &&
+        users.filter(u => u.roleId === 'admin').length === 1;
+      if (isLastAdmin) {
+        return reply.status(409).send({ error: 'Cannot change role: this is the last admin account' });
+      }
+      users[idx] = { ...users[idx], roleId };
+    }
     if (newPassword) {
       if (newPassword.length < 8) return reply.status(400).send({ error: 'Password must be at least 8 characters' });
       users[idx] = { ...users[idx], passwordHash: hashPassword(newPassword) };
@@ -594,9 +602,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.delete<{ Params: { id: string } }>('/api/users/:id', async (req, reply) => {
     if (!requirePerm(req, 'user:write', reply)) return;
     const users = await readConfig('users');
-    const filtered = users.filter(u => u.id !== req.params.id);
-    if (filtered.length === users.length) return reply.status(404).send({ error: 'Not found' });
-    await writeConfig('users', filtered);
+    const target = users.find(u => u.id === req.params.id);
+    if (!target) return reply.status(404).send({ error: 'Not found' });
+    // Ensure at least one admin remains
+    if (target.roleId === 'admin' && users.filter(u => u.roleId === 'admin').length === 1) {
+      return reply.status(409).send({ error: 'Cannot delete the last admin account' });
+    }
+    await writeConfig('users', users.filter(u => u.id !== req.params.id));
     return reply.status(204).send();
   });
 
