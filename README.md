@@ -1,6 +1,8 @@
-# LocalRouter
-
-**Self-hosted API gateway for LLMs.** Drop-in replacement for the OpenAI and Anthropic APIs with intelligent routing, cost tracking, budget enforcement, and multi-provider support.
+<div align="center">
+  <img src="docs/logo.svg" width="110" alt="LocalRouter" />
+  <h1>LocalRouter</h1>
+  <p><strong>Self-hosted API gateway for LLMs.</strong> Drop-in replacement for the OpenAI and Anthropic APIs with intelligent routing, cost tracking, budget enforcement, and multi-provider support.</p>
+</div>
 
 ## Quick Start
 

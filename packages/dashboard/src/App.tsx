@@ -27,6 +27,7 @@ import { RolesPage } from './pages/RolesPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { UserEditPage } from './pages/UserEditPage';
 import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Logo } from './components/Logo';
 
 const THEME_OPTIONS: { value: Theme; icon: ReactNode; label: string }[] = [
   { value: 'auto',  icon: <Monitor size={14} />, label: 'Auto' },
@@ -90,7 +91,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     <aside className={`sidebar${collapsed ? ' sidebar--collapsed' : ''}`}>
       <div className="sidebar-logo">
         <div className="sidebar-logo-inner">
-          <div className="logo-name">LR</div>
+          <Logo size={28} className="sidebar-logo-icon" />
           <span className="nav-label logo-full">
             <span className="logo-name-full">LocalRouter</span>
             <span className="logo-tag">LLM API Gateway</span>

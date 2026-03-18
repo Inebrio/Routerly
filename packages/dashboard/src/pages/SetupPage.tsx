@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { setupFirstAdmin } from '../api';
 import { useAuth } from '../AuthContext';
+import { Logo } from '../components/Logo';
 
 export function SetupPage() {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ export function SetupPage() {
     <div className="login-page">
       <div className="login-card" style={{ maxWidth: 420 }}>
         <div className="login-logo">
+          <Logo size={52} />
           <h1>LocalRouter</h1>
           <p>Self-hosted LLM API Gateway</p>
         </div>

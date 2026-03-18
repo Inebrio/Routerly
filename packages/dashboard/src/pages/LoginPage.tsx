@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { checkSetupStatus } from '../api';
+import { Logo } from '../components/Logo';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -42,6 +43,7 @@ export function LoginPage() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-logo">
+          <Logo size={52} />
           <h1>LocalRouter</h1>
           <p>Self-hosted LLM API Gateway</p>
         </div>
