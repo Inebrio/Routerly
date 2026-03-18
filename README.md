@@ -7,9 +7,13 @@
     Fully compatible with the OpenAI and Anthropic APIs, swap a URL, nothing else changes.
   </p>
   <p>
+    <a href="https://www.routerly.ai/">https://www.routerly.ai/</a>
+  </p>
+  <p>
     <img src="https://img.shields.io/badge/Node.js-%E2%89%A520-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js ≥ 20" />
     <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License: MIT" />
     <img src="https://img.shields.io/badge/Self--hosted-✓-6366f1?style=flat-square" alt="Self-hosted" />
+    <img src="https://img.shields.io/badge/Docker-supported-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker supported" />
     <img src="https://img.shields.io/badge/OpenAI%20compatible-✓-412991?style=flat-square&logo=openai&logoColor=white" alt="OpenAI compatible" />
     <img src="https://img.shields.io/badge/Anthropic%20compatible-✓-CC785C?style=flat-square" alt="Anthropic compatible" />
   </p>
@@ -197,6 +201,13 @@ curl -fsSL https://github.com/routerly/routerly/releases/latest/download/install
 powershell -c "irm https://github.com/routerly/routerly/releases/latest/download/install.ps1 | iex"
 ```
 
+**Via Docker (no Node.js required):**
+```bash
+git clone https://github.com/routerly/routerly.git
+cd routerly
+docker compose up -d
+```
+
 The installer detects your platform, checks for Node.js 20+ (offering to install it if missing), downloads the latest release, builds the packages, generates your encryption key, optionally sets up an auto-start daemon, and walks you through adding a model, creating a project, and creating an admin user.
 
 Once installed, the three steps to go live:
@@ -300,6 +311,8 @@ All configuration lives in `~/.routerly/`, plain JSON, no database.
 ```
 
 Override the base path with `ROUTERLY_HOME=/custom/path`.
+
+**When running via Docker**, config and data are persisted in the `routerly_data` named volume, mounted at `/data` inside the container (`ROUTERLY_HOME=/data`). No extra setup needed: the directory is created automatically on first start.
 
 ---
 
