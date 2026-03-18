@@ -197,8 +197,8 @@ Mix and match freely. A single project can span cloud and local models simultane
 | Native Anthropic API format | ✅ | ❌ | ❌ |
 | Local model support (Ollama) | ✅ | ✅ | ❌ |
 | Budget enforcement | ✅ | ✅ | ✅ |
-| Database required | ❌ none | ✅ SQLite/PostgreSQL | N/A |
-| External infrastructure (Redis, etc.) | ❌ none | optional | N/A |
+| Database required | ✅ none | ⚠️ SQLite/PostgreSQL | N/A |
+| External infrastructure (Redis, etc.) | ✅ none | ⚠️ optional | N/A |
 | LLM-powered smart routing | ✅ | ❌ | ❌ |
 | Per-project token isolation | ✅ | ✅ | ✅ |
 | Web dashboard | ✅ built-in | ✅ | ✅ |
