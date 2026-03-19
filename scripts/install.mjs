@@ -263,9 +263,11 @@ if (!YES) {
 step('2', 'Preparing directories');
 
 // Where the app files live
+// On Windows, use C:\Routerly instead of C:\Program Files\Routerly to avoid
+// permission issues with npm install/build (Program Files has strict ACLs).
 const APP_DIR = scope === 'user'
   ? path.join(HOME, '.routerly', 'app')
-  : (PLATFORM === 'win32' ? 'C:\\Program Files\\Routerly' : '/opt/routerly');
+  : (PLATFORM === 'win32' ? 'C:\\Routerly' : '/opt/routerly');
 
 // Where the bin wrapper lives
 const BIN_DIR = scope === 'user'
