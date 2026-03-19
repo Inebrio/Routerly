@@ -289,9 +289,11 @@ if (needsSudo) {
   await runCmd(`sudo chown -R ${currentUser} "${APP_DIR}"`, '/');
 }
 
-// npm install --omit=dev (HUSKY=0 prevents the "prepare" script from failing)
-info('Installing production dependencies...');
-await runCmd('HUSKY=0 npm install --omit=dev', APP_DIR);
+// npm install --ignore-scripts
+// (skip lifecycle scripts to avoid "husky: not found" error)
+// Note: We need devDependencies (TypeScript, etc.) to build packages
+info('Installing dependencies...');
+await runCmd('npm install --ignore-scripts', APP_DIR);
 success('Dependencies installed');
 
 // ── Build packages ─────────────────────────────────────────────────────────
