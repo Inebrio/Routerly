@@ -124,12 +124,151 @@ console.log(c.dim('  Self-hosted LLM gateway — https://github.com/routerly/rou
 const cliHome = path.join(HOME, '.routerly');
 
 // ─── Detect existing install ──────────────────────────────────────────────────
-const isUpgrade = fs.existsSync(path.join(cliHome, 'config', 'settings.json'));
-if (isUpgrade) {
-  warn(`Existing Routerly installation detected at ${c.bold(cliHome)}`);
-  const go = await confirm('Continue with upgrade?', true);
-  if (!go) { rl.close(); process.exit(0); }
+const existingSettingsPath = path.join(cliHome, 'config', 'settings.json');
+const isExistingInstall = fs.existsSync(existingSettingsPath);
+
+// Read existing config to reuse in update/reinstall flows
+let existingSettings = {};
+if (isExistingInstall) {
+  try { existingSettings = JSON.parse(fs.readFileSync(existingSettingsPath, 'utf-8')); } catch { /* ignore */ }
 }
+
+// Read existing CLI remote URL config
+const existingCliConfigPath = path.join(cliHome, 'config', 'cli.json');
+let existingCliConfig = {};
+if (fs.existsSync(existingCliConfigPath)) {
+  try { existingCliConfig = JSON.parse(fs.readFileSync(existingCliConfigPath, 'utf-8')); } catch { /* ignore */ }
+}
+
+/** Remove a path recursively, using sudo on POSIX if needed */
+async function removeDir(dir, needsSudo) {
+  if (!fs.existsSync(dir)) return;
+  if (needsSudo && PLATFORM !== 'win32') {
+    await exec(`sudo rm -rf "${dir}"`).catch(() => {});
+  } else {
+    await fsp.rm(dir, { recursive: true, force: true });
+  }
+}
+
+/** Stop and remove the Routerly system daemon */
+async function removeDaemon(scope) {
+  if (PLATFORM === 'linux') {
+    const unit = scope === 'system' ? 'routerly.service' : 'routerly.service';
+    const sudo = scope === 'system' ? 'sudo ' : '';
+    const ctl  = scope === 'system' ? 'systemctl' : 'systemctl --user';
+    await exec(`${sudo}${ctl} stop ${unit} 2>/dev/null`).catch(() => {});
+    await exec(`${sudo}${ctl} disable ${unit} 2>/dev/null`).catch(() => {});
+    const unitPath = scope === 'system'
+      ? `/etc/systemd/system/${unit}`
+      : path.join(HOME, `.config/systemd/user/${unit}`);
+    await exec(`${sudo}rm -f "${unitPath}"`).catch(() => {});
+    await exec(`${sudo}${ctl} daemon-reload 2>/dev/null`).catch(() => {});
+  } else if (PLATFORM === 'darwin') {
+    const label    = 'ai.routerly.service';
+    const plistDir = scope === 'system' ? '/Library/LaunchDaemons' : path.join(HOME, 'Library/LaunchAgents');
+    const plistPath = path.join(plistDir, `${label}.plist`);
+    const sudo = scope === 'system' ? 'sudo ' : '';
+    await exec(`${sudo}launchctl unload -w "${plistPath}" 2>/dev/null`).catch(() => {});
+    await exec(`${sudo}rm -f "${plistPath}"`).catch(() => {});
+  } else if (PLATFORM === 'win32') {
+    await exec(`sc stop routerly 2>nul`).catch(() => {});
+    await exec(`sc delete routerly 2>nul`).catch(() => {});
+  }
+}
+
+// Read existing install scope from APP_DIR symlink/path heuristic
+function detectExistingScope() {
+  // Check for system-level paths
+  const systemPaths = ['/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly'];
+  for (const p of systemPaths) {
+    if (fs.existsSync(p)) return 'system';
+  }
+  return 'user';
+}
+
+function detectExistingAppDir() {
+  const systemPaths = ['/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly'];
+  for (const p of systemPaths) {
+    if (fs.existsSync(p)) return p;
+  }
+  return path.join(HOME, '.routerly', 'app');
+}
+
+let installMode = 'fresh'; // 'fresh' | 'update' | 'reinstall' | 'uninstall'
+
+if (isExistingInstall && !YES) {
+  console.log('\n' + c.yellow(c.bold('  Existing installation detected')) + '\n');
+
+  console.log(`  What would you like to do?\n`);
+  console.log(`    ${c.bold('1')}  ${c.cyan('Update')}      — download & rebuild latest code, keep all settings`);
+  console.log(`    ${c.bold('2')}  ${c.cyan('Reinstall')}   — change components or settings (user data preserved)`);
+  console.log(`    ${c.bold('3')}  ${c.cyan('Uninstall')}   — remove Routerly from this machine`);
+  console.log(`    ${c.bold('0')}  ${c.cyan('Cancel')}\n`);
+
+  const choice = (await question('  Choose [1]: ')).trim();
+
+  if (choice === '0' || choice.toLowerCase() === 'c') {
+    rl.close(); process.exit(0);
+  } else if (choice === '3') {
+    installMode = 'uninstall';
+  } else if (choice === '2') {
+    installMode = 'reinstall';
+    warn('User data (accounts, budgets, usage history) will NOT be modified.');
+  } else {
+    installMode = 'update';
+  }
+
+  if (installMode === 'uninstall') {
+    const confirm_uninstall = await confirm(
+      c.red('This will remove Routerly and all its files. Are you sure?'), false
+    );
+    if (!confirm_uninstall) { rl.close(); process.exit(0); }
+
+    info('Stopping and removing daemon...');
+    const detectedScope = detectExistingScope();
+    await removeDaemon(detectedScope);
+
+    const needsSudo = detectedScope === 'system' && PLATFORM !== 'win32';
+
+    // Remove app dir
+    const systemAppDirs = ['/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly'];
+    for (const d of systemAppDirs) {
+      if (fs.existsSync(d)) { await removeDir(d, needsSudo); success(`Removed ${d}`); }
+    }
+    const userAppDir = path.join(HOME, '.routerly', 'app');
+    if (fs.existsSync(userAppDir)) { await removeDir(userAppDir, false); success(`Removed ${userAppDir}`); }
+
+    // Remove CLI wrapper
+    const binPaths = [
+      '/usr/local/bin/routerly',
+      path.join(HOME, '.local/bin/routerly'),
+      path.join(HOME, 'bin/routerly'),
+      'C:\\Routerly\\bin\\routerly.cmd',
+      path.join(HOME, '.routerly', 'bin', 'routerly'),
+      path.join(HOME, '.routerly', 'bin', 'routerly.cmd'),
+    ];
+    for (const b of binPaths) {
+      if (fs.existsSync(b)) { try { fs.unlinkSync(b); success(`Removed ${b}`); } catch { /* skip */ } }
+    }
+
+    // Remove data dir (ask)
+    const removeData = await confirm(
+      `  Also remove all user data at ${c.bold(cliHome)}? (accounts, settings, history)`, false
+    );
+    if (removeData) {
+      await removeDir(cliHome, false);
+      success(`Removed ${cliHome}`);
+    } else {
+      info(`User data kept at ${c.dim(cliHome)}`);
+    }
+
+    console.log('\n' + c.green(c.bold('  Routerly uninstalled successfully.')) + '\n');
+    rl.close(); process.exit(0);
+  }
+}
+
+// For update mode we skip the config wizard and reuse existing settings
+const isUpdate = installMode === 'update';
 
 // ════════════════════════════════════════════════════════════════════════════
 // PHASE 1: Configuration
@@ -140,8 +279,8 @@ step('1', 'Configuration');
 let scope;
 if (FLAG_SCOPE) {
   scope = FLAG_SCOPE;
-} else if (YES) {
-  scope = 'user';
+} else if (YES || isUpdate) {
+  scope = detectExistingScope();
 } else {
   console.log();
   console.log('  Installation scope:');
@@ -197,7 +336,15 @@ if (scope === 'system') {
 // ── Components ────────────────────────────────────────────────────────────────
 let installService, installCli, installDashboard;
 
-if (YES) {
+if (isUpdate) {
+  // Reuse the same components as the existing install
+  installService   = existingSettings.dashboardEnabled !== undefined || fs.existsSync(
+    path.join(detectExistingAppDir(), 'packages', 'service', 'dist', 'index.js')
+  );
+  installCli       = fs.existsSync(detectExistingAppDir() + (PLATFORM === 'win32' ? '\\packages\\cli\\dist\\index.js' : '/packages/cli/dist/index.js'));
+  installDashboard = existingSettings.dashboardEnabled === true;
+  info(`Updating with existing config: service=${installService}, cli=${installCli}, dashboard=${installDashboard}`);
+} else if (YES) {
   installService   = ENV_INSTALL_SVC  !== '0' && !FLAG_NO_SVC;
   installCli       = ENV_INSTALL_CLI  !== '0' && !FLAG_NO_CLI;
   installDashboard = ENV_INSTALL_DASH !== '0' && !FLAG_NO_DASH;
@@ -214,7 +361,9 @@ if (!installService && !installCli && !installDashboard) {
 
 // ── Remote service URL (when service not installed) ───────────────────────────
 let remoteServiceUrl = '';
-if (!installService && installCli) {
+if (isUpdate) {
+  remoteServiceUrl = existingCliConfig.serviceUrl ?? '';
+} else if (!installService && installCli) {
   remoteServiceUrl = await ask(
     'Remote Routerly service URL',
     'http://localhost:3000',
@@ -226,12 +375,18 @@ if (!installService && installCli) {
 let port = 3000;
 let publicUrl = '';
 if (installService) {
-  port = parseInt(
-    FLAG_PORT || await ask('Service port', '3000'),
-    10
-  );
-  if (isNaN(port) || port < 1 || port > 65535) die(`Invalid port: ${port}`);
-  publicUrl = FLAG_URL || await ask('Public URL', `http://localhost:${port}`);
+  if (isUpdate) {
+    port      = existingSettings.port      ?? 3000;
+    publicUrl = existingSettings.publicUrl ?? `http://localhost:${port}`;
+    info(`Keeping existing config: port=${port}, publicUrl=${publicUrl}`);
+  } else {
+    port = parseInt(
+      FLAG_PORT || await ask('Service port', '3000'),
+      10
+    );
+    if (isNaN(port) || port < 1 || port > 65535) die(`Invalid port: ${port}`);
+    publicUrl = FLAG_URL || await ask('Public URL', `http://localhost:${port}`);
+  }
 }
 
 // ── Daemon ────────────────────────────────────────────────────────────────────
@@ -239,7 +394,7 @@ let setupDaemon = false;
 if (installService) {
   if (FLAG_NO_DAEMON) {
     setupDaemon = false;
-  } else if (YES) {
+  } else if (YES || isUpdate) {
     setupDaemon = ENV_DAEMON !== '0';
   } else {
     setupDaemon = await confirm(
@@ -265,7 +420,7 @@ if (!installService && remoteServiceUrl) {
 }
 console.log();
 
-if (!YES) {
+if (!YES && !isUpdate) {
   const go = await confirm('Proceed with installation?', true);
   if (!go) { rl.close(); process.exit(0); }
 }
@@ -498,7 +653,7 @@ if (installService && setupDaemon) {
 // ════════════════════════════════════════════════════════════════════════════
 // PHASE 8: Post-install setup wizard (optional)
 // ════════════════════════════════════════════════════════════════════════════
-if (installService) {
+if (installService && !isUpdate) {
   console.log('\n' + '─'.repeat(60));
   info(c.bold('Optional: Initial Setup Wizard'));
   console.log(c.dim('  Create an admin user, configure a model, and set up a project to get started quickly.'));
