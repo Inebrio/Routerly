@@ -254,6 +254,12 @@ if (isExistingInstall && !YES) {
     const userAppDir = path.join(HOME, '.routerly', 'app');
     if (fs.existsSync(userAppDir)) { await removeDir(userAppDir, false); success(`Removed ${userAppDir}`); }
 
+    // Remove system-scope service home (config/settings written here on system installs)
+    if (_systemServiceHome !== cliHome && fs.existsSync(_systemServiceHome)) {
+      await removeDir(_systemServiceHome, needsSudo);
+      success(`Removed ${_systemServiceHome}`);
+    }
+
     // Remove CLI wrapper
     const binPaths = [
       '/usr/local/bin/routerly',
