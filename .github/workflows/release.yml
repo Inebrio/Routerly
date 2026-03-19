@@ -69,4 +69,7 @@ jobs:
           gh release create "$TAG" \
             --title "Routerly ${TAG}" \
             --generate-notes \
-            "${ARCHIVE}"
+            "${ARCHIVE}" \
+            scripts/install.sh \
+            scripts/install.ps1 \
+            scripts/install.mjs
