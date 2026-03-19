@@ -563,12 +563,7 @@ async function writeFileP(filePath, content, useSudo = false, mode = 0o644) {
 /** Run a shell command, piping output to console. */
 async function runCmd(cmd, cwd) {
   try {
-    // On Windows, explicitly use cmd.exe for npm commands to handle paths correctly
-    const execOptions = { cwd };
-    if (PLATFORM === 'win32' && cmd.startsWith('npm')) {
-      execOptions.shell = 'cmd.exe';
-    }
-    const { stdout, stderr } = await exec(cmd, execOptions);
+    const { stdout, stderr } = await exec(cmd, { cwd });
     if (stdout) process.stdout.write(c.dim(stdout));
     if (stderr) process.stderr.write(c.dim(stderr));
   } catch (err) {
