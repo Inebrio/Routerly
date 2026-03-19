@@ -103,11 +103,16 @@ async function confirm(prompt, defaultYes = true) {
 console.log('\n' + c.bold(c.cyan('  Routerly')) + c.dim('  Installer') + '\n');
 console.log(c.dim('  Self-hosted LLM gateway — https://github.com/routerly/routerly\n'));
 
+// ─── Data directories ────────────────────────────────────────────────────────
+// cliHome  : always per-user — each user that runs the CLI gets their own
+//            config/data here, regardless of install scope.
+// serviceHome: computed after scope is chosen (Phase 1); may be system-wide.
+const cliHome = path.join(HOME, '.routerly');
+
 // ─── Detect existing install ──────────────────────────────────────────────────
-const routerlyHome = process.env.ROUTERLY_HOME ?? path.join(HOME, '.routerly');
-const isUpgrade = fs.existsSync(path.join(routerlyHome, 'config', 'settings.json'));
+const isUpgrade = fs.existsSync(path.join(cliHome, 'config', 'settings.json'));
 if (isUpgrade) {
-  warn(`Existing Routerly installation detected at ${c.bold(routerlyHome)}`);
+  warn(`Existing Routerly installation detected at ${c.bold(cliHome)}`);
   const go = await confirm('Continue with upgrade?', true);
   if (!go) { rl.close(); process.exit(0); }
 }
@@ -136,6 +141,22 @@ if (scope !== 'user' && scope !== 'system') {
   die(`Invalid scope "${scope}". Must be "user" or "system".`);
 }
 success(`Scope: ${c.bold(scope)}`);
+
+// ── Service data directory ───────────────────────────────────────────────────
+// The service reads/writes its config here. For system scope this is a shared
+// system directory; for user scope it coincides with cliHome.
+let serviceHome;
+if (scope === 'system') {
+  if (PLATFORM === 'win32') {
+    serviceHome = path.join('C:\\ProgramData', 'Routerly');
+  } else if (PLATFORM === 'darwin') {
+    serviceHome = '/Library/Application Support/Routerly';
+  } else {
+    serviceHome = '/var/lib/routerly';
+  }
+} else {
+  serviceHome = cliHome;
+}
 
 // ── Components ────────────────────────────────────────────────────────────────
 let installService, installCli, installDashboard;
@@ -231,14 +252,24 @@ const BIN_DIR = scope === 'user'
       : path.join(HOME, '.local', 'bin'))
   : (PLATFORM === 'win32' ? 'C:\\Windows\\System32' : '/usr/local/bin');
 
-await fsp.mkdir(APP_DIR,   { recursive: true });
-await fsp.mkdir(BIN_DIR,   { recursive: true });
-await fsp.mkdir(path.join(routerlyHome, 'config'), { recursive: true });
-await fsp.mkdir(path.join(routerlyHome, 'data'),   { recursive: true });
+// System directories require elevated privileges on Unix.
+const needsSudo = scope === 'system' && PLATFORM !== 'win32';
+
+await mkdirP(APP_DIR, needsSudo);
+await mkdirP(BIN_DIR, needsSudo);
+// Service data dir — may be a system path
+await mkdirP(path.join(serviceHome, 'config'), needsSudo);
+await mkdirP(path.join(serviceHome, 'data'),   needsSudo);
+// CLI data dir — always per-user, no sudo needed
+await fsp.mkdir(path.join(cliHome, 'config'), { recursive: true });
+await fsp.mkdir(path.join(cliHome, 'data'),   { recursive: true });
 
 success(`App directory:  ${c.dim(APP_DIR)}`);
 success(`Bin directory:  ${c.dim(BIN_DIR)}`);
-success(`Data directory: ${c.dim(routerlyHome)}`);
+success(`Service data:   ${c.dim(serviceHome)}`);
+if (scope === 'system') {
+  success(`CLI data:       ${c.dim(cliHome)} ${c.dim('(per-user)')}`);
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 // PHASE 3: Copy source & install dependencies
@@ -287,7 +318,8 @@ if (installCli) {
 step('5', 'Writing configuration');
 
 // Write settings.json only on fresh install (don't overwrite existing config)
-const settingsPath = path.join(routerlyHome, 'config', 'settings.json');
+// Service config lives in serviceHome (may be a system-wide path).
+const settingsPath = path.join(serviceHome, 'config', 'settings.json');
 if (!fs.existsSync(settingsPath)) {
   const settings = {
     port,
@@ -297,46 +329,46 @@ if (!fs.existsSync(settingsPath)) {
     logLevel: 'info',
     publicUrl,
   };
-  await fsp.writeFile(settingsPath, JSON.stringify(settings, null, 2));
+  await writeFileP(settingsPath, JSON.stringify(settings, null, 2), needsSudo);
   success('settings.json written');
 } else {
   info('Existing settings.json kept (upgrade mode)');
 }
 
-// ── Persist ROUTERLY_HOME to shell profile ────────────────────────────────────
-const envLine = `\n# Routerly\nexport ROUTERLY_HOME="${routerlyHome}"\n`;
-
-if (PLATFORM !== 'win32') {
-  const profiles = [
-    path.join(HOME, '.zshrc'),
-    path.join(HOME, '.bashrc'),
-    path.join(HOME, '.profile'),
-  ];
-  // Write to the first profile file that exists, otherwise create .profile
-  let profilePath = profiles.find(p => fs.existsSync(p)) ?? profiles[2];
-
-  // Check if already present (upgrade)
-  const existing = fs.existsSync(profilePath)
-    ? await fsp.readFile(profilePath, 'utf-8')
-    : '';
-  if (!existing.includes('ROUTERLY_HOME')) {
-    await fsp.appendFile(profilePath, envLine);
-    success(`ROUTERLY_HOME added to ${c.dim(profilePath)}`);
+// ── Persist ROUTERLY_HOME to shell profile (user scope only) ─────────────────
+// For system scope the service daemon has ROUTERLY_HOME set in its own unit.
+// The CLI resolves its per-user data dir dynamically via its wrapper script,
+// so no global env var needs to be exported for system installations.
+if (scope === 'user') {
+  const envLine = `\n# Routerly\nexport ROUTERLY_HOME="${cliHome}"\n`;
+  if (PLATFORM !== 'win32') {
+    const profiles = [
+      path.join(HOME, '.zshrc'),
+      path.join(HOME, '.bashrc'),
+      path.join(HOME, '.profile'),
+    ];
+    const profilePath = profiles.find(p => fs.existsSync(p)) ?? profiles[2];
+    const existing = fs.existsSync(profilePath)
+      ? await fsp.readFile(profilePath, 'utf-8')
+      : '';
+    if (!existing.includes('ROUTERLY_HOME')) {
+      await fsp.appendFile(profilePath, envLine);
+      success(`ROUTERLY_HOME added to ${c.dim(profilePath)}`);
+    } else {
+      info('ROUTERLY_HOME already in shell profile, skipping');
+    }
   } else {
-    info('ROUTERLY_HOME already in shell profile, skipping');
-  }
-} else {
-  // Windows: set via setx (user-level, persistent)
-  try {
-    await runCmd(`setx ROUTERLY_HOME "${routerlyHome}"`, APP_DIR);
-    success('ROUTERLY_HOME set via setx');
-  } catch {
-    warn('Could not set ROUTERLY_HOME via setx. Set it manually.');
+    try {
+      await runCmd(`setx ROUTERLY_HOME "${cliHome}"`, APP_DIR);
+      success('ROUTERLY_HOME set via setx');
+    } catch {
+      warn('Could not set ROUTERLY_HOME via setx. Set it manually.');
+    }
   }
 }
 
-// ── Also export for the remainder of this process so post-install wizard works
-process.env.ROUTERLY_HOME = routerlyHome;
+// ── Export serviceHome for the remainder of this process (wizard etc.) ────────
+process.env.ROUTERLY_HOME = serviceHome;
 
 // ════════════════════════════════════════════════════════════════════════════
 // PHASE 6: Install CLI wrapper
@@ -348,15 +380,21 @@ if (installCli) {
 
   if (PLATFORM === 'win32') {
     // .cmd wrapper for Windows
+    // System scope: use %USERPROFILE% so each user gets their own config dir.
+    // User scope: hardcode the current user's cliHome.
+    const cliHomeExpr = scope === 'system' ? '%USERPROFILE%\\.routerly' : cliHome;
     const binPath = path.join(BIN_DIR, 'routerly.cmd');
-    const wrapper = `@echo off\nset ROUTERLY_HOME=${routerlyHome}\nnode "${cliEntry}" %*\n`;
+    const wrapper = `@echo off\nset ROUTERLY_HOME=${cliHomeExpr}\nnode "${cliEntry}" %*\n`;
     await fsp.writeFile(binPath, wrapper);
     success(`CLI wrapper installed at ${c.dim(binPath)}`);
   } else {
     // Shell wrapper for Unix
+    // System scope: resolve $HOME at runtime so each user gets their own config.
+    // User scope: hardcode the current user's cliHome.
+    const cliHomeExpr = scope === 'system' ? '$HOME/.routerly' : cliHome;
     const binPath = path.join(BIN_DIR, 'routerly');
-    const wrapper = `#!/bin/sh\nexport ROUTERLY_HOME="${routerlyHome}"\nexec node "${cliEntry}" "$@"\n`;
-    await fsp.writeFile(binPath, wrapper, { mode: 0o755 });
+    const wrapper = `#!/bin/sh\nexport ROUTERLY_HOME="${cliHomeExpr}"\nexec node "${cliEntry}" "$@"\n`;
+    await writeFileP(binPath, wrapper, needsSudo, 0o755);
     success(`CLI wrapper installed at ${c.dim(binPath)}`);
 
     // Ensure BIN_DIR is on PATH (add to shell profile if not already there)
@@ -380,7 +418,7 @@ if (installCli) {
 
   // Remote URL config for CLI-only installs
   if (!installService && remoteServiceUrl) {
-    const cliConfigPath = path.join(routerlyHome, 'config', 'cli.json');
+    const cliConfigPath = path.join(cliHome, 'config', 'cli.json');
     await fsp.writeFile(
       cliConfigPath,
       JSON.stringify({ serviceUrl: remoteServiceUrl }, null, 2)
@@ -399,11 +437,11 @@ if (installService && setupDaemon) {
   const nodeExe      = process.execPath;
 
   if (PLATFORM === 'linux') {
-    await setupSystemdService({ scope, serviceEntry, nodeExe, routerlyHome, port });
+    await setupSystemdService({ scope, serviceEntry, nodeExe, routerlyHome: serviceHome, port });
   } else if (PLATFORM === 'darwin') {
-    await setupLaunchdService({ scope, serviceEntry, nodeExe, routerlyHome, port });
+    await setupLaunchdService({ scope, serviceEntry, nodeExe, routerlyHome: serviceHome, port });
   } else if (PLATFORM === 'win32') {
-    await setupWindowsService({ serviceEntry, nodeExe, routerlyHome, port });
+    await setupWindowsService({ serviceEntry, nodeExe, routerlyHome: serviceHome, port });
   } else {
     warn('Auto-start not supported on this platform. Start the service manually with:');
     console.log(`  node ${serviceEntry}`);
@@ -421,7 +459,7 @@ if (installService) {
 
   const doWizard = await confirm('  Run the setup wizard now?', !YES);
   if (doWizard) {
-    await setupWizard({ port, routerlyHome, APP_DIR, installCli });
+    await setupWizard({ port, routerlyHome: serviceHome, APP_DIR, installCli });
   }
 }
 
@@ -464,6 +502,30 @@ process.exit(0);
 // ════════════════════════════════════════════════════════════════════════════
 // Helpers
 // ════════════════════════════════════════════════════════════════════════════
+
+/** Create a directory, using sudo for system paths on non-Windows. */
+async function mkdirP(dir, useSudo = false) {
+  if (useSudo) {
+    await runCmd(`sudo mkdir -p "${dir}"`, '/');
+  } else {
+    await fsp.mkdir(dir, { recursive: true });
+  }
+}
+
+/**
+ * Write a file, using sudo for system paths on non-Windows.
+ * For sudo writes: writes to a temp file then sudo-moves it into place.
+ */
+async function writeFileP(filePath, content, useSudo = false, mode = 0o644) {
+  if (useSudo) {
+    const tmp = path.join(os.tmpdir(), `routerly-${randomBytes(4).toString('hex')}`);
+    await fsp.writeFile(tmp, content, { mode });
+    await runCmd(`sudo mv "${tmp}" "${filePath}"`, '/');
+    await runCmd(`sudo chmod ${mode.toString(8)} "${filePath}"`, '/');
+  } else {
+    await fsp.writeFile(filePath, content, { mode });
+  }
+}
 
 /** Run a shell command, piping output to console. */
 async function runCmd(cmd, cwd) {
