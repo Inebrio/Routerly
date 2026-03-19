@@ -115,7 +115,7 @@ async function confirm(prompt, defaultYes = true) {
 
 // ─── Banner ───────────────────────────────────────────────────────────────────
 console.log('\n' + c.bold(c.cyan('  Routerly')) + c.dim('  Installer') + '\n');
-console.log(c.dim('  Self-hosted LLM gateway — https://github.com/routerly/routerly\n'));
+console.log(c.dim('  Self-hosted LLM gateway — https://github.com/Inebrio/Routerly\n'));
 
 // ─── Data directories ────────────────────────────────────────────────────────
 // cliHome  : always per-user — each user that runs the CLI gets their own
@@ -722,7 +722,7 @@ if (installCli) {
   console.log(`  CLI:           ${c.cyan('routerly --help')}  ${c.dim('(restart terminal to use)')}`);
 }
 
-console.log('\n' + c.dim('  Docs: https://github.com/routerly/routerly/tree/main/docs') + '\n');
+console.log('\n' + c.dim('  Docs: https://github.com/Inebrio/Routerly/tree/main/docs') + '\n');
 
 rl.close();
 process.exit(0);

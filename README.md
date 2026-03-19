@@ -193,18 +193,18 @@ message = client.messages.create(
 
 **macOS / Linux:**
 ```bash
-curl -fsSL https://github.com/routerly/routerly/releases/latest/download/install.sh | bash
+curl -fsSL https://github.com/Inebrio/Routerly/releases/latest/download/install.sh | bash
 ```
 
 **Windows (PowerShell):**
 ```powershell
-powershell -c "irm https://github.com/routerly/routerly/releases/latest/download/install.ps1 | iex"
+powershell -c "irm https://github.com/Inebrio/Routerly/releases/latest/download/install.ps1 | iex"
 ```
 
 **Via Docker (no Node.js required):**
 ```bash
-git clone https://github.com/routerly/routerly.git
-cd routerly
+git clone https://github.com/Inebrio/Routerly.git
+cd Routerly
 docker compose up -d
 ```
 

@@ -10,12 +10,12 @@ The installer handles everything: Node.js check, download, build, encryption key
 
 **macOS / Linux:**
 ```bash
-curl -fsSL https://github.com/routerly/routerly/releases/latest/download/install.sh | bash
+curl -fsSL https://github.com/Inebrio/Routerly/releases/latest/download/install.sh | bash
 ```
 
 **Windows (PowerShell):**
 ```powershell
-powershell -c "irm https://github.com/routerly/routerly/releases/latest/download/install.ps1 | iex"
+powershell -c "irm https://github.com/Inebrio/Routerly/releases/latest/download/install.ps1 | iex"
 ```
 
 ### What the installer does
@@ -105,12 +105,32 @@ When daemon setup is selected, the installer configures the appropriate mechanis
 
 ---
 
-## Upgrade
+## Managing an existing installation
 
-Re-run the installer to upgrade. It detects an existing installation and asks for confirmation before proceeding. Existing configuration files are preserved; only the app files and built artifacts are replaced.
+Re-running the installer on a machine where Routerly is already installed shows a menu:
+
+```
+What would you like to do?
+  1  Update      — download & rebuild latest code, keep all settings
+  2  Reinstall   — change components or settings (user data preserved)
+  3  Uninstall   — remove Routerly from this machine
+  0  Cancel
+```
+
+**Update** rebuilds the app from the latest release without touching any configuration files, API keys, users, or usage data.
+
+**Reinstall** reruns the full configuration wizard so you can change the port, components, or daemon settings. All user data is preserved.
+
+**Uninstall** stops the daemon, removes all app files and CLI wrappers, and optionally removes user data too.
+
+Run the installer again to get this menu:
 
 ```bash
-curl -fsSL https://github.com/routerly/routerly/releases/latest/download/install.sh | bash
+# macOS / Linux
+curl -fsSL https://github.com/Inebrio/Routerly/releases/latest/download/install.sh | bash
+
+# Windows
+powershell -c "irm https://github.com/Inebrio/Routerly/releases/latest/download/install.ps1 | iex"
 ```
 
 ---
@@ -135,8 +155,8 @@ Docker is the simplest way to run Routerly on a server or inside an existing con
 
 ```bash
 # clone the repository (or download docker-compose.yml individually)
-git clone https://github.com/routerly/routerly.git
-cd routerly
+git clone https://github.com/Inebrio/Routerly.git
+cd Routerly
 
 docker compose up -d
 ```
@@ -233,8 +253,8 @@ npm --version
 ### Clone and install
 
 ```bash
-git clone https://github.com/routerly/routerly.git
-cd routerly
+git clone https://github.com/Inebrio/Routerly.git
+cd Routerly
 npm install
 ```
 
