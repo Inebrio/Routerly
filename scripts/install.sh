@@ -83,7 +83,7 @@ install_node() {
   if [ "$PLATFORM" = "macos" ]; then
     if need_cmd brew; then
       echo -e "  ${DIM}  brew install node${RESET}"
-      read -rp "  Install Node.js via Homebrew now? [Y/n] " answer
+      read -rp "  Install Node.js via Homebrew now? [Y/n] " answer </dev/tty
       if [[ "$answer" =~ ^[Yy]$|^$ ]]; then
         info "Running: brew install node"
         brew install node
@@ -97,7 +97,7 @@ install_node() {
     echo -e "    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash"
     echo -e "    nvm install ${REQUIRED_NODE_MAJOR}"
     echo
-    read -rp "  Install Node.js via nvm now? [Y/n] " answer
+    read -rp "  Install Node.js via nvm now? [Y/n] " answer </dev/tty
     if [[ "$answer" =~ ^[Yy]$|^$ ]]; then
       info "Installing nvm..."
       curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
