@@ -194,8 +194,13 @@ async function removeDaemon(scope) {
 
 // Read existing install scope from APP_DIR symlink/path heuristic
 function detectExistingScope() {
-  // Check for system-level paths
-  const systemPaths = ['/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly'];
+  // Check for system-level paths (app dirs + service home dirs)
+  const systemPaths = [
+    '/opt/routerly', 'C:\\Routerly', '/usr/local/lib/routerly',
+    '/var/lib/routerly',
+    '/Library/Application Support/Routerly',
+    path.join('C:\\ProgramData', 'Routerly'),
+  ];
   for (const p of systemPaths) {
     if (fs.existsSync(p)) return 'system';
   }
@@ -255,8 +260,10 @@ if (isExistingInstall && !YES) {
     if (fs.existsSync(userAppDir)) { await removeDir(userAppDir, false); success(`Removed ${userAppDir}`); }
 
     // Remove system-scope service home (config/settings written here on system installs)
+    // Always use sudo for system paths on POSIX, even if detectExistingScope said 'user'
     if (_systemServiceHome !== cliHome && fs.existsSync(_systemServiceHome)) {
-      await removeDir(_systemServiceHome, needsSudo);
+      const sysNeedsSudo = PLATFORM !== 'win32';
+      await removeDir(_systemServiceHome, sysNeedsSudo);
       success(`Removed ${_systemServiceHome}`);
     }
 
