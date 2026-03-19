@@ -142,6 +142,28 @@ if (scope !== 'user' && scope !== 'system') {
 }
 success(`Scope: ${c.bold(scope)}`);
 
+// ── Windows admin check ───────────────────────────────────────────────────────
+// On Windows, system-scope installation requires elevated privileges but we
+// can't use sudo. Check if running as Administrator and fail early if not.
+if (scope === 'system' && PLATFORM === 'win32') {
+  info('Checking for Administrator privileges...');
+  try {
+    // This command succeeds only when running as Administrator
+    await exec('net session >nul 2>&1', { shell: 'cmd.exe' });
+    success('Running with Administrator privileges');
+  } catch {
+    console.error('\n' + c.red(c.bold('✗ Administrator privileges required')));
+    console.error('\n  System-scope installation on Windows requires Administrator rights.');
+    console.error('  Please close this window and run PowerShell as Administrator, then try again:\n');
+    console.error(c.dim('    1. Right-click PowerShell'));
+    console.error(c.dim('    2. Select "Run as Administrator"'));
+    console.error(c.dim('    3. Re-run the installation command\n'));
+    console.error('  Or install in user scope instead (does not require admin).\n');
+    rl.close();
+    process.exit(1);
+  }
+}
+
 // ── Service data directory ───────────────────────────────────────────────────
 // The service reads/writes its config here. For system scope this is a shared
 // system directory; for user scope it coincides with cliHome.
