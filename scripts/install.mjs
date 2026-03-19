@@ -595,10 +595,13 @@ async function setupSystemdService({ scope, serviceEntry, nodeExe, routerlyHome,
   let unitPath;
   if (isSystem) {
     unitPath = path.join('/etc/systemd/system', unitName);
-    await fsp.writeFile(unitPath, unitContent);
-    info('Enabling and starting systemd service (may require sudo)...');
-    await runCmd(`systemctl daemon-reload`, '/');
-    await runCmd(`systemctl enable --now ${unitName}`, '/');
+    // Write to temp file first, then move with sudo
+    const tempFile = path.join('/tmp', unitName);
+    await fsp.writeFile(tempFile, unitContent);
+    info('Installing systemd service (requires sudo)...');
+    await runCmd(`sudo mv ${tempFile} ${unitPath}`, '/');
+    await runCmd(`sudo systemctl daemon-reload`, '/');
+    await runCmd(`sudo systemctl enable --now ${unitName}`, '/');
   } else {
     const systemdUserDir = path.join(HOME, '.config', 'systemd', 'user');
     await fsp.mkdir(systemdUserDir, { recursive: true });
@@ -656,11 +659,14 @@ async function setupLaunchdService({ scope, serviceEntry, nodeExe, routerlyHome,
   if (isSystem) {
     plistDir  = '/Library/LaunchDaemons';
     plistPath = path.join(plistDir, `${label}.plist`);
-    await fsp.writeFile(plistPath, plistContent);
-    await fsp.chmod(plistPath, 0o644);
-    info('Loading launchd daemon (may require sudo)...');
+    // Write to temp file first, then move with sudo
+    const tempFile = path.join('/tmp', `${label}.plist`);
+    await fsp.writeFile(tempFile, plistContent);
+    info('Installing launchd daemon (requires sudo)...');
+    await runCmd(`sudo mv ${tempFile} ${plistPath}`, '/');
+    await runCmd(`sudo chmod 644 ${plistPath}`, '/');
     try {
-      await runCmd(`launchctl load -w "${plistPath}"`, '/');
+      await runCmd(`sudo launchctl load -w "${plistPath}"`, '/');
     } catch {
       warn('Could not load daemon automatically. Run: sudo launchctl load -w ' + plistPath);
     }
