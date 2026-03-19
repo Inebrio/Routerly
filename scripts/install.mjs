@@ -279,6 +279,12 @@ if (isExistingInstall && !YES) {
       await removeDir(cliHome, false);
       success(`Removed ${cliHome}`);
     } else {
+      // Always remove the install marker (settings.json) even when keeping user
+      // data, so a subsequent run of the installer does not detect a stale install.
+      const settingsFile = path.join(cliHome, 'config', 'settings.json');
+      if (fs.existsSync(settingsFile)) {
+        try { fs.unlinkSync(settingsFile); } catch { /* ignore */ }
+      }
       info(`User data kept at ${c.dim(cliHome)}`);
     }
 
