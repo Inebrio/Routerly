@@ -8,6 +8,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 
 const CLI_DIR = join(homedir(), '.routerly', 'cli');
 const CLI_CONFIG_PATH = join(CLI_DIR, 'config.json');
+const CLI_INSTALL_CONFIG_PATH = join(homedir(), '.routerly', 'config', 'cli.json');
 
 export interface AccountEntry {
   /** Friendly alias chosen at login, e.g. "home", "work" */
@@ -48,6 +49,17 @@ async function writeCliConfig(config: CliConfig): Promise<void> {
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
+
+/** Returns the service URL written by the installer, or null if not set. */
+export async function getDefaultServiceUrl(): Promise<string | null> {
+  try {
+    const raw = await readFile(CLI_INSTALL_CONFIG_PATH, 'utf-8');
+    const cfg = JSON.parse(raw) as { serviceUrl?: string };
+    return cfg.serviceUrl ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export async function listAccounts(): Promise<AccountEntry[]> {
   const cfg = await readCliConfig();

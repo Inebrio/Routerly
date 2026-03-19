@@ -8,6 +8,7 @@ import {
   switchAccount,
   getCurrentAccount,
   getAccount,
+  getDefaultServiceUrl,
 } from '../store.js';
 import { apiWith, api, ApiError } from '../api.js';
 
@@ -28,13 +29,14 @@ export function makeAuthCommand(): Command {
   // ── auth login ──────────────────────────────────────────────────────────────
   cmd.command('login')
     .description('Log in to a Routerly server and save the session')
-    .option('--url <url>', 'Server base URL', 'http://localhost:3000')
+    .option('--url <url>', 'Server base URL (defaults to URL set during installation)')
     .option('--email <email>', 'Account email')
     .option('--password <password>', 'Account password')
     .option('--alias <alias>', 'Friendly name for this account (default: "default")')
-    .action(async (opts: { url: string; email?: string; password?: string; alias?: string }) => {
+    .action(async (opts: { url?: string; email?: string; password?: string; alias?: string }) => {
       let { email, password } = opts;
-      const serverUrl = opts.url.replace(/\/$/, '');
+      const defaultUrl = opts.url ?? (await getDefaultServiceUrl()) ?? 'http://localhost:3000';
+      const serverUrl = defaultUrl.replace(/\/$/, '');
 
       // Prompt for missing credentials
       if (!email || !password) {
