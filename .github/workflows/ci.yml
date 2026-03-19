@@ -28,6 +28,9 @@ jobs:
       - name: Typecheck — service
         run: npm run typecheck --workspace=packages/service
 
+      - name: Build service (required by cli)
+        run: npm run build --workspace=packages/service
+
       - name: Typecheck — cli
         run: npm run typecheck --workspace=packages/cli
 
@@ -35,4 +38,4 @@ jobs:
         run: npm run typecheck --workspace=packages/dashboard
 
       - name: Build remaining packages
-        run: npm run build --workspace=packages/service --workspace=packages/cli --workspace=packages/dashboard
+        run: npm run build --workspace=packages/cli --workspace=packages/dashboard

@@ -8,7 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build --workspace=packages/shared && npm run build --workspace=packages/service && npm run build --workspace=packages/cli && npm run build --workspace=packages/dashboard",
     "dev": "npm run dev --workspace=packages/service",
     "test": "npm test --workspaces --if-present",
     "lint": "eslint packages/*/src --ext .ts",

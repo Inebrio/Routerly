@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { randomUUID } from 'node:crypto';
-import type { MessagesRequest } from '@routerly/shared';
+import type { MessagesRequest, ModelConfig } from '@routerly/shared';
 import { routeRequest } from '../routing/router.js';
 import { selectModel } from '../routing/selector.js';
 import { getProviderAdapter } from '../providers/index.js';
@@ -61,7 +61,7 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
     return; // routing-only mode: fine handler
 
     // eslint-disable-next-line no-unreachable
-    const selectedModel = await selectModel(routingResponse, project);
+    const selectedModel = await selectModel(routingResponse, project) as ModelConfig;
     if (!selectedModel) {
       return reply.status(503).send({
         type: 'error',
@@ -85,7 +85,7 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
 
     const t0 = Date.now();
     try {
-      const response = await adapter.messages(body, selectedModel);
+      const response = await adapter.messages!(body, selectedModel);
       await trackUsage({
         projectId: project.id,
         model: selectedModel,
@@ -96,8 +96,8 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
         callType: 'completion',
       });
       return reply.send(response);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+    } catch (err) {
+      const msg = err instanceof Error ? (err as Error).message : String(err);
       request.log.error({ err, modelId: selectedModel.id }, 'Anthropic messages call failed');
       await trackUsage({
         projectId: project.id,

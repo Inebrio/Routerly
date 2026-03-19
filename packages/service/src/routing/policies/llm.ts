@@ -152,7 +152,7 @@ Return ONLY a valid JSON object with no text before or after it, no markdown, no
       model,
     );
 
-    const repairText = repairResponse.choices?.[0]?.message?.content ?? '';
+    const repairText = String(repairResponse.choices?.[0]?.message?.content ?? '');
     log?.info({ raw: repairText }, 'llm policy: repair response');
     return parseRoutingResponse(repairText);
   } catch (err) {
@@ -185,7 +185,7 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
   const allModels: ModelConfig[] = await readConfig('models');
   const allProjects: ProjectConfig[] = await readConfig('projects');
   const project = allProjects.find((p: ProjectConfig) => p.id === projectId)
-    ?? { id: projectId ?? '', models: [], name: '' } as ProjectConfig;
+    ?? { id: projectId ?? '', models: [], name: '', tokens: [], members: [] };
 
   const fallbackModelIds: string[] = config?.fallbackModelIds ?? [];
   const candidateModelIds = [routingModelId, ...fallbackModelIds];
@@ -280,7 +280,7 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
         ctx,
       );
 
-      const text = response.choices?.[0]?.message?.content ?? '';
+      const text = String(response.choices?.[0]?.message?.content ?? '');
       log?.info({ modelId, raw: text }, 'llm policy: raw response');
 
       const adapter = getProviderAdapter(model);
