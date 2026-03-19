@@ -464,7 +464,7 @@ if (installService && setupDaemon) {
 if (installService) {
   console.log('\n' + '─'.repeat(60));
   info(c.bold('Optional: Initial Setup Wizard'));
-  console.log(c.dim('  Configure a model, project, and admin user to get started quickly.'));
+  console.log(c.dim('  Create an admin user, configure a model, and set up a project to get started quickly.'));
   console.log(c.dim('  You can always do this later with the `routerly` CLI.\n'));
 
   const doWizard = await confirm('  Run the setup wizard now?', !YES);
@@ -726,8 +726,27 @@ async function setupWizard({ port, routerlyHome, APP_DIR, installCli }) {
   }
   success('Service is up');
 
+  // ── Create admin user ──
+  console.log('\n' + c.bold('  Step 1: Create a dashboard admin user') + '\n');
+  const addUser = await confirm('  Create an admin user now?', true);
+  if (addUser) {
+    const email    = await ask('  Email', 'admin@localhost');
+    const password = await ask('  Password', '', { hint: 'min 8 characters' });
+    if (!password || password.length < 8) {
+      warn('Password too short. Skipping user creation — run: routerly user add --email ... --password ...');
+    } else {
+      const cliArgs = `--email "${email}" --password "${password}" --role admin`;
+      try {
+        await runCliOrApi('user', 'add', cliArgs, { baseUrl, routerlyHome, APP_DIR, installCli });
+        success(`Admin user ${c.bold(email)} created`);
+      } catch {
+        warn('Could not create user via CLI. Run manually: routerly user add ' + cliArgs);
+      }
+    }
+  }
+
   // ── Add a model ──
-  console.log('\n' + c.bold('  Step 1: Add an LLM model') + '\n');
+  console.log('\n' + c.bold('  Step 2: Add an LLM model') + '\n');
   console.log('  Supported providers: openai, anthropic, gemini, ollama, custom\n');
   const addModel = await confirm('  Add a model now?', true);
   if (addModel) {
@@ -755,7 +774,7 @@ async function setupWizard({ port, routerlyHome, APP_DIR, installCli }) {
   }
 
   // ── Create a project ──
-  console.log('\n' + c.bold('  Step 2: Create a project') + '\n');
+  console.log('\n' + c.bold('  Step 3: Create a project') + '\n');
   const addProject = await confirm('  Create a project now?', true);
   if (addProject) {
     const projName = await ask('  Project name', 'My App');
@@ -767,25 +786,6 @@ async function setupWizard({ port, routerlyHome, APP_DIR, installCli }) {
       success(`Project ${c.bold(projName)} created`);
     } catch {
       warn('Could not create project via CLI. Run manually: routerly project add ' + cliArgs);
-    }
-  }
-
-  // ── Create admin user ──
-  console.log('\n' + c.bold('  Step 3: Create a dashboard admin user') + '\n');
-  const addUser = await confirm('  Create an admin user now?', true);
-  if (addUser) {
-    const email    = await ask('  Email', 'admin@localhost');
-    const password = await ask('  Password', '', { hint: 'min 8 characters' });
-    if (!password || password.length < 8) {
-      warn('Password too short. Skipping user creation — run: routerly user add --email ... --password ...');
-    } else {
-      const cliArgs = `--email "${email}" --password "${password}" --role admin`;
-      try {
-        await runCliOrApi('user', 'add', cliArgs, { baseUrl, routerlyHome, APP_DIR, installCli });
-        success(`Admin user ${c.bold(email)} created`);
-      } catch {
-        warn('Could not create user via CLI. Run manually: routerly user add ' + cliArgs);
-      }
     }
   }
 }
