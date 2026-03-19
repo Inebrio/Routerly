@@ -7,6 +7,7 @@
 
 import { createRequire }  from 'node:module';
 import { createInterface } from 'node:readline';
+import { ReadStream as TTYReadStream } from 'node:tty';
 import { randomBytes }    from 'node:crypto';
 import { promisify }      from 'node:util';
 import { exec as execCb } from 'node:child_process';
@@ -66,7 +67,18 @@ const PLATFORM = process.platform; // 'linux' | 'darwin' | 'win32'
 const HOME     = os.homedir();
 
 // ─── Interactive readline ─────────────────────────────────────────────────────
-const rl = createInterface({ input: process.stdin, output: process.stdout });
+// When launched via pipe (curl | bash) stdin is the pipe, not the terminal.
+// Open /dev/tty directly so prompts block waiting for real keyboard input.
+let _rlInput = process.stdin;
+let _ttyStream = null;
+if (!process.stdin.isTTY && process.platform !== 'win32') {
+  try {
+    const ttyFd  = fs.openSync('/dev/tty', 'r+');
+    _ttyStream   = new TTYReadStream(ttyFd);
+    _rlInput     = _ttyStream;
+  } catch { /* no /dev/tty (CI/container) — fall back to stdin; use --yes */ }
+}
+const rl = createInterface({ input: _rlInput, output: process.stdout });
 const question = (q) => new Promise(resolve => rl.question(q, resolve));
 
 async function ask(prompt, defaultValue, { hint = '' } = {}) {
