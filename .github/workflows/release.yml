@@ -49,7 +49,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION=$(node -p "require('./package.json').version")
+          VERSION=$(node -p "require('./packages/service/package.json').version")
           TAG="v${VERSION}"
 
           if git rev-parse "$TAG" >/dev/null 2>&1; then
