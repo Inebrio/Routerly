@@ -186,26 +186,25 @@ let installService, installCli, installDashboard;
 if (YES) {
   installService   = ENV_INSTALL_SVC  !== '0' && !FLAG_NO_SVC;
   installCli       = ENV_INSTALL_CLI  !== '0' && !FLAG_NO_CLI;
-  installDashboard = ENV_INSTALL_DASH !== '0' && !FLAG_NO_DASH && installService;
+  installDashboard = ENV_INSTALL_DASH !== '0' && !FLAG_NO_DASH;
 } else {
   console.log('\n  Which components do you want to install?\n');
   installService   = !FLAG_NO_SVC  && await confirm('  Install the Routerly service (API gateway)?', true);
   installCli       = !FLAG_NO_CLI  && await confirm('  Install the Routerly CLI?', true);
-  installDashboard = installService && !FLAG_NO_DASH
-    && await confirm('  Install the web dashboard?', true);
+  installDashboard = !FLAG_NO_DASH && await confirm('  Install the web dashboard?', true);
 }
 
-if (!installService && !installCli) {
-  die('Nothing to install. Select at least the service or the CLI.');
+if (!installService && !installCli && !installDashboard) {
+  die('Nothing to install. Select at least one component.');
 }
 
 // ── Remote service URL (when service not installed) ───────────────────────────
 let remoteServiceUrl = '';
-if (!installService && installCli) {
+if (!installService && (installCli || installDashboard)) {
   remoteServiceUrl = await ask(
     'Remote Routerly service URL',
     'http://localhost:3000',
-    { hint: 'used by the CLI to reach the service' }
+    { hint: 'used by the CLI/dashboard to reach the service' }
   );
 }
 
@@ -564,7 +563,12 @@ async function writeFileP(filePath, content, useSudo = false, mode = 0o644) {
 /** Run a shell command, piping output to console. */
 async function runCmd(cmd, cwd) {
   try {
-    const { stdout, stderr } = await exec(cmd, { cwd });
+    // On Windows, explicitly use cmd.exe for npm commands to handle paths correctly
+    const execOptions = { cwd };
+    if (PLATFORM === 'win32' && cmd.startsWith('npm')) {
+      execOptions.shell = 'cmd.exe';
+    }
+    const { stdout, stderr } = await exec(cmd, execOptions);
     if (stdout) process.stdout.write(c.dim(stdout));
     if (stderr) process.stderr.write(c.dim(stderr));
   } catch (err) {
