@@ -91,6 +91,20 @@ async function ask(prompt, defaultValue, { hint = '' } = {}) {
   return answer === '' ? defaultValue : answer;
 }
 
+async function askSecret(prompt) {
+  if (YES) return '';
+  return new Promise((resolve) => {
+    process.stdout.write(`  ${prompt}${c.dim(' (hidden)')}: `);
+    const origWrite = rl._writeToOutput.bind(rl);
+    rl._writeToOutput = () => {};
+    rl.question('', (answer) => {
+      rl._writeToOutput = origWrite;
+      process.stdout.write('\n');
+      resolve(answer.trim());
+    });
+  });
+}
+
 async function confirm(prompt, defaultYes = true) {
   if (YES) return defaultYes;
   const choices = defaultYes ? c.dim('[Y/n]') : c.dim('[y/N]');
@@ -191,7 +205,7 @@ if (YES) {
   console.log('\n  Which components do you want to install?\n');
   installService   = !FLAG_NO_SVC  && await confirm('  Install the Routerly service (API gateway)?', true);
   installCli       = !FLAG_NO_CLI  && await confirm('  Install the Routerly CLI?', true);
-  installDashboard = !FLAG_NO_DASH && await confirm('  Install the web dashboard?', true);
+  installDashboard = !FLAG_NO_DASH && installService && await confirm('  Install the web dashboard?', true);
 }
 
 if (!installService && !installCli && !installDashboard) {
@@ -200,11 +214,11 @@ if (!installService && !installCli && !installDashboard) {
 
 // ── Remote service URL (when service not installed) ───────────────────────────
 let remoteServiceUrl = '';
-if (!installService && (installCli || installDashboard)) {
+if (!installService && installCli) {
   remoteServiceUrl = await ask(
     'Remote Routerly service URL',
     'http://localhost:3000',
-    { hint: 'used by the CLI/dashboard to reach the service' }
+    { hint: 'used by the CLI to reach the service' }
   );
 }
 
@@ -520,10 +534,6 @@ if (installService) {
     console.log(`  Dashboard:     ${c.cyan(publicUrl + '/dashboard/')}`);
   }
   console.log(`  Health check:  ${c.dim('curl ' + publicUrl + '/health')}`);
-} else if (installDashboard) {
-  const dashUrl = remoteServiceUrl.replace(/\/$/, '');
-  console.log(`  Dashboard:     ${c.cyan(dashUrl + '/dashboard/')}`);
-  console.log(`  ${c.dim('(connects to remote service at ' + dashUrl + ')')}`);
 }
 
 if (installCli) {
@@ -761,17 +771,26 @@ async function setupWizard({ port, routerlyHome, APP_DIR, installCli }) {
   const addUser = await confirm('  Create an admin user now?', true);
   if (addUser) {
     const email    = await ask('  Email', 'admin@localhost');
-    const password = await ask('  Password', '', { hint: 'min 8 characters' });
-    if (!password || password.length < 8) {
-      warn('Password too short. Skipping user creation — run: routerly user add --email ... --password ...');
-    } else {
-      const cliArgs = `--email "${email}" --password "${password}" --role admin`;
-      try {
-        await runCliOrApi('user', 'add', cliArgs, { baseUrl, routerlyHome, APP_DIR, installCli });
-        success(`Admin user ${c.bold(email)} created`);
-      } catch {
-        warn('Could not create user via CLI. Run manually: routerly user add ' + cliArgs);
+    let password = '';
+    while (true) {
+      password = await askSecret('  Password (min 8 characters)');
+      if (!password || password.length < 8) {
+        warn('Password too short, try again.');
+        continue;
       }
+      const confirm2 = await askSecret('  Confirm password');
+      if (password !== confirm2) {
+        warn('Passwords do not match, try again.');
+        continue;
+      }
+      break;
+    }
+    const cliArgs = `--email "${email}" --password "${password}" --role admin`;
+    try {
+      await runCliOrApi('user', 'add', cliArgs, { baseUrl, routerlyHome, APP_DIR, installCli });
+      success(`Admin user ${c.bold(email)} created`);
+    } catch {
+      warn('Could not create user via CLI. Run manually: routerly user add ' + cliArgs);
     }
   }
 
