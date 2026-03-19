@@ -268,6 +268,7 @@ if (isExistingInstall && !YES) {
     }
 
     // Remove CLI wrapper
+    // System-scope bin paths (e.g. /usr/local/bin) require sudo on POSIX
     const binPaths = [
       '/usr/local/bin/routerly',
       path.join(HOME, '.local/bin/routerly'),
@@ -281,7 +282,19 @@ if (isExistingInstall && !YES) {
       path.join(HOME, '.routerly', 'bin', 'routerly.cmd'),
     ];
     for (const b of binPaths) {
-      if (fs.existsSync(b)) { try { fs.unlinkSync(b); success(`Removed ${b}`); } catch { /* skip */ } }
+      if (fs.existsSync(b)) {
+        try {
+          fs.unlinkSync(b);
+          success(`Removed ${b}`);
+        } catch {
+          // Likely a permission error — retry with sudo on POSIX
+          if (PLATFORM !== 'win32') {
+            await exec(`sudo rm -f "${b}"`).catch(() => {});
+            if (!fs.existsSync(b)) { success(`Removed ${b}`); }
+            else { warn(`Could not remove ${b} — remove it manually with: sudo rm ${b}`); }
+          }
+        }
+      }
     }
 
     // Remove data dir (ask)
