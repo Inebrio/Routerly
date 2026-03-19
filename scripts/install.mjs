@@ -289,9 +289,9 @@ if (needsSudo) {
   await runCmd(`sudo chown -R ${currentUser} "${APP_DIR}"`, '/');
 }
 
-// npm install --omit=dev
+// npm install --omit=dev (HUSKY=0 prevents the "prepare" script from failing)
 info('Installing production dependencies...');
-await runCmd('npm install --omit=dev', APP_DIR);
+await runCmd('HUSKY=0 npm install --omit=dev', APP_DIR);
 success('Dependencies installed');
 
 // ── Build packages ─────────────────────────────────────────────────────────
