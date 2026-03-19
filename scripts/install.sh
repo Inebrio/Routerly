@@ -12,8 +12,8 @@
 set -euo pipefail
 
 # ── Distribution config ───────────────────────────────────────────────────────
-GITHUB_OWNER="routerly"
-GITHUB_REPO="routerly"
+GITHUB_OWNER="Inebrio"
+GITHUB_REPO="Routerly"
 REQUIRED_NODE_MAJOR=20
 
 # ── Colors ────────────────────────────────────────────────────────────────────
