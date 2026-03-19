@@ -567,7 +567,10 @@ async function runCmd(cmd, cwd) {
     if (stdout) process.stdout.write(c.dim(stdout));
     if (stderr) process.stderr.write(c.dim(stderr));
   } catch (err) {
-    die(`Command failed: ${cmd}\n  ${err.message}`);
+    // Show stdout/stderr from the failed command so the user can see the actual errors
+    if (err.stdout) process.stdout.write(err.stdout);
+    if (err.stderr) process.stderr.write(err.stderr);
+    die(`Command failed: ${cmd}`);
   }
 }
 
