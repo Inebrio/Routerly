@@ -1,0 +1,22 @@
+# Test environment: Debian 12 without Node.js
+# Used for: no-node scenario (tests install_node menu + apt installation)
+FROM debian:12-slim
+
+# Install only basic tools (NO Node.js)
+RUN apt-get update && \
+    apt-get install -y curl sudo ca-certificates gnupg && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create a test user with sudo privileges
+RUN useradd -m -s /bin/bash testuser && \
+    echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Verify Node is NOT installed
+RUN ! command -v node >/dev/null 2>&1 || (echo "ERROR: Node should not be installed" && exit 1)
+
+# Set working directory
+WORKDIR /test
+
+# Default command
+CMD ["/bin/bash"]
