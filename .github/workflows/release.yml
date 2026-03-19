@@ -23,47 +23,50 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build all packages
-        run: npm run build
-
-      # changesets/action either:
-      # - opens/updates the "Version Packages" PR when changesets are pending, OR
-      # - publishes the release (creates tag + GitHub Release) when that PR is merged
-      - name: Create release PR or publish
+      - name: Create or update "Version Packages" PR
         id: changesets
         uses: changesets/action@v1
         with:
-          # Instead of `npm publish`, we just create the Git tag.
-          # The actual GitHub Release with tarball is created in the next step.
-          publish: npm run release
           title: "chore: version packages"
           commit: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # This step runs only after changesets/action has published (i.e. the
-      # "Version Packages" PR was merged and tags were created).
-      - name: Create GitHub Release with tarball
-        if: steps.changesets.outputs.published == 'true'
+      # Runs when no changesets are pending (i.e. after the Version PR is merged).
+      # Idempotent: skips silently if the tag already exists.
+      - name: Build all packages
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        run: npm run build
+
+      - name: Create tag and GitHub Release
+        if: steps.changesets.outputs.hasChangesets == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=$(node -p "require('./package.json').version")
           TAG="v${VERSION}"
 
-          # Build a source tarball (excluding dev artefacts)
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists, skipping."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG"
+          git push origin "$TAG"
+
           ARCHIVE="routerly-${VERSION}.tar.gz"
           git archive --format=tar.gz --prefix="routerly-${VERSION}/" \
             --output="${ARCHIVE}" HEAD
 
-          # Create the GitHub Release and attach the tarball
-          gh release create "${TAG}" \
+          gh release create "$TAG" \
             --title "Routerly ${TAG}" \
             --generate-notes \
             "${ARCHIVE}"
