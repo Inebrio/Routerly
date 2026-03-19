@@ -31,8 +31,13 @@ program.addCommand(makeServiceCommand());
 program.command('start')
   .description('Start the Routerly service (shortcut for `node packages/service/dist/index.js`)')
   .action(async () => {
-    const { startServer } = await import('../../service/dist/server.js');
-    await startServer();
+    const { spawn } = await import('child_process');
+    const { resolve, dirname } = await import('path');
+    const { fileURLToPath } = await import('url');
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const serviceEntry = resolve(__dirname, '../../service/dist/index.js');
+    const child = spawn(process.execPath, [serviceEntry], { stdio: 'inherit' });
+    child.on('exit', (code) => process.exit(code ?? 0));
   });
 
 program.parse(process.argv);
