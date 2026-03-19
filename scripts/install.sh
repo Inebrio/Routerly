@@ -79,38 +79,127 @@ check_node() {
 install_node() {
   echo
   warn "Routerly requires Node.js ${REQUIRED_NODE_MAJOR}+."
-  echo -e "  Install options:"
+
+  # ── Detect available package managers ─────────────────────────────────────
+  local options=()   # display labels
+  local methods=()   # internal keys
+
+  # nvm is always offered (works on both macOS and Linux, no root needed)
+  options+=("nvm  (Node Version Manager — recommended, no sudo needed)")
+  methods+=("nvm")
+
   if [ "$PLATFORM" = "macos" ]; then
     if need_cmd brew; then
-      echo -e "  ${DIM}  brew install node${RESET}"
-      read -rp "  Install Node.js via Homebrew now? [Y/n] " answer </dev/tty
-      if [[ "$answer" =~ ^[Yy]$|^$ ]]; then
-        info "Running: brew install node"
-        brew install node
-        return 0
-      fi
+      options+=("brew (Homebrew)")
+      methods+=("brew")
+    else
+      options+=("brew (Homebrew — will install Homebrew first)")
+      methods+=("brew-install")
     fi
-    echo -e "  ${DIM}  brew install node${RESET}"
-    echo -e "    or download from https://nodejs.org"
-  elif [ "$PLATFORM" = "linux" ]; then
-    echo -e "  ${DIM}  Via nvm (recommended):${RESET}"
-    echo -e "    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash"
-    echo -e "    nvm install ${REQUIRED_NODE_MAJOR}"
-    echo
-    read -rp "  Install Node.js via nvm now? [Y/n] " answer </dev/tty
-    if [[ "$answer" =~ ^[Yy]$|^$ ]]; then
-      info "Installing nvm..."
+  fi
+
+  if [ "$PLATFORM" = "linux" ]; then
+    # Detect the Linux distro package manager
+    if need_cmd apt-get; then
+      options+=("apt  (Debian/Ubuntu — requires sudo)")
+      methods+=("apt")
+    elif need_cmd dnf; then
+      options+=("dnf  (Fedora/RHEL — requires sudo)")
+      methods+=("dnf")
+    elif need_cmd pacman; then
+      options+=("pacman (Arch Linux — requires sudo)")
+      methods+=("pacman")
+    elif need_cmd zypper; then
+      options+=("zypper (openSUSE — requires sudo)")
+      methods+=("zypper")
+    fi
+  fi
+
+  options+=("manual — I'll install Node.js myself")
+  methods+=("manual")
+
+  # ── Print menu ─────────────────────────────────────────────────────────────
+  echo -e "\n  How would you like to install Node.js ${REQUIRED_NODE_MAJOR}?\n"
+  local i
+  for i in "${!options[@]}"; do
+    echo -e "    ${BOLD}$((i+1))${RESET}  ${options[$i]}"
+  done
+  echo
+
+  local choice method
+  read -rp "  Choose an option [1]: " choice </dev/tty
+  choice="${choice:-1}"
+
+  # Validate input is a number in range
+  if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#methods[@]}" ]; then
+    warn "Invalid choice, defaulting to option 1."
+    choice=1
+  fi
+
+  method="${methods[$((choice-1))]}"
+
+  # ── Execute chosen method ──────────────────────────────────────────────────
+  case "$method" in
+
+    nvm)
+      info "Installing nvm and Node.js ${REQUIRED_NODE_MAJOR}..."
       curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-      export NVM_DIR="$HOME/.nvm"
+      export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
       # shellcheck disable=SC1091
       [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
       nvm install "$REQUIRED_NODE_MAJOR"
       nvm use "$REQUIRED_NODE_MAJOR"
-      return 0
-    fi
-  fi
-  echo
-  die "Please install Node.js ${REQUIRED_NODE_MAJOR}+ manually and re-run this script."
+      ;;
+
+    brew)
+      info "Running: brew install node"
+      brew install node
+      ;;
+
+    brew-install)
+      info "Installing Homebrew first..."
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      # Add brew to PATH for this session (Apple Silicon vs Intel)
+      if [ -x "/opt/homebrew/bin/brew" ]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+      elif [ -x "/usr/local/bin/brew" ]; then
+        eval "$(/usr/local/bin/brew shellenv)"
+      fi
+      info "Running: brew install node"
+      brew install node
+      ;;
+
+    apt)
+      info "Installing Node.js ${REQUIRED_NODE_MAJOR} via apt..."
+      curl -fsSL "https://deb.nodesource.com/setup_${REQUIRED_NODE_MAJOR}.x" | sudo -E bash -
+      sudo apt-get install -y nodejs
+      ;;
+
+    dnf)
+      info "Installing Node.js ${REQUIRED_NODE_MAJOR} via dnf..."
+      curl -fsSL "https://rpm.nodesource.com/setup_${REQUIRED_NODE_MAJOR}.x" | sudo bash -
+      sudo dnf install -y nodejs
+      ;;
+
+    pacman)
+      info "Installing nodejs via pacman..."
+      sudo pacman -Sy --noconfirm nodejs npm
+      ;;
+
+    zypper)
+      info "Installing nodejs via zypper..."
+      sudo zypper install -y nodejs"${REQUIRED_NODE_MAJOR}"
+      ;;
+
+    manual)
+      echo
+      echo -e "  Please install Node.js ${REQUIRED_NODE_MAJOR}+ from one of these sources:"
+      echo -e "    ${DIM}https://nodejs.org/en/download${RESET}"
+      echo -e "    ${DIM}https://github.com/nvm-sh/nvm${RESET}"
+      echo
+      die "Re-run this script after installing Node.js ${REQUIRED_NODE_MAJOR}+."
+      ;;
+  esac
 }
 
 if ! check_node; then
