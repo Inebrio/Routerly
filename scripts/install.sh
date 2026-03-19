@@ -51,12 +51,57 @@ esac
 
 info "Detected platform: ${BOLD}${PLATFORM}/${ARCH}${RESET}"
 
+# ── Probe known Node.js locations before checking ─────────────────────────────
+try_load_node_paths
+
 # ── Check for required tools ──────────────────────────────────────────────────
 need_cmd() {
   if ! command -v "$1" &>/dev/null; then
     return 1
   fi
   return 0
+}
+
+# ── Try to load Node.js from known locations ──────────────────────────────────
+# When running via `curl | bash` the shell is non-interactive: .bashrc/.zshrc
+# are NOT sourced, so nvm, Homebrew and other package managers may be invisible.
+# This function probes the most common install locations and patches PATH/env
+# so that subsequent `node` calls work without requiring a new login shell.
+try_load_node_paths() {
+  # ── nvm ──────────────────────────────────────────────────────────────────────
+  local nvm_dir="${NVM_DIR:-$HOME/.nvm}"
+  if [ -s "$nvm_dir/nvm.sh" ]; then
+    # shellcheck disable=SC1091
+    source "$nvm_dir/nvm.sh" --no-use 2>/dev/null || true
+    # Also try to point at the default/lts alias without switching global version
+    if command -v nvm &>/dev/null; then
+      nvm use default 2>/dev/null || nvm use node 2>/dev/null || true
+    fi
+  fi
+
+  # ── Homebrew (macOS — Intel and Apple Silicon) ────────────────────────────────
+  for brew_bin in /opt/homebrew/bin /usr/local/bin; do
+    if [ -x "$brew_bin/brew" ] && [[ ":$PATH:" != *":$brew_bin:"* ]]; then
+      export PATH="$brew_bin:$PATH"
+    fi
+  done
+
+  # ── Common system paths (Linux distros, manual installs) ─────────────────────
+  for dir in /usr/local/bin /usr/bin /usr/sbin /snap/bin; do
+    if [ -d "$dir" ] && [[ ":$PATH:" != *":$dir:"* ]]; then
+      export PATH="$dir:$PATH"
+    fi
+  done
+
+  # ── Volta ─────────────────────────────────────────────────────────────────────
+  if [ -d "$HOME/.volta/bin" ] && [[ ":$PATH:" != *":$HOME/.volta/bin:"* ]]; then
+    export PATH="$HOME/.volta/bin:$PATH"
+  fi
+
+  # ── fnm ───────────────────────────────────────────────────────────────────────
+  if command -v fnm &>/dev/null; then
+    eval "$(fnm env 2>/dev/null)" || true
+  fi
 }
 
 # ── Node.js version check ─────────────────────────────────────────────────────
@@ -204,7 +249,8 @@ install_node() {
 
 if ! check_node; then
   install_node
-  # Re-check after install
+  # Re-check after install: reload paths first (nvm/brew may have just been set up)
+  try_load_node_paths
   check_node || die "Node.js ${REQUIRED_NODE_MAJOR}+ still not available. Aborting."
 fi
 
