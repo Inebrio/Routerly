@@ -232,8 +232,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ]
         : undefined;
 
+    const { limits: _existingLimits, ...existingWithoutLimits } = existing;
     const model: ModelConfig = {
-      ...existing,
+      ...existingWithoutLimits,
       id: newId,
       name: req.body.name ?? existing.name,
       provider: req.body.provider as Provider,
@@ -245,10 +246,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...(req.body.cachePerMillion !== undefined ? { cachePerMillion: req.body.cachePerMillion } : {}),
         ...(req.body.pricingTiers?.length ? { pricingTiers: req.body.pricingTiers } : {}),
       },
-      limits: resolvedLimits?.length ? resolvedLimits : undefined,
       // clear legacy field when updating
       globalThresholds: undefined,
       ...(req.body.contextWindow !== undefined ? { contextWindow: req.body.contextWindow } : existing.contextWindow !== undefined ? { contextWindow: existing.contextWindow } : {}),
+      ...(resolvedLimits?.length ? { limits: resolvedLimits } : {}),
     };
     models[index] = model;
     await writeConfig('models', models);
@@ -518,7 +519,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const users = await readConfig('users');
     const idx = users.findIndex(u => u.id === userId);
     if (idx === -1) return reply.status(404).send({ error: 'User not found' });
-    const user = users[idx];
+    const user = users[idx]!;
     if (user.passwordHash !== hashPassword(currentPassword)) {
       return reply.status(401).send({ error: 'Current password is incorrect' });
     }
@@ -530,10 +531,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
     if (newPassword) {
       if (newPassword.length < 8) return reply.status(400).send({ error: 'Password must be at least 8 characters' });
-      users[idx] = { ...users[idx], passwordHash: hashPassword(newPassword) };
+      users[idx] = { ...users[idx]!, passwordHash: hashPassword(newPassword) };
     }
     await writeConfig('users', users);
-    const updated = users[idx];
+    const updated = users[idx]!;
     return reply.send({ id: updated.id, email: updated.email, roleId: updated.roleId });
   });
 
@@ -575,27 +576,27 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const users = await readConfig('users');
     const idx = users.findIndex(u => u.id === req.params.id);
     if (idx === -1) return reply.status(404).send({ error: 'User not found' });
-    const user = users[idx];
+    const user = users[idx]!;
     const { email, roleId, newPassword } = req.body;
     if (email && email !== user.email) {
       if (users.find(u => u.email === email)) return reply.status(409).send({ error: 'Email already in use' });
-      users[idx] = { ...users[idx], email };
+      users[idx] = { ...users[idx]!, email };
     }
     if (roleId) {
       // Ensure at least one admin remains
-      const isLastAdmin = user!.roleId === 'admin' && roleId !== 'admin' &&
+      const isLastAdmin = user.roleId === 'admin' && roleId !== 'admin' &&
         users.filter(u => u.roleId === 'admin').length === 1;
       if (isLastAdmin) {
         return reply.status(409).send({ error: 'Cannot change role: this is the last admin account' });
       }
-      users[idx] = { ...users[idx], roleId };
+      users[idx] = { ...users[idx]!, roleId };
     }
     if (newPassword) {
       if (newPassword.length < 8) return reply.status(400).send({ error: 'Password must be at least 8 characters' });
-      users[idx] = { ...users[idx], passwordHash: hashPassword(newPassword) };
+      users[idx] = { ...users[idx]!, passwordHash: hashPassword(newPassword) };
     }
     await writeConfig('users', users);
-    const updated = users[idx];
+    const updated = users[idx]!;
     return reply.send({ id: updated.id, email: updated.email, roleId: updated.roleId, projectIds: updated.projectIds });
   });
 
@@ -736,7 +737,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!channelId) return reply.status(400).send({ error: 'channelId is required' });
 
     const settings = await readConfig('settings');
-    const channels  = (settings.notifications?.channels ?? []) as Array<{ id: string; provider: string; [k: string]: unknown }>;
+    const channels  = ((settings.notifications?.channels ?? []) as unknown) as Array<{ id: string; provider: string; [k: string]: unknown }>;
     const channel   = channels.find(ch => ch.id === channelId);
     if (!channel) return reply.status(400).send({ error: `Channel "${channelId}" not found` });
 
