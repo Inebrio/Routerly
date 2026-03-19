@@ -278,8 +278,16 @@ step('3', 'Copying files & installing dependencies');
 
 // Copy source tree to APP_DIR
 info(`Copying source from ${c.dim(SOURCE_DIR)} to ${c.dim(APP_DIR)}...`);
-await copyDir(SOURCE_DIR, APP_DIR);
+await copyDir(SOURCE_DIR, APP_DIR, needsSudo);
 success('Source files copied');
+
+// For system installs the directory was created/populated with sudo.
+// Transfer ownership to the current user so npm install and build commands
+// can run without sudo (and avoid creating root-owned node_modules).
+if (needsSudo) {
+  const currentUser = os.userInfo().username;
+  await runCmd(`sudo chown -R ${currentUser} "${APP_DIR}"`, '/');
+}
 
 // npm install --omit=dev
 info('Installing production dependencies...');
@@ -538,9 +546,9 @@ async function runCmd(cmd, cwd) {
   }
 }
 
-/** Recursively copy a directory (Node.js built-in, no deps). */
-async function copyDir(src, dest) {
-  await fsp.mkdir(dest, { recursive: true });
+/** Recursively copy a directory, optionally using sudo for system paths. */
+async function copyDir(src, dest, useSudo = false) {
+  await mkdirP(dest, useSudo);
   const entries = await fsp.readdir(src, { withFileTypes: true });
   for (const entry of entries) {
     // Skip heavy dirs that aren't needed in the install target
@@ -550,7 +558,9 @@ async function copyDir(src, dest) {
     const srcPath  = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
     if (entry.isDirectory()) {
-      await copyDir(srcPath, destPath);
+      await copyDir(srcPath, destPath, useSudo);
+    } else if (useSudo) {
+      await runCmd(`sudo cp "${srcPath}" "${destPath}"`, '/');
     } else {
       await fsp.copyFile(srcPath, destPath);
     }
