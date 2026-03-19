@@ -124,7 +124,23 @@ console.log(c.dim('  Self-hosted LLM gateway — https://github.com/routerly/rou
 const cliHome = path.join(HOME, '.routerly');
 
 // ─── Detect existing install ──────────────────────────────────────────────────
-const existingSettingsPath = path.join(cliHome, 'config', 'settings.json');
+// settings.json is written to serviceHome, which differs by scope:
+//   user scope  → ~/.routerly/config/settings.json  (same as cliHome)
+//   system scope (Windows) → C:\ProgramData\Routerly\config\settings.json
+//   system scope (macOS)   → /Library/Application Support/Routerly/config/settings.json
+//   system scope (Linux)   → /var/lib/routerly/config/settings.json
+const _systemServiceHome =
+  PLATFORM === 'win32'   ? path.join('C:\\ProgramData', 'Routerly') :
+  PLATFORM === 'darwin'  ? '/Library/Application Support/Routerly' :
+                           '/var/lib/routerly';
+const _candidateSettingsPaths = [
+  path.join(cliHome, 'config', 'settings.json'),
+  path.join(_systemServiceHome, 'config', 'settings.json'),
+];
+// Pick the first path that actually exists; fall back to the user-scope path
+// so that isExistingInstall is false on a fresh machine.
+const existingSettingsPath =
+  _candidateSettingsPaths.find(p => fs.existsSync(p)) ?? _candidateSettingsPaths[0];
 const isExistingInstall = fs.existsSync(existingSettingsPath);
 
 // Read existing config to reuse in update/reinstall flows

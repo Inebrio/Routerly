@@ -47,11 +47,29 @@ $arch = if ([System.Environment]::Is64BitOperatingSystem) { "x64" } else { "x86"
 Write-Info "Detected: Windows/$arch"
 
 # ── Check Node.js ─────────────────────────────────────────────────────────────
+# When running as Administrator, user-scoped installs (nvm, Volta, fnm, etc.) may
+# not appear in the system PATH. Probe the most common Windows install locations
+# and add the first one found to $env:Path so Test-NodeVersion can find it.
+foreach ($loc in @(
+    "$env:ProgramFiles\nodejs",
+    "${env:ProgramFiles(x86)}\nodejs",
+    "$env:LOCALAPPDATA\Programs\nodejs",
+    "$env:APPDATA\npm"
+  )) {
+  if ((Test-Path "$loc\node.exe") -and ($env:Path -notlike "*$loc*")) {
+    $env:Path = "$loc;$env:Path"
+    break
+  }
+}
+
 function Test-NodeVersion {
   try {
     $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
     if (-not $nodeCmd) { return $false }
-    $ver = (node -e "process.stdout.write(process.versions.node)").Trim()
+    # Use --version (outputs 'v24.x.x') which is more reliable than -e in all PS versions
+    $ver = (& node --version 2>$null)
+    if (-not $ver) { return $false }
+    $ver = $ver.TrimStart('v').Trim()
     $major = [int]($ver.Split(".")[0])
     if ($major -ge $REQUIRED_NODE_MAJOR) {
       Write-Success "Node.js $ver found"
