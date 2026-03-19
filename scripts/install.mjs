@@ -520,6 +520,10 @@ if (installService) {
     console.log(`  Dashboard:     ${c.cyan(publicUrl + '/dashboard/')}`);
   }
   console.log(`  Health check:  ${c.dim('curl ' + publicUrl + '/health')}`);
+} else if (installDashboard) {
+  const dashUrl = remoteServiceUrl.replace(/\/$/, '');
+  console.log(`  Dashboard:     ${c.cyan(dashUrl + '/dashboard/')}`);
+  console.log(`  ${c.dim('(connects to remote service at ' + dashUrl + ')')}`);
 }
 
 if (installCli) {
