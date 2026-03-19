@@ -259,6 +259,10 @@ if (isExistingInstall && !YES) {
       '/usr/local/bin/routerly',
       path.join(HOME, '.local/bin/routerly'),
       path.join(HOME, 'bin/routerly'),
+      // Windows system scope: wrapper installed in System32
+      'C:\\Windows\\System32\\routerly.cmd',
+      // Windows user scope: wrapper installed in WindowsApps or .routerly\bin
+      path.join(HOME, 'AppData', 'Local', 'Microsoft', 'WindowsApps', 'routerly.cmd'),
       'C:\\Routerly\\bin\\routerly.cmd',
       path.join(HOME, '.routerly', 'bin', 'routerly'),
       path.join(HOME, '.routerly', 'bin', 'routerly.cmd'),
