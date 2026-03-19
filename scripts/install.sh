@@ -51,9 +51,6 @@ esac
 
 info "Detected platform: ${BOLD}${PLATFORM}/${ARCH}${RESET}"
 
-# ── Probe known Node.js locations before checking ─────────────────────────────
-try_load_node_paths
-
 # ── Check for required tools ──────────────────────────────────────────────────
 need_cmd() {
   if ! command -v "$1" &>/dev/null; then
@@ -247,6 +244,9 @@ install_node() {
   esac
 }
 
+# Probe known Node.js locations before checking (nvm/brew/volta/fnm are not
+# in PATH when running via `curl | bash` — shell is non-interactive)
+try_load_node_paths
 if ! check_node; then
   install_node
   # Re-check after install: reload paths first (nvm/brew may have just been set up)
