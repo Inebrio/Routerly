@@ -427,13 +427,11 @@ if (isUpdate) {
 // ── Port & URL ────────────────────────────────────────────────────────────────
 let port = 3000;
 let host = '0.0.0.0';
-let publicUrl = '';
 if (installService) {
   if (isUpdate) {
-    port      = existingSettings.port      ?? 3000;
-    host      = existingSettings.host      ?? '0.0.0.0';
-    publicUrl = existingSettings.publicUrl ?? `http://localhost:${port}`;
-    info(`Keeping existing config: port=${port}, host=${host}, publicUrl=${publicUrl}`);
+    port = existingSettings.port ?? 3000;
+    host = existingSettings.host ?? '0.0.0.0';
+    info(`Keeping existing config: port=${port}, host=${host}`);
   } else {
     port = parseInt(
       FLAG_PORT || await ask('Service port', '3000'),
@@ -441,9 +439,11 @@ if (installService) {
     );
     if (isNaN(port) || port < 1 || port > 65535) die(`Invalid port: ${port}`);
     host = FLAG_HOST || await ask('Service bind host', '0.0.0.0', { hint: 'use 0.0.0.0 for all interfaces, 127.0.0.1 for localhost only' });
-    publicUrl = FLAG_URL || await ask('Public URL', `http://localhost:${port}`);
   }
 }
+// Derived automatically from host+port — can be changed later in the dashboard settings
+const displayHost = (host === '0.0.0.0' || host === '::') ? 'localhost' : host;
+const publicUrl = FLAG_URL || (installService ? (existingSettings.publicUrl ?? `http://${displayHost}:${port}`) : '');
 
 // ── Daemon ────────────────────────────────────────────────────────────────────
 let setupDaemon = false;
