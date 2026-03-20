@@ -15,6 +15,11 @@ export function makeServiceCommand(): Command {
 
   cmd.command('status')
     .description('Show current service configuration')
+    .addHelpText('after', `
+Examples:
+  # Show version, uptime, port, models, and projects
+  routerly service status
+`)
     .action(async () => {
       const account = await getCurrentAccount();
       if (!account) {
@@ -52,6 +57,22 @@ export function makeServiceCommand(): Command {
 
   cmd.command('configure')
     .description('Update service settings')
+    .addHelpText('after', `
+Examples:
+  # Change the listening port
+  routerly service configure --port 8080
+
+  # Increase log verbosity
+  routerly service configure --log-level debug
+
+  # Bind to all network interfaces
+  routerly service configure --host 0.0.0.0
+
+  # Production hardening: specific port, reduced logging, long timeout
+  routerly service configure \\
+    --port 443 --host 0.0.0.0 \\
+    --log-level warn --timeout 60000
+`)
     .option('--port <port>', 'HTTP port to listen on')
     .option('--host <host>', 'Host to bind to')
     .option('--dashboard <bool>', 'Enable/disable dashboard (true|false)')

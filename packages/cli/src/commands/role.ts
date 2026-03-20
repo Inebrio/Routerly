@@ -14,6 +14,11 @@ export function makeRoleCommand(): Command {
   // ── role list ──
   cmd.command('list')
     .description('List all roles')
+    .addHelpText('after', `
+Examples:
+  # Show all built-in and custom roles
+  routerly role list
+`)
     .action(async () => {
       try {
         const roles = await api<RoleWithBuiltin[]>('GET', '/api/roles');
@@ -42,6 +47,21 @@ export function makeRoleCommand(): Command {
   // ── role add ──
   cmd.command('add')
     .description('Create a custom role')
+    .addHelpText('after', `
+Examples:
+  # Create a read-only role
+  routerly role add --id read-only --name "Read Only" --permissions usage:read
+
+  # Create a developer role with multiple permissions
+  routerly role add \\
+    --id developer --name "Developer" \\
+    --permissions "usage:read,models:read,projects:read"
+
+  # Create an operator role with full model and project access
+  routerly role add \\
+    --id operator --name "Operator" \\
+    --permissions "usage:read,models:read,models:write,projects:read,projects:write"
+`)
     .requiredOption('--id <id>', 'Role identifier (e.g. operator)')
     .requiredOption('--name <name>', 'Human-readable role name')
     .option('--permissions <perms>', 'Comma-separated list of permissions', '')
@@ -62,6 +82,18 @@ export function makeRoleCommand(): Command {
   // ── role edit ──
   cmd.command('edit <id>')
     .description('Edit a custom role')
+    .addHelpText('after', `
+Examples:
+  # Rename a role
+  routerly role edit developer --name "Senior Developer"
+
+  # Replace all permissions
+  routerly role edit developer --permissions "usage:read,models:read"
+
+  # Rename and update permissions at the same time
+  routerly role edit developer \\
+    --name "Engineer" --permissions "usage:read,models:read,projects:write"
+`)
     .option('--name <name>', 'New role name')
     .option('--permissions <perms>', 'New comma-separated permissions (replaces existing)')
     .action(async (id: string, opts: { name?: string; permissions?: string }) => {
@@ -87,6 +119,11 @@ export function makeRoleCommand(): Command {
   // ── role remove ──
   cmd.command('remove <id>')
     .description('Delete a custom role')
+    .addHelpText('after', `
+Examples:
+  # Delete the "developer" role
+  routerly role remove developer
+`)
     .action(async (id: string) => {
       try {
         await api<void>('DELETE', `/api/roles/${id}`);

@@ -10,6 +10,11 @@ export function makeProjectCommand(): Command {
   // ── project list ──
   cmd.command('list')
     .description('List all projects')
+    .addHelpText('after', `
+Examples:
+  # Show all projects with their associated models
+  routerly project list
+`)
     .action(async () => {
       try {
         const projects = await api<ProjectConfig[]>('GET', '/api/projects');
@@ -33,6 +38,17 @@ export function makeProjectCommand(): Command {
   // ── project add ──
   cmd.command('add')
     .description('Create a new project')
+    .addHelpText('after', `
+Examples:
+  # Minimal project with a single model
+  routerly project add --name "My API" --slug my-api --routing-model gpt-4o
+
+  # Project with a dedicated routing model and multiple candidate models
+  routerly project add \\
+    --name "Production" --slug production \\
+    --routing-model gpt-4o-mini \\
+    --models gpt-4o,gpt-4o-mini,claude-3-5-sonnet
+`)
     .requiredOption('--name <name>', 'Project name')
     .requiredOption('--slug <slug>', 'URL slug (alphanumeric + dashes, e.g. my-project)')
     .requiredOption('--routing-model <id>', 'Model ID to use for routing decisions')
@@ -77,6 +93,14 @@ export function makeProjectCommand(): Command {
   // ── project remove ──
   cmd.command('remove <id>')
     .description('Remove a project by ID or slug')
+    .addHelpText('after', `
+Examples:
+  # Remove by slug
+  routerly project remove my-api
+
+  # Remove by UUID
+  routerly project remove a1b2c3d4-e5f6-7890-abcd-ef1234567890
+`)
     .action(async (id: string) => {
       try {
         await api<void>('DELETE', `/api/projects/${encodeURIComponent(id)}`);
@@ -94,6 +118,19 @@ export function makeProjectCommand(): Command {
   // ── project add-model ──
   cmd.command('add-model')
     .description('Add a model to an existing project')
+    .addHelpText('after', `
+Examples:
+  # Add a model with no spend limits
+  routerly project add-model --project my-api --model claude-3-5-sonnet
+
+  # Add a model with a daily spend limit
+  routerly project add-model --project my-api --model gpt-4o --daily-budget 5
+
+  # Add a model with both daily and monthly limits
+  routerly project add-model \\
+    --project my-api --model gpt-4o \\
+    --daily-budget 5 --monthly-budget 100
+`)
     .requiredOption('--project <slug>', 'Project slug or ID')
     .requiredOption('--model <id>', 'Model ID to add')
     .option('--daily-budget <usd>', 'Daily spend limit for this model in this project')

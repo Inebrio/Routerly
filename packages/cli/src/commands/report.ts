@@ -36,6 +36,20 @@ export function makeReportCommand(): Command {
 
   cmd.command('usage')
     .description('Show aggregated usage by model')
+    .addHelpText('after', `
+Examples:
+  # Monthly usage summary (default)
+  routerly report usage
+
+  # Weekly usage
+  routerly report usage --period weekly
+
+  # Usage for a specific project
+  routerly report usage --project my-api
+
+  # All-time usage across all projects
+  routerly report usage --period all
+`)
     .option('--period <period>', 'Period: daily | weekly | monthly | all', 'monthly')
     .option('--project <id>', 'Filter by project ID')
     .action(async (opts: { period: string; project?: string }) => {
@@ -77,6 +91,17 @@ export function makeReportCommand(): Command {
 
   cmd.command('calls')
     .description('Show last N call records')
+    .addHelpText('after', `
+Examples:
+  # Show the last 20 calls (default)
+  routerly report calls
+
+  # Show the last 50 calls
+  routerly report calls --limit 50
+
+  # Show the last 100 calls for a specific project
+  routerly report calls --limit 100 --project my-api
+`)
     .option('--limit <n>', 'Number of records to show', '20')
     .option('--project <id>', 'Filter by project ID')
     .action(async (opts: { limit: string; project?: string }) => {
