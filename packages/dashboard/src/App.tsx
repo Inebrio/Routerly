@@ -93,8 +93,8 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
         <div className="sidebar-logo-inner">
           <Logo size={28} className="sidebar-logo-icon" />
           <span className="nav-label logo-full">
-            <span className="logo-name-full">Routerly</span>
-            <span className="logo-tag">LLM API Gateway</span>
+            <span className="logo-name-full">Routerly.ai</span>
+            <span className="logo-tag">One gateway. Any AI model. Total control.</span>
           </span>
         </div>
         <button className="sidebar-toggle" onClick={onToggle} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>

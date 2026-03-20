@@ -89,30 +89,30 @@ if docker run --rm \
         set -e
         mkdir -p /test/routerly && cd /test/routerly
         tar xzf /test/routerly.tar.gz 2>&1 | grep -v "LIBARCHIVE" || true
-        
+
         # Run CI/CD installation with system scope
         echo "=== Running: node scripts/install.mjs --yes --scope=system --no-daemon ==="
         OUTPUT=$(node scripts/install.mjs --yes --scope=system --no-daemon 2>&1 || true)
-        
+
         # Check for husky error (regression)
         if echo "$OUTPUT" | grep -qi "husky"; then
             echo "FAIL: Found husky in output"
             echo "$OUTPUT" | grep -i "husky"
             exit 1
         fi
-        
+
         # Verify directories created (system scope paths)
         [ -d "/opt/routerly" ] || { echo "FAIL: /opt/routerly not created"; exit 1; }
         [ -d "/opt/routerly/packages/service/dist" ] || { echo "FAIL: service dist not built"; exit 1; }
         [ -d "/opt/routerly/packages/dashboard/dist" ] || { echo "FAIL: dashboard dist not built"; exit 1; }
         [ -d "/var/lib/routerly" ] || { echo "FAIL: service data directory not created"; exit 1; }
-        
+
         # Verify CLI wrapper
         [ -f "/usr/local/bin/routerly" ] || { echo "FAIL: /usr/local/bin/routerly not created"; exit 1; }
-        
+
         # Verify node_modules
         [ -d "/opt/routerly/node_modules" ] || { echo "FAIL: node_modules missing"; exit 1; }
-        
+
         echo "SUCCESS: System scope installation complete"
     ' 2>&1 | tee /tmp/test-p1-system.log; then
     print_pass "System scope full"
@@ -133,36 +133,36 @@ if docker run --rm \
         set -e
         mkdir -p /test/routerly && cd /test/routerly
         tar xzf /test/routerly.tar.gz 2>&1 | grep -v "LIBARCHIVE" || true
-        
+
         # Run CI/CD installation with user scope
         echo "=== Running: node scripts/install.mjs --yes --scope=user --no-daemon ==="
         OUTPUT=$(node scripts/install.mjs --yes --scope=user --no-daemon 2>&1 || true)
-        
+
         # Check for husky error
         if echo "$OUTPUT" | grep -qi "husky"; then
             echo "FAIL: Found husky in output"
             exit 1
         fi
-        
+
         # Verify directories created in user home
         [ -d "$HOME/.routerly" ] || { echo "FAIL: ~/.routerly not created"; exit 1; }
         [ -d "$HOME/.routerly/app/packages/service/dist" ] || { echo "FAIL: service dist not built"; exit 1; }
         [ -d "$HOME/.routerly/app/packages/dashboard/dist" ] || { echo "FAIL: dashboard dist not built"; exit 1; }
-        
+
         # Verify NO system paths were created
         if [ -d "/opt/routerly" ] || [ -d "/var/lib/routerly" ]; then
             echo "FAIL: System paths should not exist in user scope"
             exit 1
         fi
-        
+
         if [ -f "/usr/local/bin/routerly" ]; then
             echo "FAIL: /usr/local/bin/routerly should not exist in user scope"
             exit 1
         fi
-        
+
         # Verify node_modules
         [ -d "$HOME/.routerly/app/node_modules" ] || { echo "FAIL: node_modules missing"; exit 1; }
-        
+
         echo "SUCCESS: User scope installation complete"
     ' 2>&1 | tee /tmp/test-p1-user.log; then
     print_pass "User scope full"
@@ -183,18 +183,18 @@ if docker run --rm \
         set -e
         mkdir -p /test/routerly && cd /test/routerly
         tar xzf /test/routerly.tar.gz 2>&1 | grep -v "LIBARCHIVE" || true
-        
+
         # Run installation and capture ALL output
         echo "=== Checking for husky errors ==="
         OUTPUT=$(node scripts/install.mjs --yes --scope=user --no-daemon 2>&1)
-        
+
         # Strict check: "husky" should NOT appear anywhere
         if echo "$OUTPUT" | grep -i "husky"; then
             echo "FAIL: Found husky in output:"
             echo "$OUTPUT" | grep -i "husky"
             exit 1
         fi
-        
+
         echo "SUCCESS: No husky errors found"
     ' 2>&1 | tee /tmp/test-p1-husky.log; then
     print_pass "Husky regression"
@@ -215,18 +215,18 @@ if docker run --rm \
         set -e
         mkdir -p /test/routerly && cd /test/routerly
         tar xzf /test/routerly.tar.gz 2>&1 | grep -v "LIBARCHIVE" || true
-        
+
         # Verify Node version
         echo "Node version: $(node --version)"
         node --version | grep -q "v20" || { echo "FAIL: Wrong Node version"; exit 1; }
-        
+
         # Run full installation
         echo "=== Running full installation ==="
         node scripts/install.mjs --yes --scope=user --no-daemon 2>&1 | grep -v "LIBARCHIVE" || true
-        
+
         # Verify installation completed
         [ -d "$HOME/.routerly" ] || { echo "FAIL: Installation incomplete"; exit 1; }
-        
+
         echo "SUCCESS: Installation on Debian + Node 20 complete"
     ' 2>&1 | tee /tmp/test-p1-debian.log; then
     print_pass "Debian + Node 20"
@@ -251,19 +251,19 @@ if docker run --rm \
         set -e
         mkdir -p /test/routerly && cd /test/routerly
         tar xzf /test/routerly.tar.gz 2>&1 | grep -v "LIBARCHIVE" || true
-        
+
         # Install without dashboard
         echo "=== Running: --yes --scope=user --no-dashboard --no-daemon ==="
         node scripts/install.mjs --yes --scope=user --no-dashboard --no-daemon 2>&1 | grep -v "LIBARCHIVE" || true
-        
+
         # Verify service and CLI installed
         [ -d "$HOME/.routerly/app/packages/service" ] || { echo "FAIL: Service not installed"; exit 1; }
-        
+
         # Dashboard should NOT be built
         if [ -d "$HOME/.routerly/dashboard/dist" ]; then
             echo "WARNING: Dashboard dist exists (may be from full build, acceptable)"
         fi
-        
+
         echo "SUCCESS: Service + CLI installed without dashboard"
     ' 2>&1 | tee /tmp/test-p2-nodash.log; then
     print_pass "Service + CLI only"
@@ -284,15 +284,15 @@ if docker run --rm \
         set -e
         mkdir -p /test/routerly && cd /test/routerly
         tar xzf /test/routerly.tar.gz 2>&1 | grep -v "LIBARCHIVE" || true
-        
+
         # Install with custom config
         echo "=== Running: --yes --scope=user --port=8080 --public-url=http://example.com:8080 --no-daemon ==="
         node scripts/install.mjs --yes --scope=user --port=8080 --public-url=http://example.com:8080 --no-daemon 2>&1 | grep -v "LIBARCHIVE" || true
-        
+
         # Verify installation completed (config file may be created on first run)
         [ -d "$HOME/.routerly" ] || { echo "FAIL: Installation directory not created"; exit 1; }
         echo "Note: Custom config validated via install flags acceptance"
-        
+
         echo "SUCCESS: Custom configuration accepted"
     ' 2>&1 | tee /tmp/test-p2-custom.log; then
     print_pass "Custom port/URL"
@@ -313,22 +313,22 @@ if docker run --rm \
         set -e
         mkdir -p /test/routerly && cd /test/routerly
         tar xzf /test/routerly.tar.gz 2>&1 | grep -v "LIBARCHIVE" || true
-        
+
         # Run system scope installation
         echo "=== Verifying sudo permissions ==="
         OUTPUT=$(node scripts/install.mjs --yes --scope=system --no-daemon 2>&1 || true)
-        
+
         # Check for permission errors
         if echo "$OUTPUT" | grep -i "EACCES\|permission denied"; then
             echo "FAIL: Permission errors found"
             echo "$OUTPUT" | grep -i "EACCES\|permission"
             exit 1
         fi
-        
+
         # Verify directories created
         [ -d "/opt/routerly" ] || { echo "FAIL: /opt/routerly not created"; exit 1; }
         [ -d "/var/lib/routerly" ] || { echo "FAIL: /var/lib/routerly not created"; exit 1; }
-        
+
         echo "SUCCESS: No permission errors in system scope"
     ' 2>&1 | tee /tmp/test-p2-sudo.log; then
     print_pass "Sudo permissions"
@@ -350,24 +350,24 @@ if docker run --rm \
         set -e
         mkdir -p /test/routerly && cd /test/routerly
         tar xzf /test/routerly.tar.gz 2>&1 | grep -v "LIBARCHIVE" || true
-        
+
         # Verify node NOT in PATH initially
         ! command -v node >/dev/null 2>&1 || { echo "FAIL: Node should not be in PATH"; exit 1; }
-        
+
         # Source nvm and use Node 20
         source $HOME/.nvm/nvm.sh
         nvm use 20
-        
+
         echo "Node version: $(node --version)"
-        
+
         # Run full installation
         echo "=== Running full installation with nvm ==="
         node scripts/install.mjs --yes --scope=user --no-daemon 2>&1 | grep -v "LIBARCHIVE" || true
-        
+
         # Verify installation completed
         [ -d "$HOME/.routerly" ] || { echo "FAIL: Service not installed"; exit 1; }
         [ -d "$HOME/.routerly/app/node_modules" ] || { echo "FAIL: node_modules missing"; exit 1; }
-        
+
         echo "SUCCESS: Installation with nvm complete"
     ' 2>&1 | tee /tmp/test-p2-nvm.log; then
     print_pass "nvm environment"
