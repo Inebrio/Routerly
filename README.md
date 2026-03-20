@@ -11,7 +11,7 @@
   </p>
   <p>
     <img src="https://img.shields.io/badge/Node.js-%E2%89%A520-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js ≥ 20" />
-    <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License: MIT" />
+    <img src="https://img.shields.io/badge/License-AGPL--3.0-blue?style=flat-square" alt="License: AGPL-3.0" />
     <img src="https://img.shields.io/badge/Self--hosted-✓-6366f1?style=flat-square" alt="Self-hosted" />
     <img src="https://img.shields.io/badge/Docker-supported-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker supported" />
     <img src="https://img.shields.io/badge/OpenAI%20compatible-✓-412991?style=flat-square&logo=openai&logoColor=white" alt="OpenAI compatible" />
@@ -324,5 +324,6 @@ Contributions are welcome. See the [Development Guide](docs/contributing/develop
 
 ## License
 
-MIT
+Routerly is licensed under [AGPL-3.0](LICENSE).
+For commercial licensing inquiries: carlo.satta@routerly.ai
 
