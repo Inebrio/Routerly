@@ -46,8 +46,8 @@ export function SetupPage() {
       <div className="login-card" style={{ maxWidth: 420 }}>
         <div className="login-logo">
           <Logo size={52} />
-          <h1>Routerly</h1>
-          <p>Smart routing for all your AI models</p>
+          <h1>Routerly.ai</h1>
+          <p>One gateway. Any AI model. Total control.</p>
         </div>
 
         <div style={{
