@@ -16,6 +16,7 @@
     <img src="https://img.shields.io/badge/Docker-supported-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker supported" />
     <img src="https://img.shields.io/badge/OpenAI%20compatible-✓-412991?style=flat-square&logo=openai&logoColor=white" alt="OpenAI compatible" />
     <img src="https://img.shields.io/badge/Anthropic%20compatible-✓-CC785C?style=flat-square" alt="Anthropic compatible" />
+    <a href="https://cla-assistant.io/Inebrio/Routerly"><img src="https://cla-assistant.io/readme/badge/Inebrio/Routerly" alt="CLA assistant" /></a>
   </p>
 </div>
 
