@@ -3,8 +3,6 @@
   <h1>Routerly</h1>
   <p><strong>One gateway. Any AI model. Total control.</strong></p>
 
-> The only LLM gateway that uses an LLM to decide which LLM to use.
-
   <p>
     Self-hosted LLM gateway with intelligent routing, cost tracking, and budget enforcement.<br>
     Fully compatible with the OpenAI and Anthropic APIs, swap a URL, nothing else changes.
@@ -40,17 +38,16 @@ curl -fsSL https://github.com/Inebrio/Routerly/releases/latest/download/install.
 powershell -c "irm https://github.com/Inebrio/Routerly/releases/latest/download/install.ps1 | iex"
 ```
 
-The installer walks you through adding a model, creating a project, and starting the gateway.
-
 ```bash
 routerly model add --id gpt-4o --provider openai --api-key sk-YOUR_KEY
 routerly project add --name "My App" --slug my-app --models gpt-4o
 routerly start
 ```
 
-Point your app at `http://localhost:3000` — the dashboard is at `http://localhost:3000/dashboard`.
+Open `http://localhost:3000/dashboard` to manage models, projects, and monitor usage in real time.
+Your app connects to `http://localhost:3000` using the project token as the API key.
 
-> [Installation options](docs/getting-started/installation.md) · [Dashboard guide](docs/dashboard/README.md) · [CLI reference](docs/cli/README.md)
+**Learn more:** [Dashboard guide](docs/dashboard/README.md) — [CLI reference](docs/cli/README.md) — [Installation options](docs/getting-started/installation.md)
 
 ---
 
@@ -111,23 +108,23 @@ Point your app at `http://localhost:3000` — the dashboard is at `http://localh
 
 ## Use Cases
 
-### 🏢 SaaS with multiple tenants
+### SaaS with multiple tenants
 You run a product where different customers have different AI budgets. Create one Routerly project per tenant, assign a monthly spend cap, and let the routing engine automatically pick the cheapest model that fits the request, no code changes in your app, no risk of a single tenant blowing up your OpenAI bill.
 
-### 🧑‍💻 Local-first development
+### Local-first development
 Your team develops against Ollama locally and promotes to GPT-4o in production. Routerly handles both with the same API surface. Point `base_url` at Routerly in all environments and change only the project token, the routing policy handles the rest.
 
-### 💸 Cost optimisation without quality loss
+### Cost optimisation without quality loss
 You have a mix of cheap fast models and expensive powerful ones. Configure a project with `cheapest` + `capability` + `context` policies: Routerly will automatically route simple short requests to the cheap model and fall back to the powerful one only when the task demands it. No changes to your application logic.
 
-### 🔁 Resilience and automatic failover
+### Resilience and automatic failover
 Your production app can't afford downtime when a provider has an outage. Register the same logical capability across multiple providers (e.g. GPT-4o + Claude Sonnet + Gemini Pro) and enable the `health` policy. Routerly detects errors in real time and routes around failing endpoints, your app gets a 200 while the provider is down.
 
 ---
 
 
 
-### 🔀 Intelligent Multi-Policy Routing
+### Intelligent Multi-Policy Routing
 Each request is scored against up to 9 pluggable routing policies, applied simultaneously and combined into a final ranking. Routerly picks the best candidate, and falls back automatically if a provider fails.
 
 | Policy | What it does |
@@ -142,16 +139,16 @@ Each request is scored against up to 9 pluggable routing policies, applied simul
 | `rate-limit` | Steers traffic away from rate-limited providers |
 | `fairness` | Balances load across candidates |
 
-### 💰 Real-Time Cost Tracking & Budgets
+### Real-Time Cost Tracking & Budgets
 Every request is priced at the token level using up-to-date pricing per model. Costs accumulate per project and per token, and you can set hard limits, hourly, daily, weekly, monthly, or per request, that block overspending before it happens.
 
-### 🔒 Project Isolation
+### Project Isolation
 Separate Bearer tokens per project. Each project has its own model list, routing policies, and budget envelope. Perfect for multi-tenant setups or separating dev/staging/production traffic.
 
-### 🌐 Web Dashboard
+### Web Dashboard
 A built-in React dashboard gives you a live view of spending, call volume, error rates, and per-model breakdown, with real-time auto-refresh. No separate monitoring tool needed.
 
-### 🖥️ Admin CLI
+### Admin CLI
 A full-featured command-line tool lets you manage models, projects, users, roles, and pull usage reports, scriptable and CI-friendly.
 
 ---
@@ -287,13 +284,13 @@ Contributions are welcome. See the [Development Guide](docs/contributing/develop
 
 ## Roadmap
 
-### 🔔 Multi-Channel Notifications
+### Multi-Channel Notifications
 Get alerted when a budget threshold is crossed, a provider goes down, or error rates spike, on the channel you already use. Notifications are fully configurable: Slack, email, webhooks, PagerDuty, and more. Each rule can target a different channel with its own severity filter.
 
-### 🔐 Enterprise SSO
+### Enterprise SSO
 Log in to the dashboard with your existing identity provider, Google, Microsoft Entra ID, GitHub, Keycloak, any OAuth 2.0 / OIDC provider, or LDAP. No separate user management required: roles and permissions sync automatically from your directory. Purpose-built for corporate and enterprise environments where user accounts are already centrally managed.
 
-### 🏛️ Enterprise / corporate environment
+### Enterprise / corporate environment
 Rolling Routerly out across a company where IT already manages identities in Azure AD, Okta, or LDAP. SSO login means your team logs into the dashboard without a separate password, access follows the same joiner/mover/leaver process as every other internal tool, and you can enforce MFA at the identity-provider level. Budget alerts on Slack or email keep finance and engineering teams in sync without anyone polling a dashboard.
 
 ---
