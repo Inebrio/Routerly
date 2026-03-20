@@ -54,6 +54,7 @@ const FLAG_NO_DASH   = hasFlag('no-dashboard');
 const FLAG_NO_DAEMON = hasFlag('no-daemon');
 const FLAG_SCOPE     = getArg('scope')       ?? process.env.ROUTERLY_SCOPE       ?? '';
 const FLAG_PORT      = getArg('port')        ?? process.env.ROUTERLY_PORT        ?? '';
+const FLAG_HOST      = getArg('host')        ?? process.env.ROUTERLY_HOST        ?? '';
 const FLAG_URL       = getArg('public-url')  ?? process.env.ROUTERLY_PUBLIC_URL  ?? '';
 
 // From env vars (--yes mode)
@@ -425,18 +426,21 @@ if (isUpdate) {
 
 // ── Port & URL ────────────────────────────────────────────────────────────────
 let port = 3000;
+let host = '0.0.0.0';
 let publicUrl = '';
 if (installService) {
   if (isUpdate) {
     port      = existingSettings.port      ?? 3000;
+    host      = existingSettings.host      ?? '0.0.0.0';
     publicUrl = existingSettings.publicUrl ?? `http://localhost:${port}`;
-    info(`Keeping existing config: port=${port}, publicUrl=${publicUrl}`);
+    info(`Keeping existing config: port=${port}, host=${host}, publicUrl=${publicUrl}`);
   } else {
     port = parseInt(
       FLAG_PORT || await ask('Service port', '3000'),
       10
     );
     if (isNaN(port) || port < 1 || port > 65535) die(`Invalid port: ${port}`);
+    host = FLAG_HOST || await ask('Service bind host', '0.0.0.0', { hint: 'use 0.0.0.0 for all interfaces, 127.0.0.1 for localhost only' });
     publicUrl = FLAG_URL || await ask('Public URL', `http://localhost:${port}`);
   }
 }
@@ -577,7 +581,7 @@ const settingsPath = path.join(serviceHome, 'config', 'settings.json');
 if (!fs.existsSync(settingsPath)) {
   const settings = {
     port,
-    host: '0.0.0.0',
+    host,
     dashboardEnabled: installDashboard,
     defaultTimeoutMs: 30000,
     logLevel: 'info',
