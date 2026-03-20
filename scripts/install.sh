@@ -259,7 +259,7 @@ need_cmd npm || die "'npm' not found. Something went wrong with the Node.js inst
 # ── Fetch latest release tarball ──────────────────────────────────────────────
 info "Fetching latest Routerly release..."
 
-TARBALL_URL=""
+RELEASE_TAG=""
 RELEASE_API="https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest"
 
 if need_cmd curl; then
@@ -271,13 +271,15 @@ else
 fi
 
 if [ -n "$RELEASE_JSON" ]; then
-  # Extract tarball URL from GitHub release assets (look for .tar.gz source code)
-  TARBALL_URL="$(echo "$RELEASE_JSON" | \
-    grep -o '"tarball_url": *"[^"]*"' | head -1 | \
-    sed 's/"tarball_url": *"//' | sed 's/"$//')"
+  RELEASE_TAG="$(echo "$RELEASE_JSON" | \
+    grep -o '"tag_name": *"[^"]*"' | head -1 | \
+    sed 's/"tag_name": *"//' | sed 's/"$//')"
 fi
 
-if [ -z "$TARBALL_URL" ]; then
+if [ -n "$RELEASE_TAG" ]; then
+  # Use the tag archive URL — always reflects the current commit pointed to by the tag
+  TARBALL_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/tags/${RELEASE_TAG}.tar.gz"
+else
   warn "Could not fetch latest release from GitHub API. Falling back to main branch..."
   TARBALL_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/heads/main.tar.gz"
 fi
