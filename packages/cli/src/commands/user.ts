@@ -10,6 +10,11 @@ export function makeUserCommand(): Command {
   // ── user list ──
   cmd.command('list')
     .description('List all users')
+    .addHelpText('after', `
+Examples:
+  # Show all dashboard users with their roles and project access
+  routerly user list
+`)
     .action(async () => {
       try {
         const users = await api<UserConfig[]>('GET', '/api/users');
@@ -33,6 +38,19 @@ export function makeUserCommand(): Command {
   // ── user add ──
   cmd.command('add')
     .description('Create a new dashboard user')
+    .addHelpText('after', `
+Examples:
+  # Create a viewer (default role)
+  routerly user add --email alice@example.com --password secret
+
+  # Create an admin user
+  routerly user add --email admin@example.com --password secret --role admin
+
+  # Create a user restricted to specific projects
+  routerly user add \\
+    --email dev@example.com --password secret \\
+    --role developer --projects proj-1,proj-2
+`)
     .requiredOption('--email <email>', 'User email')
     .requiredOption('--password <password>', 'Initial password')
     .option('--role <roleId>', 'Role ID to assign', 'viewer')
@@ -61,6 +79,11 @@ export function makeUserCommand(): Command {
   // ── user remove ──
   cmd.command('remove <email>')
     .description('Remove a user by email')
+    .addHelpText('after', `
+Examples:
+  # Remove a user by their email address
+  routerly user remove alice@example.com
+`)
     .action(async (email: string) => {
       try {
         // Resolve email → id first

@@ -21,6 +21,8 @@ export interface AccountEntry {
   token: string;
   /** Token expiry timestamp (ms since epoch) */
   expiresAt: number;
+  /** Role of the user at login time */
+  role?: string;
 }
 
 export interface CliConfig {
@@ -102,6 +104,18 @@ export async function removeAccount(alias: string): Promise<boolean> {
   }
   await writeCliConfig(cfg);
   return true;
+}
+
+export async function renameAccount(oldAlias: string, newAlias: string): Promise<'not_found' | 'conflict' | 'ok'> {
+  const cfg = await readCliConfig();
+  if (!cfg.accounts.find(a => a.alias === oldAlias)) return 'not_found';
+  if (cfg.accounts.find(a => a.alias === newAlias)) return 'conflict';
+  for (const acc of cfg.accounts) {
+    if (acc.alias === oldAlias) acc.alias = newAlias;
+  }
+  if (cfg.currentAlias === oldAlias) cfg.currentAlias = newAlias;
+  await writeCliConfig(cfg);
+  return 'ok';
 }
 
 export async function switchAccount(alias: string): Promise<boolean> {
