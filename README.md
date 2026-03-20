@@ -30,11 +30,6 @@
 
 ## Quick Start
 
-**Before you start, you'll need:**
-- Node.js 20 or higher (or Docker)
-- At least one API key from a supported provider (OpenAI, Anthropic, Gemini, Mistral, Cohere, or xAI)
-- 5 minutes
-
 **macOS / Linux:**
 ```bash
 curl -fsSL https://github.com/Inebrio/Routerly/releases/latest/download/install.sh | bash
@@ -45,41 +40,27 @@ curl -fsSL https://github.com/Inebrio/Routerly/releases/latest/download/install.
 powershell -c "irm https://github.com/Inebrio/Routerly/releases/latest/download/install.ps1 | iex"
 ```
 
-**Via Docker (no Node.js required):**
-```bash
-git clone https://github.com/Inebrio/Routerly.git
-cd Routerly
-docker compose up -d
-```
-
-The installer detects your platform, checks for Node.js 20+ (offering to install it if missing), downloads the latest release, builds the packages, generates your encryption key, optionally sets up an auto-start daemon, and walks you through adding a model, creating a project, and creating an admin user.
-
-Once installed, the three steps to go live:
+The installer walks you through adding a model, creating a project, and starting the gateway.
 
 ```bash
-# 1. Register a model (pricing preset applied automatically for known models)
 routerly model add --id gpt-4o --provider openai --api-key sk-YOUR_KEY
-
-# 2. Create a project (prints your Bearer token, save it)
-routerly project add --name "My App" --slug my-app --routing-model gpt-4o --models gpt-4o
-
-# 3. Start the gateway (skip if you configured auto-start during install)
+routerly project add --name "My App" --slug my-app --models gpt-4o
 routerly start
 ```
 
-That's it. Point your existing app at `http://localhost:3000` and use the project token as the API key.
+Point your app at `http://localhost:3000` — the dashboard is at `http://localhost:3000/dashboard`.
 
-> Need more control? See [Installation options](docs/getting-started/installation.md) for flags, non-interactive mode, system-wide install, and manual setup.
+> [Installation options](docs/getting-started/installation.md) · [Dashboard guide](docs/dashboard/README.md) · [CLI reference](docs/cli/README.md)
 
 ---
 
-## Demo
+<!-- ## Demo
 
 ![Routerly Demo](./docs/demo.gif)
 
 > A request enters, the router picks the best model, costs update in real time.
 
----
+--- -->
 
 ## Why Routerly?
 
