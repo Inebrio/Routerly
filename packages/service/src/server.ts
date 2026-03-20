@@ -34,10 +34,11 @@ export async function buildServer() {
       await fastify.register(staticFiles, {
         root: dashboardDist,
         prefix: '/dashboard/',
-        // Fallback to index.html for SPA routing
         decorateReply: false,
+        // Disable built-in wildcard so our SPA fallback below takes over
+        wildcard: false,
       });
-      // SPA fallback: all /dashboard/* routes serve index.html
+      // SPA fallback: any /dashboard/* path that isn't a static asset serves index.html
       fastify.get('/dashboard/*', async (_req, reply) => {
         return reply.sendFile('index.html', dashboardDist);
       });
@@ -58,6 +59,11 @@ export async function buildServer() {
   // ─── LLM Proxy routes ────────────────────────────────────────────────────
   await fastify.register(openaiRoutes);
   await fastify.register(anthropicRoutes);
+
+  // ─── Root redirect ────────────────────────────────────────────────────────
+  fastify.get('/', async (_req, reply) => {
+    return reply.redirect('/dashboard/');
+  });
 
   // ─── Health check ─────────────────────────────────────────────────────────
   fastify.get('/health', async () => ({
