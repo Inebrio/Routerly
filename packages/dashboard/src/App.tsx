@@ -137,7 +137,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
           <SettingsIcon size={15} />
           <span className="nav-label">Settings</span>
         </NavLink>
-        <button className="nav-item" style={{ color: 'var(--danger)' }} title={collapsed ? 'Sign Out' : undefined} onClick={handleLogout}>
+        <button className="nav-item sign-out" title="Sign Out" onClick={handleLogout}>
           <LogOut size={15} />
           <span className="nav-label">Sign Out</span>
         </button>

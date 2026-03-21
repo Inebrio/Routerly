@@ -51,16 +51,16 @@ export function OverviewPage() {
 
         {/* Stats grid */}
         <div className="stats-grid">
-          <StatCard icon={<DollarSign size={18} />} label="Total Cost" value={`$${stats.summary.totalCost.toFixed(4)}`} sub="USD this period" />
-          <StatCard icon={<Activity size={18} />} label="Total Calls" value={stats.summary.totalCalls} sub={`${stats.summary.successCalls} succeeded`} />
-          <StatCard icon={<CheckCircle size={18} />} label="Success Rate" value={
+          <StatCard icon={<DollarSign size={18} />} label="Total Cost" accentColor="#3D75F5" value={`$${stats.summary.totalCost.toFixed(4)}`} sub="USD this period" />
+          <StatCard icon={<Activity size={18} />} label="Total Calls" accentColor="#5A90F8" value={stats.summary.totalCalls} sub={`${stats.summary.successCalls} succeeded`} />
+          <StatCard icon={<CheckCircle size={18} />} label="Success Rate" accentColor="#10B981" value={
             stats.summary.totalCalls > 0
               ? `${((stats.summary.successCalls / stats.summary.totalCalls) * 100).toFixed(1)}%`
               : '—'
           } sub="of all requests" />
-          <StatCard icon={<XCircle size={18} />} label="Errors" value={stats.summary.errorCalls} sub="failed requests" />
-          <StatCard icon={<Activity size={18} />} label="Models" value={modelCount} sub="registered" />
-          <StatCard icon={<Activity size={18} />} label="Projects" value={projectCount} sub="active" />
+          <StatCard icon={<XCircle size={18} />} label="Errors" accentColor="#EF4444" valueColor="#EF4444" value={stats.summary.errorCalls} sub="failed requests" />
+          <StatCard icon={<Activity size={18} />} label="Models" accentColor="#8B5CF6" value={modelCount} sub="registered" />
+          <StatCard icon={<Activity size={18} />} label="Projects" accentColor="#A78BFA" value={projectCount} sub="active" />
         </div>
 
         {/* Cost timeline */}
@@ -71,18 +71,18 @@ export function OverviewPage() {
               <AreaChart data={timelineData}>
                 <defs>
                   <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3d75f5" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#3d75f5" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#5A90F8" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#5A90F8" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="date" tick={{ fill: '#4b5563', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#4b5563', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
+                <XAxis dataKey="date" tick={{ fill: '#94A3B8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
                 <Tooltip
-                  contentStyle={{ background: '#161922', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, fontSize: 12 }}
-                  labelStyle={{ color: '#94a3b8' }}
+                  contentStyle={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
+                  labelStyle={{ color: 'var(--text-secondary)' }}
                   formatter={(v: number) => [`$${v.toFixed(6)}`, 'Cost']}
                 />
-                <Area type="monotone" dataKey="cost" stroke="#3d75f5" fill="url(#grad)" strokeWidth={2} />
+                <Area type="monotone" dataKey="cost" stroke="#5A90F8" fill="url(#grad)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -99,10 +99,10 @@ export function OverviewPage() {
                     {pieData.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ background: '#161922', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, fontSize: 12 }}
+                    contentStyle={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
                     formatter={(v: number) => [`$${v.toFixed(6)}`, 'Cost']}
                   />
-                  <Legend wrapperStyle={{ fontSize: 12, color: '#94a3b8' }} />
+                  <Legend wrapperStyle={{ fontSize: 12, color: 'var(--text-secondary)' }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -118,10 +118,10 @@ export function OverviewPage() {
                 </thead>
                 <tbody>
                   {Object.entries(stats.byModel).map(([model, v]) => (
-                    <tr key={model} style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                      <td style={{ padding: '6px 0', color: '#f1f5f9', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{model}</td>
-                      <td style={{ textAlign: 'right', padding: '6px 0', color: '#94a3b8' }}>{v.calls}</td>
-                      <td style={{ textAlign: 'right', padding: '6px 0', color: '#94a3b8' }}>${v.cost.toFixed(4)}</td>
+                      <tr key={model} style={{ borderTop: '1px solid var(--border)' }}>
+                      <td style={{ padding: '6px 0', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{model}</td>
+                      <td style={{ textAlign: 'right', padding: '6px 0', color: 'var(--text-secondary)' }}>{v.calls}</td>
+                        <td style={{ textAlign: 'right', padding: '6px 0', color: 'var(--text-secondary)' }}>${v.cost.toFixed(4)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -134,11 +134,18 @@ export function OverviewPage() {
   );
 }
 
-function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub: string }) {
+function StatCard({ icon, label, value, sub, accentColor, valueColor }: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+  sub: string;
+  accentColor?: string;
+  valueColor?: string;
+}) {
   return (
-    <div className="stat-card">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--accent)' }}>{icon}<span className="stat-label">{label}</span></div>
-      <div className="stat-value">{value}</div>
+    <div className="stat-card" style={{ '--stat-accent': accentColor } as React.CSSProperties}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: accentColor || 'var(--accent)' }}>{icon}<span className="stat-label">{label}</span></div>
+      <div className="stat-value" style={valueColor ? { color: valueColor } : undefined}>{value}</div>
       <div className="stat-sub">{sub}</div>
     </div>
   );
