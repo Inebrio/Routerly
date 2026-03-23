@@ -1,0 +1,58 @@
+/* Fonts - matching routerly.ai (Inter + JetBrains Mono) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&display=swap');
+
+/* Light mode - brand blue #3d75f5 matching routerly.ai */
+:root {
+  --ifm-color-primary: #3d75f5;
+  --ifm-color-primary-dark: #2f67e9;
+  --ifm-color-primary-darker: #2861e3;
+  --ifm-color-primary-darkest: #1850d0;
+  --ifm-color-primary-light: #4b83f7;
+  --ifm-color-primary-lighter: #5a8ff8;
+  --ifm-color-primary-lightest: #7aa8fb;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(61, 117, 245, 0.1);
+
+  /* Typography */
+  --ifm-font-family-base: 'Inter', system-ui, sans-serif;
+  --ifm-font-family-monospace: 'JetBrains Mono', 'Fira Code', monospace;
+  --ifm-font-weight-semibold: 600;
+}
+
+/* Dark mode - palette slate routerly.ai (#0f172a base) */
+[data-theme='dark'] {
+  --ifm-color-primary: #5a90f8;
+  --ifm-color-primary-dark: #3d75f5;
+  --ifm-color-primary-darker: #2f67e9;
+  --ifm-color-primary-darkest: #1850d0;
+  --ifm-color-primary-light: #7aa8fb;
+  --ifm-color-primary-lighter: #93bafc;
+  --ifm-color-primary-lightest: #bfd3ff;
+  --docusaurus-highlighted-code-line-bg: rgba(90, 144, 248, 0.12);
+
+  /* Dark backgrounds — slate-900/800 matching routerly.ai */
+  --ifm-background-color: #0f172a;
+  --ifm-background-surface-color: #1e293b;
+  --ifm-navbar-background-color: #0f172a;
+  --ifm-footer-background-color: #0f172a;
+  --ifm-toc-border-color: #334155;
+  --ifm-color-emphasis-300: #334155;
+  --ifm-hr-border-color: #334155;
+  --ifm-color-emphasis-200: #1e293b;
+}
+
+/* Sidebar */
+[data-theme='dark'] .menu {
+  background: #1e293b;
+}
+
+[data-theme='dark'] .navbar {
+  border-bottom: 1px solid #1e293b;
+}
+
+/* Code blocks */
+[data-theme='dark'] pre,
+[data-theme='dark'] .prism-code {
+  background: #1e293b !important;
+  border: 1px solid #334155;
+}
