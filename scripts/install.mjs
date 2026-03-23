@@ -468,8 +468,14 @@ if (installService) {
   } else {
     while (true) {
       const portStr = FLAG_PORT || await ask('Service port', '3000');
+      // Must be a string containing only digits
+      if (!/^\d+$/.test(portStr)) {
+        warn(`Invalid port: "${portStr}". Must be a number between 1 and 65535.`);
+        if (FLAG_PORT) die('Invalid --port flag value.');
+        continue;
+      }
       port = parseInt(portStr, 10);
-      if (!isNaN(port) && port >= 1 && port <= 65535) break;
+      if (port >= 1 && port <= 65535) break;
       warn(`Invalid port: "${portStr}". Must be a number between 1 and 65535.`);
       if (FLAG_PORT) die('Invalid --port flag value.');
     }
