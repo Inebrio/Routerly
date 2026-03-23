@@ -213,6 +213,45 @@ async function restartDaemon(scope) {
   }
 }
 
+/** Stop the Routerly daemon without removing it (for update/reinstall) */
+async function stopDaemon(scope) {
+  if (PLATFORM === 'linux') {
+    const unit = 'routerly.service';
+    const sudo = scope === 'system' ? 'sudo ' : '';
+    const ctl  = scope === 'system' ? 'systemctl' : 'systemctl --user';
+    try {
+      const { stdout } = await exec(`${sudo}${ctl} is-active ${unit} 2>/dev/null`).catch(() => ({ stdout: '' }));
+      if (stdout.trim() === 'active') {
+        await exec(`${sudo}${ctl} stop ${unit}`);
+        success('Service daemon stopped');
+      }
+    } catch (err) {
+      warn(`Could not stop daemon: ${err.message}`);
+    }
+  } else if (PLATFORM === 'darwin') {
+    const label = 'ai.routerly.service';
+    const plistDir = scope === 'system' ? '/Library/LaunchDaemons' : path.join(HOME, 'Library/LaunchAgents');
+    const plistPath = path.join(plistDir, `${label}.plist`);
+    const sudo = scope === 'system' ? 'sudo ' : '';
+    if (fs.existsSync(plistPath)) {
+      try {
+        await exec(`${sudo}launchctl unload "${plistPath}"`);
+        success('Service daemon stopped');
+      } catch {
+        // already stopped, ignore
+      }
+    }
+  } else if (PLATFORM === 'win32') {
+    try {
+      await exec(`sc query routerly 2>nul | findstr RUNNING`);
+      await exec(`sc stop routerly`);
+      success('Service daemon stopped');
+    } catch {
+      // not running, ignore
+    }
+  }
+}
+
 /** Stop and remove the Routerly system daemon */
 async function removeDaemon(scope) {
   if (PLATFORM === 'linux') {
@@ -291,6 +330,13 @@ if (isExistingInstall && !YES) {
     warn('User data (accounts, budgets, usage history) will NOT be modified.');
   } else {
     installMode = 'update';
+  }
+
+  // Stop running daemon before update/reinstall to avoid file conflicts
+  if (installMode === 'update' || installMode === 'reinstall') {
+    const detectedScope = detectExistingScope();
+    info('Checking for running service daemon...');
+    await stopDaemon(detectedScope);
   }
 
   if (installMode === 'uninstall') {
