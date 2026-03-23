@@ -501,6 +501,15 @@ if (installService) {
 const displayHost = (host === '0.0.0.0' || host === '::') ? 'localhost' : host;
 const publicUrl = FLAG_URL || (installService ? (existingSettings.publicUrl ?? `http://${displayHost}:${port}`) : '');
 
+// Validate public URL if provided via flag
+if (FLAG_URL) {
+  try {
+    new URL(FLAG_URL);
+  } catch {
+    die(`Invalid --public-url flag value: "${FLAG_URL}". Must be a valid URL (e.g., http://example.com:3000).`);
+  }
+}
+
 // ── Daemon ────────────────────────────────────────────────────────────────────
 let setupDaemon = false;
 if (installService) {
