@@ -453,13 +453,24 @@ if (installService) {
     }
     while (true) {
       const hostInput = FLAG_HOST || await ask('Service bind host', '0.0.0.0', { hint: 'use 0.0.0.0 for all interfaces, 127.0.0.1 for localhost only' });
-      // Basic validation: IPv4, IPv6, or hostname (alphanumeric + dots/colons/hyphens)
-      const isValidHost = /^((\d{1,3}\.){3}\d{1,3}|([0-9a-f:]+)|localhost|[\w.-]+)$/i.test(hostInput);
-      if (isValidHost) {
+      // Reject if it looks like host:port (contains : followed by digits at the end)
+      if (/:\d+$/.test(hostInput)) {
+        warn(`Invalid bind host: "${hostInput}". Do not include the port here (port is configured separately).`);
+        if (FLAG_HOST) die('Invalid --host flag value.');
+        continue;
+      }
+      // Basic validation: IPv4, IPv6, or hostname
+      // IPv4: 4 octets separated by dots
+      // IPv6: colons and hex digits (simplified - allows some invalid but safe for binding)
+      // Hostname: alphanumeric, dots, hyphens
+      const isIPv4 = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostInput);
+      const isIPv6 = /^[0-9a-f:]+$/i.test(hostInput) && hostInput.includes(':');
+      const isHostname = /^[a-z0-9][a-z0-9.-]*$/i.test(hostInput);
+      if (isIPv4 || isIPv6 || isHostname) {
         host = hostInput;
         break;
       }
-      warn(`Invalid bind host: "${hostInput}". Use an IP address (e.g., 0.0.0.0, 127.0.0.1) or hostname.`);
+      warn(`Invalid bind host: "${hostInput}". Use an IP address (e.g., 0.0.0.0, 127.0.0.1) or hostname (e.g., localhost).`);
       if (FLAG_HOST) die('Invalid --host flag value.');
     }
   }
@@ -732,7 +743,8 @@ if (installService && setupDaemon) {
 // ════════════════════════════════════════════════════════════════════════════
 // PHASE 8: Post-install setup wizard (optional)
 // ════════════════════════════════════════════════════════════════════════════
-if (installService && !isUpdate) {
+// Only run the wizard on fresh installs (not reinstall or update)
+if (installService && installMode === 'fresh') {
   console.log('\n' + '─'.repeat(60));
   console.log('\n' + c.bold('  Create the first admin user') + '\n');
   console.log(c.dim('  You can always do this later with the `routerly` CLI.\n'));
