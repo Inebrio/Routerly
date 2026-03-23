@@ -111,7 +111,7 @@ async function askSecret(prompt) {
 async function confirm(prompt, defaultYes = true) {
   if (YES) return defaultYes;
   const choices = defaultYes ? c.dim('[Y/n]') : c.dim('[y/N]');
-  
+
   while (true) {
     const answer = (await question(`  ${prompt} ${choices} `)).trim().toLowerCase();
     if (answer === '') return defaultYes;
@@ -393,7 +393,7 @@ if (FLAG_SCOPE) {
   console.log(`    ${c.bold('1')}  ${c.cyan('User')}    — installs in your home directory (no sudo needed)`);
   console.log(`    ${c.bold('2')}  ${c.cyan('System')}  — installs system-wide (requires sudo / admin)`);
   console.log();
-  
+
   while (true) {
     const choice = (await question('  Choose scope [1]: ')).trim();
     if (choice === '' || choice === '1') {
@@ -526,14 +526,14 @@ if (installService) {
         if (FLAG_HOST) die('Invalid --host flag value.');
         continue;
       }
-      
+
       // Common valid bind addresses (whitelist)
       const commonHosts = ['0.0.0.0', '127.0.0.1', 'localhost', '::', '::1'];
       if (commonHosts.includes(hostInput)) {
         host = hostInput;
         break;
       }
-      
+
       // IPv4: 4 octets, each 0-255
       const ipv4Parts = hostInput.split('.');
       if (ipv4Parts.length === 4) {
@@ -546,7 +546,7 @@ if (installService) {
           break;
         }
       }
-      
+
       // IPv6: contains at least 2 colons, only hex digits and colons
       if (hostInput.includes(':')) {
         const colonCount = (hostInput.match(/:/g) || []).length;
@@ -555,13 +555,13 @@ if (installService) {
           break;
         }
       }
-      
+
       // Hostname: contains dot, starts with alphanumeric, only alphanumeric/dots/hyphens
       if (hostInput.includes('.') && /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i.test(hostInput)) {
         host = hostInput;
         break;
       }
-      
+
       warn(`Invalid bind host: "${hostInput}". Use an IP address (e.g., 0.0.0.0, 127.0.0.1) or hostname (e.g., localhost).`);
       if (FLAG_HOST) die('Invalid --host flag value.');
     }
@@ -906,7 +906,15 @@ if (installService && installMode === 'fresh') {
       }
       try {
         await createAdminUser({ baseUrl, email, password });
-        success(`Admin user ${c.bold(email)} created`);
+        // Verify the admin was actually created in the right config directory
+        const verifyResp = await fetch(`${baseUrl}/api/setup/status`);
+        const verifyData = await verifyResp.json();
+        if (verifyData.needsSetup) {
+          warn('Admin created but the service does not see it (wrong config directory?).');
+          warn('The dashboard will prompt you to create an admin on first visit.');
+        } else {
+          success(`Admin user ${c.bold(email)} created`);
+        }
       } catch (err) {
         warn(`Could not create user: ${err.message}`);
         if (err.stderr) {
