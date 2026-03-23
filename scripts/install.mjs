@@ -94,8 +94,10 @@ async function ask(prompt, defaultValue, { hint = '' } = {}) {
 
 async function askSecret(prompt) {
   if (YES) return '';
+  // Print prompt on its own line with clear indication that input is hidden
+  console.log(`  ${c.bold(prompt)} ${c.yellow('(input hidden)')}`);
   return new Promise((resolve) => {
-    process.stdout.write(`  ${prompt}${c.dim(' (hidden)')}: `);
+    process.stdout.write('  > ');
     const origWrite = rl._writeToOutput.bind(rl);
     rl._writeToOutput = () => {};
     rl.question('', (answer) => {
@@ -417,11 +419,20 @@ let remoteServiceUrl = '';
 if (isUpdate) {
   remoteServiceUrl = existingCliConfig.serviceUrl ?? '';
 } else if (!installService && installCli) {
-  remoteServiceUrl = await ask(
-    'Remote Routerly service URL',
-    'http://localhost:3000',
-    { hint: 'used by the CLI to reach the service' }
-  );
+  while (true) {
+    remoteServiceUrl = await ask(
+      'Remote Routerly service URL',
+      'http://localhost:3000',
+      { hint: 'used by the CLI to reach the service' }
+    );
+    // Basic URL validation
+    try {
+      new URL(remoteServiceUrl);
+      break;
+    } catch {
+      warn(`Invalid URL: "${remoteServiceUrl}". Must be a valid URL (e.g., http://localhost:3000).`);
+    }
+  }
 }
 
 // ── Port & URL ────────────────────────────────────────────────────────────────
@@ -738,17 +749,18 @@ if (installService && !isUpdate) {
       let email = '';
       while (true) {
         email = await ask('  Email', 'admin@localhost');
-        if (email && email.includes('@')) break;
-        warn('Please enter a valid email address.');
+        // Basic email validation: must contain @ and a dot after @
+        if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) break;
+        warn('Please enter a valid email address (e.g., admin@localhost or user@example.com).');
       }
       let password = '';
       while (true) {
-        password = await askSecret('  Password (min 8 characters)');
+        password = await askSecret('Password (min 8 characters)');
         if (!password || password.length < 8) {
           warn('Password too short (minimum 8 characters), try again.');
           continue;
         }
-        const confirm2 = await askSecret('  Confirm password');
+        const confirm2 = await askSecret('Confirm password');
         if (password !== confirm2) {
           warn('Passwords do not match, try again.');
           continue;
