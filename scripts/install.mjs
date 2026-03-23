@@ -845,8 +845,12 @@ if (installService && installMode === 'fresh') {
       try {
         await createAdminUser({ baseUrl, routerlyHome: serviceHome, APP_DIR, installCli, email, password });
         success(`Admin user ${c.bold(email)} created`);
-      } catch {
-        warn(`Could not create user. Start the service and run: routerly user add --email "${email}" --role admin`);
+      } catch (err) {
+        warn(`Could not create user: ${err.message}`);
+        if (err.stderr) {
+          console.error(c.dim(err.stderr.trim()));
+        }
+        warn(`Start the service and run: routerly user add --email "${email}" --role admin`);
       }
     }
   }
