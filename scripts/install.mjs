@@ -174,6 +174,45 @@ async function removeDir(dir, needsSudo) {
   }
 }
 
+/** Restart the Routerly system daemon (for updates) */
+async function restartDaemon(scope) {
+  if (PLATFORM === 'linux') {
+    const unit = 'routerly.service';
+    const sudo = scope === 'system' ? 'sudo ' : '';
+    const ctl  = scope === 'system' ? 'systemctl' : 'systemctl --user';
+    try {
+      await exec(`${sudo}${ctl} restart ${unit}`);
+      success('Service daemon restarted');
+    } catch (err) {
+      warn(`Could not restart daemon: ${err.message}`);
+      console.log(`  Try manually: ${sudo}${ctl} restart ${unit}`);
+    }
+  } else if (PLATFORM === 'darwin') {
+    const label = 'ai.routerly.service';
+    const plistDir = scope === 'system' ? '/Library/LaunchDaemons' : path.join(HOME, 'Library/LaunchAgents');
+    const plistPath = path.join(plistDir, `${label}.plist`);
+    const sudo = scope === 'system' ? 'sudo ' : '';
+    try {
+      // launchd: unload + load = restart
+      await exec(`${sudo}launchctl unload "${plistPath}"`).catch(() => {});
+      await exec(`${sudo}launchctl load -w "${plistPath}"`);
+      success('Service daemon restarted');
+    } catch (err) {
+      warn(`Could not restart daemon: ${err.message}`);
+      console.log(`  Try manually: ${sudo}launchctl unload + load ${plistPath}`);
+    }
+  } else if (PLATFORM === 'win32') {
+    try {
+      await exec(`sc stop routerly`);
+      await exec(`sc start routerly`);
+      success('Service daemon restarted');
+    } catch (err) {
+      warn(`Could not restart service: ${err.message}`);
+      console.log(`  Try manually: sc stop routerly && sc start routerly`);
+    }
+  }
+}
+
 /** Stop and remove the Routerly system daemon */
 async function removeDaemon(scope) {
   if (PLATFORM === 'linux') {
@@ -664,6 +703,29 @@ if (installCli) {
   info('Building @routerly/cli...');
   await runCmd('npm run build --workspace=packages/cli', APP_DIR);
   success('@routerly/cli built');
+}
+
+// ── Restart service daemon after update (if exists) ─────────────────────────
+if (isUpdate && installService) {
+  // Check if daemon exists by looking for unit/plist file
+  let daemonExists = false;
+  if (PLATFORM === 'linux') {
+    const systemUnit = '/etc/systemd/system/routerly.service';
+    const userUnit = path.join(HOME, '.config/systemd/user/routerly.service');
+    daemonExists = fs.existsSync(systemUnit) || fs.existsSync(userUnit);
+  } else if (PLATFORM === 'darwin') {
+    const systemPlist = '/Library/LaunchDaemons/ai.routerly.service.plist';
+    const userPlist = path.join(HOME, 'Library/LaunchAgents/ai.routerly.service.plist');
+    daemonExists = fs.existsSync(systemPlist) || fs.existsSync(userPlist);
+  } else if (PLATFORM === 'win32') {
+    // Just try to restart, Windows service might exist
+    daemonExists = true;
+  }
+
+  if (daemonExists) {
+    info('Restarting service daemon with updated code...');
+    await restartDaemon(scope);
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
