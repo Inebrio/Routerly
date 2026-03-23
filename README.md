@@ -30,12 +30,12 @@
 
 **macOS / Linux:**
 ```bash
-curl -fsSL https://github.com/Inebrio/Routerly/releases/latest/download/install.sh | bash
+curl -fsSL https://www.routerly.ai/install.sh | bash
 ```
 
 **Windows (PowerShell):**
 ```powershell
-powershell -c "irm https://github.com/Inebrio/Routerly/releases/latest/download/install.ps1 | iex"
+powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
 ```
 
 ```bash
@@ -244,13 +244,22 @@ Mix and match freely. A single project can span cloud and local models simultane
 
 ## Documentation
 
+Full documentation is available at **[https://docs.routerly.ai](https://docs.routerly.ai)**.
+
 | | |
 |---|---|
-| [Getting Started](docs/getting-started/installation.md) | Install, generate your secret key, run your first request |
-| [Service](docs/service/README.md) | Architecture, routing engine, providers, budgets, API reference |
-| [Dashboard](docs/dashboard/README.md) | All dashboard pages explained |
-| [CLI](docs/cli/README.md) | Every command with examples |
-| [Contributing](docs/contributing/development.md) | Dev setup, add a routing policy, add a provider |
+| [Installation](docs/getting-started/installation.md) | One-line install, Docker, manual setup |
+| [Quick Start](docs/getting-started/quick-start.md) | First model, project, and API call in 5 minutes |
+| [Configuration](docs/getting-started/configuration.md) | Settings file, environment variables, security |
+| [Architecture](docs/concepts/architecture.md) | How the gateway works end-to-end |
+| [Providers](docs/concepts/providers.md) | Supported providers and model catalogue |
+| [Routing](docs/concepts/routing.md) | All 9 routing policies explained |
+| [Budgets & Limits](docs/concepts/budgets-and-limits.md) | Cost caps, token limits, enforcement |
+| [Dashboard](docs/dashboard/overview.md) | Web UI walkthrough |
+| [CLI Reference](docs/cli/commands.md) | Every command with examples |
+| [API Reference](docs/api/overview.md) | LLM proxy and management API |
+| [Self-Hosting Guide](docs/guides/self-hosting.md) | Docker, systemd, nginx, production checklist |
+| [Client Integration](docs/guides/client-integration.md) | OpenAI SDK, Anthropic SDK, LangChain, Cursor |
 
 ---
 
