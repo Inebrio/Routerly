@@ -823,8 +823,9 @@ if (installService && installMode === 'fresh') {
       let email = '';
       while (true) {
         email = await ask('  Email', 'admin@localhost');
-        // Basic email validation: must contain @ and a dot after @
-        if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) break;
+        // Basic email validation: must contain @ with text before and after
+        // Accepts both full domains (user@example.com) and local hostnames (admin@localhost)
+        if (email && /^[^\s@]+@[^\s@]+$/.test(email)) break;
         warn('Please enter a valid email address (e.g., admin@localhost or user@example.com).');
       }
       let password = '';
