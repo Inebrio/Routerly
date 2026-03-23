@@ -440,7 +440,17 @@ if (installService) {
       warn(`Invalid port: "${portStr}". Must be a number between 1 and 65535.`);
       if (FLAG_PORT) die('Invalid --port flag value.');
     }
-    host = FLAG_HOST || await ask('Service bind host', '0.0.0.0', { hint: 'use 0.0.0.0 for all interfaces, 127.0.0.1 for localhost only' });
+    while (true) {
+      const hostInput = FLAG_HOST || await ask('Service bind host', '0.0.0.0', { hint: 'use 0.0.0.0 for all interfaces, 127.0.0.1 for localhost only' });
+      // Basic validation: IPv4, IPv6, or hostname (alphanumeric + dots/colons/hyphens)
+      const isValidHost = /^((\d{1,3}\.){3}\d{1,3}|([0-9a-f:]+)|localhost|[\w.-]+)$/i.test(hostInput);
+      if (isValidHost) {
+        host = hostInput;
+        break;
+      }
+      warn(`Invalid bind host: "${hostInput}". Use an IP address (e.g., 0.0.0.0, 127.0.0.1) or hostname.`);
+      if (FLAG_HOST) die('Invalid --host flag value.');
+    }
   }
 }
 // Derived automatically from host+port — can be changed later in the dashboard settings
