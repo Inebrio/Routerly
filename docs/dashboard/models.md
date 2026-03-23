@@ -1,99 +1,75 @@
-# Models
+---
+title: Models
+sidebar_position: 3
+---
 
-The **Models** page lets you register, configure, and remove LLM provider models through the dashboard UI.
+# Dashboard: Models
+
+The Models page lets you register, edit, clone, and remove LLM models. All models registered here become available for use in project routing configurations.
 
 ---
 
-## Listing Models
+## Model List
 
-Navigate to **Models** in the sidebar. The table shows:
+The list shows all registered models with the following columns:
 
-- Model ID
-- Provider
-- Endpoint URL
-- Input cost ($/1M tokens)
-- Output cost ($/1M tokens)
-- Capabilities (vision, function calling, thinking, JSON mode)
-- Global limits
+| Column | Description |
+|--------|-------------|
+| **Model ID** | Provider model identifier |
+| **Provider** | OpenAI, Anthropic, Gemini, etc. |
+| **Input Price** | USD per 1M input tokens |
+| **Output Price** | USD per 1M output tokens |
+| **Context Window** | Maximum tokens accepted |
+| **Capabilities** | Icons for vision, function calling, thinking, JSON |
+| **Enabled** | Toggle on/off without deleting |
+
+Click any column header to sort.
 
 ---
 
-## Registering a New Model
+## Adding a Model
 
-Click **Add Model** to open the registration form.
+1. Click **+ New Model**
+2. Fill in the form:
+   - **Model ID** — the identifier sent to the provider (e.g. `gpt-5-mini`)
+   - **Provider** — select from the dropdown
+   - **API Key** — encrypted at rest; leave blank for Ollama / custom models without auth
+   - **Base URL** — optional override (useful for proxies or self-hosted models)
+   - **Context Window** — pre-filled for known models
+   - **Pricing** — input/output/cache prices per 1M tokens; pre-filled for known models
+   - **Pricing Tiers** — add a tier for long-context pricing (e.g. Anthropic above 200k tokens)
+   - **Capabilities** — check all that apply
 
-### Required Fields
-
-| Field | Description |
-|-------|-------------|
-| **Model ID** | Unique identifier (e.g. `gpt-4o`, `my-llama3`). Used in API requests and routing |
-| **Provider** | Select from: `openai`, `anthropic`, `gemini`, `ollama`, `mistral`, `cohere`, `xai`, `custom` |
-
-### Optional Fields
-
-| Field | Description |
-|-------|-------------|
-| **Endpoint** | Override the default provider endpoint. Leave blank to use the provider default |
-| **API Key** | Provider API key. Stored encrypted at rest using AES-256 |
-| **Display Name** | Human-readable label (defaults to Model ID) |
-| **Input price ($/1M)** | Cost per million input tokens in USD. Auto-populated for known model IDs |
-| **Output price ($/1M)** | Cost per million output tokens in USD. Auto-populated for known model IDs |
-| **Cached input price ($/1M)** | Cost per million cached prompt tokens (relevant for Anthropic and OpenAI) |
-
-### Pricing Presets
-
-If the Model ID matches a known preset, pricing is filled in automatically:
-
-| Model ID | Input | Output |
-|----------|-------|--------|
-| `gpt-4o` | $5.00 | $15.00 |
-| `gpt-4o-mini` | $0.15 | $0.60 |
-| `gpt-4-turbo` | $10.00 | $30.00 |
-| `gpt-3.5-turbo` | $0.50 | $1.50 |
-| `claude-3-5-sonnet-20241022` | $3.00 | $15.00 |
-| `claude-3-5-haiku-20241022` | $1.00 | $5.00 |
-| `claude-3-opus-20240229` | $15.00 | $75.00 |
-| `gemini-1.5-pro` | $1.25 | $5.00 |
-| `gemini-1.5-flash` | $0.075 | $0.30 |
-
-### Capabilities
-
-Check the relevant boxes to tell the routing engine what this model supports:
-
-- **Vision**, accepts image inputs
-- **Function calling**, supports tool/function calls
-- **Thinking**, extended reasoning mode (e.g. claude-3-7-sonnet)
-- **JSON mode**, reliable JSON output (`response_format: json_object`)
-
-### Global Limits
-
-Add one or more spend/usage limits that apply globally across all projects:
-
-- Click **Add Limit**
-- Choose metric, window type, and value
-- Multiple limits are AND-combined (all must pass)
-
-See [Budgets & Limits](../service/budgets-and-limits.md) for the full reference.
+3. Click **Save**
 
 ---
 
 ## Editing a Model
 
-Click the **Edit** (pencil) icon on any model row to update its configuration.
+Click the **Edit** (pencil) icon next to a model. All fields except the Model ID are editable.
 
-> API keys are never shown after initial save. To rotate a key, edit the model and enter the new key.
+To update the API key, enter a new value — Routerly re-encrypts it immediately.
+
+---
+
+## Cloning a Model
+
+Click the **Clone** icon to create a copy of a model entry. Useful when registering a fine-tuned variant that shares the same provider and pricing as a base model.
+
+Change the **Model ID** and **API Key** as needed, then save.
+
+---
+
+## Disabling a Model
+
+Toggle the **Enabled** switch to `off` to temporarily remove a model from routing without deleting it. Disabled models are visible in the list but are excluded from all routing decisions.
 
 ---
 
 ## Removing a Model
 
-Click the **Delete** (trash) icon. A confirmation dialog is shown.
+Click the **Delete** (trash) icon. You will be asked to confirm.
 
-> Models assigned to active projects cannot be deleted. Remove them from all projects first.
-
----
-
-## See Also
-
-- [CLI: model commands](../cli/commands.md#model): manage models from the terminal
-- [Providers](../service/providers.md): supported providers and default endpoints
+:::warning
+Removing a model that is assigned to active project routing configurations will cause routing failures for those projects. Remove the model from all project routing configs before deleting it.
+:::
