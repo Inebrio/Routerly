@@ -433,11 +433,13 @@ if (installService) {
     host = existingSettings.host ?? '0.0.0.0';
     info(`Keeping existing config: port=${port}, host=${host}`);
   } else {
-    port = parseInt(
-      FLAG_PORT || await ask('Service port', '3000'),
-      10
-    );
-    if (isNaN(port) || port < 1 || port > 65535) die(`Invalid port: ${port}`);
+    while (true) {
+      const portStr = FLAG_PORT || await ask('Service port', '3000');
+      port = parseInt(portStr, 10);
+      if (!isNaN(port) && port >= 1 && port <= 65535) break;
+      warn(`Invalid port: "${portStr}". Must be a number between 1 and 65535.`);
+      if (FLAG_PORT) die('Invalid --port flag value.');
+    }
     host = FLAG_HOST || await ask('Service bind host', '0.0.0.0', { hint: 'use 0.0.0.0 for all interfaces, 127.0.0.1 for localhost only' });
   }
 }
@@ -711,13 +713,45 @@ if (installService && setupDaemon) {
 // ════════════════════════════════════════════════════════════════════════════
 if (installService && !isUpdate) {
   console.log('\n' + '─'.repeat(60));
-  info(c.bold('Optional: Initial Setup Wizard'));
-  console.log(c.dim('  Create an admin user, configure a model, and set up a project to get started quickly.'));
+  console.log('\n' + c.bold('  Create the first admin user') + '\n');
   console.log(c.dim('  You can always do this later with the `routerly` CLI.\n'));
 
-  const doWizard = await confirm('  Run the setup wizard now?', !YES);
-  if (doWizard) {
-    await setupWizard({ port, routerlyHome: serviceHome, APP_DIR, installCli });
+  const addUser = await confirm('  Create an admin user now?', !YES);
+  if (addUser) {
+    const baseUrl = `http://localhost:${port}`;
+    info('Waiting for service to be ready...');
+    const ready = await waitForService(baseUrl + '/health', 15, 1000);
+    if (!ready) {
+      warn('Service is not responding yet. Start it and run: routerly user add --role admin');
+    } else {
+      success('Service is up');
+      let email = '';
+      while (true) {
+        email = await ask('  Email', 'admin@localhost');
+        if (email && email.includes('@')) break;
+        warn('Please enter a valid email address.');
+      }
+      let password = '';
+      while (true) {
+        password = await askSecret('  Password (min 8 characters)');
+        if (!password || password.length < 8) {
+          warn('Password too short (minimum 8 characters), try again.');
+          continue;
+        }
+        const confirm2 = await askSecret('  Confirm password');
+        if (password !== confirm2) {
+          warn('Passwords do not match, try again.');
+          continue;
+        }
+        break;
+      }
+      try {
+        await createAdminUser({ baseUrl, routerlyHome: serviceHome, APP_DIR, installCli, email, password });
+        success(`Admin user ${c.bold(email)} created`);
+      } catch {
+        warn(`Could not create user. Start the service and run: routerly user add --email "${email}" --role admin`);
+      }
+    }
   }
 }
 
@@ -962,100 +996,21 @@ async function setupWindowsService({ serviceEntry, nodeExe, routerlyHome, port }
   }
 }
 
-// ── Setup wizard ──────────────────────────────────────────────────────────────
-async function setupWizard({ port, routerlyHome, APP_DIR, installCli }) {
-  const baseUrl = `http://localhost:${port}`;
-
-  // Give the service a moment to boot if the daemon was just started
-  info('Waiting for service to be ready...');
-  const ready = await waitForService(baseUrl + '/health', 15, 1000);
-  if (!ready) {
-    warn('Service is not responding yet. The wizard requires the service to be running.');
-    warn('Start it manually with: routerly start');
-    warn('Then run: routerly model add --id <id> --provider openai --api-key <key>');
-    return;
-  }
-  success('Service is up');
-
-  // ── Create admin user ──
-  console.log('\n' + c.bold('  Step 1: Create a dashboard admin user') + '\n');
-  const addUser = await confirm('  Create an admin user now?', true);
-  if (addUser) {
-    const email    = await ask('  Email', 'admin@localhost');
-    let password = '';
-    while (true) {
-      password = await askSecret('  Password (min 8 characters)');
-      if (!password || password.length < 8) {
-        warn('Password too short, try again.');
-        continue;
-      }
-      const confirm2 = await askSecret('  Confirm password');
-      if (password !== confirm2) {
-        warn('Passwords do not match, try again.');
-        continue;
-      }
-      break;
-    }
-    const cliArgs = `--email "${email}" --password "${password}" --role admin`;
-    try {
-      await runCliOrApi('user', 'add', cliArgs, { baseUrl, routerlyHome, APP_DIR, installCli });
-      success(`Admin user ${c.bold(email)} created`);
-    } catch {
-      warn('Could not create user via CLI. Run manually: routerly user add ' + cliArgs);
-    }
-  }
-
-  // ── Add a model ──
-  console.log('\n' + c.bold('  Step 2: Add an LLM model') + '\n');
-  console.log('  Supported providers: openai, anthropic, gemini, ollama, custom\n');
-  const addModel = await confirm('  Add a model now?', true);
-  if (addModel) {
-    const modelId   = await ask('  Model ID', 'gpt-4o', { hint: 'e.g. gpt-4o, claude-3-5-sonnet-20241022' });
-    const provider  = await ask('  Provider', 'openai', { hint: 'openai | anthropic | gemini | ollama | custom' });
-    const needsKey  = provider !== 'ollama';
-    const apiKey    = needsKey
-      ? await ask(`  API key for ${provider}`, '', { hint: 'will be stored encrypted' })
-      : '';
-    const endpoint  = await ask('  Custom endpoint (leave blank for default)', '');
-
-    const cliArgs = [
-      `--id "${modelId}"`,
-      `--provider ${provider}`,
-      apiKey    ? `--api-key "${apiKey}"` : '',
-      endpoint  ? `--endpoint "${endpoint}"` : '',
-    ].filter(Boolean).join(' ');
-
-    try {
-      await runCliOrApi('model', 'add', cliArgs, { baseUrl, routerlyHome, APP_DIR, installCli });
-      success(`Model ${c.bold(modelId)} registered`);
-    } catch {
-      warn('Could not add model via CLI. Run manually: routerly model add ' + cliArgs);
-    }
-  }
-
-  // ── Create a project ──
-  console.log('\n' + c.bold('  Step 3: Create a project') + '\n');
-  const addProject = await confirm('  Create a project now?', true);
-  if (addProject) {
-    const projName = await ask('  Project name', 'My App');
-    const projSlug = await ask('  Project slug', projName.toLowerCase().replace(/\s+/g, '-'));
-
-    const cliArgs = `--name "${projName}" --slug "${projSlug}"`;
-    try {
-      await runCliOrApi('project', 'add', cliArgs, { baseUrl, routerlyHome, APP_DIR, installCli });
-      success(`Project ${c.bold(projName)} created`);
-    } catch {
-      warn('Could not create project via CLI. Run manually: routerly project add ' + cliArgs);
-    }
-  }
-}
-
-/** Tries to run a CLI command, falling back to direct API call. */
-async function runCliOrApi(resource, action, args, { baseUrl, routerlyHome, APP_DIR, installCli }) {
+/** Create admin user securely — password passed via env var, never as CLI arg. */
+async function createAdminUser({ baseUrl, routerlyHome, APP_DIR, installCli, email, password }) {
   if (installCli) {
     const cliEntry = path.join(APP_DIR, 'packages', 'cli', 'dist', 'index.js');
+    // Pass password via ROUTERLY_USER_PASSWORD env var — never on the command line
     await exec(
-      `ROUTERLY_HOME="${routerlyHome}" ROUTERLY_BASE_URL="${baseUrl}" node "${cliEntry}" ${resource} ${action} ${args}`,
+      `node "${cliEntry}" user add --email "${email}" --role admin --password-stdin`,
+      {
+        env: {
+          ...process.env,
+          ROUTERLY_HOME: routerlyHome,
+          ROUTERLY_BASE_URL: baseUrl,
+          ROUTERLY_USER_PASSWORD: password,
+        },
+      }
     );
   } else {
     throw new Error('CLI not installed');
