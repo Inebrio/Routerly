@@ -73,3 +73,15 @@ coverage/
 .temp/
 .tmp/
 .claude/
+
+# ===========================
+# Firebase
+# ===========================
+.firebase/
+
+# ===========================
+# Docusaurus website
+# ===========================
+website/build/
+website/node_modules/
+website/.docusaurus/
