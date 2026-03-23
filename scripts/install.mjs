@@ -487,17 +487,45 @@ if (installService) {
         if (FLAG_HOST) die('Invalid --host flag value.');
         continue;
       }
-      // Basic validation: IPv4, IPv6, or hostname
-      // IPv4: 4 octets separated by dots
-      // IPv6: colons and hex digits (simplified - allows some invalid but safe for binding)
-      // Hostname: alphanumeric, dots, hyphens
-      const isIPv4 = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostInput);
-      const isIPv6 = /^[0-9a-f:]+$/i.test(hostInput) && hostInput.includes(':');
-      const isHostname = /^[a-z0-9][a-z0-9.-]*$/i.test(hostInput);
-      if (isIPv4 || isIPv6 || isHostname) {
+      
+      // Common valid bind addresses (whitelist)
+      const commonHosts = ['0.0.0.0', '127.0.0.1', 'localhost', '::', '::1'];
+      if (commonHosts.includes(hostInput)) {
         host = hostInput;
         break;
       }
+      
+      // IPv4: 4 octets, each 0-255
+      const ipv4Parts = hostInput.split('.');
+      if (ipv4Parts.length === 4) {
+        const allValid = ipv4Parts.every(part => {
+          const num = parseInt(part, 10);
+          return /^\d+$/.test(part) && num >= 0 && num <= 255;
+        });
+        if (allValid) {
+          host = hostInput;
+          break;
+        }
+      }
+      
+      // IPv6: contains at least 2 colons, only hex digits and colons
+      if (hostInput.includes(':')) {
+        const colonCount = (hostInput.match(/:/g) || []).length;
+        if (colonCount >= 2 && /^[0-9a-f:]+$/i.test(hostInput)) {
+          host = hostInput;
+          break;
+        }
+      }
+      
+      // Hostname: contains dot, starts with alphanumeric, only alphanumeric/dots/hyphens
+      if (hostInput.includes('.') && /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i.test(hostInput)) {
+        host = hostInput;
+        break;
+      }
+      
+      warn(`Invalid bind host: "${hostInput}". Use an IP address (e.g., 0.0.0.0, 127.0.0.1) or hostname (e.g., localhost).`);
+      if (FLAG_HOST) die('Invalid --host flag value.');
+    }
       warn(`Invalid bind host: "${hostInput}". Use an IP address (e.g., 0.0.0.0, 127.0.0.1) or hostname (e.g., localhost).`);
       if (FLAG_HOST) die('Invalid --host flag value.');
     }
