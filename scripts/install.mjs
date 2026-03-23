@@ -526,9 +526,6 @@ if (installService) {
       warn(`Invalid bind host: "${hostInput}". Use an IP address (e.g., 0.0.0.0, 127.0.0.1) or hostname (e.g., localhost).`);
       if (FLAG_HOST) die('Invalid --host flag value.');
     }
-      warn(`Invalid bind host: "${hostInput}". Use an IP address (e.g., 0.0.0.0, 127.0.0.1) or hostname (e.g., localhost).`);
-      if (FLAG_HOST) die('Invalid --host flag value.');
-    }
   }
 }
 // Derived automatically from host+port — can be changed later in the dashboard settings
