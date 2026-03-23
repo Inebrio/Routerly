@@ -111,9 +111,14 @@ async function askSecret(prompt) {
 async function confirm(prompt, defaultYes = true) {
   if (YES) return defaultYes;
   const choices = defaultYes ? c.dim('[Y/n]') : c.dim('[y/N]');
-  const answer  = (await question(`  ${prompt} ${choices} `)).trim().toLowerCase();
-  if (answer === '') return defaultYes;
-  return answer === 'y' || answer === 'yes';
+  
+  while (true) {
+    const answer = (await question(`  ${prompt} ${choices} `)).trim().toLowerCase();
+    if (answer === '') return defaultYes;
+    if (answer === 'y' || answer === 'yes') return true;
+    if (answer === 'n' || answer === 'no') return false;
+    console.log(c.red(`  ✖ Invalid input. Please enter 'y' or 'n'.`));
+  }
 }
 
 // ─── Banner ───────────────────────────────────────────────────────────────────
