@@ -31,20 +31,19 @@ export async function buildServer() {
   if (settings.dashboardEnabled) {
     const dashboardDist = join(__dirname, '../../dashboard/dist');
     try {
-      await fastify.register(staticFiles, {
-        root: dashboardDist,
-        prefix: '/dashboard/',
-        decorateReply: false,
-        // Disable built-in wildcard so our SPA fallback below takes over
-        wildcard: false,
-      });
-      // SPA fallback: any /dashboard/* path that isn't a static asset serves index.html
-      fastify.get('/dashboard/', async (_req, reply) => {
-        return reply.sendFile('index.html', dashboardDist);
-      });
-      fastify.get('/dashboard/*', async (_req, reply) => {
-        return reply.sendFile('index.html', dashboardDist);
-      });
+      // Encapsulated plugin: static files + SPA fallback scoped to /dashboard
+      await fastify.register(async function dashboardPlugin(scope) {
+        await scope.register(staticFiles, {
+          root: dashboardDist,
+          prefix: '/',
+        });
+        // SPA fallback: any /dashboard/* path that isn't a static file serves index.html
+        scope.setNotFoundHandler(async (_req, reply) => {
+          return reply.sendFile('index.html', dashboardDist);
+        });
+      }, { prefix: '/dashboard' });
+
+      // Redirect /dashboard → /dashboard/
       fastify.get('/dashboard', async (_req, reply) => {
         return reply.redirect('/dashboard/');
       });
