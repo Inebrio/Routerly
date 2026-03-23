@@ -843,7 +843,7 @@ if (installService && installMode === 'fresh') {
         break;
       }
       try {
-        await createAdminUser({ baseUrl, routerlyHome: serviceHome, APP_DIR, installCli, email, password });
+        await createAdminUser({ baseUrl, email, password });
         success(`Admin user ${c.bold(email)} created`);
       } catch (err) {
         warn(`Could not create user: ${err.message}`);
@@ -1097,24 +1097,19 @@ async function setupWindowsService({ serviceEntry, nodeExe, routerlyHome, port }
   }
 }
 
-/** Create admin user securely — password passed via env var, never as CLI arg. */
-async function createAdminUser({ baseUrl, routerlyHome, APP_DIR, installCli, email, password }) {
-  if (installCli) {
-    const cliEntry = path.join(APP_DIR, 'packages', 'cli', 'dist', 'index.js');
-    // Pass password via ROUTERLY_USER_PASSWORD env var — never on the command line
-    await exec(
-      `node "${cliEntry}" user add --email "${email}" --role admin --password-stdin`,
-      {
-        env: {
-          ...process.env,
-          ROUTERLY_HOME: routerlyHome,
-          ROUTERLY_BASE_URL: baseUrl,
-          ROUTERLY_USER_PASSWORD: password,
-        },
-      }
-    );
-  } else {
-    throw new Error('CLI not installed');
+/** Create admin user using the public setup endpoint (no auth required). */
+async function createAdminUser({ baseUrl, email, password }) {
+  // Use the public /api/setup/first-admin endpoint instead of CLI
+  // This endpoint is specifically for initial setup and doesn't require authentication
+  const response = await fetch(`${baseUrl}/api/setup/first-admin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
   }
 }
 
