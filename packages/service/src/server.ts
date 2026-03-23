@@ -39,6 +39,9 @@ export async function buildServer() {
         wildcard: false,
       });
       // SPA fallback: any /dashboard/* path that isn't a static asset serves index.html
+      fastify.get('/dashboard/', async (_req, reply) => {
+        return reply.sendFile('index.html', dashboardDist);
+      });
       fastify.get('/dashboard/*', async (_req, reply) => {
         return reply.sendFile('index.html', dashboardDist);
       });
