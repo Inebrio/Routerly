@@ -234,7 +234,14 @@ if (isExistingInstall && !YES) {
   console.log(`    ${c.bold('3')}  ${c.cyan('Uninstall')}   — remove Routerly from this machine`);
   console.log(`    ${c.bold('0')}  ${c.cyan('Cancel')}\n`);
 
-  const choice = (await question('  Choose [1]: ')).trim();
+  let choice;
+  while (true) {
+    choice = (await question('  Choose [1]: ')).trim();
+    if (choice === '' || choice === '1' || choice === '2' || choice === '3' || choice === '0' || choice.toLowerCase() === 'c') {
+      break;
+    }
+    console.log(c.red(`  ✖ Invalid choice. Please enter 0, 1, 2, or 3.`));
+  }
 
   if (choice === '0' || choice.toLowerCase() === 'c') {
     rl.close(); process.exit(0);
@@ -347,8 +354,18 @@ if (FLAG_SCOPE) {
   console.log(`    ${c.bold('1')}  ${c.cyan('User')}    — installs in your home directory (no sudo needed)`);
   console.log(`    ${c.bold('2')}  ${c.cyan('System')}  — installs system-wide (requires sudo / admin)`);
   console.log();
-  const choice = (await question('  Choose scope [1]: ')).trim();
-  scope = choice === '2' ? 'system' : 'user';
+  
+  while (true) {
+    const choice = (await question('  Choose scope [1]: ')).trim();
+    if (choice === '' || choice === '1') {
+      scope = 'user';
+      break;
+    } else if (choice === '2') {
+      scope = 'system';
+      break;
+    }
+    console.log(c.red(`  ✖ Invalid choice. Please enter '1' for User or '2' for System.`));
+  }
 }
 if (scope !== 'user' && scope !== 'system') {
   die(`Invalid scope "${scope}". Must be "user" or "system".`);
