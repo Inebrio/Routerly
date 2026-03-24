@@ -15,6 +15,8 @@ import { apiWith, api, ApiError } from '../api.js';
 
 interface LoginResponse {
   token: string;
+  /** Permanent refresh token returned at login (absent when calling /api/auth/refresh) */
+  refreshToken?: string;
   user: { id: string; email: string; role: string };
 }
 
@@ -136,7 +138,7 @@ Examples:
           alias = nextFreeAlias(emailBase);
         }
 
-        await saveAccount({ alias, serverUrl, email: email!, token: res.token, expiresAt, role: res.user.role });
+        await saveAccount({ alias, serverUrl, email: email!, token: res.token, expiresAt, role: res.user.role, refreshToken: res.refreshToken });
 
         console.log(chalk.green(`✓ Logged in as ${chalk.bold(res.user.email)} (role: ${res.user.role})`));
         console.log(chalk.gray(`  Account saved as "${alias}" → ${serverUrl}`));
@@ -145,6 +147,59 @@ Examples:
           console.error(chalk.red(`Login failed: ${err.message}`));
         } else {
           console.error(chalk.red(`Cannot reach server at ${serverUrl}: ${(err as Error).message}`));
+        }
+        process.exit(1);
+      }
+    });
+
+  // ── auth refresh ────────────────────────────────────────────────────────────
+  cmd.command('refresh [alias]')
+    .description('Refresh the session token for an account (token must not be expired)')
+    .addHelpText('after', `
+Examples:
+  # Refresh the current account's token
+  routerly auth refresh
+
+  # Refresh a specific account by alias
+  routerly auth refresh staging
+`)
+    .action(async (alias?: string) => {
+      const account = alias ? await getAccount(alias) : await getCurrentAccount();
+      if (!account) {
+        console.error(chalk.red(alias
+          ? `Account "${alias}" not found. Run \`routerly auth ps\` to list accounts.`
+          : 'Not logged in. Run: routerly auth login'));
+        process.exit(1);
+      }
+      if (!account.refreshToken) {
+        console.error(chalk.red(`No refresh token for "${account.alias}". Run: routerly auth login`));
+        process.exit(1);
+      }
+      try {
+        const url = `${account.serverUrl.replace(/\/$/, '')}/api/auth/refresh`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken: account.refreshToken }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({})) as { error?: string };
+          throw new ApiError(res.status, body.error ?? res.statusText);
+        }
+        const data = await res.json() as LoginResponse;
+        let expiresAt = Date.now() + 3600_000;
+        try {
+          const p = JSON.parse(Buffer.from(data.token.split('.')[0]!, 'base64url').toString()) as { exp?: number };
+          if (p.exp) expiresAt = p.exp;
+        } catch { /* keep default */ }
+        await saveAccount({ ...account, token: data.token, expiresAt });
+        console.log(chalk.green(`✓ Token refreshed for "${account.alias}".`));
+        console.log(chalk.gray(`  Expires: ${new Date(expiresAt).toLocaleString('it-IT')}`));
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          console.error(chalk.red('Refresh token revoked. Run: routerly auth login'));
+        } else {
+          console.error(chalk.red(`Error: ${(err as Error).message}`));
         }
         process.exit(1);
       }

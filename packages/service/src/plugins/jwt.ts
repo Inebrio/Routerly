@@ -36,7 +36,7 @@ export function verifyToken(token: string): Record<string, unknown> | null {
 }
 
 /** Generate a token expiring in `hours` hours */
-export function createSessionToken(userId: string, role: string, hours = 24): string {
+export function createSessionToken(userId: string, role: string, hours = 1): string {
   return signToken({ sub: userId, role, exp: Date.now() + hours * 3600_000 });
 }
 

@@ -192,6 +192,8 @@ export interface UserConfig {
   passwordHash: string;
   roleId: string;
   projectIds: string[];
+  /** SHA-256 hash of the CLI refresh token. Absent means no refresh token issued. */
+  refreshTokenHash?: string;
 }
 
 export interface RoleConfig {
