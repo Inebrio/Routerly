@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import type { ProjectConfig, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, UserConfig } from '@routerly/shared';
+import type { ProjectConfig, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig } from '@routerly/shared';
 
 // ─── Helper: resolve project by name or ID ────────────────────────────────────
 
@@ -52,10 +52,10 @@ function parseLimitSpec(spec: string): { modelId: string; limit: Limit } {
   let limit: Limit;
   if (windowType === 'period') {
     const [period, value] = rest as [string, string];
-    limit = { metric: metric as LimitMetric, windowType: 'period', period: period as Limit['period'], value: parseFloat(value!) };
+    limit = { metric: metric as LimitMetric, windowType: 'period', period: period as LimitPeriod, value: parseFloat(value!) };
   } else if (windowType === 'rolling') {
     const [rollingAmount, rollingUnit, value] = rest as [string, string, string];
-    limit = { metric: metric as LimitMetric, windowType: 'rolling', rollingAmount: parseInt(rollingAmount!), rollingUnit: rollingUnit as Limit['rollingUnit'], value: parseFloat(value!) };
+    limit = { metric: metric as LimitMetric, windowType: 'rolling', rollingAmount: parseInt(rollingAmount!), rollingUnit: rollingUnit as RollingUnit, value: parseFloat(value!) };
   } else {
     console.error(chalk.red(`Unknown windowType "${windowType}". Use "period" or "rolling".`));
     process.exit(1);

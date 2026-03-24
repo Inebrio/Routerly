@@ -138,7 +138,7 @@ Examples:
           alias = nextFreeAlias(emailBase);
         }
 
-        await saveAccount({ alias, serverUrl, email: email!, token: res.token, expiresAt, role: res.user.role, refreshToken: res.refreshToken });
+        await saveAccount({ alias, serverUrl, email: email!, token: res.token, expiresAt, role: res.user.role, ...(res.refreshToken !== undefined ? { refreshToken: res.refreshToken } : {}) });
 
         console.log(chalk.green(`✓ Logged in as ${chalk.bold(res.user.email)} (role: ${res.user.role})`));
         console.log(chalk.gray(`  Account saved as "${alias}" → ${serverUrl}`));
