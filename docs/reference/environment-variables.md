@@ -11,7 +11,7 @@ Environment variables override corresponding settings from `settings.json` and a
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ROUTERLY_HOME` | `~/.routerly` | Root directory for all Routerly data (config, data, app binaries) |
+| `ROUTERLY_HOME` | `~/.routerly` | Root directory for the **service** config and data (set automatically by the installer in the daemon unit). CLI auth tokens are always stored in `~/.routerly/cli/` regardless of this value. |
 | `ROUTERLY_PORT` | `3000` (or from `settings.json`) | TCP port the service listens on. Overrides `port` in settings |
 | `ROUTERLY_HOST` | `0.0.0.0` (or from `settings.json`) | Bind address. Overrides `host` in settings |
 | `ROUTERLY_PUBLIC_URL` | `http://localhost:3000` | Externally reachable URL. Overrides `publicUrl` in settings |
@@ -24,7 +24,7 @@ These variables are only used during the install/update process (`install.sh`, `
 
 | Variable | Values | Description |
 |----------|--------|-------------|
-| `ROUTERLY_SCOPE` | `user` (default), `system` | Install scope. `user` installs to `~/.routerly`; `system` installs to `/opt/routerly` (requires root) |
+| `ROUTERLY_SCOPE` | `user` (default), `system` | Install scope. `user` keeps all service config in `~/.routerly/`; `system` moves service config and data to the platform system directory (`/var/lib/routerly/` on Linux, `/Library/Application Support/Routerly/` on macOS, `C:\ProgramData\Routerly\` on Windows) and requires root/sudo. CLI auth tokens remain per-user in both cases. |
 | `ROUTERLY_DAEMON` | `true`, `false` | Register as a background service after installation. Defaults to `true` |
 | `ROUTERLY_INSTALL_DIR` | _(path)_ | Override the installation directory |
 

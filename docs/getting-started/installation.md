@@ -41,13 +41,24 @@ curl -fsSL https://www.routerly.ai/install.sh | bash -s -- \
 
 #### Installation scopes
 
-| Scope | App directory | CLI binary | Config directory |
-|-------|--------------|------------|-----------------|
-| `user` (default) | `~/.routerly/app/` | `~/.local/bin/routerly` | `~/.routerly/` |
-| `system` | `/opt/routerly/` | `/usr/local/bin/routerly` | `~/.routerly/` |
+| Scope | App directory | CLI binary |
+|-------|--------------|------------|
+| `user` (default) | `~/.routerly/app/` | `~/.local/bin/routerly` |
+| `system` | `/opt/routerly/` | `/usr/local/bin/routerly` |
+
+The **service config and data directory** depends on both scope and platform:
+
+| Scope | Linux | macOS | Windows |
+|-------|-------|-------|---------|
+| `user` | `~/.routerly/` | `~/.routerly/` | `%USERPROFILE%\.routerly\` |
+| `system` | `/var/lib/routerly/` | `/Library/Application Support/Routerly/` | `C:\ProgramData\Routerly\` |
 
 :::note
-System scope requires `sudo`. Config and data always stay in `~/.routerly/` regardless of scope.
+System scope requires `sudo`. The installer sets `ROUTERLY_HOME` in the daemon unit file so the service always reads the correct directory automatically.
+:::
+
+:::info CLI auth tokens are always per-user
+Regardless of scope, each user's CLI credentials (JWT tokens, refresh tokens) are stored in `~/.routerly/cli/config.json` with mode `0600`. They are never placed in the system config directory.
 :::
 
 ### Windows
@@ -131,21 +142,78 @@ node packages/cli/dist/index.js
 
 ## Updating Routerly
 
-Run the installer again — it detects an existing installation and offers an update:
+Run the installer again — it detects an existing installation and presents a menu:
 
 ```bash
+# macOS / Linux
 curl -fsSL https://www.routerly.ai/install.sh | bash
+
+# Windows (PowerShell)
+powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
 ```
+
+When an existing install is found you will see:
+
+```
+  Existing installation detected
+
+  What would you like to do?
+
+    1  Update      — download & rebuild latest code, keep all settings
+    2  Reinstall   — change components or settings (user data preserved)
+    3  Uninstall   — remove Routerly from this machine
+    0  Cancel
+```
+
+Select **1** (or press Enter to accept the default) to download and rebuild the latest release. All configuration and user data are preserved.
+
+To update without prompts (e.g. in a script or CI):
+
+```bash
+curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --yes
+```
+
+---
+
+## Reinstalling
+
+Reinstalling lets you change installed components (service, CLI, dashboard) or reconfigure settings (port, scope, daemon) while keeping all user data intact.
+
+Run the installer and select **2** at the menu:
+
+```bash
+# macOS / Linux
+curl -fsSL https://www.routerly.ai/install.sh | bash
+
+# Windows (PowerShell)
+powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
+```
+
+The wizard will walk you through the same questions as a fresh install, pre-filling your existing answers. All accounts, projects, models and usage history are preserved.
 
 ---
 
 ## Uninstalling
 
+Run the installer and select **3** at the menu:
+
 ```bash
-curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --uninstall
+# macOS / Linux
+curl -fsSL https://www.routerly.ai/install.sh | bash
+
+# Windows (PowerShell)
+powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
 ```
 
-This removes the application files and daemon. Your config and usage data in `~/.routerly/` are preserved.
+The uninstall flow will:
+
+1. Stop and remove the system daemon (systemd / launchd / Windows Service)
+2. Remove the application files and CLI binary
+3. Ask whether to also delete user data (`~/.routerly/` — accounts, settings, usage history)
+
+:::note Data preservation
+If you answer **No** to the data removal prompt, all accounts and history are kept. Running the installer again will detect the existing data and offer to resume from where you left off.
+:::
 
 ---
 
