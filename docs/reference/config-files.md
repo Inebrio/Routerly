@@ -5,9 +5,15 @@ sidebar_position: 1
 
 # Config Files
 
-Routerly stores all configuration as JSON files under `~/.routerly/` (or `$ROUTERLY_HOME` if set). Files are written atomically and are human-readable.
+Routerly stores all configuration as JSON files. The exact location depends on the **installation scope** chosen at install time. Files are written atomically and are human-readable.
+
+The service reads the root directory from the `ROUTERLY_HOME` environment variable (set automatically by the installer in the daemon unit). If the variable is not set, it falls back to `~/.routerly/`.
 
 ## Directory Layout
+
+### User scope (default)
+
+Everything lives under the installing user's home directory.
 
 ```
 ~/.routerly/
@@ -18,9 +24,42 @@ Routerly stores all configuration as JSON files under `~/.routerly/` (or `$ROUTE
 │   ├── projects.json  # Projects, routing, budgets, tokens
 │   ├── users.json     # User accounts
 │   ├── roles.json     # Custom roles and permissions
-│   └── secret         # AES-256 encryption key (plain text, keep safe)
+│   └── secret         # JWT signing key (mode 0600, keep safe)
 └── data/
     └── usage.json     # Usage records
+```
+
+### System scope
+
+Service config and data move to a system-wide directory; the CLI auth tokens remain per-user.
+
+| Platform | Service config & data directory |
+|----------|---------------------------------|
+| Linux    | `/var/lib/routerly/`            |
+| macOS    | `/Library/Application Support/Routerly/` |
+| Windows  | `C:\ProgramData\Routerly\`      |
+
+```
+/var/lib/routerly/          # (Linux example; see table above for other platforms)
+├── config/
+│   ├── settings.json
+│   ├── models.json
+│   ├── projects.json
+│   ├── users.json
+│   ├── roles.json
+│   └── secret              # JWT signing key (mode 0600)
+└── data/
+    └── usage.json
+```
+
+### CLI auth tokens (always per-user)
+
+Regardless of install scope, each user's CLI credentials are stored in their own home directory, never in the system directory:
+
+```
+~/.routerly/
+└── cli/
+    └── config.json         # Saved accounts, JWT tokens, refresh tokens (mode 0600)
 ```
 
 ---
