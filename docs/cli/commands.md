@@ -13,7 +13,7 @@ Complete reference for all `routerly` CLI commands.
 
 ### `routerly auth login`
 
-Authenticate with a Routerly service and save credentials.
+Authenticate with a Routerly service and save credentials locally.
 
 ```
 routerly auth login [options]
@@ -21,33 +21,64 @@ routerly auth login [options]
 
 | Option | Description |
 |--------|-------------|
-| `--url <url>` | Service URL (e.g. `http://localhost:3000`) |
+| `--url <url>` | Service URL (default: value from installation) |
 | `--email <email>` | Your dashboard email address |
-| `--alias <name>` | Name for this account (default: `default`) |
+| `--password <password>` | Your password (prompted interactively if omitted) |
+| `--alias <name>` | Friendly name for this account |
 
-You will be prompted for your password interactively.
+If the email is already saved, you are asked whether to overwrite the existing entry or create a new one. The first account is automatically named `default`.
 
-### `routerly auth logout`
+On success, a permanent **refresh token** is saved alongside the session token so future sessions are renewed automatically.
+
+### `routerly auth refresh [alias]`
+
+Manually obtain a new access token using the saved refresh token. Useful after a long suspension.
 
 ```
-routerly auth logout [--alias <name>]
+routerly auth refresh [alias]
 ```
 
-### `routerly auth list`
+If `alias` is omitted, the currently active account is used. Fails if no refresh token is stored (run `auth login` to re-authenticate).
+
+### `routerly auth logout [alias]`
+
+```
+routerly auth logout [alias]
+```
+
+Removes the saved account (defaults to the active account). Removes the access token and refresh token from local storage.
+
+### `routerly auth ps`
 
 List all saved accounts.
 
-### `routerly auth switch`
-
 ```
-routerly auth switch --alias <name>
+routerly auth ps
 ```
 
-### `routerly auth rename`
+The active account is marked with `*`.
+
+### `routerly auth switch <alias>`
 
 ```
-routerly auth rename --alias <current> --new-alias <new>
+routerly auth switch <alias>
 ```
+
+Sets the active account for subsequent commands.
+
+### `routerly auth rename <old-alias> <new-alias>`
+
+```
+routerly auth rename <old-alias> <new-alias>
+```
+
+### `routerly auth whoami`
+
+```
+routerly auth whoami
+```
+
+Prints the active account alias, email, role, and server URL.
 
 ---
 
@@ -95,6 +126,8 @@ routerly model remove --id <id>
 
 ## `routerly project`
 
+Project commands are organised into sub-groups. The first argument is always a **project name or ID**.
+
 ### `routerly project list`
 
 ```
@@ -117,28 +150,161 @@ routerly project add [options]
 ### `routerly project remove`
 
 ```
-routerly project remove --slug <slug>
+routerly project remove <project>
 ```
 
-### `routerly project add-model`
+---
 
-Add a model to a project's routing configuration. Optionally set budget limits.
+### Routing — `routerly project routing`
+
+#### `routerly project routing show <project>`
+
+Display the routing configuration (auto-routing flag, routing model, fallback models, and policy stack).
+
+#### `routerly project routing update <project>`
 
 ```
-routerly project add-model --slug <slug> --model <id> [budget options]
+routerly project routing update <project> [options]
 ```
 
 | Option | Description |
 |--------|-------------|
-| `--slug <slug>` | Project slug |
-| `--model <id>` | Model ID to add |
-| `--daily-budget <usd>` | Daily cost limit in USD |
-| `--monthly-budget <usd>` | Monthly cost limit in USD |
+| `--routing-model <id>` | Model ID used for LLM-based routing decisions |
+| `--fallback-models <ids>` | Comma-separated fallback routing model IDs |
+| `--auto-routing` / `--no-auto-routing` | Enable or disable auto-routing |
 
-### `routerly project remove-model`
+#### `routerly project routing policy list <project>`
 
+List all routing policies with their priority order, enabled status, and configuration.
+
+#### `routerly project routing policy enable <project> <type>`
+
+Enable a policy type (adds it to the stack if not present). Optionally pass `--config <json>` for policy-specific settings.
+
+Available types: `health`, `context`, `capability`, `budget-remaining`, `rate-limit`, `llm`, `performance`, `fairness`, `cheapest`
+
+```bash
+routerly project routing policy enable my-api health
+routerly project routing policy enable my-api llm --config '{"memoryCount":3}'
 ```
-routerly project remove-model --slug <slug> --model <id>
+
+#### `routerly project routing policy disable <project> <type>`
+
+Disable a policy without removing it from the stack.
+
+#### `routerly project routing policy reorder <project> <types>`
+
+Reorder the policy stack. Provide a comma-separated list of types in the desired evaluation order; any unlisted policies are appended at the end.
+
+```bash
+routerly project routing policy reorder my-api health,context,budget-remaining,llm,cheapest
+```
+
+---
+
+### Models — `routerly project model`
+
+#### `routerly project model list <project>`
+
+List target models configured in the project, with their prompt hints.
+
+#### `routerly project model add <project> <model-id>`
+
+```bash
+routerly project model add my-api openai/gpt-5.2
+routerly project model add my-api anthropic/claude-opus-4-6 --prompt "Use for complex reasoning"
+```
+
+| Option | Description |
+|--------|-------------|
+| `--prompt <text>` | System prompt hint used when this model is selected |
+
+#### `routerly project model remove <project> <model-id>`
+
+Remove a target model from the project.
+
+#### `routerly project model set-prompt <project> <model-id>`
+
+Update (or clear) the system prompt hint for a model.
+
+```bash
+routerly project model set-prompt my-api openai/gpt-5.2 --prompt "Fast tasks only"
+routerly project model set-prompt my-api openai/gpt-5.2 --prompt ""  # clear
+```
+
+---
+
+### Tokens — `routerly project token`
+
+#### `routerly project token list <project>`
+
+List all API tokens for the project.
+
+#### `routerly project token create <project>`
+
+Create a new project API token. The token value is shown **once only**.
+
+```bash
+routerly project token create my-api
+routerly project token create my-api --labels "production,backend"
+```
+
+| Option | Description |
+|--------|-------------|
+| `--labels <labels>` | Comma-separated labels for the token |
+
+Optionally add spending limits inline:
+
+| Option | Description |
+|--------|-------------|
+| `--limit <spec>` | Limit spec: `<model>:<metric>:<windowType>:<period>:<value>` (repeatable) |
+
+Limit spec examples:
+- `openai/gpt-5.2:cost:period:monthly:10` — $10/month cap
+- `openai/gpt-5.2:calls:rolling:24:hours:500` — 500 calls per rolling 24 h
+
+#### `routerly project token edit <project> <token-id>`
+
+Add or remove limits on an existing token.
+
+| Option | Description |
+|--------|-------------|
+| `--add-limit <spec>` | Add a limit (repeatable) |
+| `--remove-limit <spec>` | Remove a limit matching model+metric+window (repeatable) |
+
+#### `routerly project token remove <project> <token-id>`
+
+Revoke and delete an API token.
+
+---
+
+### Members — `routerly project member`
+
+#### `routerly project member list <project>`
+
+List project members with their role.
+
+#### `routerly project member add <project>`
+
+```bash
+routerly project member add my-api --email user@example.com --role viewer
+```
+
+| Option | Description |
+|--------|-------------|
+| `--email <email>` | Member's email address |
+| `--role <role>` | Role to assign (`admin`, `editor`, `viewer`, or a custom role) |
+
+#### `routerly project member set-role <project>`
+
+```bash
+routerly project member set-role my-api --email user@example.com --role editor
+```
+
+#### `routerly project member remove <project>`
+
+```bash
+routerly project member remove my-api --email user@example.com
 ```
 
 ---
@@ -263,5 +429,4 @@ routerly status [--json]
 ```
 
 Check whether the active Routerly service is reachable. Prints URL, version, and uptime. Exit code `0` if the service is up, `1` otherwise.
-
 

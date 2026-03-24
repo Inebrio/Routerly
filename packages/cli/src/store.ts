@@ -17,12 +17,14 @@ export interface AccountEntry {
   serverUrl: string;
   /** Email used to log in */
   email: string;
-  /** Session token returned by POST /api/auth/login */
+  /** Short-lived access token (JWT, ~1h) returned by POST /api/auth/login */
   token: string;
   /** Token expiry timestamp (ms since epoch) */
   expiresAt: number;
   /** Role of the user at login time */
   role?: string;
+  /** Permanent refresh token — used to obtain new access tokens silently */
+  refreshToken?: string;
 }
 
 export interface CliConfig {
@@ -133,7 +135,8 @@ export async function requireAccount(): Promise<AccountEntry> {
     console.error('Not logged in. Run: routerly auth login');
     process.exit(1);
   }
-  if (account.expiresAt < Date.now()) {
+  // If token is expired and there is no refresh token, fail immediately
+  if (account.expiresAt < Date.now() && !account.refreshToken) {
     console.error(`Session for "${account.alias}" has expired. Run: routerly auth login`);
     process.exit(1);
   }
