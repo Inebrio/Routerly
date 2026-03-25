@@ -76,6 +76,7 @@ const sidebars: SidebarsConfig = {
           label: 'Chat UI',
           items: [
             'integrations/open-webui',
+            'integrations/openclaw',
           ],
         },
         {
