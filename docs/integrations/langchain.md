@@ -13,7 +13,7 @@ sidebar_label: LangChain
 
 ```bash
 # Python
-pip install langchain langchain-openai
+pip install langchain langchain-openai langchain-anthropic
 
 # JavaScript / TypeScript
 npm install langchain @langchain/openai
@@ -54,7 +54,7 @@ from langchain_anthropic import ChatAnthropic
 
 llm = ChatAnthropic(
     model="claude-haiku-4-5",
-    base_url="http://localhost:3000",
+    anthropic_api_url="http://localhost:3000",
     api_key="sk-lr-YOUR_PROJECT_TOKEN",
 )
 ```
