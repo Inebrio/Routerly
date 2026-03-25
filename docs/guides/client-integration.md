@@ -7,6 +7,10 @@ sidebar_position: 2
 
 Routerly is a drop-in replacement for the OpenAI and Anthropic APIs. Change two things in your existing client configuration:
 
+:::tip Looking for more languages?
+See the **[Examples](../examples/overview)** section for ready-to-run snippets in JavaScript, Python, Java, Go, C#, PHP, Ruby, and Rust — including raw HTTP calls with no SDK dependency.
+:::
+
 1. **Base URL** → your Routerly instance (e.g. `http://localhost:3000`)
 2. **API key** → your project token (`sk-lr-…`)
 
