@@ -17,8 +17,6 @@ Chat interfaces that let you talk to your models directly.
 | Tool | Description |
 |------|-------------|
 | [Open WebUI](./open-webui) | Full-featured chat UI with multi-model support |
-| [LibreChat](./librechat) | OpenAI-compatible chat platform with rich configuration |
-| [OpenClaw](./openclaw) | Lightweight OpenAI-compatible chat client |
 
 ---
 
@@ -55,7 +53,6 @@ Workflow automation platforms with built-in AI nodes.
 |------|-------------|
 | [n8n](./n8n) | Self-hostable workflow automation with an HTTP/AI node |
 | [Make](./make) | Visual workflow automation with HTTP actions |
-| [Zapier](./zapier) | No-code automation with OpenAI-compatible actions |
 
 ---
 

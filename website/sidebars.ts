@@ -76,8 +76,6 @@ const sidebars: SidebarsConfig = {
           label: 'Chat UI',
           items: [
             'integrations/open-webui',
-            'integrations/librechat',
-            'integrations/openclaw',
           ],
         },
         {
@@ -105,7 +103,6 @@ const sidebars: SidebarsConfig = {
           items: [
             'integrations/n8n',
             'integrations/make',
-            'integrations/zapier',
           ],
         },
         {

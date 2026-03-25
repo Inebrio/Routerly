@@ -29,15 +29,6 @@ export OPENAI_BASE_URL="http://localhost:3000/v1"
 marimo edit notebook.py
 ```
 
-Or create a `.env` file in your project directory:
-
-```env
-OPENAI_API_KEY=sk-lr-YOUR_PROJECT_TOKEN
-OPENAI_BASE_URL=http://localhost:3000/v1
-```
-
-marimo will pick these up automatically via `python-dotenv`.
-
 ### SDK calls inside cells
 
 You can also use the OpenAI or Anthropic SDK directly inside marimo cells:
