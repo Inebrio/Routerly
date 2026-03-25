@@ -15,6 +15,7 @@ sidebar_label: Rust
 # Cargo.toml
 [dependencies]
 async-openai = "0.27"
+futures = "0.3"
 tokio = { version = "1", features = ["full"] }
 ```
 
