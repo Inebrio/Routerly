@@ -17,6 +17,7 @@ Chat interfaces that let you talk to your models directly.
 | Tool | Description |
 |------|-------------|
 | [Open WebUI](./open-webui) | Full-featured chat UI with multi-model support |
+| [OpenClaw](./openclaw) | Personal AI agent with Telegram, WhatsApp, Discord support |
 
 ---
 
