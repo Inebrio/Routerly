@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../config/paths.js';
-import { createSessionToken, verifyToken } from '../plugins/jwt.js';
+import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jwt.js';
 import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit } from '@routerly/shared';
 import { getTrace } from '../routing/traceStore.js';
 import { sendTestNotification } from '../notifications/sender.js';
@@ -66,10 +66,36 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{ Body: { email: string; password: string } }>('/api/auth/login', async (req, reply) => {
     const { email, password } = req.body;
     const [users, customRoles] = await Promise.all([readConfig('users'), readConfig('roles')]);
-    const user = users.find(u => u.email === email);
-    if (!user || user.passwordHash !== hashPassword(password)) {
+    const userIndex = users.findIndex(u => u.email === email);
+    if (userIndex === -1 || users[userIndex]!.passwordHash !== hashPassword(password)) {
       return reply.status(401).send({ error: 'Invalid credentials' });
     }
+    const user = users[userIndex]!;
+    const allRoles = getEffectiveRoles(customRoles);
+    const permissions = resolvePermissions(user.roleId, allRoles);
+    const token = createSessionToken(user.id, user.roleId);
+    // Issue a permanent refresh token and persist its hash
+    const refreshToken = generateRawToken(40);
+    users[userIndex] = { ...user, refreshTokenHash: hashPassword(refreshToken) };
+    await writeConfig('users', users);
+    return reply.send({ token, refreshToken, user: { id: user.id, email: user.email, role: user.roleId, permissions } });
+  });
+
+  // ─── POST /api/auth/refresh ─────────────────────────────────────────────────
+  fastify.post('/api/auth/refresh', async (req, reply) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return reply.status(401).send({ error: 'Unauthorized' });
+    }
+    const jwtToken = authHeader.slice(7);
+    const payload = verifyToken(jwtToken);
+    if (!payload) return reply.status(401).send({ error: 'Token expired or invalid' });
+
+    const userId = payload['sub'] as string;
+    const [users, customRoles] = await Promise.all([readConfig('users'), readConfig('roles')]);
+    const user = users.find(u => u.id === userId);
+    if (!user) return reply.status(401).send({ error: 'Unauthorized' });
+
     const allRoles = getEffectiveRoles(customRoles);
     const permissions = resolvePermissions(user.roleId, allRoles);
     const token = createSessionToken(user.id, user.roleId);
@@ -109,6 +135,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('preHandler', async (req, reply) => {
     if (!req.url.startsWith('/api/')) return;
     if (req.url === '/api/auth/login') return;
+    if (req.url === '/api/auth/refresh') return;
     if (req.url.startsWith('/api/setup/')) return;
 
     const authHeader = req.headers.authorization;
@@ -304,7 +331,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (projects.some(p => p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
       return reply.status(409).send({ error: `A project named "${trimmedName}" already exists` });
     }
-    const rawToken = `sk-lr-${randomBytes(32).toString('hex')}`;
+    const rawToken = `sk-rt-${randomBytes(32).toString('hex')}`;
     const userId = req.dashUser!.id;
 
     const project: ProjectConfig = {
@@ -390,7 +417,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const index = projects.findIndex(p => p.id === req.params.id);
     if (index === -1) return reply.status(404).send({ error: 'Not found' });
 
-    const rawToken = `sk-lr-${randomBytes(32).toString('hex')}`;
+    const rawToken = `sk-rt-${randomBytes(32).toString('hex')}`;
 
     const newToken = {
       id: uuidv4(),

@@ -1,6 +1,6 @@
 services:
   localrouter:
-    build: .
+    image: inebrio/routerly:latest
     ports:
       - "3000:3000"
     volumes:

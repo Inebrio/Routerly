@@ -1,0 +1,35 @@
+# Test environment: Debian 12 with nvm installed but Node not in PATH
+# Used for: nvm detection test (tests try_load_node_paths function)
+FROM debian:12-slim
+
+# Install basic tools
+RUN apt-get update && \
+    apt-get install -y curl sudo ca-certificates git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create a test user with sudo privileges
+RUN useradd -m -s /bin/bash testuser && \
+    echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Install nvm as testuser (NOT as root)
+USER testuser
+WORKDIR /home/testuser
+
+# Install nvm
+ENV NVM_DIR=/home/testuser/.nvm
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+
+# Install Node 20 via nvm
+RUN bash -c "source $NVM_DIR/nvm.sh && nvm install 20 && nvm use 20"
+
+# Verify Node is installed via nvm but NOT in default PATH
+# (simulates non-interactive shell where nvm isn't loaded)
+RUN bash -c "source $NVM_DIR/nvm.sh && node --version"
+RUN ! node --version 2>/dev/null || (echo "ERROR: Node should not be in PATH without sourcing nvm" && exit 1)
+
+# Set working directory for tests
+WORKDIR /test
+
+# Default command
+CMD ["/bin/bash"]

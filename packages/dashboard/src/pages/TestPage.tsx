@@ -259,7 +259,7 @@ export function TestPage() {
                     type={showKey ? 'text' : 'password'}
                     className="form-input"
                     style={{ width: 270, padding: '6px 36px 6px 10px', fontSize: '0.85rem', fontFamily: 'monospace' }}
-                    placeholder="sk-lr-..."
+                    placeholder="sk-rt-..."
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
                     autoComplete="new-password"
@@ -302,7 +302,7 @@ export function TestPage() {
                 <div className="empty-state" style={{ padding: '40px 0', margin: 'auto' }}>
                   <p style={{ margin: 0 }}>No messages yet.</p>
                   {!apiKey ? (
-                    <p style={{ fontSize: '0.8rem', marginTop: 4, color: 'var(--danger)' }}>Please enter a Project Token above to send a message.</p>
+                    <p style={{ fontSize: '0.8rem', marginTop: 4, color: 'var(--text-secondary)' }}>ℹ Please enter a Project Token above to send a message.</p>
                   ) : (
                     <p style={{ fontSize: '0.8rem', marginTop: 4 }}>Type a message below to start testing.</p>
                   )}
@@ -458,7 +458,7 @@ export function TestPage() {
 
               {/* Panel: Router Request */}
               <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ padding: '5px 12px', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+                <div style={{ padding: '5px 12px', background: 'var(--bg-surface)', borderLeft: '3px solid #5A90F8', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
                   <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Router Request</span>
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -476,7 +476,7 @@ export function TestPage() {
 
               {/* Panel: Router Response */}
               <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ padding: '5px 12px', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+                <div style={{ padding: '5px 12px', background: 'var(--bg-surface)', borderLeft: '3px solid #A78BFA', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
                   <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Router Response</span>
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -494,7 +494,7 @@ export function TestPage() {
 
               {/* Panel: Request */}
               <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ padding: '5px 12px', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+                <div style={{ padding: '5px 12px', background: 'var(--bg-surface)', borderLeft: '3px solid #10B981', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
                   <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Request</span>
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -513,7 +513,7 @@ export function TestPage() {
 
               {/* Panel: Response */}
               <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: '5px 12px', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+                <div style={{ padding: '5px 12px', background: 'var(--bg-surface)', borderLeft: '3px solid #F59E0B', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
                   <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Response</span>
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', gap: 8 }}>

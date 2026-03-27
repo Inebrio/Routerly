@@ -10,6 +10,11 @@ export function makeUserCommand(): Command {
   // ── user list ──
   cmd.command('list')
     .description('List all users')
+    .addHelpText('after', `
+Examples:
+  # Show all dashboard users with their roles and project access
+  routerly user list
+`)
     .action(async () => {
       try {
         const users = await api<UserConfig[]>('GET', '/api/users');
@@ -33,14 +38,36 @@ export function makeUserCommand(): Command {
   // ── user add ──
   cmd.command('add')
     .description('Create a new dashboard user')
+    .addHelpText('after', `
+Examples:
+  # Create a viewer (default role)
+  routerly user add --email alice@example.com --password secret
+
+  # Create an admin user
+  routerly user add --email admin@example.com --password secret --role admin
+
+  # Create a user restricted to specific projects
+  routerly user add \\
+    --email dev@example.com --password secret \\
+    --role developer --projects proj-1,proj-2
+`)
     .requiredOption('--email <email>', 'User email')
-    .requiredOption('--password <password>', 'Initial password')
+    .option('--password <password>', 'Initial password')
+    .option('--password-stdin', 'Read password from ROUTERLY_USER_PASSWORD env var')
     .option('--role <roleId>', 'Role ID to assign', 'viewer')
     .option('--projects <ids>', 'Comma-separated project IDs this user can access (empty = all)')
-    .action(async (opts: { email: string; password: string; role: string; projects?: string }) => {
+    .action(async (opts: { email: string; password?: string; passwordStdin?: boolean; role: string; projects?: string }) => {
+      let password = opts.password;
+      if (opts.passwordStdin) {
+        password = process.env.ROUTERLY_USER_PASSWORD;
+      }
+      if (!password) {
+        console.error(chalk.red('Error: --password or --password-stdin is required.'));
+        process.exit(1);
+      }
       const body = {
         email: opts.email,
-        password: opts.password,
+        password,
         roleId: opts.role,
         projectIds: (opts.projects ?? '').split(',').map((s: string) => s.trim()).filter(Boolean),
       };
@@ -61,6 +88,11 @@ export function makeUserCommand(): Command {
   // ── user remove ──
   cmd.command('remove <email>')
     .description('Remove a user by email')
+    .addHelpText('after', `
+Examples:
+  # Remove a user by their email address
+  routerly user remove alice@example.com
+`)
     .action(async (email: string) => {
       try {
         // Resolve email → id first

@@ -5,7 +5,55 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+/** Returns ms until token expiry, or 0 if unknown/expired. */
+function msUntilExpiry(): number {
+  const raw = localStorage.getItem('lr_expires_at');
+  if (!raw) return 0;
+  return Math.max(0, parseInt(raw, 10) - Date.now());
+}
+
+let refreshPromise: Promise<boolean> | null = null;
+
+/** Attempts a silent refresh. Returns true if successful. Concurrent calls share one promise. */
+function trySilentRefresh(): Promise<boolean> {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    const refreshToken = localStorage.getItem('lr_refresh_token');
+    if (!refreshToken) return false;
+    try {
+      const res = await fetch(`${BASE}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+      if (!res.ok) return false;
+      const data = await res.json() as { token: string };
+      localStorage.setItem('lr_token', data.token);
+      // Decode expiry from new token
+      try {
+        const payload = JSON.parse(atob(data.token.split('.')[0]!.replace(/-/g, '+').replace(/_/g, '/'))) as { exp?: number };
+        if (payload.exp) localStorage.setItem('lr_expires_at', String(payload.exp * 1000));
+      } catch { /* keep previous expiry */ }
+      return true;
+    } catch {
+      return false;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+  return refreshPromise;
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  // Proactive refresh: if token expires within 5 minutes, refresh before the call
+  const FIVE_MIN = 5 * 60 * 1000;
+  if (path !== '/auth/login' && path !== '/auth/refresh') {
+    const remaining = msUntilExpiry();
+    if (remaining > 0 && remaining < FIVE_MIN) {
+      await trySilentRefresh();
+    }
+  }
+
   const res = await fetch(`${BASE}${path}`, {
     ...init,
     headers: {
@@ -16,12 +64,34 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   });
 
   if (res.status === 401 && path !== '/auth/login') {
+    // Try refresh once, then retry the original request
+    const refreshed = await trySilentRefresh();
+    if (refreshed) {
+      const retry = await fetch(`${BASE}${path}`, {
+        ...init,
+        headers: {
+          ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+          ...authHeaders(),
+          ...(init.headers as Record<string, string> ?? {}),
+        },
+      });
+      if (retry.status !== 401) {
+        // Process the retried response — fall through to normal handling below
+        return processResponse<T>(retry, path);
+      }
+    }
     localStorage.removeItem('lr_token');
     localStorage.removeItem('lr_user');
+    localStorage.removeItem('lr_refresh_token');
+    localStorage.removeItem('lr_expires_at');
     window.location.href = '/dashboard/login';
     throw new Error('Unauthorized');
   }
 
+  return processResponse<T>(res, path);
+}
+
+async function processResponse<T>(res: Response, path: string): Promise<T> {
   if (res.status === 204) return undefined as T;
 
   const text = await res.text();
@@ -30,7 +100,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     return undefined as T;
   }
 
-  let data: any;
+  let data: unknown;
   try {
     data = JSON.parse(text);
   } catch (err) {
@@ -44,7 +114,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 // ── Auth ──────────────────────────────────────────────────────────────────
 export const login = (email: string, password: string) =>
-  request<{ token: string; user: { id: string; email: string; role: string; permissions: string[] } }>(
+  request<{ token: string; refreshToken?: string; user: { id: string; email: string; role: string; permissions: string[] } }>(
     '/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }
   );
 

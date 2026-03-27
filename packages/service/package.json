@@ -1,6 +1,6 @@
 {
   "name": "@routerly/service",
-  "version": "0.1.1",
+  "version": "0.1.5",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -31,6 +31,7 @@
     "@types/proper-lockfile": "^4.1.4",
     "@types/uuid": "^9.0.8",
     "tsx": "^4.7.3",
+    "typescript": "^5.4.5",
     "vitest": "^1.4.0"
   }
 }

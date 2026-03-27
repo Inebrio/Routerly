@@ -31,16 +31,19 @@ export async function buildServer() {
   if (settings.dashboardEnabled) {
     const dashboardDist = join(__dirname, '../../dashboard/dist');
     try {
-      await fastify.register(staticFiles, {
-        root: dashboardDist,
-        prefix: '/dashboard/',
-        // Fallback to index.html for SPA routing
-        decorateReply: false,
-      });
-      // SPA fallback: all /dashboard/* routes serve index.html
-      fastify.get('/dashboard/*', async (_req, reply) => {
-        return reply.sendFile('index.html', dashboardDist);
-      });
+      // Encapsulated plugin: static files + SPA fallback scoped to /dashboard
+      await fastify.register(async function dashboardPlugin(scope) {
+        await scope.register(staticFiles, {
+          root: dashboardDist,
+          prefix: '/',
+        });
+        // SPA fallback: any /dashboard/* path that isn't a static file serves index.html
+        scope.setNotFoundHandler(async (_req, reply) => {
+          return reply.sendFile('index.html', dashboardDist);
+        });
+      }, { prefix: '/dashboard' });
+
+      // Redirect /dashboard → /dashboard/
       fastify.get('/dashboard', async (_req, reply) => {
         return reply.redirect('/dashboard/');
       });
@@ -58,6 +61,11 @@ export async function buildServer() {
   // ─── LLM Proxy routes ────────────────────────────────────────────────────
   await fastify.register(openaiRoutes);
   await fastify.register(anthropicRoutes);
+
+  // ─── Root redirect ────────────────────────────────────────────────────────
+  fastify.get('/', async (_req, reply) => {
+    return reply.redirect('/dashboard/');
+  });
 
   // ─── Health check ─────────────────────────────────────────────────────────
   fastify.get('/health', async () => ({

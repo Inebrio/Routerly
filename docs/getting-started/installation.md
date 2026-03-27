@@ -1,260 +1,290 @@
+---
+title: Installation
+sidebar_position: 1
+---
+
 # Installation
 
-This guide walks you through installing Routerly. Three paths are available: the one-line installer (recommended), Docker (best for servers and containerised stacks), and a manual setup for contributors.
+Routerly can be installed with a one-line script on macOS, Linux, and Windows. Docker is also supported for containerised deployments.
 
 ---
 
-## Automated Install (recommended)
+## One-line Installer (Recommended)
 
-The installer handles everything: Node.js check, download, build, encryption key generation, shell profile update, optional daemon setup, and an interactive setup wizard.
+### macOS / Linux
 
-**macOS / Linux:**
 ```bash
-curl -fsSL https://github.com/routerly/routerly/releases/latest/download/install.sh | bash
+curl -fsSL https://www.routerly.ai/install.sh | bash
 ```
 
-**Windows (PowerShell):**
+The installer will:
+1. Detect your OS and architecture
+2. Download the latest Routerly release
+3. Install the service and CLI binaries
+4. Optionally configure a system daemon (systemd on Linux, launchd on macOS)
+5. Start the service
+
+#### Installer flags
+
+You can customise the installation by passing flags after `--`:
+
+```bash
+curl -fsSL https://www.routerly.ai/install.sh | bash -s -- \
+  --yes                     # Non-interactive; accept all defaults
+  --scope user              # Install for current user only (default)
+  --scope system            # System-wide install (requires sudo)
+  --port 8080               # Use a custom port (default: 3000)
+  --public-url https://routerly.example.com  # External URL of the service
+  --no-service              # Skip service installation (CLI only)
+  --no-daemon               # Skip auto-start setup
+```
+
+#### Installation scopes
+
+| Scope | App directory | CLI binary |
+|-------|--------------|------------|
+| `user` (default) | `~/.routerly/app/` | `~/.local/bin/routerly` |
+| `system` | `/opt/routerly/` | `/usr/local/bin/routerly` |
+
+The **service config and data directory** depends on both scope and platform:
+
+| Scope | Linux | macOS | Windows |
+|-------|-------|-------|---------|
+| `user` | `~/.routerly/` | `~/.routerly/` | `%USERPROFILE%\.routerly\` |
+| `system` | `/var/lib/routerly/` | `/Library/Application Support/Routerly/` | `C:\ProgramData\Routerly\` |
+
+:::note
+System scope requires `sudo`. The installer sets `ROUTERLY_HOME` in the daemon unit file so the service always reads the correct directory automatically.
+:::
+
+:::info CLI auth tokens are always per-user
+Regardless of scope, each user's CLI credentials (JWT tokens, refresh tokens) are stored in `~/.routerly/cli/config.json` with mode `0600`. They are never placed in the system config directory.
+:::
+
+### Windows
+
 ```powershell
-powershell -c "irm https://github.com/routerly/routerly/releases/latest/download/install.ps1 | iex"
+powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
 ```
 
-### What the installer does
-
-1. Verifies (or installs) Node.js 20+
-2. Downloads and extracts the latest release tarball from GitHub
-3. Prompts for component selection and config options
-4. Builds all selected packages
-5. Writes `~/.routerly/config/settings.json`
-6. Installs the `routerly` CLI wrapper in `~/.local/bin`
-7. Optionally configures an auto-start daemon (systemd / launchd / Windows Service)
-8. Optionally runs a setup wizard to add a model, create a project, and create an admin user
-
----
-
-## Installer options
-
-All flags can be passed after `--` when piping through bash:
-
-```bash
-curl -fsSL .../install.sh | bash -s -- [flags]
-```
-
-Or run the script file directly after downloading:
-
-```bash
-bash install.sh [flags]
-```
-
-| Flag | Description | Default |
-|------|--------------|---------|
-| `--yes` | Non-interactive, accept all defaults | off |
-| `--scope=user\|system` | Install for current user or system-wide (system requires sudo) | `user` |
-| `--port=N` | Service port | `3000` |
-| `--public-url=URL` | Public URL for the service | `http://localhost:PORT` |
-| `--no-service` | Skip service installation | off |
-| `--no-cli` | Skip CLI installation | off |
-| `--no-dashboard` | Skip dashboard build | off |
-| `--no-daemon` | Skip auto-start daemon setup | off |
-
-### Non-interactive mode
-
-Useful for CI/CD pipelines and automated provisioning:
-
-```bash
-curl -fsSL .../install.sh | bash -s -- --yes
-```
-
-For full control, combine `--yes` with environment variables:
-
-| Variable | Values | Description |
-|----------|--------|-------------|
-| `ROUTERLY_SCOPE` | `user` / `system` | Installation scope |
-| `ROUTERLY_PORT` | number | Service port |
-| `ROUTERLY_PUBLIC_URL` | URL | Public URL |
-| `ROUTERLY_INSTALL_SERVICE` | `1` / `0` | Install the service |
-| `ROUTERLY_INSTALL_CLI` | `1` / `0` | Install the CLI |
-| `ROUTERLY_INSTALL_DASHBOARD` | `1` / `0` | Build and install the dashboard |
-| `ROUTERLY_DAEMON` | `1` / `0` | Configure auto-start daemon |
-
-```bash
-ROUTERLY_SCOPE=system \
-ROUTERLY_PORT=8080 \
-ROUTERLY_DAEMON=0 \
-bash install.sh --yes
-```
-
-### Installation directories
-
-| | User scope | System scope |
-|---|---|---|
-| App files | `~/.routerly/app/` | `/opt/routerly/` |
-| CLI binary | `~/.local/bin/routerly` | `/usr/local/bin/routerly` |
-| Config & data | `~/.routerly/` | `~/.routerly/` (per user) |
-
-### Auto-start daemon
-
-When daemon setup is selected, the installer configures the appropriate mechanism for your OS:
-
-| OS | Scope | Mechanism |
-|----|-------|-----------|
-| Linux | user | systemd user unit (`~/.config/systemd/user/routerly.service`) |
-| Linux | system | systemd system unit (`/etc/systemd/system/routerly.service`) |
-| macOS | user | launchd agent (`~/Library/LaunchAgents/ai.routerly.service.plist`) |
-| macOS | system | launchd daemon (`/Library/LaunchDaemons/ai.routerly.service.plist`) |
-| Windows | — | Windows Service via `sc.exe` |
-
----
-
-## Upgrade
-
-Re-run the installer to upgrade. It detects an existing installation and asks for confirmation before proceeding. Existing configuration files are preserved; only the app files and built artifacts are replaced.
-
-```bash
-curl -fsSL https://github.com/routerly/routerly/releases/latest/download/install.sh | bash
-```
-
----
-
-## Verify installation
-
-After installation (restart your terminal first to pick up the updated PATH):
-
-```bash
-routerly --version
-curl http://localhost:3000/health
-# {"status":"ok","version":"..."}
-```
+This installs Routerly as a Windows Service and adds the CLI to your PATH.
 
 ---
 
 ## Docker
 
-Docker is the simplest way to run Routerly on a server or inside an existing containerised stack — no Node.js required on the host.
+Two options are available: pull the pre-built image from Docker Hub (recommended), or build it yourself from source.
 
-### Quick start with Docker Compose
+### Option 1 — Pre-built image (Docker Hub)
+
+The official image is published on [Docker Hub](https://hub.docker.com/r/inebrio/routerly) for `linux/amd64` and `linux/arm64`.
+
+#### docker-compose (recommended)
+
+Create a `docker-compose.yml`:
+
+```yaml
+services:
+  routerly:
+    image: inebrio/routerly:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - routerly_data:/data
+    environment:
+      - ROUTERLY_HOME=/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  routerly_data:
+```
 
 ```bash
-# clone the repository (or download docker-compose.yml individually)
-git clone https://github.com/routerly/routerly.git
-cd routerly
-
 docker compose up -d
 ```
 
-The service will be available at `http://localhost:3000`.
-Config and data are automatically persisted in a named Docker volume (`routerly_data`).
-
-### Manual Docker run
-
-Build the image yourself:
-
-```bash
-docker build -t routerly .
-```
-
-Then start a container:
+#### docker run
 
 ```bash
 docker run -d \
   --name routerly \
   -p 3000:3000 \
   -v routerly_data:/data \
-  -e NODE_ENV=production \
   -e ROUTERLY_HOME=/data \
-  routerly
+  --restart unless-stopped \
+  inebrio/routerly:latest
 ```
 
-### Persistent data
+### Option 2 — Build from source
 
-| Inside container | Host (named volume) | Purpose |
-|-----------------|---------------------|---------|
-| `/data` | `routerly_data` | Config files, token store, SQLite database |
-
-All state lives under `ROUTERLY_HOME`, which defaults to `/data` in the Docker image.
-You can substitute a bind-mount path for the named volume if you prefer to manage the directory yourself:
+Use this if you want to run a local branch or a customised build.
 
 ```bash
--v /your/local/path:/data
+git clone https://github.com/Inebrio/Routerly.git
+cd Routerly
+docker build -t routerly:local .
+docker run -d \
+  --name routerly \
+  -p 3000:3000 \
+  -v routerly_data:/data \
+  -e ROUTERLY_HOME=/data \
+  --restart unless-stopped \
+  routerly:local
 ```
 
-### Using the CLI inside Docker
+Or with docker-compose, add a `docker-compose.override.yml` next to your existing `docker-compose.yml`:
 
-The `routerly` CLI is bundled in the image and available via `docker exec`:
-
-```bash
-docker exec routerly routerly --help
-docker exec routerly routerly model list
-docker exec routerly routerly project list
+```yaml
+services:
+  routerly:
+    build: ./Routerly
+    image: routerly:local
 ```
 
-### Environment variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `NODE_ENV` | `production` | Node environment |
-| `ROUTERLY_HOME` | `/data` | Config and data directory |
-| `ROUTERLY_PORT` | `3000` | Listening port (override `ports:` mapping too) |
-
-### Health check
-
-Docker polls the built-in health endpoint automatically:
-
 ```bash
-docker inspect --format='{{.State.Health.Status}}' routerly
-# healthy
-```
-
-Or manually:
-
-```bash
-curl http://localhost:3000/health
-# {"status":"ok","version":"0.0.1","timestamp":"..."}
+docker compose up -d --build
 ```
 
 ---
 
-## Manual install (for contributors / development)
+## Manual Installation (from source)
 
-If you want to work on Routerly itself or prefer a hand-crafted setup:
-
-### Prerequisites
-
-| Requirement | Version | Notes |
-|-------------|---------|-------|
-| **Node.js** | ≥ 20 | Required for all packages |
-| **npm** | ≥ 10 | Comes with Node.js |
-| **LLM provider API keys** | — | At least one key unless using Ollama |
+Requirements: **Node.js ≥ 20**, **npm ≥ 10**
 
 ```bash
-node --version   # should print v20 or higher
-npm --version
-```
-
-### Clone and install
-
-```bash
-git clone https://github.com/routerly/routerly.git
-cd routerly
+git clone https://github.com/Inebrio/Routerly.git
+cd Routerly
 npm install
+npm run build
+npm run start --workspace=packages/service
 ```
 
-### Start in development mode
+The CLI is available via:
 
 ```bash
-npm run dev
-```
-
-This starts the service with `tsx` in watch mode. The service, CLI, and dashboard all run from source.
-
-```bash
-# Health check
-curl http://localhost:3000/health
-# {"status":"ok","version":"0.0.1","timestamp":"..."}
+node packages/cli/dist/index.js
 ```
 
 ---
 
-## Next steps
+## Updating Routerly
 
-→ [Quick Start](quick-start.md): register a model, create a project, make your first API call
-→ [Configuration](configuration.md): ports, log levels, custom storage path
+Run the installer again — it detects an existing installation and presents a menu:
+
+```bash
+# macOS / Linux
+curl -fsSL https://www.routerly.ai/install.sh | bash
+
+# Windows (PowerShell)
+powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
+```
+
+When an existing install is found you will see:
+
+```
+  Existing installation detected
+
+  What would you like to do?
+
+    1  Update      — download & rebuild latest code, keep all settings
+    2  Reinstall   — change components or settings (user data preserved)
+    3  Uninstall   — remove Routerly from this machine
+    0  Cancel
+```
+
+Select **1** (or press Enter to accept the default) to download and rebuild the latest release. All configuration and user data are preserved.
+
+To update without prompts (e.g. in a script or CI):
+
+```bash
+curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --yes
+```
+
+---
+
+## Reinstalling
+
+Reinstalling lets you change installed components (service, CLI, dashboard) or reconfigure settings (port, scope, daemon) while keeping all user data intact.
+
+Run the installer and select **2** at the menu:
+
+```bash
+# macOS / Linux
+curl -fsSL https://www.routerly.ai/install.sh | bash
+
+# Windows (PowerShell)
+powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
+```
+
+The wizard will walk you through the same questions as a fresh install, pre-filling your existing answers. All accounts, projects, models and usage history are preserved.
+
+---
+
+## Uninstalling
+
+Run the installer and select **3** at the menu:
+
+```bash
+# macOS / Linux
+curl -fsSL https://www.routerly.ai/install.sh | bash
+
+# Windows (PowerShell)
+powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
+```
+
+The uninstall flow will:
+
+1. Stop and remove the system daemon (systemd / launchd / Windows Service)
+2. Remove the application files and CLI binary
+3. Ask whether to also delete user data (`~/.routerly/` — accounts, settings, usage history)
+
+:::note Data preservation
+If you answer **No** to the data removal prompt, all accounts and history are kept. Running the installer again will detect the existing data and offer to resume from where you left off.
+:::
+
+---
+
+## Auto-start Configuration
+
+The installer can configure Routerly to start automatically on boot:
+
+| OS | Scope | Method | Location |
+|----|-------|--------|----------|
+| Linux | user | systemd user service | `~/.config/systemd/user/routerly.service` |
+| Linux | system | systemd system service | `/etc/systemd/system/routerly.service` |
+| macOS | user | launchd LaunchAgent | `~/Library/LaunchAgents/ai.routerly.service.plist` |
+| macOS | system | launchd LaunchDaemon | `/Library/LaunchDaemons/ai.routerly.service.plist` |
+| Windows | — | Windows Service | via `sc.exe` |
+
+To start/stop manually:
+
+```bash
+# Linux (user scope)
+systemctl --user start routerly
+systemctl --user stop routerly
+
+# macOS (user scope)
+launchctl load ~/Library/LaunchAgents/ai.routerly.service.plist
+launchctl unload ~/Library/LaunchAgents/ai.routerly.service.plist
+```
+
+---
+
+## Verifying the Installation
+
+```bash
+routerly status
+```
+
+You should see the service URL, version, and a reachability check. Then open the dashboard:
+
+```
+http://localhost:3000/dashboard
+```
+
+→ Continue to [Quick Start](./quick-start.md) to set up your first model and project.

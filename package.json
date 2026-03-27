@@ -1,8 +1,9 @@
 {
   "name": "routerly",
-  "version": "0.0.1",
+  "version": "0.1.5",
   "private": true,
   "type": "module",
+  "license": "AGPL-3.0",
   "description": "Self-hosted API gateway for LLMs with intelligent routing, cost tracking and multi-provider support",
   "workspaces": [
     "packages/*"

@@ -18,7 +18,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('preHandler', async (request: FastifyRequest, reply) => {
     // Skip auth for non-LLM-proxy routes (health check, dashboard UI, dashboard API)
     const url = request.url;
-    if (url === '/health' || url.startsWith('/dashboard') || url.startsWith('/api/')) return;
+    if (url === '/' || url === '/health' || url.startsWith('/dashboard') || url.startsWith('/api/')) return;
 
     const authHeader = request.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
