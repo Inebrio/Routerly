@@ -62,6 +62,12 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     if (isStream) {
       // ── Streaming path: avvia SSE subito ──────────────────────────────────
       reply.hijack();
+      const origin = request.headers.origin;
+      if (origin) {
+        reply.raw.setHeader('Access-Control-Allow-Origin', origin);
+        reply.raw.setHeader('Access-Control-Allow-Credentials', 'true');
+        reply.raw.setHeader('Access-Control-Expose-Headers', 'x-routerly-trace-id');
+      }
       reply.raw.setHeader('Content-Type', 'text/event-stream');
       reply.raw.setHeader('Cache-Control', 'no-cache');
       reply.raw.setHeader('Connection', 'keep-alive');
@@ -70,7 +76,6 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
       const emit = (entry: TraceEntry) => {
         appendTrace(traceId, [entry]);
-        reply.raw.write(`data: ${JSON.stringify({ type: 'trace', entry })}\n\n`);
       };
 
       let routingResponse;
@@ -79,7 +84,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         request.log.error({ err }, 'Routing model failed');
-        reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: `Routing model failed: ${msg}` })}\n\n`);
+        const errChunk = { id: `chatcmpl-${traceId}`, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: body.model ?? '', choices: [{ index: 0, delta: { content: `Routing failed: ${msg}` }, finish_reason: 'stop' }] };
+        reply.raw.write(`data: ${JSON.stringify(errChunk)}\n\n`);
         reply.raw.write('data: [DONE]\n\n');
         reply.raw.end();
         return;
@@ -87,8 +93,6 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
       const allModelsList = await readConfig('models');
       const sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
-
-      reply.raw.write(`data: ${JSON.stringify({ type: 'result', candidates: sortedCandidates })}\n\n`);
 
       for (const candidate of sortedCandidates) {
         const model = allModelsList.find((m: any) => m.id === candidate.model);
@@ -122,7 +126,6 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           request.log.error({ err, modelId: model.id }, 'Streaming error mid-stream');
-          reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: msg })}\n\n`);
           reply.raw.write('data: [DONE]\n\n');
         }
 
@@ -132,7 +135,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
       // Tutti i candidati esauriti
       emit({ panel: 'response', message: 'model:error', details: { error: 'All candidates unavailable or budget-exhausted' } });
-      reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: 'All candidate models are unavailable or budget-exhausted.' })}\n\n`);
+      const errChunk = { id: `chatcmpl-${traceId}`, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: body.model ?? '', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] };
+      reply.raw.write(`data: ${JSON.stringify(errChunk)}\n\n`);
       reply.raw.write('data: [DONE]\n\n');
       reply.raw.end();
       return;
@@ -199,7 +203,14 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       owned_by: m.provider,
     }));
 
-    return reply.send({ object: 'list', data });
+    const adaPlaceholder: ModelObject = {
+      id: 'routerly/ada',
+      object: 'model',
+      created: 0,
+      owned_by: 'routerly',
+    };
+
+    return reply.send({ object: 'list', data: [adaPlaceholder, ...data] });
   });
 
   // ─── GET /v1/models/:model ────────────────────────────────────────────────────
