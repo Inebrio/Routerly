@@ -20,7 +20,7 @@ Make does not have a native Routerly module, but its **HTTP → Make a request**
 |-------|-------|
 | **URL** | `http://localhost:3000/v1/chat/completions` |
 | **Method** | `POST` |
-| **Headers** | `Authorization: Bearer sk-lr-YOUR_PROJECT_TOKEN` / `Content-Type: application/json` |
+| **Headers** | `Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN` / `Content-Type: application/json` |
 | **Body type** | Raw |
 | **Content type** | JSON (application/json) |
 | **Request content** | See below |

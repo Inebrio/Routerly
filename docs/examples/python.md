@@ -18,7 +18,7 @@ from openai import OpenAI
 
 client = OpenAI(
     base_url="http://localhost:3000/v1",
-    api_key="sk-lr-YOUR_PROJECT_TOKEN",
+    api_key="sk-rt-YOUR_PROJECT_TOKEN",
 )
 
 # Non-streaming
@@ -51,7 +51,7 @@ import anthropic
 
 client = anthropic.Anthropic(
     base_url="http://localhost:3000",
-    api_key="sk-lr-YOUR_PROJECT_TOKEN",
+    api_key="sk-rt-YOUR_PROJECT_TOKEN",
 )
 
 # Non-streaming
@@ -86,7 +86,7 @@ import json
 
 HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": "Bearer sk-lr-YOUR_PROJECT_TOKEN",
+    "Authorization": "Bearer sk-rt-YOUR_PROJECT_TOKEN",
 }
 
 # Non-streaming

@@ -18,7 +18,7 @@ Download Cursor from [cursor.com](https://cursor.com).
 ## Configure
 
 1. Open Cursor → **Settings** → **Cursor Settings** → **Models**.
-2. Scroll to **OpenAI API Key** and enter: `sk-lr-YOUR_PROJECT_TOKEN`
+2. Scroll to **OpenAI API Key** and enter: `sk-rt-YOUR_PROJECT_TOKEN`
 3. Enable **Override OpenAI Base URL** and set it to: `http://localhost:3000/v1`
 4. Click **Verify** to confirm the connection.
 

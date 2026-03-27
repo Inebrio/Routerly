@@ -60,7 +60,7 @@ Manage Bearer tokens for this project.
 3. Optionally configure per-token limits (metric, limit value, window type, mode)
 4. Click **Create**
 
-The token value (`sk-lr-…`) is shown **once**. Copy it immediately.
+The token value (`sk-rt-…`) is shown **once**. Copy it immediately.
 
 ### Per-Token Limits
 

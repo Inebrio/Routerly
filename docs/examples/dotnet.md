@@ -21,7 +21,7 @@ using OpenAI.Chat;
 using System.ClientModel;
 
 var client = new OpenAIClient(
-    new ApiKeyCredential("sk-lr-YOUR_PROJECT_TOKEN"),
+    new ApiKeyCredential("sk-rt-YOUR_PROJECT_TOKEN"),
     new OpenAIClientOptions { Endpoint = new Uri("http://localhost:3000/v1") }
 );
 
@@ -55,7 +55,7 @@ using System.Text.Json;
 
 using var http = new HttpClient();
 http.DefaultRequestHeaders.Authorization =
-    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "sk-lr-YOUR_PROJECT_TOKEN");
+    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "sk-rt-YOUR_PROJECT_TOKEN");
 
 var payload = new
 {
@@ -84,7 +84,7 @@ Console.WriteLine(doc.RootElement
 using var request = new HttpRequestMessage(HttpMethod.Post,
     "http://localhost:3000/v1/chat/completions");
 request.Headers.Authorization =
-    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "sk-lr-YOUR_PROJECT_TOKEN");
+    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "sk-rt-YOUR_PROJECT_TOKEN");
 request.Content = JsonContent.Create(new
 {
     model    = "gpt-5-mini",

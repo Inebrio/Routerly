@@ -44,7 +44,7 @@ Fix the reported file by hand or restore from a backup.
 ### 401 on the LLM proxy — "Invalid or missing Authorization header"
 
 **Likely causes:**
-- Missing `Authorization: Bearer sk-lr-…` header
+- Missing `Authorization: Bearer sk-rt-…` header
 - The project token was rotated or deleted
 - The token was typed incorrectly
 

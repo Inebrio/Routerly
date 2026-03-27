@@ -18,7 +18,7 @@ import OpenAI from "openai";
 
 const client = new OpenAI({
   baseURL: "http://localhost:3000/v1",
-  apiKey: "sk-lr-YOUR_PROJECT_TOKEN",
+  apiKey: "sk-rt-YOUR_PROJECT_TOKEN",
 });
 
 // Non-streaming
@@ -52,7 +52,7 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic({
   baseURL: "http://localhost:3000",
-  apiKey: "sk-lr-YOUR_PROJECT_TOKEN",
+  apiKey: "sk-rt-YOUR_PROJECT_TOKEN",
 });
 
 const message = await client.messages.create({
@@ -75,7 +75,7 @@ const response = await fetch("http://localhost:3000/v1/chat/completions", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    Authorization: "Bearer sk-lr-YOUR_PROJECT_TOKEN",
+    Authorization: "Bearer sk-rt-YOUR_PROJECT_TOKEN",
   },
   body: JSON.stringify({
     model: "gpt-5-mini",
@@ -90,7 +90,7 @@ const streamRes = await fetch("http://localhost:3000/v1/chat/completions", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    Authorization: "Bearer sk-lr-YOUR_PROJECT_TOKEN",
+    Authorization: "Bearer sk-rt-YOUR_PROJECT_TOKEN",
   },
   body: JSON.stringify({
     model: "gpt-5-mini",

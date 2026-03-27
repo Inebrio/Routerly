@@ -22,7 +22,7 @@ When the service starts it performs the following steps in order:
    - CORS (`@fastify/cors`)
    - Dashboard static files (`@fastify/static` at `/dashboard`, only if `dashboardEnabled: true`)
    - Management API routes (`/api/*`)
-   - Auth guard plugin (validates `Bearer sk-lr-*` tokens for `/v1/*` routes)
+   - Auth guard plugin (validates `Bearer sk-rt-*` tokens for `/v1/*` routes)
    - LLM Proxy routes (`/v1/*`)
    - Root redirect (`/` → `/dashboard/`)
    - Health check (`/health`)

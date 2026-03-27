@@ -20,7 +20,7 @@ Ready-to-run code snippets for calling Routerly from any language. Every example
 Every integration needs two values:
 
 - **Base URL** — `http://localhost:3000/v1` (OpenAI) or `http://localhost:3000` (Anthropic)
-- **API Key** — your project token: `sk-lr-YOUR_PROJECT_TOKEN`
+- **API Key** — your project token: `sk-rt-YOUR_PROJECT_TOKEN`
 
 Change these two lines in your existing code and nothing else needs to change.
 
@@ -45,7 +45,7 @@ Change these two lines in your existing code and nothing else needs to change.
 
 Create a token in the dashboard: **Projects** → select your project → **Tokens** → **New Token**.
 
-Tokens start with `sk-lr-` and are shown once. Copy it before closing the dialog.
+Tokens start with `sk-rt-` and are shown once. Copy it before closing the dialog.
 
 ---
 
