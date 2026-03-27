@@ -262,6 +262,13 @@ export function ModelFormPage() {
       customId = model.id;
     }
 
+    // If prices are 0 (model was created without specifying them), fall back to preset values
+    const preset = providerPresets.find(m => m.id === formId);
+    const inputPrice  = model.cost.inputPerMillion  > 0 ? model.cost.inputPerMillion  : (preset?.input  ?? 0);
+    const outputPrice = model.cost.outputPerMillion > 0 ? model.cost.outputPerMillion : (preset?.output ?? 0);
+    const cachePrice  = model.cost.cachePerMillion  != null ? model.cost.cachePerMillion : (preset?.cache ?? null);
+    const ctxWindow   = model.contextWindow != null ? model.contextWindow : (preset?.contextWindow ?? null);
+
     setIsCustomModel(customModel);
     setErr(''); setShowToken(false);
 
@@ -272,10 +279,10 @@ export function ModelFormPage() {
       provider,
       endpoint: model.endpoint,
       apiKey: '',
-      inputPerMillion: String(model.cost.inputPerMillion),
-      outputPerMillion: String(model.cost.outputPerMillion),
-      cachePerMillion: model.cost.cachePerMillion != null ? String(model.cost.cachePerMillion) : '',
-      contextWindow: model.contextWindow != null ? String(model.contextWindow) : '',
+      inputPerMillion: String(inputPrice),
+      outputPerMillion: String(outputPrice),
+      cachePerMillion: cachePrice != null ? String(cachePrice) : '',
+      contextWindow: ctxWindow != null ? String(ctxWindow) : '',
     }));
 
     // Resolve limits: prefer new `limits`, fall back to legacy `globalThresholds`
