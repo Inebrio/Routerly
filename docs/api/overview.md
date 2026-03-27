@@ -21,10 +21,10 @@ Routerly exposes two groups of HTTP endpoints:
 Pass your **project token** as a Bearer token:
 
 ```http
-Authorization: Bearer sk-lr-YOUR_PROJECT_TOKEN
+Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN
 ```
 
-Project tokens start with `sk-lr-` and are created in the project's **Tokens** tab.
+Project tokens start with `sk-rt-` and are created in the project's **Tokens** tab.
 
 ### Management API (`/api/*`)
 

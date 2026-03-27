@@ -19,7 +19,7 @@ In your LibreChat `librechat.yaml` configuration file, add a custom endpoint ent
 endpoints:
   custom:
     - name: "Routerly"
-      apiKey: "sk-lr-YOUR_PROJECT_TOKEN"
+      apiKey: "sk-rt-YOUR_PROJECT_TOKEN"
       baseURL: "http://localhost:3000/v1"
       models:
         default: ["gpt-5-mini"]
@@ -32,7 +32,7 @@ endpoints:
       dropParams: []
 ```
 
-Replace `sk-lr-YOUR_PROJECT_TOKEN` with a valid project token from your Routerly dashboard (**Projects → your project → Tokens**).
+Replace `sk-rt-YOUR_PROJECT_TOKEN` with a valid project token from your Routerly dashboard (**Projects → your project → Tokens**).
 
 ### 2. Restart LibreChat
 

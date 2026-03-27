@@ -28,7 +28,7 @@ from openai import OpenAI
 
 client = OpenAI(
     base_url="http://localhost:3000/v1",
-    api_key="sk-lr-YOUR_PROJECT_TOKEN",
+    api_key="sk-rt-YOUR_PROJECT_TOKEN",
 )
 ```
 
@@ -69,7 +69,7 @@ import anthropic
 
 client = anthropic.Anthropic(
     base_url="http://localhost:3000",
-    api_key="sk-lr-YOUR_PROJECT_TOKEN",
+    api_key="sk-rt-YOUR_PROJECT_TOKEN",
 )
 
 message = client.messages.create(
@@ -81,5 +81,5 @@ print(message.content[0].text)
 ```
 
 :::tip
-Store your project token in a Jupyter environment variable rather than hardcoding it. Add `export ROUTERLY_TOKEN=sk-lr-…` to your shell profile and read it with `os.environ["ROUTERLY_TOKEN"]`.
+Store your project token in a Jupyter environment variable rather than hardcoding it. Add `export ROUTERLY_TOKEN=sk-rt-…` to your shell profile and read it with `os.environ["ROUTERLY_TOKEN"]`.
 :::

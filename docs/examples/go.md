@@ -26,7 +26,7 @@ import (
 )
 
 func main() {
-	config := openai.DefaultConfig("sk-lr-YOUR_PROJECT_TOKEN")
+	config := openai.DefaultConfig("sk-rt-YOUR_PROJECT_TOKEN")
 	config.BaseURL = "http://localhost:3000/v1"
 	client := openai.NewClientWithConfig(config)
 
@@ -105,7 +105,7 @@ func main() {
 		bytes.NewBuffer(payload),
 	)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer sk-lr-YOUR_PROJECT_TOKEN")
+	req.Header.Set("Authorization", "Bearer sk-rt-YOUR_PROJECT_TOKEN")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

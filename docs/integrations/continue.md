@@ -27,7 +27,7 @@ Open `~/.continue/config.json` and add Routerly as a model provider:
       "provider": "openai",
       "model": "gpt-5-mini",
       "apiBase": "http://localhost:3000/v1",
-      "apiKey": "sk-lr-YOUR_PROJECT_TOKEN"
+      "apiKey": "sk-rt-YOUR_PROJECT_TOKEN"
     }
   ]
 }
@@ -43,7 +43,7 @@ To use the Anthropic Messages API instead:
       "provider": "anthropic",
       "model": "claude-haiku-4-5",
       "apiBase": "http://localhost:3000",
-      "apiKey": "sk-lr-YOUR_PROJECT_TOKEN"
+      "apiKey": "sk-rt-YOUR_PROJECT_TOKEN"
     }
   ]
 }

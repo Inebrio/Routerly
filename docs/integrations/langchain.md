@@ -31,7 +31,7 @@ from langchain_openai import ChatOpenAI
 llm = ChatOpenAI(
     model="gpt-5-mini",
     base_url="http://localhost:3000/v1",
-    api_key="sk-lr-YOUR_PROJECT_TOKEN",
+    api_key="sk-rt-YOUR_PROJECT_TOKEN",
 )
 ```
 
@@ -42,7 +42,7 @@ const llm = new ChatOpenAI({
   model: "gpt-5-mini",
   configuration: {
     baseURL: "http://localhost:3000/v1",
-    apiKey: "sk-lr-YOUR_PROJECT_TOKEN",
+    apiKey: "sk-rt-YOUR_PROJECT_TOKEN",
   },
 });
 ```
@@ -55,7 +55,7 @@ from langchain_anthropic import ChatAnthropic
 llm = ChatAnthropic(
     model="claude-haiku-4-5",
     anthropic_api_url="http://localhost:3000",
-    api_key="sk-lr-YOUR_PROJECT_TOKEN",
+    api_key="sk-rt-YOUR_PROJECT_TOKEN",
 )
 ```
 

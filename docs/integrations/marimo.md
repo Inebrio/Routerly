@@ -24,7 +24,7 @@ pip install marimo
 marimo's built-in AI features read from environment variables. Set them before launching:
 
 ```bash
-export OPENAI_API_KEY="sk-lr-YOUR_PROJECT_TOKEN"
+export OPENAI_API_KEY="sk-rt-YOUR_PROJECT_TOKEN"
 export OPENAI_BASE_URL="http://localhost:3000/v1"
 marimo edit notebook.py
 ```
@@ -39,7 +39,7 @@ from openai import OpenAI
 
 client = OpenAI(
     base_url="http://localhost:3000/v1",
-    api_key="sk-lr-YOUR_PROJECT_TOKEN",
+    api_key="sk-rt-YOUR_PROJECT_TOKEN",
 )
 
 prompt = mo.ui.text(placeholder="Ask something…")

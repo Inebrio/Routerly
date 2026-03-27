@@ -9,7 +9,7 @@ The LLM proxy exposes standard-compatible endpoints. Any client that speaks the 
 
 **Base URL:** `http://localhost:3000/v1`
 
-**Authentication:** `Authorization: Bearer sk-lr-YOUR_PROJECT_TOKEN`
+**Authentication:** `Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN`
 
 ---
 

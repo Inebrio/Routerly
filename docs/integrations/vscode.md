@@ -11,7 +11,7 @@ sidebar_label: VS Code
 
 ## GitHub Copilot
 
-GitHub Copilot authenticates exclusively via **GitHub OAuth** — it sends a GitHub-issued token to the upstream server, not an `sk-lr-*` project token. Routerly expects a Bearer project token and returns **401** for any other credential, so routing Copilot through Routerly is not possible. The authentication schemes are fundamentally incompatible.
+GitHub Copilot authenticates exclusively via **GitHub OAuth** — it sends a GitHub-issued token to the upstream server, not an `sk-rt-*` project token. Routerly expects a Bearer project token and returns **401** for any other credential, so routing Copilot through Routerly is not possible. The authentication schemes are fundamentally incompatible.
 
 :::info Alternativa consigliata
 Usa [Continue](./continue) o [Cline](./cline) in VS Code. Entrambe le estensioni supportano un base URL OpenAI-compatible personalizzato e si autenticano con un project token esattamente come Routerly si aspetta.

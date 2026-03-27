@@ -73,7 +73,7 @@ routerly project add \
   --models gpt-5-mini
 ```
 
-The command prints your **project token** — a string starting with `sk-lr-`. Save it; you'll use it in your application.
+The command prints your **project token** — a string starting with `sk-rt-`. Save it; you'll use it in your application.
 
 :::warning Token visibility
 The project token is shown **only once** after creation. Store it securely. You can generate a new token from the dashboard at any time.
@@ -92,7 +92,7 @@ from openai import OpenAI
 
 client = OpenAI(
     base_url="http://localhost:3000/v1",
-    api_key="sk-lr-YOUR_PROJECT_TOKEN",
+    api_key="sk-rt-YOUR_PROJECT_TOKEN",
 )
 
 response = client.chat.completions.create(
@@ -109,7 +109,7 @@ import OpenAI from 'openai';
 
 const client = new OpenAI({
   baseURL: 'http://localhost:3000/v1',
-  apiKey: 'sk-lr-YOUR_PROJECT_TOKEN',
+  apiKey: 'sk-rt-YOUR_PROJECT_TOKEN',
 });
 
 const response = await client.chat.completions.create({
@@ -123,7 +123,7 @@ console.log(response.choices[0].message.content);
 
 ```bash
 curl http://localhost:3000/v1/chat/completions \
-  -H "Authorization: Bearer sk-lr-YOUR_PROJECT_TOKEN" \
+  -H "Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"model":"gpt-5-mini","messages":[{"role":"user","content":"Hello!"}]}'
 ```
