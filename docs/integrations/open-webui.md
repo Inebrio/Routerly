@@ -24,7 +24,7 @@ docker run -d -p 3001:8080 --name open-webui ghcr.io/open-webui/open-webui:main
 1. Open Open WebUI → **Admin Panel** → **Settings** → **Connections**.
 2. Under **OpenAI API**, set:
    - **API Base URL** → `http://localhost:3000/v1`
-   - **API Key** → `sk-lr-YOUR_PROJECT_TOKEN`
+   - **API Key** → `sk-rt-YOUR_PROJECT_TOKEN`
 3. Click **Save**.
 4. Open **Admin Panel** → **Settings** → **Models** and click the sync button to import your Routerly model list.
 

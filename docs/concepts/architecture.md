@@ -18,7 +18,7 @@ Routerly is a self-hosted API gateway that sits between your application and one
 │  Your App  │  OpenAI / Anthropic SDK  │  Cursor  │  Open WebUI│
 │            │  LibreChat  │  OpenClaw  │  LangChain / LlamaIndex│
 └───────────────────────┬────────────────────────────────────────┘
-                        │  Bearer sk-lr-<token>
+                        │  Bearer sk-rt-<token>
                         │  POST /v1/chat/completions  (OpenAI)
                         │  POST /v1/messages          (Anthropic)
                         ▼

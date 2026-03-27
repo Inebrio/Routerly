@@ -20,7 +20,7 @@ gem install ruby-openai
 require "openai"
 
 client = OpenAI::Client.new(
-  access_token: "sk-lr-YOUR_PROJECT_TOKEN",
+  access_token: "sk-rt-YOUR_PROJECT_TOKEN",
   uri_base: "http://localhost:3000/v1/",
 )
 
@@ -59,7 +59,7 @@ http = Net::HTTP.new(uri.host, uri.port)
 
 request = Net::HTTP::Post.new(uri.path)
 request["Content-Type"]  = "application/json"
-request["Authorization"] = "Bearer sk-lr-YOUR_PROJECT_TOKEN"
+request["Authorization"] = "Bearer sk-rt-YOUR_PROJECT_TOKEN"
 request.body = JSON.generate(
   model:    "gpt-5-mini",
   messages: [{ role: "user", content: "Hello from Net::HTTP!" }]
@@ -84,7 +84,7 @@ http = Net::HTTP.new(uri.host, uri.port)
 
 request = Net::HTTP::Post.new(uri.path)
 request["Content-Type"]  = "application/json"
-request["Authorization"] = "Bearer sk-lr-YOUR_PROJECT_TOKEN"
+request["Authorization"] = "Bearer sk-rt-YOUR_PROJECT_TOKEN"
 request.body = JSON.generate(
   model:    "gpt-5-mini",
   messages: [{ role: "user", content: "Tell me a story." }],

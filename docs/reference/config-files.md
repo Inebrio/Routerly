@@ -185,7 +185,7 @@ Array of project configurations including routing policies, budgets, tokens, and
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | `string` | Token ID (`tok_…`) |
-| `token` | `string` | Token value, stored as a bcrypt hash — the plain `sk-lr-…` value is only shown once on creation |
+| `token` | `string` | Token value, stored as a bcrypt hash — the plain `sk-rt-…` value is only shown once on creation |
 | `description` | `string` | Optional label |
 | `createdAt` | `string` | ISO 8601 creation timestamp |
 

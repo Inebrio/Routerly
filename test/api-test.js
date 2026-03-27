@@ -3,7 +3,7 @@
  * LocalRouter API Test Script
  *
  * Usage:
- *   node test/api-test.js --token=sk-lr-<your-project-token> [options]
+ *   node test/api-test.js --token=sk-rt-<your-project-token> [options]
  *
  * Options:
  *   --token=<project-token>   Project token for /v1/* LLM proxy routes (required)
@@ -14,9 +14,9 @@
  *   --help                    Show this help message
  *
  * Examples:
- *   node test/api-test.js --token=sk-lr-abc123
- *   node test/api-test.js --token=sk-lr-abc123 --admin-email=admin@example.com --admin-password=secret
- *   node test/api-test.js --token=sk-lr-abc123 --base-url=http://localhost:4000 --concurrency=10
+ *   node test/api-test.js --token=sk-rt-abc123
+ *   node test/api-test.js --token=sk-rt-abc123 --admin-email=admin@example.com --admin-password=secret
+ *   node test/api-test.js --token=sk-rt-abc123 --base-url=http://localhost:4000 --concurrency=10
  *
  * Environment variables:
  *   LOCALROUTER_TOKEN          Alternative to --token
@@ -70,7 +70,7 @@ const CONCURRENCY    = parseInt(cliArgs['concurrency'] ?? process.env['LOCALROUT
 
 if (!PROJECT_TOKEN) {
   console.error(`${C.red}${C.bold}Error:${C.reset} --token is required.\n`);
-  console.error('Usage: node test/api-test.js --token=sk-lr-<your-project-token>');
+  console.error('Usage: node test/api-test.js --token=sk-rt-<your-project-token>');
   console.error('       node test/api-test.js --help');
   process.exit(1);
 }
@@ -213,7 +213,7 @@ function chatPayload(content = 'Ping.', maxTokens = 10) {
 
   // Syntactically valid token that is not registered: must return 401.
   await test('POST /v1/chat/completions with wrong token → 401', async () => {
-    const res = await post('/v1/chat/completions', chatPayload(), bearerHeader('sk-lr-bad-token-000'));
+    const res = await post('/v1/chat/completions', chatPayload(), bearerHeader('sk-rt-bad-token-000'));
     assertStatus(res, 401);
   });
 

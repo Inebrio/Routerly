@@ -74,7 +74,7 @@ Interactive computing environments.
 Every integration follows the same two-step pattern:
 
 1. **Set the base URL** to your Routerly instance — `http://localhost:3000/v1` for local, or your production URL.
-2. **Set the API key** to your project token — `sk-lr-YOUR_PROJECT_TOKEN`.
+2. **Set the API key** to your project token — `sk-rt-YOUR_PROJECT_TOKEN`.
 
 Routerly looks like OpenAI or Anthropic to any client. No SDK patches, no plugins.
 

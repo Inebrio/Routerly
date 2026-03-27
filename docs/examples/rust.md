@@ -30,7 +30,7 @@ use async_openai::{
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = OpenAIConfig::new()
         .with_api_base("http://localhost:3000/v1")
-        .with_api_key("sk-lr-YOUR_PROJECT_TOKEN");
+        .with_api_key("sk-rt-YOUR_PROJECT_TOKEN");
 
     let client = Client::with_config(config);
 
@@ -106,7 +106,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let response = client
         .post("http://localhost:3000/v1/chat/completions")
-        .header("Authorization", "Bearer sk-lr-YOUR_PROJECT_TOKEN")
+        .header("Authorization", "Bearer sk-rt-YOUR_PROJECT_TOKEN")
         .json(&body)
         .send()
         .await?;
