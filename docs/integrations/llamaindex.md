@@ -29,7 +29,7 @@ from llama_index.llms.openai import OpenAI
 llm = OpenAI(
     model="gpt-5-mini",
     api_base="http://localhost:3000/v1",
-    api_key="sk-lr-YOUR_PROJECT_TOKEN",
+    api_key="sk-rt-YOUR_PROJECT_TOKEN",
 )
 ```
 
@@ -41,7 +41,7 @@ from llama_index.core import Settings
 Settings.llm = OpenAI(
     model="gpt-5-mini",
     api_base="http://localhost:3000/v1",
-    api_key="sk-lr-YOUR_PROJECT_TOKEN",
+    api_key="sk-rt-YOUR_PROJECT_TOKEN",
 )
 ```
 
@@ -52,7 +52,7 @@ Settings.llm = new OpenAI({
   model: "gpt-5-mini",
   additionalSessionOptions: {
     baseURL: "http://localhost:3000/v1",
-    apiKey: "sk-lr-YOUR_PROJECT_TOKEN",
+    apiKey: "sk-rt-YOUR_PROJECT_TOKEN",
   },
 });
 ```

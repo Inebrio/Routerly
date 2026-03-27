@@ -9,7 +9,7 @@ The service exposes three groups of HTTP endpoints on the same port (default: `3
 
 | Group | Path prefix | Auth | Purpose |
 |-------|-------------|------|---------|
-| [LLM Proxy](#llm-proxy) | `/v1/*` | Bearer project token (`sk-lr-…`) | Forward requests to LLM providers |
+| [LLM Proxy](#llm-proxy) | `/v1/*` | Bearer project token (`sk-rt-…`) | Forward requests to LLM providers |
 | [Management API](#management-api) | `/api/*` | Bearer JWT (dashboard session) | Configure models, projects, users |
 | [Dashboard](#dashboard) | `/dashboard/*` | Browser session (cookie) | Serve the React web UI |
 | [Health](#health-check) | `/health` | None | Liveness probe |
@@ -20,7 +20,7 @@ For the full request/response schemas of each route, see [API — LLM Proxy](../
 
 ## LLM Proxy
 
-These routes accept the same request bodies as the original provider APIs. Authentication is via a **project token** (`Authorization: Bearer sk-lr-…`).
+These routes accept the same request bodies as the original provider APIs. Authentication is via a **project token** (`Authorization: Bearer sk-rt-…`).
 
 Every request goes through the full routing and budget stack before being forwarded to a provider.
 
@@ -30,7 +30,7 @@ OpenAI Chat Completions format. Supports both streaming (`"stream": true`) and n
 
 ```http
 POST /v1/chat/completions
-Authorization: Bearer sk-lr-YOUR_PROJECT_TOKEN
+Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN
 Content-Type: application/json
 
 {
@@ -48,7 +48,7 @@ OpenAI Responses API format (newer API surface). Uses `input` instead of `messag
 
 ```http
 POST /v1/responses
-Authorization: Bearer sk-lr-YOUR_PROJECT_TOKEN
+Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN
 Content-Type: application/json
 
 {
@@ -63,7 +63,7 @@ Anthropic Messages API format. The request body matches the Anthropic SDK wire f
 
 ```http
 POST /v1/messages
-Authorization: Bearer sk-lr-YOUR_PROJECT_TOKEN
+Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN
 Content-Type: application/json
 
 {
@@ -81,7 +81,7 @@ Returns the list of models available in the project associated with the token, i
 
 ```http
 GET /v1/models
-Authorization: Bearer sk-lr-YOUR_PROJECT_TOKEN
+Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN
 ```
 
 ### Error format

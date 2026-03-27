@@ -331,7 +331,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (projects.some(p => p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
       return reply.status(409).send({ error: `A project named "${trimmedName}" already exists` });
     }
-    const rawToken = `sk-lr-${randomBytes(32).toString('hex')}`;
+    const rawToken = `sk-rt-${randomBytes(32).toString('hex')}`;
     const userId = req.dashUser!.id;
 
     const project: ProjectConfig = {
@@ -417,7 +417,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const index = projects.findIndex(p => p.id === req.params.id);
     if (index === -1) return reply.status(404).send({ error: 'Not found' });
 
-    const rawToken = `sk-lr-${randomBytes(32).toString('hex')}`;
+    const rawToken = `sk-rt-${randomBytes(32).toString('hex')}`;
 
     const newToken = {
       id: uuidv4(),

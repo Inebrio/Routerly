@@ -22,7 +22,7 @@ import java.net.http.HttpResponse;
 public class RouterlyExample {
 
     private static final String BASE_URL = "http://localhost:3000/v1";
-    private static final String API_KEY  = "sk-lr-YOUR_PROJECT_TOKEN";
+    private static final String API_KEY  = "sk-rt-YOUR_PROJECT_TOKEN";
 
     public static void main(String[] args) throws Exception {
         HttpClient client = HttpClient.newHttpClient();
@@ -79,7 +79,7 @@ public class RouterlyOkHttp {
 
         Request request = new Request.Builder()
             .url("http://localhost:3000/v1/chat/completions")
-            .header("Authorization", "Bearer sk-lr-YOUR_PROJECT_TOKEN")
+            .header("Authorization", "Bearer sk-rt-YOUR_PROJECT_TOKEN")
             .post(RequestBody.create(json, JSON))
             .build();
 

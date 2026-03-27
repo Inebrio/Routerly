@@ -29,7 +29,7 @@ from haystack.utils import Secret
 generator = OpenAIChatGenerator(
     model="gpt-5-mini",
     api_base_url="http://localhost:3000/v1",
-    api_key=Secret.from_token("sk-lr-YOUR_PROJECT_TOKEN"),
+    api_key=Secret.from_token("sk-rt-YOUR_PROJECT_TOKEN"),
 )
 ```
 
@@ -41,7 +41,7 @@ from haystack.components.embedders import OpenAITextEmbedder
 embedder = OpenAITextEmbedder(
     model="text-embedding-3-small",
     api_base_url="http://localhost:3000/v1",
-    api_key=Secret.from_token("sk-lr-YOUR_PROJECT_TOKEN"),
+    api_key=Secret.from_token("sk-rt-YOUR_PROJECT_TOKEN"),
 )
 ```
 

@@ -22,7 +22,7 @@ require 'vendor/autoload.php';
 
 $client = OpenAI::factory()
     ->withBaseUri('http://localhost:3000/v1')
-    ->withApiKey('sk-lr-YOUR_PROJECT_TOKEN')
+    ->withApiKey('sk-rt-YOUR_PROJECT_TOKEN')
     ->make();
 
 // Non-streaming
@@ -67,7 +67,7 @@ $http = new Client();
 
 $response = $http->post('http://localhost:3000/v1/chat/completions', [
     'headers' => [
-        'Authorization' => 'Bearer sk-lr-YOUR_PROJECT_TOKEN',
+        'Authorization' => 'Bearer sk-rt-YOUR_PROJECT_TOKEN',
         'Content-Type'  => 'application/json',
     ],
     'json' => [
@@ -101,7 +101,7 @@ curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_HTTPHEADER     => [
         'Content-Type: application/json',
-        'Authorization: Bearer sk-lr-YOUR_PROJECT_TOKEN',
+        'Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN',
     ],
 ]);
 

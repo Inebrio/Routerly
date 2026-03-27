@@ -259,7 +259,7 @@ export function TestPage() {
                     type={showKey ? 'text' : 'password'}
                     className="form-input"
                     style={{ width: 270, padding: '6px 36px 6px 10px', fontSize: '0.85rem', fontFamily: 'monospace' }}
-                    placeholder="sk-lr-..."
+                    placeholder="sk-rt-..."
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
                     autoComplete="new-password"

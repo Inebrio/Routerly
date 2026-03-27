@@ -21,7 +21,7 @@ Install the [Cline extension](https://marketplace.visualstudio.com/items?itemNam
 2. Set **API Provider** to `OpenAI Compatible`.
 3. Fill in:
    - **Base URL** → `http://localhost:3000/v1`
-   - **API Key** → `sk-lr-YOUR_PROJECT_TOKEN`
+   - **API Key** → `sk-rt-YOUR_PROJECT_TOKEN`
    - **Model** → any model registered in your Routerly project (e.g. `gpt-5-mini`)
 4. Set **Context Window** to at least `32000` — agentic tasks require a large context.
 
@@ -29,7 +29,7 @@ To use Anthropic via Routerly:
 
 1. Set **API Provider** to `Anthropic`.
 2. Set **Base URL** to `http://localhost:3000` (no `/v1`).
-3. Set **API Key** to `sk-lr-YOUR_PROJECT_TOKEN`.
+3. Set **API Key** to `sk-rt-YOUR_PROJECT_TOKEN`.
 4. Pick a model (e.g. `claude-haiku-4-5`).
 
 :::note

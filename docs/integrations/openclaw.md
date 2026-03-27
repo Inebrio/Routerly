@@ -26,7 +26,7 @@ The script detects your OS, installs Node.js if needed, and launches the onboard
 When `openclaw onboard` asks you to choose a model provider, select **Custom Provider (OpenAI-compatible)** and enter:
 
 - **Base URL** → `http://localhost:3000/v1`
-- **API Key** → `sk-lr-YOUR_PROJECT_TOKEN`
+- **API Key** → `sk-rt-YOUR_PROJECT_TOKEN`
 - **Default model** → any model configured in your Routerly project (e.g. `gpt-4o`, `claude-opus-4-5`)
 
 ### After onboarding

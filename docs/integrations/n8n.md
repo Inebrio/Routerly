@@ -27,7 +27,7 @@ Or follow the [full n8n installation guide](https://docs.n8n.io/hosting/).
 
 1. In n8n, go to **Credentials** → **New** → **OpenAI API**.
 2. Set:
-   - **API Key** → `sk-lr-YOUR_PROJECT_TOKEN`
+   - **API Key** → `sk-rt-YOUR_PROJECT_TOKEN`
    - **Base URL** → `http://localhost:3000/v1`
 3. Save the credential with a recognisable name (e.g. *Routerly*).
 4. Add an **OpenAI** node to your workflow and select the new credential.
@@ -38,7 +38,7 @@ For full control over the request body:
 
 1. Add an **HTTP Request** node.
 2. Set **Method** to `POST` and **URL** to `http://localhost:3000/v1/chat/completions`.
-3. Add a header: `Authorization: Bearer sk-lr-YOUR_PROJECT_TOKEN`.
+3. Add a header: `Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN`.
 4. Use **JSON Body**:
 
 ```json
