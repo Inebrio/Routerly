@@ -60,10 +60,85 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'Service',
+      items: [
+        'service/overview',
+        'service/endpoints',
+        'service/routing-engine',
+        'service/providers',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Guides',
       items: [
         'guides/self-hosting',
-        'guides/client-integration',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Integrations',
+      items: [
+        'integrations/overview',
+        {
+          type: 'category',
+          label: 'Chat UI',
+          items: [
+            'integrations/open-webui',
+            'integrations/openclaw',
+            'integrations/librechat',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'IDE & Editor',
+          items: [
+            'integrations/cursor',
+            'integrations/continue',
+            'integrations/cline',
+            'integrations/vscode',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Frameworks',
+          items: [
+            'integrations/langchain',
+            'integrations/llamaindex',
+            'integrations/haystack',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Automation',
+          items: [
+            'integrations/n8n',
+            'integrations/make',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Notebooks',
+          items: [
+            'integrations/jupyter',
+            'integrations/marimo',
+          ],
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Examples',
+      items: [
+        'examples/overview',
+        'examples/javascript',
+        'examples/python',
+        'examples/java',
+        'examples/go',
+        'examples/dotnet',
+        'examples/php',
+        'examples/ruby',
+        'examples/rust',
       ],
     },
     {

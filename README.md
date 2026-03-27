@@ -259,7 +259,8 @@ Full documentation is available at **[https://docs.routerly.ai](https://docs.rou
 | [CLI Reference](docs/cli/commands.md) | Every command with examples |
 | [API Reference](docs/api/overview.md) | LLM proxy and management API |
 | [Self-Hosting Guide](docs/guides/self-hosting.md) | Docker, systemd, nginx, production checklist |
-| [Client Integration](docs/guides/client-integration.md) | OpenAI SDK, Anthropic SDK, LangChain, Cursor |
+| [Service](docs/service/overview.md) | HTTP server internals, routing engine, provider adapters |
+| [Integrations](docs/integrations/overview.md) | Cursor, Open WebUI, LangChain, LibreChat, and more |
 
 ---
 
