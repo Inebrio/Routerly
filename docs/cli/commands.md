@@ -1,398 +1,432 @@
-# CLI Commands Reference
+---
+title: Commands
+sidebar_position: 2
+---
 
-Complete reference for all Routerly CLI commands.
+# CLI Commands
 
-> **Prerequisites:** the service must be running and you must be logged in (`routerly auth login`).
+Complete reference for all `routerly` CLI commands.
 
 ---
 
-## auth
+## `routerly auth`
 
-Manage connections to Routerly server instances.
+### `routerly auth login`
 
-### auth login
+Authenticate with a Routerly service and save credentials locally.
 
-Log in to a Routerly server and save the session locally.
-
-```bash
-routerly auth login \
-  --url <server-url>    # default: http://localhost:3000
-  --email <email>
-  --password <password>
-  --alias <alias>       # friendly name for this account, default: "default"
+```
+routerly auth login [options]
 ```
 
-If `--email` or `--password` are omitted, you are prompted interactively (password input is hidden).
+| Option | Description |
+|--------|-------------|
+| `--url <url>` | Service URL (default: value from installation) |
+| `--email <email>` | Your dashboard email address |
+| `--password <password>` | Your password (prompted interactively if omitted) |
+| `--alias <name>` | Friendly name for this account |
 
-```bash
-# Interactive login
-routerly auth login --url http://localhost:3000
+If the email is already saved, you are asked whether to overwrite the existing entry or create a new one. The first account is automatically named `default`.
 
-# Non-interactive (for scripts)
-routerly auth login --url http://routerly.example.com \
-  --email admin@example.com --password secret --alias prod
+On success, a permanent **refresh token** is saved alongside the session token so future sessions are renewed automatically.
+
+### `routerly auth refresh [alias]`
+
+Manually obtain a new access token using the saved refresh token. Useful after a long suspension.
+
+```
+routerly auth refresh [alias]
 ```
 
-### auth logout
+If `alias` is omitted, the currently active account is used. Fails if no refresh token is stored (run `auth login` to re-authenticate).
 
-Remove saved credentials for an account.
+### `routerly auth logout [alias]`
 
-```bash
-routerly auth logout [--alias <alias>]
+```
+routerly auth logout [alias]
 ```
 
-### auth list
+Removes the saved account (defaults to the active account). Removes the access token and refresh token from local storage.
 
-List all saved server accounts.
+### `routerly auth ps`
 
-```bash
-routerly auth list
+List all saved accounts.
+
+```
+routerly auth ps
 ```
 
-### auth use
+The active account is marked with `*`.
 
-Switch the active account.
+### `routerly auth switch <alias>`
 
-```bash
-routerly auth use <alias>
+```
+routerly auth switch <alias>
 ```
 
-### auth whoami
+Sets the active account for subsequent commands.
 
-Show the currently active account and logged-in user.
+### `routerly auth rename <old-alias> <new-alias>`
 
-```bash
+```
+routerly auth rename <old-alias> <new-alias>
+```
+
+### `routerly auth whoami`
+
+```
 routerly auth whoami
 ```
 
+Prints the active account alias, email, role, and server URL.
+
 ---
 
-## model
+## `routerly model`
 
-Manage registered LLM models.
+### `routerly model list`
 
-### model list
-
-List all registered models in a table.
-
-```bash
-routerly model list
+```
+routerly model list [--json]
 ```
 
-Output columns: ID, Provider, Endpoint, Input $/1M, Output $/1M
+### `routerly model add`
 
-### model add {#model-add}
-
-Register a new LLM model.
-
-```bash
-routerly model add \
-  --id <id>              # Required. Unique model ID (e.g. gpt-4o, my-llama3)
-  --provider <provider>  # Required. openai | anthropic | gemini | ollama | mistral | cohere | xai | custom
-  --api-key <key>        # Provider API key (stored encrypted)
-  --endpoint <url>       # Override default provider endpoint
-  --input-price <usd>    # Cost per 1M input tokens in USD (auto-filled for known model IDs)
-  --output-price <usd>   # Cost per 1M output tokens in USD (auto-filled for known model IDs)
-  --daily-budget <usd>   # Global daily spend limit
-  --monthly-budget <usd> # Global monthly spend limit
+```
+routerly model add [options]
 ```
 
-**Default endpoints by provider:**
+| Option | Description |
+|--------|-------------|
+| `--id <id>` | Model identifier (e.g. `gpt-5-mini`) |
+| `--provider <provider>` | Provider ID: `openai`, `anthropic`, `gemini`, `mistral`, `cohere`, `xai`, `ollama`, `custom` |
+| `--api-key <key>` | Provider API key |
+| `--base-url <url>` | Override provider endpoint |
+| `--input-price <price>` | Input price per 1M tokens (USD) |
+| `--output-price <price>` | Output price per 1M tokens (USD) |
+| `--context-window <n>` | Max context window tokens |
 
-| Provider | Default endpoint |
-|----------|----------------|
-| `openai` | `https://api.openai.com/v1` |
-| `anthropic` | `https://api.anthropic.com` |
-| `gemini` | `https://generativelanguage.googleapis.com/v1beta/openai/` |
-| `ollama` | `http://localhost:11434/v1` |
+Calling without options launches an interactive wizard.
 
-**Examples:**
+### `routerly model edit`
 
-```bash
-# OpenAI (pricing preset applied automatically)
-routerly model add --id gpt-4o --provider openai --api-key sk-...
-
-# Anthropic
-routerly model add \
-  --id claude-3-5-sonnet-20241022 \
-  --provider anthropic \
-  --api-key sk-ant-...
-
-# Ollama local model (no API key)
-routerly model add --id llama3 --provider ollama --input-price 0 --output-price 0
-
-# Custom endpoint with budget cap
-routerly model add \
-  --id my-finetuned \
-  --provider custom \
-  --endpoint https://inference.myserver.com/v1 \
-  --input-price 1.0 \
-  --output-price 3.0 \
-  --monthly-budget 50
+```
+routerly model edit --id <id> [field options]
 ```
 
-### model remove
+Same options as `add`. Only specified fields are updated.
 
-Remove a registered model by ID.
+### `routerly model remove`
 
-```bash
-routerly model remove <id>
 ```
-
-```bash
-routerly model remove gpt-4o
+routerly model remove --id <id>
 ```
 
 ---
 
-## project
+## `routerly project`
 
-Manage Routerly projects.
+Project commands are organised into sub-groups. The first argument is always a **project name or ID**.
 
-### project list
+### `routerly project list`
 
-List all projects.
-
-```bash
-routerly project list
+```
+routerly project list [--json]
 ```
 
-Output columns: ID, Name, Slug, Routing Model, Models
+### `routerly project add`
 
-### project add {#project-add}
-
-Create a new project.
-
-```bash
-routerly project add \
-  --name <name>             # Required. Human-readable project name
-  --slug <slug>             # Required. URL slug (alphanumeric + dashes)
-  --routing-model <id>      # Required. Model ID to use for routing decisions
-  --models <ids>            # Comma-separated model IDs to associate
+```
+routerly project add [options]
 ```
 
-```bash
-# Basic project
-routerly project add \
-  --name "My App" \
-  --slug my-app \
-  --routing-model gpt-4o-mini \
-  --models gpt-4o,claude-3-5-sonnet-20241022,llama3
+| Option | Description |
+|--------|-------------|
+| `--name <name>` | Project display name |
+| `--slug <slug>` | URL-safe identifier (must be unique) |
+| `--models <ids>` | Comma-separated list of model IDs to assign |
+| `--timeout <ms>` | Default request timeout in ms |
+
+### `routerly project remove`
+
 ```
-
-The command prints the **project API token** (shown only once, save it).
-
-### project remove
-
-Remove a project by slug or ID.
-
-```bash
-routerly project remove <slug|id>
-```
-
-### project add-model {#project-add-model}
-
-Add a model to an existing project with optional per-project budget limits.
-
-```bash
-routerly project add-model \
-  --project <slug>          # Required. Project slug or ID
-  --model <id>              # Required. Model ID to add
-  --daily-budget <usd>      # Per-project daily spend limit for this model
-  --monthly-budget <usd>    # Per-project monthly spend limit for this model
-```
-
-```bash
-# Add gpt-4o to "my-app" with a $10/day limit
-routerly project add-model \
-  --project my-app \
-  --model gpt-4o \
-  --daily-budget 10
+routerly project remove <project>
 ```
 
 ---
 
-## user
+### Routing — `routerly project routing`
 
-Manage dashboard user accounts.
+#### `routerly project routing show <project>`
 
-### user list
+Display the routing configuration (auto-routing flag, routing model, fallback models, and policy stack).
 
-```bash
-routerly user list
+#### `routerly project routing update <project>`
+
+```
+routerly project routing update <project> [options]
 ```
 
-### user add
+| Option | Description |
+|--------|-------------|
+| `--routing-model <id>` | Model ID used for LLM-based routing decisions |
+| `--fallback-models <ids>` | Comma-separated fallback routing model IDs |
+| `--auto-routing` / `--no-auto-routing` | Enable or disable auto-routing |
 
-Create a new dashboard user.
+#### `routerly project routing policy list <project>`
+
+List all routing policies with their priority order, enabled status, and configuration.
+
+#### `routerly project routing policy enable <project> <type>`
+
+Enable a policy type (adds it to the stack if not present). Optionally pass `--config <json>` for policy-specific settings.
+
+Available types: `health`, `context`, `capability`, `budget-remaining`, `rate-limit`, `llm`, `performance`, `fairness`, `cheapest`
 
 ```bash
-routerly user add \
-  --email <email>       # Required
-  --password <password> # Required
+routerly project routing policy enable my-api health
+routerly project routing policy enable my-api llm --config '{"memoryCount":3}'
 ```
 
+#### `routerly project routing policy disable <project> <type>`
+
+Disable a policy without removing it from the stack.
+
+#### `routerly project routing policy reorder <project> <types>`
+
+Reorder the policy stack. Provide a comma-separated list of types in the desired evaluation order; any unlisted policies are appended at the end.
+
 ```bash
-routerly user add --email dev@example.com --password secure123
-```
-
-### user remove
-
-Remove a dashboard user.
-
-```bash
-routerly user remove <email>
+routerly project routing policy reorder my-api health,context,budget-remaining,llm,cheapest
 ```
 
 ---
 
-## role
+### Models — `routerly project model`
 
-Manage RBAC roles.
+#### `routerly project model list <project>`
 
-### role list
+List target models configured in the project, with their prompt hints.
 
-List all roles (built-in and custom).
+#### `routerly project model add <project> <model-id>`
 
 ```bash
-routerly role list
+routerly project model add my-api openai/gpt-5.2
+routerly project model add my-api anthropic/claude-opus-4-6 --prompt "Use for complex reasoning"
 ```
 
-### role define
+| Option | Description |
+|--------|-------------|
+| `--prompt <text>` | System prompt hint used when this model is selected |
 
-Create or update a custom role.
+#### `routerly project model remove <project> <model-id>`
 
-```bash
-routerly role define \
-  --name <name>                # Human-readable role name
-  --permissions <list>         # Comma-separated permissions
-```
+Remove a target model from the project.
 
-**Available permissions:**
+#### `routerly project model set-prompt <project> <model-id>`
 
-| Permission | Grants |
-|------------|--------|
-| `project:read` | View projects |
-| `project:write` | Create/update/delete projects |
-| `model:read` | View models |
-| `model:write` | Create/update/delete models |
-| `user:read` | View users |
-| `user:write` | Create/update/delete users |
-| `report:read` | Access usage reports |
+Update (or clear) the system prompt hint for a model.
 
 ```bash
-routerly role define \
-  --name "Billing Viewer" \
-  --permissions "report:read,model:read,project:read"
+routerly project model set-prompt my-api openai/gpt-5.2 --prompt "Fast tasks only"
+routerly project model set-prompt my-api openai/gpt-5.2 --prompt ""  # clear
 ```
 
 ---
 
-## report {#report}
+### Tokens — `routerly project token`
 
-Generate usage and cost reports.
+#### `routerly project token list <project>`
 
-### report usage
+List all API tokens for the project.
 
-Show aggregated usage grouped by model.
+#### `routerly project token create <project>`
 
-```bash
-routerly report usage \
-  --period <period>   # daily | weekly | monthly | all  (default: monthly)
-  --project <id>      # Filter by project ID
-```
+Create a new project API token. The token value is shown **once only**.
 
 ```bash
-# Monthly summary (default)
-routerly report usage
-
-# This week, filtered to one project
-routerly report usage --period weekly --project my-app
-
-# All-time
-routerly report usage --period all
+routerly project token create my-api
+routerly project token create my-api --labels "production,backend"
 ```
 
-Output table: Model, Calls, Errors, Input Tokens, Output Tokens, Cost (USD)
+| Option | Description |
+|--------|-------------|
+| `--labels <labels>` | Comma-separated labels for the token |
 
-### report calls
+Optionally add spending limits inline:
 
-Show the last N individual call records.
+| Option | Description |
+|--------|-------------|
+| `--limit <spec>` | Limit spec: `<model>:<metric>:<windowType>:<period>:<value>` (repeatable) |
 
-```bash
-routerly report calls \
-  --limit <n>         # Number of records to show (default: 20)
-  --project <id>      # Filter by project ID
-```
+Limit spec examples:
+- `openai/gpt-5.2:cost:period:monthly:10` — $10/month cap
+- `openai/gpt-5.2:calls:rolling:24:hours:500` — 500 calls per rolling 24 h
 
-```bash
-routerly report calls --limit 50 --project my-app
-```
+#### `routerly project token edit <project> <token-id>`
 
-Output table: Timestamp, Project, Model, In Tokens, Out Tokens, Cost, Latency, Outcome
+Add or remove limits on an existing token.
+
+| Option | Description |
+|--------|-------------|
+| `--add-limit <spec>` | Add a limit (repeatable) |
+| `--remove-limit <spec>` | Remove a limit matching model+metric+window (repeatable) |
+
+#### `routerly project token remove <project> <token-id>`
+
+Revoke and delete an API token.
 
 ---
 
-## service
+### Members — `routerly project member`
 
-View and configure the running service.
+#### `routerly project member list <project>`
 
-### service status
+List project members with their role.
 
-Show current service configuration and statistics.
-
-```bash
-routerly service status
-```
-
-Output:
-```
-Routerly Service Status
-
-  Server:        http://localhost:3000
-  Version:       0.0.1
-  Uptime:        12m 34s
-  Port:          3000
-  Host:          127.0.0.1
-  Dashboard:     enabled
-  Log level:     info
-  Timeout:       60000ms
-  Models:        4
-  Projects:      2
-```
-
-### service configure
-
-Update service settings. Changes take effect on the next service restart.
+#### `routerly project member add <project>`
 
 ```bash
-routerly service configure \
-  --port <n>              # TCP port
-  --host <host>           # Bind address (0.0.0.0 for all interfaces)
-  --dashboard <bool>      # true | false
-  --log-level <level>     # trace | debug | info | warn | error
-  --timeout <ms>          # Default per-model request timeout
+routerly project member add my-api --email user@example.com --role viewer
 ```
 
-```bash
-# Change port and enable verbose logging
-routerly service configure --port 8080 --log-level debug
+| Option | Description |
+|--------|-------------|
+| `--email <email>` | Member's email address |
+| `--role <role>` | Role to assign (`admin`, `editor`, `viewer`, or a custom role) |
 
-# Disable dashboard
-routerly service configure --dashboard false
+#### `routerly project member set-role <project>`
+
+```bash
+routerly project member set-role my-api --email user@example.com --role editor
+```
+
+#### `routerly project member remove <project>`
+
+```bash
+routerly project member remove my-api --email user@example.com
 ```
 
 ---
 
-## start
+## `routerly user`
 
-Start the Routerly service directly from the CLI.
+### `routerly user list`
 
-```bash
-routerly start
+```
+routerly user list [--json]
 ```
 
-This is a convenience shortcut equivalent to:
-```bash
-node --import tsx/esm packages/service/src/index.ts
+### `routerly user add`
+
 ```
+routerly user add --email <email> --role <role>
+```
+
+You will be prompted for the new user's password.
+
+### `routerly user remove`
+
+```
+routerly user remove --email <email>
+```
+
+---
+
+## `routerly role`
+
+### `routerly role list`
+
+```
+routerly role list [--json]
+```
+
+### `routerly role add`
+
+```
+routerly role add --name <name> --permissions <perm1,perm2,...>
+```
+
+Available permissions: `project:read`, `project:write`, `model:read`, `model:write`, `user:read`, `user:write`, `report:read`.
+
+### `routerly role edit`
+
+```
+routerly role edit --name <name> --permissions <perm1,perm2,...>
+```
+
+### `routerly role remove`
+
+```
+routerly role remove --name <name>
+```
+
+---
+
+## `routerly report`
+
+### `routerly report usage`
+
+Aggregated usage summary grouped by model.
+
+```
+routerly report usage [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--period <period>` | `daily`, `weekly`, `monthly` (default: `monthly`) |
+| `--project <slug>` | Filter to one project |
+| `--json` | JSON output |
+
+### `routerly report calls`
+
+Recent request log.
+
+```
+routerly report calls [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--limit <n>` | Number of records to return (default: 20) |
+| `--project <slug>` | Filter to one project |
+| `--json` | JSON output |
+
+---
+
+## `routerly service`
+
+### `routerly service status`
+
+```
+routerly service status [--json]
+```
+
+Same as `routerly status`.
+
+### `routerly service configure`
+
+```
+routerly service configure [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--port <n>` | Service port |
+| `--host <host>` | Bind address |
+| `--dashboard <bool>` | Enable/disable web dashboard |
+| `--log-level <level>` | `trace` / `debug` / `info` / `warn` / `error` |
+| `--timeout <ms>` | Global default request timeout |
+| `--public-url <url>` | External URL of the service |
+
+---
+
+## `routerly status`
+
+```
+routerly status [--json]
+```
+
+Check whether the active Routerly service is reachable. Prints URL, version, and uptime. Exit code `0` if the service is up, `1` otherwise.
+

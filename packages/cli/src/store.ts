@@ -8,6 +8,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 
 const CLI_DIR = join(homedir(), '.routerly', 'cli');
 const CLI_CONFIG_PATH = join(CLI_DIR, 'config.json');
+const CLI_INSTALL_CONFIG_PATH = join(homedir(), '.routerly', 'config', 'cli.json');
 
 export interface AccountEntry {
   /** Friendly alias chosen at login, e.g. "home", "work" */
@@ -16,10 +17,14 @@ export interface AccountEntry {
   serverUrl: string;
   /** Email used to log in */
   email: string;
-  /** Session token returned by POST /api/auth/login */
+  /** Short-lived access token (JWT, ~1h) returned by POST /api/auth/login */
   token: string;
   /** Token expiry timestamp (ms since epoch) */
   expiresAt: number;
+  /** Role of the user at login time */
+  role?: string;
+  /** Permanent refresh token — used to obtain new access tokens silently */
+  refreshToken?: string;
 }
 
 export interface CliConfig {
@@ -48,6 +53,17 @@ async function writeCliConfig(config: CliConfig): Promise<void> {
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
+
+/** Returns the service URL written by the installer, or null if not set. */
+export async function getDefaultServiceUrl(): Promise<string | null> {
+  try {
+    const raw = await readFile(CLI_INSTALL_CONFIG_PATH, 'utf-8');
+    const cfg = JSON.parse(raw) as { serviceUrl?: string };
+    return cfg.serviceUrl ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export async function listAccounts(): Promise<AccountEntry[]> {
   const cfg = await readCliConfig();
@@ -92,6 +108,18 @@ export async function removeAccount(alias: string): Promise<boolean> {
   return true;
 }
 
+export async function renameAccount(oldAlias: string, newAlias: string): Promise<'not_found' | 'conflict' | 'ok'> {
+  const cfg = await readCliConfig();
+  if (!cfg.accounts.find(a => a.alias === oldAlias)) return 'not_found';
+  if (cfg.accounts.find(a => a.alias === newAlias)) return 'conflict';
+  for (const acc of cfg.accounts) {
+    if (acc.alias === oldAlias) acc.alias = newAlias;
+  }
+  if (cfg.currentAlias === oldAlias) cfg.currentAlias = newAlias;
+  await writeCliConfig(cfg);
+  return 'ok';
+}
+
 export async function switchAccount(alias: string): Promise<boolean> {
   const cfg = await readCliConfig();
   if (!cfg.accounts.find(a => a.alias === alias)) return false;
@@ -107,7 +135,8 @@ export async function requireAccount(): Promise<AccountEntry> {
     console.error('Not logged in. Run: routerly auth login');
     process.exit(1);
   }
-  if (account.expiresAt < Date.now()) {
+  // If token is expired and there is no refresh token, fail immediately
+  if (account.expiresAt < Date.now() && !account.refreshToken) {
     console.error(`Session for "${account.alias}" has expired. Run: routerly auth login`);
     process.exit(1);
   }

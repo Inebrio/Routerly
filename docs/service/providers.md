@@ -1,147 +1,167 @@
-# Providers
+---
+title: Provider Adapters
+sidebar_position: 4
+---
 
-Routerly supports multiple LLM providers through a unified adapter interface. Each provider has
-a default API endpoint and handles the translation between Routerly's internal format and the
-provider's native API.
+# Provider Adapters
+
+Each LLM provider has a different HTTP API, authentication scheme, and wire format. Routerly bridges those differences through **provider adapters** — thin classes that translate a normalised internal request into the provider's specific format and translate the response back.
+
+Adapters are selected automatically based on the `provider` field in a model's configuration.
 
 ---
 
-## Supported Providers
+## Adapter Overview
 
-| Provider | ID | Default Endpoint | Auth Method | Notes |
-|----------|----|-----------------|-------------|-------|
-| OpenAI | `openai` | `https://api.openai.com/v1` | API key | GPT-4o, GPT-4-turbo, GPT-3.5-turbo, etc. |
-| Anthropic | `anthropic` | `https://api.anthropic.com` | API key | Claude 3.5 Sonnet, Claude 3 Opus, etc. |
-| Google Gemini | `gemini` | `https://generativelanguage.googleapis.com/v1beta/openai/` | API key | Gemini 1.5 Pro, Gemini 1.5 Flash, etc. |
-| Ollama | `ollama` | `http://localhost:11434/v1` | None | Local models: Llama 3, Mistral, Phi-3, etc. |
-| Mistral | `mistral` | - | API key | Mistral Large, Mistral Small, etc. |
-| Cohere | `cohere` | - | API key | Command R+, Command R, etc. |
-| xAI | `xai` | - | API key | Grok models |
-| Custom | `custom` | User-specified | Optional API key | Any OpenAI-compatible endpoint |
+| Provider ID | Class | Protocol | Notes |
+|-------------|-------|----------|-------|
+| `openai` | `OpenAIAdapter` | OpenAI Chat Completions | Native SDK; also handles `/v1/responses` |
+| `anthropic` | `AnthropicAdapter` | Anthropic Messages API | Full message conversion, prompt caching |
+| `gemini` | `GeminiAdapter` | OpenAI-compatible endpoint | Uses OpenAI SDK pointed at Google's OpenAI-compatible base URL |
+| `ollama` | `OllamaAdapter` | OpenAI-compatible endpoint | Uses OpenAI SDK pointed at local Ollama host |
+| `custom` | `CustomAdapter` | OpenAI-compatible endpoint | Any endpoint that speaks `/v1/chat/completions` |
 
 ---
 
-## Registering a Model
+## OpenAI Adapter
 
-Models are registered with the CLI `model add` command or via the Dashboard > Models page.
+Uses the official `openai` Node.js SDK.
 
-```bash
-# OpenAI, pricing preset applied automatically for known model IDs
-routerly model add --id gpt-4o --provider openai --api-key sk-...
+**Model ID resolution** — If the registered model ID contains a slash (e.g. `openai/gpt-4o`), the adapter strips the prefix and sends only the part after the slash (`gpt-4o`) to the provider. This lets you namespace model IDs within Routerly without confusing OpenAI.
 
-# Anthropic
-routerly model add \
-  --id claude-3-5-sonnet-20241022 \
-  --provider anthropic \
-  --api-key sk-ant-...
+**Endpoint override** — If `endpoint` is set in the model config, the adapter uses it instead of `https://api.openai.com/v1`. This lets you point to Azure OpenAI, local OpenAI proxies, or compatible services.
 
-# Google Gemini
-routerly model add \
-  --id gemini-1.5-pro \
-  --provider gemini \
-  --api-key AIza...
-
-# Ollama (local, no key required)
-routerly model add \
-  --id llama3 \
-  --provider ollama \
-  --input-price 0 \
-  --output-price 0
-
-# Mistral AI
-routerly model add \
-  --id mistral-large-latest \
-  --provider mistral \
-  --api-key ...
-
-# Custom OpenAI-compatible endpoint
-routerly model add \
-  --id my-finetuned-model \
-  --provider custom \
-  --endpoint https://my-inference-server.example.com/v1 \
-  --api-key optional-key \
-  --input-price 1.0 \
-  --output-price 3.0
-```
-
----
-
-## Built-in Pricing Presets
-
-When you register a model with one of these IDs, pricing is applied automatically without
-needing `--input-price` / `--output-price` flags:
-
-| Model ID | Input $/1M | Output $/1M |
-|----------|-----------|------------|
-| `gpt-4o` | $5.00 | $15.00 |
-| `gpt-4o-mini` | $0.15 | $0.60 |
-| `gpt-4-turbo` | $10.00 | $30.00 |
-| `gpt-3.5-turbo` | $0.50 | $1.50 |
-| `claude-3-5-sonnet-20241022` | $3.00 | $15.00 |
-| `claude-3-5-haiku-20241022` | $1.00 | $5.00 |
-| `claude-3-opus-20240229` | $15.00 | $75.00 |
-| `gemini-1.5-pro` | $1.25 | $5.00 |
-| `gemini-1.5-flash` | $0.075 | $0.30 |
-
-All prices are per 1 million tokens in USD.
-
----
-
-## Model Capabilities
-
-Some routing policies (notably `capability`) use capability flags to match models to requests.
-Set capabilities when registering a model or via the Dashboard:
+**Streaming** — Uses the SDK's native async iterator. Chunks are forwarded to the client as Server-Sent Events (SSE) as they arrive.
 
 ```json
+// Example model config
 {
-  "capabilities": {
-    "thinking":        false,
-    "vision":          true,
-    "functionCalling": true,
-    "json":            true
-  }
+  "id": "gpt-5-mini",
+  "provider": "openai",
+  "apiKey": "<encrypted>",
+  "endpoint": null
 }
-```
-
-| Flag | Description | Example models |
-|------|-------------|----------------|
-| `thinking` | Extended chain-of-thought / reasoning mode | claude-3-7-sonnet, claude-opus-4 |
-| `vision` | Image/multimodal inputs | gpt-4o, claude-3.5-sonnet, gemini-1.5-pro |
-| `functionCalling` | Tool/function call support | gpt-4o, claude-3.5-sonnet, gemini-1.5-pro |
-| `json` | JSON mode / `response_format: json_object` | gpt-4o, gpt-4o-mini |
-
----
-
-## Custom Provider
-
-The `custom` provider type accepts any OpenAI-compatible endpoint. This is useful for:
-
-- Self-hosted inference servers (vLLM, LM Studio, text-generation-webui)
-- Azure OpenAI deployments
-- Third-party proxies that speak the OpenAI protocol
-
-```bash
-routerly model add \
-  --id my-model \
-  --provider custom \
-  --endpoint https://my-server.com/v1 \
-  --api-key Bearer-token-or-leave-empty \
-  --input-price 0 \
-  --output-price 0
 ```
 
 ---
 
-## Provider Adapter Pattern
+## Anthropic Adapter
 
-Internally, each provider is implemented as a `ProviderAdapter`:
+Uses the official `@anthropic-ai/sdk` Node.js SDK.
 
-```typescript
-interface ProviderAdapter {
-  chat(model: ModelConfig, request: ChatCompletionRequest): Promise<ChatCompletionResponse>;
-  stream(model: ModelConfig, request: ChatCompletionRequest): AsyncGenerator<string>;
+**Message format conversion** — The Anthropic Messages API differs from OpenAI's Chat Completions format in several ways. The adapter handles all conversions automatically:
+
+| OpenAI format | Anthropic format |
+|---------------|-----------------|
+| `messages[].role = "tool"` | Converted to `role: "user"` with a `tool_result` content block |
+| `messages[].role = "assistant"` with `tool_calls` | Content blocks of type `tool_use` |
+| Consecutive tool result messages | Merged into a single `user` message (Anthropic requirement) |
+| `content` as an array of content parts | Mapped block-by-block, preserving `cache_control` fields |
+| `system` message in `messages[]` | Extracted and passed as Anthropic's top-level `system` field |
+| `image_url` content parts (data URI) | Converted to Anthropic base64 image blocks |
+| `image_url` content parts (URL) | Converted to Anthropic URL image source |
+
+**Prompt caching** — The adapter preserves any `cache_control` fields present in message content parts, enabling Anthropic's prompt caching feature to work end-to-end.
+
+**Streaming** — Uses the SDK's streaming API. SSE chunks are translated back to OpenAI-compatible format for `/v1/chat/completions` requests, or forwarded as-is for `/v1/messages` requests.
+
+```json
+// Example model config
+{
+  "id": "claude-haiku-4-5",
+  "provider": "anthropic",
+  "apiKey": "<encrypted>",
+  "endpoint": null
 }
 ```
 
-The `providers/index.ts` module maps provider IDs to their adapter implementations and
-automatically selects the correct adapter when the executor forwards a request.
+---
+
+## Gemini Adapter
+
+Uses the `openai` SDK pointed at Google's OpenAI-compatible base URL (`https://generativelanguage.googleapis.com/v1beta/openai`). No format conversion is needed — Gemini's compatibility layer handles it.
+
+```json
+// Example model config
+{
+  "id": "gemini-2.5-flash",
+  "provider": "gemini",
+  "apiKey": "<encrypted>"
+}
+```
+
+---
+
+## Ollama Adapter
+
+Uses the `openai` SDK pointed at the Ollama host. No API key is required (Ollama has no auth by default).
+
+Set the `baseUrl` field in the model config to your Ollama host:
+
+```json
+// Example model config
+{
+  "id": "llama3",
+  "provider": "ollama",
+  "endpoint": "http://localhost:11434/v1",
+  "apiKey": null
+}
+```
+
+If you run Ollama on a different machine, change the `endpoint` to match. Routerly treats Ollama models as zero-cost (`inputPerMillion: 0, outputPerMillion: 0`) by default unless you configure explicit pricing.
+
+---
+
+## Custom Adapter
+
+For any provider that exposes an OpenAI-compatible `/v1/chat/completions` endpoint. Uses the `openai` SDK with a custom `baseURL`.
+
+**Required field:** `endpoint` must be set to the provider's base URL.
+
+```json
+// Example model config
+{
+  "id": "my-local-llm",
+  "provider": "custom",
+  "endpoint": "http://192.168.1.50:8080/v1",
+  "apiKey": "optional-key-if-required"
+}
+```
+
+This adapter works with LM Studio, llama.cpp server, vLLM, LocalAI, and any other service that implements the OpenAI `/v1/chat/completions` interface.
+
+---
+
+## Mistral, Cohere, xAI
+
+These providers use the OpenAI-compatible protocol. Register them using the `custom` adapter with the appropriate `endpoint` and `apiKey`:
+
+| Provider | Endpoint |
+|----------|----------|
+| Mistral | `https://api.mistral.ai/v1` |
+| Cohere | `https://api.cohere.com/compatibility/v1` |
+| xAI (Grok) | `https://api.x.ai/v1` |
+
+```json
+// Example: Mistral
+{
+  "id": "mistral-large",
+  "provider": "custom",
+  "endpoint": "https://api.mistral.ai/v1",
+  "apiKey": "<encrypted>"
+}
+```
+
+---
+
+## Timeout Handling
+
+Each adapter respects the `timeout` field in the model config (in milliseconds). If not set, it falls back to the service-wide `defaultTimeoutMs` setting (`30000` ms). Timed-out requests are recorded as `outcome: "timeout"` in usage records and the `health` policy will penalise the model accordingly.
+
+---
+
+## Related
+
+- [Concepts — Providers](../concepts/providers) — provider catalogue with model lists and pricing
+- [Service — Routing Engine](./routing-engine) — how adapters are invoked after model selection
+- [Dashboard — Models](../dashboard/models) — how to register a model with a provider

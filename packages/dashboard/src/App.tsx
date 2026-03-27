@@ -93,8 +93,8 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
         <div className="sidebar-logo-inner">
           <Logo size={28} className="sidebar-logo-icon" />
           <span className="nav-label logo-full">
-            <span className="logo-name-full">Routerly</span>
-            <span className="logo-tag">LLM API Gateway</span>
+            <span className="logo-name-full">Routerly.ai</span>
+            <span className="logo-tag">One gateway. Any AI model. Total control.</span>
           </span>
         </div>
         <button className="sidebar-toggle" onClick={onToggle} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
@@ -137,7 +137,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
           <SettingsIcon size={15} />
           <span className="nav-label">Settings</span>
         </NavLink>
-        <button className="nav-item" style={{ color: 'var(--danger)' }} title={collapsed ? 'Sign Out' : undefined} onClick={handleLogout}>
+        <button className="nav-item sign-out" title="Sign Out" onClick={handleLogout}>
           <LogOut size={15} />
           <span className="nav-label">Sign Out</span>
         </button>

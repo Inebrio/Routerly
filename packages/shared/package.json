@@ -1,6 +1,6 @@
 {
   "name": "@routerly/shared",
-  "version": "0.1.1",
+  "version": "0.1.5",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
@@ -14,5 +14,8 @@
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
   }
 }

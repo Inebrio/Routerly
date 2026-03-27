@@ -46,8 +46,8 @@ export function SetupPage() {
       <div className="login-card" style={{ maxWidth: 420 }}>
         <div className="login-logo">
           <Logo size={52} />
-          <h1>Routerly</h1>
-          <p>Smart routing for all your AI models</p>
+          <h1>Routerly.ai</h1>
+          <p>One gateway. Any AI model. Total control.</p>
         </div>
 
         <div style={{
@@ -65,6 +65,29 @@ export function SetupPage() {
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginTop: 4 }}>
             Create the first admin account to start managing Routerly.
           </div>
+        </div>
+
+        <div style={{
+          background: 'rgba(234,179,8,0.08)',
+          border: '1px solid rgba(234,179,8,0.25)',
+          borderRadius: 8,
+          padding: '10px 14px',
+          marginBottom: 20,
+          fontSize: '0.78rem',
+          color: 'var(--text-secondary)',
+          lineHeight: 1.5,
+        }}>
+          <span style={{ fontWeight: 600, color: 'rgba(234,179,8,0.9)' }}>🚧 Beta</span>
+          {' '}— Routerly is actively evolving. Bugs may occur.{' '}
+          Your feedback helps shape what it becomes —{' '}
+          <a
+            href="https://github.com/Inebrio/Routerly/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: 'rgba(234,179,8,0.8)', textDecoration: 'underline' }}
+          >
+            report issues or share ideas
+          </a>.
         </div>
 
         <form onSubmit={handleSubmit}>

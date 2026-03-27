@@ -12,8 +12,8 @@
 set -euo pipefail
 
 # ── Distribution config ───────────────────────────────────────────────────────
-GITHUB_OWNER="routerly"
-GITHUB_REPO="routerly"
+GITHUB_OWNER="Inebrio"
+GITHUB_REPO="Routerly"
 REQUIRED_NODE_MAJOR=20
 
 # ── Colors ────────────────────────────────────────────────────────────────────
@@ -59,6 +59,48 @@ need_cmd() {
   return 0
 }
 
+# ── Try to load Node.js from known locations ──────────────────────────────────
+# When running via `curl | bash` the shell is non-interactive: .bashrc/.zshrc
+# are NOT sourced, so nvm, Homebrew and other package managers may be invisible.
+# This function probes the most common install locations and patches PATH/env
+# so that subsequent `node` calls work without requiring a new login shell.
+try_load_node_paths() {
+  # ── nvm ──────────────────────────────────────────────────────────────────────
+  local nvm_dir="${NVM_DIR:-$HOME/.nvm}"
+  if [ -s "$nvm_dir/nvm.sh" ]; then
+    # shellcheck disable=SC1091
+    source "$nvm_dir/nvm.sh" --no-use 2>/dev/null || true
+    # Also try to point at the default/lts alias without switching global version
+    if command -v nvm &>/dev/null; then
+      nvm use default 2>/dev/null || nvm use node 2>/dev/null || true
+    fi
+  fi
+
+  # ── Homebrew (macOS — Intel and Apple Silicon) ────────────────────────────────
+  for brew_bin in /opt/homebrew/bin /usr/local/bin; do
+    if [ -x "$brew_bin/brew" ] && [[ ":$PATH:" != *":$brew_bin:"* ]]; then
+      export PATH="$brew_bin:$PATH"
+    fi
+  done
+
+  # ── Common system paths (Linux distros, manual installs) ─────────────────────
+  for dir in /usr/local/bin /usr/bin /usr/sbin /snap/bin; do
+    if [ -d "$dir" ] && [[ ":$PATH:" != *":$dir:"* ]]; then
+      export PATH="$dir:$PATH"
+    fi
+  done
+
+  # ── Volta ─────────────────────────────────────────────────────────────────────
+  if [ -d "$HOME/.volta/bin" ] && [[ ":$PATH:" != *":$HOME/.volta/bin:"* ]]; then
+    export PATH="$HOME/.volta/bin:$PATH"
+  fi
+
+  # ── fnm ───────────────────────────────────────────────────────────────────────
+  if command -v fnm &>/dev/null; then
+    eval "$(fnm env 2>/dev/null)" || true
+  fi
+}
+
 # ── Node.js version check ─────────────────────────────────────────────────────
 check_node() {
   if need_cmd node; then
@@ -79,43 +121,136 @@ check_node() {
 install_node() {
   echo
   warn "Routerly requires Node.js ${REQUIRED_NODE_MAJOR}+."
-  echo -e "  Install options:"
+
+  # ── Detect available package managers ─────────────────────────────────────
+  local options=()   # display labels
+  local methods=()   # internal keys
+
+  # nvm is always offered (works on both macOS and Linux, no root needed)
+  options+=("nvm  (Node Version Manager — recommended, no sudo needed)")
+  methods+=("nvm")
+
   if [ "$PLATFORM" = "macos" ]; then
     if need_cmd brew; then
-      echo -e "  ${DIM}  brew install node${RESET}"
-      read -rp "  Install Node.js via Homebrew now? [Y/n] " answer
-      if [[ "$answer" =~ ^[Yy]$|^$ ]]; then
-        info "Running: brew install node"
-        brew install node
-        return 0
-      fi
+      options+=("brew (Homebrew)")
+      methods+=("brew")
+    else
+      options+=("brew (Homebrew — will install Homebrew first)")
+      methods+=("brew-install")
     fi
-    echo -e "  ${DIM}  brew install node${RESET}"
-    echo -e "    or download from https://nodejs.org"
-  elif [ "$PLATFORM" = "linux" ]; then
-    echo -e "  ${DIM}  Via nvm (recommended):${RESET}"
-    echo -e "    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash"
-    echo -e "    nvm install ${REQUIRED_NODE_MAJOR}"
-    echo
-    read -rp "  Install Node.js via nvm now? [Y/n] " answer
-    if [[ "$answer" =~ ^[Yy]$|^$ ]]; then
-      info "Installing nvm..."
+  fi
+
+  if [ "$PLATFORM" = "linux" ]; then
+    # Detect the Linux distro package manager
+    if need_cmd apt-get; then
+      options+=("apt  (Debian/Ubuntu — requires sudo)")
+      methods+=("apt")
+    elif need_cmd dnf; then
+      options+=("dnf  (Fedora/RHEL — requires sudo)")
+      methods+=("dnf")
+    elif need_cmd pacman; then
+      options+=("pacman (Arch Linux — requires sudo)")
+      methods+=("pacman")
+    elif need_cmd zypper; then
+      options+=("zypper (openSUSE — requires sudo)")
+      methods+=("zypper")
+    fi
+  fi
+
+  options+=("manual — I'll install Node.js myself")
+  methods+=("manual")
+
+  # ── Print menu ─────────────────────────────────────────────────────────────
+  echo -e "\n  How would you like to install Node.js ${REQUIRED_NODE_MAJOR}?\n"
+  local i
+  for i in "${!options[@]}"; do
+    echo -e "    ${BOLD}$((i+1))${RESET}  ${options[$i]}"
+  done
+  echo
+
+  local choice method
+  read -rp "  Choose an option [1]: " choice </dev/tty
+  choice="${choice:-1}"
+
+  # Validate input is a number in range
+  if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#methods[@]}" ]; then
+    warn "Invalid choice, defaulting to option 1."
+    choice=1
+  fi
+
+  method="${methods[$((choice-1))]}"
+
+  # ── Execute chosen method ──────────────────────────────────────────────────
+  case "$method" in
+
+    nvm)
+      info "Installing nvm and Node.js ${REQUIRED_NODE_MAJOR}..."
       curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-      export NVM_DIR="$HOME/.nvm"
+      export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
       # shellcheck disable=SC1091
       [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
       nvm install "$REQUIRED_NODE_MAJOR"
       nvm use "$REQUIRED_NODE_MAJOR"
-      return 0
-    fi
-  fi
-  echo
-  die "Please install Node.js ${REQUIRED_NODE_MAJOR}+ manually and re-run this script."
+      ;;
+
+    brew)
+      info "Running: brew install node"
+      brew install node
+      ;;
+
+    brew-install)
+      info "Installing Homebrew first..."
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      # Add brew to PATH for this session (Apple Silicon vs Intel)
+      if [ -x "/opt/homebrew/bin/brew" ]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+      elif [ -x "/usr/local/bin/brew" ]; then
+        eval "$(/usr/local/bin/brew shellenv)"
+      fi
+      info "Running: brew install node"
+      brew install node
+      ;;
+
+    apt)
+      info "Installing Node.js ${REQUIRED_NODE_MAJOR} via apt..."
+      curl -fsSL "https://deb.nodesource.com/setup_${REQUIRED_NODE_MAJOR}.x" | sudo -E bash -
+      sudo apt-get install -y nodejs
+      ;;
+
+    dnf)
+      info "Installing Node.js ${REQUIRED_NODE_MAJOR} via dnf..."
+      curl -fsSL "https://rpm.nodesource.com/setup_${REQUIRED_NODE_MAJOR}.x" | sudo bash -
+      sudo dnf install -y nodejs
+      ;;
+
+    pacman)
+      info "Installing nodejs via pacman..."
+      sudo pacman -Sy --noconfirm nodejs npm
+      ;;
+
+    zypper)
+      info "Installing nodejs via zypper..."
+      sudo zypper install -y nodejs"${REQUIRED_NODE_MAJOR}"
+      ;;
+
+    manual)
+      echo
+      echo -e "  Please install Node.js ${REQUIRED_NODE_MAJOR}+ from one of these sources:"
+      echo -e "    ${DIM}https://nodejs.org/en/download${RESET}"
+      echo -e "    ${DIM}https://github.com/nvm-sh/nvm${RESET}"
+      echo
+      die "Re-run this script after installing Node.js ${REQUIRED_NODE_MAJOR}+."
+      ;;
+  esac
 }
 
+# Probe known Node.js locations before checking (nvm/brew/volta/fnm are not
+# in PATH when running via `curl | bash` — shell is non-interactive)
+try_load_node_paths
 if ! check_node; then
   install_node
-  # Re-check after install
+  # Re-check after install: reload paths first (nvm/brew may have just been set up)
+  try_load_node_paths
   check_node || die "Node.js ${REQUIRED_NODE_MAJOR}+ still not available. Aborting."
 fi
 
@@ -124,7 +259,7 @@ need_cmd npm || die "'npm' not found. Something went wrong with the Node.js inst
 # ── Fetch latest release tarball ──────────────────────────────────────────────
 info "Fetching latest Routerly release..."
 
-TARBALL_URL=""
+RELEASE_TAG=""
 RELEASE_API="https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest"
 
 if need_cmd curl; then
@@ -136,13 +271,15 @@ else
 fi
 
 if [ -n "$RELEASE_JSON" ]; then
-  # Extract tarball URL from GitHub release assets (look for .tar.gz source code)
-  TARBALL_URL="$(echo "$RELEASE_JSON" | \
-    grep -o '"tarball_url": *"[^"]*"' | head -1 | \
-    sed 's/"tarball_url": *"//' | sed 's/"$//')"
+  RELEASE_TAG="$(echo "$RELEASE_JSON" | \
+    grep -o '"tag_name": *"[^"]*"' | head -1 | \
+    sed 's/"tag_name": *"//' | sed 's/"$//')"
 fi
 
-if [ -z "$TARBALL_URL" ]; then
+if [ -n "$RELEASE_TAG" ]; then
+  # Use the tag archive URL — always reflects the current commit pointed to by the tag
+  TARBALL_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/tags/${RELEASE_TAG}.tar.gz"
+else
   warn "Could not fetch latest release from GitHub API. Falling back to main branch..."
   TARBALL_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/heads/main.tar.gz"
 fi

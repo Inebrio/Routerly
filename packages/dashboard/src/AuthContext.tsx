@@ -37,21 +37,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   async function login(email: string, password: string) {
-    const { token, user } = await apiLogin(email, password);
+    const { token, refreshToken, user } = await apiLogin(email, password);
     localStorage.setItem('lr_token', token);
     localStorage.setItem('lr_user', JSON.stringify(user));
+    // Persist refresh token and expiry for silent renewal
+    if (refreshToken) localStorage.setItem('lr_refresh_token', refreshToken);
+    try {
+      const payload = JSON.parse(atob(token.split('.')[0]!.replace(/-/g, '+').replace(/_/g, '/'))) as { exp?: number };
+      if (payload.exp) localStorage.setItem('lr_expires_at', String(payload.exp * 1000));
+    } catch { /* expiry decoding is best-effort */ }
     setUser(user);
   }
 
   function loginDirect(token: string, user: AuthUser) {
     localStorage.setItem('lr_token', token);
     localStorage.setItem('lr_user', JSON.stringify(user));
+    try {
+      const payload = JSON.parse(atob(token.split('.')[0]!.replace(/-/g, '+').replace(/_/g, '/'))) as { exp?: number };
+      if (payload.exp) localStorage.setItem('lr_expires_at', String(payload.exp * 1000));
+    } catch { /* best-effort */ }
     setUser(user);
   }
 
   function logout() {
     localStorage.removeItem('lr_token');
     localStorage.removeItem('lr_user');
+    localStorage.removeItem('lr_refresh_token');
+    localStorage.removeItem('lr_expires_at');
     setUser(null);
   }
 
