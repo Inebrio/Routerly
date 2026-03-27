@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getUsage, type UsageStats, type UsageRecord } from '../../api';
-import { DateRangePicker, type DateRange } from '../../components/DateRangePicker';
+import { DateRangePicker, RECENT_PRESETS, type DateRange } from '../../components/DateRangePicker';
 import { MultiSelect } from '../../components/MultiSelect';
 import { useFilterState } from '../../hooks/useFilterState';
 
@@ -29,6 +29,8 @@ export function ProjectLogsTab() {
   const [lastUpdated, setLastUpdated]       = useState<Date | null>(null);
   const [pollInterval, setPollInterval]     = useFilterState<number>({ key: `project-${projectId}-filters-pollInterval`, defaultValue: 30_000 });
   const [refreshing, setRefreshing]         = useState(false);
+  const [page, setPage]                     = useState(1);
+  const [pageSize]                          = useState(50);
 
   const POLL_OPTIONS: { label: string; value: number }[] = [
     { label: 'Off',  value: 0 },
@@ -54,11 +56,20 @@ export function ProjectLogsTab() {
 
   const fetchStats = useCallback(() => {
     if (!projectId) return Promise.resolve();
-    const period = dateRange.from || dateRange.to ? 'custom' : 'all';
-    return getUsage(period, projectId, dateRange.from || undefined, dateRange.to || undefined)
+    // For recent (minutes/hours) presets, recalculate the range on every fetch
+    let from = dateRange.from || undefined;
+    let to = dateRange.to || undefined;
+    const recentPreset = RECENT_PRESETS.find(p => p.label === dateRange.label);
+    if (recentPreset) {
+      const fresh = recentPreset.range();
+      from = fresh.from;
+      to = fresh.to;
+    }
+    const period = from || to ? 'custom' : 'all';
+    return getUsage(period, projectId, from, to, page, pageSize)
       .then(data => { setStats(data); setLastUpdated(new Date()); })
       .catch(console.error);
-  }, [projectId, dateRange]);
+  }, [projectId, dateRange, page, pageSize]);
 
   const handleRefreshNow = useCallback(() => {
     setRefreshing(true);
@@ -72,6 +83,9 @@ export function ProjectLogsTab() {
     const id = setInterval(fetchStats, pollInterval);
     return () => clearInterval(id);
   }, [fetchStats, pollInterval]);
+
+  // Reset page when filters change
+  useEffect(() => { setPage(1); }, [dateRange, modelIds, callTypeFilter, outcomeFilter]);
 
   const modelOptions = useMemo(() => {
     if (!stats) return [];
@@ -244,7 +258,7 @@ export function ProjectLogsTab() {
           }}>
             Request Logs
             <span style={{ fontWeight: 400, marginLeft: 8, color: 'var(--text-muted)' }}>
-              ({filteredRecords.length})
+              ({stats.pagination ? `${filteredRecords.length} / ${stats.pagination.totalRecords}` : filteredRecords.length})
             </span>
           </h3>
 
@@ -256,6 +270,7 @@ export function ProjectLogsTab() {
               </p>
             </div>
           ) : (
+            <>
             <div className="table-wrap">
               <table>
                 <thead>
@@ -313,6 +328,36 @@ export function ProjectLogsTab() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination controls */}
+            {stats.pagination && stats.pagination.totalPages > 1 && (
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+                marginTop: 16, padding: '10px 0',
+              }}>
+                <button
+                  className="btn btn-sm btn-secondary"
+                  disabled={page <= 1}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                >
+                  ← Precedente
+                </button>
+                <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                  Pagina {stats.pagination.page} di {stats.pagination.totalPages}
+                  <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>
+                    ({stats.pagination.totalRecords} record totali)
+                  </span>
+                </span>
+                <button
+                  className="btn btn-sm btn-secondary"
+                  disabled={page >= stats.pagination.totalPages}
+                  onClick={() => setPage(p => p + 1)}
+                >
+                  Successiva →
+                </button>
+              </div>
+            )}
+            </>
           )}
         </>
       )}

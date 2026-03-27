@@ -298,13 +298,16 @@ export interface UsageStats {
   byModel: Record<string, { calls: number; inputTokens: number; outputTokens: number; cachedInputTokens: number; cost: number; errors: number }>;
   timeline: [string, number][];
   records: Array<UsageRecord>;
+  pagination?: { page: number; pageSize: number; totalRecords: number; totalPages: number };
 }
 
-export const getUsage = (period = 'monthly', projectId?: string, from?: string, to?: string) => {
+export const getUsage = (period = 'monthly', projectId?: string, from?: string, to?: string, page?: number, pageSize?: number) => {
   const params = new URLSearchParams({ period });
   if (projectId) params.set('projectId', projectId);
   if (from) params.set('from', from);
   if (to)   params.set('to', to);
+  if (page != null) params.set('page', String(page));
+  if (pageSize != null) params.set('pageSize', String(pageSize));
   return request<UsageStats>(`/usage?${params.toString()}`);
 };
 
