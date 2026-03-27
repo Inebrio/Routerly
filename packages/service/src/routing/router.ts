@@ -1,6 +1,7 @@
 import type { ChatCompletionRequest, ModelConfig, ProjectConfig, ProjectToken, RoutingCandidate } from '@routerly/shared';
 import { readConfig } from '../config/loader.js';
-import { isAllowed } from '../cost/budget.js';
+import { isAllowed, getViolatedLimits } from '../cost/budget.js';
+import type { LimitSnapshot } from '../cost/budget.js';
 import type { CandidateModel } from './policies/types.js';
 import { contextPolicy } from './policies/context.js';
 import { cheapestPolicy } from './policies/cheapest.js';
@@ -77,14 +78,16 @@ export async function routeRequest(
   // Esclude i modelli che hanno già superato uno o più limiti prima di
   // coinvolgere qualunque policy, così alle policy arrivano solo candidati
   // ancora validi.
-  const excludedByLimits: string[] = [];
+  type LimitExclusion = { modelId: string; violated: LimitSnapshot[] };
+  const excludedByLimits: LimitExclusion[] = [];
   const validCandidates: CandidateModel[] = [];
 
   await Promise.all(
     candidates.map(async (c) => {
       const allowed = await isAllowed(c.model, project, token);
       if (!allowed) {
-        excludedByLimits.push(c.model.id);
+        const violated = await getViolatedLimits(c.model, project, token);
+        excludedByLimits.push({ modelId: c.model.id, violated });
       } else {
         validCandidates.push(c);
       }
@@ -92,7 +95,21 @@ export async function routeRequest(
   );
 
   if (excludedByLimits.length > 0) {
-    log?.info({ excluded: excludedByLimits }, 'routing: models excluded — limits already exceeded');
+    for (const exc of excludedByLimits) {
+      log?.info(
+        {
+          modelId: exc.modelId,
+          violated: exc.violated.map(v => ({
+            metric: v.metric,
+            window: v.window,
+            limit: v.value,
+            current: v.current,
+            remaining: v.remaining,
+          })),
+        },
+        'routing: model excluded — limit exceeded',
+      );
+    }
   }
 
   if (validCandidates.length === 0) {
@@ -104,6 +121,20 @@ export async function routeRequest(
     model: request.model,
     messageCount: request.messages?.length ?? 0,
     projectId: project.id,
+    ...(excludedByLimits.length > 0
+      ? {
+          excludedByLimits: excludedByLimits.map(e => ({
+            model: e.modelId,
+            violated: e.violated.map(v => ({
+              metric: v.metric,
+              window: v.window,
+              limit: v.value,
+              current: v.current,
+              remaining: v.remaining,
+            })),
+          })),
+        }
+      : {}),
   });
   emit?.(intakeEntry);
 
