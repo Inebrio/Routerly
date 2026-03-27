@@ -53,7 +53,7 @@ No configuration options.
 
 **Type:** scoring
 
-Scores models by cost efficiency. The cheapest model gets `1.0`; others receive a proportional score (`minCost / theirCost`). Free models (e.g. Ollama) always get `1.0` and paid models are capped at `0.999`.
+Scores models by cost efficiency. The cheapest model gets `1.0`; others receive a proportional score (`minCost / theirCost`). Free models (e.g. Ollama) always get `1.0` and paid models are capped at `0.5` when free models coexist — ensuring a meaningful, visible gap between free and paid options.
 
 No configuration options.
 

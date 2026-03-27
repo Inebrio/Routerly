@@ -22,6 +22,7 @@ export async function buildServer() {
         ? { transport: { target: 'pino-pretty', options: { colorize: true } } }
         : {}),
     },
+    bodyLimit: 256 * 1024 * 1024, // 256 MB — support large files, vision, and 2M-token contexts
   });
 
   // ─── Plugins ─────────────────────────────────────────────────────────────────

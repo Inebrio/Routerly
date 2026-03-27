@@ -293,3 +293,16 @@ export async function isAllowed(
   return checkLimits(limits, relevant, now);
 }
 
+/**
+ * Returns the limits that are currently exceeded for a model in a project.
+ * Returns [] if the model is within all limits (i.e. it is allowed).
+ */
+export async function getViolatedLimits(
+  model: ModelConfig,
+  project: ProjectConfig,
+  token?: ProjectToken,
+): Promise<LimitSnapshot[]> {
+  const snapshots = await getLimitUsageSnapshot(model, project, token);
+  return snapshots.filter(s => s.remaining <= 0);
+}
+
