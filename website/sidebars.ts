@@ -28,6 +28,16 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'Service',
+      items: [
+        'service/overview',
+        'service/endpoints',
+        'service/routing-engine',
+        'service/providers',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Dashboard',
       items: [
         'dashboard/setup',
@@ -56,16 +66,6 @@ const sidebars: SidebarsConfig = {
         'api/overview',
         'api/llm-proxy',
         'api/management',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Service',
-      items: [
-        'service/overview',
-        'service/endpoints',
-        'service/routing-engine',
-        'service/providers',
       ],
     },
     {
