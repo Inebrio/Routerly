@@ -44,8 +44,8 @@ COPY packages/service/package.json ./packages/service/
 COPY packages/dashboard/package.json ./packages/dashboard/
 COPY packages/cli/package.json ./packages/cli/
 
-# Install production dependencies only
-RUN npm install --omit=dev
+# Install production dependencies only (--ignore-scripts skips `prepare`/husky which is dev-only)
+RUN npm install --omit=dev --ignore-scripts
 
 # Copy compiled outputs from builder stage
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
