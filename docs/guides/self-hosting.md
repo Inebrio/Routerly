@@ -13,12 +13,18 @@ This guide covers production deployment options for Routerly: Docker, systemd, l
 
 Docker is the easiest way to run Routerly in production. Data persists in a named volume.
 
+Two options are available: pull the pre-built image from Docker Hub, or build locally from source.
+
+### Option 1 — Pre-built image (Docker Hub)
+
+The official image is published on [`inebrio/routerly`](https://hub.docker.com/r/inebrio/routerly) for `linux/amd64` and `linux/arm64`.
+
 ### docker-compose.yml
 
 ```yaml
 services:
   routerly:
-    image: ghcr.io/inebrio/routerly:latest
+    image: inebrio/routerly:latest
     container_name: routerly
     ports:
       - "3000:3000"
@@ -41,6 +47,23 @@ volumes:
 ```bash
 docker compose up -d
 docker compose logs -f    # follow logs
+```
+
+### Option 2 — Build from source
+
+Use this if you want to run a local branch or a customised build.
+
+```bash
+git clone https://github.com/Inebrio/Routerly.git
+cd Routerly
+docker build -t routerly:local .
+docker run -d \
+  --name routerly \
+  -p 3000:3000 \
+  -v routerly_data:/data \
+  -e ROUTERLY_HOME=/data \
+  --restart unless-stopped \
+  routerly:local
 ```
 
 ### Backup
