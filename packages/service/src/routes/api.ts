@@ -644,10 +644,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // USAGE STATS
   // ══════════════════════════════════════════════════════════════════════════════
 
-  fastify.get<{ Querystring: { period?: string; projectId?: string; from?: string; to?: string } }>('/api/usage', async (req, reply) => {
+  fastify.get<{ Querystring: { period?: string; projectId?: string; from?: string; to?: string; page?: string; pageSize?: string } }>('/api/usage', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
     const records = await readConfig('usage');
     const { period = 'monthly', projectId, from, to } = req.query;
+    const page = Math.max(1, parseInt(req.query.page ?? '1', 10) || 1);
+    const pageSize = Math.min(200, Math.max(1, parseInt(req.query.pageSize ?? '50', 10) || 50));
 
     const now = new Date();
     let since = new Date(0);
@@ -660,8 +662,15 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       since.setHours(0, 0, 0, 0);
     } else if (period === 'monthly') { since = new Date(now); since.setDate(1); since.setHours(0, 0, 0, 0); }
     else if (period === 'custom') {
-      if (from) { since = new Date(from); since.setHours(0, 0, 0, 0); }
-      if (to)   { until = new Date(to);  until.setHours(23, 59, 59, 999); }
+      if (from) {
+        since = new Date(from);
+        // Only normalize to day boundary for date-only strings (YYYY-MM-DD)
+        if (from.length <= 10) since.setHours(0, 0, 0, 0);
+      }
+      if (to) {
+        until = new Date(to);
+        if (to.length <= 10) until.setHours(23, 59, 59, 999);
+      }
     }
 
     let filtered = records.filter(r => {
@@ -700,12 +709,21 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const totalCalls = filtered.length;
     const successCalls = filtered.filter(r => r.outcome === 'success').length;
 
+    // Paginate records (most recent first)
+    const sorted = [...filtered].reverse();
+    const totalRecords = sorted.length;
+    const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+    const safePage = Math.min(page, totalPages);
+    const startIdx = (safePage - 1) * pageSize;
+    const paged = sorted.slice(startIdx, startIdx + pageSize);
+
     return reply.send({
       summary: { totalCost, totalCalls, successCalls, errorCalls: totalCalls - successCalls, routingCalls, completionCalls, routingCost, completionCost },
       byModel,
       timeline: Object.entries(timeline).sort(([a], [b]) => a.localeCompare(b)).slice(-30),
       // Strip trace from list response to keep payload small
-      records: filtered.slice(-100).reverse().map(({ trace: _trace, ...r }) => r),
+      records: paged.map(({ trace: _trace, ...r }) => r),
+      pagination: { page: safePage, pageSize, totalRecords, totalPages },
     });
   });
 
