@@ -52,4 +52,4 @@ Tokens start with `sk-lr-` and are shown once. Copy it before closing the dialog
 ## Next steps
 
 - Read the full [LLM Proxy API reference](../api/llm-proxy) to see all supported request parameters.
-- See [Client Integration](../guides/client-integration) for a quick two-line migration guide.
+- See [Integrations](../integrations/overview) for ready-made setup guides for tools like Cursor, Open WebUI, and LangChain.

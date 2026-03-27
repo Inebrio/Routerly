@@ -60,10 +60,19 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'Service',
+      items: [
+        'service/overview',
+        'service/endpoints',
+        'service/routing-engine',
+        'service/providers',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Guides',
       items: [
         'guides/self-hosting',
-        'guides/client-integration',
       ],
     },
     {
@@ -77,6 +86,7 @@ const sidebars: SidebarsConfig = {
           items: [
             'integrations/open-webui',
             'integrations/openclaw',
+            'integrations/librechat',
           ],
         },
         {

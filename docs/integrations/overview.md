@@ -18,6 +18,7 @@ Chat interfaces that let you talk to your models directly.
 |------|-------------|
 | [Open WebUI](./open-webui) | Full-featured chat UI with multi-model support |
 | [OpenClaw](./openclaw) | Personal AI agent with Telegram, WhatsApp, Discord support |
+| [LibreChat](./librechat) | Self-hosted open-source chat interface with multi-endpoint support |
 
 ---
 
