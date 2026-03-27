@@ -29,6 +29,12 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
     setTrace(traceId, []);
 
     reply.hijack();
+    const origin = request.headers.origin;
+    if (origin) {
+      reply.raw.setHeader('Access-Control-Allow-Origin', origin);
+      reply.raw.setHeader('Access-Control-Allow-Credentials', 'true');
+      reply.raw.setHeader('Access-Control-Expose-Headers', 'x-routerly-trace-id');
+    }
     reply.raw.setHeader('Content-Type', 'text/event-stream');
     reply.raw.setHeader('Cache-Control', 'no-cache');
     reply.raw.setHeader('Connection', 'keep-alive');
@@ -37,7 +43,6 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
 
     const emit = (entry: TraceEntry) => {
       appendTrace(traceId, [entry]);
-      reply.raw.write(`data: ${JSON.stringify({ type: 'trace', entry })}\n\n`);
     };
 
     // 1. Route request

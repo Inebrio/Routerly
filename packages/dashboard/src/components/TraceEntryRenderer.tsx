@@ -20,16 +20,16 @@ function ScoreBar({ value }: { value: number | null | undefined }) {
   // Sanitize: converti stringhe numeriche e gestisci valori invalidi
   const numValue = typeof value === 'string' ? parseFloat(value) : value;
   const validValue = typeof numValue === 'number' && !isNaN(numValue) ? numValue : null;
-  
+
   if (validValue == null) return <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>—</span>;
-  const pct = Math.round(validValue * 100);
+  const pct = Math.floor(validValue * 100);
   const color = validValue >= 0.7 ? '#4ade80' : validValue >= 0.4 ? '#facc15' : '#f87171';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
       <div style={{ width: 60, height: 5, background: 'var(--border)', borderRadius: 3, overflow: 'hidden' }}>
         <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 3 }} />
       </div>
-      <span style={{ fontSize: '0.68rem', color, fontVariantNumeric: 'tabular-nums', minWidth: 30 }}>{validValue.toFixed(2)}</span>
+      <span style={{ fontSize: '0.68rem', color, fontVariantNumeric: 'tabular-nums', minWidth: 30 }}>{validValue.toFixed(3)}</span>
     </div>
   );
 }
@@ -41,6 +41,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
   const isError        = e.message === 'model:error';
   const isThinking     = e.message === 'model:thinking';
   const isRecap        = e.message === 'router:recap';
+  const isIntake       = e.message === 'router:intake';
 
   const labelColor = isError ? 'var(--danger)' : isThinking ? '#a78bfa' : isModelPrompt ? '#c4b5fd' : isRecap ? '#34d399' : 'var(--accent)';
 
@@ -130,6 +131,37 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
                 {JSON.stringify(responseJSON, null, 2)}
               </pre>
             </details>
+          )}
+        </div>
+
+      ) : isIntake ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <details>
+            <summary style={{ fontSize: '0.62rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>details</summary>
+            <pre style={{ ...preStyle, margin: '4px 0 0' }}>{JSON.stringify({
+              model: e.details?.model,
+              messageCount: e.details?.messageCount,
+              projectId: e.details?.projectId,
+            }, null, 2)}</pre>
+          </details>
+          {(e.details?.excludedByLimits ?? []).length > 0 && (
+            <div>
+              <div style={{ fontSize: '0.6rem', color: '#f87171', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 4 }}>EXCLUDED BY LIMITS</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {(e.details.excludedByLimits as any[]).map((exc: any, i: number) => (
+                  <div key={i} style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 'var(--radius-sm)', padding: '5px 10px' }}>
+                    <div style={{ fontSize: '0.68rem', color: '#f87171', fontWeight: 600, marginBottom: exc.violated?.length ? 4 : 0 }}>{exc.model}</div>
+                    {(exc.violated ?? []).map((v: any, j: number) => (
+                      <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.62rem', color: 'var(--text-muted)' }}>
+                        <span style={{ color: '#fca5a5', fontWeight: 600 }}>{v.metric}</span>
+                        <span>{v.window}</span>
+                        <span style={{ marginLeft: 'auto', color: '#f87171' }}>{v.current} / {v.limit}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
 

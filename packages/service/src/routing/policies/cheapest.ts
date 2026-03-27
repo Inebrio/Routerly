@@ -27,15 +27,15 @@ export const cheapestPolicy: PolicyFn = async ({ candidates }) => {
   const minPaid   = paidCosts.length > 0 ? Math.min(...paidCosts) : 0;
 
   // Quando esistono modelli gratuiti, i modelli a pagamento vengono scalati
-  // al massimo a 0.999 così un modello a $0 supera sempre qualsiasi modello
-  // a pagamento, anche il più economico (che altrimenti otterrebbe 1.0).
-  const paidCeiling = hasFreeModel ? 0.999 : 1.0;
+  // al massimo a 0.5: il modello gratuito supera sempre i modelli a pagamento
+  // con un gap visibile e proporzionale (cheapest paid = 0.5, 2x più caro = 0.25...).
+  const paidCeiling = hasFreeModel ? 0.5 : 1.0;
 
   const routing = costs.map(({ id, avgCost }) => ({
     model: id,
     point: avgCost === 0
       ? 1.0                                       // modello gratuito → massimo assoluto
-      : paidCeiling * (minPaid / avgCost),         // rapporto proporzionale, < 1 se esiste un modello gratuito
+      : paidCeiling * (minPaid / avgCost),         // proporzionale tra paid; se esiste gratuito, max 0.5
     avgCostPerMillion: avgCost,
   }));
 
