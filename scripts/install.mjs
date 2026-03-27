@@ -124,6 +124,11 @@ async function confirm(prompt, defaultYes = true) {
 // ─── Banner ───────────────────────────────────────────────────────────────────
 console.log('\n' + c.bold(c.cyan('  Routerly')) + c.dim('  Installer') + '\n');
 console.log(c.dim('  Self-hosted LLM gateway — https://github.com/Inebrio/Routerly\n'));
+console.log(
+  c.yellow('  ◆ Beta') + c.dim(' — Routerly is in active development. You may encounter bugs.') + '\n' +
+  c.dim('  Your feedback helps the project grow — report issues or share ideas:') + '\n' +
+  c.dim('  https://github.com/Inebrio/Routerly/issues') + '\n'
+);
 
 // ─── Data directories ────────────────────────────────────────────────────────
 // cliHome  : always per-user — each user that runs the CLI gets their own
