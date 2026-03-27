@@ -73,16 +73,20 @@ This installs Routerly as a Windows Service and adds the CLI to your PATH.
 
 ## Docker
 
-The official Docker image is the recommended way to run Routerly in production.
+Two options are available: pull the pre-built image from Docker Hub (recommended), or build it yourself from source.
 
-### docker-compose (recommended)
+### Option 1 — Pre-built image (Docker Hub)
+
+The official image is published on [Docker Hub](https://hub.docker.com/r/inebrio/routerly) for `linux/amd64` and `linux/arm64`.
+
+#### docker-compose (recommended)
 
 Create a `docker-compose.yml`:
 
 ```yaml
 services:
   routerly:
-    image: ghcr.io/inebrio/routerly:latest
+    image: inebrio/routerly:latest
     ports:
       - "3000:3000"
     volumes:
@@ -100,13 +104,11 @@ volumes:
   routerly_data:
 ```
 
-Then start it:
-
 ```bash
 docker compose up -d
 ```
 
-### docker run
+#### docker run
 
 ```bash
 docker run -d \
@@ -115,7 +117,37 @@ docker run -d \
   -v routerly_data:/data \
   -e ROUTERLY_HOME=/data \
   --restart unless-stopped \
-  ghcr.io/inebrio/routerly:latest
+  inebrio/routerly:latest
+```
+
+### Option 2 — Build from source
+
+Use this if you want to run a local branch or a customised build.
+
+```bash
+git clone https://github.com/Inebrio/Routerly.git
+cd Routerly
+docker build -t routerly:local .
+docker run -d \
+  --name routerly \
+  -p 3000:3000 \
+  -v routerly_data:/data \
+  -e ROUTERLY_HOME=/data \
+  --restart unless-stopped \
+  routerly:local
+```
+
+Or with docker-compose, add a `docker-compose.override.yml` next to your existing `docker-compose.yml`:
+
+```yaml
+services:
+  routerly:
+    build: ./Routerly
+    image: routerly:local
+```
+
+```bash
+docker compose up -d --build
 ```
 
 ---
