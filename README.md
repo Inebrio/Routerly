@@ -15,6 +15,7 @@
     <img src="https://img.shields.io/badge/License-AGPL--3.0-blue?style=flat-square" alt="License: AGPL-3.0" />
     <img src="https://img.shields.io/badge/Self--hosted-✓-6366f1?style=flat-square" alt="Self-hosted" />
     <img src="https://img.shields.io/badge/Docker-supported-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker supported" />
+    <a href="https://hub.docker.com/r/inebrio/routerly"><img src="https://img.shields.io/docker/pulls/inebrio/routerly?style=flat-square&logo=docker&logoColor=white&label=Docker%20Hub" alt="Docker Hub" /></a>
     <img src="https://img.shields.io/badge/OpenAI%20compatible-✓-412991?style=flat-square&logo=openai&logoColor=white" alt="OpenAI compatible" />
     <img src="https://img.shields.io/badge/Anthropic%20compatible-✓-CC785C?style=flat-square" alt="Anthropic compatible" />
     <a href="https://cla-assistant.io/Inebrio/Routerly"><img src="https://cla-assistant.io/readme/badge/Inebrio/Routerly" alt="CLA assistant" /></a>
@@ -36,6 +37,17 @@ curl -fsSL https://www.routerly.ai/install.sh | bash
 **Windows (PowerShell):**
 ```powershell
 powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
+```
+
+**Docker:**
+```bash
+docker run -d \
+  --name routerly \
+  -p 3000:3000 \
+  -v routerly_data:/data \
+  -e ROUTERLY_HOME=/data \
+  --restart unless-stopped \
+  inebrio/routerly:latest
 ```
 
 ```bash
@@ -248,7 +260,7 @@ Full documentation is available at **[https://docs.routerly.ai](https://docs.rou
 
 | | |
 |---|---|
-| [Installation](docs/getting-started/installation.md) | One-line install, Docker, manual setup |
+| [Installation](docs/getting-started/installation.md) | One-line install, Docker Hub image, build from source |
 | [Quick Start](docs/getting-started/quick-start.md) | First model, project, and API call in 5 minutes |
 | [Configuration](docs/getting-started/configuration.md) | Settings file, environment variables, security |
 | [Architecture](docs/concepts/architecture.md) | How the gateway works end-to-end |
