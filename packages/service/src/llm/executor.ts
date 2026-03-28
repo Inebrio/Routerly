@@ -161,15 +161,21 @@ export async function llmChat(
       : undefined;
     const responseJSON = isRouting ? response : undefined;
 
+    const inputTokens = response.usage?.prompt_tokens ?? 0;
+    const outputTokens = response.usage?.completion_tokens ?? 0;
+    const tokensPerSec = latencyMs > 0 ? Math.round((inputTokens + outputTokens) / (latencyMs / 1000)) : 0;
+
     emit?.({
       panel: res,
       message: 'model:success',
       details: {
         modelId: model.id,
-        inputTokens: response.usage?.prompt_tokens,
+        inputTokens,
         cachedInputTokens: response.usage?.prompt_tokens_details?.cached_tokens,
-        outputTokens: response.usage?.completion_tokens,
+        outputTokens,
         latencyMs,
+        ttftMs: latencyMs,  // non-streaming: tutta la latenza ≡ TTFT
+        tokensPerSec,
         ...(responseText != null ? { responseText } : {}),
         ...(responseJSON != null ? { responseJSON } : {}),
       },
@@ -367,6 +373,7 @@ export async function llmStream(
     } finally {
       const latencyMs = Date.now() - t0;
       if (outcome === 'success') {
+        const tokensPerSec = latencyMs > 0 ? Math.round((inputTokens + outputTokens) / (latencyMs / 1000)) : 0;
         emit?.({
           panel: res,
           message: 'model:success',
@@ -376,6 +383,8 @@ export async function llmStream(
             cachedInputTokens: cachedInputTokens > 0 ? cachedInputTokens : undefined,
             outputTokens,
             latencyMs,
+            ttftMs,
+            tokensPerSec,
           },
         });
       }
