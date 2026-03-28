@@ -64,6 +64,12 @@ Filters out models whose context window is smaller than the current request's es
 
 Uses a separate LLM call to decide which model to route to, based on request content. This policy is experimental and introduces an extra API call per request.
 
+**Config options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `thinking` | `boolean` | `false` | If `true` and the routing model supports extended thinking (e.g. Claude with thinking capability), the routing call uses it for more accurate decisions. **Warning:** this increases routing latency significantly. |
+
 **Use when:** you want dynamic model selection based on request semantics.
 
 ### `rate-limit`

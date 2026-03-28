@@ -37,6 +37,9 @@ export function ProjectRoutingTab() {
   const [policies, setPolicies] = useState<PolicyItem[]>([]);
   const [targetModels, setTargetModels] = useState<TargetModel[]>([]);
 
+  // Advanced section open state per policy index
+  const [advancedOpen, setAdvancedOpen] = useState<Set<number>>(new Set());
+
   // Drag state
   const [draggedTargetIdx, setDraggedTargetIdx] = useState<number | null>(null);
   const [draggedPolicyIdx, setDraggedPolicyIdx] = useState<number | null>(null);
@@ -454,33 +457,134 @@ export function ProjectRoutingTab() {
                       </div>
 
                       <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>
-                          <input
-                            type="checkbox"
-                            checked={policy.config?.memory ?? false}
-                            onChange={(e) => updatePolicyConfig(idx, { memory: e.target.checked })}
-                            style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
-                          />
-                          Memory
-                        </label>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginLeft: 22, lineHeight: 1.4, marginBottom: (policy.config?.memory ?? false) ? 8 : 12 }}>
-                          If enabled, the last N messages from the conversation history are included in the routing prompt to give the AI router additional context.
-                        </p>
-                        {(policy.config?.memory ?? false) && (
-                          <div style={{ marginLeft: 22, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Previous messages</label>
-                            <input
-                              type="number"
-                              min={1}
-                              max={50}
-                              className="form-input"
-                              style={{ width: 70, padding: '4px 8px', fontSize: '0.8rem' }}
-                              value={policy.config?.memoryCount ?? 5}
-                              onChange={e => updatePolicyConfig(idx, { memoryCount: Math.max(1, Number(e.target.value)) })}
-                              onMouseDown={e => e.stopPropagation()}
-                            />
+                        <details
+                          open={advancedOpen.has(idx)}
+                          onToggle={(e) => {
+                            const open = (e.currentTarget as HTMLDetailsElement).open;
+                            setAdvancedOpen(prev => {
+                              const next = new Set(prev);
+                              open ? next.add(idx) : next.delete(idx);
+                              return next;
+                            });
+                          }}
+                        >
+                          <summary style={{ fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer', userSelect: 'none', color: 'var(--text-secondary)', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: '0.7rem', display: 'inline-block', transform: advancedOpen.has(idx) ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s ease' }}>▶</span> Advanced
+                          </summary>
+                          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 0 }}>
+
+                            <div style={{ paddingBottom: 10 }}>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>
+                                <input
+                                  type="checkbox"
+                                  checked={policy.config?.memory ?? false}
+                                  onChange={(e) => updatePolicyConfig(idx, { memory: e.target.checked })}
+                                  style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                                />
+                                Memory
+                              </label>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginLeft: 22, lineHeight: 1.4, marginBottom: (policy.config?.memory ?? false) ? 8 : 0 }}>
+                                If enabled, the last N messages from the conversation history are included in the routing prompt to give the AI router additional context.
+                              </p>
+                              {(policy.config?.memory ?? false) && (
+                                <div style={{ marginLeft: 22, marginTop: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Previous messages</label>
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    max={50}
+                                    className="form-input"
+                                    style={{ width: 70, padding: '4px 8px', fontSize: '0.8rem' }}
+                                    value={policy.config?.memoryCount ?? 5}
+                                    onChange={e => updatePolicyConfig(idx, { memoryCount: Math.max(1, Number(e.target.value)) })}
+                                    onMouseDown={e => e.stopPropagation()}
+                                  />
+                                </div>
+                              )}
+                            </div>
+
+                            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, paddingBottom: 10 }}>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>
+                                <input
+                                  type="checkbox"
+                                  checked={policy.config?.thinking ?? false}
+                                  onChange={(e) => updatePolicyConfig(idx, { thinking: e.target.checked })}
+                                  style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                                />
+                                Thinking
+                              </label>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginLeft: 22, lineHeight: 1.4, marginBottom: 0 }}>
+                                If enabled and the routing model supports it, extended thinking is used for more accurate routing decisions. This increases latency significantly.
+                              </p>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, paddingBottom: 10 }}>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>
+                                <input
+                                  type="checkbox"
+                                  checked={policy.config?.includeReason ?? false}
+                                  onChange={(e) => updatePolicyConfig(idx, { includeReason: e.target.checked })}
+                                  style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                                />
+                                Include Reason
+                              </label>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginLeft: 22, lineHeight: 1.4, marginBottom: 0 }}>
+                                If enabled, the routing model adds a brief explanation for each score. Useful for debugging but increases output tokens.
+                              </p>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, paddingBottom: 10 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: 160 }}>Max completion tokens</label>
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  className="form-input"
+                                  style={{ width: 80, padding: '4px 8px', fontSize: '0.8rem' }}
+                                  placeholder="auto"
+                                  value={policy.config?.maxCompletionTokens ?? ''}
+                                  onChange={e => {
+                                    const v = e.target.value.replace(/[^0-9]/g, '');
+                                    updatePolicyConfig(idx, { maxCompletionTokens: v === '' ? undefined : Number(v) });
+                                  }}
+                                  onBlur={e => {
+                                    const v = e.target.value.replace(/[^0-9]/g, '');
+                                    if (v !== '' && Number(v) < 50) updatePolicyConfig(idx, { maxCompletionTokens: 50 });
+                                  }}
+                                  onMouseDown={e => e.stopPropagation()}
+                                />
+                              </div>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginBottom: 0, lineHeight: 1.4 }}>
+                                Limits the routing model output tokens. Leave empty to use the provider default.
+                              </p>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: 160 }}>Max prompt chars</label>
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  className="form-input"
+                                  style={{ width: 80, padding: '4px 8px', fontSize: '0.8rem' }}
+                                  placeholder="auto"
+                                  value={policy.config?.maxUserMessageChars ?? ''}
+                                  onChange={e => {
+                                    const v = e.target.value.replace(/[^0-9]/g, '');
+                                    updatePolicyConfig(idx, { maxUserMessageChars: v === '' ? undefined : Math.max(100, Number(v)) });
+                                  }}
+                                  onMouseDown={e => e.stopPropagation()}
+                                />
+                              </div>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginBottom: 0, lineHeight: 1.4 }}>
+                                Truncates the routing prompt after this many characters. Leave empty for no limit.
+                              </p>
+                            </div>
+
                           </div>
-                        )}
+                        </details>
                       </div>
 
                     </div>

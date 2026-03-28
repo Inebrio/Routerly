@@ -305,6 +305,28 @@ export function DateRangePicker({ value, onChange }: Props) {
               <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', padding: '6px 12px 2px' }}>
                 Recenti
               </div>
+              {/* "From now" — freezes 'from' to the clicked instant, open-ended 'to' */}
+              {(() => {
+                const active = value.label === 'From now';
+                return (
+                  <button
+                    onClick={() => handlePreset({ from: new Date().toISOString(), to: '', label: 'From now' })}
+                    style={{
+                      background: active ? 'var(--accent, #6366f1)' : 'transparent',
+                      border: 'none', borderRadius: 6,
+                      padding: '7px 12px', textAlign: 'left',
+                      color: active ? '#fff' : 'var(--text-primary)',
+                      fontSize: '0.84rem', cursor: 'pointer',
+                      fontWeight: active ? 600 : 400,
+                      transition: 'background 0.1s',
+                    }}
+                    onMouseEnter={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-elevated)'; }}
+                    onMouseLeave={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                  >
+                    From now
+                  </button>
+                );
+              })()}
               {RECENT_PRESETS.map(p => {
                 const active = p.label === value.label;
                 return (

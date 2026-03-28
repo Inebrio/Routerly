@@ -9,10 +9,11 @@ import type { PolicyFn } from './types.js';
 
 function buildSystemPrompt(
   candidates: { id: string; prompt?: string; limits?: LimitSnapshot[] }[],
-  additionalPromptInfo?: string,
+  options: { additionalPromptInfo?: string; includeReason?: boolean } = {},
 ): string {
-  const hasAnyPrompt  = candidates.some(c => c.prompt);
-  const hasAnyLimits  = candidates.some(c => c.limits && c.limits.length > 0);
+  const { additionalPromptInfo, includeReason = false } = options;
+  const hasAnyPrompt = candidates.some(c => c.prompt);
+  const hasAnyLimits = candidates.some(c => c.limits && c.limits.length > 0);
 
   const modelList = candidates
     .map(c => {
@@ -29,35 +30,39 @@ function buildSystemPrompt(
     .join('\n');
 
   const guidanceRule = hasAnyPrompt
-    ? `- When a model has a "routing_guidance" field, treat it as a direct instruction from the operator about when that model should be preferred. Weight it heavily in your scoring: a request that matches the guidance should receive a high score (≥ 0.8), while a request that clearly contradicts it should receive a low score (≤ 0.3).`
+    ? `- routing_guidance fields are operator instructions — weight them heavily: matching request → score ≥ 0.8, contradicting → score ≤ 0.3.`
     : '';
 
   const limitsRule = hasAnyLimits
-    ? `- When a model has a "limits" block, each entry shows the current consumption vs the configured threshold for a given window. A model with low "remaining" quota is approaching exhaustion: prefer models with more headroom, unless other factors strongly favour the constrained model.`
+    ? `- limits blocks show current consumption vs threshold — prefer models with more "remaining" headroom unless other factors strongly justify the opposite.`
     : '';
 
-  const extraRules = [guidanceRule, limitsRule].filter(Boolean).map(r => `- ${r.replace(/^- /, '')}`).join('\n');
+  const extraRules = [guidanceRule, limitsRule].filter(Boolean).join('\n');
 
   const additionalBlock = additionalPromptInfo?.trim()
     ? `\n\nAdditional context:\n${additionalPromptInfo.trim()}`
     : '';
 
-  return `You are a routing assistant. Score each model by how well it fits the request (0.0 = worst, 1.0 = best).
+  const entryFormat = includeReason
+    ? `{ "model": "<id>", "point": <0.0-1.0>, "reason": "<brief>" }`
+    : `{ "model": "<id>", "point": <0.0-1.0> }`;
 
-"Best fit" is the most appropriate model, not the most powerful. Match task complexity to model capability: simple tasks suit smaller models; complex tasks need stronger ones. Using a flagship model for a trivial task is a poor fit.
+  return `You are a routing assistant. Score each model 0.0–1.0 (worst → best).
 
-Available models:
+Match complexity to capability: simple tasks → cheap models, hard tasks → powerful models.
+
+Models:
 ${modelList}
 
 Rules:
 - Return ONLY a JSON object — no markdown, no extra text.
-- Include ALL models using their exact id strings.
-- Scores must reflect real differences; avoid uniform or near-identical values.${extraRules ? `\n${extraRules}` : ''}
+- Include ALL models with their exact id strings.
+- Scores must differ meaningfully.${extraRules ? `\n${extraRules}` : ''}
 
 Format:
 {
   "routing": [
-    { "model": "<model_id>", "point": <0.0-1.0>, "reason": "<brief reason>" },
+    ${entryFormat},
     ...
   ]
 }${additionalBlock}`;
@@ -66,6 +71,7 @@ Format:
 function buildUserMessage(
   request: { messages: { role: string; content: unknown }[] },
   memoryMessages?: { role: string; content: unknown }[],
+  maxChars?: number,
 ): string {
   const msgs = request.messages as Array<{ role: string; content: unknown }>;
 
@@ -83,6 +89,7 @@ function buildUserMessage(
     ? `System prompt:\n${systemContent}\n\n`
     : '';
 
+  let result: string;
   if (memoryMessages && memoryMessages.length > 0) {
     const historyBlock = memoryMessages
       .map(m => {
@@ -90,28 +97,65 @@ function buildUserMessage(
         return `[assistant]: ${c}`;
       })
       .join('\n');
-    return `${systemBlock}Previous assistant responses (most recent last):\n${historyBlock}\n\nCurrent user request:\n${userContent}`;
+    result = `${systemBlock}Previous assistant responses (most recent last):\n${historyBlock}\n\nCurrent user request:\n${userContent}`;
+  } else {
+    result = `${systemBlock}User request:\n${userContent}`;
   }
 
-  return `${systemBlock}User request:\n${userContent}`;
+  if (maxChars != null && result.length > maxChars) {
+    result = result.slice(0, maxChars) + '\n[truncated]';
+  }
+
+  return result;
 }
 
-function parseRoutingResponse(text: string): { model: string; point: number; reason?: string }[] | null {
+function parseRoutingResponse(
+  text: string,
+  log?: { info: (obj: object, msg?: string) => void; warn: (obj: object, msg?: string) => void },
+): { model: string; point: number; reason?: string }[] | null {
   // strip markdown code fences if present
   const cleaned = text.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/, '').trim();
+
+  // 1) Try strict JSON parse
   try {
     const parsed = JSON.parse(cleaned);
     if (Array.isArray(parsed?.routing)) {
-      // Assicurati che point sia sempre un numero valido
       return parsed.routing.map((r: any) => ({
         model: r.model,
         point: typeof r.point === 'number' && !isNaN(r.point) ? r.point : 0,
         ...(r.reason ? { reason: r.reason } : {}),
       }));
     }
-  } catch {
-    // ignore
+  } catch (err) {
+    log?.warn(
+      { raw: text, error: err instanceof Error ? err.message : String(err) },
+      'llm policy: JSON parse failed, attempting truncated JSON recovery',
+    );
   }
+
+  // 2) Truncated JSON recovery: extract complete routing entries via regex
+  //    Handles cases where max_completion_tokens cuts the response mid-JSON
+  const entryRegex = /\{\s*"model"\s*:\s*"([^"]+)"\s*,\s*"point"\s*:\s*([\d.]+)(?:\s*,\s*"reason"\s*:\s*"([^"]*)")?\s*\}/g;
+  const entries: { model: string; point: number; reason?: string }[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = entryRegex.exec(cleaned)) !== null) {
+    const point = parseFloat(match[2]);
+    entries.push({
+      model: match[1],
+      point: isNaN(point) ? 0 : point,
+      ...(match[3] ? { reason: match[3] } : {}),
+    });
+  }
+
+  if (entries.length > 0) {
+    log?.warn(
+      { recoveredCount: entries.length, raw: text },
+      'llm policy: recovered routing entries from truncated JSON',
+    );
+    return entries;
+  }
+
+  log?.warn({ raw: text }, 'llm policy: unable to parse or recover routing response');
   return null;
 }
 
@@ -121,7 +165,8 @@ async function repairRoutingResponse(
   systemPrompt: string,
   userMessage: string,
   invalidResponse: string,
-  log?: { info: (obj: object, msg?: string) => void },
+  maxCompletionTokens: number | undefined,
+  log?: { info: (obj: object, msg?: string) => void; warn: (obj: object, msg?: string) => void },
 ): Promise<{ model: string; point: number }[] | null> {
   const repairUserMessage = `Your previous response was not valid JSON or did not match the expected structure.
 
@@ -146,31 +191,26 @@ Return ONLY a valid JSON object with no text before or after it, no markdown, no
           { role: 'assistant', content: invalidResponse },
           { role: 'user', content: repairUserMessage },
         ],
-        max_completion_tokens: 2048,
+        ...(maxCompletionTokens != null ? { max_completion_tokens: maxCompletionTokens } : {}),
         stream: false,
       },
       model,
     );
 
     const repairText = String(repairResponse.choices?.[0]?.message?.content ?? '');
-    log?.info({ raw: repairText }, 'llm policy: repair response');
-    return parseRoutingResponse(repairText);
+      log?.debug({ raw: repairText }, 'llm policy: repair response');
+    return parseRoutingResponse(repairText, log);
   } catch (err) {
-    log?.info({ err: String(err) }, 'llm policy: repair call failed');
+      log?.warn({ err: String(err) }, 'llm policy: repair call failed');
     return null;
   }
 }
 
 export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, emit, projectId, token, traceId }) => {
-  log?.info(
+  log?.debug(
     {
-      request: {
-        model: request.model,
-        messages: request.messages,
-        stream: request.stream,
-        temperature: request.temperature,
-        max_tokens: request.max_tokens,
-      },
+      messageCount: request.messages?.length ?? 0,
+      roles: request.messages?.map((m: any) => m.role) ?? [],
       candidates: candidates.map(c => ({ id: c.model.id, provider: c.model.provider })),
       config,
     },
@@ -201,6 +241,19 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
 
   const additionalPromptInfo: string | undefined = config?.additionalPromptInfo;
 
+  // Thinking: se abilitato nel config E il modello di routing lo supporta,
+  // crea una shallow copy con thinking attivo; altrimenti forza thinking: false.
+  // Influenza SOLO la chiamata al modello di routing, MAI la richiesta dell'utente.
+  const thinking: boolean = config?.thinking ?? false;
+  const includeReason: boolean = config?.includeReason ?? false;
+  // Se non configurato, il provider usa il suo default; per Anthropic il fallback è nell'adapter (4096)
+  const maxCompletionTokens: number | undefined = config?.maxCompletionTokens != null
+    ? Math.max(50, config.maxCompletionTokens)
+    : undefined;
+  const maxUserMessageChars: number | undefined = config?.maxUserMessageChars != null
+    ? Math.max(100, config.maxUserMessageChars)
+    : undefined;
+
   // Memory: include the last N assistant responses from the conversation
   let memoryMessages: { role: string; content: unknown }[] | undefined;
   if (config?.memory === true) {
@@ -213,20 +266,20 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
     memoryMessages = sliced.length > 0 ? sliced : undefined;
   }
 
-  const userMessage = buildUserMessage(request, memoryMessages);
+  const userMessage = buildUserMessage(request, memoryMessages, maxUserMessageChars);
   const systemPrompt = buildSystemPrompt(
     candidates.map(c => ({
       id: c.model.id as string,
       ...(c.prompt !== undefined ? { prompt: c.prompt } : {}),
       ...(limitsMap[c.model.id as string]?.length ? { limits: limitsMap[c.model.id as string] } : {}),
     })),
-    additionalPromptInfo,
+    { additionalPromptInfo, includeReason },
   );
 
-  log?.info(
+  log?.debug(
     {
-      systemPrompt,
-      userMessage: '[redacted]',
+      systemPromptChars: systemPrompt.length,
+      userMessageChars: userMessage.length,
     },
     'llm policy: prompts',
   );
@@ -234,10 +287,14 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
   for (const modelId of candidateModelIds) {
     const model = allModels.find(m => m.id === modelId);
     if (!model) {
-      log?.info({ modelId, reason: 'model not found' }, 'llm policy: skipping model');
+      log?.debug({ modelId, reason: 'model not found' }, 'llm policy: skipping model');
       emit?.({ panel: 'router-response', message: 'llm-policy:skip', details: { modelId, reason: 'model not found in config' } });
       continue;
     }
+
+    const routingModel: ModelConfig = thinking && model.capabilities?.thinking === true
+      ? model
+      : { ...model, capabilities: { ...model.capabilities, thinking: false } };
 
     const ctx: LLMCallContext = {
       projectId: projectId ?? '',
@@ -249,18 +306,11 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
       ...(log !== undefined ? { log } : {}),
     };
 
-    log?.info(
+    log?.debug(
       {
         routingModel: modelId,
-        request: {
-          model: model.id,
-          max_completion_tokens: 2048,
-          stream: false,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: '[redacted]' },
-          ],
-        },
+        messageCount: 2,
+        ...(maxCompletionTokens != null ? { max_completion_tokens: maxCompletionTokens } : {}),
       },
       'llm policy: routing request',
     );
@@ -268,35 +318,35 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
     try {
       const response = await llmChat(
         {
-          model: model.id,
+          model: routingModel.id,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userMessage },
           ],
-          max_completion_tokens: 2048,
+          ...(maxCompletionTokens != null ? { max_completion_tokens: maxCompletionTokens } : {}),
           stream: false,
         },
-        model,
+        routingModel,
         ctx,
       );
 
       const text = String(response.choices?.[0]?.message?.content ?? '');
-      log?.info({ modelId, raw: text }, 'llm policy: raw response');
+      log?.debug({ modelId, rawChars: text.length }, 'llm policy: raw response');
 
-      const adapter = getProviderAdapter(model);
-      let routing = parseRoutingResponse(text);
+      const adapter = getProviderAdapter(routingModel);
+      let routing = parseRoutingResponse(text, log);
       if (!routing) {
-        log?.info({ modelId, reason: 'parse failed, attempting repair' }, 'llm policy: repair');
-        routing = await repairRoutingResponse(adapter, model, systemPrompt, userMessage, text, log);
+        log?.warn({ modelId, reason: 'parse failed, attempting repair' }, 'llm policy: repair');
+        routing = await repairRoutingResponse(adapter, routingModel, systemPrompt, userMessage, text, maxCompletionTokens, log);
       }
 
       if (!routing) {
-        log?.info({ modelId, reason: 'repair failed' }, 'llm policy: skipping model');
+        log?.error({ modelId, reason: 'repair failed', raw: text }, 'llm policy: all parse attempts failed, skipping model');
         emit?.({ panel: 'router-response', message: 'llm-policy:skip', details: { modelId, reason: 'parse + repair failed' } });
         continue;
       }
 
-      log?.info({ modelId, routing }, 'llm policy: output');
+      log?.debug({ modelId, routing }, 'llm policy: output');
       emit?.({
         panel: 'router-response',
         message: 'llm-policy:scores',
@@ -312,11 +362,11 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
       return { routing };
     } catch (err: unknown) {
       if (err instanceof BudgetExceededError) {
-        log?.info({ modelId, reason: 'budget_exhausted' }, 'llm policy: skipping model');
+        log?.debug({ modelId, reason: 'budget_exhausted' }, 'llm policy: skipping model');
         continue;
       }
       const errMsg = err instanceof Error ? err.message : String(err);
-      log?.info({ modelId, err: errMsg, reason: 'call failed' }, 'llm policy: skipping model');
+      log?.warn({ modelId, err: errMsg, reason: 'call failed' }, 'llm policy: skipping model');
       emit?.({ panel: 'router-response', message: 'llm-policy:error', details: { modelId, error: errMsg } });
     }
   }
