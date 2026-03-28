@@ -56,6 +56,18 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     const body = request.body;
     const isStream = body.stream === true;
 
+    const msgs = body.messages ?? [];
+    const payloadChars = JSON.stringify(msgs).length;
+    request.log.info(
+      {
+        messageCount: msgs.length,
+        roles: msgs.map((m: any) => m.role),
+        payloadChars,
+        stream: isStream,
+      },
+      'completion: request',
+    );
+
     const traceId = randomUUID();
     setTrace(traceId, []);
 
@@ -120,10 +132,14 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         }
 
         try {
+          let fullContent = '';
           for await (const chunk of streamResult.chunks) {
             reply.raw.write(`data: ${JSON.stringify(chunk)}\n\n`);
+            const delta = chunk.choices?.[0]?.delta?.content;
+            if (delta) fullContent += delta;
           }
           reply.raw.write('data: [DONE]\n\n');
+          request.log.info({ modelId: model.id, contentChars: fullContent.length }, 'completion: response');
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           request.log.error({ err, modelId: model.id }, 'Streaming error mid-stream');
@@ -176,6 +192,15 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
       try {
         const response = await llmChat(body, model, ctx);
+        request.log.info(
+          {
+            modelId: model.id,
+            inputTokens: response.usage?.prompt_tokens,
+            outputTokens: response.usage?.completion_tokens,
+            finishReason: response.choices?.[0]?.finish_reason,
+          },
+          'completion: response',
+        );
         reply.header('x-routerly-trace-id', traceId);
         return reply.send(response);
       } catch (err: unknown) {

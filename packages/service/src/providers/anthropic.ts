@@ -132,11 +132,18 @@ export class AnthropicAdapter implements ProviderAdapter {
 
     const params: any = {
       model: upstreamModel,
-      max_tokens: request.max_tokens ?? 4096,
+      max_tokens: request.max_completion_tokens ?? request.max_tokens ?? 4096,
       messages: this.convertMessages(nonSystemMessages),
     };
     if (systemMessage?.content) {
       params.system = this.convertSystem(systemMessage.content as string | any[]);
+    }
+
+    // Extended thinking — requires min 16k max_tokens per Anthropic spec
+    const thinkingEnabled = model.capabilities?.thinking === true;
+    if (thinkingEnabled) {
+      params.thinking = { type: 'enabled', budget_tokens: 10000 };
+      if ((params.max_tokens as number) < 16000) params.max_tokens = 16000;
     }
 
     const response = await client.messages.create(params);
@@ -187,7 +194,7 @@ export class AnthropicAdapter implements ProviderAdapter {
 
     const params: any = {
       model: upstreamModel,
-      max_tokens: request.max_tokens ?? 4096,
+      max_tokens: request.max_completion_tokens ?? request.max_tokens ?? 4096,
       messages: this.convertMessages(nonSystemMessages),
       stream: true,
     };

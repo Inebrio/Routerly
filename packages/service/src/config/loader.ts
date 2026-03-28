@@ -53,7 +53,14 @@ export async function readConfig<K extends keyof StoredTypeMap>(
   const filePath = CONFIG_PATHS[key];
   try {
     const raw = await readFile(filePath, 'utf-8');
-    return JSON.parse(raw) as StoredTypeMap[K];
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      // File exists but is empty — treat as missing
+      const defaultValue = DEFAULTS[key] as StoredTypeMap[K];
+      await writeConfig(key, defaultValue);
+      return defaultValue;
+    }
+    return JSON.parse(trimmed) as StoredTypeMap[K];
   } catch (err: unknown) {
     if (isNodeError(err) && err.code === 'ENOENT') {
       const defaultValue = DEFAULTS[key] as StoredTypeMap[K];
