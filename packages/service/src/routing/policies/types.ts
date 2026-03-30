@@ -41,6 +41,8 @@ export interface PolicyInput {
   token?: ProjectToken;
   /** ID della traccia corrente, da propagare alle chiamate LLM interne alla policy */
   traceId?: string;
+  /** ID della conversazione (da header x-routerly-conversation-id), usato per recuperare le decisioni di routing precedenti */
+  conversationId?: string;
 }
 
 /** Output standard restituito da ogni policy */
