@@ -49,6 +49,7 @@ export async function routeRequest(
   emit?: (entry: TraceEntry) => void,
   token?: ProjectToken,
   traceId?: string,
+  conversationId?: string,
 ): Promise<RouteResult> {
   const enabledPolicies = (project.policies ?? []).filter(p => p.enabled);
 
@@ -67,12 +68,28 @@ export async function routeRequest(
 
   // Carica i ModelConfig completi per i modelli associati al progetto
   const allModels: ModelConfig[] = await readConfig('models');
+  const missingModelIds: string[] = [];
   const candidates: CandidateModel[] = project.models
     .map(ref => {
       const model = allModels.find(m => m.id === ref.modelId);
-      return model ? { model, ...(ref.prompt !== undefined ? { prompt: ref.prompt } : {}), ...(ref.thresholds !== undefined ? { thresholds: ref.thresholds } : {}) } : null;
+      if (!model) {
+        missingModelIds.push(ref.modelId);
+        return null;
+      }
+      return { model, ...(ref.prompt !== undefined ? { prompt: ref.prompt } : {}), ...(ref.thresholds !== undefined ? { thresholds: ref.thresholds } : {}) };
     })
     .filter((m): m is NonNullable<typeof m> => m !== null);
+
+  if (missingModelIds.length > 0) {
+    log?.warn(
+      { projectId: project.id, missingModelIds },
+      'routing: project references models not found in registry',
+    );
+  }
+
+  if (candidates.length === 0) {
+    throw new Error(`no_models_available: project has no resolvable models (referenced: [${project.models.map(m => m.modelId).join(', ')}])`);
+  }
 
   // ── Pre-filtro limiti ────────────────────────────────────────────────────
   // Esclude i modelli che hanno già superato uno o più limiti prima di
@@ -171,7 +188,7 @@ export async function routeRequest(
         return { type, weight, routing: [] as { model: string; point: number }[], excludes: [] as string[], failed: true };
       }
       try {
-        const out = await fn({ request, candidates: validCandidates, config, ...(log !== undefined ? { log } : {}), ...(emit !== undefined ? { emit } : {}), projectId: project.id, ...(token !== undefined ? { token } : {}), ...(traceId !== undefined ? { traceId } : {}) });
+        const out = await fn({ request, candidates: validCandidates, config, ...(log !== undefined ? { log } : {}), ...(emit !== undefined ? { emit } : {}), projectId: project.id, ...(token !== undefined ? { token } : {}), ...(traceId !== undefined ? { traceId } : {}), ...(conversationId !== undefined ? { conversationId } : {}) });
         return { type, weight, routing: out.routing, excludes: out.excludes ?? [], failed: false };
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);

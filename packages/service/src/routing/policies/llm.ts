@@ -2,6 +2,7 @@ import type { ModelConfig, ProjectConfig } from '@routerly/shared';
 import { readConfig } from '../../config/loader.js';
 import { getProviderAdapter } from '../../providers/index.js';
 import { llmChat, BudgetExceededError } from '../../llm/executor.js';
+import { getRoutingHistory } from '../routingMemoryStore.js';
 import type { LLMCallContext } from '../../llm/executor.js';
 import { getLimitUsageSnapshot } from '../../cost/budget.js';
 import type { LimitSnapshot } from '../../cost/budget.js';
@@ -70,7 +71,7 @@ Format:
 
 function buildUserMessage(
   request: { messages: { role: string; content: unknown }[] },
-  memoryMessages?: { role: string; content: unknown }[],
+  previousDecisions?: { model: string }[],
   maxChars?: number,
 ): string {
   const msgs = request.messages as Array<{ role: string; content: unknown }>;
@@ -90,14 +91,11 @@ function buildUserMessage(
     : '';
 
   let result: string;
-  if (memoryMessages && memoryMessages.length > 0) {
-    const historyBlock = memoryMessages
-      .map(m => {
-        const c = typeof m.content === 'string' ? m.content : JSON.stringify(m.content);
-        return `[assistant]: ${c}`;
-      })
+  if (previousDecisions && previousDecisions.length > 0) {
+    const historyBlock = previousDecisions
+      .map((d, i) => `- Turn ${i + 1}: routed to ${d.model}`)
       .join('\n');
-    result = `${systemBlock}Previous assistant responses (most recent last):\n${historyBlock}\n\nCurrent user request:\n${userContent}`;
+    result = `${systemBlock}Previous routing decisions (most recent last):\n${historyBlock}\n\nCurrent user request:\n${userContent}`;
   } else {
     result = `${systemBlock}User request:\n${userContent}`;
   }
@@ -206,7 +204,7 @@ Return ONLY a valid JSON object with no text before or after it, no markdown, no
   }
 }
 
-export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, emit, projectId, token, traceId }) => {
+export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, emit, projectId, token, traceId, conversationId }) => {
   log?.debug(
     {
       messageCount: request.messages?.length ?? 0,
@@ -239,7 +237,10 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
     }),
   );
 
-  const additionalPromptInfo: string | undefined = config?.additionalPromptInfo;
+  // additionalPromptInfo is only active when autoRouting is explicitly disabled;
+  // when autoRouting is true (or unset), treat it as if none was configured.
+  const additionalPromptInfo: string | undefined =
+    config?.autoRouting === false ? config?.additionalPromptInfo : undefined;
 
   // Thinking: se abilitato nel config E il modello di routing lo supporta,
   // crea una shallow copy con thinking attivo; altrimenti forza thinking: false.
@@ -254,19 +255,15 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
     ? Math.max(100, config.maxUserMessageChars)
     : undefined;
 
-  // Memory: include the last N assistant responses from the conversation
-  let memoryMessages: { role: string; content: unknown }[] | undefined;
-  if (config?.memory === true) {
+  // Memory: recupera le ultime N decisioni di routing per questa conversazione
+  let previousDecisions: { model: string }[] | undefined;
+  if (config?.memory === true && conversationId && projectId) {
     const memoryCount: number = typeof config?.memoryCount === 'number' && config.memoryCount > 0 ? config.memoryCount : 5;
-    const msgs = request.messages as Array<{ role: string; content: unknown }>;
-    const lastUserIdx = msgs.map((m: { role: string }) => m.role).lastIndexOf('user');
-    const historySlice = (lastUserIdx > 0 ? msgs.slice(0, lastUserIdx) : []) as Array<{ role: string; content: unknown }>;
-    const assistantOnly = historySlice.filter((m: { role: string }) => m.role === 'assistant');
-    const sliced = assistantOnly.slice(-memoryCount);
-    memoryMessages = sliced.length > 0 ? sliced : undefined;
+    const history = getRoutingHistory(projectId, conversationId, memoryCount);
+    previousDecisions = history.length > 0 ? history : undefined;
   }
 
-  const userMessage = buildUserMessage(request, memoryMessages, maxUserMessageChars);
+  const userMessage = buildUserMessage(request, previousDecisions, maxUserMessageChars);
   const systemPrompt = buildSystemPrompt(
     candidates.map(c => ({
       id: c.model.id as string,
