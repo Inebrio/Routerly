@@ -262,7 +262,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ]
         : undefined;
 
-    const { limits: _existingLimits, ...existingWithoutLimits } = existing;
+    const { limits: _existingLimits, upstreamModelId: _existingUpstreamModelId, ...existingWithoutLimits } = existing;
     const model: ModelConfig = {
       ...existingWithoutLimits,
       id: newId,
@@ -283,9 +283,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       // upstreamModelId: if explicitly provided keep it, if empty string clear it, if absent keep existing
       ...(req.body.upstreamModelId
         ? { upstreamModelId: req.body.upstreamModelId }
-        : req.body.upstreamModelId === ''
-          ? { upstreamModelId: undefined }
-          : existing.upstreamModelId !== undefined ? { upstreamModelId: existing.upstreamModelId } : {}),
+        : req.body.upstreamModelId === undefined && _existingUpstreamModelId !== undefined
+          ? { upstreamModelId: _existingUpstreamModelId }
+          : {}),
     };
     models[index] = model;
     await writeConfig('models', models);

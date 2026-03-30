@@ -137,9 +137,9 @@ function parseRoutingResponse(
   const entries: { model: string; point: number; reason?: string }[] = [];
   let match: RegExpExecArray | null;
   while ((match = entryRegex.exec(cleaned)) !== null) {
-    const point = parseFloat(match[2]);
+    const point = parseFloat(match[2] ?? '');
     entries.push({
-      model: match[1],
+      model: match[1] ?? '',
       point: isNaN(point) ? 0 : point,
       ...(match[3] ? { reason: match[3] } : {}),
     });
@@ -196,7 +196,7 @@ Return ONLY a valid JSON object with no text before or after it, no markdown, no
     );
 
     const repairText = String(repairResponse.choices?.[0]?.message?.content ?? '');
-      log?.debug({ raw: repairText }, 'llm policy: repair response');
+      log?.info({ raw: repairText }, 'llm policy: repair response');
     return parseRoutingResponse(repairText, log);
   } catch (err) {
       log?.warn({ err: String(err) }, 'llm policy: repair call failed');
@@ -205,7 +205,7 @@ Return ONLY a valid JSON object with no text before or after it, no markdown, no
 }
 
 export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, emit, projectId, token, traceId, conversationId }) => {
-  log?.debug(
+  log?.info(
     {
       messageCount: request.messages?.length ?? 0,
       roles: request.messages?.map((m: any) => m.role) ?? [],
@@ -270,10 +270,10 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
       ...(c.prompt !== undefined ? { prompt: c.prompt } : {}),
       ...(limitsMap[c.model.id as string]?.length ? { limits: limitsMap[c.model.id as string] } : {}),
     })),
-    { additionalPromptInfo, includeReason },
+    { ...(additionalPromptInfo !== undefined ? { additionalPromptInfo } : {}), includeReason },
   );
 
-  log?.debug(
+  log?.info(
     {
       systemPromptChars: systemPrompt.length,
       userMessageChars: userMessage.length,
@@ -284,7 +284,7 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
   for (const modelId of candidateModelIds) {
     const model = allModels.find(m => m.id === modelId);
     if (!model) {
-      log?.debug({ modelId, reason: 'model not found' }, 'llm policy: skipping model');
+      log?.info({ modelId, reason: 'model not found' }, 'llm policy: skipping model');
       emit?.({ panel: 'router-response', message: 'llm-policy:skip', details: { modelId, reason: 'model not found in config' } });
       continue;
     }
@@ -303,7 +303,7 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
       ...(log !== undefined ? { log } : {}),
     };
 
-    log?.debug(
+    log?.info(
       {
         routingModel: modelId,
         messageCount: 2,
@@ -328,7 +328,7 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
       );
 
       const text = String(response.choices?.[0]?.message?.content ?? '');
-      log?.debug({ modelId, rawChars: text.length }, 'llm policy: raw response');
+      log?.info({ modelId, rawChars: text.length }, 'llm policy: raw response');
 
       const adapter = getProviderAdapter(routingModel);
       let routing = parseRoutingResponse(text, log);
@@ -343,7 +343,7 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
         continue;
       }
 
-      log?.debug({ modelId, routing }, 'llm policy: output');
+      log?.info({ modelId, routing }, 'llm policy: output');
       emit?.({
         panel: 'router-response',
         message: 'llm-policy:scores',
@@ -359,7 +359,7 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
       return { routing };
     } catch (err: unknown) {
       if (err instanceof BudgetExceededError) {
-        log?.debug({ modelId, reason: 'budget_exhausted' }, 'llm policy: skipping model');
+        log?.info({ modelId, reason: 'budget_exhausted' }, 'llm policy: skipping model');
         continue;
       }
       const errMsg = err instanceof Error ? err.message : String(err);

@@ -110,7 +110,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       if (isMemoryEnabled && conversationId && routingResponse.models.length > 0) {
-        addRoutingDecision(project.id, conversationId, routingResponse.models[0].model);
+        addRoutingDecision(project.id, conversationId, routingResponse.models[0]!.model);
       }
 
       const allModelsList = await readConfig('models');
@@ -183,7 +183,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     if (isMemoryEnabled && conversationId && routingResponse.models.length > 0) {
-      addRoutingDecision(project.id, conversationId, routingResponse.models[0].model);
+      addRoutingDecision(project.id, conversationId, routingResponse.models[0]!.model);
     }
 
     const allModelsList = await readConfig('models');
