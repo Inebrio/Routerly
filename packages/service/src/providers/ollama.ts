@@ -48,7 +48,18 @@ export class OllamaAdapter implements ProviderAdapter {
     const normalized = this.normalizeRequest(request, model);
     const upstreamModel = this.getUpstreamModelId(model);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = await client.chat.completions.create({ ...normalized, model: upstreamModel, stream: false } as any);
+    const response = await client.chat.completions.create({ ...normalized, model: upstreamModel, stream: false } as any) as any;
+    // Some Qwen3 variants on Ollama (thinking models) put all content in `message.thinking`
+    // even when think:false is requested, leaving `message.content` empty.
+    // Fall back to thinking content so callers always receive a non-empty response.
+    const thinkingEnabled = model.capabilities?.thinking === true;
+    if (!thinkingEnabled) {
+      const msg = response?.choices?.[0]?.message as any;
+      if (msg && !msg.content && msg.thinking) {
+        msg.content = msg.thinking;
+        delete msg.thinking;
+      }
+    }
     return response as unknown as ChatCompletionResponse;
   }
 
@@ -59,9 +70,20 @@ export class OllamaAdapter implements ProviderAdapter {
     const client = this.getClient(model);
     const normalized = this.normalizeRequest(request, model);
     const upstreamModel = this.getUpstreamModelId(model);
+    const thinkingEnabled = model.capabilities?.thinking === true;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const stream: any = await client.chat.completions.create({ ...normalized, model: upstreamModel, stream: true } as any);
     for await (const chunk of stream) {
+      // Same fallback as chatCompletion: remap delta.thinking → delta.content when
+      // think:false was requested but the model still emits thinking-only chunks.
+      if (!thinkingEnabled) {
+        const delta = (chunk as any)?.choices?.[0]?.delta as any;
+        if (delta?.thinking && !delta.content) {
+          const { thinking, ...deltaRest } = delta;
+          yield { ...(chunk as any), choices: [{ ...(chunk as any).choices[0], delta: { ...deltaRest, content: thinking } }, ...(chunk as any).choices.slice(1)] } as unknown as StreamChunk;
+          continue;
+        }
+      }
       yield chunk as unknown as StreamChunk;
     }
   }
