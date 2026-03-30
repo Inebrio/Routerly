@@ -254,6 +254,13 @@ Mix and match freely. A single project can span cloud and local models simultane
 
 ---
 
+## Benchmarks
+
+Independent benchmarks are published in the **[routerly-benchmark](https://github.com/Inebrio/routerly-benchmark)** repository.
+Reproducible tests measure routing latency overhead, cost savings across workloads, and failover behaviour under simulated provider outages.
+
+---
+
 ## Documentation
 
 Full documentation is available at **[https://docs.routerly.ai](https://docs.routerly.ai)**.

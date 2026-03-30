@@ -153,6 +153,7 @@ export interface PricingTier {
 
 export interface Model {
   id: string; name: string; provider: string; endpoint: string;
+  upstreamModelId?: string;
   cost: { inputPerMillion: number; outputPerMillion: number; cachePerMillion?: number; pricingTiers?: PricingTier[] };
   contextWindow?: number;
   limits?: Limit[];
@@ -162,7 +163,7 @@ export interface Model {
 export const getModels = () => request<Model[]>('/models');
 export const createModel = (data: {
   id: string; name?: string; provider: string; endpoint: string; apiKey?: string;
-  cloneFrom?: string;
+  cloneFrom?: string; upstreamModelId?: string;
   inputPerMillion: number; outputPerMillion: number;
   cachePerMillion?: number;
   contextWindow?: number;
@@ -172,6 +173,7 @@ export const createModel = (data: {
 export const updateModel = (id: string, data: {
   id?: string;
   name?: string; provider: string; endpoint: string; apiKey?: string;
+  upstreamModelId?: string;
   inputPerMillion: number; outputPerMillion: number;
   cachePerMillion?: number;
   contextWindow?: number;
@@ -298,13 +300,16 @@ export interface UsageStats {
   byModel: Record<string, { calls: number; inputTokens: number; outputTokens: number; cachedInputTokens: number; cost: number; errors: number }>;
   timeline: [string, number][];
   records: Array<UsageRecord>;
+  pagination?: { page: number; pageSize: number; totalRecords: number; totalPages: number };
 }
 
-export const getUsage = (period = 'monthly', projectId?: string, from?: string, to?: string) => {
+export const getUsage = (period = 'monthly', projectId?: string, from?: string, to?: string, page?: number, pageSize?: number) => {
   const params = new URLSearchParams({ period });
   if (projectId) params.set('projectId', projectId);
   if (from) params.set('from', from);
   if (to)   params.set('to', to);
+  if (page != null) params.set('page', String(page));
+  if (pageSize != null) params.set('pageSize', String(pageSize));
   return request<UsageStats>(`/usage?${params.toString()}`);
 };
 

@@ -34,6 +34,15 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     params.cacheCreationInputTokens,
   );
 
+  // Calculate input/output cost breakdown for reporting
+  const plainInput = params.inputTokens - (params.cachedInputTokens ?? 0) - (params.cacheCreationInputTokens ?? 0);
+  const costInput = Math.round((
+    (plainInput / 1_000_000) * params.model.cost.inputPerMillion +
+    ((params.cachedInputTokens ?? 0) / 1_000_000) * (params.model.cost.cachePerMillion ?? params.model.cost.inputPerMillion) +
+    ((params.cacheCreationInputTokens ?? 0) / 1_000_000) * (params.model.cost.cacheWritePerMillion ?? params.model.cost.inputPerMillion)
+  ) * 1_000_000) / 1_000_000;
+  const costOutput = Math.round(((params.outputTokens / 1_000_000) * params.model.cost.outputPerMillion) * 1_000_000) / 1_000_000;
+
   const record: UsageRecord = {
     id: uuidv4(),
     timestamp: new Date().toISOString(),
@@ -51,6 +60,11 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     ...(params.errorMessage !== undefined ? { errorMessage: params.errorMessage } : {}),
     callType: params.callType ?? 'completion',
     ...(params.traceId ? { trace: getTrace(params.traceId) ?? [] } : {}),
+    ...(params.traceId ? { traceId: params.traceId } : {}),
+    costInput,
+    costOutput,
+    priceInput: params.model.cost.inputPerMillion,
+    priceOutput: params.model.cost.outputPerMillion,
   };
 
   await appendUsageRecord(record);

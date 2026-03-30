@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUsage, getProjects, type UsageStats, type Project } from '../api';
 import { MultiSelect } from '../components/MultiSelect';
-import { DateRangePicker, PRESETS, type DateRange } from '../components/DateRangePicker';
+import { DateRangePicker, PRESETS, RECENT_PRESETS, type DateRange } from '../components/DateRangePicker';
 import { useFilterState } from '../hooks/useFilterState';
 
 function FilterLabel({ children }: { children: React.ReactNode }) {
@@ -26,6 +26,8 @@ export function UsagePage() {
   const [lastUpdated, setLastUpdated]   = useState<Date | null>(null);
   const [pollInterval, setPollInterval] = useFilterState<number>({ key: 'usage-filters-pollInterval', defaultValue: 30_000 });
   const [refreshing, setRefreshing]     = useState(false);
+  const [page, setPage]                 = useState(1);
+  const [pageSize]                      = useState(50);
   const navigate = useNavigate();
 
   const POLL_OPTIONS: { label: string; value: number }[] = [
@@ -41,12 +43,16 @@ export function UsagePage() {
   // or re-apply stale relative presets (e.g. "Questo mese" saved on a previous day).
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10);
+    // Check if this is a recent (minutes/hours) preset — those are always recalculated on fetch
+    const isRecentPreset = RECENT_PRESETS.some(p => p.label === dateRange.label);
+    if (isRecentPreset) return; // will be recalculated by fetchStats
+
     if (!dateRange.from && !dateRange.to) {
       // First visit: default to this month
       const now = new Date();
       const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
       setDateRange({ from, to: today, label: 'Questo mese' });
-    } else if (dateRange.to && dateRange.to < today) {
+    } else if (dateRange.to && dateRange.to.slice(0, 10) < today) {
       // Stale "to" date — if this was a relative preset, recompute it
       const preset = PRESETS.find(p => p.label === dateRange.label);
       if (preset) setDateRange(preset.range());
@@ -58,15 +64,24 @@ export function UsagePage() {
   }, []);
 
   const fetchStats = useCallback(() => {
-    const period = dateRange.from || dateRange.to ? 'custom' : 'all';
-    return getUsage(period, undefined, dateRange.from || undefined, dateRange.to || undefined)
+    // For recent (minutes/hours) presets, recalculate the range on every fetch
+    let from = dateRange.from || undefined;
+    let to = dateRange.to || undefined;
+    const recentPreset = RECENT_PRESETS.find(p => p.label === dateRange.label);
+    if (recentPreset) {
+      const fresh = recentPreset.range();
+      from = fresh.from;
+      to = fresh.to;
+    }
+    const period = from || to ? 'custom' : 'all';
+    return getUsage(period, undefined, from, to, page, pageSize)
       .then(data => { setStats(data); setLastUpdated(new Date()); setFetchError(null); })
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err);
         setFetchError(msg);
         console.error('Failed to load usage stats:', msg);
       });
-  }, [dateRange]);
+  }, [dateRange, page, pageSize]);
 
   const handleRefreshNow = useCallback(() => {
     setRefreshing(true);
@@ -80,6 +95,9 @@ export function UsagePage() {
     const id = setInterval(fetchStats, pollInterval);
     return () => clearInterval(id);
   }, [fetchStats, pollInterval]);
+
+  // Reset page when filters change
+  useEffect(() => { setPage(1); }, [dateRange, projectIds, modelIds, callTypeFilter, outcomeFilter]);
 
   // Available model options — derived from all records in the current period
   const modelOptions = useMemo(() => {
@@ -287,7 +305,9 @@ export function UsagePage() {
             <>
               <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px' }}>
                 Recent Calls
-                <span style={{ fontWeight: 400, marginLeft: 8, color: 'var(--text-muted)' }}>({filteredRecords.length})</span>
+                <span style={{ fontWeight: 400, marginLeft: 8, color: 'var(--text-muted)' }}>
+                  ({stats.pagination ? `${filteredRecords.length} / ${stats.pagination.totalRecords}` : filteredRecords.length})
+                </span>
               </h3>
 
               {filteredRecords.length === 0 ? (
@@ -295,6 +315,7 @@ export function UsagePage() {
                   <p>{stats.records.length === 0 ? 'No usage records for this period.' : 'No records match the active filters.'}</p>
                 </div>
               ) : (
+                <>
                 <div className="table-wrap">
                   <table>
                     <thead>
@@ -347,6 +368,36 @@ export function UsagePage() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Pagination controls */}
+                {stats.pagination && stats.pagination.totalPages > 1 && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+                    marginTop: 16, padding: '10px 0',
+                  }}>
+                    <button
+                      className="btn btn-sm btn-secondary"
+                      disabled={page <= 1}
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                    >
+                      ← Precedente
+                    </button>
+                    <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                      Pagina {stats.pagination.page} di {stats.pagination.totalPages}
+                      <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>
+                        ({stats.pagination.totalRecords} record totali)
+                      </span>
+                    </span>
+                    <button
+                      className="btn btn-sm btn-secondary"
+                      disabled={page >= stats.pagination.totalPages}
+                      onClick={() => setPage(p => p + 1)}
+                    >
+                      Successiva →
+                    </button>
+                  </div>
+                )}
+                </>
               )}
             </>
           </>

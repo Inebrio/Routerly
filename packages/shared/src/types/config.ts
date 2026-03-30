@@ -100,6 +100,12 @@ export interface ModelConfig {
   endpoint: string;
   /** Provider API key (stored in plaintext; file permissions protect it) */
   apiKey?: string | undefined;
+  /**
+   * The exact model identifier sent to the upstream provider API.
+   * Used by the custom adapter to decouple the Routerly ID from the upstream model name.
+   * If absent, the adapter falls back to stripping the provider prefix from `id`.
+   */
+  upstreamModelId?: string;
   cost: TokenCost;
   /** Maximum context window size in tokens */
   contextWindow?: number;
@@ -356,4 +362,14 @@ export interface UsageRecord {
   callType?: CallType;
   /** Full trace captured at tracking time (router + model call events) */
   trace?: TraceEntry[];
+  /** Request trace ID (matches x-routerly-trace-id response header) */
+  traceId?: string;
+  /** Cost breakdown: input tokens cost in USD (includes cached + cache-write) */
+  costInput?: number;
+  /** Cost breakdown: output tokens cost in USD */
+  costOutput?: number;
+  /** Price per 1M input tokens in USD (from model config at call time) */
+  priceInput?: number;
+  /** Price per 1M output tokens in USD (from model config at call time) */
+  priceOutput?: number;
 }

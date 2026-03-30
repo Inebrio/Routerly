@@ -114,6 +114,7 @@ const EMPTY_TIER: TierRow = {
 
 const EMPTY_FORM = {
   customId: '',
+  customProviderName: '',
   id: '',
   provider: 'openai' as Provider,
   endpoint: ENDPOINT_DEFAULTS.openai,
@@ -226,8 +227,8 @@ export function ModelFormPage() {
 
   function handleProviderChange(provider: Provider) {
     const firstModel = PROVIDER_MODELS[provider]?.[0];
-    setIsCustomModel(false);
-    setForm({ ...EMPTY_FORM, provider, endpoint: ENDPOINT_DEFAULTS[provider], id: firstModel?.id ?? '' });
+    setIsCustomModel(provider === 'custom');
+    setForm({ ...EMPTY_FORM, provider, endpoint: ENDPOINT_DEFAULTS[provider] ?? '', id: firstModel?.id ?? '' });
     setTierRows([]); setShowAdvanced(false);
     if (firstModel) applyPreset(provider, firstModel.id);
   }
@@ -252,8 +253,21 @@ export function ModelFormPage() {
     let formId = '';
     let customId = '';
     let customModel = true;
+    let customProviderName = '';
 
-    if (model.id.startsWith(prefix)) {
+    if (provider === 'custom') {
+      // For custom provider, the ID is stored as "{upstreamProvider}/{modelName}"
+      // or just "{modelName}" if no prefix was set.
+      if (model.id.includes('/')) {
+        const slashIdx = model.id.indexOf('/');
+        customProviderName = model.id.slice(0, slashIdx);
+        // Prefer the explicit upstreamModelId field; fall back to the part after the slash.
+        formId = model.upstreamModelId ?? model.id.slice(slashIdx + 1);
+      } else {
+        formId = model.upstreamModelId ?? model.id;
+      }
+      customModel = true;
+    } else if (model.id.startsWith(prefix)) {
       formId = model.id.slice(prefix.length);
       if (providerPresets.some(m => m.id === formId)) {
         customModel = false;
@@ -276,6 +290,7 @@ export function ModelFormPage() {
       ...f,
       id: formId,
       customId: customId,
+      customProviderName,
       provider,
       endpoint: model.endpoint,
       apiKey: '',
@@ -326,13 +341,19 @@ export function ModelFormPage() {
 
   function effectiveId(): string {
     if (form.customId.trim()) return form.customId.trim();
-    return generateId(form.provider, form.id, models.filter(m => m.id !== editingModelId).map(m => m.id));
+    const prefix = form.provider === 'custom' && form.customProviderName.trim()
+      ? form.customProviderName.trim()
+      : form.provider;
+    return generateId(prefix, form.id, models.filter(m => m.id !== editingModelId).map(m => m.id));
   }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setErr(''); setSaving(true);
-    const finalId = form.customId.trim() || generateId(form.provider, form.id, models.filter(m => m.id !== editingModelId).map(m => m.id));
+    const idPrefix = form.provider === 'custom' && form.customProviderName.trim()
+      ? form.customProviderName.trim()
+      : form.provider;
+    const finalId = form.customId.trim() || generateId(idPrefix, form.id, models.filter(m => m.id !== editingModelId).map(m => m.id));
     if (!finalId) { setErr('Model ID required'); setSaving(false); return; }
     if (isCloning && models.some(m => m.id === finalId)) { setErr(`Model "${finalId}" already exists — set a different Custom ID`); setSaving(false); return; }
 
@@ -353,6 +374,8 @@ export function ModelFormPage() {
         endpoint: form.endpoint,
         ...(form.apiKey ? { apiKey: form.apiKey } : {}),
         ...(isCloning && cloneSourceId && !form.apiKey ? { cloneFrom: cloneSourceId } : {}),
+        // For custom provider, save the exact upstream model ID separately from the Routerly ID.
+        ...(form.provider === 'custom' && form.id.trim() ? { upstreamModelId: form.id.trim() } : {}),
         inputPerMillion: parseFloat(form.inputPerMillion) || 0,
         outputPerMillion: parseFloat(form.outputPerMillion) || 0,
         ...(form.cachePerMillion ? { cachePerMillion: parseFloat(form.cachePerMillion) } : {}),
@@ -379,7 +402,10 @@ export function ModelFormPage() {
 
   const providerModels = PROVIDER_MODELS[form.provider] ?? [];
   const selectedPreset = providerModels.find(m => m.id === form.id);
-  const autoId = form.id ? generateId(form.provider, form.id, models.filter(m => m.id !== editingModelId).map(m => m.id)) : '';
+  const autoIdPrefix = form.provider === 'custom' && form.customProviderName.trim()
+    ? form.customProviderName.trim()
+    : form.provider;
+  const autoId = form.id ? generateId(autoIdPrefix, form.id, models.filter(m => m.id !== editingModelId).map(m => m.id)) : '';
 
   if (loading) {
     return (
@@ -409,11 +435,12 @@ export function ModelFormPage() {
             <p className="section-desc">Unique identifier and provider settings for this model configuration.</p>
             <div className="form-group">
               <label className="form-label">
-                Custom ID <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional — default: <code style={{ fontSize: '0.78rem' }}>{autoId || `${form.provider}/model`}</code>)</span>
+                Routerly ID <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional — default: <code style={{ fontSize: '0.78rem' }}>{autoId || `${autoIdPrefix}/model`}</code>)</span>
               </label>
               <input className="form-input" value={form.customId} name="modelId" autoComplete="off"
                 onChange={e => setForm(f => ({ ...f, customId: e.target.value }))}
-                placeholder={autoId || `${form.provider}/model`} />
+                placeholder={autoId || `${autoIdPrefix}/model`} />
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>The identifier used when referencing this model in Routerly API calls.</div>
             </div>
 
             <div className="form-group">
@@ -424,24 +451,47 @@ export function ModelFormPage() {
               </select>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Model Preset</label>
-              {providerModels.length > 0 ? (
-                <select className="form-input" value={isCustomModel ? '__custom__' : form.id}
-                  onChange={e => handleModelChange(e.target.value)}>
-                  {providerModels.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
-                  <option value="__custom__">— custom model name —</option>
-                </select>
-              ) : null}
-              {(isCustomModel || providerModels.length === 0) && (
-                <input className="form-input" style={{ marginTop: providerModels.length > 0 ? 6 : 0 }}
-                  value={form.id} onChange={e => setForm(f => ({ ...f, id: e.target.value }))}
-                  placeholder="e.g. my-fine-tuned-model" required autoFocus />
-              )}
-              {!isCustomModel && selectedPreset?.notes && (
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>{selectedPreset.notes}</div>
-              )}
-            </div>
+            {form.provider === 'custom' ? (
+              <>
+                <div className="form-group">
+                  <label className="form-label">Provider <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(upstream provider name)</span></label>
+                  <input className="form-input"
+                    value={form.customProviderName}
+                    onChange={e => setForm(f => ({ ...f, customProviderName: e.target.value }))}
+                    placeholder="e.g. deepseek, mistral, groq"
+                    required />
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>Used as prefix for the Routerly ID (e.g. <code style={{ fontSize: '0.72rem' }}>deepseek/deepseek-r1</code>).</div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Model <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(upstream model ID)</span></label>
+                  <input className="form-input"
+                    value={form.id}
+                    onChange={e => setForm(f => ({ ...f, id: e.target.value }))}
+                    placeholder="e.g. deepseek-r1, mistral-large-latest"
+                    required />
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>The model identifier sent to the upstream API endpoint.</div>
+                </div>
+              </>
+            ) : (
+              <div className="form-group">
+                <label className="form-label">Model Preset</label>
+                {providerModels.length > 0 ? (
+                  <select className="form-input" value={isCustomModel ? '__custom__' : form.id}
+                    onChange={e => handleModelChange(e.target.value)}>
+                    {providerModels.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
+                    <option value="__custom__">— custom model name —</option>
+                  </select>
+                ) : null}
+                {(isCustomModel || providerModels.length === 0) && (
+                  <input className="form-input" style={{ marginTop: providerModels.length > 0 ? 6 : 0 }}
+                    value={form.id} onChange={e => setForm(f => ({ ...f, id: e.target.value }))}
+                    placeholder="e.g. my-fine-tuned-model" required autoFocus />
+                )}
+                {!isCustomModel && selectedPreset?.notes && (
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>{selectedPreset.notes}</div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* ── Section: Connection ───────────────────────────── */}
