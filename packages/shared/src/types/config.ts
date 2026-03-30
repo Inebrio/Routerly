@@ -362,4 +362,14 @@ export interface UsageRecord {
   callType?: CallType;
   /** Full trace captured at tracking time (router + model call events) */
   trace?: TraceEntry[];
+  /** Request trace ID (matches x-routerly-trace-id response header) */
+  traceId?: string;
+  /** Cost breakdown: input tokens cost in USD (includes cached + cache-write) */
+  costInput?: number;
+  /** Cost breakdown: output tokens cost in USD */
+  costOutput?: number;
+  /** Price per 1M input tokens in USD (from model config at call time) */
+  priceInput?: number;
+  /** Price per 1M output tokens in USD (from model config at call time) */
+  priceOutput?: number;
 }

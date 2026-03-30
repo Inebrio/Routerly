@@ -163,7 +163,15 @@ export async function llmChat(
 
     const inputTokens = response.usage?.prompt_tokens ?? 0;
     const outputTokens = response.usage?.completion_tokens ?? 0;
+    const cachedTokens = response.usage?.prompt_tokens_details?.cached_tokens ?? 0;
     const tokensPerSec = latencyMs > 0 ? Math.round((inputTokens + outputTokens) / (latencyMs / 1000)) : 0;
+
+    // Calculate costs
+    const plainInput = inputTokens - cachedTokens;
+    const inputCostUsd = (plainInput / 1_000_000) * model.cost.inputPerMillion;
+    const cachedCostUsd = (cachedTokens / 1_000_000) * (model.cost.cachePerMillion ?? model.cost.inputPerMillion);
+    const outputCostUsd = (outputTokens / 1_000_000) * model.cost.outputPerMillion;
+    const totalCostUsd = inputCostUsd + cachedCostUsd + outputCostUsd;
 
     emit?.({
       panel: res,
@@ -171,11 +179,17 @@ export async function llmChat(
       details: {
         modelId: model.id,
         inputTokens,
-        cachedInputTokens: response.usage?.prompt_tokens_details?.cached_tokens,
+        cachedInputTokens: cachedTokens,
         outputTokens,
         latencyMs,
         ttftMs: latencyMs,  // non-streaming: tutta la latenza ≡ TTFT
         tokensPerSec,
+        // Cost information
+        inputCostUsd,
+        outputCostUsd,
+        totalCostUsd,
+        inputPerMillion: model.cost.inputPerMillion,
+        outputPerMillion: model.cost.outputPerMillion,
         ...(responseText != null ? { responseText } : {}),
         ...(responseJSON != null ? { responseJSON } : {}),
       },
@@ -374,6 +388,14 @@ export async function llmStream(
       const latencyMs = Date.now() - t0;
       if (outcome === 'success') {
         const tokensPerSec = latencyMs > 0 ? Math.round((inputTokens + outputTokens) / (latencyMs / 1000)) : 0;
+        
+        // Calculate costs
+        const plainInput = inputTokens - cachedInputTokens;
+        const inputCostUsd = (plainInput / 1_000_000) * model.cost.inputPerMillion;
+        const cachedCostUsd = (cachedInputTokens / 1_000_000) * (model.cost.cachePerMillion ?? model.cost.inputPerMillion);
+        const outputCostUsd = (outputTokens / 1_000_000) * model.cost.outputPerMillion;
+        const totalCostUsd = inputCostUsd + cachedCostUsd + outputCostUsd;
+        
         emit?.({
           panel: res,
           message: 'model:success',
@@ -385,6 +407,12 @@ export async function llmStream(
             latencyMs,
             ttftMs,
             tokensPerSec,
+            // Cost information
+            inputCostUsd,
+            outputCostUsd,
+            totalCostUsd,
+            inputPerMillion: model.cost.inputPerMillion,
+            outputPerMillion: model.cost.outputPerMillion,
           },
         });
       }
