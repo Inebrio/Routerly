@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import type { ChatCompletionRequest, ModelObject } from '@routerly/shared';
 import { routeRequest } from '../routing/router.js';
+import { addRoutingDecision } from '../routing/routingMemoryStore.js';
 import { readConfig } from '../config/loader.js';
 import { setTrace, appendTrace } from '../routing/traceStore.js';
 import type { TraceEntry } from '../routing/traceStore.js';
@@ -56,8 +57,24 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     const body = request.body;
     const isStream = body.stream === true;
 
+    const msgs = body.messages ?? [];
+    const payloadChars = JSON.stringify(msgs).length;
+    request.log.info(
+      {
+        messageCount: msgs.length,
+        roles: msgs.map((m: any) => m.role),
+        payloadChars,
+        stream: isStream,
+      },
+      'completion: request',
+    );
+
     const traceId = randomUUID();
     setTrace(traceId, []);
+    const conversationId = (request.headers['x-routerly-conversation-id'] as string | undefined) || undefined;
+    const isMemoryEnabled = (project.policies ?? []).some(
+      (p: any) => p.type === 'llm' && p.enabled && p.config?.memory === true,
+    );
 
     if (isStream) {
       // ── Streaming path: avvia SSE subito ──────────────────────────────────
@@ -76,11 +93,12 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
       const emit = (entry: TraceEntry) => {
         appendTrace(traceId, [entry]);
+        reply.raw.write(`data: ${JSON.stringify({ type: 'trace', entry })}\n\n`);
       };
 
       let routingResponse;
       try {
-        routingResponse = await routeRequest(body, project, request.log, emit, request.token, traceId);
+        routingResponse = await routeRequest(body, project, request.log, emit, request.token, traceId, conversationId);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         request.log.error({ err }, 'Routing model failed');
@@ -89,6 +107,10 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         reply.raw.write('data: [DONE]\n\n');
         reply.raw.end();
         return;
+      }
+
+      if (isMemoryEnabled && conversationId && routingResponse.models.length > 0) {
+        addRoutingDecision(project.id, conversationId, routingResponse.models[0]!.model);
       }
 
       const allModelsList = await readConfig('models');
@@ -119,10 +141,14 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         }
 
         try {
+          let fullContent = '';
           for await (const chunk of streamResult.chunks) {
             reply.raw.write(`data: ${JSON.stringify(chunk)}\n\n`);
+            const delta = chunk.choices?.[0]?.delta?.content;
+            if (delta) fullContent += delta;
           }
           reply.raw.write('data: [DONE]\n\n');
+          request.log.info({ modelId: model.id, contentChars: fullContent.length }, 'completion: response');
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           request.log.error({ err, modelId: model.id }, 'Streaming error mid-stream');
@@ -149,11 +175,15 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
     let routingResponse;
     try {
-      routingResponse = await routeRequest(body, project, request.log, emit, request.token, traceId);
+      routingResponse = await routeRequest(body, project, request.log, emit, request.token, traceId, conversationId);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       request.log.error({ err }, 'Routing model failed');
       return reply.code(500).send({ error: { message: `Routing model failed: ${msg}`, type: 'server_error' } });
+    }
+
+    if (isMemoryEnabled && conversationId && routingResponse.models.length > 0) {
+      addRoutingDecision(project.id, conversationId, routingResponse.models[0]!.model);
     }
 
     const allModelsList = await readConfig('models');
@@ -175,6 +205,15 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
       try {
         const response = await llmChat(body, model, ctx);
+        request.log.info(
+          {
+            modelId: model.id,
+            inputTokens: response.usage?.prompt_tokens,
+            outputTokens: response.usage?.completion_tokens,
+            finishReason: response.choices?.[0]?.finish_reason,
+          },
+          'completion: response',
+        );
         reply.header('x-routerly-trace-id', traceId);
         return reply.send(response);
       } catch (err: unknown) {

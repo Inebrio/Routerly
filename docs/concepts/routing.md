@@ -7,6 +7,10 @@ sidebar_position: 5
 
 Routerly's router selects which model to use for each request by running a configurable stack of **routing policies**. Policies are applied in priority order; each policy can score, filter, or directly pick a model from the candidate set.
 
+:::tip Benchmarks
+Reproducible routing benchmarks — latency overhead, cost savings, and failover behaviour — are published at **[github.com/Inebrio/routerly-benchmark](https://github.com/Inebrio/routerly-benchmark)**.
+:::
+
 ---
 
 ## How Routing Works
@@ -63,6 +67,12 @@ Filters out models whose context window is smaller than the current request's es
 ### `llm`
 
 Uses a separate LLM call to decide which model to route to, based on request content. This policy is experimental and introduces an extra API call per request.
+
+**Config options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `thinking` | `boolean` | `false` | If `true` and the routing model supports extended thinking (e.g. Claude with thinking capability), the routing call uses it for more accurate decisions. **Warning:** this increases routing latency significantly. |
 
 **Use when:** you want dynamic model selection based on request semantics.
 

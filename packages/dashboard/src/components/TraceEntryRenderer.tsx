@@ -53,7 +53,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
     background: 'var(--bg-surface)',
     border: isError ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--border)',
     borderRadius: 'var(--radius-sm)',
-    fontSize: '0.72rem', overflowX: 'auto',
+    fontSize: '0.85rem', overflowX: 'auto',
     color: isError ? 'var(--danger)' : 'var(--text-secondary)',
     whiteSpace: 'pre-wrap',
   };
@@ -62,7 +62,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
     <div style={{ marginBottom: 8 }}>
 
       {!isRecap && (
-        <div style={{ fontSize: '0.6rem', color: labelColor, marginBottom: 3, fontWeight: 700, letterSpacing: '0.04em' }}>
+        <div style={{ fontSize: '0.75rem', color: labelColor, marginBottom: 3, fontWeight: 700, letterSpacing: '0.04em' }}>
           {e.message}
           {isModelPrompt && (
             <span style={{ fontWeight: 400, marginLeft: 6, color: 'var(--text-muted)' }}>
@@ -74,7 +74,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
 
       {isModelPrompt ? (
         <details>
-          <summary style={{ fontSize: '0.62rem', color: '#c4b5fd', cursor: 'pointer', userSelect: 'none' }}>
+          <summary style={{ fontSize: '0.8rem', color: '#c4b5fd', cursor: 'pointer', userSelect: 'none' }}>
             {String(e.details.prompt ?? '').substring(0, 100)}{String(e.details.prompt ?? '').length > 100 ? '…' : ''}
           </summary>
           <pre style={{ ...preStyle, margin: '4px 0 0', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.3)', color: '#c4b5fd' }}>
@@ -84,7 +84,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
 
       ) : isThinking ? (
         <details>
-          <summary style={{ fontSize: '0.68rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
+          <summary style={{ fontSize: '0.85rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
             {String(e.details?.text ?? '').substring(0, 80)}
             {String(e.details?.text ?? '').length > 80 ? '\u2026' : ''}
           </summary>
@@ -97,14 +97,14 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {/* Metadati tecnici */}
           <details>
-            <summary style={{ fontSize: '0.62rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>technical details</summary>
+            <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>technical details</summary>
             <pre style={{ ...preStyle, margin: '4px 0 0' }}>{JSON.stringify(baseDetails, null, 2)}</pre>
           </details>
 
           {/* System prompt sempre espanso (solo chiamate routing) */}
           {systemPrompt != null && (
             <>
-              <div style={{ fontSize: '0.6rem', color: '#a5b4fc', fontWeight: 600, marginTop: 2 }}>system prompt</div>
+              <div style={{ fontSize: '0.75rem', color: '#a5b4fc', fontWeight: 600, marginTop: 2 }}>system prompt</div>
               <pre style={{ ...preStyle, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)', color: '#c4b5fd' }}>
                 {String(systemPrompt)}
               </pre>
@@ -114,7 +114,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           {/* Response text (solo chiamate routing) */}
           {responseText != null && (
             <>
-              <div style={{ fontSize: '0.6rem', color: '#86efac', fontWeight: 600, marginTop: 2 }}>response text</div>
+              <div style={{ fontSize: '0.75rem', color: '#86efac', fontWeight: 600, marginTop: 2 }}>response text</div>
               <pre style={{ ...preStyle, background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.25)', color: '#86efac' }}>
                 {String(responseText)}
               </pre>
@@ -124,7 +124,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           {/* Full response JSON collassabile (solo chiamate routing) */}
           {responseJSON != null && (
             <details>
-              <summary style={{ fontSize: '0.68rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
+              <summary style={{ fontSize: '0.85rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
                 response JSON
               </summary>
               <pre style={{ ...preStyle, margin: '4px 0 0' }}>
@@ -137,7 +137,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
       ) : isIntake ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <details>
-            <summary style={{ fontSize: '0.62rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>details</summary>
+            <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>details</summary>
             <pre style={{ ...preStyle, margin: '4px 0 0' }}>{JSON.stringify({
               model: e.details?.model,
               messageCount: e.details?.messageCount,
@@ -146,13 +146,13 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           </details>
           {(e.details?.excludedByLimits ?? []).length > 0 && (
             <div>
-              <div style={{ fontSize: '0.6rem', color: '#f87171', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 4 }}>EXCLUDED BY LIMITS</div>
+              <div style={{ fontSize: '0.75rem', color: '#f87171', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 4 }}>EXCLUDED BY LIMITS</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {(e.details.excludedByLimits as any[]).map((exc: any, i: number) => (
                   <div key={i} style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 'var(--radius-sm)', padding: '5px 10px' }}>
-                    <div style={{ fontSize: '0.68rem', color: '#f87171', fontWeight: 600, marginBottom: exc.violated?.length ? 4 : 0 }}>{exc.model}</div>
+                    <div style={{ fontSize: '0.85rem', color: '#f87171', fontWeight: 600, marginBottom: exc.violated?.length ? 4 : 0 }}>{exc.model}</div>
                     {(exc.violated ?? []).map((v: any, j: number) => (
-                      <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.62rem', color: 'var(--text-muted)' }}>
+                      <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                         <span style={{ color: '#fca5a5', fontWeight: 600 }}>{v.metric}</span>
                         <span>{v.window}</span>
                         <span style={{ marginLeft: 'auto', color: '#f87171' }}>{v.current} / {v.limit}</span>
@@ -170,12 +170,12 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           {/* Final ranking */}
           {e.details?.final?.length > 0 ? (
             <>
-              <div style={{ fontSize: '0.6rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2 }}>FINAL RANKING</div>
+              <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2 }}>FINAL RANKING</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {e.details.final.map((f: any) => (
                   <div key={f.rank} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-surface)', border: f.rank === 1 ? '1px solid rgba(52,211,153,0.35)' : '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '4px 10px' }}>
-                    <span style={{ fontSize: '0.65rem', color: f.rank === 1 ? '#34d399' : 'var(--text-muted)', fontWeight: f.rank === 1 ? 700 : 400, minWidth: 16 }}>#{f.rank}</span>
-                    <span style={{ fontSize: '0.65rem', color: 'var(--text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.model}</span>
+                    <span style={{ fontSize: '0.8rem', color: f.rank === 1 ? '#34d399' : 'var(--text-muted)', fontWeight: f.rank === 1 ? 700 : 400, minWidth: 16 }}>#{f.rank}</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.model}</span>
                     <ScoreBar value={f.score ?? f.weight} />
                   </div>
                 ))}
@@ -183,37 +183,37 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
             </>
           ) : (
             <>
-              <div style={{ fontSize: '0.6rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2 }}>FINAL RANKING</div>
-              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', padding: '8px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
+              <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2 }}>FINAL RANKING</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', padding: '8px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
                 No ranking data (record may be corrupted or from older version)
               </div>
             </>
           )}
           {/* Per-policy winner table */}
-          <div style={{ fontSize: '0.6rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2, marginTop: 16 }}>POLICY SCORES</div>
+          <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2, marginTop: 16 }}>POLICY SCORES</div>
           {(e.details?.policies ?? []).length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {e.details.policies.map((p: any, i: number) => (
                 <div key={i} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '6px 10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: p.scores?.length > 1 ? 4 : 0 }}>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'capitalize' }}>
+                    <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'capitalize' }}>
                       {p.type === 'llm' ? 'AI Routing' : p.type === 'rate-limit' ? 'Rate Limit' : p.type === 'budget-remaining' ? 'Budget Remaining' : p.type}
                     </span>
-                    <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>weight {p.weight?.toFixed(2)}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>weight {p.weight?.toFixed(2)}</span>
                   </div>
                   {p.winner && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: p.scores?.length > 1 ? 4 : 0 }}>
-                    <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 600 }}>★ {p.winner.model}</span>
+                    <span style={{ fontSize: '0.85rem', color: '#fbbf24', fontWeight: 600 }}>★ {p.winner.model}</span>
                     <ScoreBar value={p.winner.point ?? p.winner.score} />
                   </div>
                 )}
                 {p.scores?.length > 1 && (
                   <details>
-                    <summary style={{ fontSize: '0.62rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>all scores</summary>
+                    <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>all scores</summary>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 4 }}>
                       {p.scores.map((s: any, j: number) => (
                         <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.model}</span>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.model}</span>
                           <ScoreBar value={s.point ?? s.score} />
                         </div>
                       ))}
@@ -224,7 +224,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
             ))}
             </div>
           ) : (
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', padding: '8px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', padding: '8px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
               No policy data (record may be corrupted or from older version)
             </div>
           )}
@@ -232,7 +232,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
 
       ) : (
         <details>
-          <summary style={{ fontSize: '0.62rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>details</summary>
+          <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>details</summary>
           <pre style={{ ...preStyle, margin: '4px 0 0' }}>{JSON.stringify(e.details, null, 2)}</pre>
         </details>
       )}

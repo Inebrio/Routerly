@@ -43,6 +43,7 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
 
     const emit = (entry: TraceEntry) => {
       appendTrace(traceId, [entry]);
+      reply.raw.write(`data: ${JSON.stringify({ type: 'trace', entry })}\n\n`);
     };
 
     // 1. Route request
