@@ -17,6 +17,12 @@ export interface MessageStats {
   latencyMs: number | null;
   ttftMs: number | null;
   tokensPerSec: number | null;
+  // Cost information
+  inputCostUsd: number | null;
+  outputCostUsd: number | null;
+  totalCostUsd: number | null;
+  inputPerMillion: number | null;
+  outputPerMillion: number | null;
   hasError: boolean;
   errorMessage?: string;
 }
@@ -36,6 +42,11 @@ export function extractMessageStats(traces: TraceEntry[]): MessageStats {
     latencyMs: null,
     ttftMs: null,
     tokensPerSec: null,
+    inputCostUsd: null,
+    outputCostUsd: null,
+    totalCostUsd: null,
+    inputPerMillion: null,
+    outputPerMillion: null,
     hasError: false,
   };
 
@@ -57,6 +68,12 @@ export function extractMessageStats(traces: TraceEntry[]): MessageStats {
     stats.latencyMs = success.details.latencyMs ?? null;
     stats.ttftMs = success.details.ttftMs ?? null;
     stats.tokensPerSec = success.details.tokensPerSec ?? null;
+    // Extract cost information
+    stats.inputCostUsd = success.details.inputCostUsd ?? null;
+    stats.outputCostUsd = success.details.outputCostUsd ?? null;
+    stats.totalCostUsd = success.details.totalCostUsd ?? null;
+    stats.inputPerMillion = success.details.inputPerMillion ?? null;
+    stats.outputPerMillion = success.details.outputPerMillion ?? null;
   }
 
   // Check for errors
@@ -79,6 +96,15 @@ export function formatDuration(ms: number | null): string {
 export function formatTokensPerSec(tps: number | null): string {
   if (tps == null) return '—';
   return `${Math.round(tps)} T/s`;
+}
+
+export function formatCost(usd: number | null): string {
+  if (usd == null) return '—';
+  if (usd === 0) return '$0.000';
+  if (usd < 0.000001) return '<$0.000001';
+  if (usd < 0.01) return `$${usd.toFixed(6)}`;
+  if (usd < 1) return `$${usd.toFixed(4)}`;
+  return `$${usd.toFixed(2)}`;
 }
 
 export function formatTokens(count: number | null): string {

@@ -1,6 +1,6 @@
-import { Clock, Zap, FileText, AlertCircle, TrendingUp, type LucideIcon } from 'lucide-react';
+import { Clock, Zap, FileText, AlertCircle, TrendingUp, DollarSign, type LucideIcon } from 'lucide-react';
 import type { MessageStats } from '../utils/traceUtils';
-import { formatDuration, formatTokensPerSec, formatTokens } from '../utils/traceUtils';
+import { formatDuration, formatTokensPerSec, formatTokens, formatCost } from '../utils/traceUtils';
 
 interface MessageStatsProps {
   stats: MessageStats;
@@ -131,6 +131,54 @@ export function MessageStatsCard({ stats, turnNumber }: MessageStatsProps) {
             : '—'}
         />
       </div>
+
+      {/* Cost Breakdown */}
+      {stats.totalCostUsd != null && (
+        <div style={{
+          marginTop: 16,
+          paddingTop: 12,
+          borderTop: '1px solid var(--border)',
+        }}>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+            Cost Breakdown
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>
+                <DollarSign size={12} style={{ display: 'inline', marginRight: 4 }} />
+                Input ({stats.inputTokens?.toLocaleString() ?? '—'} tokens)
+              </span>
+              <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--text-primary)', fontWeight: 500 }}>
+                {formatCost(stats.inputCostUsd)}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>
+                <DollarSign size={12} style={{ display: 'inline', marginRight: 4 }} />
+                Output ({stats.outputTokens?.toLocaleString() ?? '—'} tokens)
+              </span>
+              <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--text-primary)', fontWeight: 500 }}>
+                {formatCost(stats.outputCostUsd)}
+              </span>
+            </div>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginTop: 6,
+              paddingTop: 8,
+              borderTop: '1px dashed var(--border)',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+            }}>
+              <span style={{ color: 'var(--text-primary)' }}>Total Cost</span>
+              <span style={{ fontVariantNumeric: 'tabular-nums', color: '#4ade80' }}>
+                {formatCost(stats.totalCostUsd)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cached Tokens */}
       {stats.cachedTokens != null && stats.cachedTokens > 0 && (
