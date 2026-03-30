@@ -7,6 +7,10 @@ sidebar_position: 5
 
 Routerly's router selects which model to use for each request by running a configurable stack of **routing policies**. Policies are applied in priority order; each policy can score, filter, or directly pick a model from the candidate set.
 
+:::tip Benchmarks
+Reproducible routing benchmarks — latency overhead, cost savings, and failover behaviour — are published at **[github.com/Inebrio/routerly-benchmark](https://github.com/Inebrio/routerly-benchmark)**.
+:::
+
 ---
 
 ## How Routing Works
