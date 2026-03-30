@@ -368,6 +368,7 @@ export function ProjectRoutingTab() {
                             const usedIds = new Set(getLlmModelIds(policy).filter((_, i) => i !== mIdx));
                             const opts = availableModels
                               .filter(m => !usedIds.has(m.id))
+                              .sort((a, b) => a.id.localeCompare(b.id))
                               .map(m => ({ value: m.id, label: m.id }));
                             return (
                               <div
@@ -431,7 +432,10 @@ export function ProjectRoutingTab() {
                           <input
                             type="checkbox"
                             checked={policy.config?.autoRouting ?? true}
-                            onChange={(e) => updatePolicyConfig(idx, { autoRouting: e.target.checked })}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              updatePolicyConfig(idx, { autoRouting: checked, ...(checked ? { additionalPromptInfo: undefined } : {}) });
+                            }}
                             style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
                           />
                           Auto Routing
@@ -573,7 +577,7 @@ export function ProjectRoutingTab() {
                                   value={policy.config?.maxUserMessageChars ?? ''}
                                   onChange={e => {
                                     const v = e.target.value.replace(/[^0-9]/g, '');
-                                    updatePolicyConfig(idx, { maxUserMessageChars: v === '' ? undefined : Math.max(100, Number(v)) });
+                                    updatePolicyConfig(idx, { maxUserMessageChars: v === '' ? undefined : Number(v) });
                                   }}
                                   onMouseDown={e => e.stopPropagation()}
                                 />
@@ -682,18 +686,15 @@ export function ProjectRoutingTab() {
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div className="form-group" style={{ margin: 0 }}>
                     <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>Endpoint Model</label>
-                    <select
-                      className="form-input"
+                    <SearchableSelect
                       value={item.modelId}
-                      onChange={e => updateTargetModel(idx, 'modelId', e.target.value)}
-                      required
-                      style={{ padding: '6px 10px', fontSize: '0.9rem' }}
-                    >
-                      <option value="" disabled>Select model</option>
-                      {availableModels
+                      onChange={v => updateTargetModel(idx, 'modelId', v)}
+                      placeholder="Select model"
+                      options={availableModels
                         .filter(m => m.id === item.modelId || !getUsedTargetModelIds(idx).has(m.id))
-                        .map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
-                    </select>
+                        .sort((a, b) => a.id.localeCompare(b.id))
+                        .map(m => ({ value: m.id, label: m.id }))}
+                    />
                   </div>
 
                   {showPromptInput && (
