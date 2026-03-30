@@ -45,7 +45,7 @@ function addDays(d: Date, n: number) {
 function parseTimeFromISO(iso: string, defaultTime: string): string {
   if (!iso || iso.length <= 10) return defaultTime;
   const match = iso.match(/T(\d{2}:\d{2}:\d{2})/);
-  return match ? match[1] : defaultTime;
+  return match?.[1] ?? defaultTime;
 }
 
 /** Recent time-window presets (minutes / hours) — always use ISO datetime strings */

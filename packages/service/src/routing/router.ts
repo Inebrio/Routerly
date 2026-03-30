@@ -113,7 +113,7 @@ export async function routeRequest(
 
   if (excludedByLimits.length > 0) {
     for (const exc of excludedByLimits) {
-      log?.debug(
+      log?.info(
         {
           modelId: exc.modelId,
           violated: exc.violated.map(v => ({
@@ -159,7 +159,7 @@ export async function routeRequest(
   if (validCandidates.length === 1) {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const only = validCandidates[0]!;
-    log?.debug(
+    log?.info(
       { modelId: only.model.id, totalCandidates: candidates.length },
       'routing: single valid model — bypassing policies, forwarding directly',
     );
@@ -184,7 +184,7 @@ export async function routeRequest(
     policiesWithWeight.map(async ({ type, weight, config }) => {
       const fn = POLICY_MAP[type];
       if (!fn) {
-        log?.debug({ type }, 'routing: unknown policy type, skipping');
+        log?.info({ type }, 'routing: unknown policy type, skipping');
         return { type, weight, routing: [] as { model: string; point: number }[], excludes: [] as string[], failed: true };
       }
       try {
@@ -192,7 +192,7 @@ export async function routeRequest(
         return { type, weight, routing: out.routing, excludes: out.excludes ?? [], failed: false };
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
-        log?.debug({ type, err: errMsg }, 'routing: policy failed');
+        log?.info({ type, err: errMsg }, 'routing: policy failed');
         emit?.(te('router-response', `policy:error:${type}`, { type, error: errMsg }));
         return { type, weight, routing: [] as { model: string; point: number }[], excludes: [] as string[], failed: true };
       }
@@ -227,7 +227,7 @@ export async function routeRequest(
   }
 
   if (policyExcludes.size > 0) {
-    log?.debug(
+    log?.info(
       { excluded: Object.fromEntries(excludeReasons) },
       'routing: models excluded by policies',
     );
@@ -280,7 +280,7 @@ export async function routeRequest(
   }
 
   if (abstainedPolicies.length > 0) {
-    log?.debug({ abstained: abstainedPolicies }, 'routing: policies abstained (no discriminating signal)');
+    log?.info({ abstained: abstainedPolicies }, 'routing: policies abstained (no discriminating signal)');
     emit?.(te('router-response', 'router:abstained', { policies: abstainedPolicies }));
   }
 
@@ -302,7 +302,7 @@ export async function routeRequest(
   const tiedWinners = finalCandidates.filter(c => Math.abs(c.weight - topScore) < TIED_TOLERANCE);
   const hasTie = tiedWinners.length > 1;
 
-  log?.debug(
+  log?.info(
     {
       policies: successfulResults.map(r => ({
         type: r.type,
