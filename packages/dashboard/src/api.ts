@@ -153,6 +153,7 @@ export interface PricingTier {
 
 export interface Model {
   id: string; name: string; provider: string; endpoint: string;
+  upstreamModelId?: string;
   cost: { inputPerMillion: number; outputPerMillion: number; cachePerMillion?: number; pricingTiers?: PricingTier[] };
   contextWindow?: number;
   limits?: Limit[];
@@ -162,7 +163,7 @@ export interface Model {
 export const getModels = () => request<Model[]>('/models');
 export const createModel = (data: {
   id: string; name?: string; provider: string; endpoint: string; apiKey?: string;
-  cloneFrom?: string;
+  cloneFrom?: string; upstreamModelId?: string;
   inputPerMillion: number; outputPerMillion: number;
   cachePerMillion?: number;
   contextWindow?: number;
@@ -172,6 +173,7 @@ export const createModel = (data: {
 export const updateModel = (id: string, data: {
   id?: string;
   name?: string; provider: string; endpoint: string; apiKey?: string;
+  upstreamModelId?: string;
   inputPerMillion: number; outputPerMillion: number;
   cachePerMillion?: number;
   contextWindow?: number;

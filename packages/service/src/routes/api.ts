@@ -168,7 +168,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{
     Body: {
       id: string; name?: string; provider: string; endpoint: string;
-      apiKey?: string; cloneFrom?: string; inputPerMillion: number; outputPerMillion: number;
+      apiKey?: string; cloneFrom?: string; upstreamModelId?: string;
+      inputPerMillion: number; outputPerMillion: number;
       cachePerMillion?: number;
       contextWindow?: number;
       pricingTiers?: PricingTier[];
@@ -213,6 +214,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       },
       ...(resolvedLimits?.length ? { limits: resolvedLimits } : {}),
       ...(req.body.contextWindow !== undefined ? { contextWindow: req.body.contextWindow } : {}),
+      ...(req.body.upstreamModelId ? { upstreamModelId: req.body.upstreamModelId } : {}),
     };
     models.push(model);
     await writeConfig('models', models);
@@ -224,7 +226,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     Body: {
       id?: string;
       name?: string; provider: string; endpoint: string;
-      apiKey?: string; inputPerMillion: number; outputPerMillion: number;
+      apiKey?: string; upstreamModelId?: string;
+      inputPerMillion: number; outputPerMillion: number;
       cachePerMillion?: number;
       contextWindow?: number;
       pricingTiers?: PricingTier[];
@@ -277,9 +280,41 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       globalThresholds: undefined,
       ...(req.body.contextWindow !== undefined ? { contextWindow: req.body.contextWindow } : existing.contextWindow !== undefined ? { contextWindow: existing.contextWindow } : {}),
       ...(resolvedLimits?.length ? { limits: resolvedLimits } : {}),
+      // upstreamModelId: if explicitly provided keep it, if empty string clear it, if absent keep existing
+      ...(req.body.upstreamModelId
+        ? { upstreamModelId: req.body.upstreamModelId }
+        : req.body.upstreamModelId === ''
+          ? { upstreamModelId: undefined }
+          : existing.upstreamModelId !== undefined ? { upstreamModelId: existing.upstreamModelId } : {}),
     };
     models[index] = model;
     await writeConfig('models', models);
+
+    // If the model ID changed, cascade the rename to all project references
+    if (newId !== req.params.id) {
+      const projects = await readConfig('projects');
+      let projectsChanged = false;
+      for (const project of projects) {
+        for (const ref of (project.models ?? [])) {
+          if (ref.modelId === req.params.id) {
+            ref.modelId = newId;
+            projectsChanged = true;
+          }
+        }
+        for (const token of (project.tokens ?? [])) {
+          for (const ref of (token.models ?? [])) {
+            if (ref.modelId === req.params.id) {
+              ref.modelId = newId;
+              projectsChanged = true;
+            }
+          }
+        }
+      }
+      if (projectsChanged) {
+        await writeConfig('projects', projects);
+      }
+    }
+
     return reply.send({ ...model, apiKey: undefined });
   });
 
