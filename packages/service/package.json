@@ -19,7 +19,7 @@
     "@routerly/shared": "*",
     "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",
-    "fastify": "^4.27.0",
+    "fastify": "^5.8.4",
     "fastify-plugin": "^4.5.1",
     "nodemailer": "^8.0.1",
     "openai": "^4.89.0",
@@ -34,6 +34,6 @@
     "@types/uuid": "^9.0.8",
     "tsx": "^4.7.3",
     "typescript": "^5.4.5",
-    "vitest": "^1.4.0"
+    "vitest": "^3.2.4"
   }
 }
