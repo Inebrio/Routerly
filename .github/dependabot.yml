@@ -1,0 +1,25 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    groups:
+      typescript-toolchain:
+        patterns:
+          - "typescript"
+          - "@typescript-eslint/*"
+          - "eslint"
+          - "prettier"
+          - "vitest"
+      github-actions:
+        patterns:
+          - "actions/*"
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
