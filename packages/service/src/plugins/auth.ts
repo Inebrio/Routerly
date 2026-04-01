@@ -12,8 +12,8 @@ declare module 'fastify' {
 }
 
 const authPlugin: FastifyPluginAsync = async (fastify) => {
-  fastify.decorateRequest('project', null);
-  fastify.decorateRequest('token', null);
+  fastify.decorateRequest('project', { getter: () => null as unknown as ProjectConfig });
+  fastify.decorateRequest('token', { getter: () => null as unknown as ProjectToken });
 
   fastify.addHook('preHandler', async (request: FastifyRequest, reply) => {
     // Skip auth for non-LLM-proxy routes (health check, dashboard UI, dashboard API)
