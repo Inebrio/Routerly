@@ -17,5 +17,8 @@
   },
   "devDependencies": {
     "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "uuid": "^13.0.0"
   }
 }
