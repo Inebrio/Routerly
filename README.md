@@ -305,6 +305,13 @@ Override the base path with `ROUTERLY_HOME=/custom/path`.
 
 ---
 
+## Security
+
+Routerly is a pure TypeScript / Node.js project and has **no dependency on `litellm`** or any Python package.
+See [SECURITY.md](SECURITY.md) for vulnerability reporting, supply chain notes, and security practices.
+
+---
+
 ## Contributing
 
 Contributions are welcome. See the [Development Guide](docs/contributing/development.md).
