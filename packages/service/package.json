@@ -20,7 +20,7 @@
     "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",
     "fastify": "^5.8.4",
-    "fastify-plugin": "^4.5.1",
+    "fastify-plugin": "^5.1.0",
     "nodemailer": "^8.0.1",
     "openai": "^4.89.0",
     "pino-pretty": "^11.0.0",
