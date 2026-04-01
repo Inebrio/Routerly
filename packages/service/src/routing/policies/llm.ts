@@ -1,6 +1,5 @@
 import type { ModelConfig, ProjectConfig } from '@routerly/shared';
 import { readConfig } from '../../config/loader.js';
-import { getProviderAdapter } from '../../providers/index.js';
 import { llmChat, BudgetExceededError } from '../../llm/executor.js';
 import { getRoutingHistory } from '../routingMemoryStore.js';
 import type { LLMCallContext } from '../../llm/executor.js';
@@ -48,7 +47,7 @@ function buildSystemPrompt(
     ? `{ "model": "<id>", "point": <0.0-1.0>, "reason": "<brief>" }`
     : `{ "model": "<id>", "point": <0.0-1.0> }`;
 
-  return `You are a routing assistant. Score each model 0.0–1.0 (worst → best).
+  return `You are a routing engine, NOT a user assistant. Your ONLY job is to score models for routing. NEVER answer, solve, or respond to the user's request in any way.
 
 Match complexity to capability: simple tasks → cheap models, hard tasks → powerful models.
 
@@ -56,17 +55,17 @@ Models:
 ${modelList}
 
 Rules:
-- Return ONLY a JSON object — no markdown, no extra text.
+- Never output code, prose, or any explanation. Your only output is a single JSON object.
 - Include ALL models with their exact id strings.
-- Scores must differ meaningfully.${extraRules ? `\n${extraRules}` : ''}
+- Scores must differ meaningfully.${extraRules ? `\n${extraRules}` : ''}${additionalBlock}
 
-Format:
+Respond with ONLY this JSON object and nothing else:
 {
   "routing": [
     ${entryFormat},
     ...
   ]
-}${additionalBlock}`;
+}`;
 }
 
 function buildUserMessage(
@@ -87,18 +86,20 @@ function buildUserMessage(
     : JSON.stringify(lastUserMsg?.content ?? '');
 
   const systemBlock = systemContent
-    ? `System prompt:\n${systemContent}\n\n`
+    ? `<system_prompt>\n${systemContent}\n</system_prompt>\n\n`
     : '';
 
-  let result: string;
+  let requestBlock: string;
   if (previousDecisions && previousDecisions.length > 0) {
     const historyBlock = previousDecisions
       .map((d, i) => `- Turn ${i + 1}: routed to ${d.model}`)
       .join('\n');
-    result = `${systemBlock}Previous routing decisions (most recent last):\n${historyBlock}\n\nCurrent user request:\n${userContent}`;
+    requestBlock = `Previous routing decisions (most recent last):\n${historyBlock}\n\n<request_to_route>\n${userContent}\n</request_to_route>`;
   } else {
-    result = `${systemBlock}User request:\n${userContent}`;
+    requestBlock = `<request_to_route>\n${userContent}\n</request_to_route>`;
   }
+
+  let result = `Analyze the task type of the request below and score each model. Do NOT solve or answer it.\n\n${systemBlock}${requestBlock}\n\nRespond ONLY with the JSON object described in your instructions.`;
 
   if (maxChars != null && result.length > maxChars) {
     result = result.slice(0, maxChars) + '\n[truncated]';
@@ -158,48 +159,37 @@ function parseRoutingResponse(
 }
 
 async function repairRoutingResponse(
-  adapter: ReturnType<typeof getProviderAdapter>,
   model: ModelConfig,
   systemPrompt: string,
-  userMessage: string,
-  invalidResponse: string,
   maxCompletionTokens: number | undefined,
+  ctx: LLMCallContext,
   log?: { info: (obj: object, msg?: string) => void; warn: (obj: object, msg?: string) => void },
 ): Promise<{ model: string; point: number }[] | null> {
-  const repairUserMessage = `Your previous response was not valid JSON or did not match the expected structure.
-
-Previous response:
-${invalidResponse}
-
-Return ONLY a valid JSON object with no text before or after it, no markdown, no code fences:
-{
-  "routing": [
-    { "model": "<model_id>", "point": <0.0-1.0>, "reason": "<brief reason>" },
-    ...
-  ]
-}`;
+  // Minimal prompt: no user content, no conversation history.
+  // Re-exposing the user's request (e.g. a coding challenge) would risk
+  // the model losing focus again and producing non-JSON output.
+  const repairUserMessage = 'Your previous response was not valid JSON. Return ONLY the JSON scoring object described in your instructions.';
 
   try {
-    const repairResponse = await adapter.chatCompletion(
+    const repairResponse = await llmChat(
       {
         model: model.id,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage },
-          { role: 'assistant', content: invalidResponse },
           { role: 'user', content: repairUserMessage },
         ],
         ...(maxCompletionTokens != null ? { max_completion_tokens: maxCompletionTokens } : {}),
         stream: false,
       },
       model,
+      ctx,
     );
 
     const repairText = String(repairResponse.choices?.[0]?.message?.content ?? '');
-      log?.info({ raw: repairText }, 'llm policy: repair response');
+    log?.info({ raw: repairText }, 'llm policy: repair response');
     return parseRoutingResponse(repairText, log);
   } catch (err) {
-      log?.warn({ err: String(err) }, 'llm policy: repair call failed');
+    log?.warn({ err: String(err) }, 'llm policy: repair call failed');
     return null;
   }
 }
@@ -330,11 +320,11 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
       const text = String(response.choices?.[0]?.message?.content ?? '');
       log?.info({ modelId, rawChars: text.length }, 'llm policy: raw response');
 
-      const adapter = getProviderAdapter(routingModel);
       let routing = parseRoutingResponse(text, log);
       if (!routing) {
         log?.warn({ modelId, reason: 'parse failed, attempting repair' }, 'llm policy: repair');
-        routing = await repairRoutingResponse(adapter, routingModel, systemPrompt, userMessage, text, maxCompletionTokens, log);
+        emit?.({ panel: 'router-response', message: 'llm-policy:repair', details: { modelId } });
+        routing = await repairRoutingResponse(routingModel, systemPrompt, maxCompletionTokens, ctx, log);
       }
 
       if (!routing) {
