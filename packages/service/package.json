@@ -33,7 +33,7 @@
     "@types/proper-lockfile": "^4.1.4",
     "@types/uuid": "^9.0.8",
     "tsx": "^4.7.3",
-    "typescript": "^5.4.5",
-    "vitest": "^3.2.4"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
   }
 }
