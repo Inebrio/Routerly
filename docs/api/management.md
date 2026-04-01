@@ -37,7 +37,7 @@ POST /api/auth/login
 ```
 
 - `token` — short-lived JWT (1 hour). Use as `Authorization: Bearer <token>` on all other endpoints.
-- `refreshToken` — permanent opaque token. Store securely; use it with [POST /api/auth/refresh](#refresh) to obtain new access tokens without re-entering credentials.
+- `refreshToken` — opaque token used to obtain new access tokens without re-entering credentials. Store securely; see [POST /api/auth/refresh](#refresh). Rotates on every use.
 
 ### Refresh
 
@@ -55,14 +55,15 @@ This endpoint is **public** (no `Authorization` header required).
 ```json
 {
   "token": "eyJ...",
+  "refreshToken": "b9d4e1...",
   "user": { "id": "uuid", "email": "admin@example.com", "role": "admin", "permissions": [] }
 }
 ```
 
-Issues a new 1-hour access token. The refresh token itself is permanent and does not rotate. Returns `401` if the token is invalid or has been revoked.
+Issues a new 1-hour access token **and a new refresh token** (rotation). The previous refresh token is immediately invalidated — replace it with the value returned in the response. Returns `401` if the token is invalid or has already been used/revoked.
 
 :::note
-The CLI and dashboard perform this refresh automatically — the CLI tries silently when the token expires or is within 5 minutes of expiry; the dashboard retries on any `401` response.
+The CLI and dashboard perform this refresh automatically — the CLI tries silently when the token expires or is within 5 minutes of expiry; the dashboard retries on any `401` response. Both clients persist the new refresh token automatically.
 :::
 
 ---

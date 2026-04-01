@@ -27,8 +27,9 @@ function trySilentRefresh(): Promise<boolean> {
         body: JSON.stringify({ refreshToken }),
       });
       if (!res.ok) return false;
-      const data = await res.json() as { token: string };
+      const data = await res.json() as { token: string; refreshToken?: string };
       localStorage.setItem('lr_token', data.token);
+      if (data.refreshToken) localStorage.setItem('lr_refresh_token', data.refreshToken);
       // Decode expiry from new token
       try {
         const payload = JSON.parse(atob(data.token.split('.')[0]!.replace(/-/g, '+').replace(/_/g, '/'))) as { exp?: number };
