@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { createHash } from 'node:crypto';
+import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
 import { readConfig, writeConfig } from '../config/loader.js';
@@ -9,8 +10,35 @@ import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Pr
 import { getTrace } from '../routing/traceStore.js';
 import { sendTestNotification } from '../notifications/sender.js';
 
-function hashPassword(p: string): string {
-  return createHash('sha256').update(p).digest('hex');
+// SHA-256 for random tokens only (refresh tokens are not user-chosen passwords)
+function hashToken(t: string): string {
+  return createHash('sha256').update(t).digest('hex');
+}
+
+const BCRYPT_ROUNDS = 12;
+
+async function hashPassword(p: string): Promise<string> {
+  return bcrypt.hash(p, BCRYPT_ROUNDS);
+}
+
+/**
+ * Verifies a plaintext password against a stored hash.
+ * Handles legacy unsalted SHA-256 hashes transparently and returns an upgraded
+ * bcrypt hash so the caller can persist the migration on the fly.
+ */
+async function verifyPassword(
+  plain: string,
+  stored: string,
+): Promise<{ ok: boolean; upgradedHash?: string }> {
+  if (stored.startsWith('$2b$') || stored.startsWith('$2a$')) {
+    return { ok: await bcrypt.compare(plain, stored) };
+  }
+  // Legacy: unsalted SHA-256
+  const legacy = createHash('sha256').update(plain).digest('hex');
+  if (legacy === stored) {
+    return { ok: true, upgradedHash: await bcrypt.hash(plain, BCRYPT_ROUNDS) };
+  }
+  return { ok: false };
 }
 
 function requireAdmin(authHeader: string | undefined): string | null {
@@ -67,39 +95,45 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const { email, password } = req.body;
     const [users, customRoles] = await Promise.all([readConfig('users'), readConfig('roles')]);
     const userIndex = users.findIndex(u => u.email === email);
-    if (userIndex === -1 || users[userIndex]!.passwordHash !== hashPassword(password)) {
-      return reply.status(401).send({ error: 'Invalid credentials' });
-    }
+    if (userIndex === -1) return reply.status(401).send({ error: 'Invalid credentials' });
+    const { ok, upgradedHash } = await verifyPassword(password, users[userIndex]!.passwordHash);
+    if (!ok) return reply.status(401).send({ error: 'Invalid credentials' });
     const user = users[userIndex]!;
     const allRoles = getEffectiveRoles(customRoles);
     const permissions = resolvePermissions(user.roleId, allRoles);
     const token = createSessionToken(user.id, user.roleId);
     // Issue a permanent refresh token and persist its hash
     const refreshToken = generateRawToken(40);
-    users[userIndex] = { ...user, refreshTokenHash: hashPassword(refreshToken) };
+    users[userIndex] = {
+      ...user,
+      refreshTokenHash: hashToken(refreshToken),
+      // Transparently migrate legacy SHA-256 hash to bcrypt on next login
+      ...(upgradedHash ? { passwordHash: upgradedHash } : {}),
+    };
     await writeConfig('users', users);
     return reply.send({ token, refreshToken, user: { id: user.id, email: user.email, role: user.roleId, permissions } });
   });
 
   // ─── POST /api/auth/refresh ─────────────────────────────────────────────────
-  fastify.post('/api/auth/refresh', async (req, reply) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
-      return reply.status(401).send({ error: 'Unauthorized' });
-    }
-    const jwtToken = authHeader.slice(7);
-    const payload = verifyToken(jwtToken);
-    if (!payload) return reply.status(401).send({ error: 'Token expired or invalid' });
+  fastify.post<{ Body: { refreshToken?: string } }>('/api/auth/refresh', async (req, reply) => {
+    const { refreshToken } = req.body ?? {};
+    if (!refreshToken) return reply.status(401).send({ error: 'Refresh token required' });
 
-    const userId = payload['sub'] as string;
     const [users, customRoles] = await Promise.all([readConfig('users'), readConfig('roles')]);
-    const user = users.find(u => u.id === userId);
-    if (!user) return reply.status(401).send({ error: 'Unauthorized' });
+    const userIndex = users.findIndex(u => u.refreshTokenHash === hashToken(refreshToken));
+    if (userIndex === -1) return reply.status(401).send({ error: 'Invalid refresh token' });
 
+    const user = users[userIndex]!;
     const allRoles = getEffectiveRoles(customRoles);
     const permissions = resolvePermissions(user.roleId, allRoles);
     const token = createSessionToken(user.id, user.roleId);
-    return reply.send({ token, user: { id: user.id, email: user.email, role: user.roleId, permissions } });
+
+    // Rotate refresh token: issue a new one and invalidate the old
+    const newRefreshToken = generateRawToken(40);
+    users[userIndex] = { ...user, refreshTokenHash: hashToken(newRefreshToken) };
+    await writeConfig('users', users);
+
+    return reply.send({ token, refreshToken: newRefreshToken, user: { id: user.id, email: user.email, role: user.roleId, permissions } });
   });
 
   // ─── Setup endpoints (public, no auth required) ─────────────────────────────
@@ -121,7 +155,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const user: UserConfig = {
       id: uuidv4(),
       email,
-      passwordHash: hashPassword(password),
+      passwordHash: await hashPassword(password),
       roleId: 'admin',
       projectIds: [],
     };
@@ -582,9 +616,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const idx = users.findIndex(u => u.id === userId);
     if (idx === -1) return reply.status(404).send({ error: 'User not found' });
     const user = users[idx]!;
-    if (user.passwordHash !== hashPassword(currentPassword)) {
-      return reply.status(401).send({ error: 'Current password is incorrect' });
-    }
+    const { ok: pwOk } = await verifyPassword(currentPassword, user.passwordHash);
+    if (!pwOk) return reply.status(401).send({ error: 'Current password is incorrect' });
     if (newEmail && newEmail !== user.email) {
       if (users.find(u => u.email === newEmail)) {
         return reply.status(409).send({ error: 'Email already in use' });
@@ -593,7 +626,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
     if (newPassword) {
       if (newPassword.length < 8) return reply.status(400).send({ error: 'Password must be at least 8 characters' });
-      users[idx] = { ...users[idx]!, passwordHash: hashPassword(newPassword) };
+      users[idx] = { ...users[idx]!, passwordHash: await hashPassword(newPassword) };
     }
     await writeConfig('users', users);
     const updated = users[idx]!;
@@ -621,7 +654,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const user: UserConfig = {
       id: uuidv4(),
       email: req.body.email,
-      passwordHash: hashPassword(req.body.password),
+      passwordHash: await hashPassword(req.body.password),
       roleId: req.body.roleId ?? 'viewer',
       projectIds: req.body.projectIds ?? [],
     };
@@ -655,7 +688,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
     if (newPassword) {
       if (newPassword.length < 8) return reply.status(400).send({ error: 'Password must be at least 8 characters' });
-      users[idx] = { ...users[idx]!, passwordHash: hashPassword(newPassword) };
+      users[idx] = { ...users[idx]!, passwordHash: await hashPassword(newPassword) };
     }
     await writeConfig('users', users);
     const updated = users[idx]!;
@@ -782,7 +815,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // ─── GET /api/settings ─────────────────────────────────────────────────────
-  fastify.get('/api/settings', async (_req, reply) => {
+  fastify.get('/api/settings', async (req, reply) => {
+    if (!requirePerm(req, 'user:write', reply)) return;
     const settings = await readConfig('settings');
     return reply.send(settings);
   });
