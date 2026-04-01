@@ -23,12 +23,12 @@
     "@changesets/cli": "^2.30.0",
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@typescript-eslint/parser": "^7.0.0",
-    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^8.58.0",
+    "@typescript-eslint/parser": "^8.58.0",
+    "eslint": "^9.39.4",
     "husky": "^9.1.7",
     "prettier": "^3.2.5",
-    "typescript": "^5.4.5",
+    "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   },
   "engines": {

@@ -16,13 +16,13 @@
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^6.22.3",
-    "recharts": "^2.12.2",
+    "recharts": "^3.8.1",
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.2.1",
+    "@vitejs/plugin-react": "^5.2.0",
     "sharp": "^0.34.5",
     "typescript": "^5.4.5",
     "vite": "^6.4.1"
