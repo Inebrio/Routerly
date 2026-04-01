@@ -80,7 +80,7 @@ export function OverviewPage() {
                 <Tooltip
                   contentStyle={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
                   labelStyle={{ color: 'var(--text-secondary)' }}
-                  formatter={(v: number) => [`$${v.toFixed(6)}`, 'Cost']}
+                  formatter={(v) => [`$${(v as number).toFixed(6)}`, 'Cost']}
                 />
                 <Area type="monotone" dataKey="cost" stroke="#5A90F8" fill="url(#grad)" strokeWidth={2} />
               </AreaChart>
@@ -96,11 +96,11 @@ export function OverviewPage() {
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
                   <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} paddingAngle={3}>
-                    {pieData.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
+                    {pieData.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length] ?? '#5A90F8'} />)}
                   </Pie>
                   <Tooltip
                     contentStyle={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
-                    formatter={(v: number) => [`$${v.toFixed(6)}`, 'Cost']}
+                    formatter={(v) => [`$${(v as number).toFixed(6)}`, 'Cost']}
                   />
                   <Legend wrapperStyle={{ fontSize: 12, color: 'var(--text-secondary)' }} />
                 </PieChart>
