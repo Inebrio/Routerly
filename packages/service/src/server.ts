@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import staticFiles from '@fastify/static';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import authPlugin from './plugins/auth.js';
 import { loadSecret } from './plugins/jwt.js';
 import { openaiRoutes } from './routes/openai.js';
@@ -11,6 +12,7 @@ import { apiRoutes } from './routes/api.js';
 import { initConfigDirs, readConfig } from './config/loader.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const { version: pkgVersion } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8')) as { version: string };
 
 export async function buildServer() {
   const settings = await readConfig('settings');
@@ -72,7 +74,7 @@ export async function buildServer() {
   // ─── Health check ─────────────────────────────────────────────────────────
   fastify.get('/health', async () => ({
     status: 'ok',
-    version: '0.0.1',
+    version: pkgVersion,
     timestamp: new Date().toISOString(),
   }));
 
