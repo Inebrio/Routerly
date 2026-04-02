@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
@@ -9,6 +10,8 @@ import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jw
 import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit } from '@routerly/shared';
 import { getTrace } from '../routing/traceStore.js';
 import { sendTestNotification } from '../notifications/sender.js';
+
+const { version: pkgVersion } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf-8')) as { version: string };
 
 // SHA-256 for random tokens only (refresh tokens are not user-chosen passwords)
 function hashToken(t: string): string {
@@ -805,7 +808,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── GET /api/system/info ───────────────────────────────────────────────────
   fastify.get('/api/system/info', async (_req, reply) => {
     return reply.send({
-      version: '0.0.1',
+      version: pkgVersion,
       nodeVersion: process.version,
       platform: process.platform,
       configDir: CONFIG_PATHS.config,
