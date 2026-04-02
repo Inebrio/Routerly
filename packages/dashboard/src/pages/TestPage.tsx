@@ -75,7 +75,7 @@ export function TestPage() {
     abortControllerRef.current = controller;
 
     const payload = {
-      model: 'gpt-4o',
+      model: matchedProject?.routingModelId || matchedProject?.models?.[0]?.modelId || '',
       messages: newMessages,
       stream: true,
     };

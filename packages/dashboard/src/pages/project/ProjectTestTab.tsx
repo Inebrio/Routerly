@@ -110,7 +110,7 @@ export function ProjectTestTab() {
     abortControllerRef.current = controller;
 
     const payload = {
-      model: project?.routingModelId || 'gpt-4o',
+      model: project?.routingModelId || project?.models?.[0]?.modelId || ''
       messages: newMessages,
       stream: true,
     };
