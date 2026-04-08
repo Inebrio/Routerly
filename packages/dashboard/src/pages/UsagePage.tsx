@@ -27,7 +27,7 @@ export function UsagePage() {
   const [pollInterval, setPollInterval] = useFilterState<number>({ key: 'usage-filters-pollInterval', defaultValue: 30_000 });
   const [refreshing, setRefreshing]     = useState(false);
   const [page, setPage]                 = useState(1);
-  const [pageSize]                      = useState(50);
+  const [pageSize]                      = useState(100);
   const navigate = useNavigate();
 
   const POLL_OPTIONS: { label: string; value: number }[] = [

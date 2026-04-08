@@ -30,7 +30,7 @@ export function ProjectLogsTab() {
   const [pollInterval, setPollInterval]     = useFilterState<number>({ key: `project-${projectId}-filters-pollInterval`, defaultValue: 30_000 });
   const [refreshing, setRefreshing]         = useState(false);
   const [page, setPage]                     = useState(1);
-  const [pageSize]                          = useState(50);
+  const [pageSize]                          = useState(100);
 
   const POLL_OPTIONS: { label: string; value: number }[] = [
     { label: 'Off',  value: 0 },

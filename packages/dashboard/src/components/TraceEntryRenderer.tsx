@@ -44,6 +44,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
   const isIntake       = e.message === 'router:intake';
 
   const labelColor = isError ? 'var(--danger)' : isThinking ? '#a78bfa' : isModelPrompt ? '#c4b5fd' : isRecap ? '#34d399' : 'var(--accent)';
+  const hasDetails = e.details != null && Object.keys(e.details).length > 0;
 
   // Estrai i campi "speciali" dal JSON tecnico per non duplicarli nel fallback
   const { systemPrompt, responseText, responseJSON, ...baseDetails } = e.details ?? {};
@@ -57,6 +58,13 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
     color: isError ? 'var(--danger)' : 'var(--text-secondary)',
     whiteSpace: 'pre-wrap',
   };
+
+  const rawDetails = hasDetails ? (
+    <details>
+      <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>raw details</summary>
+      <pre style={{ ...preStyle, margin: '4px 0 0' }}>{JSON.stringify(e.details, null, 2)}</pre>
+    </details>
+  ) : null;
 
   return (
     <div style={{ marginBottom: 8 }}>
@@ -132,6 +140,8 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
               </pre>
             </details>
           )}
+
+          {rawDetails}
         </div>
 
       ) : isIntake ? (
@@ -163,6 +173,8 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
               </div>
             </div>
           )}
+
+          {rawDetails}
         </div>
 
       ) : isRecap ? (
@@ -228,11 +240,13 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
               No policy data (record may be corrupted or from older version)
             </div>
           )}
+
+          {rawDetails}
         </div>
 
       ) : (
         <details>
-          <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>details</summary>
+          <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>raw details</summary>
           <pre style={{ ...preStyle, margin: '4px 0 0' }}>{JSON.stringify(e.details, null, 2)}</pre>
         </details>
       )}
