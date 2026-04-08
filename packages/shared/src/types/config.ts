@@ -91,6 +91,8 @@ export interface ModelCapabilities {
   functionCalling?: boolean;
   /** Whether the model supports JSON-mode output (response_format: json_object) */
   json?: boolean;
+  /** Whether the model is an embedding model */
+  embedding?: boolean;
 }
 
 export interface ModelConfig {
@@ -130,7 +132,7 @@ export interface ProjectModelRef {
   thresholds?: BudgetThresholds;
 }
 
-export type RoutingPolicyType = 'context' | 'cheapest' | 'health' | 'performance' | 'llm' | 'capability' | 'rate-limit' | 'fairness' | 'budget-remaining';
+export type RoutingPolicyType = 'context' | 'cheapest' | 'health' | 'performance' | 'llm' | 'capability' | 'rate-limit' | 'fairness' | 'budget-remaining' | 'semantic-intent';
 
 export interface RoutingPolicy {
   type: RoutingPolicyType;
@@ -138,6 +140,63 @@ export interface RoutingPolicy {
   enabled: boolean;
   /** Optional policy-specific settings */
   config?: any;
+}
+
+/** One intent definition: example utterances and the models to consider for this intent. */
+export interface IntentDefinition {
+  /** Representative utterances used to compute the intent embedding (centroid). */
+  examples: string[];
+  /** Model IDs from the project's candidate pool to route to when this intent is matched. */
+  candidate_models: string[];
+}
+
+/** Configuration for the `semantic-intent` routing policy. */
+export interface SemanticIntentConfig {
+  /** Embedding provider to use: 'openai' or 'ollama'. */
+  embedding_provider: 'openai' | 'ollama';
+  /** Embedding model ID (e.g. 'text-embedding-3-small', 'nomic-embed-text'). */
+  embedding_model: string;
+  /** Fallback embedding model IDs tried in order if the primary fails. */
+  embedding_fallback_models?: string[];
+  /** API endpoint for the embedding provider. Defaults to provider's default. */
+  embedding_endpoint?: string;
+  /** API key for the embedding provider. Required for OpenAI. */
+  embedding_api_key?: string;
+  /**
+   * Minimum cosine similarity score for a classification to be considered `confident`.
+   * Requests scoring below this threshold are classified as `unknown` (no filtering applied).
+   * @default 0.60
+   */
+  absolute_threshold?: number;
+  /**
+   * Minimum margin between the top and second-best intent score to be considered `confident`.
+   * If the margin is below this value, the classification is `ambiguous`.
+   * @default 0.08
+   */
+  ambiguity_threshold?: number;
+  /**
+   * Name of the policy type to fall back to when the classification is `ambiguous` or `unknown`.
+   * If not set, all candidates are passed through unchanged.
+   */
+  fallback_policy?: RoutingPolicyType;
+  /** Map of intent name to its definition. */
+  intents: Record<string, IntentDefinition>;
+}
+
+/** Result of classifying a request against known intents. */
+export interface IntentClassification {
+  /** The name of the top-ranked intent (or null when status is 'unknown'). */
+  topIntent: string | null;
+  /** Cosine similarity score of the top intent. */
+  topScore: number;
+  /** The name of the second-ranked intent (or null when fewer than 2 intents). */
+  secondIntent: string | null;
+  /** Cosine similarity of the second-ranked intent. */
+  secondScore: number;
+  /** Difference between topScore and secondScore. */
+  margin: number;
+  /** Classification confidence status. */
+  status: 'confident' | 'ambiguous' | 'unknown';
 }
 
 export type ProjectRole = 'viewer' | 'editor' | 'admin';

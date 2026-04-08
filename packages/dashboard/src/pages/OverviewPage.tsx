@@ -26,7 +26,7 @@ export function OverviewPage() {
 
   const pieData = Object.entries(stats.byModel).map(([name, v]) => ({ name, value: v.cost }));
   const timelineData = stats.timeline.map(([date, cost]) => ({
-    date: date.slice(5), cost: Number(cost.toFixed(6)),
+    date: date.slice(5), cost: Number(cost.toFixed(8)),
   }));
 
   return (
@@ -80,7 +80,7 @@ export function OverviewPage() {
                 <Tooltip
                   contentStyle={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
                   labelStyle={{ color: 'var(--text-secondary)' }}
-                  formatter={(v) => [`$${(v as number).toFixed(6)}`, 'Cost']}
+                  formatter={(v) => [`$${(v as number).toFixed(8)}`, 'Cost']}
                 />
                 <Area type="monotone" dataKey="cost" stroke="#5A90F8" fill="url(#grad)" strokeWidth={2} />
               </AreaChart>
@@ -100,7 +100,7 @@ export function OverviewPage() {
                   </Pie>
                   <Tooltip
                     contentStyle={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
-                    formatter={(v) => [`$${(v as number).toFixed(6)}`, 'Cost']}
+                    formatter={(v) => [`$${(v as number).toFixed(8)}`, 'Cost']}
                   />
                   <Legend wrapperStyle={{ fontSize: 12, color: 'var(--text-secondary)' }} />
                 </PieChart>
