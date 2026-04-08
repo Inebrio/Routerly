@@ -94,6 +94,37 @@ Scores models by how much of their associated budget is still available. Models 
 
 **Use when:** you have per-model spending limits and want Routerly to naturally prefer models with headroom.
 
+### `semantic-intent`
+
+Classifies each incoming request by semantic intent using embeddings, then restricts the candidate pool to the models you have mapped to that intent.
+
+**How it works:**
+
+1. You define **intents** — each intent has a name, a list of **example phrases** that represent it, and the **target models** that should handle requests of that type.
+2. When a request arrives, Routerly embeds the user message and compares it against the centroid of each intent's examples using cosine similarity.
+3. Based on the best match score and the gap between the top two intents, the policy produces one of three outcomes:
+
+| Outcome | Condition | Effect |
+|---|---|---|
+| **Confident** | Top score ≥ threshold and margin ≥ ambiguity gap | Hard-filters candidates to the matched intent's model pool |
+| **Ambiguous** | Top score ≥ threshold but gap is too small | Merges the top-2 intent pools |
+| **Unknown** | Top score below threshold | No filtering — all candidates pass through |
+
+**Configuration:**
+
+| Option | Default | Description |
+|---|---|---|
+| `embedding_provider` | _(required)_ | `openai` or `ollama` |
+| `embedding_model` | _(required)_ | Model ID to use for embedding (must have the embedding capability) |
+| `absolute_threshold` | `0.60` | Minimum cosine similarity score to consider a match |
+| `ambiguity_threshold` | `0.08` | Minimum margin between top-2 scores to consider a match confident |
+
+**Use when:** you have distinct request categories that should always be routed to specific models (e.g. billing questions → a fine-tuned model, code requests → a coding model).
+
+:::tip Intent centroids are cached
+Embeddings for intent examples are computed once and cached in memory for 1 hour. Changing an intent's examples automatically invalidates the cache.
+:::
+
 ---
 
 ## Configuring Routing

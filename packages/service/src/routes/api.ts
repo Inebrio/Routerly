@@ -7,7 +7,7 @@ import { randomBytes } from 'node:crypto';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../config/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jwt.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities } from '@routerly/shared';
 import { getTrace } from '../routing/traceStore.js';
 import { sendTestNotification } from '../notifications/sender.js';
 
@@ -211,6 +211,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       contextWindow?: number;
       pricingTiers?: PricingTier[];
       limits?: Limit[];
+      capabilities?: ModelCapabilities;
       /** @deprecated use limits */ dailyBudget?: number;
       /** @deprecated use limits */ weeklyBudget?: number;
       /** @deprecated use limits */ monthlyBudget?: number;
@@ -252,6 +253,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...(resolvedLimits?.length ? { limits: resolvedLimits } : {}),
       ...(req.body.contextWindow !== undefined ? { contextWindow: req.body.contextWindow } : {}),
       ...(req.body.upstreamModelId ? { upstreamModelId: req.body.upstreamModelId } : {}),
+      ...(req.body.capabilities ? { capabilities: req.body.capabilities } : {}),
     };
     models.push(model);
     await writeConfig('models', models);
@@ -269,6 +271,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       contextWindow?: number;
       pricingTiers?: PricingTier[];
       limits?: Limit[];
+      capabilities?: ModelCapabilities;
       /** @deprecated use limits */ dailyBudget?: number;
       /** @deprecated use limits */ weeklyBudget?: number;
       /** @deprecated use limits */ monthlyBudget?: number;
@@ -323,6 +326,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         : req.body.upstreamModelId === undefined && _existingUpstreamModelId !== undefined
           ? { upstreamModelId: _existingUpstreamModelId }
           : {}),
+      // capabilities: if provided in body use it; if absent clear (unchecking the checkbox removes it)
+      ...(req.body.capabilities ? { capabilities: req.body.capabilities } : {}),
     };
     models[index] = model;
     await writeConfig('models', models);

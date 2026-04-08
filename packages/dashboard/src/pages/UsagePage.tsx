@@ -293,7 +293,7 @@ export function UsagePage() {
                         <td style={{ color: v.errors > 0 ? 'var(--danger)' : 'inherit' }}>{v.errors}</td>
                         <td>{v.inputTokens.toLocaleString()}</td>
                         <td>{v.outputTokens.toLocaleString()}</td>
-                        <td className="mono">${v.cost.toFixed(6)}</td>
+                        <td className="mono">${v.cost.toFixed(8)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -353,7 +353,7 @@ export function UsagePage() {
                             </td>
                             <td>{r.inputTokens}</td>
                             <td>{r.outputTokens}</td>
-                            <td className="mono" style={{ fontSize: '0.78rem' }}>${r.cost.toFixed(6)}</td>
+                        <td className="mono" style={{ fontSize: '0.78rem' }}>${r.cost.toFixed(8)}</td>
                             <td style={{ color: 'var(--text-muted)' }}>{r.latencyMs}ms</td>
                             <td style={{ color: 'var(--text-muted)' }}>{r.ttftMs != null ? `${r.ttftMs}ms` : '—'}</td>
                             <td style={{ color: 'var(--text-muted)' }}>{r.tokensPerSec != null ? `${r.tokensPerSec}` : '—'}</td>

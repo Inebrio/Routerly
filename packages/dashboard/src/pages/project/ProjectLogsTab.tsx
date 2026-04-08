@@ -313,7 +313,7 @@ export function ProjectLogsTab() {
                         </td>
                         <td>{r.inputTokens}</td>
                         <td>{r.outputTokens}</td>
-                        <td className="mono" style={{ fontSize: '0.78rem' }}>${r.cost.toFixed(6)}</td>
+                        <td className="mono" style={{ fontSize: '0.78rem' }}>${r.cost.toFixed(8)}</td>
                         <td style={{ color: 'var(--text-muted)' }}>{r.latencyMs}ms</td>
                         <td style={{ color: 'var(--text-muted)' }}>{r.ttftMs != null ? `${r.ttftMs}ms` : '—'}</td>
                         <td style={{ color: 'var(--text-muted)' }}>{r.tokensPerSec != null ? `${r.tokensPerSec}` : '—'}</td>

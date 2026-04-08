@@ -121,6 +121,30 @@
         "cache": 0.275,
         "contextWindow": 128000,
         "notes": "Reinforcement-tuned mini model"
+      },
+      {
+        "id": "text-embedding-3-large",
+        "input": 0.13,
+        "output": 0,
+        "contextWindow": 8191,
+        "notes": "OpenAI embedding model (3072-dim)",
+        "capabilities": { "embedding": true }
+      },
+      {
+        "id": "text-embedding-3-small",
+        "input": 0.02,
+        "output": 0,
+        "contextWindow": 8191,
+        "notes": "OpenAI embedding model (1536-dim, fastest)",
+        "capabilities": { "embedding": true }
+      },
+      {
+        "id": "text-embedding-ada-002",
+        "input": 0.1,
+        "output": 0,
+        "contextWindow": 8191,
+        "notes": "OpenAI legacy embedding model",
+        "capabilities": { "embedding": true }
       }
     ]
   },
@@ -477,6 +501,30 @@
         "output": 0,
         "contextWindow": 16384,
         "notes": "Microsoft Phi-4"
+      },
+      {
+        "id": "nomic-embed-text",
+        "input": 0,
+        "output": 0,
+        "contextWindow": 8192,
+        "notes": "Nomic embedding model for Ollama",
+        "capabilities": { "embedding": true }
+      },
+      {
+        "id": "mxbai-embed-large",
+        "input": 0,
+        "output": 0,
+        "contextWindow": 512,
+        "notes": "MixedBread large embedding model for Ollama",
+        "capabilities": { "embedding": true }
+      },
+      {
+        "id": "all-minilm",
+        "input": 0,
+        "output": 0,
+        "contextWindow": 512,
+        "notes": "all-MiniLM embedding model for Ollama",
+        "capabilities": { "embedding": true }
       }
     ]
   },

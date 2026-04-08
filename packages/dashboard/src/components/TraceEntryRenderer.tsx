@@ -197,7 +197,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
                 <div key={i} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '6px 10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: p.scores?.length > 1 ? 4 : 0 }}>
                     <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'capitalize' }}>
-                      {p.type === 'llm' ? 'AI Routing' : p.type === 'rate-limit' ? 'Rate Limit' : p.type === 'budget-remaining' ? 'Budget Remaining' : p.type}
+                      {p.type === 'llm' ? 'AI Routing' : p.type === 'rate-limit' ? 'Rate Limit' : p.type === 'budget-remaining' ? 'Budget Remaining' : p.type === 'semantic-intent' ? 'Semantic Intent' : p.type}
                     </span>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>weight {p.weight?.toFixed(2)}</span>
                   </div>
