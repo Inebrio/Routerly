@@ -30,7 +30,7 @@ export function ProjectLogsTab() {
   const [pollInterval, setPollInterval]     = useFilterState<number>({ key: `project-${projectId}-filters-pollInterval`, defaultValue: 30_000 });
   const [refreshing, setRefreshing]         = useState(false);
   const [page, setPage]                     = useState(1);
-  const [pageSize]                          = useState(50);
+  const [pageSize]                          = useState(100);
 
   const POLL_OPTIONS: { label: string; value: number }[] = [
     { label: 'Off',  value: 0 },
@@ -313,7 +313,7 @@ export function ProjectLogsTab() {
                         </td>
                         <td>{r.inputTokens}</td>
                         <td>{r.outputTokens}</td>
-                        <td className="mono" style={{ fontSize: '0.78rem' }}>${r.cost.toFixed(6)}</td>
+                        <td className="mono" style={{ fontSize: '0.78rem' }}>${r.cost.toFixed(8)}</td>
                         <td style={{ color: 'var(--text-muted)' }}>{r.latencyMs}ms</td>
                         <td style={{ color: 'var(--text-muted)' }}>{r.ttftMs != null ? `${r.ttftMs}ms` : '—'}</td>
                         <td style={{ color: 'var(--text-muted)' }}>{r.tokensPerSec != null ? `${r.tokensPerSec}` : '—'}</td>

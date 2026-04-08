@@ -79,6 +79,10 @@ const config: Config = {
           label: 'Docs',
         },
         {
+          type: 'docsVersionDropdown',
+          position: 'right',
+        },
+        {
           href: 'https://github.com/Inebrio/Routerly',
           label: 'GitHub',
           position: 'right',

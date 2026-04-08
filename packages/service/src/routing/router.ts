@@ -12,6 +12,7 @@ import { capabilityPolicy } from './policies/capability.js';
 import { rateLimitPolicy } from './policies/rate-limit.js';
 import { fairnessPolicy } from './policies/fairness.js';
 import { budgetRemainingPolicy } from './policies/budget-remaining.js';
+import { semanticIntentPolicy } from './policies/semantic-intent.js';
 import type { PolicyFn } from './policies/types.js';
 import type { TraceEntry, TracePanel } from './traceStore.js';
 
@@ -40,6 +41,7 @@ const POLICY_MAP: Record<string, PolicyFn> = {
   'rate-limit': rateLimitPolicy,
   fairness: fairnessPolicy,
   'budget-remaining': budgetRemainingPolicy,
+  'semantic-intent': semanticIntentPolicy,
 };
 
 export async function routeRequest(
@@ -173,8 +175,19 @@ export async function routeRequest(
   }
 
   // ── Emit policy config subito dopo ───────────────────────────────────────
+  // Redact sensitive fields (API keys, tokens, secrets) from the trace.
+  const redactConfig = (cfg: unknown): unknown => {
+    if (!cfg || typeof cfg !== 'object') return cfg;
+    return Object.fromEntries(
+      Object.entries(cfg as Record<string, unknown>).map(([k, v]) => {
+        if (/key|secret|token|password/i.test(k)) return [k, '***'];
+        if (v && typeof v === 'object') return [k, redactConfig(v)];
+        return [k, v];
+      }),
+    );
+  };
   const policiesEntry = te('router-request', 'router:policies', {
-    policies: policiesWithWeight.map(({ type, weight, config }) => ({ type, weight, config })),
+    policies: policiesWithWeight.map(({ type, weight, config }) => ({ type, weight, config: redactConfig(config) })),
     candidates: validCandidates.map(c => c.model.id),
   });
   emit?.(policiesEntry);

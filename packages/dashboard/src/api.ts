@@ -152,6 +152,14 @@ export interface PricingTier {
   cachePerMillion?: number;
 }
 
+export interface ModelCapabilities {
+  thinking?: boolean;
+  vision?: boolean;
+  functionCalling?: boolean;
+  json?: boolean;
+  embedding?: boolean;
+}
+
 export interface Model {
   id: string; name: string; provider: string; endpoint: string;
   upstreamModelId?: string;
@@ -159,6 +167,7 @@ export interface Model {
   contextWindow?: number;
   limits?: Limit[];
   /** @deprecated use limits */ globalThresholds?: { daily?: number; weekly?: number; monthly?: number };
+  capabilities?: ModelCapabilities;
 }
 
 export const getModels = () => request<Model[]>('/models');
@@ -170,6 +179,7 @@ export const createModel = (data: {
   contextWindow?: number;
   pricingTiers?: PricingTier[];
   limits?: Limit[];
+  capabilities?: ModelCapabilities;
 }) => request<Model>('/models', { method: 'POST', body: JSON.stringify(data) });
 export const updateModel = (id: string, data: {
   id?: string;
@@ -180,11 +190,12 @@ export const updateModel = (id: string, data: {
   contextWindow?: number;
   pricingTiers?: PricingTier[];
   limits?: Limit[];
+  capabilities?: ModelCapabilities;
 }) => request<Model>(`/models/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteModel = (id: string) => request<void>(`/models/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
 export interface RoutingPolicy {
-  type: 'context' | 'cheapest' | 'health' | 'performance' | 'llm' | 'capability' | 'rate-limit' | 'fairness' | 'budget-remaining';
+  type: 'context' | 'cheapest' | 'health' | 'performance' | 'llm' | 'capability' | 'rate-limit' | 'fairness' | 'budget-remaining' | 'semantic-intent';
   enabled: boolean;
   config?: any;
 }

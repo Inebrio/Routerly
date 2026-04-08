@@ -21,5 +21,5 @@ export function calculateCost(
   const cachedCost       = (cachedInputTokens         / 1_000_000) * (model.cost.cachePerMillion       ?? model.cost.inputPerMillion);
   const cacheCreateCost  = (cacheCreationInputTokens  / 1_000_000) * (model.cost.cacheWritePerMillion  ?? model.cost.inputPerMillion);
   const outputCost       = (outputTokens              / 1_000_000) * model.cost.outputPerMillion;
-  return Math.round((inputCost + cachedCost + cacheCreateCost + outputCost) * 1_000_000) / 1_000_000;
+  return Math.round((inputCost + cachedCost + cacheCreateCost + outputCost) * 1_000_000_000) / 1_000_000_000;
 }
