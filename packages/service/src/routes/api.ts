@@ -725,7 +725,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const records = await readConfig('usage');
     const { period = 'monthly', projectId, from, to } = req.query;
     const page = Math.max(1, parseInt(req.query.page ?? '1', 10) || 1);
-    const pageSize = Math.min(200, Math.max(1, parseInt(req.query.pageSize ?? '50', 10) || 50));
+    const pageSize = Math.min(200, Math.max(1, parseInt(req.query.pageSize ?? '100', 10) || 100));
 
     const now = new Date();
     let since = new Date(0);
