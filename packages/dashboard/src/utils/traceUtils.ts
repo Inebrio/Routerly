@@ -102,7 +102,7 @@ export function formatCost(usd: number | null): string {
   if (usd == null) return '—';
   if (usd === 0) return '$0.000';
   if (usd < 0.000001) return '<$0.000001';
-  if (usd < 0.01) return `$${usd.toFixed(6)}`;
+  if (usd < 0.01) return `$${usd.toFixed(8)}`;
   if (usd < 1) return `$${usd.toFixed(4)}`;
   return `$${usd.toFixed(2)}`;
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Plus, X, ChevronDown, EyeOff, Eye, ArrowLeft } from 'lucide-react';
-import { getModels, createModel, updateModel, type Model, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit } from '../api';
+import { getModels, createModel, updateModel, type Model, type ModelCapabilities, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit } from '../api';
 import { providersConf } from '@routerly/shared';
 
 type Provider = keyof typeof providersConf;
@@ -19,6 +19,7 @@ type ProviderModel = {
     output: number;
     cache?: number;
   }>;
+  capabilities?: ModelCapabilities;
 };
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -157,6 +158,7 @@ export function ModelFormPage() {
   const [err, setErr] = useState('');
   const [showToken, setShowToken] = useState(false);
   const [isCustomModel, setIsCustomModel] = useState(false);
+  const [isEmbeddingModel, setIsEmbeddingModel] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -201,8 +203,10 @@ export function ModelFormPage() {
     if (!preset) {
       setForm(f => ({ ...f, id: modelId, inputPerMillion: '', outputPerMillion: '', cachePerMillion: '', contextWindow: '' }));
       setTierRows([]); setShowAdvanced(false);
+      setIsEmbeddingModel(false);
       return;
     }
+    setIsEmbeddingModel(preset.capabilities?.embedding === true);
     setForm(f => ({
       ...f,
       id: modelId,
@@ -284,6 +288,7 @@ export function ModelFormPage() {
     const ctxWindow   = model.contextWindow != null ? model.contextWindow : (preset?.contextWindow ?? null);
 
     setIsCustomModel(customModel);
+    setIsEmbeddingModel(model.capabilities?.embedding === true);
     setErr(''); setShowToken(false);
 
     setForm(f => ({
@@ -384,6 +389,7 @@ export function ModelFormPage() {
         limits: limitRows
           .filter(l => l.value !== '' && !isNaN(parseFloat(l.value)))
           .map(rowToLimit),
+        ...(isEmbeddingModel ? { capabilities: { embedding: true } } : {}),
       };
 
       if (editingModelId) {
@@ -517,6 +523,25 @@ export function ModelFormPage() {
                   {showToken ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* ── Section: Capabilities ─────────────────────────── */}
+          <div className="form-section">
+            <h3 className="section-title">Capabilities</h3>
+            <p className="section-desc">Specify the type and capabilities of this model.</p>
+            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <input
+                type="checkbox"
+                id="cap-embedding"
+                checked={isEmbeddingModel}
+                onChange={e => setIsEmbeddingModel(e.target.checked)}
+                style={{ width: 16, height: 16, cursor: 'pointer' }}
+              />
+              <label htmlFor="cap-embedding" style={{ cursor: 'pointer', marginBottom: 0 }}>
+                Embedding model
+                <span style={{ marginLeft: 8, fontSize: '0.75rem', color: 'var(--text-muted)' }}>This model generates vector embeddings (not chat completions)</span>
+              </label>
             </div>
           </div>
 
