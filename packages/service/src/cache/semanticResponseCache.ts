@@ -10,6 +10,16 @@ interface CacheEntry {
 // Per-project store: projectId → list of entries (append-only, pruned lazily)
 const store = new Map<string, CacheEntry[]>();
 
+export interface CacheHit {
+  response: ChatCompletionResponse;
+  similarity: number;
+}
+
+export interface CacheHit {
+  response: ChatCompletionResponse;
+  similarity: number;
+}
+
 /**
  * Look up the best matching cached response for a given embedding vector.
  * Prunes expired entries lazily on each lookup.
@@ -21,7 +31,7 @@ export function lookupCache(
   vector: number[],
   threshold: number,
   extendTtlMs?: number,
-): ChatCompletionResponse | null {
+): CacheHit | null {
   const now = Date.now();
   const entries = store.get(projectId);
   if (!entries || entries.length === 0) return null;
@@ -46,7 +56,7 @@ export function lookupCache(
     bestEntry.expiresAt = Date.now() + extendTtlMs;
   }
 
-  return bestEntry ? bestEntry.response : null;
+  return bestEntry ? { response: bestEntry.response, similarity: bestScore } : null;
 }
 
 /**

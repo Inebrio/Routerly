@@ -10,6 +10,7 @@ import { llmChat, llmStream, BudgetExceededError } from '../llm/executor.js';
 import type { LLMCallContext } from '../llm/executor.js';
 import { getEmbeddingProvider } from '../embeddings/index.js';
 import { lookupCache, storeCache } from '../cache/semanticResponseCache.js';
+import { trackCacheHit } from '../cost/tracker.js';
 
 export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/chat/completions ───────────────────────────────────────────────
@@ -58,6 +59,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     const project = request.project;
     const body = request.body;
     const isStream = body.stream === true;
+    const startMs = Date.now();
 
     const msgs = body.messages ?? [];
     const payloadChars = JSON.stringify(msgs).length;
@@ -119,12 +121,31 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           const extendMs = cacheConfig.extend_on_hit ? ttlMs : undefined;
           const hit = lookupCache(project.id, cacheVector, threshold, extendMs);
           if (hit) {
-            request.log.info({ projectId: project.id }, 'semantic-cache: hit');
+            request.log.info({ projectId: project.id, similarity: hit.similarity }, 'semantic-cache: hit');
+            appendTrace(traceId, [{
+              panel: 'response',
+              message: 'cache:hit',
+              details: {
+                similarity: hit.similarity,
+                model: hit.response.model,
+                embeddingModel: cacheConfig.embedding_model,
+                ttlExtended: !!cacheConfig.extend_on_hit,
+              },
+            }]);
+            void trackCacheHit({
+              projectId: project.id,
+              modelId: hit.response.model ?? body.model ?? 'unknown',
+              inputTokens: hit.response.usage?.prompt_tokens ?? 0,
+              outputTokens: hit.response.usage?.completion_tokens ?? 0,
+              latencyMs: Date.now() - startMs,
+              cacheSimilarity: hit.similarity,
+              traceId,
+            });
 
             if (!isStream) {
               reply.header('x-routerly-trace-id', traceId);
               reply.header('x-routerly-cache', 'hit');
-              return reply.send(hit);
+              return reply.send(hit.response);
             }
 
             // Streaming hit: emit synthetic SSE chunks
@@ -142,8 +163,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
             reply.raw.setHeader('x-routerly-cache', 'hit');
             reply.raw.flushHeaders();
 
-            const content = (hit.choices?.[0]?.message?.content ?? '') as string;
-            const chunkBase = { id: hit.id, object: 'chat.completion.chunk', created: hit.created, model: hit.model };
+            const content = (hit.response.choices?.[0]?.message?.content ?? '') as string;
+            const chunkBase = { id: hit.response.id, object: 'chat.completion.chunk', created: hit.response.created, model: hit.response.model };
             reply.raw.write(`data: ${JSON.stringify({ ...chunkBase, choices: [{ index: 0, delta: { role: 'assistant', content: '' }, finish_reason: null }] })}\n\n`);
             reply.raw.write(`data: ${JSON.stringify({ ...chunkBase, choices: [{ index: 0, delta: { content }, finish_reason: 'stop' }] })}\n\n`);
             reply.raw.write('data: [DONE]\n\n');

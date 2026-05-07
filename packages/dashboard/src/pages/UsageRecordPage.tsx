@@ -158,16 +158,30 @@ export function UsageRecordPage() {
               <Field
                 label="Call Type"
                 value={
-                  <span style={{
-                    display: 'inline-block', fontSize: '0.78rem', fontWeight: 600,
-                    padding: '2px 10px', borderRadius: 99,
-                    background: isRouting ? 'rgba(99,102,241,0.12)' : 'rgba(59,130,246,0.12)',
-                    color: isRouting ? 'var(--accent)' : 'var(--primary)',
-                  }}>
-                    {isRouting ? 'router' : 'completion'}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{
+                      display: 'inline-block', fontSize: '0.78rem', fontWeight: 600,
+                      padding: '2px 10px', borderRadius: 99,
+                      background: isRouting ? 'rgba(99,102,241,0.12)' : 'rgba(59,130,246,0.12)',
+                      color: isRouting ? 'var(--accent)' : 'var(--primary)',
+                    }}>
+                      {isRouting ? 'router' : 'completion'}
+                    </span>
+                    {record.cacheHit && (
+                      <span style={{
+                        display: 'inline-block', fontSize: '0.78rem', fontWeight: 600,
+                        padding: '2px 10px', borderRadius: 99,
+                        background: 'rgba(16,185,129,0.12)', color: 'var(--success, #10b981)',
+                      }}>
+                        cache hit
+                      </span>
+                    )}
+                  </div>
                 }
               />
+              {record.cacheHit && record.cacheSimilarity != null && (
+                <Field label="Cache Similarity" value={`${(record.cacheSimilarity * 100).toFixed(2)}%`} />
+              )}
             </div>
           </div>
 
