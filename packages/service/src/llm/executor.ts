@@ -21,6 +21,8 @@ import type {
   ProjectToken,
   StreamChunk,
   CallType,
+  MessagesRequest,
+  MessagesResponse,
 } from '@routerly/shared';
 import { getProviderAdapter } from '../providers/index.js';
 import { isAllowed, isAllowedForRoutingModel } from '../cost/budget.js';
@@ -426,4 +428,112 @@ export async function llmStream(
   }
 
   return { ttftMs, chunks: makeGenerator() };
+}
+
+/**
+ * Anthropic Messages API call with full lifecycle management.
+ *
+ * Works with any provider (native Anthropic or OpenAI via adapter):
+ *   • checkBudget → adapter.messages() → trackUsage → return response
+ *
+ * @throws BudgetExceededError  if the budget is exhausted
+ * @throws Error                if the adapter does not support messages() or the call fails
+ */
+export async function llmMessages(
+  request: MessagesRequest,
+  model: ModelConfig,
+  ctx: LLMCallContext,
+): Promise<MessagesResponse> {
+  const { projectId, callType, traceId, emit, log } = ctx;
+  const { req, res } = getPanels(callType);
+
+  await checkBudget(model, ctx);
+
+  const adapter = getProviderAdapter(model);
+  if (!adapter.messages) {
+    throw new Error(`Provider "${model.provider}" does not support the Anthropic messages API.`);
+  }
+
+  const t0 = Date.now();
+
+  emit?.({
+    panel: req,
+    message: 'model:request',
+    details: {
+      modelId: model.id,
+      provider: model.provider,
+      stream: false,
+      messageCount: request.messages?.length ?? 0,
+      maxTokens: request.max_tokens,
+    },
+  });
+
+  try {
+    const response = await adapter.messages(request, model);
+    const latencyMs = Date.now() - t0;
+
+    const inputTokens = response.usage.input_tokens;
+    const outputTokens = response.usage.output_tokens;
+    const cachedInputTokens = response.usage.cache_read_input_tokens ?? 0;
+    const cacheCreationInputTokens = response.usage.cache_creation_input_tokens ?? 0;
+    const tokensPerSec = latencyMs > 0 ? Math.round((inputTokens + outputTokens) / (latencyMs / 1000)) : 0;
+
+    const plainInput = inputTokens - cachedInputTokens;
+    const inputCostUsd = (plainInput / 1_000_000) * model.cost.inputPerMillion;
+    const cachedCostUsd = (cachedInputTokens / 1_000_000) * (model.cost.cachePerMillion ?? model.cost.inputPerMillion);
+    const outputCostUsd = (outputTokens / 1_000_000) * model.cost.outputPerMillion;
+    const totalCostUsd = inputCostUsd + cachedCostUsd + outputCostUsd;
+
+    emit?.({
+      panel: res,
+      message: 'model:success',
+      details: {
+        modelId: model.id,
+        inputTokens,
+        cachedInputTokens: cachedInputTokens > 0 ? cachedInputTokens : undefined,
+        outputTokens,
+        latencyMs,
+        ttftMs: latencyMs,
+        tokensPerSec,
+        inputCostUsd,
+        outputCostUsd,
+        totalCostUsd,
+        inputPerMillion: model.cost.inputPerMillion,
+        outputPerMillion: model.cost.outputPerMillion,
+      },
+    });
+
+    await trackUsage({
+      projectId,
+      model,
+      inputTokens,
+      outputTokens,
+      ...(cachedInputTokens > 0 ? { cachedInputTokens } : {}),
+      ...(cacheCreationInputTokens > 0 ? { cacheCreationInputTokens } : {}),
+      latencyMs,
+      ttftMs: latencyMs,
+      outcome: 'success',
+      callType,
+      ...(traceId !== undefined ? { traceId } : {}),
+    }).catch(() => {});
+
+    return response;
+  } catch (err: unknown) {
+    const latencyMs = Date.now() - t0;
+    const msg = err instanceof Error ? err.message : String(err);
+    log?.warn({ err, modelId: model.id }, 'llm executor: messages call failed');
+    emit?.({ panel: res, message: 'model:error', details: { modelId: model.id, error: msg, latencyMs } });
+    await trackUsage({
+      projectId,
+      model,
+      inputTokens: 0,
+      outputTokens: 0,
+      latencyMs,
+      outcome: 'error',
+      errorMessage: msg,
+      callType,
+      ...(traceId !== undefined ? { traceId } : {}),
+    }).catch(() => {});
+    throw err;
+  }
 }
