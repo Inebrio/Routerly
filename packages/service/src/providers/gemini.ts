@@ -4,8 +4,11 @@ import type {
   ChatCompletionResponse,
   ModelConfig,
   StreamChunk,
+  MessagesRequest,
+  MessagesResponse,
 } from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
+import { anthropicToOpenAIMessages, openAIToAnthropicResponse } from './messages-compat.js';
 
 /**
  * Google Gemini adapter using the OpenAI-compatible endpoint.
@@ -42,5 +45,22 @@ export class GeminiAdapter implements ProviderAdapter {
     for await (const chunk of stream) {
       yield chunk as unknown as StreamChunk;
     }
+  }
+
+  async messages(request: MessagesRequest, model: ModelConfig): Promise<MessagesResponse> {
+    const client = this.getClient(model);
+    const upstreamModel = model.id;
+    const { messages, system } = anthropicToOpenAIMessages(request);
+    const openAIMessages = system
+      ? [{ role: 'system' as const, content: system }, ...messages]
+      : messages;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response: any = await client.chat.completions.create({
+      messages: openAIMessages,
+      model: upstreamModel,
+      max_tokens: request.max_tokens,
+      stream: false,
+    } as any);
+    return openAIToAnthropicResponse(response, upstreamModel);
   }
 }
