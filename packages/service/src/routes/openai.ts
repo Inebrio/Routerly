@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { randomUUID } from 'node:crypto';
-import type { ChatCompletionRequest, ModelObject } from '@routerly/shared';
+import type { ChatCompletionRequest, ChatCompletionResponse, ModelObject, SemanticCacheConfig } from '@routerly/shared';
 import { routeRequest } from '../routing/router.js';
 import { addRoutingDecision } from '../routing/routingMemoryStore.js';
 import { readConfig } from '../config/loader.js';
@@ -8,6 +8,8 @@ import { setTrace, appendTrace } from '../routing/traceStore.js';
 import type { TraceEntry } from '../routing/traceStore.js';
 import { llmChat, llmStream, BudgetExceededError } from '../llm/executor.js';
 import type { LLMCallContext } from '../llm/executor.js';
+import { getEmbeddingProvider } from '../embeddings/index.js';
+import { lookupCache, storeCache } from '../cache/semanticResponseCache.js';
 
 export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/chat/completions ───────────────────────────────────────────────
@@ -75,6 +77,87 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     const isMemoryEnabled = (project.policies ?? []).some(
       (p: any) => p.type === 'llm' && p.enabled && p.config?.memory === true,
     );
+
+    // ── Semantic response cache ────────────────────────────────────────────
+    const cachePolicy = (project.policies ?? []).find(
+      (p: any) => p.type === 'llm' && p.enabled && p.config?.cache?.enabled,
+    ) as { config: { cache: SemanticCacheConfig } } | undefined;
+
+    let cacheVector: number[] | null = null;
+
+    if (cachePolicy) {
+      const cacheConfig = cachePolicy.config.cache;
+      const threshold = cacheConfig.similarity_threshold ?? 0.85;
+      const ttlMs = (cacheConfig.ttl_seconds ?? 3600) * 1_000;
+
+      const messagesText = (body.messages ?? []).map(
+        (m: any) => `${m.role}: ${typeof m.content === 'string' ? m.content : JSON.stringify(m.content)}`,
+      ).join('\n');
+
+      try {
+        const provider = getEmbeddingProvider(
+          cacheConfig.embedding_provider,
+          cacheConfig.embedding_endpoint,
+          cacheConfig.embedding_api_key,
+        );
+        const modelIds = [
+          cacheConfig.embedding_model,
+          ...(cacheConfig.embedding_fallback_models ?? []),
+        ].filter(Boolean) as string[];
+
+        for (const modelId of modelIds) {
+          try {
+            const { embeddings } = await provider.embed([messagesText], modelId);
+            cacheVector = embeddings[0] ?? null;
+            break;
+          } catch {
+            // try next fallback
+          }
+        }
+
+        if (cacheVector) {
+          const extendMs = cacheConfig.extend_on_hit ? ttlMs : undefined;
+          const hit = lookupCache(project.id, cacheVector, threshold, extendMs);
+          if (hit) {
+            request.log.info({ projectId: project.id }, 'semantic-cache: hit');
+
+            if (!isStream) {
+              reply.header('x-routerly-trace-id', traceId);
+              reply.header('x-routerly-cache', 'hit');
+              return reply.send(hit);
+            }
+
+            // Streaming hit: emit synthetic SSE chunks
+            reply.hijack();
+            const origin = request.headers.origin;
+            if (origin) {
+              reply.raw.setHeader('Access-Control-Allow-Origin', origin);
+              reply.raw.setHeader('Access-Control-Allow-Credentials', 'true');
+              reply.raw.setHeader('Access-Control-Expose-Headers', 'x-routerly-trace-id, x-routerly-cache');
+            }
+            reply.raw.setHeader('Content-Type', 'text/event-stream');
+            reply.raw.setHeader('Cache-Control', 'no-cache');
+            reply.raw.setHeader('Connection', 'keep-alive');
+            reply.raw.setHeader('x-routerly-trace-id', traceId);
+            reply.raw.setHeader('x-routerly-cache', 'hit');
+            reply.raw.flushHeaders();
+
+            const content = (hit.choices?.[0]?.message?.content ?? '') as string;
+            const chunkBase = { id: hit.id, object: 'chat.completion.chunk', created: hit.created, model: hit.model };
+            reply.raw.write(`data: ${JSON.stringify({ ...chunkBase, choices: [{ index: 0, delta: { role: 'assistant', content: '' }, finish_reason: null }] })}\n\n`);
+            reply.raw.write(`data: ${JSON.stringify({ ...chunkBase, choices: [{ index: 0, delta: { content }, finish_reason: 'stop' }] })}\n\n`);
+            reply.raw.write('data: [DONE]\n\n');
+            reply.raw.end();
+            return;
+          }
+        }
+      } catch (err) {
+        request.log.warn({ err }, 'semantic-cache: embedding failed, proceeding without cache');
+        cacheVector = null;
+      }
+
+      void ttlMs; // referenced below in store calls
+    }
 
     if (isStream) {
       // ── Streaming path: avvia SSE subito ──────────────────────────────────
@@ -149,6 +232,20 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           }
           reply.raw.write('data: [DONE]\n\n');
           request.log.info({ modelId: model.id, contentChars: fullContent.length }, 'completion: response');
+
+          // Store response in semantic cache
+          if (cachePolicy && cacheVector) {
+            const ttlMs = (cachePolicy.config.cache.ttl_seconds ?? 3600) * 1_000;
+            const syntheticResponse: ChatCompletionResponse = {
+              id: `chatcmpl-${traceId}`,
+              object: 'chat.completion',
+              created: Math.floor(Date.now() / 1000),
+              model: model.id,
+              choices: [{ index: 0, message: { role: 'assistant', content: fullContent }, finish_reason: 'stop' }],
+              usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+            };
+            storeCache(project.id, cacheVector, syntheticResponse, ttlMs);
+          }
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           request.log.error({ err, modelId: model.id }, 'Streaming error mid-stream');
@@ -214,6 +311,13 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           },
           'completion: response',
         );
+
+        // Store response in semantic cache
+        if (cachePolicy && cacheVector) {
+          const ttlMs = (cachePolicy.config.cache.ttl_seconds ?? 3600) * 1_000;
+          storeCache(project.id, cacheVector, response, ttlMs);
+        }
+
         reply.header('x-routerly-trace-id', traceId);
         return reply.send(response);
       } catch (err: unknown) {

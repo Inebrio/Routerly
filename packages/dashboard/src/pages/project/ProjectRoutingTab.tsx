@@ -278,12 +278,12 @@ export function ProjectRoutingTab() {
   // --- Target Models Handlers ---
   function addTargetModel() {
     const usedIds = new Set(targetModels.map(t => t.modelId));
-    const firstAvailable = availableModels.find(m => !usedIds.has(m.id));
+    const firstAvailable = availableModels.find(m => !m.capabilities?.embedding && !usedIds.has(m.id));
     setTargetModels(prev => [
       ...prev,
       {
         internalId: Math.random().toString(36).substring(7),
-        modelId: firstAvailable?.id || availableModels[0]?.id || '',
+        modelId: firstAvailable?.id || '',
         prompt: '',
       }
     ]);
@@ -683,6 +683,150 @@ export function ProjectRoutingTab() {
 
                           </div>
                         </details>
+                      </div>
+
+                      {/* --- Caching --- */}
+                      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>
+                          <input
+                            type="checkbox"
+                            checked={policy.config?.cache?.enabled ?? false}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              updatePolicyConfig(idx, {
+                                cache: {
+                                  ...(policy.config?.cache ?? { embedding_provider: 'openai', embedding_model: '', ttl_seconds: 3600, similarity_threshold: 0.85 }),
+                                  enabled: checked,
+                                },
+                              });
+                            }}
+                            onMouseDown={e => e.stopPropagation()}
+                            style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                          />
+                          Caching
+                        </label>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginLeft: 22, lineHeight: 1.4 }}>
+                          If enabled, responses are cached using semantic similarity. Requests with a similar meaning return the cached response directly, skipping the provider call.
+                        </p>
+                        {(policy.config?.cache?.enabled ?? false) && (() => {
+                          const cacheModelIds = (() => {
+                            const primary = policy.config?.cache?.embedding_model;
+                            const fallbacks: string[] = policy.config?.cache?.embedding_fallback_models ?? [];
+                            const ids = primary ? [primary, ...fallbacks] : fallbacks;
+                            return ids.length === 0 ? [''] : ids;
+                          })();
+                          const setCacheModelIds = (newIds: string[]) => {
+                            updatePolicyConfig(idx, {
+                              cache: {
+                                ...(policy.config?.cache ?? {}),
+                                embedding_model: newIds[0] ?? '',
+                                embedding_fallback_models: newIds.slice(1),
+                              },
+                            });
+                          };
+                          return (
+                            <div style={{ marginLeft: 22, marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                              {/* Embedding Models */}
+                              <div>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Embedding Models</label>
+                                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 6, marginTop: -2 }}>The first model is the primary. The others are tried in order if the primary fails.</p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                  {cacheModelIds.map((modelId, mIdx) => {
+                                    const embeddingModels = availableModels.filter(m => m.capabilities?.embedding === true);
+                                    const usedIds = new Set(cacheModelIds.filter((_, i) => i !== mIdx));
+                                    const opts = embeddingModels
+                                      .filter(m => !usedIds.has(m.id))
+                                      .sort((a, b) => a.id.localeCompare(b.id))
+                                      .map(m => ({ value: m.id, label: m.id }));
+                                    return (
+                                      <div key={mIdx} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <SearchableSelect
+                                          options={opts}
+                                          value={modelId}
+                                          onChange={val => {
+                                            const copy = [...cacheModelIds];
+                                            copy[mIdx] = val;
+                                            setCacheModelIds(copy);
+                                          }}
+                                          placeholder="Select model"
+                                          style={{ flex: 1 }}
+                                        />
+                                        {mIdx === 0 && (
+                                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', flexShrink: 0, minWidth: 48, textAlign: 'right' }}>primary</span>
+                                        )}
+                                        <button
+                                          type="button"
+                                          className="btn-icon danger"
+                                          disabled={cacheModelIds.length === 1}
+                                          onClick={() => setCacheModelIds(cacheModelIds.filter((_, i) => i !== mIdx))}
+                                          onMouseDown={e => e.stopPropagation()}
+                                          style={{ padding: 4, flexShrink: 0, opacity: cacheModelIds.length === 1 ? 0.3 : 1 }}
+                                        >
+                                          <Trash2 size={14} />
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const embeddingModels = availableModels.filter(m => m.capabilities?.embedding === true);
+                                    const usedIds = new Set(cacheModelIds);
+                                    const firstAvail = embeddingModels.find(m => !usedIds.has(m.id));
+                                    if (firstAvail) setCacheModelIds([...cacheModelIds, firstAvail.id]);
+                                  }}
+                                  disabled={availableModels.filter(m => m.capabilities?.embedding === true && !new Set(cacheModelIds).has(m.id)).length === 0}
+                                  onMouseDown={e => e.stopPropagation()}
+                                  style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', background: 'none', border: '1px dashed var(--border)', borderRadius: 4, color: 'var(--text-secondary)', fontSize: '0.75rem', cursor: 'pointer', marginTop: 6, width: 'fit-content' }}
+                                >
+                                  <Plus size={12} /> Add Fallback Model
+                                </button>
+                              </div>
+                              {/* TTL + Threshold */}
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>TTL (seconds)</label>
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    className="form-input"
+                                    style={{ width: 72, padding: '4px 8px', fontSize: '0.8rem' }}
+                                    value={policy.config?.cache?.ttl_seconds ?? 3600}
+                                    onChange={e => updatePolicyConfig(idx, { cache: { ...(policy.config?.cache ?? {}), ttl_seconds: Number(e.target.value) } })}
+                                    onMouseDown={e => e.stopPropagation()}
+                                  />
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Similarity threshold</label>
+                                  <input
+                                    type="number"
+                                    min={0} max={1} step={0.01}
+                                    className="form-input"
+                                    style={{ width: 72, padding: '4px 8px', fontSize: '0.8rem' }}
+                                    value={policy.config?.cache?.similarity_threshold ?? 0.85}
+                                    onChange={e => updatePolicyConfig(idx, { cache: { ...(policy.config?.cache ?? {}), similarity_threshold: Number(e.target.value) } })}
+                                    onMouseDown={e => e.stopPropagation()}
+                                  />
+                                </div>
+                              </div>
+                              {/* Extend on hit */}
+                              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={policy.config?.cache?.extend_on_hit ?? false}
+                                  onChange={e => updatePolicyConfig(idx, { cache: { ...(policy.config?.cache ?? {}), extend_on_hit: e.target.checked } })}
+                                  onMouseDown={e => e.stopPropagation()}
+                                  style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                                />
+                                Extend TTL on hit
+                              </label>
+                              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: -6, marginLeft: 22, lineHeight: 1.4 }}>
+                                When a cached response is returned, its expiry is reset to the full TTL (sliding expiration).
+                              </p>
+                            </div>
+                          );
+                        })()}
                       </div>
 
                     </div>
@@ -1158,7 +1302,7 @@ export function ProjectRoutingTab() {
                       onChange={v => updateTargetModel(idx, 'modelId', v)}
                       placeholder="Select model"
                       options={availableModels
-                        .filter(m => m.id === item.modelId || !getUsedTargetModelIds(idx).has(m.id))
+                        .filter(m => !m.capabilities?.embedding && (m.id === item.modelId || !getUsedTargetModelIds(idx).has(m.id)))
                         .sort((a, b) => a.id.localeCompare(b.id))
                         .map(m => ({ value: m.id, label: m.id }))}
                     />
@@ -1238,7 +1382,7 @@ export function ProjectRoutingTab() {
           <button
             type="button"
             onClick={addTargetModel}
-            disabled={availableModels.filter(m => !targetModels.some(t => t.modelId === m.id)).length === 0}
+            disabled={availableModels.filter(m => !m.capabilities?.embedding && !targetModels.some(t => t.modelId === m.id)).length === 0}
             style={{
               display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center',
               width: '100%', padding: '10px', marginTop: 12,
