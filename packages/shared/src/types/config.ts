@@ -457,4 +457,8 @@ export interface UsageRecord {
   priceInput?: number;
   /** Price per 1M output tokens in USD (from model config at call time) */
   priceOutput?: number;
+  /** True when this completion was served from the semantic response cache */
+  cacheHit?: boolean;
+  /** Cosine similarity score of the matched cache entry (0–1) */
+  cacheSimilarity?: number;
 }

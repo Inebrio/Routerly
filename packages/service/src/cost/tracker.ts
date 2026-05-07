@@ -1,5 +1,6 @@
 import type { UsageRecord, CallType } from '@routerly/shared';
 import { appendUsageRecord } from '../config/loader.js';
+import { v4 as uuidv4Alias } from 'uuid';
 import { calculateCost } from './calculator.js';
 import { getTrace } from '../routing/traceStore.js';
 import type { ModelConfig } from '@routerly/shared';
@@ -67,5 +68,42 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     priceOutput: params.model.cost.outputPerMillion,
   };
 
+  await appendUsageRecord(record);
+}
+
+export interface TrackCacheHitParams {
+  projectId: string;
+  /** Model ID that originally produced the cached response */
+  modelId: string;
+  /** Tokens from the original response (for informational purposes only, not billed) */
+  inputTokens: number;
+  outputTokens: number;
+  /** Latency to serve the cache hit in ms */
+  latencyMs: number;
+  /** Cosine similarity score of the matched cache entry */
+  cacheSimilarity: number;
+  traceId?: string;
+}
+
+/**
+ * Records a cache-hit event to usage.json.
+ * Cost and token billing are zero since no LLM call was made.
+ */
+export async function trackCacheHit(params: TrackCacheHitParams): Promise<void> {
+  const record: UsageRecord = {
+    id: uuidv4(),
+    timestamp: new Date().toISOString(),
+    projectId: params.projectId,
+    modelId: params.modelId,
+    inputTokens: params.inputTokens,
+    outputTokens: params.outputTokens,
+    cost: 0,
+    latencyMs: params.latencyMs,
+    outcome: 'success',
+    callType: 'completion',
+    cacheHit: true,
+    cacheSimilarity: params.cacheSimilarity,
+    ...(params.traceId ? { traceId: params.traceId } : {}),
+  };
   await appendUsageRecord(record);
 }

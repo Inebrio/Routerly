@@ -305,6 +305,8 @@ export interface UsageRecord {
   callType?: 'routing' | 'completion';
   errorMessage?: string;
   trace?: TraceEntry[];
+  cacheHit?: boolean;
+  cacheSimilarity?: number;
 }
 
 export interface UsageStats {
