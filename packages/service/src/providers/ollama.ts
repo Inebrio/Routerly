@@ -4,8 +4,11 @@ import type {
   ChatCompletionResponse,
   ModelConfig,
   StreamChunk,
+  MessagesRequest,
+  MessagesResponse,
 } from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
+import { anthropicToOpenAIMessages, openAIToAnthropicResponse } from './messages-compat.js';
 
 /**
  * Ollama adapter — uses the OpenAI-compatible endpoint exposed by Ollama.
@@ -86,5 +89,23 @@ export class OllamaAdapter implements ProviderAdapter {
       }
       yield chunk as unknown as StreamChunk;
     }
+  }
+
+  async messages(request: MessagesRequest, model: ModelConfig): Promise<MessagesResponse> {
+    const client = this.getClient(model);
+    const upstreamModel = this.getUpstreamModelId(model);
+    const { messages, system } = anthropicToOpenAIMessages(request);
+    const normalized = this.normalizeRequest(
+      { messages, max_tokens: request.max_tokens } as unknown as ChatCompletionRequest,
+      model,
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response: any = await client.chat.completions.create({
+      ...normalized,
+      ...(system ? { messages: [{ role: 'system', content: system }, ...messages] } : {}),
+      model: upstreamModel,
+      stream: false,
+    } as any);
+    return openAIToAnthropicResponse(response, upstreamModel);
   }
 }
