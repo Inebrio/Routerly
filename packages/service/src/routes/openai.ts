@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { randomUUID } from 'node:crypto';
-import type { ChatCompletionRequest, ChatCompletionResponse, ModelObject, SemanticCacheConfig } from '@routerly/shared';
+import type { ChatCompletionRequest, ModelObject, SemanticCacheConfig } from '@routerly/shared';
 import { routeRequest } from '../routing/router.js';
 import { addRoutingDecision } from '../routing/routingMemoryStore.js';
 import { readConfig } from '../config/loader.js';
@@ -9,8 +9,47 @@ import type { TraceEntry } from '../routing/traceStore.js';
 import { llmChat, llmStream, BudgetExceededError } from '../llm/executor.js';
 import type { LLMCallContext } from '../llm/executor.js';
 import { getEmbeddingProvider } from '../embeddings/index.js';
+import type { EmbeddingProviderType } from '../embeddings/index.js';
 import { lookupCache, storeCache } from '../cache/semanticResponseCache.js';
-import { trackCacheHit } from '../cost/tracker.js';
+
+function resolveEmbeddingUpstreamModelId(modelId: string, explicitUpstreamModelId?: string): string {
+  if (explicitUpstreamModelId) return explicitUpstreamModelId;
+  return modelId.includes('/') ? modelId.split('/').slice(1).join('/') : modelId;
+}
+
+function getCacheEmbeddingText(messages: unknown[]): string {
+  const latestUserMessage = [...messages].reverse().find((message) => {
+    if (!message || typeof message !== 'object') return false;
+    return (message as { role?: string }).role === 'user';
+  }) as { content?: unknown } | undefined;
+
+  const latestContent = latestUserMessage?.content;
+  if (typeof latestContent === 'string' && latestContent.trim().length > 0) {
+    return latestContent;
+  }
+
+  if (Array.isArray(latestContent)) {
+    const parts = latestContent
+      .map((part) => {
+        if (!part || typeof part !== 'object') return null;
+        const text = (part as { text?: unknown }).text;
+        return typeof text === 'string' ? text : null;
+      })
+      .filter((part): part is string => Boolean(part && part.trim().length > 0));
+    if (parts.length > 0) return parts.join('\n');
+  }
+
+  return messages.map(
+    (message) => {
+      if (!message || typeof message !== 'object') return '';
+      const typedMessage = message as { role?: string; content?: unknown };
+      const content = typeof typedMessage.content === 'string'
+        ? typedMessage.content
+        : JSON.stringify(typedMessage.content);
+      return `${typedMessage.role ?? 'unknown'}: ${content}`;
+    },
+  ).join('\n');
+}
 
 export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/chat/completions ───────────────────────────────────────────────
@@ -80,36 +119,57 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       (p: any) => p.type === 'llm' && p.enabled && p.config?.memory === true,
     );
 
+    // Read models list once — used by cache embedding lookup and routing candidates
+    const allModels = await readConfig('models');
+
     // ── Semantic response cache ────────────────────────────────────────────
     const cachePolicy = (project.policies ?? []).find(
       (p: any) => p.type === 'llm' && p.enabled && p.config?.cache?.enabled,
     ) as { config: { cache: SemanticCacheConfig } } | undefined;
 
     let cacheVector: number[] | null = null;
+    let cachedModelId: string | null = null;
+    let cacheSimilarityScore: number | null = null;
 
     if (cachePolicy) {
       const cacheConfig = cachePolicy.config.cache;
       const threshold = cacheConfig.similarity_threshold ?? 0.85;
       const ttlMs = (cacheConfig.ttl_seconds ?? 3600) * 1_000;
 
-      const messagesText = (body.messages ?? []).map(
-        (m: any) => `${m.role}: ${typeof m.content === 'string' ? m.content : JSON.stringify(m.content)}`,
-      ).join('\n');
+      const messagesText = getCacheEmbeddingText(body.messages ?? []);
 
       try {
-        const provider = getEmbeddingProvider(
-          cacheConfig.embedding_provider,
-          cacheConfig.embedding_endpoint,
-          cacheConfig.embedding_api_key,
-        );
         const modelIds = [
           cacheConfig.embedding_model,
           ...(cacheConfig.embedding_fallback_models ?? []),
         ].filter(Boolean) as string[];
 
-        for (const modelId of modelIds) {
+        for (const [index, modelId] of modelIds.entries()) {
           try {
-            const { embeddings } = await provider.embed([messagesText], modelId);
+            // Derive provider details from the model definition (has endpoint + apiKey already configured).
+            // Fall back to values in cacheConfig for backward compatibility.
+            const modelDef = allModels.find(m => m.id === modelId);
+            const providerType: EmbeddingProviderType =
+              modelDef?.provider === 'ollama' ? 'ollama' : (cacheConfig.embedding_provider ?? 'openai');
+            const endpoint = modelDef?.endpoint ?? cacheConfig.embedding_endpoint;
+            const apiKey = modelDef?.apiKey ?? cacheConfig.embedding_api_key;
+            const upstreamModelId = resolveEmbeddingUpstreamModelId(modelId, modelDef?.upstreamModelId);
+            appendTrace(traceId, [{
+              panel: 'response',
+              message: 'cache:embedding',
+              details: {
+                modelId,
+                upstreamModelId,
+                provider: providerType,
+                endpoint,
+                source: modelDef ? 'model-config' : 'cache-config',
+                fallback: index > 0,
+                attempt: index + 1,
+                totalCandidates: modelIds.length,
+              },
+            }]);
+            const provider = getEmbeddingProvider(providerType, endpoint, apiKey);
+            const { embeddings } = await provider.embed([messagesText], upstreamModelId);
             cacheVector = embeddings[0] ?? null;
             break;
           } catch {
@@ -127,57 +187,25 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
               message: 'cache:hit',
               details: {
                 similarity: hit.similarity,
-                model: hit.response.model,
+                modelId: hit.modelId,
                 embeddingModel: cacheConfig.embedding_model,
                 ttlExtended: !!cacheConfig.extend_on_hit,
               },
             }]);
-            void trackCacheHit({
-              projectId: project.id,
-              modelId: hit.response.model ?? body.model ?? 'unknown',
-              inputTokens: hit.response.usage?.prompt_tokens ?? 0,
-              outputTokens: hit.response.usage?.completion_tokens ?? 0,
-              latencyMs: Date.now() - startMs,
-              cacheSimilarity: hit.similarity,
-              traceId,
-            });
-
-            if (!isStream) {
-              reply.header('x-routerly-trace-id', traceId);
-              reply.header('x-routerly-cache', 'hit');
-              return reply.send(hit.response);
-            }
-
-            // Streaming hit: emit synthetic SSE chunks
-            reply.hijack();
-            const origin = request.headers.origin;
-            if (origin) {
-              reply.raw.setHeader('Access-Control-Allow-Origin', origin);
-              reply.raw.setHeader('Access-Control-Allow-Credentials', 'true');
-              reply.raw.setHeader('Access-Control-Expose-Headers', 'x-routerly-trace-id, x-routerly-cache');
-            }
-            reply.raw.setHeader('Content-Type', 'text/event-stream');
-            reply.raw.setHeader('Cache-Control', 'no-cache');
-            reply.raw.setHeader('Connection', 'keep-alive');
-            reply.raw.setHeader('x-routerly-trace-id', traceId);
-            reply.raw.setHeader('x-routerly-cache', 'hit');
-            reply.raw.flushHeaders();
-
-            const content = (hit.response.choices?.[0]?.message?.content ?? '') as string;
-            const chunkBase = { id: hit.response.id, object: 'chat.completion.chunk', created: hit.response.created, model: hit.response.model };
-            reply.raw.write(`data: ${JSON.stringify({ ...chunkBase, choices: [{ index: 0, delta: { role: 'assistant', content: '' }, finish_reason: null }] })}\n\n`);
-            reply.raw.write(`data: ${JSON.stringify({ ...chunkBase, choices: [{ index: 0, delta: { content }, finish_reason: 'stop' }] })}\n\n`);
-            reply.raw.write('data: [DONE]\n\n');
-            reply.raw.end();
-            return;
+            cachedModelId = hit.modelId;
+            cacheSimilarityScore = hit.similarity;
+          } else {
+            appendTrace(traceId, [{
+              panel: 'response',
+              message: 'cache:miss',
+              details: { embeddingModel: cacheConfig.embedding_model },
+            }]);
           }
         }
       } catch (err) {
         request.log.warn({ err }, 'semantic-cache: embedding failed, proceeding without cache');
         cacheVector = null;
       }
-
-      void ttlMs; // referenced below in store calls
     }
 
     if (isStream) {
@@ -200,28 +228,33 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         reply.raw.write(`data: ${JSON.stringify({ type: 'trace', entry })}\n\n`);
       };
 
-      let routingResponse;
-      try {
-        routingResponse = await routeRequest(body, project, request.log, emit, request.token, traceId, conversationId);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        request.log.error({ err }, 'Routing model failed');
-        const errChunk = { id: `chatcmpl-${traceId}`, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: body.model ?? '', choices: [{ index: 0, delta: { content: `Routing failed: ${msg}` }, finish_reason: 'stop' }] };
-        reply.raw.write(`data: ${JSON.stringify(errChunk)}\n\n`);
-        reply.raw.write('data: [DONE]\n\n');
-        reply.raw.end();
-        return;
-      }
+      let sortedCandidates: Array<{ model: string; weight: number }>;
+      if (cachedModelId) {
+        // Cache hit: skip routing, use the cached model directly
+        sortedCandidates = [{ model: cachedModelId, weight: 1 }];
+      } else {
+        let routingResponse;
+        try {
+          routingResponse = await routeRequest(body, project, request.log, emit, request.token, traceId, conversationId);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          request.log.error({ err }, 'Routing model failed');
+          const errChunk = { id: `chatcmpl-${traceId}`, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: body.model ?? '', choices: [{ index: 0, delta: { content: `Routing failed: ${msg}` }, finish_reason: 'stop' }] };
+          reply.raw.write(`data: ${JSON.stringify(errChunk)}\n\n`);
+          reply.raw.write('data: [DONE]\n\n');
+          reply.raw.end();
+          return;
+        }
 
-      if (isMemoryEnabled && conversationId && routingResponse.models.length > 0) {
-        addRoutingDecision(project.id, conversationId, routingResponse.models[0]!.model);
-      }
+        if (isMemoryEnabled && conversationId && routingResponse.models.length > 0) {
+          addRoutingDecision(project.id, conversationId, routingResponse.models[0]!.model);
+        }
 
-      const allModelsList = await readConfig('models');
-      const sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
+        sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
+      }
 
       for (const candidate of sortedCandidates) {
-        const model = allModelsList.find((m: any) => m.id === candidate.model);
+        const model = allModels.find((m: any) => m.id === candidate.model);
         if (!model) continue;
 
         const ctx: LLMCallContext = {
@@ -232,6 +265,9 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           traceId,
           emit,
           log: request.log,
+          ...(cachedModelId !== null
+            ? { cacheHit: true as const, ...(cacheSimilarityScore !== null ? { cacheSimilarity: cacheSimilarityScore } : {}) }
+            : {}),
         };
 
         let streamResult: Awaited<ReturnType<typeof llmStream>>;
@@ -254,18 +290,10 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           reply.raw.write('data: [DONE]\n\n');
           request.log.info({ modelId: model.id, contentChars: fullContent.length }, 'completion: response');
 
-          // Store response in semantic cache
-          if (cachePolicy && cacheVector) {
+          // Store routing decision in semantic cache on cache miss
+          if (cachePolicy && cacheVector && !cachedModelId) {
             const ttlMs = (cachePolicy.config.cache.ttl_seconds ?? 3600) * 1_000;
-            const syntheticResponse: ChatCompletionResponse = {
-              id: `chatcmpl-${traceId}`,
-              object: 'chat.completion',
-              created: Math.floor(Date.now() / 1000),
-              model: model.id,
-              choices: [{ index: 0, message: { role: 'assistant', content: fullContent }, finish_reason: 'stop' }],
-              usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-            };
-            storeCache(project.id, cacheVector, syntheticResponse, ttlMs);
+            storeCache(project.id, cacheVector, model.id, ttlMs);
           }
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
@@ -291,24 +319,29 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       appendTrace(traceId, [entry]);
     };
 
-    let routingResponse;
-    try {
-      routingResponse = await routeRequest(body, project, request.log, emit, request.token, traceId, conversationId);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      request.log.error({ err }, 'Routing model failed');
-      return reply.code(500).send({ error: { message: `Routing model failed: ${msg}`, type: 'server_error' } });
-    }
+    let sortedCandidates: Array<{ model: string; weight: number }>;
+    if (cachedModelId) {
+      // Cache hit: skip routing, use the cached model directly
+      sortedCandidates = [{ model: cachedModelId, weight: 1 }];
+    } else {
+      let routingResponse;
+      try {
+        routingResponse = await routeRequest(body, project, request.log, emit, request.token, traceId, conversationId);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        request.log.error({ err }, 'Routing model failed');
+        return reply.code(500).send({ error: { message: `Routing model failed: ${msg}`, type: 'server_error' } });
+      }
 
-    if (isMemoryEnabled && conversationId && routingResponse.models.length > 0) {
-      addRoutingDecision(project.id, conversationId, routingResponse.models[0]!.model);
-    }
+      if (isMemoryEnabled && conversationId && routingResponse.models.length > 0) {
+        addRoutingDecision(project.id, conversationId, routingResponse.models[0]!.model);
+      }
 
-    const allModelsList = await readConfig('models');
-    const sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
+      sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
+    }
 
     for (const candidate of sortedCandidates) {
-      const model = allModelsList.find((m: any) => m.id === candidate.model);
+      const model = allModels.find((m: any) => m.id === candidate.model);
       if (!model) continue;
 
       const ctx: LLMCallContext = {
@@ -319,6 +352,9 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         traceId,
         emit,
         log: request.log,
+        ...(cachedModelId !== null
+          ? { cacheHit: true as const, ...(cacheSimilarityScore !== null ? { cacheSimilarity: cacheSimilarityScore } : {}) }
+          : {}),
       };
 
       try {
@@ -333,10 +369,10 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           'completion: response',
         );
 
-        // Store response in semantic cache
-        if (cachePolicy && cacheVector) {
+        // Store routing decision in semantic cache on cache miss
+        if (cachePolicy && cacheVector && !cachedModelId) {
           const ttlMs = (cachePolicy.config.cache.ttl_seconds ?? 3600) * 1_000;
-          storeCache(project.id, cacheVector, response, ttlMs);
+          storeCache(project.id, cacheVector, model.id, ttlMs);
         }
 
         reply.header('x-routerly-trace-id', traceId);

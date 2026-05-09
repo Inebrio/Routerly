@@ -50,6 +50,9 @@ export interface LLMCallContext {
   traceId?: string;
   emit?: (entry: TraceEntry) => void;
   log?: Logger;
+  /** True when the routing decision was served from the semantic cache */
+  cacheHit?: boolean;
+  cacheSimilarity?: number;
 }
 
 /**
@@ -211,6 +214,7 @@ export async function llmChat(
       outcome: 'success',
       callType,
       ...(traceId !== undefined ? { traceId } : {}),
+      ...(ctx.cacheHit ? { cacheHit: true, cacheSimilarity: ctx.cacheSimilarity } : {}),
     }).catch(() => {});
 
     return response;
@@ -231,6 +235,7 @@ export async function llmChat(
       errorMessage: msg,
       callType,
       ...(traceId !== undefined ? { traceId } : {}),
+      ...(ctx.cacheHit ? { cacheHit: true, cacheSimilarity: ctx.cacheSimilarity } : {}),
     }).catch(() => {});
 
     throw err;
@@ -390,14 +395,14 @@ export async function llmStream(
       const latencyMs = Date.now() - t0;
       if (outcome === 'success') {
         const tokensPerSec = latencyMs > 0 ? Math.round((inputTokens + outputTokens) / (latencyMs / 1000)) : 0;
-        
+
         // Calculate costs
         const plainInput = inputTokens - cachedInputTokens;
         const inputCostUsd = (plainInput / 1_000_000) * model.cost.inputPerMillion;
         const cachedCostUsd = (cachedInputTokens / 1_000_000) * (model.cost.cachePerMillion ?? model.cost.inputPerMillion);
         const outputCostUsd = (outputTokens / 1_000_000) * model.cost.outputPerMillion;
         const totalCostUsd = inputCostUsd + cachedCostUsd + outputCostUsd;
-        
+
         emit?.({
           panel: res,
           message: 'model:success',
@@ -423,6 +428,7 @@ export async function llmStream(
         ...(errorMessage !== undefined ? { errorMessage } : {}),
         callType,
         ...(traceId !== undefined ? { traceId } : {}),
+        ...(ctx.cacheHit ? { cacheHit: true, cacheSimilarity: ctx.cacheSimilarity } : {}),
       }).catch(() => {});
     }
   }
