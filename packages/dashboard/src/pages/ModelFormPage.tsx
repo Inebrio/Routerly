@@ -31,6 +31,41 @@ const PROVIDER_MODELS = Object.fromEntries(
   PROVIDERS.map(p => [p, providersConf[p as Provider]?.models as ProviderModel[]])
 ) as Record<Provider, ProviderModel[]>;
 
+const WEB_PROVIDERS = ['openai-web', 'anthropic-web'] as const;
+type WebProvider = typeof WEB_PROVIDERS[number];
+const isWebProvider = (p: string): p is WebProvider => (WEB_PROVIDERS as readonly string[]).includes(p);
+
+const WEB_PROVIDER_TOKEN_LABEL: Record<WebProvider, string> = {
+  'openai-web': 'Access Token',
+  'anthropic-web': 'Session Token',
+};
+
+const WEB_PROVIDER_TOKEN_PLACEHOLDER: Record<WebProvider, string> = {
+  'openai-web': 'Paste accessToken from https://chatgpt.com/api/auth/session',
+  'anthropic-web': 'Paste sessionKey cookie value (sk-ant-sid01-…)',
+};
+
+const WEB_PROVIDER_INSTRUCTIONS: Record<WebProvider, React.ReactNode> = {
+  'openai-web': (
+    <>
+      <strong>How to get your access token:</strong> While logged in to ChatGPT, open{' '}
+      <code style={{ fontSize: '0.78rem' }}>https://chatgpt.com/api/auth/session</code> in a new
+      tab. Copy the value of the <code style={{ fontSize: '0.78rem' }}>accessToken</code> field
+      from the JSON response. The token expires every ~24 hours and must be renewed manually.
+    </>
+  ),
+  'anthropic-web': (
+    <>
+      <strong>How to get your session key:</strong> While logged in to Claude, open DevTools
+      (F12) → Application → Cookies → <code style={{ fontSize: '0.78rem' }}>claude.ai</code>{' '}
+      → copy the value of the{' '}
+      <code style={{ fontSize: '0.78rem' }}>sessionKey</code> cookie
+      (starts with <code style={{ fontSize: '0.78rem' }}>sk-ant-sid01-</code>).
+      The key stays valid until you log out.
+    </>
+  ),
+};
+
 const METRIC_OPTIONS = [
   { value: 'context_tokens', label: 'Context tokens' },
 ];
@@ -504,6 +539,26 @@ export function ModelFormPage() {
           <div className="form-section">
             <h3 className="section-title">Connection details</h3>
             <p className="section-desc">API endpoint and authentication credentials required to perform requests.</p>
+
+            {isWebProvider(form.provider) && (
+              <div style={{
+                display: 'flex', gap: 10, padding: '12px 14px', marginBottom: 16,
+                background: 'color-mix(in srgb, var(--color-warning, #f59e0b) 10%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--color-warning, #f59e0b) 40%, transparent)',
+                borderRadius: 8,
+              }}>
+                <span style={{ fontSize: '1rem', flexShrink: 0 }}>⚠️</span>
+                <div style={{ fontSize: '0.82rem', lineHeight: 1.6, color: 'var(--text-primary)' }}>
+                  <p style={{ margin: '0 0 6px' }}>
+                    <strong>Unofficial provider — use at your own risk.</strong>{' '}
+                    This integration relies on an undocumented internal API that may change or break without notice.
+                    It may violate the provider&apos;s Terms of Service and could result in account suspension.
+                  </p>
+                  <p style={{ margin: 0 }}>{WEB_PROVIDER_INSTRUCTIONS[form.provider as WebProvider]}</p>
+                </div>
+              </div>
+            )}
+
             <div className="form-group">
               <label className="form-label">Endpoint URL</label>
               <input className="form-input" value={form.endpoint}
@@ -511,12 +566,22 @@ export function ModelFormPage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">API Key / Token</label>
+              <label className="form-label">
+                {isWebProvider(form.provider)
+                  ? WEB_PROVIDER_TOKEN_LABEL[form.provider as WebProvider]
+                  : 'API Key / Token'}
+              </label>
               <div style={{ position: 'relative' }}>
                 <input className="form-input" type={showToken ? 'text' : 'password'}
                   name="apiKey" autoComplete="new-password"
                   value={form.apiKey} onChange={e => setForm(f => ({ ...f, apiKey: e.target.value }))}
-                  placeholder={editingModelId ? 'Leave blank to keep existing key' : isCloning ? 'Leave blank to keep existing key' : (form.provider === 'ollama' ? 'not required for local models' : 'sk-…')}
+                  placeholder={
+                    editingModelId ? 'Leave blank to keep existing key'
+                    : isCloning ? 'Leave blank to keep existing key'
+                    : isWebProvider(form.provider) ? WEB_PROVIDER_TOKEN_PLACEHOLDER[form.provider as WebProvider]
+                    : form.provider === 'ollama' ? 'not required for local models'
+                    : 'sk-…'
+                  }
                   style={{ paddingRight: 40 }} />
                 <button type="button" onClick={() => setShowToken(v => !v)}
                   style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>

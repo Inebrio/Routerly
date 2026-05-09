@@ -1247,7 +1247,11 @@ export function ProjectRoutingTab() {
               <SearchableSelect
                 options={ALL_POLICY_TYPES
                   .filter(t => !policies.some(p => p.type === t))
-                  .map(t => ({ value: t, label: POLICY_LABELS[t] ?? t, description: POLICY_DESCRIPTIONS[t] }))}
+                  .map(t => ({
+                    value: t,
+                    label: POLICY_LABELS[t] ?? t,
+                    ...(POLICY_DESCRIPTIONS[t] ? { description: POLICY_DESCRIPTIONS[t] } : {}),
+                  }))}
                 value=""
                 onChange={addPolicy}
                 placeholder="Add a policy..."

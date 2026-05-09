@@ -30,10 +30,10 @@ function StatItem({ icon: Icon, label, value, color = 'var(--text-secondary)' }:
 
 function ScoreBar({ value }: { value: number | null }) {
   if (value == null) return <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>—</span>;
-  
+
   const pct = Math.floor(value * 100);
   const color = value >= 0.7 ? '#4ade80' : value >= 0.4 ? '#facc15' : '#f87171';
-  
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <div style={{ flex: 1, height: 8, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
@@ -56,9 +56,9 @@ export function MessageStatsCard({ stats, turnNumber }: MessageStatsProps) {
       marginBottom: 12,
     }}>
       {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'space-between',
         marginBottom: 12,
         paddingBottom: 12,
@@ -67,12 +67,31 @@ export function MessageStatsCard({ stats, turnNumber }: MessageStatsProps) {
         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
           Turn #{turnNumber}
         </span>
-        {stats.hasError && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 600 }}>
-            <AlertCircle size={14} />
-            ERROR
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {(stats.cacheHit || stats.cacheMiss) && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '3px 10px', borderRadius: 99,
+              background: stats.cacheHit ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.12)',
+              border: `1px solid ${stats.cacheHit ? 'rgba(16,185,129,0.4)' : 'rgba(245,158,11,0.4)'}`,
+            }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: stats.cacheHit ? '#10b981' : '#f59e0b', letterSpacing: '0.04em' }}>
+                {stats.cacheHit ? '⚡ CACHE HIT' : '○ CACHE MISS'}
+              </span>
+              {stats.cacheHit && stats.cacheSimilarity != null && (
+                <span style={{ fontSize: '0.7rem', color: stats.cacheHit ? '#6ee7b7' : '#fcd34d', fontVariantNumeric: 'tabular-nums' }}>
+                  {(stats.cacheSimilarity * 100).toFixed(1)}%
+                </span>
+              )}
+            </div>
+          )}
+          {stats.hasError && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 600 }}>
+              <AlertCircle size={14} />
+              ERROR
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Model */}
