@@ -68,6 +68,28 @@ type PolicyFn = (ctx: PolicyContext) => PolicyResult
 // PolicyResult:  { routing: Array<{ model: ModelConfig, points: number }>, excludes?: string[] }
 ```
 
+### `llm` policy — internal scoring format
+
+The `llm` policy calls a configured meta-LLM **internally** and parses its response. The expected JSON format (produced by the meta-LLM) is:
+
+```json
+{
+  "routing": [
+    { "model": "<model-id>", "point": 0.9 },
+    { "model": "<model-id>", "point": 0.7 }
+  ]
+}
+```
+
+`point` is a float 0.0–1.0. This is an **internal** format between the policy and the meta-LLM; it is not exposed to clients. Truncated JSON is recovered via regex; a repair call is attempted if parsing fails entirely.
+
+### Budget enforcement
+
+Budget is enforced in **two separate stages**:
+
+1. **Pre-filter** (in `router.ts`, before any policy runs): `isAllowed()` checks all configured limits (global + project). Models that have already exceeded any limit are **hard-excluded** from the candidate pool.
+2. **`budget-remaining` policy** (soft scoring): for the surviving candidates, scores each model by headroom (`(limit - current) / limit`). Takes the minimum headroom across all limits (bottleneck). Models with more headroom score higher (0.0–1.0).
+
 ---
 
 ## Provider adapters

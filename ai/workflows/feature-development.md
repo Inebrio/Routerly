@@ -72,6 +72,8 @@ npm run typecheck
 npm run lint
 ```
 
+> **BLOCKING**: The task is not complete until all three commands exit green. If `npm test` fails, fix the failures before proceeding to Step 5. Do not skip this step.
+
 ## Step 5 — Handoffs
 
 After implementation, send a handoff message to each affected agent:

@@ -21,6 +21,7 @@ Full context is in `ai/`. Read `AGENTS.md` first, then the agent file for your c
 - `afterEach(() => vi.clearAllMocks())` whenever `vi.mock()` is used
 - Never alter the OpenAI/Anthropic wire format forwarded to clients
 - No new npm dependencies without ESM compatibility check
+- **Test before done**: every feature added, modified, or deleted must pass `npm test --workspace=packages/<affected>` + `npm run typecheck` before the task is complete. If tests fail, fix them — do not close the task with a red test suite.
 
 ## Commit format
 
