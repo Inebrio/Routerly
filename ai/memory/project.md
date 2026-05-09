@@ -80,6 +80,23 @@ Build order: `shared` → `service` → `cli` → `dashboard`
 
 ---
 
+## Business requirements (from spec)
+
+| Code | Title | Summary |
+|------|-------|---------|
+| BR-01 | API compatibility | Drop-in replacement for OpenAI and Anthropic APIs — zero client code changes |
+| BR-02 | Multi-provider | OpenAI, Anthropic, Gemini, Ollama, custom endpoint |
+| BR-03 | Intelligent routing | Routing model returns weighted candidate list; proxy selects in weight order with fallback |
+| BR-04 | Cost tracking | Token usage and cost tracked per call, aggregated per model/project/period (daily/weekly/monthly) |
+| BR-05 | Budget control | Global (per model) + project-level thresholds; project thresholds take priority over global |
+| BR-06 | Project isolation | Each project has its own endpoint and Bearer token |
+| BR-07 | Internal users | Roles + permissions for dashboard access — independent from LLM proxy auth |
+| BR-08 | File-based config | JSON files only; sensitive data encrypted at rest |
+| BR-09 | Self-hosting | Zero external cloud dependencies beyond configured LLM providers |
+| BR-10 | Multiple interfaces | CLI (admin, no auth required) + web dashboard (role-based auth) |
+
+---
+
 ## Built-in roles
 
 | Role | Permissions |

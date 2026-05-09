@@ -36,8 +36,11 @@ ai/
     tester.md      writing Vitest tests
 
   skills/       ← copy-paste operational guides
-    testing/SKILL.md       test templates for policies and providers
-    code-review/SKILL.md   Routerly-specific review checklist
+    testing/SKILL.md            test templates for policies and providers
+    code-review/SKILL.md        Routerly-specific review checklist
+    self-improvement/SKILL.md   log learnings/errors, promote to memory files
+    frontend-design/SKILL.md    design principles for the React dashboard
+    react-best-practices/SKILL.md  performance patterns for packages/dashboard/
 
   prompts/      ← prompt templates
     implement-feature.md

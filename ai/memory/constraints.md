@@ -26,6 +26,7 @@ These constraints are not up for debate. Violating them requires an explicit tea
 - **ALWAYS** use Vitest 3 — do not introduce Jest, Mocha, Jasmine or other frameworks
 - **ALWAYS** call `afterEach(() => vi.clearAllMocks())` in tests that use mocks
 - **ALWAYS** place test files in the same directory as the file under test
+- **NEVER** declare a task complete without running `npm test --workspace=packages/<affected>` and `npm run typecheck`; if any test fails, fix it before closing the task
 
 ## Security
 
@@ -58,6 +59,19 @@ These constraints are not up for debate. Violating them requires an explicit tea
 - **ALWAYS** use conventional commits: `feat(scope): lowercase description`
 - **NEVER** commit with `--no-verify` (bypasses husky + commitlint)
 - Allowed types: `feat | fix | docs | style | refactor | perf | test | build | ci | chore | revert`
+
+## Non-functional requirements (from spec)
+
+> **Implementation status** noted where the codebase diverges from the spec.
+
+| Code | Constraint | Status |
+|------|------------|--------|
+| RNF-01 | Credentials and API keys encrypted at rest (AES-256) via `ROUTERLY_SECRET_KEY` | ⚠️ **Not implemented** — API keys are stored in plain text in `models.json`. Spec intent; not yet built. |
+| RNF-02 | Proxy overhead < 200 ms (excluding routing model + provider latency) | No measurement enforcement in code — aspirational target |
+| RNF-03 | Fallback loop completes within project timeout; each candidate has its own per-model timeout | Fallback loop exists in executor; per-model timeout not yet configurable |
+| RNF-04 | Runs on Linux, macOS, Windows — no OS-specific dependencies | ✅ Node.js + JSON files, no OS-specific code |
+| RNF-05 | Structured JSON logs (pino) for all significant events | ✅ pino used throughout; `NODE_ENV=production` disables pretty-print |
+| RNF-06 | Env vars take priority over file config (`ROUTERLY_HOME`, port) | ✅ `ROUTERLY_HOME` in `config/paths.ts`; port in `settings.json` (no env override yet) |
 
 ## Docker / Deploy
 

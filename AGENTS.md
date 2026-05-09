@@ -65,6 +65,7 @@ No `.env.example` exists. Configuration is done via JSON files managed by the CL
 6. **Config writes**: always via `writeConfig()` with `proper-lockfile`
 7. **OpenAI/Anthropic wire format**: never alter the response format sent to the client
 8. **No new dependencies** without strong justification and ESM compatibility check
+9. **Test before done**: every feature added, modified, or deleted must pass `npm test --workspace=packages/<affected>` + `npm run typecheck` before the task is declared complete. If tests fail, fix them before closing the task.
 
 ---
 

@@ -37,6 +37,7 @@ npm run lint
 6. `afterEach(() => vi.clearAllMocks())` whenever mocks are present
 7. OpenAI/Anthropic proxy response format never altered
 8. No new npm dependencies without ESM check
+9. **Test before done** — run `npm test --workspace=packages/<affected>` + `npm run typecheck` after every change. A task is not complete until all tests pass. Fix failures before declaring done.
 
 ## Workflow files
 
