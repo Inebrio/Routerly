@@ -5,6 +5,8 @@ import { AnthropicAdapter } from './anthropic.js';
 import { GeminiAdapter } from './gemini.js';
 import { OllamaAdapter } from './ollama.js';
 import { CustomAdapter } from './custom.js';
+import { OpenAIWebAdapter } from './openai-web.js';
+import { AnthropicWebAdapter } from './anthropic-web.js';
 
 export type { ProviderAdapter };
 
@@ -14,6 +16,8 @@ const adapters: Record<string, ProviderAdapter> = {
   gemini: new GeminiAdapter(),
   ollama: new OllamaAdapter(),
   custom: new CustomAdapter(),
+  'openai-web': new OpenAIWebAdapter(),
+  'anthropic-web': new AnthropicWebAdapter(),
 };
 
 /**

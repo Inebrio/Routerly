@@ -1,9 +1,8 @@
-import type { ChatCompletionResponse } from '@routerly/shared';
 import { cosineSimilarity } from '../routing/intent/similarity.js';
 
 interface CacheEntry {
   vector: number[];
-  response: ChatCompletionResponse;
+  modelId: string;
   expiresAt: number;
 }
 
@@ -11,12 +10,7 @@ interface CacheEntry {
 const store = new Map<string, CacheEntry[]>();
 
 export interface CacheHit {
-  response: ChatCompletionResponse;
-  similarity: number;
-}
-
-export interface CacheHit {
-  response: ChatCompletionResponse;
+  modelId: string;
   similarity: number;
 }
 
@@ -56,19 +50,19 @@ export function lookupCache(
     bestEntry.expiresAt = Date.now() + extendTtlMs;
   }
 
-  return bestEntry ? { response: bestEntry.response, similarity: bestScore } : null;
+  return bestEntry ? { modelId: bestEntry.modelId, similarity: bestScore } : null;
 }
 
 /**
- * Store a (vector, response) pair in the project's cache with the given TTL.
+ * Store a (vector, modelId) pair in the project's cache with the given TTL.
  */
 export function storeCache(
   projectId: string,
   vector: number[],
-  response: ChatCompletionResponse,
+  modelId: string,
   ttlMs: number,
 ): void {
-  const entry: CacheEntry = { vector, response, expiresAt: Date.now() + ttlMs };
+  const entry: CacheEntry = { vector, modelId, expiresAt: Date.now() + ttlMs };
   const existing = store.get(projectId);
   if (existing) {
     existing.push(entry);

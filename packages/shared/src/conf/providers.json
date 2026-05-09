@@ -531,5 +531,23 @@
   "custom": {
     "endpoint": "",
     "models": []
+  },
+  "openai-web": {
+    "endpoint": "https://chatgpt.com",
+    "models": [
+      { "id": "gpt-4o", "input": 0, "output": 0, "contextWindow": 128000 },
+      { "id": "gpt-4o-mini", "input": 0, "output": 0, "contextWindow": 128000 },
+      { "id": "o1", "input": 0, "output": 0, "contextWindow": 200000 },
+      { "id": "o3", "input": 0, "output": 0, "contextWindow": 200000 },
+      { "id": "o4-mini", "input": 0, "output": 0, "contextWindow": 200000 }
+    ]
+  },
+  "anthropic-web": {
+    "endpoint": "https://claude.ai",
+    "models": [
+      { "id": "claude-opus-4-6", "input": 0, "output": 0, "contextWindow": 200000 },
+      { "id": "claude-sonnet-4-6", "input": 0, "output": 0, "contextWindow": 200000 },
+      { "id": "claude-haiku-4-5", "input": 0, "output": 0, "contextWindow": 200000 }
+    ]
   }
 }

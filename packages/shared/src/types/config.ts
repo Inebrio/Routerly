@@ -1,6 +1,6 @@
 // ─── Config types ────────────────────────────────────────────────────────────
 
-export type Provider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom';
+export type Provider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom' | 'openai-web' | 'anthropic-web';
 
 export interface PricingTier {
   /** What dimension is being measured, e.g. "context_tokens" */
