@@ -132,6 +132,12 @@ export function UsageRecordPage() {
   const project = projects.find(p => p.id === record.projectId);
   const isRouting = (record.callType ?? 'completion') === 'routing';
   const totalTokens = record.inputTokens + record.outputTokens;
+  const traceCacheHit = record.trace?.find(e => e.message === 'cache:hit');
+  const traceCacheMiss = record.trace?.some(e => e.message === 'cache:miss') ?? false;
+  const effectiveCacheHit = record.cacheHit || !!traceCacheHit;
+  const effectiveCacheMiss = !effectiveCacheHit && traceCacheMiss;
+  const traceSimilarity = traceCacheHit?.details?.similarity;
+  const effectiveCacheSimilarity = record.cacheSimilarity ?? (typeof traceSimilarity === 'number' ? traceSimilarity : null);
 
   return (
     <>
@@ -167,7 +173,7 @@ export function UsageRecordPage() {
                     }}>
                       {isRouting ? 'router' : 'completion'}
                     </span>
-                    {record.cacheHit && (
+                    {effectiveCacheHit && (
                       <span style={{
                         display: 'inline-block', fontSize: '0.78rem', fontWeight: 600,
                         padding: '2px 10px', borderRadius: 99,
@@ -176,11 +182,23 @@ export function UsageRecordPage() {
                         cache hit
                       </span>
                     )}
+                    {effectiveCacheMiss && (
+                      <span style={{
+                        display: 'inline-block', fontSize: '0.78rem', fontWeight: 600,
+                        padding: '2px 10px', borderRadius: 99,
+                        background: 'rgba(245,158,11,0.12)', color: '#f59e0b',
+                      }}>
+                        cache miss
+                      </span>
+                    )}
                   </div>
                 }
               />
-              {record.cacheHit && record.cacheSimilarity != null && (
-                <Field label="Cache Similarity" value={`${(record.cacheSimilarity * 100).toFixed(2)}%`} />
+              {(effectiveCacheHit || effectiveCacheMiss) && (
+                <Field label="Cache Status" value={effectiveCacheHit ? 'Hit' : 'Miss'} />
+              )}
+              {effectiveCacheHit && effectiveCacheSimilarity != null && (
+                <Field label="Cache Similarity" value={`${(effectiveCacheSimilarity * 100).toFixed(2)}%`} />
               )}
             </div>
           </div>
