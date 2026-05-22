@@ -83,9 +83,38 @@ describe('OpenAIWebAdapter.chatCompletion', () => {
       makeModel(),
     );
 
-    const callArgs = fetchMock.mock.calls[0] as [string, RequestInit];
+    // calls[0] = sentinel/chat-requirements (GET), calls[1] = conversation (POST)
+    const callArgs = fetchMock.mock.calls[1] as [string, RequestInit];
     const body = JSON.parse((callArgs[1].body) as string) as Record<string, unknown>;
     expect(body['system_prompt']).toBe('Be concise.');
+  });
+
+  it('attaches sentinel headers when chat-requirements responds', async () => {
+    const sentinelResponse = {
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        token: 'sentinel-tok-123',
+        proofofwork: { required: false, seed: '', difficulty: '' },
+      }),
+    };
+    const conversationResponse = {
+      ok: true,
+      body: makeSSEStream([sseEvent('Hi')]),
+    };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(sentinelResponse)
+      .mockResolvedValueOnce(conversationResponse);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const adapter = new OpenAIWebAdapter();
+    await adapter.chatCompletion(makeRequest(), makeModel());
+
+    const [sentinelUrl] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(sentinelUrl).toContain('/backend-api/sentinel/chat-requirements');
+
+    const [, conversationInit] = fetchMock.mock.calls[1] as [string, RequestInit];
+    const headers = conversationInit.headers as Record<string, string>;
+    expect(headers['Openai-Sentinel-Chat-Requirements-Token']).toBe('sentinel-tok-123');
   });
 
   it('throws on HTTP 401', async () => {
@@ -93,6 +122,7 @@ describe('OpenAIWebAdapter.chatCompletion', () => {
       ok: false,
       status: 401,
       statusText: 'Unauthorized',
+      text: () => Promise.resolve(''),
     }));
 
     const adapter = new OpenAIWebAdapter();
@@ -147,5 +177,68 @@ describe('OpenAIWebAdapter.streamCompletion', () => {
     }
 
     expect(deltas).toEqual(['Hi', ' there', '!']);
+  });
+});
+
+describe('OpenAIWebAdapter.cleanAnnotations (via SSE parsing)', () => {
+  const MARKER = '\u{1F523}';
+
+  function annotated(key: string, content: string): string {
+    return `${MARKER}${JSON.stringify({ [key]: { content } })}${MARKER}`;
+  }
+
+  it('converts math_block_widget annotations to $$...$$', async () => {
+    const raw = `Before${annotated('math_block_widget_always_prefetch_v2', '\\pi = \\frac{C}{d}')}After`;
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      body: makeSSEStream([sseEvent(raw)]),
+    }));
+
+    const adapter = new OpenAIWebAdapter();
+    const result = await adapter.chatCompletion(makeRequest(), makeModel());
+    const text = result.choices[0]!.message.content as string;
+    expect(text).not.toContain(MARKER);
+    expect(text).not.toContain('math_block_widget');
+    expect(text).toContain('$$');
+    expect(text).toContain('\\pi = \\frac{C}{d}');
+  });
+
+  it('converts math_inline_widget annotations to $...$', async () => {
+    const raw = `The constant ${annotated('math_inline_widget_always_prefetch_v2', '\\pi')} is irrational.`;
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      body: makeSSEStream([sseEvent(raw)]),
+    }));
+
+    const adapter = new OpenAIWebAdapter();
+    const result = await adapter.chatCompletion(makeRequest(), makeModel());
+    const text = result.choices[0]!.message.content as string;
+    expect(text).toBe('The constant $\\pi$ is irrational.');
+  });
+
+  it('silently removes unknown annotations', async () => {
+    const raw = `Hello${annotated('some_unknown_widget_v1', 'data')} world`;
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      body: makeSSEStream([sseEvent(raw)]),
+    }));
+
+    const adapter = new OpenAIWebAdapter();
+    const result = await adapter.chatCompletion(makeRequest(), makeModel());
+    const text = result.choices[0]!.message.content as string;
+    expect(text).toBe('Hello world');
+    expect(text).not.toContain(MARKER);
+  });
+
+  it('leaves plain text without annotations unchanged', async () => {
+    const raw = 'Just normal text with no annotations.';
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      body: makeSSEStream([sseEvent(raw)]),
+    }));
+
+    const adapter = new OpenAIWebAdapter();
+    const result = await adapter.chatCompletion(makeRequest(), makeModel());
+    expect(result.choices[0]!.message.content).toBe(raw);
   });
 });
