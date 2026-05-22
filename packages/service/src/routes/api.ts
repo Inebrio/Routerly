@@ -198,14 +198,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get('/api/models', async (_req, reply) => {
     const models = await readConfig('models');
-    // Strip API keys before sending to client (use /api/models/:id/apikey to retrieve)
-    return reply.send(models.map(m => ({ ...m, apiKey: undefined })));
+    // Strip secrets before sending to client (use /api/models/:id/apikey to retrieve)
+    return reply.send(models.map(m => ({ ...m, apiKey: undefined, cfClearance: undefined })));
   });
 
   fastify.post<{
     Body: {
       id: string; name?: string; provider: string; endpoint: string;
-      apiKey?: string; cloneFrom?: string; upstreamModelId?: string;
+      apiKey?: string; cfClearance?: string; cloneFrom?: string; upstreamModelId?: string;
       inputPerMillion: number; outputPerMillion: number;
       cachePerMillion?: number;
       contextWindow?: number;
@@ -244,6 +244,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         : req.body.cloneFrom
           ? (models.find(m => m.id === req.body.cloneFrom)?.apiKey ?? undefined)
           : undefined,
+      cfClearance: req.body.cfClearance
+        ? req.body.cfClearance
+        : req.body.cloneFrom
+          ? (models.find(m => m.id === req.body.cloneFrom)?.cfClearance ?? undefined)
+          : undefined,
       cost: {
         inputPerMillion: req.body.inputPerMillion,
         outputPerMillion: req.body.outputPerMillion,
@@ -257,7 +262,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     };
     models.push(model);
     await writeConfig('models', models);
-    return reply.status(201).send({ ...model, apiKey: undefined });
+    return reply.status(201).send({ ...model, apiKey: undefined, cfClearance: undefined });
   });
 
   fastify.put<{
@@ -265,7 +270,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     Body: {
       id?: string;
       name?: string; provider: string; endpoint: string;
-      apiKey?: string; upstreamModelId?: string;
+      apiKey?: string; cfClearance?: string; upstreamModelId?: string;
       inputPerMillion: number; outputPerMillion: number;
       cachePerMillion?: number;
       contextWindow?: number;
@@ -310,6 +315,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       provider: req.body.provider as Provider,
       endpoint: req.body.endpoint,
       apiKey: req.body.apiKey ? req.body.apiKey : existing.apiKey,
+      cfClearance: req.body.cfClearance ? req.body.cfClearance : existing.cfClearance,
       cost: {
         inputPerMillion: req.body.inputPerMillion,
         outputPerMillion: req.body.outputPerMillion,
@@ -357,7 +363,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
 
-    return reply.send({ ...model, apiKey: undefined });
+    return reply.send({ ...model, apiKey: undefined, cfClearance: undefined });
   });
 
   fastify.get<{ Params: { id: string } }>('/api/models/:id/apikey', async (req, reply) => {

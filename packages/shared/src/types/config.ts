@@ -102,6 +102,8 @@ export interface ModelConfig {
   endpoint: string;
   /** Provider API key (stored in plaintext; file permissions protect it) */
   apiKey?: string | undefined;
+  /** cf_clearance cookie value for Cloudflare bypass (openai-web only) */
+  cfClearance?: string | undefined;
   /**
    * The exact model identifier sent to the upstream provider API.
    * Used by the custom adapter to decouple the Routerly ID from the upstream model name.
