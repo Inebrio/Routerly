@@ -21,6 +21,8 @@ import type { ProviderAdapter } from './types.js';
 export class AnthropicWebAdapter implements ProviderAdapter {
   /** Cached organization ID — fetched once per adapter instance */
   private cachedOrgId: string | undefined;
+  /** Cached conversation ID — reused across requests to avoid per-request creation */
+  private cachedConvId: string | undefined;
 
   private getSessionKey(model: ModelConfig): string {
     if (!model.apiKey) {
@@ -43,19 +45,42 @@ export class AnthropicWebAdapter implements ProviderAdapter {
     return model.endpoint?.replace(/\/$/, '') || 'https://claude.ai';
   }
 
+  /** Build browser-like headers to reduce bot-detection false positives. */
+  private buildBrowserHeaders(
+    sessionKey: string,
+    extra: Record<string, string> = {},
+  ): Record<string, string> {
+    return {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+      'Accept': 'application/json, text/plain, */*',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'sec-ch-ua': '"Chromium";v="136", "Google Chrome";v="136", "Not-A.Brand";v="99"',
+      'sec-ch-ua-mobile': '?0',
+      'sec-ch-ua-platform': '"macOS"',
+      'sec-fetch-dest': 'empty',
+      'sec-fetch-mode': 'cors',
+      'sec-fetch-site': 'same-origin',
+      'Origin': 'https://claude.ai',
+      'Referer': 'https://claude.ai/',
+      'Cookie': `sessionKey=${sessionKey}`,
+      ...extra,
+    };
+  }
+
   /** Step 1: fetch the organization ID for this session (cached after first call) */
   private async getOrgId(sessionKey: string, base: string): Promise<string> {
     if (this.cachedOrgId) return this.cachedOrgId;
 
     const response = await globalThis.fetch(`${base}/api/organizations`, {
-      headers: {
-        'Cookie': `sessionKey=${sessionKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers: this.buildBrowserHeaders(sessionKey),
     });
 
     if (!response.ok) {
-      throw new Error(`anthropic-web: failed to fetch organizations — HTTP ${response.status} ${response.statusText}. Check that your sessionKey is valid.`);
+      const detail = await response.text().catch(() => '');
+      throw new Error(
+        `anthropic-web: failed to fetch organizations — HTTP ${response.status} ${response.statusText}. ` +
+        `Check that your sessionKey is valid.${detail ? ` — ${detail}` : ''}`,
+      );
     }
 
     const orgs = await response.json() as Array<{ uuid: string }>;
@@ -67,26 +92,29 @@ export class AnthropicWebAdapter implements ProviderAdapter {
     return this.cachedOrgId;
   }
 
-  /** Step 2: create a new conversation and return its ID */
-  private async createConversation(sessionKey: string, base: string, orgId: string): Promise<string> {
+  /** Step 2: get or create a conversation ID (cached per adapter instance) */
+  private async getConvId(sessionKey: string, base: string, orgId: string): Promise<string> {
+    if (this.cachedConvId) return this.cachedConvId;
     const response = await globalThis.fetch(
       `${base}/api/organizations/${orgId}/chat_conversations`,
       {
         method: 'POST',
-        headers: {
-          'Cookie': `sessionKey=${sessionKey}`,
-          'Content-Type': 'application/json',
-        },
+        headers: this.buildBrowserHeaders(sessionKey, { 'Content-Type': 'application/json' }),
         body: JSON.stringify({ name: '' }),
       },
     );
 
     if (!response.ok) {
-      throw new Error(`anthropic-web: failed to create conversation — HTTP ${response.status} ${response.statusText}`);
+      const detail = await response.text().catch(() => '');
+      throw new Error(
+        `anthropic-web: failed to create conversation — HTTP ${response.status} ${response.statusText}` +
+        `${detail ? ` — ${detail}` : ''}`,
+      );
     }
 
     const conv = await response.json() as { uuid: string };
-    return conv.uuid;
+    this.cachedConvId = conv.uuid;
+    return this.cachedConvId;
   }
 
   /** Convert OpenAI-format messages to a single prompt string for the web API */
@@ -179,17 +207,24 @@ export class AnthropicWebAdapter implements ProviderAdapter {
       `${base}/api/organizations/${orgId}/chat_conversations/${convId}/completion`,
       {
         method: 'POST',
-        headers: {
-          'Cookie': `sessionKey=${sessionKey}`,
+        headers: this.buildBrowserHeaders(sessionKey, {
           'Content-Type': 'application/json',
           'Accept': 'text/event-stream',
-        },
+        }),
         body: JSON.stringify(body),
       },
     );
 
     if (!response.ok) {
-      throw new Error(`anthropic-web: completion request failed — HTTP ${response.status} ${response.statusText}`);
+      // 404 means the conversation was deleted/expired — invalidate cache so next call creates a fresh one
+      if (response.status === 404) this.cachedConvId = undefined;
+      const retryAfter = response.headers.get('Retry-After');
+      const detail = await response.text().catch(() => '');
+      throw new Error(
+        `anthropic-web: completion request failed — HTTP ${response.status} ${response.statusText}` +
+        `${retryAfter ? ` (retry after ${retryAfter}s)` : ''}` +
+        `${detail ? ` — ${detail}` : ''}`,
+      );
     }
     return response;
   }
@@ -202,7 +237,7 @@ export class AnthropicWebAdapter implements ProviderAdapter {
     const base = this.baseUrl(model);
 
     const orgId = await this.getOrgId(sessionKey, base);
-    const convId = await this.createConversation(sessionKey, base, orgId);
+    const convId = await this.getConvId(sessionKey, base, orgId);
     const response = await this.sendCompletion(sessionKey, base, orgId, convId, request, model);
 
     if (!response.body) throw new Error('anthropic-web: empty response body');
@@ -243,7 +278,7 @@ export class AnthropicWebAdapter implements ProviderAdapter {
     const base = this.baseUrl(model);
 
     const orgId = await this.getOrgId(sessionKey, base);
-    const convId = await this.createConversation(sessionKey, base, orgId);
+    const convId = await this.getConvId(sessionKey, base, orgId);
     const response = await this.sendCompletion(sessionKey, base, orgId, convId, request, model);
 
     if (!response.body) throw new Error('anthropic-web: empty response body');

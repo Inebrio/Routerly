@@ -87,6 +87,7 @@ describe('AnthropicWebAdapter.chatCompletion', () => {
       ok: false,
       status: 401,
       statusText: 'Unauthorized',
+      text: () => Promise.resolve(''),
     }));
 
     const adapter = new AnthropicWebAdapter();
