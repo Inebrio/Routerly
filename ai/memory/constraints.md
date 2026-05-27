@@ -58,8 +58,24 @@ These constraints are not up for debate. Violating them requires an explicit tea
 ## Commits
 
 - **ALWAYS** use conventional commits: `feat(scope): lowercase description`
-- **NEVER** commit with `--no-verify` (bypasses husky + commitlint)
+- **NEVER** commit with `--no-verify` unless commitlint rejects the message solely because of uppercase characters **inside a technical identifier** (e.g. a type name, an acronym, a field name) that cannot be written differently — document the reason in the commit body
 - Allowed types: `feat | fix | docs | style | refactor | perf | test | build | ci | chore | revert`
+
+## Git / Branch workflow
+
+- **`develop` is a protected branch** — direct push is always rejected; a PR is required
+- **ALWAYS** implement changes on a dedicated feature branch — never commit directly on `develop` or `main`
+- Feature branch naming convention: `feature/<scope>-<brief-description>` (kebab-case, e.g. `feature/service-retry-logic`)
+- **ALWAYS** open a PR from the feature branch to `develop` using the `gh` CLI (pre-authenticated in this repo):
+  ```bash
+  gh pr create --base develop --head feature/<name> \
+    --title "<conventional-commit-title>" \
+    --body "<summary of changes + test evidence>"
+  ```
+- PR title must follow conventional commits format (same as the main commit)
+- PR body must include: summary of changes, packages affected, test commands run, and their outcome
+- **CI check "Build & Typecheck" must pass** before the PR can be merged — if it fails, fix the code and push additional commits to the same branch
+- **NEVER** merge a PR while CI is red
 
 ## Non-functional requirements (from spec)
 

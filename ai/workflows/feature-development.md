@@ -1,5 +1,14 @@
 # Workflow: Feature Development
 
+## Before you start — autoimprove pre-task review
+
+Run Hook 1 from `ai/skills/autoimprove/SKILL.md`:
+1. Check `ai/learnings/` for pending entries whose `**Area**` matches this task
+2. Read any `high` or `critical` priority entries before writing code
+3. If `ai/learnings/` is empty or absent, skip and proceed
+
+---
+
 ## Step 0 — Identify the scope
 
 Determine which package(s) the feature touches and read the corresponding agent file:
@@ -92,6 +101,18 @@ After `npm run typecheck` passes, dashboard changes require a real-browser verif
 | Visual/CSS change | appearance correct · no regressions elsewhere |
 | Routing change | correct page per URL · protected routes redirect unauthenticated |
 
+## Step 4.5 — Autoimprove post-task capture
+
+Run Hook 2 from `ai/skills/autoimprove/SKILL.md` before moving to handoffs:
+- Any test failed unexpectedly before you fixed it? → `ai/learnings/ERRORS.md`
+- User corrected you during this task? → `ai/learnings/LEARNINGS.md` (correction)
+- You used a wrong import, type, or API? → `ai/learnings/LEARNINGS.md` (knowledge_gap)
+- A doc in `ai/` was outdated? → update doc + `ai/learnings/LEARNINGS.md` (knowledge_gap)
+- You found a better approach? → `ai/learnings/LEARNINGS.md` (best_practice)
+- Any learning broadly applicable? → promote to `ai/memory/` or entrypoint files
+
+---
+
 ## Step 5 — Handoffs
 
 After implementation, send a handoff message to each affected agent:
@@ -119,3 +140,38 @@ docs: document cache flush endpoint and command
 ```
 
 One commit per package when changes span multiple packages.
+
+> If commitlint rejects the message only because of an uppercase character inside a technical identifier (a type name, an acronym, a field name) that cannot be written in lowercase without losing meaning, use `--no-verify` and explain the reason in the commit body. This is an exception, not the norm.
+
+## Step 7 — Push and open a PR
+
+`develop` is a **protected branch** — direct pushes are rejected. Every feature must go through a pull request.
+
+1. **Push the feature branch** to the remote:
+   ```bash
+   git push origin feature/<name>
+   ```
+
+2. **Open the PR** with the `gh` CLI (pre-authenticated in this repo):
+   ```bash
+   gh pr create \
+     --base develop \
+     --head feature/<name> \
+     --title "<conventional-commit-title>" \
+     --body "$(cat <<'EOF'
+   ## Summary
+   <what this PR does>
+
+   ## Packages affected
+   - `packages/<name>`
+
+   ## Testing
+   - `npm test --workspace=packages/<name>` → N/N pass
+   - `npm run typecheck` → clean
+   EOF
+   )"
+   ```
+
+3. **Monitor CI** — the "Build & Typecheck" check must go green before the PR can be merged. If it fails, push a fix commit to the same branch.
+
+4. **Do not merge manually** — wait for review/CI, then merge via the GitHub UI or `gh pr merge`.

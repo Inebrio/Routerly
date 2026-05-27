@@ -3,6 +3,30 @@
 This file is the entry point for any agent working on **Routerly**.
 Read this file before anything else. For details, go to `ai/`.
 
+> **Local environment**: if `AGENTS.local.md` exists in the repository root, read it
+> immediately after this file. It contains developer-specific context (local paths,
+> active providers, WIP branches, personal preferences) that overrides or extends
+> what is documented here. The file is gitignored and may not be present.
+>
+> **Bootstrap (mandatory when `AGENTS.local.md` is absent)**: if the file does not
+> exist, **create it automatically** before proceeding. Do not ask the developer —
+> gather all required data autonomously:
+>
+> 1. Read `~/.routerly/config/users.json` — pick the first admin user as the local username.
+> 2. Read `~/.routerly/config/projects.json` — pick the project named `Test` (or the
+>    first project with `"test"` in the name) and extract its first token.
+> 3. Read `~/.routerly/config/models.json` — list active providers and endpoints.
+> 4. Detect OS (`uname -s`), Node version (`node -v`), and `ROUTERLY_HOME` (default `~/.routerly/`).
+> 5. Use `AGENTS.local.example.md` as the template and write the populated file to
+>    `AGENTS.local.md` in the repository root.
+> 6. Confirm creation in the startup message.
+>
+> **Startup confirmation (mandatory)**: at the very start of every conversation,
+> output a brief confirmation listing which context files were loaded, for example:
+> `[Routerly] Custom configuration loaded — AGENTS.md ✓ | AGENTS.local.md ✓ (username: info@routerly.ai, test token: set)`
+> If `AGENTS.local.md` was just bootstrapped, say so: `(bootstrapped automatically)`.
+> If bootstrap failed, say why and proceed without it.
+
 ---
 
 ## What is Routerly
@@ -66,6 +90,7 @@ No `.env.example` exists. Configuration is done via JSON files managed by the CL
 7. **OpenAI/Anthropic wire format**: never alter the response format sent to the client
 8. **No new dependencies** without strong justification and ESM compatibility check
 9. **Test before done**: every feature added, modified, or deleted must pass `npm test --workspace=packages/<affected>` + `npm run typecheck` before the task is declared complete. If tests fail, fix them before closing the task.
+10. **Autoimprove**: run Hook 1 (pre-task review) before starting any multi-step task and Hook 2 (post-task capture) after completing it — see `ai/skills/autoimprove/SKILL.md`.
 
 ---
 
@@ -104,3 +129,5 @@ Use the agent that matches your scope. Each agent knows its own boundaries and h
 | Ready-to-use prompt templates | `ai/prompts/` |
 | Skill: writing tests | `ai/skills/testing/SKILL.md` |
 | Skill: code review | `ai/skills/code-review/SKILL.md` |
+| Skill: continuous improvement | `ai/skills/autoimprove/SKILL.md` |
+| Learnings staging area | `ai/learnings/` |
