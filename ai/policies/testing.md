@@ -50,11 +50,11 @@ describe('myFunction', () => {
 - Mock file paths must use `.js` extension: `vi.mock('./config/loader.js', ...)`
 - **Never** mock `node:crypto` for security tests — use real crypto functions
 
-## What to test
+## What to test (service)
 
 - **Unit tests**: routing policies, config loader, JWT functions, provider adapters (mock the SDK calls)
 - **Integration tests**: Fastify route handlers using `fastify.inject()` — no real HTTP server needed
-- **No E2E tests in this repo** — integration tests with `inject()` are sufficient
+- **No E2E tests for the service** — integration tests with `inject()` are sufficient for backend logic
 
 ## Fastify route test template
 
@@ -86,6 +86,34 @@ describe('GET /api/resource', () => {
   })
 })
 ```
+
+## Dashboard browser verification
+
+Dashboard changes **must** be verified in a real browser before the task is declared complete.
+This is an interactive verification step — not an automated test suite — and is **blocking**.
+
+### Workflow
+
+1. Start the service in dev mode: `npm run dev` (serves the dashboard at `http://localhost:3000/dashboard/`)
+2. Open `http://localhost:3000/dashboard/` in a browser
+3. Navigate to the relevant page and exercise the changed functionality:
+   - Fill forms, click buttons, trigger validation errors, submit
+   - Verify data loads and displays correctly
+   - Check error states and empty states
+4. Capture a screenshot (or equivalent evidence) to document the result
+5. Stop the dev server
+
+### What to verify per change type
+
+| Change | Verification |
+|--------|--------------|
+| New page | renders without crash · navigation link works · data loads |
+| New form | fields visible · validation shown on empty submit · success state after save |
+| New component | visible in DOM · interactions (click, input) behave correctly |
+| Visual / CSS change | before/after appearance matches intent · no regressions on other pages |
+| Routing change | correct page shown for each URL · protected routes redirect unauthenticated |
+
+---
 
 ## Coverage targets
 
