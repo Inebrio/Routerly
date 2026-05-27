@@ -1,49 +1,34 @@
+@AGENTS.md
+
 # CLAUDE.md — Routerly
 
-Routerly is a self-hosted LLM API gateway. TypeScript ESM monorepo, Node ≥20, Fastify 5, React 18 + Vite 6, Commander 14. No external database — all state in JSON files under `ROUTERLY_HOME`.
+Routerly is a self-hosted LLM API gateway (TypeScript ESM monorepo, Node ≥20, Fastify 5, React 18 + Vite 6, Commander 14).
 
-**Start here**: read `AGENTS.md`, then the agent file for your scope.
+Full context is in `ai/`. Read `AGENTS.md` first, then the agent file for your current scope.
+`AGENTS.md` contains the full bootstrap procedure: if `AGENTS.local.md` is absent, create it automatically from `~/.routerly/config/` without asking the developer.
 
-## Agent files by scope
+## Package boundaries
 
-| Scope | File |
-|-------|------|
-| `packages/service/` — Fastify, routing, providers | `ai/agents/service.md` |
-| `packages/dashboard/` — React SPA | `ai/agents/frontend.md` |
-| `packages/cli/` — Commander CLI | `ai/agents/cli.md` |
-| `docs/` — Docusaurus | `ai/agents/docs.md` |
-| `.github/`, `Dockerfile`, `scripts/`, versioning | `ai/agents/cicd.md` |
-| Generic feature | `ai/agents/developer.md` |
-| Code review | `ai/agents/reviewer.md` |
-| Writing tests | `ai/agents/tester.md` |
+| Working in | Read first |
+|------------|----------|
+| `packages/service/` | `ai/agents/service.md` |
+| `packages/dashboard/` | `ai/agents/frontend.md` |
+| `packages/cli/` | `ai/agents/cli.md` |
+| `docs/` | `ai/agents/docs.md` |
 
-## Essential commands
+## Non-negotiable rules (enforced on every suggestion)
 
-```bash
-npm run build          # build all packages in dependency order
-npm run dev            # service in watch mode on :3000
-npm test               # vitest across all workspaces
-npm run typecheck
-npm run lint
-```
+- TypeScript imports **must** use `.js` extension — `import { x } from './foo.js'`
+- Node builtins **must** use `node:` prefix — `import { readFile } from 'node:fs/promises'`
+- No `require()` anywhere
+- Config writes go through `writeConfig()` — never `fs.writeFile` directly
+- Test files are `*.test.ts` — never `*.spec.ts`
+- `afterEach(() => vi.clearAllMocks())` whenever `vi.mock()` is used
+- Never alter the OpenAI/Anthropic wire format forwarded to clients
+- No new npm dependencies without ESM compatibility check
+- **Test before done**: every feature added, modified, or deleted must pass `npm test --workspace=packages/<affected>` + `npm run typecheck` before the task is complete. If tests fail, fix them — do not close the task with a red test suite.
+- **Autoimprove**: run Hook 1 (pre-task review) and Hook 2 (post-task capture) — see `ai/skills/autoimprove/SKILL.md`.
 
-## Hard constraints — never violate
+## Commit format
 
-1. Imports use `.js` extension — `import { x } from './foo.js'`
-2. Node builtins use `node:` prefix — `node:fs`, `node:path`, `node:crypto`
-3. No `require()`
-4. Config writes via `writeConfig()` only — uses `proper-lockfile`
-5. Test files `*.test.ts` — never `*.spec.ts`
-6. `afterEach(() => vi.clearAllMocks())` whenever mocks are present
-7. OpenAI/Anthropic proxy response format never altered
-8. No new npm dependencies without ESM check
-9. **Test before done** — run `npm test --workspace=packages/<affected>` + `npm run typecheck` after every change. A task is not complete until all tests pass. Fix failures before declaring done.
-
-## Workflow files
-
-- Feature development: `ai/workflows/feature-development.md`
-- Bug fix: `ai/workflows/bugfix.md`
-
-## Commits
-
-Conventional commits, lowercase: `feat(scope): description`
+`feat(scope): description` — lowercase, conventional commits.

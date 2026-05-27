@@ -3,9 +3,13 @@ name: self-improvement
 description: "Captures learnings, errors, and corrections to enable continuous improvement. Use when: (1) a command or operation fails unexpectedly, (2) the user corrects you ('No, that's wrong...', 'Actually...'), (3) a capability is requested but missing, (4) an external API or tool fails, (5) knowledge turns out to be outdated, (6) a better approach is discovered for a recurring task. Also review learnings before major tasks."
 ---
 
+> **Deprecated — superseded by `ai/skills/autoimprove/SKILL.md`**
+> The active continuous-improvement workflow (Hook 1 + Hook 2, log formats,
+> promotion rules) lives there. Refer to that file for all new work.
+
 # Self-Improvement — Routerly
 
-Log learnings and errors to `.learnings/` for continuous improvement.
+Log learnings and errors to `ai/learnings/` for continuous improvement.
 Promote broadly applicable insights to `ai/memory/` or the Routerly entrypoint files.
 
 ---
@@ -14,12 +18,12 @@ Promote broadly applicable insights to `ai/memory/` or the Routerly entrypoint f
 
 | Situation | Action |
 |-----------|--------|
-| Command/operation fails | Log to `.learnings/ERRORS.md` |
-| User corrects you | Log to `.learnings/LEARNINGS.md` with category `correction` |
-| User requests missing feature | Log to `.learnings/FEATURE_REQUESTS.md` |
-| External API/tool fails | Log to `.learnings/ERRORS.md` |
-| Knowledge was outdated | Log to `.learnings/LEARNINGS.md` with category `knowledge_gap` |
-| Better approach found | Log to `.learnings/LEARNINGS.md` with category `best_practice` |
+| Command/operation fails | Log to `ai/learnings/ERRORS.md` |
+| User corrects you | Log to `ai/learnings/LEARNINGS.md` with category `correction` |
+| User requests missing feature | Log to `ai/learnings/FEATURE_REQUESTS.md` |
+| External API/tool fails | Log to `ai/learnings/ERRORS.md` |
+| Knowledge was outdated | Log to `ai/learnings/LEARNINGS.md` with category `knowledge_gap` |
+| Better approach found | Log to `ai/learnings/LEARNINGS.md` with category `best_practice` |
 | Learning applies broadly | Promote to `ai/memory/` or entrypoint files — see table below |
 
 ---
@@ -27,14 +31,14 @@ Promote broadly applicable insights to `ai/memory/` or the Routerly entrypoint f
 ## Setup
 
 ```bash
-mkdir -p .learnings
+mkdir -p ai/learnings
 ```
 
 ---
 
 ## Log formats
 
-### Learning entry — append to `.learnings/LEARNINGS.md`
+### Learning entry — append to `ai/learnings/LEARNINGS.md`
 
 ```markdown
 ## [LRN-YYYYMMDD-XXX] category
@@ -61,7 +65,7 @@ Specific fix or improvement.
 ---
 ```
 
-### Error entry — append to `.learnings/ERRORS.md`
+### Error entry — append to `ai/learnings/ERRORS.md`
 
 ```markdown
 ## [ERR-YYYYMMDD-XXX] skill_or_command_name
@@ -93,7 +97,7 @@ If identifiable.
 ---
 ```
 
-### Feature request entry — append to `.learnings/FEATURE_REQUESTS.md`
+### Feature request entry — append to `ai/learnings/FEATURE_REQUESTS.md`
 
 ```markdown
 ## [FEAT-YYYYMMDD-XXX] capability_name
@@ -199,14 +203,14 @@ Promote when a learning is broadly applicable — any contributor should know it
 
 ## Periodic review
 
-Review `.learnings/` at natural breakpoints: before a major task, after completing a feature, or when working in an area with past learnings.
+Review `ai/learnings/` at natural breakpoints: before a major task, after completing a feature, or when working in an area with past learnings.
 
 ```bash
 # Count pending items
-grep -h "Status\*\*: pending" .learnings/*.md | wc -l
+grep -h "Status\*\*: pending" ai/learnings/*.md | wc -l
 
 # List high-priority pending items
-grep -B5 "Priority\*\*: high" .learnings/*.md | grep "^## \["
+grep -B5 "Priority\*\*: high" ai/learnings/*.md | grep "^## \["
 ```
 
 ---

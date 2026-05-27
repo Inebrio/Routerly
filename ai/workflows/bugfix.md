@@ -1,5 +1,14 @@
 # Workflow: Bug Fix
 
+## Before you start — autoimprove pre-task review
+
+Run Hook 1 from `ai/skills/autoimprove/SKILL.md`:
+1. Check `ai/learnings/ERRORS.md` — has this error or a similar one been seen before?
+2. Read matching entries before diagnosing to avoid re-tracing the same path
+3. If `ai/learnings/` is empty or absent, skip and proceed
+
+---
+
 ## Step 0 — Reproduce
 
 Before touching any code, reproduce the bug:
@@ -58,6 +67,16 @@ If the bug spans multiple packages, run the full suite:
 ```bash
 npm test
 ```
+
+## Step 4.5 — Autoimprove post-task capture
+
+Run Hook 2 from `ai/skills/autoimprove/SKILL.md` before handoffs:
+- Log the root cause pattern to `ai/learnings/ERRORS.md` (even if resolved — it prevents recurrence)
+- Was the bug caused by an outdated doc in `ai/`? → update doc + log knowledge_gap
+- Did you find a better diagnostic approach? → log best_practice
+- Promote if the bug reveals a gap in `ai/memory/constraints.md` or `ai/context/`
+
+---
 
 ## Step 5 — Handoffs
 
