@@ -41,17 +41,19 @@ const WEB_PROVIDER_TOKEN_LABEL: Record<WebProvider, string> = {
 };
 
 const WEB_PROVIDER_TOKEN_PLACEHOLDER: Record<WebProvider, string> = {
-  'openai-web': 'Paste accessToken from https://chatgpt.com/api/auth/session',
+  'openai-web': 'eyJ…',
   'anthropic-web': 'Paste sessionKey cookie value (sk-ant-sid01-…)',
 };
 
 const WEB_PROVIDER_INSTRUCTIONS: Record<WebProvider, React.ReactNode> = {
   'openai-web': (
     <>
-      <strong>How to get your access token:</strong> While logged in to ChatGPT, open{' '}
+      While logged in to ChatGPT, open{' '}
       <code style={{ fontSize: '0.78rem' }}>https://chatgpt.com/api/auth/session</code> in a new
       tab. Copy the value of the <code style={{ fontSize: '0.78rem' }}>accessToken</code> field
-      from the JSON response. The token expires every ~24 hours and must be renewed manually.
+      (starts with <code style={{ fontSize: '0.78rem' }}>eyJ</code>).
+      The token expires every ~24 hours.
+      For reliable access, also fill in the <strong>cf_clearance</strong> field below.
     </>
   ),
   'anthropic-web': (
@@ -155,6 +157,7 @@ const EMPTY_FORM = {
   provider: 'openai' as Provider,
   endpoint: ENDPOINT_DEFAULTS.openai,
   apiKey: '',
+  cfClearance: '',
   inputPerMillion: '',
   outputPerMillion: '',
   cachePerMillion: '',
@@ -192,6 +195,7 @@ export function ModelFormPage() {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const [showToken, setShowToken] = useState(false);
+  const [showCfClearance, setShowCfClearance] = useState(false);
   const [isCustomModel, setIsCustomModel] = useState(false);
   const [isEmbeddingModel, setIsEmbeddingModel] = useState(false);
 
@@ -334,6 +338,7 @@ export function ModelFormPage() {
       provider,
       endpoint: model.endpoint,
       apiKey: '',
+      cfClearance: '',
       inputPerMillion: String(inputPrice),
       outputPerMillion: String(outputPrice),
       cachePerMillion: cachePrice != null ? String(cachePrice) : '',
@@ -413,6 +418,7 @@ export function ModelFormPage() {
         provider: form.provider,
         endpoint: form.endpoint,
         ...(form.apiKey ? { apiKey: form.apiKey } : {}),
+        ...(form.cfClearance ? { cfClearance: form.cfClearance } : {}),
         ...(isCloning && cloneSourceId && !form.apiKey ? { cloneFrom: cloneSourceId } : {}),
         // For custom provider, save the exact upstream model ID separately from the Routerly ID.
         ...(form.provider === 'custom' && form.id.trim() ? { upstreamModelId: form.id.trim() } : {}),
@@ -589,6 +595,7 @@ export function ModelFormPage() {
                 </button>
               </div>
             </div>
+
           </div>
 
           {/* ── Section: Capabilities ─────────────────────────── */}
