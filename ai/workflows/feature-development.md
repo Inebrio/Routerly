@@ -74,6 +74,24 @@ npm run lint
 
 > **BLOCKING**: The task is not complete until all three commands exit green. If `npm test` fails, fix the failures before proceeding to Step 5. Do not skip this step.
 
+### Dashboard changes — additional browser verification (BLOCKING)
+
+After `npm run typecheck` passes, dashboard changes require a real-browser verification step before the task is complete:
+
+1. `npm run dev` — start the service (dashboard at `http://localhost:3000/dashboard/`)
+2. Open the dashboard in a browser and navigate to the changed page/feature
+3. Exercise the functionality: fill forms, trigger validation, verify data loads, check error states
+4. Capture a screenshot as evidence
+5. Stop the dev server
+
+| Change | What to verify |
+|--------|----------------|
+| New page | renders · navigation link works · data loads |
+| New form | fields visible · validation on empty submit · success state |
+| New component | visible · interactions behave correctly |
+| Visual/CSS change | appearance correct · no regressions elsewhere |
+| Routing change | correct page per URL · protected routes redirect unauthenticated |
+
 ## Step 5 — Handoffs
 
 After implementation, send a handoff message to each affected agent:

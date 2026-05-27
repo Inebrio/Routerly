@@ -27,6 +27,7 @@ These constraints are not up for debate. Violating them requires an explicit tea
 - **ALWAYS** call `afterEach(() => vi.clearAllMocks())` in tests that use mocks
 - **ALWAYS** place test files in the same directory as the file under test
 - **NEVER** declare a task complete without running `npm test --workspace=packages/<affected>` and `npm run typecheck`; if any test fails, fix it before closing the task
+- **Dashboard changes require browser verification** — start the dev server, open the dashboard in a real browser, exercise the changed functionality, and capture a screenshot before declaring the task complete
 
 ## Security
 

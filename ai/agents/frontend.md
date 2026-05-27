@@ -82,6 +82,25 @@ npm run build --workspace=packages/dashboard   # production build into packages/
 npm run dev                                     # starts the service in watch mode (serves dashboard at localhost:3000)
 ```
 
+## Browser verification (BLOCKING)
+
+Every dashboard change must be verified in a real browser before the task is declared complete.
+
+**Workflow:**
+1. `npm run dev` — starts the service; dashboard is at `http://localhost:3000/dashboard/`
+2. Open the dashboard in a browser and navigate to the changed page or feature
+3. Exercise the functionality: fill forms, click buttons, trigger validation, verify data loads, check error and empty states
+4. Capture a screenshot as evidence of correct behaviour
+5. Stop the dev server
+
+| Change | What to verify |
+|--------|----------------|
+| New page | renders · navigation link works · data loads |
+| New form | fields visible · validation on empty submit · success state after save |
+| New component | visible · interactions behave correctly |
+| Visual / CSS change | appearance correct · no regressions on other pages |
+| Routing change | correct page per URL · protected routes redirect unauthenticated |
+
 ## Handoff contracts
 
 | You change | Notify |
@@ -99,5 +118,7 @@ npm run dev                                     # starts the service in watch mo
 [ ] All API calls go through api.ts
 [ ] Shared types imported from @routerly/shared, not duplicated
 [ ] TypeScript strict — no any
+[ ] npm run typecheck exits green
+[ ] Browser verification completed (dev server started, feature exercised, screenshot captured)
 [ ] Handoff messages sent to Docs agent for new pages
 ```
