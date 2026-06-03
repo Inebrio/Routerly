@@ -50,11 +50,49 @@ describe('myFunction', () => {
 - Mock file paths must use `.js` extension: `vi.mock('./config/loader.js', ...)`
 - **Never** mock `node:crypto` for security tests — use real crypto functions
 
+## E2E tests
+
+E2E regression tests live in `test/e2e.test.ts` and run against a live Routerly instance.
+They are part of the standard test suite and **must pass** before a task that touches the service is declared complete.
+
+### Prerequisites
+
+1. Copy `.env.example` → `.env` and fill in the credentials (gitignored)
+2. Start the service: `npm run dev`
+3. Credentials loaded automatically from `.env` by `vitest.config.ts`
+
+### How to run
+
+```bash
+# Start the service in one terminal
+npm run dev
+
+# In another terminal — run only E2E tests
+npm run test:e2e
+```
+
+### What they cover
+
+| Suite | Activated when |
+|-------|----------------|
+| `E2E · LLM Proxy` | `ROUTERLY_TEST_TOKEN` is set (required) |
+| `E2E · Management API` | `ROUTERLY_TEST_TOKEN` + `ROUTERLY_TEST_ADMIN_PASSWORD` are both set |
+
+Suites skip silently when the required env vars are absent — the unit/integration suite still runs normally.
+
+### When to run
+
+Run E2E tests for every change that touches:
+- `packages/service/src/routes/` — any proxy or management endpoint
+- `packages/service/src/routing/` — routing policies or executor
+- `packages/service/src/providers/` — any provider adapter
+- `packages/service/src/config/` — config loader or schema changes
+
 ## What to test (service)
 
 - **Unit tests**: routing policies, config loader, JWT functions, provider adapters (mock the SDK calls)
 - **Integration tests**: Fastify route handlers using `fastify.inject()` — no real HTTP server needed
-- **No E2E tests for the service** — integration tests with `inject()` are sufficient for backend logic
+- **E2E tests**: `test/e2e.test.ts` against a live instance — required for service changes (see above)
 
 ## Fastify route test template
 

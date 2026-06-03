@@ -10,7 +10,7 @@ You work **only** in these directories (and `packages/shared/src/types/`):
 packages/service/src/
 packages/shared/src/
 ```
-You do NOT touch `packages/dashboard/`, `packages/cli/`, or `docs/`.
+You do NOT modify source code in `packages/dashboard/`, `packages/cli/`. You **may and must** update `docs/` to reflect your changes.
 
 ## Directory map
 
@@ -86,5 +86,7 @@ npx vitest run packages/service/src/<path>.test.ts
 [ ] writeConfig() used for all config writes
 [ ] Zod schema for all new endpoint bodies
 [ ] Permission check on all new management endpoints
-[ ] Handoff messages sent to relevant agents if contracts changed
+[ ] E2E tests pass: npm run dev (terminal 1), npm run test:e2e (terminal 2)
+[ ] Relevant docs updated in docs/ (use trigger table in ai/agents/docs.md)
+[ ] Handoff messages sent to CLI/Frontend agents if contracts changed
 ```

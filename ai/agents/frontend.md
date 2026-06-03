@@ -11,7 +11,7 @@ packages/dashboard/src/
 packages/dashboard/index.html
 packages/dashboard/vite.config.ts
 ```
-You do NOT touch `packages/service/`, `packages/cli/`, or `docs/`.
+You do NOT touch `packages/service/`, `packages/cli/`. You **may and must** update `docs/` to reflect your changes.
 
 ## Directory map
 
@@ -119,6 +119,6 @@ Every dashboard change must be verified in a real browser before the task is dec
 [ ] Shared types imported from @routerly/shared, not duplicated
 [ ] TypeScript strict — no any
 [ ] npm run typecheck exits green
+[ ] Relevant docs updated in docs/dashboard/ (or other affected docs)
 [ ] Browser verification completed (dev server started, feature exercised, screenshot captured)
-[ ] Handoff messages sent to Docs agent for new pages
 ```
