@@ -10,6 +10,7 @@ type ProviderModel = {
   input: number;
   output: number;
   cache?: number;
+  cacheWrite?: number;
   contextWindow?: number;
   notes?: string;
   pricingTiers?: Array<{
@@ -161,6 +162,7 @@ const EMPTY_FORM = {
   inputPerMillion: '',
   outputPerMillion: '',
   cachePerMillion: '',
+  cacheWritePerMillion: '',
   contextWindow: '',
 };
 
@@ -240,7 +242,7 @@ export function ModelFormPage() {
   function applyPreset(provider: Provider, modelId: string) {
     const preset = PROVIDER_MODELS[provider]?.find(m => m.id === modelId);
     if (!preset) {
-      setForm(f => ({ ...f, id: modelId, inputPerMillion: '', outputPerMillion: '', cachePerMillion: '', contextWindow: '' }));
+      setForm(f => ({ ...f, id: modelId, inputPerMillion: '', outputPerMillion: '', cachePerMillion: '', cacheWritePerMillion: '', contextWindow: '' }));
       setTierRows([]); setShowAdvanced(false);
       setIsEmbeddingModel(false);
       return;
@@ -252,6 +254,7 @@ export function ModelFormPage() {
       inputPerMillion: String(preset.input),
       outputPerMillion: String(preset.output),
       cachePerMillion: preset.cache != null ? String(preset.cache) : '',
+      cacheWritePerMillion: preset.cacheWrite != null ? String(preset.cacheWrite) : '',
       contextWindow: preset.contextWindow != null ? String(preset.contextWindow) : '',
     }));
     if (preset.pricingTiers?.length) {
@@ -279,7 +282,7 @@ export function ModelFormPage() {
   function handleModelChange(modelId: string) {
     if (modelId === '__custom__') {
       setIsCustomModel(true);
-      setForm(f => ({ ...f, id: '', inputPerMillion: '', outputPerMillion: '', cachePerMillion: '', contextWindow: '', customId: '' }));
+      setForm(f => ({ ...f, id: '', inputPerMillion: '', outputPerMillion: '', cachePerMillion: '', cacheWritePerMillion: '', contextWindow: '', customId: '' }));
       setTierRows([]); setShowAdvanced(false);
       return;
     }
@@ -324,6 +327,7 @@ export function ModelFormPage() {
     const inputPrice  = model.cost.inputPerMillion  > 0 ? model.cost.inputPerMillion  : (preset?.input  ?? 0);
     const outputPrice = model.cost.outputPerMillion > 0 ? model.cost.outputPerMillion : (preset?.output ?? 0);
     const cachePrice  = model.cost.cachePerMillion  != null ? model.cost.cachePerMillion : (preset?.cache ?? null);
+    const cacheWritePrice = model.cost.cacheWritePerMillion != null ? model.cost.cacheWritePerMillion : (preset?.cacheWrite ?? null);
     const ctxWindow   = model.contextWindow != null ? model.contextWindow : (preset?.contextWindow ?? null);
 
     setIsCustomModel(customModel);
@@ -342,6 +346,7 @@ export function ModelFormPage() {
       inputPerMillion: String(inputPrice),
       outputPerMillion: String(outputPrice),
       cachePerMillion: cachePrice != null ? String(cachePrice) : '',
+      cacheWritePerMillion: cacheWritePrice != null ? String(cacheWritePrice) : '',
       contextWindow: ctxWindow != null ? String(ctxWindow) : '',
     }));
 
@@ -425,6 +430,7 @@ export function ModelFormPage() {
         inputPerMillion: parseFloat(form.inputPerMillion) || 0,
         outputPerMillion: parseFloat(form.outputPerMillion) || 0,
         ...(form.cachePerMillion ? { cachePerMillion: parseFloat(form.cachePerMillion) } : {}),
+        ...(form.cacheWritePerMillion ? { cacheWritePerMillion: parseFloat(form.cacheWritePerMillion) } : {}),
         ...(form.contextWindow ? { contextWindow: parseInt(form.contextWindow, 10) } : {}),
         ...(pricingTiersPayload.length ? { pricingTiers: pricingTiersPayload } : {}),
         limits: limitRows
@@ -634,9 +640,17 @@ export function ModelFormPage() {
                   onChange={e => setForm(f => ({ ...f, outputPerMillion: e.target.value }))} placeholder="15.00" required />
               </div>
               <div className="form-group">
-                <label className="form-label">Cache $/1M <span style={{ color: 'var(--text-muted)' }}>(opt.)</span></label>
+                <label className="form-label">Cache read $/1M <span style={{ color: 'var(--text-muted)' }}>(opt.)</span></label>
                 <input className="form-input" type="number" step="any" value={form.cachePerMillion}
                   onChange={e => setForm(f => ({ ...f, cachePerMillion: e.target.value }))} placeholder="—" />
+              </div>
+            </div>
+
+            <div className="grid-3">
+              <div className="form-group">
+                <label className="form-label">Cache write $/1M <span style={{ color: 'var(--text-muted)' }}>(opt.)</span></label>
+                <input className="form-input" type="number" step="any" value={form.cacheWritePerMillion}
+                  onChange={e => setForm(f => ({ ...f, cacheWritePerMillion: e.target.value }))} placeholder="—" />
               </div>
             </div>
 
