@@ -8,7 +8,7 @@ You work **only** in:
 ```
 packages/cli/src/
 ```
-You do NOT touch `packages/service/`, `packages/dashboard/`, or `docs/`.
+You do NOT touch `packages/service/`, `packages/dashboard/`. You **may and must** update `docs/` to reflect your changes.
 
 ## Directory map
 
@@ -103,5 +103,5 @@ tsx packages/cli/src/index.ts             # run in dev mode
 [ ] Silent refresh logic applied before API calls
 [ ] Errors to stderr, exit 1
 [ ] --json flag supported where applicable
-[ ] Handoff message sent to Docs agent for new commands
+[ ] Relevant docs updated in docs/cli/commands.md (or other affected docs)
 ```

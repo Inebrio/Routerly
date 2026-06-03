@@ -51,7 +51,7 @@ Order of changes:
 2. **`packages/service/src/`** — core logic, routes, policies, providers
 3. **`packages/cli/src/`** — new command or updated API call if applicable
 4. **`packages/dashboard/src/`** — new page or API call in `api.ts` if applicable
-5. **`docs/`** — documentation (or hand off to the Docs agent)
+5. **`docs/`** — update the relevant documentation files using the trigger table in `ai/agents/docs.md`; this step is **BLOCKING** — do not skip it
 
 Implementation rules:
 - Imports use `.js` extension; builtins use `node:` prefix
@@ -83,6 +83,23 @@ npm run lint
 
 > **BLOCKING**: The task is not complete until all three commands exit green. If `npm test` fails, fix the failures before proceeding to Step 5. Do not skip this step.
 
+### Service changes — additional E2E tests (BLOCKING)
+
+For any change that touches `packages/service/src/routes/`, `routing/`, `providers/`, or `config/`, run the E2E suite after unit tests:
+
+```bash
+# Terminal 1 — start the service (if not already running)
+npm run dev
+
+# Terminal 2 — run E2E tests
+npm run test:e2e
+```
+
+Prerequisites: `.env` file populated from `.env.example` (credentials loaded automatically).
+Both `E2E · LLM Proxy` and `E2E · Management API` suites must pass.
+
+> **BLOCKING**: E2E tests must pass before declaring a service task complete.
+
 ### Dashboard changes — additional browser verification (BLOCKING)
 
 After `npm run typecheck` passes, dashboard changes require a real-browser verification step before the task is complete:
@@ -113,9 +130,27 @@ Run Hook 2 from `ai/skills/autoimprove/SKILL.md` before moving to handoffs:
 
 ---
 
-## Step 5 — Handoffs
+## Step 5 — Documentation update (BLOCKING)
 
-After implementation, send a handoff message to each affected agent:
+Before committing, update all documentation files affected by your changes. Use the trigger table in `ai/agents/docs.md` to identify which files to touch.
+
+| You changed | Docs files to update |
+|-------------|---------------------|
+| New/changed `/api/*` endpoint | `docs/api/management.md`, `docs/service/endpoints.md` |
+| New/changed `/v1/*` or `/anthropic/*` proxy | `docs/api/llm-proxy.md` |
+| New routing policy | `docs/concepts/routing.md`, `docs/service/routing-engine.md` |
+| New provider | `docs/concepts/providers.md`, `docs/service/providers.md` |
+| Changed config file schema | `docs/reference/config-files.md` |
+| New CLI command | `docs/cli/commands.md` |
+| Changed CLI flags or output | `docs/cli/commands.md` |
+| New dashboard page | matching file in `docs/dashboard/` |
+| Changed setting exposed in UI | `docs/dashboard/settings.md` |
+
+> **BLOCKING**: The task is not complete until all relevant docs files are updated. Do not commit without updating the docs.
+
+## Step 5.5 — Cross-agent handoffs
+
+For changes that require another agent (not Docs) to act:
 
 ```
 HANDOFF → <AgentName>
@@ -125,10 +160,9 @@ Files: <relevant file paths>
 ```
 
 Examples:
-- Service → Docs: "New endpoint `POST /api/notifications/test`. Update `docs/api/management.md`."
 - Service → CLI: "New endpoint `POST /api/models/bulk-disable`. Add `routerly model bulk-disable` command."
 - Service → Frontend: "New field `budgetAlert` in `projects.json` schema. Expose in ProjectFormPage."
-- CLI → Docs: "New command `routerly report --format csv`. Update `docs/cli/commands.md`."
+- CLI → Service: verify endpoint exists before adding api.ts call.
 
 ## Step 6 — Commit
 
