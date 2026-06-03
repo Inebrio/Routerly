@@ -301,15 +301,28 @@ export function ProjectLogsTab() {
                         </td>
                         <td><span className="mono" style={{ fontSize: '0.78rem' }}>{r.modelId}</span></td>
                         <td>
-                          <span style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 4,
-                            fontSize: '0.72rem', fontWeight: 600, padding: '2px 7px',
-                            borderRadius: 99,
-                            background: isRouting ? 'rgba(99,102,241,0.12)' : 'rgba(59,130,246,0.12)',
-                            color: isRouting ? 'var(--accent)' : 'var(--primary)',
-                          }}>
-                            {isRouting ? 'router' : 'completion'}
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 4,
+                              fontSize: '0.72rem', fontWeight: 600, padding: '2px 7px',
+                              borderRadius: 99,
+                              background: isRouting ? 'rgba(99,102,241,0.12)' : 'rgba(59,130,246,0.12)',
+                              color: isRouting ? 'var(--accent)' : 'var(--primary)',
+                            }}>
+                              {isRouting ? 'router' : 'completion'}
+                            </span>
+                            {r.cacheHit && (
+                              <span style={{
+                                display: 'inline-flex', alignItems: 'center',
+                                fontSize: '0.68rem', fontWeight: 600, padding: '2px 6px',
+                                borderRadius: 99,
+                                background: 'rgba(16,185,129,0.12)',
+                                color: 'var(--success, #10b981)',
+                              }} title={r.cacheSimilarity != null ? `similarity: ${(r.cacheSimilarity * 100).toFixed(1)}%` : 'cache hit'}>
+                                cache
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td>{r.inputTokens}</td>
                         <td>{r.outputTokens}</td>

@@ -20,6 +20,9 @@ export interface TrackUsageParams {
   errorMessage?: string;
   callType?: CallType;
   traceId?: string;
+  /** True when the routing decision was served from the semantic cache (LLM was still called) */
+  cacheHit?: boolean;
+  cacheSimilarity?: number;
 }
 
 /**
@@ -65,6 +68,7 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     costOutput,
     priceInput: params.model.cost.inputPerMillion,
     priceOutput: params.model.cost.outputPerMillion,
+    ...(params.cacheHit ? { cacheHit: true, cacheSimilarity: params.cacheSimilarity } : {}),
   };
 
   await appendUsageRecord(record);

@@ -4,8 +4,11 @@ import type {
   ChatCompletionResponse,
   ModelConfig,
   StreamChunk,
+  MessagesRequest,
+  MessagesResponse,
 } from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
+import { anthropicToOpenAIMessages, openAIToAnthropicResponse } from './messages-compat.js';
 
 /**
  * Generic adapter for any provider that exposes an OpenAI-compatible API.
@@ -56,5 +59,23 @@ export class CustomAdapter implements ProviderAdapter {
     for await (const chunk of stream) {
       yield chunk as unknown as StreamChunk;
     }
+  }
+
+  async messages(request: MessagesRequest, model: ModelConfig): Promise<MessagesResponse> {
+    const client = this.getClient(model);
+    const upstreamModel = this.getUpstreamModelId(model);
+    const { messages, system } = anthropicToOpenAIMessages(request);
+    const openAIMessages = system
+      ? [{ role: 'system' as const, content: system }, ...messages]
+      : messages;
+    const { stream: _stream, ...rest } = request as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response: any = await client.chat.completions.create({
+      ...rest,
+      messages: openAIMessages,
+      model: upstreamModel,
+      stream: false,
+    } as any);
+    return openAIToAnthropicResponse(response, upstreamModel);
   }
 }

@@ -11,7 +11,8 @@
   "scripts": {
     "build": "npm run build --workspace=packages/shared && npm run build --workspace=packages/service && npm run build --workspace=packages/cli && npm run build --workspace=packages/dashboard",
     "dev": "npm run dev --workspace=packages/service",
-    "test": "npm test --workspaces --if-present",
+    "test": "npm test --workspaces --if-present && vitest run",
+    "test:e2e": "vitest run",
     "lint": "eslint packages/*/src --ext .ts",
     "format": "prettier --write \"packages/*/src/**/*.ts\"",
     "changeset": "changeset",
@@ -29,7 +30,7 @@
     "husky": "^9.1.7",
     "prettier": "^3.2.5",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.8"
   },
   "engines": {
     "node": ">=20"

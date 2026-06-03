@@ -163,7 +163,7 @@ export interface ModelCapabilities {
 export interface Model {
   id: string; name: string; provider: string; endpoint: string;
   upstreamModelId?: string;
-  cost: { inputPerMillion: number; outputPerMillion: number; cachePerMillion?: number; pricingTiers?: PricingTier[] };
+  cost: { inputPerMillion: number; outputPerMillion: number; cachePerMillion?: number; cacheWritePerMillion?: number; pricingTiers?: PricingTier[] };
   contextWindow?: number;
   limits?: Limit[];
   /** @deprecated use limits */ globalThresholds?: { daily?: number; weekly?: number; monthly?: number };
@@ -172,10 +172,11 @@ export interface Model {
 
 export const getModels = () => request<Model[]>('/models');
 export const createModel = (data: {
-  id: string; name?: string; provider: string; endpoint: string; apiKey?: string;
+  id: string; name?: string; provider: string; endpoint: string; apiKey?: string; cfClearance?: string;
   cloneFrom?: string; upstreamModelId?: string;
   inputPerMillion: number; outputPerMillion: number;
   cachePerMillion?: number;
+  cacheWritePerMillion?: number;
   contextWindow?: number;
   pricingTiers?: PricingTier[];
   limits?: Limit[];
@@ -183,10 +184,11 @@ export const createModel = (data: {
 }) => request<Model>('/models', { method: 'POST', body: JSON.stringify(data) });
 export const updateModel = (id: string, data: {
   id?: string;
-  name?: string; provider: string; endpoint: string; apiKey?: string;
+  name?: string; provider: string; endpoint: string; apiKey?: string; cfClearance?: string;
   upstreamModelId?: string;
   inputPerMillion: number; outputPerMillion: number;
   cachePerMillion?: number;
+  cacheWritePerMillion?: number;
   contextWindow?: number;
   pricingTiers?: PricingTier[];
   limits?: Limit[];
@@ -305,6 +307,8 @@ export interface UsageRecord {
   callType?: 'routing' | 'completion';
   errorMessage?: string;
   trace?: TraceEntry[];
+  cacheHit?: boolean;
+  cacheSimilarity?: number;
 }
 
 export interface UsageStats {

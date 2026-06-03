@@ -1,6 +1,6 @@
 // ─── Config types ────────────────────────────────────────────────────────────
 
-export type Provider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom';
+export type Provider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom' | 'openai-web' | 'anthropic-web' | 'deepseek' | 'groq' | 'together' | 'perplexity';
 
 export interface PricingTier {
   /** What dimension is being measured, e.g. "context_tokens" */
@@ -102,6 +102,8 @@ export interface ModelConfig {
   endpoint: string;
   /** Provider API key (stored in plaintext; file permissions protect it) */
   apiKey?: string | undefined;
+  /** cf_clearance cookie value for Cloudflare bypass (openai-web only) */
+  cfClearance?: string | undefined;
   /**
    * The exact model identifier sent to the upstream provider API.
    * Used by the custom adapter to decouple the Routerly ID from the upstream model name.
@@ -181,6 +183,32 @@ export interface SemanticIntentConfig {
   fallback_policy?: RoutingPolicyType;
   /** Map of intent name to its definition. */
   intents: Record<string, IntentDefinition>;
+}
+
+/** Cache configuration used inside the `llm` routing policy (`policy.config.cache`). */
+export interface SemanticCacheConfig {
+  /** Embedding provider to use: 'openai' or 'ollama'. */
+  embedding_provider: 'openai' | 'ollama';
+  /** Embedding model ID (e.g. 'text-embedding-3-small', 'nomic-embed-text'). */
+  embedding_model: string;
+  /** Fallback embedding model IDs tried in order if the primary fails. */
+  embedding_fallback_models?: string[];
+  /** API endpoint for the embedding provider. Defaults to provider's default. */
+  embedding_endpoint?: string;
+  /** API key for the embedding provider. Required for OpenAI. */
+  embedding_api_key?: string;
+  /**
+   * How long a cached response remains valid, in minutes.
+   * @default 60
+   */
+  ttl_seconds?: number;
+  extend_on_hit?: boolean;
+  /**
+   * Minimum cosine similarity between the incoming request embedding and a cached entry
+   * for the cached response to be returned.
+   * @default 0.85
+   */
+  similarity_threshold?: number;
 }
 
 /** Result of classifying a request against known intents. */
@@ -431,4 +459,8 @@ export interface UsageRecord {
   priceInput?: number;
   /** Price per 1M output tokens in USD (from model config at call time) */
   priceOutput?: number;
+  /** True when this completion was served from the semantic response cache */
+  cacheHit?: boolean;
+  /** Cosine similarity score of the matched cache entry (0–1) */
+  cacheSimilarity?: number;
 }

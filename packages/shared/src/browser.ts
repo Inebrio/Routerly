@@ -5,8 +5,7 @@
 
 // Static configuration data (JSON, safe in any environment)
 import providersConf from './conf/providers.json';
-import llmApiPricing from './conf/llm_api_pricing.json';
-export { providersConf, llmApiPricing };
+export { providersConf };
 
 // Re-export all types (erased at compile time, no runtime cost)
 export type {

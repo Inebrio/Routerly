@@ -4,10 +4,11 @@ import { OpenAIEmbeddingProvider } from './openai.js';
 // Mock the OpenAI SDK.
 vi.mock('openai', () => {
   const mockCreate = vi.fn();
-  const MockOpenAI = vi.fn(() => ({
-    embeddings: { create: mockCreate },
-  }));
-  (MockOpenAI as any).__mockCreate = mockCreate;
+  class MockOpenAI {
+    embeddings = { create: mockCreate };
+    static __mockCreate = mockCreate;
+    constructor(_options?: unknown) {}
+  }
   return { default: MockOpenAI };
 });
 
