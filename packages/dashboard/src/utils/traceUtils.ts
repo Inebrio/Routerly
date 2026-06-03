@@ -25,6 +25,9 @@ export interface MessageStats {
   outputPerMillion: number | null;
   hasError: boolean;
   errorMessage?: string;
+  cacheHit: boolean;
+  cacheMiss: boolean;
+  cacheSimilarity: number | null;
 }
 
 /**
@@ -48,6 +51,9 @@ export function extractMessageStats(traces: TraceEntry[]): MessageStats {
     inputPerMillion: null,
     outputPerMillion: null,
     hasError: false,
+    cacheHit: false,
+    cacheMiss: false,
+    cacheSimilarity: null,
   };
 
   if (!traces || traces.length === 0) return stats;
@@ -81,6 +87,15 @@ export function extractMessageStats(traces: TraceEntry[]): MessageStats {
   if (error) {
     stats.hasError = true;
     stats.errorMessage = error.details?.error ?? error.details?.message ?? 'Unknown error';
+  }
+
+  // Check for cache hit/miss
+  const cacheHitEntry = traces.find((e) => e.message === 'cache:hit');
+  if (cacheHitEntry) {
+    stats.cacheHit = true;
+    stats.cacheSimilarity = cacheHitEntry.details?.similarity ?? null;
+  } else if (traces.some((e) => e.message === 'cache:miss')) {
+    stats.cacheMiss = true;
   }
 
   return stats;

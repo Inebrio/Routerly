@@ -10,6 +10,7 @@ type ProviderModel = {
   input: number;
   output: number;
   cache?: number;
+  cacheWrite?: number;
   contextWindow?: number;
   notes?: string;
   pricingTiers?: Array<{
@@ -30,6 +31,43 @@ const ENDPOINT_DEFAULTS = Object.fromEntries(
 const PROVIDER_MODELS = Object.fromEntries(
   PROVIDERS.map(p => [p, providersConf[p as Provider]?.models as ProviderModel[]])
 ) as Record<Provider, ProviderModel[]>;
+
+const WEB_PROVIDERS = ['openai-web', 'anthropic-web'] as const;
+type WebProvider = typeof WEB_PROVIDERS[number];
+const isWebProvider = (p: string): p is WebProvider => (WEB_PROVIDERS as readonly string[]).includes(p);
+
+const WEB_PROVIDER_TOKEN_LABEL: Record<WebProvider, string> = {
+  'openai-web': 'Access Token',
+  'anthropic-web': 'Session Token',
+};
+
+const WEB_PROVIDER_TOKEN_PLACEHOLDER: Record<WebProvider, string> = {
+  'openai-web': 'eyJ…',
+  'anthropic-web': 'Paste sessionKey cookie value (sk-ant-sid01-…)',
+};
+
+const WEB_PROVIDER_INSTRUCTIONS: Record<WebProvider, React.ReactNode> = {
+  'openai-web': (
+    <>
+      While logged in to ChatGPT, open{' '}
+      <code style={{ fontSize: '0.78rem' }}>https://chatgpt.com/api/auth/session</code> in a new
+      tab. Copy the value of the <code style={{ fontSize: '0.78rem' }}>accessToken</code> field
+      (starts with <code style={{ fontSize: '0.78rem' }}>eyJ</code>).
+      The token expires every ~24 hours.
+      For reliable access, also fill in the <strong>cf_clearance</strong> field below.
+    </>
+  ),
+  'anthropic-web': (
+    <>
+      <strong>How to get your session key:</strong> While logged in to Claude, open DevTools
+      (F12) → Application → Cookies → <code style={{ fontSize: '0.78rem' }}>claude.ai</code>{' '}
+      → copy the value of the{' '}
+      <code style={{ fontSize: '0.78rem' }}>sessionKey</code> cookie
+      (starts with <code style={{ fontSize: '0.78rem' }}>sk-ant-sid01-</code>).
+      The key stays valid until you log out.
+    </>
+  ),
+};
 
 const METRIC_OPTIONS = [
   { value: 'context_tokens', label: 'Context tokens' },
@@ -120,9 +158,11 @@ const EMPTY_FORM = {
   provider: 'openai' as Provider,
   endpoint: ENDPOINT_DEFAULTS.openai,
   apiKey: '',
+  cfClearance: '',
   inputPerMillion: '',
   outputPerMillion: '',
   cachePerMillion: '',
+  cacheWritePerMillion: '',
   contextWindow: '',
 };
 
@@ -157,6 +197,7 @@ export function ModelFormPage() {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const [showToken, setShowToken] = useState(false);
+  const [showCfClearance, setShowCfClearance] = useState(false);
   const [isCustomModel, setIsCustomModel] = useState(false);
   const [isEmbeddingModel, setIsEmbeddingModel] = useState(false);
 
@@ -201,7 +242,7 @@ export function ModelFormPage() {
   function applyPreset(provider: Provider, modelId: string) {
     const preset = PROVIDER_MODELS[provider]?.find(m => m.id === modelId);
     if (!preset) {
-      setForm(f => ({ ...f, id: modelId, inputPerMillion: '', outputPerMillion: '', cachePerMillion: '', contextWindow: '' }));
+      setForm(f => ({ ...f, id: modelId, inputPerMillion: '', outputPerMillion: '', cachePerMillion: '', cacheWritePerMillion: '', contextWindow: '' }));
       setTierRows([]); setShowAdvanced(false);
       setIsEmbeddingModel(false);
       return;
@@ -213,6 +254,7 @@ export function ModelFormPage() {
       inputPerMillion: String(preset.input),
       outputPerMillion: String(preset.output),
       cachePerMillion: preset.cache != null ? String(preset.cache) : '',
+      cacheWritePerMillion: preset.cacheWrite != null ? String(preset.cacheWrite) : '',
       contextWindow: preset.contextWindow != null ? String(preset.contextWindow) : '',
     }));
     if (preset.pricingTiers?.length) {
@@ -240,7 +282,7 @@ export function ModelFormPage() {
   function handleModelChange(modelId: string) {
     if (modelId === '__custom__') {
       setIsCustomModel(true);
-      setForm(f => ({ ...f, id: '', inputPerMillion: '', outputPerMillion: '', cachePerMillion: '', contextWindow: '', customId: '' }));
+      setForm(f => ({ ...f, id: '', inputPerMillion: '', outputPerMillion: '', cachePerMillion: '', cacheWritePerMillion: '', contextWindow: '', customId: '' }));
       setTierRows([]); setShowAdvanced(false);
       return;
     }
@@ -285,6 +327,7 @@ export function ModelFormPage() {
     const inputPrice  = model.cost.inputPerMillion  > 0 ? model.cost.inputPerMillion  : (preset?.input  ?? 0);
     const outputPrice = model.cost.outputPerMillion > 0 ? model.cost.outputPerMillion : (preset?.output ?? 0);
     const cachePrice  = model.cost.cachePerMillion  != null ? model.cost.cachePerMillion : (preset?.cache ?? null);
+    const cacheWritePrice = model.cost.cacheWritePerMillion != null ? model.cost.cacheWritePerMillion : (preset?.cacheWrite ?? null);
     const ctxWindow   = model.contextWindow != null ? model.contextWindow : (preset?.contextWindow ?? null);
 
     setIsCustomModel(customModel);
@@ -299,9 +342,11 @@ export function ModelFormPage() {
       provider,
       endpoint: model.endpoint,
       apiKey: '',
+      cfClearance: '',
       inputPerMillion: String(inputPrice),
       outputPerMillion: String(outputPrice),
       cachePerMillion: cachePrice != null ? String(cachePrice) : '',
+      cacheWritePerMillion: cacheWritePrice != null ? String(cacheWritePrice) : '',
       contextWindow: ctxWindow != null ? String(ctxWindow) : '',
     }));
 
@@ -378,12 +423,14 @@ export function ModelFormPage() {
         provider: form.provider,
         endpoint: form.endpoint,
         ...(form.apiKey ? { apiKey: form.apiKey } : {}),
+        ...(form.cfClearance ? { cfClearance: form.cfClearance } : {}),
         ...(isCloning && cloneSourceId && !form.apiKey ? { cloneFrom: cloneSourceId } : {}),
         // For custom provider, save the exact upstream model ID separately from the Routerly ID.
         ...(form.provider === 'custom' && form.id.trim() ? { upstreamModelId: form.id.trim() } : {}),
         inputPerMillion: parseFloat(form.inputPerMillion) || 0,
         outputPerMillion: parseFloat(form.outputPerMillion) || 0,
         ...(form.cachePerMillion ? { cachePerMillion: parseFloat(form.cachePerMillion) } : {}),
+        ...(form.cacheWritePerMillion ? { cacheWritePerMillion: parseFloat(form.cacheWritePerMillion) } : {}),
         ...(form.contextWindow ? { contextWindow: parseInt(form.contextWindow, 10) } : {}),
         ...(pricingTiersPayload.length ? { pricingTiers: pricingTiersPayload } : {}),
         limits: limitRows
@@ -504,6 +551,26 @@ export function ModelFormPage() {
           <div className="form-section">
             <h3 className="section-title">Connection details</h3>
             <p className="section-desc">API endpoint and authentication credentials required to perform requests.</p>
+
+            {isWebProvider(form.provider) && (
+              <div style={{
+                display: 'flex', gap: 10, padding: '12px 14px', marginBottom: 16,
+                background: 'color-mix(in srgb, var(--color-warning, #f59e0b) 10%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--color-warning, #f59e0b) 40%, transparent)',
+                borderRadius: 8,
+              }}>
+                <span style={{ fontSize: '1rem', flexShrink: 0 }}>⚠️</span>
+                <div style={{ fontSize: '0.82rem', lineHeight: 1.6, color: 'var(--text-primary)' }}>
+                  <p style={{ margin: '0 0 6px' }}>
+                    <strong>Unofficial provider — use at your own risk.</strong>{' '}
+                    This integration relies on an undocumented internal API that may change or break without notice.
+                    It may violate the provider&apos;s Terms of Service and could result in account suspension.
+                  </p>
+                  <p style={{ margin: 0 }}>{WEB_PROVIDER_INSTRUCTIONS[form.provider as WebProvider]}</p>
+                </div>
+              </div>
+            )}
+
             <div className="form-group">
               <label className="form-label">Endpoint URL</label>
               <input className="form-input" value={form.endpoint}
@@ -511,12 +578,22 @@ export function ModelFormPage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">API Key / Token</label>
+              <label className="form-label">
+                {isWebProvider(form.provider)
+                  ? WEB_PROVIDER_TOKEN_LABEL[form.provider as WebProvider]
+                  : 'API Key / Token'}
+              </label>
               <div style={{ position: 'relative' }}>
                 <input className="form-input" type={showToken ? 'text' : 'password'}
                   name="apiKey" autoComplete="new-password"
                   value={form.apiKey} onChange={e => setForm(f => ({ ...f, apiKey: e.target.value }))}
-                  placeholder={editingModelId ? 'Leave blank to keep existing key' : isCloning ? 'Leave blank to keep existing key' : (form.provider === 'ollama' ? 'not required for local models' : 'sk-…')}
+                  placeholder={
+                    editingModelId ? 'Leave blank to keep existing key'
+                    : isCloning ? 'Leave blank to keep existing key'
+                    : isWebProvider(form.provider) ? WEB_PROVIDER_TOKEN_PLACEHOLDER[form.provider as WebProvider]
+                    : form.provider === 'ollama' ? 'not required for local models'
+                    : 'sk-…'
+                  }
                   style={{ paddingRight: 40 }} />
                 <button type="button" onClick={() => setShowToken(v => !v)}
                   style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>
@@ -524,6 +601,7 @@ export function ModelFormPage() {
                 </button>
               </div>
             </div>
+
           </div>
 
           {/* ── Section: Capabilities ─────────────────────────── */}
@@ -562,9 +640,17 @@ export function ModelFormPage() {
                   onChange={e => setForm(f => ({ ...f, outputPerMillion: e.target.value }))} placeholder="15.00" required />
               </div>
               <div className="form-group">
-                <label className="form-label">Cache $/1M <span style={{ color: 'var(--text-muted)' }}>(opt.)</span></label>
+                <label className="form-label">Cache read $/1M <span style={{ color: 'var(--text-muted)' }}>(opt.)</span></label>
                 <input className="form-input" type="number" step="any" value={form.cachePerMillion}
                   onChange={e => setForm(f => ({ ...f, cachePerMillion: e.target.value }))} placeholder="—" />
+              </div>
+            </div>
+
+            <div className="grid-3">
+              <div className="form-group">
+                <label className="form-label">Cache write $/1M <span style={{ color: 'var(--text-muted)' }}>(opt.)</span></label>
+                <input className="form-input" type="number" step="any" value={form.cacheWritePerMillion}
+                  onChange={e => setForm(f => ({ ...f, cacheWritePerMillion: e.target.value }))} placeholder="—" />
               </div>
             </div>
 

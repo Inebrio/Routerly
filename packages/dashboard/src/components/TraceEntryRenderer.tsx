@@ -42,8 +42,11 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
   const isThinking     = e.message === 'model:thinking';
   const isRecap        = e.message === 'router:recap';
   const isIntake       = e.message === 'router:intake';
+  const isCacheEmbedding = e.message === 'cache:embedding';
+  const isCacheHit     = e.message === 'cache:hit';
+  const isCacheMiss    = e.message === 'cache:miss';
 
-  const labelColor = isError ? 'var(--danger)' : isThinking ? '#a78bfa' : isModelPrompt ? '#c4b5fd' : isRecap ? '#34d399' : 'var(--accent)';
+  const labelColor = isError ? 'var(--danger)' : isThinking ? '#a78bfa' : isModelPrompt ? '#c4b5fd' : isRecap ? '#34d399' : isCacheEmbedding ? '#38bdf8' : isCacheHit ? '#10b981' : isCacheMiss ? '#f59e0b' : 'var(--accent)';
   const hasDetails = e.details != null && Object.keys(e.details).length > 0;
 
   // Estrai i campi "speciali" dal JSON tecnico per non duplicarli nel fallback
@@ -69,7 +72,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
   return (
     <div style={{ marginBottom: 8 }}>
 
-      {!isRecap && (
+      {!isRecap && !isCacheEmbedding && !isCacheHit && !isCacheMiss && (
         <div style={{ fontSize: '0.75rem', color: labelColor, marginBottom: 3, fontWeight: 700, letterSpacing: '0.04em' }}>
           {e.message}
           {isModelPrompt && (
@@ -142,6 +145,75 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           )}
 
           {rawDetails}
+        </div>
+
+      ) : isCacheEmbedding ? (
+        <div style={{ background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.32)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>CACHE EMBEDDING CALL</span>
+            {e.details?.fallback && (
+              <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#7dd3fc', background: 'rgba(56,189,248,0.14)', padding: '1px 6px', borderRadius: 99 }}>
+                fallback #{String(e.details?.attempt ?? '—')}
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Embedding Model</span>
+              <span style={{ fontSize: '0.82rem', color: '#e0f2fe', fontFamily: 'monospace', fontWeight: 600 }}>{String(e.details?.modelId ?? '—')}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Upstream Model</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{String(e.details?.upstreamModelId ?? '—')}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Provider</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{String(e.details?.provider ?? '—')}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Source</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{String(e.details?.source ?? '—')}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Endpoint</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'monospace', wordBreak: 'break-all' }}>{String(e.details?.endpoint ?? '—')}</span>
+            </div>
+          </div>
+          {rawDetails}
+        </div>
+
+      ) : isCacheHit ? (
+        <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.35)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.06em' }}>CACHE HIT</span>
+            {e.details?.ttlExtended && (
+              <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#6ee7b7', background: 'rgba(16,185,129,0.15)', padding: '1px 6px', borderRadius: 99 }}>TTL extended</span>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Model</span>
+              <span style={{ fontSize: '0.82rem', color: '#10b981', fontFamily: 'monospace', fontWeight: 600 }}>{e.details?.modelId ?? '—'}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Similarity</span>
+              <ScoreBar value={e.details?.similarity} />
+            </div>
+            {e.details?.embeddingModel && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Embedding</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{e.details.embeddingModel}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+      ) : isCacheMiss ? (
+        <div style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>CACHE MISS</span>
+          {e.details?.embeddingModel && (
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{e.details.embeddingModel}</span>
+          )}
         </div>
 
       ) : isIntake ? (
