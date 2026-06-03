@@ -156,6 +156,7 @@
         "input": 5,
         "output": 25,
         "cache": 1.5,
+        "cacheWrite": 18.75,
         "contextWindow": 200000,
         "notes": "Premium Claude model",
         "pricingTiers": [
@@ -172,8 +173,7 @@
         "id": "claude-sonnet-4-6",
         "input": 3,
         "output": 15,
-        "cache": 0.3,
-        "contextWindow": 200000,
+        "cache": 0.3,        "cacheWrite": 3.75,        "contextWindow": 200000,
         "notes": "Mid‑range Claude model"
       },
       {
@@ -181,6 +181,7 @@
         "input": 3,
         "output": 15,
         "cache": 0.3,
+        "cacheWrite": 3.75,
         "contextWindow": 200000,
         "notes": "Sonnet 4.5",
         "pricingTiers": [
@@ -197,8 +198,7 @@
         "id": "claude-haiku-4-5",
         "input": 1,
         "output": 5,
-        "cache": 0.1,
-        "contextWindow": 200000,
+        "cache": 0.1,        "cacheWrite": 1.25,        "contextWindow": 200000,
         "notes": "Entry‑level Claude model"
       },
       {
@@ -206,6 +206,7 @@
         "input": 15,
         "output": 75,
         "cache": 1.5,
+        "cacheWrite": 18.75,
         "contextWindow": 200000,
         "notes": "Legacy Opus model"
       },
@@ -214,6 +215,7 @@
         "input": 3,
         "output": 15,
         "cache": 0.3,
+        "cacheWrite": 3.75,
         "contextWindow": 200000,
         "notes": "Legacy Sonnet model"
       }
@@ -341,7 +343,7 @@
         "id": "codestral",
         "input": 1,
         "output": 3,
-        "contextWindow": 32000,
+        "contextWindow": 256000,
         "notes": "Mistral code‑specialized model"
       },
       {
@@ -423,7 +425,7 @@
         "input": 3,
         "output": 15,
         "cache": 0.75,
-        "contextWindow": 128000,
+        "contextWindow": 256000,
         "notes": "Flagship Grok 4 model"
       },
       {
@@ -525,6 +527,140 @@
         "contextWindow": 512,
         "notes": "all-MiniLM embedding model for Ollama",
         "capabilities": { "embedding": true }
+      }
+    ]
+  },
+  "deepseek": {
+    "endpoint": "https://api.deepseek.com/v1",
+    "models": [
+      {
+        "id": "deepseek-chat",
+        "input": 0.27,
+        "output": 1.1,
+        "cache": 0.07,
+        "contextWindow": 64000,
+        "notes": "DeepSeek V3 chat model"
+      },
+      {
+        "id": "deepseek-reasoner",
+        "input": 0.55,
+        "output": 2.19,
+        "cache": 0.14,
+        "contextWindow": 64000,
+        "notes": "DeepSeek R1 reasoning model"
+      }
+    ]
+  },
+  "groq": {
+    "endpoint": "https://api.groq.com/openai/v1",
+    "models": [
+      {
+        "id": "llama-3.3-70b-versatile",
+        "input": 0.59,
+        "output": 0.79,
+        "contextWindow": 128000,
+        "notes": "Llama 3.3 70B on Groq"
+      },
+      {
+        "id": "llama-3.1-8b-instant",
+        "input": 0.05,
+        "output": 0.08,
+        "contextWindow": 128000,
+        "notes": "Llama 3.1 8B instant on Groq"
+      },
+      {
+        "id": "mixtral-8x7b-32768",
+        "input": 0.24,
+        "output": 0.24,
+        "contextWindow": 32768,
+        "notes": "Mixtral 8x7B on Groq"
+      },
+      {
+        "id": "gemma2-9b-it",
+        "input": 0.2,
+        "output": 0.2,
+        "contextWindow": 8192,
+        "notes": "Gemma 2 9B IT on Groq"
+      },
+      {
+        "id": "deepseek-r1-distill-llama-70b",
+        "input": 0.75,
+        "output": 0.99,
+        "contextWindow": 128000,
+        "notes": "DeepSeek R1 distilled 70B on Groq"
+      }
+    ]
+  },
+  "together": {
+    "endpoint": "https://api.together.xyz/v1",
+    "models": [
+      {
+        "id": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        "input": 0.88,
+        "output": 0.88,
+        "contextWindow": 131072,
+        "notes": "Llama 3.3 70B Instruct Turbo"
+      },
+      {
+        "id": "meta-llama/Llama-3.1-8B-Instruct-Turbo",
+        "input": 0.18,
+        "output": 0.18,
+        "contextWindow": 131072,
+        "notes": "Llama 3.1 8B Instruct Turbo"
+      },
+      {
+        "id": "meta-llama/Llama-3.1-405B-Instruct-Turbo",
+        "input": 3.5,
+        "output": 3.5,
+        "contextWindow": 130815,
+        "notes": "Llama 3.1 405B Instruct Turbo"
+      },
+      {
+        "id": "deepseek-ai/DeepSeek-R1",
+        "input": 7,
+        "output": 7,
+        "contextWindow": 163840,
+        "notes": "DeepSeek R1 on Together"
+      },
+      {
+        "id": "Qwen/Qwen3-235B-A22B-fp8-tbo",
+        "input": 0.2,
+        "output": 0.6,
+        "contextWindow": 41000,
+        "notes": "Qwen3 235B MoE on Together"
+      }
+    ]
+  },
+  "perplexity": {
+    "endpoint": "https://api.perplexity.ai",
+    "models": [
+      {
+        "id": "sonar",
+        "input": 1,
+        "output": 1,
+        "contextWindow": 127000,
+        "notes": "Perplexity Sonar (search-augmented)"
+      },
+      {
+        "id": "sonar-pro",
+        "input": 3,
+        "output": 15,
+        "contextWindow": 200000,
+        "notes": "Perplexity Sonar Pro"
+      },
+      {
+        "id": "sonar-reasoning",
+        "input": 1,
+        "output": 5,
+        "contextWindow": 127000,
+        "notes": "Perplexity Sonar Reasoning"
+      },
+      {
+        "id": "sonar-reasoning-pro",
+        "input": 2,
+        "output": 8,
+        "contextWindow": 127000,
+        "notes": "Perplexity Sonar Reasoning Pro"
       }
     ]
   },
