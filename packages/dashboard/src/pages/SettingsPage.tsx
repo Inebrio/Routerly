@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, Globe } from 'lucide-react';
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
-import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate } from '../api';
-import type { Settings, SystemInfo, UpdateInfo } from '../api';
+import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases } from '../api';
+import type { Settings, SystemInfo, UpdateInfo, AvailableReleases } from '../api';
 
 const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'error'];
 
@@ -596,7 +596,7 @@ export function SettingsNotificationsTab() {
 
 // ── About tab ────────────────────────────────────────────────────────────────
 
-const PRESET_CHANNELS = ['latest', 'stable', 'develop'];
+const FALLBACK_RELEASES: AvailableReleases = { channels: ['latest', 'stable', 'develop'], versions: [] };
 
 function ChannelSelector({
   current,
@@ -605,13 +605,23 @@ function ChannelSelector({
   current: string;
   onSave: (ch: string) => Promise<void>;
 }) {
-  const isPreset = PRESET_CHANNELS.includes(current);
-  const [mode, setMode] = React.useState<'select' | 'custom'>(isPreset ? 'select' : 'custom');
-  const [selectVal, setSelectVal] = React.useState(isPreset ? current : 'latest');
-  const [customVal, setCustomVal] = React.useState(isPreset ? '' : current);
+  const [releases, setReleases] = React.useState<AvailableReleases>(FALLBACK_RELEASES);
   const [saving, setSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
   const [err, setErr] = React.useState('');
+  const [customVal, setCustomVal] = React.useState('');
+  const [showCustom, setShowCustom] = React.useState(false);
+
+  React.useEffect(() => {
+    getAvailableReleases().then(setReleases).catch(() => setReleases(FALLBACK_RELEASES));
+  }, []);
+
+  const knownValues = [...releases.channels, ...releases.versions];
+  const isKnown = knownValues.includes(current);
+
+  React.useEffect(() => {
+    if (!isKnown) { setShowCustom(true); setCustomVal(current); }
+  }, [current, isKnown]);
 
   async function save(ch: string) {
     if (!ch.trim()) return;
@@ -629,8 +639,7 @@ function ChannelSelector({
 
   function handleSelectChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const v = e.target.value;
-    if (v === '__custom') { setMode('custom'); return; }
-    setSelectVal(v);
+    if (v === '__custom') { setShowCustom(true); return; }
     void save(v);
   }
 
@@ -641,11 +650,11 @@ function ChannelSelector({
         {err && <span style={{ fontSize: '0.72rem', color: 'var(--error, #e53e3e)' }}>{err}</span>}
         {saved && <span style={{ fontSize: '0.72rem', color: '#22c55e' }}>Saved</span>}
         {saving && <div className="spinner" style={{ width: 12, height: 12 }} />}
-        {mode === 'custom' ? (
+        {showCustom ? (
           <>
             <input
               className="form-input"
-              style={{ width: 90, fontSize: '0.78rem', padding: '3px 8px', margin: 0 }}
+              style={{ width: 100, fontSize: '0.78rem', padding: '3px 8px', margin: 0 }}
               placeholder="v0.2.0"
               value={customVal}
               onChange={e => setCustomVal(e.target.value)}
@@ -661,20 +670,27 @@ function ChannelSelector({
             <button
               type="button"
               style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.75rem', cursor: 'pointer', padding: 0 }}
-              onClick={() => setMode('select')}
-            >← presets</button>
+              onClick={() => setShowCustom(false)}
+            >← back</button>
           </>
         ) : (
           <select
             className="form-input"
-            style={{ fontSize: '0.83rem', padding: '3px 8px', margin: 0, width: 120 }}
-            value={selectVal}
+            style={{ fontSize: '0.83rem', padding: '3px 8px', margin: 0, width: 130 }}
+            value={isKnown ? current : '__custom'}
             onChange={handleSelectChange}
             disabled={saving}
           >
-            <option value="latest">latest</option>
-            <option value="stable">stable</option>
-            <option value="develop">develop</option>
+            {releases.channels.map(ch => (
+              <option key={ch} value={ch}>{ch}</option>
+            ))}
+            {releases.versions.length > 0 && (
+              <optgroup label="Versions">
+                {releases.versions.map(v => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </optgroup>
+            )}
             <option value="__custom">custom…</option>
           </select>
         )}

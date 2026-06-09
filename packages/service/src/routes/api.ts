@@ -837,6 +837,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
+  // ─── GET /api/system/releases ────────────────────────────────────────────
+  fastify.get('/api/system/releases', async (req, reply) => {
+    if (!req.dashUser) return reply.status(401).send({ error: 'Unauthorized' });
+    return reply.send(await updateChecker.getAvailableReleases());
+  });
+
   // ─── GET /api/system/update-check ───────────────────────────────────────
   fastify.get('/api/system/update-check', async (req, reply) => {
     if (!req.dashUser) return reply.status(401).send({ error: 'Unauthorized' });
