@@ -28,6 +28,7 @@ Routerly is a self-hosted LLM API gateway with intelligent routing, cost trackin
 | **Admin CLI** | Full management from the terminal with `routerly` commands |
 | **RBAC** | Role-based access control with 7 granular permissions and custom roles |
 | **Notifications** | Email and webhook alerts via SMTP, SES, SendGrid, Azure, Google, or custom webhook |
+| **Self-updating** | Built-in update checker polls GitHub Releases every 24 h. Channels: `stable`, `latest`, `develop`. One-click update from the dashboard or `routerly update run` |
 
 ---
 
@@ -73,13 +74,21 @@ LangChain   completions   Track cost     ◀──  ...
 **macOS / Linux:**
 
 ```bash
+# Install stable release (default)
 curl -fsSL https://www.routerly.ai/install.sh | bash
+
+# Install latest release
+curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --channel latest
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
+# Install stable release (default)
 powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
+
+# Install latest release
+powershell -c "& ([scriptblock]::Create((irm https://www.routerly.ai/install.ps1))) -Channel latest"
 ```
 
 Then register a model, create a project, and start:
