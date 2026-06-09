@@ -597,6 +597,7 @@ export function SettingsNotificationsTab() {
 // ── About tab ────────────────────────────────────────────────────────────────
 
 const FALLBACK_RELEASES: AvailableReleases = { channels: ['latest', 'stable', 'develop'], versions: [] };
+const CHANNEL_LABELS: Record<string, string> = { stable: 'current', latest: 'latest', develop: 'develop' };
 
 function ChannelSelector({
   current,
@@ -682,15 +683,8 @@ function ChannelSelector({
             disabled={saving}
           >
             {releases.channels.map(ch => (
-              <option key={ch} value={ch}>{ch}</option>
+              <option key={ch} value={ch}>{CHANNEL_LABELS[ch] ?? ch}</option>
             ))}
-            {releases.versions.length > 0 && (
-              <optgroup label="Versions">
-                {releases.versions.map(v => (
-                  <option key={v} value={v}>{v}</option>
-                ))}
-              </optgroup>
-            )}
             <option value="__custom">custom…</option>
           </select>
         )}

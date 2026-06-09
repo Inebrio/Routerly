@@ -179,24 +179,22 @@ export class UpdateChecker {
     }
   }
 
-  /** Fetch available channels and version tags from GitHub Releases. Falls back to defaults on error. */
+  /** Fetch available channels from GitHub Releases, always including the base set. */
   async getAvailableReleases(): Promise<AvailableReleases> {
+    const base = ['latest', 'stable', 'develop'];
     try {
       const releases = await fetchAllReleases();
-      const channels: string[] = ['latest'];
-      const versions: string[] = [];
+      const extra: string[] = [];
       for (const r of releases) {
         if (r.draft) continue;
         const tag = r.tag_name;
-        if (parseSemver(tag)) {
-          versions.push(tag);
-        } else if (!channels.includes(tag)) {
-          channels.push(tag);
+        if (!parseSemver(tag) && !base.includes(tag)) {
+          extra.push(tag);
         }
       }
-      return { channels, versions };
+      return { channels: [...base, ...extra], versions: [] };
     } catch {
-      return { channels: ['latest', 'stable', 'develop'], versions: [] };
+      return { channels: base, versions: [] };
     }
   }
 
