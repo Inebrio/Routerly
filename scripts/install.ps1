@@ -4,7 +4,12 @@
 # Usage:
 #   powershell -c "irm https://your-domain.com/install.ps1 | iex"
 #   or with flags:
-#   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) --yes"
+#   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Yes"
+#   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Channel stable"
+#   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Channel develop"
+#   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Version v0.2.0"
+#
+# -Channel and -Version are resolved here; all other flags are forwarded to install.mjs.
 # ────────────────────────────────────────────────────────────────────────────
 [CmdletBinding()]
 param(
@@ -15,7 +20,9 @@ param(
   [switch]$NoService,
   [switch]$NoCli,
   [switch]$NoDashboard,
-  [switch]$NoDaemon
+  [switch]$NoDaemon,
+  [string]$Channel       = "stable",   # latest | stable | develop
+  [string]$Version       = ""         # e.g. v0.2.0 — overrides -Channel when set
 )
 
 $ErrorActionPreference = "Stop"
@@ -132,19 +139,40 @@ function Cleanup {
 # Register cleanup on exit
 Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action { Cleanup } | Out-Null
 
-# ── Fetch latest release tarball ──────────────────────────────────────────────
-Write-Info "Fetching latest Routerly release..."
-
-$releaseApiUrl = "https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest"
-$tarballUrl    = ""
-
-try {
+# ── Resolve download URL from channel or version ──────────────────────────────
+function Resolve-DownloadUrl {
   $headers = @{ "User-Agent" = "routerly-installer/1.0" }
-  $release = Invoke-RestMethod -Uri $releaseApiUrl -Headers $headers -ErrorAction Stop
-  $tarballUrl = $release.tarball_url
-} catch {
-  Write-Warn "Could not fetch latest release from GitHub API. Falling back to main branch..."
+  $apiBase = "https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases"
+
+  if ($Version) {
+    Write-Info "Resolving version $Version..."
+    $apiUrl = "$apiBase/tags/$Version"
+  } elseif ($Channel -eq "latest") {
+    Write-Info "Resolving channel latest..."
+    $apiUrl = "$apiBase/latest"
+  } elseif ($Channel -eq "stable" -or $Channel -eq "develop") {
+    Write-Info "Resolving channel $Channel..."
+    $apiUrl = "$apiBase/tags/$Channel"
+  } else {
+    Die "Unknown channel: '$Channel'. Valid values: latest, stable, develop"
+  }
+
+  try {
+    $release = Invoke-RestMethod -Uri $apiUrl -Headers $headers -ErrorAction Stop
+    return @{ TarballUrl = $release.tarball_url; Tag = $release.tag_name }
+  } catch {
+    if ($Version) {
+      Die "Could not find release '$Version' on GitHub. Check the version tag and retry."
+    }
+    Write-Warn "Could not fetch release from GitHub API. Falling back to main branch..."
+    return @{ TarballUrl = ""; Tag = "" }
+  }
 }
+
+# ── Fetch release tarball ─────────────────────────────────────────────────────
+$resolved    = Resolve-DownloadUrl
+$tarballUrl  = $resolved.TarballUrl
+$resolvedTag = $resolved.Tag
 
 if (-not $tarballUrl) {
   $tarballUrl = "https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/heads/main.zip"
@@ -194,6 +222,8 @@ if ($NoService)    { $installerArgs += "--no-service" }
 if ($NoCli)        { $installerArgs += "--no-cli" }
 if ($NoDashboard)  { $installerArgs += "--no-dashboard" }
 if ($NoDaemon)     { $installerArgs += "--no-daemon" }
+if ($resolvedTag)  { $installerArgs += "--version=$resolvedTag" }
+$installerArgs += "--channel=$Channel"
 
 # ── Run the Node.js installer ─────────────────────────────────────────────────
 $installer = Join-Path $extractDir "scripts\install.mjs"

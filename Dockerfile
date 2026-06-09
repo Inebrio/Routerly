@@ -71,7 +71,8 @@ VOLUME ["/data"]
 EXPOSE 3000
 
 ENV NODE_ENV=production \
-    ROUTERLY_HOME=/data
+    ROUTERLY_HOME=/data \
+    ROUTERLY_DOCKER=1
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://localhost:3000/health || exit 1

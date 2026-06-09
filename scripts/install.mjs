@@ -56,6 +56,8 @@ const FLAG_SCOPE     = getArg('scope')       ?? process.env.ROUTERLY_SCOPE      
 const FLAG_PORT      = getArg('port')        ?? process.env.ROUTERLY_PORT        ?? '';
 const FLAG_HOST      = getArg('host')        ?? process.env.ROUTERLY_HOST        ?? '';
 const FLAG_URL       = getArg('public-url')  ?? process.env.ROUTERLY_PUBLIC_URL  ?? '';
+const INSTALL_VERSION = getArg('version') ?? ''; // set by install.sh/ps1 via --version=vX.Y.Z
+const INSTALL_CHANNEL = getArg('channel') ?? 'latest'; // set by install.sh/ps1 via --channel=
 
 // From env vars (--yes mode)
 const ENV_INSTALL_SVC  = process.env.ROUTERLY_INSTALL_SERVICE;
@@ -122,7 +124,8 @@ async function confirm(prompt, defaultYes = true) {
 }
 
 // ─── Banner ───────────────────────────────────────────────────────────────────
-console.log('\n' + c.bold(c.cyan('  Routerly')) + c.dim('  Installer') + '\n');
+const _versionLabel = INSTALL_VERSION ? c.dim(` (${INSTALL_VERSION})`) : '';
+console.log('\n' + c.bold(c.cyan('  Routerly')) + c.dim('  Installer') + _versionLabel + '\n');
 console.log(c.dim('  Self-hosted LLM gateway — https://github.com/Inebrio/Routerly\n'));
 console.log(
   c.yellow('  ◆ Beta') + c.dim(' — Routerly is in active development. You may encounter bugs.') + '\n' +
@@ -795,6 +798,7 @@ if (!fs.existsSync(settingsPath)) {
     defaultTimeoutMs: 30000,
     logLevel: 'info',
     publicUrl,
+    channel: INSTALL_VERSION ? 'custom' : INSTALL_CHANNEL,
   };
   await writeFileP(settingsPath, JSON.stringify(settings, null, 2), needsSudo);
   success('settings.json written');

@@ -46,6 +46,7 @@ export type {
   TraceEntry,
   UsageRecord,
   SemanticCacheConfig,
+  UpdateInfo,
 } from './types/config.js';
 
 export type {

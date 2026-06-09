@@ -6,8 +6,11 @@
 #   curl -fsSL https://your-domain.com/install.sh | bash
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --yes
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --scope=system
+#   curl -fsSL https://your-domain.com/install.sh | bash -s -- --channel=stable
+#   curl -fsSL https://your-domain.com/install.sh | bash -s -- --channel=develop
+#   curl -fsSL https://your-domain.com/install.sh | bash -s -- --version=v0.2.0
 #
-# Flags are forwarded to install.mjs.
+# --channel and --version are resolved here; all other flags are forwarded to install.mjs.
 # ────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -15,6 +18,10 @@ set -euo pipefail
 GITHUB_OWNER="Inebrio"
 GITHUB_REPO="Routerly"
 REQUIRED_NODE_MAJOR=20
+
+# ── Channel / version defaults ────────────────────────────────────────────────
+INSTALL_CHANNEL="stable"  # latest | stable | develop
+INSTALL_VERSION=""        # e.g. v0.2.0 — overrides INSTALL_CHANNEL when set
 
 # ── Colors ────────────────────────────────────────────────────────────────────
 if [ -t 1 ]; then
@@ -256,33 +263,78 @@ fi
 
 need_cmd npm || die "'npm' not found. Something went wrong with the Node.js install."
 
-# ── Fetch latest release tarball ──────────────────────────────────────────────
-info "Fetching latest Routerly release..."
+# ── Parse --channel / --version flags ─────────────────────────────────────────
+# These are consumed by this script and are NOT forwarded to install.mjs.
+FORWARD_ARGS=()
+_i=0
+_ORIG_ARGS=("$@")
+while [ $_i -lt ${#_ORIG_ARGS[@]} ]; do
+  _arg="${_ORIG_ARGS[$_i]}"
+  case "$_arg" in
+    --channel=*) INSTALL_CHANNEL="${_arg#--channel=}" ;;
+    --channel)   _i=$((_i + 1)); INSTALL_CHANNEL="${_ORIG_ARGS[$_i]}" ;;
+    --version=*) INSTALL_VERSION="${_arg#--version=}" ;;
+    --version)   _i=$((_i + 1)); INSTALL_VERSION="${_ORIG_ARGS[$_i]}" ;;
+    *)           FORWARD_ARGS+=("$_arg") ;;
+  esac
+  _i=$((_i + 1))
+done
 
+# ── Resolve download URL from channel or version ──────────────────────────────
+resolve_download_url() {
+  local api_base="https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases"
+  local api_url release_json
+
+  if [ -n "$INSTALL_VERSION" ]; then
+    info "Resolving version ${BOLD}${INSTALL_VERSION}${RESET}..."
+    api_url="${api_base}/tags/${INSTALL_VERSION}"
+  else
+    case "$INSTALL_CHANNEL" in
+      latest)
+        info "Resolving channel ${BOLD}latest${RESET}..."
+        api_url="${api_base}/latest"
+        ;;
+      stable|develop)
+        info "Resolving channel ${BOLD}${INSTALL_CHANNEL}${RESET}..."
+        api_url="${api_base}/tags/${INSTALL_CHANNEL}"
+        ;;
+      *)
+        die "Unknown channel: '${INSTALL_CHANNEL}'. Valid values: latest, stable, develop"
+        ;;
+    esac
+  fi
+
+  release_json=""
+  if need_cmd curl; then
+    release_json="$(curl -fsSL "$api_url" 2>/dev/null || true)"
+  elif need_cmd wget; then
+    release_json="$(wget -qO- "$api_url" 2>/dev/null || true)"
+  else
+    die "Neither 'curl' nor 'wget' found. Please install one and retry."
+  fi
+
+  RELEASE_TAG=""
+  if [ -n "$release_json" ]; then
+    RELEASE_TAG="$(echo "$release_json" | \
+      grep -o '"tag_name": *"[^"]*"' | head -1 | \
+      sed 's/"tag_name": *"//' | sed 's/"$//')"
+  fi
+
+  if [ -n "$RELEASE_TAG" ]; then
+    TARBALL_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/tags/${RELEASE_TAG}.tar.gz"
+  else
+    if [ -n "$INSTALL_VERSION" ]; then
+      die "Could not find release '${INSTALL_VERSION}' on GitHub. Check the version tag and retry."
+    fi
+    warn "Could not fetch release from GitHub API. Falling back to main branch..."
+    TARBALL_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/heads/main.tar.gz"
+  fi
+}
+
+# ── Fetch release tarball ─────────────────────────────────────────────────────
 RELEASE_TAG=""
-RELEASE_API="https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest"
-
-if need_cmd curl; then
-  RELEASE_JSON="$(curl -fsSL "$RELEASE_API" 2>/dev/null || true)"
-elif need_cmd wget; then
-  RELEASE_JSON="$(wget -qO- "$RELEASE_API" 2>/dev/null || true)"
-else
-  die "Neither 'curl' nor 'wget' found. Please install one and retry."
-fi
-
-if [ -n "$RELEASE_JSON" ]; then
-  RELEASE_TAG="$(echo "$RELEASE_JSON" | \
-    grep -o '"tag_name": *"[^"]*"' | head -1 | \
-    sed 's/"tag_name": *"//' | sed 's/"$//')"
-fi
-
-if [ -n "$RELEASE_TAG" ]; then
-  # Use the tag archive URL — always reflects the current commit pointed to by the tag
-  TARBALL_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/tags/${RELEASE_TAG}.tar.gz"
-else
-  warn "Could not fetch latest release from GitHub API. Falling back to main branch..."
-  TARBALL_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/heads/main.tar.gz"
-fi
+TARBALL_URL=""
+resolve_download_url
 
 info "Downloading Routerly from: ${DIM}${TARBALL_URL}${RESET}"
 
@@ -310,6 +362,7 @@ fi
 info "Launching Routerly installer..."
 echo
 
-# Forward all original arguments to the Node.js installer,
-# plus pass the source directory so it knows where files are.
-exec node "$INSTALLER" "--source-dir=${EXTRACT_DIR}" "$@"
+# Forward filtered arguments (--channel and --version already consumed above)
+# plus the source directory so it knows where files are.
+# Pass --version with the resolved tag so install.mjs can show it in the banner.
+exec node "$INSTALLER" "--source-dir=${EXTRACT_DIR}" ${RELEASE_TAG:+"--version=${RELEASE_TAG}"} "--channel=${INSTALL_CHANNEL}" "${FORWARD_ARGS[@]+${FORWARD_ARGS[@]}}"

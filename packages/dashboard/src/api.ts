@@ -368,6 +368,8 @@ export interface Settings {
   /** Public base URL of the service — used in "How to connect" when dashboard runs on a different host. */
   publicUrl?: string;
   notifications?: NotificationsConfig;
+  /** Distribution channel for updates: 'latest' | 'stable' | 'develop' | vX.Y.Z tag */
+  channel?: string;
 }
 
 export const getSettings = () => request<Settings>('/settings');
@@ -375,6 +377,15 @@ export const updateSettings = (data: Partial<Settings>) =>
   request<Settings>('/settings', { method: 'PUT', body: JSON.stringify(data) });
 
 // ── System info ──────────────────────────────────────────────────────────────
+export interface UpdateInfo {
+  available: boolean;
+  currentVersion: string;
+  latestVersion: string;
+  channel: string;
+  releaseUrl?: string;
+  checkedAt: string;
+}
+
 export interface SystemInfo {
   version: string;
   nodeVersion: string;
@@ -382,9 +393,14 @@ export interface SystemInfo {
   configDir: string;
   dataDir: string;
   uptimeSeconds: number;
+  channel: string;
+  isDocker: boolean;
+  updateInfo: UpdateInfo | null;
 }
 
 export const getSystemInfo = () => request<SystemInfo>('/system/info');
+export const checkForUpdates = () => request<UpdateInfo>('/system/update-check');
+export const triggerUpdate = () => request<{ message: string }>('/system/update', { method: 'POST' });
 
 export const testNotificationChannel = (channelId: string, to: string) =>
   request<{ ok: boolean; message: string; fixedSecure?: boolean }>('/notifications/test', {
