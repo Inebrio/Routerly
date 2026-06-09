@@ -10,6 +10,7 @@ import { openaiRoutes } from './routes/openai.js';
 import { anthropicRoutes } from './routes/anthropic.js';
 import { apiRoutes } from './routes/api.js';
 import { initConfigDirs, readConfig } from './config/loader.js';
+import { updateChecker } from './update-checker.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const { version: pkgVersion } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8')) as { version: string };
@@ -89,6 +90,7 @@ export async function startServer() {
 
   try {
     await server.listen({ port: settings.port, host: settings.host });
+    updateChecker.start(pkgVersion, settings.channel ?? 'latest');
   } catch (err) {
     server.log.error(err);
     process.exit(1);

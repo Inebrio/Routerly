@@ -1,0 +1,87 @@
+name: Promote Stable Channel
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag to promote as stable (e.g. v0.1.5)'
+        required: true
+
+concurrency: promote-stable
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    name: Promote stable channel
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if ! gh release view "$VERSION" > /dev/null 2>&1; then
+            echo "::error::Release '$VERSION' does not exist. Create a versioned release first."
+            exit 1
+          fi
+          echo "Release $VERSION found — proceeding."
+
+      - name: Checkout version tag
+        run: git checkout "refs/tags/${{ github.event.inputs.version }}"
+
+      - name: Force-tag stable
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f stable
+          git push origin stable --force
+
+      - name: Delete existing stable release (if any)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release delete stable --yes 2>/dev/null || true
+
+      - name: Create stable GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          gh release create stable \
+            --title "Routerly stable (→ ${VERSION})" \
+            --notes "$(printf 'Stable channel release. Points to **%s**.\n\nInstall:\n```bash\ncurl -fsSL https://routerly.ai/install.sh | bash -s -- --channel=stable\n```\n\nWindows:\n```powershell\n& ([scriptblock]::Create((irm https://routerly.ai/install.ps1))) -Channel stable\n```' "$VERSION")" \
+            scripts/install.sh \
+            scripts/install.ps1 \
+            scripts/install.mjs
+
+  docker:
+    name: Push Docker stable tag
+    runs-on: ubuntu-latest
+    needs: promote
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Re-tag the existing multi-arch image as :stable without re-building.
+      # docker buildx imagetools create preserves the full multi-arch manifest.
+      - name: Re-tag version image as stable
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          docker buildx imagetools create \
+            --tag "inebrio/routerly:stable" \
+            "inebrio/routerly:${VERSION}"
