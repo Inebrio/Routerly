@@ -42,6 +42,7 @@ interface GithubRelease {
   tag_name: string;
   html_url: string;
   prerelease: boolean;
+  draft: boolean;
 }
 
 function fetchAllReleases(): Promise<GithubRelease[]> {
