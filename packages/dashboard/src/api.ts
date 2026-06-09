@@ -402,6 +402,12 @@ export const getSystemInfo = () => request<SystemInfo>('/system/info');
 export const checkForUpdates = () => request<UpdateInfo>('/system/update-check');
 export const triggerUpdate = () => request<{ message: string }>('/system/update', { method: 'POST' });
 
+export interface AvailableReleases {
+  channels: string[];
+  versions: string[];
+}
+export const getAvailableReleases = () => request<AvailableReleases>('/system/releases');
+
 export const testNotificationChannel = (channelId: string, to: string) =>
   request<{ ok: boolean; message: string; fixedSecure?: boolean }>('/notifications/test', {
     method: 'POST',

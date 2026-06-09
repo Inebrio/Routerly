@@ -10,7 +10,7 @@
  */
 
 import { request as httpsRequest } from 'node:https';
-import type { UpdateInfo } from '@routerly/shared';
+import type { UpdateInfo, AvailableReleases } from '@routerly/shared';
 
 const GITHUB_OWNER = 'Inebrio';
 const GITHUB_REPO  = 'Routerly';
@@ -42,6 +42,39 @@ interface GithubRelease {
   tag_name: string;
   html_url: string;
   prerelease: boolean;
+}
+
+function fetchAllReleases(): Promise<GithubRelease[]> {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.github.com',
+      path: `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases?per_page=100`,
+      method: 'GET',
+      headers: {
+        'User-Agent': `routerly-update-checker/${GITHUB_OWNER}`,
+        'Accept': 'application/vnd.github+json',
+      },
+      timeout: 10_000,
+    };
+
+    const req = httpsRequest(options, (res) => {
+      const chunks: Buffer[] = [];
+      res.on('data', (c: Buffer) => chunks.push(c));
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          try {
+            resolve(JSON.parse(Buffer.concat(chunks).toString('utf-8')) as GithubRelease[]);
+          } catch (e) { reject(e); }
+        } else {
+          reject(new Error(`GitHub API returned ${res.statusCode}`));
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('GitHub API request timed out')); });
+    req.end();
+  });
 }
 
 function fetchRelease(channel: string): Promise<GithubRelease> {
@@ -142,6 +175,27 @@ export class UpdateChecker {
       // Only overwrite cached result if we have none yet
       if (!this._result) this._result = fallback;
       return this._result;
+    }
+  }
+
+  /** Fetch available channels and version tags from GitHub Releases. Falls back to defaults on error. */
+  async getAvailableReleases(): Promise<AvailableReleases> {
+    try {
+      const releases = await fetchAllReleases();
+      const channels: string[] = ['latest'];
+      const versions: string[] = [];
+      for (const r of releases) {
+        if (r.draft) continue;
+        const tag = r.tag_name;
+        if (parseSemver(tag)) {
+          versions.push(tag);
+        } else if (!channels.includes(tag)) {
+          channels.push(tag);
+        }
+      }
+      return { channels, versions };
+    } catch {
+      return { channels: ['latest', 'stable', 'develop'], versions: [] };
     }
   }
 
