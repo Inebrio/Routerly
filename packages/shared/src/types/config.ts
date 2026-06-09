@@ -327,6 +327,14 @@ export interface Settings {
 
 // ─── Update info ─────────────────────────────────────────────────────────────
 
+/** Available channels and version tags from GitHub Releases. */
+export interface AvailableReleases {
+  /** Named channels (e.g. 'latest', 'stable', 'develop') */
+  channels: string[];
+  /** Semver version tags (e.g. 'v0.2.0', 'v0.1.5') */
+  versions: string[];
+}
+
 /** Result of a version update check against GitHub Releases. */
 export interface UpdateInfo {
   /** Whether a newer version is available */
