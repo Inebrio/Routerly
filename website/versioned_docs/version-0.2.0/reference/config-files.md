@@ -76,6 +76,7 @@ Global service configuration.
   "defaultTimeoutMs": 30000,
   "logLevel": "info",
   "publicUrl": "http://localhost:3000",
+  "channel": "stable",
   "notifications": []
 }
 ```
@@ -88,6 +89,7 @@ Global service configuration.
 | `defaultTimeoutMs` | `number` | `30000` | Default provider request timeout in milliseconds |
 | `logLevel` | `string` | `"info"` | Log verbosity: `"error"`, `"warn"`, `"info"`, `"debug"` |
 | `publicUrl` | `string` | `"http://localhost:3000"` | Externally reachable URL, used for notification links |
+| `channel` | `string` | `"stable"` | Update channel: `"latest"`, `"stable"`, `"develop"`, or a version tag such as `"v0.2.0"`. Controls which GitHub Release the update checker compares against |
 | `notifications` | `array` | `[]` | Notification channel configurations — see [Notifications](../concepts/notifications.md) |
 
 ---
