@@ -1,6 +1,6 @@
 {
   "name": "@routerly/cli",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "bin": {
@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@routerly/shared": "*",

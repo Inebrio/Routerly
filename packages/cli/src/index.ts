@@ -12,6 +12,7 @@ import { makeRoleCommand } from './commands/role.js';
 import { makeReportCommand } from './commands/report.js';
 import { makeServiceCommand } from './commands/service.js';
 import { makeStatusCommand } from './commands/status.js';
+import { makeUpdateCommand } from './commands/update.js';
 
 const program = new Command();
 
@@ -31,5 +32,6 @@ program.addCommand(makeUserCommand());
 program.addCommand(makeRoleCommand());
 program.addCommand(makeReportCommand());
 program.addCommand(makeServiceCommand());
+program.addCommand(makeUpdateCommand());
 
 program.parse(process.argv);

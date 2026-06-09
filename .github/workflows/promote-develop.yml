@@ -1,0 +1,96 @@
+name: Promote Develop Channel
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to promote as develop'
+        required: true
+        default: 'develop'
+
+concurrency: promote-develop
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    name: Promote develop channel
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build all packages
+        run: npm run build
+
+      - name: Force-tag develop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f develop
+          git push origin develop --force
+
+      - name: Delete existing develop release (if any)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release delete develop --yes 2>/dev/null || true
+
+      - name: Create develop GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="${{ github.event.inputs.branch }}"
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          gh release create develop \
+            --title "Routerly develop (${BRANCH}@${SHORT_SHA})" \
+            --notes "Latest build from the \`${BRANCH}\` branch. This is a pre-release — not intended for production use." \
+            --prerelease \
+            scripts/install.sh \
+            scripts/install.ps1 \
+            scripts/install.mjs
+
+  docker:
+    name: Push Docker develop tag
+    runs-on: ubuntu-latest
+    needs: promote
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push develop image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: inebrio/routerly:develop
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
