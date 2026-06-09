@@ -15,6 +15,7 @@ const DEFAULTS: Record<string, unknown> = {
     defaultTimeoutMs: 30000,
     logLevel: 'info',
     publicUrl: 'http://localhost:3000',
+    channel: 'latest',
   } satisfies Settings,
   models: [] as ModelConfig[],
   projects: [] as ProjectConfig[],

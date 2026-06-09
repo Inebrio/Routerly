@@ -1,8 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { createBrowserRouter, RouterProvider, NavLink, Navigate, useNavigate, Outlet } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, NavLink, Navigate, useNavigate, Outlet, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { ThemeProvider, useTheme, type Theme } from './ThemeContext';
-import { checkSetupStatus } from './api';
+import { checkSetupStatus, getSystemInfo } from './api';
+import type { UpdateInfo } from './api';
 import { LoginPage } from './pages/LoginPage';
 import { SetupPage } from './pages/SetupPage';
 import { OverviewPage } from './pages/OverviewPage';
@@ -149,6 +150,20 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
 function ProtectedLayout() {
   const { user, isLoading } = useAuth();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('lr-sidebar') === 'collapsed');
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [isDocker, setIsDocker] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(() => {
+    return localStorage.getItem('lr-update-banner-dismissed') === 'true';
+  });
+
+  useEffect(() => {
+    getSystemInfo()
+      .then(info => {
+        setIsDocker(info.isDocker);
+        if (info.updateInfo?.available) setUpdateInfo(info.updateInfo);
+      })
+      .catch(() => { /* non-critical */ });
+  }, []);
 
   function handleToggle() {
     setCollapsed(prev => {
@@ -158,12 +173,45 @@ function ProtectedLayout() {
     });
   }
 
+  function dismissBanner() {
+    localStorage.setItem('lr-update-banner-dismissed', 'true');
+    setBannerDismissed(true);
+  }
+
+  const showBanner = !bannerDismissed && !isDocker && user?.role === 'admin' && updateInfo?.available;
+
   if (isLoading) return <div className="loading-center"><div className="spinner" /></div>;
   if (!user) return <Navigate to="/dashboard/login" replace />;
   return (
     <div className={`app-shell${collapsed ? ' sidebar-collapsed' : ''}`}>
       <Sidebar collapsed={collapsed} onToggle={handleToggle} />
       <main className="main-content">
+        {showBanner && (
+          <div style={{
+            background: 'var(--warning-bg, #fffbeb)',
+            borderBottom: '1px solid var(--warning-border, #f6e05e)',
+            padding: '10px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            fontSize: '0.85rem',
+            color: 'var(--warning-text, #744210)',
+          }}>
+            <span>
+              Routerly <strong>v{updateInfo!.latestVersion}</strong> is available. You are on v{updateInfo!.currentVersion}.{' '}
+              <Link to="/dashboard/settings/about" style={{ color: 'inherit', fontWeight: 600, textDecoration: 'underline' }}>
+                Update in Settings
+              </Link>
+            </span>
+            <button
+              onClick={dismissBanner}
+              style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, color: 'inherit', opacity: 0.7 }}
+              title="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        )}
         <Outlet />
       </main>
     </div>

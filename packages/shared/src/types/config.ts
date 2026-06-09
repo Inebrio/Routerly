@@ -321,6 +321,26 @@ export interface Settings {
   publicUrl?: string;
   /** Optional notification channels configuration */
   notifications?: NotificationsConfig;
+  /** Distribution channel for updates: 'latest' | 'stable' | 'develop' | vX.Y.Z tag */
+  channel?: string;
+}
+
+// ─── Update info ─────────────────────────────────────────────────────────────
+
+/** Result of a version update check against GitHub Releases. */
+export interface UpdateInfo {
+  /** Whether a newer version is available */
+  available: boolean;
+  /** Version string currently running (e.g. '0.1.5') */
+  currentVersion: string;
+  /** Latest version found in the resolved channel (e.g. '0.2.0') */
+  latestVersion: string;
+  /** Channel or tag that was checked (e.g. 'latest', 'stable', 'v0.2.0') */
+  channel: string;
+  /** URL to the GitHub release page */
+  releaseUrl?: string;
+  /** ISO-8601 timestamp of the last check */
+  checkedAt: string;
 }
 
 // ─── Notification config types ────────────────────────────────────────────────

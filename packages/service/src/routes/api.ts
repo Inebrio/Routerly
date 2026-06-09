@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
@@ -10,8 +11,12 @@ import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jw
 import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities } from '@routerly/shared';
 import { getTrace } from '../routing/traceStore.js';
 import { sendTestNotification } from '../notifications/sender.js';
+import { updateChecker } from '../update-checker.js';
 
 const { version: pkgVersion } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf-8')) as { version: string };
+
+const GITHUB_OWNER = 'Inebrio';
+const GITHUB_REPO  = 'Routerly';
 
 // SHA-256 for random tokens only (refresh tokens are not user-chosen passwords)
 function hashToken(t: string): string {
@@ -818,6 +823,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── GET /api/system/info ───────────────────────────────────────────────────
   fastify.get('/api/system/info', async (_req, reply) => {
+    const settings = await readConfig('settings');
     return reply.send({
       version: pkgVersion,
       nodeVersion: process.version,
@@ -825,7 +831,39 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       configDir: CONFIG_PATHS.config,
       dataDir: CONFIG_PATHS.data,
       uptimeSeconds: Math.floor(process.uptime()),
+      channel: settings.channel ?? 'latest',
+      isDocker: process.env['ROUTERLY_DOCKER'] === '1',
+      updateInfo: updateChecker.getLastResult(),
     });
+  });
+
+  // ─── GET /api/system/update-check ───────────────────────────────────────
+  fastify.get('/api/system/update-check', async (req, reply) => {
+    if (!req.dashUser) return reply.status(401).send({ error: 'Unauthorized' });
+    const result = await updateChecker.check();
+    return reply.send(result);
+  });
+
+  // ─── POST /api/system/update ───────────────────────────────────────────
+  fastify.post('/api/system/update', async (req, reply) => {
+    if (!req.dashUser || req.dashUser.roleId !== 'admin') {
+      return reply.status(403).send({ error: 'Admin only' });
+    }
+    if (process.env['ROUTERLY_DOCKER'] === '1') {
+      return reply.status(403).send({ error: 'In-app update is not available in Docker. Pull the latest image instead.' });
+    }
+    if (process.platform === 'win32') {
+      return reply.status(400).send({ error: 'In-app update is not supported on Windows. Run the installer manually.' });
+    }
+    const settings = await readConfig('settings');
+    const channel = settings.channel ?? 'latest';
+    const installCmd = `curl -fsSL https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/scripts/install.sh | bash -s -- --channel=${channel}`;
+    const child = spawn('bash', ['-c', installCmd], {
+      detached: true,
+      stdio: 'ignore',
+    });
+    child.unref();
+    return reply.status(202).send({ message: 'Update started. The service will restart shortly.' });
   });
 
   // ─── GET /api/settings ─────────────────────────────────────────────────────
@@ -847,6 +885,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       'dashboardEnabled',
       'notifications',
       'publicUrl',
+      'channel',
     ];
     const updated = { ...current };
     for (const key of allowed) {
@@ -855,6 +894,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
     await writeConfig('settings', updated);
+    if ((req.body as Partial<Settings>).channel !== undefined) {
+      updateChecker.updateChannel(updated.channel ?? 'latest');
+    }
     return reply.send(updated);
   });
 
