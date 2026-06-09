@@ -51,9 +51,9 @@ const config: Config = {
               label: '0.1.5 (stable)',
               badge: true,
             },
-            '0.2.0': {
-              label: '0.2.0',
-              badge: true,
+            current: {
+              label: 'next (develop)',
+              badge: false,
             },
           },
         },

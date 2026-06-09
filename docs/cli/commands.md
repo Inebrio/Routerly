@@ -422,6 +422,86 @@ routerly service configure [options]
 
 ---
 
+## `routerly update`
+
+Manage Routerly version channels and trigger in-app updates.
+
+### `routerly update check`
+
+Check whether a newer version is available on the current channel.
+
+```
+routerly update check [--json]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--json` | Print output as JSON for scripting |
+
+Prints the current version, the latest version available on the active channel, and when the last check was performed. Exit code `0` in all cases (use `--json` and parse `available` for scripting).
+
+```bash
+routerly update check
+#   Routerly v0.2.0 is up to date.
+#   Channel: stable   Checked: 6/9/2026, 10:00:00 AM
+
+routerly update check --json
+```
+
+### `routerly update channel [name]`
+
+Show or change the update channel.
+
+```
+routerly update channel [name]
+```
+
+With no argument, prints the current channel. With an argument, updates the channel immediately — the running service is notified without a restart.
+
+Valid values:
+
+| Value | Description |
+|-------|-------------|
+| `latest` | Most recent release (may include pre-releases) |
+| `stable` | Most recent production-stable release |
+| `develop` | Development pre-release builds |
+| `vX.Y.Z` | Pin to a specific version tag (e.g. `v0.2.0`) |
+
+```bash
+routerly update channel           # show current channel
+routerly update channel latest    # switch to latest
+routerly update channel stable    # switch to stable
+routerly update channel develop   # switch to develop (pre-releases)
+routerly update channel v0.2.0    # pin to a specific version
+```
+
+Changing the channel to a version tag sets the channel to `custom` internally and disables automatic update notifications for that version.
+
+### `routerly update run`
+
+Trigger an in-app update to the newest version on the current channel.
+
+```
+routerly update run [--yes]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--yes` | Skip the interactive confirmation prompt |
+
+The service downloads and installs the update in the background, then restarts automatically. The CLI polls `/health` for up to 60 seconds and prints a confirmation when the service comes back online.
+
+```bash
+routerly update run          # interactive confirmation
+routerly update run --yes    # non-interactive (for scripts)
+```
+
+:::note Requirements
+Admin role required. Not available inside Docker containers — pull the new image and recreate the container instead. Not available on Windows — run the installer script manually.
+:::
+
+---
+
 ## `routerly status`
 
 ```
