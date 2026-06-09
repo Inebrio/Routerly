@@ -52,7 +52,7 @@ const config: Config = {
               badge: true,
             },
             current: {
-              label: 'next (develop)',
+              label: '0.2.0',
               badge: false,
             },
           },
