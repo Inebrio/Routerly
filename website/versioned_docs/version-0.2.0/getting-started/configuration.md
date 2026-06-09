@@ -61,6 +61,7 @@ Open **Settings → General** in the dashboard. Changes take effect immediately 
 | `defaultTimeoutMs` | `30000` | Per-request timeout in milliseconds |
 | `logLevel` | `"info"` | Log verbosity: `trace` / `debug` / `info` / `warn` / `error` |
 | `publicUrl` | `"http://localhost:3000"` | External URL shown in the dashboard connection snippets |
+| `channel` | `"stable"` | Update channel: `"stable"`, `"latest"`, `"develop"`, or a version tag (e.g. `"v0.2.0"`). Editable from the dashboard or via `routerly update channel` |
 | `notifications` | `[]` | Array of notification channel configurations |
 
 ---
@@ -73,6 +74,7 @@ Open **Settings → General** in the dashboard. Changes take effect immediately 
 | `ROUTERLY_PORT` | Service port (overrides `settings.json`) |
 | `ROUTERLY_SCOPE` | Installation scope: `user` or `system` |
 | `ROUTERLY_PUBLIC_URL` | External URL of the service |
+| `ROUTERLY_DOCKER` | Set to `1` by the official Docker image. Disables in-app update (`POST /api/system/update`) |
 | `NODE_ENV` | Set to `production` to disable pretty-printed logs |
 
 ---
