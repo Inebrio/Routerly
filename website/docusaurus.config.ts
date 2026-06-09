@@ -48,11 +48,11 @@ const config: Config = {
           lastVersion: '0.1.5',
           versions: {
             '0.1.5': {
-              label: '0.1.5 (stable)',
+              label: '0.1.5 (current)',
               badge: true,
             },
             current: {
-              label: 'next (develop)',
+              label: '0.2.0',
               badge: false,
             },
           },
