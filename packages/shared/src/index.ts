@@ -47,6 +47,7 @@ export type {
   UsageRecord,
   SemanticCacheConfig,
   UpdateInfo,
+  AvailableReleases,
 } from './types/config.js';
 
 export type {
