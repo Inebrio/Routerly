@@ -424,7 +424,7 @@ if (isExistingInstall && !YES) {
     }
 
     if (!FLAG_NO_TELEMETRY && existingSettings.telemetry?.enabled && existingSettings.telemetry?.installId) {
-      await pingTelemetry('uninstall', existingSettings.telemetry.installId);
+      try { await pingTelemetry('uninstall', existingSettings.telemetry.installId); } catch { /* never block uninstall */ }
     }
     console.log('\n' + c.green(c.bold('  Routerly uninstalled successfully.')) + '\n');
     rl.close(); process.exit(0);
@@ -991,7 +991,7 @@ if (installService && installMode === 'fresh') {
 
 // Send upgrade ping if the user had previously opted in
 if (isUpdate && !FLAG_NO_TELEMETRY && existingSettings.telemetry?.enabled && existingSettings.telemetry?.installId) {
-  await pingTelemetry('upgrade', existingSettings.telemetry.installId);
+  try { await pingTelemetry('upgrade', existingSettings.telemetry.installId); } catch { /* never block upgrade */ }
 }
 
 // On fresh installs, ask for anonymous metrics consent (skip in CI or --no-telemetry)

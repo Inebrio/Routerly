@@ -27,7 +27,8 @@ import { SettingsGeneralTab, SettingsAboutTab, SettingsNotificationsTab } from '
 import { RolesPage } from './pages/RolesPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { UserEditPage } from './pages/UserEditPage';
-import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { HelpPage } from './pages/HelpPage';
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Logo } from './components/Logo';
 
 const THEME_OPTIONS: { value: Theme; icon: ReactNode; label: string }[] = [
@@ -86,6 +87,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
     { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Test' },
+    { to: '/dashboard/help', icon: <HelpCircle size={17} />, label: 'Help' },
   ];
 
   return (
@@ -351,6 +353,7 @@ const router = createBrowserRouter([
               { path: 'about', element: <SettingsAboutTab /> },
             ],
           },
+          { path: 'help', element: <HelpPage /> },
           { path: 'profile', element: <ProfilePage /> },
           { path: 'usage/:id', element: <UsageRecordPage /> },
           { path: '*', element: <Navigate to="overview" replace /> },
