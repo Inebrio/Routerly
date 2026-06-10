@@ -1,10 +1,86 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, Globe } from 'lucide-react';
+import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, Globe, BarChart2 } from 'lucide-react';
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
-import { getSettings, updateSettings, getSystemInfo, testNotificationChannel } from '../api';
-import type { Settings, SystemInfo } from '../api';
+import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases } from '../api';
+import type { Settings, SystemInfo, UpdateInfo, AvailableReleases } from '../api';
 
 const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'error'];
+
+// ── Telemetry section (self-saving) ──────────────────────────────────────────
+
+function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: (s: Settings) => void }) {
+  const t = settings.telemetry;
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  async function toggle(enabled: boolean) {
+    setSaving(true);
+    setError('');
+    try {
+      const updated = await updateSettings({ telemetry: { enabled } } as Partial<Settings>);
+      onSaved(updated);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <BarChart2 size={13} /> Anonymous Metrics
+      </h3>
+
+      <div style={{ padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-elevated)' }}>
+        <p style={{ fontSize: '0.83rem', color: 'var(--text-primary)', margin: '0 0 4px' }}>
+          <strong>Routerly never sends data automatically.</strong>{' '}
+          {t === undefined
+            ? 'You have not made a choice yet.'
+            : t.enabled
+              ? 'Anonymous install metrics are enabled.'
+              : 'Anonymous install metrics are disabled.'}
+        </p>
+        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 12px' }}>
+          When enabled, Routerly sends only: event type (install / upgrade / uninstall), version, platform, and a random ID.
+          No personal data, no usage data, no IP stored.{' '}
+          <a href="https://doc.routerly.ai/next/reference/telemetry" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+            What is sent?
+          </a>
+        </p>
+
+        {t?.enabled && t.installId && (
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 12px', fontFamily: 'monospace' }}>
+            Install ID: {t.installId}
+          </p>
+        )}
+
+        {error && <p style={{ fontSize: '0.78rem', color: 'var(--error, #e53e3e)', margin: '0 0 10px' }}>{error}</p>}
+
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button
+            type="button"
+            className={`btn btn-sm ${t?.enabled ? 'btn-primary' : 'btn-secondary'}`}
+            disabled={saving || t?.enabled === true}
+            onClick={() => toggle(true)}
+            style={{ fontSize: '0.8rem' }}
+          >
+            {saving && !t?.enabled ? <><div className="spinner" style={{ width: 11, height: 11 }} /> Saving…</> : 'Enable'}
+          </button>
+          <button
+            type="button"
+            className={`btn btn-sm ${t?.enabled === false ? 'btn-primary' : 'btn-secondary'}`}
+            disabled={saving || t?.enabled === false}
+            onClick={() => toggle(false)}
+            style={{ fontSize: '0.8rem' }}
+          >
+            {saving && t?.enabled ? <><div className="spinner" style={{ width: 11, height: 11 }} /> Saving…</> : 'Disable'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── General tab ───────────────────────────────────────────────────────────────
 
@@ -131,6 +207,11 @@ export function SettingsGeneralTab() {
         </div>
 
       </div>
+
+      <TelemetrySection
+        settings={settings!}
+        onSaved={updated => setSettings(updated)}
+      />
 
       {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
       {saved && (
@@ -594,7 +675,104 @@ export function SettingsNotificationsTab() {
   );
 }
 
-// ── About tab ───────────────────────────────────────────────────────────────
+// ── About tab ────────────────────────────────────────────────────────────────
+
+const FALLBACK_RELEASES: AvailableReleases = { channels: ['latest', 'stable', 'develop'], versions: [] };
+const CHANNEL_LABELS: Record<string, string> = { stable: 'current', latest: 'latest', develop: 'develop' };
+
+function ChannelSelector({
+  current,
+  onSave,
+}: {
+  current: string;
+  onSave: (ch: string) => Promise<void>;
+}) {
+  const [releases, setReleases] = React.useState<AvailableReleases>(FALLBACK_RELEASES);
+  const [saving, setSaving] = React.useState(false);
+  const [saved, setSaved] = React.useState(false);
+  const [err, setErr] = React.useState('');
+  const [customVal, setCustomVal] = React.useState('');
+  const [showCustom, setShowCustom] = React.useState(false);
+
+  React.useEffect(() => {
+    getAvailableReleases().then(setReleases).catch(() => setReleases(FALLBACK_RELEASES));
+  }, []);
+
+  const knownValues = [...releases.channels, ...releases.versions];
+  const isKnown = knownValues.includes(current);
+
+  React.useEffect(() => {
+    if (!isKnown) { setShowCustom(true); setCustomVal(current); }
+  }, [current, isKnown]);
+
+  async function save(ch: string) {
+    if (!ch.trim()) return;
+    setSaving(true); setSaved(false); setErr('');
+    try {
+      await onSave(ch.trim());
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleSelectChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const v = e.target.value;
+    if (v === '__custom') { setShowCustom(true); return; }
+    void save(v);
+  }
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
+      <span style={{ fontSize: '0.83rem', color: 'var(--text-muted)', flexShrink: 0, marginRight: 20 }}>Channel</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {err && <span style={{ fontSize: '0.72rem', color: 'var(--error, #e53e3e)' }}>{err}</span>}
+        {saved && <span style={{ fontSize: '0.72rem', color: '#22c55e' }}>Saved</span>}
+        {saving && <div className="spinner" style={{ width: 12, height: 12 }} />}
+        {showCustom ? (
+          <>
+            <input
+              className="form-input"
+              style={{ width: 100, fontSize: '0.78rem', padding: '3px 8px', margin: 0 }}
+              placeholder="v0.2.0"
+              value={customVal}
+              onChange={e => setCustomVal(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') void save(customVal); }}
+            />
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ fontSize: '0.75rem', padding: '3px 10px' }}
+              disabled={saving || !customVal.trim()}
+              onClick={() => void save(customVal)}
+            >Apply</button>
+            <button
+              type="button"
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.75rem', cursor: 'pointer', padding: 0 }}
+              onClick={() => setShowCustom(false)}
+            >← back</button>
+          </>
+        ) : (
+          <select
+            className="form-input"
+            style={{ fontSize: '0.83rem', padding: '3px 8px', margin: 0, width: 130 }}
+            value={isKnown ? current : '__custom'}
+            onChange={handleSelectChange}
+            disabled={saving}
+          >
+            {releases.channels.map(ch => (
+              <option key={ch} value={ch}>{CHANNEL_LABELS[ch] ?? ch}</option>
+            ))}
+            <option value="__custom">custom…</option>
+          </select>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function formatUptime(seconds: number): string {
   const d = Math.floor(seconds / 86400);
@@ -621,22 +799,85 @@ export function SettingsAboutTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Update-check state
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [updateMsg, setUpdateMsg] = useState('');
+  const [updateError, setUpdateError] = useState('');
+  const pollRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+
   useEffect(() => {
     getSystemInfo()
-      .then(setInfo)
+      .then(i => { setInfo(i); setUpdateInfo(i.updateInfo); })
       .catch(e => setError(e instanceof Error ? e.message : 'Failed to load'))
       .finally(() => setLoading(false));
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
+
+  async function handleChannelSave(ch: string) {
+    await updateSettings({ channel: ch });
+    setInfo(prev => prev ? { ...prev, channel: ch } : prev);
+  }
+
+  async function handleCheckUpdates() {
+    setChecking(true);
+    setUpdateError('');
+    try {
+      const result = await checkForUpdates();
+      setUpdateInfo(result);
+    } catch (e) {
+      setUpdateError(e instanceof Error ? e.message : 'Check failed');
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  async function handleUpdate() {
+    if (!window.confirm('This will download and install the latest version. The service will restart. Continue?')) return;
+    setUpdating(true);
+    setUpdateError('');
+    setUpdateMsg('');
+    try {
+      const result = await triggerUpdate();
+      setUpdateMsg(result.message);
+      // Poll /health every 3s for up to 60s waiting for the service to come back
+      let attempts = 0;
+      pollRef.current = setInterval(async () => {
+        attempts++;
+        try {
+          const r = await fetch('/health');
+          if (r.ok) {
+            clearInterval(pollRef.current!);
+            setUpdateMsg('Update complete! Reloading…');
+            setTimeout(() => window.location.reload(), 1500);
+          }
+        } catch { /* still restarting */ }
+        if (attempts >= 20) {
+          clearInterval(pollRef.current!);
+          setUpdating(false);
+          setUpdateMsg('Service is restarting. Please reload the page in a moment.');
+        }
+      }, 3000);
+    } catch (e) {
+      setUpdateError(e instanceof Error ? e.message : 'Update failed');
+      setUpdating(false);
+    }
+  }
 
   if (loading) return <div className="loading-center"><div className="spinner" /></div>;
   if (error) return <div className="form-error">{error}</div>;
   if (!info) return null;
+
+  const isAdmin = info.isDocker === false; // will refine via App.tsx context if needed
+  void isAdmin;
 
   return (
     <div style={{ maxWidth: 560 }}>
       <div style={{ marginBottom: 28 }}>
         <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>Application</h3>
         <InfoRow label="Version" value={`v${info.version}`} />
+        <ChannelSelector current={info.channel ?? 'latest'} onSave={handleChannelSave} />
         <InfoRow label="Uptime" value={formatUptime(info.uptimeSeconds)} />
       </div>
 
@@ -646,10 +887,52 @@ export function SettingsAboutTab() {
         <InfoRow label="Platform" value={info.platform} />
       </div>
 
-      <div>
+      <div style={{ marginBottom: 28 }}>
         <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>Storage</h3>
         <InfoRow label="Config directory" value={info.configDir} mono />
         <InfoRow label="Data directory" value={info.dataDir} mono />
+      </div>
+
+      <div>
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>Software Update</h3>
+        {updateInfo ? (
+          <>
+            <InfoRow label="Current version" value={`v${updateInfo.currentVersion}`} />
+            <InfoRow label="Available version" value={updateInfo.available ? `v${updateInfo.latestVersion}` : 'Up to date'} />
+            {updateInfo.checkedAt && (
+              <InfoRow label="Last checked" value={new Date(updateInfo.checkedAt).toLocaleString()} />
+            )}
+          </>
+        ) : (
+          <p style={{ fontSize: '0.83rem', color: 'var(--text-muted)', padding: '9px 0' }}>No update check performed yet.</p>
+        )}
+        {updateError && <p style={{ color: 'var(--error, #e53e3e)', fontSize: '0.83rem', margin: '8px 0 0' }}>{updateError}</p>}
+        {updateMsg && <p style={{ color: 'var(--accent)', fontSize: '0.83rem', margin: '8px 0 0' }}>{updateMsg}</p>}
+        <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+          <button
+            className="btn btn-secondary"
+            onClick={handleCheckUpdates}
+            disabled={checking || updating}
+            style={{ fontSize: '0.83rem' }}
+          >
+            {checking ? <><span className="spinner" style={{ width: 12, height: 12, marginRight: 6 }} />Checking…</> : 'Check for updates'}
+          </button>
+          {!info.isDocker && updateInfo?.available && (
+            <button
+              className="btn btn-primary"
+              onClick={handleUpdate}
+              disabled={updating}
+              style={{ fontSize: '0.83rem' }}
+            >
+              {updating ? <><span className="spinner" style={{ width: 12, height: 12, marginRight: 6 }} />Updating…</> : `Update to v${updateInfo.latestVersion}`}
+            </button>
+          )}
+          {info.isDocker && (
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', alignSelf: 'center', margin: 0 }}>
+              Running in Docker — pull the latest image to update.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

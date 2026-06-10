@@ -1,16 +1,53 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
+import { pingTelemetry } from '../telemetry.js';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../config/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jwt.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities } from '@routerly/shared';
 import { getTrace } from '../routing/traceStore.js';
 import { sendTestNotification } from '../notifications/sender.js';
+import { updateChecker } from '../update-checker.js';
 
-function hashPassword(p: string): string {
-  return createHash('sha256').update(p).digest('hex');
+const { version: pkgVersion } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf-8')) as { version: string };
+
+const GITHUB_OWNER = 'Inebrio';
+const GITHUB_REPO  = 'Routerly';
+
+// SHA-256 for random tokens only (refresh tokens are not user-chosen passwords)
+function hashToken(t: string): string {
+  return createHash('sha256').update(t).digest('hex');
+}
+
+const BCRYPT_ROUNDS = 12;
+
+async function hashPassword(p: string): Promise<string> {
+  return bcrypt.hash(p, BCRYPT_ROUNDS);
+}
+
+/**
+ * Verifies a plaintext password against a stored hash.
+ * Handles legacy unsalted SHA-256 hashes transparently and returns an upgraded
+ * bcrypt hash so the caller can persist the migration on the fly.
+ */
+async function verifyPassword(
+  plain: string,
+  stored: string,
+): Promise<{ ok: boolean; upgradedHash?: string }> {
+  if (stored.startsWith('$2b$') || stored.startsWith('$2a$')) {
+    return { ok: await bcrypt.compare(plain, stored) };
+  }
+  // Legacy: unsalted SHA-256
+  const legacy = createHash('sha256').update(plain).digest('hex');
+  if (legacy === stored) {
+    return { ok: true, upgradedHash: await bcrypt.hash(plain, BCRYPT_ROUNDS) };
+  }
+  return { ok: false };
 }
 
 function requireAdmin(authHeader: string | undefined): string | null {
@@ -67,39 +104,45 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const { email, password } = req.body;
     const [users, customRoles] = await Promise.all([readConfig('users'), readConfig('roles')]);
     const userIndex = users.findIndex(u => u.email === email);
-    if (userIndex === -1 || users[userIndex]!.passwordHash !== hashPassword(password)) {
-      return reply.status(401).send({ error: 'Invalid credentials' });
-    }
+    if (userIndex === -1) return reply.status(401).send({ error: 'Invalid credentials' });
+    const { ok, upgradedHash } = await verifyPassword(password, users[userIndex]!.passwordHash);
+    if (!ok) return reply.status(401).send({ error: 'Invalid credentials' });
     const user = users[userIndex]!;
     const allRoles = getEffectiveRoles(customRoles);
     const permissions = resolvePermissions(user.roleId, allRoles);
     const token = createSessionToken(user.id, user.roleId);
     // Issue a permanent refresh token and persist its hash
     const refreshToken = generateRawToken(40);
-    users[userIndex] = { ...user, refreshTokenHash: hashPassword(refreshToken) };
+    users[userIndex] = {
+      ...user,
+      refreshTokenHash: hashToken(refreshToken),
+      // Transparently migrate legacy SHA-256 hash to bcrypt on next login
+      ...(upgradedHash ? { passwordHash: upgradedHash } : {}),
+    };
     await writeConfig('users', users);
     return reply.send({ token, refreshToken, user: { id: user.id, email: user.email, role: user.roleId, permissions } });
   });
 
   // ─── POST /api/auth/refresh ─────────────────────────────────────────────────
-  fastify.post('/api/auth/refresh', async (req, reply) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
-      return reply.status(401).send({ error: 'Unauthorized' });
-    }
-    const jwtToken = authHeader.slice(7);
-    const payload = verifyToken(jwtToken);
-    if (!payload) return reply.status(401).send({ error: 'Token expired or invalid' });
+  fastify.post<{ Body: { refreshToken?: string } }>('/api/auth/refresh', async (req, reply) => {
+    const { refreshToken } = req.body ?? {};
+    if (!refreshToken) return reply.status(401).send({ error: 'Refresh token required' });
 
-    const userId = payload['sub'] as string;
     const [users, customRoles] = await Promise.all([readConfig('users'), readConfig('roles')]);
-    const user = users.find(u => u.id === userId);
-    if (!user) return reply.status(401).send({ error: 'Unauthorized' });
+    const userIndex = users.findIndex(u => u.refreshTokenHash === hashToken(refreshToken));
+    if (userIndex === -1) return reply.status(401).send({ error: 'Invalid refresh token' });
 
+    const user = users[userIndex]!;
     const allRoles = getEffectiveRoles(customRoles);
     const permissions = resolvePermissions(user.roleId, allRoles);
     const token = createSessionToken(user.id, user.roleId);
-    return reply.send({ token, user: { id: user.id, email: user.email, role: user.roleId, permissions } });
+
+    // Rotate refresh token: issue a new one and invalidate the old
+    const newRefreshToken = generateRawToken(40);
+    users[userIndex] = { ...user, refreshTokenHash: hashToken(newRefreshToken) };
+    await writeConfig('users', users);
+
+    return reply.send({ token, refreshToken: newRefreshToken, user: { id: user.id, email: user.email, role: user.roleId, permissions } });
   });
 
   // ─── Setup endpoints (public, no auth required) ─────────────────────────────
@@ -121,7 +164,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const user: UserConfig = {
       id: uuidv4(),
       email,
-      passwordHash: hashPassword(password),
+      passwordHash: await hashPassword(password),
       roleId: 'admin',
       projectIds: [],
     };
@@ -137,6 +180,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (req.url === '/api/auth/login') return;
     if (req.url === '/api/auth/refresh') return;
     if (req.url.startsWith('/api/setup/')) return;
+    if (req.url === '/api/system/info') return;
 
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
@@ -161,18 +205,20 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get('/api/models', async (_req, reply) => {
     const models = await readConfig('models');
-    // Strip API keys before sending to client (use /api/models/:id/apikey to retrieve)
-    return reply.send(models.map(m => ({ ...m, apiKey: undefined })));
+    // Strip secrets before sending to client (use /api/models/:id/apikey to retrieve)
+    return reply.send(models.map(m => ({ ...m, apiKey: undefined, cfClearance: undefined })));
   });
 
   fastify.post<{
     Body: {
       id: string; name?: string; provider: string; endpoint: string;
-      apiKey?: string; cloneFrom?: string; inputPerMillion: number; outputPerMillion: number;
+      apiKey?: string; cfClearance?: string; cloneFrom?: string; upstreamModelId?: string;
+      inputPerMillion: number; outputPerMillion: number;
       cachePerMillion?: number;
       contextWindow?: number;
       pricingTiers?: PricingTier[];
       limits?: Limit[];
+      capabilities?: ModelCapabilities;
       /** @deprecated use limits */ dailyBudget?: number;
       /** @deprecated use limits */ weeklyBudget?: number;
       /** @deprecated use limits */ monthlyBudget?: number;
@@ -205,6 +251,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         : req.body.cloneFrom
           ? (models.find(m => m.id === req.body.cloneFrom)?.apiKey ?? undefined)
           : undefined,
+      cfClearance: req.body.cfClearance
+        ? req.body.cfClearance
+        : req.body.cloneFrom
+          ? (models.find(m => m.id === req.body.cloneFrom)?.cfClearance ?? undefined)
+          : undefined,
       cost: {
         inputPerMillion: req.body.inputPerMillion,
         outputPerMillion: req.body.outputPerMillion,
@@ -213,10 +264,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       },
       ...(resolvedLimits?.length ? { limits: resolvedLimits } : {}),
       ...(req.body.contextWindow !== undefined ? { contextWindow: req.body.contextWindow } : {}),
+      ...(req.body.upstreamModelId ? { upstreamModelId: req.body.upstreamModelId } : {}),
+      ...(req.body.capabilities ? { capabilities: req.body.capabilities } : {}),
     };
     models.push(model);
     await writeConfig('models', models);
-    return reply.status(201).send({ ...model, apiKey: undefined });
+    return reply.status(201).send({ ...model, apiKey: undefined, cfClearance: undefined });
   });
 
   fastify.put<{
@@ -224,11 +277,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     Body: {
       id?: string;
       name?: string; provider: string; endpoint: string;
-      apiKey?: string; inputPerMillion: number; outputPerMillion: number;
+      apiKey?: string; cfClearance?: string; upstreamModelId?: string;
+      inputPerMillion: number; outputPerMillion: number;
       cachePerMillion?: number;
       contextWindow?: number;
       pricingTiers?: PricingTier[];
       limits?: Limit[];
+      capabilities?: ModelCapabilities;
       /** @deprecated use limits */ dailyBudget?: number;
       /** @deprecated use limits */ weeklyBudget?: number;
       /** @deprecated use limits */ monthlyBudget?: number;
@@ -259,7 +314,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ]
         : undefined;
 
-    const { limits: _existingLimits, ...existingWithoutLimits } = existing;
+    const { limits: _existingLimits, upstreamModelId: _existingUpstreamModelId, ...existingWithoutLimits } = existing;
     const model: ModelConfig = {
       ...existingWithoutLimits,
       id: newId,
@@ -267,6 +322,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       provider: req.body.provider as Provider,
       endpoint: req.body.endpoint,
       apiKey: req.body.apiKey ? req.body.apiKey : existing.apiKey,
+      cfClearance: req.body.cfClearance ? req.body.cfClearance : existing.cfClearance,
       cost: {
         inputPerMillion: req.body.inputPerMillion,
         outputPerMillion: req.body.outputPerMillion,
@@ -277,10 +333,44 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       globalThresholds: undefined,
       ...(req.body.contextWindow !== undefined ? { contextWindow: req.body.contextWindow } : existing.contextWindow !== undefined ? { contextWindow: existing.contextWindow } : {}),
       ...(resolvedLimits?.length ? { limits: resolvedLimits } : {}),
+      // upstreamModelId: if explicitly provided keep it, if empty string clear it, if absent keep existing
+      ...(req.body.upstreamModelId
+        ? { upstreamModelId: req.body.upstreamModelId }
+        : req.body.upstreamModelId === undefined && _existingUpstreamModelId !== undefined
+          ? { upstreamModelId: _existingUpstreamModelId }
+          : {}),
+      // capabilities: if provided in body use it; if absent clear (unchecking the checkbox removes it)
+      ...(req.body.capabilities ? { capabilities: req.body.capabilities } : {}),
     };
     models[index] = model;
     await writeConfig('models', models);
-    return reply.send({ ...model, apiKey: undefined });
+
+    // If the model ID changed, cascade the rename to all project references
+    if (newId !== req.params.id) {
+      const projects = await readConfig('projects');
+      let projectsChanged = false;
+      for (const project of projects) {
+        for (const ref of (project.models ?? [])) {
+          if (ref.modelId === req.params.id) {
+            ref.modelId = newId;
+            projectsChanged = true;
+          }
+        }
+        for (const token of (project.tokens ?? [])) {
+          for (const ref of (token.models ?? [])) {
+            if (ref.modelId === req.params.id) {
+              ref.modelId = newId;
+              projectsChanged = true;
+            }
+          }
+        }
+      }
+      if (projectsChanged) {
+        await writeConfig('projects', projects);
+      }
+    }
+
+    return reply.send({ ...model, apiKey: undefined, cfClearance: undefined });
   });
 
   fastify.get<{ Params: { id: string } }>('/api/models/:id/apikey', async (req, reply) => {
@@ -547,9 +637,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const idx = users.findIndex(u => u.id === userId);
     if (idx === -1) return reply.status(404).send({ error: 'User not found' });
     const user = users[idx]!;
-    if (user.passwordHash !== hashPassword(currentPassword)) {
-      return reply.status(401).send({ error: 'Current password is incorrect' });
-    }
+    const { ok: pwOk } = await verifyPassword(currentPassword, user.passwordHash);
+    if (!pwOk) return reply.status(401).send({ error: 'Current password is incorrect' });
     if (newEmail && newEmail !== user.email) {
       if (users.find(u => u.email === newEmail)) {
         return reply.status(409).send({ error: 'Email already in use' });
@@ -558,7 +647,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
     if (newPassword) {
       if (newPassword.length < 8) return reply.status(400).send({ error: 'Password must be at least 8 characters' });
-      users[idx] = { ...users[idx]!, passwordHash: hashPassword(newPassword) };
+      users[idx] = { ...users[idx]!, passwordHash: await hashPassword(newPassword) };
     }
     await writeConfig('users', users);
     const updated = users[idx]!;
@@ -586,7 +675,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const user: UserConfig = {
       id: uuidv4(),
       email: req.body.email,
-      passwordHash: hashPassword(req.body.password),
+      passwordHash: await hashPassword(req.body.password),
       roleId: req.body.roleId ?? 'viewer',
       projectIds: req.body.projectIds ?? [],
     };
@@ -620,7 +709,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
     if (newPassword) {
       if (newPassword.length < 8) return reply.status(400).send({ error: 'Password must be at least 8 characters' });
-      users[idx] = { ...users[idx]!, passwordHash: hashPassword(newPassword) };
+      users[idx] = { ...users[idx]!, passwordHash: await hashPassword(newPassword) };
     }
     await writeConfig('users', users);
     const updated = users[idx]!;
@@ -644,10 +733,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // USAGE STATS
   // ══════════════════════════════════════════════════════════════════════════════
 
-  fastify.get<{ Querystring: { period?: string; projectId?: string; from?: string; to?: string } }>('/api/usage', async (req, reply) => {
+  fastify.get<{ Querystring: { period?: string; projectId?: string; from?: string; to?: string; page?: string; pageSize?: string } }>('/api/usage', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
     const records = await readConfig('usage');
     const { period = 'monthly', projectId, from, to } = req.query;
+    const page = Math.max(1, parseInt(req.query.page ?? '1', 10) || 1);
+    const pageSize = Math.min(200, Math.max(1, parseInt(req.query.pageSize ?? '100', 10) || 100));
 
     const now = new Date();
     let since = new Date(0);
@@ -660,8 +751,15 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       since.setHours(0, 0, 0, 0);
     } else if (period === 'monthly') { since = new Date(now); since.setDate(1); since.setHours(0, 0, 0, 0); }
     else if (period === 'custom') {
-      if (from) { since = new Date(from); since.setHours(0, 0, 0, 0); }
-      if (to)   { until = new Date(to);  until.setHours(23, 59, 59, 999); }
+      if (from) {
+        since = new Date(from);
+        // Only normalize to day boundary for date-only strings (YYYY-MM-DD)
+        if (from.length <= 10) since.setHours(0, 0, 0, 0);
+      }
+      if (to) {
+        until = new Date(to);
+        if (to.length <= 10) until.setHours(23, 59, 59, 999);
+      }
     }
 
     let filtered = records.filter(r => {
@@ -700,12 +798,21 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const totalCalls = filtered.length;
     const successCalls = filtered.filter(r => r.outcome === 'success').length;
 
+    // Paginate records (most recent first)
+    const sorted = [...filtered].reverse();
+    const totalRecords = sorted.length;
+    const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+    const safePage = Math.min(page, totalPages);
+    const startIdx = (safePage - 1) * pageSize;
+    const paged = sorted.slice(startIdx, startIdx + pageSize);
+
     return reply.send({
       summary: { totalCost, totalCalls, successCalls, errorCalls: totalCalls - successCalls, routingCalls, completionCalls, routingCost, completionCost },
       byModel,
       timeline: Object.entries(timeline).sort(([a], [b]) => a.localeCompare(b)).slice(-30),
       // Strip trace from list response to keep payload small
-      records: filtered.slice(-100).reverse().map(({ trace: _trace, ...r }) => r),
+      records: paged.map(({ trace: _trace, ...r }) => r),
+      pagination: { page: safePage, pageSize, totalRecords, totalPages },
     });
   });
 
@@ -718,18 +825,58 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── GET /api/system/info ───────────────────────────────────────────────────
   fastify.get('/api/system/info', async (_req, reply) => {
+    const settings = await readConfig('settings');
     return reply.send({
-      version: '0.0.1',
+      version: pkgVersion,
       nodeVersion: process.version,
       platform: process.platform,
       configDir: CONFIG_PATHS.config,
       dataDir: CONFIG_PATHS.data,
       uptimeSeconds: Math.floor(process.uptime()),
+      channel: settings.channel ?? 'latest',
+      isDocker: process.env['ROUTERLY_DOCKER'] === '1',
+      updateInfo: updateChecker.getLastResult(),
     });
   });
 
+  // ─── GET /api/system/releases ────────────────────────────────────────────
+  fastify.get('/api/system/releases', async (req, reply) => {
+    if (!req.dashUser) return reply.status(401).send({ error: 'Unauthorized' });
+    return reply.send(await updateChecker.getAvailableReleases());
+  });
+
+  // ─── GET /api/system/update-check ───────────────────────────────────────
+  fastify.get('/api/system/update-check', async (req, reply) => {
+    if (!req.dashUser) return reply.status(401).send({ error: 'Unauthorized' });
+    const result = await updateChecker.check();
+    return reply.send(result);
+  });
+
+  // ─── POST /api/system/update ───────────────────────────────────────────
+  fastify.post('/api/system/update', async (req, reply) => {
+    if (!req.dashUser || req.dashUser.roleId !== 'admin') {
+      return reply.status(403).send({ error: 'Admin only' });
+    }
+    if (process.env['ROUTERLY_DOCKER'] === '1') {
+      return reply.status(403).send({ error: 'In-app update is not available in Docker. Pull the latest image instead.' });
+    }
+    if (process.platform === 'win32') {
+      return reply.status(400).send({ error: 'In-app update is not supported on Windows. Run the installer manually.' });
+    }
+    const settings = await readConfig('settings');
+    const channel = settings.channel ?? 'latest';
+    const installCmd = `curl -fsSL https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/scripts/install.sh | bash -s -- --channel=${channel}`;
+    const child = spawn('bash', ['-c', installCmd], {
+      detached: true,
+      stdio: 'ignore',
+    });
+    child.unref();
+    return reply.status(202).send({ message: 'Update started. The service will restart shortly.' });
+  });
+
   // ─── GET /api/settings ─────────────────────────────────────────────────────
-  fastify.get('/api/settings', async (_req, reply) => {
+  fastify.get('/api/settings', async (req, reply) => {
+    if (!requirePerm(req, 'user:write', reply)) return;
     const settings = await readConfig('settings');
     return reply.send(settings);
   });
@@ -746,6 +893,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       'dashboardEnabled',
       'notifications',
       'publicUrl',
+      'channel',
     ];
     const updated = { ...current };
     for (const key of allowed) {
@@ -753,7 +901,22 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         (updated as any)[key] = (req.body as Partial<Settings>)[key];
       }
     }
+    // Telemetry is handled separately: server controls installId generation
+    const telemetryPatch = (req.body as Partial<Settings>).telemetry;
+    if (telemetryPatch !== undefined) {
+      const wasEnabled = current.telemetry?.enabled === true;
+      if (telemetryPatch.enabled) {
+        const installId = current.telemetry?.installId || randomUUID();
+        updated.telemetry = { enabled: true, installId };
+        if (!wasEnabled) pingTelemetry(installId, 'install');
+      } else {
+        updated.telemetry = { enabled: false, installId: current.telemetry?.installId ?? '' };
+      }
+    }
     await writeConfig('settings', updated);
+    if ((req.body as Partial<Settings>).channel !== undefined) {
+      updateChecker.updateChannel(updated.channel ?? 'latest');
+    }
     return reply.send(updated);
   });
 

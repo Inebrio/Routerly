@@ -1,12 +1,12 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { randomUUID } from 'node:crypto';
-import type { MessagesRequest, ModelConfig } from '@routerly/shared';
+import type { MessagesRequest } from '@routerly/shared';
 import { routeRequest } from '../routing/router.js';
-import { selectModel } from '../routing/selector.js';
-import { getProviderAdapter } from '../providers/index.js';
-import { trackUsage } from '../cost/tracker.js';
+import { readConfig } from '../config/loader.js';
 import { setTrace, appendTrace } from '../routing/traceStore.js';
 import type { TraceEntry } from '../routing/traceStore.js';
+import { llmMessages, BudgetExceededError } from '../llm/executor.js';
+import type { LLMCallContext } from '../llm/executor.js';
 
 export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/messages ────────────────────────────────────────────────────────
@@ -14,7 +14,7 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
     const project = request.project;
     const body = request.body;
 
-    // Convert Anthropic request to OpenAI format for routing
+    // Convert Anthropic messages to OpenAI format for routing policies
     const openAICompatBody = {
       model: body.model,
       messages: body.messages.map((m) => ({
@@ -24,22 +24,8 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
       max_tokens: body.max_tokens,
     };
 
-    // ── Avvia SSE immediatamente, prima che il routing inizi ─────────────────
     const traceId = randomUUID();
     setTrace(traceId, []);
-
-    reply.hijack();
-    const origin = request.headers.origin;
-    if (origin) {
-      reply.raw.setHeader('Access-Control-Allow-Origin', origin);
-      reply.raw.setHeader('Access-Control-Allow-Credentials', 'true');
-      reply.raw.setHeader('Access-Control-Expose-Headers', 'x-routerly-trace-id');
-    }
-    reply.raw.setHeader('Content-Type', 'text/event-stream');
-    reply.raw.setHeader('Cache-Control', 'no-cache');
-    reply.raw.setHeader('Connection', 'keep-alive');
-    reply.raw.setHeader('x-routerly-trace-id', traceId);
-    reply.raw.flushHeaders();
 
     const emit = (entry: TraceEntry) => {
       appendTrace(traceId, [entry]);
@@ -52,73 +38,46 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       request.log.error({ err }, 'Routing model failed');
-      reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: `Routing failed: ${msg}` })}\n\n`);
-      reply.raw.write('data: [DONE]\n\n');
-      reply.raw.end();
-      return;
-    }
-
-    // 2. Routing completato — risposta immediata senza chiamare il modello finale
-    const candidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
-    reply.raw.write(`data: ${JSON.stringify({ type: 'result', candidates })}\n\n`);
-    reply.raw.write('data: [DONE]\n\n');
-    reply.raw.end();
-    return; // routing-only mode: fine handler
-
-    // eslint-disable-next-line no-unreachable
-    const selectedModel = await selectModel(routingResponse, project) as ModelConfig;
-    if (!selectedModel) {
       return reply.status(503).send({
         type: 'error',
-        error: {
-          type: 'overloaded_error',
-          message: 'All candidate models are budget-exhausted or unavailable.',
-        },
+        error: { type: 'overloaded_error', message: `Routing failed: ${msg}` },
       });
     }
 
-    const adapter = getProviderAdapter(selectedModel);
-    if (!adapter.messages) {
-      return reply.status(400).send({
-        type: 'error',
-        error: {
-          type: 'invalid_request_error',
-          message: `Model "${selectedModel.id}" does not support the Anthropic messages API.`,
-        },
-      });
+    // 2. Loop through candidates (highest weight first) with fallback
+    const allModels = await readConfig('models');
+    const sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
+
+    for (const candidate of sortedCandidates) {
+      const model = allModels.find((m: any) => m.id === candidate.model);
+      if (!model) continue;
+
+      const ctx: LLMCallContext = {
+        projectId: project.id,
+        project,
+        token: request.token,
+        callType: 'completion',
+        traceId,
+        emit,
+        log: request.log,
+      };
+
+      try {
+        const response = await llmMessages(body, model, ctx);
+        reply.header('x-routerly-trace-id', traceId);
+        return reply.send(response);
+      } catch (err: unknown) {
+        if (!(err instanceof BudgetExceededError)) {
+          request.log.warn({ err, modelId: model.id }, 'Anthropic messages call failed, trying next candidate');
+        }
+        continue;
+      }
     }
 
-    const t0 = Date.now();
-    try {
-      const response = await adapter.messages!(body, selectedModel);
-      await trackUsage({
-        projectId: project.id,
-        model: selectedModel,
-        inputTokens: response.usage.input_tokens,
-        outputTokens: response.usage.output_tokens,
-        latencyMs: Date.now() - t0,
-        outcome: 'success',
-        callType: 'completion',
-      });
-      return reply.send(response);
-    } catch (err) {
-      const msg = err instanceof Error ? (err as Error).message : String(err);
-      request.log.error({ err, modelId: selectedModel.id }, 'Anthropic messages call failed');
-      await trackUsage({
-        projectId: project.id,
-        model: selectedModel,
-        inputTokens: 0,
-        outputTokens: 0,
-        latencyMs: Date.now() - t0,
-        outcome: 'error',
-        errorMessage: msg,
-        callType: 'completion',
-      });
-      return reply.status(503).send({
-        type: 'error',
-        error: { type: 'overloaded_error', message: msg },
-      });
-    }
+    return reply.status(503).send({
+      type: 'error',
+      error: { type: 'overloaded_error', message: 'All candidate models are budget-exhausted or unavailable.' },
+    });
   });
 
   // ─── POST /v1/messages/count_tokens ──────────────────────────────────────────

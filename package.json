@@ -1,6 +1,6 @@
 {
   "name": "routerly",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "license": "AGPL-3.0",
@@ -11,7 +11,8 @@
   "scripts": {
     "build": "npm run build --workspace=packages/shared && npm run build --workspace=packages/service && npm run build --workspace=packages/cli && npm run build --workspace=packages/dashboard",
     "dev": "npm run dev --workspace=packages/service",
-    "test": "npm test --workspaces --if-present",
+    "test": "npm test --workspaces --if-present && vitest run",
+    "test:e2e": "vitest run",
     "lint": "eslint packages/*/src --ext .ts",
     "format": "prettier --write \"packages/*/src/**/*.ts\"",
     "changeset": "changeset",
@@ -23,13 +24,13 @@
     "@changesets/cli": "^2.30.0",
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@typescript-eslint/parser": "^7.0.0",
-    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^8.58.0",
+    "@typescript-eslint/parser": "^8.58.0",
+    "eslint": "^9.39.4",
     "husky": "^9.1.7",
     "prettier": "^3.2.5",
-    "typescript": "^5.4.5",
-    "vitest": "^1.4.0"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.8"
   },
   "engines": {
     "node": ">=20"

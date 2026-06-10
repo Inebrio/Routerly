@@ -53,13 +53,13 @@ async function trySilentRefresh(account: AccountEntry): Promise<AccountEntry> {
       body: JSON.stringify({ refreshToken: account.refreshToken }),
     });
     if (!res.ok) return account;
-    const data = await res.json() as { token: string };
+    const data = await res.json() as { token: string; refreshToken?: string };
     let expiresAt = Date.now() + 3600_000;
     try {
       const p = JSON.parse(Buffer.from(data.token.split('.')[0]!, 'base64url').toString()) as { exp?: number };
       if (p.exp) expiresAt = p.exp;
     } catch { /* keep default */ }
-    const refreshed = { ...account, token: data.token, expiresAt };
+    const refreshed = { ...account, token: data.token, expiresAt, ...(data.refreshToken ? { refreshToken: data.refreshToken } : {}) };
     await saveAccount(refreshed);
     return refreshed;
   } catch { /* silent failure — proceed with existing token */ }

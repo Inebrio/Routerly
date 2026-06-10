@@ -4,9 +4,8 @@
  */
 
 // Static configuration data (JSON, safe in any environment)
-import providersConf from './conf/providers.json';
-import llmApiPricing from './conf/llm_api_pricing.json';
-export { providersConf, llmApiPricing };
+import providersConf from './conf/providers.json' with { type: 'json' };
+export { providersConf };
 
 // Re-export all types (erased at compile time, no runtime cost)
 export type {
@@ -23,6 +22,9 @@ export type {
   TokenModelRef,
   RoutingPolicy,
   RoutingPolicyType,
+  IntentDefinition,
+  SemanticIntentConfig,
+  IntentClassification,
   UserConfig,
   RoleConfig,
   Permission,

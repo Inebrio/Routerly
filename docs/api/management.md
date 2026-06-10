@@ -37,7 +37,7 @@ POST /api/auth/login
 ```
 
 - `token` — short-lived JWT (1 hour). Use as `Authorization: Bearer <token>` on all other endpoints.
-- `refreshToken` — permanent opaque token. Store securely; use it with [POST /api/auth/refresh](#refresh) to obtain new access tokens without re-entering credentials.
+- `refreshToken` — opaque token used to obtain new access tokens without re-entering credentials. Store securely; see [POST /api/auth/refresh](#refresh). Rotates on every use.
 
 ### Refresh
 
@@ -55,14 +55,15 @@ This endpoint is **public** (no `Authorization` header required).
 ```json
 {
   "token": "eyJ...",
+  "refreshToken": "b9d4e1...",
   "user": { "id": "uuid", "email": "admin@example.com", "role": "admin", "permissions": [] }
 }
 ```
 
-Issues a new 1-hour access token. The refresh token itself is permanent and does not rotate. Returns `401` if the token is invalid or has been revoked.
+Issues a new 1-hour access token **and a new refresh token** (rotation). The previous refresh token is immediately invalidated — replace it with the value returned in the response. Returns `401` if the token is invalid or has already been used/revoked.
 
 :::note
-The CLI and dashboard perform this refresh automatically — the CLI tries silently when the token expires or is within 5 minutes of expiry; the dashboard retries on any `401` response.
+The CLI and dashboard perform this refresh automatically — the CLI tries silently when the token expires or is within 5 minutes of expiry; the dashboard retries on any `401` response. Both clients persist the new refresh token automatically.
 :::
 
 ---
@@ -442,12 +443,72 @@ Returns `200 OK` on success or an error with details.
 GET /api/system/info
 ```
 
+No authentication required.
+
 **Response:**
 ```json
 {
-  "version": "1.2.3",
-  "uptime": 3600,
-  "node": "v22.0.0",
-  "platform": "darwin/arm64"
+  "version": "0.2.0",
+  "nodeVersion": "v22.0.0",
+  "platform": "darwin",
+  "configDir": "/Users/you/.routerly/config",
+  "dataDir": "/Users/you/.routerly/data",
+  "uptimeSeconds": 3600,
+  "channel": "stable",
+  "isDocker": false,
+  "updateInfo": {
+    "available": true,
+    "currentVersion": "0.2.0",
+    "latestVersion": "0.3.0",
+    "channel": "stable",
+    "releaseUrl": "https://github.com/Inebrio/Routerly/releases/tag/v0.3.0",
+    "checkedAt": "2026-06-09T10:00:00.000Z"
+  }
 }
 ```
+
+`updateInfo` is `null` if no check has completed yet (first 24 hours after boot). `isDocker` is `true` when the service is running inside a Docker container.
+
+---
+
+### Force Update Check
+
+```
+GET /api/system/update-check
+```
+
+Requires authentication. Forces an immediate check against the GitHub Releases API and returns the result. This also updates the cached value returned by `GET /api/system/info`.
+
+**Response:** same shape as `updateInfo` above (`UpdateInfo` object).
+
+```json
+{
+  "available": false,
+  "currentVersion": "0.2.0",
+  "latestVersion": "0.2.0",
+  "channel": "stable",
+  "checkedAt": "2026-06-09T12:34:56.000Z"
+}
+```
+
+---
+
+### Trigger In-App Update
+
+```
+POST /api/system/update
+```
+
+**Admin only.** Downloads and installs the latest version on the active channel and restarts the service. The response is returned immediately (202); the update runs in the background.
+
+**Constraints:**
+- Returns `403` if the caller is not an admin.
+- Returns `403` if the service is running inside Docker (`ROUTERLY_DOCKER=1`). Pull the new image instead.
+- Returns `400` if the service is running on Windows. Run the installer manually.
+
+**Response `202`:**
+```json
+{ "message": "Update started. The service will restart shortly." }
+```
+
+Poll `GET /health` to detect when the service has restarted. The CLI command `routerly update run` does this automatically.

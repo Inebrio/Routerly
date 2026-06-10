@@ -132,6 +132,12 @@ export function UsageRecordPage() {
   const project = projects.find(p => p.id === record.projectId);
   const isRouting = (record.callType ?? 'completion') === 'routing';
   const totalTokens = record.inputTokens + record.outputTokens;
+  const traceCacheHit = record.trace?.find(e => e.message === 'cache:hit');
+  const traceCacheMiss = record.trace?.some(e => e.message === 'cache:miss') ?? false;
+  const effectiveCacheHit = record.cacheHit || !!traceCacheHit;
+  const effectiveCacheMiss = !effectiveCacheHit && traceCacheMiss;
+  const traceSimilarity = traceCacheHit?.details?.similarity;
+  const effectiveCacheSimilarity = record.cacheSimilarity ?? (typeof traceSimilarity === 'number' ? traceSimilarity : null);
 
   return (
     <>
@@ -158,16 +164,42 @@ export function UsageRecordPage() {
               <Field
                 label="Call Type"
                 value={
-                  <span style={{
-                    display: 'inline-block', fontSize: '0.78rem', fontWeight: 600,
-                    padding: '2px 10px', borderRadius: 99,
-                    background: isRouting ? 'rgba(99,102,241,0.12)' : 'rgba(59,130,246,0.12)',
-                    color: isRouting ? 'var(--accent)' : 'var(--primary)',
-                  }}>
-                    {isRouting ? 'router' : 'completion'}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{
+                      display: 'inline-block', fontSize: '0.78rem', fontWeight: 600,
+                      padding: '2px 10px', borderRadius: 99,
+                      background: isRouting ? 'rgba(99,102,241,0.12)' : 'rgba(59,130,246,0.12)',
+                      color: isRouting ? 'var(--accent)' : 'var(--primary)',
+                    }}>
+                      {isRouting ? 'router' : 'completion'}
+                    </span>
+                    {effectiveCacheHit && (
+                      <span style={{
+                        display: 'inline-block', fontSize: '0.78rem', fontWeight: 600,
+                        padding: '2px 10px', borderRadius: 99,
+                        background: 'rgba(16,185,129,0.12)', color: 'var(--success, #10b981)',
+                      }}>
+                        cache hit
+                      </span>
+                    )}
+                    {effectiveCacheMiss && (
+                      <span style={{
+                        display: 'inline-block', fontSize: '0.78rem', fontWeight: 600,
+                        padding: '2px 10px', borderRadius: 99,
+                        background: 'rgba(245,158,11,0.12)', color: '#f59e0b',
+                      }}>
+                        cache miss
+                      </span>
+                    )}
+                  </div>
                 }
               />
+              {(effectiveCacheHit || effectiveCacheMiss) && (
+                <Field label="Cache Status" value={effectiveCacheHit ? 'Hit' : 'Miss'} />
+              )}
+              {effectiveCacheHit && effectiveCacheSimilarity != null && (
+                <Field label="Cache Similarity" value={`${(effectiveCacheSimilarity * 100).toFixed(2)}%`} />
+              )}
             </div>
           </div>
 

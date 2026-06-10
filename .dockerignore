@@ -8,6 +8,7 @@ dist/
 build/
 out/
 *.tsbuildinfo
+**/*.tsbuildinfo
 
 # Git
 .git/

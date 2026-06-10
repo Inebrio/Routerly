@@ -42,8 +42,12 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
   const isThinking     = e.message === 'model:thinking';
   const isRecap        = e.message === 'router:recap';
   const isIntake       = e.message === 'router:intake';
+  const isCacheEmbedding = e.message === 'cache:embedding';
+  const isCacheHit     = e.message === 'cache:hit';
+  const isCacheMiss    = e.message === 'cache:miss';
 
-  const labelColor = isError ? 'var(--danger)' : isThinking ? '#a78bfa' : isModelPrompt ? '#c4b5fd' : isRecap ? '#34d399' : 'var(--accent)';
+  const labelColor = isError ? 'var(--danger)' : isThinking ? '#a78bfa' : isModelPrompt ? '#c4b5fd' : isRecap ? '#34d399' : isCacheEmbedding ? '#38bdf8' : isCacheHit ? '#10b981' : isCacheMiss ? '#f59e0b' : 'var(--accent)';
+  const hasDetails = e.details != null && Object.keys(e.details).length > 0;
 
   // Estrai i campi "speciali" dal JSON tecnico per non duplicarli nel fallback
   const { systemPrompt, responseText, responseJSON, ...baseDetails } = e.details ?? {};
@@ -53,16 +57,23 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
     background: 'var(--bg-surface)',
     border: isError ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--border)',
     borderRadius: 'var(--radius-sm)',
-    fontSize: '0.72rem', overflowX: 'auto',
+    fontSize: '0.85rem', overflowX: 'auto',
     color: isError ? 'var(--danger)' : 'var(--text-secondary)',
     whiteSpace: 'pre-wrap',
   };
 
+  const rawDetails = hasDetails ? (
+    <details>
+      <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>raw details</summary>
+      <pre style={{ ...preStyle, margin: '4px 0 0' }}>{JSON.stringify(e.details, null, 2)}</pre>
+    </details>
+  ) : null;
+
   return (
     <div style={{ marginBottom: 8 }}>
 
-      {!isRecap && (
-        <div style={{ fontSize: '0.6rem', color: labelColor, marginBottom: 3, fontWeight: 700, letterSpacing: '0.04em' }}>
+      {!isRecap && !isCacheEmbedding && !isCacheHit && !isCacheMiss && (
+        <div style={{ fontSize: '0.75rem', color: labelColor, marginBottom: 3, fontWeight: 700, letterSpacing: '0.04em' }}>
           {e.message}
           {isModelPrompt && (
             <span style={{ fontWeight: 400, marginLeft: 6, color: 'var(--text-muted)' }}>
@@ -74,7 +85,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
 
       {isModelPrompt ? (
         <details>
-          <summary style={{ fontSize: '0.62rem', color: '#c4b5fd', cursor: 'pointer', userSelect: 'none' }}>
+          <summary style={{ fontSize: '0.8rem', color: '#c4b5fd', cursor: 'pointer', userSelect: 'none' }}>
             {String(e.details.prompt ?? '').substring(0, 100)}{String(e.details.prompt ?? '').length > 100 ? '…' : ''}
           </summary>
           <pre style={{ ...preStyle, margin: '4px 0 0', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.3)', color: '#c4b5fd' }}>
@@ -84,7 +95,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
 
       ) : isThinking ? (
         <details>
-          <summary style={{ fontSize: '0.68rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
+          <summary style={{ fontSize: '0.85rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
             {String(e.details?.text ?? '').substring(0, 80)}
             {String(e.details?.text ?? '').length > 80 ? '\u2026' : ''}
           </summary>
@@ -97,14 +108,14 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {/* Metadati tecnici */}
           <details>
-            <summary style={{ fontSize: '0.62rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>technical details</summary>
+            <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>technical details</summary>
             <pre style={{ ...preStyle, margin: '4px 0 0' }}>{JSON.stringify(baseDetails, null, 2)}</pre>
           </details>
 
           {/* System prompt sempre espanso (solo chiamate routing) */}
           {systemPrompt != null && (
             <>
-              <div style={{ fontSize: '0.6rem', color: '#a5b4fc', fontWeight: 600, marginTop: 2 }}>system prompt</div>
+              <div style={{ fontSize: '0.75rem', color: '#a5b4fc', fontWeight: 600, marginTop: 2 }}>system prompt</div>
               <pre style={{ ...preStyle, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)', color: '#c4b5fd' }}>
                 {String(systemPrompt)}
               </pre>
@@ -114,7 +125,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           {/* Response text (solo chiamate routing) */}
           {responseText != null && (
             <>
-              <div style={{ fontSize: '0.6rem', color: '#86efac', fontWeight: 600, marginTop: 2 }}>response text</div>
+              <div style={{ fontSize: '0.75rem', color: '#86efac', fontWeight: 600, marginTop: 2 }}>response text</div>
               <pre style={{ ...preStyle, background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.25)', color: '#86efac' }}>
                 {String(responseText)}
               </pre>
@@ -124,7 +135,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           {/* Full response JSON collassabile (solo chiamate routing) */}
           {responseJSON != null && (
             <details>
-              <summary style={{ fontSize: '0.68rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
+              <summary style={{ fontSize: '0.85rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
                 response JSON
               </summary>
               <pre style={{ ...preStyle, margin: '4px 0 0' }}>
@@ -132,12 +143,83 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
               </pre>
             </details>
           )}
+
+          {rawDetails}
+        </div>
+
+      ) : isCacheEmbedding ? (
+        <div style={{ background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.32)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>CACHE EMBEDDING CALL</span>
+            {e.details?.fallback && (
+              <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#7dd3fc', background: 'rgba(56,189,248,0.14)', padding: '1px 6px', borderRadius: 99 }}>
+                fallback #{String(e.details?.attempt ?? '—')}
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Embedding Model</span>
+              <span style={{ fontSize: '0.82rem', color: '#e0f2fe', fontFamily: 'monospace', fontWeight: 600 }}>{String(e.details?.modelId ?? '—')}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Upstream Model</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{String(e.details?.upstreamModelId ?? '—')}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Provider</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{String(e.details?.provider ?? '—')}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Source</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{String(e.details?.source ?? '—')}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Endpoint</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'monospace', wordBreak: 'break-all' }}>{String(e.details?.endpoint ?? '—')}</span>
+            </div>
+          </div>
+          {rawDetails}
+        </div>
+
+      ) : isCacheHit ? (
+        <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.35)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.06em' }}>CACHE HIT</span>
+            {e.details?.ttlExtended && (
+              <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#6ee7b7', background: 'rgba(16,185,129,0.15)', padding: '1px 6px', borderRadius: 99 }}>TTL extended</span>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Model</span>
+              <span style={{ fontSize: '0.82rem', color: '#10b981', fontFamily: 'monospace', fontWeight: 600 }}>{e.details?.modelId ?? '—'}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Similarity</span>
+              <ScoreBar value={e.details?.similarity} />
+            </div>
+            {e.details?.embeddingModel && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Embedding</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{e.details.embeddingModel}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+      ) : isCacheMiss ? (
+        <div style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>CACHE MISS</span>
+          {e.details?.embeddingModel && (
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{e.details.embeddingModel}</span>
+          )}
         </div>
 
       ) : isIntake ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <details>
-            <summary style={{ fontSize: '0.62rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>details</summary>
+            <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>details</summary>
             <pre style={{ ...preStyle, margin: '4px 0 0' }}>{JSON.stringify({
               model: e.details?.model,
               messageCount: e.details?.messageCount,
@@ -146,13 +228,13 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           </details>
           {(e.details?.excludedByLimits ?? []).length > 0 && (
             <div>
-              <div style={{ fontSize: '0.6rem', color: '#f87171', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 4 }}>EXCLUDED BY LIMITS</div>
+              <div style={{ fontSize: '0.75rem', color: '#f87171', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 4 }}>EXCLUDED BY LIMITS</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {(e.details.excludedByLimits as any[]).map((exc: any, i: number) => (
                   <div key={i} style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 'var(--radius-sm)', padding: '5px 10px' }}>
-                    <div style={{ fontSize: '0.68rem', color: '#f87171', fontWeight: 600, marginBottom: exc.violated?.length ? 4 : 0 }}>{exc.model}</div>
+                    <div style={{ fontSize: '0.85rem', color: '#f87171', fontWeight: 600, marginBottom: exc.violated?.length ? 4 : 0 }}>{exc.model}</div>
                     {(exc.violated ?? []).map((v: any, j: number) => (
-                      <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.62rem', color: 'var(--text-muted)' }}>
+                      <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                         <span style={{ color: '#fca5a5', fontWeight: 600 }}>{v.metric}</span>
                         <span>{v.window}</span>
                         <span style={{ marginLeft: 'auto', color: '#f87171' }}>{v.current} / {v.limit}</span>
@@ -163,6 +245,8 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
               </div>
             </div>
           )}
+
+          {rawDetails}
         </div>
 
       ) : isRecap ? (
@@ -170,12 +254,12 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           {/* Final ranking */}
           {e.details?.final?.length > 0 ? (
             <>
-              <div style={{ fontSize: '0.6rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2 }}>FINAL RANKING</div>
+              <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2 }}>FINAL RANKING</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {e.details.final.map((f: any) => (
                   <div key={f.rank} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-surface)', border: f.rank === 1 ? '1px solid rgba(52,211,153,0.35)' : '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '4px 10px' }}>
-                    <span style={{ fontSize: '0.65rem', color: f.rank === 1 ? '#34d399' : 'var(--text-muted)', fontWeight: f.rank === 1 ? 700 : 400, minWidth: 16 }}>#{f.rank}</span>
-                    <span style={{ fontSize: '0.65rem', color: 'var(--text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.model}</span>
+                    <span style={{ fontSize: '0.8rem', color: f.rank === 1 ? '#34d399' : 'var(--text-muted)', fontWeight: f.rank === 1 ? 700 : 400, minWidth: 16 }}>#{f.rank}</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.model}</span>
                     <ScoreBar value={f.score ?? f.weight} />
                   </div>
                 ))}
@@ -183,37 +267,37 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
             </>
           ) : (
             <>
-              <div style={{ fontSize: '0.6rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2 }}>FINAL RANKING</div>
-              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', padding: '8px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
+              <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2 }}>FINAL RANKING</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', padding: '8px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
                 No ranking data (record may be corrupted or from older version)
               </div>
             </>
           )}
           {/* Per-policy winner table */}
-          <div style={{ fontSize: '0.6rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2, marginTop: 16 }}>POLICY SCORES</div>
+          <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2, marginTop: 16 }}>POLICY SCORES</div>
           {(e.details?.policies ?? []).length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {e.details.policies.map((p: any, i: number) => (
                 <div key={i} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '6px 10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: p.scores?.length > 1 ? 4 : 0 }}>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'capitalize' }}>
-                      {p.type === 'llm' ? 'AI Routing' : p.type === 'rate-limit' ? 'Rate Limit' : p.type === 'budget-remaining' ? 'Budget Remaining' : p.type}
+                    <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'capitalize' }}>
+                      {p.type === 'llm' ? 'AI Routing' : p.type === 'rate-limit' ? 'Rate Limit' : p.type === 'budget-remaining' ? 'Budget Remaining' : p.type === 'semantic-intent' ? 'Semantic Intent' : p.type}
                     </span>
-                    <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>weight {p.weight?.toFixed(2)}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>weight {p.weight?.toFixed(2)}</span>
                   </div>
                   {p.winner && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: p.scores?.length > 1 ? 4 : 0 }}>
-                    <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 600 }}>★ {p.winner.model}</span>
+                    <span style={{ fontSize: '0.85rem', color: '#fbbf24', fontWeight: 600 }}>★ {p.winner.model}</span>
                     <ScoreBar value={p.winner.point ?? p.winner.score} />
                   </div>
                 )}
                 {p.scores?.length > 1 && (
                   <details>
-                    <summary style={{ fontSize: '0.62rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>all scores</summary>
+                    <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>all scores</summary>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 4 }}>
                       {p.scores.map((s: any, j: number) => (
                         <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.model}</span>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.model}</span>
                           <ScoreBar value={s.point ?? s.score} />
                         </div>
                       ))}
@@ -224,15 +308,17 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
             ))}
             </div>
           ) : (
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', padding: '8px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', padding: '8px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
               No policy data (record may be corrupted or from older version)
             </div>
           )}
+
+          {rawDetails}
         </div>
 
       ) : (
         <details>
-          <summary style={{ fontSize: '0.62rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>details</summary>
+          <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>raw details</summary>
           <pre style={{ ...preStyle, margin: '4px 0 0' }}>{JSON.stringify(e.details, null, 2)}</pre>
         </details>
       )}

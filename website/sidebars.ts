@@ -147,6 +147,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'reference/config-files',
         'reference/environment-variables',
+        'reference/telemetry',
         'reference/troubleshooting',
       ],
     },

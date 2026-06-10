@@ -12,6 +12,7 @@ import { capabilityPolicy } from './policies/capability.js';
 import { rateLimitPolicy } from './policies/rate-limit.js';
 import { fairnessPolicy } from './policies/fairness.js';
 import { budgetRemainingPolicy } from './policies/budget-remaining.js';
+import { semanticIntentPolicy } from './policies/semantic-intent.js';
 import type { PolicyFn } from './policies/types.js';
 import type { TraceEntry, TracePanel } from './traceStore.js';
 
@@ -40,6 +41,7 @@ const POLICY_MAP: Record<string, PolicyFn> = {
   'rate-limit': rateLimitPolicy,
   fairness: fairnessPolicy,
   'budget-remaining': budgetRemainingPolicy,
+  'semantic-intent': semanticIntentPolicy,
 };
 
 export async function routeRequest(
@@ -49,6 +51,7 @@ export async function routeRequest(
   emit?: (entry: TraceEntry) => void,
   token?: ProjectToken,
   traceId?: string,
+  conversationId?: string,
 ): Promise<RouteResult> {
   const enabledPolicies = (project.policies ?? []).filter(p => p.enabled);
 
@@ -67,12 +70,28 @@ export async function routeRequest(
 
   // Carica i ModelConfig completi per i modelli associati al progetto
   const allModels: ModelConfig[] = await readConfig('models');
+  const missingModelIds: string[] = [];
   const candidates: CandidateModel[] = project.models
     .map(ref => {
       const model = allModels.find(m => m.id === ref.modelId);
-      return model ? { model, ...(ref.prompt !== undefined ? { prompt: ref.prompt } : {}), ...(ref.thresholds !== undefined ? { thresholds: ref.thresholds } : {}) } : null;
+      if (!model) {
+        missingModelIds.push(ref.modelId);
+        return null;
+      }
+      return { model, ...(ref.prompt !== undefined ? { prompt: ref.prompt } : {}), ...(ref.thresholds !== undefined ? { thresholds: ref.thresholds } : {}) };
     })
     .filter((m): m is NonNullable<typeof m> => m !== null);
+
+  if (missingModelIds.length > 0) {
+    log?.warn(
+      { projectId: project.id, missingModelIds },
+      'routing: project references models not found in registry',
+    );
+  }
+
+  if (candidates.length === 0) {
+    throw new Error(`no_models_available: project has no resolvable models (referenced: [${project.models.map(m => m.modelId).join(', ')}])`);
+  }
 
   // ── Pre-filtro limiti ────────────────────────────────────────────────────
   // Esclude i modelli che hanno già superato uno o più limiti prima di
@@ -156,8 +175,19 @@ export async function routeRequest(
   }
 
   // ── Emit policy config subito dopo ───────────────────────────────────────
+  // Redact sensitive fields (API keys, tokens, secrets) from the trace.
+  const redactConfig = (cfg: unknown): unknown => {
+    if (!cfg || typeof cfg !== 'object') return cfg;
+    return Object.fromEntries(
+      Object.entries(cfg as Record<string, unknown>).map(([k, v]) => {
+        if (/key|secret|token|password/i.test(k)) return [k, '***'];
+        if (v && typeof v === 'object') return [k, redactConfig(v)];
+        return [k, v];
+      }),
+    );
+  };
   const policiesEntry = te('router-request', 'router:policies', {
-    policies: policiesWithWeight.map(({ type, weight, config }) => ({ type, weight, config })),
+    policies: policiesWithWeight.map(({ type, weight, config }) => ({ type, weight, config: redactConfig(config) })),
     candidates: validCandidates.map(c => c.model.id),
   });
   emit?.(policiesEntry);
@@ -171,7 +201,7 @@ export async function routeRequest(
         return { type, weight, routing: [] as { model: string; point: number }[], excludes: [] as string[], failed: true };
       }
       try {
-        const out = await fn({ request, candidates: validCandidates, config, ...(log !== undefined ? { log } : {}), ...(emit !== undefined ? { emit } : {}), projectId: project.id, ...(token !== undefined ? { token } : {}), ...(traceId !== undefined ? { traceId } : {}) });
+        const out = await fn({ request, candidates: validCandidates, config, ...(log !== undefined ? { log } : {}), ...(emit !== undefined ? { emit } : {}), projectId: project.id, ...(token !== undefined ? { token } : {}), ...(traceId !== undefined ? { traceId } : {}), ...(conversationId !== undefined ? { conversationId } : {}) });
         return { type, weight, routing: out.routing, excludes: out.excludes ?? [], failed: false };
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);

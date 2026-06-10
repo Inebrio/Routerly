@@ -3,14 +3,17 @@ import cors from '@fastify/cors';
 import staticFiles from '@fastify/static';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import authPlugin from './plugins/auth.js';
 import { loadSecret } from './plugins/jwt.js';
 import { openaiRoutes } from './routes/openai.js';
 import { anthropicRoutes } from './routes/anthropic.js';
 import { apiRoutes } from './routes/api.js';
 import { initConfigDirs, readConfig } from './config/loader.js';
+import { updateChecker } from './update-checker.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const { version: pkgVersion } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8')) as { version: string };
 
 export async function buildServer() {
   const settings = await readConfig('settings');
@@ -22,6 +25,7 @@ export async function buildServer() {
         ? { transport: { target: 'pino-pretty', options: { colorize: true } } }
         : {}),
     },
+    disableRequestLogging: true,
     bodyLimit: 256 * 1024 * 1024, // 256 MB — support large files, vision, and 2M-token contexts
   });
 
@@ -71,7 +75,7 @@ export async function buildServer() {
   // ─── Health check ─────────────────────────────────────────────────────────
   fastify.get('/health', async () => ({
     status: 'ok',
-    version: '0.0.1',
+    version: pkgVersion,
     timestamp: new Date().toISOString(),
   }));
 
@@ -86,6 +90,7 @@ export async function startServer() {
 
   try {
     await server.listen({ port: settings.port, host: settings.host });
+    updateChecker.start(pkgVersion, settings.channel ?? 'latest');
   } catch (err) {
     server.log.error(err);
     process.exit(1);
