@@ -44,7 +44,7 @@ function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: 
         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 12px' }}>
           When enabled, Routerly sends only: event type (install / upgrade / uninstall), version, platform, and a random ID.
           No personal data, no usage data, no IP stored.{' '}
-          <a href="https://doc.routerly.ai/reference/telemetry" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+          <a href="https://doc.routerly.ai/next/reference/telemetry" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none' }}>
             What is sent?
           </a>
         </p>

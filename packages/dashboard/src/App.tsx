@@ -240,7 +240,7 @@ function ProtectedLayout() {
               <strong>Routerly never sends data automatically.</strong>{' '}
               Would you like to help by sending anonymous install metrics? Only event type, version, platform, and a random ID — no personal data, no IP.{' '}
               <a
-                href="https://doc.routerly.ai/reference/telemetry"
+                href="https://doc.routerly.ai/next/reference/telemetry"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ color: 'inherit', textDecoration: 'underline' }}
