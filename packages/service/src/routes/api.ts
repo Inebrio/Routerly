@@ -180,6 +180,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (req.url === '/api/auth/login') return;
     if (req.url === '/api/auth/refresh') return;
     if (req.url.startsWith('/api/setup/')) return;
+    if (req.url === '/api/system/info') return;
 
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
