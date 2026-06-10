@@ -1,10 +1,86 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, Globe } from 'lucide-react';
+import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, Globe, BarChart2 } from 'lucide-react';
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
 import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases } from '../api';
 import type { Settings, SystemInfo, UpdateInfo, AvailableReleases } from '../api';
 
 const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'error'];
+
+// ── Telemetry section (self-saving) ──────────────────────────────────────────
+
+function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: (s: Settings) => void }) {
+  const t = settings.telemetry;
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  async function toggle(enabled: boolean) {
+    setSaving(true);
+    setError('');
+    try {
+      const updated = await updateSettings({ telemetry: { enabled } } as Partial<Settings>);
+      onSaved(updated);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <BarChart2 size={13} /> Anonymous Metrics
+      </h3>
+
+      <div style={{ padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-elevated)' }}>
+        <p style={{ fontSize: '0.83rem', color: 'var(--text-primary)', margin: '0 0 4px' }}>
+          <strong>Routerly never sends data automatically.</strong>{' '}
+          {t === undefined
+            ? 'You have not made a choice yet.'
+            : t.enabled
+              ? 'Anonymous install metrics are enabled.'
+              : 'Anonymous install metrics are disabled.'}
+        </p>
+        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 12px' }}>
+          When enabled, Routerly sends only: event type (install / upgrade / uninstall), version, platform, and a random ID.
+          No personal data, no usage data, no IP stored.{' '}
+          <a href="https://doc.routerly.ai/next/reference/telemetry" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+            What is sent?
+          </a>
+        </p>
+
+        {t?.enabled && t.installId && (
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 12px', fontFamily: 'monospace' }}>
+            Install ID: {t.installId}
+          </p>
+        )}
+
+        {error && <p style={{ fontSize: '0.78rem', color: 'var(--error, #e53e3e)', margin: '0 0 10px' }}>{error}</p>}
+
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button
+            type="button"
+            className={`btn btn-sm ${t?.enabled ? 'btn-primary' : 'btn-secondary'}`}
+            disabled={saving || t?.enabled === true}
+            onClick={() => toggle(true)}
+            style={{ fontSize: '0.8rem' }}
+          >
+            {saving && !t?.enabled ? <><div className="spinner" style={{ width: 11, height: 11 }} /> Saving…</> : 'Enable'}
+          </button>
+          <button
+            type="button"
+            className={`btn btn-sm ${t?.enabled === false ? 'btn-primary' : 'btn-secondary'}`}
+            disabled={saving || t?.enabled === false}
+            onClick={() => toggle(false)}
+            style={{ fontSize: '0.8rem' }}
+          >
+            {saving && t?.enabled ? <><div className="spinner" style={{ width: 11, height: 11 }} /> Saving…</> : 'Disable'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── General tab ───────────────────────────────────────────────────────────────
 
@@ -131,6 +207,11 @@ export function SettingsGeneralTab() {
         </div>
 
       </div>
+
+      <TelemetrySection
+        settings={settings!}
+        onSaved={updated => setSettings(updated)}
+      />
 
       {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
       {saved && (

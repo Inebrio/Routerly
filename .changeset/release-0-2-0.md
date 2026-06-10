@@ -30,6 +30,23 @@ Added built-in support for: DeepSeek, Groq, Together AI, and Perplexity. Pricing
 **Decoupled model IDs**
 The Routerly model ID is now independent of the upstream provider API model name. This enables cleaner aliases and model renaming without breaking existing configurations.
 
+**Built-in update checker**
+Routerly now polls GitHub Releases every 24 hours and compares the running version against the configured channel (`latest`, `current`, `develop`, or a pinned tag). The result is cached in memory and surfaced via the dashboard and CLI.
+
+**CLI update commands**
+Three new subcommands under `routerly update`:
+- `routerly update check` — show whether a newer version is available on the active channel
+- `routerly update channel [name]` — get or set the update channel
+- `routerly update run` — download and install the latest version (non-Docker only)
+
+**Software Update section in the dashboard**
+The Settings → About tab now shows the current channel, the latest available version, the last-checked timestamp, and a one-click update button. The channel selector is populated dynamically from GitHub Releases and always includes the base channels.
+
+**New management API endpoints**
+- `GET /api/system/update-check` — trigger an immediate update check and return the result
+- `POST /api/system/update` — run the in-app updater (admin only; disabled in Docker)
+- `GET /api/system/releases` — list available channels and version tags from GitHub Releases
+
 **Improved dashboard UX**
 - Policy editor: add/remove policies with a searchable select
 - Usage page: time-based filtering and pagination

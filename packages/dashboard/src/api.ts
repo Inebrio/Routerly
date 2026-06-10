@@ -359,6 +359,11 @@ export type AzureEmailConfig    = AzureChannelConfig;
 export type GoogleEmailConfig   = GoogleChannelConfig;
 export type EmailConfig = SmtpChannelConfig | SesChannelConfig | SendGridChannelConfig | AzureChannelConfig | GoogleChannelConfig;
 
+export interface TelemetryConfig {
+  enabled: boolean;
+  installId: string;
+}
+
 export interface Settings {
   port: number;
   host: string;
@@ -370,6 +375,8 @@ export interface Settings {
   notifications?: NotificationsConfig;
   /** Distribution channel for updates: 'latest' | 'stable' | 'develop' | vX.Y.Z tag */
   channel?: string;
+  /** Anonymous install metrics opt-in. Absent means the user has not been asked yet. */
+  telemetry?: TelemetryConfig;
 }
 
 export const getSettings = () => request<Settings>('/settings');

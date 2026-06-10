@@ -304,6 +304,13 @@ export type Permission =
   | 'user:write'
   | 'report:read';
 
+export interface TelemetryConfig {
+  /** Whether the user has opted in to anonymous install metrics */
+  enabled: boolean;
+  /** Random UUID generated once at opt-in time, never changes */
+  installId: string;
+}
+
 export interface Settings {
   port: number;
   host: string;
@@ -323,6 +330,8 @@ export interface Settings {
   notifications?: NotificationsConfig;
   /** Distribution channel for updates: 'latest' | 'stable' | 'develop' | vX.Y.Z tag */
   channel?: string;
+  /** Anonymous install metrics opt-in. Absent means the user has not been asked yet. */
+  telemetry?: TelemetryConfig;
 }
 
 // ─── Update info ─────────────────────────────────────────────────────────────
