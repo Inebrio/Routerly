@@ -45,13 +45,13 @@ export class OpenAIAdapter implements ProviderAdapter {
 
   // Strip reasoning-model-only params when forwarding to non-o-series models.
   private normalizeForModel(req: ChatCompletionRequest, upstreamModel: string): Record<string, unknown> {
-    const { stream: _stream, ...normalized } = this.normalizeTokenLimit(req);
+    const { stream: _stream, input: _input, ...normalized } = this.normalizeTokenLimit(req) as Record<string, unknown>;
     if (!this.isReasoningModel(upstreamModel)) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { reasoning_effort, reasoning_summary, ...safe } = normalized as Record<string, unknown>;
+      const { reasoning_effort, reasoning_summary, ...safe } = normalized;
       return safe;
     }
-    return normalized as Record<string, unknown>;
+    return normalized;
   }
 
   async chatCompletion(
