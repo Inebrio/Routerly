@@ -59,7 +59,7 @@ export function ProjectGeneralTab() {
       const payload = isEdit
         ? {
             name: form.name,
-            routingModelId: project!.routingModelId || 'gpt-4o',
+            ...(project!.routingModelId ? { routingModelId: project!.routingModelId } : {}),
             models: project!.models.map(m => ({ modelId: m.modelId })),
             timeoutMs: parseInt(form.timeoutMs),
           }

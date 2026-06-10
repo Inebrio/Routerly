@@ -45,6 +45,17 @@ const config: Config = {
           routeBasePath: '/',
           sidebarPath: './sidebars.ts',
           editUrl: 'https://github.com/Inebrio/Routerly/edit/main/',
+          lastVersion: '0.1.5',
+          versions: {
+            '0.1.5': {
+              label: '0.1.5 (current)',
+              badge: true,
+            },
+            current: {
+              label: '0.2.0',
+              badge: false,
+            },
+          },
         },
         blog: false,
         theme: {
@@ -77,6 +88,10 @@ const config: Config = {
           sidebarId: 'docsSidebar',
           position: 'left',
           label: 'Docs',
+        },
+        {
+          type: 'docsVersionDropdown',
+          position: 'right',
         },
         {
           href: 'https://github.com/Inebrio/Routerly',

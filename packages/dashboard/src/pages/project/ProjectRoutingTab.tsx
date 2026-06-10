@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Trash2, GripVertical } from 'lucide-react';
+import { Plus, Trash2, GripVertical, X, Check } from 'lucide-react';
 import { updateProject, getModels, type Model, type Project, type RoutingPolicy } from '../../api';
 import { useProject } from './ProjectLayout';
 import { SearchableSelect } from '../../components/SearchableSelect';
@@ -15,6 +15,21 @@ type PolicyItem = RoutingPolicy & {
   internalId: string;
 };
 
+const ALL_POLICY_TYPES = ['health', 'context', 'capability', 'budget-remaining', 'rate-limit', 'semantic-intent', 'llm', 'performance', 'fairness', 'cheapest'] as const;
+
+const POLICY_LABELS: Record<string, string> = {
+  llm:               'AI Routing Policy',
+  'rate-limit':      'Rate Limit Policy',
+  'budget-remaining':'Budget Remaining Policy',
+  'semantic-intent': 'Semantic Intent Policy',
+  health:            'Health Policy',
+  context:           'Context Policy',
+  capability:        'Capability Policy',
+  performance:       'Performance Policy',
+  fairness:          'Fairness Policy',
+  cheapest:          'Cheapest Policy',
+};
+
 const POLICY_DESCRIPTIONS: Record<string, string> = {
   context:          'Scores models based on available context window. Assigns 0 to models whose context window is smaller than the estimated request length, preventing truncation errors.',
   cheapest:         'Scores models inversely proportional to their token cost. The cheapest model gets 1.0, the most expensive gets 0.0, helping reduce API spend across requests.',
@@ -25,6 +40,7 @@ const POLICY_DESCRIPTIONS: Record<string, string> = {
   'rate-limit':     'Penalizes models with a high recent call frequency to reduce the risk of hitting provider rate limits (HTTP 429). Supports a configurable hard threshold that forces the score to 0.',
   fairness:         'Distributes traffic evenly by penalizing models that received more successful calls recently. Acts as a soft round-robin to prevent load from concentrating on a single model.',
   'budget-remaining': 'Scores models based on remaining budget headroom across all configured limits. Prefers models with more room before their thresholds are hit, spreading consumption proactively.',
+  'semantic-intent':  'Classifies the request by semantic intent using embeddings, then restricts the candidate pool to the models mapped to that intent. Confident matches hard-filter the pool; ambiguous matches merge top-2 pools; unknown requests pass all candidates through.',
 };
 
 export function ProjectRoutingTab() {
@@ -32,15 +48,32 @@ export function ProjectRoutingTab() {
   const [availableModels, setAvailableModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [err, setErr] = useState('');
 
   const [policies, setPolicies] = useState<PolicyItem[]>([]);
   const [targetModels, setTargetModels] = useState<TargetModel[]>([]);
 
+  // Advanced section open state per policy index
+  const [advancedOpen, setAdvancedOpen] = useState<Set<number>>(new Set());
+
+  // Add-intent inline input state per policy index
+  const [addIntentInputs, setAddIntentInputs] = useState<Record<number, string>>({});
+
+  // Expanded intent state: which intents are open (keyed by intentName)
+  const [expandedIntents, setExpandedIntents] = useState<Set<string>>(new Set());
+
+  // Show-all-examples toggle: keyed by `${policyIdx}::${intentName}`
+  const [showAllExamples, setShowAllExamples] = useState<Set<string>>(new Set());
+
+  // Add-example inline input state: keyed by `${policyIdx}::${intentName}`
+  const [addExampleInputs, setAddExampleInputs] = useState<Record<string, string>>({});
+
   // Drag state
   const [draggedTargetIdx, setDraggedTargetIdx] = useState<number | null>(null);
   const [draggedPolicyIdx, setDraggedPolicyIdx] = useState<number | null>(null);
   const [draggedLlmModelIdx, setDraggedLlmModelIdx] = useState<number | null>(null);
+  const [draggedSemModelIdx, setDraggedSemModelIdx] = useState<number | null>(null);
   const [promptHoverIdx, setPromptHoverIdx] = useState<number | null>(null);
 
   useEffect(() => {
@@ -52,41 +85,11 @@ export function ProjectRoutingTab() {
   useEffect(() => {
     if (project) {
       const mkId = () => Math.random().toString(36).substring(7);
-      // Suggested pipeline order (users can reorder via drag-and-drop):
-      // Phase 1 – hard filters: eliminate candidates that cannot serve the request
-      //   health       → drop unreachable / unhealthy models first
-      //   context      → drop models whose context window is too small
-      //   capability   → drop models missing required features
-      // Phase 2 – operational constraints: penalise models under pressure
-      //   budget-remaining → penalise models approaching budget exhaustion
-      //   rate-limit       → penalise models approaching their rate limits
-      // Phase 3 – semantic scoring: the core routing intelligence
-      //   llm          → AI-based relevance scoring
-      // Phase 4 – cost/quality optimisation: tiebreakers
-      //   performance  → favour low-latency, high-reliability models
-      //   fairness     → balance load across models
-      //   cheapest     → final cost tiebreaker
-      const defaultPolicies: PolicyItem[] = [
-        { internalId: mkId(), type: 'health',           enabled: false },
-        { internalId: mkId(), type: 'context',          enabled: false },
-        { internalId: mkId(), type: 'capability',       enabled: false },
-        { internalId: mkId(), type: 'budget-remaining', enabled: false },
-        { internalId: mkId(), type: 'rate-limit',       enabled: false },
-        { internalId: mkId(), type: 'llm',              enabled: false, config: { routingModelId: project.routingModelId || '', fallbackModelIds: project.fallbackRoutingModelIds || [], autoRouting: project.autoRouting ?? true } },
-        { internalId: mkId(), type: 'performance',      enabled: false },
-        { internalId: mkId(), type: 'fairness',         enabled: false },
-        { internalId: mkId(), type: 'cheapest',         enabled: false },
-      ];
 
       if (project.policies && project.policies.length > 0) {
-        const saved: PolicyItem[] = project.policies.map(p => ({ ...p, internalId: mkId() }));
-        const savedTypes = new Set(saved.map(p => p.type));
-        // Append any policy types not yet in the saved list (disabled by default)
-        const missing = defaultPolicies.filter(d => !savedTypes.has(d.type));
-        setPolicies([...saved, ...missing]);
+        setPolicies(project.policies.map(p => ({ ...p, internalId: mkId() })));
       } else {
-        // No saved policies — show all available but none enabled
-        setPolicies(defaultPolicies);
+        setPolicies([]);
       }
 
       setTargetModels(project.models.map(m => ({
@@ -101,16 +104,9 @@ export function ProjectRoutingTab() {
     if (!project) return false;
 
     const savedPolicies = project.policies || [];
-    const savedTypes = new Set(savedPolicies.map(p => p.type));
-
-    // Appended-but-still-disabled policies (not in saved) are not considered dirty
-    // unless the user has enabled or configured them
-    const newUntouched = policies.filter(p => !savedTypes.has(p.type) && !p.enabled && !p.config);
-    const effectivePolicies = policies.filter(p => !newUntouched.includes(p));
-
-    if (effectivePolicies.length !== savedPolicies.length) return true;
-    for (let i = 0; i < effectivePolicies.length; i++) {
-      const p1 = effectivePolicies[i]!;
+    if (policies.length !== savedPolicies.length) return true;
+    for (let i = 0; i < policies.length; i++) {
+      const p1 = policies[i]!;
       const p2 = savedPolicies[i]!;
       if (p1.type !== p2.type || p1.enabled !== p2.enabled) return true;
       if (JSON.stringify(p1.config || {}) !== JSON.stringify(p2.config || {})) return true;
@@ -129,6 +125,76 @@ export function ProjectRoutingTab() {
     const used = new Set<string>();
     targetModels.forEach((m, i) => { if (i !== excludeIdx) used.add(m.modelId); });
     return used;
+  }
+
+  // --- Semantic Intent / Model association helpers ---
+  function getIntentsForModel(modelId: string): Set<string> {
+    const result = new Set<string>();
+    const semPolicy = policies.find(p => p.type === 'semantic-intent' && p.enabled);
+    if (!semPolicy) return result;
+    const intents = (semPolicy.config?.intents ?? {}) as Record<string, { candidate_models: string[] }>;
+    for (const [key, def] of Object.entries(intents)) {
+      if (def.candidate_models?.includes(modelId)) result.add(key);
+    }
+    return result;
+  }
+
+  function toggleIntentForModel(modelId: string, intentKey: string) {
+    const semPolicyIdx = policies.findIndex(p => p.type === 'semantic-intent' && p.enabled);
+    if (semPolicyIdx === -1) return;
+    const semPolicy = policies[semPolicyIdx]!;
+    const intents = { ...((semPolicy.config?.intents ?? {}) as Record<string, { examples: string[]; candidate_models: string[] }>) };
+    const def = intents[intentKey];
+    if (!def) return;
+    const current = def.candidate_models ?? [];
+    const next = current.includes(modelId)
+      ? current.filter(id => id !== modelId)
+      : [...current, modelId];
+    intents[intentKey] = { ...def, candidate_models: next };
+    updatePolicyConfig(semPolicyIdx, { intents });
+  }
+
+  // --- Semantic Intent Embedding Model Helpers ---
+  function getSemModelIds(policy: PolicyItem): string[] {
+    const primary = policy.config?.embedding_model;
+    const fallbacks: string[] = policy.config?.embedding_fallback_models ?? [];
+    const ids = primary ? [primary, ...fallbacks] : fallbacks;
+    return ids.length === 0 ? [''] : ids;
+  }
+
+  function setSemModelIds(policyIdx: number, newIds: string[]) {
+    updatePolicyConfig(policyIdx, {
+      embedding_model: newIds[0] ?? '',
+      embedding_fallback_models: newIds.slice(1),
+    });
+  }
+
+  function onDragStartSemModel(e: React.DragEvent, mIdx: number) {
+    setDraggedSemModelIdx(mIdx);
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => {
+      const el = document.getElementById(`sem-model-row-${mIdx}`);
+      if (el) el.style.opacity = '0.4';
+    }, 0);
+  }
+
+  function onDragEnterSemModel(e: React.DragEvent, policyIdx: number, targetIdx: number) {
+    e.preventDefault();
+    if (draggedSemModelIdx === null || draggedSemModelIdx === targetIdx) return;
+    const pol = policies[policyIdx]!;
+    const ids = getSemModelIds(pol);
+    const copy = [...ids];
+    const dragged = copy[draggedSemModelIdx]!;
+    copy.splice(draggedSemModelIdx, 1);
+    copy.splice(targetIdx, 0, dragged);
+    setSemModelIds(policyIdx, copy);
+    setDraggedSemModelIdx(targetIdx);
+  }
+
+  function onDragEndSemModel(_e: React.DragEvent, mIdx: number) {
+    setDraggedSemModelIdx(null);
+    const el = document.getElementById(`sem-model-row-${mIdx}`);
+    if (el) el.style.opacity = '1';
   }
 
   // --- LLM Routing Model Helpers ---
@@ -212,12 +278,12 @@ export function ProjectRoutingTab() {
   // --- Target Models Handlers ---
   function addTargetModel() {
     const usedIds = new Set(targetModels.map(t => t.modelId));
-    const firstAvailable = availableModels.find(m => !usedIds.has(m.id));
+    const firstAvailable = availableModels.find(m => !m.capabilities?.embedding && !usedIds.has(m.id));
     setTargetModels(prev => [
       ...prev,
       {
         internalId: Math.random().toString(36).substring(7),
-        modelId: firstAvailable?.id || availableModels[0]?.id || '',
+        modelId: firstAvailable?.id || '',
         prompt: '',
       }
     ]);
@@ -229,6 +295,19 @@ export function ProjectRoutingTab() {
 
   function removeTargetModel(idx: number) {
     setTargetModels(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  // --- Policy Add/Remove ---
+  function addPolicy(type: string) {
+    const mkId = () => Math.random().toString(36).substring(7);
+    let config: Record<string, unknown> | undefined;
+    if (type === 'semantic-intent') config = { embedding_provider: 'openai', embedding_model: '', intents: {} };
+    else if (type === 'llm') config = { routingModelId: project?.routingModelId || '', fallbackModelIds: project?.fallbackRoutingModelIds || [], autoRouting: true };
+    setPolicies(prev => [...prev, { internalId: mkId(), type: type as PolicyItem['type'], enabled: true, ...(config ? { config } : {}) }]);
+  }
+
+  function removePolicy(idx: number) {
+    setPolicies(prev => prev.filter((_, i) => i !== idx));
   }
 
   // Target Drag Drop
@@ -260,8 +339,7 @@ export function ProjectRoutingTab() {
 
   // --------------------------------
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function doSave() {
     if (!project) return;
     setErr('');
 
@@ -278,7 +356,7 @@ export function ProjectRoutingTab() {
         name: project.name,
         policies: policies.map(p => {
           const { internalId, ...rest } = p;
-          return rest;
+          return { ...rest, enabled: true };
         }),
         models: targetModels.map(m => ({
           modelId: m.modelId,
@@ -288,6 +366,8 @@ export function ProjectRoutingTab() {
       };
       const updated = await updateProject(project.id, payload);
       setProject(updated);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
     } catch (err) {
       setErr(err instanceof Error ? err.message : 'Error saving project routing');
     } finally {
@@ -295,9 +375,20 @@ export function ProjectRoutingTab() {
     }
   }
 
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    void doSave();
+  }
+
   const isAiRoutingEnabled = policies.some(p => p.type === 'llm' && p.enabled);
   const isAutoRoutingEnabled = policies.find(p => p.type === 'llm')?.config?.autoRouting ?? true;
   const showPromptInput = isAiRoutingEnabled && !isAutoRoutingEnabled;
+
+  const semanticIntentPolicy = policies.find(p => p.type === 'semantic-intent' && p.enabled);
+  const isSemanticIntentEnabled = !!semanticIntentPolicy;
+  const semanticIntents = isSemanticIntentEnabled
+    ? (semanticIntentPolicy!.config?.intents ?? {}) as Record<string, { examples: string[]; candidate_models: string[] }>
+    : {};
 
   if (loading) return (
     <div style={{ maxWidth: 768, animation: 'fade-in 0.2s ease' }} className="loading-center">
@@ -331,19 +422,17 @@ export function ProjectRoutingTab() {
                     display: 'flex', flexDirection: 'column', gap: 10,
                     background: 'var(--surface-active)', padding: '12px',
                     borderRadius: 8, border: '1px solid var(--border)',
-                    cursor: 'grab', transition: 'opacity 0.2s', opacity: policy.enabled ? 1 : 0.6
+                    cursor: 'grab', transition: 'opacity 0.2s'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ color: 'var(--text-muted)' }}><GripVertical size={16} /></div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <input type="checkbox" checked={policy.enabled} onChange={e => updatePolicy(idx, 'enabled', e.target.checked)} style={{ width: 14, height: 14, accentColor: 'var(--primary)' }} />
-                    </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: '0.9rem', fontWeight: 600, textTransform: 'capitalize' }}>
                         {policy.type === 'llm' ? 'AI Routing'
                           : policy.type === 'rate-limit' ? 'Rate Limit'
                           : policy.type === 'budget-remaining' ? 'Budget Remaining'
+                          : policy.type === 'semantic-intent' ? 'Semantic Intent'
                           : policy.type} Policy
                       </div>
                       {POLICY_DESCRIPTIONS[policy.type] && (
@@ -352,6 +441,14 @@ export function ProjectRoutingTab() {
                         </div>
                       )}
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => removePolicy(idx)}
+                      title="Remove policy"
+                      style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', flexShrink: 0 }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
 
                   {/* Policy Specific Configs */}
@@ -365,6 +462,7 @@ export function ProjectRoutingTab() {
                             const usedIds = new Set(getLlmModelIds(policy).filter((_, i) => i !== mIdx));
                             const opts = availableModels
                               .filter(m => !usedIds.has(m.id))
+                              .sort((a, b) => a.id.localeCompare(b.id))
                               .map(m => ({ value: m.id, label: m.id }));
                             return (
                               <div
@@ -428,7 +526,10 @@ export function ProjectRoutingTab() {
                           <input
                             type="checkbox"
                             checked={policy.config?.autoRouting ?? true}
-                            onChange={(e) => updatePolicyConfig(idx, { autoRouting: e.target.checked })}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              updatePolicyConfig(idx, { autoRouting: checked, ...(checked ? { additionalPromptInfo: undefined } : {}) });
+                            }}
                             style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
                           />
                           Auto Routing
@@ -454,33 +555,632 @@ export function ProjectRoutingTab() {
                       </div>
 
                       <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                        <details
+                          open={advancedOpen.has(idx)}
+                          onToggle={(e) => {
+                            const open = (e.currentTarget as HTMLDetailsElement).open;
+                            setAdvancedOpen(prev => {
+                              const next = new Set(prev);
+                              open ? next.add(idx) : next.delete(idx);
+                              return next;
+                            });
+                          }}
+                        >
+                          <summary style={{ fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer', userSelect: 'none', color: 'var(--text-secondary)', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: '0.7rem', display: 'inline-block', transform: advancedOpen.has(idx) ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s ease' }}>▶</span> Advanced
+                          </summary>
+                          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 0 }}>
+
+                            <div style={{ paddingBottom: 10 }}>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>
+                                <input
+                                  type="checkbox"
+                                  checked={policy.config?.memory ?? false}
+                                  onChange={(e) => updatePolicyConfig(idx, { memory: e.target.checked })}
+                                  style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                                />
+                                Memory
+                              </label>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginLeft: 22, lineHeight: 1.4, marginBottom: (policy.config?.memory ?? false) ? 8 : 0 }}>
+                                If enabled, the last N messages from the conversation history are included in the routing prompt to give the AI router additional context.
+                              </p>
+                              {(policy.config?.memory ?? false) && (
+                                <div style={{ marginLeft: 22, marginTop: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Previous messages</label>
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    max={50}
+                                    className="form-input"
+                                    style={{ width: 70, padding: '4px 8px', fontSize: '0.8rem' }}
+                                    value={policy.config?.memoryCount ?? 5}
+                                    onChange={e => updatePolicyConfig(idx, { memoryCount: Math.max(1, Number(e.target.value)) })}
+                                    onMouseDown={e => e.stopPropagation()}
+                                  />
+                                </div>
+                              )}
+                            </div>
+
+                            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, paddingBottom: 10 }}>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>
+                                <input
+                                  type="checkbox"
+                                  checked={policy.config?.thinking ?? false}
+                                  onChange={(e) => updatePolicyConfig(idx, { thinking: e.target.checked })}
+                                  style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                                />
+                                Thinking
+                              </label>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginLeft: 22, lineHeight: 1.4, marginBottom: 0 }}>
+                                If enabled and the routing model supports it, extended thinking is used for more accurate routing decisions. This increases latency significantly.
+                              </p>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, paddingBottom: 10 }}>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>
+                                <input
+                                  type="checkbox"
+                                  checked={policy.config?.includeReason ?? false}
+                                  onChange={(e) => updatePolicyConfig(idx, { includeReason: e.target.checked })}
+                                  style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                                />
+                                Include Reason
+                              </label>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginLeft: 22, lineHeight: 1.4, marginBottom: 0 }}>
+                                If enabled, the routing model adds a brief explanation for each score. Useful for debugging but increases output tokens.
+                              </p>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, paddingBottom: 10 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: 160 }}>Max completion tokens</label>
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  className="form-input"
+                                  style={{ width: 80, padding: '4px 8px', fontSize: '0.8rem' }}
+                                  placeholder="auto"
+                                  value={policy.config?.maxCompletionTokens ?? ''}
+                                  onChange={e => {
+                                    const v = e.target.value.replace(/[^0-9]/g, '');
+                                    updatePolicyConfig(idx, { maxCompletionTokens: v === '' ? undefined : Number(v) });
+                                  }}
+                                  onBlur={e => {
+                                    const v = e.target.value.replace(/[^0-9]/g, '');
+                                    if (v !== '' && Number(v) < 50) updatePolicyConfig(idx, { maxCompletionTokens: 50 });
+                                  }}
+                                  onMouseDown={e => e.stopPropagation()}
+                                />
+                              </div>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginBottom: 0, lineHeight: 1.4 }}>
+                                Limits the routing model output tokens. Leave empty to use the provider default.
+                              </p>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: 160 }}>Max prompt chars</label>
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  className="form-input"
+                                  style={{ width: 80, padding: '4px 8px', fontSize: '0.8rem' }}
+                                  placeholder="auto"
+                                  value={policy.config?.maxUserMessageChars ?? ''}
+                                  onChange={e => {
+                                    const v = e.target.value.replace(/[^0-9]/g, '');
+                                    updatePolicyConfig(idx, { maxUserMessageChars: v === '' ? undefined : Number(v) });
+                                  }}
+                                  onMouseDown={e => e.stopPropagation()}
+                                />
+                              </div>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginBottom: 0, lineHeight: 1.4 }}>
+                                Truncates the routing prompt after this many characters. Leave empty for no limit.
+                              </p>
+                            </div>
+
+                          </div>
+                        </details>
+                      </div>
+
+                      {/* --- Caching --- */}
+                      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
                         <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>
                           <input
                             type="checkbox"
-                            checked={policy.config?.memory ?? false}
-                            onChange={(e) => updatePolicyConfig(idx, { memory: e.target.checked })}
+                            checked={policy.config?.cache?.enabled ?? false}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              updatePolicyConfig(idx, {
+                                cache: {
+                                  ...(policy.config?.cache ?? { embedding_provider: 'openai', embedding_model: '', ttl_seconds: 3600, similarity_threshold: 0.85 }),
+                                  enabled: checked,
+                                },
+                              });
+                            }}
+                            onMouseDown={e => e.stopPropagation()}
                             style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
                           />
-                          Memory
+                          Caching
                         </label>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginLeft: 22, lineHeight: 1.4, marginBottom: (policy.config?.memory ?? false) ? 8 : 12 }}>
-                          If enabled, the last N messages from the conversation history are included in the routing prompt to give the AI router additional context.
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginLeft: 22, lineHeight: 1.4 }}>
+                          If enabled, responses are cached using semantic similarity. Requests with a similar meaning return the cached response directly, skipping the provider call.
                         </p>
-                        {(policy.config?.memory ?? false) && (
-                          <div style={{ marginLeft: 22, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Previous messages</label>
+                        {(policy.config?.cache?.enabled ?? false) && (() => {
+                          const cacheModelIds = (() => {
+                            const primary = policy.config?.cache?.embedding_model;
+                            const fallbacks: string[] = policy.config?.cache?.embedding_fallback_models ?? [];
+                            const ids = primary ? [primary, ...fallbacks] : fallbacks;
+                            return ids.length === 0 ? [''] : ids;
+                          })();
+                          const setCacheModelIds = (newIds: string[]) => {
+                            updatePolicyConfig(idx, {
+                              cache: {
+                                ...(policy.config?.cache ?? {}),
+                                embedding_model: newIds[0] ?? '',
+                                embedding_fallback_models: newIds.slice(1),
+                              },
+                            });
+                          };
+                          return (
+                            <div style={{ marginLeft: 22, marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                              {/* Embedding Models */}
+                              <div>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Embedding Models</label>
+                                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 6, marginTop: -2 }}>The first model is the primary. The others are tried in order if the primary fails.</p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                  {cacheModelIds.map((modelId, mIdx) => {
+                                    const embeddingModels = availableModels.filter(m => m.capabilities?.embedding === true);
+                                    const usedIds = new Set(cacheModelIds.filter((_, i) => i !== mIdx));
+                                    const opts = embeddingModels
+                                      .filter(m => !usedIds.has(m.id))
+                                      .sort((a, b) => a.id.localeCompare(b.id))
+                                      .map(m => ({ value: m.id, label: m.id }));
+                                    return (
+                                      <div key={mIdx} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <SearchableSelect
+                                          options={opts}
+                                          value={modelId}
+                                          onChange={val => {
+                                            const copy = [...cacheModelIds];
+                                            copy[mIdx] = val;
+                                            setCacheModelIds(copy);
+                                          }}
+                                          placeholder="Select model"
+                                          style={{ flex: 1 }}
+                                        />
+                                        {mIdx === 0 && (
+                                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', flexShrink: 0, minWidth: 48, textAlign: 'right' }}>primary</span>
+                                        )}
+                                        <button
+                                          type="button"
+                                          className="btn-icon danger"
+                                          disabled={cacheModelIds.length === 1}
+                                          onClick={() => setCacheModelIds(cacheModelIds.filter((_, i) => i !== mIdx))}
+                                          onMouseDown={e => e.stopPropagation()}
+                                          style={{ padding: 4, flexShrink: 0, opacity: cacheModelIds.length === 1 ? 0.3 : 1 }}
+                                        >
+                                          <Trash2 size={14} />
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const embeddingModels = availableModels.filter(m => m.capabilities?.embedding === true);
+                                    const usedIds = new Set(cacheModelIds);
+                                    const firstAvail = embeddingModels.find(m => !usedIds.has(m.id));
+                                    if (firstAvail) setCacheModelIds([...cacheModelIds, firstAvail.id]);
+                                  }}
+                                  disabled={availableModels.filter(m => m.capabilities?.embedding === true && !new Set(cacheModelIds).has(m.id)).length === 0}
+                                  onMouseDown={e => e.stopPropagation()}
+                                  style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', background: 'none', border: '1px dashed var(--border)', borderRadius: 4, color: 'var(--text-secondary)', fontSize: '0.75rem', cursor: 'pointer', marginTop: 6, width: 'fit-content' }}
+                                >
+                                  <Plus size={12} /> Add Fallback Model
+                                </button>
+                              </div>
+                              {/* TTL + Threshold */}
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>TTL (seconds)</label>
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    className="form-input"
+                                    style={{ width: 72, padding: '4px 8px', fontSize: '0.8rem' }}
+                                    value={policy.config?.cache?.ttl_seconds ?? 3600}
+                                    onChange={e => updatePolicyConfig(idx, { cache: { ...(policy.config?.cache ?? {}), ttl_seconds: Number(e.target.value) } })}
+                                    onMouseDown={e => e.stopPropagation()}
+                                  />
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Similarity threshold</label>
+                                  <input
+                                    type="number"
+                                    min={0} max={1} step={0.01}
+                                    className="form-input"
+                                    style={{ width: 72, padding: '4px 8px', fontSize: '0.8rem' }}
+                                    value={policy.config?.cache?.similarity_threshold ?? 0.85}
+                                    onChange={e => updatePolicyConfig(idx, { cache: { ...(policy.config?.cache ?? {}), similarity_threshold: Number(e.target.value) } })}
+                                    onMouseDown={e => e.stopPropagation()}
+                                  />
+                                </div>
+                              </div>
+                              {/* Extend on hit */}
+                              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={policy.config?.cache?.extend_on_hit ?? false}
+                                  onChange={e => updatePolicyConfig(idx, { cache: { ...(policy.config?.cache ?? {}), extend_on_hit: e.target.checked } })}
+                                  onMouseDown={e => e.stopPropagation()}
+                                  style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                                />
+                                Extend TTL on hit
+                              </label>
+                              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: -6, marginLeft: 22, lineHeight: 1.4 }}>
+                                When a cached response is returned, its expiry is reset to the full TTL (sliding expiration).
+                              </p>
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                    </div>
+                  )}
+
+                  {policy.type === 'semantic-intent' && policy.enabled && (
+                    <div style={{ paddingLeft: 30, paddingTop: 4, display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+                      {/* --- Embedding Model --- */}
+                      <div>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Embedding Models</label>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 8, marginTop: -4 }}>The first model is the primary. The others are tried in order if the primary fails.</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {getSemModelIds(policy).map((modelId, mIdx) => {
+                            const embeddingModels = availableModels.filter(m => m.capabilities?.embedding === true);
+                            const usedIds = new Set(getSemModelIds(policy).filter((_, i) => i !== mIdx));
+                            const opts = embeddingModels
+                              .filter(m => !usedIds.has(m.id))
+                              .sort((a, b) => a.id.localeCompare(b.id))
+                              .map(m => ({ value: m.id, label: m.id }));
+                            return (
+                              <div
+                                key={mIdx}
+                                id={`sem-model-row-${mIdx}`}
+                                draggable
+                                onDragStart={e => onDragStartSemModel(e, mIdx)}
+                                onDragEnter={e => onDragEnterSemModel(e, idx, mIdx)}
+                                onDragEnd={e => onDragEndSemModel(e, mIdx)}
+                                onDragOver={e => e.preventDefault()}
+                                style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'grab', transition: 'opacity 0.2s' }}
+                              >
+                                <div style={{ color: 'var(--text-muted)', flexShrink: 0 }}><GripVertical size={14} /></div>
+                                <SearchableSelect
+                                  options={opts}
+                                  value={modelId}
+                                  onChange={val => {
+                                    const ids = getSemModelIds(policy);
+                                    const copy = [...ids];
+                                    copy[mIdx] = val;
+                                    setSemModelIds(idx, copy);
+                                  }}
+                                  placeholder="Select model"
+                                  style={{ flex: 1 }}
+                                />
+                                {mIdx === 0 && (
+                                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', flexShrink: 0, minWidth: 48, textAlign: 'right' }}>primary</span>
+                                )}
+                                <button
+                                  type="button"
+                                  className="btn-icon danger"
+                                  disabled={getSemModelIds(policy).length === 1}
+                                  onClick={() => {
+                                    const ids = getSemModelIds(policy).filter((_, i) => i !== mIdx);
+                                    setSemModelIds(idx, ids);
+                                  }}
+                                  style={{ padding: 4, flexShrink: 0, opacity: getSemModelIds(policy).length === 1 ? 0.3 : 1 }}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const embeddingModels = availableModels.filter(m => m.capabilities?.embedding === true);
+                            const usedIds = new Set(getSemModelIds(policy));
+                            const firstAvail = embeddingModels.find(m => !usedIds.has(m.id));
+                            if (firstAvail) setSemModelIds(idx, [...getSemModelIds(policy), firstAvail.id]);
+                          }}
+                          disabled={availableModels.filter(m => m.capabilities?.embedding === true && !new Set(getSemModelIds(policy)).has(m.id)).length === 0}
+                          style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', background: 'none', border: '1px dashed var(--border)', borderRadius: 4, color: 'var(--text-secondary)', fontSize: '0.75rem', cursor: 'pointer', marginTop: 6, width: 'fit-content', opacity: availableModels.filter(m => m.capabilities?.embedding === true && !new Set(getSemModelIds(policy)).has(m.id)).length === 0 ? 0.4 : 1 }}
+                        >
+                          <Plus size={12} /> Add Fallback Model
+                        </button>
+                      </div>
+
+                      {/* --- Intents --- */}
+                      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Intents</label>
+                        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 8, lineHeight: 1.4 }}>
+                          Each intent groups example utterances that represent a category of requests. The closer a user message is to an intent's examples, the higher its score.
+                        </p>
+                        <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+                          {Object.entries((policy.config?.intents ?? {}) as Record<string, { examples: string[]; candidate_models: string[] }>).map(([intentName, intentDef], iIdx, arr) => {
+                            const isExpanded = expandedIntents.has(intentName);
+                            const exampleKey = `${idx}::${intentName}`;
+                            return (
+                              <div
+                                key={intentName}
+                                style={{
+                                  borderBottom: iIdx < arr.length - 1 ? '1px solid var(--border)' : undefined,
+                                  background: 'var(--surface)',
+                                }}
+                              >
+                                {/* Intent header row */}
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    padding: '8px 12px',
+                                    cursor: 'pointer',
+                                    userSelect: 'none',
+                                  }}
+                                  onClick={() => setExpandedIntents(prev => {
+                                    const next = new Set(prev);
+                                    next.has(intentName) ? next.delete(intentName) : next.add(intentName);
+                                    return next;
+                                  })}
+                                >
+                                  <span style={{ fontSize: '0.65rem', display: 'inline-block', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s ease', color: 'var(--text-muted)', flexShrink: 0 }}>▶</span>
+                                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }} />
+                                  <span style={{ flex: 1, fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)' }}>
+                                    {intentName.replace(/_/g, ' ')}
+                                  </span>
+                                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'monospace', marginRight: 4 }}>
+                                    {intentDef.examples?.length ?? 0} example{(intentDef.examples?.length ?? 0) !== 1 ? 's' : ''}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const intents = { ...((policy.config?.intents ?? {}) as Record<string, unknown>) };
+                                      delete intents[intentName];
+                                      updatePolicyConfig(idx, { intents });
+                                    }}
+                                    style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', borderRadius: 4, flexShrink: 0 }}
+                                    title="Remove intent"
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </div>
+
+                                {/* Expanded: examples list */}
+                                {isExpanded && (
+                                  <div style={{ padding: '0 12px 10px 36px' }}>
+                                    {(intentDef.examples ?? []).length === 0 && (
+                                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic', margin: '4px 0 8px' }}>
+                                        No examples yet. Add representative phrases below.
+                                      </p>
+                                    )}
+                                    {(() => {
+                                      const examples = intentDef.examples ?? [];
+                                      const PAGE = 5;
+                                      const showAll = showAllExamples.has(exampleKey);
+                                      const visible = showAll ? examples : examples.slice(0, PAGE);
+                                      const hidden = examples.length - PAGE;
+                                      return (
+                                        <>
+                                          {visible.map((ex, exIdx) => (
+                                            <div key={exIdx} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0', borderBottom: '1px solid var(--border-light, rgba(128,128,128,0.1))', borderRadius: 4, transition: 'background 0.1s ease' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(128,128,128,0.06)'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                                              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', width: 22, textAlign: 'right', flexShrink: 0, fontFamily: 'monospace' }}>{exIdx + 1}.</span>
+                                              <input
+                                                type="text"
+                                                value={ex}
+                                                onChange={e => {
+                                                  const intents = { ...((policy.config?.intents ?? {}) as Record<string, { examples: string[]; candidate_models: string[] }>) };
+                                                  const def = intents[intentName];
+                                                  if (!def) return;
+                                                  const newExamples = [...def.examples];
+                                                  newExamples[exIdx] = e.target.value;
+                                                  intents[intentName] = { ...def, examples: newExamples };
+                                                  updatePolicyConfig(idx, { intents });
+                                                }}
+                                                onMouseDown={e => e.stopPropagation()}
+                                                onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
+                                                style={{
+                                                  flex: 1,
+                                                  fontSize: '0.8rem',
+                                                  color: 'var(--text-primary)',
+                                                  lineHeight: 1.4,
+                                                  background: 'none',
+                                                  border: '1px solid transparent',
+                                                  borderRadius: 4,
+                                                  outline: 'none',
+                                                  padding: '3px 6px',
+                                                  transition: 'border-color 0.15s ease',
+                                                }}
+                                                onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)'; }}
+                                                onBlur={e => { e.currentTarget.style.borderColor = 'transparent'; }}
+                                              />
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  const intents = { ...((policy.config?.intents ?? {}) as Record<string, { examples: string[]; candidate_models: string[] }>) };
+                                                  const def = intents[intentName];
+                                                  if (!def) return;
+                                                  intents[intentName] = { ...def, examples: def.examples.filter((_, i) => i !== exIdx) };
+                                                  updatePolicyConfig(idx, { intents });
+                                                }}
+                                                style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', flexShrink: 0, opacity: 0.5 }}
+                                                title="Remove example"
+                                              >
+                                                <X size={12} />
+                                              </button>
+                                            </div>
+                                          ))}
+                                          {!showAll && hidden > 0 && (
+                                            <button
+                                              type="button"
+                                              onClick={() => setShowAllExamples(prev => new Set(prev).add(exampleKey))}
+                                              style={{ background: 'none', border: 'none', padding: '6px 0 2px', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--accent)', opacity: 0.8 }}
+                                            >
+                                              + {hidden} more example{hidden !== 1 ? 's' : ''}
+                                            </button>
+                                          )}
+                                          {showAll && examples.length > PAGE && (
+                                            <button
+                                              type="button"
+                                              onClick={() => setShowAllExamples(prev => { const n = new Set(prev); n.delete(exampleKey); return n; })}
+                                              style={{ background: 'none', border: 'none', padding: '6px 0 2px', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)' }}
+                                            >
+                                              Show less
+                                            </button>
+                                          )}
+                                        </>
+                                      );
+                                    })()}
+                                    {/* Add example input */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
+                                      <Plus size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                                      <input
+                                        type="text"
+                                        placeholder="Add example and press Enter…"
+                                        value={addExampleInputs[exampleKey] ?? ''}
+                                        onChange={e => setAddExampleInputs(prev => ({ ...prev, [exampleKey]: e.target.value }))}
+                                        onMouseDown={e => e.stopPropagation()}
+                                        onKeyDown={e => {
+                                          if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            const text = addExampleInputs[exampleKey]?.trim();
+                                            if (!text) return;
+                                            const intents = { ...((policy.config?.intents ?? {}) as Record<string, { examples: string[]; candidate_models: string[] }>) };
+                                            const def = intents[intentName];
+                                            if (!def) return;
+                                            intents[intentName] = { ...def, examples: [...def.examples, text] };
+                                            updatePolicyConfig(idx, { intents });
+                                            setAddExampleInputs(prev => ({ ...prev, [exampleKey]: '' }));
+                                          } else if (e.key === 'Escape') {
+                                            setAddExampleInputs(prev => ({ ...prev, [exampleKey]: '' }));
+                                          }
+                                        }}
+                                        style={{ flex: 1, background: 'none', border: '1px solid var(--border)', borderRadius: 4, outline: 'none', fontSize: '0.8rem', color: 'var(--text-primary)', padding: '4px 8px' }}
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--surface-2, rgba(255,255,255,0.03))' }}>
+                            <Plus size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                             <input
-                              type="number"
-                              min={1}
-                              max={50}
-                              className="form-input"
-                              style={{ width: 70, padding: '4px 8px', fontSize: '0.8rem' }}
-                              value={policy.config?.memoryCount ?? 5}
-                              onChange={e => updatePolicyConfig(idx, { memoryCount: Math.max(1, Number(e.target.value)) })}
+                              type="text"
+                              placeholder="Add intent and press Enter…"
+                              value={addIntentInputs[idx] ?? ''}
+                              onChange={e => setAddIntentInputs(prev => ({ ...prev, [idx]: e.target.value }))}
                               onMouseDown={e => e.stopPropagation()}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') {
+                                  const raw = addIntentInputs[idx];
+                                  if (!raw?.trim()) return;
+                                  const key = raw.trim().toLowerCase().replace(/\s+/g, '_');
+                                  const intents = { ...((policy.config?.intents ?? {}) as Record<string, unknown>) };
+                                  if (!intents[key]) {
+                                    intents[key] = { examples: [], candidate_models: [] };
+                                    updatePolicyConfig(idx, { intents });
+                                    setExpandedIntents(prev => new Set(prev).add(key));
+                                  }
+                                  setAddIntentInputs(prev => ({ ...prev, [idx]: '' }));
+                                } else if (e.key === 'Escape') {
+                                  setAddIntentInputs(prev => ({ ...prev, [idx]: '' }));
+                                }
+                              }}
+                              onBlur={() => {
+                                const raw = addIntentInputs[idx];
+                                if (raw?.trim()) {
+                                  const key = raw.trim().toLowerCase().replace(/\s+/g, '_');
+                                  const intents = { ...((policy.config?.intents ?? {}) as Record<string, unknown>) };
+                                  if (!intents[key]) {
+                                    intents[key] = { examples: [], candidate_models: [] };
+                                    updatePolicyConfig(idx, { intents });
+                                    setExpandedIntents(prev => new Set(prev).add(key));
+                                  }
+                                }
+                                setAddIntentInputs(prev => ({ ...prev, [idx]: '' }));
+                              }}
+                              style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: '0.82rem', color: 'var(--text-primary)', padding: 0 }}
                             />
                           </div>
-                        )}
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                          Names are normalized automatically (e.g. "Customer Support" → <code style={{ fontSize: '0.7rem' }}>customer_support</code>)
+                        </div>
+                      </div>
+
+                      {/* --- Advanced (thresholds) --- */}
+                      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                        <details
+                          open={advancedOpen.has(idx)}
+                          onToggle={(e) => {
+                            const open = (e.currentTarget as HTMLDetailsElement).open;
+                            setAdvancedOpen(prev => {
+                              const next = new Set(prev);
+                              open ? next.add(idx) : next.delete(idx);
+                              return next;
+                            });
+                          }}
+                        >
+                          <summary style={{ fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer', userSelect: 'none', color: 'var(--text-secondary)', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: '0.7rem', display: 'inline-block', transform: advancedOpen.has(idx) ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s ease' }}>▶</span> Advanced
+                          </summary>
+                          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 0 }}>
+
+                            <div style={{ paddingBottom: 10 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: 160 }}>Confidence threshold</label>
+                                <input
+                                  type="number"
+                                  min={0} max={1} step={0.05}
+                                  className="form-input"
+                                  style={{ width: 80, padding: '4px 8px', fontSize: '0.8rem' }}
+                                  value={policy.config?.absolute_threshold ?? 0.60}
+                                  onChange={e => updatePolicyConfig(idx, { absolute_threshold: Number(e.target.value) })}
+                                  onMouseDown={e => e.stopPropagation()}
+                                />
+                              </div>
+                              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4, marginBottom: 0, lineHeight: 1.4 }}>
+                                Minimum cosine similarity score to consider a classification valid. Below this, the result is "unknown" and no filtering is applied.
+                              </p>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, paddingBottom: 10 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: 160 }}>Ambiguity margin</label>
+                                <input
+                                  type="number"
+                                  min={0} max={0.5} step={0.01}
+                                  className="form-input"
+                                  style={{ width: 80, padding: '4px 8px', fontSize: '0.8rem' }}
+                                  value={policy.config?.ambiguity_threshold ?? 0.08}
+                                  onChange={e => updatePolicyConfig(idx, { ambiguity_threshold: Number(e.target.value) })}
+                                  onMouseDown={e => e.stopPropagation()}
+                                />
+                              </div>
+                              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4, marginBottom: 0, lineHeight: 1.4 }}>
+                                Minimum gap between the top and second-best intent. If the margin is smaller, the classification is "ambiguous" and the candidate pools of both intents are merged.
+                              </p>
+                            </div>
+
+                          </div>
+                        </details>
                       </div>
 
                     </div>
@@ -534,6 +1234,29 @@ export function ProjectRoutingTab() {
 
                 </div>
               ))}
+
+              {policies.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '20px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  No routing policies configured.
+                </div>
+              )}
+            </div>
+
+            {/* Add Policy */}
+            <div style={{ marginTop: 10, border: '1.5px dashed var(--border)', borderRadius: 8, padding: '6px 10px' }}>
+              <SearchableSelect
+                options={ALL_POLICY_TYPES
+                  .filter(t => !policies.some(p => p.type === t))
+                  .map(t => ({
+                    value: t,
+                    label: POLICY_LABELS[t] ?? t,
+                    ...(POLICY_DESCRIPTIONS[t] ? { description: POLICY_DESCRIPTIONS[t] } : {}),
+                  }))}
+                value=""
+                onChange={addPolicy}
+                placeholder="Add a policy..."
+                disabled={ALL_POLICY_TYPES.every(t => policies.some(p => p.type === t))}
+              />
             </div>
           </div>
         </div>
@@ -578,18 +1301,15 @@ export function ProjectRoutingTab() {
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div className="form-group" style={{ margin: 0 }}>
                     <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>Endpoint Model</label>
-                    <select
-                      className="form-input"
+                    <SearchableSelect
                       value={item.modelId}
-                      onChange={e => updateTargetModel(idx, 'modelId', e.target.value)}
-                      required
-                      style={{ padding: '6px 10px', fontSize: '0.9rem' }}
-                    >
-                      <option value="" disabled>Select model</option>
-                      {availableModels
-                        .filter(m => m.id === item.modelId || !getUsedTargetModelIds(idx).has(m.id))
-                        .map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
-                    </select>
+                      onChange={v => updateTargetModel(idx, 'modelId', v)}
+                      placeholder="Select model"
+                      options={availableModels
+                        .filter(m => !m.capabilities?.embedding && (m.id === item.modelId || !getUsedTargetModelIds(idx).has(m.id)))
+                        .sort((a, b) => a.id.localeCompare(b.id))
+                        .map(m => ({ value: m.id, label: m.id }))}
+                    />
                   </div>
 
                   {showPromptInput && (
@@ -608,6 +1328,37 @@ export function ProjectRoutingTab() {
                         rows={2}
                         style={{ fontSize: '0.9rem', resize: 'vertical', minHeight: '60px' }}
                       />
+                    </div>
+                  )}
+
+                  {isSemanticIntentEnabled && Object.keys(semanticIntents).length > 0 && (
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>Intents</label>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {Object.keys(semanticIntents).map(intentKey => {
+                          const active = getIntentsForModel(item.modelId).has(intentKey);
+                          return (
+                            <button
+                              key={intentKey}
+                              type="button"
+                              onClick={() => toggleIntentForModel(item.modelId, intentKey)}
+                              style={{
+                                padding: '3px 10px',
+                                borderRadius: 12,
+                                border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
+                                background: active ? 'var(--primary)' : 'transparent',
+                                color: active ? '#fff' : 'var(--text-secondary)',
+                                fontSize: '0.72rem',
+                                cursor: 'pointer',
+                                fontFamily: 'monospace',
+                                transition: 'all 0.15s',
+                              }}
+                            >
+                              {intentKey}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -635,7 +1386,7 @@ export function ProjectRoutingTab() {
           <button
             type="button"
             onClick={addTargetModel}
-            disabled={availableModels.filter(m => !targetModels.some(t => t.modelId === m.id)).length === 0}
+            disabled={availableModels.filter(m => !m.capabilities?.embedding && !targetModels.some(t => t.modelId === m.id)).length === 0}
             style={{
               display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center',
               width: '100%', padding: '10px', marginTop: 12,
@@ -658,8 +1409,20 @@ export function ProjectRoutingTab() {
         </div>
 
         <div style={{ marginTop: 32 }}>
-          <button type="submit" className="btn btn-primary" disabled={saving || !isDirty}>
-            {saving ? <span className="spinner" /> : 'Save Routing Configuration'}
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={saving}
+            onClick={() => void doSave()}
+            style={saved ? { background: '#16a34a', borderColor: '#16a34a', transition: 'background 0.2s, border-color 0.2s' } : { transition: 'background 0.2s, border-color 0.2s' }}
+          >
+            {saving ? (
+              <span className="spinner" />
+            ) : saved ? (
+              <><Check size={15} style={{ marginRight: 6 }} />Saved!</>
+            ) : (
+              'Save Routing Configuration'
+            )}
           </button>
         </div>
       </form>

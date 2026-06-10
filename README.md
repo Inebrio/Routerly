@@ -254,6 +254,13 @@ Mix and match freely. A single project can span cloud and local models simultane
 
 ---
 
+## Benchmarks
+
+Independent benchmarks are published in the **[routerly-benchmark](https://github.com/Inebrio/routerly-benchmark)** repository.
+Reproducible tests measure routing latency overhead, cost savings across workloads, and failover behaviour under simulated provider outages.
+
+---
+
 ## Documentation
 
 Full documentation is available at **[https://docs.routerly.ai](https://docs.routerly.ai)**.
@@ -295,6 +302,13 @@ All configuration lives in `~/.routerly/`, plain JSON, no database.
 Override the base path with `ROUTERLY_HOME=/custom/path`.
 
 **When running via Docker**, config and data are persisted in the `routerly_data` named volume, mounted at `/data` inside the container (`ROUTERLY_HOME=/data`). No extra setup needed: the directory is created automatically on first start.
+
+---
+
+## Security
+
+Routerly is a pure TypeScript / Node.js project and has **no dependency on `litellm`** or any Python package.
+See [SECURITY.md](SECURITY.md) for vulnerability reporting, supply chain notes, and security practices.
 
 ---
 

@@ -56,6 +56,9 @@ const FLAG_SCOPE     = getArg('scope')       ?? process.env.ROUTERLY_SCOPE      
 const FLAG_PORT      = getArg('port')        ?? process.env.ROUTERLY_PORT        ?? '';
 const FLAG_HOST      = getArg('host')        ?? process.env.ROUTERLY_HOST        ?? '';
 const FLAG_URL       = getArg('public-url')  ?? process.env.ROUTERLY_PUBLIC_URL  ?? '';
+const INSTALL_VERSION = getArg('version') ?? ''; // set by install.sh/ps1 via --version=vX.Y.Z
+const INSTALL_CHANNEL = getArg('channel') ?? 'latest'; // set by install.sh/ps1 via --channel=
+const FLAG_NO_TELEMETRY = hasFlag('no-telemetry') || process.env.CI === '1' || process.env.CI === 'true';
 
 // From env vars (--yes mode)
 const ENV_INSTALL_SVC  = process.env.ROUTERLY_INSTALL_SERVICE;
@@ -122,7 +125,8 @@ async function confirm(prompt, defaultYes = true) {
 }
 
 // ─── Banner ───────────────────────────────────────────────────────────────────
-console.log('\n' + c.bold(c.cyan('  Routerly')) + c.dim('  Installer') + '\n');
+const _versionLabel = INSTALL_VERSION ? c.dim(` (${INSTALL_VERSION})`) : '';
+console.log('\n' + c.bold(c.cyan('  Routerly')) + c.dim('  Installer') + _versionLabel + '\n');
 console.log(c.dim('  Self-hosted LLM gateway — https://github.com/Inebrio/Routerly\n'));
 console.log(
   c.yellow('  ◆ Beta') + c.dim(' — Routerly is in active development. You may encounter bugs.') + '\n' +
@@ -419,6 +423,9 @@ if (isExistingInstall && !YES) {
       info(`User data kept at ${c.dim(cliHome)}`);
     }
 
+    if (!FLAG_NO_TELEMETRY && existingSettings.telemetry?.enabled && existingSettings.telemetry?.installId) {
+      try { await pingTelemetry('uninstall', existingSettings.telemetry.installId); } catch { /* never block uninstall */ }
+    }
     console.log('\n' + c.green(c.bold('  Routerly uninstalled successfully.')) + '\n');
     rl.close(); process.exit(0);
   }
@@ -795,6 +802,7 @@ if (!fs.existsSync(settingsPath)) {
     defaultTimeoutMs: 30000,
     logLevel: 'info',
     publicUrl,
+    channel: INSTALL_VERSION ? 'custom' : INSTALL_CHANNEL,
   };
   await writeFileP(settingsPath, JSON.stringify(settings, null, 2), needsSudo);
   success('settings.json written');
@@ -980,6 +988,34 @@ if (installService && installMode === 'fresh') {
 // ════════════════════════════════════════════════════════════════════════════
 // Done
 // ════════════════════════════════════════════════════════════════════════════
+
+// Send upgrade ping if the user had previously opted in
+if (isUpdate && !FLAG_NO_TELEMETRY && existingSettings.telemetry?.enabled && existingSettings.telemetry?.installId) {
+  try { await pingTelemetry('upgrade', existingSettings.telemetry.installId); } catch { /* never block upgrade */ }
+}
+
+// On fresh installs, ask for anonymous metrics consent (skip in CI or --no-telemetry)
+if (!isUpdate && !FLAG_NO_TELEMETRY && installService) {
+  console.log('\n' + '─'.repeat(60));
+  console.log(c.dim('\n  Help improve Routerly? (completely optional)\n'));
+  console.log('  Sends only: event type, version, platform, and a random ID.');
+  console.log('  No personal data. No IP stored. Opt out anytime:');
+  console.log(c.dim('    routerly telemetry off\n'));
+  const wantsMetrics = await confirm('  Send anonymous install metrics?', false);
+  if (wantsMetrics) {
+    const installId = randomBytes(16).toString('hex');
+    try {
+      if (fs.existsSync(settingsPath)) {
+        const current = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+        current.telemetry = { enabled: true, installId };
+        await writeFileP(settingsPath, JSON.stringify(current, null, 2), needsSudo);
+      }
+      await pingTelemetry('install', installId);
+      success('Anonymous metrics enabled. Thank you!');
+    } catch { /* ignore, non-critical */ }
+  }
+}
+
 console.log('\n' + '─'.repeat(60));
 console.log(c.green(c.bold('\n  Routerly installed successfully!\n')));
 
@@ -1216,6 +1252,21 @@ async function setupWindowsService({ serviceEntry, nodeExe, routerlyHome, port }
     console.log(`  set ROUTERLY_HOME=${routerlyHome}`);
     console.log(`  node "${serviceEntry}"`);
   }
+}
+
+/** Fire-and-forget telemetry ping. Never throws. */
+async function pingTelemetry(event, installId) {
+  const version = INSTALL_VERSION || 'unknown';
+  try {
+    await Promise.race([
+      fetch('https://telemetry.routerly.ai/ping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event, installId, version, platform: PLATFORM }),
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000)),
+    ]);
+  } catch { /* ignore */ }
 }
 
 /** Create admin user using the public setup endpoint (no auth required). */

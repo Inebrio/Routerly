@@ -27,8 +27,9 @@ function trySilentRefresh(): Promise<boolean> {
         body: JSON.stringify({ refreshToken }),
       });
       if (!res.ok) return false;
-      const data = await res.json() as { token: string };
+      const data = await res.json() as { token: string; refreshToken?: string };
       localStorage.setItem('lr_token', data.token);
+      if (data.refreshToken) localStorage.setItem('lr_refresh_token', data.refreshToken);
       // Decode expiry from new token
       try {
         const payload = JSON.parse(atob(data.token.split('.')[0]!.replace(/-/g, '+').replace(/_/g, '/'))) as { exp?: number };
@@ -151,37 +152,52 @@ export interface PricingTier {
   cachePerMillion?: number;
 }
 
+export interface ModelCapabilities {
+  thinking?: boolean;
+  vision?: boolean;
+  functionCalling?: boolean;
+  json?: boolean;
+  embedding?: boolean;
+}
+
 export interface Model {
   id: string; name: string; provider: string; endpoint: string;
-  cost: { inputPerMillion: number; outputPerMillion: number; cachePerMillion?: number; pricingTiers?: PricingTier[] };
+  upstreamModelId?: string;
+  cost: { inputPerMillion: number; outputPerMillion: number; cachePerMillion?: number; cacheWritePerMillion?: number; pricingTiers?: PricingTier[] };
   contextWindow?: number;
   limits?: Limit[];
   /** @deprecated use limits */ globalThresholds?: { daily?: number; weekly?: number; monthly?: number };
+  capabilities?: ModelCapabilities;
 }
 
 export const getModels = () => request<Model[]>('/models');
 export const createModel = (data: {
-  id: string; name?: string; provider: string; endpoint: string; apiKey?: string;
-  cloneFrom?: string;
+  id: string; name?: string; provider: string; endpoint: string; apiKey?: string; cfClearance?: string;
+  cloneFrom?: string; upstreamModelId?: string;
   inputPerMillion: number; outputPerMillion: number;
   cachePerMillion?: number;
+  cacheWritePerMillion?: number;
   contextWindow?: number;
   pricingTiers?: PricingTier[];
   limits?: Limit[];
+  capabilities?: ModelCapabilities;
 }) => request<Model>('/models', { method: 'POST', body: JSON.stringify(data) });
 export const updateModel = (id: string, data: {
   id?: string;
-  name?: string; provider: string; endpoint: string; apiKey?: string;
+  name?: string; provider: string; endpoint: string; apiKey?: string; cfClearance?: string;
+  upstreamModelId?: string;
   inputPerMillion: number; outputPerMillion: number;
   cachePerMillion?: number;
+  cacheWritePerMillion?: number;
   contextWindow?: number;
   pricingTiers?: PricingTier[];
   limits?: Limit[];
+  capabilities?: ModelCapabilities;
 }) => request<Model>(`/models/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteModel = (id: string) => request<void>(`/models/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
 export interface RoutingPolicy {
-  type: 'context' | 'cheapest' | 'health' | 'performance' | 'llm' | 'capability' | 'rate-limit' | 'fairness' | 'budget-remaining';
+  type: 'context' | 'cheapest' | 'health' | 'performance' | 'llm' | 'capability' | 'rate-limit' | 'fairness' | 'budget-remaining' | 'semantic-intent';
   enabled: boolean;
   config?: any;
 }
@@ -291,6 +307,8 @@ export interface UsageRecord {
   callType?: 'routing' | 'completion';
   errorMessage?: string;
   trace?: TraceEntry[];
+  cacheHit?: boolean;
+  cacheSimilarity?: number;
 }
 
 export interface UsageStats {
@@ -298,13 +316,16 @@ export interface UsageStats {
   byModel: Record<string, { calls: number; inputTokens: number; outputTokens: number; cachedInputTokens: number; cost: number; errors: number }>;
   timeline: [string, number][];
   records: Array<UsageRecord>;
+  pagination?: { page: number; pageSize: number; totalRecords: number; totalPages: number };
 }
 
-export const getUsage = (period = 'monthly', projectId?: string, from?: string, to?: string) => {
+export const getUsage = (period = 'monthly', projectId?: string, from?: string, to?: string, page?: number, pageSize?: number) => {
   const params = new URLSearchParams({ period });
   if (projectId) params.set('projectId', projectId);
   if (from) params.set('from', from);
   if (to)   params.set('to', to);
+  if (page != null) params.set('page', String(page));
+  if (pageSize != null) params.set('pageSize', String(pageSize));
   return request<UsageStats>(`/usage?${params.toString()}`);
 };
 
@@ -338,6 +359,11 @@ export type AzureEmailConfig    = AzureChannelConfig;
 export type GoogleEmailConfig   = GoogleChannelConfig;
 export type EmailConfig = SmtpChannelConfig | SesChannelConfig | SendGridChannelConfig | AzureChannelConfig | GoogleChannelConfig;
 
+export interface TelemetryConfig {
+  enabled: boolean;
+  installId: string;
+}
+
 export interface Settings {
   port: number;
   host: string;
@@ -347,6 +373,10 @@ export interface Settings {
   /** Public base URL of the service — used in "How to connect" when dashboard runs on a different host. */
   publicUrl?: string;
   notifications?: NotificationsConfig;
+  /** Distribution channel for updates: 'latest' | 'stable' | 'develop' | vX.Y.Z tag */
+  channel?: string;
+  /** Anonymous install metrics opt-in. Absent means the user has not been asked yet. */
+  telemetry?: TelemetryConfig;
 }
 
 export const getSettings = () => request<Settings>('/settings');
@@ -354,6 +384,15 @@ export const updateSettings = (data: Partial<Settings>) =>
   request<Settings>('/settings', { method: 'PUT', body: JSON.stringify(data) });
 
 // ── System info ──────────────────────────────────────────────────────────────
+export interface UpdateInfo {
+  available: boolean;
+  currentVersion: string;
+  latestVersion: string;
+  channel: string;
+  releaseUrl?: string;
+  checkedAt: string;
+}
+
 export interface SystemInfo {
   version: string;
   nodeVersion: string;
@@ -361,9 +400,20 @@ export interface SystemInfo {
   configDir: string;
   dataDir: string;
   uptimeSeconds: number;
+  channel: string;
+  isDocker: boolean;
+  updateInfo: UpdateInfo | null;
 }
 
 export const getSystemInfo = () => request<SystemInfo>('/system/info');
+export const checkForUpdates = () => request<UpdateInfo>('/system/update-check');
+export const triggerUpdate = () => request<{ message: string }>('/system/update', { method: 'POST' });
+
+export interface AvailableReleases {
+  channels: string[];
+  versions: string[];
+}
+export const getAvailableReleases = () => request<AvailableReleases>('/system/releases');
 
 export const testNotificationChannel = (channelId: string, to: string) =>
   request<{ ok: boolean; message: string; fixedSecure?: boolean }>('/notifications/test', {

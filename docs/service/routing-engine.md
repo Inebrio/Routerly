@@ -186,6 +186,91 @@ No configuration options (reads limits from the project and model config).
 
 ---
 
+### `semantic-intent`
+
+**Type:** hard filter (pool narrowing)
+
+Classifies the incoming request by semantic intent using embedding-based similarity, then restricts the candidate pool to the models mapped to that intent. Policies that run after it (e.g. `cheapest`, `performance`) operate only within the narrowed pool.
+
+#### How it works
+
+1. The last user message is extracted from the request.
+2. It is embedded using the configured embedding model/provider.
+3. Each intent's **centroid** — the element-wise mean of its example phrase embeddings — is computed (and cached for 1 hour).
+4. Cosine similarity is computed between the request vector and every intent centroid.
+5. The result is classified as `confident`, `ambiguous`, or `unknown`:
+
+| Status | Condition | Candidate pool |
+|---|---|---|
+| `confident` | `topScore ≥ absolute_threshold` and `margin ≥ ambiguity_threshold` | Intent's `candidate_models` only |
+| `ambiguous` | `topScore ≥ absolute_threshold` but `margin < ambiguity_threshold` | Union of top-2 intents' `candidate_models` |
+| `unknown` | `topScore < absolute_threshold` | All candidates (no filtering) |
+
+If the embedding call itself fails, the policy degrades gracefully and passes all candidates through unchanged.
+
+#### Configuration
+
+| Config key | Default | Description |
+|------------|---------|-------------|
+| `embedding_provider` | _(required)_ | `openai` or `ollama` |
+| `embedding_model` | _(required)_ | Embedding model ID. The model must have `capabilities.embedding = true` |
+| `embedding_endpoint` | — | Custom base URL (useful for self-hosted Ollama) |
+| `embedding_api_key` | — | API key override (defaults to the provider's global key) |
+| `absolute_threshold` | `0.60` | Minimum cosine similarity to recognise a match |
+| `ambiguity_threshold` | `0.08` | Minimum margin between top-2 scores to resolve ambiguity |
+| `intents` | _(required)_ | Map of intent name → `{ examples: string[], candidate_models: string[] }` |
+
+#### Intent definition
+
+```json
+{
+  "intents": {
+    "billing": {
+      "examples": [
+        "I need an invoice",
+        "Can I change my payment method?",
+        "Refund request"
+      ],
+      "candidate_models": ["gpt-4.1-mini"]
+    },
+    "code_review": {
+      "examples": [
+        "Review this pull request",
+        "Check my TypeScript code",
+        "What's wrong with this function?"
+      ],
+      "candidate_models": ["claude-3-7-sonnet", "gpt-4.1"]
+    }
+  }
+}
+```
+
+Intent names are normalised to `snake_case` (e.g. `"Customer Support"` → `customer_support`).
+
+#### Trace entries
+
+The policy emits three trace entries visible in the **Router Response** panel of the dashboard:
+
+| Message | When | Details |
+|---|---|---|
+| `policy:semantic-intent:classification` | Always (when text is classified) | `topIntent`, `topScore`, `secondIntent`, `secondScore`, `margin`, `status` |
+| `policy:semantic-intent:result` | After pool narrowing | `allowed`, `excluded`, `status` |
+| `policy:semantic-intent:error` | If the embedding call fails | `error` message |
+
+#### Centroid cache
+
+Intent centroids are computed once — embedding all example phrases and averaging them — then stored in memory with a 1-hour TTL. The cache key includes a hash of the example phrases, so changing an intent's examples automatically invalidates it without a service restart.
+
+**Use when:** you have distinct request categories that must always reach specific models (support triage, multilingual routing, task-type segregation, etc.).
+
+:::info Recommended pipeline position
+Place `semantic-intent` **before** scoring policies (`cheapest`, `performance`, `llm`) so they score only within the already-narrowed pool. Place it **after** hard-filter policies (`health`, `context`, `capability`) so unhealthy or incapable models are excluded before intent matching.
+
+Suggested order: `health` → `context` → `capability` → `budget-remaining` → `rate-limit` → **`semantic-intent`** → `llm` → `performance` → `fairness` → `cheapest`
+:::
+
+---
+
 ## Policy Ordering and Weights
 
 Policies are applied in the order configured in the project. Their positional weight (`total − index`) means policies near the top of the list have more influence on the final score. Reorder policies via the dashboard (**Projects → your project → Routing**) or the CLI.

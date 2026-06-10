@@ -9,6 +9,7 @@ export type {
   LimitsMode,
   RollingUnit,
   BudgetThresholds,
+  ModelCapabilities,
   ModelConfig,
   ProjectModelRef,
   ProjectConfig,
@@ -18,6 +19,9 @@ export type {
   TokenModelRef,
   RoutingPolicy,
   RoutingPolicyType,
+  IntentDefinition,
+  SemanticIntentConfig,
+  IntentClassification,
   UserConfig,
   RoleConfig,
   Permission,
@@ -41,6 +45,9 @@ export type {
   CallType,
   TraceEntry,
   UsageRecord,
+  SemanticCacheConfig,
+  UpdateInfo,
+  AvailableReleases,
 } from './types/config.js';
 
 export type {
@@ -74,6 +81,5 @@ export type {
 export type { RoutingCandidate, RoutingResponse } from './types/routing.js';
 
 // Static configuration data
-import providersConf from './conf/providers.json';
-import llmApiPricing from './conf/llm_api_pricing.json';
-export { providersConf, llmApiPricing };
+import providersConf from './conf/providers.json' with { type: 'json' };
+export { providersConf };

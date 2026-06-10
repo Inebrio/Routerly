@@ -1,6 +1,6 @@
 // ─── Config types ────────────────────────────────────────────────────────────
 
-export type Provider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom';
+export type Provider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom' | 'openai-web' | 'anthropic-web' | 'deepseek' | 'groq' | 'together' | 'perplexity';
 
 export interface PricingTier {
   /** What dimension is being measured, e.g. "context_tokens" */
@@ -91,6 +91,8 @@ export interface ModelCapabilities {
   functionCalling?: boolean;
   /** Whether the model supports JSON-mode output (response_format: json_object) */
   json?: boolean;
+  /** Whether the model is an embedding model */
+  embedding?: boolean;
 }
 
 export interface ModelConfig {
@@ -100,6 +102,14 @@ export interface ModelConfig {
   endpoint: string;
   /** Provider API key (stored in plaintext; file permissions protect it) */
   apiKey?: string | undefined;
+  /** cf_clearance cookie value for Cloudflare bypass (openai-web only) */
+  cfClearance?: string | undefined;
+  /**
+   * The exact model identifier sent to the upstream provider API.
+   * Used by the custom adapter to decouple the Routerly ID from the upstream model name.
+   * If absent, the adapter falls back to stripping the provider prefix from `id`.
+   */
+  upstreamModelId?: string;
   cost: TokenCost;
   /** Maximum context window size in tokens */
   contextWindow?: number;
@@ -124,7 +134,7 @@ export interface ProjectModelRef {
   thresholds?: BudgetThresholds;
 }
 
-export type RoutingPolicyType = 'context' | 'cheapest' | 'health' | 'performance' | 'llm' | 'capability' | 'rate-limit' | 'fairness' | 'budget-remaining';
+export type RoutingPolicyType = 'context' | 'cheapest' | 'health' | 'performance' | 'llm' | 'capability' | 'rate-limit' | 'fairness' | 'budget-remaining' | 'semantic-intent';
 
 export interface RoutingPolicy {
   type: RoutingPolicyType;
@@ -132,6 +142,89 @@ export interface RoutingPolicy {
   enabled: boolean;
   /** Optional policy-specific settings */
   config?: any;
+}
+
+/** One intent definition: example utterances and the models to consider for this intent. */
+export interface IntentDefinition {
+  /** Representative utterances used to compute the intent embedding (centroid). */
+  examples: string[];
+  /** Model IDs from the project's candidate pool to route to when this intent is matched. */
+  candidate_models: string[];
+}
+
+/** Configuration for the `semantic-intent` routing policy. */
+export interface SemanticIntentConfig {
+  /** Embedding provider to use: 'openai' or 'ollama'. */
+  embedding_provider: 'openai' | 'ollama';
+  /** Embedding model ID (e.g. 'text-embedding-3-small', 'nomic-embed-text'). */
+  embedding_model: string;
+  /** Fallback embedding model IDs tried in order if the primary fails. */
+  embedding_fallback_models?: string[];
+  /** API endpoint for the embedding provider. Defaults to provider's default. */
+  embedding_endpoint?: string;
+  /** API key for the embedding provider. Required for OpenAI. */
+  embedding_api_key?: string;
+  /**
+   * Minimum cosine similarity score for a classification to be considered `confident`.
+   * Requests scoring below this threshold are classified as `unknown` (no filtering applied).
+   * @default 0.60
+   */
+  absolute_threshold?: number;
+  /**
+   * Minimum margin between the top and second-best intent score to be considered `confident`.
+   * If the margin is below this value, the classification is `ambiguous`.
+   * @default 0.08
+   */
+  ambiguity_threshold?: number;
+  /**
+   * Name of the policy type to fall back to when the classification is `ambiguous` or `unknown`.
+   * If not set, all candidates are passed through unchanged.
+   */
+  fallback_policy?: RoutingPolicyType;
+  /** Map of intent name to its definition. */
+  intents: Record<string, IntentDefinition>;
+}
+
+/** Cache configuration used inside the `llm` routing policy (`policy.config.cache`). */
+export interface SemanticCacheConfig {
+  /** Embedding provider to use: 'openai' or 'ollama'. */
+  embedding_provider: 'openai' | 'ollama';
+  /** Embedding model ID (e.g. 'text-embedding-3-small', 'nomic-embed-text'). */
+  embedding_model: string;
+  /** Fallback embedding model IDs tried in order if the primary fails. */
+  embedding_fallback_models?: string[];
+  /** API endpoint for the embedding provider. Defaults to provider's default. */
+  embedding_endpoint?: string;
+  /** API key for the embedding provider. Required for OpenAI. */
+  embedding_api_key?: string;
+  /**
+   * How long a cached response remains valid, in minutes.
+   * @default 60
+   */
+  ttl_seconds?: number;
+  extend_on_hit?: boolean;
+  /**
+   * Minimum cosine similarity between the incoming request embedding and a cached entry
+   * for the cached response to be returned.
+   * @default 0.85
+   */
+  similarity_threshold?: number;
+}
+
+/** Result of classifying a request against known intents. */
+export interface IntentClassification {
+  /** The name of the top-ranked intent (or null when status is 'unknown'). */
+  topIntent: string | null;
+  /** Cosine similarity score of the top intent. */
+  topScore: number;
+  /** The name of the second-ranked intent (or null when fewer than 2 intents). */
+  secondIntent: string | null;
+  /** Cosine similarity of the second-ranked intent. */
+  secondScore: number;
+  /** Difference between topScore and secondScore. */
+  margin: number;
+  /** Classification confidence status. */
+  status: 'confident' | 'ambiguous' | 'unknown';
 }
 
 export type ProjectRole = 'viewer' | 'editor' | 'admin';
@@ -211,6 +304,13 @@ export type Permission =
   | 'user:write'
   | 'report:read';
 
+export interface TelemetryConfig {
+  /** Whether the user has opted in to anonymous install metrics */
+  enabled: boolean;
+  /** Random UUID generated once at opt-in time, never changes */
+  installId: string;
+}
+
 export interface Settings {
   port: number;
   host: string;
@@ -228,6 +328,36 @@ export interface Settings {
   publicUrl?: string;
   /** Optional notification channels configuration */
   notifications?: NotificationsConfig;
+  /** Distribution channel for updates: 'latest' | 'stable' | 'develop' | vX.Y.Z tag */
+  channel?: string;
+  /** Anonymous install metrics opt-in. Absent means the user has not been asked yet. */
+  telemetry?: TelemetryConfig;
+}
+
+// ─── Update info ─────────────────────────────────────────────────────────────
+
+/** Available channels and version tags from GitHub Releases. */
+export interface AvailableReleases {
+  /** Named channels (e.g. 'latest', 'stable', 'develop') */
+  channels: string[];
+  /** Semver version tags (e.g. 'v0.2.0', 'v0.1.5') */
+  versions: string[];
+}
+
+/** Result of a version update check against GitHub Releases. */
+export interface UpdateInfo {
+  /** Whether a newer version is available */
+  available: boolean;
+  /** Version string currently running (e.g. '0.1.5') */
+  currentVersion: string;
+  /** Latest version found in the resolved channel (e.g. '0.2.0') */
+  latestVersion: string;
+  /** Channel or tag that was checked (e.g. 'latest', 'stable', 'v0.2.0') */
+  channel: string;
+  /** URL to the GitHub release page */
+  releaseUrl?: string;
+  /** ISO-8601 timestamp of the last check */
+  checkedAt: string;
 }
 
 // ─── Notification config types ────────────────────────────────────────────────
@@ -356,4 +486,18 @@ export interface UsageRecord {
   callType?: CallType;
   /** Full trace captured at tracking time (router + model call events) */
   trace?: TraceEntry[];
+  /** Request trace ID (matches x-routerly-trace-id response header) */
+  traceId?: string;
+  /** Cost breakdown: input tokens cost in USD (includes cached + cache-write) */
+  costInput?: number;
+  /** Cost breakdown: output tokens cost in USD */
+  costOutput?: number;
+  /** Price per 1M input tokens in USD (from model config at call time) */
+  priceInput?: number;
+  /** Price per 1M output tokens in USD (from model config at call time) */
+  priceOutput?: number;
+  /** True when this completion was served from the semantic response cache */
+  cacheHit?: boolean;
+  /** Cosine similarity score of the matched cache entry (0–1) */
+  cacheSimilarity?: number;
 }

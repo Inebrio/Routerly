@@ -4,6 +4,7 @@ import { ChevronDown } from 'lucide-react';
 export interface SelectOption {
   value: string;
   label: string;
+  description?: string;
 }
 
 interface SearchableSelectProps {
@@ -121,7 +122,10 @@ export function SearchableSelect({
                   onMouseEnter={e => { if (opt.value !== value) (e.currentTarget as HTMLElement).style.background = 'var(--bg-surface)'; }}
                   onMouseLeave={e => { if (opt.value !== value) (e.currentTarget as HTMLElement).style.background = 'var(--bg-elevated)'; }}
                 >
-                  {opt.label}
+                  <div>{opt.label}</div>
+                  {opt.description && (
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.4 }}>{opt.description}</div>
+                  )}
                 </div>
               ))
             )}

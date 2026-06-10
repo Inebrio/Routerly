@@ -1,17 +1,18 @@
 # ─── Stage 1: Builder ────────────────────────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:25-alpine AS builder
 
 WORKDIR /app
 
 # Copy workspace manifests first for better layer caching
-COPY package.json ./
+COPY package.json package-lock.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/service/package.json ./packages/service/
 COPY packages/dashboard/package.json ./packages/dashboard/
 COPY packages/cli/package.json ./packages/cli/
 
 # Install all deps (including devDependencies needed for build)
-RUN npm install
+# npm ci ensures exact lockfile-pinned versions are installed
+RUN npm ci
 
 # Copy source code
 COPY tsconfig.base.json ./
@@ -30,7 +31,7 @@ RUN cd packages/service && (npx tsc --noEmitOnError false || true) && test -f di
 RUN npm run build --workspace=packages/cli
 
 # ─── Stage 2: Production ─────────────────────────────────────────────────────
-FROM node:20-alpine AS production
+FROM node:25-alpine AS production
 
 WORKDIR /app
 
@@ -38,14 +39,14 @@ WORKDIR /app
 RUN addgroup -S routerly && adduser -S routerly -G routerly
 
 # Copy workspace manifests
-COPY package.json ./
+COPY package.json package-lock.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/service/package.json ./packages/service/
 COPY packages/dashboard/package.json ./packages/dashboard/
 COPY packages/cli/package.json ./packages/cli/
 
 # Install production dependencies only (--ignore-scripts skips `prepare`/husky which is dev-only)
-RUN npm install --omit=dev --ignore-scripts
+RUN npm ci --omit=dev --ignore-scripts
 
 # Copy compiled outputs from builder stage
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
@@ -70,7 +71,8 @@ VOLUME ["/data"]
 EXPOSE 3000
 
 ENV NODE_ENV=production \
-    ROUTERLY_HOME=/data
+    ROUTERLY_HOME=/data \
+    ROUTERLY_DOCKER=1
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://localhost:3000/health || exit 1

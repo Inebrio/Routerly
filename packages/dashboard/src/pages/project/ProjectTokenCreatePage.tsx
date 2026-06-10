@@ -23,8 +23,26 @@ export function ProjectTokenCreatePage() {
   const allLabels = Array.from(new Set((project.tokens || []).flatMap(t => t.labels || []))).sort();
 
   async function copyToClipboard(token: string) {
-    try { await navigator.clipboard.writeText(token); setCopied(true); setTimeout(() => setCopied(false), 2000); }
-    catch { setErr('Failed to copy to clipboard.'); }
+    const success = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); };
+    try {
+      await navigator.clipboard.writeText(token);
+      success();
+    } catch {
+      // Fallback for non-secure contexts (HTTP, docker self-hosted via IP)
+      try {
+        const el = document.createElement('textarea');
+        el.value = token;
+        el.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
+        document.body.appendChild(el);
+        el.focus();
+        el.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(el);
+        if (ok) { success(); } else { setErr('Copy failed — please select and copy the token manually.'); }
+      } catch {
+        setErr('Copy failed — please select and copy the token manually.');
+      }
+    }
   }
 
   async function handleCreate(e: React.FormEvent) {

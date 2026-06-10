@@ -7,6 +7,10 @@ sidebar_position: 5
 
 Routerly's router selects which model to use for each request by running a configurable stack of **routing policies**. Policies are applied in priority order; each policy can score, filter, or directly pick a model from the candidate set.
 
+:::tip Benchmarks
+Reproducible routing benchmarks — latency overhead, cost savings, and failover behaviour — are published at **[github.com/Inebrio/routerly-benchmark](https://github.com/Inebrio/routerly-benchmark)**.
+:::
+
 ---
 
 ## How Routing Works
@@ -64,6 +68,12 @@ Filters out models whose context window is smaller than the current request's es
 
 Uses a separate LLM call to decide which model to route to, based on request content. This policy is experimental and introduces an extra API call per request.
 
+**Config options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `thinking` | `boolean` | `false` | If `true` and the routing model supports extended thinking (e.g. Claude with thinking capability), the routing call uses it for more accurate decisions. **Warning:** this increases routing latency significantly. |
+
 **Use when:** you want dynamic model selection based on request semantics.
 
 ### `rate-limit`
@@ -83,6 +93,37 @@ Distributes requests across models to balance load, or ensures that cheaper mode
 Scores models by how much of their associated budget is still available. Models with more remaining budget get higher scores.
 
 **Use when:** you have per-model spending limits and want Routerly to naturally prefer models with headroom.
+
+### `semantic-intent`
+
+Classifies each incoming request by semantic intent using embeddings, then restricts the candidate pool to the models you have mapped to that intent.
+
+**How it works:**
+
+1. You define **intents** — each intent has a name, a list of **example phrases** that represent it, and the **target models** that should handle requests of that type.
+2. When a request arrives, Routerly embeds the user message and compares it against the centroid of each intent's examples using cosine similarity.
+3. Based on the best match score and the gap between the top two intents, the policy produces one of three outcomes:
+
+| Outcome | Condition | Effect |
+|---|---|---|
+| **Confident** | Top score ≥ threshold and margin ≥ ambiguity gap | Hard-filters candidates to the matched intent's model pool |
+| **Ambiguous** | Top score ≥ threshold but gap is too small | Merges the top-2 intent pools |
+| **Unknown** | Top score below threshold | No filtering — all candidates pass through |
+
+**Configuration:**
+
+| Option | Default | Description |
+|---|---|---|
+| `embedding_provider` | _(required)_ | `openai` or `ollama` |
+| `embedding_model` | _(required)_ | Model ID to use for embedding (must have the embedding capability) |
+| `absolute_threshold` | `0.60` | Minimum cosine similarity score to consider a match |
+| `ambiguity_threshold` | `0.08` | Minimum margin between top-2 scores to consider a match confident |
+
+**Use when:** you have distinct request categories that should always be routed to specific models (e.g. billing questions → a fine-tuned model, code requests → a coding model).
+
+:::tip Intent centroids are cached
+Embeddings for intent examples are computed once and cached in memory for 1 hour. Changing an intent's examples automatically invalidates the cache.
+:::
 
 ---
 
