@@ -152,13 +152,40 @@
     "endpoint": "https://api.anthropic.com",
     "models": [
       {
+        "id": "claude-fable-5",
+        "input": 10,
+        "output": 50,
+        "cache": 1.0,
+        "cacheWrite": 12.5,
+        "contextWindow": 1000000,
+        "notes": "Claude Fable 5 — most capable model (June 2026)"
+      },
+      {
+        "id": "claude-opus-4-8",
+        "input": 5,
+        "output": 25,
+        "cache": 0.5,
+        "cacheWrite": 6.25,
+        "contextWindow": 1000000,
+        "notes": "Claude Opus 4.8 — flagship model"
+      },
+      {
+        "id": "claude-opus-4-7",
+        "input": 5,
+        "output": 25,
+        "cache": 0.5,
+        "cacheWrite": 6.25,
+        "contextWindow": 1000000,
+        "notes": "Claude Opus 4.7"
+      },
+      {
         "id": "claude-opus-4-6",
         "input": 5,
         "output": 25,
-        "cache": 1.5,
-        "cacheWrite": 18.75,
-        "contextWindow": 200000,
-        "notes": "Premium Claude model",
+        "cache": 0.5,
+        "cacheWrite": 6.25,
+        "contextWindow": 1000000,
+        "notes": "Claude Opus 4.6",
         "pricingTiers": [
           {
             "metric": "context_tokens",
@@ -173,8 +200,10 @@
         "id": "claude-sonnet-4-6",
         "input": 3,
         "output": 15,
-        "cache": 0.3,        "cacheWrite": 3.75,        "contextWindow": 200000,
-        "notes": "Mid‑range Claude model"
+        "cache": 0.3,
+        "cacheWrite": 3.75,
+        "contextWindow": 1000000,
+        "notes": "Claude Sonnet 4.6 — balanced speed and intelligence"
       },
       {
         "id": "claude-sonnet-4-5",
