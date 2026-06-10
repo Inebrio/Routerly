@@ -87,7 +87,6 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
     { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Test' },
-    { to: '/dashboard/help', icon: <HelpCircle size={17} />, label: 'Help' },
   ];
 
   return (
@@ -139,6 +138,14 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
         >
           <SettingsIcon size={15} />
           <span className="nav-label">Settings</span>
+        </NavLink>
+        <NavLink
+          to="/dashboard/help"
+          title={collapsed ? 'Help' : undefined}
+          className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+        >
+          <HelpCircle size={15} />
+          <span className="nav-label">Help</span>
         </NavLink>
         <button className="nav-item sign-out" title="Sign Out" onClick={handleLogout}>
           <LogOut size={15} />
