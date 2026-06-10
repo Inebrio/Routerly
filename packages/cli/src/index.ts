@@ -13,6 +13,7 @@ import { makeReportCommand } from './commands/report.js';
 import { makeServiceCommand } from './commands/service.js';
 import { makeStatusCommand } from './commands/status.js';
 import { makeUpdateCommand } from './commands/update.js';
+import { makeTelemetryCommand } from './commands/telemetry.js';
 
 const program = new Command();
 
@@ -33,5 +34,6 @@ program.addCommand(makeRoleCommand());
 program.addCommand(makeReportCommand());
 program.addCommand(makeServiceCommand());
 program.addCommand(makeUpdateCommand());
+program.addCommand(makeTelemetryCommand());
 
 program.parse(process.argv);

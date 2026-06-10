@@ -1,10 +1,11 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
+import { pingTelemetry } from '../telemetry.js';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../config/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jwt.js';
@@ -897,6 +898,18 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     for (const key of allowed) {
       if ((req.body as Partial<Settings>)[key] !== undefined) {
         (updated as any)[key] = (req.body as Partial<Settings>)[key];
+      }
+    }
+    // Telemetry is handled separately: server controls installId generation
+    const telemetryPatch = (req.body as Partial<Settings>).telemetry;
+    if (telemetryPatch !== undefined) {
+      const wasEnabled = current.telemetry?.enabled === true;
+      if (telemetryPatch.enabled) {
+        const installId = current.telemetry?.installId || randomUUID();
+        updated.telemetry = { enabled: true, installId };
+        if (!wasEnabled) pingTelemetry(installId, 'install');
+      } else {
+        updated.telemetry = { enabled: false, installId: current.telemetry?.installId ?? '' };
       }
     }
     await writeConfig('settings', updated);

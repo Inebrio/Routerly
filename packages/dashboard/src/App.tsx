@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { createBrowserRouter, RouterProvider, NavLink, Navigate, useNavigate, Outlet, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { ThemeProvider, useTheme, type Theme } from './ThemeContext';
-import { checkSetupStatus, getSystemInfo } from './api';
+import { checkSetupStatus, getSystemInfo, getSettings, updateSettings } from './api';
 import type { UpdateInfo } from './api';
 import { LoginPage } from './pages/LoginPage';
 import { SetupPage } from './pages/SetupPage';
@@ -27,7 +27,8 @@ import { SettingsGeneralTab, SettingsAboutTab, SettingsNotificationsTab } from '
 import { RolesPage } from './pages/RolesPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { UserEditPage } from './pages/UserEditPage';
-import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { HelpPage } from './pages/HelpPage';
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Logo } from './components/Logo';
 
 const THEME_OPTIONS: { value: Theme; icon: ReactNode; label: string }[] = [
@@ -86,6 +87,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
     { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Test' },
+    { to: '/dashboard/help', icon: <HelpCircle size={17} />, label: 'Help' },
   ];
 
   return (
@@ -155,6 +157,7 @@ function ProtectedLayout() {
   const [bannerDismissed, setBannerDismissed] = useState(() => {
     return localStorage.getItem('lr-update-banner-dismissed') === 'true';
   });
+  const [telemetryUndecided, setTelemetryUndecided] = useState(false);
 
   useEffect(() => {
     getSystemInfo()
@@ -164,6 +167,13 @@ function ProtectedLayout() {
       })
       .catch(() => { /* non-critical */ });
   }, []);
+
+  useEffect(() => {
+    if (user?.role !== 'admin') return;
+    getSettings()
+      .then(s => { if (s.telemetry === undefined) setTelemetryUndecided(true); })
+      .catch(() => { /* non-critical */ });
+  }, [user]);
 
   function handleToggle() {
     setCollapsed(prev => {
@@ -178,7 +188,12 @@ function ProtectedLayout() {
     setBannerDismissed(true);
   }
 
-  const showBanner = !bannerDismissed && !isDocker && user?.role === 'admin' && updateInfo?.available;
+  function handleTelemetryChoice(enabled: boolean) {
+    setTelemetryUndecided(false);
+    updateSettings({ telemetry: { enabled } } as any).catch(() => { /* non-critical */ });
+  }
+
+  const showUpdateBanner = !bannerDismissed && !isDocker && user?.role === 'admin' && updateInfo?.available;
 
   if (isLoading) return <div className="loading-center"><div className="spinner" /></div>;
   if (!user) return <Navigate to="/dashboard/login" replace />;
@@ -186,7 +201,7 @@ function ProtectedLayout() {
     <div className={`app-shell${collapsed ? ' sidebar-collapsed' : ''}`}>
       <Sidebar collapsed={collapsed} onToggle={handleToggle} />
       <main className="main-content">
-        {showBanner && (
+        {showUpdateBanner && (
           <div style={{
             background: 'var(--warning-bg, #fffbeb)',
             borderBottom: '1px solid var(--warning-border, #f6e05e)',
@@ -209,6 +224,43 @@ function ProtectedLayout() {
               title="Dismiss"
             >
               ×
+            </button>
+          </div>
+        )}
+        {telemetryUndecided && (
+          <div style={{
+            background: 'var(--info-bg, #eff6ff)',
+            borderBottom: '1px solid var(--info-border, #bfdbfe)',
+            padding: '10px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            fontSize: '0.85rem',
+            color: 'var(--info-text, #1e40af)',
+          }}>
+            <span style={{ flex: 1 }}>
+              <strong>Routerly never sends data automatically.</strong>{' '}
+              Would you like to help by sending anonymous install metrics? Only event type, version, platform, and a random ID — no personal data, no IP.{' '}
+              <a
+                href="https://doc.routerly.ai/next/reference/telemetry"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'inherit', textDecoration: 'underline' }}
+              >
+                What is sent?
+              </a>
+            </span>
+            <button
+              onClick={() => handleTelemetryChoice(true)}
+              style={{ padding: '4px 12px', borderRadius: 4, border: '1px solid currentColor', cursor: 'pointer', background: 'none', fontSize: '0.82rem', fontWeight: 600, color: 'inherit', whiteSpace: 'nowrap' }}
+            >
+              Yes, help out
+            </button>
+            <button
+              onClick={() => handleTelemetryChoice(false)}
+              style={{ padding: '4px 12px', borderRadius: 4, border: 'none', cursor: 'pointer', background: 'none', fontSize: '0.82rem', opacity: 0.7, color: 'inherit', whiteSpace: 'nowrap' }}
+            >
+              No thanks
             </button>
           </div>
         )}
@@ -301,6 +353,7 @@ const router = createBrowserRouter([
               { path: 'about', element: <SettingsAboutTab /> },
             ],
           },
+          { path: 'help', element: <HelpPage /> },
           { path: 'profile', element: <ProfilePage /> },
           { path: 'usage/:id', element: <UsageRecordPage /> },
           { path: '*', element: <Navigate to="overview" replace /> },
