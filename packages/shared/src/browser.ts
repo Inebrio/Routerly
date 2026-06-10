@@ -4,7 +4,7 @@
  */
 
 // Static configuration data (JSON, safe in any environment)
-import providersConf from './conf/providers.json';
+import providersConf from './conf/providers.json' with { type: 'json' };
 export { providersConf };
 
 // Re-export all types (erased at compile time, no runtime cost)

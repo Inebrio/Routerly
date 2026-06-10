@@ -1,4 +1,5 @@
-import { defineConfig, loadEnv } from 'vitest/config'
+import { defineConfig } from 'vitest/config'
+import { loadEnv } from 'vite'
 
 export default defineConfig(({ mode }) => {
   // Load .env if present — provides ROUTERLY_TEST_TOKEN and other E2E credentials

@@ -81,5 +81,5 @@ export type {
 export type { RoutingCandidate, RoutingResponse } from './types/routing.js';
 
 // Static configuration data
-import providersConf from './conf/providers.json';
+import providersConf from './conf/providers.json' with { type: 'json' };
 export { providersConf };

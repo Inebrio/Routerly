@@ -20,12 +20,19 @@
 
 - **Strict mode**: `"strict": true` in `tsconfig.base.json` — no exceptions
 - **No `any`**: use `unknown` and narrow, or `never` for exhaustive checks
-- **Import extensions**: always `.js` (required by Node16 resolution)
+- **Import extensions**: always `.js` (required by NodeNext resolution)
   ```ts
   // ✅ correct
   import { readConfig } from './config/loader.js'
   // ❌ wrong
   import { readConfig } from './config/loader'
+  ```
+- **JSON imports**: always use `with { type: 'json' }` attribute (required by Node 22+)
+  ```ts
+  // ✅ correct
+  import data from './conf/data.json' with { type: 'json' }
+  // ❌ wrong — ERR_IMPORT_ATTRIBUTE_MISSING on Node 22+
+  import data from './conf/data.json'
   ```
 - **Node builtins**: always `node:` prefix
   ```ts

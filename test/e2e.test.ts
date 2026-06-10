@@ -344,16 +344,16 @@ describe.skipIf(!TOKEN || !ADMIN_PASSWORD)('E2E · Management API', () => {
   // ── POST /api/system/update — auth guards ────────────────────────────────
 
   describe('POST /api/system/update', () => {
-    it('returns 403 when called without auth', async () => {
+    it('returns 401 when called without auth', async () => {
       const res = await post('/api/system/update', {})
-      expect(res.status).toBe(403)
+      expect(res.status).toBe(401)
       const body = await res.json() as Record<string, unknown>
       expect(typeof body['error']).toBe('string')
     })
 
-    it('returns 403 when called with a project token (non-admin)', async () => {
+    it('returns 401 when called with a project token (not a dashboard session)', async () => {
       const res = await post('/api/system/update', {}, auth(TOKEN!))
-      expect(res.status).toBe(403)
+      expect(res.status).toBe(401)
     })
   })
 

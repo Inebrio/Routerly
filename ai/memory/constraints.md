@@ -19,6 +19,8 @@ These constraints are not up for debate. Violating them requires an explicit tea
 - **NEVER** use `require()` — the project is ESM-only
 - **NEVER** use `import type` for runtime values (use a regular `import`)
 - **ALWAYS** extend `tsconfig.base.json` from the root in every new package
+- **ALWAYS** use `with { type: 'json' }` for JSON imports — bare JSON imports fail on Node 22+
+- **NEVER** add a new public `/api/*` route without explicitly whitelisting it in the JWT preHandler (api.ts:178)
 
 ## Documentation
 
