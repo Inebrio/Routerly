@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bug, ExternalLink, Mail, ChevronDown, ChevronRight, MessageSquarePlus } from 'lucide-react';
+import { BookOpen, Bug, ExternalLink, Mail, ChevronDown, ChevronRight, MessageSquarePlus } from 'lucide-react';
 
 const FAQ_ITEMS = [
   {
@@ -111,6 +111,35 @@ export function HelpPage() {
       </div>
 
       <div className="page-body" style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 640 }}>
+
+        {/* ── Documentation ─────────────────────────────────────────────────── */}
+        <Card>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <div style={{
+              width: 34, height: 34, borderRadius: 8,
+              background: 'rgba(139,92,246,0.12)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <BookOpen size={17} color="#8b5cf6" />
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Documentation</div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 1 }}>Guides, API reference, and configuration docs</div>
+            </div>
+          </div>
+          <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 14px' }}>
+            The official docs cover everything from getting started to advanced routing policies, provider setup, budgets, and the full API reference.
+          </p>
+          <a
+            href="https://doc.routerly.ai/next/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-secondary btn-sm"
+            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          >
+            <ExternalLink size={13} /> Open documentation
+          </a>
+        </Card>
 
         {/* ── GitHub Issues ──────────────────────────────────────────────────── */}
         <Card>
