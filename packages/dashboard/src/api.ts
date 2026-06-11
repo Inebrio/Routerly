@@ -362,6 +362,7 @@ export type EmailConfig = SmtpChannelConfig | SesChannelConfig | SendGridChannel
 export interface TelemetryConfig {
   enabled: boolean;
   installId: string;
+  lastPingedVersion?: string;
 }
 
 export interface Settings {

@@ -309,6 +309,8 @@ export interface TelemetryConfig {
   enabled: boolean;
   /** Random UUID generated once at opt-in time, never changes */
   installId: string;
+  /** Version that last fired a telemetry ping — absent means not yet tracked */
+  lastPingedVersion?: string;
 }
 
 export interface Settings {

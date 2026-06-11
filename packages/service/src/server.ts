@@ -9,7 +9,8 @@ import { loadSecret } from './plugins/jwt.js';
 import { openaiRoutes } from './routes/openai.js';
 import { anthropicRoutes } from './routes/anthropic.js';
 import { apiRoutes } from './routes/api.js';
-import { initConfigDirs, readConfig } from './config/loader.js';
+import { initConfigDirs, readConfig, writeConfig } from './config/loader.js';
+import { pingTelemetry } from './telemetry.js';
 import { updateChecker } from './update-checker.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -86,6 +87,23 @@ export async function startServer() {
   await initConfigDirs();
   await loadSecret();
   const settings = await readConfig('settings');
+
+  if (settings.telemetry?.enabled === true) {
+    const { installId, lastPingedVersion } = settings.telemetry;
+    const event: 'install' | 'upgrade' | null =
+      !lastPingedVersion ? 'install' :
+      lastPingedVersion !== pkgVersion ? 'upgrade' :
+      null;
+
+    if (event !== null) {
+      pingTelemetry(installId, event);
+      await writeConfig('settings', {
+        ...settings,
+        telemetry: { ...settings.telemetry, lastPingedVersion: pkgVersion },
+      });
+    }
+  }
+
   const server = await buildServer();
 
   try {
