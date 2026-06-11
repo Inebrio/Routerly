@@ -907,7 +907,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const wasEnabled = current.telemetry?.enabled === true;
       if (telemetryPatch.enabled) {
         const installId = current.telemetry?.installId || randomUUID();
-        updated.telemetry = { enabled: true, installId };
+        updated.telemetry = {
+          enabled: true,
+          installId,
+          ...(current.telemetry?.lastPingedVersion !== undefined
+            ? { lastPingedVersion: current.telemetry.lastPingedVersion }
+            : {}),
+        };
         if (!wasEnabled) pingTelemetry(installId, 'install');
       } else {
         updated.telemetry = { enabled: false, installId: current.telemetry?.installId ?? '' };
