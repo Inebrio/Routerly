@@ -69,11 +69,11 @@ Respond with ONLY this JSON object and nothing else:
 }
 
 function buildUserMessage(
-  request: { messages: { role: string; content: unknown }[] },
+  request: { messages?: { role: string; content: unknown }[] },
   previousDecisions?: { model: string }[],
   maxChars?: number,
 ): string {
-  const msgs = request.messages as Array<{ role: string; content: unknown }>;
+  const msgs = (request.messages ?? []) as Array<{ role: string; content: unknown }>;
 
   const systemMsg = msgs.find(m => m.role === 'system');
   const systemContent = systemMsg

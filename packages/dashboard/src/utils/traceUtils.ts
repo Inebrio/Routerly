@@ -25,6 +25,7 @@ export interface MessageStats {
   outputPerMillion: number | null;
   hasError: boolean;
   errorMessage?: string;
+  fallbackUsed: boolean;
   cacheHit: boolean;
   cacheMiss: boolean;
   cacheSimilarity: number | null;
@@ -51,6 +52,7 @@ export function extractMessageStats(traces: TraceEntry[]): MessageStats {
     inputPerMillion: null,
     outputPerMillion: null,
     hasError: false,
+    fallbackUsed: false,
     cacheHit: false,
     cacheMiss: false,
     cacheSimilarity: null,
@@ -82,11 +84,16 @@ export function extractMessageStats(traces: TraceEntry[]): MessageStats {
     stats.outputPerMillion = success.details.outputPerMillion ?? null;
   }
 
-  // Check for errors
-  const error = traces.find((e) => e.message === 'model:error');
-  if (error) {
-    stats.hasError = true;
-    stats.errorMessage = error.details?.error ?? error.details?.message ?? 'Unknown error';
+  // Check for errors — only fatal if there's no subsequent model:success (fallback)
+  const errorEntry = traces.find((e) => e.message === 'model:error');
+  const hasSuccess = traces.some((e) => e.message === 'model:success');
+  if (errorEntry) {
+    stats.errorMessage = errorEntry.details?.error ?? errorEntry.details?.message ?? 'Unknown error';
+    if (hasSuccess) {
+      stats.fallbackUsed = true;
+    } else {
+      stats.hasError = true;
+    }
   }
 
   // Check for cache hit/miss

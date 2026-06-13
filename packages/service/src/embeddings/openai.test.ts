@@ -63,4 +63,15 @@ describe('OpenAIEmbeddingProvider', () => {
     const provider = new OpenAIEmbeddingProvider();
     await expect(provider.embed(['test'], 'model')).rejects.toThrow('api error');
   });
+
+  it('returns 0 inputTokens when response.usage is undefined (line 23 ?? 0 branch)', async () => {
+    getMockCreate().mockResolvedValue({
+      data: [{ embedding: [0.1, 0.2] }],
+      usage: undefined,
+    });
+
+    const provider = new OpenAIEmbeddingProvider();
+    const result = await provider.embed(['text'], 'model');
+    expect(result.inputTokens).toBe(0);
+  });
 });

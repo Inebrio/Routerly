@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUsage, getProjects, type UsageStats, type Project } from '../api';
 import { MultiSelect } from '../components/MultiSelect';
@@ -25,9 +25,12 @@ export function UsagePage() {
   const [fetchError, setFetchError]     = useState<string | null>(null);
   const [lastUpdated, setLastUpdated]   = useState<Date | null>(null);
   const [pollInterval, setPollInterval] = useFilterState<number>({ key: 'usage-filters-pollInterval', defaultValue: 30_000 });
+  const [liveMode, setLiveMode]         = useState(false);
   const [refreshing, setRefreshing]     = useState(false);
   const [page, setPage]                 = useState(1);
   const [pageSize]                      = useState(100);
+  const [newRowIds, setNewRowIds]       = useState<ReadonlySet<string>>(new Set());
+  const latestTimestampRef              = useRef<string | null>(null);
   const navigate = useNavigate();
 
   const POLL_OPTIONS: { label: string; value: number }[] = [
@@ -38,6 +41,14 @@ export function UsagePage() {
     { label: '1m',   value: 60_000 },
     { label: '5m',   value: 300_000 },
   ];
+
+  const handleToggleLive = useCallback(() => {
+    setLiveMode(prev => {
+      const next = !prev;
+      setPollInterval(next ? 2_000 : 30_000);
+      return next;
+    });
+  }, [setPollInterval]);
 
   // Initialize date range to "This month" if not already set,
   // or re-apply stale relative presets (e.g. "Questo mese" saved on a previous day).
@@ -63,7 +74,14 @@ export function UsagePage() {
     getProjects().then(setProjects).catch(console.error);
   }, []);
 
+  // Reset the timestamp anchor when filter/page context changes so we don't mis-highlight old rows
+  useEffect(() => {
+    latestTimestampRef.current = null;
+    setNewRowIds(new Set());
+  }, [dateRange, page, pageSize, projectIds, modelIds, callTypeFilter, outcomeFilter]);
+
   const fetchStats = useCallback(() => {
+    const prevMax = latestTimestampRef.current;
     // For recent (minutes/hours) presets, recalculate the range on every fetch
     let from = dateRange.from || undefined;
     let to = dateRange.to || undefined;
@@ -75,7 +93,23 @@ export function UsagePage() {
     }
     const period = from || to ? 'custom' : 'all';
     return getUsage(period, undefined, from, to, page, pageSize)
-      .then(data => { setStats(data); setLastUpdated(new Date()); setFetchError(null); })
+      .then(data => {
+        // Track new rows for live-mode highlight
+        if (prevMax !== null) {
+          const ids = new Set(data.records.filter(r => r.timestamp > prevMax).map(r => r.id));
+          if (ids.size > 0) {
+            setNewRowIds(ids);
+            setTimeout(() => setNewRowIds(new Set()), 3_000);
+          }
+        }
+        // Update max timestamp seen
+        const maxTs = data.records.reduce<string>((max, r) => r.timestamp > max ? r.timestamp : max, '');
+        if (maxTs) latestTimestampRef.current = maxTs;
+
+        setStats(data);
+        setLastUpdated(new Date());
+        setFetchError(null);
+      })
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err);
         setFetchError(msg);
@@ -128,7 +162,24 @@ export function UsagePage() {
   return (
     <>
       <div className="page-header">
-        <h1>Usage</h1>
+        <h1>
+          Usage
+          {liveMode && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em',
+              padding: '3px 10px', borderRadius: 99, marginLeft: 12,
+              background: 'rgba(239,68,68,0.12)',
+              color: '#ef4444',
+              border: '1px solid rgba(239,68,68,0.35)',
+              verticalAlign: 'middle',
+              animation: 'live-pulse 2s ease-in-out infinite',
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
+              LIVE
+            </span>
+          )}
+        </h1>
         <p>
           Detailed call logs and per-model breakdown
           {lastUpdated && (
@@ -140,12 +191,24 @@ export function UsagePage() {
             {POLL_OPTIONS.map(o => (
               <button
                 key={o.value}
-                className={`btn btn-sm ${pollInterval === o.value ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setPollInterval(o.value)}
+                className={`btn btn-sm ${!liveMode && pollInterval === o.value ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => { setLiveMode(false); setPollInterval(o.value); }}
+                disabled={liveMode}
               >
                 {o.label}
               </button>
             ))}
+            <button
+              className={`btn btn-sm ${liveMode ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={handleToggleLive}
+              style={{
+                marginLeft: 4,
+                ...(liveMode ? { background: '#ef4444', borderColor: '#ef4444', color: 'white' } : {}),
+              }}
+              title={liveMode ? 'Disattiva live mode' : 'Attiva live mode (aggiorna ogni 2s)'}
+            >
+              ● Live
+            </button>
             <button
               className="btn btn-sm btn-secondary"
               onClick={handleRefreshNow}
@@ -325,12 +388,19 @@ export function UsagePage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredRecords.map((r, i) => {
+                      {filteredRecords.map((r) => {
                         const isRouting = (r.callType ?? 'completion') === 'routing';
+                        const isNew = liveMode && newRowIds.has(r.id);
                         return (
                           <tr
-                            key={i}
-                            style={{ cursor: 'pointer' }}
+                            key={r.id}
+                            className={isNew ? 'row-new' : undefined}
+                            style={{
+                              cursor: 'pointer',
+                              borderLeft: isRouting
+                                ? '3px solid var(--accent)'
+                                : '3px solid var(--primary)',
+                            }}
                             onClick={() => navigate(`/dashboard/usage/${r.id}`, { state: { record: r } })}
                           >
                             <td style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
@@ -353,7 +423,7 @@ export function UsagePage() {
                             </td>
                             <td>{r.inputTokens}</td>
                             <td>{r.outputTokens}</td>
-                        <td className="mono" style={{ fontSize: '0.78rem' }}>${r.cost.toFixed(8)}</td>
+                            <td className="mono" style={{ fontSize: '0.78rem' }}>${r.cost.toFixed(8)}</td>
                             <td style={{ color: 'var(--text-muted)' }}>{r.latencyMs}ms</td>
                             <td style={{ color: 'var(--text-muted)' }}>{r.ttftMs != null ? `${r.ttftMs}ms` : '—'}</td>
                             <td style={{ color: 'var(--text-muted)' }}>{r.tokensPerSec != null ? `${r.tokensPerSec}` : '—'}</td>
