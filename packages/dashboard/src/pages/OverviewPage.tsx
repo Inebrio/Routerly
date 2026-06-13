@@ -136,7 +136,7 @@ export function OverviewPage() {
         {timelineData.length > 0 && (
           <div className="chart-card">
             <h3>{PERIOD_LABEL[period] ?? 'Cost over Time (USD)'}</h3>
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer key={period} width="100%" height={200}>
               <AreaChart data={timelineData}>
                 <defs>
                   <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
@@ -163,7 +163,7 @@ export function OverviewPage() {
             {barData.length === 0 ? (
               <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', paddingTop: 8 }}>No cost recorded this period.</p>
             ) : (
-              <ResponsiveContainer width="100%" height={Math.max(barData.length * 36, 120)}>
+              <ResponsiveContainer key={period} width="100%" height={Math.max(barData.length * 36, 120)}>
                 <BarChart data={barData} layout="vertical" margin={{ left: 8, right: 32 }}>
                   <XAxis type="number" tick={{ fill: tickColor, fontSize: 11 }} axisLine={false} tickLine={false}
                     tickFormatter={v => `$${(v as number).toFixed(4)}`} />
