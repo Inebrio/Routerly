@@ -11,6 +11,25 @@ declare module 'fastify' {
   }
 }
 
+/**
+ * Resolve a raw bearer token to its owning project and token entry.
+ * Returns null if no project owns the token. Shared by the auth preHandler
+ * and the pass-through proxy handler so both authenticate identically.
+ */
+export async function resolveProjectByToken(
+  incomingToken: string,
+): Promise<{ project: ProjectConfig; token: ProjectToken } | null> {
+  const projects = await readConfig('projects');
+  for (const project of projects) {
+    for (const token of project.tokens || []) {
+      if (token.token === incomingToken) {
+        return { project, token };
+      }
+    }
+  }
+  return null;
+}
+
 const authPlugin: FastifyPluginAsync = async (fastify) => {
   fastify.decorateRequest('project', null as unknown as ProjectConfig);
   fastify.decorateRequest('token', null as unknown as ProjectToken);
@@ -30,15 +49,11 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 
     const incomingToken = authHeader.slice(7).trim();
 
-    const projects = await readConfig('projects');
-    for (const project of projects) {
-      for (const token of project.tokens || []) {
-        if (token.token === incomingToken) {
-          request.project = project;
-          request.token = token;
-          return;
-        }
-      }
+    const resolved = await resolveProjectByToken(incomingToken);
+    if (resolved) {
+      request.project = resolved.project;
+      request.token = resolved.token;
+      return;
     }
 
     return reply.status(401).send({
