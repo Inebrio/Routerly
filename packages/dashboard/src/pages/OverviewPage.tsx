@@ -10,7 +10,7 @@ import { useTheme } from '../ThemeContext.js';
 const PALETTE = ['#3d75f5', '#10b981', '#f59e0b', '#ec4899', '#3b82f6', '#8b5cf6', '#06b6d4', '#f97316'];
 
 const PERIOD_LABEL: Record<string, string> = {
-  daily: 'Cost per Day (USD)',
+  daily: 'Cost per Hour (USD)',
   weekly: 'Cost per Week (USD)',
   monthly: 'Daily Cost (USD)',
   all: 'Cost over Time (USD)',
@@ -37,6 +37,20 @@ export function OverviewPage() {
 
   const timelineData = useMemo(() => {
     if (!stats || stats.timeline.length === 0) return [];
+    const isHourly = (stats.timeline[0]?.[0]?.length ?? 0) > 10;
+
+    if (isHourly) {
+      // Hourly: fill all 24 hours for today (UTC)
+      const costByHour = new Map<string, number>(stats.timeline.map(([d, c]) => [d, c]));
+      const now = new Date();
+      const dateStr = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
+      return Array.from({ length: 24 }, (_, h) => {
+        const key = `${dateStr}T${String(h).padStart(2, '0')}`;
+        return { date: `${String(h).padStart(2, '0')}:00`, cost: costByHour.get(key) ?? 0 };
+      });
+    }
+
+    // Daily: fill every date in the range with 0 for gaps
     const costByDate = new Map<string, number>(stats.timeline.map(([d, c]) => [d, c]));
     const sorted = [...costByDate.keys()].sort();
     const [sy, sm, sd] = sorted[0]!.split('-').map(Number) as [number, number, number];
@@ -145,15 +159,7 @@ export function OverviewPage() {
         )}
 
         {/* Cost timeline */}
-        {timelineData.length === 1 && (
-          <div className="chart-card" style={{ marginBottom: 24 }}>
-            <h3>{PERIOD_LABEL[period] ?? 'Cost over Time (USD)'}</h3>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', paddingTop: 4 }}>
-              Not enough data for a trend — cost today: <strong style={{ color: 'var(--text-secondary)' }}>${stats.summary.totalCost.toFixed(6)}</strong>
-            </p>
-          </div>
-        )}
-        {timelineData.length > 1 && (
+        {timelineData.length > 0 && (
           <div className="chart-card">
             <h3>{PERIOD_LABEL[period] ?? 'Cost over Time (USD)'}</h3>
             <ResponsiveContainer key={period} width="100%" height={200}>

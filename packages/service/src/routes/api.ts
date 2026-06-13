@@ -780,11 +780,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const routingCost = filtered.filter(r => r.callType === 'routing' && r.outcome === 'success').reduce((s, r) => s + r.cost, 0);
     const completionCost = filtered.filter(r => r.callType !== 'routing' && r.outcome === 'success').reduce((s, r) => s + r.cost, 0);
 
-    // Timeline for the selected period
+    // Timeline for the selected period (hourly for daily, daily otherwise)
     const timeline: Record<string, number> = {};
     for (const r of filtered.filter(r => r.outcome === 'success')) {
-      const day = r.timestamp.slice(0, 10);
-      timeline[day] = (timeline[day] ?? 0) + r.cost;
+      const key = period === 'daily' ? r.timestamp.slice(0, 13) : r.timestamp.slice(0, 10);
+      timeline[key] = (timeline[key] ?? 0) + r.cost;
     }
 
     const totalCost = filtered.filter(r => r.outcome === 'success').reduce((s, r) => s + r.cost, 0);
