@@ -35,10 +35,22 @@ export function OverviewPage() {
     getProjects().then(p => setProjectCount(p.length)).catch(console.error);
   }, []);
 
-  const timelineData = useMemo(() =>
-    stats?.timeline.map(([date, cost]) => ({ date: date.slice(5), cost: Number(cost.toFixed(8)) })) ?? [],
-    [stats],
-  );
+  const timelineData = useMemo(() => {
+    if (!stats || stats.timeline.length === 0) return [];
+    const costByDate = new Map<string, number>(stats.timeline.map(([d, c]) => [d, c]));
+    const sorted = [...costByDate.keys()].sort();
+    const [sy, sm, sd] = sorted[0]!.split('-').map(Number) as [number, number, number];
+    const [ey, em, ed] = sorted[sorted.length - 1]!.split('-').map(Number) as [number, number, number];
+    const result: { date: string; cost: number }[] = [];
+    const cur = new Date(sy, sm - 1, sd);
+    const end = new Date(ey, em - 1, ed);
+    while (cur <= end) {
+      const key = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
+      result.push({ date: key.slice(5), cost: costByDate.get(key) ?? 0 });
+      cur.setDate(cur.getDate() + 1);
+    }
+    return result;
+  }, [stats]);
 
   const barData = useMemo(() => {
     if (!stats) return [];
