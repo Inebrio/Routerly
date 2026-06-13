@@ -21,7 +21,9 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.8",
     "tsx": "^4.7.3",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vitest": "^4.1.8"
   }
 }

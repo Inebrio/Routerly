@@ -29,6 +29,7 @@ export function TestPage() {
 
   const [showKey, setShowKey] = useState(false);
   const [debugTraceHistory, setDebugTraceHistory] = useState<(any[] | null)[]>([]);
+  const [debugModelHistory, setDebugModelHistory] = useState<(string | null)[]>([]);
   const [showDebugSidebar, setShowDebugSidebar] = useState(true);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -51,6 +52,12 @@ export function TestPage() {
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
   useEffect(() => { debugPanelEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [debugTraceHistory]);
+
+  // Reset debug history when token changes
+  useEffect(() => {
+    setDebugTraceHistory([]);
+    setDebugModelHistory([]);
+  }, [apiKey]);
 
   async function handleSend() {
     if ((!input.trim() && !attachedImage) || !apiKey || loading) return;
@@ -137,7 +144,14 @@ export function TestPage() {
                     throw new Error(data.message || data.error?.message || data.error || 'Service error');
                   }
 
-                  if (data.model && !modelName) modelName = data.model as string;
+                  if (data.model && !modelName) {
+                    modelName = data.model as string;
+                    setDebugModelHistory(prev => {
+                      const updated = [...prev];
+                      updated[turnIndex] = modelName;
+                      return updated;
+                    });
+                  }
 
                   const thinkingDelta: string | undefined = data.choices?.[0]?.delta?.thinking;
                   if (thinkingDelta) {
@@ -425,7 +439,7 @@ export function TestPage() {
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   {debugTraceHistory.length > 0 && (
                     <button
-                      onClick={() => setDebugTraceHistory([])}
+                      onClick={() => { setDebugTraceHistory([]); setDebugModelHistory([]); }}
                       style={{ fontSize: '0.7rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}
                     >
                       Clear
@@ -454,7 +468,7 @@ export function TestPage() {
                     const stats = extractMessageStats(traces);
                     return (
                       <div key={i} style={{ marginBottom: 16 }}>
-                        <MessageStatsCard stats={stats} turnNumber={i + 1} />
+                        <MessageStatsCard stats={stats} turnNumber={i + 1} {...(debugModelHistory[i] != null ? { completionModel: debugModelHistory[i] as string } : {})} />
                         
                         {/* Technical Details - Collapsible */}
                         <details style={{ marginTop: 8 }}>

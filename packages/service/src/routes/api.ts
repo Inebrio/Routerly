@@ -50,13 +50,6 @@ async function verifyPassword(
   return { ok: false };
 }
 
-function requireAdmin(authHeader: string | undefined): string | null {
-  if (!authHeader?.startsWith('Bearer ')) return null;
-  const token = authHeader.slice(7);
-  const payload = verifyToken(token);
-  if (!payload) return null;
-  return payload['sub'] as string;
-}
 
 // ── Module augmentation ───────────────────────────────────────────────────────
 declare module 'fastify' {
@@ -787,11 +780,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const routingCost = filtered.filter(r => r.callType === 'routing' && r.outcome === 'success').reduce((s, r) => s + r.cost, 0);
     const completionCost = filtered.filter(r => r.callType !== 'routing' && r.outcome === 'success').reduce((s, r) => s + r.cost, 0);
 
-    // Daily timeline (last 30 days)
+    // Timeline for the selected period (hourly for daily, daily otherwise)
     const timeline: Record<string, number> = {};
-    for (const r of records.filter(r => r.outcome === 'success')) {
-      const day = r.timestamp.slice(0, 10);
-      timeline[day] = (timeline[day] ?? 0) + r.cost;
+    for (const r of filtered.filter(r => r.outcome === 'success')) {
+      const key = period === 'daily' ? r.timestamp.slice(0, 13) : r.timestamp.slice(0, 10);
+      timeline[key] = (timeline[key] ?? 0) + r.cost;
     }
 
     const totalCost = filtered.filter(r => r.outcome === 'success').reduce((s, r) => s + r.cost, 0);
@@ -907,7 +900,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const wasEnabled = current.telemetry?.enabled === true;
       if (telemetryPatch.enabled) {
         const installId = current.telemetry?.installId || randomUUID();
-        updated.telemetry = { enabled: true, installId };
+        updated.telemetry = {
+          enabled: true,
+          installId,
+          ...(current.telemetry?.lastPingedVersion !== undefined
+            ? { lastPingedVersion: current.telemetry.lastPingedVersion }
+            : {}),
+        };
         if (!wasEnabled) pingTelemetry(installId, 'install');
       } else {
         updated.telemetry = { enabled: false, installId: current.telemetry?.installId ?? '' };

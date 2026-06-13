@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { clearIntentCache } from '../intent/cache.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -16,6 +16,10 @@ function makeMockProvider(vectors: Record<string, number[]>) {
 const mockProvider = makeMockProvider({});
 vi.mock('../../embeddings/index.js', () => ({
   getEmbeddingProvider: vi.fn(() => mockProvider),
+}));
+
+vi.mock('../../cost/tracker.js', () => ({
+  trackUsage: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { semanticIntentPolicy } from './semantic-intent.js';
@@ -60,6 +64,8 @@ const baseConfig: SemanticIntentConfig = {
   },
 };
 
+import { trackUsage } from '../../cost/tracker.js';
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('semanticIntentPolicy', () => {
@@ -67,6 +73,8 @@ describe('semanticIntentPolicy', () => {
     clearIntentCache();
     vi.clearAllMocks();
   });
+
+  afterEach(() => vi.clearAllMocks());
 
   it('passes all candidates when config is missing required fields', async () => {
     const emitMock = vi.fn();
@@ -209,5 +217,226 @@ describe('semanticIntentPolicy', () => {
 
     // Falls back to all candidates
     expect(result.routing.find(r => r.model === 'some-other-model')?.point).toBe(1.0);
+  });
+
+  it('falls back to all concatenated content when user content is an array', async () => {
+    // User message has array content → no string user message found → fallback joins all messages
+    const requestVec = [0, 0, 0]; // zero → unknown status
+    mockProvider.embed.mockResolvedValue({ embeddings: [requestVec], inputTokens: 0 });
+
+    const result = await semanticIntentPolicy({
+      request: {
+        model: 'auto',
+        messages: [{ role: 'user', content: [{ type: 'text', text: 'hello' }] as any }],
+      } as any,
+      candidates: [makeCandidate('coder-model')],
+      config: baseConfig,
+    });
+
+    expect(result.routing.every(r => r.point === 1.0)).toBe(true);
+  });
+
+  it('tracks usage when projectId is provided and classification succeeds', async () => {
+    const vec = [1, 0, 0];
+    mockProvider.embed.mockImplementation(async (texts: string[]) => ({
+      embeddings: texts.map(() => vec),
+      inputTokens: 10,
+    }));
+
+    const log = { info: vi.fn(), warn: vi.fn() } as any;
+
+    const result = await semanticIntentPolicy({
+      request: makeRequest('some coding question'),
+      candidates: [makeCandidate('coder-model')],
+      config: { ...baseConfig, absolute_threshold: 0.0 },
+      projectId: 'proj-test',
+      log,
+      traceId: 'trace-1',
+    });
+
+    expect(result.routing).toBeDefined();
+    expect(log.info).toHaveBeenCalled();
+  });
+
+  it('passes all candidates when no messages have string content', async () => {
+    const result = await semanticIntentPolicy({
+      request: {
+        model: 'auto',
+        messages: [],
+      } as any,
+      candidates: [makeCandidate('coder-model')],
+      config: baseConfig,
+    });
+
+    expect(result.routing.every(r => r.point === 1.0)).toBe(true);
+  });
+
+  // ── Line 58: request.messages ?? [] when messages is absent ─────────────────
+  it('passes all candidates when request has no messages property (messages ?? [])', async () => {
+    const result = await semanticIntentPolicy({
+      request: { model: 'auto' } as any,
+      candidates: [makeCandidate('coder-model')],
+      config: baseConfig,
+    });
+
+    // No messages → userText is '' → passes all through
+    expect(result.routing.every(r => r.point === 1.0)).toBe(true);
+  });
+
+  // ── Line 108: traceId === undefined inside projectId block ───────────────────
+  it('tracks usage without traceId when projectId is set but traceId is omitted', async () => {
+    const vec = [1, 0, 0];
+    mockProvider.embed.mockImplementation(async (texts: string[]) => ({
+      embeddings: texts.map(() => vec),
+      inputTokens: 5,
+    }));
+
+    await semanticIntentPolicy({
+      request: makeRequest('write code'),
+      candidates: [makeCandidate('coder-model')],
+      config: { ...baseConfig, absolute_threshold: 0.0 },
+      projectId: 'proj-no-trace',
+      // traceId intentionally omitted → hits the false branch of `traceId !== undefined`
+    });
+
+    expect(trackUsage).toHaveBeenCalledWith(
+      expect.not.objectContaining({ traceId: expect.anything() }),
+    );
+  });
+
+  // ── Lines 113 & 117: catch block when err is NOT an Error instance ───────────
+  it('degrades gracefully and stringifies non-Error thrown value', async () => {
+    // Throw a plain string (not an Error instance) → String(err) branch
+    mockProvider.embed.mockRejectedValue('plain string error');
+
+    const emit = vi.fn();
+    const log = { warn: vi.fn(), info: vi.fn() } as any;
+    const result = await semanticIntentPolicy({
+      request: makeRequest('some text'),
+      candidates: [makeCandidate('coder-model')],
+      config: baseConfig,
+      emit,
+      log,
+    });
+
+    expect(result.routing.every(r => r.point === 1.0)).toBe(true);
+    expect(emit).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'policy:semantic-intent:error',
+      details: expect.objectContaining({ error: 'plain string error' }),
+    }));
+    expect(log.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ err: 'plain string error' }),
+      expect.any(String),
+    );
+  });
+
+  // ── Line 148: resolvePool called with null intentName (ambiguous, secondIntent=null) ──
+  it('resolvePool returns all candidates when secondIntent is null (ambiguous status)', async () => {
+    // Use a config with only one intent so secondIntent is null when ambiguous
+    const singleIntentConfig: SemanticIntentConfig = {
+      ...baseConfig,
+      intents: { coding: baseConfig.intents['coding']! },
+      absolute_threshold: 0.0,
+      ambiguity_threshold: 2.0, // very high → ambiguous
+    };
+
+    const vec = [1, 0, 0];
+    mockProvider.embed.mockResolvedValue({ embeddings: [vec], inputTokens: 0 });
+
+    const result = await semanticIntentPolicy({
+      request: makeRequest('write some code'),
+      candidates: [makeCandidate('coder-model'), makeCandidate('other-model')],
+      config: singleIntentConfig,
+    });
+
+    // secondIntent is null → resolvePool(null) returns all candidateIds
+    // pool1 ∪ pool2 (all) → all candidates allowed
+    expect(result.routing.every(r => r.point === 1.0)).toBe(true);
+  });
+
+  // ── Line 150: resolvePool when intentDef is missing from cfg.intents ─────────
+  it('resolvePool falls back to all candidates when intentName is not in cfg.intents', async () => {
+    // Build classification result where topIntent is a name not in the config's intents map.
+    // We can achieve this by having classifyIntent return a confident result for 'coding',
+    // but using a config that has no 'coding' key.
+    const noMatchConfig: SemanticIntentConfig = {
+      ...baseConfig,
+      intents: {
+        unknown_intent: {
+          examples: ['something else'],
+          candidate_models: ['never-model'],
+        },
+      },
+      absolute_threshold: 0.0,
+      ambiguity_threshold: 0.0,
+    };
+
+    const vec = [1, 0, 0];
+    mockProvider.embed.mockResolvedValue({ embeddings: [vec], inputTokens: 0 });
+
+    // The classifier will return topIntent='unknown_intent' (confident)
+    // cfg.intents['unknown_intent'] exists but candidate_models=['never-model']
+    // which is NOT in the candidates list → falls back to all candidates (pool.size === 0).
+    const result = await semanticIntentPolicy({
+      request: makeRequest('some request'),
+      candidates: [makeCandidate('coder-model'), makeCandidate('chat-model')],
+      config: noMatchConfig,
+    });
+
+    // Since the intent's pool has no overlap with candidates, falls back to all candidates
+    expect(result.routing.every(r => r.point === 1.0)).toBe(true);
+  });
+
+  // ── Line 11 (getEmbeddingInputCost): modelConf.input is undefined (returns 0) ──
+  it('getEmbeddingInputCost returns 0 when the provider model has no input cost defined', async () => {
+    const vec = [1, 0, 0];
+    mockProvider.embed.mockImplementation(async (texts: string[]) => ({
+      embeddings: texts.map(() => vec),
+      inputTokens: 7,
+    }));
+
+    // Use a provider/model combo that does not exist in providersConf → input cost = 0
+    await semanticIntentPolicy({
+      request: makeRequest('compute something'),
+      candidates: [makeCandidate('coder-model')],
+      config: {
+        ...baseConfig,
+        embedding_provider: 'nonexistent-provider',
+        embedding_model: 'nonexistent-model',
+        absolute_threshold: 0.0,
+      },
+      projectId: 'proj-cost-zero',
+    });
+
+    // trackUsage should be called with inputPerMillion: 0
+    expect(trackUsage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: expect.objectContaining({ cost: { inputPerMillion: 0, outputPerMillion: 0 } }),
+      }),
+    );
+  });
+});
+
+// ── Line 113: log?.warn with err instanceof Error → TRUE branch ───────────────
+
+describe('semanticIntentPolicy — line 113 err instanceof Error TRUE branch', () => {
+  it('logs err.message when the thrown value is an Error instance and log is provided', async () => {
+    mockProvider.embed.mockRejectedValue(new Error('embedding network error'));
+
+    const emit = vi.fn();
+    const log = { warn: vi.fn(), info: vi.fn() } as any;
+    const result = await semanticIntentPolicy({
+      request: makeRequest('some text'),
+      candidates: [makeCandidate('coder-model')],
+      config: baseConfig,
+      emit,
+      log,
+    });
+
+    expect(result.routing.every(r => r.point === 1.0)).toBe(true);
+    expect(log.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ err: 'embedding network error' }),
+      expect.any(String),
+    );
   });
 });

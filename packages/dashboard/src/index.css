@@ -1067,3 +1067,16 @@ td .badge {
   :root:not([data-theme="dark"]):not([data-theme="light"]) .table-wrap { border: 1px solid #E2E8F0; }
   :root:not([data-theme="dark"]):not([data-theme="light"]) .modal { background: #ffffff; border: 1px solid #E2E8F0; }
 }
+
+/* Live-mode row highlight animation */
+@keyframes row-highlight {
+  from { background-color: rgba(61, 117, 245, 0.18); }
+  to   { background-color: transparent; }
+}
+tr.row-new { animation: row-highlight 2.5s ease-out; }
+
+/* LIVE badge pulse */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}

@@ -69,6 +69,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       if (body.input && !body.messages) {
         body.messages = body.input;
       }
+      delete body.input;
       if (body.max_tokens !== undefined) {
         body.max_output_tokens = body.max_tokens;
         delete body.max_tokens;
@@ -105,7 +106,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     request.log.info(
       {
         messageCount: msgs.length,
-        roles: msgs.map((m: any) => m.role),
+        roles: msgs.map((m: any) => m?.role),
         payloadChars,
         stream: isStream,
       },

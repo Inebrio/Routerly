@@ -30,6 +30,8 @@ export function pingTelemetry(installId: string, event: TelemetryEvent): void {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(3000),
-    }).catch(() => { /* fire-and-forget: network errors, timeouts, server down */ });
+    })
+      .then(res => console.log(`[telemetry] ${event} sent → ${res.status}`))
+      .catch(err => console.log(`[telemetry] ${event} failed → ${(err as Error).message}`));
   } catch { /* never propagate to the caller */ }
 }
