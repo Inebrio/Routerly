@@ -32,6 +32,7 @@ vi.mock('fastify', () => ({
   default: vi.fn(() => ({
     register: vi.fn().mockResolvedValue(undefined),
     get: vi.fn(),
+    addContentTypeParser: vi.fn(),
     listen: vi.fn().mockResolvedValue(undefined),
     log: { warn: vi.fn(), error: vi.fn() },
     setNotFoundHandler: vi.fn(),
@@ -43,6 +44,7 @@ vi.mock('./plugins/auth.js', () => ({ default: vi.fn() }));
 vi.mock('./routes/api.js', () => ({ apiRoutes: vi.fn() }));
 vi.mock('./routes/openai.js', () => ({ openaiRoutes: vi.fn() }));
 vi.mock('./routes/anthropic.js', () => ({ anthropicRoutes: vi.fn() }));
+vi.mock('./routes/passthrough.js', () => ({ passthroughHandler: vi.fn() }));
 
 import { startServer } from './server.js';
 

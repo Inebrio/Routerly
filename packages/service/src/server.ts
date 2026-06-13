@@ -9,6 +9,7 @@ import { loadSecret } from './plugins/jwt.js';
 import { openaiRoutes } from './routes/openai.js';
 import { anthropicRoutes } from './routes/anthropic.js';
 import { apiRoutes } from './routes/api.js';
+import { passthroughHandler } from './routes/passthrough.js';
 import { initConfigDirs, readConfig, writeConfig } from './config/loader.js';
 import { pingTelemetry } from './telemetry.js';
 import { updateChecker } from './update-checker.js';
@@ -32,6 +33,10 @@ export async function buildServer() {
 
   // ─── Plugins ─────────────────────────────────────────────────────────────────
   await fastify.register(cors, { origin: true, exposedHeaders: ['x-routerly-trace-id'] });
+
+  // Capture non-JSON bodies as raw Buffer so the pass-through proxy can forward
+  // them verbatim. The default application/json parser is unaffected.
+  fastify.addContentTypeParser('*', { parseAs: 'buffer' }, (_req, body, done) => done(null, body));
 
   // ─── Dashboard static files (served before auth plugin) ───────────────────
   if (settings.dashboardEnabled) {
@@ -79,6 +84,12 @@ export async function buildServer() {
     version: pkgVersion,
     timestamp: new Date().toISOString(),
   }));
+
+  // ─── Pass-through proxy ───────────────────────────────────────────────────
+  // Any path not matched above is forwarded to the project's upstream provider.
+  // Reserved namespaces (/, /health, /api/*, /dashboard*) are guarded inside
+  // the handler and return a normal 404 instead of being proxied.
+  fastify.setNotFoundHandler(passthroughHandler);
 
   return fastify;
 }
