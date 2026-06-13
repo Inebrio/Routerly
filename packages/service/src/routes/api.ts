@@ -50,13 +50,6 @@ async function verifyPassword(
   return { ok: false };
 }
 
-function requireAdmin(authHeader: string | undefined): string | null {
-  if (!authHeader?.startsWith('Bearer ')) return null;
-  const token = authHeader.slice(7);
-  const payload = verifyToken(token);
-  if (!payload) return null;
-  return payload['sub'] as string;
-}
 
 // ── Module augmentation ───────────────────────────────────────────────────────
 declare module 'fastify' {
@@ -787,9 +780,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const routingCost = filtered.filter(r => r.callType === 'routing' && r.outcome === 'success').reduce((s, r) => s + r.cost, 0);
     const completionCost = filtered.filter(r => r.callType !== 'routing' && r.outcome === 'success').reduce((s, r) => s + r.cost, 0);
 
-    // Daily timeline (last 30 days)
+    // Timeline for the selected period
     const timeline: Record<string, number> = {};
-    for (const r of records.filter(r => r.outcome === 'success')) {
+    for (const r of filtered.filter(r => r.outcome === 'success')) {
       const day = r.timestamp.slice(0, 10);
       timeline[day] = (timeline[day] ?? 0) + r.cost;
     }

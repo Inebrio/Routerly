@@ -145,7 +145,15 @@ export function OverviewPage() {
         )}
 
         {/* Cost timeline */}
-        {timelineData.length > 0 && (
+        {timelineData.length === 1 && (
+          <div className="chart-card" style={{ marginBottom: 24 }}>
+            <h3>{PERIOD_LABEL[period] ?? 'Cost over Time (USD)'}</h3>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', paddingTop: 4 }}>
+              Not enough data for a trend — cost today: <strong style={{ color: 'var(--text-secondary)' }}>${stats.summary.totalCost.toFixed(6)}</strong>
+            </p>
+          </div>
+        )}
+        {timelineData.length > 1 && (
           <div className="chart-card">
             <h3>{PERIOD_LABEL[period] ?? 'Cost over Time (USD)'}</h3>
             <ResponsiveContainer key={period} width="100%" height={200}>
