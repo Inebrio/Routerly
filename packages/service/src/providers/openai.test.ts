@@ -99,4 +99,107 @@ describe('OpenAIAdapter.chatCompletion', () => {
     expect(calledWith).not.toHaveProperty('reasoning_effort');
     expect(calledWith).not.toHaveProperty('reasoning_summary');
   });
+
+  it('keeps reasoning params for o-series models', async () => {
+    create.mockResolvedValue(makeResponse());
+    const adapter = new OpenAIAdapter();
+    await adapter.chatCompletion(
+      { model: 'o1-mini', messages: [{ role: 'user', content: 'Hi' }], reasoning_effort: 'high' } as any,
+      makeModel({ id: 'o1-mini' }),
+    );
+    const calledWith = create.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(calledWith).toHaveProperty('reasoning_effort', 'high')
+    expect(calledWith).toHaveProperty('model', 'o1-mini')
+  });
+
+  it('uses model.id as-is when no slash present', async () => {
+    create.mockResolvedValue(makeResponse());
+    const adapter = new OpenAIAdapter();
+    await adapter.chatCompletion(
+      { model: 'gpt-4o', messages: [{ role: 'user', content: 'Hi' }] },
+      makeModel({ id: 'gpt-4o' }),
+    );
+    const calledWith = create.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(calledWith).toHaveProperty('model', 'gpt-4o')
+  });
+
+  it('passes through when neither max_tokens nor max_completion_tokens are set', async () => {
+    create.mockResolvedValue(makeResponse());
+    const adapter = new OpenAIAdapter();
+    await adapter.chatCompletion({ model: 'gpt-4o', messages: [] }, makeModel())
+    const calledWith = create.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(calledWith).not.toHaveProperty('max_tokens')
+    expect(calledWith).not.toHaveProperty('max_completion_tokens')
+  });
+});
+
+describe('OpenAIAdapter.streamCompletion', () => {
+  it('yields chunks from the stream', async () => {
+    const chunks = [{ choices: [{ delta: { content: 'hello' } }] }]
+    create.mockReturnValue({ [Symbol.asyncIterator]: async function* () { for (const c of chunks) yield c } })
+    const adapter = new OpenAIAdapter()
+    const received: any[] = []
+    for await (const chunk of adapter.streamCompletion({ model: 'gpt-4o', messages: [] }, makeModel())) {
+      received.push(chunk)
+    }
+    expect(received).toHaveLength(1)
+    expect(received[0].choices[0].delta.content).toBe('hello')
+  });
+});
+
+describe('OpenAIAdapter.messages', () => {
+  it('converts MessagesRequest to OpenAI format and returns response', async () => {
+    create.mockResolvedValue({
+      id: 'cmpl-1', model: 'gpt-4o',
+      choices: [{ message: { content: 'Hi' }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 5, completion_tokens: 3 },
+    })
+    const adapter = new OpenAIAdapter()
+    const result = await adapter.messages({
+      model: 'gpt-4o', max_tokens: 100,
+      messages: [{ role: 'user', content: 'Hello' }],
+    }, makeModel())
+    expect(result.content[0]).toMatchObject({ type: 'text' })
+  });
+
+  it('includes system message when provided', async () => {
+    create.mockResolvedValue({
+      id: 'c2', model: 'gpt-4o',
+      choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 5, completion_tokens: 2 },
+    })
+    const adapter = new OpenAIAdapter()
+    await adapter.messages({
+      model: 'gpt-4o', max_tokens: 50,
+      messages: [{ role: 'user', content: 'Hi' }],
+      system: 'You are helpful.',
+    }, makeModel())
+    const msgs = (create.mock.calls[0]![0] as any).messages
+    expect(msgs[0].role).toBe('system')
+    expect(msgs[0].content).toBe('You are helpful.')
+  });
+
+  it('uses empty string for apiKey when model.apiKey is undefined (line 15 ?? branch)', async () => {
+    create.mockResolvedValueOnce({
+      id: 'c-no-key', model: 'gpt-4o',
+      choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 1, completion_tokens: 1 },
+    })
+    const adapter = new OpenAIAdapter()
+    const modelNoKey: any = { ...makeModel(), apiKey: undefined }
+    await adapter.chatCompletion({ messages: [{ role: 'user', content: 'Hi' }] } as any, modelNoKey)
+    expect(create).toHaveBeenCalled()
+  });
+
+  it('uses default endpoint when model.endpoint is falsy (line 18 || branch)', async () => {
+    create.mockResolvedValueOnce({
+      id: 'c-no-ep', model: 'gpt-4o',
+      choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 1, completion_tokens: 1 },
+    })
+    const adapter = new OpenAIAdapter()
+    const modelNoEp: any = { ...makeModel(), endpoint: '' }
+    await adapter.chatCompletion({ messages: [{ role: 'user', content: 'Hi' }] } as any, modelNoEp)
+    expect(create).toHaveBeenCalled()
+  });
 });

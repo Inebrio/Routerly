@@ -106,7 +106,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     request.log.info(
       {
         messageCount: msgs.length,
-        roles: msgs.map((m: any) => m.role),
+        roles: msgs.map((m: any) => m?.role),
         payloadChars,
         stream: isStream,
       },

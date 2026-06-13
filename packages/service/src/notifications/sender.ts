@@ -161,7 +161,8 @@ async function sendGoogle(cfg: GoogleChannelConfig, to: string): Promise<SendRes
 
 // ── SSRF guard ────────────────────────────────────────────────────────────────────────
 function isPrivateHostname(hostname: string): boolean {
-  const h = hostname.toLowerCase();
+  // Strip IPv6 brackets added by URL.hostname (e.g. "[::1]" → "::1")
+  const h = hostname.replace(/^\[|\]$/g, '').toLowerCase();
   if (h === 'localhost' || h === '::1') return true;
   // IPv4 loopback
   if (/^127\./.test(h)) return true;

@@ -26,6 +26,7 @@
     "@commitlint/config-conventional": "^20.5.0",
     "@typescript-eslint/eslint-plugin": "^8.58.0",
     "@typescript-eslint/parser": "^8.58.0",
+    "@vitest/coverage-v8": "^4.1.8",
     "eslint": "^9.39.4",
     "husky": "^9.1.7",
     "prettier": "^3.2.5",
