@@ -36,11 +36,10 @@ export function OverviewPage() {
   }, []);
 
   const timelineData = useMemo(() => {
-    if (!stats || stats.timeline.length === 0) return [];
+    if (!stats) return [];
     const isHourly = (stats.timeline[0]?.[0]?.length ?? 0) > 10;
 
     if (isHourly) {
-      // Hourly: fill all 24 hours for today (UTC)
       const costByHour = new Map<string, number>(stats.timeline.map(([d, c]) => [d, c]));
       const now = new Date();
       const dateStr = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
@@ -50,21 +49,35 @@ export function OverviewPage() {
       });
     }
 
-    // Daily: fill every date in the range with 0 for gaps
+    // Use period boundaries so weekly ≠ monthly when data is sparse
+    const now = new Date();
+    let start: Date;
+    if (period === 'weekly') {
+      start = new Date(now);
+      const d = start.getDay();
+      start.setDate(start.getDate() - (d === 0 ? 6 : d - 1));
+      start.setHours(0, 0, 0, 0);
+    } else if (period === 'monthly') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (period === 'all' && stats.timeline.length > 0) {
+      const firstKey = stats.timeline[0]![0]!;
+      const [fy, fm, fd] = firstKey.split('-').map(Number) as [number, number, number];
+      start = new Date(fy, fm - 1, fd);
+    } else {
+      return [];
+    }
+
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const costByDate = new Map<string, number>(stats.timeline.map(([d, c]) => [d, c]));
-    const sorted = [...costByDate.keys()].sort();
-    const [sy, sm, sd] = sorted[0]!.split('-').map(Number) as [number, number, number];
-    const [ey, em, ed] = sorted[sorted.length - 1]!.split('-').map(Number) as [number, number, number];
     const result: { date: string; cost: number }[] = [];
-    const cur = new Date(sy, sm - 1, sd);
-    const end = new Date(ey, em - 1, ed);
+    const cur = new Date(start);
     while (cur <= end) {
       const key = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
       result.push({ date: key.slice(5), cost: costByDate.get(key) ?? 0 });
       cur.setDate(cur.getDate() + 1);
     }
     return result;
-  }, [stats]);
+  }, [stats, period]);
 
   const barData = useMemo(() => {
     if (!stats) return [];
