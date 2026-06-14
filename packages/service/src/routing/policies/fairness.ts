@@ -20,7 +20,7 @@ import type { UsageRecord } from '@routerly/shared';
  * Configurazione (policy.config, tutti opzionali):
  *  - windowMinutes  {number}  Finestra temporale osservata   (default: 60)
  */
-export const fairnessPolicy: PolicyFn = async ({ candidates, config }) => {
+export const fairnessPolicy: PolicyFn = async ({ candidates, config, projectId }) => {
   const windowMinutes: number = config?.windowMinutes ?? 60;
 
   const records: UsageRecord[] = await readConfig('usage');
@@ -30,7 +30,8 @@ export const fairnessPolicy: PolicyFn = async ({ candidates, config }) => {
 
   // Solo le chiamate con esito positivo contribuiscono al conteggio
   const recent = records.filter(
-    r => new Date(r.timestamp) >= since && r.outcome === 'success',
+    r => new Date(r.timestamp) >= since && r.outcome === 'success'
+         && (projectId === undefined || r.projectId === projectId),
   );
 
   // ── Conta chiamate per candidato ─────────────────────────────────────────
