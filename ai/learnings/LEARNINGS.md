@@ -74,3 +74,26 @@ When adding a new public `/api/*` endpoint, always add it to the preHandler whit
 - Tags: auth, middleware, api
 
 ---
+
+## [LRN-20260613-001] best_practice
+
+**Logged**: 2026-06-13T00:00:00Z
+**Priority**: high
+**Status**: pending
+**Area**: service
+
+### Summary
+The `anthropic` provider adapter uses the official SDK and **reconstructs** the request body (`JSON.stringify(m.content)`), so it is NOT byte-faithful. Any feature that must forward a request verbatim (e.g. subscription/OAuth pass-through, preserving the `system` block / tool-use content) must **bypass the SDK adapter** and use raw `fetch`.
+
+### Details
+`/v1/messages` is handled by `routes/anthropic.ts` → `llmMessages` → `AnthropicAdapter.messages()`, which rebuilds params and stringifies structured message content (`packages/service/src/providers/anthropic.ts:324`). It does NOT go through `routes/passthrough.ts` (that's only the not-found handler for unhandled paths). An early assumption that "just tweak `buildUpstreamHeaders` in passthrough.ts" would suffice was wrong: passthrough is never reached for `/v1/messages`.
+
+### Suggested Action
+For verbatim forwarding on a first-class route, branch in the route after model resolution to a dedicated raw-`fetch` helper (see `routes/oauthForward.ts`). Re-stringifying the parsed JSON body is semantically faithful (Anthropic parses JSON server-side; only field values matter). Reuse `buildUpstreamUrl` from `passthrough.ts` and the hop-by-hop filtering pattern.
+
+### Metadata
+- Source: conversation
+- Related Files: packages/service/src/providers/anthropic.ts:315-335, packages/service/src/routes/oauthForward.ts, packages/service/src/routes/anthropic.ts
+- Tags: providers, anthropic, passthrough, oauth, wire-format
+
+---

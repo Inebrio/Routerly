@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Plus, X, ChevronDown, EyeOff, Eye, ArrowLeft } from 'lucide-react';
-import { getModels, createModel, updateModel, type Model, type ModelCapabilities, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit } from '../api';
+import { Plus, X, ChevronDown, EyeOff, Eye, ArrowLeft, Copy, Check, FlaskConical } from 'lucide-react';
+import { getModels, createModel, updateModel, testOpenAIOAuth, type Model, type ModelCapabilities, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit } from '../api';
 import { providersConf } from '@routerly/shared';
 
 type Provider = keyof typeof providersConf;
@@ -25,6 +25,11 @@ type ProviderModel = {
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const PROVIDERS = Object.keys(providersConf) as Provider[];
+
+const PROVIDER_LABELS: Partial<Record<Provider, string>> = {
+  'anthropic-oauth': 'Anthropic (Pro/Max subscription)',
+  'openai-oauth': 'OpenAI (ChatGPT Plus/Pro subscription)',
+};
 const ENDPOINT_DEFAULTS = Object.fromEntries(
   PROVIDERS.map(p => [p, providersConf[p as Provider]?.endpoint])
 ) as Record<Provider, string>;
@@ -65,6 +70,112 @@ const WEB_PROVIDER_INSTRUCTIONS: Record<WebProvider, React.ReactNode> = {
       <code style={{ fontSize: '0.78rem' }}>sessionKey</code> cookie
       (starts with <code style={{ fontSize: '0.78rem' }}>sk-ant-sid01-</code>).
       The key stays valid until you log out.
+    </>
+  ),
+};
+
+// Subscription providers store a long-lived OAuth token (Flow A) instead of an
+// API key. The token is used verbatim as the upstream credential; the calling
+// client must be a first-party-compatible client (e.g. Claude Code).
+const SUBSCRIPTION_PROVIDERS = ['anthropic-oauth', 'openai-oauth'] as const;
+type SubscriptionProvider = typeof SUBSCRIPTION_PROVIDERS[number];
+const isSubscriptionProvider = (p: string): p is SubscriptionProvider =>
+  (SUBSCRIPTION_PROVIDERS as readonly string[]).includes(p);
+
+const SUBSCRIPTION_TOKEN_LABEL: Record<SubscriptionProvider, string> = {
+  'anthropic-oauth': 'Subscription OAuth Token',
+  'openai-oauth': 'Auth file path',
+};
+
+const SUBSCRIPTION_TOKEN_PLACEHOLDER: Record<SubscriptionProvider, string> = {
+  'anthropic-oauth': 'sk-ant-oat01-…',
+  'openai-oauth': '~/.codex/auth.json (default)',
+};
+
+function CopyCode({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  function handleCopy() {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '0.5rem',
+      background: 'rgba(0,0,0,0.35)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      borderRadius: '6px',
+      padding: '0.3rem 0.5rem 0.3rem 0.75rem',
+      width: '100%',
+    }}>
+      <code style={{ fontSize: '0.88rem', letterSpacing: '0.01em', color: '#e2e8f0' }}>{text}</code>
+      <button
+        type="button"
+        onClick={handleCopy}
+        title={copied ? 'Copied!' : 'Copy to clipboard'}
+        style={{
+          background: copied ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.08)',
+          border: '1px solid ' + (copied ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.18)'),
+          borderRadius: '4px',
+          color: copied ? '#4ade80' : '#cbd5e1',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.25rem',
+          flexShrink: 0,
+          fontSize: '0.72rem',
+          padding: '3px 8px',
+          transition: 'all 0.15s',
+        }}
+      >
+        {copied
+          ? <><Check size={12} /> Copied</>
+          : <><Copy size={12} /> Copy</>
+        }
+      </button>
+    </span>
+  );
+}
+
+const SUBSCRIPTION_INSTRUCTIONS: Record<SubscriptionProvider, React.ReactNode> = {
+  'anthropic-oauth': (
+    <>
+      <strong>Use your Claude Pro/Max subscription.</strong>
+      <ol style={{ margin: '0.5rem 0 0.25rem 1.2rem', padding: 0, lineHeight: 1.8 }}>
+        <li>
+          Run this command and copy the token it prints:
+          <div style={{ margin: '0.3rem 0 0.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <CopyCode text="claude setup-token" />
+          </div>
+        </li>
+        <li>Paste the token into the <em>Subscription OAuth Token</em> field below.</li>
+      </ol>
+      <span style={{ opacity: 0.7, fontSize: '0.8rem' }}>
+        Regenerate when it expires. Subscription use via a gateway may be against the provider&apos;s Terms.
+      </span>
+    </>
+  ),
+  'openai-oauth': (
+    <>
+      <strong>Use your ChatGPT Plus/Pro subscription via the Codex app.</strong>
+      <ol style={{ margin: '0.5rem 0 0.25rem 1.2rem', padding: 0, lineHeight: 1.8 }}>
+        <li>Log in to the Codex desktop app with your ChatGPT Plus/Pro account.</li>
+        <li>
+          Routerly reads your access token from <code style={{ fontSize: '0.8rem' }}>~/.codex/auth.json</code>{' '}
+          and refreshes it automatically. No manual copy/paste needed.
+        </li>
+        <li>
+          Leave the <em>Auth file path</em> field blank to use the default, or enter a custom path
+          if your Codex app stores auth elsewhere.
+        </li>
+      </ol>
+      <span style={{ opacity: 0.7, fontSize: '0.8rem' }}>
+        Subscription use via a gateway may be against the provider&apos;s Terms.
+      </span>
     </>
   ),
 };
@@ -195,6 +306,7 @@ export function ModelFormPage() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showLimits, setShowLimits] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [oauthTest, setOauthTest] = useState<{ status: 'idle' | 'testing' | 'ok' | 'error'; msg?: string }>({ status: 'idle' });
   const [err, setErr] = useState('');
   const [showToken, setShowToken] = useState(false);
   const [showCfClearance, setShowCfClearance] = useState(false);
@@ -397,6 +509,21 @@ export function ModelFormPage() {
     return generateId(prefix, form.id, models.filter(m => m.id !== editingModelId).map(m => m.id));
   }
 
+  async function handleTestOAuth() {
+    setOauthTest({ status: 'testing' });
+    try {
+      const res = await testOpenAIOAuth(form.apiKey || undefined);
+      if (res.ok) {
+        const expStr = res.expiresAt ? new Date(res.expiresAt).toLocaleString() : 'unknown';
+        setOauthTest({ status: 'ok', msg: `Account: ${res.accountId} — expires ${expStr}` });
+      } else {
+        setOauthTest({ status: 'error', msg: res.error ?? 'Unknown error' });
+      }
+    } catch (e) {
+      setOauthTest({ status: 'error', msg: e instanceof Error ? e.message : String(e) });
+    }
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setErr(''); setSaving(true);
@@ -500,7 +627,7 @@ export function ModelFormPage() {
               <label className="form-label">Provider</label>
               <select className="form-input" value={form.provider}
                 onChange={e => handleProviderChange(e.target.value as Provider)}>
-                {PROVIDERS.map(p => <option key={p} value={p}>{p}</option>)}
+                {PROVIDERS.map(p => <option key={p} value={p}>{PROVIDER_LABELS[p] ?? p}</option>)}
               </select>
             </div>
 
@@ -571,6 +698,20 @@ export function ModelFormPage() {
               </div>
             )}
 
+            {isSubscriptionProvider(form.provider) && (
+              <div style={{
+                display: 'flex', gap: 10, padding: '12px 14px', marginBottom: 16,
+                background: 'color-mix(in srgb, var(--color-warning, #f59e0b) 10%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--color-warning, #f59e0b) 40%, transparent)',
+                borderRadius: 8,
+              }}>
+                <span style={{ fontSize: '1rem', flexShrink: 0 }}>ℹ️</span>
+                <div style={{ fontSize: '0.82rem', lineHeight: 1.6, color: 'var(--text-primary)' }}>
+                  <p style={{ margin: 0 }}>{SUBSCRIPTION_INSTRUCTIONS[form.provider as SubscriptionProvider]}</p>
+                </div>
+              </div>
+            )}
+
             <div className="form-group">
               <label className="form-label">Endpoint URL</label>
               <input className="form-input" value={form.endpoint}
@@ -581,25 +722,60 @@ export function ModelFormPage() {
               <label className="form-label">
                 {isWebProvider(form.provider)
                   ? WEB_PROVIDER_TOKEN_LABEL[form.provider as WebProvider]
+                  : isSubscriptionProvider(form.provider)
+                  ? SUBSCRIPTION_TOKEN_LABEL[form.provider as SubscriptionProvider]
                   : 'API Key / Token'}
               </label>
-              <div style={{ position: 'relative' }}>
-                <input className="form-input" type={showToken ? 'text' : 'password'}
-                  name="apiKey" autoComplete="new-password"
-                  value={form.apiKey} onChange={e => setForm(f => ({ ...f, apiKey: e.target.value }))}
-                  placeholder={
-                    editingModelId ? 'Leave blank to keep existing key'
-                    : isCloning ? 'Leave blank to keep existing key'
-                    : isWebProvider(form.provider) ? WEB_PROVIDER_TOKEN_PLACEHOLDER[form.provider as WebProvider]
-                    : form.provider === 'ollama' ? 'not required for local models'
-                    : 'sk-…'
-                  }
-                  style={{ paddingRight: 40 }} />
-                <button type="button" onClick={() => setShowToken(v => !v)}
-                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>
-                  {showToken ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
+              {form.provider === 'openai-oauth' ? (
+                <>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input className="form-input" type="text"
+                      name="apiKey" autoComplete="off"
+                      value={form.apiKey} onChange={e => { setForm(f => ({ ...f, apiKey: e.target.value })); setOauthTest({ status: 'idle' }); }}
+                      placeholder={
+                        (editingModelId || isCloning) ? 'Leave blank to keep existing path'
+                        : '~/.codex/auth.json (default)'
+                      }
+                      style={{ flex: 1 }} />
+                    <button type="button"
+                      onClick={handleTestOAuth}
+                      disabled={oauthTest.status === 'testing'}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, padding: '0 14px', height: 38, background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                      {oauthTest.status === 'testing' ? <span className="spinner" style={{ width: 14, height: 14 }} /> : <FlaskConical size={14} />}
+                      Test
+                    </button>
+                  </div>
+                  {oauthTest.status === 'ok' && (
+                    <div style={{ marginTop: 6, fontSize: '0.78rem', color: '#4ade80' }}>
+                      {oauthTest.msg}
+                    </div>
+                  )}
+                  {oauthTest.status === 'error' && (
+                    <div style={{ marginTop: 6, fontSize: '0.78rem', color: '#f87171' }}>
+                      {oauthTest.msg}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div style={{ position: 'relative' }}>
+                  <input className="form-input" type={showToken ? 'text' : 'password'}
+                    name="apiKey" autoComplete="new-password"
+                    value={form.apiKey} onChange={e => setForm(f => ({ ...f, apiKey: e.target.value }))}
+                    placeholder={
+                      editingModelId ? 'Leave blank to keep existing key'
+                      : isCloning ? 'Leave blank to keep existing key'
+                      : isWebProvider(form.provider) ? WEB_PROVIDER_TOKEN_PLACEHOLDER[form.provider as WebProvider]
+                      : isSubscriptionProvider(form.provider) ? SUBSCRIPTION_TOKEN_PLACEHOLDER[form.provider as SubscriptionProvider]
+                      : form.provider === 'ollama' ? 'not required for local models'
+                      : 'sk-…'
+                    }
+                    style={{ paddingRight: 40 }} />
+                  <button type="button" onClick={() => setShowToken(v => !v)}
+                    style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>
+                    {showToken ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              )}
             </div>
 
           </div>

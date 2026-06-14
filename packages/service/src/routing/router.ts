@@ -297,11 +297,16 @@ export async function routeRequest(
     emit?.(te('router-response', 'router:abstained', { policies: abstainedPolicies }));
   }
 
+  // When every active policy abstained (or none were configured), no policy has a
+  // preference. Use random weights so the router distributes traffic uniformly over
+  // time instead of always picking the first model in the project config.
+  const allPoliciesAbstained = abstainedPolicies.length === successfulResults.length;
+
   const finalCandidates: RoutingCandidate[] = scoringCandidates
     .map(c => {
       const totalScore = scoreAccumulator.get(c.model.id) ?? 0;
       const totalWeight = weightAccumulator.get(c.model.id) ?? 0;
-      const score = totalWeight > 0 ? totalScore / totalWeight : 0.5;
+      const score = totalWeight > 0 ? totalScore / totalWeight : (allPoliciesAbstained ? Math.random() : 0.5);
       return {
         model: c.model.id,
         weight: +score.toFixed(4),
