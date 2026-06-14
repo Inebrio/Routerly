@@ -10,7 +10,7 @@ import type {
 import type { ProviderAdapter } from './types.js';
 
 export class AnthropicAdapter implements ProviderAdapter {
-  private getClient(model: ModelConfig): Anthropic {
+  protected getClient(model: ModelConfig): Anthropic {
     const apiKey = model.apiKey ?? '';
     return new Anthropic({
       apiKey,

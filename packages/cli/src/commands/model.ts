@@ -185,7 +185,7 @@ Examples:
   routerly model add --id gpt-4o --provider openai --api-key sk-... --interactive
 `)
     .requiredOption('--id <id>', 'Unique model ID (e.g. gpt-4o)')
-    .requiredOption('--provider <provider>', 'Provider: openai | anthropic | gemini | ollama | custom')
+    .requiredOption('--provider <provider>', 'Provider: openai | anthropic | anthropic-oauth | gemini | ollama | custom')
     .option('--endpoint <url>', 'Custom API endpoint (uses provider default if omitted)')
     .option('--api-key <key>', 'API key (stored plaintext; file permissions protect it)')
     .option('--input-price <usd>', 'Cost per 1M input tokens in USD')
@@ -209,6 +209,7 @@ Examples:
       const providerEndpoints: Record<string, string> = {
         openai: 'https://api.openai.com/v1',
         anthropic: 'https://api.anthropic.com',
+        'anthropic-oauth': 'https://api.anthropic.com',
         gemini: 'https://generativelanguage.googleapis.com/v1beta/openai/',
         ollama: 'http://localhost:11434/v1',
       };

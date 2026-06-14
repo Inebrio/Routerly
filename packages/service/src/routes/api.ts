@@ -940,6 +940,24 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
   });
 
+  // ─── POST /api/test/openai-oauth ─────────────────────────────────────────────
+  fastify.post<{ Body: { authFilePath?: string } }>('/api/test/openai-oauth', async (req, reply) => {
+    if (!requirePerm(req, 'model:read', reply)) return;
+    const { resolveCodexToken } = await import('./openaiOAuthForward.js');
+    const authFilePath = req.body?.authFilePath || '~/.codex/auth.json';
+    try {
+      const { accessToken, accountId } = await resolveCodexToken(authFilePath, req.log);
+      const payloadB64 = accessToken.split('.')[1] ?? '';
+      const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf-8')) as Record<string, unknown>;
+      const exp = typeof payload['exp'] === 'number' ? payload['exp'] : 0;
+      const expiresAt = exp > 0 ? new Date(exp * 1000).toISOString() : null;
+      return reply.send({ ok: true, accountId, expiresAt });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return reply.send({ ok: false, error: msg });
+    }
+  });
+
   // ─── GET /api/traces/:id ─────────────────────────────────────────────────────
   fastify.get<{ Params: { id: string } }>('/api/traces/:id', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
