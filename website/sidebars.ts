@@ -73,6 +73,7 @@ const sidebars: SidebarsConfig = {
       label: 'Guides',
       items: [
         'guides/self-hosting',
+        'guides/claude-subscription',
       ],
     },
     {

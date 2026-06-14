@@ -250,6 +250,69 @@
       }
     ]
   },
+  "anthropic-oauth": {
+    "endpoint": "https://api.anthropic.com",
+    "models": [
+      {
+        "id": "claude-fable-5",
+        "input": 0,
+        "output": 0,
+        "contextWindow": 1000000,
+        "notes": "Claude Fable 5 — most capable model (June 2026)"
+      },
+      {
+        "id": "claude-opus-4-8",
+        "input": 0,
+        "output": 0,
+        "contextWindow": 1000000,
+        "notes": "Claude Opus 4.8 — flagship model"
+      },
+      {
+        "id": "claude-sonnet-4-6",
+        "input": 0,
+        "output": 0,
+        "contextWindow": 1000000,
+        "notes": "Claude Sonnet 4.6 — balanced speed and intelligence"
+      },
+      {
+        "id": "claude-sonnet-4-5",
+        "input": 0,
+        "output": 0,
+        "contextWindow": 200000,
+        "notes": "Claude Sonnet 4.5"
+      },
+      {
+        "id": "claude-haiku-4-5",
+        "input": 0,
+        "output": 0,
+        "contextWindow": 200000,
+        "notes": "Claude Haiku 4.5 — entry-level"
+      }
+    ]
+  },
+  "openai-oauth": {
+    "endpoint": "https://chatgpt.com",
+    "models": [
+      {
+        "id": "gpt-5.5",
+        "input": 0,
+        "output": 0,
+        "notes": "GPT-5.5 — frontier model for complex coding and research (ChatGPT Plus/Pro)"
+      },
+      {
+        "id": "gpt-5.4",
+        "input": 0,
+        "output": 0,
+        "notes": "GPT-5.4 — strong model for everyday coding (ChatGPT Plus/Pro)"
+      },
+      {
+        "id": "gpt-5.4-mini",
+        "input": 0,
+        "output": 0,
+        "notes": "GPT-5.4-Mini — fast model for simpler coding tasks (ChatGPT Plus/Pro)"
+      }
+    ]
+  },
   "gemini": {
     "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/",
     "models": [

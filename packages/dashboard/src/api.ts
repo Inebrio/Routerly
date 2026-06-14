@@ -422,6 +422,12 @@ export const testNotificationChannel = (channelId: string, to: string) =>
     body: JSON.stringify({ channelId, to }),
   });
 
+export const testOpenAIOAuth = (authFilePath?: string) =>
+  request<{ ok: boolean; accountId?: string; expiresAt?: string | null; error?: string }>(
+    '/test/openai-oauth',
+    { method: 'POST', body: JSON.stringify({ authFilePath }) },
+  );
+
 // ── Profile (current user) ────────────────────────────────────────────────
 export interface Me {
   id: string;

@@ -7,6 +7,7 @@ import { readConfig } from '../config/loader.js';
 import { setTrace, appendTrace } from '../routing/traceStore.js';
 import type { TraceEntry } from '../routing/traceStore.js';
 import { llmChat, llmStream, BudgetExceededError } from '../llm/executor.js';
+import { forwardOpenAIOAuthSSE } from './openaiOAuthForward.js';
 import type { LLMCallContext } from '../llm/executor.js';
 import { getEmbeddingProvider } from '../embeddings/index.js';
 import type { EmbeddingProviderType } from '../embeddings/index.js';
@@ -271,6 +272,12 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
             : {}),
         };
 
+        if (model.provider === 'openai-oauth') {
+          await forwardOpenAIOAuthSSE(reply.raw, body as Record<string, unknown>, model, request.log, traceId, project.id);
+          reply.raw.end();
+          return;
+        }
+
         let streamResult: Awaited<ReturnType<typeof llmStream>>;
         try {
           streamResult = await llmStream(body, model, ctx);
@@ -357,6 +364,15 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           ? { cacheHit: true as const, ...(cacheSimilarityScore !== null ? { cacheSimilarity: cacheSimilarityScore } : {}) }
           : {}),
       };
+
+      if (model.provider === 'openai-oauth') {
+        return reply.code(422).send({
+          error: {
+            message: 'openai-oauth requires streaming. Use /v1/responses with stream: true.',
+            type: 'invalid_request_error',
+          },
+        });
+      }
 
       try {
         const response = await llmChat(body, model, ctx);
