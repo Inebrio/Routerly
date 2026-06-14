@@ -1,0 +1,156 @@
+# Release Notes — v0.2.1 (draft)
+
+Status: **in progress** — branch `feat/passthrough-proxy-issue-100`
+
+---
+
+## Overview
+
+v0.2.1 introduces two major capabilities: a transparent pass-through proxy that makes Routerly a complete drop-in replacement for any provider endpoint, and native support for consumer subscriptions (Claude Pro/Max and ChatGPT Plus/Pro via OAuth tokens). It also ships a redesigned overview dashboard and several reliability fixes.
+
+---
+
+## What shipped (committed to branch)
+
+### Transparent pass-through proxy (`#100`)
+
+Any request path that Routerly does not explicitly handle is now forwarded to the project's upstream provider, with only the API key swapped. Reserved namespaces (`/`, `/health`, `/api/*`, `/dashboard*`) are never proxied.
+
+**Why it matters:** Routerly was previously limited to `/v1/chat/completions` and `/v1/messages`. Clients that call `/v1/embeddings`, `/v1/audio/transcriptions`, `/v1/files`, or any future endpoint got a 404. The pass-through removes that limitation — any OpenAI-compatible or Anthropic-compatible client can now route all its traffic through Routerly without special configuration.
+
+**Key files:**
+- `packages/service/src/routes/passthrough.ts` — core proxy handler; model selection, URL construction, streaming
+- `packages/service/src/server.ts` — registered as `setNotFoundHandler`; added wildcard content-type parser so binary bodies are not lost
+
+### Overview page redesign (`#105`)
+
+The dashboard overview page was fully rewritten.
+
+- Replaced the pie chart with a bar chart (top 8 models by cost)
+- Added hourly granularity for the daily period (cost per hour instead of a single daily bar)
+- Correct period boundaries for weekly, monthly, and all-time views
+- Period-aware Y-axis labels
+- Dark mode support via `useTheme`
+
+**Key files:**
+- `packages/dashboard/src/pages/OverviewPage.tsx`
+- `packages/service/src/routes/api.ts` — `GET /api/usage` now emits hourly keys (`2026-06-14T09`) when `period=daily`
+
+### Telemetry: install vs upgrade detection
+
+The telemetry system now records the version that last fired a ping (`lastPingedVersion` in `settings.json`). On every startup, if telemetry is enabled:
+
+- First run ever → fires `install` event
+- Version changed → fires `upgrade` event
+- Same version restarted → no ping
+
+**Key files:**
+- `packages/shared/src/types/config.ts` — `TelemetryConfig.lastPingedVersion`
+- `packages/service/src/server.ts` — startup detection logic
+- `packages/dashboard/src/api.ts` — type synced
+
+### OpenAI route fix
+
+- `DELETE body.input` after mapping to `messages` (was being forwarded twice)
+- Safe optional chaining `m?.role` in log call
+
+### Fairness routing policy — three bug fixes
+
+Three bugs in the fairness routing policy were found and fixed:
+
+**1. Cross-project usage contamination.** The fairness policy was reading usage records from *all* projects when deciding call distribution. A model used heavily in project A would be penalized when routing in project B, causing unfair distribution.
+Fix: added `projectId` filter to `fairnessPolicy` — only records matching the current project are counted.
+
+**2. Tie-breaking always favored the first model.** When all active policies abstained (scores all within 0.0001 of each other, or no policies configured), every candidate received a static score of 0.5. JavaScript's stable sort then consistently picked the first model in the project config.
+Fix: when every policy abstains, `Math.random()` is used instead of 0.5, distributing traffic uniformly over time.
+
+**3. OAuth passthrough models invisible to fairness.** `openai-oauth` and `anthropic-oauth` requests bypass the standard `llmStream`/`llmMessages` executor path and go directly to `forwardOpenAIOAuthSSE` / `forwardAnthropicOAuth`. Neither function called `trackUsage`, so OAuth models always had zero usage records — making them permanently score 1.0 and win every routing decision.
+Fix: `trackUsage` is now called in both forward functions after the upstream response is initiated (`outcome: 'success'` on 2xx, `outcome: 'error'` on fetch failures and non-2xx). Token counts are recorded as 0 (subscription models have no per-token billing; the record exists only for fairness accounting).
+
+**Key files:**
+- `packages/service/src/routing/policies/fairness.ts` — `projectId` filter on usage records
+- `packages/service/src/routing/router.ts` — `allPoliciesAbstained` flag + `Math.random()` fallback
+- `packages/service/src/routes/openaiOAuthForward.ts` — `projectId` param added; `trackUsage` on all exit paths
+- `packages/service/src/routes/oauthForward.ts` — `trackUsage` on fetch error and after upstream response
+- `packages/service/src/routes/openai.ts` — passes `project.id` to `forwardOpenAIOAuthSSE`
+
+---
+
+## What is in progress (uncommitted)
+
+### Anthropic OAuth / Claude Pro/Max subscription support
+
+Allows storing a `sk-ant-oat...` OAuth token (generated by `claude setup-token`) as a model credential. When a project routes to an `anthropic-oauth` model, Routerly forwards the request verbatim without SDK reconstruction — the client's `system` block and tool-use content are preserved exactly.
+
+**Architecture (Flow A):**
+1. Client sends a normal `POST /v1/messages` to Routerly with its project token.
+2. Routerly resolves the model and detects `provider: anthropic-oauth`.
+3. Branches to `forwardAnthropicOAuth` — raw `fetch`, no SDK.
+4. Swaps the inbound project token for the stored `sk-ant-oat...` credential.
+5. Adds `anthropic-beta: oauth-2025-04-20` and `anthropic-dangerous-direct-browser-access: true`.
+6. Streams the response back verbatim.
+
+**Key files:**
+- `packages/service/src/providers/anthropic-oauth.ts` — `AnthropicOAuthAdapter` (extends base, overrides `getClient` with OAuth headers; used by the adapter registry for non-pass-through paths if needed)
+- `packages/service/src/providers/anthropic.ts` — `getClient` made `protected` to allow inheritance
+- `packages/service/src/routes/oauthForward.ts` — `forwardAnthropicOAuth`, `buildOAuthForwardHeaders`
+- `packages/service/src/routes/anthropic.ts` — early branch on `model.provider === 'anthropic-oauth'`
+- `packages/service/src/providers/index.ts` — `anthropic-oauth` registered in adapter map
+- `packages/shared/src/conf/providers.json` — `anthropic-oauth` entry with Claude Fable 5, Opus 4.8, Sonnet 4.6, Sonnet 4.5, Haiku 4.5 (all priced at $0 — subscription)
+- `packages/shared/src/types/config.ts` — `'anthropic-oauth'` added to `Provider` union
+- `packages/cli/src/commands/model.ts` — `--provider` help text updated
+- `packages/dashboard/src/pages/ModelFormPage.tsx` — subscription provider UI: instructions callout, token input with copy button
+- `docs/guides/claude-subscription.md` — user-facing guide
+
+### OpenAI OAuth / ChatGPT Plus/Pro subscription support
+
+Allows routing to ChatGPT Plus/Pro models by reading the OAuth token written by the Codex desktop app to `~/.codex/auth.json`. Routerly auto-refreshes the token when it is within 5 minutes of expiry.
+
+**Architecture (Flow B — SSE only):**
+1. Client sends `POST /v1/chat/completions` with `stream: true`.
+2. Routerly resolves an `openai-oauth` model.
+3. Branches to `forwardOpenAIOAuthSSE`.
+4. Reads + auto-refreshes the Codex token from disk.
+5. Calls `POST https://chatgpt.com/backend-api/codex/responses` with a translated request body.
+6. Converts ChatGPT's streaming response format to standard OpenAI SSE chunks.
+7. Non-streaming calls return HTTP 422 (subscription path is stream-only).
+
+**Key files:**
+- `packages/service/src/routes/openaiOAuthForward.ts` — token loading, auto-refresh, SSE translation, `resolveCodexToken`, `forwardOpenAIOAuthSSE`
+- `packages/service/src/providers/openai-oauth.ts` — `OpenAIOAuthAdapter` stub
+- `packages/service/src/routes/openai.ts` — early branch on `model.provider === 'openai-oauth'`
+- `packages/service/src/routes/api.ts` — `POST /api/test/openai-oauth` endpoint to verify Codex token from dashboard
+- `packages/shared/src/conf/providers.json` — `openai-oauth` entry with GPT-5.5, GPT-5.4, GPT-5.4-Mini ($0)
+- `packages/dashboard/src/api.ts` — `testOpenAIOAuth()` client function
+- `packages/dashboard/src/pages/ModelFormPage.tsx` — Codex instructions, auth file path input, "Test" button
+- `docs/guides/openai-subscription.md` — user-facing guide
+
+---
+
+## What remains before merging
+
+- [x] Tests for `oauthForward.ts` (`packages/service/src/routes/oauthForward.test.ts`)
+- [x] Tests for `openaiOAuthForward.ts`
+- [ ] Tests for `anthropic-oauth` and `openai-oauth` providers
+- [ ] Tests for `ModelFormPage` subscription UI changes
+- [ ] Verify `openai-oauth` SSE translation against actual ChatGPT backend
+- [ ] Review `openai-oauth` non-streaming path (currently returns 422; decide if a non-streaming adapter is needed)
+- [ ] Update `website/sidebars.ts` and `website/versions.json` for new guides
+- [ ] `npm run typecheck` across all packages
+- [ ] `npm test --workspace=packages/service` + `packages/dashboard`
+- [ ] Final pass on `ModelFormPage` subscription UX
+
+---
+
+## Files changed summary
+
+| Area | Committed | Uncommitted (WIP) |
+|------|-----------|--------------------|
+| `packages/service/src/routes/` | `passthrough.ts` (new), `api.ts`, `openai.ts`, `server.ts` | `oauthForward.ts` (new), `openaiOAuthForward.ts` (new), `anthropic.ts`, `openai.ts` (fairness + usage tracking) |
+| `packages/service/src/routing/` | — | `policies/fairness.ts` (projectId filter), `router.ts` (random tie-break) |
+| `packages/service/src/providers/` | — | `anthropic-oauth.ts` (new), `openai-oauth.ts` (new), `anthropic.ts`, `index.ts` |
+| `packages/dashboard/src/` | `pages/OverviewPage.tsx` | `pages/ModelFormPage.tsx`, `api.ts` |
+| `packages/shared/src/` | `types/config.ts` | `conf/providers.json`, `types/config.ts` |
+| `packages/cli/src/` | — | `commands/model.ts` |
+| `docs/guides/` | — | `claude-subscription.md` (new), `openai-subscription.md` (new) |
+| `website/` | `docusaurus.config.ts` | `sidebars.ts`, `versions.json` |

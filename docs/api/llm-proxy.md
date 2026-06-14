@@ -153,6 +153,26 @@ The project slug in the URL takes precedence over the slug inferred from the Bea
 
 ---
 
+## Pass-Through Proxy
+
+Any path not listed above is transparently proxied to the project's upstream provider. This covers embeddings, audio, file uploads, fine-tuning, and any endpoint the provider adds in the future.
+
+```
+ANY /<provider-path>
+```
+
+**Request:** forwarded verbatim (method, body, query string, headers) — only the `Authorization` / `x-api-key` header is replaced with the upstream API key.
+
+**Response:** streamed back as-is, with hop-by-hop headers (`content-encoding`, `transfer-encoding`, etc.) stripped.
+
+**Model selection:** if the request body contains a `model` field, Routerly matches it against the project's configured models. If no match, the first project model is used.
+
+**Reserved paths** (`/`, `/health`, `/api/*`, `/dashboard*`) are never proxied.
+
+See [Service — Pass-Through Proxy](../service/endpoints#pass-through-proxy) for the full reference.
+
+---
+
 ## Streaming Protocol Details
 
 Routerly extends the standard SSE stream with a `trace` event at the start:

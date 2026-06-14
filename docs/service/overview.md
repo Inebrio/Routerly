@@ -26,6 +26,7 @@ When the service starts it performs the following steps in order:
    - LLM Proxy routes (`/v1/*`)
    - Root redirect (`/` → `/dashboard/`)
    - Health check (`/health`)
+   - Pass-through proxy (`setNotFoundHandler`) — any unmatched path is forwarded to the project's upstream provider
 5. **`server.listen`** — Binds to `host:port` from settings (defaults: `0.0.0.0:3000`).
 
 ---

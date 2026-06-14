@@ -7,6 +7,7 @@ import { setTrace, appendTrace } from '../routing/traceStore.js';
 import type { TraceEntry } from '../routing/traceStore.js';
 import { llmMessages, BudgetExceededError } from '../llm/executor.js';
 import type { LLMCallContext } from '../llm/executor.js';
+import { forwardAnthropicOAuth } from './oauthForward.js';
 
 export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/messages ────────────────────────────────────────────────────────
@@ -51,6 +52,13 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
     for (const candidate of sortedCandidates) {
       const model = allModels.find((m: any) => m.id === candidate.model);
       if (!model) continue;
+
+      // Subscription / OAuth models forward verbatim (no SDK, no routing
+      // transforms, no fallback) so the client's system block is preserved.
+      if (model.provider === 'anthropic-oauth') {
+        reply.header('x-routerly-trace-id', traceId);
+        return forwardAnthropicOAuth(request, reply, model);
+      }
 
       const ctx: LLMCallContext = {
         projectId: project.id,

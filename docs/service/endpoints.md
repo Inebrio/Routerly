@@ -5,11 +5,12 @@ sidebar_position: 2
 
 # HTTP Endpoints
 
-The service exposes three groups of HTTP endpoints on the same port (default: `3000`):
+The service exposes four groups of HTTP endpoints on the same port (default: `3000`):
 
 | Group | Path prefix | Auth | Purpose |
 |-------|-------------|------|---------|
 | [LLM Proxy](#llm-proxy) | `/v1/*` | Bearer project token (`sk-rt-…`) | Forward requests to LLM providers |
+| [Pass-Through Proxy](#pass-through-proxy) | any other path | Bearer project token (`sk-rt-…`) | Transparently forward any unhandled provider endpoint |
 | [Management API](#management-api) | `/api/*` | Bearer JWT (dashboard session) | Configure models, projects, users |
 | [Dashboard](#dashboard) | `/dashboard/*` | Browser session (cookie) | Serve the React web UI |
 | [Health](#health-check) | `/health` | None | Liveness probe |
@@ -106,6 +107,63 @@ Common status codes:
 | `503` | No model passed all routing filters (all excluded or over budget) |
 | `503` | Budget exhausted for the project or token |
 | `504` | Provider timeout |
+
+---
+
+## Pass-Through Proxy
+
+Any path that Routerly does not explicitly handle is transparently forwarded to the project's upstream provider. Only the API key is swapped — method, headers, body, and query string are passed through verbatim. This makes Routerly a true drop-in replacement for the full provider API surface, not just chat completions.
+
+**Authentication:** same `Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN` header required for the LLM Proxy.
+
+### What it enables
+
+| Provider | Endpoints now available via Routerly |
+|----------|--------------------------------------|
+| OpenAI | `/v1/embeddings`, `/v1/audio/transcriptions`, `/v1/audio/speech`, `/v1/files`, `/v1/fine-tuning/*`, and any future endpoints |
+| Anthropic | `/v1/complete`, `/v1/messages/batches`, `/v1/models`, and any future endpoints |
+| Ollama | `/api/embeddings`, `/api/tags`, `/api/pull`, and more |
+| Custom providers | Any path your upstream accepts |
+
+### Model selection
+
+When the request body contains a `model` field, Routerly matches it against the project's configured models (by ID or upstream model ID) and uses the corresponding provider credentials. If no match is found, or the request has no body, it falls back to the first configured model in the project.
+
+### Reserved namespaces
+
+The following paths are **never** proxied and always return a Routerly-native response:
+
+| Path | Behaviour |
+|------|-----------|
+| `/` | Redirect to `/dashboard/` |
+| `/health` | Health check response |
+| `/api/*` | Management API |
+| `/dashboard*` | Dashboard static files |
+
+Any request to these paths with a project token receives a standard 404, not a proxy attempt.
+
+### Example: embeddings
+
+```http
+POST /v1/embeddings
+Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN
+Content-Type: application/json
+
+{
+  "model": "text-embedding-3-small",
+  "input": "The quick brown fox"
+}
+```
+
+Routerly finds the configured model matching `text-embedding-3-small`, injects the upstream API key, and forwards the request to `https://api.openai.com/v1/embeddings`. The response is streamed back as-is.
+
+### Error codes
+
+| Code | Cause |
+|------|-------|
+| `401` | Missing or invalid project token |
+| `502 no_upstream` | Project has no configured models |
+| `502 upstream_error` | Network error reaching the upstream provider |
 
 ---
 
