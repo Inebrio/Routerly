@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X } from 'lucide-react';
+import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope } from 'lucide-react';
 import { getModels, deleteModel, type Model } from '../api';
 
 type SortKey = 'id' | 'provider' | 'input' | 'output' | 'cache' | 'context';
@@ -104,6 +104,9 @@ export function ModelsPage() {
                 </button>
               )}
             </div>
+            <Link to="/dashboard/models/discover" className="btn">
+              <Telescope size={16} /> Discover
+            </Link>
             <Link to="/dashboard/models/new" className="btn btn-primary">
               <Plus size={16} /> Add Model
             </Link>

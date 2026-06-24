@@ -54,6 +54,38 @@ async function verifyPassword(
 }
 
 
+// ── Static model catalog ──────────────────────────────────────────────────────
+interface CatalogEntry {
+  id: string;
+  provider: string;
+  name: string;
+  contextWindow: number;
+  modalities: string[];
+  pricing: { inputPer1kTokens: number; outputPer1kTokens: number };
+  local?: boolean;
+  notes?: string;
+}
+
+const MODEL_CATALOG: CatalogEntry[] = [
+  // OpenAI
+  { id: 'gpt-4o',       provider: 'openai',    name: 'GPT-4o',       contextWindow: 128000,  modalities: ['text', 'vision'], pricing: { inputPer1kTokens: 0.005,   outputPer1kTokens: 0.015  } },
+  { id: 'gpt-4o-mini',  provider: 'openai',    name: 'GPT-4o mini',  contextWindow: 128000,  modalities: ['text'],           pricing: { inputPer1kTokens: 0.00015, outputPer1kTokens: 0.0006 } },
+  { id: 'gpt-4-turbo',  provider: 'openai',    name: 'GPT-4 Turbo',  contextWindow: 128000,  modalities: ['text'],           pricing: { inputPer1kTokens: 0.01,    outputPer1kTokens: 0.03   } },
+  { id: 'o1',           provider: 'openai',    name: 'o1',           contextWindow: 200000,  modalities: ['text'],           pricing: { inputPer1kTokens: 0.015,   outputPer1kTokens: 0.060  } },
+  { id: 'o3-mini',      provider: 'openai',    name: 'o3-mini',      contextWindow: 200000,  modalities: ['text'],           pricing: { inputPer1kTokens: 0.0011,  outputPer1kTokens: 0.0044 } },
+  // Anthropic
+  { id: 'claude-opus-4-5',   provider: 'anthropic', name: 'Claude Opus 4.5',   contextWindow: 200000, modalities: ['text', 'vision'], pricing: { inputPer1kTokens: 0.015,   outputPer1kTokens: 0.075   } },
+  { id: 'claude-sonnet-4-5', provider: 'anthropic', name: 'Claude Sonnet 4.5', contextWindow: 200000, modalities: ['text'],           pricing: { inputPer1kTokens: 0.003,   outputPer1kTokens: 0.015   } },
+  { id: 'claude-haiku-4-5',  provider: 'anthropic', name: 'Claude Haiku 4.5',  contextWindow: 200000, modalities: ['text'],           pricing: { inputPer1kTokens: 0.00025, outputPer1kTokens: 0.00125 } },
+  // Google
+  { id: 'gemini-2.0-flash', provider: 'gemini', name: 'Gemini 2.0 Flash', contextWindow: 1048576, modalities: ['text'], pricing: { inputPer1kTokens: 0.0001,   outputPer1kTokens: 0.0004 } },
+  { id: 'gemini-1.5-pro',   provider: 'gemini', name: 'Gemini 1.5 Pro',   contextWindow: 2097152, modalities: ['text'], pricing: { inputPer1kTokens: 0.00125,  outputPer1kTokens: 0.005  } },
+  { id: 'gemini-1.5-flash', provider: 'gemini', name: 'Gemini 1.5 Flash', contextWindow: 1048576, modalities: ['text'], pricing: { inputPer1kTokens: 0.000075, outputPer1kTokens: 0.0003 } },
+  // Ollama
+  { id: 'llama3',   provider: 'ollama', name: 'Llama 3',   contextWindow: 8192,  modalities: ['text'], pricing: { inputPer1kTokens: 0, outputPer1kTokens: 0 }, local: true },
+  { id: 'mistral',  provider: 'ollama', name: 'Mistral',   contextWindow: 32768, modalities: ['text'], pricing: { inputPer1kTokens: 0, outputPer1kTokens: 0 }, local: true },
+];
+
 // ── Module augmentation ───────────────────────────────────────────────────────
 declare module 'fastify' {
   interface FastifyRequest {
@@ -447,6 +479,17 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     await writeConfig('models', filtered);
     void emitEvent('config.model_deleted', 'info', { modelId: req.params.id }, { log: req.log });
     return reply.status(204).send();
+  });
+
+  // ── Model catalog (static, cross-referenced with configured models) ──────────
+  fastify.get('/api/models/catalog', async (req, reply) => {
+    if (!requirePerm(req, 'model:read', reply)) return;
+    const configured = await readConfig('models');
+    const configuredIds = new Set(configured.map(m => m.id));
+    return reply.send(MODEL_CATALOG.map(entry => ({
+      ...entry,
+      isConfigured: configuredIds.has(entry.id),
+    })));
   });
 
   // ══════════════════════════════════════════════════════════════════════════════
