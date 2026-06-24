@@ -1,4 +1,4 @@
-import type { Limit, LimitPeriod, LimitsMode, RollingUnit, ModelConfig, ProjectConfig, ProjectToken, UsageRecord } from '@routerly/shared';
+import type { Limit, LimitPeriod, LimitsMode, RollingUnit, ModelConfig, ProjectConfig, ProjectToken, SpendGroup, Settings, UsageRecord } from '@routerly/shared';
 import { readConfig } from '../config/loader.js';
 
 // ─── Window helpers ────────────────────────────────────────────────────────────
@@ -291,6 +291,130 @@ export async function isAllowed(
   );
 
   return checkLimits(limits, relevant, now);
+}
+
+// ─── Spend groups (hierarchical org → team → key cascade, #82) ──────────────────
+
+/** Walk a group's parent chain, returning [group, parent, grandparent, …]. */
+function groupChain(groupId: string, groups: SpendGroup[]): SpendGroup[] {
+  const chain: SpendGroup[] = [];
+  const seen = new Set<string>();
+  let current: SpendGroup | undefined = groups.find(g => g.id === groupId);
+  while (current && !seen.has(current.id)) {
+    seen.add(current.id);
+    chain.push(current);
+    current = current.parentGroupId ? groups.find(g => g.id === current!.parentGroupId) : undefined;
+  }
+  return chain;
+}
+
+/** All project IDs attributed to a group, including those of its descendant groups. */
+function groupProjectIds(group: SpendGroup, groups: SpendGroup[]): Set<string> {
+  const ids = new Set<string>(group.projectIds ?? []);
+  const queue = [group.id];
+  const seen = new Set<string>();
+  while (queue.length) {
+    const id = queue.shift()!;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    for (const child of groups.filter(g => g.parentGroupId === id)) {
+      for (const pid of child.projectIds ?? []) ids.add(pid);
+      queue.push(child.id);
+    }
+  }
+  return ids;
+}
+
+/**
+ * Checks a prospective `cost` against the limits of `groupId` and every parent
+ * group in its chain (org → team → key cascade). Usage is attributed to a group
+ * by the projects belonging to it (and to its descendant groups).
+ *
+ * Returns false if adding `cost` would meet or exceed any limit in the chain.
+ * Returns true when the group does not exist or no limit is hit.
+ */
+export function checkGroupBudget(
+  groupId: string,
+  cost: number,
+  settings: Settings,
+  usageRecords: UsageRecord[],
+): boolean {
+  const groups = settings.spendGroups ?? [];
+  const chain = groupChain(groupId, groups);
+  if (chain.length === 0) return true;
+
+  const now = new Date();
+  // Synthetic record carrying the prospective cost/call for the request about to run.
+  const pending: UsageRecord = {
+    id: '__pending__',
+    timestamp: now.toISOString(),
+    projectId: '',
+    modelId: '',
+    inputTokens: 0,
+    outputTokens: 0,
+    cost,
+    latencyMs: 0,
+    outcome: 'success',
+  };
+
+  for (const group of chain) {
+    if (!group.limits?.length) continue;
+    const pids = groupProjectIds(group, groups);
+    const relevant = usageRecords.filter(
+      r => r.outcome === 'success' && pids.has(r.projectId),
+    );
+    if (!checkLimits(group.limits, [...relevant, pending], now)) return false;
+  }
+  return true;
+}
+
+/**
+ * Per-limit current consumption for a spend group, used by the dashboard tree
+ * view and end-of-period forecast (#82).
+ */
+export function getGroupUsageSnapshot(
+  group: SpendGroup,
+  groups: SpendGroup[],
+  usageRecords: UsageRecord[],
+): LimitSnapshot[] {
+  if (!group.limits?.length) return [];
+  const now = new Date();
+  const pids = groupProjectIds(group, groups);
+  const relevant = usageRecords.filter(r => r.outcome === 'success' && pids.has(r.projectId));
+
+  return group.limits.map(lim => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const legacyWindow = (lim as any).window as string | undefined;
+
+    let start: Date;
+    let windowLabel: string;
+    if (lim.windowType === 'rolling') {
+      const amount = lim.rollingAmount ?? 1;
+      const unit   = lim.rollingUnit   ?? 'day';
+      start = new Date(now.getTime() - amount * (ROLLING_UNIT_MS[unit] ?? 86_400_000));
+      windowLabel = `rolling ${amount} ${unit}${amount !== 1 ? 's' : ''}`;
+    } else {
+      const period = lim.period ?? legacyWindowToPeriod(legacyWindow);
+      start = startOfPeriod(period, now);
+      windowLabel = period;
+    }
+
+    const windowRecords = relevant.filter(r => new Date(r.timestamp) >= start);
+    const current =
+      lim.metric === 'cost'          ? windowRecords.reduce((s, r) => s + r.cost, 0) :
+      lim.metric === 'calls'         ? windowRecords.length :
+      lim.metric === 'input_tokens'  ? windowRecords.reduce((s, r) => s + r.inputTokens, 0) :
+      lim.metric === 'output_tokens' ? windowRecords.reduce((s, r) => s + r.outputTokens, 0) :
+      /* total_tokens */               windowRecords.reduce((s, r) => s + r.inputTokens + r.outputTokens, 0);
+
+    return {
+      metric: lim.metric,
+      window: windowLabel,
+      value: lim.value,
+      current: +current.toFixed(6),
+      remaining: +(lim.value - current).toFixed(6),
+    };
+  });
 }
 
 /**

@@ -37,6 +37,28 @@ Applies to all requests through a specific project. Configure per project via th
 
 Applies to requests made with a specific project token. Configured in the project's **Tokens** tab. Per-token limits are useful when different applications share a project and you want to isolate their spending.
 
+### Spend groups (org / team)
+
+Spend groups add an org- and team-level tier on top of the model/project/token
+limits, giving a full cascade:
+
+```
+Organisation group
+└── Team group
+    └── Project (spendGroupId) → per-token budget
+```
+
+A project joins a group via its `spendGroupId`, and groups nest via
+`parentGroupId`. Usage is attributed to a group by the projects that belong to
+it and to its descendant groups. When a request runs through a project in a
+group, every group in the parent chain must have budget remaining, in addition
+to the per-model/project/token checks. **Child group limits cannot exceed their
+parent's matching limit** — this is validated when creating or updating a group.
+
+Spend groups use the same `Limit` shape (metrics, period/rolling windows) as the
+other levels. Manage them via the `/api/spend-groups` endpoints (see the
+[Management API reference](../api/management.md#spend-groups)).
+
 ---
 
 ## Metrics

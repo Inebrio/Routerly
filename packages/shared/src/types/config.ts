@@ -279,6 +279,8 @@ export interface ProjectToken {
   models?: TokenModelRef[];
   /** Optional labels/tags to identify this token's usage */
   labels?: string[];
+  /** ID of the SpendGroup this token belongs to (#82) */
+  spendGroupId?: string;
 }
 
 export interface ProjectConfig {
@@ -302,6 +304,8 @@ export interface ProjectConfig {
   timeoutMs?: number;
   /** Named per-agent routing policies, selectable via the X-Routerly-Policy header (#78) */
   agentPolicies?: AgentPolicy[];
+  /** ID of the SpendGroup this project belongs to (#82) */
+  spendGroupId?: string;
 }
 
 export interface UserConfig {
@@ -339,6 +343,25 @@ export interface TelemetryConfig {
   lastPingedVersion?: string;
 }
 
+/**
+ * A spend group: an org- or team-level budget container in the hierarchical
+ * spend-limit cascade (org → team → API key). Projects and/or tokens belong to
+ * a group; a group may nest under a parent group. Child limits cannot exceed
+ * parent limits (validated on write).
+ */
+export interface SpendGroup {
+  id: string;
+  name: string;
+  /** Usage limits applied to all usage attributed to this group */
+  limits: Limit[];
+  /** Project IDs that belong to this group */
+  projectIds?: string[];
+  /** Token IDs that belong to this group */
+  tokenIds?: string[];
+  /** Parent group ID, for nesting (org → team) */
+  parentGroupId?: string;
+}
+
 export interface Settings {
   port: number;
   host: string;
@@ -362,6 +385,8 @@ export interface Settings {
   metricsEnabled?: boolean;
   /** Anonymous install metrics opt-in. Absent means the user has not been asked yet. */
   telemetry?: TelemetryConfig;
+  /** Org/team spend groups for the hierarchical spend-limit cascade (#82) */
+  spendGroups?: SpendGroup[];
 }
 
 // ─── Update info ─────────────────────────────────────────────────────────────

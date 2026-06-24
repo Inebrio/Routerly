@@ -27,6 +27,7 @@ export type {
   RoleConfig,
   Permission,
   Settings,
+  SpendGroup,
   NotificationsConfig,
   EmailConfig,
   EmailProvider,
