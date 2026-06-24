@@ -348,6 +348,31 @@ export interface ProviderHealth {
 export const getProviderHealth = () =>
   request<{ providers: ProviderHealth[] }>('/health/providers');
 
+// ── Leaderboard (#80) ───────────────────────────────────────────────────────
+
+export interface LeaderboardEntry {
+  modelId: string;
+  provider: string;
+  totalRequests: number;
+  successRate: number;
+  avgLatencyMs: number;
+  p95LatencyMs: number;
+  avgCostPer1kTokens: number;
+  totalCost: number;
+  totalTokens: number;
+  tokensPerSec: number;
+  errorRate: number;
+  trend: { date: string; cost: number }[];
+}
+
+export const getLeaderboard = (period = 'monthly', projectId?: string, from?: string, to?: string) => {
+  const params = new URLSearchParams({ period });
+  if (projectId) params.set('projectId', projectId);
+  if (from) params.set('from', from);
+  if (to)   params.set('to', to);
+  return request<LeaderboardEntry[]>(`/leaderboard?${params.toString()}`);
+};
+
 // ── Settings ──────────────────────────────────────────────────────────────
 export type EmailProvider   = 'smtp' | 'ses' | 'sendgrid' | 'azure' | 'google';
 export type ChannelProvider = EmailProvider | 'webhook';
