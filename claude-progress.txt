@@ -1,4 +1,4 @@
-## Session: 2026-06-24 (continued — release/0.3.0 feature implementation)
+## Session: 2026-06-24 (continued — release/0.3.0 feature implementation + bug fixes)
 
 ### Done
 - Created release/0.3.0 branch from develop
@@ -13,29 +13,41 @@
   - #80 — Model leaderboard dashboard page + /api/leaderboard (feat/issue-80-model-leaderboard)
   - #77/#76 — Content guardrails + PII scrubbing middleware (feat/issue-77-76-guardrails-pii)
   - #89/#90/#91 — Notification system: event taxonomy, routing rules, cooldown, in-app inbox (feat/issue-89-90-91-notifications)
+- Additional features completed in retrospective coverage pass (feat/release-03-cli-coverage):
+  - #84 — 2FA TOTP enrollment (service + dashboard + CLI)
+  - #102 — Prompt management with versioning (service + dashboard + CLI)
+  - #92 — Permissions hardening + audit log (service + dashboard + CLI)
+  - #87 — Enterprise cloud providers: Bedrock, Azure OpenAI, Vertex (service)
+  - #88 — Notification channel adapters: Slack, Teams, PagerDuty, Discord (service)
+  - #81 — Model discovery page (dashboard + static catalog)
+  - #75 — Semantic response caching (service)
+  - #99 — Prompt playground with compare mode and presets (dashboard + CLI)
 - All feature branches pushed to origin and linked to GitHub issues
-- Tests: 1232 pass on release/0.3.0 as of last check
-- Created RELEASE-0.3.0.md (work in progress — will be updated as features land)
+- Created RELEASE-0.3.0.md
+- Dashboard/2FA/notification bug fixes (commit 838eb1c):
+  - Notification dropdown: fixed sidebar overflow:hidden clipping via React portal + z-index 9999
+  - 2FA setup: replaced broken Google Charts QR image with step-by-step instructions + mobile link
+  - 2FA: ProfilePage now syncs totpEnabled state to AuthContext on confirm/disable
+  - Settings > General: added "Require 2FA for all users" toggle (admin-configurable)
+  - App: force-enrollment banner when requireMfa=true and user has no 2FA
+  - CLI auth login: added TOTP challenge step when server returns requiresTotp:true
+  - Service login/2fa-verify responses: now include totpEnabled in user object
+  - shared Settings type: added requireMfa field
 
 ### Discovered
 - API overload (529) when running >2 parallel agents — cap at 2 concurrent
 - Commit subjects must be fully lowercase after the colon (commitlint)
 - Worktrees from failed agents must be cleaned with `git worktree remove --force` before retrying
 - shared/types/config.ts is large — agents must read it before adding fields to avoid duplication
+- Dashboard is served from built dist/ files — source changes require `npm run build --workspace=packages/dashboard`
+- Google Charts QR API is deprecated/dead — never use it; use otpauth:// link or server-side generation
 
-### Remaining (ordered)
-1. #99 — Prompt playground (dashboard)
-2. #81 — Model Discovery page (dashboard + static catalog)
-3. #88 — Slack/Teams/PagerDuty/Discord adapters (service notifications)
-4. #75 — Semantic response caching (service)
-5. #84 — 2FA TOTP (service + dashboard)
-6. #102 — Prompt management (service + dashboard)
-7. #92 — Permissions hardening + audit log (service + dashboard)
-8. #87 — Enterprise cloud providers: Bedrock, Azure OpenAI, Vertex
-9. #103 — Request pipeline architecture (internal refactor)
-10. #83 — External auth: OAuth2/OIDC/LDAP/SAML
-11. #86 — Horizontal scaling: shared state abstraction
-12. #79 — MCP Gateway
+### Remaining (ordered by complexity)
+1. #103 — Request pipeline architecture (pre/post processing hooks — internal refactor, no UI)
+2. #83 — External auth: OAuth2/OIDC/LDAP/SAML (complex, needs provider config UI)
+3. #86 — Horizontal scaling: shared state abstraction with Redis adapter
+4. #79 — MCP Gateway: route and observe Model Context Protocol traffic
 
 ### Open problems
-- None blocking
+- Tests: 2 pre-existing failures in model.test.ts (model discover command, unrelated to recent changes)
+- The remaining 4 features (#103, #83, #86, #79) are architecturally complex; each should be a full feature branch
