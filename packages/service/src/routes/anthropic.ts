@@ -9,6 +9,7 @@ import { llmMessages, BudgetExceededError } from '../llm/executor.js';
 import type { LLMCallContext } from '../llm/executor.js';
 import { forwardAnthropicOAuth } from './oauthForward.js';
 import { parseRoutingTags } from './requestEnrichment.js';
+import { AGENT_POLICY_HEADER, resolveAgentPolicy, agentPolicyCandidates } from '../routing/agentPolicy.js';
 
 export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/messages ────────────────────────────────────────────────────────
@@ -39,22 +40,37 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
     const rawTags = request.headers['x-routerly-tags'] as string | undefined;
     const tags = rawTags ? parseRoutingTags(rawTags) : undefined;
 
-    // 1. Route request
-    let routingResponse;
-    try {
-      routingResponse = await routeRequest(openAICompatBody, project, request.log, emit);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      request.log.error({ err }, 'Routing model failed');
-      return reply.status(503).send({
-        type: 'error',
-        error: { type: 'overloaded_error', message: `Routing failed: ${msg}` },
-      });
+    const allModels = await readConfig('models');
+
+    // Per-agent routing policy override (#78): X-Routerly-Policy selects a named
+    // policy in the project config that overrides the routing decision.
+    const agentPolicyName = (request.headers[AGENT_POLICY_HEADER] as string | undefined) || undefined;
+    const agentPolicy = resolveAgentPolicy(project, agentPolicyName);
+    if (agentPolicyName && !agentPolicy) {
+      request.log.warn({ projectId: project.id, agentPolicyName }, 'agent-policy: unknown policy, falling back to routing');
     }
 
-    // 2. Loop through candidates (highest weight first) with fallback
-    const allModels = await readConfig('models');
-    const sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
+    // 1. Resolve candidates — agent policy override bypasses routing.
+    let sortedCandidates: Array<{ model: string; weight: number }>;
+    if (agentPolicy) {
+      const override = agentPolicyCandidates(agentPolicy, allModels);
+      emit({ panel: 'router-response', message: 'agent-policy:override', details: { policy: agentPolicy.name, models: override.map((c) => c.model) } });
+      sortedCandidates = override;
+    } else {
+      let routingResponse;
+      try {
+        routingResponse = await routeRequest(openAICompatBody, project, request.log, emit);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        request.log.error({ err }, 'Routing model failed');
+        return reply.status(503).send({
+          type: 'error',
+          error: { type: 'overloaded_error', message: `Routing failed: ${msg}` },
+        });
+      }
+      // 2. Loop through candidates (highest weight first) with fallback
+      sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
+    }
 
     for (const candidate of sortedCandidates) {
       const model = allModels.find((m: any) => m.id === candidate.model);
@@ -78,6 +94,8 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
         ...(endUserId ? { endUserId } : {}),
         ...(sessionId ? { sessionId } : {}),
         ...(tags ? { tags } : {}),
+        ...(agentPolicy ? { agentPolicyName: agentPolicy.name } : {}),
+        ...(agentPolicy?.maxCostUsd !== undefined ? { agentPolicyCostCapUsd: agentPolicy.maxCostUsd } : {}),
       };
 
       try {

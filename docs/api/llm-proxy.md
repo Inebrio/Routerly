@@ -21,6 +21,14 @@ POST /v1/chat/completions
 
 OpenAI-compatible chat completions endpoint. Accepts the same request body as the OpenAI API.
 
+### Headers
+
+Optional headers:
+
+| Header | Description |
+|--------|-------------|
+| `X-Routerly-Policy` | Name of an agent policy (defined in the project) to override the normal routing decision. If present, the named policy's model list is used instead of the 10-policy pipeline. Ignored if the policy name does not exist (warning logged). |
+
 ### Request
 
 ```json
@@ -70,6 +78,14 @@ POST /v1/responses
 
 OpenAI Responses API compatible endpoint. Supports stateful multi-turn conversations via `previous_response_id`.
 
+### Headers
+
+Optional headers:
+
+| Header | Description |
+|--------|-------------|
+| `X-Routerly-Policy` | Name of an agent policy (defined in the project) to override the normal routing decision. If present, the named policy's model list is used instead of the 10-policy pipeline. Ignored if the policy name does not exist (warning logged). |
+
 ### Request
 
 ```json
@@ -93,6 +109,14 @@ POST /v1/messages
 ```
 
 Anthropic Messages API compatible endpoint. Use this with the Anthropic SDK by setting `base_url` to `http://localhost:3000`.
+
+### Headers
+
+Optional headers:
+
+| Header | Description |
+|--------|-------------|
+| `X-Routerly-Policy` | Name of an agent policy (defined in the project) to override the normal routing decision. If present, the named policy's model list is used instead of the 10-policy pipeline. Ignored if the policy name does not exist (warning logged). |
 
 ### Request
 

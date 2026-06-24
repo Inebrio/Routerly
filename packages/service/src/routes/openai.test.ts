@@ -1240,3 +1240,52 @@ describe('POST /v1/chat/completions — line 289 if(delta) FALSE branch', () => 
     expect(res.body).toContain('ok')
   })
 })
+
+// ─── Agent routing policies (#78) ─────────────────────────────────────────────
+
+describe('POST /v1/chat/completions — X-Routerly-Policy override', () => {
+  const m1: any = { id: 'openai/gpt-4o', name: 'GPT-4o', provider: 'openai', endpoint: 'https://api.openai.com/v1', apiKey: 'k', cost: { inputPerMillion: 5, outputPerMillion: 15 } }
+  const m2: any = { id: 'openai/gpt-4o-mini', name: 'Mini', provider: 'openai', endpoint: 'https://api.openai.com/v1', apiKey: 'k', cost: { inputPerMillion: 1, outputPerMillion: 2 } }
+  const projectWithPolicy: ProjectConfig = {
+    id: 'proj-1', name: 'Test', tokens: [], members: [],
+    models: [{ modelId: 'openai/gpt-4o' }, { modelId: 'openai/gpt-4o-mini' }],
+    agentPolicies: [{ name: 'cheap', models: ['openai/gpt-4o-mini', 'openai/gpt-4o'], maxCostUsd: 0.01 }],
+  }
+
+  it('bypasses routing and uses policy models in order (non-streaming)', async () => {
+    mockReadConfig.mockResolvedValue([m1, m2] as any)
+    mockLlmChat.mockResolvedValue(makeCompletion() as any)
+
+    const app = await buildApp(projectWithPolicy)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json', 'x-routerly-policy': 'cheap' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'Hi' }] }),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    expect(mockRouteRequest).not.toHaveBeenCalled()
+    expect(mockLlmChat.mock.calls[0]![1].id).toBe('openai/gpt-4o-mini')
+    const ctx = mockLlmChat.mock.calls[0]![2] as any
+    expect(ctx.agentPolicyName).toBe('cheap')
+    expect(ctx.agentPolicyCostCapUsd).toBe(0.01)
+  })
+
+  it('falls back to routing when policy name is unknown', async () => {
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([m1, m2] as any)
+    mockLlmChat.mockResolvedValue(makeCompletion() as any)
+
+    const app = await buildApp(projectWithPolicy)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json', 'x-routerly-policy': 'nope' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'Hi' }] }),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    expect(mockRouteRequest).toHaveBeenCalledTimes(1)
+  })
+})

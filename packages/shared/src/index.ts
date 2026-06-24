@@ -16,6 +16,7 @@ export type {
   ProjectToken,
   ProjectMember,
   ProjectRole,
+  AgentPolicy,
   TokenModelRef,
   RoutingPolicy,
   RoutingPolicyType,
