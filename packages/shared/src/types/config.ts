@@ -314,6 +314,10 @@ export interface ProjectToken {
   /** First 10 characters of the token, for display purposes */
   tokenSnippet?: string;
   createdAt: string; // ISO 8601
+  /** ISO 8601 timestamp of last use (updated on each authenticated request) */
+  lastUsedAt?: string;
+  /** ISO 8601 expiry timestamp; absent or null means never expires */
+  expiresAt?: string;
   /** Per-token model-specific budget overrides */
   models?: TokenModelRef[];
   /** Optional labels/tags to identify this token's usage */
@@ -400,7 +404,14 @@ export type Permission =
   | 'model:write'
   | 'user:read'
   | 'user:write'
-  | 'report:read';
+  | 'report:read'
+  | 'settings:read'
+  | 'settings:write'
+  | 'notification:write'
+  | 'token:read'
+  | 'token:write'
+  | 'role:write'
+  | 'audit:read';
 
 export interface TelemetryConfig {
   /** Whether the user has opted in to anonymous install metrics */

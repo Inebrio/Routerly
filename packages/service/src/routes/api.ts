@@ -17,6 +17,7 @@ import { getTrace } from '../routing/traceStore.js';
 import { sendTestNotification } from '../notifications/sender.js';
 import { emitEvent } from '../notifications/emitter.js';
 import { updateChecker } from '../update-checker.js';
+import { logAudit } from '../audit/logger.js';
 
 const { version: pkgVersion } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf-8')) as { version: string };
 
@@ -100,12 +101,17 @@ const ALL_PERMISSIONS: Permission[] = [
   'model:read', 'model:write',
   'user:read', 'user:write',
   'report:read',
+  'settings:read', 'settings:write',
+  'notification:write',
+  'token:read', 'token:write',
+  'role:write',
+  'audit:read',
 ];
 
 const BUILT_IN_ROLES: RoleConfig[] = [
   { id: 'admin',    name: 'Admin',    permissions: ALL_PERMISSIONS },
-  { id: 'viewer',   name: 'Viewer',   permissions: ['project:read', 'model:read', 'report:read'] },
-  { id: 'operator', name: 'Operator', permissions: ['project:read', 'project:write', 'model:read', 'model:write', 'report:read', 'user:read'] },
+  { id: 'viewer',   name: 'Viewer',   permissions: ['project:read', 'model:read', 'report:read', 'settings:read', 'token:read', 'audit:read'] },
+  { id: 'operator', name: 'Operator', permissions: ['project:read', 'project:write', 'model:read', 'model:write', 'report:read', 'user:read', 'settings:read', 'token:read', 'token:write', 'notification:write'] },
 ];
 
 function getEffectiveRoles(customRoles: RoleConfig[]): RoleConfig[] {
@@ -1976,5 +1982,25 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
 
+  // ══════════════════════════════════════════════════════════════════════════════
+  // AUDIT LOG
+  // ══════════════════════════════════════════════════════════════════════════════
+
+  fastify.get<{
+    Querystring: { userId?: string; action?: string; from?: string; to?: string; limit?: string };
+  }>('/api/audit', async (req, reply) => {
+    if (!requirePerm(req, 'audit:read', reply)) return;
+    const entries = await readConfig('audit');
+    const { userId, action, from, to, limit } = req.query;
+    const maxLimit = Math.min(1000, Math.max(1, parseInt(limit ?? '100', 10) || 100));
+
+    let filtered = [...entries].reverse(); // most recent first
+    if (userId) filtered = filtered.filter(e => e.userId === userId);
+    if (action) filtered = filtered.filter(e => e.action.includes(action));
+    if (from) filtered = filtered.filter(e => e.timestamp >= from);
+    if (to) filtered = filtered.filter(e => e.timestamp <= to);
+
+    return reply.send(filtered.slice(0, maxLimit));
+  });
 
 };

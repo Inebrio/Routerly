@@ -5,6 +5,18 @@ import lockfile from 'proper-lockfile';
 import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Settings, UsageRecord, NotificationInboxItem } from '@routerly/shared';
 import { CONFIG_PATHS } from './paths.js';
 
+/** Mirrors audit/logger.ts AuditEntry — defined here to avoid circular import */
+export interface AuditEntry {
+  id: string;
+  timestamp: string;
+  userId: string;
+  email: string;
+  endpoint: string;
+  action: string;
+  result: 'success' | 'forbidden' | 'error';
+  details?: Record<string, unknown>;
+}
+
 // ─── Default configs ──────────────────────────────────────────────────────────
 
 const DEFAULTS: Record<string, unknown> = {
@@ -23,6 +35,7 @@ const DEFAULTS: Record<string, unknown> = {
   roles: [] as RoleConfig[],
   usage: [] as UsageRecord[],
   notifications: [] as NotificationInboxItem[],
+  audit: [] as AuditEntry[],
 };
 
 // ─── File mapping ─────────────────────────────────────────────────────────────
@@ -35,6 +48,7 @@ type StoredTypeMap = {
   roles: RoleConfig[];
   usage: UsageRecord[];
   notifications: NotificationInboxItem[];
+  audit: AuditEntry[];
 };
 
 // ─── Loader ───────────────────────────────────────────────────────────────────
