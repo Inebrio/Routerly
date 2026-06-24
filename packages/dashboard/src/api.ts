@@ -332,6 +332,22 @@ export const getUsage = (period = 'monthly', projectId?: string, from?: string, 
 export const getUsageRecord = (id: string) =>
   request<UsageRecord>(`/usage/${id}`);
 
+// ── Provider Health ───────────────────────────────────────────────────────
+export interface ProviderHealth {
+  modelId: string;
+  name: string;
+  provider: string;
+  status: 'healthy' | 'degraded' | 'unavailable' | 'cooldown';
+  errorRate: number;
+  p95LatencyMs: number | null;
+  requestsLastHour: number;
+  lastSuccessAt: string | null;
+  cooldownUntil: string | null;
+}
+
+export const getProviderHealth = () =>
+  request<{ providers: ProviderHealth[] }>('/health/providers');
+
 // ── Settings ──────────────────────────────────────────────────────────────
 export type EmailProvider   = 'smtp' | 'ses' | 'sendgrid' | 'azure' | 'google';
 export type ChannelProvider = EmailProvider | 'webhook';

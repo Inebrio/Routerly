@@ -88,6 +88,7 @@ Exception: `POST /api/auth/login` and `POST /api/auth/refresh` are unauthenticat
 |--------|------|-------------|
 | GET | `/api/usage` | Usage summary (supports `?projectId=`, `?from=`, `?to=`) |
 | GET | `/api/usage/export` | Export usage as CSV |
+| GET | `/api/health/providers` | Per-model health: `status`, `errorRate` (5m), `p95LatencyMs` (5m), `requestsLastHour`, `lastSuccessAt`, `cooldownUntil`. Requires `report:read`. |
 
 ### Settings
 
