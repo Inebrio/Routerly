@@ -1,6 +1,6 @@
 // ─── Config types ────────────────────────────────────────────────────────────
 
-export type Provider = 'openai' | 'anthropic' | 'anthropic-oauth' | 'openai-oauth' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom' | 'openai-web' | 'anthropic-web' | 'deepseek' | 'groq' | 'together' | 'perplexity';
+export type Provider = 'openai' | 'anthropic' | 'anthropic-oauth' | 'openai-oauth' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom' | 'openai-web' | 'anthropic-web' | 'deepseek' | 'groq' | 'together' | 'perplexity' | 'azure-openai' | 'bedrock' | 'vertex';
 
 export interface PricingTier {
   /** What dimension is being measured, e.g. "context_tokens" */
@@ -104,6 +104,22 @@ export interface ModelConfig {
   apiKey?: string | undefined;
   /** cf_clearance cookie value for Cloudflare bypass (openai-web only) */
   cfClearance?: string | undefined;
+  // AWS Bedrock
+  awsAccessKeyId?: string | undefined;
+  awsSecretAccessKey?: string | undefined;
+  awsRegion?: string | undefined;
+  awsSessionToken?: string | undefined;
+  // Azure OpenAI
+  azureResourceName?: string | undefined;
+  azureDeploymentId?: string | undefined;
+  /** Azure OpenAI API version (default '2024-02-01') */
+  azureApiVersion?: string | undefined;
+  // Google Vertex AI
+  vertexProjectId?: string | undefined;
+  /** Vertex AI location, e.g. 'us-central1' */
+  vertexLocation?: string | undefined;
+  /** JSON string of service account key */
+  vertexServiceAccountKey?: string | undefined;
   /**
    * The exact model identifier sent to the upstream provider API.
    * Used by the custom adapter to decouple the Routerly ID from the upstream model name.

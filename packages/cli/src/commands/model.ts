@@ -185,7 +185,7 @@ Examples:
   routerly model add --id gpt-4o --provider openai --api-key sk-... --interactive
 `)
     .requiredOption('--id <id>', 'Unique model ID (e.g. gpt-4o)')
-    .requiredOption('--provider <provider>', 'Provider: openai | anthropic | anthropic-oauth | gemini | ollama | custom')
+    .requiredOption('--provider <provider>', 'Provider: openai | anthropic | anthropic-oauth | gemini | ollama | custom | azure-openai | bedrock | vertex')
     .option('--endpoint <url>', 'Custom API endpoint (uses provider default if omitted)')
     .option('--api-key <key>', 'API key (stored plaintext; file permissions protect it)')
     .option('--input-price <usd>', 'Cost per 1M input tokens in USD')
@@ -195,10 +195,25 @@ Examples:
     .option('--limits-json <json>', 'Limits array as JSON string')
     .option('--pricing-tiers-json <json>', 'Pricing tiers array as JSON string')
     .option('--interactive', 'Open interactive wizard for limits and pricing tiers')
+    // Azure OpenAI
+    .option('--azure-resource <name>', 'Azure resource name (azure-openai provider)')
+    .option('--azure-deployment <id>', 'Azure deployment ID (azure-openai provider)')
+    .option('--azure-api-version <v>', "Azure API version (azure-openai provider, default '2024-02-01')")
+    // AWS Bedrock
+    .option('--aws-region <region>', 'AWS region (bedrock provider)')
+    .option('--aws-key-id <id>', 'AWS access key ID (bedrock provider)')
+    .option('--aws-secret <secret>', 'AWS secret access key (bedrock provider)')
+    // Google Vertex AI
+    .option('--vertex-project <id>', 'Google Cloud project ID (vertex provider)')
+    .option('--vertex-location <loc>', 'Vertex AI location, e.g. us-central1 (vertex provider)')
+    .option('--vertex-sa-key <path>', 'Path to service account JSON key file (vertex provider)')
     .action(async (opts: {
       id: string; provider: string; endpoint?: string; apiKey?: string;
       inputPrice?: string; outputPrice?: string; dailyBudget?: string; monthlyBudget?: string;
       limitsJson?: string; pricingTiersJson?: string; interactive?: boolean;
+      azureResource?: string; azureDeployment?: string; azureApiVersion?: string;
+      awsRegion?: string; awsKeyId?: string; awsSecret?: string;
+      vertexProject?: string; vertexLocation?: string; vertexSaKey?: string;
     }) => {
       const preset = PRICING_PRESETS[opts.id];
       const cost: TokenCost = {
@@ -212,6 +227,9 @@ Examples:
         'anthropic-oauth': 'https://api.anthropic.com',
         gemini: 'https://generativelanguage.googleapis.com/v1beta/openai/',
         ollama: 'http://localhost:11434/v1',
+        'azure-openai': '',
+        bedrock: '',
+        vertex: '',
       };
 
       let limits: Limit[] | undefined;
@@ -238,6 +256,18 @@ Examples:
 
       if (pricingTiers?.length) cost.pricingTiers = pricingTiers;
 
+      // Read Vertex service account key file if provided
+      let vertexServiceAccountKey: string | undefined;
+      if (opts.vertexSaKey) {
+        const { readFile } = await import('node:fs/promises');
+        try {
+          vertexServiceAccountKey = await readFile(opts.vertexSaKey, 'utf-8');
+        } catch {
+          console.error(chalk.red(`Cannot read service account key file: ${opts.vertexSaKey}`));
+          process.exit(1);
+        }
+      }
+
       const body = {
         id: opts.id,
         name: opts.id,
@@ -246,6 +276,18 @@ Examples:
         apiKey: opts.apiKey,
         cost,
         ...(limits?.length ? { limits } : {}),
+        // Azure OpenAI
+        ...(opts.azureResource    ? { azureResourceName: opts.azureResource }                     : {}),
+        ...(opts.azureDeployment  ? { azureDeploymentId: opts.azureDeployment }                   : {}),
+        ...(opts.azureApiVersion  ? { azureApiVersion: opts.azureApiVersion }                     : {}),
+        // AWS Bedrock
+        ...(opts.awsRegion        ? { awsRegion: opts.awsRegion }                                 : {}),
+        ...(opts.awsKeyId         ? { awsAccessKeyId: opts.awsKeyId }                             : {}),
+        ...(opts.awsSecret        ? { awsSecretAccessKey: opts.awsSecret }                        : {}),
+        // Google Vertex AI
+        ...(opts.vertexProject    ? { vertexProjectId: opts.vertexProject }                       : {}),
+        ...(opts.vertexLocation   ? { vertexLocation: opts.vertexLocation }                       : {}),
+        ...(vertexServiceAccountKey ? { vertexServiceAccountKey }                                 : {}),
       };
 
       try {

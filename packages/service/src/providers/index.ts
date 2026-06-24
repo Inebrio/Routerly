@@ -9,6 +9,9 @@ import { AnthropicWebAdapter } from './anthropic-web.js';
 import { GeminiAdapter } from './gemini.js';
 import { OllamaAdapter } from './ollama.js';
 import { CustomAdapter } from './custom.js';
+import { AzureOpenAIAdapter } from './azure-openai.js';
+import { BedrockAdapter } from './bedrock.js';
+import { VertexAdapter } from './vertex.js';
 
 export type { ProviderAdapter };
 
@@ -23,6 +26,9 @@ const adapters: Record<string, ProviderAdapter> = {
   gemini: new GeminiAdapter(),
   ollama: new OllamaAdapter(),
   custom: new CustomAdapter(),
+  'azure-openai': new AzureOpenAIAdapter(),
+  bedrock: new BedrockAdapter(),
+  vertex: new VertexAdapter(),
 };
 
 /**
