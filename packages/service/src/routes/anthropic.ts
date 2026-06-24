@@ -50,6 +50,32 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
 
+    // ── Prompt injection ──────────────────────────────────────────────────
+    const promptId = request.headers['x-routerly-prompt-id'] as string | undefined;
+    if (promptId) {
+      const promptVarsRaw = request.headers['x-routerly-prompt-vars'] as string | undefined;
+      const settings = await readConfig('settings') as Settings;
+      const prompt = settings.prompts?.find(p => p.id === promptId);
+      if (prompt) {
+        const activeVer = prompt.versions.find(v => v.version === prompt.activeVersion);
+        if (activeVer) {
+          let systemPrompt = activeVer.systemPrompt;
+          if (promptVarsRaw) {
+            try {
+              const vars = JSON.parse(promptVarsRaw) as Record<string, string>;
+              systemPrompt = systemPrompt.replace(/\{\{(\w+)\}\}/g, (_, k: string) => vars[k] ?? `{{${k}}}`);
+            } catch { /* ignore malformed vars */ }
+          }
+          // Anthropic uses body.system for the system prompt
+          body.system = systemPrompt;
+          // Prepend seed messages to the messages array
+          if (activeVer.seedMessages?.length) {
+            body.messages = [...activeVer.seedMessages as MessagesRequest['messages'], ...body.messages];
+          }
+        }
+      }
+    }
+
     // Convert Anthropic messages to OpenAI format for routing policies
     const openAICompatBody = {
       model: body.model,

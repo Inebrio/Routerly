@@ -24,6 +24,7 @@ import { UsageRecordPage } from './pages/UsageRecordPage';
 import { ProviderHealthPage } from './pages/ProviderHealthPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
 import { TestPage } from './pages/TestPage';
+import { PromptsPage } from './pages/PromptsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SettingsGeneralTab, SettingsAboutTab, SettingsNotificationsTab } from './pages/SettingsPage';
 import { RolesPage } from './pages/RolesPage';
@@ -31,7 +32,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { UserEditPage } from './pages/UserEditPage';
 import { HelpPage } from './pages/HelpPage';
 import { ModelDiscoveryPage } from './pages/ModelDiscoveryPage';
-import { LayoutDashboard, Cpu, FolderOpen, BarChart2, Activity, Trophy, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, Activity, Trophy, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, BookOpen } from 'lucide-react';
 import { ModelDiscoveryPage } from './pages/ModelDiscoveryPage';
 import { Logo } from './components/Logo';
 import { NotificationBell } from './components/NotificationBell';
@@ -94,6 +95,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     { to: '/dashboard/health', icon: <Activity size={17} />, label: 'Health' },
     { to: '/dashboard/leaderboard', icon: <Trophy size={17} />, label: 'Leaderboard' },
     { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Playground' },
+    { to: '/dashboard/prompts', icon: <BookOpen size={17} />, label: 'Prompts' },
   ];
 
   return (
@@ -358,6 +360,7 @@ const router = createBrowserRouter([
           { path: 'health', element: <ProviderHealthPage /> },
           { path: 'leaderboard', element: <LeaderboardPage /> },
           { path: 'test', element: <TestPage /> },
+          { path: 'prompts', element: <PromptsPage /> },
           {
             path: 'settings',
             element: <SettingsPage />,

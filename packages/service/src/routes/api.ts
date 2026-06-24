@@ -10,7 +10,7 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../config/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, AgentPolicy, SpendGroup, GuardrailConfig, PiiConfig, ProjectSemanticCacheConfig } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, AgentPolicy, SpendGroup, GuardrailConfig, PiiConfig, ProjectSemanticCacheConfig, PromptEntry, PromptVersion } from '@routerly/shared';
 import { z } from 'zod';
 import { getGroupUsageSnapshot } from '../cost/budget.js';
 import { getTrace } from '../routing/traceStore.js';
@@ -1808,5 +1808,173 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     await writeConfig('settings', settings);
     return reply.status(204).send();
   });
+
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // PROMPTS
+  // ══════════════════════════════════════════════════════════════════════════════
+
+  async function getPrompts(): Promise<PromptEntry[]> {
+    const settings = await readConfig('settings');
+    return settings.prompts ?? [];
+  }
+
+  async function savePrompts(prompts: PromptEntry[]): Promise<void> {
+    const settings = await readConfig('settings');
+    await writeConfig('settings', { ...settings, prompts });
+  }
+
+  // ─── GET /api/prompts ──────────────────────────────────────────────────────
+  fastify.get<{ Querystring: { projectId?: string } }>('/api/prompts', async (req, reply) => {
+    if (!requirePerm(req, 'project:read', reply)) return;
+    const prompts = await getPrompts();
+    const { projectId } = req.query;
+    const filtered = projectId !== undefined
+      ? prompts.filter(p => p.projectId === projectId)
+      : prompts;
+    return reply.send(filtered);
+  });
+
+  // ─── POST /api/prompts ─────────────────────────────────────────────────────
+  fastify.post<{
+    Body: { name: string; description?: string; systemPrompt: string; projectId?: string; notes?: string };
+  }>('/api/prompts', async (req, reply) => {
+    if (!requirePerm(req, 'project:write', reply)) return;
+    const { name, description, systemPrompt, projectId, notes } = req.body;
+    if (!name || !systemPrompt) {
+      return reply.status(400).send({ error: 'name and systemPrompt are required' });
+    }
+    const prompts = await getPrompts();
+    const userId = req.dashUser!.id;
+    const version: PromptVersion = {
+      version: 1,
+      systemPrompt,
+      createdAt: new Date().toISOString(),
+      createdBy: userId,
+      ...(notes ? { notes } : {}),
+    };
+    const entry: PromptEntry = {
+      id: uuidv4(),
+      name,
+      ...(description ? { description } : {}),
+      ...(projectId ? { projectId } : {}),
+      versions: [version],
+      activeVersion: 1,
+    };
+    prompts.push(entry);
+    await savePrompts(prompts);
+    return reply.status(201).send(entry);
+  });
+
+  // ─── GET /api/prompts/:id ──────────────────────────────────────────────────
+  fastify.get<{ Params: { id: string } }>('/api/prompts/:id', async (req, reply) => {
+    if (!requirePerm(req, 'project:read', reply)) return;
+    const prompts = await getPrompts();
+    const prompt = prompts.find(p => p.id === req.params.id);
+    if (!prompt) return reply.status(404).send({ error: 'Prompt not found' });
+    return reply.send(prompt);
+  });
+
+  // ─── PUT /api/prompts/:id ─────────────────────────────────────────────────
+  fastify.put<{ Params: { id: string }; Body: { name?: string; description?: string } }>('/api/prompts/:id', async (req, reply) => {
+    if (!requirePerm(req, 'project:write', reply)) return;
+    const prompts = await getPrompts();
+    const idx = prompts.findIndex(p => p.id === req.params.id);
+    if (idx === -1) return reply.status(404).send({ error: 'Prompt not found' });
+    const p = prompts[idx]!;
+    if (req.body.name) p.name = req.body.name;
+    if (req.body.description !== undefined) p.description = req.body.description;
+    prompts[idx] = p;
+    await savePrompts(prompts);
+    return reply.send(p);
+  });
+
+  // ─── DELETE /api/prompts/:id ───────────────────────────────────────────────
+  fastify.delete<{ Params: { id: string } }>('/api/prompts/:id', async (req, reply) => {
+    if (!requirePerm(req, 'project:write', reply)) return;
+    const prompts = await getPrompts();
+    const filtered = prompts.filter(p => p.id !== req.params.id);
+    if (filtered.length === prompts.length) return reply.status(404).send({ error: 'Prompt not found' });
+    await savePrompts(filtered);
+    return reply.status(204).send();
+  });
+
+  // ─── GET /api/prompts/:id/versions ────────────────────────────────────────
+  fastify.get<{ Params: { id: string } }>('/api/prompts/:id/versions', async (req, reply) => {
+    if (!requirePerm(req, 'project:read', reply)) return;
+    const prompts = await getPrompts();
+    const prompt = prompts.find(p => p.id === req.params.id);
+    if (!prompt) return reply.status(404).send({ error: 'Prompt not found' });
+    return reply.send(prompt.versions);
+  });
+
+  // ─── POST /api/prompts/:id/versions ───────────────────────────────────────
+  fastify.post<{
+    Params: { id: string };
+    Body: { systemPrompt: string; seedMessages?: Array<{ role: 'user' | 'assistant'; content: string }>; notes?: string };
+  }>('/api/prompts/:id/versions', async (req, reply) => {
+    if (!requirePerm(req, 'project:write', reply)) return;
+    const { systemPrompt, seedMessages, notes } = req.body;
+    if (!systemPrompt) return reply.status(400).send({ error: 'systemPrompt is required' });
+    const prompts = await getPrompts();
+    const idx = prompts.findIndex(p => p.id === req.params.id);
+    if (idx === -1) return reply.status(404).send({ error: 'Prompt not found' });
+    const prompt = prompts[idx]!;
+    const nextVersion = Math.max(0, ...prompt.versions.map(v => v.version)) + 1;
+    const version: PromptVersion = {
+      version: nextVersion,
+      systemPrompt,
+      createdAt: new Date().toISOString(),
+      createdBy: req.dashUser!.id,
+      ...(seedMessages?.length ? { seedMessages } : {}),
+      ...(notes ? { notes } : {}),
+    };
+    prompt.versions.push(version);
+    prompts[idx] = prompt;
+    await savePrompts(prompts);
+    return reply.status(201).send(version);
+  });
+
+  // ─── POST /api/prompts/:id/activate/:version ───────────────────────────────
+  fastify.post<{ Params: { id: string; version: string } }>('/api/prompts/:id/activate/:version', async (req, reply) => {
+    if (!requirePerm(req, 'project:write', reply)) return;
+    const versionNum = parseInt(req.params.version, 10);
+    if (isNaN(versionNum)) return reply.status(400).send({ error: 'version must be a number' });
+    const prompts = await getPrompts();
+    const idx = prompts.findIndex(p => p.id === req.params.id);
+    if (idx === -1) return reply.status(404).send({ error: 'Prompt not found' });
+    const prompt = prompts[idx]!;
+    if (!prompt.versions.find(v => v.version === versionNum)) {
+      return reply.status(404).send({ error: `Version ${versionNum} not found` });
+    }
+    prompt.activeVersion = versionNum;
+    prompts[idx] = prompt;
+    await savePrompts(prompts);
+    return reply.send(prompt);
+  });
+
+  // ─── DELETE /api/prompts/:id/versions/:version ─────────────────────────────
+  fastify.delete<{ Params: { id: string; version: string } }>('/api/prompts/:id/versions/:version', async (req, reply) => {
+    if (!requirePerm(req, 'project:write', reply)) return;
+    const versionNum = parseInt(req.params.version, 10);
+    if (isNaN(versionNum)) return reply.status(400).send({ error: 'version must be a number' });
+    const prompts = await getPrompts();
+    const idx = prompts.findIndex(p => p.id === req.params.id);
+    if (idx === -1) return reply.status(404).send({ error: 'Prompt not found' });
+    const prompt = prompts[idx]!;
+    if (prompt.activeVersion === versionNum) {
+      return reply.status(400).send({ error: 'Cannot delete the active version' });
+    }
+    const filtered = prompt.versions.filter(v => v.version !== versionNum);
+    if (filtered.length === prompt.versions.length) {
+      return reply.status(404).send({ error: `Version ${versionNum} not found` });
+    }
+    prompt.versions = filtered;
+    prompts[idx] = prompt;
+    await savePrompts(prompts);
+    return reply.status(204).send();
+  });
+
+
 
 };
