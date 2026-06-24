@@ -726,12 +726,18 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // USAGE STATS
   // ══════════════════════════════════════════════════════════════════════════════
 
-  fastify.get<{ Querystring: { period?: string; projectId?: string; from?: string; to?: string; page?: string; pageSize?: string } }>('/api/usage', async (req, reply) => {
+  fastify.get<{ Querystring: { period?: string; projectId?: string; from?: string; to?: string; page?: string; pageSize?: string; endUserId?: string; sessionId?: string; [key: string]: string | undefined } }>('/api/usage', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
     const records = await readConfig('usage');
-    const { period = 'monthly', projectId, from, to } = req.query;
+    const { period = 'monthly', projectId, from, to, endUserId, sessionId } = req.query;
     const page = Math.max(1, parseInt(req.query.page ?? '1', 10) || 1);
     const pageSize = Math.min(200, Math.max(1, parseInt(req.query.pageSize ?? '100', 10) || 100));
+    // Parse tag filters: ?tag[customer]=acme
+    const tagFilters: Record<string, string> = {};
+    for (const [k, v] of Object.entries(req.query)) {
+      const m = k.match(/^tag\[(.+)\]$/);
+      if (m && v) tagFilters[m[1]!] = v;
+    }
 
     const now = new Date();
     let since = new Date(0);
@@ -760,6 +766,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       return ts >= since && ts <= until;
     });
     if (projectId) filtered = filtered.filter(r => r.projectId === projectId);
+    if (endUserId) filtered = filtered.filter(r => r.endUserId === endUserId);
+    if (sessionId) filtered = filtered.filter(r => r.sessionId === sessionId);
+    if (Object.keys(tagFilters).length > 0) {
+      filtered = filtered.filter(r => r.tags && Object.entries(tagFilters).every(([k, v]) => r.tags![k] === v));
+    }
 
     // Aggregate by model
     const byModel: Record<string, { calls: number; inputTokens: number; outputTokens: number; cachedInputTokens: number; cost: number; errors: number }> = {};
@@ -814,6 +825,68 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const record = records.find(r => r.id === req.params.id);
     if (!record) return reply.status(404).send({ error: 'Record not found' });
     return reply.send(record);
+  });
+
+  // ─── GET /api/sessions (#94) ──────────────────────────────────────────────
+  fastify.get<{ Querystring: { projectId?: string; limit?: string; cursor?: string } }>('/api/sessions', async (req, reply) => {
+    if (!requirePerm(req, 'report:read', reply)) return;
+    const records = await readConfig('usage');
+    const { projectId, limit: limitStr, cursor } = req.query;
+    const limit = Math.min(100, Math.max(1, parseInt(limitStr ?? '20', 10) || 20));
+
+    // Build session map from usage records
+    const sessionMap = new Map<string, { sessionId: string; projectId: string; firstSeen: string; lastSeen: string; requests: number; totalCost: number; totalTokens: number }>();
+    for (const r of records) {
+      if (!r.sessionId) continue;
+      if (projectId && r.projectId !== projectId) continue;
+      const s = sessionMap.get(r.sessionId) ?? { sessionId: r.sessionId, projectId: r.projectId, firstSeen: r.timestamp, lastSeen: r.timestamp, requests: 0, totalCost: 0, totalTokens: 0 };
+      s.requests++;
+      s.totalCost += r.cost;
+      s.totalTokens += r.inputTokens + r.outputTokens;
+      if (r.timestamp < s.firstSeen) s.firstSeen = r.timestamp;
+      if (r.timestamp > s.lastSeen) s.lastSeen = r.timestamp;
+      sessionMap.set(r.sessionId, s);
+    }
+
+    const sessions = [...sessionMap.values()].sort((a, b) => b.lastSeen.localeCompare(a.lastSeen));
+    const startIdx = cursor ? sessions.findIndex(s => s.sessionId === cursor) + 1 : 0;
+    const page = sessions.slice(startIdx, startIdx + limit);
+    const nextCursor = page.length === limit ? page.at(-1)?.sessionId : undefined;
+    return reply.send({ sessions: page, nextCursor });
+  });
+
+  // ─── GET /api/sessions/:id/requests (#94) ────────────────────────────────
+  fastify.get<{ Params: { id: string } }>('/api/sessions/:id/requests', async (req, reply) => {
+    if (!requirePerm(req, 'report:read', reply)) return;
+    const records = await readConfig('usage');
+    const requests = records
+      .filter(r => r.sessionId === req.params.id)
+      .sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+      .map(({ trace: _trace, ...r }) => r);
+    return reply.send({ sessionId: req.params.id, requests });
+  });
+
+  // ─── GET /api/end-users (#96) ─────────────────────────────────────────────
+  fastify.get<{ Querystring: { projectId?: string } }>('/api/end-users', async (req, reply) => {
+    if (!requirePerm(req, 'report:read', reply)) return;
+    const records = await readConfig('usage');
+    const { projectId } = req.query;
+
+    const userMap = new Map<string, { userId: string; projectId: string; firstSeen: string; lastSeen: string; requests: number; totalCost: number; totalTokens: number }>();
+    for (const r of records) {
+      if (!r.endUserId) continue;
+      if (projectId && r.projectId !== projectId) continue;
+      const u = userMap.get(r.endUserId) ?? { userId: r.endUserId, projectId: r.projectId, firstSeen: r.timestamp, lastSeen: r.timestamp, requests: 0, totalCost: 0, totalTokens: 0 };
+      u.requests++;
+      u.totalCost += r.cost;
+      u.totalTokens += r.inputTokens + r.outputTokens;
+      if (r.timestamp < u.firstSeen) u.firstSeen = r.timestamp;
+      if (r.timestamp > u.lastSeen) u.lastSeen = r.timestamp;
+      userMap.set(r.endUserId, u);
+    }
+
+    const users = [...userMap.values()].sort((a, b) => b.totalCost - a.totalCost);
+    return reply.send({ users });
   });
 
   // ─── GET /api/system/info ───────────────────────────────────────────────────
