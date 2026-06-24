@@ -234,6 +234,23 @@ export interface IntentClassification {
   status: 'confident' | 'ambiguous' | 'unknown';
 }
 
+/**
+ * A named routing policy attachable to a specific agent/request via the
+ * `X-Routerly-Policy` header (#78). When present, it overrides the routing
+ * decision: the request is sent to `models` in the given order (filtered to
+ * models that still exist), with the standard fallback loop.
+ */
+export interface AgentPolicy {
+  /** Unique policy name, referenced by the X-Routerly-Policy header */
+  name: string;
+  /** Ordered preferred model IDs — tried first to last */
+  models: string[];
+  /** Max cost per request in USD (recorded on the usage record) */
+  maxCostUsd?: number;
+  /** Max latency threshold in ms (recorded on the usage record when exceeded) */
+  maxLatencyMs?: number;
+}
+
 export type ProjectRole = 'viewer' | 'editor' | 'admin';
 
 export interface ProjectMember {
@@ -283,6 +300,8 @@ export interface ProjectConfig {
   models: ProjectModelRef[];
   /** Timeout in ms for each individual model attempt */
   timeoutMs?: number;
+  /** Named per-agent routing policies, selectable via the X-Routerly-Policy header (#78) */
+  agentPolicies?: AgentPolicy[];
 }
 
 export interface UserConfig {
@@ -517,4 +536,6 @@ export interface UsageRecord {
   sessionId?: string;
   /** Arbitrary key-value tags from X-Routerly-Tags header — for cost attribution (#95) */
   tags?: Record<string, string>;
+  /** Name of the agent routing policy applied to this request via X-Routerly-Policy (#78) */
+  agentPolicyName?: string;
 }
