@@ -5361,3 +5361,72 @@ describe('DELETE /api/projects/:id/playground-presets/:presetId', () => {
     expect(res.statusCode).toBe(404)
   })
 })
+
+describe('GET /api/models/catalog', () => {
+  it('returns array with isConfigured field', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'models') return []
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/models/catalog', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body) as any[]
+    expect(Array.isArray(body)).toBe(true)
+    expect(body.length).toBeGreaterThan(0)
+    expect(typeof body[0]!.isConfigured).toBe('boolean')
+  })
+
+  it('returns 401 without auth', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/models/catalog' })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('isConfigured is true for a model that exists in config', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'models') return [{ id: 'gpt-4o', provider: 'openai', endpoint: 'https://api.openai.com/v1', cost: { inputPerMillion: 5, outputPerMillion: 15 } }]
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/models/catalog', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body) as any[]
+    const gpt4o = body.find((m: any) => m.id === 'gpt-4o')
+    expect(gpt4o?.isConfigured).toBe(true)
+    const other = body.find((m: any) => m.id === 'gpt-4o-mini')
+    expect(other?.isConfigured).toBe(false)
+  })
+
+  it('all 4 providers are present in catalog', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'models') return []
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/models/catalog', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body) as any[]
+    const providers = new Set(body.map((m: any) => m.provider))
+    expect(providers.has('openai')).toBe(true)
+    expect(providers.has('anthropic')).toBe(true)
+    expect(providers.has('google')).toBe(true)
+    expect(providers.has('ollama')).toBe(true)
+  })
+})
