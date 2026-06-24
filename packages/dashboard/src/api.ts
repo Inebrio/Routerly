@@ -206,6 +206,8 @@ export interface ProjectToken {
   id: string;
   tokenSnippet?: string;
   createdAt: string;
+  lastUsedAt?: string;
+  expiresAt?: string;
   models?: Array<{ modelId: string; limitsMode?: LimitsMode; limits?: Limit[] }>;
   labels?: string[];
 }
@@ -249,8 +251,8 @@ export const updateProject = (id: string, data: {
   timeoutMs?: number;
 }) => request<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteProject = (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' });
-export const createProjectToken = (id: string, labels?: string[]) => request<{ token: string; tokenInfo: ProjectToken }>(`/projects/${id}/tokens`, { method: 'POST', body: JSON.stringify({ labels }) });
-export const updateProjectToken = (id: string, tokenId: string, models?: Array<{ modelId: string; limitsMode?: LimitsMode; limits?: Limit[] }>, labels?: string[]) => request<ProjectToken>(`/projects/${id}/tokens/${tokenId}`, { method: 'PUT', body: JSON.stringify({ models, labels }) });
+export const createProjectToken = (id: string, labels?: string[], expiresAt?: string) => request<{ token: string; tokenInfo: ProjectToken }>(`/projects/${id}/tokens`, { method: 'POST', body: JSON.stringify({ labels, ...(expiresAt ? { expiresAt } : {}) }) });
+export const updateProjectToken = (id: string, tokenId: string, models?: Array<{ modelId: string; limitsMode?: LimitsMode; limits?: Limit[] }>, labels?: string[], expiresAt?: string | null) => request<ProjectToken>(`/projects/${id}/tokens/${tokenId}`, { method: 'PUT', body: JSON.stringify({ models, labels, expiresAt }) });
 export const deleteProjectToken = (id: string, tokenId: string) => request<void>(`/projects/${id}/tokens/${tokenId}`, { method: 'DELETE' });
 
 export const addProjectMember = (id: string, userId: string, role: string) => request<ProjectMember>(`/projects/${id}/members`, { method: 'POST', body: JSON.stringify({ userId, role }) });
@@ -276,6 +278,11 @@ export const ALL_PERMISSIONS = [
   'model:read', 'model:write',
   'user:read', 'user:write',
   'report:read',
+  'settings:read', 'settings:write',
+  'notification:write',
+  'token:read', 'token:write',
+  'role:write',
+  'audit:read',
 ] as const;
 export type Permission = typeof ALL_PERMISSIONS[number];
 
@@ -421,6 +428,29 @@ export const testNotificationChannel = (channelId: string, to: string) =>
     method: 'POST',
     body: JSON.stringify({ channelId, to }),
   });
+
+// ── Audit Log ─────────────────────────────────────────────────────────────────
+export interface AuditEntry {
+  id: string;
+  timestamp: string;
+  userId: string;
+  email: string;
+  endpoint: string;
+  action: string;
+  result: 'success' | 'forbidden' | 'error';
+  details?: Record<string, unknown>;
+}
+
+export const getAuditLog = (params?: { userId?: string; action?: string; from?: string; to?: string; limit?: number }) => {
+  const p = new URLSearchParams();
+  if (params?.userId) p.set('userId', params.userId);
+  if (params?.action) p.set('action', params.action);
+  if (params?.from) p.set('from', params.from);
+  if (params?.to) p.set('to', params.to);
+  if (params?.limit != null) p.set('limit', String(params.limit));
+  const qs = p.toString();
+  return request<AuditEntry[]>(`/audit${qs ? `?${qs}` : ''}`);
+};
 
 // ── Profile (current user) ────────────────────────────────────────────────
 export interface Me {

@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
 import { pingTelemetry } from '../telemetry.js';
 import { readConfig, writeConfig } from '../config/loader.js';
+import { logAudit } from '../audit/logger.js';
 import { CONFIG_PATHS } from '../config/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jwt.js';
 import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities } from '@routerly/shared';
@@ -71,12 +72,17 @@ const ALL_PERMISSIONS: Permission[] = [
   'model:read', 'model:write',
   'user:read', 'user:write',
   'report:read',
+  'settings:read', 'settings:write',
+  'notification:write',
+  'token:read', 'token:write',
+  'role:write',
+  'audit:read',
 ];
 
 const BUILT_IN_ROLES: RoleConfig[] = [
   { id: 'admin',    name: 'Admin',    permissions: ALL_PERMISSIONS },
-  { id: 'viewer',   name: 'Viewer',   permissions: ['project:read', 'model:read', 'report:read'] },
-  { id: 'operator', name: 'Operator', permissions: ['project:read', 'project:write', 'model:read', 'model:write', 'report:read', 'user:read'] },
+  { id: 'viewer',   name: 'Viewer',   permissions: ['project:read', 'model:read', 'report:read', 'settings:read', 'token:read', 'audit:read'] },
+  { id: 'operator', name: 'Operator', permissions: ['project:read', 'project:write', 'model:read', 'model:write', 'report:read', 'user:read', 'settings:read', 'token:read', 'token:write', 'notification:write'] },
 ];
 
 function getEffectiveRoles(customRoles: RoleConfig[]): RoleConfig[] {
@@ -104,9 +110,15 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const { email, password } = req.body;
     const [users, customRoles] = await Promise.all([readConfig('users'), readConfig('roles')]);
     const userIndex = users.findIndex(u => u.email === email);
-    if (userIndex === -1) return reply.status(401).send({ error: 'Invalid credentials' });
+    if (userIndex === -1) {
+      void logAudit({ userId: '', email, endpoint: '/api/auth/login', action: 'auth:login', result: 'error', details: { reason: 'user not found' } });
+      return reply.status(401).send({ error: 'Invalid credentials' });
+    }
     const { ok, upgradedHash } = await verifyPassword(password, users[userIndex]!.passwordHash);
-    if (!ok) return reply.status(401).send({ error: 'Invalid credentials' });
+    if (!ok) {
+      void logAudit({ userId: users[userIndex]!.id, email, endpoint: '/api/auth/login', action: 'auth:login', result: 'error', details: { reason: 'wrong password' } });
+      return reply.status(401).send({ error: 'Invalid credentials' });
+    }
     const user = users[userIndex]!;
     const allRoles = getEffectiveRoles(customRoles);
     const permissions = resolvePermissions(user.roleId, allRoles);
@@ -120,6 +132,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...(upgradedHash ? { passwordHash: upgradedHash } : {}),
     };
     await writeConfig('users', users);
+    void logAudit({ userId: user.id, email: user.email, endpoint: '/api/auth/login', action: 'auth:login', result: 'success' });
     return reply.send({ token, refreshToken, user: { id: user.id, email: user.email, role: user.roleId, permissions } });
   });
 
@@ -269,6 +282,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     };
     models.push(model);
     await writeConfig('models', models);
+    void logAudit({ userId: req.dashUser!.id, email: req.dashUser!.id, endpoint: '/api/models', action: 'model:create', result: 'success', details: { modelId: model.id } });
     return reply.status(201).send({ ...model, apiKey: undefined, cfClearance: undefined });
   });
 
@@ -370,6 +384,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
 
+    void logAudit({ userId: req.dashUser!.id, email: req.dashUser!.id, endpoint: `/api/models/${req.params.id}`, action: 'model:update', result: 'success', details: { modelId: newId } });
     return reply.send({ ...model, apiKey: undefined, cfClearance: undefined });
   });
 
@@ -387,6 +402,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const filtered = models.filter(m => m.id !== req.params.id);
     if (filtered.length === models.length) return reply.status(404).send({ error: 'Not found' });
     await writeConfig('models', filtered);
+    void logAudit({ userId: req.dashUser!.id, email: req.dashUser!.id, endpoint: `/api/models/${req.params.id}`, action: 'model:delete', result: 'success', details: { modelId: req.params.id } });
     return reply.status(204).send();
   });
 
@@ -446,6 +462,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     };
     projects.push(project);
     await writeConfig('projects', projects);
+    void logAudit({ userId: req.dashUser!.id, email: req.dashUser!.id, endpoint: '/api/projects', action: 'project:create', result: 'success', details: { projectId: project.id, name: project.name } });
     return reply.status(201).send({ ...project, token: rawToken });
   });
 
@@ -486,6 +503,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     };
     projects[index] = updated;
     await writeConfig('projects', projects);
+    void logAudit({ userId: req.dashUser!.id, email: req.dashUser!.id, endpoint: `/api/projects/${req.params.id}`, action: 'project:update', result: 'success', details: { projectId: req.params.id } });
     return reply.send({
       ...updated,
       tokens: updated.tokens?.map(t => ({ ...t, token: undefined })) || []
@@ -498,11 +516,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const filtered = projects.filter(p => p.id !== req.params.id);
     if (filtered.length === projects.length) return reply.status(404).send({ error: 'Not found' });
     await writeConfig('projects', filtered);
+    void logAudit({ userId: req.dashUser!.id, email: req.dashUser!.id, endpoint: `/api/projects/${req.params.id}`, action: 'project:delete', result: 'success', details: { projectId: req.params.id } });
     return reply.status(204).send();
   });
 
-  fastify.post<{ Params: { id: string }, Body: { labels?: string[] } }>('/api/projects/:id/tokens', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
+  fastify.post<{ Params: { id: string }, Body: { labels?: string[]; expiresAt?: string } }>('/api/projects/:id/tokens', async (req, reply) => {
+    if (!requirePerm(req, 'token:write', reply)) return;
     const projects = await readConfig('projects');
     const index = projects.findIndex(p => p.id === req.params.id);
     if (index === -1) return reply.status(404).send({ error: 'Not found' });
@@ -514,7 +533,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       token: rawToken,
       tokenSnippet: rawToken.substring(0, 10),
       createdAt: new Date().toISOString(),
-      ...(req.body.labels ? { labels: req.body.labels } : {})
+      ...(req.body.labels ? { labels: req.body.labels } : {}),
+      ...(req.body.expiresAt ? { expiresAt: req.body.expiresAt } : {}),
     };
 
     const updated = { ...projects[index]! };
@@ -523,11 +543,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
     projects[index] = updated;
     await writeConfig('projects', projects);
+    void logAudit({ userId: req.dashUser!.id, email: req.dashUser!.id, endpoint: `/api/projects/${req.params.id}/tokens`, action: 'token:create', result: 'success', details: { projectId: req.params.id, tokenId: newToken.id } });
     return reply.send({ token: rawToken, tokenInfo: { ...newToken, token: undefined } });
   });
 
-  fastify.put<{ Params: { id: string, tokenId: string }; Body: { models?: TokenModelRef[], labels?: string[] } }>('/api/projects/:id/tokens/:tokenId', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
+  fastify.put<{ Params: { id: string, tokenId: string }; Body: { models?: TokenModelRef[], labels?: string[]; expiresAt?: string | null } }>('/api/projects/:id/tokens/:tokenId', async (req, reply) => {
+    if (!requirePerm(req, 'token:write', reply)) return;
     const projects = await readConfig('projects');
     const index = projects.findIndex(p => p.id === req.params.id);
     if (index === -1) return reply.status(404).send({ error: 'Project not found' });
@@ -540,13 +561,20 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
     if (req.body.models !== undefined) token.models = req.body.models;
     if (req.body.labels !== undefined) token.labels = req.body.labels;
+    if (req.body.expiresAt !== undefined) {
+      if (req.body.expiresAt === null) {
+        delete token.expiresAt;
+      } else {
+        token.expiresAt = req.body.expiresAt;
+      }
+    }
     await writeConfig('projects', projects);
 
     return reply.send(token);
   });
 
   fastify.delete<{ Params: { id: string, tokenId: string } }>('/api/projects/:id/tokens/:tokenId', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
+    if (!requirePerm(req, 'token:write', reply)) return;
     const projects = await readConfig('projects');
     const index = projects.findIndex(p => p.id === req.params.id);
     if (index === -1) return reply.status(404).send({ error: 'Project not found' });
@@ -557,8 +585,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const tokenIndex = project.tokens.findIndex(t => t.id === req.params.tokenId);
     if (tokenIndex === -1) return reply.status(404).send({ error: 'Token not found' });
 
+    const deletedTokenId = project.tokens[tokenIndex]!.id;
     project.tokens.splice(tokenIndex, 1);
     await writeConfig('projects', projects);
+    void logAudit({ userId: req.dashUser!.id, email: req.dashUser!.id, endpoint: `/api/projects/${req.params.id}/tokens/${req.params.tokenId}`, action: 'token:delete', result: 'success', details: { projectId: req.params.id, tokenId: deletedTokenId } });
     return reply.status(204).send();
   });
 
@@ -681,6 +711,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     };
     users.push(user);
     await writeConfig('users', users);
+    void logAudit({ userId: req.dashUser!.id, email: req.dashUser!.id, endpoint: '/api/users', action: 'user:create', result: 'success', details: { createdUserId: user.id, email: user.email } });
     return reply.status(201).send({ ...user, passwordHash: undefined });
   });
 
@@ -712,6 +743,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       users[idx] = { ...users[idx]!, passwordHash: await hashPassword(newPassword) };
     }
     await writeConfig('users', users);
+    void logAudit({ userId: req.dashUser!.id, email: req.dashUser!.id, endpoint: `/api/users/${req.params.id}`, action: 'user:update', result: 'success', details: { targetUserId: req.params.id } });
     const updated = users[idx]!;
     return reply.send({ id: updated.id, email: updated.email, roleId: updated.roleId, projectIds: updated.projectIds });
   });
@@ -726,6 +758,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(409).send({ error: 'Cannot delete the last admin account' });
     }
     await writeConfig('users', users.filter(u => u.id !== req.params.id));
+    void logAudit({ userId: req.dashUser!.id, email: req.dashUser!.id, endpoint: `/api/users/${req.params.id}`, action: 'user:delete', result: 'success', details: { targetUserId: req.params.id } });
     return reply.status(204).send();
   });
 
@@ -876,7 +909,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── GET /api/settings ─────────────────────────────────────────────────────
   fastify.get('/api/settings', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'settings:read', reply)) return;
     const settings = await readConfig('settings');
     return reply.send(settings);
   });
@@ -885,7 +918,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.put<{
     Body: Partial<Settings>;
   }>('/api/settings', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'settings:write', reply)) return;
     const current = await readConfig('settings');
     const allowed: (keyof Settings)[] = [
       'defaultTimeoutMs',
@@ -920,6 +953,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
     await writeConfig('settings', updated);
+    void logAudit({ userId: req.dashUser!.id, email: req.dashUser!.id, endpoint: '/api/settings', action: 'settings:update', result: 'success' });
     if ((req.body as Partial<Settings>).channel !== undefined) {
       updateChecker.updateChannel(updated.channel ?? 'latest');
     }
@@ -928,7 +962,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── POST /api/notifications/test ─────────────────────────────────────────
   fastify.post<{ Body: { channelId: string; to: string } }>('/api/notifications/test', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'notification:write', reply)) return;
     const { channelId, to } = req.body;
     if (!channelId) return reply.status(400).send({ error: 'channelId is required' });
 
@@ -967,7 +1001,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.post<{ Body: { id: string; name: string; permissions: Permission[] } }>('/api/roles', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'role:write', reply)) return;
     const { id, name, permissions } = req.body;
     if (!id || !name) return reply.status(400).send({ error: 'id and name are required' });
     if (BUILT_IN_ROLES.some(r => r.id === id)) {
@@ -978,11 +1012,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const role: RoleConfig = { id, name, permissions: permissions ?? [] };
     customRoles.push(role);
     await writeConfig('roles', customRoles);
+    void logAudit({ userId: req.dashUser!.id, email: req.dashUser!.id, endpoint: '/api/roles', action: 'role:create', result: 'success', details: { roleId: id } });
     return reply.status(201).send({ ...role, builtin: false });
   });
 
   fastify.put<{ Params: { id: string }; Body: { name?: string; permissions?: Permission[] } }>('/api/roles/:id', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'role:write', reply)) return;
     if (BUILT_IN_ROLES.some(r => r.id === req.params.id)) {
       return reply.status(403).send({ error: `Built-in role "${req.params.id}" cannot be modified` });
     }
@@ -994,11 +1029,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (req.body.permissions) role.permissions = req.body.permissions;
     customRoles[idx] = role;
     await writeConfig('roles', customRoles);
+    void logAudit({ userId: req.dashUser!.id, email: req.dashUser!.id, endpoint: `/api/roles/${req.params.id}`, action: 'role:update', result: 'success', details: { roleId: req.params.id } });
     return reply.send({ ...role, builtin: false });
   });
 
   fastify.delete<{ Params: { id: string } }>('/api/roles/:id', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'role:write', reply)) return;
     if (BUILT_IN_ROLES.some(r => r.id === req.params.id)) {
       return reply.status(403).send({ error: `Built-in role "${req.params.id}" cannot be deleted` });
     }
@@ -1006,7 +1042,29 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const filtered = customRoles.filter(r => r.id !== req.params.id);
     if (filtered.length === customRoles.length) return reply.status(404).send({ error: 'Role not found' });
     await writeConfig('roles', filtered);
+    void logAudit({ userId: req.dashUser!.id, email: req.dashUser!.id, endpoint: `/api/roles/${req.params.id}`, action: 'role:delete', result: 'success', details: { roleId: req.params.id } });
     return reply.status(204).send();
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // AUDIT LOG
+  // ══════════════════════════════════════════════════════════════════════════════
+
+  fastify.get<{
+    Querystring: { userId?: string; action?: string; from?: string; to?: string; limit?: string };
+  }>('/api/audit', async (req, reply) => {
+    if (!requirePerm(req, 'audit:read', reply)) return;
+    const entries = await readConfig('audit');
+    const { userId, action, from, to, limit } = req.query;
+    const maxLimit = Math.min(1000, Math.max(1, parseInt(limit ?? '100', 10) || 100));
+
+    let filtered = [...entries].reverse(); // most recent first
+    if (userId) filtered = filtered.filter(e => e.userId === userId);
+    if (action) filtered = filtered.filter(e => e.action.includes(action));
+    if (from) filtered = filtered.filter(e => e.timestamp >= from);
+    if (to) filtered = filtered.filter(e => e.timestamp <= to);
+
+    return reply.send(filtered.slice(0, maxLimit));
   });
 
 };

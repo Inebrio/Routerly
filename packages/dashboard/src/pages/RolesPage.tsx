@@ -4,13 +4,20 @@ import { getRoles, createRole, updateRole, deleteRole, ALL_PERMISSIONS } from '.
 import type { Role, Permission } from '../api';
 
 const PERM_LABELS: Record<Permission, string> = {
-  'project:read':  'Projects – Read',
-  'project:write': 'Projects – Write',
-  'model:read':    'Models – Read',
-  'model:write':   'Models – Write',
-  'user:read':     'Users – Read',
-  'user:write':    'Users – Write',
-  'report:read':   'Reports – Read',
+  'project:read':       'Projects – Read',
+  'project:write':      'Projects – Write',
+  'model:read':         'Models – Read',
+  'model:write':        'Models – Write',
+  'user:read':          'Users – Read',
+  'user:write':         'Users – Write',
+  'report:read':        'Reports – Read',
+  'settings:read':      'Settings – Read',
+  'settings:write':     'Settings – Write',
+  'notification:write': 'Notifications – Write',
+  'token:read':         'Tokens – Read',
+  'token:write':        'Tokens – Write',
+  'role:write':         'Roles – Write',
+  'audit:read':         'Audit Log – Read',
 };
 
 interface RoleFormState {

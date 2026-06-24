@@ -25,10 +25,11 @@ import { TestPage } from './pages/TestPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SettingsGeneralTab, SettingsAboutTab, SettingsNotificationsTab } from './pages/SettingsPage';
 import { RolesPage } from './pages/RolesPage';
+import { AuditPage } from './pages/AuditPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { UserEditPage } from './pages/UserEditPage';
 import { HelpPage } from './pages/HelpPage';
-import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, ShieldCheck } from 'lucide-react';
 import { Logo } from './components/Logo';
 
 const THEME_OPTIONS: { value: Theme; icon: ReactNode; label: string }[] = [
@@ -87,6 +88,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
     { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Test' },
+    { to: '/dashboard/audit', icon: <ShieldCheck size={17} />, label: 'Audit' },
   ];
 
   return (
@@ -360,6 +362,7 @@ const router = createBrowserRouter([
               { path: 'about', element: <SettingsAboutTab /> },
             ],
           },
+          { path: 'audit', element: <AuditPage /> },
           { path: 'help', element: <HelpPage /> },
           { path: 'profile', element: <ProfilePage /> },
           { path: 'usage/:id', element: <UsageRecordPage /> },
