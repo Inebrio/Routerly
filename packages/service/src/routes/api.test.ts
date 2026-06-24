@@ -4350,3 +4350,144 @@ describe('PUT /api/settings — telemetry re-enabled when already enabled (line 
     expect(mockPing).not.toHaveBeenCalledWith(expect.any(String), 'install')
   })
 })
+
+// ─── GET /api/health/providers ───────────────────────────────────────────────
+
+describe('GET /api/health/providers', () => {
+  const viewerUser: any = {
+    id: 'viewer-id', email: 'viewer@example.com',
+    passwordHash: '$2b$12$hashed', roleId: 'viewer', projectIds: [],
+  }
+
+  function setupHealth(models: any[], usage: any[]) {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'models') return models
+      if (t === 'usage') return usage
+      return []
+    })
+  }
+
+  function rec(modelId: string, outcome: string, latencyMs: number, ageMs: number): any {
+    return {
+      id: `r-${Math.random()}`,
+      timestamp: new Date(Date.now() - ageMs).toISOString(),
+      projectId: 'p1', modelId,
+      inputTokens: 10, outputTokens: 10, cost: 0.01, latencyMs, outcome,
+    }
+  }
+
+  it('classifies a model with no errors as healthy', async () => {
+    setupHealth(
+      [{ id: 'gpt-4', name: 'GPT-4', provider: 'openai' }],
+      [rec('gpt-4', 'success', 100, 1000), rec('gpt-4', 'success', 200, 2000)],
+    )
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/health/providers', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const { providers } = res.json()
+    expect(providers).toHaveLength(1)
+    expect(providers[0].modelId).toBe('gpt-4')
+    expect(providers[0].status).toBe('healthy')
+    expect(providers[0].errorRate).toBe(0)
+    expect(providers[0].requestsLastHour).toBe(2)
+    expect(providers[0].cooldownUntil).toBeNull()
+  })
+
+  it('classifies a model with 20% errors as degraded', async () => {
+    const usage = [
+      rec('m', 'error', 100, 1000),
+      rec('m', 'success', 100, 1000),
+      rec('m', 'success', 100, 1000),
+      rec('m', 'success', 100, 1000),
+      rec('m', 'success', 100, 1000),
+    ]
+    setupHealth([{ id: 'm', name: 'M', provider: 'openai' }], usage)
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/health/providers', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const { providers } = res.json()
+    expect(providers[0].errorRate).toBeCloseTo(0.2)
+    expect(providers[0].status).toBe('degraded')
+  })
+
+  it('classifies a model with majority errors as unavailable', async () => {
+    setupHealth(
+      [{ id: 'm', name: 'M', provider: 'openai' }],
+      [rec('m', 'error', 100, 1000), rec('m', 'error', 100, 1000), rec('m', 'success', 100, 1000)],
+    )
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/health/providers', headers: adminAuthHeaders() })
+    await app.close()
+    const { providers } = res.json()
+    expect(providers[0].status).toBe('unavailable')
+  })
+
+  it('only counts records from the last 5 minutes for error rate and p95', async () => {
+    // One old success (outside 5min) + recent errors only inside window
+    setupHealth(
+      [{ id: 'm', name: 'M', provider: 'openai' }],
+      [rec('m', 'success', 50, 10 * 60_000), rec('m', 'error', 500, 1000)],
+    )
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/health/providers', headers: adminAuthHeaders() })
+    await app.close()
+    const { providers } = res.json()
+    // Only the recent error counts: errorRate = 1, p95 from [500]
+    expect(providers[0].errorRate).toBe(1)
+    expect(providers[0].p95LatencyMs).toBe(500)
+    expect(providers[0].status).toBe('unavailable')
+    // requestsLastHour counts both (10 min < 1h)
+    expect(providers[0].requestsLastHour).toBe(2)
+  })
+
+  it('returns null stats for a model with no usage', async () => {
+    setupHealth([{ id: 'idle', name: 'Idle', provider: 'ollama' }], [])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/health/providers', headers: adminAuthHeaders() })
+    await app.close()
+    const { providers } = res.json()
+    expect(providers[0].status).toBe('healthy')
+    expect(providers[0].errorRate).toBe(0)
+    expect(providers[0].p95LatencyMs).toBeNull()
+    expect(providers[0].lastSuccessAt).toBeNull()
+    expect(providers[0].requestsLastHour).toBe(0)
+  })
+
+  it('reports lastSuccessAt from the most recent successful record', async () => {
+    const old = rec('m', 'success', 100, 5000)
+    const newer = rec('m', 'error', 100, 1000)
+    setupHealth([{ id: 'm', name: 'M', provider: 'openai' }], [old, newer])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/health/providers', headers: adminAuthHeaders() })
+    await app.close()
+    const { providers } = res.json()
+    expect(providers[0].lastSuccessAt).toBe(old.timestamp)
+  })
+
+  it('returns 403 without report:read permission', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ ...viewerUser, roleId: 'no-perms' }]
+      if (t === 'roles') return [{ id: 'no-perms', name: 'NoPerms', permissions: [] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/health/providers', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('returns 401 without auth', async () => {
+    mockVerifyToken.mockReturnValue(null as any)
+    mockReadConfig.mockResolvedValue([] as any)
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/health/providers' })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+})
