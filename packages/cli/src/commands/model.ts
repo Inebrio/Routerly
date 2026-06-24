@@ -389,66 +389,77 @@ Examples:
 
   // ── model discover ──
   cmd.command('discover')
-    .description('Browse the model catalog')
-    .option('--provider <name>', 'Filter by provider (openai, anthropic, google, ollama)')
-    .option('--json', 'Output as JSON')
+    .description('Browse the built-in model catalog with capabilities and pricing')
+    .option('--provider <name>', 'Filter by provider (openai, anthropic, gemini, ollama)')
+    .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  routerly model discover
+  routerly model discover --provider anthropic
+  routerly model discover --json
+`)
     .action(async (opts: { provider?: string; json?: boolean }) => {
+      interface CatalogEntry {
+        id: string;
+        provider: string;
+        name: string;
+        contextWindow: number;
+        modalities: string[];
+        pricing: { inputPer1kTokens: number; outputPer1kTokens: number };
+        local?: boolean;
+        isConfigured: boolean;
+      }
+
+      let entries: CatalogEntry[];
       try {
-        const data = await api<Array<{
-          id: string;
-          provider: string;
-          name: string;
-          contextWindow: number;
-          modalities: string[];
-          pricing: { inputPer1kTokens: number; outputPer1kTokens: number };
-          local?: boolean;
-          isConfigured: boolean;
-        }>>('GET', '/api/models/catalog');
-
-        const filtered = opts.provider
-          ? data.filter(m => m.provider === opts.provider)
-          : data;
-
-        if (opts.json) { console.log(JSON.stringify(filtered, null, 2)); return; }
-
-        if (filtered.length === 0) {
-          console.log(chalk.yellow('No models match the filter.'));
-          return;
-        }
-
-        const table = new Table({
-          head: ['Model', 'Provider', 'Context', 'Input/1K', 'Output/1K', 'Modalities'].map(h => chalk.cyan(h)),
-        });
-
-        function fmtCtx(n: number): string {
-          if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(0)}M`;
-          if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-          return String(n);
-        }
-
-        for (const m of filtered) {
-          const star = m.isConfigured ? chalk.yellow(' ★') : '';
-          const price = m.local
-            ? [chalk.gray('free/local'), chalk.gray('free/local')]
-            : [`$${m.pricing.inputPer1kTokens}`, `$${m.pricing.outputPer1kTokens}`];
-          table.push([
-            `${m.id}${star}`,
-            m.provider,
-            fmtCtx(m.contextWindow),
-            price[0]!,
-            price[1]!,
-            m.modalities.join(', '),
-          ]);
-        }
-        console.log(table.toString());
+        entries = await api<CatalogEntry[]>('GET', '/api/models/catalog');
       } catch (err) {
         if (err instanceof ApiError && err.status === 404) {
-          console.log(chalk.yellow('Model discovery not available in this version.'));
-          return;
+          console.error(chalk.yellow('Model catalog endpoint not available on this server version.'));
+          process.exit(1);
         }
         console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
+
+      if (opts.provider) {
+        entries = entries.filter(e => e.provider.toLowerCase() === opts.provider!.toLowerCase());
+      }
+
+      if (opts.json) {
+        console.log(JSON.stringify(entries, null, 2));
+        return;
+      }
+
+      if (entries.length === 0) {
+        console.log(chalk.yellow('No models found for the given filter.'));
+        return;
+      }
+
+      const table = new Table({
+        head: ['Model', 'Provider', 'Context', 'Modalities', 'Input /1K', 'Output /1K'].map(h => chalk.cyan(h)),
+      });
+
+      for (const e of entries) {
+        const configured = e.isConfigured ? chalk.green(' ★') : '';
+        const priceIn  = e.local ? chalk.green('local/free') : `$${e.pricing.inputPer1kTokens}`;
+        const priceOut = e.local ? chalk.green('local/free') : `$${e.pricing.outputPer1kTokens}`;
+        const ctx = e.contextWindow >= 1_000_000
+          ? `${(e.contextWindow / 1_000_000).toFixed(1)}M`
+          : `${Math.round(e.contextWindow / 1000)}k`;
+
+        table.push([
+          e.id + configured,
+          e.provider,
+          ctx,
+          e.modalities.join(', '),
+          priceIn,
+          priceOut,
+        ]);
+      }
+
+      console.log(table.toString());
+      console.log(chalk.gray(`\n${entries.length} model${entries.length !== 1 ? 's' : ''} shown. ★ = configured in Routerly.`));
     });
 
   // ── model set-caching ──

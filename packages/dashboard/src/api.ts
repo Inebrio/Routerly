@@ -171,6 +171,20 @@ export interface Model {
 }
 
 export const getModels = () => request<Model[]>('/models');
+
+export interface CatalogEntry {
+  id: string;
+  provider: string;
+  name: string;
+  contextWindow: number;
+  modalities: string[];
+  pricing: { inputPer1kTokens: number; outputPer1kTokens: number };
+  local?: boolean;
+  notes?: string;
+  isConfigured: boolean;
+}
+
+export const getModelCatalog = () => request<CatalogEntry[]>('/models/catalog');
 export const createModel = (data: {
   id: string; name?: string; provider: string; endpoint: string; apiKey?: string; cfClearance?: string;
   cloneFrom?: string; upstreamModelId?: string;
