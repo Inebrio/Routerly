@@ -203,6 +203,42 @@ GET /api/projects/:slug
 PUT /api/projects/:slug
 ```
 
+On `PUT`, the `guardrails` and `pii` fields are optional: omit a field to leave it
+unchanged, send `null` to clear it, or send an object to replace it.
+
+### Content Guardrails and PII (project fields)
+
+A project may carry two optional security blocks (#77, #76), accepted by both
+`POST /api/projects` and `PUT /api/projects/:slug` and validated server-side:
+
+```json
+{
+  "guardrails": {
+    "enabled": true,
+    "inputBlocklist": ["secret\\s+code"],
+    "detectPromptInjection": true,
+    "action": "block",
+    "fallbackMessage": "This request was blocked by content guardrails."
+  },
+  "pii": {
+    "enabled": true,
+    "entities": ["EMAIL", "PHONE", "CREDIT_CARD", "SSN", "IBAN"]
+  }
+}
+```
+
+- `guardrails.action`: `block` (return HTTP 400 with `fallbackMessage`), `flag`
+  (record the triggering rule on the usage record and continue), or `log`.
+- `guardrails.detectPromptInjection` defaults to `true` when `guardrails.enabled`.
+- `pii.entities` defaults to all entity types when omitted. Matched values in
+  message string content are replaced with typed placeholders
+  (`[EMAIL]`, `[PHONE_NUMBER]`, `[CREDIT_CARD]`, `[SSN]`, `[IBAN]`) before the
+  request is forwarded to the provider.
+
+When a guardrail flags or PII is redacted, the usage record gains
+`guardrailTriggered` (the rule name) and/or `piiRedacted` (the list of redacted
+entity types).
+
 ### Delete Project
 
 ```

@@ -64,6 +64,10 @@ export interface LLMCallContext {
   agentPolicyName?: string;
   /** Max cost per request in USD from the selected agent policy (#78) — recorded on the usage record */
   agentPolicyCostCapUsd?: number;
+  /** Name of the guardrail rule that triggered on this request, if any (#77) */
+  guardrailTriggered?: string;
+  /** PII entity types redacted before forwarding (#76) */
+  piiRedacted?: string[];
 }
 
 /**
@@ -239,6 +243,8 @@ export async function llmChat(
       ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
       ...(ctx.tags ? { tags: ctx.tags } : {}),
       ...(ctx.agentPolicyName ? { agentPolicyName: ctx.agentPolicyName } : {}),
+      ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
+      ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
     }).catch(() => {});
 
     return response;
@@ -264,6 +270,8 @@ export async function llmChat(
       ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
       ...(ctx.tags ? { tags: ctx.tags } : {}),
       ...(ctx.agentPolicyName ? { agentPolicyName: ctx.agentPolicyName } : {}),
+      ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
+      ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
     }).catch(() => {});
 
     throw err;
@@ -557,6 +565,8 @@ export async function llmMessages(
       ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
       ...(ctx.tags ? { tags: ctx.tags } : {}),
       ...(ctx.agentPolicyName ? { agentPolicyName: ctx.agentPolicyName } : {}),
+      ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
+      ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
     }).catch(() => {});
 
     return response;
@@ -579,6 +589,8 @@ export async function llmMessages(
       ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
       ...(ctx.tags ? { tags: ctx.tags } : {}),
       ...(ctx.agentPolicyName ? { agentPolicyName: ctx.agentPolicyName } : {}),
+      ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
+      ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
     }).catch(() => {});
     throw err;
   }

@@ -10,12 +10,45 @@ import type { LLMCallContext } from '../llm/executor.js';
 import { forwardAnthropicOAuth } from './oauthForward.js';
 import { parseRoutingTags } from './requestEnrichment.js';
 import { AGENT_POLICY_HEADER, resolveAgentPolicy, agentPolicyCandidates } from '../routing/agentPolicy.js';
+import { checkGuardrails } from '../middleware/guardrails.js';
+import { scrubMessages } from '../middleware/piiScrubber.js';
 
 export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/messages ────────────────────────────────────────────────────────
   fastify.post<{ Body: MessagesRequest }>('/v1/messages', async (request, reply) => {
     const project = request.project;
     const body = request.body;
+
+    const traceId = randomUUID();
+    setTrace(traceId, []);
+
+    // ── Content guardrails (#77) ─────────────────────────────────────────────
+    let guardrailTriggered: string | undefined;
+    if (project.guardrails?.enabled) {
+      const hit = checkGuardrails(body.messages ?? [], project.guardrails);
+      if (hit) {
+        request.log.warn({ projectId: project.id, rule: hit.triggered, action: project.guardrails.action }, 'guardrail: triggered');
+        appendTrace(traceId, [{ panel: 'request', message: 'guardrail:triggered', details: { rule: hit.triggered, action: project.guardrails.action } }]);
+        if (project.guardrails.action === 'block') {
+          const fallback = project.guardrails.fallbackMessage ?? 'This request was blocked by content guardrails.';
+          reply.header('x-routerly-trace-id', traceId);
+          return reply.status(400).send({ type: 'error', error: { type: 'invalid_request_error', message: fallback } });
+        }
+        guardrailTriggered = hit.triggered;
+      }
+    }
+
+    // ── PII scrubbing (#76) ──────────────────────────────────────────────────
+    let piiRedacted: string[] | undefined;
+    if (project.pii?.enabled && Array.isArray(body.messages)) {
+      const { messages, redacted } = scrubMessages(body.messages, project.pii);
+      if (redacted.length > 0) {
+        body.messages = messages as typeof body.messages;
+        piiRedacted = redacted;
+        request.log.info({ projectId: project.id, redacted }, 'pii: scrubbed');
+        appendTrace(traceId, [{ panel: 'request', message: 'pii:scrubbed', details: { entities: redacted } }]);
+      }
+    }
 
     // Convert Anthropic messages to OpenAI format for routing policies
     const openAICompatBody = {
@@ -26,9 +59,6 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
       })),
       max_tokens: body.max_tokens,
     };
-
-    const traceId = randomUUID();
-    setTrace(traceId, []);
 
     const emit = (entry: TraceEntry) => {
       appendTrace(traceId, [entry]);
@@ -96,6 +126,8 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
         ...(tags ? { tags } : {}),
         ...(agentPolicy ? { agentPolicyName: agentPolicy.name } : {}),
         ...(agentPolicy?.maxCostUsd !== undefined ? { agentPolicyCostCapUsd: agentPolicy.maxCostUsd } : {}),
+        ...(guardrailTriggered ? { guardrailTriggered } : {}),
+        ...(piiRedacted ? { piiRedacted } : {}),
       };
 
       try {
