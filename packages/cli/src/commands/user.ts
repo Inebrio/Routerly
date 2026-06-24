@@ -85,6 +85,55 @@ Examples:
       }
     });
 
+  // ── user 2fa ──
+  const tfaCmd = cmd.command('2fa').description('Manage user two-factor authentication (admin only)');
+
+  tfaCmd.command('status <email>')
+    .description('Show 2FA status for a user')
+    .addHelpText('after', `
+Examples:
+  routerly user 2fa status alice@example.com
+`)
+    .action(async (email: string) => {
+      try {
+        const users = await api<UserConfig[]>('GET', '/api/users');
+        const user = users.find(u => u.email === email);
+        if (!user) {
+          console.error(chalk.red(`User "${email}" not found.`));
+          process.exit(1);
+          return;
+        }
+        const enabled = (user as UserConfig & { totpEnabled?: boolean }).totpEnabled === true;
+        console.log(`2FA for ${chalk.cyan(email)}: ${enabled ? chalk.green('enabled') : chalk.yellow('disabled')}`);
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  tfaCmd.command('reset <email>')
+    .description('Reset (disable) 2FA for a user — admin action')
+    .addHelpText('after', `
+Examples:
+  routerly user 2fa reset alice@example.com
+`)
+    .action(async (email: string) => {
+      try {
+        const users = await api<UserConfig[]>('GET', '/api/users');
+        const user = users.find(u => u.email === email);
+        if (!user) {
+          console.error(chalk.red(`User "${email}" not found.`));
+          process.exit(1);
+          return;
+        }
+        await api<{ ok: boolean }>('POST', `/api/users/${encodeURIComponent(user.id)}/2fa/reset`);
+        console.log(chalk.green(`✓ 2FA reset for "${email}".`));
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
   // ── user remove ──
   cmd.command('remove <email>')
     .description('Remove a user by email')
