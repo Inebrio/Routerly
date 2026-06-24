@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import type { ProjectConfig, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig } from '@routerly/shared';
+import type { ProjectConfig, ProjectSemanticCacheConfig, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig } from '@routerly/shared';
 
 // ─── Helper: resolve project by name or ID ────────────────────────────────────
 
@@ -787,6 +787,75 @@ function makeAgentPolicyCommand(): Command {
   return cmd;
 }
 
+// ─── Cache subcommand ─────────────────────────────────────────────────────────
+
+function makeCacheCommand(): Command {
+  const cmd = new Command('cache').description('Manage semantic response cache for a project');
+
+  cmd
+    .argument('<project>', 'Project name or ID')
+    .option('--enable', 'Enable semantic cache')
+    .option('--disable', 'Disable semantic cache')
+    .option('--threshold <value>', 'Similarity threshold (0–1, default 0.95)')
+    .option('--ttl-hours <hours>', 'Cache TTL in hours (default 1)')
+    .option('--max-entries <n>', 'Maximum cached responses per project (default 500)')
+    .addHelpText('after', `
+Examples:
+  routerly project cache my-api
+  routerly project cache my-api --enable
+  routerly project cache my-api --disable
+  routerly project cache my-api --enable --threshold 0.97 --ttl-hours 2 --max-entries 200
+`)
+    .action(async (nameOrId: string, opts: { enable?: boolean; disable?: boolean; threshold?: string; ttlHours?: string; maxEntries?: string }) => {
+      try {
+        const project = await resolveProject(nameOrId);
+        const current = project.semanticCache ?? { enabled: false };
+
+        const hasChanges = opts.enable || opts.disable || opts.threshold || opts.ttlHours || opts.maxEntries;
+
+        if (!hasChanges) {
+          // Show current config
+          console.log(chalk.bold(`\nSemantic Cache — ${project.name}`));
+          console.log(chalk.gray('  Enabled:     ') + (current.enabled ? chalk.green('yes') : chalk.yellow('no')));
+          console.log(chalk.gray('  Threshold:   ') + (current.threshold ?? 0.95));
+          console.log(chalk.gray('  TTL:         ') + `${((current.ttlMs ?? 3600000) / 3600000).toFixed(1)} h`);
+          console.log(chalk.gray('  Max entries: ') + (current.maxEntries ?? 500));
+          console.log('');
+          return;
+        }
+
+        const updated: ProjectSemanticCacheConfig = {
+          enabled: opts.enable ? true : opts.disable ? false : current.enabled,
+          threshold: opts.threshold !== undefined ? parseFloat(opts.threshold) : (current.threshold ?? 0.95),
+          ttlMs: opts.ttlHours !== undefined ? parseFloat(opts.ttlHours) * 3600000 : (current.ttlMs ?? 3600000),
+          maxEntries: opts.maxEntries !== undefined ? parseInt(opts.maxEntries) : (current.maxEntries ?? 500),
+        };
+
+        await api<void>('PUT', `/api/projects/${encodeURIComponent(project.id)}`, {
+          name: project.name,
+          models: project.models,
+          timeoutMs: project.timeoutMs,
+          autoRouting: project.autoRouting,
+          routingModelId: project.routingModelId,
+          fallbackRoutingModelIds: project.fallbackRoutingModelIds,
+          policies: project.policies,
+          semanticCache: updated,
+        });
+
+        console.log(chalk.green(`✓ Semantic cache updated for "${project.name}".`));
+        console.log(chalk.gray(`  Enabled:     `) + (updated.enabled ? chalk.green('yes') : chalk.yellow('no')));
+        console.log(chalk.gray(`  Threshold:   `) + updated.threshold);
+        console.log(chalk.gray(`  TTL:         `) + `${((updated.ttlMs ?? 3600000) / 3600000).toFixed(1)} h`);
+        console.log(chalk.gray(`  Max entries: `) + updated.maxEntries);      } catch (err) {
+        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
+        else console.error(chalk.red(`Error: ${err.message}`));
+        process.exit(1);
+      }
+    });
+
+  return cmd;
+}
+
 // ─── Main project command ─────────────────────────────────────────────────────
 
 export function makeProjectCommand(): Command {
@@ -1010,8 +1079,7 @@ Examples:
   cmd.addCommand(makeRoutingCommand());
   cmd.addCommand(makeModelSubCommand());
   cmd.addCommand(makeTokenSubCommand());
-  cmd.addCommand(makeMemberCommand());
-  cmd.addCommand(makeAgentPolicyCommand());
+  cmd.addCommand(makeMemberCommand());  cmd.addCommand(makeAgentPolicyCommand());
 
   // ── project guardrails <project> ─────────────────────────────────────────────
   cmd.command('guardrails <project>')
@@ -1088,46 +1156,7 @@ Examples:
       }
     });
 
-  // ── project cache <project> ──────────────────────────────────────────────────
-  // ponytail: stub — endpoint not yet deployed in 0.3.0
-  cmd.command('cache <project>')
-    .description('Show or set semantic cache config for a project (coming soon)')
-    .option('--enable', 'Enable semantic cache')
-    .option('--disable', 'Disable semantic cache')
-    .option('--threshold <0-1>', 'Similarity threshold (0.0-1.0)')
-    .option('--ttl-ms <ms>', 'Cache TTL in milliseconds')
-    .action(async (nameOrId: string, opts: {
-      enable?: boolean; disable?: boolean; threshold?: string; ttlMs?: string;
-    }) => {
-      try {
-        const project = await resolveProject(nameOrId);
-        const cache = (project as ProjectConfig & { semanticCache?: Record<string, unknown> }).semanticCache ?? {};
-
-        const hasUpdate = opts.enable || opts.disable || opts.threshold || opts.ttlMs;
-        if (!hasUpdate) {
-          console.log(chalk.bold(`\nSemantic Cache — ${project.name}`));
-          console.log(JSON.stringify(cache, null, 2));
-          return;
-        }
-
-        const patch: Record<string, unknown> = { ...cache };
-        if (opts.enable) patch.enabled = true;
-        if (opts.disable) patch.enabled = false;
-        if (opts.threshold) patch.threshold = parseFloat(opts.threshold);
-        if (opts.ttlMs) patch.ttlMs = parseInt(opts.ttlMs, 10);
-
-        await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/cache`, patch);
-        console.log(chalk.green(`Semantic cache config updated for "${project.name}".`));
-      } catch (err) {
-        if (err instanceof ApiError && err.status === 404) {
-          console.log(chalk.yellow('Semantic cache not available in this version.'));
-          return;
-        }
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
-        process.exit(1);
-      }
-    });
+  cmd.addCommand(makeCacheCommand());
 
   return cmd;
 }

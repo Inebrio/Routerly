@@ -9,12 +9,9 @@ import { loadSecret } from './plugins/jwt.js';
 import { openaiRoutes } from './routes/openai.js';
 import { anthropicRoutes } from './routes/anthropic.js';
 import { apiRoutes } from './routes/api.js';
-import { metricsRoutes } from './routes/metrics.js';
-import { passthroughHandler } from './routes/passthrough.js';
 import { initConfigDirs, readConfig, writeConfig } from './config/loader.js';
 import { pingTelemetry } from './telemetry.js';
 import { updateChecker } from './update-checker.js';
-import { emitEvent } from './notifications/emitter.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const { version: pkgVersion } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8')) as { version: string };
@@ -35,10 +32,6 @@ export async function buildServer() {
 
   // ─── Plugins ─────────────────────────────────────────────────────────────────
   await fastify.register(cors, { origin: true, exposedHeaders: ['x-routerly-trace-id'] });
-
-  // Capture non-JSON bodies as raw Buffer so the pass-through proxy can forward
-  // them verbatim. The default application/json parser is unaffected.
-  fastify.addContentTypeParser('*', { parseAs: 'buffer' }, (_req, body, done) => done(null, body));
 
   // ─── Dashboard static files (served before auth plugin) ───────────────────
   if (settings.dashboardEnabled) {
@@ -68,9 +61,6 @@ export async function buildServer() {
   // ─── Dashboard REST API (auth handled inside the plugin) ─────────────────
   await fastify.register(apiRoutes);
 
-  // ─── Prometheus metrics (no auth; gated by settings.metricsEnabled) ───────
-  await fastify.register(metricsRoutes);
-
   // ─── LLM Proxy auth (only for /v1/* routes) ───────────────────────────────
   await fastify.register(authPlugin);
 
@@ -89,12 +79,6 @@ export async function buildServer() {
     version: pkgVersion,
     timestamp: new Date().toISOString(),
   }));
-
-  // ─── Pass-through proxy ───────────────────────────────────────────────────
-  // Any path not matched above is forwarded to the project's upstream provider.
-  // Reserved namespaces (/, /health, /api/*, /dashboard*) are guarded inside
-  // the handler and return a normal 404 instead of being proxied.
-  fastify.setNotFoundHandler(passthroughHandler);
 
   return fastify;
 }
@@ -125,16 +109,8 @@ export async function startServer() {
   try {
     await server.listen({ port: settings.port, host: settings.host });
     updateChecker.start(pkgVersion, settings.channel ?? 'latest');
-    void emitEvent('system.startup', 'info', { version: pkgVersion, port: settings.port }, { log: server.log });
   } catch (err) {
     server.log.error(err);
     process.exit(1);
-  }
-
-  for (const signal of ['SIGTERM', 'SIGINT'] as const) {
-    process.once(signal, () => {
-      void emitEvent('system.shutdown', 'info', { signal }, { log: server.log })
-        .finally(() => server.close().finally(() => process.exit(0)));
-    });
   }
 }

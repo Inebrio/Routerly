@@ -314,6 +314,17 @@ export interface PlaygroundPreset {
   messages?: Array<{ role: 'user' | 'assistant'; content: string }>;
 }
 
+/** Semantic response cache config stored directly on a project (no embedding model required, uses TF bag-of-words). */
+export interface ProjectSemanticCacheConfig {
+  enabled: boolean;
+  /** Minimum cosine similarity for a cache hit (0-1, default 0.95) */
+  threshold?: number;
+  /** How long a cached response is valid in ms (default 3600000 = 1 h) */
+  ttlMs?: number;
+  /** Maximum number of cached responses per project (default 500) */
+  maxEntries?: number;
+}
+
 export interface ProjectConfig {
   id: string;
   name: string;
@@ -345,6 +356,8 @@ export interface ProjectConfig {
   notifications?: { channels: string[] };
   /** Named saved prompts for the playground (#99) */
   playgroundPresets?: PlaygroundPreset[];
+  /** Semantic response cache (TF bag-of-words similarity, non-streaming only) */
+  semanticCache?: ProjectSemanticCacheConfig;
 }
 
 export interface UserConfig {

@@ -17,6 +17,9 @@ import { AGENT_POLICY_HEADER, resolveAgentPolicy, agentPolicyCandidates } from '
 import { checkGuardrails } from '../middleware/guardrails.js';
 import { scrubMessages } from '../middleware/piiScrubber.js';
 import { emitEvent } from '../notifications/emitter.js';
+import { lookupResponseCache, storeResponseCache } from '../cache/llmResponseCache.js';
+import { textToVector } from '../cache/textVector.js';
+import { trackUsage } from '../cost/tracker.js';
 
 function resolveEmbeddingUpstreamModelId(modelId: string, explicitUpstreamModelId?: string): string {
   if (explicitUpstreamModelId) return explicitUpstreamModelId;
@@ -387,6 +390,44 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       appendTrace(traceId, [entry]);
     };
 
+    // ── Semantic response cache (non-streaming, TF bag-of-words) ────────────
+    if (project.semanticCache?.enabled && !isStream) {
+      const lastUserMsg = (body.messages ?? []).findLast((m: any) => m.role === 'user');
+      const text = typeof lastUserMsg?.content === 'string' ? lastUserMsg.content : '';
+      if (text) {
+        const vec = textToVector(text);
+        if (vec.length > 0) {
+          const threshold = project.semanticCache.threshold ?? 0.95;
+          const hit = lookupResponseCache(project.id, vec, threshold);
+          if (hit) {
+            request.log.info({ projectId: project.id, similarity: hit.similarity }, 'llm-response-cache: hit');
+            // Find first valid model for tracking (use project's first model)
+            const firstModelId = project.models[0]?.modelId;
+            const trackModel = firstModelId ? allModels.find((m: any) => m.id === firstModelId) : undefined;
+            if (trackModel) {
+              await trackUsage({
+                projectId: project.id,
+                model: trackModel,
+                inputTokens: hit.promptTokens,
+                outputTokens: hit.completionTokens,
+                latencyMs: 0,
+                outcome: 'success',
+                callType: 'completion',
+                traceId,
+                cacheHit: true,
+                cacheSimilarity: hit.similarity,
+              });
+            }
+            reply.header('x-routerly-trace-id', traceId);
+            reply.header('X-Routerly-Cache', 'HIT');
+            return reply.send(JSON.parse(hit.response));
+          }
+          // Store vec for post-call storage — attach to request context
+          (request as any)._responseCacheVec = vec;
+        }
+      }
+    }
+
     let sortedCandidates: Array<{ model: string; weight: number }>;
     if (agentPolicyOverride) {
       // Agent policy override (#78): use the policy's ordered models, bypass routing.
@@ -461,6 +502,20 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         if (cachePolicy && cacheVector && !cachedModelId) {
           const ttlMs = (cachePolicy.config.cache.ttl_seconds ?? 3600) * 1_000;
           storeCache(project.id, cacheVector, model.id, ttlMs);
+        }
+
+        // Store full response in semantic response cache (non-streaming)
+        const responseCacheVec = (request as any)._responseCacheVec as number[] | undefined;
+        if (project.semanticCache?.enabled && responseCacheVec && !isStream) {
+          storeResponseCache(
+            project.id,
+            responseCacheVec,
+            JSON.stringify(response),
+            response.usage?.prompt_tokens ?? 0,
+            response.usage?.completion_tokens ?? 0,
+            project.semanticCache.ttlMs ?? 3_600_000,
+            project.semanticCache.maxEntries ?? 500,
+          );
         }
 
         reply.header('x-routerly-trace-id', traceId);
