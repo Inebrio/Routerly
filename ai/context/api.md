@@ -89,6 +89,7 @@ Exception: `POST /api/auth/login` and `POST /api/auth/refresh` are unauthenticat
 | GET | `/api/usage` | Usage summary (supports `?projectId=`, `?from=`, `?to=`) |
 | GET | `/api/usage/export` | Export usage as CSV |
 | GET | `/api/health/providers` | Per-model health: `status`, `errorRate` (5m), `p95LatencyMs` (5m), `requestsLastHour`, `lastSuccessAt`, `cooldownUntil`. Requires `report:read`. |
+| GET | `/api/leaderboard` | Models ranked by cost-performance from local usage (`?period=daily\|weekly\|monthly\|custom`, `?projectId=`, `?from=`, `?to=`). Returns an array of `{ modelId, provider, totalRequests, successRate, avgLatencyMs, p95LatencyMs, avgCostPer1kTokens, totalCost, totalTokens, tokensPerSec, errorRate, trend[] }` sorted by `avgCostPer1kTokens / successRate` (best first). 7-day daily cost `trend`. Requires `report:read`. |
 
 ### Settings
 
