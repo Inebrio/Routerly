@@ -52,10 +52,19 @@ Examples:
 `)
     .option('--period <period>', 'Period: daily | weekly | monthly | all', 'monthly')
     .option('--project <id>', 'Filter by project ID')
-    .action(async (opts: { period: string; project?: string }) => {
+    .option('--session-id <id>', 'Filter by session ID')
+    .option('--end-user <id>', 'Filter by end-user ID')
+    .option('--tag <key=value>', 'Filter by tag (key=value)')
+    .action(async (opts: { period: string; project?: string; sessionId?: string; endUser?: string; tag?: string }) => {
       try {
         const params = new URLSearchParams({ period: opts.period });
         if (opts.project) params.set('projectId', opts.project);
+        if (opts.sessionId) params.set('sessionId', opts.sessionId);
+        if (opts.endUser) params.set('endUserId', opts.endUser);
+        if (opts.tag) {
+          const [key, value] = opts.tag.split('=');
+          if (key && value) params.set(`tag[${key}]`, value);
+        }
 
         const data = await api<UsageResponse>('GET', `/api/usage?${params.toString()}`);
 
@@ -130,6 +139,143 @@ Examples:
           ]);
         }
 
+        console.log(table.toString());
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  // ── report leaderboard ──
+  cmd.command('leaderboard')
+    .description('Show model performance leaderboard')
+    .option('--period <period>', 'Period: daily | weekly | monthly', 'weekly')
+    .option('--project <id>', 'Filter by project ID')
+    .option('--json', 'Output as JSON')
+    .action(async (opts: { period: string; project?: string; json?: boolean }) => {
+      try {
+        const params = new URLSearchParams({ period: opts.period });
+        if (opts.project) params.set('projectId', opts.project);
+
+        const data = await api<Array<{
+          modelId: string;
+          provider: string;
+          requests: number;
+          successRate: number;
+          avgLatencyMs: number;
+          costPer1kTokens: number;
+          totalCost: number;
+        }>>('GET', `/api/leaderboard?${params.toString()}`);
+
+        if (opts.json) { console.log(JSON.stringify(data, null, 2)); return; }
+
+        if (data.length === 0) {
+          console.log(chalk.yellow('No leaderboard data for this period.'));
+          return;
+        }
+
+        console.log(chalk.bold(`\nModel Leaderboard — ${opts.period.toUpperCase()}\n`));
+        const table = new Table({
+          head: ['Rank', 'Model', 'Provider', 'Requests', 'Success%', 'Avg Latency', 'Cost/1K tokens', 'Total Cost'].map(h => chalk.cyan(h)),
+        });
+
+        data.forEach((row, i) => {
+          const rank = i === 0 ? chalk.yellow('★ 1') : String(i + 1);
+          table.push([
+            rank,
+            row.modelId,
+            row.provider,
+            row.requests,
+            `${(row.successRate * 100).toFixed(1)}%`,
+            `${row.avgLatencyMs}ms`,
+            `$${row.costPer1kTokens.toFixed(4)}`,
+            `$${row.totalCost.toFixed(6)}`,
+          ]);
+        });
+        console.log(table.toString());
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  // ── report sessions ──
+  cmd.command('sessions')
+    .description('Show usage sessions')
+    .option('--project <id>', 'Filter by project ID')
+    .option('--limit <n>', 'Number of sessions to show', '20')
+    .option('--json', 'Output as JSON')
+    .action(async (opts: { project?: string; limit: string; json?: boolean }) => {
+      try {
+        const params = new URLSearchParams({ limit: opts.limit });
+        if (opts.project) params.set('projectId', opts.project);
+
+        const data = await api<Array<{
+          sessionId: string;
+          projectId: string;
+          requests: number;
+          totalCost: number;
+          startedAt: string;
+        }>>('GET', `/api/sessions?${params.toString()}`);
+
+        if (opts.json) { console.log(JSON.stringify(data, null, 2)); return; }
+
+        if (data.length === 0) {
+          console.log(chalk.yellow('No sessions found.'));
+          return;
+        }
+
+        const table = new Table({
+          head: ['Session ID', 'Project', 'Requests', 'Total Cost', 'Started At'].map(h => chalk.cyan(h)),
+        });
+
+        for (const s of data) {
+          table.push([
+            chalk.gray(s.sessionId.slice(0, 12) + '…'),
+            s.projectId.slice(0, 12),
+            s.requests,
+            `$${s.totalCost.toFixed(6)}`,
+            new Date(s.startedAt).toLocaleString(),
+          ]);
+        }
+        console.log(table.toString());
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  // ── report end-users ──
+  cmd.command('end-users')
+    .description('Show per-end-user usage stats')
+    .option('--project <id>', 'Filter by project ID')
+    .option('--json', 'Output as JSON')
+    .action(async (opts: { project?: string; json?: boolean }) => {
+      try {
+        const params = new URLSearchParams();
+        if (opts.project) params.set('projectId', opts.project);
+        const qs = params.toString();
+
+        const data = await api<Array<{
+          userId: string;
+          requests: number;
+          totalCost: number;
+        }>>('GET', `/api/end-users${qs ? `?${qs}` : ''}`);
+
+        if (opts.json) { console.log(JSON.stringify(data, null, 2)); return; }
+
+        if (data.length === 0) {
+          console.log(chalk.yellow('No end-user data found.'));
+          return;
+        }
+
+        const table = new Table({
+          head: ['User ID', 'Requests', 'Total Cost'].map(h => chalk.cyan(h)),
+        });
+
+        for (const u of data) {
+          table.push([u.userId, u.requests, `$${u.totalCost.toFixed(6)}`]);
+        }
         console.log(table.toString());
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
