@@ -13,6 +13,26 @@ The LLM proxy exposes standard-compatible endpoints. Any client that speaks the 
 
 ---
 
+## Content Guardrails and PII Scrubbing
+
+When the project enables them, two pre-request stages run on `/v1/chat/completions`,
+`/v1/responses` and `/v1/messages` before the request reaches a provider:
+
+- **Guardrails (#77):** input message string content is checked against the
+  project's regex blocklist and built-in prompt-injection patterns
+  (`ignore previous instructions`, `you are now`, `disregard your/all`,
+  `DAN mode`, `jailbreak`). With `action: "block"` a triggering request returns
+  HTTP `400` with the configured fallback message; with `flag`/`log` the request
+  proceeds and the rule name is recorded on the usage record.
+- **PII scrubbing (#76):** detected entities (`EMAIL`, `PHONE`, `CREDIT_CARD`,
+  `SSN`, `IBAN`) in message string content are replaced with typed placeholders
+  before forwarding. Redacted entity types are recorded on the usage record.
+
+Array (multimodal) message content is not inspected by either stage. See the
+[management API](./management.md) for the `guardrails` and `pii` project fields.
+
+---
+
 ## Chat Completions
 
 ```

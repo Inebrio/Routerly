@@ -31,6 +31,10 @@ export interface TrackUsageParams {
   tags?: Record<string, string>;
   /** Agent routing policy name from X-Routerly-Policy header (#78) */
   agentPolicyName?: string;
+  /** Name of the guardrail rule that triggered on this request (#77) */
+  guardrailTriggered?: string;
+  /** PII entity types redacted before forwarding (#76) */
+  piiRedacted?: string[];
 }
 
 /**
@@ -81,6 +85,8 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     ...(params.sessionId ? { sessionId: params.sessionId } : {}),
     ...(params.tags ? { tags: params.tags } : {}),
     ...(params.agentPolicyName ? { agentPolicyName: params.agentPolicyName } : {}),
+    ...(params.guardrailTriggered ? { guardrailTriggered: params.guardrailTriggered } : {}),
+    ...(params.piiRedacted && params.piiRedacted.length > 0 ? { piiRedacted: params.piiRedacted } : {}),
   };
 
   await appendUsageRecord(record);

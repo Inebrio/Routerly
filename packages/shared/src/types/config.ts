@@ -251,6 +251,29 @@ export interface AgentPolicy {
   maxLatencyMs?: number;
 }
 
+/** Content guardrail configuration for a project (#77). */
+export interface GuardrailConfig {
+  enabled: boolean;
+  /** Regex patterns blocked/flagged on input message content */
+  inputBlocklist?: string[];
+  /** Detect common prompt-injection patterns (default true when enabled) */
+  detectPromptInjection?: boolean;
+  /** What to do when a rule triggers */
+  action: 'block' | 'flag' | 'log';
+  /** Message returned to the client when action='block' */
+  fallbackMessage?: string;
+}
+
+/** PII entity types detected and scrubbed before forwarding (#76). */
+export type PiiEntity = 'EMAIL' | 'PHONE' | 'CREDIT_CARD' | 'SSN' | 'IBAN';
+
+/** PII detection and scrubbing configuration for a project (#76). */
+export interface PiiConfig {
+  enabled: boolean;
+  /** Entity types to scrub. Defaults to all when absent. */
+  entities?: PiiEntity[];
+}
+
 export type ProjectRole = 'viewer' | 'editor' | 'admin';
 
 export interface ProjectMember {
@@ -306,6 +329,10 @@ export interface ProjectConfig {
   agentPolicies?: AgentPolicy[];
   /** ID of the SpendGroup this project belongs to (#82) */
   spendGroupId?: string;
+  /** Content guardrails: input blocklist + prompt-injection detection (#77) */
+  guardrails?: GuardrailConfig;
+  /** PII detection and scrubbing before requests reach the model (#76) */
+  pii?: PiiConfig;
 }
 
 export interface UserConfig {
@@ -563,4 +590,8 @@ export interface UsageRecord {
   tags?: Record<string, string>;
   /** Name of the agent routing policy applied to this request via X-Routerly-Policy (#78) */
   agentPolicyName?: string;
+  /** Name of the guardrail rule that triggered on this request, if any (#77) */
+  guardrailTriggered?: string;
+  /** PII entity types redacted from this request before forwarding (#76) */
+  piiRedacted?: string[];
 }
