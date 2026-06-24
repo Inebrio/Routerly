@@ -121,6 +121,13 @@ export interface ModelConfig {
   capabilities?: ModelCapabilities;
   /** Request timeout in milliseconds (default: 60000) */
   timeout?: number;
+  /**
+   * Provider-native prompt caching mode (#97).
+   * - "auto": inject cache_control at optimal breakpoint (Anthropic only)
+   * - "passthrough": forward client cache_control as-is (default)
+   * - "disabled": strip all cache_control markers before forwarding
+   */
+  promptCaching?: 'auto' | 'passthrough' | 'disabled';
 }
 
 export interface ProjectModelRef {
