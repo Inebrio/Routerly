@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile, chmod } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import lockfile from 'proper-lockfile';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Settings, UsageRecord } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Settings, UsageRecord, NotificationInboxItem } from '@routerly/shared';
 import { CONFIG_PATHS } from './paths.js';
 
 // ─── Default configs ──────────────────────────────────────────────────────────
@@ -22,6 +22,7 @@ const DEFAULTS: Record<string, unknown> = {
   users: [] as UserConfig[],
   roles: [] as RoleConfig[],
   usage: [] as UsageRecord[],
+  notifications: [] as NotificationInboxItem[],
 };
 
 // ─── File mapping ─────────────────────────────────────────────────────────────
@@ -33,6 +34,7 @@ type StoredTypeMap = {
   users: UserConfig[];
   roles: RoleConfig[];
   usage: UsageRecord[];
+  notifications: NotificationInboxItem[];
 };
 
 // ─── Loader ───────────────────────────────────────────────────────────────────

@@ -32,6 +32,7 @@ import { UserEditPage } from './pages/UserEditPage';
 import { HelpPage } from './pages/HelpPage';
 import { LayoutDashboard, Cpu, FolderOpen, BarChart2, Activity, Trophy, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Logo } from './components/Logo';
+import { NotificationBell } from './components/NotificationBell';
 
 const THEME_OPTIONS: { value: Theme; icon: ReactNode; label: string }[] = [
   { value: 'auto',  icon: <Monitor size={14} />, label: 'Auto' },
@@ -121,6 +122,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
         ))}
       </nav>
       <div className="sidebar-footer">
+        <NotificationBell collapsed={collapsed} />
         {!collapsed && <ThemeSelector />}
         {collapsed && (
           <div className="sidebar-footer-icons">

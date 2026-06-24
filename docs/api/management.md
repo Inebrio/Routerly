@@ -616,6 +616,57 @@ POST /api/notifications/test
 
 Returns `200 OK` on success or an error with details.
 
+### Notifications Inbox {#notifications-inbox}
+
+The in-app notification inbox is per-user and available to any authenticated dashboard user (no special permission required).
+
+```
+GET /api/notifications/inbox?limit=50&unreadOnly=false
+```
+
+**Query params:**
+- `limit` — max items to return (1–200, default 50)
+- `unreadOnly` — when `true`, returns only items the current user has not read
+
+**Response `200`:**
+```json
+{
+  "items": [
+    {
+      "id": "8f3c…",
+      "event": "provider.error",
+      "severity": "critical",
+      "timestamp": "2026-06-24T12:00:00.000Z",
+      "details": { "modelId": "openai/gpt-4o" },
+      "read": false
+    }
+  ],
+  "unreadCount": 1
+}
+```
+
+Items are returned newest-first. `unreadCount` is the total unread count for the current user (independent of `limit`).
+
+```
+POST /api/notifications/inbox/read
+```
+
+Marks inbox items as read for the current user. Provide either `ids` or `all`:
+
+```json
+{ "ids": ["8f3c…", "1a2b…"] }
+```
+```json
+{ "all": true }
+```
+
+Returns `400` if neither is provided.
+
+**Response `200`:**
+```json
+{ "updated": 2 }
+```
+
 ---
 
 ## System

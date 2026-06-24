@@ -16,6 +16,7 @@ import { parseRoutingTags } from './requestEnrichment.js';
 import { AGENT_POLICY_HEADER, resolveAgentPolicy, agentPolicyCandidates } from '../routing/agentPolicy.js';
 import { checkGuardrails } from '../middleware/guardrails.js';
 import { scrubMessages } from '../middleware/piiScrubber.js';
+import { emitEvent } from '../notifications/emitter.js';
 
 function resolveEmbeddingUpstreamModelId(modelId: string, explicitUpstreamModelId?: string): string {
   if (explicitUpstreamModelId) return explicitUpstreamModelId;
@@ -373,6 +374,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
       // Tutti i candidati esauriti
       emit({ panel: 'response', message: 'model:error', details: { error: 'All candidates unavailable or budget-exhausted' } });
+      void emitEvent('routing.no_candidates', 'critical', { projectId: project.id, requestedModel: body.model ?? null, traceId }, { projectId: project.id, log: request.log });
       const errChunk = { id: `chatcmpl-${traceId}`, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: body.model ?? '', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] };
       reply.raw.write(`data: ${JSON.stringify(errChunk)}\n\n`);
       reply.raw.write('data: [DONE]\n\n');
@@ -470,6 +472,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
 
+    void emitEvent('routing.no_candidates', 'critical', { projectId: project.id, requestedModel: body.model ?? null, traceId }, { projectId: project.id, log: request.log });
     return reply.code(503).send({ error: { message: 'All candidate models failed or are budget-exhausted.', type: 'server_error' } });
   }
 
