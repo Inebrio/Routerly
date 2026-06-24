@@ -1,26 +1,41 @@
-## Session: 2026-06-24
+## Session: 2026-06-24 (continued — release/0.3.0 feature implementation)
 
 ### Done
-- Merged AGENTS.md into CLAUDE.md (single source of truth)
-- Created .claude/ project directory with full structure:
-  - agents/: 8 sub-agents (service, frontend, cli, docs, cicd, developer, reviewer, tester)
-  - commands/: /commit, /changeset, /test, /review
-  - hooks/: notify-done.sh, block-danger.sh
-  - rules/: service.md, dashboard.md, cli.md (glob-scoped)
-  - settings.json with permissions and hooks
-  - settings.local.json (gitignored)
-- Added coding rules and session workflow to CLAUDE.md
+- Created release/0.3.0 branch from develop
+- Implemented and merged 11 feature groups into release/0.3.0:
+  - #85 — OpenAI Web + Anthropic Web session providers (feat/issue-85-web-session-providers)
+  - #94/#95/#96 — Usage enrichment: endUserId, sessionId, custom tags (feat/issue-96-95-94-usage-enrichment)
+  - #97 — Provider-native prompt caching: auto/passthrough/disabled (feat/issue-97-provider-prompt-caching)
+  - #93 — Prometheus metrics endpoint /metrics (feat/issue-93-prometheus-metrics)
+  - #101 — Provider health dashboard page (feat/issue-101-provider-health-dashboard)
+  - #78 — Per-agent routing policies via X-Routerly-Policy header (feat/issue-78-per-agent-routing-policies)
+  - #82 — Hierarchical spend limits / spend groups (feat/issue-82-hierarchical-spend-limits-wt)
+  - #80 — Model leaderboard dashboard page + /api/leaderboard (feat/issue-80-model-leaderboard)
+  - #77/#76 — Content guardrails + PII scrubbing middleware (feat/issue-77-76-guardrails-pii)
+  - #89/#90/#91 — Notification system: event taxonomy, routing rules, cooldown, in-app inbox (feat/issue-89-90-91-notifications)
+- All feature branches pushed to origin and linked to GitHub issues
+- Tests: 1232 pass on release/0.3.0 as of last check
+- Created RELEASE-0.3.0.md (work in progress — will be updated as features land)
 
 ### Discovered
-- .claude/ was already gitignored in .gitignore
-- settings.json already had ponytail plugin enabled
-- ai/skills/code-review/SKILL.md does not exist (referenced in CLAUDE.md but missing)
+- API overload (529) when running >2 parallel agents — cap at 2 concurrent
+- Commit subjects must be fully lowercase after the colon (commitlint)
+- Worktrees from failed agents must be cleaned with `git worktree remove --force` before retrying
+- shared/types/config.ts is large — agents must read it before adding fields to avoid duplication
 
-### Remaining
-- Create ai/skills/code-review/SKILL.md (referenced in CLAUDE.md canonical files table)
-- Populate feature-list.json with actual feature list
-- Write init.sh with real environment checks
-- Verify .claude/agents/ sub-agents work correctly in practice
+### Remaining (ordered)
+1. #99 — Prompt playground (dashboard)
+2. #81 — Model Discovery page (dashboard + static catalog)
+3. #88 — Slack/Teams/PagerDuty/Discord adapters (service notifications)
+4. #75 — Semantic response caching (service)
+5. #84 — 2FA TOTP (service + dashboard)
+6. #102 — Prompt management (service + dashboard)
+7. #92 — Permissions hardening + audit log (service + dashboard)
+8. #87 — Enterprise cloud providers: Bedrock, Azure OpenAI, Vertex
+9. #103 — Request pipeline architecture (internal refactor)
+10. #83 — External auth: OAuth2/OIDC/LDAP/SAML
+11. #86 — Horizontal scaling: shared state abstraction
+12. #79 — MCP Gateway
 
 ### Open problems
 - None blocking
