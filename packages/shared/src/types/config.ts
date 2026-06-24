@@ -339,6 +339,8 @@ export interface Settings {
   notifications?: NotificationsConfig;
   /** Distribution channel for updates: 'latest' | 'stable' | 'develop' | vX.Y.Z tag */
   channel?: string;
+  /** Whether to expose the Prometheus-compatible /metrics endpoint (default true) */
+  metricsEnabled?: boolean;
   /** Anonymous install metrics opt-in. Absent means the user has not been asked yet. */
   telemetry?: TelemetryConfig;
 }
