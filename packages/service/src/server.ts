@@ -9,6 +9,7 @@ import { loadSecret } from './plugins/jwt.js';
 import { openaiRoutes } from './routes/openai.js';
 import { anthropicRoutes } from './routes/anthropic.js';
 import { apiRoutes } from './routes/api.js';
+import { metricsRoutes } from './routes/metrics.js';
 import { passthroughHandler } from './routes/passthrough.js';
 import { initConfigDirs, readConfig, writeConfig } from './config/loader.js';
 import { pingTelemetry } from './telemetry.js';
@@ -65,6 +66,9 @@ export async function buildServer() {
 
   // ─── Dashboard REST API (auth handled inside the plugin) ─────────────────
   await fastify.register(apiRoutes);
+
+  // ─── Prometheus metrics (no auth; gated by settings.metricsEnabled) ───────
+  await fastify.register(metricsRoutes);
 
   // ─── LLM Proxy auth (only for /v1/* routes) ───────────────────────────────
   await fastify.register(authPlugin);
