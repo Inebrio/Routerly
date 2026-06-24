@@ -759,5 +759,84 @@
   "custom": {
     "endpoint": "",
     "models": []
+  },
+  "azure-openai": {
+    "endpoint": "",
+    "models": [
+      {
+        "id": "gpt-4o",
+        "input": 5,
+        "output": 15,
+        "cache": 2.5,
+        "contextWindow": 128000,
+        "notes": "GPT-4o via Azure OpenAI"
+      },
+      {
+        "id": "gpt-4o-mini",
+        "input": 0.165,
+        "output": 0.66,
+        "contextWindow": 128000,
+        "notes": "GPT-4o mini via Azure OpenAI"
+      },
+      {
+        "id": "gpt-4-turbo",
+        "input": 10,
+        "output": 30,
+        "contextWindow": 128000,
+        "notes": "GPT-4 Turbo via Azure OpenAI"
+      }
+    ]
+  },
+  "bedrock": {
+    "endpoint": "",
+    "models": [
+      {
+        "id": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        "input": 3,
+        "output": 15,
+        "contextWindow": 200000,
+        "notes": "Claude 3.5 Sonnet v2 on AWS Bedrock"
+      },
+      {
+        "id": "anthropic.claude-3-haiku-20240307-v1:0",
+        "input": 0.25,
+        "output": 1.25,
+        "contextWindow": 200000,
+        "notes": "Claude 3 Haiku on AWS Bedrock"
+      },
+      {
+        "id": "meta.llama3-70b-instruct-v1:0",
+        "input": 0.99,
+        "output": 0.99,
+        "contextWindow": 8192,
+        "notes": "Llama 3 70B Instruct on AWS Bedrock"
+      }
+    ]
+  },
+  "vertex": {
+    "endpoint": "",
+    "models": [
+      {
+        "id": "google/gemini-2.0-flash-001",
+        "input": 0.1,
+        "output": 0.4,
+        "contextWindow": 1048576,
+        "notes": "Gemini 2.0 Flash via Vertex AI"
+      },
+      {
+        "id": "google/gemini-1.5-pro-002",
+        "input": 1.25,
+        "output": 5,
+        "contextWindow": 2097152,
+        "notes": "Gemini 1.5 Pro 002 via Vertex AI"
+      },
+      {
+        "id": "meta/llama-3.3-70b-instruct-maas",
+        "input": 0.85,
+        "output": 0.85,
+        "contextWindow": 128000,
+        "notes": "Llama 3.3 70B Instruct via Vertex AI Model as a Service"
+      }
+    ]
   }
 }
