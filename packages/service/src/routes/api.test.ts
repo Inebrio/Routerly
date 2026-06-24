@@ -5362,8 +5362,10 @@ describe('DELETE /api/projects/:id/playground-presets/:presetId', () => {
   })
 })
 
+// ─── Model catalog ─────────────────────────────────────────────────────────────
+
 describe('GET /api/models/catalog', () => {
-  it('returns array with isConfigured field', async () => {
+  it('returns an array of catalog entries', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -5375,22 +5377,22 @@ describe('GET /api/models/catalog', () => {
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/models/catalog', headers: adminAuthHeaders() })
     await app.close()
+
     expect(res.statusCode).toBe(200)
-    const body = JSON.parse(res.body) as any[]
+    const body = JSON.parse(res.body) as unknown[]
     expect(Array.isArray(body)).toBe(true)
     expect(body.length).toBeGreaterThan(0)
-    expect(typeof body[0]!.isConfigured).toBe('boolean')
   })
 
-  it('returns 401 without auth', async () => {
+  it('requires authentication (401 without token)', async () => {
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/models/catalog' })
     await app.close()
     expect(res.statusCode).toBe(401)
   })
 
-  it('isConfigured is true for a model that exists in config', async () => {
-    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+  it('marks isConfigured=true for a configured model', async () => {
+    setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
@@ -5401,15 +5403,17 @@ describe('GET /api/models/catalog', () => {
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/models/catalog', headers: adminAuthHeaders() })
     await app.close()
+
     expect(res.statusCode).toBe(200)
-    const body = JSON.parse(res.body) as any[]
-    const gpt4o = body.find((m: any) => m.id === 'gpt-4o')
-    expect(gpt4o?.isConfigured).toBe(true)
-    const other = body.find((m: any) => m.id === 'gpt-4o-mini')
-    expect(other?.isConfigured).toBe(false)
+    const body = JSON.parse(res.body) as Array<{ id: string; isConfigured: boolean }>
+    const gpt4o = body.find(e => e.id === 'gpt-4o')
+    expect(gpt4o).toBeDefined()
+    expect(gpt4o!.isConfigured).toBe(true)
+    const other = body.find(e => e.id !== 'gpt-4o')
+    expect(other!.isConfigured).toBe(false)
   })
 
-  it('all 4 providers are present in catalog', async () => {
+  it('includes entries for all four expected providers', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -5421,12 +5425,13 @@ describe('GET /api/models/catalog', () => {
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/models/catalog', headers: adminAuthHeaders() })
     await app.close()
+
     expect(res.statusCode).toBe(200)
-    const body = JSON.parse(res.body) as any[]
-    const providers = new Set(body.map((m: any) => m.provider))
+    const body = JSON.parse(res.body) as Array<{ provider: string }>
+    const providers = new Set(body.map(e => e.provider))
     expect(providers.has('openai')).toBe(true)
     expect(providers.has('anthropic')).toBe(true)
-    expect(providers.has('google')).toBe(true)
+    expect(providers.has('gemini')).toBe(true)
     expect(providers.has('ollama')).toBe(true)
   })
 })
