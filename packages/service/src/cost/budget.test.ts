@@ -2,9 +2,9 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 
 vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }))
 
-import { isAllowed, getViolatedLimits, getLimitUsageSnapshot, isAllowedForRoutingModel } from './budget.js'
+import { isAllowed, getViolatedLimits, getLimitUsageSnapshot, isAllowedForRoutingModel, checkGroupBudget, getGroupUsageSnapshot } from './budget.js'
 import { readConfig } from '../config/loader.js'
-import type { ModelConfig, ProjectConfig, UsageRecord } from '@routerly/shared'
+import type { ModelConfig, ProjectConfig, Settings, SpendGroup, UsageRecord } from '@routerly/shared'
 
 const mockReadConfig = vi.mocked(readConfig)
 
@@ -599,5 +599,97 @@ describe('startOfPeriod – Sunday (day === 0) branch (line 19)', () => {
     // cost=5 exceeds limit=3 → not allowed
     expect(await isAllowed(makeModel('m'), project)).toBe(false)
     vi.useRealTimers()
+  })
+})
+
+// ─── Hierarchical spend groups (#82) ────────────────────────────────────────────
+
+function makeGroupRecord(projectId: string, cost: number): UsageRecord {
+  return {
+    id: `g-${projectId}-${cost}`,
+    timestamp: new Date().toISOString(),
+    projectId, modelId: 'm',
+    inputTokens: 100, outputTokens: 50, cost,
+    latencyMs: 100, outcome: 'success',
+  } as UsageRecord
+}
+
+function settingsWith(groups: SpendGroup[]): Settings {
+  return {
+    port: 3000, host: '0.0.0.0', dashboardEnabled: true,
+    defaultTimeoutMs: 30000, logLevel: 'info', spendGroups: groups,
+  }
+}
+
+describe('checkGroupBudget', () => {
+  const dailyCost = (value: number): any => ({ metric: 'cost', windowType: 'period', period: 'daily', value })
+
+  it('returns true when the group does not exist', () => {
+    expect(checkGroupBudget('missing', 0, settingsWith([]), [])).toBe(true)
+  })
+
+  it('returns true when the group has no limits', () => {
+    const groups: SpendGroup[] = [{ id: 'team', name: 'Team', limits: [], projectIds: ['proj-1'] }]
+    expect(checkGroupBudget('team', 1, settingsWith(groups), [makeGroupRecord('proj-1', 5)])).toBe(true)
+  })
+
+  it('returns true when within the group limit', () => {
+    const groups: SpendGroup[] = [{ id: 'team', name: 'Team', limits: [dailyCost(10)], projectIds: ['proj-1'] }]
+    expect(checkGroupBudget('team', 0, settingsWith(groups), [makeGroupRecord('proj-1', 4)])).toBe(true)
+  })
+
+  it('returns false when the group limit is met or exceeded', () => {
+    const groups: SpendGroup[] = [{ id: 'team', name: 'Team', limits: [dailyCost(5)], projectIds: ['proj-1'] }]
+    expect(checkGroupBudget('team', 0, settingsWith(groups), [makeGroupRecord('proj-1', 5)])).toBe(false)
+  })
+
+  it('counts the prospective cost against the limit', () => {
+    const groups: SpendGroup[] = [{ id: 'team', name: 'Team', limits: [dailyCost(5)], projectIds: ['proj-1'] }]
+    // existing 3 + prospective 2 = 5 → meets limit → blocked
+    expect(checkGroupBudget('team', 2, settingsWith(groups), [makeGroupRecord('proj-1', 3)])).toBe(false)
+    expect(checkGroupBudget('team', 1, settingsWith(groups), [makeGroupRecord('proj-1', 3)])).toBe(true)
+  })
+
+  it('cascades: blocks when a parent (org) limit is exceeded even if the team has room', () => {
+    const groups: SpendGroup[] = [
+      { id: 'org',  name: 'Org',  limits: [dailyCost(5)], projectIds: ['proj-2'] },
+      { id: 'team', name: 'Team', limits: [dailyCost(100)], projectIds: ['proj-1'], parentGroupId: 'org' },
+    ]
+    // team spend 1 (ok vs 100), but org aggregates team+proj-2 = 1 + 5 = 6 ≥ 5 → blocked
+    const usage = [makeGroupRecord('proj-1', 1), makeGroupRecord('proj-2', 5)]
+    expect(checkGroupBudget('team', 0, settingsWith(groups), usage)).toBe(false)
+  })
+
+  it('cascades: allows when both team and parent have room', () => {
+    const groups: SpendGroup[] = [
+      { id: 'org',  name: 'Org',  limits: [dailyCost(100)], projectIds: [] },
+      { id: 'team', name: 'Team', limits: [dailyCost(50)], projectIds: ['proj-1'], parentGroupId: 'org' },
+    ]
+    expect(checkGroupBudget('team', 0, settingsWith(groups), [makeGroupRecord('proj-1', 10)])).toBe(true)
+  })
+
+  it('tolerates a parent-chain cycle without looping forever', () => {
+    const groups: SpendGroup[] = [
+      { id: 'a', name: 'A', limits: [dailyCost(100)], parentGroupId: 'b' },
+      { id: 'b', name: 'B', limits: [dailyCost(100)], parentGroupId: 'a' },
+    ]
+    expect(checkGroupBudget('a', 0, settingsWith(groups), [])).toBe(true)
+  })
+})
+
+describe('getGroupUsageSnapshot', () => {
+  it('returns [] when the group has no limits', () => {
+    const group: SpendGroup = { id: 'team', name: 'Team', limits: [], projectIds: ['proj-1'] }
+    expect(getGroupUsageSnapshot(group, [group], [makeGroupRecord('proj-1', 5)])).toEqual([])
+  })
+
+  it('reports current and remaining including descendant-group projects', () => {
+    const org: SpendGroup = { id: 'org', name: 'Org', limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 20 }], projectIds: ['proj-org'] }
+    const team: SpendGroup = { id: 'team', name: 'Team', limits: [], projectIds: ['proj-1'], parentGroupId: 'org' }
+    const usage = [makeGroupRecord('proj-org', 3), makeGroupRecord('proj-1', 4)]
+    const snap = getGroupUsageSnapshot(org, [org, team], usage)
+    expect(snap).toHaveLength(1)
+    expect(snap[0]!.current).toBe(7)
+    expect(snap[0]!.remaining).toBe(13)
   })
 })

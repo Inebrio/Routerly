@@ -4722,3 +4722,170 @@ describe('PUT /api/agent-policies', () => {
     expect(res.statusCode).toBe(403)
   })
 })
+
+// ─── Spend groups (#82) ─────────────────────────────────────────────────────────
+
+function setupSpendGroups(groups: any[], usage: any[] = []) {
+  mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+  mockReadConfig.mockImplementation(async (t: string) => {
+    if (t === 'users') return [adminUser]
+    if (t === 'roles') return []
+    if (t === 'settings') return { port: 3000, host: '0.0.0.0', dashboardEnabled: true, defaultTimeoutMs: 30000, logLevel: 'info', spendGroups: groups }
+    if (t === 'usage') return usage
+    return []
+  })
+  mockWriteConfig.mockResolvedValue(undefined)
+}
+
+describe('GET /api/spend-groups', () => {
+  it('lists groups with current usage snapshot', async () => {
+    setupSpendGroups(
+      [{ id: 'team', name: 'Team', limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 10 }], projectIds: ['proj-1'] }],
+      [{ id: 'u1', timestamp: new Date().toISOString(), projectId: 'proj-1', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 4, latencyMs: 1, outcome: 'success' }],
+    )
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/spend-groups', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json()
+    expect(body[0].usage[0]).toMatchObject({ metric: 'cost', current: 4, remaining: 6 })
+  })
+
+  it('returns 403 without report:read', async () => {
+    const viewer = { id: 'no-id', email: 'n@e.com', passwordHash: '$2b$12$x', roleId: 'no-role', projectIds: [] }
+    mockVerifyToken.mockReturnValue({ sub: 'no-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [viewer]
+      if (t === 'roles') return [{ id: 'no-role', name: 'No', permissions: [] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/spend-groups', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+describe('POST /api/spend-groups', () => {
+  it('creates a group and persists via writeConfig', async () => {
+    setupSpendGroups([])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/spend-groups',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Org', limits: [{ metric: 'cost', windowType: 'period', period: 'monthly', value: 1000 }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    expect(res.json()).toMatchObject({ id: 'test-uuid-1234', name: 'Org' })
+    expect(mockWriteConfig).toHaveBeenCalledWith('settings', expect.objectContaining({
+      spendGroups: expect.arrayContaining([expect.objectContaining({ name: 'Org' })]),
+    }))
+  })
+
+  it('rejects an invalid body with 400', async () => {
+    setupSpendGroups([])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/spend-groups',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: '' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('rejects a child whose limit exceeds the parent limit', async () => {
+    setupSpendGroups([{ id: 'org', name: 'Org', limits: [{ metric: 'cost', windowType: 'period', period: 'monthly', value: 100 }] }])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/spend-groups',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Team', parentGroupId: 'org', limits: [{ metric: 'cost', windowType: 'period', period: 'monthly', value: 200 }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toMatch(/exceeds parent/)
+  })
+
+  it('returns 400 when parentGroupId is unknown', async () => {
+    setupSpendGroups([])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/spend-groups',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Team', parentGroupId: 'ghost', limits: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+})
+
+describe('PUT /api/spend-groups/:id', () => {
+  it('updates an existing group', async () => {
+    setupSpendGroups([{ id: 'team', name: 'Team', limits: [] }])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/spend-groups/team',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Team Renamed', limits: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ id: 'team', name: 'Team Renamed' })
+  })
+
+  it('returns 404 for an unknown group', async () => {
+    setupSpendGroups([])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/spend-groups/missing',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'X', limits: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('rejects making a group its own parent', async () => {
+    setupSpendGroups([{ id: 'team', name: 'Team', limits: [] }])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/spend-groups/team',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Team', parentGroupId: 'team', limits: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+})
+
+describe('DELETE /api/spend-groups/:id', () => {
+  it('deletes a group', async () => {
+    setupSpendGroups([{ id: 'team', name: 'Team', limits: [] }])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/spend-groups/team', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(204)
+    expect(mockWriteConfig).toHaveBeenCalledWith('settings', expect.objectContaining({ spendGroups: [] }))
+  })
+
+  it('returns 404 for an unknown group', async () => {
+    setupSpendGroups([])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/spend-groups/missing', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('refuses to delete a group with children (409)', async () => {
+    setupSpendGroups([
+      { id: 'org', name: 'Org', limits: [] },
+      { id: 'team', name: 'Team', limits: [], parentGroupId: 'org' },
+    ])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/spend-groups/org', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(409)
+  })
+})
