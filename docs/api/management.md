@@ -364,6 +364,67 @@ DELETE /api/roles/:name
 
 ---
 
+## Spend Groups
+
+Org- and team-level budget containers for the hierarchical spend-limit cascade
+(organisation -> team -> API key). A project belongs to a group via its
+`spendGroupId`; groups may nest via `parentGroupId`. When a request runs through
+a project that belongs to a group, the group chain's limits are enforced in
+addition to the per-model/project/token limits. Child limits cannot exceed
+parent limits (validated on create/update).
+
+A group object:
+
+```json
+{
+  "id": "uuid",
+  "name": "Engineering",
+  "limits": [{ "metric": "cost", "windowType": "period", "period": "monthly", "value": 1000 }],
+  "projectIds": ["proj-1"],
+  "tokenIds": [],
+  "parentGroupId": "org-uuid"
+}
+```
+
+### List Spend Groups
+
+```
+GET /api/spend-groups
+```
+
+Requires `report:read`. Returns each group with a `usage` array (current and
+remaining consumption per limit, aggregating its own and descendant groups'
+projects) for the consumption tree view and end-of-period forecast.
+
+### Create Spend Group
+
+```
+POST /api/spend-groups
+```
+
+Requires `project:write`. Body validated with Zod (`name` required; `limits`,
+`projectIds`, `tokenIds`, `parentGroupId` optional). Returns `400` if a child
+limit exceeds the parent's matching limit or the parent does not exist.
+
+### Update Spend Group
+
+```
+PUT /api/spend-groups/:id
+```
+
+Requires `project:write`. Same validation as create. A group cannot be its own
+parent.
+
+### Delete Spend Group
+
+```
+DELETE /api/spend-groups/:id
+```
+
+Requires `project:write`. Returns `409` if the group still has child groups.
+
+---
+
 ## Usage {#usage}
 
 ### Query Usage Records

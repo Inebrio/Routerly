@@ -9,7 +9,9 @@ import { pingTelemetry } from '../telemetry.js';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../config/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jwt.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, SpendGroup } from '@routerly/shared';
+import { z } from 'zod';
+import { getGroupUsageSnapshot } from '../cost/budget.js';
 import { getTrace } from '../routing/traceStore.js';
 import { sendTestNotification } from '../notifications/sender.js';
 import { updateChecker } from '../update-checker.js';
@@ -87,6 +89,51 @@ function requirePerm(req: FastifyRequest, perm: Permission, reply: FastifyReply)
     return false;
   }
   return true;
+}
+
+// ── Spend group validation (#82) ────────────────────────────────────────────────
+const limitSchema = z.object({
+  metric: z.enum(['cost', 'calls', 'input_tokens', 'output_tokens', 'total_tokens']),
+  windowType: z.enum(['period', 'rolling']),
+  period: z.enum(['hourly', 'daily', 'weekly', 'monthly', 'yearly']).optional(),
+  rollingAmount: z.number().positive().optional(),
+  rollingUnit: z.enum(['second', 'minute', 'hour', 'day', 'week', 'month']).optional(),
+  value: z.number().nonnegative(),
+});
+
+const spendGroupBodySchema = z.object({
+  name: z.string().trim().min(1),
+  limits: z.array(limitSchema).default([]),
+  projectIds: z.array(z.string()).optional(),
+  tokenIds: z.array(z.string()).optional(),
+  parentGroupId: z.string().optional(),
+});
+
+/**
+ * Enforce "child limits cannot exceed parent limits": for every cost/calls/token
+ * limit of the child sharing a window with a parent limit, the child value must
+ * not be greater than the parent's. Returns an error string or null if valid.
+ */
+function validateAgainstParent(child: SpendGroup, groups: SpendGroup[]): string | null {
+  let parentId = child.parentGroupId;
+  const seen = new Set<string>([child.id]);
+  while (parentId) {
+    if (seen.has(parentId)) return 'Spend group hierarchy contains a cycle';
+    seen.add(parentId);
+    const parent = groups.find(g => g.id === parentId);
+    if (!parent) return `Parent group "${parentId}" not found`;
+    for (const cl of child.limits) {
+      const pl = (parent.limits ?? []).find(
+        p => p.metric === cl.metric && p.windowType === cl.windowType &&
+             p.period === cl.period && p.rollingAmount === cl.rollingAmount && p.rollingUnit === cl.rollingUnit,
+      );
+      if (pl && cl.value > pl.value) {
+        return `Limit ${cl.metric} (${cl.value}) exceeds parent limit (${pl.value})`;
+      }
+    }
+    parentId = parent.parentGroupId;
+  }
+  return null;
 }
 
 export const apiRoutes: FastifyPluginAsync = async (fastify) => {
@@ -1090,6 +1137,78 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const filtered = customRoles.filter(r => r.id !== req.params.id);
     if (filtered.length === customRoles.length) return reply.status(404).send({ error: 'Role not found' });
     await writeConfig('roles', filtered);
+    return reply.status(204).send();
+  });
+
+  // ─── Spend groups (hierarchical org → team → key cascade, #82) ─────────────────
+
+  // GET /api/spend-groups — list all groups with current usage per limit
+  fastify.get('/api/spend-groups', async (req, reply) => {
+    if (!requirePerm(req, 'report:read', reply)) return;
+    const settings = await readConfig('settings');
+    const groups = settings.spendGroups ?? [];
+    const usage = await readConfig('usage');
+    return reply.send(groups.map(g => ({ ...g, usage: getGroupUsageSnapshot(g, groups, usage) })));
+  });
+
+  // POST /api/spend-groups — create a group
+  fastify.post('/api/spend-groups', async (req, reply) => {
+    if (!requirePerm(req, 'project:write', reply)) return;
+    const parsed = spendGroupBodySchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Invalid body', details: parsed.error.issues });
+
+    const settings = await readConfig('settings');
+    const groups = settings.spendGroups ?? [];
+    if (parsed.data.parentGroupId && !groups.some(g => g.id === parsed.data.parentGroupId)) {
+      return reply.status(400).send({ error: `Parent group "${parsed.data.parentGroupId}" not found` });
+    }
+    const group = { id: uuidv4(), ...parsed.data } as SpendGroup;
+    const conflict = validateAgainstParent(group, [...groups, group]);
+    if (conflict) return reply.status(400).send({ error: conflict });
+
+    settings.spendGroups = [...groups, group];
+    await writeConfig('settings', settings);
+    return reply.status(201).send(group);
+  });
+
+  // PUT /api/spend-groups/:id — update a group
+  fastify.put<{ Params: { id: string } }>('/api/spend-groups/:id', async (req, reply) => {
+    if (!requirePerm(req, 'project:write', reply)) return;
+    const parsed = spendGroupBodySchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Invalid body', details: parsed.error.issues });
+
+    const settings = await readConfig('settings');
+    const groups = settings.spendGroups ?? [];
+    const idx = groups.findIndex(g => g.id === req.params.id);
+    if (idx === -1) return reply.status(404).send({ error: 'Spend group not found' });
+    if (parsed.data.parentGroupId === req.params.id) {
+      return reply.status(400).send({ error: 'A spend group cannot be its own parent' });
+    }
+    if (parsed.data.parentGroupId && !groups.some(g => g.id === parsed.data.parentGroupId)) {
+      return reply.status(400).send({ error: `Parent group "${parsed.data.parentGroupId}" not found` });
+    }
+    const updated = { id: req.params.id, ...parsed.data } as SpendGroup;
+    const next = groups.map(g => (g.id === req.params.id ? updated : g));
+    const conflict = validateAgainstParent(updated, next);
+    if (conflict) return reply.status(400).send({ error: conflict });
+
+    settings.spendGroups = next;
+    await writeConfig('settings', settings);
+    return reply.send(updated);
+  });
+
+  // DELETE /api/spend-groups/:id — delete a group
+  fastify.delete<{ Params: { id: string } }>('/api/spend-groups/:id', async (req, reply) => {
+    if (!requirePerm(req, 'project:write', reply)) return;
+    const settings = await readConfig('settings');
+    const groups = settings.spendGroups ?? [];
+    if (groups.some(g => g.parentGroupId === req.params.id)) {
+      return reply.status(409).send({ error: 'Cannot delete a group that has child groups' });
+    }
+    const filtered = groups.filter(g => g.id !== req.params.id);
+    if (filtered.length === groups.length) return reply.status(404).send({ error: 'Spend group not found' });
+    settings.spendGroups = filtered;
+    await writeConfig('settings', settings);
     return reply.status(204).send();
   });
 

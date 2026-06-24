@@ -1,17 +1,19 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
 vi.mock('../providers/index.js', () => ({ getProviderAdapter: vi.fn() }))
-vi.mock('../cost/budget.js', () => ({ isAllowed: vi.fn(), isAllowedForRoutingModel: vi.fn() }))
+vi.mock('../cost/budget.js', () => ({ isAllowed: vi.fn(), isAllowedForRoutingModel: vi.fn(), checkGroupBudget: vi.fn() }))
 vi.mock('../cost/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('../config/loader.js', () => ({ readConfig: vi.fn().mockResolvedValue([]) }))
 
 import { llmChat, llmStream, llmMessages, BudgetExceededError } from './executor.js'
 import { getProviderAdapter } from '../providers/index.js'
-import { isAllowed, isAllowedForRoutingModel } from '../cost/budget.js'
+import { isAllowed, isAllowedForRoutingModel, checkGroupBudget } from '../cost/budget.js'
 import { trackUsage } from '../cost/tracker.js'
 
 const mockGetProvider = vi.mocked(getProviderAdapter)
 const mockIsAllowed = vi.mocked(isAllowed)
 const mockIsAllowedForRouting = vi.mocked(isAllowedForRoutingModel)
+const mockCheckGroupBudget = vi.mocked(checkGroupBudget)
 const mockTrackUsage = vi.mocked(trackUsage)
 
 afterEach(() => vi.clearAllMocks())
@@ -67,6 +69,39 @@ describe('BudgetExceededError', () => {
     expect(err.modelId).toBe('gpt-4')
     expect(err.message).toBe('budget_exceeded')
     expect(err instanceof Error).toBe(true)
+  })
+})
+
+// ─── spend-group cascade (#82) ────────────────────────────────────────────────
+
+describe('checkBudget spend-group cascade', () => {
+  it('throws BudgetExceededError when the project spend group is exhausted', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    mockCheckGroupBudget.mockReturnValue(false)
+    const ctx = makeCtx({ project: { ...makeProject(), spendGroupId: 'team' } })
+
+    await expect(llmChat({ messages: [] } as any, makeModel(), ctx)).rejects.toThrow(BudgetExceededError)
+    expect(mockCheckGroupBudget).toHaveBeenCalledWith('team', 0, expect.anything(), expect.anything())
+  })
+
+  it('proceeds when the spend group has room', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    mockCheckGroupBudget.mockReturnValue(true)
+    const mockAdapter = { chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) }
+    mockGetProvider.mockReturnValue(mockAdapter as any)
+    const ctx = makeCtx({ project: { ...makeProject(), spendGroupId: 'team' } })
+
+    const response = await llmChat({ messages: [] } as any, makeModel(), ctx)
+    expect(response.choices[0]!.message.content).toBe('Hello')
+  })
+
+  it('does not check the group when the project has no spendGroupId', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    const mockAdapter = { chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) }
+    mockGetProvider.mockReturnValue(mockAdapter as any)
+
+    await llmChat({ messages: [] } as any, makeModel(), makeCtx())
+    expect(mockCheckGroupBudget).not.toHaveBeenCalled()
   })
 })
 
