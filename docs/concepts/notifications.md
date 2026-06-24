@@ -153,10 +153,80 @@ const isValid = signature === `sha256=${expected}`;
 
 ## Notification Events
 
-| Event | Description |
-|-------|-------------|
-| `budget.threshold` | Budget reached the configured warning threshold (e.g. 80%) |
-| `budget.exhausted` | Budget reached its limit |
-| `budget.reset` | Budget window reset (optional) |
+Every event carries the payload `{ event, severity, timestamp, details }`, where `severity` is one of `info`, `warning`, or `critical`.
 
-Threshold percentage is configurable per budget limit.
+| Event | Severity | Description |
+|-------|----------|-------------|
+| `budget.threshold` | warning | Budget reached the configured warning threshold (e.g. 80%) |
+| `budget.exhausted` | critical | Budget reached its limit |
+| `budget.reset` | info | Budget window reset (optional) |
+| `provider.error` | critical | Non-retryable provider error (5xx, auth failure) |
+| `provider.degraded` | warning | Error rate for a model exceeded the threshold in the window |
+| `provider.recovered` | info | A previously degraded model is healthy again |
+| `provider.rate_limited` | warning | 429 received; model entered cooldown |
+| `routing.no_candidates` | critical | All models filtered out; request returned 503 |
+| `routing.fallback_used` | info | Primary model skipped; a fallback was used |
+| `auth.login_failed` | warning | A dashboard login failed for an existing user (wrong password) |
+| `auth.token_invalid` | warning | A project token that does not exist was used |
+| `config.model_added` / `config.model_deleted` | info | A model was created or deleted |
+| `config.project_created` / `config.project_deleted` | info | A project was created or deleted |
+| `system.startup` / `system.shutdown` | info | Service lifecycle |
+
+---
+
+## Routing Rules
+
+By default events are not dispatched to any external channel — they only land in the in-app inbox. To route events to channels, add `notificationRules` to the `notifications` config. Each rule maps event patterns to channel IDs.
+
+```jsonc
+{
+  "notifications": {
+    "channels": [ /* … */ ],
+    "notificationRules": [
+      { "events": ["provider.error", "provider.degraded"], "channels": ["webhook-ops"] },
+      { "events": ["budget.*"], "channels": ["smtp-admin"] }
+    ]
+  }
+}
+```
+
+Pattern matching supports an exact event name, the wildcard `*`, or a prefix glob such as `budget.*` (matches `budget.threshold`, `budget.exhausted`, …).
+
+---
+
+## Cooldowns
+
+To avoid alert storms, configure a minimum interval between repeated dispatches of the same event type. Suppressed events are still recorded in the inbox and logged — they are simply not dispatched to external channels.
+
+```jsonc
+{
+  "notifications": {
+    "cooldowns": { "provider.degraded": "15m", "budget.threshold": "1h" }
+  }
+}
+```
+
+Durations accept `s`, `m`, `h`, `d` suffixes. Cooldown state is held in memory (single-node).
+
+---
+
+## In-App Inbox
+
+Independently of external channels, every event is appended to a per-instance inbox persisted in `notifications.json` (retention: the last 200 events or 30 days, whichever is smaller). The dashboard shows a bell icon with an unread badge; each user tracks their own read state. The inbox is always available — even with zero external channels configured.
+
+See the [Management API](../api/management.md#notifications-inbox) for the inbox endpoints.
+
+---
+
+## Per-Project Recipients
+
+A project can override which channels its own events go to by setting `notifications.channels` on the project. These channel IDs are merged with the global `notificationRules` matches for events emitted in that project's context.
+
+```jsonc
+// projects.json — one project entry
+{
+  "id": "proj_123",
+  "name": "Acme",
+  "notifications": { "channels": ["webhook-acme"] }
+}
+```

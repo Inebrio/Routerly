@@ -194,6 +194,8 @@ Full endpoint catalogue: [API — Management](../api/management).
 | `POST` | `/api/spend-groups` | Create a spend group |
 | `PUT` | `/api/spend-groups/:id` | Update a spend group |
 | `DELETE` | `/api/spend-groups/:id` | Delete a spend group |
+| `GET` | `/api/notifications/inbox` | List the current user's in-app notifications |
+| `POST` | `/api/notifications/inbox/read` | Mark notifications as read (`ids[]` or `all`) |
 
 ---
 

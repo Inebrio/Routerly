@@ -306,6 +306,8 @@ export interface ProjectConfig {
   agentPolicies?: AgentPolicy[];
   /** ID of the SpendGroup this project belongs to (#82) */
   spendGroupId?: string;
+  /** Per-project notification override: channel IDs to dispatch this project's events to (#91) */
+  notifications?: { channels: string[] };
 }
 
 export interface UserConfig {
@@ -483,9 +485,33 @@ export type NotificationChannel =
   | GoogleChannelConfig
   | WebhookChannelConfig;
 
+/** Maps event name patterns (exact or glob like `budget.*`) to channel IDs (#90) */
+export interface NotificationRule {
+  events: string[];
+  channels: string[];
+}
+
 /** Top-level notifications configuration */
 export interface NotificationsConfig {
   channels?: NotificationChannel[];
+  /** Event-pattern → channel routing rules (#90) */
+  notificationRules?: NotificationRule[];
+  /** Per-event-type minimum interval between dispatches, e.g. { "provider.degraded": "15m" } (#90) */
+  cooldowns?: Record<string, string>;
+}
+
+/** Severity of a system notification event (#89) */
+export type NotificationSeverity = 'info' | 'warning' | 'critical';
+
+/** A persisted in-app inbox notification (#91) */
+export interface NotificationInboxItem {
+  id: string;
+  event: string;
+  severity: NotificationSeverity;
+  timestamp: string; // ISO 8601
+  details: Record<string, unknown>;
+  /** User IDs that have marked this item as read */
+  readBy: string[];
 }
 
 // ── Backward-compat aliases (used by service code) ────────────────────────────
