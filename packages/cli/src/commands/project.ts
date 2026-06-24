@@ -715,6 +715,78 @@ Examples:
   return cmd;
 }
 
+// ─── Agent policy subcommand group ───────────────────────────────────────────
+
+function makeAgentPolicyCommand(): Command {
+  const cmd = new Command('policy').description('Manage per-agent routing policies for a project');
+
+  cmd.command('list <projectId>')
+    .description('List agent policies for a project')
+    .option('--json', 'Output as JSON')
+    .action(async (projectId: string, opts: { json?: boolean }) => {
+      try {
+        const data = await api<Array<{ name: string; models: string[]; maxCostUsd?: number }>>('GET', `/api/agent-policies?projectId=${encodeURIComponent(projectId)}`);
+
+        if (opts.json) { console.log(JSON.stringify(data, null, 2)); return; }
+
+        if (data.length === 0) {
+          console.log(chalk.yellow('No agent policies configured.'));
+          return;
+        }
+
+        const table = new Table({
+          head: ['Name', 'Models', 'Max Cost (USD)'].map(h => chalk.cyan(h)),
+        });
+        for (const p of data) {
+          table.push([p.name, p.models.join(', '), p.maxCostUsd != null ? `$${p.maxCostUsd}` : chalk.gray('—')]);
+        }
+        console.log(table.toString());
+      } catch (err) {
+        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
+        else console.error(chalk.red(`Error: ${err.message}`));
+        process.exit(1);
+      }
+    });
+
+  cmd.command('add <projectId>')
+    .description('Add an agent policy to a project')
+    .requiredOption('--name <n>', 'Policy name')
+    .requiredOption('--models <m>', 'Comma-separated model IDs allowed')
+    .option('--max-cost <usd>', 'Maximum cost in USD')
+    .action(async (projectId: string, opts: { name: string; models: string; maxCost?: string }) => {
+      try {
+        const body: Record<string, unknown> = {
+          projectId,
+          name: opts.name,
+          models: opts.models.split(',').map(s => s.trim()).filter(Boolean),
+          ...(opts.maxCost ? { maxCostUsd: parseFloat(opts.maxCost) } : {}),
+        };
+        await api<void>('PUT', '/api/agent-policies', body);
+        console.log(chalk.green(`Agent policy "${opts.name}" added to project "${projectId}".`));
+      } catch (err) {
+        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
+        else console.error(chalk.red(`Error: ${err.message}`));
+        process.exit(1);
+      }
+    });
+
+  cmd.command('delete <projectId>')
+    .description('Delete an agent policy by name')
+    .requiredOption('--name <n>', 'Policy name to delete')
+    .action(async (projectId: string, opts: { name: string }) => {
+      try {
+        await api<void>('PUT', '/api/agent-policies', { projectId, name: opts.name, _delete: true });
+        console.log(chalk.green(`Agent policy "${opts.name}" removed from project "${projectId}".`));
+      } catch (err) {
+        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
+        else console.error(chalk.red(`Error: ${err.message}`));
+        process.exit(1);
+      }
+    });
+
+  return cmd;
+}
+
 // ─── Main project command ─────────────────────────────────────────────────────
 
 export function makeProjectCommand(): Command {
@@ -939,6 +1011,123 @@ Examples:
   cmd.addCommand(makeModelSubCommand());
   cmd.addCommand(makeTokenSubCommand());
   cmd.addCommand(makeMemberCommand());
+  cmd.addCommand(makeAgentPolicyCommand());
+
+  // ── project guardrails <project> ─────────────────────────────────────────────
+  cmd.command('guardrails <project>')
+    .description('Show or update guardrails config for a project')
+    .option('--enable', 'Enable guardrails')
+    .option('--disable', 'Disable guardrails')
+    .option('--action <action>', 'Action on violation: block | flag | log')
+    .option('--add-pattern <regex>', 'Add a blocked regex pattern')
+    .option('--injection-detection <bool>', 'Enable/disable prompt injection detection (true|false)')
+    .action(async (nameOrId: string, opts: {
+      enable?: boolean; disable?: boolean; action?: string;
+      addPattern?: string; injectionDetection?: string;
+    }) => {
+      try {
+        const project = await resolveProject(nameOrId);
+        const guardrails = (project as ProjectConfig & { guardrails?: Record<string, unknown> }).guardrails ?? {};
+
+        const hasUpdate = opts.enable || opts.disable || opts.action || opts.addPattern || opts.injectionDetection !== undefined;
+        if (!hasUpdate) {
+          console.log(chalk.bold(`\nGuardrails — ${project.name}`));
+          console.log(JSON.stringify(guardrails, null, 2));
+          return;
+        }
+
+        const patch: Record<string, unknown> = { ...guardrails };
+        if (opts.enable) patch.enabled = true;
+        if (opts.disable) patch.enabled = false;
+        if (opts.action) patch.action = opts.action;
+        if (opts.injectionDetection !== undefined) patch.injectionDetection = opts.injectionDetection === 'true';
+        if (opts.addPattern) {
+          const patterns = (patch.patterns as string[] | undefined) ?? [];
+          patterns.push(opts.addPattern);
+          patch.patterns = patterns;
+        }
+
+        await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/guardrails`, patch);
+        console.log(chalk.green(`Guardrails updated for "${project.name}".`));
+      } catch (err) {
+        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
+        else console.error(chalk.red(`Error: ${err.message}`));
+        process.exit(1);
+      }
+    });
+
+  // ── project pii <project> ────────────────────────────────────────────────────
+  cmd.command('pii <project>')
+    .description('Show or update PII detection config for a project')
+    .option('--enable', 'Enable PII detection')
+    .option('--disable', 'Disable PII detection')
+    .option('--entities <types>', 'Comma-separated PII entity types (e.g. EMAIL,PHONE,SSN)')
+    .action(async (nameOrId: string, opts: { enable?: boolean; disable?: boolean; entities?: string }) => {
+      try {
+        const project = await resolveProject(nameOrId);
+        const pii = (project as ProjectConfig & { pii?: Record<string, unknown> }).pii ?? {};
+
+        const hasUpdate = opts.enable || opts.disable || opts.entities;
+        if (!hasUpdate) {
+          console.log(chalk.bold(`\nPII Config — ${project.name}`));
+          console.log(JSON.stringify(pii, null, 2));
+          return;
+        }
+
+        const patch: Record<string, unknown> = { ...pii };
+        if (opts.enable) patch.enabled = true;
+        if (opts.disable) patch.enabled = false;
+        if (opts.entities) patch.entities = opts.entities.split(',').map(s => s.trim()).filter(Boolean);
+
+        await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/guardrails`, { pii: patch });
+        console.log(chalk.green(`PII config updated for "${project.name}".`));
+      } catch (err) {
+        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
+        else console.error(chalk.red(`Error: ${err.message}`));
+        process.exit(1);
+      }
+    });
+
+  // ── project cache <project> ──────────────────────────────────────────────────
+  // ponytail: stub — endpoint not yet deployed in 0.3.0
+  cmd.command('cache <project>')
+    .description('Show or set semantic cache config for a project (coming soon)')
+    .option('--enable', 'Enable semantic cache')
+    .option('--disable', 'Disable semantic cache')
+    .option('--threshold <0-1>', 'Similarity threshold (0.0-1.0)')
+    .option('--ttl-ms <ms>', 'Cache TTL in milliseconds')
+    .action(async (nameOrId: string, opts: {
+      enable?: boolean; disable?: boolean; threshold?: string; ttlMs?: string;
+    }) => {
+      try {
+        const project = await resolveProject(nameOrId);
+        const cache = (project as ProjectConfig & { semanticCache?: Record<string, unknown> }).semanticCache ?? {};
+
+        const hasUpdate = opts.enable || opts.disable || opts.threshold || opts.ttlMs;
+        if (!hasUpdate) {
+          console.log(chalk.bold(`\nSemantic Cache — ${project.name}`));
+          console.log(JSON.stringify(cache, null, 2));
+          return;
+        }
+
+        const patch: Record<string, unknown> = { ...cache };
+        if (opts.enable) patch.enabled = true;
+        if (opts.disable) patch.enabled = false;
+        if (opts.threshold) patch.threshold = parseFloat(opts.threshold);
+        if (opts.ttlMs) patch.ttlMs = parseInt(opts.ttlMs, 10);
+
+        await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/cache`, patch);
+        console.log(chalk.green(`Semantic cache config updated for "${project.name}".`));
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) {
+          console.log(chalk.yellow('Semantic cache not available in this version.'));
+          return;
+        }
+        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
+        else console.error(chalk.red(`Error: ${err.message}`));
+        process.exit(1);
+      }
+    });
 
   return cmd;
 }
