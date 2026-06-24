@@ -389,43 +389,55 @@ Examples:
 
   // ── model discover ──
   cmd.command('discover')
-    .description('Browse the model catalog (requires service 0.3.0+)')
-    .option('--provider <name>', 'Filter by provider')
+    .description('Browse the model catalog')
+    .option('--provider <name>', 'Filter by provider (openai, anthropic, google, ollama)')
     .option('--json', 'Output as JSON')
     .action(async (opts: { provider?: string; json?: boolean }) => {
       try {
-        const params = new URLSearchParams();
-        if (opts.provider) params.set('provider', opts.provider);
-        const qs = params.toString();
-
         const data = await api<Array<{
-          modelId: string;
+          id: string;
           provider: string;
-          contextWindow?: number;
-          modalities?: string[];
-          inputPricePerMillion?: number;
-          outputPricePerMillion?: number;
-        }>>('GET', `/api/models/catalog${qs ? `?${qs}` : ''}`);
+          name: string;
+          contextWindow: number;
+          modalities: string[];
+          pricing: { inputPer1kTokens: number; outputPer1kTokens: number };
+          local?: boolean;
+          isConfigured: boolean;
+        }>>('GET', '/api/models/catalog');
 
-        if (opts.json) { console.log(JSON.stringify(data, null, 2)); return; }
+        const filtered = opts.provider
+          ? data.filter(m => m.provider === opts.provider)
+          : data;
 
-        if (data.length === 0) {
-          console.log(chalk.yellow('No models in catalog.'));
+        if (opts.json) { console.log(JSON.stringify(filtered, null, 2)); return; }
+
+        if (filtered.length === 0) {
+          console.log(chalk.yellow('No models match the filter.'));
           return;
         }
 
         const table = new Table({
-          head: ['Model', 'Provider', 'Context Window', 'Modalities', 'Price/1K In', 'Price/1K Out'].map(h => chalk.cyan(h)),
+          head: ['Model', 'Provider', 'Context', 'Input/1K', 'Output/1K', 'Modalities'].map(h => chalk.cyan(h)),
         });
 
-        for (const m of data) {
+        function fmtCtx(n: number): string {
+          if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(0)}M`;
+          if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
+          return String(n);
+        }
+
+        for (const m of filtered) {
+          const star = m.isConfigured ? chalk.yellow(' ★') : '';
+          const price = m.local
+            ? [chalk.gray('free/local'), chalk.gray('free/local')]
+            : [`$${m.pricing.inputPer1kTokens}`, `$${m.pricing.outputPer1kTokens}`];
           table.push([
-            m.modelId,
+            `${m.id}${star}`,
             m.provider,
-            m.contextWindow ? m.contextWindow.toLocaleString() : chalk.gray('—'),
-            m.modalities?.join(', ') ?? chalk.gray('—'),
-            m.inputPricePerMillion != null ? `$${(m.inputPricePerMillion / 1000).toFixed(5)}` : chalk.gray('—'),
-            m.outputPricePerMillion != null ? `$${(m.outputPricePerMillion / 1000).toFixed(5)}` : chalk.gray('—'),
+            fmtCtx(m.contextWindow),
+            price[0]!,
+            price[1]!,
+            m.modalities.join(', '),
           ]);
         }
         console.log(table.toString());

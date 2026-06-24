@@ -104,6 +104,9 @@ export function ModelsPage() {
                 </button>
               )}
             </div>
+            <Link to="/dashboard/models/discover" className="btn">
+              Discover
+            </Link>
             <Link to="/dashboard/models/new" className="btn btn-primary">
               <Plus size={16} /> Add Model
             </Link>

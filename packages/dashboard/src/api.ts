@@ -522,3 +522,16 @@ export const createPlaygroundPreset = (projectId: string, data: { name: string; 
 
 export const deletePlaygroundPreset = (projectId: string, presetId: string) =>
   request<void>(`/projects/${projectId}/playground-presets/${presetId}`, { method: 'DELETE' });
+
+export interface CatalogEntry {
+  id: string;
+  provider: string;
+  name: string;
+  contextWindow: number;
+  modalities: string[];
+  pricing: { inputPer1kTokens: number; outputPer1kTokens: number };
+  local?: boolean;
+  isConfigured: boolean;
+}
+
+export const getModelCatalog = () => request<CatalogEntry[]>('/models/catalog');
