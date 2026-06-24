@@ -23,6 +23,12 @@ export interface TrackUsageParams {
   /** True when the routing decision was served from the semantic cache (LLM was still called) */
   cacheHit?: boolean;
   cacheSimilarity?: number;
+  /** End-user id from OpenAI `user` field (#96) */
+  endUserId?: string;
+  /** Session id from X-Routerly-Session-Id header (#94) */
+  sessionId?: string;
+  /** Tags from X-Routerly-Tags header (#95) */
+  tags?: Record<string, string>;
 }
 
 /**
@@ -69,6 +75,9 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     priceInput: params.model.cost.inputPerMillion,
     priceOutput: params.model.cost.outputPerMillion,
     ...(params.cacheHit ? { cacheHit: true, cacheSimilarity: params.cacheSimilarity } : {}),
+    ...(params.endUserId ? { endUserId: params.endUserId } : {}),
+    ...(params.sessionId ? { sessionId: params.sessionId } : {}),
+    ...(params.tags ? { tags: params.tags } : {}),
   };
 
   await appendUsageRecord(record);

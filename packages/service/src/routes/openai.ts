@@ -12,6 +12,7 @@ import type { LLMCallContext } from '../llm/executor.js';
 import { getEmbeddingProvider } from '../embeddings/index.js';
 import type { EmbeddingProviderType } from '../embeddings/index.js';
 import { lookupCache, storeCache } from '../cache/semanticResponseCache.js';
+import { parseRoutingTags } from './requestEnrichment.js';
 
 function resolveEmbeddingUpstreamModelId(modelId: string, explicitUpstreamModelId?: string): string {
   if (explicitUpstreamModelId) return explicitUpstreamModelId;
@@ -120,6 +121,11 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     const isMemoryEnabled = (project.policies ?? []).some(
       (p: any) => p.type === 'llm' && p.enabled && p.config?.memory === true,
     );
+
+    // Usage enrichment: end-user (#96), session (#94), tags (#95)
+    const endUserId = (body as any).user as string | undefined || undefined;
+    const sessionId = (request.headers['x-routerly-session-id'] as string | undefined) || undefined;
+    const tags = parseRoutingTags(request.headers['x-routerly-tags'] as string | undefined);
 
     // Read models list once — used by cache embedding lookup and routing candidates
     const allModels = await readConfig('models');
@@ -270,6 +276,9 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           ...(cachedModelId !== null
             ? { cacheHit: true as const, ...(cacheSimilarityScore !== null ? { cacheSimilarity: cacheSimilarityScore } : {}) }
             : {}),
+          ...(endUserId ? { endUserId } : {}),
+          ...(sessionId ? { sessionId } : {}),
+          ...(tags ? { tags } : {}),
         };
 
         if (model.provider === 'openai-oauth') {
@@ -363,6 +372,9 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         ...(cachedModelId !== null
           ? { cacheHit: true as const, ...(cacheSimilarityScore !== null ? { cacheSimilarity: cacheSimilarityScore } : {}) }
           : {}),
+        ...(endUserId ? { endUserId } : {}),
+        ...(sessionId ? { sessionId } : {}),
+        ...(tags ? { tags } : {}),
       };
 
       if (model.provider === 'openai-oauth') {

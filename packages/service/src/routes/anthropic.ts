@@ -8,6 +8,7 @@ import type { TraceEntry } from '../routing/traceStore.js';
 import { llmMessages, BudgetExceededError } from '../llm/executor.js';
 import type { LLMCallContext } from '../llm/executor.js';
 import { forwardAnthropicOAuth } from './oauthForward.js';
+import { parseRoutingTags } from './requestEnrichment.js';
 
 export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/messages ────────────────────────────────────────────────────────
@@ -31,6 +32,12 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
     const emit = (entry: TraceEntry) => {
       appendTrace(traceId, [entry]);
     };
+
+    // Usage enrichment headers (#94, #95, #96)
+    const endUserId = (body as any).user as string | undefined || undefined;
+    const sessionId = (request.headers['x-routerly-session-id'] as string | undefined) || undefined;
+    const rawTags = request.headers['x-routerly-tags'] as string | undefined;
+    const tags = rawTags ? parseRoutingTags(rawTags) : undefined;
 
     // 1. Route request
     let routingResponse;
@@ -68,6 +75,9 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
         traceId,
         emit,
         log: request.log,
+        ...(endUserId ? { endUserId } : {}),
+        ...(sessionId ? { sessionId } : {}),
+        ...(tags ? { tags } : {}),
       };
 
       try {
