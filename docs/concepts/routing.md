@@ -32,6 +32,52 @@ So a model at position 0 gets `weight = N`, the one at position 1 gets `weight =
 
 ---
 
+## Agent Policies: Overriding Routing per Request
+
+You can define **agent policies** — named sets of preferred models — and apply them on a per-request basis using the `X-Routerly-Policy` request header. This lets you route specific requests outside the normal 10-policy pipeline without changing your global configuration.
+
+### How Agent Policies Work
+
+1. Define one or more agent policies on a project with a unique name, an ordered list of models, and optional cost and latency constraints.
+2. When a request arrives with the header `X-Routerly-Policy: my-policy`, Routerly looks up the policy by name.
+3. If found, the request is routed through the policy's model list (in order) using the standard fallback loop: try the first model, on failure try the next, etc.
+4. If not found, Routerly logs a warning and falls back to normal routing.
+5. Agent policy override takes precedence over the semantic response cache, ensuring the policy's model choice is respected.
+
+### Example
+
+Set up an agent policy called `code-expert`:
+
+```json
+{
+  "name": "code-expert",
+  "models": ["gpt-5", "gpt-5-mini"],
+  "maxCostUsd": 1.00
+}
+```
+
+Then send a request with the header:
+
+```bash
+curl https://localhost:3000/v1/chat/completions \
+  -H "Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN" \
+  -H "X-Routerly-Policy: code-expert" \
+  -d '{ ... }'
+```
+
+Routerly will try `gpt-5` first. If it fails or is unavailable, it falls back to `gpt-5-mini`. The normal 10-policy routing pipeline is bypassed.
+
+### Constraints
+
+Agent policies support two optional constraints:
+
+- `maxCostUsd` — maximum estimated cost per request in USD. Recorded on the usage record for cost attribution (enforcement during the request is recorded as a future enhancement).
+- `maxLatencyMs` — maximum latency threshold in milliseconds. Recorded on the usage record (in-flight abortion is not possible; this field is recorded as context).
+
+Both constraints are optional. If omitted, no limit is applied.
+
+---
+
 ## Available Policies
 
 ### `cheapest`

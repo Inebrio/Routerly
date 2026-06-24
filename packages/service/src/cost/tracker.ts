@@ -29,6 +29,8 @@ export interface TrackUsageParams {
   sessionId?: string;
   /** Tags from X-Routerly-Tags header (#95) */
   tags?: Record<string, string>;
+  /** Agent routing policy name from X-Routerly-Policy header (#78) */
+  agentPolicyName?: string;
 }
 
 /**
@@ -78,6 +80,7 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     ...(params.endUserId ? { endUserId: params.endUserId } : {}),
     ...(params.sessionId ? { sessionId: params.sessionId } : {}),
     ...(params.tags ? { tags: params.tags } : {}),
+    ...(params.agentPolicyName ? { agentPolicyName: params.agentPolicyName } : {}),
   };
 
   await appendUsageRecord(record);

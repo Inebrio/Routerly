@@ -13,6 +13,7 @@ import { getEmbeddingProvider } from '../embeddings/index.js';
 import type { EmbeddingProviderType } from '../embeddings/index.js';
 import { lookupCache, storeCache } from '../cache/semanticResponseCache.js';
 import { parseRoutingTags } from './requestEnrichment.js';
+import { AGENT_POLICY_HEADER, resolveAgentPolicy, agentPolicyCandidates } from '../routing/agentPolicy.js';
 
 function resolveEmbeddingUpstreamModelId(modelId: string, explicitUpstreamModelId?: string): string {
   if (explicitUpstreamModelId) return explicitUpstreamModelId;
@@ -130,6 +131,15 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     // Read models list once — used by cache embedding lookup and routing candidates
     const allModels = await readConfig('models');
 
+    // Per-agent routing policy override (#78): X-Routerly-Policy selects a named
+    // policy in the project config that overrides the routing decision.
+    const agentPolicyName = (request.headers[AGENT_POLICY_HEADER] as string | undefined) || undefined;
+    const agentPolicy = resolveAgentPolicy(project, agentPolicyName);
+    if (agentPolicyName && !agentPolicy) {
+      request.log.warn({ projectId: project.id, agentPolicyName }, 'agent-policy: unknown policy, falling back to routing');
+    }
+    const agentPolicyOverride = agentPolicy ? agentPolicyCandidates(agentPolicy, allModels) : null;
+
     // ── Semantic response cache ────────────────────────────────────────────
     const cachePolicy = (project.policies ?? []).find(
       (p: any) => p.type === 'llm' && p.enabled && p.config?.cache?.enabled,
@@ -237,7 +247,11 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       };
 
       let sortedCandidates: Array<{ model: string; weight: number }>;
-      if (cachedModelId) {
+      if (agentPolicyOverride) {
+        // Agent policy override (#78): use the policy's ordered models, bypass routing.
+        emit({ panel: 'router-response', message: 'agent-policy:override', details: { policy: agentPolicy!.name, models: agentPolicyOverride.map((c) => c.model) } });
+        sortedCandidates = [...agentPolicyOverride];
+      } else if (cachedModelId) {
         // Cache hit: skip routing, use the cached model directly
         sortedCandidates = [{ model: cachedModelId, weight: 1 }];
       } else {
@@ -279,6 +293,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           ...(endUserId ? { endUserId } : {}),
           ...(sessionId ? { sessionId } : {}),
           ...(tags ? { tags } : {}),
+          ...(agentPolicy ? { agentPolicyName: agentPolicy.name } : {}),
+          ...(agentPolicy?.maxCostUsd !== undefined ? { agentPolicyCostCapUsd: agentPolicy.maxCostUsd } : {}),
         };
 
         if (model.provider === 'openai-oauth') {
@@ -337,7 +353,11 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     };
 
     let sortedCandidates: Array<{ model: string; weight: number }>;
-    if (cachedModelId) {
+    if (agentPolicyOverride) {
+      // Agent policy override (#78): use the policy's ordered models, bypass routing.
+      emit({ panel: 'router-response', message: 'agent-policy:override', details: { policy: agentPolicy!.name, models: agentPolicyOverride.map((c) => c.model) } });
+      sortedCandidates = [...agentPolicyOverride];
+    } else if (cachedModelId) {
       // Cache hit: skip routing, use the cached model directly
       sortedCandidates = [{ model: cachedModelId, weight: 1 }];
     } else {
@@ -375,6 +395,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         ...(endUserId ? { endUserId } : {}),
         ...(sessionId ? { sessionId } : {}),
         ...(tags ? { tags } : {}),
+        ...(agentPolicy ? { agentPolicyName: agentPolicy.name } : {}),
+        ...(agentPolicy?.maxCostUsd !== undefined ? { agentPolicyCostCapUsd: agentPolicy.maxCostUsd } : {}),
       };
 
       if (model.provider === 'openai-oauth') {
