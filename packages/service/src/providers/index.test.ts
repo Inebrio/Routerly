@@ -57,8 +57,20 @@ describe('getProviderAdapter', () => {
     )
   })
 
+  it('returns an adapter for openai-web', () => {
+    const adapter = getProviderAdapter(makeModel('openai-web'))
+    expect(adapter).toBeDefined()
+    expect(typeof adapter.chatCompletion).toBe('function')
+  })
+
+  it('returns an adapter for anthropic-web', () => {
+    const adapter = getProviderAdapter(makeModel('anthropic-web'))
+    expect(adapter).toBeDefined()
+    expect(typeof adapter.chatCompletion).toBe('function')
+  })
+
   it('all standard adapters have required methods', () => {
-    for (const provider of ['openai', 'anthropic', 'gemini', 'ollama', 'custom']) {
+    for (const provider of ['openai', 'openai-web', 'anthropic', 'anthropic-web', 'gemini', 'ollama', 'custom']) {
       const adapter = getProviderAdapter(makeModel(provider))
       expect(typeof adapter.chatCompletion).toBe('function')
       expect(typeof adapter.streamCompletion).toBe('function')
