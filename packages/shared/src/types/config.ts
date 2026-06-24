@@ -502,4 +502,10 @@ export interface UsageRecord {
   cacheHit?: boolean;
   /** Cosine similarity score of the matched cache entry (0–1) */
   cacheSimilarity?: number;
+  /** End-user identifier from the OpenAI `user` field — for per-user cost attribution (#96) */
+  endUserId?: string;
+  /** Session identifier from X-Routerly-Session-Id header — groups related calls (#94) */
+  sessionId?: string;
+  /** Arbitrary key-value tags from X-Routerly-Tags header — for cost attribution (#95) */
+  tags?: Record<string, string>;
 }

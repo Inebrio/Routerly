@@ -53,6 +53,12 @@ export interface LLMCallContext {
   /** True when the routing decision was served from the semantic cache */
   cacheHit?: boolean;
   cacheSimilarity?: number;
+  /** End-user id from the OpenAI `user` field (#96) */
+  endUserId?: string;
+  /** Session id from X-Routerly-Session-Id header (#94) */
+  sessionId?: string;
+  /** Tags from X-Routerly-Tags header (#95) */
+  tags?: Record<string, string>;
 }
 
 /**
@@ -215,6 +221,9 @@ export async function llmChat(
       callType,
       ...(traceId !== undefined ? { traceId } : {}),
       ...(ctx.cacheHit ? { cacheHit: true, cacheSimilarity: ctx.cacheSimilarity } : {}),
+      ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
+      ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
+      ...(ctx.tags ? { tags: ctx.tags } : {}),
     }).catch(() => {});
 
     return response;
@@ -236,6 +245,9 @@ export async function llmChat(
       callType,
       ...(traceId !== undefined ? { traceId } : {}),
       ...(ctx.cacheHit ? { cacheHit: true, cacheSimilarity: ctx.cacheSimilarity } : {}),
+      ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
+      ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
+      ...(ctx.tags ? { tags: ctx.tags } : {}),
     }).catch(() => {});
 
     throw err;
@@ -429,6 +441,9 @@ export async function llmStream(
         callType,
         ...(traceId !== undefined ? { traceId } : {}),
         ...(ctx.cacheHit ? { cacheHit: true, cacheSimilarity: ctx.cacheSimilarity } : {}),
+        ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
+        ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
+        ...(ctx.tags ? { tags: ctx.tags } : {}),
       }).catch(() => {});
     }
   }
@@ -521,6 +536,9 @@ export async function llmMessages(
       outcome: 'success',
       callType,
       ...(traceId !== undefined ? { traceId } : {}),
+      ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
+      ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
+      ...(ctx.tags ? { tags: ctx.tags } : {}),
     }).catch(() => {});
 
     return response;
@@ -539,6 +557,9 @@ export async function llmMessages(
       errorMessage: msg,
       callType,
       ...(traceId !== undefined ? { traceId } : {}),
+      ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
+      ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
+      ...(ctx.tags ? { tags: ctx.tags } : {}),
     }).catch(() => {});
     throw err;
   }
