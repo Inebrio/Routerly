@@ -17,6 +17,7 @@ vi.mock('../update-checker.js', () => ({
   updateChecker: { getLastResult: vi.fn(() => null), check: vi.fn(), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))
 vi.mock('../telemetry.js', () => ({ pingTelemetry: vi.fn() }))
+vi.mock('../audit/logger.js', () => ({ logAudit: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('bcrypt', () => ({
   default: { hash: vi.fn(async (p: string) => `hashed:${p}`), compare: vi.fn() },
 }))
@@ -5433,5 +5434,78 @@ describe('GET /api/models/catalog', () => {
     expect(providers.has('anthropic')).toBe(true)
     expect(providers.has('gemini')).toBe(true)
     expect(providers.has('ollama')).toBe(true)
+  })
+})
+
+// ── GET /api/audit (issue-92) ─────────────────────────────────────────────────
+
+describe('GET /api/audit', () => {
+  const sampleEntries = [
+    { id: 'e1', timestamp: '2026-01-01T10:00:00.000Z', userId: 'admin-id', email: 'admin@example.com', endpoint: '/api/models', action: 'model:create', result: 'success' },
+    { id: 'e2', timestamp: '2026-01-02T10:00:00.000Z', userId: 'viewer-id', email: 'viewer@example.com', endpoint: '/api/auth/login', action: 'auth:login', result: 'success' },
+  ]
+
+  it('returns audit entries most recent first for users with audit:read', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'audit') return sampleEntries
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET', url: '/api/audit',
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as Array<{ id: string }>
+    expect(body[0]!.id).toBe('e2')
+    expect(body[1]!.id).toBe('e1')
+  })
+
+  it('returns 403 for roles without audit:read', async () => {
+    const noAuditRole = { id: 'restricted', name: 'Restricted', permissions: ['project:read'] }
+    const restrictedUser = { id: 'viewer-id', email: 'viewer@example.com', passwordHash: '$2b$12$hashed', roleId: 'restricted', projectIds: [] }
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [restrictedUser]
+      if (t === 'roles') return [noAuditRole]
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET', url: '/api/audit',
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('filters by userId query param', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'audit') return sampleEntries
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET', url: '/api/audit?userId=viewer-id',
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as Array<{ userId: string }>
+    expect(body).toHaveLength(1)
+    expect(body[0]!.userId).toBe('viewer-id')
   })
 })
