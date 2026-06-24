@@ -720,6 +720,47 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.status(204).send();
   });
 
+  // ── Playground presets (#99) ──────────────────────────────────────────────
+
+  fastify.get<{ Params: { id: string } }>('/api/projects/:id/playground-presets', async (req, reply) => {
+    if (!requirePerm(req, 'project:read', reply)) return;
+    const projects = await readConfig('projects');
+    const project = projects.find(p => p.id === req.params.id);
+    if (!project) return reply.status(404).send({ error: 'Project not found' });
+    return reply.send(project.playgroundPresets ?? []);
+  });
+
+  fastify.post<{
+    Params: { id: string };
+    Body: { name: string; systemPrompt: string; messages?: Array<{ role: 'user' | 'assistant'; content: string }> };
+  }>('/api/projects/:id/playground-presets', async (req, reply) => {
+    if (!requirePerm(req, 'project:write', reply)) return;
+    const { name, systemPrompt, messages } = req.body ?? {};
+    if (!name?.trim()) return reply.status(400).send({ error: 'name is required' });
+    if (systemPrompt === undefined) return reply.status(400).send({ error: 'systemPrompt is required' });
+    const projects = await readConfig('projects');
+    const index = projects.findIndex(p => p.id === req.params.id);
+    if (index === -1) return reply.status(404).send({ error: 'Project not found' });
+    const preset = { id: randomUUID(), name: name.trim(), systemPrompt, ...(messages ? { messages } : {}) };
+    const project = projects[index]!;
+    project.playgroundPresets = [...(project.playgroundPresets ?? []), preset];
+    await writeConfig('projects', projects);
+    return reply.status(201).send(preset);
+  });
+
+  fastify.delete<{ Params: { id: string; presetId: string } }>('/api/projects/:id/playground-presets/:presetId', async (req, reply) => {
+    if (!requirePerm(req, 'project:write', reply)) return;
+    const projects = await readConfig('projects');
+    const index = projects.findIndex(p => p.id === req.params.id);
+    if (index === -1) return reply.status(404).send({ error: 'Project not found' });
+    const project = projects[index]!;
+    const before = (project.playgroundPresets ?? []).length;
+    project.playgroundPresets = (project.playgroundPresets ?? []).filter(p => p.id !== req.params.presetId);
+    if (project.playgroundPresets.length === before) return reply.status(404).send({ error: 'Preset not found' });
+    await writeConfig('projects', projects);
+    return reply.status(204).send();
+  });
+
   // ══════════════════════════════════════════════════════════════════════════════
   // CURRENT USER (me)
   // ══════════════════════════════════════════════════════════════════════════════

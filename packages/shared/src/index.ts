@@ -13,6 +13,7 @@ export type {
   ModelConfig,
   ProjectModelRef,
   ProjectConfig,
+  PlaygroundPreset,
   ProjectToken,
   ProjectMember,
   ProjectRole,

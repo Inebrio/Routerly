@@ -500,3 +500,20 @@ export const getNotificationInbox = (opts: { limit?: number; unreadOnly?: boolea
 
 export const markNotificationsRead = (body: { ids?: string[]; all?: boolean }) =>
   request<{ updated: number }>('/notifications/inbox/read', { method: 'POST', body: JSON.stringify(body) });
+
+// ── Playground presets (#99) ──────────────────────────────────────────────
+export interface PlaygroundPreset {
+  id: string;
+  name: string;
+  systemPrompt: string;
+  messages?: Array<{ role: 'user' | 'assistant'; content: string }>;
+}
+
+export const getPlaygroundPresets = (projectId: string) =>
+  request<PlaygroundPreset[]>(`/projects/${projectId}/playground-presets`);
+
+export const createPlaygroundPreset = (projectId: string, data: { name: string; systemPrompt: string; messages?: Array<{ role: 'user' | 'assistant'; content: string }> }) =>
+  request<PlaygroundPreset>(`/projects/${projectId}/playground-presets`, { method: 'POST', body: JSON.stringify(data) });
+
+export const deletePlaygroundPreset = (projectId: string, presetId: string) =>
+  request<void>(`/projects/${projectId}/playground-presets/${presetId}`, { method: 'DELETE' });

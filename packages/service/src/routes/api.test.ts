@@ -5161,3 +5161,203 @@ describe('POST /api/notifications/inbox/read', () => {
     expect(res.statusCode).toBe(400)
   })
 })
+
+// ─── Playground presets (#99) ─────────────────────────────────────────────────
+
+describe('GET /api/projects/:id/playground-presets', () => {
+  it('returns empty array when no presets', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/projects/p1/playground-presets', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body)).toEqual([])
+  })
+
+  it('returns existing presets', async () => {
+    setupAdminAuth()
+    const preset = { id: 'preset-1', name: 'My Preset', systemPrompt: 'You are helpful.' }
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], playgroundPresets: [preset] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/projects/p1/playground-presets', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body)).toHaveLength(1)
+    expect(JSON.parse(res.body)[0].name).toBe('My Preset')
+  })
+
+  it('returns 404 for unknown project', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return []
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/projects/nope/playground-presets', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+})
+
+describe('POST /api/projects/:id/playground-presets', () => {
+  it('creates a new preset', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/projects/p1/playground-presets',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Helpful Bot', systemPrompt: 'You are a helpful assistant.' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const body = JSON.parse(res.body)
+    expect(body.id).toBeDefined()
+    expect(body.name).toBe('Helpful Bot')
+    expect(body.systemPrompt).toBe('You are a helpful assistant.')
+  })
+
+  it('creates a preset with seed messages', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/projects/p1/playground-presets',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        name: 'QA Preset',
+        systemPrompt: 'You are a QA assistant.',
+        messages: [{ role: 'user', content: 'Hello' }, { role: 'assistant', content: 'Hi!' }],
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    expect(JSON.parse(res.body).messages).toHaveLength(2)
+  })
+
+  it('returns 400 when name is missing', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/projects/p1/playground-presets',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ systemPrompt: 'Hello' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('returns 404 for unknown project', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return []
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/projects/nope/playground-presets',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'X', systemPrompt: 'Y' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+})
+
+describe('DELETE /api/projects/:id/playground-presets/:presetId', () => {
+  it('deletes a preset', async () => {
+    setupAdminAuth()
+    const preset = { id: 'preset-1', name: 'Test', systemPrompt: 'Test' }
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], playgroundPresets: [preset] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/projects/p1/playground-presets/preset-1', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(204)
+    const written = mockWriteConfig.mock.calls[0]![1] as any[]
+    expect(written[0].playgroundPresets).toHaveLength(0)
+  })
+
+  it('returns 404 for unknown preset', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], playgroundPresets: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/projects/p1/playground-presets/nope', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('returns 404 for unknown project', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return []
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/projects/nope/playground-presets/preset-1', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+})
