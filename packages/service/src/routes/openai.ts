@@ -14,6 +14,8 @@ import type { EmbeddingProviderType } from '../embeddings/index.js';
 import { lookupCache, storeCache } from '../cache/semanticResponseCache.js';
 import { parseRoutingTags } from './requestEnrichment.js';
 import { AGENT_POLICY_HEADER, resolveAgentPolicy, agentPolicyCandidates } from '../routing/agentPolicy.js';
+import { checkGuardrails } from '../middleware/guardrails.js';
+import { scrubMessages } from '../middleware/piiScrubber.js';
 
 function resolveEmbeddingUpstreamModelId(modelId: string, explicitUpstreamModelId?: string): string {
   if (explicitUpstreamModelId) return explicitUpstreamModelId;
@@ -127,6 +129,37 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     const endUserId = (body as any).user as string | undefined || undefined;
     const sessionId = (request.headers['x-routerly-session-id'] as string | undefined) || undefined;
     const tags = parseRoutingTags(request.headers['x-routerly-tags'] as string | undefined);
+
+    // ── Content guardrails (#77) ─────────────────────────────────────────────
+    // Checks input messages against the project blocklist + injection patterns.
+    // On 'block' we short-circuit with the fallback message; 'flag'/'log' record
+    // the rule on the usage record and continue.
+    let guardrailTriggered: string | undefined;
+    if (project.guardrails?.enabled) {
+      const hit = checkGuardrails(body.messages ?? [], project.guardrails);
+      if (hit) {
+        request.log.warn({ projectId: project.id, rule: hit.triggered, action: project.guardrails.action }, 'guardrail: triggered');
+        appendTrace(traceId, [{ panel: 'request', message: 'guardrail:triggered', details: { rule: hit.triggered, action: project.guardrails.action } }]);
+        if (project.guardrails.action === 'block') {
+          const fallback = project.guardrails.fallbackMessage ?? 'This request was blocked by content guardrails.';
+          return reply.code(400).send({ error: { message: fallback, type: 'invalid_request_error', code: 'guardrail_blocked' } });
+        }
+        guardrailTriggered = hit.triggered;
+      }
+    }
+
+    // ── PII scrubbing (#76) ──────────────────────────────────────────────────
+    // Redact PII entities from message content before forwarding to the provider.
+    let piiRedacted: string[] | undefined;
+    if (project.pii?.enabled && Array.isArray(body.messages)) {
+      const { messages, redacted } = scrubMessages(body.messages, project.pii);
+      if (redacted.length > 0) {
+        body.messages = messages;
+        piiRedacted = redacted;
+        request.log.info({ projectId: project.id, redacted }, 'pii: scrubbed');
+        appendTrace(traceId, [{ panel: 'request', message: 'pii:scrubbed', details: { entities: redacted } }]);
+      }
+    }
 
     // Read models list once — used by cache embedding lookup and routing candidates
     const allModels = await readConfig('models');
@@ -397,6 +430,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         ...(tags ? { tags } : {}),
         ...(agentPolicy ? { agentPolicyName: agentPolicy.name } : {}),
         ...(agentPolicy?.maxCostUsd !== undefined ? { agentPolicyCostCapUsd: agentPolicy.maxCostUsd } : {}),
+        ...(guardrailTriggered ? { guardrailTriggered } : {}),
+        ...(piiRedacted ? { piiRedacted } : {}),
       };
 
       if (model.provider === 'openai-oauth') {

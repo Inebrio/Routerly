@@ -9,7 +9,7 @@ import { pingTelemetry } from '../telemetry.js';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../config/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jwt.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, AgentPolicy, SpendGroup } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, AgentPolicy, SpendGroup, GuardrailConfig, PiiConfig } from '@routerly/shared';
 import { z } from 'zod';
 import { getGroupUsageSnapshot } from '../cost/budget.js';
 import { getTrace } from '../routing/traceStore.js';
@@ -99,6 +99,19 @@ const limitSchema = z.object({
   rollingAmount: z.number().positive().optional(),
   rollingUnit: z.enum(['second', 'minute', 'hour', 'day', 'week', 'month']).optional(),
   value: z.number().nonnegative(),
+});
+
+const guardrailConfigSchema = z.object({
+  enabled: z.boolean(),
+  inputBlocklist: z.array(z.string()).optional(),
+  detectPromptInjection: z.boolean().optional(),
+  action: z.enum(['block', 'flag', 'log']),
+  fallbackMessage: z.string().optional(),
+});
+
+const piiConfigSchema = z.object({
+  enabled: z.boolean(),
+  entities: z.array(z.enum(['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'])).optional(),
 });
 
 const spendGroupBodySchema = z.object({
@@ -452,6 +465,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       policies?: RoutingPolicy[];
       models?: { modelId: string; prompt?: string }[];
       timeoutMs?: number;
+      guardrails?: GuardrailConfig;
+      pii?: PiiConfig;
     }
   }>('/api/projects', async (req, reply) => {
     if (!requirePerm(req, 'project:write', reply)) return;
@@ -461,6 +476,19 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (projects.some(p => p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
       return reply.status(409).send({ error: `A project named "${trimmedName}" already exists` });
     }
+    let guardrails: GuardrailConfig | undefined;
+    if (req.body.guardrails !== undefined) {
+      const parsed = guardrailConfigSchema.safeParse(req.body.guardrails);
+      if (!parsed.success) return reply.status(400).send({ error: 'Invalid guardrails config', details: parsed.error.issues });
+      guardrails = parsed.data as GuardrailConfig;
+    }
+    let pii: PiiConfig | undefined;
+    if (req.body.pii !== undefined) {
+      const parsed = piiConfigSchema.safeParse(req.body.pii);
+      if (!parsed.success) return reply.status(400).send({ error: 'Invalid pii config', details: parsed.error.issues });
+      pii = parsed.data as PiiConfig;
+    }
+
     const rawToken = `sk-rt-${randomBytes(32).toString('hex')}`;
     const userId = req.dashUser!.id;
 
@@ -483,6 +511,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...(m.prompt ? { prompt: m.prompt } : {}),
       })),
       timeoutMs: req.body.timeoutMs ?? 30000,
+      ...(guardrails ? { guardrails } : {}),
+      ...(pii ? { pii } : {}),
     };
     projects.push(project);
     await writeConfig('projects', projects);
@@ -499,6 +529,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       policies?: RoutingPolicy[];
       models: { modelId: string; prompt?: string }[];
       timeoutMs?: number;
+      guardrails?: GuardrailConfig | null;
+      pii?: PiiConfig | null;
     };
   }>('/api/projects/:id', async (req, reply) => {
     if (!requirePerm(req, 'project:write', reply)) return;
@@ -510,7 +542,29 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (projects.some(p => p.id !== req.params.id && p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
       return reply.status(409).send({ error: `A project named "${trimmedName}" already exists` });
     }
-    const existing = projects[index]!;
+    // Guardrails/PII: undefined = leave unchanged, null = clear, object = validate & set.
+    let guardrailsUpdate: { guardrails?: GuardrailConfig } = {};
+    if (req.body.guardrails === null) {
+      guardrailsUpdate = {};
+    } else if (req.body.guardrails !== undefined) {
+      const parsed = guardrailConfigSchema.safeParse(req.body.guardrails);
+      if (!parsed.success) return reply.status(400).send({ error: 'Invalid guardrails config', details: parsed.error.issues });
+      guardrailsUpdate = { guardrails: parsed.data as GuardrailConfig };
+    } else if (projects[index]!.guardrails) {
+      guardrailsUpdate = { guardrails: projects[index]!.guardrails };
+    }
+    let piiUpdate: { pii?: PiiConfig } = {};
+    if (req.body.pii === null) {
+      piiUpdate = {};
+    } else if (req.body.pii !== undefined) {
+      const parsed = piiConfigSchema.safeParse(req.body.pii);
+      if (!parsed.success) return reply.status(400).send({ error: 'Invalid pii config', details: parsed.error.issues });
+      piiUpdate = { pii: parsed.data as PiiConfig };
+    } else if (projects[index]!.pii) {
+      piiUpdate = { pii: projects[index]!.pii };
+    }
+
+    const { guardrails: _g, pii: _p, ...existing } = projects[index]!;
     const updated: ProjectConfig = {
       ...existing,
       name: trimmedName,
@@ -523,6 +577,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...(m.prompt ? { prompt: m.prompt } : {}),
       })),
       timeoutMs: req.body.timeoutMs ?? existing.timeoutMs ?? 30000,
+      ...guardrailsUpdate,
+      ...piiUpdate,
     };
     projects[index] = updated;
     await writeConfig('projects', projects);
