@@ -1,6 +1,6 @@
 // ─── Config types ────────────────────────────────────────────────────────────
 
-export type Provider = 'openai' | 'anthropic' | 'anthropic-oauth' | 'openai-oauth' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom' | 'openai-web' | 'anthropic-web' | 'deepseek' | 'groq' | 'together' | 'perplexity';
+export type Provider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom' | 'openai-web' | 'anthropic-web' | 'deepseek' | 'groq' | 'together' | 'perplexity';
 
 export interface PricingTier {
   /** What dimension is being measured, e.g. "context_tokens" */
@@ -121,13 +121,6 @@ export interface ModelConfig {
   capabilities?: ModelCapabilities;
   /** Request timeout in milliseconds (default: 60000) */
   timeout?: number;
-  /**
-   * Provider-native prompt caching mode (#97).
-   * - "auto": inject cache_control at optimal breakpoint (Anthropic only)
-   * - "passthrough": forward client cache_control as-is (default)
-   * - "disabled": strip all cache_control markers before forwarding
-   */
-  promptCaching?: 'auto' | 'passthrough' | 'disabled';
 }
 
 export interface ProjectModelRef {
@@ -234,46 +227,6 @@ export interface IntentClassification {
   status: 'confident' | 'ambiguous' | 'unknown';
 }
 
-/**
- * A named routing policy attachable to a specific agent/request via the
- * `X-Routerly-Policy` header (#78). When present, it overrides the routing
- * decision: the request is sent to `models` in the given order (filtered to
- * models that still exist), with the standard fallback loop.
- */
-export interface AgentPolicy {
-  /** Unique policy name, referenced by the X-Routerly-Policy header */
-  name: string;
-  /** Ordered preferred model IDs — tried first to last */
-  models: string[];
-  /** Max cost per request in USD (recorded on the usage record) */
-  maxCostUsd?: number;
-  /** Max latency threshold in ms (recorded on the usage record when exceeded) */
-  maxLatencyMs?: number;
-}
-
-/** Content guardrail configuration for a project (#77). */
-export interface GuardrailConfig {
-  enabled: boolean;
-  /** Regex patterns blocked/flagged on input message content */
-  inputBlocklist?: string[];
-  /** Detect common prompt-injection patterns (default true when enabled) */
-  detectPromptInjection?: boolean;
-  /** What to do when a rule triggers */
-  action: 'block' | 'flag' | 'log';
-  /** Message returned to the client when action='block' */
-  fallbackMessage?: string;
-}
-
-/** PII entity types detected and scrubbed before forwarding (#76). */
-export type PiiEntity = 'EMAIL' | 'PHONE' | 'CREDIT_CARD' | 'SSN' | 'IBAN';
-
-/** PII detection and scrubbing configuration for a project (#76). */
-export interface PiiConfig {
-  enabled: boolean;
-  /** Entity types to scrub. Defaults to all when absent. */
-  entities?: PiiEntity[];
-}
-
 export type ProjectRole = 'viewer' | 'editor' | 'admin';
 
 export interface ProjectMember {
@@ -302,27 +255,6 @@ export interface ProjectToken {
   models?: TokenModelRef[];
   /** Optional labels/tags to identify this token's usage */
   labels?: string[];
-  /** ID of the SpendGroup this token belongs to (#82) */
-  spendGroupId?: string;
-}
-
-/** A saved prompt preset for the playground (#99). */
-export interface PlaygroundPreset {
-  id: string;
-  name: string;
-  systemPrompt: string;
-  messages?: Array<{ role: 'user' | 'assistant'; content: string }>;
-}
-
-/** Semantic response cache config stored directly on a project (no embedding model required, uses TF bag-of-words). */
-export interface ProjectSemanticCacheConfig {
-  enabled: boolean;
-  /** Minimum cosine similarity for a cache hit (0-1, default 0.95) */
-  threshold?: number;
-  /** How long a cached response is valid in ms (default 3600000 = 1 h) */
-  ttlMs?: number;
-  /** Maximum number of cached responses per project (default 500) */
-  maxEntries?: number;
 }
 
 export interface ProjectConfig {
@@ -344,20 +276,6 @@ export interface ProjectConfig {
   models: ProjectModelRef[];
   /** Timeout in ms for each individual model attempt */
   timeoutMs?: number;
-  /** Named per-agent routing policies, selectable via the X-Routerly-Policy header (#78) */
-  agentPolicies?: AgentPolicy[];
-  /** ID of the SpendGroup this project belongs to (#82) */
-  spendGroupId?: string;
-  /** Content guardrails: input blocklist + prompt-injection detection (#77) */
-  guardrails?: GuardrailConfig;
-  /** PII detection and scrubbing before requests reach the model (#76) */
-  pii?: PiiConfig;
-  /** Per-project notification override: channel IDs to dispatch this project's events to (#91) */
-  notifications?: { channels: string[] };
-  /** Named saved prompts for the playground (#99) */
-  playgroundPresets?: PlaygroundPreset[];
-  /** Semantic response cache (TF bag-of-words similarity, non-streaming only) */
-  semanticCache?: ProjectSemanticCacheConfig;
 }
 
 export interface UserConfig {
@@ -369,6 +287,12 @@ export interface UserConfig {
   projectIds: string[];
   /** SHA-256 hash of the CLI refresh token. Absent means no refresh token issued. */
   refreshTokenHash?: string;
+  /** Base32-encoded TOTP secret; present only after 2FA setup is initiated. */
+  totpSecret?: string;
+  /** True once the user has confirmed their first TOTP code. */
+  totpEnabled?: boolean;
+  /** SHA-256 hashes of one-time backup codes (shown in plaintext only once). */
+  backupCodes?: string[];
 }
 
 export interface RoleConfig {
@@ -395,25 +319,6 @@ export interface TelemetryConfig {
   lastPingedVersion?: string;
 }
 
-/**
- * A spend group: an org- or team-level budget container in the hierarchical
- * spend-limit cascade (org → team → API key). Projects and/or tokens belong to
- * a group; a group may nest under a parent group. Child limits cannot exceed
- * parent limits (validated on write).
- */
-export interface SpendGroup {
-  id: string;
-  name: string;
-  /** Usage limits applied to all usage attributed to this group */
-  limits: Limit[];
-  /** Project IDs that belong to this group */
-  projectIds?: string[];
-  /** Token IDs that belong to this group */
-  tokenIds?: string[];
-  /** Parent group ID, for nesting (org → team) */
-  parentGroupId?: string;
-}
-
 export interface Settings {
   port: number;
   host: string;
@@ -433,12 +338,8 @@ export interface Settings {
   notifications?: NotificationsConfig;
   /** Distribution channel for updates: 'latest' | 'stable' | 'develop' | vX.Y.Z tag */
   channel?: string;
-  /** Whether to expose the Prometheus-compatible /metrics endpoint (default true) */
-  metricsEnabled?: boolean;
   /** Anonymous install metrics opt-in. Absent means the user has not been asked yet. */
   telemetry?: TelemetryConfig;
-  /** Org/team spend groups for the hierarchical spend-limit cascade (#82) */
-  spendGroups?: SpendGroup[];
 }
 
 // ─── Update info ─────────────────────────────────────────────────────────────
@@ -469,9 +370,8 @@ export interface UpdateInfo {
 
 // ─── Notification config types ────────────────────────────────────────────────
 
-export type EmailProvider    = 'smtp' | 'ses' | 'sendgrid' | 'azure' | 'google';
-export type NativeProvider   = 'slack' | 'teams' | 'pagerduty' | 'discord';
-export type ChannelProvider  = EmailProvider | 'webhook' | NativeProvider;
+export type EmailProvider   = 'smtp' | 'ses' | 'sendgrid' | 'azure' | 'google';
+export type ChannelProvider = EmailProvider | 'webhook';
 
 interface ChannelBase {
   /** Unique channel identifier generated client-side */
@@ -528,66 +428,17 @@ export interface WebhookChannelConfig extends ChannelBase {
   secret?: string;
 }
 
-export interface SlackChannelConfig extends ChannelBase {
-  provider: 'slack';
-  botToken: string;
-  channelId: string;
-}
-
-export interface TeamsChannelConfig extends ChannelBase {
-  provider: 'teams';
-  webhookUrl: string;
-}
-
-export interface PagerDutyChannelConfig extends ChannelBase {
-  provider: 'pagerduty';
-  integrationKey: string;
-}
-
-export interface DiscordChannelConfig extends ChannelBase {
-  provider: 'discord';
-  webhookUrl: string;
-}
-
 export type NotificationChannel =
   | SmtpChannelConfig
   | SesChannelConfig
   | SendGridChannelConfig
   | AzureChannelConfig
   | GoogleChannelConfig
-  | WebhookChannelConfig
-  | SlackChannelConfig
-  | TeamsChannelConfig
-  | PagerDutyChannelConfig
-  | DiscordChannelConfig;
-
-/** Maps event name patterns (exact or glob like `budget.*`) to channel IDs (#90) */
-export interface NotificationRule {
-  events: string[];
-  channels: string[];
-}
+  | WebhookChannelConfig;
 
 /** Top-level notifications configuration */
 export interface NotificationsConfig {
   channels?: NotificationChannel[];
-  /** Event-pattern → channel routing rules (#90) */
-  notificationRules?: NotificationRule[];
-  /** Per-event-type minimum interval between dispatches, e.g. { "provider.degraded": "15m" } (#90) */
-  cooldowns?: Record<string, string>;
-}
-
-/** Severity of a system notification event (#89) */
-export type NotificationSeverity = 'info' | 'warning' | 'critical';
-
-/** A persisted in-app inbox notification (#91) */
-export interface NotificationInboxItem {
-  id: string;
-  event: string;
-  severity: NotificationSeverity;
-  timestamp: string; // ISO 8601
-  details: Record<string, unknown>;
-  /** User IDs that have marked this item as read */
-  readBy: string[];
 }
 
 // ── Backward-compat aliases (used by service code) ────────────────────────────
@@ -657,16 +508,4 @@ export interface UsageRecord {
   cacheHit?: boolean;
   /** Cosine similarity score of the matched cache entry (0–1) */
   cacheSimilarity?: number;
-  /** End-user identifier from the OpenAI `user` field — for per-user cost attribution (#96) */
-  endUserId?: string;
-  /** Session identifier from X-Routerly-Session-Id header — groups related calls (#94) */
-  sessionId?: string;
-  /** Arbitrary key-value tags from X-Routerly-Tags header — for cost attribution (#95) */
-  tags?: Record<string, string>;
-  /** Name of the agent routing policy applied to this request via X-Routerly-Policy (#78) */
-  agentPolicyName?: string;
-  /** Name of the guardrail rule that triggered on this request, if any (#77) */
-  guardrailTriggered?: string;
-  /** PII entity types redacted from this request before forwarding (#76) */
-  piiRedacted?: string[];
 }
