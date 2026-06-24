@@ -1373,6 +1373,57 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send(leaderboard);
   });
 
+  // ─── GET /api/notifications/channels ─────────────────────────────────────────
+  fastify.get('/api/notifications/channels', async (req, reply) => {
+    if (!requirePerm(req, 'user:write', reply)) return;
+    const settings = await readConfig('settings');
+    return reply.send(settings.notifications?.channels ?? []);
+  });
+
+  // ─── POST /api/notifications/channels ────────────────────────────────────────
+  fastify.post<{ Body: Record<string, unknown> }>('/api/notifications/channels', async (req, reply) => {
+    if (!requirePerm(req, 'user:write', reply)) return;
+    const channel = req.body;
+    if (!channel || typeof channel !== 'object' || !channel['provider']) {
+      return reply.status(400).send({ error: 'channel.provider is required' });
+    }
+    if (!channel['id']) channel['id'] = randomUUID();
+    const settings  = await readConfig('settings');
+    const channels  = settings.notifications?.channels ?? [];
+    const updated   = { ...settings, notifications: { channels: [...channels, channel] } };
+    await writeConfig('settings', updated as Settings);
+    return reply.status(201).send(channel);
+  });
+
+  // ─── DELETE /api/notifications/channels/:id ──────────────────────────────────
+  fastify.delete<{ Params: { id: string } }>('/api/notifications/channels/:id', async (req, reply) => {
+    if (!requirePerm(req, 'user:write', reply)) return;
+    const settings = await readConfig('settings');
+    const channels = settings.notifications?.channels ?? [];
+    const filtered = channels.filter(ch => (ch as unknown as { id: string }).id !== req.params.id);
+    if (filtered.length === channels.length) {
+      return reply.status(404).send({ error: `Channel "${req.params.id}" not found` });
+    }
+    await writeConfig('settings', { ...settings, notifications: { channels: filtered } });
+    return reply.status(204).send();
+  });
+
+  // ─── POST /api/notifications/channels/:id/test ───────────────────────────────
+  fastify.post<{ Params: { id: string }; Body: { to?: string } }>('/api/notifications/channels/:id/test', async (req, reply) => {
+    if (!requirePerm(req, 'user:write', reply)) return;
+    const settings = await readConfig('settings');
+    const channels = ((settings.notifications?.channels ?? []) as unknown) as Array<{ id: string; provider: string; [k: string]: unknown }>;
+    const channel  = channels.find(ch => ch.id === req.params.id);
+    if (!channel) return reply.status(404).send({ error: `Channel "${req.params.id}" not found` });
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await sendTestNotification(channel as any, req.body?.to ?? '');
+      return reply.send(result);
+    } catch (e) {
+      return reply.send({ ok: false, message: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
   // ─── GET /api/traces/:id ─────────────────────────────────────────────────────
   fastify.get<{ Params: { id: string } }>('/api/traces/:id', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;

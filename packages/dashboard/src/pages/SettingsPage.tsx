@@ -242,6 +242,10 @@ const CHANNEL_PROVIDERS: Array<{ key: EProvider; label: string; description: str
   { key: 'azure',     label: 'Azure Communication', description: 'Azure Communication Services' },
   { key: 'google',    label: 'Google / Gmail',       description: 'Gmail via OAuth2' },
   { key: 'webhook',   label: 'Webhook',             description: 'HTTP webhook callback' },
+  { key: 'slack',     label: 'Slack',               description: 'Slack Bot API' },
+  { key: 'teams',     label: 'Microsoft Teams',     description: 'Teams Incoming Webhook' },
+  { key: 'pagerduty', label: 'PagerDuty',           description: 'PagerDuty Events API v2' },
+  { key: 'discord',   label: 'Discord',             description: 'Discord Webhook' },
 ];
 
 function migrateNotifications(raw: unknown): import('../api').NotificationsConfig | undefined {
@@ -323,12 +327,16 @@ export function SettingsNotificationsTab() {
     setAddOpen(false);
     const id = nextId();
     const defaults: Record<EProvider, EChannel> = {
-      smtp:     { id, provider: 'smtp',     fromAddress: '', host: '', port: 587, secure: false },
-      ses:      { id, provider: 'ses',      fromAddress: '', region: '' },
-      sendgrid: { id, provider: 'sendgrid', fromAddress: '', apiKey: '' },
-      azure:    { id, provider: 'azure',    fromAddress: '', connectionString: '' },
-      google:   { id, provider: 'google',   fromAddress: '', clientId: '', clientSecret: '', refreshToken: '' },
-      webhook:  { id, provider: 'webhook',  url: '' },
+      smtp:      { id, provider: 'smtp',      fromAddress: '', host: '', port: 587, secure: false },
+      ses:       { id, provider: 'ses',       fromAddress: '', region: '' },
+      sendgrid:  { id, provider: 'sendgrid',  fromAddress: '', apiKey: '' },
+      azure:     { id, provider: 'azure',     fromAddress: '', connectionString: '' },
+      google:    { id, provider: 'google',    fromAddress: '', clientId: '', clientSecret: '', refreshToken: '' },
+      webhook:   { id, provider: 'webhook',   url: '' },
+      slack:     { id, provider: 'slack',     botToken: '', channelId: '' },
+      teams:     { id, provider: 'teams',     webhookUrl: '' },
+      pagerduty: { id, provider: 'pagerduty', integrationKey: '' },
+      discord:   { id, provider: 'discord',   webhookUrl: '' },
     };
     setForm(f => ({ ...f, notifications: { channels: [...(f.notifications?.channels ?? []), defaults[provider]] } }));
     setCollapsed(c => ({ ...c, [id]: false }));
@@ -391,26 +399,27 @@ export function SettingsNotificationsTab() {
 
   function testRow(ch: EChannel) {
     const st = testStatus[ch.id];
-    const isWebhook = ch.provider === 'webhook';
+    // native providers (slack/teams/pagerduty/discord) and webhook don't need an email recipient
+    const noRecipient = ch.provider === 'webhook' || ch.provider === 'slack' || ch.provider === 'teams' || ch.provider === 'pagerduty' || ch.provider === 'discord';
     return (
       <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border)', background: 'var(--bg-elevated)', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-          {isWebhook ? 'Ping' : 'Send test'}
+          Send test
         </span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {!isWebhook && (
+          {!noRecipient && (
             <input type="email" className="form-input" style={{ flex: 1, margin: 0 }}
               placeholder="recipient@example.com"
               value={testTo[ch.id] ?? ''}
               onChange={e => setTestTo(t => ({ ...t, [ch.id]: e.target.value }))} />
           )}
           <button type="button" className="btn btn-secondary"
-            disabled={st?.loading || (!isWebhook && !testTo[ch.id]?.trim())}
+            disabled={st?.loading || (!noRecipient && !testTo[ch.id]?.trim())}
             onClick={() => sendTest(ch.id, ch.provider)}
             style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
             {st?.loading
               ? <><div className="spinner" style={{ width: 12, height: 12 }} /> Sending…</>
-              : isWebhook ? 'Send Ping' : 'Send Test'}
+              : 'Send Test'}
           </button>
         </div>
         {st && !st.loading && (
@@ -570,6 +579,36 @@ export function SettingsNotificationsTab() {
           </div>
         </>
       );
+      case 'slack': return (
+        <>
+          <div className="form-group">
+            <label className="form-label">Bot Token</label>
+            <input className="form-input" type="password" value={ch.botToken} onChange={e => uf(ch.id, 'botToken', e.target.value)} placeholder="xoxb-…" required />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Channel ID</label>
+            <input className="form-input" value={ch.channelId} onChange={e => uf(ch.id, 'channelId', e.target.value)} placeholder="C1234567890" required />
+          </div>
+        </>
+      );
+      case 'teams': return (
+        <div className="form-group">
+          <label className="form-label">Webhook URL</label>
+          <input className="form-input" type="url" value={ch.webhookUrl} onChange={e => uf(ch.id, 'webhookUrl', e.target.value)} placeholder="https://outlook.office.com/webhook/…" required />
+        </div>
+      );
+      case 'pagerduty': return (
+        <div className="form-group">
+          <label className="form-label">Integration Key</label>
+          <input className="form-input" type="password" value={ch.integrationKey} onChange={e => uf(ch.id, 'integrationKey', e.target.value)} placeholder="32-character routing key" required />
+        </div>
+      );
+      case 'discord': return (
+        <div className="form-group">
+          <label className="form-label">Webhook URL</label>
+          <input className="form-input" type="url" value={ch.webhookUrl} onChange={e => uf(ch.id, 'webhookUrl', e.target.value)} placeholder="https://discord.com/api/webhooks/…" required />
+        </div>
+      );
     }
   }
 
@@ -591,7 +630,7 @@ export function SettingsNotificationsTab() {
         {channels.map(ch => {
           const isCollapsed = collapsed[ch.id] ?? false;
           const meta = CHANNEL_PROVIDERS.find(p => p.key === ch.provider);
-          const isWebhook = ch.provider === 'webhook';
+          const isNonEmail = ch.provider === 'webhook' || ch.provider === 'slack' || ch.provider === 'teams' || ch.provider === 'pagerduty' || ch.provider === 'discord';
           return (
             <div key={ch.id} style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
               <div style={cardHeaderStyle}>
@@ -601,7 +640,7 @@ export function SettingsNotificationsTab() {
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 2, display: 'flex', flexShrink: 0 }}>
                     {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                   </button>
-                  {isWebhook
+                  {isNonEmail
                     ? <Globe size={14} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
                     : <Mail  size={14} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />}
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', flexShrink: 0 }}>{meta?.label}</span>

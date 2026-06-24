@@ -8,6 +8,10 @@ import type {
   WebhookChannelConfig,
   NotificationChannel,
 } from '@routerly/shared';
+import { sendSlack }     from './channels/slack.js';
+import { sendTeams }     from './channels/teams.js';
+import { sendPagerDuty } from './channels/pagerduty.js';
+import { sendDiscord }   from './channels/discord.js';
 
 interface SendResult {
   ok: boolean;
@@ -226,19 +230,34 @@ async function sendWebhook(cfg: WebhookChannelConfig, content: MessageContent = 
   return { ok: true, message: `Webhook ping OK — server responded HTTP ${res.status}.` };
 }
 
+const TEST_NATIVE_PAYLOAD = {
+  event:     'test',
+  severity:  'info' as const,
+  timestamp: new Date().toISOString(),
+  details:   { source: 'Routerly', message: 'Test notification' },
+};
+
 // ── Public dispatcher ──────────────────────────────────────────────────────────────
 export async function sendTestNotification(
   channel: NotificationChannel,
   to: string,
 ): Promise<SendResult> {
   switch (channel.provider) {
-    case 'smtp':     return sendSmtp(channel, to);
-    case 'ses':      return sendSes(channel, to);
-    case 'sendgrid': return sendSendGrid(channel, to);
-    case 'azure':    return sendAzure(channel, to);
-    case 'google':   return sendGoogle(channel, to);
-    case 'webhook':  return sendWebhook(channel);
-    default:         throw new Error(`Unknown provider: ${String((channel as { provider: string }).provider)}`);
+    case 'smtp':      return sendSmtp(channel, to);
+    case 'ses':       return sendSes(channel, to);
+    case 'sendgrid':  return sendSendGrid(channel, to);
+    case 'azure':     return sendAzure(channel, to);
+    case 'google':    return sendGoogle(channel, to);
+    case 'webhook':   return sendWebhook(channel);
+    case 'slack':     await sendSlack(channel, TEST_NATIVE_PAYLOAD);
+                      return { ok: true, message: 'Test message sent via Slack.' };
+    case 'teams':     await sendTeams(channel, TEST_NATIVE_PAYLOAD);
+                      return { ok: true, message: 'Test message sent via Microsoft Teams.' };
+    case 'pagerduty': await sendPagerDuty(channel, TEST_NATIVE_PAYLOAD);
+                      return { ok: true, message: 'Test event triggered via PagerDuty.' };
+    case 'discord':   await sendDiscord(channel, TEST_NATIVE_PAYLOAD);
+                      return { ok: true, message: 'Test message sent via Discord.' };
+    default:          throw new Error(`Unknown provider: ${String((channel as { provider: string }).provider)}`);
   }
 }
 
