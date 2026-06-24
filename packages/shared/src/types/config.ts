@@ -364,8 +364,9 @@ export interface UpdateInfo {
 
 // ─── Notification config types ────────────────────────────────────────────────
 
-export type EmailProvider   = 'smtp' | 'ses' | 'sendgrid' | 'azure' | 'google';
-export type ChannelProvider = EmailProvider | 'webhook';
+export type EmailProvider    = 'smtp' | 'ses' | 'sendgrid' | 'azure' | 'google';
+export type NativeProvider   = 'slack' | 'teams' | 'pagerduty' | 'discord';
+export type ChannelProvider  = EmailProvider | 'webhook' | NativeProvider;
 
 interface ChannelBase {
   /** Unique channel identifier generated client-side */
@@ -422,13 +423,38 @@ export interface WebhookChannelConfig extends ChannelBase {
   secret?: string;
 }
 
+export interface SlackChannelConfig extends ChannelBase {
+  provider: 'slack';
+  botToken: string;
+  channelId: string;
+}
+
+export interface TeamsChannelConfig extends ChannelBase {
+  provider: 'teams';
+  webhookUrl: string;
+}
+
+export interface PagerDutyChannelConfig extends ChannelBase {
+  provider: 'pagerduty';
+  integrationKey: string;
+}
+
+export interface DiscordChannelConfig extends ChannelBase {
+  provider: 'discord';
+  webhookUrl: string;
+}
+
 export type NotificationChannel =
   | SmtpChannelConfig
   | SesChannelConfig
   | SendGridChannelConfig
   | AzureChannelConfig
   | GoogleChannelConfig
-  | WebhookChannelConfig;
+  | WebhookChannelConfig
+  | SlackChannelConfig
+  | TeamsChannelConfig
+  | PagerDutyChannelConfig
+  | DiscordChannelConfig;
 
 /** Top-level notifications configuration */
 export interface NotificationsConfig {

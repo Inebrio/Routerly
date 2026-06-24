@@ -334,18 +334,23 @@ export const getUsageRecord = (id: string) =>
 
 // ── Settings ──────────────────────────────────────────────────────────────
 export type EmailProvider   = 'smtp' | 'ses' | 'sendgrid' | 'azure' | 'google';
-export type ChannelProvider = EmailProvider | 'webhook';
+export type ChannelProvider = EmailProvider | 'webhook' | 'slack' | 'teams' | 'pagerduty' | 'discord';
 
-export interface SmtpChannelConfig   { id: string; name?: string; provider: 'smtp';      fromAddress: string; fromName?: string; host: string; port: number; secure: boolean; username?: string; password?: string; }
-export interface SesChannelConfig    { id: string; name?: string; provider: 'ses';       fromAddress: string; fromName?: string; region: string; accessKeyId?: string; secretAccessKey?: string; }
-export interface SendGridChannelConfig { id: string; name?: string; provider: 'sendgrid'; fromAddress: string; fromName?: string; apiKey: string; }
-export interface AzureChannelConfig  { id: string; name?: string; provider: 'azure';     fromAddress: string; fromName?: string; connectionString: string; }
-export interface GoogleChannelConfig { id: string; name?: string; provider: 'google';    fromAddress: string; fromName?: string; clientId: string; clientSecret: string; refreshToken: string; }
-export interface WebhookChannelConfig { id: string; name?: string; provider: 'webhook'; url: string; method?: 'POST' | 'GET'; secret?: string; }
+export interface SmtpChannelConfig     { id: string; name?: string; provider: 'smtp';      fromAddress: string; fromName?: string; host: string; port: number; secure: boolean; username?: string; password?: string; }
+export interface SesChannelConfig      { id: string; name?: string; provider: 'ses';       fromAddress: string; fromName?: string; region: string; accessKeyId?: string; secretAccessKey?: string; }
+export interface SendGridChannelConfig { id: string; name?: string; provider: 'sendgrid';  fromAddress: string; fromName?: string; apiKey: string; }
+export interface AzureChannelConfig    { id: string; name?: string; provider: 'azure';     fromAddress: string; fromName?: string; connectionString: string; }
+export interface GoogleChannelConfig   { id: string; name?: string; provider: 'google';    fromAddress: string; fromName?: string; clientId: string; clientSecret: string; refreshToken: string; }
+export interface WebhookChannelConfig  { id: string; name?: string; provider: 'webhook';   url: string; method?: 'POST' | 'GET'; secret?: string; }
+export interface SlackChannelConfig    { id: string; name?: string; provider: 'slack';     botToken: string; channelId: string; }
+export interface TeamsChannelConfig    { id: string; name?: string; provider: 'teams';     webhookUrl: string; }
+export interface PagerDutyChannelConfig { id: string; name?: string; provider: 'pagerduty'; integrationKey: string; }
+export interface DiscordChannelConfig  { id: string; name?: string; provider: 'discord';   webhookUrl: string; }
 
 export type NotificationChannel =
   | SmtpChannelConfig | SesChannelConfig | SendGridChannelConfig
-  | AzureChannelConfig | GoogleChannelConfig | WebhookChannelConfig;
+  | AzureChannelConfig | GoogleChannelConfig | WebhookChannelConfig
+  | SlackChannelConfig | TeamsChannelConfig | PagerDutyChannelConfig | DiscordChannelConfig;
 
 export interface NotificationsConfig {
   channels?: NotificationChannel[];
