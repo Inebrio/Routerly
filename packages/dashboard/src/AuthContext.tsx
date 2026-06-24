@@ -5,7 +5,7 @@ interface AuthUser { id: string; email: string; role: string; permissions?: stri
 interface AuthCtx {
   user: AuthUser | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ requiresTotp: true; userId: string } | void>;
   loginDirect: (token: string, user: AuthUser) => void;
   logout: () => void;
   updateUser: (partial: Partial<AuthUser>) => void;
@@ -36,8 +36,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  async function login(email: string, password: string) {
-    const { token, refreshToken, user } = await apiLogin(email, password);
+  async function login(email: string, password: string): Promise<{ requiresTotp: true; userId: string } | void> {
+    const result = await apiLogin(email, password);
+    if (result.requiresTotp) {
+      return { requiresTotp: true, userId: result.userId! };
+    }
+    const { token, refreshToken, user } = result;
     localStorage.setItem('lr_token', token);
     localStorage.setItem('lr_user', JSON.stringify(user));
     // Persist refresh token and expiry for silent renewal

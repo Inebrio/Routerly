@@ -115,9 +115,32 @@ async function processResponse<T>(res: Response, path: string): Promise<T> {
 
 // ── Auth ──────────────────────────────────────────────────────────────────
 export const login = (email: string, password: string) =>
-  request<{ token: string; refreshToken?: string; user: { id: string; email: string; role: string; permissions: string[] } }>(
+  request<{ token: string; refreshToken?: string; user: { id: string; email: string; role: string; permissions: string[] }; requiresTotp?: boolean; userId?: string }>(
     '/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }
   );
+
+// ── 2FA ───────────────────────────────────────────────────────────────────
+export const verify2fa = (userId: string, token?: string, backupCode?: string) =>
+  request<{ token: string; refreshToken?: string; user: { id: string; email: string; role: string; permissions: string[] } }>(
+    '/auth/2fa/verify', { method: 'POST', body: JSON.stringify({ userId, token, backupCode }) }
+  );
+
+export const setup2fa = () =>
+  request<{ secret: string; qrUrl: string; backupCodes: string[] }>(
+    '/auth/2fa/setup', { method: 'POST' }
+  );
+
+export const confirm2fa = (token: string) =>
+  request<{ ok: boolean }>('/auth/2fa/confirm', { method: 'POST', body: JSON.stringify({ token }) });
+
+export const disable2fa = (token?: string, backupCode?: string) =>
+  request<{ ok: boolean }>('/auth/2fa/disable', { method: 'POST', body: JSON.stringify({ token, backupCode }) });
+
+export const regenerateBackupCodes = (token: string) =>
+  request<{ backupCodes: string[] }>('/auth/2fa/backup-codes', { method: 'POST', body: JSON.stringify({ token }) });
+
+export const reset2faForUser = (userId: string) =>
+  request<{ ok: boolean }>(`/users/${userId}/2fa/reset`, { method: 'POST' });
 
 // ── Setup ─────────────────────────────────────────────────────────────────
 export const checkSetupStatus = () =>
