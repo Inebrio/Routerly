@@ -226,7 +226,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       refreshTokenHash: hashToken(refreshToken),
     };
     await writeConfig('users', users);
-    return reply.send({ token, refreshToken, user: { id: user.id, email: user.email, role: user.roleId, permissions } });
+    return reply.send({ token, refreshToken, user: { id: user.id, email: user.email, role: user.roleId, permissions, totpEnabled: !!user.totpEnabled } });
   });
 
   // ─── POST /api/auth/2fa/verify ───────────────────────────────────────────────
@@ -268,7 +268,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const refreshToken = generateRawToken(40);
     users[userIndex] = { ...(users[userIndex]!), refreshTokenHash: hashToken(refreshToken) };
     await writeConfig('users', users);
-    return reply.send({ token: sessionToken, refreshToken, user: { id: user.id, email: user.email, role: user.roleId, permissions } });
+    return reply.send({ token: sessionToken, refreshToken, user: { id: user.id, email: user.email, role: user.roleId, permissions, totpEnabled: true } });
   });
 
   // ─── POST /api/auth/refresh ─────────────────────────────────────────────────

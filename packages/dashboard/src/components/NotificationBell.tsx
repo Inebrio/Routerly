@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { Bell, AlertTriangle, AlertCircle, Info, CheckCheck } from 'lucide-react';
 import { getNotificationInbox, markNotificationsRead, type InboxItem } from '../api';
 
@@ -26,6 +27,9 @@ export function NotificationBell({ collapsed }: { collapsed?: boolean }) {
   const [items, setItems] = useState<InboxItem[]>([]);
   const [unread, setUnread] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<CSSProperties>({});
 
   const load = useCallback(async () => {
     try {
@@ -43,11 +47,32 @@ export function NotificationBell({ collapsed }: { collapsed?: boolean }) {
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (ref.current && !ref.current.contains(t) && dropdownRef.current && !dropdownRef.current.contains(t)) setOpen(false);
     }
     if (open) document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
   }, [open]);
+
+  function toggleOpen() {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        position: 'fixed',
+        left: r.right + 8,
+        top: r.top,
+        width: 320,
+        maxHeight: 420,
+        overflowY: 'auto',
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius)',
+        boxShadow: 'var(--shadow-lg)',
+        zIndex: 9999,
+      });
+    }
+    setOpen(o => !o);
+  }
 
   async function markOne(id: string) {
     try {
@@ -66,11 +91,12 @@ export function NotificationBell({ collapsed }: { collapsed?: boolean }) {
   }
 
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
+    <div ref={ref}>
       <button
+        ref={btnRef}
         className="nav-item"
         title={collapsed ? 'Notifications' : undefined}
-        onClick={() => setOpen(o => !o)}
+        onClick={toggleOpen}
         style={{ position: 'relative', width: '100%' }}
       >
         <span style={{ position: 'relative', display: 'inline-flex' }}>
@@ -88,13 +114,8 @@ export function NotificationBell({ collapsed }: { collapsed?: boolean }) {
         <span className="nav-label">Notifications</span>
       </button>
 
-      {open && (
-        <div style={{
-          position: 'absolute', bottom: '100%', left: 0, marginBottom: 6,
-          width: 320, maxHeight: 420, overflowY: 'auto',
-          background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-          borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-lg)', zIndex: 1000,
-        }}>
+      {open && createPortal(
+        <div ref={dropdownRef} style={dropdownStyle}>
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '10px 12px', borderBottom: '1px solid var(--border)',
@@ -143,7 +164,8 @@ export function NotificationBell({ collapsed }: { collapsed?: boolean }) {
               </button>
             ))
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

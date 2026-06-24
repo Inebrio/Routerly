@@ -99,7 +99,7 @@ export function SettingsGeneralTab() {
     try {
       const s = await getSettings();
       setSettings(s);
-      setForm({ defaultTimeoutMs: s.defaultTimeoutMs, logLevel: s.logLevel, publicUrl: s.publicUrl || `http://localhost:${s.port}`, ...(s.notifications ? { notifications: s.notifications } : {}) });
+      setForm({ defaultTimeoutMs: s.defaultTimeoutMs, logLevel: s.logLevel, publicUrl: s.publicUrl || `http://localhost:${s.port}`, ...(s.requireMfa !== undefined ? { requireMfa: s.requireMfa } : {}), ...(s.notifications ? { notifications: s.notifications } : {}) });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load settings');
     } finally {
@@ -203,6 +203,22 @@ export function SettingsGeneralTab() {
           </select>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
             Controls the verbosity of service logs.
+          </p>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={!!form.requireMfa}
+              onChange={e => field('requireMfa', e.target.checked)}
+              style={{ width: 16, height: 16, cursor: 'pointer' }}
+            />
+            Require Two-Factor Authentication for all users
+          </label>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+            When enabled, users who have not set up 2FA will see a prompt to do so after logging in.
+            Users can configure 2FA in their Profile page.
           </p>
         </div>
 
