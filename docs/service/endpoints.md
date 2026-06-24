@@ -184,6 +184,8 @@ Full endpoint catalogue: [API — Management](../api/management).
 | `DELETE` | `/api/models/:id` | Remove a model |
 | `GET` | `/api/projects` | List projects |
 | `POST` | `/api/projects` | Create a project |
+| `GET` | `/api/agent-policies` | List agent policies for a project |
+| `PUT` | `/api/agent-policies` | Update agent policies for a project |
 | `GET` | `/api/usage` | Query usage records |
 | `GET` | `/api/settings` | Read service settings |
 | `PUT` | `/api/settings` | Update service settings |

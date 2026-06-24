@@ -59,6 +59,10 @@ export interface LLMCallContext {
   sessionId?: string;
   /** Tags from X-Routerly-Tags header (#95) */
   tags?: Record<string, string>;
+  /** Agent routing policy name from X-Routerly-Policy header (#78) */
+  agentPolicyName?: string;
+  /** Max cost per request in USD from the selected agent policy (#78) — recorded on the usage record */
+  agentPolicyCostCapUsd?: number;
 }
 
 /**
@@ -224,6 +228,7 @@ export async function llmChat(
       ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
       ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
       ...(ctx.tags ? { tags: ctx.tags } : {}),
+      ...(ctx.agentPolicyName ? { agentPolicyName: ctx.agentPolicyName } : {}),
     }).catch(() => {});
 
     return response;
@@ -248,6 +253,7 @@ export async function llmChat(
       ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
       ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
       ...(ctx.tags ? { tags: ctx.tags } : {}),
+      ...(ctx.agentPolicyName ? { agentPolicyName: ctx.agentPolicyName } : {}),
     }).catch(() => {});
 
     throw err;
@@ -444,6 +450,7 @@ export async function llmStream(
         ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
         ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
         ...(ctx.tags ? { tags: ctx.tags } : {}),
+        ...(ctx.agentPolicyName ? { agentPolicyName: ctx.agentPolicyName } : {}),
       }).catch(() => {});
     }
   }
@@ -539,6 +546,7 @@ export async function llmMessages(
       ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
       ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
       ...(ctx.tags ? { tags: ctx.tags } : {}),
+      ...(ctx.agentPolicyName ? { agentPolicyName: ctx.agentPolicyName } : {}),
     }).catch(() => {});
 
     return response;
@@ -560,6 +568,7 @@ export async function llmMessages(
       ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
       ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
       ...(ctx.tags ? { tags: ctx.tags } : {}),
+      ...(ctx.agentPolicyName ? { agentPolicyName: ctx.agentPolicyName } : {}),
     }).catch(() => {});
     throw err;
   }
