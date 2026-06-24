@@ -1031,6 +1031,56 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
   });
 
+  // ─── GET /api/health/providers ───────────────────────────────────────────────
+  // Real-time per-model operational status computed from recent usage records.
+  fastify.get('/api/health/providers', async (req, reply) => {
+    if (!requirePerm(req, 'report:read', reply)) return;
+    const [models, records] = await Promise.all([readConfig('models'), readConfig('usage')]);
+
+    const now = Date.now();
+    const fiveMinAgo = now - 300_000;
+    const oneHourAgo = now - 3_600_000;
+
+    const providers = models.map(model => {
+      const mine = records.filter(r => r.modelId === model.id);
+      const recent = mine.filter(r => new Date(r.timestamp).getTime() >= fiveMinAgo);
+      const total = recent.length;
+      const errors = recent.filter(r => r.outcome !== 'success').length;
+      const errorRate = total > 0 ? errors / total : 0;
+
+      // p95 latency over the last 5 minutes
+      const latencies = recent.map(r => r.latencyMs).filter(n => typeof n === 'number').sort((a, b) => a - b);
+      const p95LatencyMs = latencies.length > 0
+        ? latencies[Math.min(latencies.length - 1, Math.ceil(latencies.length * 0.95) - 1)]!
+        : null;
+
+      const requestsLastHour = mine.filter(r => new Date(r.timestamp).getTime() >= oneHourAgo).length;
+
+      const lastSuccess = [...mine].reverse().find(r => r.outcome === 'success');
+      const lastSuccessAt = lastSuccess ? lastSuccess.timestamp : null;
+
+      let status: 'healthy' | 'degraded' | 'unavailable';
+      if (errorRate < 0.05) status = 'healthy';
+      else if (errorRate < 0.5) status = 'degraded';
+      else status = 'unavailable';
+
+      return {
+        modelId: model.id,
+        name: model.name,
+        provider: model.provider,
+        status,
+        errorRate,
+        p95LatencyMs,
+        requestsLastHour,
+        lastSuccessAt,
+        // ponytail: cooldown lives in in-memory router state, not persisted; wire later if surfaced
+        cooldownUntil: null as string | null,
+      };
+    });
+
+    return reply.send({ providers });
+  });
+
   // ─── GET /api/traces/:id ─────────────────────────────────────────────────────
   fastify.get<{ Params: { id: string } }>('/api/traces/:id', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;

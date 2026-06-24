@@ -21,6 +21,7 @@ import { ProjectTokenEditPage } from './pages/project/ProjectTokenEditPage';
 import { UsersPage } from './pages/UsersPage';
 import { UsagePage } from './pages/UsagePage';
 import { UsageRecordPage } from './pages/UsageRecordPage';
+import { ProviderHealthPage } from './pages/ProviderHealthPage';
 import { TestPage } from './pages/TestPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SettingsGeneralTab, SettingsAboutTab, SettingsNotificationsTab } from './pages/SettingsPage';
@@ -28,7 +29,7 @@ import { RolesPage } from './pages/RolesPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { UserEditPage } from './pages/UserEditPage';
 import { HelpPage } from './pages/HelpPage';
-import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, Activity, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Logo } from './components/Logo';
 
 const THEME_OPTIONS: { value: Theme; icon: ReactNode; label: string }[] = [
@@ -86,6 +87,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
+    { to: '/dashboard/health', icon: <Activity size={17} />, label: 'Health' },
     { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Test' },
   ];
 
@@ -346,6 +348,7 @@ const router = createBrowserRouter([
             ],
           },
           { path: 'usage', element: <UsagePage /> },
+          { path: 'health', element: <ProviderHealthPage /> },
           { path: 'test', element: <TestPage /> },
           {
             path: 'settings',
