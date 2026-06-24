@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Copy, Check, ChevronDown, ArrowRight, Plug } from 'lucide-react';
 import { createProject, updateProject, getSettings } from '../../api';
+import type { ProjectSemanticCacheConfig } from '../../api';
 import { useProject } from './ProjectLayout';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
 
@@ -35,17 +36,23 @@ export function ProjectGeneralTab() {
     timeoutMs: '30000',
   });
 
+  const defaultCache: ProjectSemanticCacheConfig = { enabled: false, threshold: 0.95, ttlMs: 3600000, maxEntries: 500 };
+  const [cache, setCache] = useState<ProjectSemanticCacheConfig>(defaultCache);
+
   useEffect(() => {
     if (project) {
       setForm({
         name: project.name,
         timeoutMs: String(project.timeoutMs ?? 30000),
       });
+      setCache(project.semanticCache ?? defaultCache);
     }
-  }, [project]);
+  }, [project]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isDirty = isEdit
-    ? form.name !== (project?.name ?? '') || form.timeoutMs !== String(project?.timeoutMs ?? 30000)
+    ? form.name !== (project?.name ?? '') ||
+      form.timeoutMs !== String(project?.timeoutMs ?? 30000) ||
+      JSON.stringify(cache) !== JSON.stringify(project?.semanticCache ?? defaultCache)
     : form.name !== '';
 
   // Once the token is revealed the form is "done" — don't block navigation anymore.
@@ -62,6 +69,7 @@ export function ProjectGeneralTab() {
             ...(project!.routingModelId ? { routingModelId: project!.routingModelId } : {}),
             models: project!.models.map(m => ({ modelId: m.modelId })),
             timeoutMs: parseInt(form.timeoutMs),
+            semanticCache: cache,
           }
         : {
             name: form.name,
@@ -72,7 +80,7 @@ export function ProjectGeneralTab() {
       if (isEdit && project) {
         await updateProject(project.id, payload);
         // Update context and reset form so isDirty becomes false — no navigation needed
-        const updated = { ...project, name: form.name, timeoutMs: parseInt(form.timeoutMs) };
+        const updated = { ...project, name: form.name, timeoutMs: parseInt(form.timeoutMs), semanticCache: cache };
         setProject(updated);
         setForm({ name: updated.name, timeoutMs: String(updated.timeoutMs) });
       } else {
@@ -212,6 +220,66 @@ export function ProjectGeneralTab() {
                   max={300000}
                 />
               </div>
+
+              {isEdit && (
+                <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: 4 }}>Semantic Response Cache</div>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
+                    Cache full LLM responses and serve them on semantically similar requests (non-streaming only). Uses TF bag-of-words vectors — no embedding model required.
+                  </p>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                    <input
+                      id="sc-enabled"
+                      type="checkbox"
+                      checked={cache.enabled}
+                      onChange={e => setCache(c => ({ ...c, enabled: e.target.checked }))}
+                    />
+                    <label htmlFor="sc-enabled" style={{ fontSize: '0.85rem', cursor: 'pointer' }}>Enable semantic cache</label>
+                  </div>
+
+                  {cache.enabled && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '0.8rem' }}>
+                          Similarity threshold ({((cache.threshold ?? 0.95) * 100).toFixed(0)}%)
+                        </label>
+                        <input
+                          type="range"
+                          min={0.90}
+                          max={0.99}
+                          step={0.01}
+                          value={cache.threshold ?? 0.95}
+                          onChange={e => setCache(c => ({ ...c, threshold: parseFloat(e.target.value) }))}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '0.8rem' }}>TTL (hours)</label>
+                        <input
+                          className="form-input"
+                          type="number"
+                          min={1}
+                          max={720}
+                          value={Math.round((cache.ttlMs ?? 3600000) / 3600000)}
+                          onChange={e => setCache(c => ({ ...c, ttlMs: parseInt(e.target.value) * 3600000 }))}
+                        />
+                      </div>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '0.8rem' }}>Max entries</label>
+                        <input
+                          className="form-input"
+                          type="number"
+                          min={10}
+                          max={10000}
+                          value={cache.maxEntries ?? 500}
+                          onChange={e => setCache(c => ({ ...c, maxEntries: parseInt(e.target.value) }))}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

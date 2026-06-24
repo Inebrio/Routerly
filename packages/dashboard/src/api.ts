@@ -215,6 +215,13 @@ export interface ProjectMember {
   role: string;
 }
 
+export interface ProjectSemanticCacheConfig {
+  enabled: boolean;
+  threshold?: number;
+  ttlMs?: number;
+  maxEntries?: number;
+}
+
 export interface Project {
   id: string; name: string; routingModelId?: string;
   autoRouting?: boolean;
@@ -225,6 +232,7 @@ export interface Project {
   members?: ProjectMember[];
   token?: string;
   timeoutMs?: number;
+  semanticCache?: ProjectSemanticCacheConfig;
 }
 
 export const getProjects = () => request<Project[]>('/projects');
@@ -247,6 +255,7 @@ export const updateProject = (id: string, data: {
   policies?: RoutingPolicy[];
   models: { modelId: string; prompt?: string }[];
   timeoutMs?: number;
+  semanticCache?: ProjectSemanticCacheConfig;
 }) => request<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteProject = (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' });
 export const createProjectToken = (id: string, labels?: string[]) => request<{ token: string; tokenInfo: ProjectToken }>(`/projects/${id}/tokens`, { method: 'POST', body: JSON.stringify({ labels }) });

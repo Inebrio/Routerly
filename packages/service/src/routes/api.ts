@@ -9,7 +9,7 @@ import { pingTelemetry } from '../telemetry.js';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../config/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jwt.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, AgentPolicy, SpendGroup, GuardrailConfig, PiiConfig } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, ProjectSemanticCacheConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, AgentPolicy, SpendGroup, GuardrailConfig, PiiConfig } from '@routerly/shared';
 import { z } from 'zod';
 import { getGroupUsageSnapshot } from '../cost/budget.js';
 import { getTrace } from '../routing/traceStore.js';
@@ -562,6 +562,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       timeoutMs?: number;
       guardrails?: GuardrailConfig | null;
       pii?: PiiConfig | null;
+      semanticCache?: ProjectSemanticCacheConfig;
     };
   }>('/api/projects/:id', async (req, reply) => {
     if (!requirePerm(req, 'project:write', reply)) return;
@@ -610,6 +611,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       timeoutMs: req.body.timeoutMs ?? existing.timeoutMs ?? 30000,
       ...guardrailsUpdate,
       ...piiUpdate,
+      ...(req.body.semanticCache !== undefined ? { semanticCache: req.body.semanticCache } : {}),
     };
     projects[index] = updated;
     await writeConfig('projects', projects);
