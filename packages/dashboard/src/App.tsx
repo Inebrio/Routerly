@@ -91,7 +91,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
     { to: '/dashboard/health', icon: <Activity size={17} />, label: 'Health' },
     { to: '/dashboard/leaderboard', icon: <Trophy size={17} />, label: 'Leaderboard' },
-    { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Test' },
+    { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Playground' },
   ];
 
   return (
