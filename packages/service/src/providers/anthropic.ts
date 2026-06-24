@@ -75,6 +75,52 @@ export class AnthropicAdapter implements ProviderAdapter {
     });
   }
 
+  /**
+   * Apply prompt caching mode to the already-built params object.
+   * Called just before sending to the Anthropic SDK.
+   */
+  private applyPromptCachingMode(params: any, mode: 'auto' | 'passthrough' | 'disabled'): void {
+    if (mode === 'passthrough') return;
+
+    if (mode === 'disabled') {
+      // Strip cache_control from system
+      if (Array.isArray(params.system)) {
+        for (const b of params.system) delete b.cache_control;
+      }
+      // Strip from messages
+      for (const m of params.messages ?? []) {
+        if (Array.isArray(m.content)) {
+          for (const b of m.content) delete b.cache_control;
+        }
+      }
+      return;
+    }
+
+    // mode === 'auto': inject cache_control at optimal breakpoints
+    // Breakpoint 1: last block of system prompt
+    if (params.system) {
+      if (typeof params.system === 'string') {
+        params.system = [{ type: 'text', text: params.system, cache_control: { type: 'ephemeral' } }];
+      } else if (Array.isArray(params.system) && params.system.length > 0) {
+        params.system[params.system.length - 1].cache_control = { type: 'ephemeral' };
+      }
+    }
+
+    // Breakpoint 2: last user message that precedes the final user message (conversation context)
+    const messages: any[] = params.messages ?? [];
+    const userIndices = messages.reduce<number[]>((acc, m, i) => m.role === 'user' ? [...acc, i] : acc, []);
+    // Inject on the penultimate user turn (context boundary), if it exists
+    const contextIdx = userIndices.length >= 2 ? userIndices[userIndices.length - 2] : undefined;
+    if (contextIdx !== undefined) {
+      const m = messages[contextIdx];
+      if (typeof m.content === 'string') {
+        m.content = [{ type: 'text', text: m.content, cache_control: { type: 'ephemeral' } }];
+      } else if (Array.isArray(m.content) && m.content.length > 0) {
+        m.content[m.content.length - 1].cache_control = { type: 'ephemeral' };
+      }
+    }
+  }
+
   private convertMessages(messages: import('@routerly/shared').Message[]): any[] {
     const result: any[] = [];
 
@@ -146,6 +192,11 @@ export class AnthropicAdapter implements ProviderAdapter {
       if ((params.max_tokens as number) < 16000) params.max_tokens = 16000;
     }
 
+    // Provider-native prompt caching (#97)
+    if (model.promptCaching && model.promptCaching !== 'passthrough') {
+      this.applyPromptCachingMode(params, model.promptCaching);
+    }
+
     const response = await client.messages.create(params);
 
     // Convert Anthropic response to OpenAI format
@@ -207,6 +258,11 @@ export class AnthropicAdapter implements ProviderAdapter {
     if (thinkingEnabled) {
       params.thinking = { type: 'enabled', budget_tokens: 10000 };
       if ((params.max_tokens as number) < 16000) params.max_tokens = 16000;
+    }
+
+    // Provider-native prompt caching (#97)
+    if (model.promptCaching && model.promptCaching !== 'passthrough') {
+      this.applyPromptCachingMode(params, model.promptCaching);
     }
 
     const stream = await client.messages.create(params) as unknown as AsyncIterable<any>;
