@@ -19,13 +19,22 @@ interface SendResult {
 const TEST_SUBJECT = 'Routerly – Test notification';
 const TEST_BODY    = 'This is a test message sent from Routerly to verify your notification channel is configured correctly.';
 
+/** Subject/body for the message being sent — defaults to the test content. */
+interface MessageContent {
+  subject: string;
+  text: string;
+  /** Structured payload sent to webhook channels */
+  payload?: Record<string, unknown>;
+}
+const TEST_CONTENT: MessageContent = { subject: TEST_SUBJECT, text: TEST_BODY };
+
 // ── SMTP ─────────────────────────────────────────────────────────────────────────────
-async function sendSmtp(cfg: SmtpChannelConfig, to: string): Promise<SendResult> {
+async function sendSmtp(cfg: SmtpChannelConfig, to: string, content: MessageContent = TEST_CONTENT): Promise<SendResult> {
   const mail = {
     from: cfg.fromName ? `"${cfg.fromName}" <${cfg.fromAddress}>` : cfg.fromAddress,
     to,
-    subject: TEST_SUBJECT,
-    text: TEST_BODY,
+    subject: content.subject,
+    text: content.text,
   };
 
   const tryTransport = async (secure: boolean) => {
@@ -62,7 +71,7 @@ async function sendSmtp(cfg: SmtpChannelConfig, to: string): Promise<SendResult>
 }
 
 // ── Amazon SES (via SMTP endpoint) ────────────────────────────────────────────────────
-async function sendSes(cfg: SesChannelConfig, to: string): Promise<SendResult> {
+async function sendSes(cfg: SesChannelConfig, to: string, content: MessageContent = TEST_CONTENT): Promise<SendResult> {
   const host = `email-smtp.${cfg.region}.amazonaws.com`;
   const transport = nodemailer.createTransport({
     host,
@@ -73,14 +82,14 @@ async function sendSes(cfg: SesChannelConfig, to: string): Promise<SendResult> {
   await transport.sendMail({
     from: cfg.fromName ? `"${cfg.fromName}" <${cfg.fromAddress}>` : cfg.fromAddress,
     to,
-    subject: TEST_SUBJECT,
-    text: TEST_BODY,
+    subject: content.subject,
+    text: content.text,
   });
   return { ok: true, message: 'Test email sent via Amazon SES.' };
 }
 
 // ── SendGrid ────────────────────────────────────────────────────────────────────────
-async function sendSendGrid(cfg: SendGridChannelConfig, to: string): Promise<SendResult> {
+async function sendSendGrid(cfg: SendGridChannelConfig, to: string, content: MessageContent = TEST_CONTENT): Promise<SendResult> {
   const transport = nodemailer.createTransport({
     host:   'smtp.sendgrid.net',
     port:   587,
@@ -90,14 +99,14 @@ async function sendSendGrid(cfg: SendGridChannelConfig, to: string): Promise<Sen
   await transport.sendMail({
     from: cfg.fromName ? `"${cfg.fromName}" <${cfg.fromAddress}>` : cfg.fromAddress,
     to,
-    subject: TEST_SUBJECT,
-    text: TEST_BODY,
+    subject: content.subject,
+    text: content.text,
   });
   return { ok: true, message: 'Test email sent via SendGrid.' };
 }
 
 // ── Azure Communication Services ──────────────────────────────────────────────────
-async function sendAzure(cfg: AzureChannelConfig, to: string): Promise<SendResult> {
+async function sendAzure(cfg: AzureChannelConfig, to: string, content: MessageContent = TEST_CONTENT): Promise<SendResult> {
   const parts = Object.fromEntries(
     cfg.connectionString.split(';').map((p: string) => {
       const idx = p.indexOf('=');
@@ -111,7 +120,7 @@ async function sendAzure(cfg: AzureChannelConfig, to: string): Promise<SendResul
   const now    = new Date().toUTCString();
   const body   = JSON.stringify({
     senderAddress: cfg.fromAddress,
-    content: { subject: TEST_SUBJECT, plainText: TEST_BODY },
+    content: { subject: content.subject, plainText: content.text },
     recipients: { to: [{ address: to }] },
   });
 
@@ -139,7 +148,7 @@ async function sendAzure(cfg: AzureChannelConfig, to: string): Promise<SendResul
 }
 
 // ── Google / Gmail OAuth2 ──────────────────────────────────────────────────────────
-async function sendGoogle(cfg: GoogleChannelConfig, to: string): Promise<SendResult> {
+async function sendGoogle(cfg: GoogleChannelConfig, to: string, content: MessageContent = TEST_CONTENT): Promise<SendResult> {
   const transport = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -153,8 +162,8 @@ async function sendGoogle(cfg: GoogleChannelConfig, to: string): Promise<SendRes
   await transport.sendMail({
     from: cfg.fromName ? `"${cfg.fromName}" <${cfg.fromAddress}>` : cfg.fromAddress,
     to,
-    subject: TEST_SUBJECT,
-    text: TEST_BODY,
+    subject: content.subject,
+    text: content.text,
   });
   return { ok: true, message: 'Test email sent via Google / Gmail.' };
 }
@@ -196,9 +205,9 @@ function validateWebhookUrl(urlStr: string): void {
 }
 
 // ── Webhook ───────────────────────────────────────────────────────────────────────────
-async function sendWebhook(cfg: WebhookChannelConfig): Promise<SendResult> {
+async function sendWebhook(cfg: WebhookChannelConfig, content: MessageContent = TEST_CONTENT): Promise<SendResult> {
   validateWebhookUrl(cfg.url);
-  const payload = { event: 'test', source: 'Routerly', timestamp: new Date().toISOString() };
+  const payload = content.payload ?? { event: 'test', source: 'Routerly', timestamp: new Date().toISOString() };
   const body    = JSON.stringify(payload);
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (cfg.secret) {
@@ -229,6 +238,29 @@ export async function sendTestNotification(
     case 'azure':    return sendAzure(channel, to);
     case 'google':   return sendGoogle(channel, to);
     case 'webhook':  return sendWebhook(channel);
+    default:         throw new Error(`Unknown provider: ${String((channel as { provider: string }).provider)}`);
+  }
+}
+
+/**
+ * Dispatches a real system event to a configured channel (#89/#90).
+ * Email channels send to their own `fromAddress`; webhook channels POST the
+ * structured event payload. Throws on failure (caller should catch per-channel).
+ */
+export async function dispatchNotification(
+  channel: NotificationChannel,
+  payload: { event: string; severity: string; timestamp: string; details: Record<string, unknown> },
+): Promise<SendResult> {
+  const subject = `Routerly [${payload.severity}] ${payload.event}`;
+  const text    = `${payload.event} (${payload.severity}) at ${payload.timestamp}\n\n${JSON.stringify(payload.details, null, 2)}`;
+  const content: MessageContent = { subject, text, payload: payload as unknown as Record<string, unknown> };
+  switch (channel.provider) {
+    case 'smtp':     return sendSmtp(channel, channel.fromAddress, content);
+    case 'ses':      return sendSes(channel, channel.fromAddress, content);
+    case 'sendgrid': return sendSendGrid(channel, channel.fromAddress, content);
+    case 'azure':    return sendAzure(channel, channel.fromAddress, content);
+    case 'google':   return sendGoogle(channel, channel.fromAddress, content);
+    case 'webhook':  return sendWebhook(channel, content);
     default:         throw new Error(`Unknown provider: ${String((channel as { provider: string }).provider)}`);
   }
 }

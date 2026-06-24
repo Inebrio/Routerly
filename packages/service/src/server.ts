@@ -14,6 +14,7 @@ import { passthroughHandler } from './routes/passthrough.js';
 import { initConfigDirs, readConfig, writeConfig } from './config/loader.js';
 import { pingTelemetry } from './telemetry.js';
 import { updateChecker } from './update-checker.js';
+import { emitEvent } from './notifications/emitter.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const { version: pkgVersion } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8')) as { version: string };
@@ -124,8 +125,16 @@ export async function startServer() {
   try {
     await server.listen({ port: settings.port, host: settings.host });
     updateChecker.start(pkgVersion, settings.channel ?? 'latest');
+    void emitEvent('system.startup', 'info', { version: pkgVersion, port: settings.port }, { log: server.log });
   } catch (err) {
     server.log.error(err);
     process.exit(1);
+  }
+
+  for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+    process.once(signal, () => {
+      void emitEvent('system.shutdown', 'info', { signal }, { log: server.log })
+        .finally(() => server.close().finally(() => process.exit(0)));
+    });
   }
 }
