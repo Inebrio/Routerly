@@ -1,0 +1,26 @@
+## Session: 2026-06-24
+
+### Done
+- Merged AGENTS.md into CLAUDE.md (single source of truth)
+- Created .claude/ project directory with full structure:
+  - agents/: 8 sub-agents (service, frontend, cli, docs, cicd, developer, reviewer, tester)
+  - commands/: /commit, /changeset, /test, /review
+  - hooks/: notify-done.sh, block-danger.sh
+  - rules/: service.md, dashboard.md, cli.md (glob-scoped)
+  - settings.json with permissions and hooks
+  - settings.local.json (gitignored)
+- Added coding rules and session workflow to CLAUDE.md
+
+### Discovered
+- .claude/ was already gitignored in .gitignore
+- settings.json already had ponytail plugin enabled
+- ai/skills/code-review/SKILL.md does not exist (referenced in CLAUDE.md but missing)
+
+### Remaining
+- Create ai/skills/code-review/SKILL.md (referenced in CLAUDE.md canonical files table)
+- Populate feature-list.json with actual feature list
+- Write init.sh with real environment checks
+- Verify .claude/agents/ sub-agents work correctly in practice
+
+### Open problems
+- None blocking
