@@ -7,16 +7,10 @@ import { useAuth } from '../AuthContext';
 
 type TwoFaStep = 'idle' | 'setup' | 'confirm' | 'enabled';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function qrImageUrl(otpauthUrl: string): string {
-  return `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(otpauthUrl)}`;
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function ProfilePage() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
 
   // ── Change password ─────────────────────────────────────────────────────────
   const [pwForm, setPwForm] = useState({
@@ -64,8 +58,7 @@ export function ProfilePage() {
   const [tfaCode, setTfaCode] = useState('');
   const [tfaError, setTfaError] = useState('');
   const [tfaBusy, setTfaBusy] = useState(false);
-  // Track server-side 2FA status; we infer it from the flow (no me.totpEnabled field in API)
-  const [tfaEnabled, setTfaEnabled] = useState(false);
+  const [tfaEnabled, setTfaEnabled] = useState(!!user?.totpEnabled);
   const [disableCode, setDisableCode] = useState('');
   const [backupVisible, setBackupVisible] = useState(false);
   const [newBackupCodes, setNewBackupCodes] = useState<string[]>([]);
@@ -96,6 +89,7 @@ export function ProfilePage() {
       setTfaCode('');
       setTfaStep('enabled');
       setTfaEnabled(true);
+      updateUser({ totpEnabled: true });
     } catch (e) {
       setTfaError(e instanceof Error ? e.message : 'Confirmation failed');
     } finally {
@@ -112,6 +106,7 @@ export function ProfilePage() {
       setDisableCode('');
       setTfaEnabled(false);
       setTfaStep('idle');
+      updateUser({ totpEnabled: false });
     } catch (e) {
       setTfaError(e instanceof Error ? e.message : 'Disable failed');
     } finally {
@@ -250,14 +245,23 @@ export function ProfilePage() {
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
                 Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.), then enter the 6-digit code to confirm.
               </p>
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <img
-                  src={qrImageUrl(tfaQrUrl)}
-                  alt="TOTP QR code"
-                  width={200}
-                  height={200}
-                  style={{ border: '4px solid #fff', borderRadius: 8 }}
-                />
+              <div style={{ padding: '14px 16px', background: 'var(--surface-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 8px' }}>
+                  Open your authenticator app (Google Authenticator, Authy, 1Password, etc.) and add a new account:
+                </p>
+                <ol style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
+                  <li>Tap <strong>Add account</strong> or the <strong>+</strong> button</li>
+                  <li>Choose <strong>Enter setup key</strong> (or scan QR code if on mobile)</li>
+                  <li>Enter the secret shown below</li>
+                </ol>
+                {tfaQrUrl && (
+                  <a
+                    href={tfaQrUrl}
+                    style={{ display: 'block', marginTop: 10, fontSize: '0.72rem', color: 'var(--accent)', wordBreak: 'break-all' }}
+                  >
+                    Tap here on mobile to open authenticator
+                  </a>
+                )}
               </div>
               <div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 4 }}>

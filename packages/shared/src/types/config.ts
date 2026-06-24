@@ -389,6 +389,11 @@ export interface UserConfig {
   projectIds: string[];
   /** SHA-256 hash of the CLI refresh token. Absent means no refresh token issued. */
   refreshTokenHash?: string;
+  /** base32-encoded TOTP secret, present when 2FA is enrolled */
+  totpSecret?: string;
+  totpEnabled?: boolean;
+  /** SHA-256 hashed one-time backup codes */
+  backupCodes?: string[];
 }
 
 export interface RoleConfig {
@@ -490,6 +495,8 @@ export interface Settings {
   spendGroups?: SpendGroup[];
   /** Stored prompt registry */
   prompts?: PromptEntry[];
+  /** When true, all users must enroll in and pass 2FA before accessing the API */
+  requireMfa?: boolean;
 }
 
 // ─── Update info ─────────────────────────────────────────────────────────────

@@ -33,7 +33,6 @@ import { UserEditPage } from './pages/UserEditPage';
 import { HelpPage } from './pages/HelpPage';
 import { ModelDiscoveryPage } from './pages/ModelDiscoveryPage';
 import { LayoutDashboard, Cpu, FolderOpen, BarChart2, Activity, Trophy, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, BookOpen } from 'lucide-react';
-import { ModelDiscoveryPage } from './pages/ModelDiscoveryPage';
 import { Logo } from './components/Logo';
 import { NotificationBell } from './components/NotificationBell';
 
@@ -175,6 +174,7 @@ function ProtectedLayout() {
     return localStorage.getItem('lr-update-banner-dismissed') === 'true';
   });
   const [telemetryUndecided, setTelemetryUndecided] = useState(false);
+  const [requireMfa, setRequireMfa] = useState(false);
 
   useEffect(() => {
     getSystemInfo()
@@ -186,9 +186,11 @@ function ProtectedLayout() {
   }, []);
 
   useEffect(() => {
-    if (user?.role !== 'admin') return;
     getSettings()
-      .then(s => { if (s.telemetry === undefined) setTelemetryUndecided(true); })
+      .then(s => {
+        if (user?.role === 'admin' && s.telemetry === undefined) setTelemetryUndecided(true);
+        setRequireMfa(!!s.requireMfa);
+      })
       .catch(() => { /* non-critical */ });
   }, [user]);
 
@@ -242,6 +244,26 @@ function ProtectedLayout() {
             >
               ×
             </button>
+          </div>
+        )}
+        {requireMfa && !user?.totpEnabled && (
+          <div style={{
+            background: 'var(--warning-bg, #fffbeb)',
+            borderBottom: '1px solid var(--warning-border, #f6e05e)',
+            padding: '10px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            fontSize: '0.85rem',
+            color: 'var(--warning-text, #744210)',
+          }}>
+            <span>
+              Two-factor authentication is required for this instance.{' '}
+              <Link to="/dashboard/profile" style={{ color: 'inherit', fontWeight: 600, textDecoration: 'underline' }}>
+                Set up 2FA in your Profile
+              </Link>
+              {' '}to secure your account.
+            </span>
           </div>
         )}
         {telemetryUndecided && (

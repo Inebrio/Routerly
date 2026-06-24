@@ -470,6 +470,8 @@ export interface Settings {
   channel?: string;
   /** Anonymous install metrics opt-in. Absent means the user has not been asked yet. */
   telemetry?: TelemetryConfig;
+  /** When true, all users must have 2FA enabled to access the dashboard. */
+  requireMfa?: boolean;
 }
 
 export const getSettings = () => request<Settings>('/settings');
@@ -569,19 +571,6 @@ export const createPlaygroundPreset = (projectId: string, data: { name: string; 
 export const deletePlaygroundPreset = (projectId: string, presetId: string) =>
   request<void>(`/projects/${projectId}/playground-presets/${presetId}`, { method: 'DELETE' });
 
-export interface CatalogEntry {
-  id: string;
-  provider: string;
-  name: string;
-  contextWindow: number;
-  modalities: string[];
-  pricing: { inputPer1kTokens: number; outputPer1kTokens: number };
-  local?: boolean;
-  isConfigured: boolean;
-}
-
-export const getModelCatalog = () => request<CatalogEntry[]>('/models/catalog');
-
 // ── Prompts ───────────────────────────────────────────────────────────────────
 
 export interface PromptVersion {
@@ -625,3 +614,26 @@ export const addPromptVersion = (id: string, data: { systemPrompt: string; seedM
 
 export const deletePromptVersion = (id: string, version: number) =>
   request<void>(`/prompts/${id}/versions/${version}`, { method: 'DELETE' });
+
+// ── Audit ─────────────────────────────────────────────────────────────────────
+
+export interface AuditEntry {
+  id: string;
+  timestamp: string;
+  userId: string;
+  email: string;
+  endpoint: string;
+  action: string;
+  result: 'success' | 'forbidden' | 'error';
+  details?: Record<string, unknown>;
+}
+
+export const getAuditLog = (params?: { userId?: string; action?: string; from?: string; to?: string; limit?: number }) => {
+  const q = new URLSearchParams();
+  if (params?.userId) q.set('userId', params.userId);
+  if (params?.action) q.set('action', params.action);
+  if (params?.from) q.set('from', params.from);
+  if (params?.to) q.set('to', params.to);
+  if (params?.limit) q.set('limit', String(params.limit));
+  return request<AuditEntry[]>(`/audit${q.size ? '?' + q : ''}`);
+};

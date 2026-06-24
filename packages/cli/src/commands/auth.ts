@@ -18,6 +18,9 @@ interface LoginResponse {
   /** Permanent refresh token returned at login (absent when calling /api/auth/refresh) */
   refreshToken?: string;
   user: { id: string; email: string; role: string };
+  /** Set on HTTP 202 when the account has 2FA enabled */
+  requiresTotp?: boolean;
+  userId?: string;
 }
 
 interface MeResponse {
@@ -68,7 +71,19 @@ Examples:
 
       try {
         const fakeAccount = { alias: '', serverUrl, email: email!, token: '', expiresAt: 0 };
-        const res = await apiWith<LoginResponse>(fakeAccount, 'POST', '/api/auth/login', { email, password });
+        let res = await apiWith<LoginResponse>(fakeAccount, 'POST', '/api/auth/login', { email, password });
+
+        // Handle 2FA challenge (service returns HTTP 202 with requiresTotp: true)
+        if (res.requiresTotp) {
+          console.log(chalk.yellow('Two-factor authentication required.'));
+          const { default: inq } = await import('inquirer');
+          const { totpCode } = await inq.prompt([{
+            type: 'input',
+            name: 'totpCode',
+            message: 'Enter your 6-digit authenticator code (or backup code):',
+          }]);
+          res = await apiWith<LoginResponse>(fakeAccount, 'POST', '/api/auth/2fa/verify', { userId: res.userId, token: totpCode as string });
+        }
 
         // Decode expiry from token payload (base64url(json).sig)
         let expiresAt = Date.now() + 24 * 3600_000;
