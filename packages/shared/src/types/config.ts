@@ -306,6 +306,14 @@ export interface ProjectToken {
   spendGroupId?: string;
 }
 
+/** A saved prompt preset for the playground (#99). */
+export interface PlaygroundPreset {
+  id: string;
+  name: string;
+  systemPrompt: string;
+  messages?: Array<{ role: 'user' | 'assistant'; content: string }>;
+}
+
 export interface ProjectConfig {
   id: string;
   name: string;
@@ -335,6 +343,8 @@ export interface ProjectConfig {
   pii?: PiiConfig;
   /** Per-project notification override: channel IDs to dispatch this project's events to (#91) */
   notifications?: { channels: string[] };
+  /** Named saved prompts for the playground (#99) */
+  playgroundPresets?: PlaygroundPreset[];
 }
 
 export interface UserConfig {
