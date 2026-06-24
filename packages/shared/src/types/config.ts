@@ -287,6 +287,12 @@ export interface UserConfig {
   projectIds: string[];
   /** SHA-256 hash of the CLI refresh token. Absent means no refresh token issued. */
   refreshTokenHash?: string;
+  /** Base32-encoded TOTP secret; present only after 2FA setup is initiated. */
+  totpSecret?: string;
+  /** True once the user has confirmed their first TOTP code. */
+  totpEnabled?: boolean;
+  /** SHA-256 hashes of one-time backup codes (shown in plaintext only once). */
+  backupCodes?: string[];
 }
 
 export interface RoleConfig {

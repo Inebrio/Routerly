@@ -9,6 +9,7 @@ import { pingTelemetry } from '../telemetry.js';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../config/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jwt.js';
+import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
 import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities } from '@routerly/shared';
 import { getTrace } from '../routing/traceStore.js';
 import { sendTestNotification } from '../notifications/sender.js';
@@ -108,19 +109,71 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const { ok, upgradedHash } = await verifyPassword(password, users[userIndex]!.passwordHash);
     if (!ok) return reply.status(401).send({ error: 'Invalid credentials' });
     const user = users[userIndex]!;
+
+    // Migrate legacy hash on the fly
+    if (upgradedHash) {
+      users[userIndex] = { ...user, passwordHash: upgradedHash };
+      await writeConfig('users', users);
+    }
+
+    // If 2FA is enabled, defer JWT issuance
+    if (user.totpEnabled) {
+      return reply.status(202).send({ requiresTotp: true, userId: user.id });
+    }
+
     const allRoles = getEffectiveRoles(customRoles);
     const permissions = resolvePermissions(user.roleId, allRoles);
     const token = createSessionToken(user.id, user.roleId);
     // Issue a permanent refresh token and persist its hash
     const refreshToken = generateRawToken(40);
     users[userIndex] = {
-      ...user,
+      ...(users[userIndex]!),
       refreshTokenHash: hashToken(refreshToken),
-      // Transparently migrate legacy SHA-256 hash to bcrypt on next login
-      ...(upgradedHash ? { passwordHash: upgradedHash } : {}),
     };
     await writeConfig('users', users);
     return reply.send({ token, refreshToken, user: { id: user.id, email: user.email, role: user.roleId, permissions } });
+  });
+
+  // ─── POST /api/auth/2fa/verify ───────────────────────────────────────────────
+  fastify.post<{ Body: { userId: string; token?: string; backupCode?: string } }>('/api/auth/2fa/verify', async (req, reply) => {
+    const { userId, token: totpToken, backupCode } = req.body;
+    if (!userId || (!totpToken && !backupCode)) {
+      return reply.status(400).send({ error: 'userId and either token or backupCode are required' });
+    }
+    const [users, customRoles] = await Promise.all([readConfig('users'), readConfig('roles')]);
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex === -1) return reply.status(401).send({ error: 'Invalid credentials' });
+    const user = users[userIndex]!;
+    if (!user.totpEnabled || !user.totpSecret) {
+      return reply.status(400).send({ error: '2FA is not enabled for this user' });
+    }
+
+    let verified = false;
+
+    if (totpToken) {
+      verified = verifyTotp(user.totpSecret, totpToken);
+    } else if (backupCode) {
+      const hash = hashBackupCode(backupCode);
+      const idx = (user.backupCodes ?? []).indexOf(hash);
+      if (idx !== -1) {
+        // Consume the backup code (one-time use)
+        const newCodes = [...(user.backupCodes ?? [])];
+        newCodes.splice(idx, 1);
+        users[userIndex] = { ...user, backupCodes: newCodes };
+        await writeConfig('users', users);
+        verified = true;
+      }
+    }
+
+    if (!verified) return reply.status(401).send({ error: 'Invalid 2FA code' });
+
+    const allRoles = getEffectiveRoles(customRoles);
+    const permissions = resolvePermissions(user.roleId, allRoles);
+    const sessionToken = createSessionToken(user.id, user.roleId);
+    const refreshToken = generateRawToken(40);
+    users[userIndex] = { ...(users[userIndex]!), refreshTokenHash: hashToken(refreshToken) };
+    await writeConfig('users', users);
+    return reply.send({ token: sessionToken, refreshToken, user: { id: user.id, email: user.email, role: user.roleId, permissions } });
   });
 
   // ─── POST /api/auth/refresh ─────────────────────────────────────────────────
@@ -143,6 +196,92 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     await writeConfig('users', users);
 
     return reply.send({ token, refreshToken: newRefreshToken, user: { id: user.id, email: user.email, role: user.roleId, permissions } });
+  });
+
+  // ─── POST /api/auth/2fa/setup ────────────────────────────────────────────────
+  fastify.post('/api/auth/2fa/setup', async (req, reply) => {
+    const userId = req.dashUser!.id;
+    const users = await readConfig('users');
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex === -1) return reply.status(404).send({ error: 'User not found' });
+    const user = users[userIndex]!;
+
+    const secret = generateTotpSecret();
+    const { plain, hashed } = generateBackupCodes();
+    const qrUrl = `otpauth://totp/Routerly:${encodeURIComponent(user.email)}?secret=${secret}&issuer=Routerly`;
+
+    // Store secret and hashed backup codes — NOT enabled yet (requires confirm)
+    users[userIndex] = { ...user, totpSecret: secret, backupCodes: hashed, totpEnabled: false };
+    await writeConfig('users', users);
+
+    return reply.send({ secret, qrUrl, backupCodes: plain });
+  });
+
+  // ─── POST /api/auth/2fa/confirm ──────────────────────────────────────────────
+  fastify.post<{ Body: { token: string } }>('/api/auth/2fa/confirm', async (req, reply) => {
+    const userId = req.dashUser!.id;
+    const { token: totpToken } = req.body;
+    if (!totpToken) return reply.status(400).send({ error: 'token is required' });
+
+    const users = await readConfig('users');
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex === -1) return reply.status(404).send({ error: 'User not found' });
+    const user = users[userIndex]!;
+
+    if (!user.totpSecret) return reply.status(400).send({ error: '2FA setup not started — call /api/auth/2fa/setup first' });
+    if (!verifyTotp(user.totpSecret, totpToken)) return reply.status(400).send({ error: 'Invalid TOTP code' });
+
+    users[userIndex] = { ...user, totpEnabled: true };
+    await writeConfig('users', users);
+    return reply.send({ ok: true });
+  });
+
+  // ─── POST /api/auth/2fa/disable ──────────────────────────────────────────────
+  fastify.post<{ Body: { token?: string; backupCode?: string } }>('/api/auth/2fa/disable', async (req, reply) => {
+    const userId = req.dashUser!.id;
+    const { token: totpToken, backupCode } = req.body;
+    if (!totpToken && !backupCode) return reply.status(400).send({ error: 'token or backupCode is required' });
+
+    const users = await readConfig('users');
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex === -1) return reply.status(404).send({ error: 'User not found' });
+    const user = users[userIndex]!;
+
+    if (!user.totpEnabled || !user.totpSecret) return reply.status(400).send({ error: '2FA is not enabled' });
+
+    let verified = false;
+    if (totpToken) {
+      verified = verifyTotp(user.totpSecret, totpToken);
+    } else if (backupCode) {
+      const hash = hashBackupCode(backupCode);
+      verified = (user.backupCodes ?? []).includes(hash);
+    }
+    if (!verified) return reply.status(401).send({ error: 'Invalid code' });
+
+    const { totpSecret: _s, totpEnabled: _e, backupCodes: _b, ...rest } = user;
+    users[userIndex] = rest;
+    await writeConfig('users', users);
+    return reply.send({ ok: true });
+  });
+
+  // ─── GET /api/auth/2fa/backup-codes ─────────────────────────────────────────
+  fastify.post<{ Body: { token: string } }>('/api/auth/2fa/backup-codes', async (req, reply) => {
+    const userId = req.dashUser!.id;
+    const { token: totpToken } = req.body;
+    if (!totpToken) return reply.status(400).send({ error: 'token is required' });
+
+    const users = await readConfig('users');
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex === -1) return reply.status(404).send({ error: 'User not found' });
+    const user = users[userIndex]!;
+
+    if (!user.totpEnabled || !user.totpSecret) return reply.status(400).send({ error: '2FA is not enabled' });
+    if (!verifyTotp(user.totpSecret, totpToken)) return reply.status(401).send({ error: 'Invalid TOTP code' });
+
+    const { plain, hashed } = generateBackupCodes();
+    users[userIndex] = { ...user, backupCodes: hashed };
+    await writeConfig('users', users);
+    return reply.send({ backupCodes: plain });
   });
 
   // ─── Setup endpoints (public, no auth required) ─────────────────────────────
@@ -179,6 +318,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!req.url.startsWith('/api/')) return;
     if (req.url === '/api/auth/login') return;
     if (req.url === '/api/auth/refresh') return;
+    if (req.url === '/api/auth/2fa/verify') return;
     if (req.url.startsWith('/api/setup/')) return;
     if (req.url === '/api/system/info') return;
 
@@ -727,6 +867,20 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
     await writeConfig('users', users.filter(u => u.id !== req.params.id));
     return reply.status(204).send();
+  });
+
+  // ─── POST /api/users/:id/2fa/reset ──────────────────────────────────────────
+  fastify.post<{ Params: { id: string } }>('/api/users/:id/2fa/reset', async (req, reply) => {
+    if (!requirePerm(req, 'user:write', reply)) return;
+    const users = await readConfig('users');
+    const userIndex = users.findIndex(u => u.id === req.params.id);
+    if (userIndex === -1) return reply.status(404).send({ error: 'User not found' });
+    const user = users[userIndex]!;
+    const { totpSecret: _s, totpEnabled: _e, backupCodes: _b, ...rest } = user;
+    users[userIndex] = rest;
+    await writeConfig('users', users);
+    req.log.info({ adminId: req.dashUser!.id, targetUserId: req.params.id }, '2FA reset by admin');
+    return reply.send({ ok: true });
   });
 
   // ══════════════════════════════════════════════════════════════════════════════
