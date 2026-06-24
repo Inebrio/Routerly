@@ -432,3 +432,47 @@ export interface Me {
 export const getMe = () => request<Me>('/me');
 export const updateMe = (data: { currentPassword: string; newPassword: string }) =>
   request<Me>('/me', { method: 'PUT', body: JSON.stringify(data) });
+
+// ── Prompts ───────────────────────────────────────────────────────────────────
+
+export interface PromptVersion {
+  version: number;
+  systemPrompt: string;
+  seedMessages?: Array<{ role: 'user' | 'assistant'; content: string }>;
+  createdAt: string;
+  createdBy: string;
+  notes?: string;
+}
+
+export interface PromptEntry {
+  id: string;
+  name: string;
+  description?: string;
+  projectId?: string;
+  versions: PromptVersion[];
+  activeVersion: number;
+}
+
+export const listPrompts = (projectId?: string) =>
+  request<PromptEntry[]>(`/prompts${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ''}`);
+
+export const createPrompt = (data: { name: string; description?: string; systemPrompt: string; projectId?: string; notes?: string }) =>
+  request<PromptEntry>('/prompts', { method: 'POST', body: JSON.stringify(data) });
+
+export const getPrompt = (id: string) =>
+  request<PromptEntry>(`/prompts/${id}`);
+
+export const updatePrompt = (id: string, data: { name?: string; description?: string }) =>
+  request<PromptEntry>(`/prompts/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+
+export const deletePrompt = (id: string) =>
+  request<void>(`/prompts/${id}`, { method: 'DELETE' });
+
+export const activateVersion = (id: string, version: number) =>
+  request<PromptEntry>(`/prompts/${id}/activate/${version}`, { method: 'POST' });
+
+export const addPromptVersion = (id: string, data: { systemPrompt: string; seedMessages?: Array<{ role: 'user' | 'assistant'; content: string }>; notes?: string }) =>
+  request<PromptVersion>(`/prompts/${id}/versions`, { method: 'POST', body: JSON.stringify(data) });
+
+export const deletePromptVersion = (id: string, version: number) =>
+  request<void>(`/prompts/${id}/versions/${version}`, { method: 'DELETE' });

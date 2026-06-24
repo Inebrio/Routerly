@@ -101,6 +101,38 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     const isStream = body.stream === true;
     const startMs = Date.now();
 
+    // ── Prompt injection ──────────────────────────────────────────────────
+    const promptId = request.headers['x-routerly-prompt-id'] as string | undefined;
+    if (promptId) {
+      const promptVarsRaw = request.headers['x-routerly-prompt-vars'] as string | undefined;
+      const settings = await readConfig('settings');
+      const prompt = settings.prompts?.find(p => p.id === promptId);
+      if (prompt) {
+        const activeVer = prompt.versions.find(v => v.version === prompt.activeVersion);
+        if (activeVer) {
+          let systemPrompt = activeVer.systemPrompt;
+          if (promptVarsRaw) {
+            try {
+              const vars = JSON.parse(promptVarsRaw) as Record<string, string>;
+              systemPrompt = systemPrompt.replace(/\{\{(\w+)\}\}/g, (_, k: string) => vars[k] ?? `{{${k}}}`);
+            } catch { /* ignore malformed vars */ }
+          }
+          const messages: any[] = body.messages ?? [];
+          body.messages = messages;
+          const sysIdx = messages.findIndex((m: any) => m.role === 'system');
+          if (sysIdx >= 0) {
+            messages[sysIdx] = { role: 'system', content: systemPrompt };
+          } else {
+            messages.unshift({ role: 'system', content: systemPrompt });
+          }
+          if (activeVer.seedMessages?.length) {
+            // insert seed messages after system message (index 1)
+            messages.splice(1, 0, ...activeVer.seedMessages);
+          }
+        }
+      }
+    }
+
     const msgs = body.messages ?? [];
     const payloadChars = JSON.stringify(msgs).length;
     request.log.info(

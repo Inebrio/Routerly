@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { randomUUID } from 'node:crypto';
-import type { MessagesRequest } from '@routerly/shared';
+import type { MessagesRequest, Settings } from '@routerly/shared';
 import { routeRequest } from '../routing/router.js';
 import { readConfig } from '../config/loader.js';
 import { setTrace, appendTrace } from '../routing/traceStore.js';
@@ -13,6 +13,32 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{ Body: MessagesRequest }>('/v1/messages', async (request, reply) => {
     const project = request.project;
     const body = request.body;
+
+    // ── Prompt injection ──────────────────────────────────────────────────
+    const promptId = request.headers['x-routerly-prompt-id'] as string | undefined;
+    if (promptId) {
+      const promptVarsRaw = request.headers['x-routerly-prompt-vars'] as string | undefined;
+      const settings = await readConfig('settings') as Settings;
+      const prompt = settings.prompts?.find(p => p.id === promptId);
+      if (prompt) {
+        const activeVer = prompt.versions.find(v => v.version === prompt.activeVersion);
+        if (activeVer) {
+          let systemPrompt = activeVer.systemPrompt;
+          if (promptVarsRaw) {
+            try {
+              const vars = JSON.parse(promptVarsRaw) as Record<string, string>;
+              systemPrompt = systemPrompt.replace(/\{\{(\w+)\}\}/g, (_, k: string) => vars[k] ?? `{{${k}}}`);
+            } catch { /* ignore malformed vars */ }
+          }
+          // Anthropic uses body.system for the system prompt
+          body.system = systemPrompt;
+          // Prepend seed messages to the messages array
+          if (activeVer.seedMessages?.length) {
+            body.messages = [...activeVer.seedMessages as MessagesRequest['messages'], ...body.messages];
+          }
+        }
+      }
+    }
 
     // Convert Anthropic messages to OpenAI format for routing policies
     const openAICompatBody = {

@@ -48,6 +48,8 @@ export type {
   SemanticCacheConfig,
   UpdateInfo,
   AvailableReleases,
+  PromptVersion,
+  PromptEntry,
 } from './types/config.js';
 
 export type {

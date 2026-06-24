@@ -313,6 +313,29 @@ export interface TelemetryConfig {
   lastPingedVersion?: string;
 }
 
+// ─── Prompt registry ──────────────────────────────────────────────────────────
+
+export interface PromptVersion {
+  version: number;
+  systemPrompt: string;
+  seedMessages?: Array<{ role: 'user' | 'assistant'; content: string }>;
+  createdAt: string;
+  createdBy: string;
+  notes?: string;
+}
+
+export interface PromptEntry {
+  id: string;
+  name: string;
+  description?: string;
+  /** null = global; set to a project id to scope to that project */
+  projectId?: string;
+  versions: PromptVersion[];
+  activeVersion: number;
+}
+
+// ─── Settings ────────────────────────────────────────────────────────────────
+
 export interface Settings {
   port: number;
   host: string;
@@ -334,6 +357,8 @@ export interface Settings {
   channel?: string;
   /** Anonymous install metrics opt-in. Absent means the user has not been asked yet. */
   telemetry?: TelemetryConfig;
+  /** Stored prompt registry */
+  prompts?: PromptEntry[];
 }
 
 // ─── Update info ─────────────────────────────────────────────────────────────
