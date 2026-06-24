@@ -479,3 +479,24 @@ export interface Me {
 export const getMe = () => request<Me>('/me');
 export const updateMe = (data: { currentPassword: string; newPassword: string }) =>
   request<Me>('/me', { method: 'PUT', body: JSON.stringify(data) });
+
+// ── Notification inbox (#91) ───────────────────────────────────────────────
+export interface InboxItem {
+  id: string;
+  event: string;
+  severity: 'info' | 'warning' | 'critical';
+  timestamp: string;
+  details: Record<string, unknown>;
+  read: boolean;
+}
+
+export const getNotificationInbox = (opts: { limit?: number; unreadOnly?: boolean } = {}) => {
+  const q = new URLSearchParams();
+  if (opts.limit) q.set('limit', String(opts.limit));
+  if (opts.unreadOnly) q.set('unreadOnly', 'true');
+  const qs = q.toString();
+  return request<{ items: InboxItem[]; unreadCount: number }>(`/notifications/inbox${qs ? `?${qs}` : ''}`);
+};
+
+export const markNotificationsRead = (body: { ids?: string[]; all?: boolean }) =>
+  request<{ updated: number }>('/notifications/inbox/read', { method: 'POST', body: JSON.stringify(body) });

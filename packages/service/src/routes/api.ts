@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { getGroupUsageSnapshot } from '../cost/budget.js';
 import { getTrace } from '../routing/traceStore.js';
 import { sendTestNotification } from '../notifications/sender.js';
+import { emitEvent } from '../notifications/emitter.js';
 import { updateChecker } from '../update-checker.js';
 
 const { version: pkgVersion } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf-8')) as { version: string };
@@ -159,7 +160,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const userIndex = users.findIndex(u => u.email === email);
     if (userIndex === -1) return reply.status(401).send({ error: 'Invalid credentials' });
     const { ok, upgradedHash } = await verifyPassword(password, users[userIndex]!.passwordHash);
-    if (!ok) return reply.status(401).send({ error: 'Invalid credentials' });
+    if (!ok) {
+      void emitEvent('auth.login_failed', 'warning', { email, userId: users[userIndex]!.id }, { log: req.log });
+      return reply.status(401).send({ error: 'Invalid credentials' });
+    }
     const user = users[userIndex]!;
     const allRoles = getEffectiveRoles(customRoles);
     const permissions = resolvePermissions(user.roleId, allRoles);
@@ -322,6 +326,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     };
     models.push(model);
     await writeConfig('models', models);
+    void emitEvent('config.model_added', 'info', { modelId: model.id, provider: model.provider }, { log: req.log });
     return reply.status(201).send({ ...model, apiKey: undefined, cfClearance: undefined });
   });
 
@@ -440,6 +445,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const filtered = models.filter(m => m.id !== req.params.id);
     if (filtered.length === models.length) return reply.status(404).send({ error: 'Not found' });
     await writeConfig('models', filtered);
+    void emitEvent('config.model_deleted', 'info', { modelId: req.params.id }, { log: req.log });
     return reply.status(204).send();
   });
 
@@ -516,6 +522,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     };
     projects.push(project);
     await writeConfig('projects', projects);
+    void emitEvent('config.project_created', 'info', { projectId: project.id, name: project.name }, { projectId: project.id, log: req.log });
     return reply.status(201).send({ ...project, token: rawToken });
   });
 
@@ -591,9 +598,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.delete<{ Params: { id: string } }>('/api/projects/:id', async (req, reply) => {
     if (!requirePerm(req, 'project:write', reply)) return;
     const projects = await readConfig('projects');
+    const deleted = projects.find(p => p.id === req.params.id);
     const filtered = projects.filter(p => p.id !== req.params.id);
     if (filtered.length === projects.length) return reply.status(404).send({ error: 'Not found' });
     await writeConfig('projects', filtered);
+    void emitEvent('config.project_deleted', 'info', { projectId: req.params.id, name: deleted?.name }, { log: req.log });
     return reply.status(204).send();
   });
 
@@ -1114,6 +1123,48 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const msg = e instanceof Error ? e.message : String(e);
       return reply.send({ ok: false, message: msg });
     }
+  });
+
+  // ─── GET /api/notifications/inbox ─────────────────────────────────────────
+  // Per-user in-app notification inbox (#91). Available to any authenticated user.
+  fastify.get<{ Querystring: { limit?: string; unreadOnly?: string } }>('/api/notifications/inbox', async (req, reply) => {
+    const userId = req.dashUser!.id;
+    const limit = Math.min(Math.max(Number(req.query.limit ?? '50') || 50, 1), 200);
+    const unreadOnly = req.query.unreadOnly === 'true';
+    const all = await readConfig('notifications');
+    // Newest first
+    const sorted = [...all].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+    const visible = unreadOnly ? sorted.filter(n => !n.readBy.includes(userId)) : sorted;
+    const items = visible.slice(0, limit).map(n => ({
+      id: n.id, event: n.event, severity: n.severity, timestamp: n.timestamp,
+      details: n.details, read: n.readBy.includes(userId),
+    }));
+    const unreadCount = sorted.filter(n => !n.readBy.includes(userId)).length;
+    return reply.send({ items, unreadCount });
+  });
+
+  // ─── POST /api/notifications/inbox/read ────────────────────────────────────
+  const inboxReadSchema = z.object({
+    ids: z.array(z.string()).optional(),
+    all: z.boolean().optional(),
+  }).refine(b => b.all === true || (b.ids?.length ?? 0) > 0, { message: 'Provide ids[] or all:true' });
+
+  fastify.post<{ Body: { ids?: string[]; all?: boolean } }>('/api/notifications/inbox/read', async (req, reply) => {
+    const parsed = inboxReadSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid body' });
+    const userId = req.dashUser!.id;
+    const { ids, all } = parsed.data;
+    const items = await readConfig('notifications');
+    const idSet = new Set(ids ?? []);
+    let updated = 0;
+    for (const n of items) {
+      if ((all || idSet.has(n.id)) && !n.readBy.includes(userId)) {
+        n.readBy.push(userId);
+        updated++;
+      }
+    }
+    if (updated > 0) await writeConfig('notifications', items);
+    return reply.send({ updated });
   });
 
   // ─── POST /api/test/openai-oauth ─────────────────────────────────────────────

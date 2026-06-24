@@ -11,6 +11,7 @@ vi.mock('../plugins/jwt.js', () => ({
   generateRawToken: vi.fn(() => 'raw-refresh-token-xxxx'),
 }))
 vi.mock('../notifications/sender.js', () => ({ sendTestNotification: vi.fn() }))
+vi.mock('../notifications/emitter.js', () => ({ emitEvent: vi.fn() }))
 vi.mock('../routing/traceStore.js', () => ({ getTrace: vi.fn() }))
 vi.mock('../update-checker.js', () => ({
   updateChecker: { getLastResult: vi.fn(() => null), check: vi.fn(), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
@@ -5050,5 +5051,113 @@ describe('DELETE /api/spend-groups/:id', () => {
     const res = await app.inject({ method: 'DELETE', url: '/api/spend-groups/org', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(409)
+  })
+})
+
+// ─── Notification inbox (#91) ────────────────────────────────────────────────
+describe('GET /api/notifications/inbox', () => {
+  const inbox = [
+    { id: 'n1', event: 'provider.error', severity: 'critical', timestamp: '2026-01-02T00:00:00.000Z', details: {}, readBy: [] },
+    { id: 'n2', event: 'config.model_added', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: ['admin-id'] },
+  ]
+
+  function setup() {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'notifications') return inbox.map(n => ({ ...n, readBy: [...n.readBy] }))
+      return []
+    })
+  }
+
+  it('returns items newest-first with unreadCount and read flag', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.items[0].id).toBe('n1') // newest first
+    expect(body.items[0].read).toBe(false)
+    expect(body.items[1].read).toBe(true)
+    expect(body.unreadCount).toBe(1)
+  })
+
+  it('filters to unread when unreadOnly=true', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?unreadOnly=true', headers: adminAuthHeaders() })
+    await app.close()
+    const body = JSON.parse(res.body)
+    expect(body.items).toHaveLength(1)
+    expect(body.items[0].id).toBe('n1')
+  })
+
+  it('requires auth', async () => {
+    mockVerifyToken.mockReturnValue(null as any)
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox' })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+})
+
+describe('POST /api/notifications/inbox/read', () => {
+  function setup(inbox: any[]) {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'notifications') return inbox
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+  }
+
+  it('marks specific ids as read', async () => {
+    setup([
+      { id: 'n1', event: 'x', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [] },
+      { id: 'n2', event: 'y', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [] },
+    ])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/read',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ ids: ['n1'] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).updated).toBe(1)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'notifications')![1]
+    expect(written.find((n: any) => n.id === 'n1').readBy).toContain('admin-id')
+    expect(written.find((n: any) => n.id === 'n2').readBy).not.toContain('admin-id')
+  })
+
+  it('marks all as read with all:true', async () => {
+    setup([
+      { id: 'n1', event: 'x', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [] },
+      { id: 'n2', event: 'y', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [] },
+    ])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/read',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ all: true }),
+    })
+    await app.close()
+    expect(JSON.parse(res.body).updated).toBe(2)
+  })
+
+  it('returns 400 when neither ids nor all provided', async () => {
+    setup([])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/read',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
   })
 })
