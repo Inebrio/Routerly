@@ -386,5 +386,80 @@ Examples:
       }
     });
 
+
+  // ── model discover ──
+  cmd.command('discover')
+    .description('Browse the model catalog (requires service 0.3.0+)')
+    .option('--provider <name>', 'Filter by provider')
+    .option('--json', 'Output as JSON')
+    .action(async (opts: { provider?: string; json?: boolean }) => {
+      try {
+        const params = new URLSearchParams();
+        if (opts.provider) params.set('provider', opts.provider);
+        const qs = params.toString();
+
+        const data = await api<Array<{
+          modelId: string;
+          provider: string;
+          contextWindow?: number;
+          modalities?: string[];
+          inputPricePerMillion?: number;
+          outputPricePerMillion?: number;
+        }>>('GET', `/api/models/catalog${qs ? `?${qs}` : ''}`);
+
+        if (opts.json) { console.log(JSON.stringify(data, null, 2)); return; }
+
+        if (data.length === 0) {
+          console.log(chalk.yellow('No models in catalog.'));
+          return;
+        }
+
+        const table = new Table({
+          head: ['Model', 'Provider', 'Context Window', 'Modalities', 'Price/1K In', 'Price/1K Out'].map(h => chalk.cyan(h)),
+        });
+
+        for (const m of data) {
+          table.push([
+            m.modelId,
+            m.provider,
+            m.contextWindow ? m.contextWindow.toLocaleString() : chalk.gray('—'),
+            m.modalities?.join(', ') ?? chalk.gray('—'),
+            m.inputPricePerMillion != null ? `$${(m.inputPricePerMillion / 1000).toFixed(5)}` : chalk.gray('—'),
+            m.outputPricePerMillion != null ? `$${(m.outputPricePerMillion / 1000).toFixed(5)}` : chalk.gray('—'),
+          ]);
+        }
+        console.log(table.toString());
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) {
+          console.log(chalk.yellow('Model discovery not available in this version.'));
+          return;
+        }
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  // ── model set-caching ──
+  cmd.command('set-caching <modelId> <mode>')
+    .description('Set prompt caching mode for a model (auto | passthrough | disabled)')
+    .action(async (modelId: string, mode: string) => {
+      const valid = ['auto', 'passthrough', 'disabled'];
+      if (!valid.includes(mode)) {
+        console.error(chalk.red(`Invalid mode "${mode}". Use: ${valid.join(' | ')}`));
+        process.exit(1);
+      }
+      try {
+        await api<void>('PATCH', `/api/models/${encodeURIComponent(modelId)}`, { promptCaching: mode });
+        console.log(chalk.green(`Prompt caching for "${modelId}" set to "${mode}".`));
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) {
+          console.error(chalk.red(`Model "${modelId}" not found.`));
+        } else {
+          console.error(chalk.red(`Error: ${(err as Error).message}`));
+        }
+        process.exit(1);
+      }
+    });
+
   return cmd;
 }
