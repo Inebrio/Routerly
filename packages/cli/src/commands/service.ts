@@ -1,7 +1,8 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
+import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import { getCurrentAccount } from '../store.js';
+import { getCurrentAccount, requireAccount } from '../store.js';
 import type { Settings } from '@routerly/shared';
 
 interface SystemInfo {
@@ -103,6 +104,110 @@ Examples:
         } else {
           console.error(chalk.red(`Error: ${(err as Error).message}`));
         }
+        process.exit(1);
+      }
+    });
+
+
+  // ── service health ──
+  cmd.command('health')
+    .description('Show provider health status')
+    .option('--json', 'Output as JSON')
+    .action(async (opts: { json?: boolean }) => {
+      try {
+        const data = await api<Array<{
+          modelId: string;
+          provider: string;
+          status: 'healthy' | 'degraded' | 'down';
+          errorRate?: number;
+          p95LatencyMs?: number;
+          requestsPerHour?: number;
+          lastSuccess?: string;
+        }>>('GET', '/api/health/providers');
+
+        if (opts.json) { console.log(JSON.stringify(data, null, 2)); return; }
+
+        if (data.length === 0) {
+          console.log(chalk.yellow('No provider health data available.'));
+          return;
+        }
+
+        const table = new Table({
+          head: ['Model', 'Provider', 'Status', 'Error Rate', 'P95 Latency', 'Req/hr', 'Last Success'].map(h => chalk.cyan(h)),
+        });
+
+        for (const p of data) {
+          const status = p.status === 'healthy'
+            ? chalk.green(p.status)
+            : p.status === 'degraded'
+              ? chalk.yellow(p.status)
+              : chalk.red(p.status);
+          table.push([
+            p.modelId,
+            p.provider,
+            status,
+            p.errorRate != null ? `${(p.errorRate * 100).toFixed(1)}%` : chalk.gray('—'),
+            p.p95LatencyMs != null ? `${p.p95LatencyMs}ms` : chalk.gray('—'),
+            p.requestsPerHour ?? chalk.gray('—'),
+            p.lastSuccess ? new Date(p.lastSuccess).toLocaleString() : chalk.gray('—'),
+          ]);
+        }
+        console.log(table.toString());
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  // ── service metrics ──
+  cmd.command('metrics')
+    .description('Show Prometheus metrics summary')
+    .option('--raw', 'Print raw Prometheus text output')
+    .action(async (opts: { raw?: boolean }) => {
+      try {
+        const account = await requireAccount();
+        const url = `${account.serverUrl.replace(/\/$/, '')}/metrics`;
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${account.token}` },
+        });
+        if (!res.ok) {
+          console.error(chalk.red(`Error: ${res.statusText}`));
+          process.exit(1);
+        }
+        const text = await res.text();
+
+        if (opts.raw) {
+          console.log(text);
+          return;
+        }
+
+        // Parse Prometheus text: extract non-comment, non-empty lines with a value
+        const counters: Array<{ name: string; value: string }> = [];
+        for (const line of text.split('\n')) {
+          if (!line || line.startsWith('#')) continue;
+          const spaceIdx = line.lastIndexOf(' ');
+          if (spaceIdx === -1) continue;
+          const name = line.slice(0, spaceIdx).trim();
+          const value = line.slice(spaceIdx + 1).trim();
+          if (name && value && !isNaN(Number(value))) {
+            counters.push({ name, value });
+          }
+        }
+
+        if (counters.length === 0) {
+          console.log(chalk.yellow('No metrics available.'));
+          return;
+        }
+
+        const table = new Table({
+          head: ['Metric', 'Value'].map(h => chalk.cyan(h)),
+        });
+        for (const c of counters) {
+          table.push([c.name, c.value]);
+        }
+        console.log(table.toString());
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
