@@ -389,54 +389,77 @@ Examples:
 
   // ── model discover ──
   cmd.command('discover')
-    .description('Browse the model catalog (requires service 0.3.0+)')
-    .option('--provider <name>', 'Filter by provider')
-    .option('--json', 'Output as JSON')
+    .description('Browse the built-in model catalog with capabilities and pricing')
+    .option('--provider <name>', 'Filter by provider (openai, anthropic, gemini, ollama)')
+    .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  routerly model discover
+  routerly model discover --provider anthropic
+  routerly model discover --json
+`)
     .action(async (opts: { provider?: string; json?: boolean }) => {
+      interface CatalogEntry {
+        id: string;
+        provider: string;
+        name: string;
+        contextWindow: number;
+        modalities: string[];
+        pricing: { inputPer1kTokens: number; outputPer1kTokens: number };
+        local?: boolean;
+        isConfigured: boolean;
+      }
+
+      let entries: CatalogEntry[];
       try {
-        const params = new URLSearchParams();
-        if (opts.provider) params.set('provider', opts.provider);
-        const qs = params.toString();
-
-        const data = await api<Array<{
-          modelId: string;
-          provider: string;
-          contextWindow?: number;
-          modalities?: string[];
-          inputPricePerMillion?: number;
-          outputPricePerMillion?: number;
-        }>>('GET', `/api/models/catalog${qs ? `?${qs}` : ''}`);
-
-        if (opts.json) { console.log(JSON.stringify(data, null, 2)); return; }
-
-        if (data.length === 0) {
-          console.log(chalk.yellow('No models in catalog.'));
-          return;
-        }
-
-        const table = new Table({
-          head: ['Model', 'Provider', 'Context Window', 'Modalities', 'Price/1K In', 'Price/1K Out'].map(h => chalk.cyan(h)),
-        });
-
-        for (const m of data) {
-          table.push([
-            m.modelId,
-            m.provider,
-            m.contextWindow ? m.contextWindow.toLocaleString() : chalk.gray('—'),
-            m.modalities?.join(', ') ?? chalk.gray('—'),
-            m.inputPricePerMillion != null ? `$${(m.inputPricePerMillion / 1000).toFixed(5)}` : chalk.gray('—'),
-            m.outputPricePerMillion != null ? `$${(m.outputPricePerMillion / 1000).toFixed(5)}` : chalk.gray('—'),
-          ]);
-        }
-        console.log(table.toString());
+        entries = await api<CatalogEntry[]>('GET', '/api/models/catalog');
       } catch (err) {
         if (err instanceof ApiError && err.status === 404) {
-          console.log(chalk.yellow('Model discovery not available in this version.'));
-          return;
+          console.error(chalk.yellow('Model catalog endpoint not available on this server version.'));
+          process.exit(1);
         }
         console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
+
+      if (opts.provider) {
+        entries = entries.filter(e => e.provider.toLowerCase() === opts.provider!.toLowerCase());
+      }
+
+      if (opts.json) {
+        console.log(JSON.stringify(entries, null, 2));
+        return;
+      }
+
+      if (entries.length === 0) {
+        console.log(chalk.yellow('No models found for the given filter.'));
+        return;
+      }
+
+      const table = new Table({
+        head: ['Model', 'Provider', 'Context', 'Modalities', 'Input /1K', 'Output /1K'].map(h => chalk.cyan(h)),
+      });
+
+      for (const e of entries) {
+        const configured = e.isConfigured ? chalk.green(' ★') : '';
+        const priceIn  = e.local ? chalk.green('local/free') : `$${e.pricing.inputPer1kTokens}`;
+        const priceOut = e.local ? chalk.green('local/free') : `$${e.pricing.outputPer1kTokens}`;
+        const ctx = e.contextWindow >= 1_000_000
+          ? `${(e.contextWindow / 1_000_000).toFixed(1)}M`
+          : `${Math.round(e.contextWindow / 1000)}k`;
+
+        table.push([
+          e.id + configured,
+          e.provider,
+          ctx,
+          e.modalities.join(', '),
+          priceIn,
+          priceOut,
+        ]);
+      }
+
+      console.log(table.toString());
+      console.log(chalk.gray(`\n${entries.length} model${entries.length !== 1 ? 's' : ''} shown. ★ = configured in Routerly.`));
     });
 
   // ── model set-caching ──

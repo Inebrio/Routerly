@@ -31,6 +31,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { UserEditPage } from './pages/UserEditPage';
 import { HelpPage } from './pages/HelpPage';
 import { LayoutDashboard, Cpu, FolderOpen, BarChart2, Activity, Trophy, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { ModelDiscoveryPage } from './pages/ModelDiscoveryPage';
 import { Logo } from './components/Logo';
 import { NotificationBell } from './components/NotificationBell';
 
@@ -315,6 +316,7 @@ const router = createBrowserRouter([
           { index: true, element: <Navigate to="overview" replace /> },
           { path: 'overview', element: <OverviewPage /> },
           { path: 'models', element: <ModelsPage /> },
+          { path: 'models/discover', element: <ModelDiscoveryPage /> },
           { path: 'models/new', element: <ModelFormPage /> },
           { path: 'models/:id', element: <ModelFormPage /> },
           { path: 'projects', element: <ProjectsPage /> },

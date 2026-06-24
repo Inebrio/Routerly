@@ -5361,3 +5361,77 @@ describe('DELETE /api/projects/:id/playground-presets/:presetId', () => {
     expect(res.statusCode).toBe(404)
   })
 })
+
+// ─── Model catalog ─────────────────────────────────────────────────────────────
+
+describe('GET /api/models/catalog', () => {
+  it('returns an array of catalog entries', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'models') return []
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/models/catalog', headers: adminAuthHeaders() })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body) as unknown[]
+    expect(Array.isArray(body)).toBe(true)
+    expect(body.length).toBeGreaterThan(0)
+  })
+
+  it('requires authentication (401 without token)', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/models/catalog' })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('marks isConfigured=true for a configured model', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'models') return [{ id: 'gpt-4o', provider: 'openai', endpoint: 'https://api.openai.com/v1', cost: { inputPerMillion: 5, outputPerMillion: 15 } }]
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/models/catalog', headers: adminAuthHeaders() })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body) as Array<{ id: string; isConfigured: boolean }>
+    const gpt4o = body.find(e => e.id === 'gpt-4o')
+    expect(gpt4o).toBeDefined()
+    expect(gpt4o!.isConfigured).toBe(true)
+    const other = body.find(e => e.id !== 'gpt-4o')
+    expect(other!.isConfigured).toBe(false)
+  })
+
+  it('includes entries for all four expected providers', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'models') return []
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/models/catalog', headers: adminAuthHeaders() })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body) as Array<{ provider: string }>
+    const providers = new Set(body.map(e => e.provider))
+    expect(providers.has('openai')).toBe(true)
+    expect(providers.has('anthropic')).toBe(true)
+    expect(providers.has('gemini')).toBe(true)
+    expect(providers.has('ollama')).toBe(true)
+  })
+})
