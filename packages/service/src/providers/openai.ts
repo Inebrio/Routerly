@@ -11,7 +11,7 @@ import type { ProviderAdapter } from './types.js';
 import { anthropicToOpenAIMessages, openAIToAnthropicResponse } from './messages-compat.js';
 
 export class OpenAIAdapter implements ProviderAdapter {
-  private getClient(model: ModelConfig): OpenAI {
+  protected getClient(model: ModelConfig): OpenAI {
     const apiKey = model.apiKey ?? '';
     return new OpenAI({
       apiKey,

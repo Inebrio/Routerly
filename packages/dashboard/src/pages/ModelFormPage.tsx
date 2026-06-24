@@ -275,6 +275,19 @@ const EMPTY_FORM = {
   cachePerMillion: '',
   cacheWritePerMillion: '',
   contextWindow: '',
+  // Azure OpenAI
+  azureResourceName: '',
+  azureDeploymentId: '',
+  azureApiVersion: '',
+  // AWS Bedrock
+  awsRegion: '',
+  awsAccessKeyId: '',
+  awsSecretAccessKey: '',
+  awsSessionToken: '',
+  // Google Vertex AI
+  vertexProjectId: '',
+  vertexLocation: '',
+  vertexServiceAccountKey: '',
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -446,6 +459,12 @@ export function ModelFormPage() {
     setIsEmbeddingModel(model.capabilities?.embedding === true);
     setErr(''); setShowToken(false);
 
+    const m = model as Model & {
+      azureResourceName?: string; azureDeploymentId?: string; azureApiVersion?: string;
+      awsRegion?: string; awsAccessKeyId?: string; awsSessionToken?: string;
+      vertexProjectId?: string; vertexLocation?: string; vertexServiceAccountKey?: string;
+    };
+
     setForm(f => ({
       ...f,
       id: formId,
@@ -460,6 +479,16 @@ export function ModelFormPage() {
       cachePerMillion: cachePrice != null ? String(cachePrice) : '',
       cacheWritePerMillion: cacheWritePrice != null ? String(cacheWritePrice) : '',
       contextWindow: ctxWindow != null ? String(ctxWindow) : '',
+      azureResourceName: m.azureResourceName ?? '',
+      azureDeploymentId: m.azureDeploymentId ?? '',
+      azureApiVersion: m.azureApiVersion ?? '',
+      awsRegion: m.awsRegion ?? '',
+      awsAccessKeyId: m.awsAccessKeyId ?? '',
+      awsSecretAccessKey: '',
+      awsSessionToken: m.awsSessionToken ?? '',
+      vertexProjectId: m.vertexProjectId ?? '',
+      vertexLocation: m.vertexLocation ?? '',
+      vertexServiceAccountKey: '',
     }));
 
     // Resolve limits: prefer new `limits`, fall back to legacy `globalThresholds`
@@ -564,6 +593,19 @@ export function ModelFormPage() {
           .filter(l => l.value !== '' && !isNaN(parseFloat(l.value)))
           .map(rowToLimit),
         ...(isEmbeddingModel ? { capabilities: { embedding: true } } : {}),
+        // Azure OpenAI
+        ...(form.azureResourceName ? { azureResourceName: form.azureResourceName } : {}),
+        ...(form.azureDeploymentId ? { azureDeploymentId: form.azureDeploymentId } : {}),
+        ...(form.azureApiVersion   ? { azureApiVersion: form.azureApiVersion }     : {}),
+        // AWS Bedrock
+        ...(form.awsRegion         ? { awsRegion: form.awsRegion }                 : {}),
+        ...(form.awsAccessKeyId    ? { awsAccessKeyId: form.awsAccessKeyId }       : {}),
+        ...(form.awsSecretAccessKey ? { awsSecretAccessKey: form.awsSecretAccessKey } : {}),
+        ...(form.awsSessionToken   ? { awsSessionToken: form.awsSessionToken }     : {}),
+        // Google Vertex AI
+        ...(form.vertexProjectId   ? { vertexProjectId: form.vertexProjectId }     : {}),
+        ...(form.vertexLocation    ? { vertexLocation: form.vertexLocation }       : {}),
+        ...(form.vertexServiceAccountKey ? { vertexServiceAccountKey: form.vertexServiceAccountKey } : {}),
       };
 
       if (editingModelId) {
@@ -777,6 +819,94 @@ export function ModelFormPage() {
                 </div>
               )}
             </div>
+
+            {/* Azure OpenAI specific fields */}
+            {form.provider === 'azure-openai' && (
+              <>
+                <div className="form-group">
+                  <label className="form-label">Azure Resource Name</label>
+                  <input className="form-input" value={form.azureResourceName}
+                    onChange={e => setForm(f => ({ ...f, azureResourceName: e.target.value }))}
+                    placeholder="myresource" required />
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>The Azure OpenAI resource name (from the Azure portal).</div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Deployment ID</label>
+                  <input className="form-input" value={form.azureDeploymentId}
+                    onChange={e => setForm(f => ({ ...f, azureDeploymentId: e.target.value }))}
+                    placeholder="gpt-4o-deployment" required />
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>The deployment name you created in Azure OpenAI Studio.</div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">API Version <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(default: 2024-02-01)</span></label>
+                  <input className="form-input" value={form.azureApiVersion}
+                    onChange={e => setForm(f => ({ ...f, azureApiVersion: e.target.value }))}
+                    placeholder="2024-02-01" />
+                </div>
+              </>
+            )}
+
+            {/* AWS Bedrock specific fields */}
+            {form.provider === 'bedrock' && (
+              <>
+                <div className="form-group">
+                  <label className="form-label">AWS Region</label>
+                  <input className="form-input" value={form.awsRegion}
+                    onChange={e => setForm(f => ({ ...f, awsRegion: e.target.value }))}
+                    placeholder="us-east-1" required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">AWS Access Key ID</label>
+                  <input className="form-input" value={form.awsAccessKeyId}
+                    onChange={e => setForm(f => ({ ...f, awsAccessKeyId: e.target.value }))}
+                    placeholder="AKIAIOSFODNN7EXAMPLE" required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">AWS Secret Access Key</label>
+                  <input className="form-input" type="password" autoComplete="new-password"
+                    value={form.awsSecretAccessKey}
+                    onChange={e => setForm(f => ({ ...f, awsSecretAccessKey: e.target.value }))}
+                    placeholder={editingModelId ? 'Leave blank to keep existing' : 'wJalrXUtnFEMI/K7MDENG/…'} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Session Token <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional, for temporary credentials)</span></label>
+                  <input className="form-input" type="password" autoComplete="new-password"
+                    value={form.awsSessionToken}
+                    onChange={e => setForm(f => ({ ...f, awsSessionToken: e.target.value }))}
+                    placeholder="AQoDYXdz…" />
+                </div>
+              </>
+            )}
+
+            {/* Google Vertex AI specific fields */}
+            {form.provider === 'vertex' && (
+              <>
+                <div className="form-group">
+                  <label className="form-label">GCP Project ID</label>
+                  <input className="form-input" value={form.vertexProjectId}
+                    onChange={e => setForm(f => ({ ...f, vertexProjectId: e.target.value }))}
+                    placeholder="my-gcp-project" required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Location <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(default: us-central1)</span></label>
+                  <input className="form-input" value={form.vertexLocation}
+                    onChange={e => setForm(f => ({ ...f, vertexLocation: e.target.value }))}
+                    placeholder="us-central1" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Service Account Key <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(JSON)</span></label>
+                  <textarea className="form-input" rows={6}
+                    value={form.vertexServiceAccountKey}
+                    onChange={e => setForm(f => ({ ...f, vertexServiceAccountKey: e.target.value }))}
+                    placeholder={editingModelId ? 'Leave blank to keep existing key' : 'Paste the contents of your service account JSON key file'}
+                    style={{ fontFamily: 'monospace', fontSize: '0.78rem', resize: 'vertical' }} />
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                    The full JSON content of a service account key with Vertex AI User role.
+                    If omitted, falls back to the API Key field as a Bearer token.
+                  </div>
+                </div>
+              </>
+            )}
 
           </div>
 
