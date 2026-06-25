@@ -63,8 +63,6 @@ export type {
   ProjectSemanticCacheConfig,
   UpdateInfo,
   AvailableReleases,
-  PromptVersion,
-  PromptEntry,
 } from './types/config.js';
 
 export type {

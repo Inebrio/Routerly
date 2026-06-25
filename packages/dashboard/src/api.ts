@@ -571,50 +571,6 @@ export const createPlaygroundPreset = (projectId: string, data: { name: string; 
 export const deletePlaygroundPreset = (projectId: string, presetId: string) =>
   request<void>(`/projects/${projectId}/playground-presets/${presetId}`, { method: 'DELETE' });
 
-// ── Prompts ───────────────────────────────────────────────────────────────────
-
-export interface PromptVersion {
-  version: number;
-  systemPrompt: string;
-  seedMessages?: Array<{ role: 'user' | 'assistant'; content: string }>;
-  createdAt: string;
-  createdBy: string;
-  notes?: string;
-}
-
-export interface PromptEntry {
-  id: string;
-  name: string;
-  description?: string;
-  projectId?: string;
-  versions: PromptVersion[];
-  activeVersion: number;
-}
-
-export const listPrompts = (projectId?: string) =>
-  request<PromptEntry[]>(`/prompts${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ''}`);
-
-export const createPrompt = (data: { name: string; description?: string; systemPrompt: string; projectId?: string; notes?: string }) =>
-  request<PromptEntry>('/prompts', { method: 'POST', body: JSON.stringify(data) });
-
-export const getPrompt = (id: string) =>
-  request<PromptEntry>(`/prompts/${id}`);
-
-export const updatePrompt = (id: string, data: { name?: string; description?: string }) =>
-  request<PromptEntry>(`/prompts/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-
-export const deletePrompt = (id: string) =>
-  request<void>(`/prompts/${id}`, { method: 'DELETE' });
-
-export const activateVersion = (id: string, version: number) =>
-  request<PromptEntry>(`/prompts/${id}/activate/${version}`, { method: 'POST' });
-
-export const addPromptVersion = (id: string, data: { systemPrompt: string; seedMessages?: Array<{ role: 'user' | 'assistant'; content: string }>; notes?: string }) =>
-  request<PromptVersion>(`/prompts/${id}/versions`, { method: 'POST', body: JSON.stringify(data) });
-
-export const deletePromptVersion = (id: string, version: number) =>
-  request<void>(`/prompts/${id}/versions/${version}`, { method: 'DELETE' });
-
 // ── Audit ─────────────────────────────────────────────────────────────────────
 
 export interface AuditEntry {
@@ -637,3 +593,16 @@ export const getAuditLog = (params?: { userId?: string; action?: string; from?: 
   if (params?.limit) q.set('limit', String(params.limit));
   return request<AuditEntry[]>(`/audit${q.size ? '?' + q : ''}`);
 };
+
+export interface CatalogEntry {
+  id: string;
+  provider: string;
+  name: string;
+  contextWindow: number;
+  modalities: string[];
+  pricing: { inputPer1kTokens: number; outputPer1kTokens: number };
+  local?: boolean;
+  isConfigured: boolean;
+}
+
+export const getModelCatalog = () => request<CatalogEntry[]>('/models/catalog');

@@ -16,7 +16,6 @@ import { makeUpdateCommand } from './commands/update.js';
 import { makeTelemetryCommand } from './commands/telemetry.js';
 import { makeNotificationCommand } from './commands/notification.js';
 import { makeSpendGroupCommand } from './commands/spend-group.js';
-import { makePromptCommand } from './commands/prompt.js';
 
 const program = new Command();
 
@@ -40,6 +39,5 @@ program.addCommand(makeUpdateCommand());
 program.addCommand(makeTelemetryCommand());
 program.addCommand(makeNotificationCommand());
 program.addCommand(makeSpendGroupCommand());
-program.addCommand(makePromptCommand());
 
 program.parse(process.argv);
