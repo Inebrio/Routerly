@@ -97,15 +97,3 @@ For verbatim forwarding on a first-class route, branch in the route after model 
 - Tags: providers, anthropic, passthrough, oauth, wire-format
 
 ---
-
-## 2026-06-24: Worktree node_modules isolation for @routerly/shared
-
-When running TypeScript typecheck in a git worktree, `@routerly/shared` resolves through the main repo's node_modules symlink (pointing to main repo's `packages/shared`), not the worktree's copy. Running `npm install` in the worktree root creates a local `node_modules/@routerly/shared` symlink pointing to the worktree's own packages/shared, fixing the resolution. Always run `npm install` in the worktree before typechecking cross-package types.
-
-## 2026-06-24: TF bag-of-words vectors need fixed vocab dimension
-
-Per-text vocabulary (each text builds its own word list) makes vectors incomparable across different texts — two texts with the same frequency profile but different words produce identical numerical vectors, causing false cosine similarity hits. Use a fixed-dimension hash space (djb2 hash → bucket index) so vectors from different texts are in the same space and cosine similarity is meaningful.
-
-## 2026-06-24: Git merge from worktree when target branch is checked out in main worktree
-
-A worktree cannot check out a branch already checked out in the main worktree (`fatal: ... already used by worktree`). To merge the feature branch into the base branch: push the feature branch to origin, then perform the merge from the main worktree (`git -C /main/repo/path merge --no-ff feature-branch`).
