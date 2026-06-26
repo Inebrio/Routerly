@@ -7,6 +7,10 @@
 import providersConf from './conf/providers.json' with { type: 'json' };
 export { providersConf };
 
+// Static notification event list (safe for browser — plain string array)
+export { NOTIFICATION_EVENTS } from './types/config.js';
+export type { NotificationEvent } from './types/config.js';
+
 // Re-export all types (erased at compile time, no runtime cost)
 export type {
   Provider,
@@ -31,6 +35,24 @@ export type {
   Settings,
   CallOutcome,
   UsageRecord,
+  // Notification channel types (U5)
+  EmailProvider,
+  NativeProvider,
+  ChannelProvider,
+  ChannelTargets,
+  NotificationsConfig,
+  NotificationChannel,
+  DashboardChannelConfig,
+  SmtpChannelConfig,
+  SesChannelConfig,
+  SendGridChannelConfig,
+  AzureChannelConfig,
+  GoogleChannelConfig,
+  WebhookChannelConfig,
+  SlackChannelConfig,
+  TeamsChannelConfig,
+  PagerDutyChannelConfig,
+  DiscordChannelConfig,
 } from './types/config.js';
 
 export type {

@@ -17,6 +17,12 @@ interface UsageResponse {
     totalCalls: number;
     successCalls: number;
     errorCalls: number;
+    routingCalls?: number;
+    completionCalls?: number;
+    guardrailCalls?: number;
+    routingCost?: number;
+    completionCost?: number;
+    guardrailCost?: number;
   };
   byModel: Record<string, UsageByModel>;
   records: Array<{
@@ -28,6 +34,7 @@ interface UsageResponse {
     cost: number;
     latencyMs: number;
     outcome: string;
+    callType?: string;
   }>;
 }
 
@@ -55,7 +62,8 @@ Examples:
     .option('--session-id <id>', 'Filter by session ID')
     .option('--end-user <id>', 'Filter by end-user ID')
     .option('--tag <key=value>', 'Filter by tag (key=value)')
-    .action(async (opts: { period: string; project?: string; sessionId?: string; endUser?: string; tag?: string }) => {
+    .option('--json', 'Output as JSON')
+    .action(async (opts: { period: string; project?: string; sessionId?: string; endUser?: string; tag?: string; json?: boolean }) => {
       try {
         const params = new URLSearchParams({ period: opts.period });
         if (opts.project) params.set('projectId', opts.project);
@@ -67,6 +75,8 @@ Examples:
         }
 
         const data = await api<UsageResponse>('GET', `/api/usage?${params.toString()}`);
+
+        if (opts.json) { console.log(JSON.stringify(data, null, 2)); return; }
 
         if (data.summary.totalCalls === 0) {
           console.log(chalk.yellow(`No usage records for period: ${opts.period}`));
@@ -92,6 +102,13 @@ Examples:
         console.log(table.toString());
         console.log(chalk.bold(`\nTotal: $${data.summary.totalCost.toFixed(6)} USD`) +
           chalk.gray(` (${data.summary.successCalls} ok, ${data.summary.errorCalls} errors)`));
+
+        const s = data.summary;
+        const breakdown: string[] = [];
+        if (s.completionCalls !== undefined) breakdown.push(`completion: ${s.completionCalls} calls / $${(s.completionCost ?? 0).toFixed(6)}`);
+        if (s.routingCalls !== undefined) breakdown.push(`routing: ${s.routingCalls} calls / $${(s.routingCost ?? 0).toFixed(6)}`);
+        if (s.guardrailCalls !== undefined) breakdown.push(`guardrail: ${s.guardrailCalls} calls / $${(s.guardrailCost ?? 0).toFixed(6)}`);
+        if (breakdown.length > 0) console.log(chalk.gray(`Breakdown — ${breakdown.join('  |  ')}`));
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);

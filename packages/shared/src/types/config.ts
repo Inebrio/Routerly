@@ -556,13 +556,31 @@ export interface UpdateInfo {
 
 export type EmailProvider    = 'smtp' | 'ses' | 'sendgrid' | 'azure' | 'google';
 export type NativeProvider   = 'slack' | 'teams' | 'pagerduty' | 'discord';
-export type ChannelProvider  = EmailProvider | 'webhook' | NativeProvider;
+export type ChannelProvider  = EmailProvider | 'webhook' | NativeProvider | 'dashboard';
+
+/** Recipient targeting for a channel. Empty/undefined arrays = everyone (U5). */
+export interface ChannelTargets {
+  /** Role IDs whose users are targeted */
+  roles?: string[];
+  /** Users whose role grants any of these permissions are targeted */
+  permissions?: Permission[];
+  /** Explicit user IDs targeted */
+  users?: string[];
+}
 
 interface ChannelBase {
   /** Unique channel identifier generated client-side */
   id: string;
   /** User-defined label shown in the UI */
   name?: string;
+  /**
+   * Event-name patterns this channel receives (exact, `*`, or `prefix.*`).
+   * When non-empty it is the primary routing mechanism; empty/undefined falls
+   * back to notificationRules, then to receive-all (U5).
+   */
+  events?: string[];
+  /** Recipient targeting (U5). Undefined or all-empty = everyone. */
+  targets?: ChannelTargets;
 }
 
 interface EmailChannelBase extends ChannelBase {
@@ -634,6 +652,11 @@ export interface DiscordChannelConfig extends ChannelBase {
   webhookUrl: string;
 }
 
+/** In-dashboard inbox channel (U5). No secrets; delivery is the in-app inbox. */
+export interface DashboardChannelConfig extends ChannelBase {
+  provider: 'dashboard';
+}
+
 export type NotificationChannel =
   | SmtpChannelConfig
   | SesChannelConfig
@@ -644,7 +667,8 @@ export type NotificationChannel =
   | SlackChannelConfig
   | TeamsChannelConfig
   | PagerDutyChannelConfig
-  | DiscordChannelConfig;
+  | DiscordChannelConfig
+  | DashboardChannelConfig;
 
 /** Maps event name patterns (exact or glob like `budget.*`) to channel IDs (#90) */
 export interface NotificationRule {
@@ -664,6 +688,31 @@ export interface NotificationsConfig {
 /** Severity of a system notification event (#89) */
 export type NotificationSeverity = 'info' | 'warning' | 'critical';
 
+/**
+ * Canonical system event taxonomy (#89). Single source of truth shared by
+ * service, dashboard and CLI. `emitEvent` accepts any string, but these are the
+ * events Routerly emits.
+ */
+export const NOTIFICATION_EVENTS = [
+  'provider.error',
+  'provider.degraded',
+  'provider.recovered',
+  'provider.rate_limited',
+  'routing.no_candidates',
+  'routing.fallback_used',
+  'auth.login_failed',
+  'auth.token_invalid',
+  'config.model_added',
+  'config.model_deleted',
+  'config.project_created',
+  'config.project_deleted',
+  'system.startup',
+  'system.shutdown',
+] as const;
+
+/** One of the canonical {@link NOTIFICATION_EVENTS} names. */
+export type NotificationEvent = (typeof NOTIFICATION_EVENTS)[number];
+
 /** A persisted in-app inbox notification (#91) */
 export interface NotificationInboxItem {
   id: string;
@@ -673,6 +722,11 @@ export interface NotificationInboxItem {
   details: Record<string, unknown>;
   /** User IDs that have marked this item as read */
   readBy: string[];
+  /**
+   * User IDs allowed to see this item (U5). Undefined = visible to everyone
+   * (legacy items and items from untargeted dashboard channels).
+   */
+  recipients?: string[];
 }
 
 // ── Backward-compat aliases (used by service code) ────────────────────────────

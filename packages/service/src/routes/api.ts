@@ -16,6 +16,7 @@ import { getGroupUsageSnapshot } from '../cost/budget.js';
 import { getTrace } from '../routing/traceStore.js';
 import { sendTestNotification } from '../notifications/sender.js';
 import { emitEvent } from '../notifications/emitter.js';
+import { ALL_PERMISSIONS, BUILT_IN_ROLES, getEffectiveRoles } from '../auth/roles.js';
 import { updateChecker } from '../update-checker.js';
 import { logAudit } from '../audit/logger.js';
 import type { AuditEntry } from '../audit/logger.js';
@@ -31,6 +32,45 @@ function hashToken(t: string): string {
 }
 
 const BCRYPT_ROUNDS = 12;
+
+// ── Notification channel validation (U5) ──────────────────────────────────────
+const CHANNEL_PROVIDERS = [
+  'smtp', 'ses', 'sendgrid', 'azure', 'google',
+  'webhook', 'slack', 'teams', 'pagerduty', 'discord', 'dashboard',
+] as const;
+
+const channelTargetsSchema = z.object({
+  roles:       z.array(z.string()).max(200).optional(),
+  permissions: z.array(z.enum(ALL_PERMISSIONS as [string, ...string[]])).max(200).optional(),
+  users:       z.array(z.string()).max(200).optional(),
+}).strict();
+
+/**
+ * Validates a NotificationChannel: enforces a known provider, optional events
+ * and targets, and a string id/name. Provider-specific fields (host, apiKey…)
+ * pass through unvalidated — they are exercised by the channel's own sender.
+ */
+const notificationChannelSchema = z.object({
+  id:       z.string().min(1).optional(),
+  name:     z.string().optional(),
+  provider: z.enum(CHANNEL_PROVIDERS),
+  events:   z.array(z.string()).max(50).optional(),
+  targets:  channelTargetsSchema.optional(),
+}).passthrough();
+
+const notificationRuleSchema = z.object({
+  events:   z.array(z.string()).max(50),
+  channels: z.array(z.string()).max(100),
+}).strict();
+
+const notificationsConfigSchema = z.object({
+  channels:          z.array(notificationChannelSchema).max(100).optional(),
+  notificationRules: z.array(notificationRuleSchema).max(100).optional(),
+  cooldowns:         z.record(z.string(), z.string()).refine(
+                       (c) => Object.keys(c).length <= 100,
+                       { message: 'cooldowns supports at most 100 entries' },
+                     ).optional(),
+}).strict();
 
 async function hashPassword(p: string): Promise<string> {
   return bcrypt.hash(p, BCRYPT_ROUNDS);
@@ -94,30 +134,6 @@ declare module 'fastify' {
   interface FastifyRequest {
     dashUser: { id: string; email: string; roleId: string; permissions: Permission[] } | null;
   }
-}
-
-// ── Built-in roles ────────────────────────────────────────────────────────────
-const ALL_PERMISSIONS: Permission[] = [
-  'project:read', 'project:write',
-  'model:read', 'model:write',
-  'user:read', 'user:write',
-  'report:read',
-  'settings:read', 'settings:write',
-  'notification:write',
-  'token:read', 'token:write',
-  'role:write',
-  'audit:read',
-];
-
-const BUILT_IN_ROLES: RoleConfig[] = [
-  { id: 'admin',    name: 'Admin',    permissions: ALL_PERMISSIONS },
-  { id: 'viewer',   name: 'Viewer',   permissions: ['project:read', 'model:read', 'report:read', 'settings:read', 'token:read', 'audit:read'] },
-  { id: 'operator', name: 'Operator', permissions: ['project:read', 'project:write', 'model:read', 'model:write', 'report:read', 'user:read', 'settings:read', 'token:read', 'token:write', 'notification:write'] },
-];
-
-function getEffectiveRoles(customRoles: RoleConfig[]): RoleConfig[] {
-  const builtInIds = new Set(BUILT_IN_ROLES.map(r => r.id));
-  return [...BUILT_IN_ROLES, ...customRoles.filter(r => !builtInIds.has(r.id))];
 }
 
 function resolvePermissions(roleId: string, allRoles: RoleConfig[]): Permission[] {
@@ -1388,6 +1404,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     Body: Partial<Settings>;
   }>('/api/settings', async (req, reply) => {
     if (!requirePerm(req, 'settings:write', reply)) return;
+    // Validate notifications config when present (U5: channels/events/targets).
+    const notifPatch = (req.body as Partial<Settings>).notifications;
+    if (notifPatch !== undefined) {
+      const parsed = notificationsConfigSchema.safeParse(notifPatch);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid notifications config' });
+      }
+    }
     const current = await readConfig('settings');
     const allowed: (keyof Settings)[] = [
       'defaultTimeoutMs',
@@ -1457,8 +1481,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const limit = Math.min(Math.max(Number(req.query.limit ?? '50') || 50, 1), 200);
     const unreadOnly = req.query.unreadOnly === 'true';
     const all = await readConfig('notifications');
+    // Per-user audience filter (U5): item.recipients undefined = everyone.
+    const mine = all.filter(n => n.recipients === undefined || n.recipients.includes(userId));
     // Newest first
-    const sorted = [...all].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+    const sorted = [...mine].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
     const visible = unreadOnly ? sorted.filter(n => !n.readBy.includes(userId)) : sorted;
     const items = visible.slice(0, limit).map(n => ({
       id: n.id, event: n.event, severity: n.severity, timestamp: n.timestamp,
@@ -1483,7 +1509,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const idSet = new Set(ids ?? []);
     let updated = 0;
     for (const n of items) {
-      if ((all || idSet.has(n.id)) && !n.readBy.includes(userId)) {
+      // Audience filter (U5): a user can only mark items addressed to them.
+      const visibleToUser = n.recipients === undefined || n.recipients.includes(userId);
+      if (visibleToUser && (all || idSet.has(n.id)) && !n.readBy.includes(userId)) {
         n.readBy.push(userId);
         updated++;
       }
@@ -1667,14 +1695,18 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /api/notifications/channels ────────────────────────────────────────
   fastify.post<{ Body: Record<string, unknown> }>('/api/notifications/channels', async (req, reply) => {
     if (!requirePerm(req, 'user:write', reply)) return;
-    const channel = req.body;
-    if (!channel || typeof channel !== 'object' || !channel['provider']) {
-      return reply.status(400).send({ error: 'channel.provider is required' });
+    const parsed = notificationChannelSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid channel' });
     }
-    if (!channel['id']) channel['id'] = randomUUID();
+    const channel = { ...parsed.data, id: parsed.data.id ?? randomUUID() };
     const settings  = await readConfig('settings');
-    const channels  = settings.notifications?.channels ?? [];
-    const updated   = { ...settings, notifications: { channels: [...channels, channel] } };
+    const existing  = settings.notifications ?? {};
+    const channels  = existing.channels ?? [];
+    const updated   = {
+      ...settings,
+      notifications: { ...existing, channels: [...channels, channel] },
+    };
     await writeConfig('settings', updated as Settings);
     return reply.status(201).send(channel);
   });
@@ -1688,7 +1720,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (filtered.length === channels.length) {
       return reply.status(404).send({ error: `Channel "${req.params.id}" not found` });
     }
-    await writeConfig('settings', { ...settings, notifications: { channels: filtered } });
+    await writeConfig('settings', {
+      ...settings,
+      notifications: { ...(settings.notifications ?? {}), channels: filtered },
+    });
     return reply.status(204).send();
   });
 

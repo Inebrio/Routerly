@@ -11,7 +11,12 @@ vi.mock('nodemailer', () => ({
   },
 }))
 
-import { sendTestNotification } from './sender.js'
+vi.mock('./channels/slack.js',     () => ({ sendSlack: vi.fn() }))
+vi.mock('./channels/teams.js',     () => ({ sendTeams: vi.fn() }))
+vi.mock('./channels/pagerduty.js', () => ({ sendPagerDuty: vi.fn() }))
+vi.mock('./channels/discord.js',   () => ({ sendDiscord: vi.fn() }))
+
+import { sendTestNotification, dispatchNotification } from './sender.js'
 
 afterEach(() => {
   vi.clearAllMocks()
@@ -398,5 +403,93 @@ describe('sendTestNotification', () => {
 
   it('throws for unknown provider', async () => {
     await expect(sendTestNotification({ provider: 'unknown' } as any, 'x@y.com')).rejects.toThrow('Unknown provider')
+  })
+
+  it('slack test returns ok', async () => {
+    const r = await sendTestNotification({ provider: 'slack', botToken: 't', channelId: 'c' } as any, '')
+    expect(r.message).toContain('Slack')
+  })
+  it('teams test returns ok', async () => {
+    const r = await sendTestNotification({ provider: 'teams', webhookUrl: 'https://x' } as any, '')
+    expect(r.message).toContain('Teams')
+  })
+  it('pagerduty test returns ok', async () => {
+    const r = await sendTestNotification({ provider: 'pagerduty', integrationKey: 'k' } as any, '')
+    expect(r.message).toContain('PagerDuty')
+  })
+  it('discord test returns ok', async () => {
+    const r = await sendTestNotification({ provider: 'discord', webhookUrl: 'https://x' } as any, '')
+    expect(r.message).toContain('Discord')
+  })
+
+  it('dashboard channel test returns ok with inbox note', async () => {
+    const result = await sendTestNotification({ provider: 'dashboard', id: 'd' } as any, '')
+    expect(result.ok).toBe(true)
+    expect(result.message).toContain('inbox')
+  })
+})
+
+describe('dispatchNotification recipients (U5)', () => {
+  const payload = { event: 'provider.error', severity: 'critical', timestamp: 't', details: {} }
+  const smtp: any = { provider: 'smtp', host: 'h', port: 587, secure: false, fromAddress: 'sys@x' }
+
+  it('emails the resolved recipients (comma-joined) when provided', async () => {
+    mockSendMail.mockResolvedValue({})
+    await dispatchNotification(smtp, payload, ['a@x', 'b@x'])
+    expect(mockSendMail.mock.calls[0]![0].to).toBe('a@x, b@x')
+  })
+
+  it('falls back to fromAddress when recipients undefined', async () => {
+    mockSendMail.mockResolvedValue({})
+    await dispatchNotification(smtp, payload)
+    expect(mockSendMail.mock.calls[0]![0].to).toBe('sys@x')
+  })
+
+  it('falls back to fromAddress when recipients empty', async () => {
+    mockSendMail.mockResolvedValue({})
+    await dispatchNotification(smtp, payload, [])
+    expect(mockSendMail.mock.calls[0]![0].to).toBe('sys@x')
+  })
+
+  it('webhook delivery ignores recipients', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200 }))
+    const result = await dispatchNotification(
+      { provider: 'webhook', url: 'https://hooks.example.com/h' } as any, payload, ['a@x'],
+    )
+    expect(result.ok).toBe(true)
+  })
+
+  it('dispatches via ses to resolved recipients', async () => {
+    mockSendMail.mockResolvedValue({})
+    await dispatchNotification({ provider: 'ses', region: 'us-east-1', fromAddress: 'sys@x' } as any, payload, ['r@x'])
+    expect(mockSendMail.mock.calls[0]![0].to).toBe('r@x')
+  })
+
+  it('dispatches via sendgrid', async () => {
+    mockSendMail.mockResolvedValue({})
+    await dispatchNotification({ provider: 'sendgrid', apiKey: 'SG', fromAddress: 'sys@x' } as any, payload)
+    expect(mockSendMail).toHaveBeenCalled()
+  })
+
+  it('dispatches via google', async () => {
+    mockSendMail.mockResolvedValue({})
+    await dispatchNotification({
+      provider: 'google', fromAddress: 'sys@gmail.com', clientId: 'c', clientSecret: 's', refreshToken: 'r',
+    } as any, payload)
+    expect(mockSendMail).toHaveBeenCalled()
+  })
+
+  it('dispatches via azure', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 202 }))
+    const r = await dispatchNotification({
+      provider: 'azure',
+      connectionString: 'endpoint=https://t.communication.azure.com;accesskey=dGVzdGtleQ==',
+      fromAddress: 'sys@x',
+    } as any, payload)
+    expect(r.ok).toBe(true)
+  })
+
+  it('throws for unknown provider', async () => {
+    await expect(dispatchNotification({ provider: 'nope' } as any, payload)).rejects.toThrow('Unknown provider')
   })
 })

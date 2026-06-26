@@ -16,7 +16,7 @@ interface NotificationInboxResponse {
   notifications: Notification[];
 }
 
-interface ChannelBase { id: string; provider: string; name?: string }
+interface ChannelBase { id: string; provider: string; name?: string; events?: string[]; targets?: { roles?: string[]; permissions?: string[]; users?: string[] } }
 
 function providerSummary(ch: ChannelBase & Record<string, unknown>): string {
   switch (ch.provider) {
@@ -25,8 +25,18 @@ function providerSummary(ch: ChannelBase & Record<string, unknown>): string {
     case 'discord':   return `url=${String(ch['webhookUrl'] ?? '').slice(0, 40)}…`;
     case 'pagerduty': return `key=***`;
     case 'webhook':   return `url=${String(ch['url'] ?? '').slice(0, 40)}…`;
+    case 'dashboard': return 'in-app inbox';
     default:          return `from=${String(ch['fromAddress'] ?? '')}`;
   }
+}
+
+function targetsSummary(t?: ChannelBase['targets']): string {
+  if (!t) return '—';
+  const parts: string[] = [];
+  if (t.roles?.length)       parts.push(`roles:${t.roles.join(',')}`);
+  if (t.permissions?.length) parts.push(`perms:${t.permissions.join(',')}`);
+  if (t.users?.length)       parts.push(`users:${t.users.join(',')}`);
+  return parts.length ? parts.join(' ') : 'everyone';
 }
 
 export function makeNotificationCommand(): Command {
@@ -93,9 +103,14 @@ export function makeNotificationCommand(): Command {
   channel
     .command('list')
     .description('List configured notification channels')
-    .action(async () => {
+    .option('--json', 'Output as JSON')
+    .action(async (opts: { json?: boolean }) => {
       try {
         const channels = await api<ChannelBase[]>('GET', '/api/notifications/channels');
+        if (opts.json) {
+          console.log(JSON.stringify(channels, null, 2));
+          return;
+        }
         if (!channels.length) {
           console.log(chalk.gray('No notification channels configured.'));
           return;
@@ -104,6 +119,8 @@ export function makeNotificationCommand(): Command {
           Name:    ch.name ?? '(unnamed)',
           Type:    ch.provider,
           Config:  providerSummary(ch as ChannelBase & Record<string, unknown>),
+          Events:  ch.events?.length ? ch.events.join(', ') : '*',
+          Targets: targetsSummary(ch.targets),
         }));
         console.table(rows);
       } catch (err) {
@@ -114,17 +131,31 @@ export function makeNotificationCommand(): Command {
 
   const add = new Command('add').description('Add a notification channel');
   add
-    .requiredOption('--type <type>', 'Channel type: slack|teams|pagerduty|discord')
+    .requiredOption('--type <type>', 'Channel type: slack|teams|pagerduty|discord|dashboard')
     .requiredOption('--name <name>', 'Friendly name for this channel')
     .option('--bot-token <token>', 'Slack bot token (xoxb-…)')
     .option('--channel-id <id>', 'Slack channel ID')
     .option('--webhook-url <url>', 'Webhook URL (Teams or Discord)')
     .option('--integration-key <key>', 'PagerDuty integration key')
+    .option('--events <patterns>', 'Comma-separated event patterns this channel receives (e.g. budget.*,model.added)')
+    .option('--target-roles <roles>', 'Comma-separated role IDs to target')
+    .option('--target-permissions <perms>', 'Comma-separated permission names to target')
+    .option('--target-users <users>', 'Comma-separated user IDs to target')
     .action(async (opts: {
       type: string; name: string;
       botToken?: string; channelId?: string;
       webhookUrl?: string; integrationKey?: string;
+      events?: string; targetRoles?: string; targetPermissions?: string; targetUsers?: string;
     }) => {
+      // ponytail: build optional shared fields once, spread into provider body
+      const shared: Record<string, unknown> = { name: opts.name };
+      if (opts.events) shared['events'] = opts.events.split(',').map(s => s.trim()).filter(Boolean);
+      const targets: Record<string, unknown> = {};
+      if (opts.targetRoles)       targets['roles']       = opts.targetRoles.split(',').map(s => s.trim()).filter(Boolean);
+      if (opts.targetPermissions) targets['permissions'] = opts.targetPermissions.split(',').map(s => s.trim()).filter(Boolean);
+      if (opts.targetUsers)       targets['users']       = opts.targetUsers.split(',').map(s => s.trim()).filter(Boolean);
+      if (Object.keys(targets).length) shared['targets'] = targets;
+
       let body: Record<string, unknown>;
       switch (opts.type) {
         case 'slack':
@@ -132,22 +163,25 @@ export function makeNotificationCommand(): Command {
             console.error(chalk.red('--bot-token and --channel-id are required for slack'));
             process.exit(1);
           }
-          body = { provider: 'slack', name: opts.name, botToken: opts.botToken, channelId: opts.channelId };
+          body = { provider: 'slack', ...shared, botToken: opts.botToken, channelId: opts.channelId };
           break;
         case 'teams':
           if (!opts.webhookUrl) { console.error(chalk.red('--webhook-url is required for teams')); process.exit(1); }
-          body = { provider: 'teams', name: opts.name, webhookUrl: opts.webhookUrl };
+          body = { provider: 'teams', ...shared, webhookUrl: opts.webhookUrl };
           break;
         case 'pagerduty':
           if (!opts.integrationKey) { console.error(chalk.red('--integration-key is required for pagerduty')); process.exit(1); }
-          body = { provider: 'pagerduty', name: opts.name, integrationKey: opts.integrationKey };
+          body = { provider: 'pagerduty', ...shared, integrationKey: opts.integrationKey };
           break;
         case 'discord':
           if (!opts.webhookUrl) { console.error(chalk.red('--webhook-url is required for discord')); process.exit(1); }
-          body = { provider: 'discord', name: opts.name, webhookUrl: opts.webhookUrl };
+          body = { provider: 'discord', ...shared, webhookUrl: opts.webhookUrl };
+          break;
+        case 'dashboard':
+          body = { provider: 'dashboard', ...shared };
           break;
         default:
-          console.error(chalk.red(`Unknown type: ${opts.type}. Must be one of: slack, teams, pagerduty, discord`));
+          console.error(chalk.red(`Unknown type: ${opts.type}. Must be one of: slack, teams, pagerduty, discord, dashboard`));
           process.exit(1);
       }
       try {

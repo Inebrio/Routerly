@@ -9,6 +9,7 @@ import { loadSecret } from './plugins/jwt.js';
 import { openaiRoutes } from './routes/openai.js';
 import { anthropicRoutes } from './routes/anthropic.js';
 import { apiRoutes } from './routes/api.js';
+import { metricsRoutes } from './routes/metrics.js';
 import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage } from './config/loader.js';
 import { pingTelemetry } from './telemetry.js';
 import { updateChecker } from './update-checker.js';
@@ -72,6 +73,9 @@ export async function buildServer() {
   fastify.get('/', async (_req, reply) => {
     return reply.redirect('/dashboard/');
   });
+
+  // ─── Prometheus metrics (#93, public — in auth skip list) ─────────────────
+  await fastify.register(metricsRoutes);
 
   // ─── Health check ─────────────────────────────────────────────────────────
   fastify.get('/health', async () => ({

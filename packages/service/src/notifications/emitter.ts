@@ -1,33 +1,19 @@
 import { randomUUID } from 'node:crypto';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { dispatchNotification } from './sender.js';
+import { getEffectiveRoles } from '../auth/roles.js';
 import type {
   NotificationSeverity,
   NotificationInboxItem,
   NotificationRule,
   NotificationChannel,
+  ChannelTargets,
+  UserConfig,
+  RoleConfig,
 } from '@routerly/shared';
 
-/**
- * Notification event taxonomy (#89). The canonical set of system event names.
- * `emitEvent` accepts any string, but these are the events Routerly emits.
- */
-export const NOTIFICATION_EVENTS = [
-  'provider.error',
-  'provider.degraded',
-  'provider.recovered',
-  'provider.rate_limited',
-  'routing.no_candidates',
-  'routing.fallback_used',
-  'auth.login_failed',
-  'auth.token_invalid',
-  'config.model_added',
-  'config.model_deleted',
-  'config.project_created',
-  'config.project_deleted',
-  'system.startup',
-  'system.shutdown',
-] as const;
+// Canonical event taxonomy lives in @routerly/shared (single source of truth).
+export { NOTIFICATION_EVENTS } from '@routerly/shared';
 
 /** In-app inbox retention bounds (#91). */
 const MAX_INBOX_ITEMS = 200;
@@ -59,15 +45,68 @@ export function matchesPattern(pattern: string, event: string): boolean {
   return false;
 }
 
-/** Resolve which channel IDs an event routes to, given the rules. */
-function resolveChannelIds(event: string, rules: NotificationRule[]): string[] {
-  const ids = new Set<string>();
-  for (const rule of rules) {
-    if (rule.events.some((p) => matchesPattern(p, event))) {
-      for (const c of rule.channels) ids.add(c);
-    }
+/** True if any pattern in the list matches the event. */
+function anyPatternMatches(patterns: string[] | undefined, event: string): boolean {
+  return !!patterns && patterns.length > 0 && patterns.some((p) => matchesPattern(p, event));
+}
+
+/**
+ * Decide whether a single channel receives an event (U5):
+ *  1. channel.events non-empty → match against those patterns;
+ *  2. else if any rule names this channel → that rule's events must match;
+ *  3. else (no per-channel events, no rule mentions it):
+ *       - dashboard channels → receive all (always-on inbox backward-compat);
+ *       - external channels → receive NOTHING (opt-in, preserves pre-U5 silence).
+ */
+function channelReceives(
+  channel: NotificationChannel,
+  event: string,
+  rules: NotificationRule[],
+): boolean {
+  if (channel.events && channel.events.length > 0) {
+    return anyPatternMatches(channel.events, event);
   }
-  return [...ids];
+  const mentioningRules = rules.filter((r) => r.channels.includes(channel.id));
+  if (mentioningRules.length > 0) {
+    return mentioningRules.some((r) => anyPatternMatches(r.events, event));
+  }
+  // No events, no rule: dashboard defaults to all; external defaults to silent.
+  return channel.provider === 'dashboard';
+}
+
+/** True if targets is undefined or all three arrays empty (= everyone). */
+function targetsEveryone(t: ChannelTargets | undefined): boolean {
+  return (
+    !t ||
+    ((t.roles?.length ?? 0) === 0 &&
+      (t.permissions?.length ?? 0) === 0 &&
+      (t.users?.length ?? 0) === 0)
+  );
+}
+
+/**
+ * Resolve the set of users matching a channel's targets: roles ∪ permissions ∪ users.
+ * Undefined/empty targets → all users. (U5)
+ */
+export function resolveTargetUsers(
+  targets: ChannelTargets | undefined,
+  users: UserConfig[],
+  roles: RoleConfig[],
+): UserConfig[] {
+  if (targetsEveryone(targets)) return users;
+  const wantRoles = new Set(targets!.roles ?? []);
+  const wantUsers = new Set(targets!.users ?? []);
+  const wantPerms = targets!.permissions ?? [];
+  const permsByRole = new Map(roles.map((r) => [r.id, new Set(r.permissions)]));
+  return users.filter((u) => {
+    if (wantRoles.has(u.roleId)) return true;
+    if (wantUsers.has(u.id)) return true;
+    if (wantPerms.length > 0) {
+      const rolePerms = permsByRole.get(u.roleId);
+      if (rolePerms && wantPerms.some((p) => rolePerms.has(p))) return true;
+    }
+    return false;
+  });
 }
 
 interface EmitOptions {
@@ -77,10 +116,19 @@ interface EmitOptions {
   log?: { info: (o: object, m?: string) => void; warn: (o: object, m?: string) => void };
 }
 
+const EMAIL_PROVIDERS = new Set(['smtp', 'ses', 'sendgrid', 'azure', 'google']);
+
 /**
- * Emit a system notification event (#89/#90/#91).
- *  - Always appends to the in-app inbox (notifications.json), trimmed to retention bounds.
- *  - Dispatches to channels matched by notificationRules (+ per-project override), honoring cooldowns.
+ * Emit a system notification event (#89/#90/#91, reworked U5).
+ *  - In-app inbox is driven by `dashboard` channels: an event lands in the inbox
+ *    only when a dashboard channel matches it (audience = union of those channels'
+ *    targets). Backward-compat: if NO dashboard channel exists, every event is
+ *    appended visible to everyone (recipients undefined).
+ *  - External channels (email/webhook/native) receive an event per their own
+ *    `events` patterns, falling back to notificationRules, then to receive-all.
+ *  - Email channels send to their resolved target users' emails (or fromAddress
+ *    when untargeted). Webhook/native delivery endpoints are fixed; targets only
+ *    gate which events they receive.
  * Never throws: notification failures must not break the request path.
  */
 export async function emitEvent(
@@ -90,30 +138,53 @@ export async function emitEvent(
   opts: EmitOptions = {},
 ): Promise<void> {
   const timestamp = new Date().toISOString();
+  const settings = await readConfig('settings').catch(() => undefined);
+  const notif = settings?.notifications;
+  const channels = (notif?.channels ?? []) as NotificationChannel[];
+  const rules = notif?.notificationRules ?? [];
+
+  const dashboardChannels = channels.filter((c) => c.provider === 'dashboard');
+
+  // ── Inbox (U5) ──────────────────────────────────────────────────────────────
   try {
-    await appendToInbox({ id: randomUUID(), event, severity, timestamp, details, readBy: [] });
+    if (dashboardChannels.length === 0) {
+      // Backward-compat: no dashboard channel → inbox for everyone.
+      await appendToInbox({ id: randomUUID(), event, severity, timestamp, details, readBy: [] });
+    } else {
+      const matching = dashboardChannels.filter((c) => channelReceives(c, event, rules));
+      if (matching.length > 0) {
+        const recipients = await resolveInboxRecipients(matching);
+        await appendToInbox({
+          id: randomUUID(), event, severity, timestamp, details, readBy: [],
+          ...(recipients === undefined ? {} : { recipients }),
+        });
+      }
+    }
   } catch (err) {
     opts.log?.warn({ err, event }, 'failed to append notification to inbox');
   }
 
+  // ── External channels ────────────────────────────────────────────────────────
   try {
-    const settings = await readConfig('settings');
-    const notif = settings.notifications;
-    if (!notif?.channels?.length) return; // zero external channels: inbox only
+    const external = channels.filter((c) => c.provider !== 'dashboard');
+    if (external.length === 0) return;
 
-    const rules = notif.notificationRules ?? [];
-    const channelIds = new Set(resolveChannelIds(event, rules));
+    const matched = new Set(
+      external.filter((c) => channelReceives(c, event, rules)).map((c) => c.id),
+    );
 
     // Per-project override (#91): merge the project's channels for its own events.
     if (opts.projectId) {
       const projects = await readConfig('projects');
       const project = projects.find((p) => p.id === opts.projectId);
-      for (const c of project?.notifications?.channels ?? []) channelIds.add(c);
+      for (const id of project?.notifications?.channels ?? []) {
+        if (external.some((c) => c.id === id)) matched.add(id);
+      }
     }
-    if (channelIds.size === 0) return;
+    if (matched.size === 0) return;
 
     // Cooldown (#90): suppress repeated dispatches of the same event type.
-    const cooldownMs = parseDuration(notif.cooldowns?.[event] ?? '');
+    const cooldownMs = parseDuration(notif?.cooldowns?.[event] ?? '');
     if (cooldownMs > 0) {
       const last = lastDispatchAt.get(event);
       if (last !== undefined && Date.now() - last < cooldownMs) {
@@ -123,22 +194,57 @@ export async function emitEvent(
     }
     lastDispatchAt.set(event, Date.now());
 
-    const channels = notif.channels as NotificationChannel[];
     const payload = { event, severity, timestamp, details };
+    // Every id in `matched` came from `external` (directly or via the external.some
+    // guard on the project override), so the lookup always resolves.
+    const matchedChannels = external.filter((c) => matched.has(c.id));
     await Promise.all(
-      [...channelIds].map(async (id) => {
-        const channel = channels.find((c) => c.id === id);
-        if (!channel) return;
+      matchedChannels.map(async (channel) => {
         try {
-          await dispatchNotification(channel, payload);
+          const recipients = await resolveEmailRecipients(channel);
+          await dispatchNotification(channel, payload, recipients);
         } catch (err) {
-          opts.log?.warn({ err, event, channelId: id }, 'notification dispatch failed');
+          opts.log?.warn({ err, event, channelId: channel.id }, 'notification dispatch failed');
         }
       }),
     );
   } catch (err) {
     opts.log?.warn({ err, event }, 'notification dispatch error');
   }
+}
+
+/**
+ * Inbox audience for a set of matched dashboard channels (U5).
+ * Returns undefined (everyone) if any channel is untargeted; otherwise the
+ * union of resolved user IDs.
+ */
+async function resolveInboxRecipients(
+  matching: NotificationChannel[],
+): Promise<string[] | undefined> {
+  if (matching.some((c) => targetsEveryone(c.targets))) return undefined;
+  const [users, customRoles] = await Promise.all([readConfig('users'), readConfig('roles')]);
+  const roles = getEffectiveRoles(customRoles);
+  const ids = new Set<string>();
+  for (const c of matching) {
+    for (const u of resolveTargetUsers(c.targets, users, roles)) ids.add(u.id);
+  }
+  return [...ids];
+}
+
+/**
+ * Resolve target email addresses for an email channel (U5). Returns undefined
+ * for non-email channels or when the channel is untargeted (sender falls back to
+ * channel.fromAddress). Webhook/native channels ignore targets for delivery.
+ */
+async function resolveEmailRecipients(
+  channel: NotificationChannel,
+): Promise<string[] | undefined> {
+  if (!EMAIL_PROVIDERS.has(channel.provider)) return undefined;
+  if (targetsEveryone(channel.targets)) return undefined;
+  const [users, customRoles] = await Promise.all([readConfig('users'), readConfig('roles')]);
+  const roles = getEffectiveRoles(customRoles);
+  const emails = resolveTargetUsers(channel.targets, users, roles).map((u) => u.email);
+  return emails.length > 0 ? emails : undefined;
 }
 
 /** Append one item to the inbox file, trimming to retention bounds (#91). */

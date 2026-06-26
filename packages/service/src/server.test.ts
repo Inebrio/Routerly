@@ -61,6 +61,23 @@ describe('buildServer', () => {
     const server = await buildServer()
     await server.close()
   })
+
+  // Regression (U6): metricsRoutes must be wired into the real server factory.
+  // The isolated metrics.test.ts mounts the plugin directly and so missed this gap.
+  it('serves GET /metrics (200, text/plain) — Prometheus endpoint is registered', async () => {
+    mockReadConfig.mockImplementation(async (key: string) => {
+      if (key === 'settings') return { logLevel: 'silent', dashboardEnabled: false } as any
+      return [] as any // usage / projects / models
+    })
+
+    const server = await buildServer()
+    const res = await server.inject({ method: 'GET', url: '/metrics' })
+    await server.close()
+
+    expect(res.statusCode).toBe(200)
+    expect(res.headers['content-type']).toContain('text/plain')
+    expect(res.body).toContain('# HELP routerly_requests_total')
+  })
 })
 
 describe('startServer', () => {
