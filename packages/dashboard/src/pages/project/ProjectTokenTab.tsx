@@ -3,6 +3,7 @@ import { Copy, Check, Plus, Trash2, Edit2, Key } from 'lucide-react';
 import { createProjectToken, updateProjectToken, deleteProjectToken, type ProjectToken } from '../../api';
 import { useProject } from './ProjectLayout';
 import { useNavigate } from 'react-router-dom';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
 
 type ModalView = 'none' | 'create' | 'edit';
 
@@ -15,6 +16,7 @@ export function ProjectTokenTab() {
   const [err, setErr] = useState('');
   const [modalView, setModalView] = useState<ModalView>('none');
   const [copied, setCopied] = useState(false);
+  const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   // Create state
   const [createLabels, setCreateLabels] = useState<string[]>([]);
@@ -94,15 +96,20 @@ export function ProjectTokenTab() {
     finally { setLoading(false); }
   }
 
-  async function handleDelete(tokenId: string, snippet: string) {
-    if (!window.confirm(`Revoke token "${snippet}…"? Apps using it will stop working immediately.`)) return;
-    setErr(''); setLoading(true);
-    if (!project) return;
-    try {
-      await deleteProjectToken(project.id, tokenId);
-      setProject(p => p ? { ...p, tokens: p.tokens?.filter(t => t.id !== tokenId) || [] } : p);
-    } catch (e) { setErr(e instanceof Error ? e.message : 'Error deleting token'); }
-    finally { setLoading(false); }
+  function handleDelete(tokenId: string, snippet: string) {
+    setConfirmState({
+      message: `Revoke token "${snippet}..."? Apps using it will stop working immediately.`,
+      onConfirm: async () => {
+        setConfirmState(null);
+        setErr(''); setLoading(true);
+        if (!project) return;
+        try {
+          await deleteProjectToken(project.id, tokenId);
+          setProject(p => p ? { ...p, tokens: p.tokens?.filter(t => t.id !== tokenId) || [] } : p);
+        } catch (e) { setErr(e instanceof Error ? e.message : 'Error deleting token'); }
+        finally { setLoading(false); }
+      },
+    });
   }
 
 
@@ -171,6 +178,18 @@ export function ProjectTokenTab() {
                       {new Date(token.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                     </span>
                   </div>
+                  <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Last used</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                      {token.lastUsedAt ? new Date(token.lastUsedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}
+                    </span>
+                  </div>
+                  <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Expires</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                      {token.expiresAt ? new Date(token.expiresAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Never'}
+                    </span>
+                  </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button className="btn-icon" onClick={() => openEdit(token.id)} disabled={loading} title="Edit Configuration">
                       <Edit2 size={16} />
@@ -185,6 +204,13 @@ export function ProjectTokenTab() {
           </div>
         )
       }
+      {confirmState && (
+        <ConfirmDialog
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
+        />
+      )}
     </>
   );
 }

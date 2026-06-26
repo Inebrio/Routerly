@@ -88,7 +88,8 @@ export class BudgetExceededError extends Error {
 
 /** Mappa callType → panel SSE per le trace entry */
 function getPanels(callType: CallType): { req: TracePanel; res: TracePanel } {
-  return callType === 'routing'
+  // guardrail judge calls share the router panels (internal, not the user completion).
+  return callType === 'routing' || callType === 'guardrail'
     ? { req: 'router-request', res: 'router-response' }
     : { req: 'request', res: 'response' };
 }

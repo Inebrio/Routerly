@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, FolderOpen, Pencil } from 'lucide-react';
 import { getProjects, deleteProject, type Project } from '../api';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 
 export function ProjectsPage() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
+  const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   useEffect(() => { load(); }, []);
 
@@ -18,14 +20,19 @@ export function ProjectsPage() {
     } finally { setLoading(false); }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Delete this project?')) return;
-    try {
-      await deleteProject(id);
-      setProjects(p => p.filter(x => x.id !== id));
-    } catch (error) {
-      setErr(error instanceof Error ? error.message : 'Error deleting project');
-    }
+  function handleDelete(id: string) {
+    setConfirmState({
+      message: 'Delete this project?',
+      onConfirm: async () => {
+        setConfirmState(null);
+        try {
+          await deleteProject(id);
+          setProjects(p => p.filter(x => x.id !== id));
+        } catch (error) {
+          setErr(error instanceof Error ? error.message : 'Error deleting project');
+        }
+      },
+    });
   }
 
   return (
@@ -93,6 +100,13 @@ export function ProjectsPage() {
           </div>
         )}
       </div>
+      {confirmState && (
+        <ConfirmDialog
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
+        />
+      )}
     </>
   );
 }

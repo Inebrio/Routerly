@@ -4,6 +4,7 @@ vi.mock('./config/loader.js', () => ({
   initConfigDirs: vi.fn(),
   readConfig: vi.fn(),
   writeConfig: vi.fn(),
+  pruneOrphanUsage: vi.fn(async () => 0),
 }))
 vi.mock('./plugins/jwt.js', () => ({
   loadSecret: vi.fn(),
@@ -119,5 +120,18 @@ describe('startServer', () => {
     await startServer()
 
     expect(mockPingTelemetry).not.toHaveBeenCalled()
+  })
+
+  it('prunes orphan usage records on startup and logs when any removed (BUG-5)', async () => {
+    const { pruneOrphanUsage } = await import('./config/loader.js')
+    vi.mocked(pruneOrphanUsage).mockResolvedValueOnce(18)
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    mockReadConfig.mockResolvedValue({ logLevel: 'silent', dashboardEnabled: false, port: 3095, host: '127.0.0.1', telemetry: { enabled: false } } as any)
+
+    await startServer()
+
+    expect(pruneOrphanUsage).toHaveBeenCalled()
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('pruned 18 orphan usage record'))
+    logSpy.mockRestore()
   })
 })

@@ -45,8 +45,10 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
   const isCacheEmbedding = e.message === 'cache:embedding';
   const isCacheHit     = e.message === 'cache:hit';
   const isCacheMiss    = e.message === 'cache:miss';
+  const isGuardrailTriggered = e.message === 'guardrail:triggered' || e.message === 'guardrail:response-triggered';
+  const isPiiScrubbed  = e.message === 'pii:scrubbed';
 
-  const labelColor = isError ? 'var(--danger)' : isThinking ? '#a78bfa' : isModelPrompt ? '#c4b5fd' : isRecap ? '#34d399' : isCacheEmbedding ? '#38bdf8' : isCacheHit ? '#10b981' : isCacheMiss ? '#f59e0b' : 'var(--accent)';
+  const labelColor = isError ? 'var(--danger)' : isGuardrailTriggered ? '#ef4444' : isPiiScrubbed ? '#f97316' : isThinking ? '#a78bfa' : isModelPrompt ? '#c4b5fd' : isRecap ? '#34d399' : isCacheEmbedding ? '#38bdf8' : isCacheHit ? '#10b981' : isCacheMiss ? '#f59e0b' : 'var(--accent)';
   const hasDetails = e.details != null && Object.keys(e.details).length > 0;
 
   // Estrai i campi "speciali" dal JSON tecnico per non duplicarli nel fallback
@@ -72,7 +74,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
   return (
     <div style={{ marginBottom: 8 }}>
 
-      {!isRecap && !isCacheEmbedding && !isCacheHit && !isCacheMiss && (
+      {!isRecap && !isCacheEmbedding && !isCacheHit && !isCacheMiss && !isGuardrailTriggered && !isPiiScrubbed && (
         <div style={{ fontSize: '0.75rem', color: labelColor, marginBottom: 3, fontWeight: 700, letterSpacing: '0.04em' }}>
           {e.message}
           {isModelPrompt && (
@@ -314,6 +316,47 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           )}
 
           {rawDetails}
+        </div>
+
+      ) : isGuardrailTriggered ? (
+        <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              {e.details?.target === 'request' ? 'REQUEST' : 'RESPONSE'} GUARDRAIL {e.details?.action === 'block' ? 'BLOCKED' : 'TRIGGERED'}
+            </span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#fca5a5', background: 'rgba(239,68,68,0.12)', padding: '1px 7px', borderRadius: 99, border: '1px solid rgba(239,68,68,0.25)' }}>
+              {String(e.details?.target ?? '—')}
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
+            <div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>Rule</div>
+              <div style={{ fontSize: '0.82rem', color: '#fca5a5', fontFamily: 'monospace', fontWeight: 600 }}>{String(e.details?.rule ?? '—')}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>Action</div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{String(e.details?.action ?? '—')}</div>
+            </div>
+          </div>
+          {e.details?.fallbackMessage && (
+            <div style={{ fontSize: '0.8rem', color: '#fca5a5', fontStyle: 'italic', paddingTop: 4, borderTop: '1px solid rgba(239,68,68,0.2)' }}>
+              {String(e.details.fallbackMessage)}
+            </div>
+          )}
+        </div>
+
+      ) : isPiiScrubbed ? (
+        <div style={{ background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.35)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#f97316', textTransform: 'uppercase', letterSpacing: '0.06em' }}>PII SCRUBBED</span>
+          {Array.isArray(e.details?.entities) && e.details.entities.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              {(e.details.entities as string[]).map((entity: string, i: number) => (
+                <span key={i} style={{ fontSize: '0.72rem', fontWeight: 600, color: '#fdba74', background: 'rgba(249,115,22,0.12)', padding: '2px 8px', borderRadius: 99, border: '1px solid rgba(249,115,22,0.25)' }}>
+                  {entity}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
       ) : (

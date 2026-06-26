@@ -180,6 +180,29 @@ describe('llmChat', () => {
     expect(emitted.some(e => e.panel === 'router-response')).toBe(true)
   })
 
+  it('uses router panels for callType=guardrail (BUG-5)', async () => {
+    mockIsAllowedForRouting.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+
+    const emitted: any[] = []
+    const ctx = makeCtx({
+      callType: 'guardrail',
+      project: { ...makeProject('other'), models: [] },
+      emit: (e: any) => emitted.push(e),
+    })
+    await llmChat({ messages: [{ role: 'user', content: 'judge' }] } as any, makeModel(), ctx)
+    expect(emitted.some(e => e.panel === 'router-request')).toBe(true)
+    expect(emitted.some(e => e.panel === 'router-response')).toBe(true)
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ callType: 'guardrail' }))
+  })
+
+  it('guardrail callType is still budget-gated (BUG-5)', async () => {
+    mockIsAllowed.mockResolvedValue(false) // model is a project candidate, over limit
+    const ctx = makeCtx({ callType: 'guardrail' })
+    await expect(llmChat({ messages: [] } as any, makeModel(), ctx)).rejects.toThrow(BudgetExceededError)
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ callType: 'guardrail', errorMessage: 'budget_exceeded' }))
+  })
+
   it('includes cacheHit in trackUsage when ctx.cacheHit is true', async () => {
     mockIsAllowed.mockResolvedValue(true)
     mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)

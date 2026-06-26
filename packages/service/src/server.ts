@@ -9,7 +9,7 @@ import { loadSecret } from './plugins/jwt.js';
 import { openaiRoutes } from './routes/openai.js';
 import { anthropicRoutes } from './routes/anthropic.js';
 import { apiRoutes } from './routes/api.js';
-import { initConfigDirs, readConfig, writeConfig } from './config/loader.js';
+import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage } from './config/loader.js';
 import { pingTelemetry } from './telemetry.js';
 import { updateChecker } from './update-checker.js';
 
@@ -86,6 +86,11 @@ export async function buildServer() {
 export async function startServer() {
   await initConfigDirs();
   await loadSecret();
+  const orphansRemoved = await pruneOrphanUsage();
+  if (orphansRemoved > 0) {
+    // eslint-disable-next-line no-console
+    console.log(`[startup] pruned ${orphansRemoved} orphan usage record(s) (no matching project)`);
+  }
   const settings = await readConfig('settings');
 
   if (settings.telemetry?.enabled === true) {

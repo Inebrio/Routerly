@@ -1,8 +1,7 @@
-# AGENTS.local.md — Local Developer Environment
+# CLAUDE.local.md — Local Developer Environment
 
-> **Copy this file to `AGENTS.local.md` and fill in your details.**
-> `AGENTS.local.md` is gitignored (`*.local`) — it will never be committed.
-> It is read by AI agents **after** `AGENTS.md` to enrich context with your local setup.
+> **Copy to `CLAUDE.local.md` and fill in your details.**
+> Gitignored — never committed. Loaded by agents after `CLAUDE.md`.
 
 ---
 

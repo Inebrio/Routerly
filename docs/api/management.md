@@ -208,36 +208,124 @@ unchanged, send `null` to clear it, or send an object to replace it.
 
 ### Content Guardrails and PII (project fields)
 
-A project may carry two optional security blocks (#77, #76), accepted by both
-`POST /api/projects` and `PUT /api/projects/:slug` and validated server-side:
+A project may carry two optional security blocks, accepted by both
+`POST /api/projects` and `PUT /api/projects/:slug` and validated server-side.
+Use `PATCH /api/projects/:id/guardrails` for partial updates (guardrails or PII only).
+
+#### Guardrails
+
+Guardrails evaluate each request and/or response against an ordered list of rules;
+the first matching enabled rule triggers the configured action.
 
 ```json
 {
   "guardrails": {
     "enabled": true,
-    "inputBlocklist": ["secret\\s+code"],
-    "detectPromptInjection": true,
     "action": "block",
-    "fallbackMessage": "This request was blocked by content guardrails."
-  },
-  "pii": {
-    "enabled": true,
-    "entities": ["EMAIL", "PHONE", "CREDIT_CARD", "SSN", "IBAN"]
+    "fallbackMessage": "This request was blocked by content guardrails.",
+    "rules": [
+      {
+        "type": "regex",
+        "enabled": true,
+        "target": "request",
+        "config": { "patterns": ["competitor", "rival\\s+product"] }
+      },
+      {
+        "type": "injection",
+        "enabled": true,
+        "target": "request",
+        "config": {}
+      },
+      {
+        "type": "topic",
+        "enabled": true,
+        "target": "both",
+        "config": {
+          "modelId": "openai/gpt-4o-mini",
+          "allowedTopics": "Customer support questions about our product only",
+          "threshold": 0.5
+        }
+      },
+      {
+        "type": "moderation",
+        "enabled": true,
+        "target": "both",
+        "config": { "modelId": "openai/gpt-4o-mini", "threshold": 0.7 }
+      }
+    ]
   }
 }
 ```
 
-- `guardrails.action`: `block` (return HTTP 400 with `fallbackMessage`), `flag`
-  (record the triggering rule on the usage record and continue), or `log`.
-- `guardrails.detectPromptInjection` defaults to `true` when `guardrails.enabled`.
-- `pii.entities` defaults to all entity types when omitted. Matched values in
-  message string content are replaced with typed placeholders
-  (`[EMAIL]`, `[PHONE_NUMBER]`, `[CREDIT_CARD]`, `[SSN]`, `[IBAN]`) before the
-  request is forwarded to the provider.
+**Rule types:**
 
-When a guardrail flags or PII is redacted, the usage record gains
-`guardrailTriggered` (the rule name) and/or `piiRedacted` (the list of redacted
+| Type | Target | Config fields | Description |
+|------|--------|---------------|-------------|
+| `regex` | request / response / both | `patterns: string[]` | Block text matching any regex pattern (case-insensitive) |
+| `injection` | request | _(none)_ | Detect prompt injection attacks (built-in patterns: "ignore previous instructions", DAN mode, jailbreak, etc.) |
+| `semantic` | request / response / both | `embeddingModelId`, `examples: string[]`, `threshold?: number` (default 0.82) | Block semantically similar content using embedding cosine similarity |
+| `topic` | request / response / both | `modelId`, `allowedTopics: string`, `threshold?: number` (default 0.5) | LLM judge: block content not matching the allowed topics description |
+| `moderation` | request / response / both | `modelId`, `threshold?: number` (default 0.5) | LLM judge: block harmful content (hate, violence, sexual, self-harm) |
+
+**Action values:**
+- `block` — reject before forwarding; return a wire-faithful HTTP 200 response
+  (`finish_reason: "content_filter"` for OpenAI, `stop_reason: "refusal"` for
+  Anthropic). The `fallbackMessage` is stored on the trace but not in the wire
+  body. See [LLM Proxy — Guardrail block wire format](./llm-proxy.md#guardrail-block--wire-format).
+- `flag` — record `guardrailTriggered` on the usage record, continue
+- `log` — log only, no usage record side-effect
+
+**Target values:** `request` evaluates the user messages; `response` evaluates the model output; `both` evaluates both sides.
+
+#### PII
+
+```json
+{
+  "pii": {
+    "enabled": true,
+    "entities": ["EMAIL", "PHONE", "CREDIT_CARD", "SSN", "IBAN"],
+    "scrubInput": true,
+    "scrubOutput": false
+  }
+}
+```
+
+`pii.entities` defaults to all entity types when omitted. Matched values in
+message string content are replaced with typed placeholders
+(`[EMAIL]`, `[PHONE_NUMBER]`, `[CREDIT_CARD]`, `[SSN]`, `[IBAN]`) before the
+request is forwarded to the provider.
+
+`scrubInput` (default `true`) controls whether user message content is scrubbed
+before sending to the provider. `scrubOutput` (default `false`) controls whether
+the provider's response content is scrubbed before returning to the caller. Set
+`scrubOutput: true` when your model may echo or repeat sensitive values in its reply.
+
+When a guardrail triggers or PII is redacted, the usage record gains
+`guardrailTriggered` (the rule type) and/or `piiRedacted` (the list of redacted
 entity types).
+
+#### Guardrail judge calls and usage attribution
+
+Security rules that call a model (semantic embedding, topic judge, moderation
+judge) are tracked as separate usage records with `callType: "guardrail"`. These
+records are attributed to the same project and token as the originating request
+and are subject to the same budget limits — an over-budget judge call fails
+the same as an over-budget completion. The records appear in
+`GET /api/usage` alongside completion and routing records and are broken out in
+the usage summary (see [Query Usage Records](#query-usage-records)).
+
+#### Consumer Impact
+
+PII scrubbing modifies request content in-flight. The model receives placeholders
+instead of original sensitive values and responds based on the modified message.
+Disable specific entity types if your application requires the model to see the
+original values.
+
+Guardrails with `block` action return a wire-faithful HTTP 200 response — they
+do **not** return HTTP 400. See [LLM Proxy — Guardrail block wire format](./llm-proxy.md#guardrail-block--wire-format).
+
+Guardrails with `flag` or `log` action forward requests to the model with no
+consumer-visible impact. The event is recorded on the usage record for audit purposes.
 
 ### Delete Project
 
@@ -567,13 +655,54 @@ Query parameters:
 | `limit` | number | Max records to return (default: 100) |
 | `offset` | number | Pagination offset |
 
-### Get Usage Record
+**Response summary object:**
+
+```json
+{
+  "summary": {
+    "totalCost": 0.1234,
+    "totalCalls": 200,
+    "successCalls": 188,
+    "errorCalls": 12,
+    "completionCalls": 180,
+    "routingCalls": 8,
+    "guardrailCalls": 12,
+    "completionCost": 0.1200,
+    "routingCost": 0.0011,
+    "guardrailCost": 0.0023
+  },
+  "byModel": {},
+  "timeline": [],
+  "records": [],
+  "pagination": {}
+}
+```
+
+The `summary` object breaks down calls and cost by sub-activity type:
+
+| Field | Description |
+|-------|-------------|
+| `completionCalls` / `completionCost` | Main model inference calls |
+| `routingCalls` / `routingCost` | LLM policy routing calls (e.g. the `llm` routing policy) |
+| `guardrailCalls` / `guardrailCost` | Model calls made by security rules (semantic embedding, topic judge, moderation judge) |
+
+Guardrail call records appear in the `records` array with `callType: "guardrail"`.
+
+### Get Routing Trace
 
 ```
-GET /api/usage/:id
+GET /api/traces/:id
 ```
 
-Returns the full record including the routing trace.
+Returns the routing trace (`{ trace: [...] }`), including guardrail
+(`guardrail:triggered`, `guardrail:response-triggered`) and PII (`pii:scrubbed`)
+entries. Use the `x-routerly-trace-id` header from any LLM proxy response —
+present even on blocked responses — to look up its trace:
+
+```bash
+curl -s http://localhost:3000/api/traces/$TRACE_ID \
+  -H "Authorization: Bearer <jwt>"
+```
 
 ---
 
@@ -666,6 +795,59 @@ Returns `400` if neither is provided.
 ```json
 { "updated": 2 }
 ```
+
+---
+
+## Audit Log
+
+### List Audit Entries
+
+```
+GET /api/audit
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `audit:read`)
+
+Returns paginated audit log entries. Requires `audit:read` permission.
+
+**Query parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `userId` | string | Filter by user ID or email (substring match on email) |
+| `action` | string | Filter by action substring (e.g. `model:create`) |
+| `result` | string | Filter by result: `success`, `forbidden`, or `error` |
+| `from` | string | Start timestamp (ISO 8601) |
+| `to` | string | End timestamp (ISO 8601) |
+| `page` | number | Page number (default: 1) |
+| `pageSize` | number | Entries per page (default: 50, max: 200) |
+
+**Response** `200`
+
+```json
+{
+  "entries": [
+    {
+      "id": "uuid",
+      "timestamp": "2026-06-25T13:03:26.767Z",
+      "userId": "uuid",
+      "email": "admin@example.com",
+      "endpoint": "POST /api/models",
+      "action": "model:create",
+      "result": "success",
+      "details": { "id": "my-model" }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 50,
+    "totalRecords": 142,
+    "totalPages": 3
+  }
+}
+```
+
+**Errors**: `403` insufficient permissions
 
 ---
 

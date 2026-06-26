@@ -502,6 +502,34 @@ describe('GET /api/usage', () => {
     expect(body.records).toHaveLength(1)
   })
 
+  it('aggregates guardrail callType as a distinct sub-activity (BUG-5)', async () => {
+    setupAdminAuth()
+    const now = new Date().toISOString()
+    const records = [
+      { id: 'c1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.10, outcome: 'success', callType: 'completion', latencyMs: 100 },
+      { id: 'r1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.02, outcome: 'success', callType: 'routing', latencyMs: 100 },
+      { id: 'g1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 8, outputTokens: 0, cost: 0.01, outcome: 'success', callType: 'guardrail', latencyMs: 50 },
+      { id: 'g2', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 4, outputTokens: 0, cost: 0.005, outcome: 'success', callType: 'guardrail', latencyMs: 50 },
+    ]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return records
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/usage', headers: adminAuthHeaders() })
+    await app.close()
+    const s = JSON.parse(res.body).summary
+    expect(s.guardrailCalls).toBe(2)
+    expect(s.routingCalls).toBe(1)
+    expect(s.completionCalls).toBe(1) // guardrail not lumped into completion
+    expect(s.guardrailCost).toBeCloseTo(0.015)
+    expect(s.completionCost).toBeCloseTo(0.10)
+    expect(s.routingCost).toBeCloseTo(0.02)
+  })
+
   it('filters by projectId', async () => {
     setupAdminAuth()
     const records = [
@@ -1442,6 +1470,70 @@ describe('POST /api/projects/:id/tokens', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(404)
+  })
+
+  it('stores expiresAt when provided in future', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const future = new Date(Date.now() + 86400000).toISOString()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/projects/p1/tokens',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ expiresAt: future }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).tokenInfo.expiresAt).toBe(future)
+  })
+
+  it('returns 400 when expiresAt is in the past', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+
+    const past = new Date(Date.now() - 1000).toISOString()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/projects/p1/tokens',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ expiresAt: past }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('returns 400 when expiresAt is not a valid datetime', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/projects/p1/tokens',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ expiresAt: 'not-a-date' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
   })
 })
 
@@ -3061,15 +3153,20 @@ describe('requirePerm denied branches', () => {
     expect(res.statusCode).toBe(403)
   })
 
-  it('returns 403 for GET /api/settings without user:write', async () => {
-    setupViewerAuth()
+  it('returns 403 for GET /api/settings without settings:read', async () => {
+    vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'no-perms-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ id: 'no-perms-id', email: 'noperms@example.com', passwordHash: 'hashed', roleId: 'no-perms', projectIds: [] }]
+      if (t === 'roles') return [{ id: 'no-perms', name: 'No Perms', permissions: [] }]
+      return []
+    })
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/settings', headers: { authorization: 'Bearer tok' } })
     await app.close()
     expect(res.statusCode).toBe(403)
   })
 
-  it('returns 403 for PUT /api/settings without user:write', async () => {
+  it('returns 403 for PUT /api/settings without settings:write', async () => {
     setupViewerAuth()
     const app = await buildApp()
     const res = await app.inject({
@@ -5462,9 +5559,10 @@ describe('GET /api/audit', () => {
     await app.close()
 
     expect(res.statusCode).toBe(200)
-    const body = res.json() as Array<{ id: string }>
-    expect(body[0]!.id).toBe('e2')
-    expect(body[1]!.id).toBe('e1')
+    const body = res.json() as { entries: Array<{ id: string }>; pagination: { totalRecords: number } }
+    expect(body.entries[0]!.id).toBe('e2')
+    expect(body.entries[1]!.id).toBe('e1')
+    expect(body.pagination.totalRecords).toBe(2)
   })
 
   it('returns 403 for roles without audit:read', async () => {
@@ -5504,8 +5602,9 @@ describe('GET /api/audit', () => {
     await app.close()
 
     expect(res.statusCode).toBe(200)
-    const body = res.json() as Array<{ userId: string }>
-    expect(body).toHaveLength(1)
-    expect(body[0]!.userId).toBe('viewer-id')
+    const body = res.json() as { entries: Array<{ userId: string }>; pagination: { totalRecords: number } }
+    expect(body.entries).toHaveLength(1)
+    expect(body.entries[0]!.userId).toBe('viewer-id')
+    expect(body.pagination.totalRecords).toBe(1)
   })
 })

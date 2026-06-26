@@ -309,6 +309,83 @@ routerly project member remove my-api --email user@example.com
 
 ---
 
+### Guardrails — `routerly project guardrails`
+
+Manage the content guardrail configuration for a project. Guardrails evaluate each request and/or response against a set of active security policies; all policies run in parallel and apply the configured action (`block`, `flag`, or `log`) independently.
+
+#### `routerly project guardrails <project>`
+
+Show the current guardrail configuration.
+
+```bash
+routerly project guardrails my-api
+routerly project guardrails my-api --json   # raw JSON output
+```
+
+Output example:
+
+```
+Guardrails - my-api
+Enabled: yes   Action: block   Fallback: "This request was blocked"
+
+Active Security Policies:
+  #   Type          Target      Summary
+  0   regex         request     2 pattern(s)
+  1   injection     request     (built-in patterns)
+  2   semantic      both        model: text-embedding-3-small, 3 example(s), threshold: 0.82
+  3   topic         both        model: gpt-4o-mini, threshold: 0.5
+  4   moderation    both        model: claude-haiku-4-5, threshold: 0.5
+```
+
+#### Master toggle and action
+
+```bash
+routerly project guardrails my-api --enable
+routerly project guardrails my-api --disable
+routerly project guardrails my-api --action block
+routerly project guardrails my-api --fallback "Your request was blocked by content policy."
+```
+
+| Option | Description |
+|--------|-------------|
+| `--enable` | Enable the guardrail master toggle |
+| `--disable` | Disable the guardrail master toggle |
+| `--action <block\|flag\|log>` | Action taken when a rule triggers |
+| `--fallback <message>` | Message returned to the client when `action=block` |
+
+#### Adding a security policy
+
+```bash
+routerly project guardrails my-api --add-rule
+```
+
+Launches an interactive wizard. Steps:
+
+1. **Policy type** — choose from:
+   - `regex` — block requests/responses matching regex patterns
+   - `injection` — detect prompt injection attacks (built-in patterns, no config required)
+   - `semantic` — block semantically similar content using embeddings
+   - `topic` — block off-topic requests using an LLM judge
+   - `moderation` — detect harmful content using an LLM judge
+
+2. **Target** — `request`, `response`, or `both` (skipped for `injection`, which always targets `request`)
+
+3. **Type-specific fields** — prompts depend on the policy type selected
+
+New security policies are appended to the end of the list and are active by default.
+
+#### Removing a security policy
+
+```bash
+routerly project guardrails my-api --remove-rule 2   # delete policy at index 2
+```
+
+| Option | Description |
+|--------|-------------|
+| `--remove-rule <index>` | Remove the security policy at 0-based index |
+
+---
+
 ## `routerly user`
 
 ### `routerly user list`
@@ -347,7 +424,7 @@ routerly role list [--json]
 routerly role add --name <name> --permissions <perm1,perm2,...>
 ```
 
-Available permissions: `project:read`, `project:write`, `model:read`, `model:write`, `user:read`, `user:write`, `report:read`.
+Available permissions: `project:read`, `project:write`, `model:read`, `model:write`, `user:read`, `user:write`, `role:write`, `report:read`, `audit:read`, `settings:read`, `settings:write`, `notification:write`, `token:read`, `token:write`.
 
 ### `routerly role edit`
 
@@ -360,6 +437,38 @@ routerly role edit --name <name> --permissions <perm1,perm2,...>
 ```
 routerly role remove --name <name>
 ```
+
+---
+
+## `routerly audit`
+
+### `routerly audit list`
+
+List audit log entries.
+
+```
+routerly audit list [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--user <email>` | Filter by user email or ID |
+| `--action <str>` | Filter by action substring (e.g. `model:create`) |
+| `--from <date>` | Start date (ISO format, e.g. `2026-01-01`) |
+| `--to <date>` | End date (ISO format, e.g. `2026-12-31`) |
+| `--limit <n>` | Max entries to return (default: 50) |
+| `--json` | Output raw JSON |
+
+Examples:
+
+```
+routerly audit list
+routerly audit list --user admin@example.com --limit 20
+routerly audit list --action model:create --json
+routerly audit list --from 2026-01-01 --to 2026-06-30
+```
+
+Requires `audit:read` permission.
 
 ---
 

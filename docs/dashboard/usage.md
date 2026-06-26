@@ -13,11 +13,19 @@ The Usage page provides aggregate analytics and per-request logs across all proj
 
 The top row shows aggregated totals for the selected filter set:
 
-- Total cost (USD)
-- Total call count
-- Success rate
-- Error count
-- Average latency
+![Usage page summary cards showing Total Cost, Total Calls, Completion Calls, Router Calls, Guardrail Calls, and Errors](../assets/screenshot-usage.png)
+
+| Card | Description |
+|------|-------------|
+| **Total Cost** | USD cost of all successful calls in the period |
+| **Total Calls** | All usage records (completion + routing + guardrail) |
+| **Completion Calls** | Main model inference calls, with their total cost |
+| **Router Calls** | LLM routing policy calls (e.g. the `llm` routing policy), with cost |
+| **Guardrail Calls** | Model calls made by security rules (semantic, topic, moderation), with cost |
+| **Errors** | Failed calls (any call type) |
+
+Guardrail calls are charged to the project like any other model call and are
+subject to the project's budget limits.
 
 ---
 
@@ -25,11 +33,11 @@ The top row shows aggregated totals for the selected filter set:
 
 | Filter | Description |
 |--------|-------------|
-| **Date range** | Start and end date/time picker |
-| **Project** | Filter to one or more projects |
+| **Period** | Preset time window (today, this month, etc.) or custom range |
+| **Project** | Filter to a specific project |
 | **Model** | Filter to specific model IDs |
-| **Type** | `chat`, `responses`, `messages` |
-| **Outcome** | `success`, `error`, `budget_exceeded`, `timeout` |
+| **Type** | `All`, `Completion`, `Router`, or `Guardrail` — filters by call sub-activity type |
+| **Status** | `All`, `Success`, or `Error` |
 
 Filters are applied immediately; the page updates in real time.
 

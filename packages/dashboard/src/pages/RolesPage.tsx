@@ -2,15 +2,23 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Trash2, Lock, Save, X } from 'lucide-react';
 import { getRoles, createRole, updateRole, deleteRole, ALL_PERMISSIONS } from '../api';
 import type { Role, Permission } from '../api';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 
 const PERM_LABELS: Record<Permission, string> = {
-  'project:read':  'Projects – Read',
-  'project:write': 'Projects – Write',
-  'model:read':    'Models – Read',
-  'model:write':   'Models – Write',
-  'user:read':     'Users – Read',
-  'user:write':    'Users – Write',
-  'report:read':   'Reports – Read',
+  'project:read':       'Projects – Read',
+  'project:write':      'Projects – Write',
+  'model:read':         'Models – Read',
+  'model:write':        'Models – Write',
+  'user:read':          'Users – Read',
+  'user:write':         'Users – Write',
+  'report:read':        'Reports – Read',
+  'settings:read':      'Settings – Read',
+  'settings:write':     'Settings – Write',
+  'notification:write': 'Notifications – Write',
+  'token:read':         'Tokens – Read',
+  'token:write':        'Tokens – Write',
+  'role:write':         'Roles – Write',
+  'audit:read':         'Audit Log – Read',
 };
 
 interface RoleFormState {
@@ -30,6 +38,7 @@ export function RolesPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState<RoleFormState>(EMPTY_FORM);
   const [saving, setSaving]         = useState(false);
+  const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   useEffect(() => { load(); }, []);
 
@@ -94,15 +103,20 @@ export function RolesPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Delete this role? Users with this role will be affected.')) return;
-    setError('');
-    try {
-      await deleteRole(id);
-      setRoles(rs => rs.filter(r => r.id !== id));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to delete role');
-    }
+  function handleDelete(id: string) {
+    setConfirmState({
+      message: 'Delete this role? Users with this role will be affected.',
+      onConfirm: async () => {
+        setConfirmState(null);
+        setError('');
+        try {
+          await deleteRole(id);
+          setRoles(rs => rs.filter(r => r.id !== id));
+        } catch (e) {
+          setError(e instanceof Error ? e.message : 'Failed to delete role');
+        }
+      },
+    });
   }
 
   if (loading) return <div className="loading-center"><div className="spinner" /></div>;
@@ -111,13 +125,8 @@ export function RolesPage() {
     <>
       {error && <div className="form-error" style={{ marginBottom: 20 }}>{error}</div>}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div>
-          <h2 style={{ margin: 0 }}>Roles</h2>
-          <p style={{ margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-            Manage roles and their permissions. Built-in roles cannot be modified.
-          </p>
-        </div>
+      <div className="toolbar">
+        <span className="toolbar-title">Manage roles and permissions. Built-in roles cannot be modified.</span>
         {!showCreate && (
           <button className="btn btn-primary" onClick={() => { setShowCreate(true); setEditingId(null); }}>
             <Plus size={15} /> New Role
@@ -198,6 +207,13 @@ export function RolesPage() {
           </div>
         ))}
       </div>
+      {confirmState && (
+        <ConfirmDialog
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
+        />
+      )}
     </>
   );
 }

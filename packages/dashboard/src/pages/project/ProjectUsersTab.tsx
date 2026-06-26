@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
 import { useProject } from './ProjectLayout';
 import { getUsers, addProjectMember, updateProjectMember, removeProjectMember, User } from '../../api';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
 
 export function ProjectUsersTab() {
   const { project, setProject } = useProject();
@@ -17,6 +18,7 @@ export function ProjectUsersTab() {
 
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editRole, setEditRole] = useState('viewer');
+  const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   useEffect(() => {
     getUsers()
@@ -64,21 +66,26 @@ export function ProjectUsersTab() {
     }
   }
 
-  async function handleRemoveMember(userId: string) {
-    if (!window.confirm('Are you sure you want to remove this member?')) return;
-    setErr('');
-    setLoading(true);
-    try {
-      await removeProjectMember(project!.id, userId);
-      setProject(p => {
-        if (!p) return p;
-        return { ...p, members: p.members?.filter(m => m.userId !== userId) || [] };
-      });
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Error removing member');
-    } finally {
-      setLoading(false);
-    }
+  function handleRemoveMember(userId: string) {
+    setConfirmState({
+      message: 'Are you sure you want to remove this member?',
+      onConfirm: async () => {
+        setConfirmState(null);
+        setErr('');
+        setLoading(true);
+        try {
+          await removeProjectMember(project!.id, userId);
+          setProject(p => {
+            if (!p) return p;
+            return { ...p, members: p.members?.filter(m => m.userId !== userId) || [] };
+          });
+        } catch (e) {
+          setErr(e instanceof Error ? e.message : 'Error removing member');
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   }
 
   const members = project.members || [];
@@ -216,6 +223,13 @@ export function ProjectUsersTab() {
             </tbody>
           </table>
         </div>
+      )}
+      {confirmState && (
+        <ConfirmDialog
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
+        />
       )}
     </div>
   );

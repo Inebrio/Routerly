@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope } from 'lucide-react';
 import { getModels, deleteModel, type Model } from '../api';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 
 type SortKey = 'id' | 'provider' | 'input' | 'output' | 'cache' | 'context';
 type SortDir = 'asc' | 'desc';
@@ -21,6 +22,7 @@ export function ModelsPage() {
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   useEffect(() => { load(); }, []);
 
@@ -29,10 +31,15 @@ export function ModelsPage() {
     try { setModels(await getModels()); } finally { setLoading(false); }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm(`Remove model "${id}"?`)) return;
-    await deleteModel(id);
-    setModels(m => m.filter(x => x.id !== id));
+  function handleDelete(id: string) {
+    setConfirmState({
+      message: `Remove model "${id}"?`,
+      onConfirm: async () => {
+        setConfirmState(null);
+        await deleteModel(id);
+        setModels(m => m.filter(x => x.id !== id));
+      },
+    });
   }
 
   function handleSort(key: SortKey) {
@@ -161,6 +168,13 @@ export function ModelsPage() {
           </div>
         )}
       </div>
+      {confirmState && (
+        <ConfirmDialog
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
+        />
+      )}
     </>
   );
 }

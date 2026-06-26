@@ -243,6 +243,8 @@ export interface ProjectToken {
   id: string;
   tokenSnippet?: string;
   createdAt: string;
+  lastUsedAt?: string;
+  expiresAt?: string;
   models?: Array<{ modelId: string; limitsMode?: LimitsMode; limits?: Limit[] }>;
   labels?: string[];
 }
@@ -259,6 +261,38 @@ export interface ProjectSemanticCacheConfig {
   maxEntries?: number;
 }
 
+export type GuardrailRuleType = 'regex' | 'semantic' | 'topic' | 'moderation';
+export type GuardrailTarget = 'request' | 'response' | 'both';
+
+export interface RegexGuardConfig { patterns: string[]; }
+export interface SemanticGuardConfig { embeddingModelId: string; examples: string[]; threshold?: number; }
+export interface TopicGuardConfig { modelId: string; allowedTopics: string; threshold?: number; }
+export interface ModerationGuardConfig { modelId: string; threshold?: number; systemPrompt?: string; }
+
+export interface GuardrailRule {
+  type: GuardrailRuleType;
+  enabled?: boolean;
+  target: GuardrailTarget;
+  config: RegexGuardConfig | SemanticGuardConfig | TopicGuardConfig | ModerationGuardConfig;
+}
+
+export interface GuardrailConfig {
+  action: 'block' | 'flag' | 'log';
+  fallbackMessage?: string;
+  detectInjection?: boolean;
+  rules: GuardrailRule[];
+}
+
+export type PiiEntity = 'EMAIL' | 'PHONE' | 'CREDIT_CARD' | 'SSN' | 'IBAN';
+
+export interface PiiConfig {
+  entities?: PiiEntity[];
+  customPatterns?: string[];
+  scrubInput?: boolean;
+  scrubOutput?: boolean;
+  outputBufferSize?: number;
+}
+
 export interface Project {
   id: string; name: string; routingModelId?: string;
   autoRouting?: boolean;
@@ -270,6 +304,8 @@ export interface Project {
   token?: string;
   timeoutMs?: number;
   semanticCache?: ProjectSemanticCacheConfig;
+  guardrails?: GuardrailConfig;
+  pii?: PiiConfig;
 }
 
 export const getProjects = () => request<Project[]>('/projects');
@@ -293,6 +329,8 @@ export const updateProject = (id: string, data: {
   models: { modelId: string; prompt?: string }[];
   timeoutMs?: number;
   semanticCache?: ProjectSemanticCacheConfig;
+  guardrails?: GuardrailConfig | null;
+  pii?: PiiConfig | null;
 }) => request<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteProject = (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' });
 export const createProjectToken = (id: string, labels?: string[]) => request<{ token: string; tokenInfo: ProjectToken }>(`/projects/${id}/tokens`, { method: 'POST', body: JSON.stringify({ labels }) });
@@ -322,6 +360,11 @@ export const ALL_PERMISSIONS = [
   'model:read', 'model:write',
   'user:read', 'user:write',
   'report:read',
+  'settings:read', 'settings:write',
+  'notification:write',
+  'token:read', 'token:write',
+  'role:write',
+  'audit:read',
 ] as const;
 export type Permission = typeof ALL_PERMISSIONS[number];
 
@@ -358,7 +401,7 @@ export interface UsageRecord {
 }
 
 export interface UsageStats {
-  summary: { totalCost: number; totalCalls: number; successCalls: number; errorCalls: number; routingCalls: number; completionCalls: number; routingCost: number; completionCost: number };
+  summary: { totalCost: number; totalCalls: number; successCalls: number; errorCalls: number; routingCalls: number; completionCalls: number; routingCost: number; completionCost: number; guardrailCalls?: number; guardrailCost?: number };
   byModel: Record<string, { calls: number; inputTokens: number; outputTokens: number; cachedInputTokens: number; cost: number; errors: number }>;
   timeline: [string, number][];
   records: Array<UsageRecord>;
@@ -377,6 +420,9 @@ export const getUsage = (period = 'monthly', projectId?: string, from?: string, 
 
 export const getUsageRecord = (id: string) =>
   request<UsageRecord>(`/usage/${id}`);
+
+export const getTrace = (id: string) =>
+  request<{ trace: TraceEntry[] }>(`/traces/${id}`);
 
 // ── Provider Health ───────────────────────────────────────────────────────
 export interface ProviderHealth {
@@ -584,25 +630,20 @@ export interface AuditEntry {
   details?: Record<string, unknown>;
 }
 
-export const getAuditLog = (params?: { userId?: string; action?: string; from?: string; to?: string; limit?: number }) => {
-  const q = new URLSearchParams();
-  if (params?.userId) q.set('userId', params.userId);
-  if (params?.action) q.set('action', params.action);
-  if (params?.from) q.set('from', params.from);
-  if (params?.to) q.set('to', params.to);
-  if (params?.limit) q.set('limit', String(params.limit));
-  return request<AuditEntry[]>(`/audit${q.size ? '?' + q : ''}`);
-};
-
-export interface CatalogEntry {
-  id: string;
-  provider: string;
-  name: string;
-  contextWindow: number;
-  modalities: string[];
-  pricing: { inputPer1kTokens: number; outputPer1kTokens: number };
-  local?: boolean;
-  isConfigured: boolean;
+export interface AuditPage {
+  entries: AuditEntry[];
+  pagination: { page: number; pageSize: number; totalRecords: number; totalPages: number };
 }
 
-export const getModelCatalog = () => request<CatalogEntry[]>('/models/catalog');
+export const getAuditLog = (params?: { userId?: string; action?: string; result?: string; from?: string; to?: string; page?: number; pageSize?: number }) => {
+  const q = new URLSearchParams();
+  if (params?.userId)                       q.set('userId', params.userId);
+  if (params?.action)                       q.set('action', params.action);
+  if (params?.result && params.result !== 'all') q.set('result', params.result);
+  if (params?.from)                         q.set('from', params.from);
+  if (params?.to)                           q.set('to', params.to);
+  if (params?.page)                         q.set('page', String(params.page));
+  if (params?.pageSize)                     q.set('pageSize', String(params.pageSize));
+  return request<AuditPage>(`/audit${q.size ? '?' + q : ''}`);
+};
+

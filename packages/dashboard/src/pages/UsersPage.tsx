@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Users, Pencil } from 'lucide-react';
 import { getUsers, createUser, deleteUser, type User } from '../api';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 
 type AddForm = { email: string; password: string; roleId: string };
 
@@ -12,6 +13,7 @@ export function UsersPage() {
   const [addForm, setAddForm]     = useState<AddForm>({ email: '', password: '', roleId: 'viewer' });
   const [addErr, setAddErr]       = useState('');
   const [addSaving, setAddSaving] = useState(false);
+  const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => { load(); }, []);
@@ -33,10 +35,15 @@ export function UsersPage() {
     finally { setAddSaving(false); }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Delete this user?')) return;
-    await deleteUser(id);
-    setUsers(u => u.filter(x => x.id !== id));
+  function handleDelete(id: string) {
+    setConfirmState({
+      message: 'Delete this user?',
+      onConfirm: async () => {
+        setConfirmState(null);
+        await deleteUser(id);
+        setUsers(u => u.filter(x => x.id !== id));
+      },
+    });
   }
 
   return (
@@ -114,7 +121,13 @@ export function UsersPage() {
         </div>
       )}
 
-
+      {confirmState && (
+        <ConfirmDialog
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
+        />
+      )}
     </>
   );
 }

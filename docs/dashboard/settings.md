@@ -118,3 +118,40 @@ docker compose up -d
 ### Admin Update Banner
 
 When a newer version is available on the active channel, a yellow banner appears at the top of every page for admin users. The banner links to this page and can be dismissed for the current browser session by clicking **×**.
+
+---
+
+## Audit Log
+
+**Settings → Audit Log**
+
+The Audit Log records every write operation performed on the Routerly instance: who did what, when, and whether it succeeded or was blocked.
+
+### What is recorded
+
+| Event | Trigger |
+|-------|---------|
+| `model:create/update/delete` | Model added, edited, or removed |
+| `project:create/update/delete` | Project added, edited, or removed |
+| `user:create/update/delete` | User added, edited, or removed |
+| `role:create/update/delete` | Role added, edited, or removed |
+| `token:create/delete` | API token issued or revoked |
+| `settings:update` | Global settings changed |
+| `forbidden` | Any action blocked by missing permission |
+
+### Filters
+
+- **Period** — date range picker with presets (today, last 7 days, this month, etc.)
+- **User** — filter by email or user ID
+- **Action** — filter by action substring (e.g. `model:create`)
+- **Result** — toggle between All / Success / Forbidden / Error
+
+Results are paginated (50 entries per page), server-side.
+
+### Retention
+
+Entries older than 90 days are automatically pruned. Maximum 10,000 entries are kept at any time.
+
+### Access control
+
+Requires `audit:read` permission. Assign this permission to roles that should have read-only access to the audit trail (e.g. a dedicated "Auditor" role).

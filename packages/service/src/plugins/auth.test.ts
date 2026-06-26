@@ -3,13 +3,15 @@ import Fastify from 'fastify'
 
 vi.mock('../config/loader.js', () => ({
   readConfig: vi.fn(),
+  writeConfig: vi.fn().mockResolvedValue(undefined),
 }))
 
 import authPlugin from './auth.js'
-import { readConfig } from '../config/loader.js'
+import { readConfig, writeConfig } from '../config/loader.js'
 import type { ProjectConfig } from '@routerly/shared'
 
 const mockReadConfig = vi.mocked(readConfig)
+const mockWriteConfig = vi.mocked(writeConfig)
 
 afterEach(() => { vi.clearAllMocks() })
 
@@ -159,6 +161,58 @@ describe('authPlugin', () => {
       headers: { authorization: 'Bearer anything' },
     })
     expect(res.statusCode).toBe(401)
+    await app.close()
+  })
+
+  it('returns 401 when token is expired', async () => {
+    const expired = new Date(Date.now() - 1000).toISOString()
+    const projectWithExpired: ProjectConfig = {
+      id: 'proj-exp', name: 'Exp',
+      tokens: [{ token: 'expired-token', name: 'T', permissions: ['completion'], expiresAt: expired } as any],
+      members: [], models: [],
+    }
+    mockReadConfig.mockResolvedValue([projectWithExpired])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/chat/completions',
+      headers: { authorization: 'Bearer expired-token' },
+    })
+    expect(res.statusCode).toBe(401)
+    expect(res.json().error).toBe('Token expired')
+    await app.close()
+  })
+
+  it('allows valid token with future expiresAt', async () => {
+    const future = new Date(Date.now() + 86400000).toISOString()
+    const projectWithFuture: ProjectConfig = {
+      id: 'proj-fut', name: 'Fut',
+      tokens: [{ token: 'future-token', name: 'T', permissions: ['completion'], expiresAt: future } as any],
+      members: [], models: [],
+    }
+    mockReadConfig.mockResolvedValue([projectWithFuture])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/chat/completions',
+      headers: { authorization: 'Bearer future-token' },
+    })
+    expect(res.statusCode).toBe(200)
+    await app.close()
+  })
+
+  it('updates lastUsedAt and calls writeConfig on valid auth', async () => {
+    const projects = [testProject]
+    // readConfig called twice: once in resolveProjectByToken, once in preHandler for lastUsedAt update
+    mockReadConfig.mockResolvedValue(JSON.parse(JSON.stringify(projects)))
+    const app = await buildApp()
+    await app.inject({
+      method: 'GET',
+      url: '/v1/chat/completions',
+      headers: { authorization: 'Bearer valid-token-123' },
+    })
+    // writeConfig should have been called to persist lastUsedAt
+    expect(mockWriteConfig).toHaveBeenCalledWith('projects', expect.any(Array))
     await app.close()
   })
 })

@@ -126,6 +126,26 @@ export async function appendUsageRecord(record: UsageRecord): Promise<void> {
 }
 
 /**
+ * One-shot cleanup of orphan usage records (#77, BUG-5).
+ *
+ * Drops usage rows whose projectId matches no existing project — residue from
+ * the pre-fix guardrail path which wrote records under a fictitious
+ * projectId 'guardrail'. Real projects' records are kept. Only rewrites the
+ * file when something was actually removed. Returns the number removed.
+ */
+export async function pruneOrphanUsage(): Promise<number> {
+  const [usage, projects] = await Promise.all([
+    readConfig('usage'),
+    readConfig('projects'),
+  ]);
+  const validIds = new Set(projects.map((p) => p.id));
+  const kept = usage.filter((r) => validIds.has(r.projectId));
+  const removed = usage.length - kept.length;
+  if (removed > 0) await writeConfig('usage', kept);
+  return removed;
+}
+
+/**
  * Reads the signing secret from the config directory, generating one if it
  * does not exist yet. The file is created with mode 0600 (owner read/write only).
  */

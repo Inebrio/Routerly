@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { fastifyPlugin as fp } from 'fastify-plugin';
 import type { ProjectConfig, ProjectToken } from '@routerly/shared';
-import { readConfig } from '../config/loader.js';
+import { readConfig, writeConfig } from '../config/loader.js';
 
 // Augment FastifyRequest to carry the resolved project and token
 declare module 'fastify' {
@@ -51,8 +51,25 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 
     const resolved = await resolveProjectByToken(incomingToken);
     if (resolved) {
-      request.project = resolved.project;
-      request.token = resolved.token;
+      const { project, token } = resolved;
+
+      // Enforce expiry
+      if (token.expiresAt && new Date(token.expiresAt) < new Date()) {
+        return reply.status(401).send({ error: 'Token expired' });
+      }
+
+      // Track lastUsedAt — fire-and-forget, don't block the request
+      token.lastUsedAt = new Date().toISOString();
+      const projects = await readConfig('projects');
+      const pi = projects.findIndex(p => p.id === project.id);
+      if (pi !== -1) {
+        const ti = projects[pi]!.tokens?.findIndex(t => t.token === incomingToken) ?? -1;
+        if (ti !== -1) projects[pi]!.tokens![ti]!.lastUsedAt = token.lastUsedAt;
+        writeConfig('projects', projects).catch(() => { /* non-fatal */ });
+      }
+
+      request.project = project;
+      request.token = token;
       return;
     }
 

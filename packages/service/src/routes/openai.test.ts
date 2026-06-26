@@ -24,6 +24,7 @@ import { readConfig } from '../config/loader.js'
 import { llmChat, llmStream } from '../llm/executor.js'
 import { getEmbeddingProvider } from '../embeddings/index.js'
 import { lookupCache, storeCache } from '../cache/semanticResponseCache.js'
+import { appendTrace } from '../routing/traceStore.js'
 
 const mockRouteRequest = vi.mocked(routeRequest)
 const mockReadConfig = vi.mocked(readConfig)
@@ -32,6 +33,7 @@ const mockLlmStream = vi.mocked(llmStream)
 const mockGetEmbeddingProvider = vi.mocked(getEmbeddingProvider)
 const mockLookupCache = vi.mocked(lookupCache)
 const mockStoreCache = vi.mocked(storeCache)
+const mockAppendTrace = vi.mocked(appendTrace)
 
 afterEach(() => vi.clearAllMocks())
 
@@ -1241,6 +1243,69 @@ describe('POST /v1/chat/completions — line 289 if(delta) FALSE branch', () => 
   })
 })
 
+// ─── Streaming response guardrail (#77 regression) ───────────────────────────
+
+describe('POST /v1/chat/completions — streaming response guardrail (block)', () => {
+  const projectWithResponseGuardrail: any = {
+    id: 'proj-guard', name: 'GuardTest', tokens: [], members: [],
+    models: [{ modelId: 'openai/gpt-4o' }],
+    guardrails: {
+      action: 'block',
+      fallbackMessage: 'Response blocked by content guardrails.',
+      // No `enabled` field on the rule — presence + target is what activates it (#77).
+      rules: [{ type: 'regex', target: 'response', config: { patterns: ['forbidden'] } }],
+    },
+  }
+
+  it('buffers SSE and suppresses matched content, emitting content_filter fallback', async () => {
+    async function* gen() {
+      yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'this is ' }, finish_reason: null }] }
+      yield { id: 'c2', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'forbidden text' }, finish_reason: 'stop' }] }
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmStream.mockResolvedValue({ ttftMs: 50, chunks: gen() } as any)
+
+    const app = await buildApp(projectWithResponseGuardrail)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', stream: true, messages: [{ role: 'user', content: 'Hi' }] }),
+    })
+    await app.close()
+
+    // Matched content must NOT leak to the client.
+    expect(res.body).not.toContain('forbidden text')
+    expect(res.body).not.toContain('this is ')
+    // Wire-faithful block: empty delta + content_filter, no human-readable fallback in the stream.
+    expect(res.body).not.toContain('Response blocked by content guardrails.')
+    expect(res.body).toContain('content_filter')
+    expect(res.body).toContain('"delta":{}')
+    expect(res.body).toContain('[DONE]')
+  })
+
+  it('flushes buffered SSE unchanged when response does not match', async () => {
+    async function* gen() {
+      yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'all clean here' }, finish_reason: 'stop' }] }
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmStream.mockResolvedValue({ ttftMs: 50, chunks: gen() } as any)
+
+    const app = await buildApp(projectWithResponseGuardrail)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', stream: true, messages: [{ role: 'user', content: 'Hi' }] }),
+    })
+    await app.close()
+
+    expect(res.body).toContain('all clean here')
+    expect(res.body).not.toContain('content_filter')
+    expect(res.body).toContain('[DONE]')
+  })
+})
+
 // ─── Agent routing policies (#78) ─────────────────────────────────────────────
 
 describe('POST /v1/chat/completions — X-Routerly-Policy override', () => {
@@ -1287,5 +1352,105 @@ describe('POST /v1/chat/completions — X-Routerly-Policy override', () => {
 
     expect(res.statusCode).toBe(200)
     expect(mockRouteRequest).toHaveBeenCalledTimes(1)
+  })
+})
+
+// ─── Request guardrail block wire format + PII output trace (#76/#77) ──────────
+describe('POST /v1/chat/completions — guardrail request block & PII output trace', () => {
+  const blockProject: any = {
+    id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
+    guardrails: { action: 'block', fallbackMessage: 'nope', rules: [{ type: 'regex', target: 'request', config: { patterns: ['forbidden'] } }] },
+  }
+
+  it('non-streaming request block: empty content + content_filter, no fallback in wire, trace-id header', async () => {
+    const app = await buildApp(blockProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'this is forbidden' }] }),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.choices[0].message.content).toBe('')
+    expect(body.choices[0].finish_reason).toBe('content_filter')
+    expect(res.body).not.toContain('nope')
+    expect(res.headers['x-routerly-trace-id']).toBeDefined()
+    const traceCall = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'guardrail:triggered')
+    expect((traceCall![1] as any[])[0].details).toMatchObject({ action: 'block', fallbackMessage: 'nope', target: 'request' })
+    expect(mockLlmChat).not.toHaveBeenCalled()
+  })
+
+  it('streaming request block: empty delta + content_filter + [DONE], no fallback', async () => {
+    const app = await buildApp(blockProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', stream: true, messages: [{ role: 'user', content: 'forbidden please' }] }),
+    })
+    await app.close()
+
+    expect(res.body).toContain('content_filter')
+    expect(res.body).toContain('"delta":{}')
+    expect(res.body).toContain('[DONE]')
+    expect(res.body).not.toContain('nope')
+    expect(res.headers['x-routerly-trace-id']).toBeDefined()
+  })
+
+  it('non-streaming PII output scrubbing emits a response pii:scrubbed trace entry', async () => {
+    const piiProject: any = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
+      pii: { scrubOutput: true },
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmChat.mockResolvedValue({
+      id: 'c1', object: 'chat.completion', created: 0, model: 'gpt-4o',
+      choices: [{ index: 0, message: { role: 'assistant', content: 'write to a@b.com' }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+    } as any)
+
+    const app = await buildApp(piiProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+
+    const body = JSON.parse(res.body)
+    expect(body.choices[0].message.content).toBe('write to [EMAIL]')
+    const piiTrace = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:scrubbed' && (c[1] as any[])[0]?.panel === 'response')
+    expect(piiTrace).toBeDefined()
+    expect((piiTrace![1] as any[])[0].details.entities).toContain('EMAIL')
+  })
+
+  it('streaming PII output scrubbing accumulates entities and traces at flush', async () => {
+    const piiProject: any = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
+      pii: { scrubOutput: true },
+    }
+    async function* gen() {
+      yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'reach me at a@b.com ' }, finish_reason: null }] }
+      yield { id: 'c2', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'thanks' }, finish_reason: 'stop' }] }
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmStream.mockResolvedValue({ ttftMs: 10, chunks: gen() } as any)
+
+    const app = await buildApp(piiProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', stream: true, messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+
+    expect(res.body).not.toContain('a@b.com')
+    expect(res.body).toContain('[EMAIL]')
+    const piiTrace = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:scrubbed' && (c[1] as any[])[0]?.panel === 'response')
+    expect(piiTrace).toBeDefined()
+    expect((piiTrace![1] as any[])[0].details.entities).toContain('EMAIL')
   })
 })

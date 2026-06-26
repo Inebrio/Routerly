@@ -24,6 +24,7 @@ vi.mock('./config/loader.js', () => ({
   initConfigDirs: mockInitConfigDirs,
   readConfig: mockReadConfig,
   writeConfig: mockWriteConfig,
+  pruneOrphanUsage: vi.fn(async () => 0),
 }));
 vi.mock('./plugins/jwt.js', () => ({ loadSecret: mockLoadSecret }));
 vi.mock('./update-checker.js', () => ({ updateChecker: { start: vi.fn() } }));

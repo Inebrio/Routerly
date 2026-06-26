@@ -16,7 +16,10 @@ const DETECTORS: Detector[] = [
   { entity: 'IBAN', re: /\b[A-Z]{2}\d{2}[\sA-Z0-9]{11,30}\b/g, placeholder: '[IBAN]' },
   { entity: 'EMAIL', re: /\b[\w.+-]+@[\w-]+\.[a-z]{2,}\b/gi, placeholder: '[EMAIL]' },
   { entity: 'SSN', re: /\b\d{3}-\d{2}-\d{4}\b/g, placeholder: '[SSN]' },
-  { entity: 'PHONE', re: /\b(\+\d{1,3}[\s-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g, placeholder: '[PHONE_NUMBER]' },
+  // Two alternatives: international (+CC then 2-4 digit groups, captures the "+1 (" prefix
+  // a leading \b would miss) | bare US-style 3-3-4. Lookbehind/ahead keep it from
+  // eating digits inside longer alphanumeric tokens (e.g. IBANs).
+  { entity: 'PHONE', re: /(?<![\w])\+\d{1,3}[\s.-]?\(?\d{2,4}\)?(?:[\s.-]?\d{2,4}){2,4}|(?<![\w+])\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}(?![\w])/g, placeholder: '[PHONE_NUMBER]' },
 ];
 
 /**
@@ -28,6 +31,7 @@ const DETECTORS: Detector[] = [
 export function scrubPii(
   text: string,
   entities: string[],
+  customPatterns?: string[],
 ): { text: string; found: string[] } {
   const active = new Set(entities);
   const found = new Set<string>();
@@ -41,7 +45,70 @@ export function scrubPii(
     });
   }
 
+  for (const pattern of (customPatterns ?? [])) {
+    try {
+      const re = new RegExp(pattern, 'gi');
+      const before = result;
+      result = result.replace(re, '[REDACTED]');
+      if (result !== before) found.add('CUSTOM');
+    } catch { /* skip invalid regex */ }
+  }
+
   return { text: result, found: [...found] };
+}
+
+/**
+ * Scrubs PII from a single string — used for output scrubbing (#76).
+ */
+export function scrubText(text: string, config: PiiConfig): { text: string; found: string[] } {
+  const entities = config.entities ?? ALL_ENTITIES;
+  return scrubPii(text, entities, config.customPatterns);
+}
+
+/**
+ * Streaming PII scrubber using suffix buffering.
+ *
+ * Holds back the last N chars of accumulated text so that patterns split
+ * across chunk boundaries are caught. Call push() per chunk, flush() at
+ * stream end. N=30 covers most emails, phone numbers, and short IBANs.
+ */
+export class StreamingScrubber {
+  private buffer = '';
+  private readonly n: number;
+  private readonly config: PiiConfig;
+  /** Distinct entity types redacted across all chunks — for the response trace (#76). */
+  readonly found = new Set<string>();
+
+  constructor(config: PiiConfig) {
+    this.n = config.outputBufferSize ?? 30;
+    this.config = config;
+  }
+
+  /** Push a new text chunk. Returns the portion safe to emit (scrubbed). */
+  push(text: string): string {
+    this.buffer += text;
+    if (this.buffer.length <= this.n) return '';
+    // Cut at last whitespace so PII tokens (emails, phone numbers) are never split mid-token.
+    const lastSpace = Math.max(
+      this.buffer.lastIndexOf(' '),
+      this.buffer.lastIndexOf('\n'),
+      this.buffer.lastIndexOf('\t'),
+    );
+    if (lastSpace <= 0) return '';
+    const safe = this.buffer.slice(0, lastSpace + 1);
+    this.buffer = this.buffer.slice(lastSpace + 1);
+    const { text: scrubbed, found } = scrubText(safe, this.config);
+    found.forEach((e) => this.found.add(e));
+    return scrubbed;
+  }
+
+  /** Call at stream end. Scrubs and returns the remaining buffer. */
+  flush(): string {
+    const { text: result, found } = scrubText(this.buffer, this.config);
+    found.forEach((e) => this.found.add(e));
+    this.buffer = '';
+    return result;
+  }
 }
 
 /**
@@ -63,7 +130,7 @@ export function scrubMessages(
     const content = (message as { content?: unknown }).content;
     if (typeof content !== 'string') return message;
 
-    const { text, found } = scrubPii(content, entities);
+    const { text, found } = scrubPii(content, entities, config.customPatterns);
     if (found.length === 0) return message;
     found.forEach((entity) => redacted.add(entity));
     return { ...(message as object), content: text };

@@ -6,12 +6,19 @@ import {
   ChevronLeft, ChevronRight, Code, Trash2, Save, BookOpen,
   SplitSquareHorizontal, MessageSquare,
 } from 'lucide-react';
-import { getProjects, getPlaygroundPresets, createPlaygroundPreset, deletePlaygroundPreset, type Project, type PlaygroundPreset } from '../api.js';
+import { getProjects, getPlaygroundPresets, createPlaygroundPreset, deletePlaygroundPreset, getTrace, type Project, type PlaygroundPreset, type TraceEntry } from '../api.js';
 import { TraceEntryRenderer } from '../components/TraceEntryRenderer.js';
 import { MessageStatsCard } from '../components/MessageStatsCard.js';
 import { extractMessageStats } from '../utils/traceUtils.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+interface GuardrailBlock {
+  rule: string;
+  target: string;
+  action: string;
+  fallbackMessage?: string;
+}
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -22,6 +29,7 @@ interface Message {
   outputTokens?: number;
   latencyMs?: number;
   rawJson?: string;
+  blocked?: GuardrailBlock;
 }
 
 interface ContentPart {
@@ -120,7 +128,12 @@ function ComparePanel({
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
-      if (!res.body) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok || !res.body) {
+        const body = await res.text();
+        let msg = `HTTP ${res.status}`;
+        try { const json = JSON.parse(body) as { error?: { message?: string } }; if (json.error?.message) msg = json.error.message; } catch {}
+        throw new Error(msg);
+      }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       while (true) {
@@ -156,7 +169,10 @@ function ComparePanel({
       const latencyMs = Date.now() - startMs;
       setMsgs(prev => { const u = [...prev]; if (assistantAdded) u[u.length - 1] = { ...u[u.length - 1]!, inputTokens, outputTokens, latencyMs }; return u; });
     } catch (e) {
-      if (e instanceof Error && e.name !== 'AbortError') setError(e.message);
+      if (e instanceof Error && e.name !== 'AbortError') {
+        setError(e.message);
+        setMsgs(prev => prev.slice(0, -1));
+      }
     } finally {
       abortRef.current = null;
       setLoading(false);
@@ -373,6 +389,8 @@ export function TestPage() {
     let assistantAdded = false;
     let inputTokens = 0;
     let outputTokens = 0;
+    let finishReason = '';
+    let stopReason = '';
     const rawChunks: string[] = [];
     const startMs = Date.now();
 
@@ -384,7 +402,15 @@ export function TestPage() {
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
-      if (!res.body) throw new Error(`HTTP ${res.status}`);
+      // Capture trace ID for post-stream trace fetch
+      const traceId = res.headers.get('x-routerly-trace-id');
+
+      if (!res.ok || !res.body) {
+        const body = await res.text();
+        let msg = `HTTP ${res.status}`;
+        try { const json = JSON.parse(body) as { error?: { message?: string } }; if (json.error?.message) msg = json.error.message; } catch {}
+        throw new Error(msg);
+      }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
 
@@ -415,6 +441,12 @@ export function TestPage() {
             }
             rawChunks.push(dataStr);
 
+            // Track finish/stop reason for block detection
+            const fr: string | undefined = data.choices?.[0]?.finish_reason;
+            if (fr) finishReason = fr;
+            const sr: string | undefined = data.stop_reason;
+            if (sr) stopReason = sr;
+
             const thinking: string | undefined = data.choices?.[0]?.delta?.thinking;
             if (thinking) {
               if (!assistantAdded) { setMessages(prev => [...prev, { role: 'assistant', content: '', thinking: '', model: modelName }]); assistantAdded = true; }
@@ -435,15 +467,56 @@ export function TestPage() {
       }
 
       const latencyMs = Date.now() - startMs;
+      const isBlocked = finishReason === 'content_filter' || stopReason === 'refusal';
+
+      // Fetch full trace from API (SSE trace events may be incomplete; the stored trace is authoritative)
+      let traceEntries: TraceEntry[] = [];
+      if (traceId) {
+        try {
+          const traceData = await getTrace(traceId);
+          traceEntries = traceData.trace;
+          // Merge trace entries into debug sidebar (replace SSE-collected entries with full trace)
+          setDebugTraceHistory(prev => {
+            const u = [...prev];
+            u[turnIndex] = traceEntries;
+            return u;
+          });
+        } catch {
+          // Trace fetch failed — keep SSE-collected entries
+        }
+      }
+
+      // Extract guardrail block info from trace
+      let blocked: GuardrailBlock | undefined;
+      if (isBlocked) {
+        const guardEntry = traceEntries.find(e => e.message === 'guardrail:triggered' || e.message === 'guardrail:response-triggered');
+        if (guardEntry?.details) {
+          const fm = guardEntry.details.fallbackMessage ? String(guardEntry.details.fallbackMessage) : undefined;
+          blocked = {
+            rule: String(guardEntry.details.rule ?? '—'),
+            target: String(guardEntry.details.target ?? '—'),
+            action: String(guardEntry.details.action ?? 'block'),
+            ...(fm ? { fallbackMessage: fm } : {}),
+          };
+        } else {
+          // No trace entry found — still mark as blocked with minimal info
+          blocked = { rule: '—', target: '—', action: 'block' };
+        }
+      }
+
       const fullMsg: Message = {
         role: 'assistant', content: finalContent, model: modelName,
         inputTokens, outputTokens, latencyMs,
         rawJson: rawChunks.join('\n'),
         ...(thinkingAccum ? { thinking: thinkingAccum } : {}),
+        ...(blocked ? { blocked } : {}),
       };
       setMessages(prev => { const u = [...prev]; if (assistantAdded) u[u.length - 1] = fullMsg; else u.push(fullMsg); return u; });
     } catch (e) {
-      if (e instanceof Error && e.name !== 'AbortError') setError(e.message);
+      if (e instanceof Error && e.name !== 'AbortError') {
+        setError(e.message);
+        setMessages(prev => prev.slice(0, -1));
+      }
     } finally {
       abortRef.current = null;
       setLoading(false);
@@ -667,7 +740,7 @@ export function TestPage() {
                   <ParamSlider label="Max tokens" value={maxTokens} min={64} max={8192} step={64} onChange={setMaxTokens} />
                   <ParamSlider label="Top-p" value={topP} min={0} max={1} step={0.05} onChange={setTopP} />
                   {messages.length > 0 && (
-                    <button className="btn" style={{ fontSize: '0.73rem', marginLeft: 'auto' }} onClick={() => { setMessages([]); setShowRaw({}); }}>Clear</button>
+                    <button className="btn" style={{ fontSize: '0.73rem', marginLeft: 'auto' }} onClick={() => { setMessages([]); setShowRaw({}); setDebugTraceHistory([]); }}>Clear</button>
                   )}
                 </div>
               </div>
@@ -695,13 +768,45 @@ export function TestPage() {
                             </div>
                           </details>
                         )}
+                        {/* Blocked guardrail box — shown above the bubble */}
+                        {isAssistant && msg.blocked && (
+                          <div style={{
+                            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.5)',
+                            borderRadius: '12px 12px 4px 12px', padding: '10px 14px',
+                            display: 'flex', flexDirection: 'column', gap: 4, width: '100%', boxSizing: 'border-box',
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              <AlertCircle size={13} /> {msg.blocked.target === 'request' ? 'Request' : 'Response'} blocked by guardrail
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 6, marginTop: 2 }}>
+                              <div>
+                                <div style={{ fontSize: '0.62rem', color: 'rgba(239,68,68,0.7)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Rule</div>
+                                <div style={{ fontSize: '0.8rem', color: '#fca5a5', fontFamily: 'monospace', fontWeight: 600 }}>{msg.blocked.rule}</div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '0.62rem', color: 'rgba(239,68,68,0.7)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Target</div>
+                                <div style={{ fontSize: '0.8rem', color: '#fca5a5' }}>{msg.blocked.target}</div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '0.62rem', color: 'rgba(239,68,68,0.7)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Action</div>
+                                <div style={{ fontSize: '0.8rem', color: '#fca5a5' }}>{msg.blocked.action}</div>
+                              </div>
+                            </div>
+                            {msg.blocked.fallbackMessage && (
+                              <div style={{ fontSize: '0.8rem', color: '#fca5a5', fontStyle: 'italic', paddingTop: 4, borderTop: '1px solid rgba(239,68,68,0.25)', marginTop: 2 }}>
+                                {msg.blocked.fallbackMessage}
+                              </div>
+                            )}
+                          </div>
+                        )}
                         <div style={{
-                          background: isAssistant ? 'var(--bg-elevated)' : 'var(--primary)',
+                          background: isAssistant ? (msg.blocked ? 'rgba(239,68,68,0.05)' : 'var(--bg-elevated)') : 'var(--primary)',
                           color: isAssistant ? 'var(--text-primary)' : '#fff',
                           padding: '10px 14px',
                           borderRadius: isAssistant ? '16px 16px 16px 4px' : '16px 16px 4px 16px',
-                          border: isAssistant ? '1px solid var(--border)' : 'none',
+                          border: isAssistant ? (msg.blocked ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--border)') : 'none',
                           fontSize: '0.9rem', lineHeight: 1.5,
+                          display: isAssistant && msg.blocked && !msg.content ? 'none' : undefined,
                         }}>
                           {isAssistant ? (
                             typeof msg.content === 'string'

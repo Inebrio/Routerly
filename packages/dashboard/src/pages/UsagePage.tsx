@@ -19,7 +19,7 @@ export function UsagePage() {
   const [dateRange, setDateRange]       = useFilterState<DateRange>({ key: 'usage-filters-dateRange', defaultValue: { from: '', to: '', label: 'This month' } });
   const [projectIds, setProjectIds]     = useFilterState<string[]>({ key: 'usage-filters-projectIds', defaultValue: [] });
   const [modelIds, setModelIds]         = useFilterState<string[]>({ key: 'usage-filters-modelIds', defaultValue: [] });
-  const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing'>({ key: 'usage-filters-callType', defaultValue: 'all' });
+  const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing' | 'guardrail'>({ key: 'usage-filters-callType', defaultValue: 'all' });
   const [outcomeFilter, setOutcomeFilter]   = useFilterState<'all' | 'success' | 'error'>({ key: 'usage-filters-outcome', defaultValue: 'all' });
   const [loading, setLoading]           = useState(true);
   const [fetchError, setFetchError]     = useState<string | null>(null);
@@ -258,10 +258,10 @@ export function UsagePage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               <FilterLabel>Type</FilterLabel>
               <div style={{ display: 'flex', gap: 4 }}>
-                {(['all', 'completion', 'routing'] as const).map(f => (
+                {(['all', 'completion', 'routing', 'guardrail'] as const).map(f => (
                   <button key={f} className={`btn btn-sm ${callTypeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setCallTypeFilter(f)}>
-                    {f === 'all' ? 'All' : f === 'completion' ? 'Completion' : 'Router'}
+                    {f === 'all' ? 'All' : f === 'completion' ? 'Completion' : f === 'routing' ? 'Router' : 'Guardrail'}
                   </button>
                 ))}
               </div>
@@ -330,6 +330,16 @@ export function UsagePage() {
                 <div className="stat-value">{stats.summary.routingCalls ?? 0}</div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>${(stats.summary.routingCost ?? 0).toFixed(4)}</div>
               </div>
+              {(stats.summary.guardrailCalls ?? 0) > 0 && (
+                <div className="stat-card">
+                  <div className="stat-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
+                    Guardrail Calls
+                  </div>
+                  <div className="stat-value">{stats.summary.guardrailCalls}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>${(stats.summary.guardrailCost ?? 0).toFixed(4)}</div>
+                </div>
+              )}
               <div className="stat-card">
                 <div className="stat-label">Errors</div>
                 <div className="stat-value" style={{ color: stats.summary.errorCalls > 0 ? 'var(--danger)' : 'var(--success)' }}>
