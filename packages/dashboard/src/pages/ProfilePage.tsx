@@ -1,15 +1,114 @@
-import React, { useState } from 'react';
-import { User, Lock, ShieldCheck, ShieldOff } from 'lucide-react';
-import { updateMe, setup2fa, confirm2fa, disable2fa, regenerateBackupCodes } from '../api';
+import React, { useState, useCallback, useEffect } from 'react';
+import { NavLink } from 'react-router-dom';
+import { User, Lock, ShieldCheck, ShieldOff, CheckCheck } from 'lucide-react';
+import { updateMe, setup2fa, confirm2fa, disable2fa, regenerateBackupCodes, getNotificationInbox, markNotificationsRead, type InboxItem } from '../api';
 import { useAuth } from '../AuthContext';
+import { severityIcon, timeAgo } from '../components/NotificationBell';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Notifications tab ────────────────────────────────────────────────────────
 
-type TwoFaStep = 'idle' | 'setup' | 'confirm' | 'enabled';
+export function ProfileNotificationsTab() {
+  const [items, setItems] = useState<InboxItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-// ─── Component ────────────────────────────────────────────────────────────────
+  const load = useCallback(async () => {
+    try {
+      const res = await getNotificationInbox({ limit: 200 });
+      setItems(res.items);
+      setUnreadCount(res.unreadCount);
+    } catch { /* non-critical */ }
+    finally { setLoading(false); }
+  }, []);
 
-export function ProfilePage() {
+  useEffect(() => { void load(); }, [load]);
+
+  async function markOne(id: string) {
+    try {
+      await markNotificationsRead({ ids: [id] });
+      setItems(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+      setUnreadCount(u => Math.max(0, u - 1));
+    } catch { /* non-critical */ }
+  }
+
+  async function markAll() {
+    try {
+      await markNotificationsRead({ all: true });
+      setItems(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+    } catch { /* non-critical */ }
+  }
+
+  if (loading) return <div className="loading-center"><div className="spinner" /></div>;
+
+  return (
+    <div style={{ maxWidth: 600 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+          {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
+        </span>
+        {unreadCount > 0 && (
+          <button
+            onClick={markAll}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--accent)', fontSize: '0.8rem',
+            }}
+          >
+            <CheckCheck size={14} /> Mark all read
+          </button>
+        )}
+      </div>
+
+      {items.length === 0 ? (
+        <div style={{
+          padding: '32px 16px', textAlign: 'center',
+          color: 'var(--text-muted)', fontSize: '0.85rem',
+          border: '1px solid var(--border)', borderRadius: 8,
+        }}>
+          No notifications
+        </div>
+      ) : (
+        <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+          {items.map((n, i) => (
+            <div
+              key={n.id}
+              style={{
+                display: 'flex', gap: 10, padding: '12px 14px',
+                borderBottom: i < items.length - 1 ? '1px solid var(--border)' : 'none',
+                background: n.read ? 'transparent' : 'var(--bg-card)',
+              }}
+            >
+              <span style={{ marginTop: 2 }}>{severityIcon(n.severity)}</span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: '0.85rem', fontWeight: n.read ? 400 : 600, color: 'var(--text-primary)' }}>
+                  {n.event}
+                </span>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                  {timeAgo(n.timestamp)}
+                </span>
+              </span>
+              {!n.read && (
+                <button
+                  onClick={() => markOne(n.id)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: '0.72rem', flexShrink: 0 }}
+                  title="Mark as read"
+                >
+                  <CheckCheck size={13} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Profile (security) tab content ──────────────────────────────────────────
+
+function ProfileSecurityTab() {
   const { user, updateUser } = useAuth();
 
   // ── Change password ─────────────────────────────────────────────────────────
@@ -51,6 +150,7 @@ export function ProfilePage() {
   }
 
   // ── 2FA ─────────────────────────────────────────────────────────────────────
+  type TwoFaStep = 'idle' | 'setup' | 'confirm' | 'enabled';
   const [tfaStep, setTfaStep] = useState<TwoFaStep>('idle');
   const [tfaSecret, setTfaSecret] = useState('');
   const [tfaQrUrl, setTfaQrUrl] = useState('');
@@ -131,152 +231,199 @@ export function ProfilePage() {
   }
 
   return (
-    <>
-      <div className="page-header">
-        <h1>My Profile</h1>
-        <p>Manage your account settings</p>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 32, maxWidth: 520 }}>
 
-      <div className="page-body" style={{ display: 'flex', flexDirection: 'column', gap: 32, maxWidth: 520 }}>
-
-        {/* ── Account info (read-only) ─────────────────────────────────────────── */}
+      {/* ── Account info (read-only) ─────────────────────────────────────────── */}
+      <div style={{
+        background: 'var(--surface-2, rgba(255,255,255,0.04))',
+        border: '1px solid var(--border)',
+        borderRadius: 10,
+        padding: '16px 20px',
+        display: 'flex', alignItems: 'center', gap: 14,
+      }}>
         <div style={{
-          background: 'var(--surface-2, rgba(255,255,255,0.04))',
-          border: '1px solid var(--border)',
-          borderRadius: 10,
-          padding: '16px 20px',
-          display: 'flex', alignItems: 'center', gap: 14,
+          width: 44, height: 44, borderRadius: '50%',
+          background: 'linear-gradient(135deg, #3d75f5, #5a90f8)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
         }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #3d75f5, #5a90f8)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            <User size={20} color="#fff" />
+          <User size={20} color="#fff" />
+        </div>
+        <div>
+          <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
+            {user?.email}
           </div>
-          <div>
-            <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
-              {user?.email}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
-              Role: <span style={{ color: 'var(--text-secondary)' }}>{user?.role}</span>
-            </div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
+            Role: <span style={{ color: 'var(--text-secondary)' }}>{user?.role}</span>
           </div>
         </div>
+      </div>
 
-        {/* ── Change password ────────────────────────────────────────────────── */}
-        <section>
-          <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 14 }}>
-            Change Password
-          </h3>
-          <form onSubmit={handlePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" htmlFor="p-cur-pw">Current Password</label>
-              <input
-                id="p-cur-pw"
-                type="password"
-                className="form-input"
-                value={pwForm.currentPassword}
-                onChange={e => setPwForm(f => ({ ...f, currentPassword: e.target.value }))}
-                required
-              />
-            </div>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" htmlFor="p-new-pw">New Password</label>
-              <input
-                id="p-new-pw"
-                type="password"
-                className="form-input"
-                value={pwForm.newPassword}
-                onChange={e => setPwForm(f => ({ ...f, newPassword: e.target.value }))}
-                placeholder="Minimum 8 characters"
-                required
-              />
-            </div>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" htmlFor="p-conf-pw">Confirm New Password</label>
-              <input
-                id="p-conf-pw"
-                type="password"
-                className="form-input"
-                value={pwForm.confirmPassword}
-                onChange={e => setPwForm(f => ({ ...f, confirmPassword: e.target.value }))}
-                required
-              />
-            </div>
-            {pwError && <div className="form-error">{pwError}</div>}
-            {pwSaved && <div style={{ padding: '8px 12px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, fontSize: '0.83rem', color: '#22c55e' }}>Password changed successfully.</div>}
+      {/* ── Change password ────────────────────────────────────────────────── */}
+      <section>
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 14 }}>
+          Change Password
+        </h3>
+        <form onSubmit={handlePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label" htmlFor="p-cur-pw">Current Password</label>
+            <input
+              id="p-cur-pw"
+              type="password"
+              className="form-input"
+              value={pwForm.currentPassword}
+              onChange={e => setPwForm(f => ({ ...f, currentPassword: e.target.value }))}
+              required
+            />
+          </div>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label" htmlFor="p-new-pw">New Password</label>
+            <input
+              id="p-new-pw"
+              type="password"
+              className="form-input"
+              value={pwForm.newPassword}
+              onChange={e => setPwForm(f => ({ ...f, newPassword: e.target.value }))}
+              placeholder="Minimum 8 characters"
+              required
+            />
+          </div>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label" htmlFor="p-conf-pw">Confirm New Password</label>
+            <input
+              id="p-conf-pw"
+              type="password"
+              className="form-input"
+              value={pwForm.confirmPassword}
+              onChange={e => setPwForm(f => ({ ...f, confirmPassword: e.target.value }))}
+              required
+            />
+          </div>
+          {pwError && <div className="form-error">{pwError}</div>}
+          {pwSaved && <div style={{ padding: '8px 12px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, fontSize: '0.83rem', color: '#22c55e' }}>Password changed successfully.</div>}
+          <div>
+            <button type="submit" className="btn btn-primary" disabled={pwSaving}>
+              {pwSaving
+                ? <><div className="spinner" style={{ width: 14, height: 14 }} /> Saving...</>
+                : <><Lock size={14} /> Change Password</>}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      {/* ── Two-Factor Authentication ──────────────────────────────────────── */}
+      <section>
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 14 }}>
+          Two-Factor Authentication
+        </h3>
+
+        {tfaError && <div className="form-error" style={{ marginBottom: 12 }}>{tfaError}</div>}
+
+        {tfaStep === 'idle' && !tfaEnabled && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
+              2FA is not enabled. Protect your account with a time-based one-time password.
+            </p>
             <div>
-              <button type="submit" className="btn btn-primary" disabled={pwSaving}>
-                {pwSaving
-                  ? <><div className="spinner" style={{ width: 14, height: 14 }} /> Saving...</>
-                  : <><Lock size={14} /> Change Password</>}
+              <button className="btn btn-primary" onClick={handleSetup2fa} disabled={tfaBusy}>
+                <ShieldCheck size={14} /> Enable Two-Factor Authentication
               </button>
             </div>
-          </form>
-        </section>
+          </div>
+        )}
 
-        {/* ── Two-Factor Authentication ──────────────────────────────────────── */}
-        <section>
-          <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 14 }}>
-            Two-Factor Authentication
-          </h3>
-
-          {tfaError && <div className="form-error" style={{ marginBottom: 12 }}>{tfaError}</div>}
-
-          {/* Not enrolled and no setup in progress */}
-          {tfaStep === 'idle' && !tfaEnabled && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-                2FA is not enabled. Protect your account with a time-based one-time password.
+        {tfaStep === 'setup' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
+              Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.), then enter the 6-digit code to confirm.
+            </p>
+            <div style={{ padding: '14px 16px', background: 'var(--surface-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 8px' }}>
+                Open your authenticator app (Google Authenticator, Authy, 1Password, etc.) and add a new account:
               </p>
-              <div>
-                <button className="btn btn-primary" onClick={handleSetup2fa} disabled={tfaBusy}>
-                  <ShieldCheck size={14} /> Enable Two-Factor Authentication
+              <ol style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
+                <li>Tap <strong>Add account</strong> or the <strong>+</strong> button</li>
+                <li>Choose <strong>Enter setup key</strong> (or scan QR code if on mobile)</li>
+                <li>Enter the secret shown below</li>
+              </ol>
+              {tfaQrUrl && (
+                <a
+                  href={tfaQrUrl}
+                  style={{ display: 'block', marginTop: 10, fontSize: '0.72rem', color: 'var(--accent)', wordBreak: 'break-all' }}
+                >
+                  Tap here on mobile to open authenticator
+                </a>
+              )}
+            </div>
+            <div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 4 }}>
+                Manual entry secret:
+              </p>
+              <code style={{ fontSize: '0.8rem', background: 'var(--surface-2)', padding: '4px 8px', borderRadius: 4, letterSpacing: '0.1em' }}>
+                {tfaSecret}
+              </code>
+            </div>
+            <div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6 }}>
+                Save these backup codes. Each can be used once if you lose access to your authenticator.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 8 }}>
+                {tfaBackupCodes.map(c => (
+                  <code key={c} style={{ fontSize: '0.8rem', background: 'var(--surface-2)', padding: '4px 8px', borderRadius: 4 }}>{c}</code>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                style={{ fontSize: '0.8rem' }}
+                onClick={() => navigator.clipboard.writeText(tfaBackupCodes.join('\n'))}
+              >
+                Copy backup codes
+              </button>
+            </div>
+            <form onSubmit={handleConfirm2fa} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" htmlFor="tfa-confirm-code">Enter code from your app to activate</label>
+                <input
+                  id="tfa-confirm-code"
+                  type="text"
+                  className="form-input"
+                  value={tfaCode}
+                  onChange={e => setTfaCode(e.target.value.trim())}
+                  placeholder="000000"
+                  maxLength={6}
+                  autoComplete="one-time-code"
+                  required
+                />
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="submit" className="btn btn-primary" disabled={tfaBusy}>
+                  {tfaBusy ? <span className="spinner" style={{ width: 14, height: 14 }} /> : 'Activate 2FA'}
+                </button>
+                <button type="button" className="btn btn-ghost" onClick={() => { setTfaStep('idle'); setTfaError(''); }}>
+                  Cancel
                 </button>
               </div>
-            </div>
-          )}
+            </form>
+          </div>
+        )}
 
-          {/* Setup step: show QR + backup codes */}
-          {tfaStep === 'setup' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-                Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.), then enter the 6-digit code to confirm.
-              </p>
-              <div style={{ padding: '14px 16px', background: 'var(--surface-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 8px' }}>
-                  Open your authenticator app (Google Authenticator, Authy, 1Password, etc.) and add a new account:
-                </p>
-                <ol style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
-                  <li>Tap <strong>Add account</strong> or the <strong>+</strong> button</li>
-                  <li>Choose <strong>Enter setup key</strong> (or scan QR code if on mobile)</li>
-                  <li>Enter the secret shown below</li>
-                </ol>
-                {tfaQrUrl && (
-                  <a
-                    href={tfaQrUrl}
-                    style={{ display: 'block', marginTop: 10, fontSize: '0.72rem', color: 'var(--accent)', wordBreak: 'break-all' }}
-                  >
-                    Tap here on mobile to open authenticator
-                  </a>
-                )}
-              </div>
+        {(tfaStep === 'enabled' || tfaEnabled) && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '8px 12px', borderRadius: 8,
+              background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)',
+            }}>
+              <ShieldCheck size={16} color="#22c55e" />
+              <span style={{ fontSize: '0.85rem', color: '#22c55e', fontWeight: 600 }}>2FA is enabled</span>
+            </div>
+
+            {newBackupCodes.length > 0 ? (
               <div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 4 }}>
-                  Manual entry secret:
-                </p>
-                <code style={{ fontSize: '0.8rem', background: 'var(--surface-2)', padding: '4px 8px', borderRadius: 4, letterSpacing: '0.1em' }}>
-                  {tfaSecret}
-                </code>
-              </div>
-              <div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6 }}>
-                  Save these backup codes. Each can be used once if you lose access to your authenticator.
-                </p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6 }}>New backup codes (save these now):</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 8 }}>
-                  {tfaBackupCodes.map(c => (
+                  {newBackupCodes.map(c => (
                     <code key={c} style={{ fontSize: '0.8rem', background: 'var(--surface-2)', padding: '4px 8px', borderRadius: 4 }}>{c}</code>
                   ))}
                 </div>
@@ -284,20 +431,21 @@ export function ProfilePage() {
                   type="button"
                   className="btn btn-ghost"
                   style={{ fontSize: '0.8rem' }}
-                  onClick={() => navigator.clipboard.writeText(tfaBackupCodes.join('\n'))}
+                  onClick={() => navigator.clipboard.writeText(newBackupCodes.join('\n'))}
                 >
-                  Copy backup codes
+                  Copy
                 </button>
               </div>
-              <form onSubmit={handleConfirm2fa} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            ) : backupVisible ? (
+              <form onSubmit={handleRegenerateBackupCodes} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" htmlFor="tfa-confirm-code">Enter code from your app to activate</label>
+                  <label className="form-label" htmlFor="regen-code">Enter authenticator code to regenerate backup codes</label>
                   <input
-                    id="tfa-confirm-code"
+                    id="regen-code"
                     type="text"
                     className="form-input"
-                    value={tfaCode}
-                    onChange={e => setTfaCode(e.target.value.trim())}
+                    value={regenCode}
+                    onChange={e => setRegenCode(e.target.value.trim())}
                     placeholder="000000"
                     maxLength={6}
                     autoComplete="one-time-code"
@@ -306,101 +454,98 @@ export function ProfilePage() {
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button type="submit" className="btn btn-primary" disabled={tfaBusy}>
-                    {tfaBusy ? <span className="spinner" style={{ width: 14, height: 14 }} /> : 'Activate 2FA'}
+                    {tfaBusy ? <span className="spinner" style={{ width: 14, height: 14 }} /> : 'Regenerate'}
                   </button>
-                  <button type="button" className="btn btn-ghost" onClick={() => { setTfaStep('idle'); setTfaError(''); }}>
-                    Cancel
-                  </button>
+                  <button type="button" className="btn btn-ghost" onClick={() => { setBackupVisible(false); setTfaError(''); }}>Cancel</button>
                 </div>
               </form>
-            </div>
-          )}
+            ) : (
+              <button type="button" className="btn btn-ghost" onClick={() => setBackupVisible(true)}>
+                Regenerate backup codes
+              </button>
+            )}
 
-          {/* Enabled state: show status + management options */}
-          {(tfaStep === 'enabled' || tfaEnabled) && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                padding: '8px 12px', borderRadius: 8,
-                background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)',
-              }}>
-                <ShieldCheck size={16} color="#22c55e" />
-                <span style={{ fontSize: '0.85rem', color: '#22c55e', fontWeight: 600 }}>2FA is enabled</span>
+            <form onSubmit={handleDisable2fa} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" htmlFor="disable-code">Disable 2FA (enter authenticator code)</label>
+                <input
+                  id="disable-code"
+                  type="text"
+                  className="form-input"
+                  value={disableCode}
+                  onChange={e => setDisableCode(e.target.value.trim())}
+                  placeholder="000000"
+                  maxLength={6}
+                  autoComplete="one-time-code"
+                  required
+                />
               </div>
-
-              {/* Regenerate backup codes */}
-              {newBackupCodes.length > 0 ? (
-                <div>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6 }}>New backup codes (save these now):</p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 8 }}>
-                    {newBackupCodes.map(c => (
-                      <code key={c} style={{ fontSize: '0.8rem', background: 'var(--surface-2)', padding: '4px 8px', borderRadius: 4 }}>{c}</code>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    className="btn btn-ghost"
-                    style={{ fontSize: '0.8rem' }}
-                    onClick={() => navigator.clipboard.writeText(newBackupCodes.join('\n'))}
-                  >
-                    Copy
-                  </button>
-                </div>
-              ) : backupVisible ? (
-                <form onSubmit={handleRegenerateBackupCodes} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" htmlFor="regen-code">Enter authenticator code to regenerate backup codes</label>
-                    <input
-                      id="regen-code"
-                      type="text"
-                      className="form-input"
-                      value={regenCode}
-                      onChange={e => setRegenCode(e.target.value.trim())}
-                      placeholder="000000"
-                      maxLength={6}
-                      autoComplete="one-time-code"
-                      required
-                    />
-                  </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button type="submit" className="btn btn-primary" disabled={tfaBusy}>
-                      {tfaBusy ? <span className="spinner" style={{ width: 14, height: 14 }} /> : 'Regenerate'}
-                    </button>
-                    <button type="button" className="btn btn-ghost" onClick={() => { setBackupVisible(false); setTfaError(''); }}>Cancel</button>
-                  </div>
-                </form>
-              ) : (
-                <button type="button" className="btn btn-ghost" onClick={() => setBackupVisible(true)}>
-                  Regenerate backup codes
+              <div>
+                <button type="submit" className="btn" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }} disabled={tfaBusy}>
+                  <ShieldOff size={14} /> Disable 2FA
                 </button>
-              )}
+              </div>
+            </form>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
 
-              {/* Disable 2FA */}
-              <form onSubmit={handleDisable2fa} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" htmlFor="disable-code">Disable 2FA (enter authenticator code)</label>
-                  <input
-                    id="disable-code"
-                    type="text"
-                    className="form-input"
-                    value={disableCode}
-                    onChange={e => setDisableCode(e.target.value.trim())}
-                    placeholder="000000"
-                    maxLength={6}
-                    autoComplete="one-time-code"
-                    required
-                  />
-                </div>
-                <div>
-                  <button type="submit" className="btn" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }} disabled={tfaBusy}>
-                    <ShieldOff size={14} /> Disable 2FA
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-        </section>
+// ─── Tab bar (reuses ProjectLayout pattern) ───────────────────────────────────
 
+const TABS = [
+  { id: 'profile', label: 'Profile', to: '/dashboard/profile' },
+  { id: 'notifications', label: 'Notifications', to: '/dashboard/profile/notifications' },
+] as const;
+
+type TabId = typeof TABS[number]['id'];
+
+// ─── ProfilePage ──────────────────────────────────────────────────────────────
+
+export function ProfilePage({ initialTab = 'profile' }: { initialTab?: TabId }) {
+  const activeTab = initialTab;
+
+  return (
+    <>
+      <div className="page-header" style={{ paddingBottom: 0 }}>
+        <div style={{ paddingBottom: 24 }}>
+          <h1 style={{ margin: 0 }}>My Profile</h1>
+          <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            Manage your account settings
+          </p>
+        </div>
+
+        {/* Tab navigation - same pattern as ProjectLayout */}
+        <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--border)' }}>
+          {TABS.map(tab => {
+            const isActive = activeTab === tab.id;
+            return (
+              <NavLink
+                key={tab.id}
+                to={tab.to}
+                style={{
+                  padding: '0 4px 12px',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  fontSize: '0.9rem', fontWeight: 500,
+                  color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
+                  borderBottom: isActive ? '2px solid var(--primary)' : '2px solid transparent',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s',
+                  marginBottom: -1,
+                }}
+              >
+                {tab.label}
+              </NavLink>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="page-body" style={{ paddingTop: 32 }}>
+        {activeTab === 'profile' && <ProfileSecurityTab />}
+        {activeTab === 'notifications' && <ProfileNotificationsTab />}
       </div>
     </>
   );

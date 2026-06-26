@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, Globe, BarChart2 } from 'lucide-react';
+import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, Globe, BarChart2, Bell, Users } from 'lucide-react';
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
-import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases } from '../api';
-import type { Settings, SystemInfo, UpdateInfo, AvailableReleases } from '../api';
+import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases, getRoles, getUsers, ALL_PERMISSIONS } from '../api';
+import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, Permission } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { MultiSelect } from '../components/MultiSelect';
+import { NOTIFICATION_EVENTS } from '@routerly/shared';
 
 const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'error'];
 
@@ -254,17 +256,85 @@ type EProvider = import('../api').ChannelProvider;
 type EChannel  = import('../api').NotificationChannel;
 
 const CHANNEL_PROVIDERS: Array<{ key: EProvider; label: string; description: string }> = [
-  { key: 'smtp',      label: 'SMTP',               description: 'Custom mail server' },
-  { key: 'ses',       label: 'Amazon SES',          description: 'AWS Simple Email Service' },
-  { key: 'sendgrid',  label: 'SendGrid',            description: 'Twilio SendGrid' },
-  { key: 'azure',     label: 'Azure Communication', description: 'Azure Communication Services' },
-  { key: 'google',    label: 'Google / Gmail',       description: 'Gmail via OAuth2' },
-  { key: 'webhook',   label: 'Webhook',             description: 'HTTP webhook callback' },
-  { key: 'slack',     label: 'Slack',               description: 'Slack Bot API' },
-  { key: 'teams',     label: 'Microsoft Teams',     description: 'Teams Incoming Webhook' },
-  { key: 'pagerduty', label: 'PagerDuty',           description: 'PagerDuty Events API v2' },
-  { key: 'discord',   label: 'Discord',             description: 'Discord Webhook' },
+  { key: 'dashboard',  label: 'Dashboard (in-app inbox)', description: 'Routes events to the in-app inbox' },
+  { key: 'smtp',       label: 'SMTP',               description: 'Custom mail server' },
+  { key: 'ses',        label: 'Amazon SES',          description: 'AWS Simple Email Service' },
+  { key: 'sendgrid',   label: 'SendGrid',            description: 'Twilio SendGrid' },
+  { key: 'azure',      label: 'Azure Communication', description: 'Azure Communication Services' },
+  { key: 'google',     label: 'Google / Gmail',       description: 'Gmail via OAuth2' },
+  { key: 'webhook',    label: 'Webhook',             description: 'HTTP webhook callback' },
+  { key: 'slack',      label: 'Slack',               description: 'Slack Bot API' },
+  { key: 'teams',      label: 'Microsoft Teams',     description: 'Teams Incoming Webhook' },
+  { key: 'pagerduty',  label: 'PagerDuty',           description: 'PagerDuty Events API v2' },
+  { key: 'discord',    label: 'Discord',             description: 'Discord Webhook' },
 ];
+
+// Readable labels for the 14 canonical events
+const EVENT_LABELS: Record<string, string> = {
+  'provider.error':          'Provider – Error',
+  'provider.degraded':       'Provider – Degraded',
+  'provider.recovered':      'Provider – Recovered',
+  'provider.rate_limited':   'Provider – Rate Limited',
+  'routing.no_candidates':   'Routing – No Candidates',
+  'routing.fallback_used':   'Routing – Fallback Used',
+  'auth.login_failed':       'Auth – Login Failed',
+  'auth.token_invalid':      'Auth – Token Invalid',
+  'config.model_added':      'Config – Model Added',
+  'config.model_deleted':    'Config – Model Deleted',
+  'config.project_created':  'Config – Project Created',
+  'config.project_deleted':  'Config – Project Deleted',
+  'system.startup':          'System – Startup',
+  'system.shutdown':         'System – Shutdown',
+};
+
+const EVENT_OPTIONS = NOTIFICATION_EVENTS.map(e => ({ value: e, label: EVENT_LABELS[e] ?? e }));
+
+const PERM_LABELS_LOCAL: Record<Permission, string> = {
+  'project:read':       'Projects – Read',
+  'project:write':      'Projects – Write',
+  'model:read':         'Models – Read',
+  'model:write':        'Models – Write',
+  'user:read':          'Users – Read',
+  'user:write':         'Users – Write',
+  'report:read':        'Reports – Read',
+  'settings:read':      'Settings – Read',
+  'settings:write':     'Settings – Write',
+  'notification:write': 'Notifications – Write',
+  'token:read':         'Tokens – Read',
+  'token:write':        'Tokens – Write',
+  'role:write':         'Roles – Write',
+  'audit:read':         'Audit Log – Read',
+};
+
+const PERM_OPTIONS = ALL_PERMISSIONS.map(p => ({ value: p, label: PERM_LABELS_LOCAL[p] ?? p }));
+
+/** Fixed-endpoint channels: targets change inbox visibility/email recipients, but don't change the actual delivery destination */
+const FIXED_ENDPOINT_PROVIDERS: EProvider[] = ['webhook', 'slack', 'teams', 'pagerduty', 'discord'];
+
+function targetsHint(provider: EProvider): string | null {
+  if (FIXED_ENDPOINT_PROVIDERS.includes(provider)) {
+    return 'For this channel type, targets do not change delivery (the endpoint is fixed). They filter which events are logged in the audit trail per recipient.';
+  }
+  if (provider === 'dashboard') {
+    return 'Targets control inbox visibility — only the matched users will see these notifications in their in-app inbox.';
+  }
+  // email providers
+  return 'Targets determine which users receive this email. Leave all empty to send to all users.';
+}
+
+/** Summarise events + targets for collapsed card view */
+function summariseChannel(ch: EChannel): string {
+  const parts: string[] = [];
+  const evCount = ch.events?.length ?? 0;
+  parts.push(evCount === 0 ? 'All events' : `${evCount} event${evCount > 1 ? 's' : ''}`);
+  const t = ch.targets;
+  const targetParts: string[] = [];
+  if (t?.roles?.length) targetParts.push(`${t.roles.length} role${t.roles.length > 1 ? 's' : ''}`);
+  if (t?.permissions?.length) targetParts.push(`${t.permissions.length} perm${t.permissions.length > 1 ? 's' : ''}`);
+  if (t?.users?.length) targetParts.push(`${t.users.length} user${t.users.length > 1 ? 's' : ''}`);
+  parts.push(targetParts.length ? targetParts.join(', ') : 'Everyone');
+  return parts.join(' · ');
+}
 
 function migrateNotifications(raw: unknown): import('../api').NotificationsConfig | undefined {
   if (!raw || typeof raw !== 'object') return undefined;
@@ -294,6 +364,8 @@ export function SettingsNotificationsTab() {
   const [collapsed, setCollapsed]         = useState<Record<string, boolean>>({});
   const [testTo, setTestTo]               = useState<Record<string, string>>({});
   const [testStatus, setTestStatus]       = useState<Record<string, { loading: boolean; ok?: boolean; message?: string; warn?: boolean }>>({});
+  const [roles, setRoles]   = useState<Role[]>([]);
+  const [users, setUsers]   = useState<User[]>([]);
   const addRef    = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -317,19 +389,40 @@ export function SettingsNotificationsTab() {
       .then(s => {
         const notif = migrateNotifications(s.notifications as unknown);
         setForm(notif ? { notifications: notif } : {});
-        // Collapse all existing channels by default
         const ids = notif?.channels?.map(ch => ch.id) ?? [];
         if (ids.length) setCollapsed(Object.fromEntries(ids.map(id => [id, true])));
       })
       .catch(e => setError(e instanceof Error ? e.message : 'Failed to load'))
       .finally(() => setLoading(false));
+    // ponytail: load roles + users in parallel for targets editor; failures are non-fatal
+    getRoles().then(setRoles).catch(() => {});
+    getUsers().then(setUsers).catch(() => {});
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(''); setSaving(true); setSaved(false);
     try {
-      await updateSettings(form);
+      // Strip empty events/targets before saving
+      const cleanChannels = form.notifications
+        ? (form.notifications.channels ?? []).map(ch => {
+            const out: EChannel = { ...ch };
+            if (!out.events?.length) delete out.events;
+            if (out.targets) {
+              const t = out.targets;
+              const clean: import('../api').ChannelTargets = {};
+              if (t.roles?.length)       clean.roles       = t.roles;
+              if (t.permissions?.length) clean.permissions = t.permissions;
+              if (t.users?.length)       clean.users       = t.users;
+              if (Object.keys(clean).length) out.targets = clean;
+              else delete out.targets;
+            }
+            return out;
+          })
+        : undefined;
+      await updateSettings(cleanChannels !== undefined
+        ? { ...form, notifications: { channels: cleanChannels } }
+        : form);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (e) {
@@ -345,6 +438,7 @@ export function SettingsNotificationsTab() {
     setAddOpen(false);
     const id = nextId();
     const defaults: Record<EProvider, EChannel> = {
+      dashboard: { id, provider: 'dashboard' },
       smtp:      { id, provider: 'smtp',      fromAddress: '', host: '', port: 587, secure: false },
       ses:       { id, provider: 'ses',       fromAddress: '', region: '' },
       sendgrid:  { id, provider: 'sendgrid',  fromAddress: '', apiKey: '' },
@@ -367,13 +461,13 @@ export function SettingsNotificationsTab() {
   function uf(id: string, field: string, value: unknown) {
     setForm(f => ({
       ...f,
-      notifications: { channels: (f.notifications?.channels ?? []).map(ch => ch.id === id ? { ...ch, [field]: value } : ch) },
+      notifications: { channels: (f.notifications?.channels ?? []).map(ch => ch.id === id ? ({ ...ch, [field]: value } as EChannel) : ch) },
     }));
   }
 
   async function sendTest(id: string, provider: EProvider) {
     const to = (testTo[id] ?? '').trim();
-    if (provider !== 'webhook' && !to) return;
+    if (provider !== 'webhook' && provider !== 'dashboard' && !to) return;
     setTestStatus(s => ({ ...s, [id]: { loading: true } }));
     try {
       const res = await testNotificationChannel(id, to);
@@ -389,6 +483,12 @@ export function SettingsNotificationsTab() {
   const cardHeaderStyle: React.CSSProperties = {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     padding: '10px 14px', background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)',
+  };
+
+  const sectionLabelStyle: React.CSSProperties = {
+    fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)',
+    textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8,
+    display: 'flex', alignItems: 'center', gap: 5,
   };
 
   function removeActions(id: string) {
@@ -416,14 +516,12 @@ export function SettingsNotificationsTab() {
   }
 
   function testRow(ch: EChannel) {
+    if (ch.provider === 'dashboard') return null; // ponytail: no test delivery for inbox channel
     const st = testStatus[ch.id];
-    // native providers (slack/teams/pagerduty/discord) and webhook don't need an email recipient
     const noRecipient = ch.provider === 'webhook' || ch.provider === 'slack' || ch.provider === 'teams' || ch.provider === 'pagerduty' || ch.provider === 'discord';
     return (
       <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border)', background: 'var(--bg-elevated)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-          Send test
-        </span>
+        <span style={sectionLabelStyle}>Send test</span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {!noRecipient && (
             <input type="email" className="form-input" style={{ flex: 1, margin: 0 }}
@@ -456,7 +554,7 @@ export function SettingsNotificationsTab() {
   }
 
   function emailBaseFields(ch: EChannel) {
-    if (ch.provider === 'webhook') return null;
+    if (ch.provider === 'webhook' || ch.provider === 'dashboard') return null;
     const c = ch as { fromAddress: string; fromName?: string };
     return (
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
@@ -474,8 +572,80 @@ export function SettingsNotificationsTab() {
     );
   }
 
+  /** Events + Targets editor — rendered inside every channel's expanded form */
+  function eventsAndTargetsFields(ch: EChannel) {
+    const roleOptions = roles.map(r => ({ value: r.id, label: r.name }));
+    const userOptions = users.map(u => ({ value: u.id, label: u.email }));
+    const hint = targetsHint(ch.provider);
+
+    return (
+      <div style={{ borderTop: '1px solid var(--border)', marginTop: 12, paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {/* Events */}
+        <div>
+          <div style={sectionLabelStyle}><Bell size={11} /> Events</div>
+          <MultiSelect
+            options={EVENT_OPTIONS}
+            value={ch.events ?? []}
+            onChange={v => uf(ch.id, 'events', v.length ? v : undefined)}
+            placeholder="All events (leave empty for all)"
+          />
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '5px 0 0' }}>
+            Leave empty to receive all events. Select specific events to filter.
+          </p>
+        </div>
+
+        {/* Targets */}
+        <div>
+          <div style={sectionLabelStyle}><Users size={11} /> Recipients / Targets</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div>
+              <label className="form-label" style={{ fontSize: '0.78rem' }}>Roles</label>
+              <MultiSelect
+                options={roleOptions}
+                value={ch.targets?.roles ?? []}
+                onChange={v => uf(ch.id, 'targets', { ...(ch.targets ?? {}), roles: v.length ? v : undefined })}
+                placeholder="All roles (everyone)"
+              />
+            </div>
+            <div>
+              <label className="form-label" style={{ fontSize: '0.78rem' }}>Permissions</label>
+              <MultiSelect
+                options={PERM_OPTIONS}
+                value={(ch.targets?.permissions ?? []) as string[]}
+                onChange={v => uf(ch.id, 'targets', { ...(ch.targets ?? {}), permissions: v.length ? (v as Permission[]) : undefined })}
+                placeholder="All permissions (everyone)"
+              />
+            </div>
+            <div>
+              <label className="form-label" style={{ fontSize: '0.78rem' }}>Individual users</label>
+              <MultiSelect
+                options={userOptions}
+                value={ch.targets?.users ?? []}
+                onChange={v => uf(ch.id, 'targets', { ...(ch.targets ?? {}), users: v.length ? v : undefined })}
+                placeholder="All users (everyone)"
+              />
+            </div>
+          </div>
+          {hint && (
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '6px 0 0', padding: '6px 8px', background: 'var(--bg-surface)', borderRadius: 4, borderLeft: '2px solid var(--border)' }}>
+              {hint}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   function channelFields(ch: EChannel) {
     switch (ch.provider) {
+      case 'dashboard': return (
+        <>
+          <p style={{ fontSize: '0.83rem', color: 'var(--text-muted)', margin: '0 0 12px' }}>
+            Routes matching events to the in-app notification inbox. No credentials required.
+          </p>
+          {eventsAndTargetsFields(ch)}
+        </>
+      );
       case 'smtp': return (
         <>
           {emailBaseFields(ch)}
@@ -517,6 +687,7 @@ export function SettingsNotificationsTab() {
               <input className="form-input" type="password" value={ch.password ?? ''} onChange={e => uf(ch.id, 'password', e.target.value || undefined)} />
             </div>
           </div>
+          {eventsAndTargetsFields(ch)}
         </>
       );
       case 'ses': return (
@@ -537,6 +708,7 @@ export function SettingsNotificationsTab() {
             </div>
           </div>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>Leave credentials blank to use the IAM instance role.</p>
+          {eventsAndTargetsFields(ch)}
         </>
       );
       case 'sendgrid': return (
@@ -546,6 +718,7 @@ export function SettingsNotificationsTab() {
             <label className="form-label">API Key</label>
             <input className="form-input" type="password" value={ch.apiKey} onChange={e => uf(ch.id, 'apiKey', e.target.value)} required />
           </div>
+          {eventsAndTargetsFields(ch)}
         </>
       );
       case 'azure': return (
@@ -555,6 +728,7 @@ export function SettingsNotificationsTab() {
             <label className="form-label">Connection String</label>
             <input className="form-input" value={ch.connectionString} onChange={e => uf(ch.id, 'connectionString', e.target.value)} required />
           </div>
+          {eventsAndTargetsFields(ch)}
         </>
       );
       case 'google': return (
@@ -574,6 +748,7 @@ export function SettingsNotificationsTab() {
             <label className="form-label">Refresh Token</label>
             <input className="form-input" type="password" value={ch.refreshToken} onChange={e => uf(ch.id, 'refreshToken', e.target.value)} required />
           </div>
+          {eventsAndTargetsFields(ch)}
         </>
       );
       case 'webhook': return (
@@ -595,6 +770,7 @@ export function SettingsNotificationsTab() {
               <input className="form-input" type="password" value={ch.secret ?? ''} onChange={e => uf(ch.id, 'secret', e.target.value || undefined)} placeholder="HMAC signing key" />
             </div>
           </div>
+          {eventsAndTargetsFields(ch)}
         </>
       );
       case 'slack': return (
@@ -607,25 +783,35 @@ export function SettingsNotificationsTab() {
             <label className="form-label">Channel ID</label>
             <input className="form-input" value={ch.channelId} onChange={e => uf(ch.id, 'channelId', e.target.value)} placeholder="C1234567890" required />
           </div>
+          {eventsAndTargetsFields(ch)}
         </>
       );
       case 'teams': return (
-        <div className="form-group">
-          <label className="form-label">Webhook URL</label>
-          <input className="form-input" type="url" value={ch.webhookUrl} onChange={e => uf(ch.id, 'webhookUrl', e.target.value)} placeholder="https://outlook.office.com/webhook/…" required />
-        </div>
+        <>
+          <div className="form-group">
+            <label className="form-label">Webhook URL</label>
+            <input className="form-input" type="url" value={ch.webhookUrl} onChange={e => uf(ch.id, 'webhookUrl', e.target.value)} placeholder="https://outlook.office.com/webhook/…" required />
+          </div>
+          {eventsAndTargetsFields(ch)}
+        </>
       );
       case 'pagerduty': return (
-        <div className="form-group">
-          <label className="form-label">Integration Key</label>
-          <input className="form-input" type="password" value={ch.integrationKey} onChange={e => uf(ch.id, 'integrationKey', e.target.value)} placeholder="32-character routing key" required />
-        </div>
+        <>
+          <div className="form-group">
+            <label className="form-label">Integration Key</label>
+            <input className="form-input" type="password" value={ch.integrationKey} onChange={e => uf(ch.id, 'integrationKey', e.target.value)} placeholder="32-character routing key" required />
+          </div>
+          {eventsAndTargetsFields(ch)}
+        </>
       );
       case 'discord': return (
-        <div className="form-group">
-          <label className="form-label">Webhook URL</label>
-          <input className="form-input" type="url" value={ch.webhookUrl} onChange={e => uf(ch.id, 'webhookUrl', e.target.value)} placeholder="https://discord.com/api/webhooks/…" required />
-        </div>
+        <>
+          <div className="form-group">
+            <label className="form-label">Webhook URL</label>
+            <input className="form-input" type="url" value={ch.webhookUrl} onChange={e => uf(ch.id, 'webhookUrl', e.target.value)} placeholder="https://discord.com/api/webhooks/…" required />
+          </div>
+          {eventsAndTargetsFields(ch)}
+        </>
       );
     }
   }
@@ -637,7 +823,7 @@ export function SettingsNotificationsTab() {
     : CHANNEL_PROVIDERS;
 
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 560 }}>
+    <form onSubmit={handleSubmit} style={{ maxWidth: 600 }}>
       {channels.length === 0 && (
         <div style={{ padding: '40px 0 24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
           No notification channels configured yet.
@@ -648,9 +834,11 @@ export function SettingsNotificationsTab() {
         {channels.map(ch => {
           const isCollapsed = collapsed[ch.id] ?? false;
           const meta = CHANNEL_PROVIDERS.find(p => p.key === ch.provider);
-          const isNonEmail = ch.provider === 'webhook' || ch.provider === 'slack' || ch.provider === 'teams' || ch.provider === 'pagerduty' || ch.provider === 'discord';
+          const isDashboard = ch.provider === 'dashboard';
+          const isNonEmail = isDashboard || ch.provider === 'webhook' || ch.provider === 'slack' || ch.provider === 'teams' || ch.provider === 'pagerduty' || ch.provider === 'discord';
           return (
             <div key={ch.id} style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+              {/* Card header — always visible */}
               <div style={cardHeaderStyle}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
                   <button type="button"
@@ -658,16 +846,26 @@ export function SettingsNotificationsTab() {
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 2, display: 'flex', flexShrink: 0 }}>
                     {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                   </button>
-                  {isNonEmail
-                    ? <Globe size={14} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
-                    : <Mail  size={14} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />}
+                  {isDashboard
+                    ? <Bell size={14} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                    : isNonEmail
+                      ? <Globe size={14} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
+                      : <Mail  size={14} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />}
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', flexShrink: 0 }}>{meta?.label}</span>
                   <input value={ch.name ?? ''}
                     onChange={e => uf(ch.id, 'name', e.target.value || undefined)}
                     placeholder="Label (optional)"
                     style={{ background: 'none', border: 'none', outline: 'none', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', minWidth: 0, flex: 1 }} />
                 </div>
-                {removeActions(ch.id)}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  {/* Collapsed summary: events + targets at a glance */}
+                  {isCollapsed && (
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      {summariseChannel(ch)}
+                    </span>
+                  )}
+                  {removeActions(ch.id)}
+                </div>
               </div>
               {!isCollapsed && (
                 <>
@@ -691,7 +889,7 @@ export function SettingsNotificationsTab() {
           <div style={{
             position: 'absolute', top: '100%', left: 0, marginTop: 6,
             background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.35)', minWidth: 260, zIndex: 100, overflow: 'hidden',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.35)', minWidth: 280, zIndex: 100, overflow: 'hidden',
           }}>
             <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 6 }}>
               <Search size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
