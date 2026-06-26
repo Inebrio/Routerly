@@ -7,13 +7,17 @@ sidebar_position: 5
 
 The Usage page provides aggregate analytics and per-request logs across all projects. Use it to understand spending patterns, investigate errors, and drill into individual request traces.
 
+The page has two tabs: **Usage** (call logs and statistics) and **Leaderboard** (model performance ranking).
+
 ---
 
-## Summary Statistics
+## Usage Tab
+
+### Summary Statistics
 
 The top row shows aggregated totals for the selected filter set:
 
-![Usage page summary cards showing Total Cost, Total Calls, Completion Calls, Router Calls, Guardrail Calls, and Errors](../assets/screenshot-usage.png)
+![Usage page showing summary cards and type filter with Guardrail option](../assets/screenshot-usage.png)
 
 | Card | Description |
 |------|-------------|
@@ -24,12 +28,9 @@ The top row shows aggregated totals for the selected filter set:
 | **Guardrail Calls** | Model calls made by security rules (semantic, topic, moderation), with cost |
 | **Errors** | Failed calls (any call type) |
 
-Guardrail calls are charged to the project like any other model call and are
-subject to the project's budget limits.
+Guardrail calls are charged to the project like any other model call and are subject to the project's budget limits.
 
----
-
-## Filters
+### Filters
 
 | Filter | Description |
 |--------|-------------|
@@ -41,9 +42,7 @@ subject to the project's budget limits.
 
 Filters are applied immediately; the page updates in real time.
 
----
-
-## Usage Table
+### Usage Table
 
 The table lists individual requests with:
 
@@ -61,9 +60,7 @@ The table lists individual requests with:
 
 Click any row to open the full **Trace view**.
 
----
-
-## Trace View
+### Trace View
 
 The trace view shows the complete lifecycle of a single request:
 
@@ -72,13 +69,11 @@ The trace view shows the complete lifecycle of a single request:
 3. **Model Request** — the actual payload sent to the provider
 4. **Model Response** — the raw provider response including all tokens and finish reason
 
-This detail is useful for debugging unexpected model selections, routing failures, or provider errors.
+The trace also includes guardrail (`guardrail:triggered`, `guardrail:response-triggered`) and PII scrubbing (`pii:scrubbed`) entries when those features are active. For blocked requests, the trace shows the `fallbackMessage` that was stored but not sent on the wire.
 
----
+### Live Polling
 
-## Live Polling
-
-The usage table can auto-refresh to show new requests as they arrive. Use the interval selector in the top-right:
+The usage table auto-refreshes to show new requests as they arrive. Use the interval selector in the top-right:
 
 | Interval | Meaning |
 |----------|---------|
@@ -88,6 +83,32 @@ The usage table can auto-refresh to show new requests as they arrive. Use the in
 | 1 min | Refresh every minute |
 | 5 min | Refresh every 5 minutes |
 | Now | Manual refresh only |
+
+---
+
+## Leaderboard Tab
+
+![Usage Leaderboard tab showing model performance ranking](../assets/screenshot-usage-leaderboard.png)
+
+The Leaderboard ranks all models by cost-performance ratio based on your own traffic. Data is computed locally — no external telemetry.
+
+| Column | Description |
+|--------|-------------|
+| **Rank** | Performance rank (1 = best cost-performance) |
+| **Model** | Provider model identifier |
+| **Provider** | Provider name |
+| **Requests** | Total requests in the period |
+| **Success Rate** | Percentage of successful completions |
+| **Avg Latency** | Mean response time |
+| **P95 Latency** | 95th-percentile response time |
+| **Cost / 1K Tokens** | Effective blended cost per 1,000 tokens |
+| **Total Cost** | Total spend for this model in the period |
+
+Filter by **period** (Today, This week, This month) and **project** using the controls above the table.
+
+:::note Redirected from /dashboard/leaderboard
+The standalone Leaderboard page has moved. `/dashboard/leaderboard` now redirects to `/dashboard/usage?tab=leaderboard`.
+:::
 
 ---
 

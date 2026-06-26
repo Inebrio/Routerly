@@ -77,7 +77,11 @@ Global service configuration.
   "logLevel": "info",
   "publicUrl": "http://localhost:3000",
   "channel": "stable",
-  "notifications": []
+  "notifications": {
+    "channels": [],
+    "notificationRules": [],
+    "cooldowns": {}
+  }
 }
 ```
 
@@ -90,7 +94,9 @@ Global service configuration.
 | `logLevel` | `string` | `"info"` | Log verbosity: `"error"`, `"warn"`, `"info"`, `"debug"` |
 | `publicUrl` | `string` | `"http://localhost:3000"` | Externally reachable URL, used for notification links |
 | `channel` | `string` | `"stable"` | Update channel: `"latest"`, `"stable"`, `"develop"`, or a version tag such as `"v0.2.0"`. Controls which GitHub Release the update checker compares against |
-| `notifications` | `array` | `[]` | Notification channel configurations — see [Notifications](../concepts/notifications.md) |
+| `notifications.channels` | `array` | `[]` | Notification channel objects. Each has `provider`, optional `name`, `id`, `events` (event patterns), `targets` (`{ roles, permissions, users }`), plus provider-specific fields. See [Notifications](../concepts/notifications.md) |
+| `notifications.notificationRules` | `array` | `[]` | Route event patterns to specific channel IDs: `{ events, channels }` |
+| `notifications.cooldowns` | `object` | `{}` | Minimum interval between repeated dispatches per event type (e.g. `"provider.degraded": "15m"`) |
 
 ---
 

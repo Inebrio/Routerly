@@ -28,19 +28,33 @@ Changes are saved immediately and take effect without a restart (except Port and
 
 ---
 
-## Notifications Tab
+## Notifications Tab {#notifications-tab}
 
-Configure one or more notification channels for budget alerts.
+Configure notification channels. Each channel routes events to a delivery method (in-app inbox, email, or webhook) and can be scoped to specific event types and recipients.
+
+![SMTP channel expanded showing Events and Recipients/Targets fields](../assets/screenshot-settings-notifications.png)
+
+Each channel row shows its type badge, name, event filter summary, and target summary. Click the **>** chevron to expand a channel and edit its **Events** and **Recipients / Targets**.
+
+The `Dashboard (in-app inbox)` channel shows extra context: "Routes matching events to the in-app notification inbox. No credentials required." Its targets tooltip reads "Targets control inbox visibility — only the matched users will see these notifications in their in-app inbox."
+
+![Dashboard channel expanded showing events and targets with inbox-visibility note](../assets/screenshot-settings-notifications-dashboard.png)
 
 ### Adding a Channel
 
 1. Click **+ Add Channel**
-2. Select the channel type: `SMTP`, `SES`, `SendGrid`, `Azure`, `Google`, `Webhook`
-3. Fill in the connection details for the selected type
-4. Click **Save**
-5. Click **Send Test** to verify the channel delivers a message correctly
+2. Select the channel type: `Dashboard (in-app inbox)`, `SMTP`, `SES`, `SendGrid`, `Azure`, `Google`, `Webhook`, `Slack`, `Teams`, `PagerDuty`, `Discord`
+3. Fill in the connection details for the selected type (the `Dashboard` type requires no credentials)
+4. Optionally filter by **Events** — select specific event types to route to this channel; leave empty to receive all events
+5. Optionally set **Recipients / Targets** — pick roles, permissions, or individual users; leave empty for everyone
+6. Click **Save Settings**
+7. Click **Send Test** to verify the channel delivers a message correctly
 
-See [Concepts: Notifications](../concepts/notifications.md) for the configuration fields required by each provider.
+See [Concepts: Notifications](../concepts/notifications.md) for the full event taxonomy and per-type configuration fields.
+
+:::note Target scope
+**Recipients / Targets** control inbox visibility for the `Dashboard` channel and recipient resolution for email channels. Webhook and native channels (Slack, Teams, PagerDuty, Discord) deliver to a fixed endpoint — targets are stored but do not change delivery.
+:::
 
 ### Testing a Channel
 

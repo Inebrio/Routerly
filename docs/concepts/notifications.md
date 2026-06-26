@@ -5,33 +5,35 @@ sidebar_position: 7
 
 # Notifications
 
-Routerly can send notifications when a budget limit is reached (or approaching a threshold). Notifications are delivered via one or more **channels** — email providers or webhooks.
+Routerly emits events when something notable happens — a provider goes down, a budget limit is hit, a login fails. These events are routed to one or more **channels**: the in-app inbox, email providers, or webhooks.
 
----
+Every channel supports two filtering dimensions:
 
-## Configuring Notification Channels
-
-Configure channels in **Dashboard → Settings → Notifications**, or by editing the `notifications` array in `settings.json`.
-
-Each channel has:
-- A `type` (the provider identifier)
-- Connection settings specific to that provider
-- A `name` label used in logs
-
-After saving, use the **Send Test** button to verify the channel works before a real alert is triggered.
-
-You can also test a channel via the API:
-
-```bash
-curl -X POST http://localhost:3000/api/notifications/test \
-  -H "Authorization: Bearer $ADMIN_JWT" \
-  -H "Content-Type: application/json" \
-  -d '{"channelName": "my-smtp"}'
-```
+- **Events** — which event types it receives. Leave empty to receive all events.
+- **Targets** — who receives them (`{ roles, permissions, users }`). Leave empty for everyone.
 
 ---
 
 ## Channel Types
+
+### Dashboard (in-app inbox)
+
+The `dashboard` channel routes events to the per-user in-app inbox. No credentials are required. The inbox is always available regardless of other channels.
+
+```jsonc
+{
+  "provider": "dashboard",
+  "name": "Budget Alerts",
+  "events": ["budget.*"],
+  "targets": { "roles": ["admin"] }
+}
+```
+
+Targets control **inbox visibility**: only matched users see the item in their inbox. If `targets` is omitted, all users see the item.
+
+:::note
+Webhook and native channels (Slack, Teams, PagerDuty, Discord) deliver to a fixed endpoint, so `targets` does not change delivery for those types — it is documented on the channel but has no effect. Only the `dashboard` channel and email channels use targets for recipient resolution.
+:::
 
 ### SMTP
 
@@ -39,16 +41,20 @@ Sends email via any SMTP server. Routerly auto-detects whether to use SSL (port 
 
 ```jsonc
 {
-  "type": "smtp",
+  "provider": "smtp",
   "name": "my-smtp",
   "host": "smtp.example.com",
   "port": 587,
   "user": "alerts@example.com",
   "password": "secret",
   "from": "Routerly <alerts@example.com>",
-  "to": "admin@example.com"
+  "to": "admin@example.com",
+  "events": ["provider.error", "provider.degraded"],
+  "targets": { "roles": ["admin", "operator"] }
 }
 ```
+
+For SMTP and other email channels, `targets` controls **recipient resolution**: Routerly looks up matching users and adds their email addresses to the `to` field in addition to any static `to` value.
 
 ### Amazon SES
 
@@ -56,7 +62,7 @@ Uses Amazon SES via its regional SMTP endpoint. Authentication is the standard S
 
 ```jsonc
 {
-  "type": "ses",
+  "provider": "ses",
   "name": "ses-us-east",
   "region": "us-east-1",
   "user": "AKIAIOSFODNN7EXAMPLE",
@@ -72,7 +78,7 @@ Uses SendGrid's SMTP relay at `smtp.sendgrid.net:587`. The username is always `a
 
 ```jsonc
 {
-  "type": "sendgrid",
+  "provider": "sendgrid",
   "name": "sendgrid",
   "apiKey": "SG.xxxx",
   "from": "alerts@example.com",
@@ -86,7 +92,7 @@ Sends email via Azure Communication Services. Authentication uses HMAC-SHA256 wi
 
 ```jsonc
 {
-  "type": "azure",
+  "provider": "azure",
   "name": "azure-email",
   "connectionString": "endpoint=https://....communication.azure.com;accesskey=BASE64KEY==",
   "from": "alerts@yourdomain.com",
@@ -100,7 +106,7 @@ Uses the Gmail API via OAuth 2.0. Requires a Google Cloud project with the Gmail
 
 ```jsonc
 {
-  "type": "google",
+  "provider": "google",
   "name": "gmail",
   "clientId": "123456789.apps.googleusercontent.com",
   "clientSecret": "GOCSPX-xxxx",
@@ -116,26 +122,21 @@ Sends an HTTP POST request to any URL. An optional HMAC-SHA256 signature is incl
 
 ```jsonc
 {
-  "type": "webhook",
-  "name": "slack-webhook",
-  "url": "https://hooks.slack.com/services/xxx/yyy/zzz",
-  "secret": "optional_signing_secret"
+  "provider": "webhook",
+  "name": "ops-webhook",
+  "url": "https://hooks.example.com/routerly",
+  "secret": "optional_signing_secret",
+  "events": ["provider.error", "routing.no_candidates"]
 }
 ```
 
 **Webhook payload:**
 ```json
 {
-  "event": "budget.exhausted",
-  "budget": {
-    "level": "project",
-    "name": "my-app",
-    "metric": "cost",
-    "window": "monthly",
-    "limit": 50.00,
-    "current": 50.12
-  },
-  "timestamp": "2025-01-15T14:30:00Z"
+  "event": "provider.error",
+  "severity": "critical",
+  "timestamp": "2025-01-15T14:30:00Z",
+  "details": { "modelId": "openai/gpt-5" }
 }
 ```
 
@@ -147,6 +148,29 @@ const signature = req.headers['x-routerly-signature'];
 const body = req.rawBody; // raw request body as string
 const expected = createHmac('sha256', secret).update(body).digest('hex');
 const isValid = signature === `sha256=${expected}`;
+```
+
+### Slack / Teams / PagerDuty / Discord
+
+Native integrations. Deliver to a fixed endpoint — `targets` is accepted but does not change delivery.
+
+```jsonc
+// Slack
+{
+  "provider": "slack",
+  "name": "ops-alerts",
+  "botToken": "xoxb-...",
+  "channelId": "C1234567890"
+}
+
+// Microsoft Teams
+{ "provider": "teams", "name": "teams-alerts", "webhookUrl": "https://..." }
+
+// PagerDuty
+{ "provider": "pagerduty", "name": "pagerduty", "integrationKey": "abc123" }
+
+// Discord
+{ "provider": "discord", "name": "discord", "webhookUrl": "https://..." }
 ```
 
 ---
@@ -171,6 +195,14 @@ Every event carries the payload `{ event, severity, timestamp, details }`, where
 | `config.model_added` / `config.model_deleted` | info | A model was created or deleted |
 | `config.project_created` / `config.project_deleted` | info | A project was created or deleted |
 | `system.startup` / `system.shutdown` | info | Service lifecycle |
+
+---
+
+## Configuring Channels
+
+Configure channels in **Settings > Notifications** or directly in `settings.json` under `notifications.channels`. See [Dashboard: Settings](../dashboard/settings.md#notifications-tab) for the UI and [API: Notification Channels](../api/management.md#notification-channels) for the HTTP API.
+
+After saving, use the **Send Test** button (or `POST /api/notifications/channels/:id/test`) to verify the channel works before a real event is triggered.
 
 ---
 
@@ -212,7 +244,11 @@ Durations accept `s`, `m`, `h`, `d` suffixes. Cooldown state is held in memory (
 
 ## In-App Inbox
 
-Independently of external channels, every event is appended to a per-instance inbox persisted in `notifications.json` (retention: the last 200 events or 30 days, whichever is smaller). The dashboard shows a bell icon with an unread badge; each user tracks their own read state. The inbox is always available — even with zero external channels configured.
+Independently of external channels, every event matching a `dashboard` channel's `events` filter (or all events when no `dashboard` channel is configured) is appended to the inbox, persisted in `notifications.json`. Retention: last 200 events or 30 days, whichever is smaller.
+
+The inbox is **per-user filtered**: if a `dashboard` channel has `targets`, only the matched users see the items in their inbox. Users track their own read state independently.
+
+Users access their inbox via the notification bell on the profile row in the sidebar, or the full **Notifications** tab under **My Profile** (`/dashboard/profile/notifications`).
 
 See the [Management API](../api/management.md#notifications-inbox) for the inbox endpoints.
 

@@ -486,7 +486,12 @@ routerly report usage [options]
 |--------|-------------|
 | `--period <period>` | `daily`, `weekly`, `monthly` (default: `monthly`) |
 | `--project <slug>` | Filter to one project |
+| `--session-id <id>` | Filter by session ID |
+| `--end-user <id>` | Filter by end-user ID |
+| `--tag <key=value>` | Filter by tag |
 | `--json` | JSON output |
+
+The footer line below the model table shows a **callType breakdown**: completion, routing, and guardrail calls with their individual costs. Guardrail calls are model invocations made by the content-guardrail pipeline (embedding lookups, topic/moderation judges). The `--json` output includes these as `summary.guardrailCalls` and `summary.guardrailCost`.
 
 ### `routerly report calls`
 
@@ -608,6 +613,88 @@ routerly update run --yes    # non-interactive (for scripts)
 :::note Requirements
 Admin role required. Not available inside Docker containers — pull the new image and recreate the container instead. Not available on Windows — run the installer script manually.
 :::
+
+---
+
+## `routerly notification`
+
+Manage the in-app notification inbox and delivery channels.
+
+### `routerly notification list`
+
+```
+routerly notification list [--json]
+```
+
+List the 50 most recent inbox notifications. `--json` outputs the raw array.
+
+### `routerly notification read [id]`
+
+```
+routerly notification read [id]
+```
+
+Mark a notification as read. Omit `<id>` to mark all as read.
+
+### `routerly notification channel list`
+
+```
+routerly notification channel list [--json]
+```
+
+List all configured notification channels. The table columns are: **Name**, **Type**, **Config**, **Events** (patterns routed to this channel, `*` = all), and **Targets** (who receives — `everyone` when unset).
+
+### `routerly notification channel add`
+
+```
+routerly notification channel add --type <type> --name <name> [options]
+```
+
+Add a notification channel.
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--type <type>` | yes | `slack`, `teams`, `pagerduty`, `discord`, or `dashboard` |
+| `--name <name>` | yes | Friendly label shown in the UI |
+| `--events <patterns>` | no | Comma-separated event patterns this channel receives (e.g. `budget.*,model.added`). Omit for all events. |
+| `--target-roles <roles>` | no | Comma-separated role IDs to target. Omit for everyone. |
+| `--target-permissions <perms>` | no | Comma-separated permission names to target. |
+| `--target-users <users>` | no | Comma-separated user IDs to target. |
+| `--bot-token <token>` | slack | Slack bot token (`xoxb-…`) |
+| `--channel-id <id>` | slack | Slack channel ID |
+| `--webhook-url <url>` | teams/discord | Incoming webhook URL |
+| `--integration-key <key>` | pagerduty | PagerDuty integration key |
+
+The `dashboard` type requires only `--name` (no secrets — delivery is the in-app inbox).
+
+```bash
+# In-app inbox channel: budget events to admin role only
+routerly notification channel add \
+  --type dashboard --name "Budget Alerts" \
+  --events "budget.*" \
+  --target-roles "admin"
+
+# Slack channel for all events, everyone
+routerly notification channel add \
+  --type slack --name "ops-alerts" \
+  --bot-token xoxb-... --channel-id C1234567890
+```
+
+### `routerly notification channel delete <id>`
+
+```
+routerly notification channel delete <id>
+```
+
+Delete a channel by ID. Use `channel list --json` to find IDs.
+
+### `routerly notification channel test <id>`
+
+```
+routerly notification channel test <id>
+```
+
+Send a test notification through the channel. Prints success or failure message.
 
 ---
 

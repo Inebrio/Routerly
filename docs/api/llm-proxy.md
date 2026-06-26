@@ -11,6 +11,8 @@ The LLM proxy exposes standard-compatible endpoints. Any client that speaks the 
 
 **Authentication:** `Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN`
 
+The proxy also accepts the Anthropic SDK's native `x-api-key: sk-rt-YOUR_PROJECT_TOKEN` header, so an Anthropic SDK client works drop-in by pointing its base URL at Routerly. `Authorization: Bearer` takes precedence when both are present.
+
 ---
 
 ## Content Guardrails and PII Scrubbing
