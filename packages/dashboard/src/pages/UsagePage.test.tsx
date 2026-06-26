@@ -103,3 +103,50 @@ describe('UsagePage — Guardrail filter button', () => {
     expect(btn.className).toContain('btn-primary');
   });
 });
+
+describe('UsagePage — Live mode', () => {
+  it('renders the Live button', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    await waitFor(() => expect(screen.getByText(/● Live/)).toBeTruthy());
+  });
+
+  it('toggling Live activates live mode indicator', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    const liveBtn = await screen.findByText(/● Live/);
+    await userEvent.click(liveBtn);
+    // LIVE badge should appear
+    await waitFor(() => expect(screen.getByText('LIVE')).toBeTruthy());
+  });
+
+  it('toggling Live twice returns to normal mode', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    const liveBtn = await screen.findByText(/● Live/);
+    await userEvent.click(liveBtn);  // enable
+    await waitFor(() => screen.getByText('LIVE'));
+    await userEvent.click(liveBtn);  // disable
+    await waitFor(() => expect(screen.queryByText('LIVE')).toBeNull());
+  });
+
+  it('clicking a poll-interval button while live mode is off sets interval', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    await waitFor(() => screen.getByText(/● Live/));
+    // Find the "1m" interval button and click it
+    const oneMinBtn = screen.getByRole('button', { name: '1m' });
+    await userEvent.click(oneMinBtn);
+    expect(oneMinBtn.className).toContain('btn-primary');
+  });
+
+  it('poll-interval buttons are disabled when live mode is active', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    const liveBtn = await screen.findByText(/● Live/);
+    await userEvent.click(liveBtn);
+    await waitFor(() => screen.getByText('LIVE'));
+    const oneMinBtn = screen.getByRole('button', { name: '1m' });
+    expect(oneMinBtn).toBeDisabled();
+  });
+});

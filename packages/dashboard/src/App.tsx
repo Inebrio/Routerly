@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createBrowserRouter, RouterProvider, NavLink, Navigate, useNavigate, Outlet, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { ThemeProvider, useTheme, type Theme } from './ThemeContext';
@@ -22,8 +22,6 @@ import { ProjectTokenEditPage } from './pages/project/ProjectTokenEditPage';
 import { UsersPage } from './pages/UsersPage';
 import { UsagePage } from './pages/UsagePage';
 import { UsageRecordPage } from './pages/UsageRecordPage';
-import { ProviderHealthPage } from './pages/ProviderHealthPage';
-import { LeaderboardPage } from './pages/LeaderboardPage';
 import { TestPage } from './pages/TestPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SettingsGeneralTab, SettingsAboutTab, SettingsNotificationsTab } from './pages/SettingsPage';
@@ -33,9 +31,9 @@ import { UserEditPage } from './pages/UserEditPage';
 import { HelpPage } from './pages/HelpPage';
 import { ModelDiscoveryPage } from './pages/ModelDiscoveryPage';
 import { AuditPage } from './pages/AuditPage';
-import { LayoutDashboard, Cpu, FolderOpen, BarChart2, Activity, Trophy, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Logo } from './components/Logo';
-import { NotificationBell } from './components/NotificationBell';
+import { ProfileNotificationBadge } from './components/NotificationBell';
 
 const THEME_OPTIONS: { value: Theme; icon: ReactNode; label: string }[] = [
   { value: 'auto',  icon: <Monitor size={14} />, label: 'Auto' },
@@ -84,6 +82,7 @@ function ThemeCycleButton() {
 function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const profileRowRef = useRef<HTMLDivElement>(null);
 
   function handleLogout() { logout(); navigate('/dashboard/login'); }
 
@@ -92,8 +91,6 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
-    { to: '/dashboard/health', icon: <Activity size={17} />, label: 'Health' },
-    { to: '/dashboard/leaderboard', icon: <Trophy size={17} />, label: 'Leaderboard' },
     { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Playground' },
   ];
 
@@ -125,21 +122,24 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
         ))}
       </nav>
       <div className="sidebar-footer">
-        <NotificationBell collapsed={collapsed} />
         {!collapsed && <ThemeSelector />}
         {collapsed && (
           <div className="sidebar-footer-icons">
             <ThemeCycleButton />
           </div>
         )}
-        <NavLink
-          to="/dashboard/profile"
-          title={collapsed ? user?.email : undefined}
-          className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-        >
-          <UserCircle size={15} />
-          <span className="nav-label">{user?.email}</span>
-        </NavLink>
+        <div ref={profileRowRef} style={{ display: 'flex', alignItems: 'center' }}>
+          <NavLink
+            to="/dashboard/profile"
+            title={collapsed ? user?.email : undefined}
+            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+            style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}
+          >
+            <UserCircle size={15} />
+            <span className="nav-label" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</span>
+          </NavLink>
+          <ProfileNotificationBadge anchorRef={profileRowRef} />
+        </div>
         <NavLink
           to="/dashboard/settings"
           title={collapsed ? 'Settings' : undefined}
@@ -380,8 +380,8 @@ const router = createBrowserRouter([
             ],
           },
           { path: 'usage', element: <UsagePage /> },
-          { path: 'health', element: <ProviderHealthPage /> },
-          { path: 'leaderboard', element: <LeaderboardPage /> },
+          { path: 'health', element: <Navigate to="/dashboard/models?tab=health" replace /> },
+          { path: 'leaderboard', element: <Navigate to="/dashboard/usage?tab=leaderboard" replace /> },
           { path: 'test', element: <TestPage /> },
           {
             path: 'settings',
@@ -399,6 +399,7 @@ const router = createBrowserRouter([
           },
           { path: 'help', element: <HelpPage /> },
           { path: 'profile', element: <ProfilePage /> },
+          { path: 'profile/notifications', element: <ProfilePage initialTab="notifications" /> },
           { path: 'usage/:id', element: <UsageRecordPage /> },
           { path: '*', element: <Navigate to="overview" replace /> },
         ],
