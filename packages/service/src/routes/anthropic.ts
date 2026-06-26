@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { randomUUID } from 'node:crypto';
-import type { MessagesRequest } from '@routerly/shared';
+import type { MessagesRequest, Settings } from '@routerly/shared';
 import { routeRequest } from '../routing/router.js';
 import { readConfig } from '../config/loader.js';
 import { setTrace, appendTrace } from '../routing/traceStore.js';
@@ -11,7 +11,7 @@ import { forwardAnthropicOAuth } from './oauthForward.js';
 import { parseRoutingTags } from './requestEnrichment.js';
 import { AGENT_POLICY_HEADER, resolveAgentPolicy, agentPolicyCandidates } from '../routing/agentPolicy.js';
 import { checkGuardrails } from '../middleware/guardrails.js';
-import { scrubMessages } from '../middleware/piiScrubber.js';
+import { scrubMessages, scrubText } from '../middleware/piiScrubber.js';
 
 export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/messages ────────────────────────────────────────────────────────
@@ -22,17 +22,34 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
     const traceId = randomUUID();
     setTrace(traceId, []);
 
+    // Real project context for guardrail judge/embedding calls (#77, BUG-4).
+    const guardrailPctx = { projectId: project.id, project, ...(request.token ? { token: request.token } : {}) };
     // ── Content guardrails (#77) ─────────────────────────────────────────────
     let guardrailTriggered: string | undefined;
-    if (project.guardrails?.enabled) {
-      const hit = checkGuardrails(body.messages ?? [], project.guardrails);
-      if (hit) {
-        request.log.warn({ projectId: project.id, rule: hit.triggered, action: project.guardrails.action }, 'guardrail: triggered');
-        appendTrace(traceId, [{ panel: 'request', message: 'guardrail:triggered', details: { rule: hit.triggered, action: project.guardrails.action } }]);
-        if (project.guardrails.action === 'block') {
-          const fallback = project.guardrails.fallbackMessage ?? 'This request was blocked by content guardrails.';
+    if (project.guardrails) {
+      const msgs = body.messages ?? [];
+      const lastUserMsg = [...msgs].reverse().find((m: any) => m?.role === 'user');
+      const inputText = typeof lastUserMsg?.content === 'string' ? lastUserMsg.content : '';
+      let hit: { triggered: string } | null;
+      try {
+        hit = await checkGuardrails('request', inputText, project.guardrails, guardrailPctx, request.log);
+      } catch (err: unknown) {
+        // Over-limit guardrail judge call: fail like an over-limit completion (BUG-4).
+        if (err instanceof BudgetExceededError) {
           reply.header('x-routerly-trace-id', traceId);
-          return reply.status(400).send({ type: 'error', error: { type: 'invalid_request_error', message: fallback } });
+          return reply.status(429).send({ type: 'error', error: { type: 'rate_limit_error', message: 'Usage limit exceeded by content-guardrail check.' } });
+        }
+        throw err;
+      }
+      if (hit) {
+        const fallbackMessage = project.guardrails.fallbackMessage ?? 'This request was blocked by content guardrails.';
+        request.log.warn({ projectId: project.id, rule: hit.triggered, action: project.guardrails.action }, 'guardrail: triggered');
+        // Trace carries the readable reason (incl. fallbackMessage); the wire response no longer ships it (#76/#77).
+        appendTrace(traceId, [{ panel: 'request', message: 'guardrail:triggered', details: { rule: hit.triggered, target: 'request', action: project.guardrails.action, fallbackMessage } }]);
+        if (project.guardrails.action === 'block') {
+          reply.header('x-routerly-trace-id', traceId);
+          // Wire-faithful refusal: empty content + stop_reason refusal + stop_details.
+          return reply.status(200).send({ id: `msg_${traceId}`, type: 'message', role: 'assistant', content: [], model: body.model ?? 'unknown', stop_reason: 'refusal', stop_details: { type: 'refusal' }, usage: { input_tokens: 0, output_tokens: 0 } });
         }
         guardrailTriggered = hit.triggered;
       }
@@ -40,7 +57,7 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
 
     // ── PII scrubbing (#76) ──────────────────────────────────────────────────
     let piiRedacted: string[] | undefined;
-    if (project.pii?.enabled && Array.isArray(body.messages)) {
+    if (project.pii && project.pii.scrubInput !== false && Array.isArray(body.messages)) {
       const { messages, redacted } = scrubMessages(body.messages, project.pii);
       if (redacted.length > 0) {
         body.messages = messages as typeof body.messages;
@@ -132,6 +149,39 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
 
       try {
         const response = await llmMessages(body, model, ctx);
+        if (project.pii?.scrubOutput === true) {
+          const block = response?.content?.[0];
+          if (block?.type === 'text' && typeof block.text === 'string') {
+            const { text, found } = scrubText(block.text, project.pii);
+            if (found.length > 0) {
+              block.text = text;
+              request.log.info({ projectId: project.id, found }, 'pii: scrubbed output');
+              // PII output trace (#76).
+              appendTrace(traceId, [{ panel: 'response', message: 'pii:scrubbed', details: { entities: found } }]);
+            }
+          }
+        }
+
+        // ── Response guardrail (#77) ───────────────────────────────────────────
+        if (project.guardrails) {
+          const block = response?.content?.[0];
+          const responseText = block?.type === 'text' && typeof block.text === 'string' ? block.text : '';
+          if (responseText) {
+            const hit = await checkGuardrails('response', responseText, project.guardrails, guardrailPctx, request.log);
+            if (hit) {
+              const fallbackMessage = project.guardrails.fallbackMessage ?? 'Response blocked by content guardrails.';
+              request.log.warn({ projectId: project.id, rule: hit.triggered }, 'guardrail: response triggered');
+              appendTrace(traceId, [{ panel: 'response', message: 'guardrail:response-triggered', details: { rule: hit.triggered, target: 'response', action: project.guardrails.action, fallbackMessage } }]);
+              if (project.guardrails.action === 'block') {
+                reply.header('x-routerly-trace-id', traceId);
+                // Wire-faithful refusal: empty content + stop_reason refusal + stop_details.
+                return reply.status(200).send({ id: `msg_${traceId}`, type: 'message', role: 'assistant', content: [], model: body.model ?? 'unknown', stop_reason: 'refusal', stop_details: { type: 'refusal' }, usage: { input_tokens: 0, output_tokens: 0 } });
+              }
+              guardrailTriggered = hit.triggered;
+            }
+          }
+        }
+
         reply.header('x-routerly-trace-id', traceId);
         return reply.send(response);
       } catch (err: unknown) {

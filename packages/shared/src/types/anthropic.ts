@@ -53,7 +53,15 @@ export type AnthropicStopReason =
   | 'max_tokens'
   | 'stop_sequence'
   | 'tool_use'
+  | 'refusal'
   | null;
+
+/** Detail for a refusal stop, surfaced when a guardrail blocks the response (#77). */
+export interface AnthropicStopDetails {
+  type: 'refusal';
+  category?: string;
+  explanation?: string;
+}
 
 export interface MessagesResponse {
   id: string;
@@ -62,6 +70,8 @@ export interface MessagesResponse {
   content: AnthropicContentBlock[];
   model: string;
   stop_reason: AnthropicStopReason;
-  stop_sequence: string | null;
+  /** Present on refusal stops (guardrail block, #77). */
+  stop_details?: AnthropicStopDetails;
+  stop_sequence?: string | null;
   usage: AnthropicUsage;
 }

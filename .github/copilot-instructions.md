@@ -1,15 +1,15 @@
 Routerly is a self-hosted LLM API gateway (TypeScript ESM monorepo, Node ≥20, Fastify 5, React 18 + Vite 6, Commander 14).
 
-Full context is in `ai/`. Read `AGENTS.md` first, then the agent file for your current scope.
+Full context is in `ai/`. Read `CLAUDE.md` first, then the agent file for your current scope.
 
 ## Package boundaries
 
 | Working in | Read first |
 |------------|-----------|
-| `packages/service/` | `ai/agents/service.md` |
-| `packages/dashboard/` | `ai/agents/frontend.md` |
-| `packages/cli/` | `ai/agents/cli.md` |
-| `docs/` | `ai/agents/docs.md` |
+| `packages/service/` | `.claude/agents/service.md` |
+| `packages/dashboard/` | `.claude/agents/frontend.md` |
+| `packages/cli/` | `.claude/agents/cli.md` |
+| `docs/` | `.claude/agents/docs.md` |
 
 ## Non-negotiable rules (enforced on every suggestion)
 

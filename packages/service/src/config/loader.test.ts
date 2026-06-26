@@ -26,7 +26,7 @@ vi.mock('node:fs/promises', () => ({
   chmod: vi.fn().mockResolvedValue(undefined),
 }))
 
-import { readConfig, writeConfig, initConfigDirs, getOrCreateSecret, appendUsageRecord } from './loader.js'
+import { readConfig, writeConfig, initConfigDirs, getOrCreateSecret, appendUsageRecord, pruneOrphanUsage } from './loader.js'
 import * as fs from 'node:fs/promises'
 import lockfile from 'proper-lockfile'
 
@@ -188,5 +188,48 @@ describe('getOrCreateSecret', () => {
   it('rethrows non-ENOENT errors', async () => {
     mockReadFile.mockRejectedValue(new Error('access denied'))
     await expect(getOrCreateSecret()).rejects.toThrow('access denied')
+  })
+})
+
+describe('pruneOrphanUsage (#77 BUG-5)', () => {
+  // readConfig reads usage.json and projects.json by path; route the mock per path.
+  function byPath(usage: unknown[], projects: unknown[]) {
+    mockReadFile.mockImplementation(((p: string) =>
+      Promise.resolve(
+        p.endsWith('usage.json') ? JSON.stringify(usage)
+        : p.endsWith('projects.json') ? JSON.stringify(projects)
+        : '[]',
+      )) as any)
+  }
+
+  it('removes records whose projectId matches no project, keeps real ones', async () => {
+    const releaseFn = vi.fn().mockResolvedValue(undefined)
+    mockLock.mockResolvedValue(releaseFn)
+    const usage = [
+      { id: 'u1', projectId: 'real-1', cost: 0.1 },
+      { id: 'u2', projectId: 'guardrail', cost: 0, outcome: 'error' },
+      { id: 'u3', projectId: 'real-2', cost: 0.2 },
+      { id: 'u4', projectId: 'guardrail', cost: 0, outcome: 'error' },
+    ]
+    byPath(usage, [{ id: 'real-1' }, { id: 'real-2' }])
+
+    const removed = await pruneOrphanUsage()
+
+    expect(removed).toBe(2)
+    // wrote the pruned usage back, keeping only real records
+    const writeCall = mockWriteFile.mock.calls.find(c => String(c[0]).endsWith('usage.json'))
+    expect(writeCall).toBeDefined()
+    const written = JSON.parse(String(writeCall![1]))
+    expect(written.map((r: any) => r.id)).toEqual(['u1', 'u3'])
+  })
+
+  it('does nothing (no write) when there are no orphans', async () => {
+    byPath(
+      [{ id: 'u1', projectId: 'real-1', cost: 0.1 }],
+      [{ id: 'real-1' }],
+    )
+    const removed = await pruneOrphanUsage()
+    expect(removed).toBe(0)
+    expect(mockWriteFile.mock.calls.some(c => String(c[0]).endsWith('usage.json'))).toBe(false)
   })
 })

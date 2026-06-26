@@ -1,175 +1,135 @@
 # CLAUDE.md — Routerly
 
-Routerly is a self-hosted LLM API gateway (TypeScript ESM monorepo, Node ≥20, Fastify 5, React 18 + Vite 6, Commander 14).
+Self-hosted LLM API gateway. Receives OpenAI/Anthropic-format requests, routes them to the right provider via configurable policies (cost, latency, health, budget, capability), returns the response **without altering the wire format**. Goal: full team control over models, cost, guardrails, and audit trail with no proprietary cloud dependency.
 
-Full context is in `ai/`. Read the agent file for your current scope before starting any task.
+Stack: TypeScript ESM monorepo, Node ≥20, Fastify 5, React 18 + Vite 6, Commander 14.
 
-> **Local environment**: if `AGENTS.local.md` exists in the repository root, read it
-> immediately after this file. It contains developer-specific context (local paths,
-> active providers, WIP branches, personal preferences) that overrides or extends
-> what is documented here. The file is gitignored and may not be present.
->
-> **Bootstrap (mandatory when `AGENTS.local.md` is absent)**: if the file does not
-> exist, **create it automatically** before proceeding. Do not ask the developer —
-> gather all required data autonomously:
->
-> 1. Read `~/.routerly/config/users.json` — pick the first admin user as the local username.
-> 2. Read `~/.routerly/config/projects.json` — pick the project named `Test` (or the
->    first project with `"test"` in the name) and extract its first token.
-> 3. Read `~/.routerly/config/models.json` — list active providers and endpoints.
-> 4. Detect OS (`uname -s`), Node version (`node -v`), and `ROUTERLY_HOME` (default `~/.routerly/`).
-> 5. Use `AGENTS.local.example.md` as the template and write the populated file to
->    `AGENTS.local.md` in the repository root.
-> 6. Confirm creation in the startup message.
->
-> **Startup confirmation (mandatory)**: at the very start of every conversation,
-> output a brief confirmation listing which context files were loaded, for example:
-> `[Routerly] Custom configuration loaded — CLAUDE.md ✓ | AGENTS.local.md ✓ (username: info@routerly.ai, test token: set)`
-> If `AGENTS.local.md` was just bootstrapped, say so: `(bootstrapped automatically)`.
-> If bootstrap failed, say why and proceed without it.
+> This file is the single source of truth. The `.claude/rules/*.md` files add per-package detail; `.claude/agents/*.md` define the sub-agents; `CLAUDE.local.md` holds local env + personal prefs. Nothing here is repeated there — if two files disagree, this one wins.
 
 ---
 
-## What is Routerly
+## Wire-format transparency — ABSOLUTE
 
-Self-hosted API gateway that acts as an intelligent proxy between LLM clients and providers (OpenAI, Anthropic, Gemini, Ollama, custom). It offers intelligent routing with 10 policies, cost tracking, per-project budgets, authentication and a web dashboard. Drop-in compatibility with OpenAI and Anthropic APIs.
+Routerly is a transparent gateway / reverse proxy: it **routes** a request to the best model and returns the response. By default it changes **nothing** on the wire.
 
-- **Current version**: 0.1.5
-- **Default port**: 3000
-- **Docker image**: `inebrio/routerly:latest`
-- **Formal spec**: `spec/LocalRouter_Specification_1.md`
+- A client using the **OpenAI SDK** or the **Anthropic SDK** must work drop-in, pointing only its base URL at Routerly. No code change, no SDK change, no different call shape.
+- **Do not add headers.** Do not require new request fields. Do not change response structure. The client must not be able to tell Routerly is in the path.
+- Request and response are passed through **unaltered**. Routing, model selection, cost tracking, and logging happen **around** the payload, never inside it.
+- Altering the payload is the rare exception — only for a task the user has **explicitly** asked for (guardrails block, PII scrub, prompt cache), and even then the wire stays standard-compliant (e.g. a block returns a normal `finish_reason`, not a custom shape).
+- Everything must stay **superimposable on and compliant with** the OpenAI / Anthropic / provider wire specs. When unsure whether a change breaks drop-in compatibility, it does — ask first.
 
----
+This rule outranks convenience. A feature that needs a custom header or a non-standard field is wrong until proven it cannot be done within the standard.
 
-## Monorepo structure
-
-```
-packages/
-  shared/    ← shared TypeScript types (no runtime logic)
-  service/   ← core: Fastify 5, routing engine, provider adapters, management API
-  cli/       ← CLI interface (Commander 14 + Inquirer 13)
-  dashboard/ ← web SPA (React 18 + Vite 6), served embedded by the service
-```
-
-Dependency order: `shared` ← `service`, `cli`, `dashboard`.
+When in doubt about a wire detail (a field, a status code, an SSE event, an error shape), verify it against the **live** OpenAI / Anthropic / provider spec with `WebSearch` / `WebFetch` — every agent has them. Do not rely on training memory; it has a cutoff and the specs move.
 
 ---
 
-## Specialized agents
+## Communication
 
-Use the agent that matches your scope. Each agent knows its own boundaries and handoff contracts.
+You are a program. No simulated empathy, no apologies, no fake enthusiasm, no "we" — we are not friends. No flattery: never open with "good question", "great observation", "you nailed it". State facts, decisions, and what you need; stay silent on the rest. When something was wrong, name what was wrong and the fix; do not apologize. Do the work you made for.
 
-| Scope | Agent file |
-|-------|-----------|
-| `packages/service/` — Fastify, routing, providers, auth | `ai/agents/service.md` |
-| `packages/dashboard/` — React SPA | `ai/agents/frontend.md` |
-| `packages/cli/` — Commander CLI | `ai/agents/cli.md` |
-| `docs/` — Docusaurus documentation | `ai/agents/docs.md` |
-| `.github/`, `Dockerfile`, `scripts/`, versioning | `ai/agents/cicd.md` |
-| Generic feature development | `ai/agents/developer.md` |
-| Code review | `ai/agents/reviewer.md` |
-| Writing tests | `ai/agents/tester.md` |
+**When a decision is not fixed by the task or the code, ask — do not guess.** Rather one question than a wrong assumption.
+
+**English only, always — no exceptions.** Code, comments, commits, PRs, docs, UI strings, and this chat. Even when the user writes in another language, reply in English.
 
 ---
 
-## Essential commands
+## Who does what — strict delegation
 
-```bash
-npm run build               # shared → service → cli → dashboard
-npm run dev                 # start service in watch mode (tsx watch)
-npm test                    # vitest run across all workspaces
-npm test --workspace=packages/service  # service only
-npm run lint                # eslint packages/*/src
-npm run format              # prettier --write
-npm run typecheck           # typecheck all packages
-```
+You are the **orchestrator**, running on **opus**. You do **not** write application code (`packages/**`) yourself. Every code change is delegated to the specialist sub-agent below. You set priorities, give the agent a precise task, then verify the result.
 
----
+You **do** edit directly (no delegation): `CLAUDE.md`, `.claude/**`, `claude-progress.txt`, `feature-list.json`, and trivial `docs/**` touch-ups. These are orchestration/meta, not application code.
 
-## Environment variables
+Each agent has a fixed model and a fixed tool set (in its `.claude/agents/*.md` frontmatter). Do not override them.
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `ROUTERLY_HOME` | `~/.routerly/` | directory for all config and data files |
-| `NODE_ENV` | — | `production` disables pino-pretty in the logger |
+| Work touches | Delegate to | Model | Tools |
+|---|---|---|---|
+| `packages/dashboard/` | `frontend` | sonnet | edit + Bash + **Chrome MCP** (browser verify) |
+| `packages/service/` (+ `packages/shared/src/types/`) | `service` | opus | edit + Bash |
+| `packages/cli/` | `cli` | sonnet | edit + Bash |
+| Multiple packages at once | `developer` | opus | edit + Bash |
+| Vitest tests | `tester` | sonnet | edit + Bash |
+| `docs/` (non-trivial) | `docs` | sonnet | edit + Bash + **Chrome MCP** (screenshots) |
+| `.github/`, Docker, release, Changesets | `cicd` | sonnet | edit + Bash |
+| Review a diff before merge | `reviewer` | opus | **read-only** (no edit) |
+| Verify a UI feature in the browser | `verify` skill | — | Chrome MCP (orchestrator) |
 
-No `.env.example` exists. Configuration is done via JSON files managed by the CLI.
+Chrome MCP goes to `frontend` (browser verify) and `docs` (dashboard screenshots), plus the orchestrator's `verify` skill. `reviewer` is read-only by design: it reports, it does not patch.
 
----
+Spawn agents in parallel when the work is independent. **Cap: 2 concurrent** (API returns 529 above that).
 
-## Coding rules
-
-1. **Solve the current problem only.** Write code only for what exists now. No speculative code, no future requirements, no unrequested features, abstractions, or flexibility.
-2. **Keep the solution simple.** Use the smallest change that solves the problem. If 50 lines solve it, do not write 200.
-3. **Make surgical changes.** Touch only the code that must change. Do not refactor, reformat, rename, or move unrelated code. Every changed line must be directly connected to the requested task.
-4. **Verify the result.** Define what "done" means before coding. After the change, verify the specific problem is solved with tests or concrete checks.
+**Do not proliferate agents.** One agent per coherent task — batch related changes into a single delegation, do not fan out many agents for what one can do. Reuse a running agent (SendMessage) before spawning a fresh one. Spawn a new agent only when the work needs a different specialist or a genuinely independent parallel track. Fewer agents, each given the full task.
 
 ---
 
-## Session workflow
+## Cross-surface parity
 
-### At the start of every session
+Any feature the **service** exposes must be reachable from **both the CLI and the dashboard**. A service change is not done until the CLI command and the dashboard UI both reach it. Build the three together — never ship the endpoint alone.
 
-1. Read `claude-progress.txt`
-2. Run `git log --oneline -20`
-3. Read `feature-list.json`
-4. Run `bash init.sh` to set up the environment
-5. Verify the current state is working before making changes
+In the **dashboard**, reuse before you create: existing components, graphical patterns, and logic come first. Do not grow new components or invent new UX when something already in the SPA does the job. If nothing fits, ask before proliferating.
 
-### During work
-
-- Work on **one task at a time**
-- Do not declare a task complete without end-to-end testing
-- Do not modify `feature-list.json` except the `"passes"` field
-- Commit frequently with descriptive messages
-- If something breaks, use `git revert` before continuing
-
-### At the end of every session
-
-Update `claude-progress.txt` with:
-- What was done
-- What was discovered
-- What remains to do
-- Open problems
-
-Then update `feature-list.json` and make a final commit.
+**Documentation has the same parity.** Every feature is documented on each surface it touches: API/service (`docs/api`, `docs/service`), CLI (`docs/cli`), and dashboard (`docs/dashboard`). Dashboard docs carry a current screenshot (the `docs` agent captures it via Chrome MCP). A feature is not done until its docs cover every surface it exposes. The `docs` agent owns this.
 
 ---
 
-## Non-negotiable rules
+## Permissions
 
-1. **No external database** — everything on JSON files in `ROUTERLY_HOME`
-2. **TypeScript imports with `.js` extension** — required with `moduleResolution: Node16`
-3. **`node:` prefix** for builtins — `node:fs`, `node:path`, `node:crypto`
-4. **No `require()` anywhere**
-5. **Tests: only `*.test.ts`** — never `*.spec.ts`
-6. **`afterEach(() => vi.clearAllMocks())`** whenever `vi.mock()` is used
-7. **Commits: conventional commits lowercase** — `feat(scope): description`
-8. **Config writes**: always via `writeConfig()` with `proper-lockfile` — never `fs.writeFile` directly
-9. **OpenAI/Anthropic wire format**: never alter the response format sent to the client
-10. **No new dependencies** without strong justification and ESM compatibility check
-11. **Test before done**: every feature added, modified, or deleted must pass `npm test --workspace=packages/<affected>` + `npm run typecheck` before the task is declared complete. If tests fail, fix them before closing the task.
-12. **Autoimprove**: run Hook 1 (pre-task review) before starting any multi-step task and Hook 2 (post-task capture) after completing it — see `ai/skills/autoimprove/SKILL.md`.
+If a feature gates an action behind access control (any new protected endpoint or mutation), the permission must be **defined, registered, surfaced, and enforced** — not just checked inline. A new permission travels through the whole chain:
+
+1. `packages/shared/src/types/config.ts` — add it to the `Permission` union (source of truth).
+2. `packages/service/src/routes/api.ts` — add it to the server `ALL_PERMISSIONS` list.
+3. `packages/dashboard/src/api.ts` — add it to the dashboard `ALL_PERMISSIONS`.
+4. `packages/dashboard/src/pages/RolesPage.tsx` — add its label to `PERM_LABELS` so it shows under **/dashboard/settings/roles**.
+5. Enforce it on the route (permission check before the action) and cover it with a test (allowed → 200, forbidden → 403).
+
+A feature whose new action is reachable without an admin being able to grant/deny it from the Roles UI is not done. Reuse an existing permission when one fits; add a new one only when none does.
 
 ---
 
-## Canonical files
+## Verification — run it, don't read it
 
-| Looking for | Where to look |
-|-------------|---------------|
-| Architecture and request flow | `ai/context/architecture.md` |
-| All API endpoints | `ai/context/api.md` |
-| Storage and JSON files | `ai/context/database.md` |
-| Docker, CI/CD, deploy | `ai/context/infrastructure.md` |
-| Code style | `ai/policies/coding-style.md` |
-| Testing rules | `ai/policies/testing.md` |
-| Security rules | `ai/policies/security.md` |
-| Architectural decisions | `ai/memory/decisions.md` |
-| Non-negotiable constraints (full) | `ai/memory/constraints.md` |
-| How to develop a feature | `ai/workflows/feature-development.md` |
-| How to fix a bug | `ai/workflows/bugfix.md` |
-| Ready-to-use prompt templates | `ai/prompts/` |
-| Skill: writing tests | `ai/skills/testing/SKILL.md` |
-| Skill: code review | `ai/skills/code-review/SKILL.md` |
-| Skill: continuous improvement | `ai/skills/autoimprove/SKILL.md` |
-| Learnings staging area | `ai/learnings/` |
+Reading source is research, not verification. A feature is DONE only when every layer it touches was **executed and observed**. **Test the boundary, not the happy path**: minimum-privilege user, empty data, rejected input, expired token — that is where bugs live. Full checklist + curl snippets: `.claude/rules/feature-verification.md`.
+
+| Layer the feature touches | Required evidence |
+|---|---|
+| Service / API | `curl` vs `localhost:3000` — exact HTTP status + body, for each case (happy / no-auth / bad-input) |
+| Dashboard / UI | `verify` skill: Chrome MCP **screenshot** of the feature working — **one per variant/type** |
+| CLI | actual command on a **real shell** — exact stdout/stderr + exit code |
+| Always | every feature ships its `*.test.ts`; e2e run against a **running instance** (not mocked); `npm test` green; `npm run typecheck` clean; **coverage ≥ 98%, always**; **documented on every surface it touches** (see Cross-surface parity) |
+
+**Browser screenshot is required for UI work only.** A service-only or CLI-only feature is proven by curl / command output — no browser needed. Dashboard tests run on a **real browser** (Chrome MCP), CLI tests on a **real shell** — never simulated. If a feature has N variants (4 policy types, 3 channel adapters…), each variant gets its own evidence; testing one and assuming the rest is not verification.
+
+**Status vocabulary** (use in `claude-progress.txt` — never bare "done"):
+`VERIFIED DONE` / `VERIFIED PARTIAL` / `VERIFIED BROKEN` / `NOT VERIFIED`.
+`VERIFIED DONE` also needs explicit user sign-off after they see the evidence.
+
+---
+
+## Principles
+
+- Solve the current problem, not future ones. Simplest thing that works wins.
+- Touch only what must change — every modified line tied to the current task.
+- No decorative code, no abstraction nobody needs now, no config nobody asked for.
+- Broke something? `git revert` before continuing.
+
+---
+
+## The loop
+
+`UNDERSTAND → PLAN → EXECUTE (delegate) → VERIFY (execute) → REPORT → CONFIRM` — then wait for explicit sign-off before the next task. One task at a time. Frequent descriptive commits (commitlint: lowercase after the colon).
+
+**Orchestration chain (respect it):**
+1. Orchestrator (opus) understands + plans, picks the agent from the table.
+2. Specialist agent implements in its package + writes/updates its `*.test.ts`, self-checks (curl / its own browser pass), reports back.
+3. If a wire contract changed → handoff to the sibling agent (service↔frontend↔cli) so CLI **and** dashboard stay in parity.
+4. `docs` agent updates `docs/` for the change.
+5. `reviewer` (read-only) audits the diff before merge.
+6. Orchestrator runs final verification (browser screenshot for UI, curl for service, command for CLI), then reports to the user for sign-off.
+
+---
+
+## Session
+
+**Start:** read `claude-progress.txt` → `git log --oneline -20` → `feature-list.json` → `bash init.sh`.
+**During:** don't edit `feature-list.json` except the `"passes"` field.
+**End:** update `claude-progress.txt` (done / discovered / remaining / open) + `feature-list.json`, final commit.

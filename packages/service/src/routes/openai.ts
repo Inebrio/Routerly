@@ -15,7 +15,7 @@ import { lookupCache, storeCache } from '../cache/semanticResponseCache.js';
 import { parseRoutingTags } from './requestEnrichment.js';
 import { AGENT_POLICY_HEADER, resolveAgentPolicy, agentPolicyCandidates } from '../routing/agentPolicy.js';
 import { checkGuardrails } from '../middleware/guardrails.js';
-import { scrubMessages } from '../middleware/piiScrubber.js';
+import { scrubMessages, scrubText, StreamingScrubber } from '../middleware/piiScrubber.js';
 import { emitEvent } from '../notifications/emitter.js';
 import { lookupResponseCache, storeResponseCache } from '../cache/llmResponseCache.js';
 import { textToVector } from '../cache/textVector.js';
@@ -135,18 +135,57 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     const tags = parseRoutingTags(request.headers['x-routerly-tags'] as string | undefined);
 
     // ── Content guardrails (#77) ─────────────────────────────────────────────
-    // Checks input messages against the project blocklist + injection patterns.
+    // Checks input messages against the project's guardrail rules.
     // On 'block' we short-circuit with the fallback message; 'flag'/'log' record
     // the rule on the usage record and continue.
+    // Real project context for guardrail judge/embedding calls (#77, BUG-4):
+    // their tokens are attributed and gated against the caller's project.
+    const guardrailPctx = { projectId: project.id, project, ...(request.token ? { token: request.token } : {}) };
     let guardrailTriggered: string | undefined;
-    if (project.guardrails?.enabled) {
-      const hit = checkGuardrails(body.messages ?? [], project.guardrails);
+    if (project.guardrails) {
+      const msgs = body.messages ?? [];
+      const lastUserMsg = [...msgs].reverse().find((m: any) => m?.role === 'user');
+      const inputText = typeof lastUserMsg?.content === 'string' ? lastUserMsg.content : '';
+      let hit: { triggered: string } | null;
+      try {
+        hit = await checkGuardrails('request', inputText, project.guardrails, guardrailPctx, request.log);
+      } catch (err: unknown) {
+        // Over-limit guardrail judge call: fail the request like an over-limit completion (BUG-4).
+        if (err instanceof BudgetExceededError) {
+          reply.header('x-routerly-trace-id', traceId);
+          return reply.code(429).send({ error: { message: 'Usage limit exceeded by content-guardrail check.', type: 'insufficient_quota' } });
+        }
+        throw err;
+      }
       if (hit) {
+        const fallbackMessage = project.guardrails.fallbackMessage ?? 'This request was blocked by content guardrails.';
         request.log.warn({ projectId: project.id, rule: hit.triggered, action: project.guardrails.action }, 'guardrail: triggered');
-        appendTrace(traceId, [{ panel: 'request', message: 'guardrail:triggered', details: { rule: hit.triggered, action: project.guardrails.action } }]);
+        // Trace carries the human-readable reason (incl. fallbackMessage) for the dashboard — it no longer ships in the wire response (#76/#77).
+        appendTrace(traceId, [{ panel: 'request', message: 'guardrail:triggered', details: { rule: hit.triggered, target: 'request', action: project.guardrails.action, fallbackMessage } }]);
         if (project.guardrails.action === 'block') {
-          const fallback = project.guardrails.fallbackMessage ?? 'This request was blocked by content guardrails.';
-          return reply.code(400).send({ error: { message: fallback, type: 'invalid_request_error', code: 'guardrail_blocked' } });
+          if (isStream) {
+            reply.hijack();
+            const _origin = request.headers.origin;
+            if (_origin) {
+              reply.raw.setHeader('Access-Control-Allow-Origin', _origin);
+              reply.raw.setHeader('Access-Control-Allow-Credentials', 'true');
+              reply.raw.setHeader('Access-Control-Expose-Headers', 'x-routerly-trace-id');
+            }
+            reply.raw.setHeader('Content-Type', 'text/event-stream');
+            reply.raw.setHeader('Cache-Control', 'no-cache');
+            reply.raw.setHeader('Connection', 'keep-alive');
+            reply.raw.setHeader('x-routerly-trace-id', traceId);
+            reply.raw.flushHeaders();
+            // Wire-faithful content_filter block: empty delta + content_filter finish_reason, then [DONE].
+            const chunk = JSON.stringify({ id: `chatcmpl-${traceId}`, object: 'chat.completion.chunk', choices: [{ index: 0, delta: {}, finish_reason: 'content_filter' }] });
+            reply.raw.write(`data: ${chunk}\n\n`);
+            reply.raw.write('data: [DONE]\n\n');
+            reply.raw.end();
+            return;
+          }
+          reply.header('x-routerly-trace-id', traceId);
+          // Wire-faithful content_filter block: empty content + content_filter finish_reason.
+          return reply.code(200).send({ id: `chatcmpl-${traceId}`, object: 'chat.completion', choices: [{ index: 0, message: { role: 'assistant', content: '' }, finish_reason: 'content_filter' }], usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } });
         }
         guardrailTriggered = hit.triggered;
       }
@@ -155,7 +194,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     // ── PII scrubbing (#76) ──────────────────────────────────────────────────
     // Redact PII entities from message content before forwarding to the provider.
     let piiRedacted: string[] | undefined;
-    if (project.pii?.enabled && Array.isArray(body.messages)) {
+    if (project.pii && project.pii.scrubInput !== false && Array.isArray(body.messages)) {
       const { messages, redacted } = scrubMessages(body.messages, project.pii);
       if (redacted.length > 0) {
         body.messages = messages;
@@ -335,7 +374,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         };
 
         if (model.provider === 'openai-oauth') {
-          await forwardOpenAIOAuthSSE(reply.raw, body as Record<string, unknown>, model, request.log, traceId, project.id);
+          await forwardOpenAIOAuthSSE(reply.raw, body as Record<string, unknown>, model, request.log, traceId, project.id, project.pii);
           reply.raw.end();
           return;
         }
@@ -352,11 +391,76 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
         try {
           let fullContent = '';
-          for await (const chunk of streamResult.chunks) {
-            reply.raw.write(`data: ${JSON.stringify(chunk)}\n\n`);
-            const delta = chunk.choices?.[0]?.delta?.content;
-            if (delta) fullContent += delta;
+          const outputScrubber = project.pii?.scrubOutput === true
+            ? new StreamingScrubber(project.pii)
+            : null;
+
+          // ponytail: buffer SSE only when response guardrail needs to intercept before flushing
+          const hasResponseGuardrails = project.guardrails &&
+            project.guardrails.rules.some((r: any) => r.target === 'response' || r.target === 'both');
+          const bufferForGuardrail = hasResponseGuardrails && project.guardrails!.action === 'block';
+          const sseBuffer: string[] = [];
+
+          function writeSSE(data: string): void {
+            if (bufferForGuardrail) { sseBuffer.push(data); } else { reply.raw.write(data); }
           }
+
+          for await (const chunk of streamResult.chunks) {
+            let outChunk = chunk;
+            if (outputScrubber) {
+              const delta = chunk.choices?.[0]?.delta?.content;
+              if (typeof delta === 'string' && delta.length > 0) {
+                const scrubbed = outputScrubber.push(delta);
+                const c0 = chunk.choices![0]!;
+                outChunk = { ...chunk, choices: [{ index: c0.index, finish_reason: c0.finish_reason, delta: { ...c0.delta, content: scrubbed } }] };
+              }
+            }
+            writeSSE(`data: ${JSON.stringify(outChunk)}\n\n`);
+            const d = outChunk.choices?.[0]?.delta?.content;
+            if (d) fullContent += d;
+          }
+
+          if (outputScrubber) {
+            const remaining = outputScrubber.flush();
+            if (remaining) {
+              const flushChunk = {
+                id: `chatcmpl-${traceId}`,
+                object: 'chat.completion.chunk',
+                created: Math.floor(Date.now() / 1000),
+                model: body.model ?? '',
+                choices: [{ index: 0, delta: { content: remaining }, finish_reason: null }],
+              };
+              writeSSE(`data: ${JSON.stringify(flushChunk)}\n\n`);
+              fullContent += remaining;
+            }
+            // PII output trace (#76): record entities redacted across the stream.
+            if (outputScrubber.found.size > 0) {
+              appendTrace(traceId, [{ panel: 'response', message: 'pii:scrubbed', details: { entities: [...outputScrubber.found] } }]);
+            }
+          }
+
+          // ── Streaming response guardrail (#77) ─────────────────────────────
+          if (hasResponseGuardrails && fullContent) {
+            const hit = await checkGuardrails('response', fullContent, project.guardrails!, guardrailPctx, request.log);
+            if (hit) {
+              const fallbackMessage = project.guardrails!.fallbackMessage ?? 'Response blocked by content guardrails.';
+              request.log.warn({ projectId: project.id, rule: hit.triggered }, 'guardrail: stream response triggered');
+              appendTrace(traceId, [{ panel: 'response', message: 'guardrail:response-triggered', details: { rule: hit.triggered, target: 'response', action: project.guardrails!.action, fallbackMessage } }]);
+              if (project.guardrails!.action === 'block') {
+                // Wire-faithful content_filter block: empty delta + content_filter finish_reason (buffered output dropped).
+                const fallbackChunk = { id: `chatcmpl-${traceId}`, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: body.model ?? '', choices: [{ index: 0, delta: {}, finish_reason: 'content_filter' }] };
+                reply.raw.write(`data: ${JSON.stringify(fallbackChunk)}\n\n`);
+              } else {
+                for (const d of sseBuffer) reply.raw.write(d);
+              }
+            } else {
+              for (const d of sseBuffer) reply.raw.write(d);
+            }
+          } else {
+            // flush buffer (empty when not buffering, pass-through otherwise)
+            for (const d of sseBuffer) reply.raw.write(d);
+          }
+
           reply.raw.write('data: [DONE]\n\n');
           request.log.info({ modelId: model.id, contentChars: fullContent.length }, 'completion: response');
 
@@ -366,7 +470,6 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
             storeCache(project.id, cacheVector, model.id, ttlMs);
           }
         } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : String(err);
           request.log.error({ err, modelId: model.id }, 'Streaming error mid-stream');
           reply.raw.write('data: [DONE]\n\n');
         }
@@ -516,6 +619,38 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
             project.semanticCache.ttlMs ?? 3_600_000,
             project.semanticCache.maxEntries ?? 500,
           );
+        }
+
+        if (project.pii?.scrubOutput === true) {
+          const content = response.choices?.[0]?.message?.content;
+          if (typeof content === 'string') {
+            const { text, found } = scrubText(content, project.pii);
+            if (found.length > 0) {
+              response.choices![0]!.message.content = text;
+              request.log.info({ projectId: project.id, found }, 'pii: scrubbed output');
+              // PII output trace (#76).
+              appendTrace(traceId, [{ panel: 'response', message: 'pii:scrubbed', details: { entities: found } }]);
+            }
+          }
+        }
+
+        // ── Response guardrail (#77) ───────────────────────────────────────────
+        if (project.guardrails) {
+          const responseContent = response.choices?.[0]?.message?.content;
+          if (typeof responseContent === 'string' && responseContent.length > 0) {
+            const hit = await checkGuardrails('response', responseContent, project.guardrails, guardrailPctx, request.log);
+            if (hit) {
+              const fallbackMessage = project.guardrails.fallbackMessage ?? 'Response blocked by content guardrails.';
+              request.log.warn({ projectId: project.id, rule: hit.triggered }, 'guardrail: response triggered');
+              appendTrace(traceId, [{ panel: 'response', message: 'guardrail:response-triggered', details: { rule: hit.triggered, target: 'response', action: project.guardrails.action, fallbackMessage } }]);
+              if (project.guardrails.action === 'block') {
+                reply.header('x-routerly-trace-id', traceId);
+                // Wire-faithful content_filter block: empty content + content_filter finish_reason.
+                return reply.code(200).send({ id: `chatcmpl-${traceId}`, object: 'chat.completion', choices: [{ index: 0, message: { role: 'assistant', content: '' }, finish_reason: 'content_filter' }], usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } });
+              }
+              guardrailTriggered = hit.triggered;
+            }
+          }
         }
 
         reply.header('x-routerly-trace-id', traceId);

@@ -3,6 +3,7 @@ import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, Globe, Bar
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
 import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases } from '../api';
 import type { Settings, SystemInfo, UpdateInfo, AvailableReleases } from '../api';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 
 const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'error'];
 
@@ -129,6 +130,7 @@ export function SettingsGeneralTab() {
   }
 
   if (loading) return <div className="loading-center"><div className="spinner" /></div>;
+  if (!settings) return <div className="form-error" style={{ margin: 24 }}>{error || 'Failed to load settings.'}</div>;
 
   return (
     <form onSubmit={handleSubmit} style={{ maxWidth: 560 }}>
@@ -861,6 +863,7 @@ export function SettingsAboutTab() {
   const [updateMsg, setUpdateMsg] = useState('');
   const [updateError, setUpdateError] = useState('');
   const pollRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+  const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   useEffect(() => {
     getSystemInfo()
@@ -888,8 +891,14 @@ export function SettingsAboutTab() {
     }
   }
 
-  async function handleUpdate() {
-    if (!window.confirm('This will download and install the latest version. The service will restart. Continue?')) return;
+  function handleUpdate() {
+    setConfirmState({
+      message: 'This will download and install the latest version. The service will restart. Continue?',
+      onConfirm: () => { setConfirmState(null); doUpdate(); },
+    });
+  }
+
+  async function doUpdate() {
     setUpdating(true);
     setUpdateError('');
     setUpdateMsg('');
@@ -928,6 +937,7 @@ export function SettingsAboutTab() {
   void isAdmin;
 
   return (
+    <>
     <div style={{ maxWidth: 560 }}>
       <div style={{ marginBottom: 28 }}>
         <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>Application</h3>
@@ -990,6 +1000,15 @@ export function SettingsAboutTab() {
         </div>
       </div>
     </div>
+    {confirmState && (
+      <ConfirmDialog
+        message={confirmState.message}
+        onConfirm={confirmState.onConfirm}
+        onCancel={() => setConfirmState(null)}
+        danger={false}
+      />
+    )}
+    </>
   );
 }
 
@@ -1000,6 +1019,7 @@ const TABS = [
   { path: 'notifications', label: 'Notifications' },
   { path: 'users',         label: 'Users' },
   { path: 'roles',         label: 'Roles' },
+  { path: 'audit',         label: 'Audit Log' },
   { path: 'about',         label: 'About' },
 ];
 

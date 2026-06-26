@@ -69,7 +69,7 @@ coverage/
 # Misc
 # ===========================
 *.local
-AGENTS.local.md
+CLAUDE.local.md
 .cache/
 .temp/
 .tmp/

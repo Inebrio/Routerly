@@ -18,6 +18,7 @@ import { sendTestNotification } from '../notifications/sender.js';
 import { emitEvent } from '../notifications/emitter.js';
 import { updateChecker } from '../update-checker.js';
 import { logAudit } from '../audit/logger.js';
+import type { AuditEntry } from '../audit/logger.js';
 
 const { version: pkgVersion } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf-8')) as { version: string };
 
@@ -91,7 +92,7 @@ const MODEL_CATALOG: CatalogEntry[] = [
 // ── Module augmentation ───────────────────────────────────────────────────────
 declare module 'fastify' {
   interface FastifyRequest {
-    dashUser: { id: string; roleId: string; permissions: Permission[] } | null;
+    dashUser: { id: string; email: string; roleId: string; permissions: Permission[] } | null;
   }
 }
 
@@ -123,9 +124,21 @@ function resolvePermissions(roleId: string, allRoles: RoleConfig[]): Permission[
   return allRoles.find(r => r.id === roleId)?.permissions ?? [];
 }
 
+function audit(req: FastifyRequest, action: string, result: AuditEntry['result'], details?: Record<string, unknown>): void {
+  void logAudit({
+    userId: req.dashUser?.id ?? 'unknown',
+    email: req.dashUser?.email ?? 'unknown',
+    endpoint: `${req.method} ${req.url}`,
+    action,
+    result,
+    ...(details !== undefined ? { details } : {}),
+  });
+}
+
 function requirePerm(req: FastifyRequest, perm: Permission, reply: FastifyReply): boolean {
   if (!req.dashUser?.permissions.includes(perm)) {
     reply.status(403).send({ error: 'Forbidden', message: `Required permission: ${perm}` });
+    audit(req, perm, 'forbidden');
     return false;
   }
   return true;
@@ -141,17 +154,26 @@ const limitSchema = z.object({
   value: z.number().nonnegative(),
 });
 
+const guardrailRuleSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('regex'), enabled: z.boolean().optional(), target: z.enum(['request', 'response', 'both']), config: z.object({ patterns: z.array(z.string()) }) }),
+  z.object({ type: z.literal('semantic'), enabled: z.boolean().optional(), target: z.enum(['request', 'response', 'both']), config: z.object({ embeddingModelId: z.string(), examples: z.array(z.string()), threshold: z.number().min(0).max(1).optional() }) }),
+  z.object({ type: z.literal('topic'), enabled: z.boolean().optional(), target: z.enum(['request', 'response', 'both']), config: z.object({ modelId: z.string(), allowedTopics: z.string(), threshold: z.number().min(0).max(1).optional() }) }),
+  z.object({ type: z.literal('moderation'), enabled: z.boolean().optional(), target: z.enum(['request', 'response', 'both']), config: z.object({ modelId: z.string(), threshold: z.number().min(0).max(1).optional(), systemPrompt: z.string().optional() }) }),
+]);
+
 const guardrailConfigSchema = z.object({
-  enabled: z.boolean(),
-  inputBlocklist: z.array(z.string()).optional(),
-  detectPromptInjection: z.boolean().optional(),
   action: z.enum(['block', 'flag', 'log']),
   fallbackMessage: z.string().optional(),
+  detectInjection: z.boolean().optional(),
+  rules: z.array(guardrailRuleSchema),
 });
 
 const piiConfigSchema = z.object({
-  enabled: z.boolean(),
   entities: z.array(z.enum(['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'])).optional(),
+  customPatterns: z.array(z.string()).optional(),
+  scrubInput: z.boolean().optional(),
+  scrubOutput: z.boolean().optional(),
+  outputBufferSize: z.number().int().min(10).max(500).optional(),
 });
 
 const spendGroupBodySchema = z.object({
@@ -431,7 +453,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!user) return reply.status(401).send({ error: 'Unauthorized' });
 
     const allRoles = getEffectiveRoles(customRoles);
-    req.dashUser = { id: userId, roleId: user.roleId, permissions: resolvePermissions(user.roleId, allRoles) };
+    req.dashUser = { id: userId, email: user.email, roleId: user.roleId, permissions: resolvePermissions(user.roleId, allRoles) };
   });
 
   // ══════════════════════════════════════════════════════════════════════════════
@@ -505,6 +527,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     models.push(model);
     await writeConfig('models', models);
     void emitEvent('config.model_added', 'info', { modelId: model.id, provider: model.provider }, { log: req.log });
+    audit(req, 'model:create', 'success', { id: model.id });
     return reply.status(201).send({ ...model, apiKey: undefined, cfClearance: undefined });
   });
 
@@ -606,6 +629,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
 
+    audit(req, 'model:update', 'success', { id: req.params.id });
     return reply.send({ ...model, apiKey: undefined, cfClearance: undefined });
   });
 
@@ -624,6 +648,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (filtered.length === models.length) return reply.status(404).send({ error: 'Not found' });
     await writeConfig('models', filtered);
     void emitEvent('config.model_deleted', 'info', { modelId: req.params.id }, { log: req.log });
+    audit(req, 'model:delete', 'success', { id: req.params.id });
     return reply.status(204).send();
   });
 
@@ -712,6 +737,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     projects.push(project);
     await writeConfig('projects', projects);
     void emitEvent('config.project_created', 'info', { projectId: project.id, name: project.name }, { projectId: project.id, log: req.log });
+    audit(req, 'project:create', 'success', { id: project.id });
     return reply.status(201).send({ ...project, token: rawToken });
   });
 
@@ -780,10 +806,39 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     };
     projects[index] = updated;
     await writeConfig('projects', projects);
+    audit(req, 'project:update', 'success', { id: req.params.id });
     return reply.send({
       ...updated,
       tokens: updated.tokens?.map(t => ({ ...t, token: undefined })) || []
     });
+  });
+
+  fastify.patch<{
+    Params: { id: string };
+    Body: { guardrails?: GuardrailConfig; pii?: PiiConfig };
+  }>('/api/projects/:id/guardrails', async (req, reply) => {
+    if (!requirePerm(req, 'project:write', reply)) return;
+    const projects = await readConfig('projects');
+    const index = projects.findIndex(p => p.id === req.params.id);
+    if (index === -1) return reply.status(404).send({ error: 'Not found' });
+    const project = projects[index]!;
+    let guardrailsUpdate: { guardrails?: GuardrailConfig } = project.guardrails ? { guardrails: project.guardrails } : {};
+    let piiUpdate: { pii?: PiiConfig } = project.pii ? { pii: project.pii } : {};
+    if (req.body.guardrails !== undefined) {
+      const parsed = guardrailConfigSchema.safeParse(req.body.guardrails);
+      if (!parsed.success) return reply.status(400).send({ error: 'Invalid guardrails config', details: parsed.error.issues });
+      guardrailsUpdate = { guardrails: parsed.data as GuardrailConfig };
+    }
+    if (req.body.pii !== undefined) {
+      const parsed = piiConfigSchema.safeParse(req.body.pii);
+      if (!parsed.success) return reply.status(400).send({ error: 'Invalid pii config', details: parsed.error.issues });
+      piiUpdate = { pii: parsed.data as PiiConfig };
+    }
+    const updated: ProjectConfig = { ...project, ...guardrailsUpdate, ...piiUpdate };
+    projects[index] = updated;
+    await writeConfig('projects', projects);
+    audit(req, 'project:update', 'success', { id: req.params.id });
+    return reply.send({ ...updated, tokens: updated.tokens?.map(t => ({ ...t, token: undefined })) || [] });
   });
 
   fastify.delete<{ Params: { id: string } }>('/api/projects/:id', async (req, reply) => {
@@ -794,11 +849,24 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (filtered.length === projects.length) return reply.status(404).send({ error: 'Not found' });
     await writeConfig('projects', filtered);
     void emitEvent('config.project_deleted', 'info', { projectId: req.params.id, name: deleted?.name }, { log: req.log });
+    audit(req, 'project:delete', 'success', { id: req.params.id });
     return reply.status(204).send();
   });
 
-  fastify.post<{ Params: { id: string }, Body: { labels?: string[] } }>('/api/projects/:id/tokens', async (req, reply) => {
+  const createTokenBodySchema = z.object({
+    labels: z.array(z.string()).optional(),
+    expiresAt: z.string().datetime({ offset: true }).refine(
+      v => new Date(v) > new Date(),
+      { message: 'expiresAt must be in the future' }
+    ).optional(),
+  });
+
+  fastify.post<{ Params: { id: string }, Body: { labels?: string[]; expiresAt?: string } }>('/api/projects/:id/tokens', async (req, reply) => {
     if (!requirePerm(req, 'project:write', reply)) return;
+
+    const parsed = createTokenBodySchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
+
     const projects = await readConfig('projects');
     const index = projects.findIndex(p => p.id === req.params.id);
     if (index === -1) return reply.status(404).send({ error: 'Not found' });
@@ -810,7 +878,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       token: rawToken,
       tokenSnippet: rawToken.substring(0, 10),
       createdAt: new Date().toISOString(),
-      ...(req.body.labels ? { labels: req.body.labels } : {})
+      ...(parsed.data.labels ? { labels: parsed.data.labels } : {}),
+      ...(parsed.data.expiresAt ? { expiresAt: parsed.data.expiresAt } : {}),
     };
 
     const updated = { ...projects[index]! };
@@ -819,6 +888,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
     projects[index] = updated;
     await writeConfig('projects', projects);
+    audit(req, 'token:create', 'success', { projectId: req.params.id });
     return reply.send({ token: rawToken, tokenInfo: { ...newToken, token: undefined } });
   });
 
@@ -855,6 +925,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
     project.tokens.splice(tokenIndex, 1);
     await writeConfig('projects', projects);
+    audit(req, 'token:delete', 'success', { projectId: req.params.id, tokenId: req.params.tokenId });
     return reply.status(204).send();
   });
 
@@ -1018,6 +1089,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     };
     users.push(user);
     await writeConfig('users', users);
+    audit(req, 'user:create', 'success', { email: user.email });
     return reply.status(201).send({ ...user, passwordHash: undefined });
   });
 
@@ -1050,6 +1122,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
     await writeConfig('users', users);
     const updated = users[idx]!;
+    audit(req, 'user:update', 'success', { id: req.params.id });
     return reply.send({ id: updated.id, email: updated.email, roleId: updated.roleId, projectIds: updated.projectIds });
   });
 
@@ -1063,6 +1136,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(409).send({ error: 'Cannot delete the last admin account' });
     }
     await writeConfig('users', users.filter(u => u.id !== req.params.id));
+    audit(req, 'user:delete', 'success', { id: req.params.id });
     return reply.status(204).send();
   });
 
@@ -1143,11 +1217,15 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       byModel[r.modelId] = entry;
     }
 
-    // Aggregate by callType
+    // Aggregate by callType — routing / guardrail / completion are distinct sub-activities (#77, BUG-5).
+    // Records without callType default to completion (legacy data).
     const routingCalls = filtered.filter(r => r.callType === 'routing').length;
-    const completionCalls = filtered.filter(r => r.callType !== 'routing').length;
-    const routingCost = filtered.filter(r => r.callType === 'routing' && r.outcome === 'success').reduce((s, r) => s + r.cost, 0);
-    const completionCost = filtered.filter(r => r.callType !== 'routing' && r.outcome === 'success').reduce((s, r) => s + r.cost, 0);
+    const guardrailCalls = filtered.filter(r => r.callType === 'guardrail').length;
+    const completionCalls = filtered.filter(r => r.callType !== 'routing' && r.callType !== 'guardrail').length;
+    const succ = (r: typeof filtered[number]) => r.outcome === 'success';
+    const routingCost = filtered.filter(r => r.callType === 'routing' && succ(r)).reduce((s, r) => s + r.cost, 0);
+    const guardrailCost = filtered.filter(r => r.callType === 'guardrail' && succ(r)).reduce((s, r) => s + r.cost, 0);
+    const completionCost = filtered.filter(r => r.callType !== 'routing' && r.callType !== 'guardrail' && succ(r)).reduce((s, r) => s + r.cost, 0);
 
     // Timeline for the selected period (hourly for daily, daily otherwise)
     const timeline: Record<string, number> = {};
@@ -1169,7 +1247,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const paged = sorted.slice(startIdx, startIdx + pageSize);
 
     return reply.send({
-      summary: { totalCost, totalCalls, successCalls, errorCalls: totalCalls - successCalls, routingCalls, completionCalls, routingCost, completionCost },
+      summary: { totalCost, totalCalls, successCalls, errorCalls: totalCalls - successCalls, routingCalls, completionCalls, guardrailCalls, routingCost, completionCost, guardrailCost },
       byModel,
       timeline: Object.entries(timeline).sort(([a], [b]) => a.localeCompare(b)).slice(-30),
       // Strip trace from list response to keep payload small
@@ -1300,7 +1378,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── GET /api/settings ─────────────────────────────────────────────────────
   fastify.get('/api/settings', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'settings:read', reply)) return;
     const settings = await readConfig('settings');
     return reply.send(settings);
   });
@@ -1309,7 +1387,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.put<{
     Body: Partial<Settings>;
   }>('/api/settings', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'settings:write', reply)) return;
     const current = await readConfig('settings');
     const allowed: (keyof Settings)[] = [
       'defaultTimeoutMs',
@@ -1347,6 +1425,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if ((req.body as Partial<Settings>).channel !== undefined) {
       updateChecker.updateChannel(updated.channel ?? 'latest');
     }
+    audit(req, 'settings:update', 'success');
     return reply.send(updated);
   });
 
@@ -1660,6 +1739,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const role: RoleConfig = { id, name, permissions: permissions ?? [] };
     customRoles.push(role);
     await writeConfig('roles', customRoles);
+    audit(req, 'role:create', 'success', { id: role.id });
     return reply.status(201).send({ ...role, builtin: false });
   });
 
@@ -1676,6 +1756,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (req.body.permissions) role.permissions = req.body.permissions;
     customRoles[idx] = role;
     await writeConfig('roles', customRoles);
+    audit(req, 'role:update', 'success', { id: req.params.id });
     return reply.send({ ...role, builtin: false });
   });
 
@@ -1688,6 +1769,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const filtered = customRoles.filter(r => r.id !== req.params.id);
     if (filtered.length === customRoles.length) return reply.status(404).send({ error: 'Role not found' });
     await writeConfig('roles', filtered);
+    audit(req, 'role:delete', 'success', { id: req.params.id });
     return reply.status(204).send();
   });
 
@@ -1820,20 +1902,30 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // ══════════════════════════════════════════════════════════════════════════════
 
   fastify.get<{
-    Querystring: { userId?: string; action?: string; from?: string; to?: string; limit?: string };
+    Querystring: { userId?: string; action?: string; result?: string; from?: string; to?: string; page?: string; pageSize?: string };
   }>('/api/audit', async (req, reply) => {
     if (!requirePerm(req, 'audit:read', reply)) return;
     const entries = await readConfig('audit');
-    const { userId, action, from, to, limit } = req.query;
-    const maxLimit = Math.min(1000, Math.max(1, parseInt(limit ?? '100', 10) || 100));
+    const { userId, action, result, from, to, page, pageSize } = req.query;
+    const size = Math.min(200, Math.max(1, parseInt(pageSize ?? '50', 10) || 50));
+    const p    = Math.max(1, parseInt(page ?? '1', 10) || 1);
 
     let filtered = [...entries].reverse(); // most recent first
-    if (userId) filtered = filtered.filter(e => e.userId === userId);
+    if (userId) filtered = filtered.filter(e => e.userId === userId || e.email?.includes(userId));
     if (action) filtered = filtered.filter(e => e.action.includes(action));
+    if (result && result !== 'all') filtered = filtered.filter(e => e.result === result);
     if (from) filtered = filtered.filter(e => e.timestamp >= from);
     if (to) filtered = filtered.filter(e => e.timestamp <= to);
 
-    return reply.send(filtered.slice(0, maxLimit));
+    const totalRecords = filtered.length;
+    const totalPages   = Math.max(1, Math.ceil(totalRecords / size));
+    const clampedPage  = Math.min(p, totalPages);
+    const data         = filtered.slice((clampedPage - 1) * size, clampedPage * size);
+
+    return reply.send({
+      entries: data,
+      pagination: { page: clampedPage, pageSize: size, totalRecords, totalPages },
+    });
   });
 
 };

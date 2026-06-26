@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import type { ProjectConfig, ProjectSemanticCacheConfig, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig } from '@routerly/shared';
+import type { ProjectConfig, ProjectSemanticCacheConfig, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig } from '@routerly/shared';
 
 // ─── Helper: resolve project by name or ID ────────────────────────────────────
 
@@ -856,6 +856,105 @@ Examples:
   return cmd;
 }
 
+// ─── Guardrail helpers ────────────────────────────────────────────────────────
+
+function rulesSummary(rule: GuardrailRule): string {
+  switch (rule.type) {
+    case 'regex': return `${(rule.config as RegexGuardConfig).patterns.length} pattern(s)`;
+    case 'semantic': {
+      const c = rule.config as SemanticGuardConfig;
+      return `model: ${c.embeddingModelId}, ${c.examples.length} example(s), threshold: ${c.threshold ?? 0.82}`;
+    }
+    case 'topic': {
+      const c = rule.config as TopicGuardConfig;
+      return `model: ${c.modelId}, threshold: ${c.threshold ?? 0.5}`;
+    }
+    case 'moderation': {
+      const c = rule.config as ModerationGuardConfig;
+      return `model: ${c.modelId}, threshold: ${c.threshold ?? 0.5}`;
+    }
+  }
+}
+
+async function runAddRuleWizard(): Promise<GuardrailRule> {
+  const { default: inquirer } = await import('inquirer');
+
+  // ponytail: Inquirer 13 prompt() has no generic overload — cast after
+  const typeAns = await inquirer.prompt([{
+    type: 'list',
+    name: 'type',
+    message: 'Rule type:',
+    choices: [
+      { name: 'regex       - Block requests/responses matching regex patterns', value: 'regex' },
+      { name: 'semantic    - Block semantically similar content using embeddings', value: 'semantic' },
+      { name: 'topic       - Block off-topic requests using LLM judge', value: 'topic' },
+      { name: 'moderation  - Detect harmful content using LLM judge', value: 'moderation' },
+    ],
+  }]) as { type: GuardrailRuleType };
+  const type = typeAns.type;
+
+  const targetAns = await inquirer.prompt([{
+    type: 'list',
+    name: 'target',
+    message: 'Apply to:',
+    choices: ['request', 'response', 'both'],
+  }]) as { target: 'request' | 'response' | 'both' };
+  const target = targetAns.target;
+
+  let config: GuardrailRule['config'];
+
+  if (type === 'regex') {
+    const ans = await inquirer.prompt([{
+      type: 'input',
+      name: 'patterns',
+      message: 'Patterns (comma-separated regex):',
+      validate: (v: string) => v.trim().length > 0 || 'At least one pattern required',
+    }]) as { patterns: string };
+    const rc: RegexGuardConfig = { patterns: ans.patterns.split(',').map((s: string) => s.trim()).filter(Boolean) };
+    config = rc;
+
+  } else if (type === 'semantic') {
+    const ans = await inquirer.prompt([
+      { type: 'input', name: 'embeddingModelId', message: 'Embedding model ID:', validate: (v: string) => v.trim().length > 0 || 'Required' },
+      { type: 'input', name: 'examples', message: 'Example texts to block (comma-separated):', validate: (v: string) => v.trim().length > 0 || 'At least one example required' },
+      { type: 'input', name: 'threshold', message: 'Similarity threshold (0-1, default 0.82):', default: '0.82' },
+    ]) as { embeddingModelId: string; examples: string; threshold: string };
+    const sc: SemanticGuardConfig = {
+      embeddingModelId: ans.embeddingModelId.trim(),
+      examples: ans.examples.split(',').map((s: string) => s.trim()).filter(Boolean),
+      threshold: parseFloat(ans.threshold),
+    };
+    config = sc;
+
+  } else if (type === 'topic') {
+    const ans = await inquirer.prompt([
+      { type: 'input', name: 'modelId', message: 'Judge model ID:', validate: (v: string) => v.trim().length > 0 || 'Required' },
+      { type: 'input', name: 'allowedTopics', message: 'Allowed topics (describe in natural language):', validate: (v: string) => v.trim().length > 0 || 'Required' },
+      { type: 'input', name: 'threshold', message: 'On-topic score threshold (0-1, default 0.5):', default: '0.5' },
+    ]) as { modelId: string; allowedTopics: string; threshold: string };
+    const tc: TopicGuardConfig = {
+      modelId: ans.modelId.trim(),
+      allowedTopics: ans.allowedTopics.trim(),
+      threshold: parseFloat(ans.threshold),
+    };
+    config = tc;
+
+  } else {
+    // moderation
+    const ans = await inquirer.prompt([
+      { type: 'input', name: 'modelId', message: 'Judge model ID:', validate: (v: string) => v.trim().length > 0 || 'Required' },
+      { type: 'input', name: 'threshold', message: 'Harm score threshold (0-1, default 0.5):', default: '0.5' },
+    ]) as { modelId: string; threshold: string };
+    const mc: ModerationGuardConfig = {
+      modelId: ans.modelId.trim(),
+      threshold: parseFloat(ans.threshold),
+    };
+    config = mc;
+  }
+
+  return { type, target, config };
+}
+
 // ─── Main project command ─────────────────────────────────────────────────────
 
 export function makeProjectCommand(): Command {
@@ -1084,38 +1183,90 @@ Examples:
   // ── project guardrails <project> ─────────────────────────────────────────────
   cmd.command('guardrails <project>')
     .description('Show or update guardrails config for a project')
-    .option('--enable', 'Enable guardrails')
-    .option('--disable', 'Disable guardrails')
     .option('--action <action>', 'Action on violation: block | flag | log')
-    .option('--add-pattern <regex>', 'Add a blocked regex pattern')
-    .option('--injection-detection <bool>', 'Enable/disable prompt injection detection (true|false)')
+    .option('--fallback <message>', 'Fallback message returned to client when action=block')
+    .option('--detect-injection', 'Enable built-in prompt injection detection')
+    .option('--no-detect-injection', 'Disable built-in prompt injection detection')
+    .option('--add-rule', 'Add a new rule (interactive wizard)')
+    .option('--remove-rule <index>', 'Remove rule by 0-based index')
+
+    .option('--json', 'Output raw JSON (show only)')
+    .addHelpText('after', `
+Examples:
+  routerly project guardrails my-api
+  routerly project guardrails my-api --enable
+  routerly project guardrails my-api --action block --fallback "Request blocked."
+  routerly project guardrails my-api --add-rule
+  routerly project guardrails my-api --remove-rule 2
+`)
     .action(async (nameOrId: string, opts: {
-      enable?: boolean; disable?: boolean; action?: string;
-      addPattern?: string; injectionDetection?: string;
+      action?: string; fallback?: string;
+      detectInjection?: boolean;
+      addRule?: boolean; removeRule?: string; json?: boolean;
     }) => {
       try {
         const project = await resolveProject(nameOrId);
-        const guardrails = (project as ProjectConfig & { guardrails?: Record<string, unknown> }).guardrails ?? {};
+        const current: GuardrailConfig = project.guardrails ?? { action: 'block', rules: [] };
 
-        const hasUpdate = opts.enable || opts.disable || opts.action || opts.addPattern || opts.injectionDetection !== undefined;
-        if (!hasUpdate) {
+        const isUpdate = opts.action || opts.fallback !== undefined ||
+          opts.detectInjection !== undefined ||
+          opts.addRule || opts.removeRule !== undefined;
+
+        if (!isUpdate) {
+          // ── show ──────────────────────────────────────────────────────────────
+          if (opts.json) {
+            console.log(JSON.stringify(current, null, 2));
+            return;
+          }
           console.log(chalk.bold(`\nGuardrails — ${project.name}`));
-          console.log(JSON.stringify(guardrails, null, 2));
+          const fallbackStr = current.fallbackMessage ? `"${current.fallbackMessage}"` : chalk.dim('(none)');
+          const injLabel = current.detectInjection ? chalk.green('yes') : chalk.dim('no');
+          console.log(`Action: ${chalk.cyan(current.action)}   Fallback: ${fallbackStr}   Injection detection: ${injLabel}\n`);
+
+          if (!current.rules.length) {
+            console.log(chalk.dim('  No rules configured.'));
+          } else {
+            const col: [number, number, number, number] = [4, 12, 10, 0];
+            const header = ['#', 'Type', 'Target', 'Summary'].map((h, i) => chalk.bold(h).padEnd(col[i] ?? 0));
+            console.log('Rules:');
+            console.log('  ' + header.join('  '));
+            current.rules.forEach((rule, idx) => {
+              const summary = rulesSummary(rule);
+              const cells = [
+                String(idx).padEnd(col[0]),
+                rule.type.padEnd(col[1]),
+                rule.target.padEnd(col[2]),
+                summary,
+              ];
+              console.log('  ' + cells.join('  '));
+            });
+          }
+          console.log('');
           return;
         }
 
-        const patch: Record<string, unknown> = { ...guardrails };
-        if (opts.enable) patch.enabled = true;
-        if (opts.disable) patch.enabled = false;
-        if (opts.action) patch.action = opts.action;
-        if (opts.injectionDetection !== undefined) patch.injectionDetection = opts.injectionDetection === 'true';
-        if (opts.addPattern) {
-          const patterns = (patch.patterns as string[] | undefined) ?? [];
-          patterns.push(opts.addPattern);
-          patch.patterns = patterns;
+        // ── mutate ───────────────────────────────────────────────────────────────
+        const updated: GuardrailConfig = { ...current, rules: [...current.rules] };
+
+        if (opts.action) updated.action = opts.action as 'block' | 'flag' | 'log';
+        if (opts.fallback !== undefined) updated.fallbackMessage = opts.fallback;
+        if (opts.detectInjection !== undefined) updated.detectInjection = opts.detectInjection;
+
+        if (opts.removeRule !== undefined) {
+          const idx = parseInt(opts.removeRule, 10);
+          if (isNaN(idx) || idx < 0 || idx >= updated.rules.length) {
+            console.error(chalk.red(`Error: rule index ${opts.removeRule} out of bounds (0-${updated.rules.length - 1})`));
+            process.exit(1);
+          }
+          updated.rules.splice(idx, 1);
         }
 
-        await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/guardrails`, patch);
+        if (opts.addRule) {
+          const newRule = await runAddRuleWizard();
+          updated.rules.push(newRule);
+        }
+
+        await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/guardrails`, { guardrails: updated });
         console.log(chalk.green(`Guardrails updated for "${project.name}".`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
@@ -1127,15 +1278,13 @@ Examples:
   // ── project pii <project> ────────────────────────────────────────────────────
   cmd.command('pii <project>')
     .description('Show or update PII detection config for a project')
-    .option('--enable', 'Enable PII detection')
-    .option('--disable', 'Disable PII detection')
     .option('--entities <types>', 'Comma-separated PII entity types (e.g. EMAIL,PHONE,SSN)')
-    .action(async (nameOrId: string, opts: { enable?: boolean; disable?: boolean; entities?: string }) => {
+    .action(async (nameOrId: string, opts: { entities?: string }) => {
       try {
         const project = await resolveProject(nameOrId);
         const pii = (project as ProjectConfig & { pii?: Record<string, unknown> }).pii ?? {};
 
-        const hasUpdate = opts.enable || opts.disable || opts.entities;
+        const hasUpdate = !!opts.entities;
         if (!hasUpdate) {
           console.log(chalk.bold(`\nPII Config — ${project.name}`));
           console.log(JSON.stringify(pii, null, 2));
@@ -1143,8 +1292,6 @@ Examples:
         }
 
         const patch: Record<string, unknown> = { ...pii };
-        if (opts.enable) patch.enabled = true;
-        if (opts.disable) patch.enabled = false;
         if (opts.entities) patch.entities = opts.entities.split(',').map(s => s.trim()).filter(Boolean);
 
         await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/guardrails`, { pii: patch });

@@ -18,6 +18,7 @@ const PERIOD_LABEL: Record<string, string> = {
 
 export function OverviewPage() {
   const [stats, setStats] = useState<UsageStats | null>(null);
+  const [statsError, setStatsError] = useState(false);
   const [period, setPeriod] = useState('monthly');
   const [modelCount, setModelCount] = useState(0);
   const [projectCount, setProjectCount] = useState(0);
@@ -27,7 +28,7 @@ export function OverviewPage() {
   const tickColor = isDark ? '#94a3b8' : '#475569';
 
   useEffect(() => {
-    getUsage(period).then(setStats).catch(console.error);
+    getUsage(period).then(setStats).catch(() => setStatsError(true));
   }, [period]);
 
   useEffect(() => {
@@ -105,7 +106,10 @@ export function OverviewPage() {
     return { totalIn, totalOut, totalCached };
   }, [stats]);
 
-  if (!stats) return <div className="loading-center"><div className="spinner" /></div>;
+  if (!stats) {
+    if (statsError) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>No permission to view usage data.</div>;
+    return <div className="loading-center"><div className="spinner" /></div>;
+  }
 
   const tooltipStyle = {
     background: 'var(--bg-elevated)',

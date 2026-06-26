@@ -2,8 +2,9 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import type { FastifyBaseLogger } from 'fastify';
 import type { ServerResponse } from 'node:http';
-import type { ModelConfig } from '@routerly/shared';
+import type { ModelConfig, PiiConfig } from '@routerly/shared';
 import { trackUsage } from '../cost/tracker.js';
+import { StreamingScrubber } from '../middleware/piiScrubber.js';
 
 const CHATGPT_BASE = 'https://chatgpt.com';
 const CODEX_PATH = '/backend-api/codex/responses';
@@ -147,6 +148,7 @@ export async function forwardOpenAIOAuthSSE(
   log: FastifyBaseLogger,
   traceId: string,
   projectId: string,
+  piiConfig?: PiiConfig,
 ): Promise<void> {
   const startMs = Date.now();
   const authFilePath = model.apiKey || DEFAULT_AUTH_PATH;
@@ -200,18 +202,21 @@ export async function forwardOpenAIOAuthSSE(
   const chatId = `chatcmpl-${traceId}`;
   const created = Math.floor(Date.now() / 1000);
   let buffer = '';
+  // ponytail: null when PII scrubbing disabled, avoids per-chunk branch overhead
+  const scrubber = piiConfig?.scrubOutput === true ? new StreamingScrubber(piiConfig) : null;
 
   function emitTextDelta(dataStr: string) {
     try {
       const parsed = JSON.parse(dataStr) as Record<string, unknown>;
       const delta = parsed['delta'];
       if (typeof delta !== 'string' || delta.length === 0) return;
+      const content = scrubber ? scrubber.push(delta) : delta;
       const chunk = {
         id: chatId,
         object: 'chat.completion.chunk',
         created,
         model: modelId,
-        choices: [{ index: 0, delta: { content: delta }, finish_reason: null }],
+        choices: [{ index: 0, delta: { content }, finish_reason: null }],
       };
       raw.write(`data: ${JSON.stringify(chunk)}\n\n`);
     } catch { /* ignore unparseable events */ }
@@ -241,6 +246,17 @@ export async function forwardOpenAIOAuthSSE(
     if (buffer.trim()) processBlock(buffer);
   } finally {
     reader.releaseLock();
+  }
+
+  if (scrubber) {
+    const flushed = scrubber.flush();
+    if (flushed.length > 0) {
+      const flushChunk = {
+        id: chatId, object: 'chat.completion.chunk', created, model: modelId,
+        choices: [{ index: 0, delta: { content: flushed }, finish_reason: null }],
+      };
+      raw.write(`data: ${JSON.stringify(flushChunk)}\n\n`);
+    }
   }
 
   const stopChunk = {

@@ -18,18 +18,80 @@ The LLM proxy exposes standard-compatible endpoints. Any client that speaks the 
 When the project enables them, two pre-request stages run on `/v1/chat/completions`,
 `/v1/responses` and `/v1/messages` before the request reaches a provider:
 
-- **Guardrails (#77):** input message string content is checked against the
-  project's regex blocklist and built-in prompt-injection patterns
-  (`ignore previous instructions`, `you are now`, `disregard your/all`,
-  `DAN mode`, `jailbreak`). With `action: "block"` a triggering request returns
-  HTTP `400` with the configured fallback message; with `flag`/`log` the request
-  proceeds and the rule name is recorded on the usage record.
-- **PII scrubbing (#76):** detected entities (`EMAIL`, `PHONE`, `CREDIT_CARD`,
+- **Guardrails:** input message string content is checked against the project's
+  configured security rules (regex, injection patterns, semantic similarity, topic
+  classification, moderation). With `action: "block"` a triggering request never
+  reaches the provider and Routerly returns a wire-faithful response (see below).
+  With `flag` or `log`, the request proceeds and the rule name is recorded on the
+  usage record.
+- **PII scrubbing:** detected entities (`EMAIL`, `PHONE`, `CREDIT_CARD`,
   `SSN`, `IBAN`) in message string content are replaced with typed placeholders
   before forwarding. Redacted entity types are recorded on the usage record.
+  The `scrubInput`/`scrubOutput` flags control which direction is scrubbed.
 
 Array (multimodal) message content is not inspected by either stage. See the
 [management API](./management.md) for the `guardrails` and `pii` project fields.
+
+### Guardrail block — wire format
+
+When a guardrail with `action: "block"` triggers, Routerly returns **HTTP 200**
+and mimics the provider's native content-filter format. No HTTP error is returned.
+The `x-routerly-trace-id` header is always present on the response (including
+blocked responses) and is exposed via CORS.
+
+**OpenAI `/v1/chat/completions` (non-streaming):**
+
+```json
+{
+  "id": "chatcmpl-<trace-id>",
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "message": { "role": "assistant", "content": "" },
+      "finish_reason": "content_filter"
+    }
+  ],
+  "usage": { "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0 }
+}
+```
+
+**OpenAI `/v1/chat/completions` (streaming):**
+
+```
+data: {"id":"chatcmpl-<trace-id>","object":"chat.completion.chunk","choices":[{"index":0,"delta":{},"finish_reason":"content_filter"}]}
+
+data: [DONE]
+```
+
+**Anthropic `/v1/messages`:**
+
+```json
+{
+  "id": "msg_<trace-id>",
+  "type": "message",
+  "role": "assistant",
+  "content": [],
+  "model": "<requested-model>",
+  "stop_reason": "refusal",
+  "stop_details": { "type": "refusal" },
+  "usage": { "input_tokens": 0, "output_tokens": 0 }
+}
+```
+
+:::note
+The `fallbackMessage` configured on the project is **not** included in the wire
+response. It is stored on the trace record only and is retrievable via
+`GET /api/traces/:id`. This preserves wire-format compatibility with existing
+OpenAI and Anthropic SDKs that do not expect a text body on content-filter events.
+:::
+
+Use the `x-routerly-trace-id` response header to look up the full trace:
+
+```bash
+curl -s http://localhost:3000/api/traces/$TRACE_ID \
+  -H "Authorization: Bearer <jwt>"
+```
 
 ---
 
@@ -70,7 +132,8 @@ The `model` field can be:
 
 ### Response (non-streaming)
 
-Standard OpenAI `ChatCompletion` object, with an additional header:
+Standard OpenAI `ChatCompletion` object. The `x-routerly-trace-id` header is
+present on every response, including blocked ones, and is exposed via CORS:
 
 ```
 x-routerly-trace-id: 018f3c2a-4b5d-7e8f-9012-34567890abcd

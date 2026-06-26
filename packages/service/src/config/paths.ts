@@ -14,6 +14,7 @@ export const CONFIG_PATHS = {
   roles: join(base, 'config', 'roles.json'),
   usage: join(base, 'data', 'usage.json'),
   notifications: join(base, 'data', 'notifications.json'),
+  audit: join(base, 'data', 'audit.json'),
   secret: join(base, 'config', 'secret'),
 } as const;
 

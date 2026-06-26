@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { scrubPii, scrubMessages } from './piiScrubber.js';
+import { scrubPii, scrubMessages, StreamingScrubber } from './piiScrubber.js';
 import type { PiiConfig } from '@routerly/shared';
 
 const ALL = ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'];
@@ -15,6 +15,25 @@ describe('scrubPii — single entity types', () => {
     const { text, found } = scrubPii('call +1 415-555-1234 now', ['PHONE']);
     expect(text).toContain('[PHONE_NUMBER]');
     expect(found).toEqual(['PHONE']);
+  });
+
+  // BUG-3: international prefix + open paren must be fully masked, not left as "+1 (".
+  it.each([
+    ['+1 (415) 555-2671', 'call +1 (415) 555-2671 today'],
+    ['+44 20 7946 0958', 'ring +44 20 7946 0958 please'],
+    ['415 555 2671', 'dial 415 555 2671 now'],
+  ])('fully redacts international/spaced phone %s', (_num, sentence) => {
+    const { text, found } = scrubPii(sentence, ['PHONE']);
+    expect(text).toContain('[PHONE_NUMBER]');
+    expect(text).not.toMatch(/\d{3}/); // no digit run left in clear
+    expect(text).not.toContain('+1 (');
+    expect(found).toEqual(['PHONE']);
+  });
+
+  it('does not eat digits inside an IBAN when scrubbing PHONE only', () => {
+    const { text, found } = scrubPii('iban DE89370400440532013000 ok', ['PHONE']);
+    expect(text).toBe('iban DE89370400440532013000 ok');
+    expect(found).toEqual([]);
   });
 
   it('redacts CREDIT_CARD', () => {
@@ -62,7 +81,7 @@ describe('scrubPii — selection and combinations', () => {
 });
 
 describe('scrubMessages', () => {
-  const cfg: PiiConfig = { enabled: true };
+  const cfg: PiiConfig = {};
 
   it('scrubs string content across messages and aggregates redacted entities', () => {
     const messages = [
@@ -85,7 +104,7 @@ describe('scrubMessages', () => {
 
   it('respects the entities filter', () => {
     const messages = [{ role: 'user', content: 'a@b.com 123-45-6789' }];
-    const { messages: out, redacted } = scrubMessages(messages, { enabled: true, entities: ['SSN'] });
+    const { messages: out, redacted } = scrubMessages(messages, { entities: ['SSN'] });
     expect((out[0] as any).content).toBe('a@b.com [SSN]');
     expect(redacted).toEqual(['SSN']);
   });
@@ -94,5 +113,106 @@ describe('scrubMessages', () => {
     const messages = [{ role: 'user', content: 'hello world' }];
     const { redacted } = scrubMessages(messages, cfg);
     expect(redacted).toEqual([]);
+  });
+
+  it('applies customPatterns via scrubMessages', () => {
+    const messages = [{ role: 'user', content: 'my token is tok-abc123' }];
+    const { messages: out, redacted } = scrubMessages(messages, {
+      customPatterns: ['tok-[a-z0-9]+'],
+    });
+    expect((out[0] as any).content).toBe('my token is [REDACTED]');
+    expect(redacted).toContain('CUSTOM');
+  });
+});
+
+describe('StreamingScrubber', () => {
+  const cfg = (outputBufferSize?: number): import('@routerly/shared').PiiConfig =>
+    ({ ...(outputBufferSize !== undefined ? { outputBufferSize } : {}) });
+
+  it('catches a pattern wholly within one chunk', () => {
+    const s = new StreamingScrubber(cfg(30));
+    // push a short chunk — under N, so nothing emitted yet
+    s.push('contact ');
+    const out = s.push('a@b.com end');
+    // flush emits the buffer
+    const remaining = s.flush();
+    expect((out + remaining)).toContain('[EMAIL]');
+    expect((out + remaining)).not.toContain('a@b.com');
+  });
+
+  it('catches a pattern split across two pushes with N=30', () => {
+    const s = new StreamingScrubber(cfg(30));
+    // Split "mario@example.com" across two pushes, both halves < 30 chars
+    s.push('contact mario@exa');
+    const out2 = s.push('mple.com today');
+    const remaining = s.flush();
+    const full = out2 + remaining;
+    expect(full).toContain('[EMAIL]');
+    expect(full).not.toContain('mario@example.com');
+  });
+
+  it('documents expected miss: pattern split with first half > N chars', () => {
+    // ponytail: known ceiling — if the first half of a PII token is longer than N,
+    // it will be emitted before the second half arrives. Increase outputBufferSize to fix.
+    const s = new StreamingScrubber(cfg(5)); // tiny buffer
+    const out1 = s.push('mario@example.c'); // 15 chars > 5 → emits 10 chars un-scrubbed
+    s.push('om');
+    const remaining = s.flush();
+    // The address is split at the N boundary so it won't be caught — this is documented behavior
+    const full = out1 + remaining;
+    // We just assert no crash and that output is a string
+    expect(typeof full).toBe('string');
+  });
+
+  it('flush() scrubs and returns remaining buffer', () => {
+    const s = new StreamingScrubber(cfg(30));
+    s.push('hello ');
+    // buffer is 6 chars < 30, nothing emitted
+    const remaining = s.flush();
+    expect(remaining).toBe('hello ');
+  });
+
+  it('empty push returns empty string', () => {
+    const s = new StreamingScrubber(cfg(30));
+    expect(s.push('')).toBe('');
+  });
+
+  it('flush() on fresh scrubber returns empty string', () => {
+    const s = new StreamingScrubber(cfg(30));
+    expect(s.flush()).toBe('');
+  });
+
+  it('resets buffer after flush', () => {
+    const s = new StreamingScrubber(cfg(30));
+    s.push('some text');
+    s.flush();
+    expect(s.flush()).toBe('');
+  });
+});
+
+describe('scrubPii — customPatterns', () => {
+  it('applies a custom regex and adds CUSTOM to found', () => {
+    const { text, found } = scrubPii('my token is tok-abc123', [], ['tok-[a-z0-9]+']);
+    expect(text).toBe('my token is [REDACTED]');
+    expect(found).toContain('CUSTOM');
+  });
+
+  it('silently skips an invalid regex pattern', () => {
+    expect(() =>
+      scrubPii('hello world', [], ['[invalid('])
+    ).not.toThrow();
+    const { text } = scrubPii('hello world', [], ['[invalid(']);
+    expect(text).toBe('hello world');
+  });
+
+  it('reports CUSTOM once for multiple matches of a single pattern', () => {
+    const { found } = scrubPii('tok-aaa tok-bbb', [], ['tok-[a-z]+']);
+    expect(found.filter((f) => f === 'CUSTOM')).toHaveLength(1);
+  });
+
+  it('runs custom patterns after built-in entities', () => {
+    const { text, found } = scrubPii('a@b.com and tok-xyz', ['EMAIL'], ['tok-[a-z]+']);
+    expect(text).toBe('[EMAIL] and [REDACTED]');
+    expect(found.sort()).toEqual(['CUSTOM', 'EMAIL']);
   });
 });

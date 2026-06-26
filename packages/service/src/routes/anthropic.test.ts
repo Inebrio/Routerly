@@ -452,3 +452,89 @@ describe('POST /v1/messages — X-Routerly-Policy override', () => {
     expect(mockRouteRequest).toHaveBeenCalledTimes(1)
   })
 })
+
+// ─── Guardrail block + PII trace wire format (#76/#77) ────────────────────────
+describe('POST /v1/messages — guardrail block & PII output trace', () => {
+  function buildAppWith(project: ProjectConfig) {
+    const app = Fastify({ logger: false })
+    app.decorateRequest('project', null as any)
+    app.decorateRequest('token', null as any)
+    app.addHook('preHandler', async (req: any) => { req.project = project; req.token = undefined })
+    return app.register(anthropicRoutes).then(() => app.ready()).then(() => app)
+  }
+
+  const guardProject: ProjectConfig = {
+    id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+    guardrails: { action: 'block', fallbackMessage: 'nope', rules: [{ type: 'regex', target: 'request', config: { patterns: ['forbidden'] } }] },
+  } as any
+
+  it('request block returns refusal wire format (empty content, stop_reason refusal, stop_details, trace-id header)', async () => {
+    const app = await buildAppWith(guardProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'this is forbidden' }] }),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.content).toEqual([])
+    expect(body.stop_reason).toBe('refusal')
+    expect(body.stop_details).toEqual({ type: 'refusal' })
+    expect(body.content).not.toContainEqual({ type: 'text', text: 'nope' })
+    expect(res.headers['x-routerly-trace-id']).toBeDefined()
+    // trace carries the readable reason for the dashboard
+    const traceCall = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'guardrail:triggered')
+    expect(traceCall).toBeDefined()
+    expect((traceCall![1] as any[])[0].details).toMatchObject({ action: 'block', fallbackMessage: 'nope', target: 'request' })
+    expect(mockLlmMessages).not.toHaveBeenCalled()
+  })
+
+  it('response block returns refusal wire format', async () => {
+    const respGuard: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      guardrails: { action: 'block', fallbackMessage: 'nope', rules: [{ type: 'regex', target: 'response', config: { patterns: ['leak'] } }] },
+    } as any
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmMessages.mockResolvedValue({ id: 'msg-1', type: 'message', role: 'assistant', content: [{ type: 'text', text: 'this is a leak' }], model: 'm1', stop_reason: 'end_turn', usage: { input_tokens: 1, output_tokens: 1 } } as any)
+
+    const app = await buildAppWith(respGuard)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+
+    const body = JSON.parse(res.body)
+    expect(body.content).toEqual([])
+    expect(body.stop_reason).toBe('refusal')
+    expect(body.stop_details).toEqual({ type: 'refusal' })
+  })
+
+  it('PII output scrubbing emits a response pii:scrubbed trace entry', async () => {
+    const piiProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      pii: { scrubOutput: true },
+    } as any
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmMessages.mockResolvedValue({ id: 'msg-1', type: 'message', role: 'assistant', content: [{ type: 'text', text: 'email me at a@b.com' }], model: 'm1', stop_reason: 'end_turn', usage: { input_tokens: 1, output_tokens: 1 } } as any)
+
+    const app = await buildAppWith(piiProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+
+    const body = JSON.parse(res.body)
+    expect(body.content[0].text).toBe('email me at [EMAIL]')
+    const piiTrace = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:scrubbed' && (c[1] as any[])[0]?.panel === 'response')
+    expect(piiTrace).toBeDefined()
+    expect((piiTrace![1] as any[])[0].details.entities).toContain('EMAIL')
+  })
+})

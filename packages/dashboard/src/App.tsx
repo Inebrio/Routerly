@@ -16,6 +16,7 @@ import { ProjectRoutingTab } from './pages/project/ProjectRoutingTab';
 import { ProjectTokenTab } from './pages/project/ProjectTokenTab';
 import { ProjectUsersTab } from './pages/project/ProjectUsersTab';
 import { ProjectLogsTab } from './pages/project/ProjectLogsTab';
+import { ProjectSecurityTab } from './pages/project/ProjectSecurityTab';
 import { ProjectTokenCreatePage } from './pages/project/ProjectTokenCreatePage';
 import { ProjectTokenEditPage } from './pages/project/ProjectTokenEditPage';
 import { UsersPage } from './pages/UsersPage';
@@ -31,6 +32,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { UserEditPage } from './pages/UserEditPage';
 import { HelpPage } from './pages/HelpPage';
 import { ModelDiscoveryPage } from './pages/ModelDiscoveryPage';
+import { AuditPage } from './pages/AuditPage';
 import { LayoutDashboard, Cpu, FolderOpen, BarChart2, Activity, Trophy, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Logo } from './components/Logo';
 import { NotificationBell } from './components/NotificationBell';
@@ -374,6 +376,7 @@ const router = createBrowserRouter([
               { path: 'token', element: <ProjectTokenTab /> },
               { path: 'users', element: <ProjectUsersTab /> },
               { path: 'logs', element: <ProjectLogsTab /> },
+              { path: 'security', element: <ProjectSecurityTab /> },
             ],
           },
           { path: 'usage', element: <UsagePage /> },
@@ -390,6 +393,7 @@ const router = createBrowserRouter([
               { path: 'users', element: <UsersPage /> },
               { path: 'users/:userId', element: <UserEditPage /> },
               { path: 'roles', element: <RolesPage /> },
+              { path: 'audit', element: <AuditPage /> },
               { path: 'about', element: <SettingsAboutTab /> },
             ],
           },
