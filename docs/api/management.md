@@ -731,23 +731,97 @@ PUT /api/settings
 
 ---
 
-## Notifications
+## Notifications {#notification-channels}
 
-### Test a Notification Channel
+### List Channels
 
 ```
-POST /api/notifications/test
+GET /api/notifications/channels
 ```
 
+**Auth**: `Authorization: Bearer <jwt>` (requires `user:write`)
+
+Returns the configured notification channels array.
+
+### Create Channel
+
+```
+POST /api/notifications/channels
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `user:write`)
+
+**Request body**
 ```json
-{ "channelName": "my-smtp" }
+{
+  "provider": "dashboard",
+  "name": "Budget Alerts",
+  "events": ["budget.*"],
+  "targets": {
+    "roles": ["admin"],
+    "permissions": [],
+    "users": ["user-uuid"]
+  }
+}
 ```
 
-Returns `200 OK` on success or an error with details.
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `provider` | string | yes | Channel type: `smtp`, `ses`, `sendgrid`, `azure`, `google`, `webhook`, `slack`, `teams`, `pagerduty`, `discord`, `dashboard` |
+| `name` | string | no | Friendly label shown in the UI |
+| `events` | string[] | no | Event patterns routed to this channel (empty = all). Supports exact names, `*`, and prefix globs like `budget.*` |
+| `targets` | object | no | `{ roles, permissions, users }` — who receives (empty = everyone). Controls inbox visibility for `dashboard` and recipient resolution for email channels; ignored for webhook/native channels |
+
+Provider-specific fields (e.g. `host`, `apiKey`, `botToken`) pass through alongside these base fields.
+
+**Response `201`**
+```json
+{
+  "id": "abc-uuid",
+  "provider": "dashboard",
+  "name": "Budget Alerts",
+  "events": ["budget.*"],
+  "targets": { "roles": ["admin"] }
+}
+```
+
+**Errors**: `400` invalid body (unknown provider, bad targets shape) · `403` insufficient permissions
+
+### Delete Channel
+
+```
+DELETE /api/notifications/channels/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `user:write`)
+
+**Response**: `204 No Content`
+
+**Errors**: `404` channel not found · `403` insufficient permissions
+
+### Test Channel
+
+```
+POST /api/notifications/channels/:id/test
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `user:write`)
+
+**Request body** (optional)
+```json
+{ "to": "override-recipient@example.com" }
+```
+
+**Response `200`**
+```json
+{ "ok": true, "message": "Test notification sent" }
+```
+
+**Errors**: `404` channel not found · `400` send failed (details in `message`)
 
 ### Notifications Inbox {#notifications-inbox}
 
-The in-app notification inbox is per-user and available to any authenticated dashboard user (no special permission required).
+The in-app notification inbox is per-user and available to any authenticated dashboard user (no special permission required). Returns only items for the current user (matched by the `targets` of the `dashboard` channel that created each item, or all items when no targeting was configured).
 
 ```
 GET /api/notifications/inbox?limit=50&unreadOnly=false
@@ -795,6 +869,18 @@ Returns `400` if neither is provided.
 ```json
 { "updated": 2 }
 ```
+
+### Test (legacy endpoint)
+
+```
+POST /api/notifications/test
+```
+
+```json
+{ "channelId": "abc-uuid" }
+```
+
+Returns `200 OK` on success or an error with details. Prefer `POST /api/notifications/channels/:id/test`.
 
 ---
 
