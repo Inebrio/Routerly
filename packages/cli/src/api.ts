@@ -18,8 +18,9 @@ async function request<T>(
   const res = await fetch(url, {
     method,
     headers: {
-      'Content-Type': 'application/json',
       'Authorization': `Bearer ${account.token}`,
+      // ponytail: only set Content-Type when there is a body; Fastify rejects empty JSON bodies
+      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
     },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });

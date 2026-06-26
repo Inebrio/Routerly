@@ -128,4 +128,167 @@ describe('routerly model discover', () => {
     spy.mockRestore();
     expect(lines.some(l => l.includes('not available'))).toBe(true);
   });
+
+  it('prints error and exits 1 on non-404 error', async () => {
+    mockApi.mockRejectedValue(new Error('boom'));
+    const errLines: string[] = [];
+    vi.spyOn(console, 'error').mockImplementation((...a) => { errLines.push(a.map(String).join(' ')); });
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => { throw new Error('exit'); }) as never);
+    const cmd = makeModelCommand();
+    cmd.exitOverride();
+    await expect(cmd.parseAsync(['node', 'model', 'discover'])).rejects.toThrow('exit');
+    expect(errLines.join(' ')).toContain('boom');
+    exitSpy.mockRestore();
+  });
+
+  it('prints message when filter yields no results', async () => {
+    mockApi.mockResolvedValue(catalogFixture);
+    const { lines, spy } = captureConsole();
+    await run('discover', '--provider', 'nonexistent');
+    spy.mockRestore();
+    expect(lines.join('\n')).toContain('No models found');
+  });
+
+  it('formats large contextWindow as M', async () => {
+    mockApi.mockResolvedValue([
+      { id: 'gemini-1.5', provider: 'google', name: 'Gemini 1.5', contextWindow: 2_000_000, modalities: ['text'], pricing: { inputPer1kTokens: 0.001, outputPer1kTokens: 0.002 }, isConfigured: false },
+    ]);
+    const { lines, spy } = captureConsole();
+    await run('discover');
+    spy.mockRestore();
+    expect(lines.join('\n')).toMatch(/\dM/);
+  });
+});
+
+// ── model add (new provider options) ─────────────────────────────────────────
+
+describe('routerly model add azure-openai provider', () => {
+  it('sends azure fields when provided', async () => {
+    mockApi.mockResolvedValue({});
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await run(
+      'add',
+      '--id', 'my-azure-model',
+      '--provider', 'azure-openai',
+      '--azure-resource', 'my-resource',
+      '--azure-deployment', 'dep-123',
+      '--azure-api-version', '2024-05-01',
+    );
+    logSpy.mockRestore();
+    const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
+    expect(body['azureResourceName']).toBe('my-resource');
+    expect(body['azureDeploymentId']).toBe('dep-123');
+    expect(body['azureApiVersion']).toBe('2024-05-01');
+  });
+});
+
+describe('routerly model add bedrock provider', () => {
+  it('sends aws fields when provided', async () => {
+    mockApi.mockResolvedValue({});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    await run(
+      'add',
+      '--id', 'my-bedrock-model',
+      '--provider', 'bedrock',
+      '--aws-region', 'us-east-1',
+      '--aws-key-id', 'AKIAIOSFODNN7EXAMPLE',
+      '--aws-secret', 'wJalrXUtnFEMI/K7MDENG',
+    );
+    const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
+    expect(body['awsRegion']).toBe('us-east-1');
+    expect(body['awsAccessKeyId']).toBe('AKIAIOSFODNN7EXAMPLE');
+    expect(body['awsSecretAccessKey']).toBe('wJalrXUtnFEMI/K7MDENG');
+  });
+});
+
+describe('routerly model add vertex provider', () => {
+  it('sends vertex fields when provided', async () => {
+    mockApi.mockResolvedValue({});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    await run(
+      'add',
+      '--id', 'my-vertex-model',
+      '--provider', 'vertex',
+      '--vertex-project', 'my-gcp-project',
+      '--vertex-location', 'us-central1',
+    );
+    const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
+    expect(body['vertexProjectId']).toBe('my-gcp-project');
+    expect(body['vertexLocation']).toBe('us-central1');
+  });
+
+  it('exits 1 when SA key file cannot be read', async () => {
+    const errLines: string[] = [];
+    vi.spyOn(console, 'error').mockImplementation((...a) => { errLines.push(a.map(String).join(' ')); });
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => { throw new Error('exit'); }) as never);
+
+    const cmd = makeModelCommand();
+    // Do NOT call exitOverride so process.exit spy works
+    await expect(
+      cmd.parseAsync(['node', 'model', 'add', '--id', 'v', '--provider', 'vertex', '--vertex-sa-key', '/nonexistent/path.json'])
+    ).rejects.toThrow('exit');
+    expect(errLines.join(' ')).toContain('Cannot read service account key file');
+    exitSpy.mockRestore();
+  });
+});
+
+// ── model set-caching ─────────────────────────────────────────────────────────
+
+describe('routerly model set-caching', () => {
+  it('sets caching mode to auto', async () => {
+    mockApi.mockResolvedValue(undefined);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await run('set-caching', 'gpt-4o', 'auto');
+    logSpy.mockRestore();
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/models/gpt-4o', { promptCaching: 'auto' });
+  });
+
+  it('sets caching mode to passthrough', async () => {
+    mockApi.mockResolvedValue(undefined);
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    await run('set-caching', 'gpt-4o', 'passthrough');
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/models/gpt-4o', { promptCaching: 'passthrough' });
+  });
+
+  it('sets caching mode to disabled', async () => {
+    mockApi.mockResolvedValue(undefined);
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    await run('set-caching', 'gpt-4o', 'disabled');
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/models/gpt-4o', { promptCaching: 'disabled' });
+  });
+
+  it('exits 1 on invalid mode', async () => {
+    const errLines: string[] = [];
+    vi.spyOn(console, 'error').mockImplementation((...a) => { errLines.push(a.map(String).join(' ')); });
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => { throw new Error('exit'); }) as never);
+    const cmd = makeModelCommand();
+    cmd.exitOverride();
+    await expect(cmd.parseAsync(['node', 'model', 'set-caching', 'gpt-4o', 'badmode'])).rejects.toThrow('exit');
+    expect(errLines.join(' ')).toContain('Invalid mode');
+    exitSpy.mockRestore();
+  });
+
+  it('exits 1 with 404 error (model not found)', async () => {
+    mockApi.mockRejectedValue(new ApiError(404, 'Not Found'));
+    const errLines: string[] = [];
+    vi.spyOn(console, 'error').mockImplementation((...a) => { errLines.push(a.map(String).join(' ')); });
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => { throw new Error('exit'); }) as never);
+    const cmd = makeModelCommand();
+    cmd.exitOverride();
+    await expect(cmd.parseAsync(['node', 'model', 'set-caching', 'gpt-4o', 'auto'])).rejects.toThrow('exit');
+    expect(errLines.join(' ')).toContain('not found');
+    exitSpy.mockRestore();
+  });
+
+  it('exits 1 with generic error', async () => {
+    mockApi.mockRejectedValue(new Error('network'));
+    const errLines: string[] = [];
+    vi.spyOn(console, 'error').mockImplementation((...a) => { errLines.push(a.map(String).join(' ')); });
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => { throw new Error('exit'); }) as never);
+    const cmd = makeModelCommand();
+    cmd.exitOverride();
+    await expect(cmd.parseAsync(['node', 'model', 'set-caching', 'gpt-4o', 'auto'])).rejects.toThrow('exit');
+    expect(errLines.join(' ')).toContain('network');
+    exitSpy.mockRestore();
+  });
 });

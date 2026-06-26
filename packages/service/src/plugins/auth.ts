@@ -12,6 +12,27 @@ declare module 'fastify' {
 }
 
 /**
+ * Extract the project token from the request headers, accepting either auth
+ * style so SDK clients work drop-in (wire transparency, CLAUDE.md):
+ *  - `Authorization: Bearer <token>` (OpenAI SDK), takes precedence;
+ *  - `x-api-key: <token>` (Anthropic SDK).
+ * Returns null if neither carries a usable token.
+ */
+export function extractProjectToken(
+  headers: Record<string, string | string[] | undefined>,
+): string | null {
+  const authHeader = headers['authorization'];
+  if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+    const t = authHeader.slice(7).trim();
+    if (t) return t;
+  }
+  const apiKey = headers['x-api-key'];
+  const key = Array.isArray(apiKey) ? apiKey[0] : apiKey;
+  if (typeof key === 'string' && key.trim()) return key.trim();
+  return null;
+}
+
+/**
  * Resolve a raw bearer token to its owning project and token entry.
  * Returns null if no project owns the token. Shared by the auth preHandler
  * and the pass-through proxy handler so both authenticate identically.
@@ -39,15 +60,13 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
     const url = request.url;
     if (url === '/' || url === '/health' || url === '/metrics' || url.startsWith('/dashboard') || url.startsWith('/api/')) return;
 
-    const authHeader = request.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
+    const incomingToken = extractProjectToken(request.headers);
+    if (!incomingToken) {
       return reply.status(401).send({
         error: 'unauthorized',
         message: 'Missing or invalid Authorization header. Expected: Bearer <project-token>',
       });
     }
-
-    const incomingToken = authHeader.slice(7).trim();
 
     const resolved = await resolveProjectByToken(incomingToken);
     if (resolved) {

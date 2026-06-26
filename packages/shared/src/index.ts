@@ -60,7 +60,10 @@ export type {
   TeamsChannelConfig,
   PagerDutyChannelConfig,
   DiscordChannelConfig,
+  DashboardChannelConfig,
+  ChannelTargets,
   NativeProvider,
+  ChannelProvider,
   NotificationChannel,
   CallOutcome,
   CallType,
@@ -101,6 +104,10 @@ export type {
 } from './types/anthropic.js';
 
 export type { RoutingCandidate, RoutingResponse } from './types/routing.js';
+
+// Notification event taxonomy (runtime value + derived type)
+export { NOTIFICATION_EVENTS } from './types/config.js';
+export type { NotificationEvent } from './types/config.js';
 
 // Static configuration data
 import providersConf from './conf/providers.json' with { type: 'json' };

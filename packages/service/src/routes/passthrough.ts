@@ -2,7 +2,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Readable } from 'node:stream';
 import type { ModelConfig, ProjectConfig } from '@routerly/shared';
 import { readConfig } from '../config/loader.js';
-import { resolveProjectByToken } from '../plugins/auth.js';
+import { resolveProjectByToken, extractProjectToken } from '../plugins/auth.js';
 
 /**
  * Transparent pass-through proxy.
@@ -131,14 +131,14 @@ export async function passthroughHandler(
   // resolve here too as a safeguard for the not-found lifecycle.
   let project = request.project;
   if (!project) {
-    const authHeader = request.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
+    const incomingToken = extractProjectToken(request.headers);
+    if (!incomingToken) {
       return reply.code(401).send({
         error: 'unauthorized',
         message: 'Missing or invalid Authorization header. Expected: Bearer <project-token>',
       });
     }
-    const resolved = await resolveProjectByToken(authHeader.slice(7).trim());
+    const resolved = await resolveProjectByToken(incomingToken);
     if (!resolved) {
       return reply.code(401).send({ error: 'unauthorized', message: 'Invalid project token.' });
     }

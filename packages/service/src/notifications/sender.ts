@@ -257,30 +257,40 @@ export async function sendTestNotification(
                       return { ok: true, message: 'Test event triggered via PagerDuty.' };
     case 'discord':   await sendDiscord(channel, TEST_NATIVE_PAYLOAD);
                       return { ok: true, message: 'Test message sent via Discord.' };
+    case 'dashboard': return { ok: true, message: 'Dashboard channel delivers to the in-app inbox; nothing to send.' };
     default:          throw new Error(`Unknown provider: ${String((channel as { provider: string }).provider)}`);
   }
 }
 
 /**
- * Dispatches a real system event to a configured channel (#89/#90).
- * Email channels send to their own `fromAddress`; webhook channels POST the
- * structured event payload. Throws on failure (caller should catch per-channel).
+ * Dispatches a real system event to a configured channel (#89/#90, targets U5).
+ * Email channels send to the resolved target emails (`recipients`, comma-joined)
+ * or fall back to their own `fromAddress` when untargeted. Webhook/native
+ * delivery endpoints are fixed — `recipients` does not change their delivery.
+ * Throws on failure (caller should catch per-channel).
  */
 export async function dispatchNotification(
   channel: NotificationChannel,
   payload: { event: string; severity: string; timestamp: string; details: Record<string, unknown> },
+  recipients?: string[],
 ): Promise<SendResult> {
   const subject = `Routerly [${payload.severity}] ${payload.event}`;
   const text    = `${payload.event} (${payload.severity}) at ${payload.timestamp}\n\n${JSON.stringify(payload.details, null, 2)}`;
   const content: MessageContent = { subject, text, payload: payload as unknown as Record<string, unknown> };
   switch (channel.provider) {
-    case 'smtp':     return sendSmtp(channel, channel.fromAddress, content);
-    case 'ses':      return sendSes(channel, channel.fromAddress, content);
-    case 'sendgrid': return sendSendGrid(channel, channel.fromAddress, content);
-    case 'azure':    return sendAzure(channel, channel.fromAddress, content);
-    case 'google':   return sendGoogle(channel, channel.fromAddress, content);
-    case 'webhook':  return sendWebhook(channel, content);
+    case 'smtp':     return sendSmtp(channel, emailTo(channel.fromAddress, recipients), content);
+    case 'ses':      return sendSes(channel, emailTo(channel.fromAddress, recipients), content);
+    case 'sendgrid': return sendSendGrid(channel, emailTo(channel.fromAddress, recipients), content);
+    case 'azure':    return sendAzure(channel, emailTo(channel.fromAddress, recipients), content);
+    case 'google':   return sendGoogle(channel, emailTo(channel.fromAddress, recipients), content);
+    case 'webhook':  return sendWebhook(channel, content); // targets ignored for delivery
+    // slack/teams/pagerduty/discord/dashboard never reach here (filtered by emitter)
     default:         throw new Error(`Unknown provider: ${String((channel as { provider: string }).provider)}`);
   }
+}
+
+/** Comma-joined recipient list, or the channel's fromAddress when untargeted. */
+function emailTo(fromAddress: string, recipients?: string[]): string {
+  return recipients && recipients.length > 0 ? recipients.join(', ') : fromAddress;
 }
 

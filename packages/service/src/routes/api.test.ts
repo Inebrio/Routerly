@@ -5260,6 +5260,235 @@ describe('POST /api/notifications/inbox/read', () => {
   })
 })
 
+// ─── Notification inbox per-user audience (U5) ───────────────────────────────
+describe('GET /api/notifications/inbox audience filter (U5)', () => {
+  const inbox = [
+    { id: 'all', event: 'a', severity: 'info', timestamp: '2026-01-03T00:00:00.000Z', details: {}, readBy: [] },
+    { id: 'mine', event: 'b', severity: 'info', timestamp: '2026-01-02T00:00:00.000Z', details: {}, readBy: [], recipients: ['admin-id'] },
+    { id: 'theirs', event: 'c', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [], recipients: ['other-id'] },
+  ]
+  function setup() {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'notifications') return inbox.map(n => ({ ...n, readBy: [...n.readBy] }))
+      return []
+    })
+  }
+
+  it('returns items addressed to everyone or to the current user, hides others', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox', headers: adminAuthHeaders() })
+    await app.close()
+    const body = JSON.parse(res.body)
+    const ids = body.items.map((i: any) => i.id)
+    expect(ids).toContain('all')
+    expect(ids).toContain('mine')
+    expect(ids).not.toContain('theirs')
+    expect(body.unreadCount).toBe(2)
+  })
+})
+
+describe('POST /api/notifications/inbox/read audience filter (U5)', () => {
+  it('does not mark items the user cannot see', async () => {
+    const items = [
+      { id: 'mine', event: 'b', severity: 'info', timestamp: '2026-01-02T00:00:00.000Z', details: {}, readBy: [], recipients: ['admin-id'] },
+      { id: 'theirs', event: 'c', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [], recipients: ['other-id'] },
+    ]
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'notifications') return items
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/read',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ all: true }),
+    })
+    await app.close()
+    expect(JSON.parse(res.body).updated).toBe(1)
+    expect(items.find(n => n.id === 'theirs')!.readBy).not.toContain('admin-id')
+  })
+})
+
+// ─── Notification channels Zod validation (U5) ────────────────────────────────
+describe('POST /api/notifications/channels (U5 validation)', () => {
+  function setup() {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'settings') return { notifications: { channels: [], notificationRules: [{ events: ['x'], channels: ['keep'] }] } }
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+  }
+
+  it('accepts a dashboard channel with events and targets', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/channels',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ provider: 'dashboard', name: 'Inbox', events: ['config.*'], targets: { roles: ['admin'] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const body = JSON.parse(res.body)
+    expect(body.provider).toBe('dashboard')
+    expect(body.id).toBeDefined()
+    // notificationRules preserved on write
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')![1] as any
+    expect(written.notifications.notificationRules).toHaveLength(1)
+  })
+
+  it('rejects an unknown provider', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/channels',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ provider: 'pigeon' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('rejects garbage targets shape', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/channels',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ provider: 'dashboard', targets: { roles: 'admin' } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('returns 403 without user:write', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [{ ...adminUser, id: 'viewer-id', roleId: 'viewer' }]
+      if (type === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/channels',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ provider: 'dashboard' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+describe('PUT /api/settings notifications validation (U5)', () => {
+  function setup() {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'settings') return { logLevel: 'info' }
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+  }
+
+  it('accepts a notifications config with dashboard channel + events + targets', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ notifications: { channels: [{ id: 'd', provider: 'dashboard', events: ['config.*'], targets: { roles: ['admin'] } }] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('rejects a notifications config with a bad channel provider', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ notifications: { channels: [{ id: 'd', provider: 'pigeon' }] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('rejects an over-cap events array (>50)', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ notifications: { channels: [{ id: 'd', provider: 'dashboard', events: Array.from({ length: 51 }, (_, i) => `e${i}`) }] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('rejects an invalid permission in targets', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ notifications: { channels: [{ id: 'd', provider: 'dashboard', targets: { permissions: ['not:a:perm'] } }] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('accepts a valid permission in targets', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ notifications: { channels: [{ id: 'd', provider: 'dashboard', targets: { permissions: ['user:write'] } }] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('rejects over-cap channels array (>100)', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ notifications: { channels: Array.from({ length: 101 }, (_, i) => ({ id: `d${i}`, provider: 'dashboard' })) } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('rejects over-cap cooldowns record (>100 keys)', async () => {
+    setup()
+    const cooldowns: Record<string, string> = {}
+    for (let i = 0; i < 101; i++) cooldowns[`e${i}`] = '1m'
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ notifications: { channels: [], cooldowns } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+})
+
 // ─── Playground presets (#99) ─────────────────────────────────────────────────
 
 describe('GET /api/projects/:id/playground-presets', () => {

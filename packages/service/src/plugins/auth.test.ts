@@ -6,7 +6,7 @@ vi.mock('../config/loader.js', () => ({
   writeConfig: vi.fn().mockResolvedValue(undefined),
 }))
 
-import authPlugin from './auth.js'
+import authPlugin, { extractProjectToken } from './auth.js'
 import { readConfig, writeConfig } from '../config/loader.js'
 import type { ProjectConfig } from '@routerly/shared'
 
@@ -35,6 +35,29 @@ async function buildApp() {
   await app.ready()
   return app
 }
+
+describe('extractProjectToken', () => {
+  it('reads Bearer token', () => {
+    expect(extractProjectToken({ authorization: 'Bearer abc' })).toBe('abc')
+  })
+  it('reads x-api-key', () => {
+    expect(extractProjectToken({ 'x-api-key': 'key123' })).toBe('key123')
+  })
+  it('Bearer precedence over x-api-key', () => {
+    expect(extractProjectToken({ authorization: 'Bearer a', 'x-api-key': 'b' })).toBe('a')
+  })
+  it('handles array-valued x-api-key', () => {
+    expect(extractProjectToken({ 'x-api-key': ['k1', 'k2'] })).toBe('k1')
+  })
+  it('empty Bearer falls through to x-api-key', () => {
+    expect(extractProjectToken({ authorization: 'Bearer    ', 'x-api-key': 'k' })).toBe('k')
+  })
+  it('returns null when neither present', () => {
+    expect(extractProjectToken({})).toBeNull()
+    expect(extractProjectToken({ authorization: 'Basic x' })).toBeNull()
+    expect(extractProjectToken({ 'x-api-key': '   ' })).toBeNull()
+  })
+})
 
 describe('authPlugin', () => {
   it('allows requests to /health without auth', async () => {
@@ -108,6 +131,59 @@ describe('authPlugin', () => {
     })
     expect(res.statusCode).toBe(200)
     expect(res.json().project).toBe('proj-1')
+    expect(res.json().token).toBe('valid-token-123')
+    await app.close()
+  })
+
+  it('authenticates via x-api-key header (Anthropic SDK style)', async () => {
+    mockReadConfig.mockResolvedValue([testProject])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/chat/completions',
+      headers: { 'x-api-key': 'valid-token-123' },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().project).toBe('proj-1')
+    expect(res.json().token).toBe('valid-token-123')
+    await app.close()
+  })
+
+  it('returns 401 for invalid x-api-key', async () => {
+    mockReadConfig.mockResolvedValue([testProject])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/chat/completions',
+      headers: { 'x-api-key': 'nope' },
+    })
+    expect(res.statusCode).toBe(401)
+    expect(res.json().message).toContain('Invalid project token')
+    await app.close()
+  })
+
+  it('Bearer takes precedence over x-api-key when both present', async () => {
+    mockReadConfig.mockResolvedValue([testProject])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/chat/completions',
+      headers: { authorization: 'Bearer valid-token-123', 'x-api-key': 'another-token' },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().token).toBe('valid-token-123')
+    await app.close()
+  })
+
+  it('falls back to x-api-key when Authorization is not Bearer', async () => {
+    mockReadConfig.mockResolvedValue([testProject])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/chat/completions',
+      headers: { authorization: 'Basic abc', 'x-api-key': 'valid-token-123' },
+    })
+    expect(res.statusCode).toBe(200)
     expect(res.json().token).toBe('valid-token-123')
     await app.close()
   })

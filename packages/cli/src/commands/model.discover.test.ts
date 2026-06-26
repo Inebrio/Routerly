@@ -113,7 +113,7 @@ describe('routerly model discover', () => {
 
     restore();
     const out = lines.join('\n');
-    expect(out).toContain('local/free');
+    expect(out).toContain('free/local');
   });
 
   it('prints 404-safe message if endpoint is unavailable', async () => {

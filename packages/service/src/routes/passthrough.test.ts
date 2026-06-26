@@ -308,6 +308,29 @@ describe('passthroughHandler', () => {
     expect(res.statusCode).toBe(401)
   })
 
+  it('resolves project from x-api-key header (Anthropic SDK style) when request.project is null', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(
+      new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }),
+    )
+    vi.stubGlobal('fetch', mockFetch)
+
+    mockResolveToken.mockResolvedValue({ project: testProject, token: testProject.tokens[0]! })
+    mockReadConfig.mockResolvedValue([openaiModel])
+
+    const app = await buildApp(null)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/messages',
+      headers: { 'x-api-key': 'valid-token', 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [] }),
+    })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(res.statusCode).toBe(200)
+    expect(mockResolveToken).toHaveBeenCalledWith('valid-token')
+  })
+
   it('resolves project from token when request.project is null', async () => {
     const mockFetch = vi.fn().mockResolvedValue(
       new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }),
