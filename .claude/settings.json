@@ -1,0 +1,64 @@
+{
+  "model": "opus",
+  "enabledPlugins": {
+    "ponytail@ponytail": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(bash .claude/*)",
+      "Bash(npm run build*)",
+      "Bash(npm run dev*)",
+      "Bash(npm run lint*)",
+      "Bash(npm run format*)",
+      "Bash(npm run typecheck*)",
+      "Bash(npm test*)",
+      "Bash(node -v*)",
+      "Bash(uname*)",
+      "Bash(ls*)",
+      "Bash(find . *)",
+      "Bash(grep *)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)"
+    ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/verify-reminder.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/notify-done.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/stop-verify-check.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/block-danger.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
