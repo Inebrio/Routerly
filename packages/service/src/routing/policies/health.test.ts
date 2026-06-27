@@ -20,7 +20,7 @@ function makeModel(id: string): ModelConfig {
   }
 }
 
-function makeRecord(modelId: string, minutesAgo: number, outcome: 'success' | 'error' | 'timeout'): UsageRecord {
+function makeRecord(modelId: string, minutesAgo: number, outcome: 'success' | 'error' | 'timeout' | 'blocked'): UsageRecord {
   return {
     id: `r-${modelId}-${minutesAgo}-${outcome}`,
     timestamp: new Date(Date.now() - minutesAgo * 60_000).toISOString(),
@@ -119,5 +119,20 @@ describe('healthPolicy', () => {
     ])
     const result = await healthPolicy(makeInput([{ model: makeModel('a') }]))
     expect(result.excludes).toBeUndefined()
+  })
+
+  it('excludes guardrail-blocked records from the health window (#77)', async () => {
+    // A blocked record never ran the model — it must not enter the window, so it
+    // neither counts as a call nor dilutes the error-rate denominator.
+    mockReadConfig.mockResolvedValue([
+      makeRecord('a', 1, 'error'),
+      makeRecord('a', 2, 'blocked'),
+      makeRecord('a', 3, 'blocked'),
+    ])
+    const result = await healthPolicy(makeInput([{ model: makeModel('a') }]))
+    // Only the error is in the window — recentCalls is 1, not 3.
+    expect(result.routing[0]!.recentCalls).toBe(1)
+    // With the single (error) record in-window, weighted error rate is 1.
+    expect(result.routing[0]!.weightedErrorRate).toBe(1)
   })
 })

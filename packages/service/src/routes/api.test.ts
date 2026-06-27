@@ -4701,6 +4701,26 @@ describe('GET /api/leaderboard', () => {
     expect(e.errorRate).toBeCloseTo(0.25)
   })
 
+  it('excludes guardrail-blocked records from the leaderboard error rate (#77)', async () => {
+    // 2 successes + 1 blocked (zero cost, never ran the model). The block must not
+    // count toward totalRequests nor errorRate — same as the usage summary + health.
+    setupLb(
+      [{ id: 'm', name: 'M', provider: 'openai' }],
+      [
+        rec({ outcome: 'success' }),
+        rec({ outcome: 'success' }),
+        rec({ outcome: 'blocked', callType: 'guardrail', cost: 0, inputTokens: 0, outputTokens: 0, latencyMs: 0 }),
+      ],
+    )
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard', headers: adminAuthHeaders() })
+    await app.close()
+    const e = res.json()[0]
+    expect(e.totalRequests).toBe(2)      // blocked excluded from the denominator
+    expect(e.successRate).toBe(1)        // not depressed by the block
+    expect(e.errorRate).toBe(0)          // block is not an error
+  })
+
   it('ranks by cost-performance ratio (best first)', async () => {
     setupLb(
       [

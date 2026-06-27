@@ -1636,6 +1636,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     };
     const byModel = new Map<string, Acc>();
     for (const r of filtered) {
+      // A guardrail-blocked request never ran on the model — exclude it from both
+      // the denominator and the error count, consistent with usage summary + health (#77).
+      if (r.outcome === 'blocked') continue;
       const a = byModel.get(r.modelId) ?? {
         totalRequests: 0, success: 0, totalCost: 0, totalTokens: 0,
         latencies: [], totalLatencyMs: 0, trend: {},
