@@ -5,19 +5,15 @@ sidebar_position: 5
 
 # Dashboard: Usage
 
-The Usage page provides aggregate analytics and per-request logs across all projects. Use it to understand spending patterns, investigate errors, and drill into individual request traces.
-
-The page has two tabs: **Usage** (call logs and statistics) and **Leaderboard** (model performance ranking).
+The Usage page provides aggregate analytics, per-model performance breakdown, and per-request logs across all projects. Use it to understand spending patterns, investigate errors, and drill into individual request traces.
 
 ---
 
-## Usage Tab
-
-### Summary Statistics
+## Summary Statistics
 
 The top row shows aggregated totals for the selected filter set:
 
-![Usage page showing summary cards and type filter with Guardrail option](../assets/screenshot-usage.png)
+![Usage page showing summary cards, filters, per-model breakdown, and call log](../assets/screenshot-usage.png)
 
 | Card | Description |
 |------|-------------|
@@ -27,23 +23,53 @@ The top row shows aggregated totals for the selected filter set:
 | **Router Calls** | LLM routing policy calls (e.g. the `llm` routing policy), with cost |
 | **Guardrail Calls** | Model calls made by security rules (semantic, topic, moderation), with cost |
 | **Blocked Calls** | Requests blocked by a guardrail rule before reaching any model. Shown only when at least one blocked call exists in the period. |
-| **Errors** | Failed model calls — blocked calls are counted separately and excluded from this number |
+| **Errors** | Failed model calls -- blocked calls are counted separately and excluded from this number |
 
 Guardrail judge calls are charged to the project like any other model call and are subject to the project's budget limits. Blocked requests record zero cost and zero tokens.
 
-### Filters
+---
+
+## Filters
 
 | Filter | Description |
 |--------|-------------|
 | **Period** | Preset time window (today, this month, etc.) or custom range |
 | **Project** | Filter to a specific project |
 | **Model** | Filter to specific model IDs |
-| **Type** | `All`, `Completion`, `Router`, or `Guardrail` — filters by call sub-activity type |
-| **Status** | `All`, `Success`, `Blocked`, or `Error` — `Blocked` shows only guardrail-blocked requests |
+| **Type** | `All`, `Completion`, `Router`, or `Guardrail` -- filters by call sub-activity type |
+| **Status** | `All`, `Success`, `Blocked`, or `Error` -- `Blocked` shows only guardrail-blocked requests |
 
-Filters are applied immediately; the page updates in real time.
+Filters are applied immediately and affect the summary cards, the per-model breakdown table, and the request log simultaneously.
 
-### Usage Table
+---
+
+## Per-Model Breakdown
+
+Below the summary cards, a table ranks all models that received traffic in the selected period.
+
+| Column | Description |
+|--------|-------------|
+| **Model** | Provider model identifier |
+| **Provider** | Provider name |
+| **Calls** | Total requests in the period |
+| **Errors** | Failed calls |
+| **Success Rate** | Percentage of successful completions |
+| **Avg Latency** | Mean response time |
+| **P95 Latency** | 95th-percentile response time |
+| **Input Tokens** | Total input tokens consumed |
+| **Output Tokens** | Total output tokens produced |
+| **Last Used** | Timestamp of the most recent call |
+| **Total Cost** | Total spend for this model in the period |
+
+A star marks the model with the best cost-performance ratio based on your own traffic. The table respects all active filters.
+
+:::note Redirected from /dashboard/leaderboard
+The standalone Leaderboard page has been merged into this page. `/dashboard/leaderboard` redirects to `/dashboard/usage`.
+:::
+
+---
+
+## Usage Table
 
 The table lists individual requests with:
 
@@ -73,28 +99,28 @@ Click any row to open the full **Trace view**.
 
 The trace view shows the complete lifecycle of a single request:
 
-1. **Router Request** — the routing engine's input: the project slug, requested model (if any), and active policies
-2. **Router Response** — which model was selected and why (policy scores listed)
-3. **Model Request** — the actual payload sent to the provider
-4. **Model Response** — the raw provider response including all tokens and finish reason
+1. **Router Request** -- the routing engine's input: the project slug, requested model (if any), and active policies
+2. **Router Response** -- which model was selected and why (policy scores listed)
+3. **Model Request** -- the actual payload sent to the provider
+4. **Model Response** -- the raw provider response including all tokens and finish reason
 
 The trace also includes guardrail and PII entries when those features are active:
 
 | Trace entry | When |
 |-------------|------|
-| `guardrail:evaluated` | After every guardrail check — shows each rule's `outcome` (`passed`, `triggered`, or `skipped`) and `reason`, even when no rule fires |
+| `guardrail:evaluated` | After every guardrail check -- shows each rule's `outcome` (`passed`, `triggered`, or `skipped`) and `reason`, even when no rule fires |
 | `guardrail:triggered` | A request-side rule matched (action `flag`/`log`; request continued) |
 | `guardrail:response-triggered` | A response-side rule matched |
 | `pii:scrubbed` | PII was detected and replaced in the request or response |
 
-For a **blocked** request (`action: block`), the trace includes the `guardrail:evaluated` entry and the `fallbackMessage`. The fallback message is stored on the trace only — it is not included in the wire response sent to the client.
+For a **blocked** request (`action: block`), the trace includes the `guardrail:evaluated` entry and the `fallbackMessage`. The fallback message is stored on the trace only -- it is not included in the wire response sent to the client.
 
 The **detail panel** for each usage record shows:
 
 | Field | Description |
 |-------|-------------|
 | **Guardrail Triggered** | Identifier of the first rule that fired (e.g. `regex:pattern`, `injection:dan-mode`, `topic:gpt-4o-mini`) |
-| **Blocked By** | Same as Guardrail Triggered — present only when `outcome` is `blocked` |
+| **Blocked By** | Same as Guardrail Triggered -- present only when `outcome` is `blocked` |
 | **PII Redacted** | Comma-separated list of entity types redacted (e.g. `EMAIL, PHONE`) |
 
 ### Live Polling
@@ -109,32 +135,6 @@ The usage table auto-refreshes to show new requests as they arrive. Use the inte
 | 1 min | Refresh every minute |
 | 5 min | Refresh every 5 minutes |
 | Now | Manual refresh only |
-
----
-
-## Leaderboard Tab
-
-![Usage Leaderboard tab showing model performance ranking](../assets/screenshot-usage-leaderboard.png)
-
-The Leaderboard ranks all models by cost-performance ratio based on your own traffic. Data is computed locally — no external telemetry.
-
-| Column | Description |
-|--------|-------------|
-| **Rank** | Performance rank (1 = best cost-performance) |
-| **Model** | Provider model identifier |
-| **Provider** | Provider name |
-| **Requests** | Total requests in the period |
-| **Success Rate** | Percentage of successful completions |
-| **Avg Latency** | Mean response time |
-| **P95 Latency** | 95th-percentile response time |
-| **Cost / 1K Tokens** | Effective blended cost per 1,000 tokens |
-| **Total Cost** | Total spend for this model in the period |
-
-Filter by **period** (Today, This week, This month) and **project** using the controls above the table.
-
-:::note Redirected from /dashboard/leaderboard
-The standalone Leaderboard page has moved. `/dashboard/leaderboard` now redirects to `/dashboard/usage?tab=leaderboard`.
-:::
 
 ---
 

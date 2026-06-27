@@ -647,10 +647,15 @@ Query parameters:
 | `from` | ISO date | Start of range |
 | `to` | ISO date | End of range |
 | `project` | string | Filter by project slug |
+| `projectIds` | string | Comma-separated project IDs to filter by |
 | `model` | string | Filter by model ID |
-| `outcome` | string | `success`, `error`, `budget_exceeded`, `timeout`, `blocked` |
+| `modelIds` | string | Comma-separated model IDs to filter by |
+| `callType` | string | `completion`, `routing`, or `guardrail`. `completion` also matches legacy records with no `callType` field |
+| `outcome` | string | `success`, `error`, `budget_exceeded`, `timeout`, `blocked`. `error` matches records that are neither `success` nor `blocked` |
 | `limit` | number | Max records to return (default: 100) |
 | `offset` | number | Pagination offset |
+
+All filters are applied server-side. `projectIds` and `modelIds` accept comma-separated values for multi-value filtering; they take precedence over the single-value `project` and `model` parameters when both are provided.
 
 **Response summary object:**
 
@@ -669,7 +674,15 @@ Query parameters:
     "routingCost": 0.0011,
     "guardrailCost": 0.0023
   },
-  "byModel": {},
+  "byModel": {
+    "openai/gpt-5-mini": {
+      "calls": 120,
+      "cost": 0.08,
+      "success": 115,
+      "avgLatencyMs": 820,
+      "p95LatencyMs": 1540
+    }
+  },
   "timeline": [],
   "records": [],
   "pagination": {}
@@ -684,9 +697,19 @@ The `summary` object breaks down calls and cost by sub-activity type:
 | `routingCalls` / `routingCost` | LLM policy routing calls (e.g. the `llm` routing policy) |
 | `guardrailCalls` / `guardrailCost` | Model calls made by security rules (semantic embedding, topic judge, moderation judge) |
 | `blockedCalls` | Requests blocked by a guardrail rule before reaching any model |
-| `errorCalls` | Failed calls — does **not** include blocked calls |
+| `errorCalls` | Failed calls -- does **not** include blocked calls |
 
-Guardrail judge call records appear in the `records` array with `callType: "guardrail"`. Blocked request records appear with `outcome: "blocked"` and `callType: "guardrail"`. The `errorCalls` counter excludes blocked requests — a block is a normal guardrail outcome, not a model error.
+Each `byModel` entry includes:
+
+| Field | Description |
+|-------|-------------|
+| `calls` | Total requests for this model in the period |
+| `cost` | Total cost in USD |
+| `success` | Number of successful calls |
+| `avgLatencyMs` | Mean response time in milliseconds |
+| `p95LatencyMs` | 95th-percentile response time in milliseconds |
+
+Guardrail judge call records appear in the `records` array with `callType: "guardrail"`. Blocked request records appear with `outcome: "blocked"` and `callType: "guardrail"`. The `errorCalls` counter excludes blocked requests -- a block is a normal guardrail outcome, not a model error.
 
 The `outcome` filter on `GET /api/usage` accepts `blocked` in addition to `success`, `error`, and `budget_exceeded`.
 

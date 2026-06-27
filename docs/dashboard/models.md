@@ -7,18 +7,18 @@ sidebar_position: 3
 
 The Models page lets you register, edit, clone, and remove LLM models. All models registered here become available for use in project routing configurations.
 
-The page has two tabs: **Models** (the registry) and **Health** (real-time provider status).
+Health status is shown inline in the same table as configuration -- no separate tab is needed.
 
 ---
 
-## Models Tab
+## Model List
 
-![Models tab with provider filter, text search, and paginated model list](../assets/screenshot-models.png)
+![Models page with provider filter, search, and merged config + health columns](../assets/screenshot-models.png)
 
 ### Filtering and Search
 
-- **Provider filter** — dropdown to show models for a single provider (OpenAI, Anthropic, Ollama, etc.) or all providers.
-- **Search** — text search by model ID, filtered live as you type.
+- **Provider filter** -- dropdown to show models for a single provider (OpenAI, Anthropic, Ollama, etc.) or all providers.
+- **Search** -- text search by model ID, filtered live as you type.
 
 Results are paginated at 20 models per page.
 
@@ -32,22 +32,34 @@ Results are paginated at 20 models per page.
 | **Input $/1M** | Input token price in USD |
 | **Output $/1M** | Output token price in USD |
 | **Cache $/1M** | Cache read price (if applicable) |
-| **Context** | Maximum context window tokens |
+| **Context Size** | Maximum context window tokens |
+| **Status** | `Healthy`, `Unavailable` -- based on recent error rate. Shows a neutral badge when no traffic has been recorded yet |
+| **Error Rate (5M)** | Percentage of failed requests in the last 5 minutes |
+| **P95 Latency (5M)** | 95th-percentile response time in the last 5 minutes |
+| **Requests (1H)** | Total requests in the last hour |
+| **Last Success** | Time of the most recent successful request |
+| **Cooldown** | Remaining cooldown if the model triggered rate-limiting |
+
+Health columns show a dash when no data is available for the window. The health data refreshes automatically every 30 seconds (visible in the subtitle bar).
 
 Click any column header to sort.
 
+:::note Redirected from /dashboard/health
+The standalone Provider Health page has been merged into this page. `/dashboard/health` redirects to `/dashboard/models`.
+:::
+
 ### Adding a Model
 
-1. Click **+ New Model**
+1. Click **+ Add Model**
 2. Fill in the form:
-   - **Model ID** — the identifier sent to the provider (e.g. `gpt-5-mini`)
-   - **Provider** — select from the dropdown
-   - **API Key** — encrypted at rest; leave blank for Ollama / custom models without auth
-   - **Base URL** — optional override (useful for proxies or self-hosted models)
-   - **Context Window** — pre-filled for known models
-   - **Pricing** — input/output/cache prices per 1M tokens; pre-filled for known models
-   - **Pricing Tiers** — add a tier for long-context pricing (e.g. Anthropic above 200k tokens)
-   - **Capabilities** — check all that apply
+   - **Model ID** -- the identifier sent to the provider (e.g. `gpt-5-mini`)
+   - **Provider** -- select from the dropdown
+   - **API Key** -- encrypted at rest; leave blank for Ollama / custom models without auth
+   - **Base URL** -- optional override (useful for proxies or self-hosted models)
+   - **Context Window** -- pre-filled for known models
+   - **Pricing** -- input/output/cache prices per 1M tokens; pre-filled for known models
+   - **Pricing Tiers** -- add a tier for long-context pricing (e.g. Anthropic above 200k tokens)
+   - **Capabilities** -- check all that apply
 
 3. Click **Save**
 
@@ -61,7 +73,7 @@ Use the **Model Discovery** page (navigate to **Models**, then click **Discover*
 
 Click the **Edit** (pencil) icon next to a model. All fields except the Model ID are editable.
 
-To update the API key, enter a new value — Routerly re-encrypts it immediately.
+To update the API key, enter a new value -- Routerly re-encrypts it immediately.
 
 ### Cloning a Model
 
@@ -83,29 +95,6 @@ Removing a model that is assigned to active project routing configurations will 
 
 ---
 
-## Health Tab
-
-![Models Health tab showing real-time provider health per model](../assets/screenshot-models-health.png)
-
-The Health tab shows real-time operational status for each model. Data is refreshed every 30 seconds automatically.
-
-| Column | Description |
-|--------|-------------|
-| **Model** | Provider model identifier |
-| **Provider** | Provider name |
-| **Status** | `Healthy`, `Degraded`, or `Down` — based on recent error rate |
-| **Error Rate (5M)** | Percentage of failed requests in the last 5 minutes |
-| **P95 Latency (5M)** | 95th-percentile response time in the last 5 minutes |
-| **Requests (1H)** | Total requests in the last hour |
-| **Last Success** | Time of the most recent successful request |
-| **Cooldown** | Remaining cooldown if the model triggered rate-limiting |
-
-:::note Redirected from /dashboard/health
-The standalone Provider Health page has moved. `/dashboard/health` now redirects to `/dashboard/models?tab=health`.
-:::
-
----
-
 ## Model Discovery
 
 Navigate to `/dashboard/models/discover` (or click **Discover** on the Models page) to browse the built-in model catalog. The catalog lists known models from supported providers with their context window, modalities, and published pricing.
@@ -123,4 +112,4 @@ Navigate to `/dashboard/models/discover` (or click **Discover** on the Models pa
 
 Filter by **provider** using the tabs above the table, or use the search box to narrow by model ID.
 
-Click **Add** next to any model to open the new-model form with that model's details pre-filled. If the model matches a Routerly-curated preset, the form uses the preset's pricing and context window (Input $/1M, Output $/1M, and Context Window are all populated automatically). If the model is not a known preset, the form creates a custom entry pre-filled with the catalog's pricing and context window values — note that the catalog shows prices per 1K tokens while the form stores them per 1M tokens, so Routerly converts automatically. In both cases you only need to supply the API key to complete registration.
+Click **Add** next to any model to open the new-model form with that model's details pre-filled. If the model matches a Routerly-curated preset, the form uses the preset's pricing and context window (Input $/1M, Output $/1M, and Context Window are all populated automatically). If the model is not a known preset, the form creates a custom entry pre-filled with the catalog's pricing and context window values -- note that the catalog shows prices per 1K tokens while the form stores them per 1M tokens, so Routerly converts automatically. In both cases you only need to supply the API key to complete registration.
