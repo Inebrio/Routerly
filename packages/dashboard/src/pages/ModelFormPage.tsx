@@ -306,6 +306,8 @@ export function ModelFormPage() {
   const { id } = useParams<{ id?: string }>();
   const [searchParams] = useSearchParams();
   const cloneSourceId = searchParams.get('clone') ? decodeURIComponent(searchParams.get('clone')!) : null;
+  const prefillProvider = searchParams.get('provider');
+  const prefillModelId = searchParams.get('modelId');
   const isEditing = Boolean(id);
   const isCloning = Boolean(cloneSourceId);
   const editingModelId = isEditing ? decodeURIComponent(id!) : null;
@@ -349,10 +351,16 @@ export function ModelFormPage() {
             setErr('Source model not found');
           }
         } else {
-          // Initialize new
-          const firstModel = PROVIDER_MODELS.openai?.[0];
-          setForm({ ...EMPTY_FORM, id: firstModel?.id ?? '' });
-          if (firstModel) applyPreset('openai', firstModel.id);
+          // Initialize new — honour ?provider=&modelId= from discovery, fall back to openai default
+          // ponytail: reuse handleProviderChange logic inline to avoid calling a function that also resets form state mid-init
+          const provider: Provider = (prefillProvider && PROVIDERS.includes(prefillProvider as Provider))
+            ? prefillProvider as Provider
+            : 'openai';
+          const firstModel = PROVIDER_MODELS[provider]?.[0];
+          const seedId = prefillModelId ?? firstModel?.id ?? '';
+          setIsCustomModel(provider === 'custom');
+          setForm({ ...EMPTY_FORM, provider, endpoint: ENDPOINT_DEFAULTS[provider] ?? '', id: seedId });
+          if (seedId) applyPreset(provider, seedId);
         }
       } catch (e) {
         setErr(e instanceof Error ? e.message : 'Error loading models');
