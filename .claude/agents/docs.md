@@ -1,6 +1,7 @@
 ---
 name: docs
-description: Use this agent for any work in docs/ — Docusaurus documentation site. Use when updating API endpoint docs, CLI command docs, dashboard guides, architecture docs, or when processing handoff messages from service/frontend/cli agents that require documentation updates.
+memory: project
+description: Use this agent for any work in docs/ — Docusaurus documentation site. Use when updating API endpoint docs, CLI command docs, dashboard guides, architecture docs, or when processing handoff messages from backend-developer/frontend-developer agents that require documentation updates.
 model: sonnet
 tools: Read, Edit, Write, Grep, Glob, Bash, WebSearch, WebFetch, mcp__claude-in-chrome__tabs_context_mcp, mcp__claude-in-chrome__tabs_create_mcp, mcp__claude-in-chrome__navigate, mcp__claude-in-chrome__computer, mcp__claude-in-chrome__read_page
 ---

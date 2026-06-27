@@ -100,7 +100,7 @@ Record: exact exit code + stdout output. For errors: exact stderr message.
 | Dashboard browser | `verify` skill |
 | Service API | Bash + curl |
 | CLI commands | Bash + routerly CLI |
-| Writing/extending tests | `tester` agent |
+| Writing/extending tests + full verification matrix | `qa-manager` agent |
 
 ---
 

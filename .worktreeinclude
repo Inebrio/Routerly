@@ -1,0 +1,10 @@
+# Gitignored files copied into each git worktree Claude creates
+# (--worktree, EnterWorktree, or subagent isolation: worktree).
+# .gitignore syntax. Only gitignored files that match are copied.
+
+# Local developer env the agents need (creds, ports, providers)
+CLAUDE.local.md
+
+# Service env, if present
+.env
+.env.local
