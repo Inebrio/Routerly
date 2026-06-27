@@ -565,4 +565,83 @@ describe('POST /v1/messages — guardrail block & PII output trace', () => {
     expect(piiTrace).toBeDefined()
     expect((piiTrace![1] as any[])[0].details.entities).toContain('EMAIL')
   })
+
+  it('clean input with PII active emits pii:evaluated (redacted []) and no pii:scrubbed, wire response unchanged', async () => {
+    const piiProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      pii: { scrubInput: true },
+    } as any
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmMessages.mockResolvedValue(makeMessagesResponse() as any)
+
+    const app = await buildAppWith(piiProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'just a clean prompt' }] }),
+    })
+    await app.close()
+
+    const evalCall = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:evaluated' && (c[1] as any[])[0]?.panel === 'request')
+    expect(evalCall).toBeDefined()
+    expect((evalCall![1] as any[])[0].details.redacted).toEqual([])
+    const scrubbed = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:scrubbed' && (c[1] as any[])[0]?.panel === 'request')
+    expect(scrubbed).toBeUndefined()
+    // wire-format transparency: response body is the standard messages shape, no added fields.
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body)).toEqual(makeMessagesResponse())
+  })
+
+  it('input with a PII hit emits BOTH pii:evaluated (entities) and pii:scrubbed', async () => {
+    const piiProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      pii: { scrubInput: true },
+    } as any
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmMessages.mockResolvedValue(makeMessagesResponse() as any)
+
+    const app = await buildAppWith(piiProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'email me at a@b.com' }] }),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    const evalCall = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:evaluated' && (c[1] as any[])[0]?.panel === 'request')
+    expect(evalCall).toBeDefined()
+    expect((evalCall![1] as any[])[0].details.redacted).toContain('EMAIL')
+    const scrubbed = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:scrubbed' && (c[1] as any[])[0]?.panel === 'request')
+    expect(scrubbed).toBeDefined()
+    expect((scrubbed![1] as any[])[0].details.entities).toContain('EMAIL')
+  })
+
+  it('clean output (non-streaming) with scrubOutput active emits pii:evaluated (redacted []) and no pii:scrubbed', async () => {
+    const piiProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      pii: { scrubOutput: true },
+    } as any
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmMessages.mockResolvedValue(makeMessagesResponse() as any)
+
+    const app = await buildAppWith(piiProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).content[0].text).toBe('Hello!')
+    const evalCall = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:evaluated' && (c[1] as any[])[0]?.panel === 'response')
+    expect(evalCall).toBeDefined()
+    expect((evalCall![1] as any[])[0].details.redacted).toEqual([])
+    const scrubbed = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:scrubbed' && (c[1] as any[])[0]?.panel === 'response')
+    expect(scrubbed).toBeUndefined()
+  })
 })

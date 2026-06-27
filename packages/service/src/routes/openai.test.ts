@@ -1501,6 +1501,113 @@ describe('POST /v1/chat/completions — guardrail request block & PII output tra
     expect((piiTrace![1] as any[])[0].details.entities).toContain('EMAIL')
   })
 
+  it('clean input with PII active emits pii:evaluated (redacted []) and no pii:scrubbed, wire response unchanged', async () => {
+    const piiProject: any = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
+      pii: { scrubInput: true },
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmChat.mockResolvedValue(makeCompletion() as any)
+
+    const app = await buildApp(piiProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'just a clean prompt' }] }),
+    })
+    await app.close()
+
+    const evalCall = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:evaluated' && (c[1] as any[])[0]?.panel === 'request')
+    expect(evalCall).toBeDefined()
+    expect((evalCall![1] as any[])[0].details.redacted).toEqual([])
+    const scrubbed = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:scrubbed' && (c[1] as any[])[0]?.panel === 'request')
+    expect(scrubbed).toBeUndefined()
+    // wire-format transparency: response body is the standard completion shape, no added fields.
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body)).toEqual(makeCompletion())
+  })
+
+  it('input with a PII hit emits BOTH pii:evaluated (entities) and pii:scrubbed', async () => {
+    const piiProject: any = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
+      pii: { scrubInput: true },
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmChat.mockResolvedValue(makeCompletion() as any)
+
+    const app = await buildApp(piiProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'email me at a@b.com' }] }),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    const evalCall = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:evaluated' && (c[1] as any[])[0]?.panel === 'request')
+    expect(evalCall).toBeDefined()
+    expect((evalCall![1] as any[])[0].details.redacted).toContain('EMAIL')
+    const scrubbed = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:scrubbed' && (c[1] as any[])[0]?.panel === 'request')
+    expect(scrubbed).toBeDefined()
+    expect((scrubbed![1] as any[])[0].details.entities).toContain('EMAIL')
+  })
+
+  it('clean output (non-streaming) with scrubOutput active emits pii:evaluated (redacted []) and no pii:scrubbed', async () => {
+    const piiProject: any = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
+      pii: { scrubOutput: true },
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmChat.mockResolvedValue(makeCompletion() as any)
+
+    const app = await buildApp(piiProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).choices[0].message.content).toBe('Hello!')
+    const evalCall = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:evaluated' && (c[1] as any[])[0]?.panel === 'response')
+    expect(evalCall).toBeDefined()
+    expect((evalCall![1] as any[])[0].details.redacted).toEqual([])
+    const scrubbed = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:scrubbed' && (c[1] as any[])[0]?.panel === 'response')
+    expect(scrubbed).toBeUndefined()
+  })
+
+  it('clean output (streaming) with scrubOutput active emits pii:evaluated (redacted []) and no pii:scrubbed', async () => {
+    const piiProject: any = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
+      pii: { scrubOutput: true },
+    }
+    async function* gen() {
+      yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'all clean here' }, finish_reason: 'stop' }] }
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmStream.mockResolvedValue({ ttftMs: 10, chunks: gen() } as any)
+
+    const app = await buildApp(piiProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', stream: true, messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+
+    expect(res.body).toContain('all clean here')
+    const evalCall = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:evaluated' && (c[1] as any[])[0]?.panel === 'response')
+    expect(evalCall).toBeDefined()
+    expect((evalCall![1] as any[])[0].details.redacted).toEqual([])
+    const scrubbed = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:scrubbed' && (c[1] as any[])[0]?.panel === 'response')
+    expect(scrubbed).toBeUndefined()
+  })
+
   it('non-streaming response guardrail block emits content_filter + response evaluated trace (#77 C1)', async () => {
     const respGuard: any = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],

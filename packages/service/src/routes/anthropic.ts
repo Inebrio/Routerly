@@ -91,6 +91,8 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
     let piiRedacted: string[] | undefined;
     if (project.pii && project.pii.scrubInput !== false && Array.isArray(body.messages)) {
       const { messages, redacted } = scrubMessages(body.messages, project.pii);
+      // "ran" signal: always emitted when input scrubbing is active, even with 0 redactions.
+      appendTrace(traceId, [{ panel: 'request', message: 'pii:evaluated', details: { redacted } }]);
       if (redacted.length > 0) {
         body.messages = messages as typeof body.messages;
         piiRedacted = redacted;
@@ -185,6 +187,8 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
           const block = response?.content?.[0];
           if (block?.type === 'text' && typeof block.text === 'string') {
             const { text, found } = scrubText(block.text, project.pii);
+            // "ran" signal: always emitted when output scrubbing is active, even with 0 redactions.
+            appendTrace(traceId, [{ panel: 'response', message: 'pii:evaluated', details: { redacted: found } }]);
             if (found.length > 0) {
               block.text = text;
               request.log.info({ projectId: project.id, found }, 'pii: scrubbed output');
