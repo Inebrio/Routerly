@@ -79,7 +79,7 @@ CLAUDE.local.md
 # ===========================
 # .claude/ project config (agents, hooks, rules, commands, settings) IS versioned.
 # Only local/transient bits are ignored:
-claude-progress.txt
+handoff.md
 .claude/settings.local.json
 .claude/worktrees/
 
