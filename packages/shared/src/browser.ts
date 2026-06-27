@@ -35,6 +35,7 @@ export type {
   Settings,
   CallOutcome,
   UsageRecord,
+  UsageByModelEntry,
   // Notification channel types (U5)
   EmailProvider,
   NativeProvider,

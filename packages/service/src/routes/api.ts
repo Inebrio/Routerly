@@ -10,7 +10,7 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../config/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, AgentPolicy, SpendGroup, GuardrailConfig, PiiConfig, ProjectSemanticCacheConfig } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, AgentPolicy, SpendGroup, GuardrailConfig, PiiConfig, ProjectSemanticCacheConfig, UsageByModelEntry } from '@routerly/shared';
 import { z } from 'zod';
 import { getGroupUsageSnapshot } from '../cost/budget.js';
 import { getTrace } from '../routing/traceStore.js';
@@ -32,6 +32,13 @@ function hashToken(t: string): string {
 }
 
 const BCRYPT_ROUNDS = 12;
+
+/** 95th percentile of a numeric array (0 when empty). Same nearest-rank method as the leaderboard/health handlers. */
+function p95(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1)]!;
+}
 
 // ── Notification channel validation (U5) ──────────────────────────────────────
 const CHANNEL_PROVIDERS = [
@@ -1174,10 +1181,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // USAGE STATS
   // ══════════════════════════════════════════════════════════════════════════════
 
-  fastify.get<{ Querystring: { period?: string; projectId?: string; from?: string; to?: string; page?: string; pageSize?: string; endUserId?: string; sessionId?: string; [key: string]: string | undefined } }>('/api/usage', async (req, reply) => {
+  fastify.get<{ Querystring: { period?: string; projectId?: string; projectIds?: string; modelIds?: string; callType?: string; outcome?: string; from?: string; to?: string; page?: string; pageSize?: string; endUserId?: string; sessionId?: string; [key: string]: string | undefined } }>('/api/usage', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
     const records = await readConfig('usage');
-    const { period = 'monthly', projectId, from, to, endUserId, sessionId } = req.query;
+    const { period = 'monthly', projectId, projectIds, modelIds, callType, outcome, from, to, endUserId, sessionId } = req.query;
     const page = Math.max(1, parseInt(req.query.page ?? '1', 10) || 1);
     const pageSize = Math.min(200, Math.max(1, parseInt(req.query.pageSize ?? '100', 10) || 100));
     // Parse tag filters: ?tag[customer]=acme
@@ -1220,18 +1227,44 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       filtered = filtered.filter(r => r.tags && Object.entries(tagFilters).every(([k, v]) => r.tags![k] === v));
     }
 
-    // Aggregate by model
-    const byModel: Record<string, { calls: number; inputTokens: number; outputTokens: number; cachedInputTokens: number; cost: number; errors: number }> = {};
+    // Dashboard filters (multiselect + type/outcome) — applied to records, byModel, summary and timeline alike (#80).
+    const csv = (s?: string) => (s ? new Set(s.split(',').map(v => v.trim()).filter(Boolean)) : null);
+    const projectIdSet = csv(projectIds);
+    if (projectIdSet) filtered = filtered.filter(r => projectIdSet.has(r.projectId));
+    const modelIdSet = csv(modelIds);
+    if (modelIdSet) filtered = filtered.filter(r => modelIdSet.has(r.modelId));
+    if (callType && callType !== 'all') {
+      // 'completion' covers legacy records that carry no callType.
+      filtered = callType === 'completion'
+        ? filtered.filter(r => r.callType !== 'routing' && r.callType !== 'guardrail')
+        : filtered.filter(r => r.callType === callType);
+    }
+    if (outcome && outcome !== 'all') {
+      // 'error' is any outcome that is neither success nor blocked.
+      filtered = outcome === 'error'
+        ? filtered.filter(r => r.outcome !== 'success' && r.outcome !== 'blocked')
+        : filtered.filter(r => r.outcome === outcome);
+    }
+
+    // Aggregate by model. Latencies collected per model to derive avg + p95 (leaderboard metrics, #80).
+    const byModelAcc: Record<string, Omit<UsageByModelEntry, 'avgLatencyMs' | 'p95LatencyMs'> & { latencies: number[] }> = {};
     for (const r of filtered) {
-      const entry = byModel[r.modelId] ?? { calls: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cost: 0, errors: 0 };
+      const entry = byModelAcc[r.modelId] ?? { calls: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cost: 0, errors: 0, success: 0, latencies: [] };
       entry.calls++;
       entry.inputTokens += r.inputTokens;
       entry.outputTokens += r.outputTokens;
       entry.cachedInputTokens += r.cachedInputTokens ?? 0;
       entry.cost += r.cost;
+      if (r.outcome === 'success') entry.success++;
       // A guardrail-blocked request is neither a success nor a model error — exclude it from the error count (#77).
       if (r.outcome !== 'success' && r.outcome !== 'blocked') entry.errors++;
-      byModel[r.modelId] = entry;
+      if (typeof r.latencyMs === 'number') entry.latencies.push(r.latencyMs);
+      byModelAcc[r.modelId] = entry;
+    }
+    const byModel: Record<string, UsageByModelEntry> = {};
+    for (const [modelId, { latencies, ...rest }] of Object.entries(byModelAcc)) {
+      const avgLatencyMs = latencies.length > 0 ? latencies.reduce((s, n) => s + n, 0) / latencies.length : 0;
+      byModel[modelId] = { ...rest, avgLatencyMs, p95LatencyMs: p95(latencies) };
     }
 
     // Aggregate by callType — routing / guardrail / completion are distinct sub-activities (#77, BUG-5).

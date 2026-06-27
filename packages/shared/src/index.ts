@@ -69,6 +69,7 @@ export type {
   CallType,
   TraceEntry,
   UsageRecord,
+  UsageByModelEntry,
   SemanticCacheConfig,
   ProjectSemanticCacheConfig,
   UpdateInfo,
