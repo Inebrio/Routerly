@@ -44,6 +44,33 @@ describe('loader — real-FS concurrent safety (data-loss regression)', () => {
     expect(JSON.parse(onDisk)).toHaveLength(populated.length);
   });
 
+  it('a burst of concurrent writes to the same key all resolve without throwing (lock-retry budget)', async () => {
+    await initConfigDirs();
+    // 10 concurrent writeConfig calls contend for the same lock — the transient
+    // burst the budget bump targets (e.g. overlapping appendUsageRecord on the
+    // request hot path). Under the old 5-retry budget the back-of-the-queue
+    // writers exhausted retries and threw, dropping the write; the bumped budget
+    // (10 retries, 500ms cap) lets them ride it out. Beyond ~12 simultaneous
+    // writers no modest budget suffices — that is the O(n) global-lock ceiling
+    // named in writeConfig's ponytail comment (upgrade: NDJSON append), not a
+    // case a bigger retry budget should chase. Each payload is distinct so we
+    // confirm the file ends parseable holding one writer's value.
+    const N = 10;
+    const writes = Array.from({ length: N }, (_, i) =>
+      writeConfig('projects', [{ id: `w${i}`, name: `Writer ${i}` }] as any),
+    );
+    // No call may reject.
+    await expect(Promise.all(writes)).resolves.toHaveLength(N);
+
+    // File parses and holds a valid last-writer value (one of the N payloads).
+    const onDisk = JSON.parse(await readFile(CONFIG_PATHS.projects, 'utf-8'));
+    expect(Array.isArray(onDisk)).toBe(true);
+    expect(onDisk).toHaveLength(1);
+    expect(onDisk[0].id).toMatch(/^w\d+$/);
+    // readConfig agrees with disk.
+    expect(await readConfig('projects')).toEqual(onDisk);
+  });
+
   it('a read of a truly-missing file creates it with defaults (first run unchanged)', async () => {
     // usage.json under a fresh isolated home; readConfig must create it as [].
     const result = await readConfig('usage');

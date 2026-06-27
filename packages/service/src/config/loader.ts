@@ -140,7 +140,15 @@ export async function writeConfig<K extends keyof StoredTypeMap>(
   const tmpPath = `${filePath}.tmp-${process.pid}-${tmpCounter++}`;
   let release: (() => Promise<void>) | undefined;
   try {
-    release = await lockfile.lock(filePath, { retries: { retries: 5, minTimeout: 50 } });
+    // ponytail: whole-file read-modify-write per usage append under this global
+    // lock is O(n) per record; if write throughput ever demands it the upgrade is
+    // append-only usage writes (NDJSON append), not a bigger retry budget. Budget
+    // bumped (5→10 retries, capped 500ms backoff) so transient contention — e.g.
+    // appendUsageRecord on the request hot path — rides out instead of throwing a
+    // dropped write; kept modest so a real deadlock still surfaces.
+    release = await lockfile.lock(filePath, {
+      retries: { retries: 10, minTimeout: 50, maxTimeout: 500 },
+    });
     // Atomic publish: full content to temp, then rename over the target.
     await writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
     await rename(tmpPath, filePath);
