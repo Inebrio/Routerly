@@ -673,6 +673,18 @@ describe('GET /api/usage', () => {
       const b = await get('callType=all&outcome=all')
       expect(b.summary.totalCalls).toBe(4)
     })
+
+    it('unknown callType/outcome values fall through gracefully (HTTP 200, empty — not 500)', async () => {
+      setupAdminAuth(); mount()
+      const app = await buildApp()
+      const r1 = await app.inject({ method: 'GET', url: '/api/usage?callType=garbage', headers: adminAuthHeaders() })
+      const r2 = await app.inject({ method: 'GET', url: '/api/usage?outcome=garbage', headers: adminAuthHeaders() })
+      await app.close()
+      expect(r1.statusCode).toBe(200)
+      expect(JSON.parse(r1.body).summary.totalCalls).toBe(0)
+      expect(r2.statusCode).toBe(200)
+      expect(JSON.parse(r2.body).summary.totalCalls).toBe(0)
+    })
   })
 
   it('filters by projectId', async () => {

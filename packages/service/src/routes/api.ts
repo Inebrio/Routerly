@@ -1592,11 +1592,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const errors = recent.filter(r => r.outcome !== 'success').length;
       const errorRate = total > 0 ? errors / total : 0;
 
-      // p95 latency over the last 5 minutes
-      const latencies = recent.map(r => r.latencyMs).filter(n => typeof n === 'number').sort((a, b) => a - b);
-      const p95LatencyMs = latencies.length > 0
-        ? latencies[Math.min(latencies.length - 1, Math.ceil(latencies.length * 0.95) - 1)]!
-        : null;
+      // p95 latency over the last 5 minutes (null when no sample — health distinguishes "no data" from 0ms)
+      const latencies = recent.map(r => r.latencyMs).filter((n): n is number => typeof n === 'number');
+      const p95LatencyMs = latencies.length > 0 ? p95(latencies) : null;
 
       const requestsLastHour = mine.filter(r => new Date(r.timestamp).getTime() >= oneHourAgo).length;
 
@@ -1693,10 +1691,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const successRate = a.totalRequests > 0 ? a.success / a.totalRequests : 0;
       const errorRate = a.totalRequests > 0 ? 1 - successRate : 0;
       const avgLatencyMs = a.latencies.length > 0 ? a.totalLatencyMs / a.latencies.length : 0;
-      const sorted = [...a.latencies].sort((x, y) => x - y);
-      const p95LatencyMs = sorted.length > 0
-        ? sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1)]!
-        : 0;
+      const p95LatencyMs = p95(a.latencies);
       const avgCostPer1kTokens = a.totalTokens > 0 ? (a.totalCost / a.totalTokens) * 1000 : 0;
       const totalLatencySec = a.totalLatencyMs / 1000;
       const tokensPerSec = totalLatencySec > 0 ? a.totalTokens / totalLatencySec : 0;
