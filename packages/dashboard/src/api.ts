@@ -398,10 +398,13 @@ export interface UsageRecord {
   trace?: TraceEntry[];
   cacheHit?: boolean;
   cacheSimilarity?: number;
+  guardrailTriggered?: string;
+  blockedBy?: string;
+  piiRedacted?: string[];
 }
 
 export interface UsageStats {
-  summary: { totalCost: number; totalCalls: number; successCalls: number; errorCalls: number; routingCalls: number; completionCalls: number; routingCost: number; completionCost: number; guardrailCalls?: number; guardrailCost?: number };
+  summary: { totalCost: number; totalCalls: number; successCalls: number; errorCalls: number; routingCalls: number; completionCalls: number; routingCost: number; completionCost: number; guardrailCalls?: number; guardrailCost?: number; blockedCalls?: number };
   byModel: Record<string, { calls: number; inputTokens: number; outputTokens: number; cachedInputTokens: number; cost: number; errors: number }>;
   timeline: [string, number][];
   records: Array<UsageRecord>;

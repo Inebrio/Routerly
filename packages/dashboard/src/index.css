@@ -480,6 +480,7 @@ td .badge {
 .badge-custom   { background: rgba(167,139,250,0.12); color: #a78bfa; border: 1px solid rgba(167,139,250,0.2); }
 .badge-success  { background: rgba(16,185,129,0.08); color: #059669; border: 1px solid rgba(16,185,129,0.15); }
 .badge-error    { background: rgba(239,68,68,0.08); color: #DC2626; border: 1px solid rgba(239,68,68,0.15); }
+.badge-warning  { background: rgba(245,158,11,0.10); color: #b45309; border: 1px solid rgba(245,158,11,0.25); }
 .badge-completion{ background: rgba(61,117,245,0.08); color: #3D75F5; border: 1px solid rgba(61,117,245,0.15); }
 .badge-router   { background: rgba(139,92,246,0.08); color: #8B5CF6; border: 1px solid rgba(139,92,246,0.15); }
 .badge-policy   { background: rgba(90,144,248,0.08); color: #3D75F5; border: 1px solid rgba(61,117,245,0.2); font-weight: 500; text-transform: none; letter-spacing: 0; }

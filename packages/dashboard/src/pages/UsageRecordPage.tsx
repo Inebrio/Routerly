@@ -228,12 +228,21 @@ export function UsageRecordPage() {
               <Field
                 label="Outcome"
                 value={
-                  <span className={`badge ${record.outcome === 'success' ? 'badge-success' : 'badge-error'}`}>
+                  <span className={`badge ${record.outcome === 'success' ? 'badge-success' : record.outcome === 'blocked' ? 'badge-warning' : 'badge-error'}`}>
                     {record.outcome}
                   </span>
                 }
               />
               <Field label="Timestamp" value={new Date(record.timestamp).toISOString()} mono />
+              {record.guardrailTriggered && (
+                <Field label="Guardrail Triggered" value={record.guardrailTriggered} mono />
+              )}
+              {record.blockedBy && (
+                <Field label="Blocked By" value={record.blockedBy} mono />
+              )}
+              {record.piiRedacted && record.piiRedacted.length > 0 && (
+                <Field label="PII Redacted" value={record.piiRedacted.join(', ')} />
+              )}
             </div>
             {record.errorMessage && (
               <div style={{ marginTop: 20, padding: '12px 16px', background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8 }}>
