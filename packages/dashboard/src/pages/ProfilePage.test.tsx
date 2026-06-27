@@ -4,6 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { ProfilePage, ProfileNotificationsTab } from './ProfilePage';
 
+// ponytail: mock qrcode so tests don't need a canvas implementation
+vi.mock('qrcode', () => ({
+  default: { toDataURL: vi.fn().mockResolvedValue('data:image/png;base64,STUB') },
+}));
+
 // ponytail: mock api at module level
 vi.mock('../api', () => ({
   updateMe: vi.fn(),
@@ -141,6 +146,18 @@ describe('ProfilePage — 2FA setup flow', () => {
     await waitFor(() => expect(screen.getByText('TESTSECRET')).toBeTruthy());
     expect(screen.getByText('aaa')).toBeTruthy();
     expect(screen.getByText('bbb')).toBeTruthy();
+  });
+
+  it('renders QR code image with data: src after setup', async () => {
+    mockSetup2fa.mockResolvedValue({
+      secret: 'TESTSECRET',
+      qrUrl: 'otpauth://totp/test',
+      backupCodes: [],
+    });
+    renderProfile();
+    await userEvent.click(screen.getByRole('button', { name: /Enable Two-Factor Authentication/ }));
+    const img = await waitFor(() => screen.getByRole('img', { name: '2FA setup QR code' }));
+    expect((img as HTMLImageElement).src).toMatch(/^data:/);
   });
 
   it('shows setup error when setup2fa throws', async () => {
