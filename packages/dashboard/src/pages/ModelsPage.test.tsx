@@ -71,7 +71,7 @@ beforeEach(() => {
 
 afterEach(() => vi.clearAllMocks());
 
-// ── Models tab ─────────────────────────────────────────────────────────────────
+// ── Models list ────────────────────────────────────────────────────────────────
 
 describe('ModelsPage — models list', () => {
   it('shows empty state when no models', async () => {
@@ -83,7 +83,6 @@ describe('ModelsPage — models list', () => {
     mockGetModels.mockResolvedValue([makeModel()]);
     renderPage();
     await waitFor(() => expect(screen.getByText('gpt-4o')).toBeTruthy());
-    // provider badge appears in the row (multiple "openai" text nodes are expected)
     expect(screen.getAllByText('openai').length).toBeGreaterThan(0);
   });
 
@@ -102,8 +101,6 @@ describe('ModelsPage — models list', () => {
     const input = screen.getByPlaceholderText(/Filter models/);
     await userEvent.type(input, 'zzz');
     await waitFor(() => screen.getByText(/No models match/));
-    const clearBtn = document.querySelector('button[title=""]') ?? screen.getByRole('button', { name: '' });
-    // find the X button near the input
     const xBtn = Array.from(document.querySelectorAll('button')).find(b =>
       b.style.position === 'absolute' && b.style.right === '7px'
     );
@@ -111,7 +108,6 @@ describe('ModelsPage — models list', () => {
       await userEvent.click(xBtn);
       await waitFor(() => screen.getByText('gpt-4o'));
     }
-    // if xBtn not found, search was still reset — just verify input value
     expect((input as HTMLInputElement).value === '' || screen.queryByText('gpt-4o') !== null).toBe(true);
   });
 
@@ -143,7 +139,6 @@ describe('ModelsPage — models list', () => {
     mockGetModels.mockResolvedValue([makeModel({ cost: { inputPerMillion: 5, outputPerMillion: 15, cachePerMillion: null } })]);
     renderPage();
     await waitFor(() => screen.getByText('gpt-4o'));
-    // dash rendered for null cache
     const dashes = Array.from(document.querySelectorAll('.text-muted, [class*="muted"]'));
     expect(dashes.length).toBeGreaterThan(0);
   });
@@ -158,7 +153,6 @@ describe('ModelsPage — models list', () => {
     mockGetModels.mockResolvedValue([makeModel({ contextWindow: null })]);
     renderPage();
     await waitFor(() => screen.getByText('gpt-4o'));
-    // Should render a dash placeholder
     const cells = Array.from(document.querySelectorAll('td'));
     const hasDash = cells.some(td => td.querySelector('.text-muted') !== null);
     expect(hasDash).toBe(true);
@@ -171,10 +165,8 @@ describe('ModelsPage — models list', () => {
     ]);
     renderPage();
     await waitFor(() => screen.getByText('z-model'));
-    // Click Provider header to sort
     const providerHeader = screen.getByText('Provider');
     await userEvent.click(providerHeader);
-    // anthropic comes before openai
     const rows = Array.from(document.querySelectorAll('tbody tr'));
     expect(rows[0]?.textContent).toContain('anthropic');
   });
@@ -272,92 +264,123 @@ describe('ModelsPage — pagination', () => {
     await waitFor(() => screen.getByText(/Page 1 of/));
     await userEvent.click(screen.getByRole('button', { name: /Next/ }));
     await waitFor(() => screen.getByText(/Page 2 of/));
-    // Type in search to reset page
     await userEvent.type(screen.getByPlaceholderText(/Filter models/), 'model-1');
     await waitFor(() => expect(screen.queryByText(/Page 2 of/)).toBeNull());
   });
 });
 
-// ── Health tab ─────────────────────────────────────────────────────────────────
+// ── Health columns in the merged table ────────────────────────────────────────
 
-describe('ModelsPage — health tab', () => {
-  it('switches to Health tab on click', async () => {
+describe('ModelsPage — health columns (merged table)', () => {
+  it('shows health columns headers in the table', async () => {
+    mockGetModels.mockResolvedValue([makeModel()]);
     renderPage();
-    await waitFor(() => screen.getByRole('button', { name: 'Health' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Health' }));
-    await waitFor(() => expect(screen.getByText(/Real-time operational status/)).toBeTruthy());
+    await waitFor(() => screen.getByText('gpt-4o'));
+    expect(screen.getByText('Status')).toBeTruthy();
+    expect(screen.getByText(/Error rate/)).toBeTruthy();
+    expect(screen.getByText(/P95 latency/)).toBeTruthy();
+    expect(screen.getByText(/Requests/)).toBeTruthy();
+    expect(screen.getByText(/Last success/)).toBeTruthy();
+    expect(screen.getByText(/Cooldown/)).toBeTruthy();
   });
 
-  it('shows empty state when no providers', async () => {
-    mockGetProviderHealth.mockResolvedValue({ providers: [] });
-    renderPage();
-    await userEvent.click(screen.getByRole('button', { name: 'Health' }));
-    await waitFor(() => expect(screen.getByText(/No models configured/)).toBeTruthy());
-  });
-
-  it('renders health table with provider rows', async () => {
+  it('shows Healthy badge when health data matches model', async () => {
+    mockGetModels.mockResolvedValue([makeModel()]);
     mockGetProviderHealth.mockResolvedValue({ providers: [makeHealthProvider()] });
     renderPage();
-    await userEvent.click(screen.getByRole('button', { name: 'Health' }));
-    await waitFor(() => expect(screen.getByText('GPT-4o')).toBeTruthy());
-    expect(screen.getByText('Healthy')).toBeTruthy();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    await waitFor(() => expect(screen.getByText('Healthy')).toBeTruthy());
   });
 
-  it('shows error state when getProviderHealth fails', async () => {
-    mockGetProviderHealth.mockRejectedValue(new Error('network error'));
+  it('shows No data badge for model with no health entry', async () => {
+    mockGetModels.mockResolvedValue([makeModel()]);
+    mockGetProviderHealth.mockResolvedValue({ providers: [] });
     renderPage();
-    await userEvent.click(screen.getByRole('button', { name: 'Health' }));
-    await waitFor(() => expect(screen.getByText(/network error/)).toBeTruthy());
+    await waitFor(() => screen.getByText('gpt-4o'));
+    await waitFor(() => expect(screen.getByText('No data')).toBeTruthy());
   });
 
-  it('shows cooldown status when cooldownUntil is in the future', async () => {
+  it('shows dashes in health columns when no health entry', async () => {
+    mockGetModels.mockResolvedValue([makeModel()]);
+    mockGetProviderHealth.mockResolvedValue({ providers: [] });
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    // multiple — cells expected (error rate, p95, requests, last success, cooldown)
+    const cells = Array.from(document.querySelectorAll('td'));
+    const dashCells = cells.filter(td => td.textContent === '—');
+    expect(dashCells.length).toBeGreaterThan(0);
+  });
+
+  it('shows Cooldown badge when cooldownUntil is in the future', async () => {
     const future = new Date(Date.now() + 60_000).toISOString();
+    mockGetModels.mockResolvedValue([makeModel()]);
     mockGetProviderHealth.mockResolvedValue({
       providers: [makeHealthProvider({ cooldownUntil: future, status: 'healthy' })],
     });
     renderPage();
-    await userEvent.click(screen.getByRole('button', { name: 'Health' }));
-    // Wait for health tab to load the provider row, then check status badge
-    await waitFor(() => expect(screen.getByText('GPT-4o')).toBeTruthy(), { timeout: 3000 });
-    expect(screen.getAllByText('Cooldown').length).toBeGreaterThan(0);
+    await waitFor(() => screen.getByText('gpt-4o'));
+    await waitFor(() => expect(screen.getAllByText('Cooldown').length).toBeGreaterThan(0));
   });
 
   it('shows dash for null p95LatencyMs', async () => {
+    mockGetModels.mockResolvedValue([makeModel()]);
     mockGetProviderHealth.mockResolvedValue({
       providers: [makeHealthProvider({ p95LatencyMs: null })],
     });
     renderPage();
-    await userEvent.click(screen.getByRole('button', { name: 'Health' }));
-    await waitFor(() => screen.getByText('GPT-4o'));
-    // There should be at least one — cell
+    await waitFor(() => screen.getByText('gpt-4o'));
+    await waitFor(() => screen.getByText('Healthy'));
     const dashes = Array.from(document.querySelectorAll('td')).filter(td => td.textContent === '—');
     expect(dashes.length).toBeGreaterThan(0);
   });
 
   it('shows "never" for null lastSuccessAt', async () => {
+    mockGetModels.mockResolvedValue([makeModel()]);
     mockGetProviderHealth.mockResolvedValue({
       providers: [makeHealthProvider({ lastSuccessAt: null })],
     });
     renderPage();
-    await userEvent.click(screen.getByRole('button', { name: 'Health' }));
+    await waitFor(() => screen.getByText('gpt-4o'));
     await waitFor(() => expect(screen.getByText('never')).toBeTruthy());
   });
 
-  it('relativeTime shows days ago for old dates', async () => {
+  it('shows days ago for old lastSuccessAt', async () => {
     const oldDate = new Date(Date.now() - 3 * 86_400_000).toISOString();
+    mockGetModels.mockResolvedValue([makeModel()]);
     mockGetProviderHealth.mockResolvedValue({
       providers: [makeHealthProvider({ lastSuccessAt: oldDate })],
     });
     renderPage();
-    await userEvent.click(screen.getByRole('button', { name: 'Health' }));
+    await waitFor(() => screen.getByText('gpt-4o'));
     await waitFor(() => expect(screen.getByText(/\d+d ago/)).toBeTruthy());
   });
 
-  it('switches back to Models tab', async () => {
+  it('model with no health entry still appears in the table', async () => {
+    mockGetModels.mockResolvedValue([makeModel({ id: 'orphan-model' })]);
+    mockGetProviderHealth.mockResolvedValue({ providers: [] });
     renderPage();
-    await userEvent.click(screen.getByRole('button', { name: 'Health' }));
-    await waitFor(() => screen.getByText(/Real-time operational status/));
-    await userEvent.click(screen.getByRole('button', { name: 'Models' }));
-    await waitFor(() => expect(screen.getByText(/No models yet/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('orphan-model')).toBeTruthy());
+  });
+
+  it('both health and no-health models render when mixed', async () => {
+    mockGetModels.mockResolvedValue([
+      makeModel({ id: 'gpt-4o', provider: 'openai' }),
+      makeModel({ id: 'local-model', provider: 'ollama' }),
+    ]);
+    mockGetProviderHealth.mockResolvedValue({
+      providers: [makeHealthProvider({ modelId: 'gpt-4o' })],
+    });
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    expect(screen.getByText('local-model')).toBeTruthy();
+    await waitFor(() => expect(screen.getByText('Healthy')).toBeTruthy());
+    expect(screen.getByText('No data')).toBeTruthy();
+  });
+
+  it('no tab buttons rendered (tab bar removed)', async () => {
+    renderPage();
+    await waitFor(() => screen.queryByText(/No models yet/) || screen.queryByText(/model/));
+    expect(screen.queryByRole('button', { name: 'Health' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Models' })).toBeNull();
   });
 });
