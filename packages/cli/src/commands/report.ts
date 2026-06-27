@@ -17,6 +17,7 @@ interface UsageResponse {
     totalCalls: number;
     successCalls: number;
     errorCalls: number;
+    blockedCalls?: number;
     routingCalls?: number;
     completionCalls?: number;
     guardrailCalls?: number;
@@ -100,14 +101,16 @@ Examples:
         }
 
         console.log(table.toString());
-        console.log(chalk.bold(`\nTotal: $${data.summary.totalCost.toFixed(6)} USD`) +
-          chalk.gray(` (${data.summary.successCalls} ok, ${data.summary.errorCalls} errors)`));
-
         const s = data.summary;
+        const blockedSuffix = s.blockedCalls ? `, ${s.blockedCalls} blocked` : '';
+        console.log(chalk.bold(`\nTotal: $${data.summary.totalCost.toFixed(6)} USD`) +
+          chalk.gray(` (${s.successCalls} ok, ${s.errorCalls} errors${blockedSuffix})`));
+
         const breakdown: string[] = [];
         if (s.completionCalls !== undefined) breakdown.push(`completion: ${s.completionCalls} calls / $${(s.completionCost ?? 0).toFixed(6)}`);
         if (s.routingCalls !== undefined) breakdown.push(`routing: ${s.routingCalls} calls / $${(s.routingCost ?? 0).toFixed(6)}`);
         if (s.guardrailCalls !== undefined) breakdown.push(`guardrail: ${s.guardrailCalls} calls / $${(s.guardrailCost ?? 0).toFixed(6)}`);
+        if (s.blockedCalls) breakdown.push(`blocked: ${s.blockedCalls} calls`);
         if (breakdown.length > 0) console.log(chalk.gray(`Breakdown — ${breakdown.join('  |  ')}`));
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));

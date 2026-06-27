@@ -61,6 +61,23 @@ describe('api() Content-Type header', () => {
     const headers = init.headers as Record<string, string>;
     expect(headers['Content-Type']).toBeUndefined();
     expect(headers['Authorization']).toBe('Bearer tok');
+    // Root cause of the 400: a bodyless request must send NO body at all (not '' / 'undefined'),
+    // otherwise Fastify rejects the empty JSON body. (#fix-3)
+    expect(init.body).toBeUndefined();
+  });
+
+  it('returns success for a bodyless DELETE that the server accepts (200)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      status: 200, ok: true,
+      json: vi.fn().mockResolvedValue({ deleted: true }),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await api<{ deleted: boolean }>('DELETE', '/api/models/abc');
+    expect(result).toMatchObject({ deleted: true });
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(init.method).toBe('DELETE');
+    expect(init.body).toBeUndefined();
   });
 
   it('sets Content-Type: application/json when body is present (e.g. POST)', async () => {

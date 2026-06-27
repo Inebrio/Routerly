@@ -162,6 +162,40 @@ describe('report usage', () => {
     expect(out.join('\n')).toContain('Breakdown');
   });
 
+  it('surfaces blocked calls in the human summary and breakdown (#77)', async () => {
+    const withBlocked = {
+      ...usageFixture,
+      summary: { ...usageFixture.summary, blockedCalls: 2 },
+    };
+    mockApi.mockResolvedValue(withBlocked);
+    const { out } = await run('usage');
+    const text = out.join('\n');
+    // summary line mentions blocked count
+    expect(text).toMatch(/2 blocked/);
+    // breakdown line includes a blocked entry
+    expect(text).toContain('blocked: 2 calls');
+  });
+
+  it('omits blocked from the summary when blockedCalls is 0 or absent', async () => {
+    mockApi.mockResolvedValue(usageFixture); // no blockedCalls
+    const { out } = await run('usage');
+    const text = out.join('\n');
+    expect(text).not.toContain('blocked');
+  });
+
+  it('--json payload includes guardrail and blocked summary stats (#77)', async () => {
+    const withBlocked = {
+      ...usageFixture,
+      summary: { ...usageFixture.summary, blockedCalls: 2 },
+    };
+    mockApi.mockResolvedValue(withBlocked);
+    const { out } = await run('usage', '--json');
+    const parsed = JSON.parse(out.join('\n'));
+    expect(parsed.summary.guardrailCalls).toBe(1);
+    expect(parsed.summary.guardrailCost).toBeCloseTo(0.0000034);
+    expect(parsed.summary.blockedCalls).toBe(2);
+  });
+
   it('exits 1 on API error', async () => {
     mockApi.mockRejectedValue(new Error('Network error'));
     const { err } = await run('usage');
