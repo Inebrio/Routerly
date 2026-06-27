@@ -93,7 +93,8 @@ describe('UsagePage — per-model table enriched columns', () => {
     });
   });
 
-  it('renders provider derived from modelId prefix', async () => {
+  it('renders provider from models list (slash id)', async () => {
+    vi.mocked(getModels).mockResolvedValue([{ id: 'openai/gpt-4o', provider: 'openai', name: 'GPT-4o', endpoint: '', cost: { inputPerMillion: 0, outputPerMillion: 0 } }] as never);
     vi.mocked(getUsage).mockResolvedValue({
       ...makeStats(),
       byModel: {
@@ -105,6 +106,23 @@ describe('UsagePage — per-model table enriched columns', () => {
     });
     renderPage();
     await waitFor(() => expect(screen.getByText('openai')).toBeTruthy());
+  });
+
+  it('renders provider from models list for slash-less id (not the modelId itself)', async () => {
+    vi.mocked(getModels).mockResolvedValue([{ id: 'gpt-4o', provider: 'openai', name: 'GPT-4o', endpoint: '', cost: { inputPerMillion: 0, outputPerMillion: 0 } }] as never);
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'gpt-4o': {
+          calls: 2, inputTokens: 100, outputTokens: 50, cachedInputTokens: 0,
+          cost: 0.001, errors: 0, success: 2, avgLatencyMs: 200, p95LatencyMs: 400,
+        },
+      },
+    });
+    renderPage();
+    // must show 'openai' from the model registry, NOT the bare id 'gpt-4o'
+    await waitFor(() => expect(screen.getByText('openai')).toBeTruthy());
+    expect(screen.queryAllByText('gpt-4o').length).toBeLessThan(2); // appears in Model col only
   });
 
   it('renders star on best cost-per-1k model', async () => {

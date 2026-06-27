@@ -394,7 +394,8 @@ export function UsagePage() {
                       // ponytail: guard divide-by-zero; guard v.calls=0
                       const successRate = v.calls > 0 ? (v.success / v.calls) * 100 : 0;
                       const costPer1k = totalTok > 0 ? (v.cost * 1000) / totalTok : 0;
-                      const provider = modelId.split('/')[0];
+                      // ponytail: authoritative source first; split fallback only for slash-ids
+                      const provider = allModels.find(m => m.id === modelId)?.provider ?? (modelId.includes('/') ? modelId.split('/')[0] : modelId);
                       return (
                         <tr key={modelId}>
                           <td>
