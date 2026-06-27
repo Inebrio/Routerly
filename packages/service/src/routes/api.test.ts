@@ -530,6 +530,34 @@ describe('GET /api/usage', () => {
     expect(s.routingCost).toBeCloseTo(0.02)
   })
 
+  it('buckets a blocked outcome separately from errors (#77 C3)', async () => {
+    setupAdminAuth()
+    const now = new Date().toISOString()
+    const records = [
+      { id: 'c1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.10, outcome: 'success', callType: 'completion', latencyMs: 100 },
+      { id: 'e1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 0, outputTokens: 0, cost: 0, outcome: 'error', callType: 'completion', latencyMs: 0 },
+      { id: 'b1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 0, outputTokens: 0, cost: 0, outcome: 'blocked', callType: 'guardrail', latencyMs: 0, blockedBy: 'regex:forbidden' },
+    ]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return records
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/usage', headers: adminAuthHeaders() })
+    await app.close()
+    const body = JSON.parse(res.body)
+    const s = body.summary
+    expect(s.totalCalls).toBe(3)
+    expect(s.successCalls).toBe(1)
+    expect(s.blockedCalls).toBe(1)
+    expect(s.errorCalls).toBe(1) // the blocked record is NOT counted as an error
+    // byModel error count excludes the block too (only the real error)
+    expect(body.byModel.m1.errors).toBe(1)
+  })
+
   it('filters by projectId', async () => {
     setupAdminAuth()
     const records = [
@@ -4494,6 +4522,20 @@ describe('GET /api/health/providers', () => {
     expect(providers[0].errorRate).toBe(0)
     expect(providers[0].requestsLastHour).toBe(2)
     expect(providers[0].cooldownUntil).toBeNull()
+  })
+
+  it('excludes guardrail-blocked records from health error rate (#77 C3)', async () => {
+    // 1 success + 2 blocked: blocked must not count as error nor dilute the rate → healthy, 0% error.
+    setupHealth(
+      [{ id: 'gpt-4', name: 'GPT-4', provider: 'openai' }],
+      [rec('gpt-4', 'success', 100, 1000), rec('gpt-4', 'blocked', 0, 1000), rec('gpt-4', 'blocked', 0, 2000)],
+    )
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/health/providers', headers: adminAuthHeaders() })
+    await app.close()
+    const { providers } = res.json()
+    expect(providers[0].errorRate).toBe(0)
+    expect(providers[0].status).toBe('healthy')
   })
 
   it('classifies a model with 20% errors as degraded', async () => {

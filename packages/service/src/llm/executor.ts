@@ -101,7 +101,7 @@ function getPanels(callType: CallType): { req: TracePanel; res: TracePanel } {
  * Se il budget è esaurito: traccia l'evento, emette la trace entry e lancia
  * BudgetExceededError.
  */
-async function checkBudget(model: ModelConfig, ctx: LLMCallContext): Promise<void> {
+export async function checkBudget(model: ModelConfig, ctx: LLMCallContext): Promise<void> {
   const { project, token, projectId, callType, traceId, emit } = ctx;
   const { res } = getPanels(callType);
 

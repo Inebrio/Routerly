@@ -12,6 +12,31 @@ import { parseRoutingTags } from './requestEnrichment.js';
 import { AGENT_POLICY_HEADER, resolveAgentPolicy, agentPolicyCandidates } from '../routing/agentPolicy.js';
 import { checkGuardrails } from '../middleware/guardrails.js';
 import { scrubMessages, scrubText } from '../middleware/piiScrubber.js';
+import { trackUsage } from '../cost/tracker.js';
+
+/**
+ * Records a usage event for a guardrail-blocked request (#77 observability).
+ * Zero cost/tokens, outcome 'blocked', callType 'guardrail', attributed to the
+ * project's first model. Shares the trackUsage path — no new recording channel.
+ */
+async function trackBlockedRequest(project: any, blockedBy: string, traceId: string): Promise<void> {
+  const allModels = await readConfig('models');
+  const firstModelId = project.models?.[0]?.modelId;
+  const model = firstModelId ? allModels.find((m: any) => m.id === firstModelId) : undefined;
+  if (!model) return; // ponytail: no project model to attribute to → nothing to record
+  await trackUsage({
+    projectId: project.id,
+    model,
+    inputTokens: 0,
+    outputTokens: 0,
+    latencyMs: 0,
+    outcome: 'blocked',
+    callType: 'guardrail',
+    traceId,
+    guardrailTriggered: blockedBy,
+    blockedBy,
+  }).catch(() => {});
+}
 
 export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/messages ────────────────────────────────────────────────────────
@@ -30,9 +55,9 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
       const msgs = body.messages ?? [];
       const lastUserMsg = [...msgs].reverse().find((m: any) => m?.role === 'user');
       const inputText = typeof lastUserMsg?.content === 'string' ? lastUserMsg.content : '';
-      let hit: { triggered: string } | null;
+      let result: Awaited<ReturnType<typeof checkGuardrails>>;
       try {
-        hit = await checkGuardrails('request', inputText, project.guardrails, guardrailPctx, request.log);
+        result = await checkGuardrails('request', inputText, project.guardrails, guardrailPctx, request.log);
       } catch (err: unknown) {
         // Over-limit guardrail judge call: fail like an over-limit completion (BUG-4).
         if (err instanceof BudgetExceededError) {
@@ -41,12 +66,19 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
         }
         throw err;
       }
+      // Observability (#77): record that guardrails were evaluated and the per-rule result, not only triggers.
+      if (result.evaluated.length > 0) {
+        appendTrace(traceId, [{ panel: 'request', message: 'guardrail:evaluated', details: { target: 'request', rules: result.evaluated } }]);
+      }
+      const hit = result.triggered ? { triggered: result.triggered } : null;
       if (hit) {
         const fallbackMessage = project.guardrails.fallbackMessage ?? 'This request was blocked by content guardrails.';
         request.log.warn({ projectId: project.id, rule: hit.triggered, action: project.guardrails.action }, 'guardrail: triggered');
         // Trace carries the readable reason (incl. fallbackMessage); the wire response no longer ships it (#76/#77).
         appendTrace(traceId, [{ panel: 'request', message: 'guardrail:triggered', details: { rule: hit.triggered, target: 'request', action: project.guardrails.action, fallbackMessage } }]);
         if (project.guardrails.action === 'block') {
+          // Usage record for the blocked request (#77): zero cost/tokens, distinct 'blocked' outcome.
+          await trackBlockedRequest(project, hit.triggered, traceId);
           reply.header('x-routerly-trace-id', traceId);
           // Wire-faithful refusal: empty content + stop_reason refusal + stop_details.
           return reply.status(200).send({ id: `msg_${traceId}`, type: 'message', role: 'assistant', content: [], model: body.model ?? 'unknown', stop_reason: 'refusal', stop_details: { type: 'refusal' }, usage: { input_tokens: 0, output_tokens: 0 } });
@@ -167,7 +199,11 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
           const block = response?.content?.[0];
           const responseText = block?.type === 'text' && typeof block.text === 'string' ? block.text : '';
           if (responseText) {
-            const hit = await checkGuardrails('response', responseText, project.guardrails, guardrailPctx, request.log);
+            const result = await checkGuardrails('response', responseText, project.guardrails, guardrailPctx, request.log);
+            if (result.evaluated.length > 0) {
+              appendTrace(traceId, [{ panel: 'response', message: 'guardrail:evaluated', details: { target: 'response', rules: result.evaluated } }]);
+            }
+            const hit = result.triggered ? { triggered: result.triggered } : null;
             if (hit) {
               const fallbackMessage = project.guardrails.fallbackMessage ?? 'Response blocked by content guardrails.';
               request.log.warn({ projectId: project.id, rule: hit.triggered }, 'guardrail: response triggered');
