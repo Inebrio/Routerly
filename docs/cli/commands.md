@@ -122,6 +122,31 @@ Same options as `add`. Only specified fields are updated.
 routerly model remove --id <id>
 ```
 
+### `routerly model discover`
+
+Browse the built-in model catalog with capabilities and pricing.
+
+```
+routerly model discover [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--provider <name>` | Filter by provider (`openai`, `anthropic`, `gemini`, `ollama`, …) |
+| `--json` | Output raw JSON |
+
+Displays a table of known models with their context window, modalities, and pricing. Models already configured in your Routerly instance are marked with a `★`.
+
+Pricing is shown as the per-1,000-token rate. Models that carry a `local` flag in the catalog **or** that are zero-priced on both input and output are labelled `free/local` in green — this covers Ollama and other self-hosted models regardless of whether the catalog explicitly marks them as local.
+
+If the server does not yet expose the model catalog (older versions), the command exits gracefully with a message instead of an error.
+
+```bash
+routerly model discover
+routerly model discover --provider anthropic
+routerly model discover --json
+```
+
 ---
 
 ## `routerly project`
@@ -491,7 +516,22 @@ routerly report usage [options]
 | `--tag <key=value>` | Filter by tag |
 | `--json` | JSON output |
 
-The footer line below the model table shows a **callType breakdown**: completion, routing, and guardrail calls with their individual costs. Guardrail calls are model invocations made by the content-guardrail pipeline (embedding lookups, topic/moderation judges). The `--json` output includes these as `summary.guardrailCalls` and `summary.guardrailCost`.
+The footer line below the model table shows a summary and a **callType breakdown**:
+
+```
+Total: $0.001234 USD (142 ok, 2 errors, 3 blocked)
+Breakdown — completion: 142 calls / $0.001200  |  routing: 8 calls / $0.000011  |  guardrail: 12 calls / $0.000023  |  blocked: 3 calls
+```
+
+The summary suffix `, N blocked` appears when at least one request was blocked by a guardrail rule. Blocked requests contribute zero cost. The breakdown line includes a `blocked: N calls` entry for the same count.
+
+The `--json` output includes these fields in `summary`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `guardrailCalls` | number | Model calls made by the guardrail pipeline (embedding, topic, moderation judges) |
+| `guardrailCost` | number | USD cost of guardrail judge calls |
+| `blockedCalls` | number | Requests blocked before reaching a model (zero cost) |
 
 ### `routerly report calls`
 

@@ -22,13 +22,14 @@ The top row shows aggregated totals for the selected filter set:
 | Card | Description |
 |------|-------------|
 | **Total Cost** | USD cost of all successful calls in the period |
-| **Total Calls** | All usage records (completion + routing + guardrail) |
+| **Total Calls** | All usage records (completion + routing + guardrail + blocked) |
 | **Completion Calls** | Main model inference calls, with their total cost |
 | **Router Calls** | LLM routing policy calls (e.g. the `llm` routing policy), with cost |
 | **Guardrail Calls** | Model calls made by security rules (semantic, topic, moderation), with cost |
-| **Errors** | Failed calls (any call type) |
+| **Blocked Calls** | Requests blocked by a guardrail rule before reaching any model. Shown only when at least one blocked call exists in the period. |
+| **Errors** | Failed model calls — blocked calls are counted separately and excluded from this number |
 
-Guardrail calls are charged to the project like any other model call and are subject to the project's budget limits.
+Guardrail judge calls are charged to the project like any other model call and are subject to the project's budget limits. Blocked requests record zero cost and zero tokens.
 
 ### Filters
 
@@ -38,7 +39,7 @@ Guardrail calls are charged to the project like any other model call and are sub
 | **Project** | Filter to a specific project |
 | **Model** | Filter to specific model IDs |
 | **Type** | `All`, `Completion`, `Router`, or `Guardrail` — filters by call sub-activity type |
-| **Status** | `All`, `Success`, or `Error` |
+| **Status** | `All`, `Success`, `Blocked`, or `Error` — `Blocked` shows only guardrail-blocked requests |
 
 Filters are applied immediately; the page updates in real time.
 
@@ -58,6 +59,14 @@ The table lists individual requests with:
 | Cost | Estimated cost in USD |
 | Latency | Time to first byte / total response time |
 
+The **Status** badge in the table uses colour coding:
+
+| Outcome | Badge colour |
+|---------|-------------|
+| `success` | Green |
+| `blocked` | Amber |
+| `error` / other | Red |
+
 Click any row to open the full **Trace view**.
 
 ### Trace View
@@ -69,7 +78,24 @@ The trace view shows the complete lifecycle of a single request:
 3. **Model Request** — the actual payload sent to the provider
 4. **Model Response** — the raw provider response including all tokens and finish reason
 
-The trace also includes guardrail (`guardrail:triggered`, `guardrail:response-triggered`) and PII scrubbing (`pii:scrubbed`) entries when those features are active. For blocked requests, the trace shows the `fallbackMessage` that was stored but not sent on the wire.
+The trace also includes guardrail and PII entries when those features are active:
+
+| Trace entry | When |
+|-------------|------|
+| `guardrail:evaluated` | After every guardrail check — shows each rule's `outcome` (`passed`, `triggered`, or `skipped`) and `reason`, even when no rule fires |
+| `guardrail:triggered` | A request-side rule matched (action `flag`/`log`; request continued) |
+| `guardrail:response-triggered` | A response-side rule matched |
+| `pii:scrubbed` | PII was detected and replaced in the request or response |
+
+For a **blocked** request (`action: block`), the trace includes the `guardrail:evaluated` entry and the `fallbackMessage`. The fallback message is stored on the trace only — it is not included in the wire response sent to the client.
+
+The **detail panel** for each usage record shows:
+
+| Field | Description |
+|-------|-------------|
+| **Guardrail Triggered** | Identifier of the first rule that fired (e.g. `regex:pattern`, `injection:dan-mode`, `topic:gpt-4o-mini`) |
+| **Blocked By** | Same as Guardrail Triggered — present only when `outcome` is `blocked` |
+| **PII Redacted** | Comma-separated list of entity types redacted (e.g. `EMAIL, PHONE`) |
 
 ### Live Polling
 

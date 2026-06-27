@@ -94,10 +94,12 @@ A live log of recent requests routed through this project.
 |--------|-------------|
 | Timestamp | When the request arrived |
 | Model | Provider model that handled the request |
-| Status | `success`, `error`, `budget_exceeded`, etc. |
+| Status | `success` (green), `blocked` (amber), `error` / `budget_exceeded` etc. (red) |
 | Input Tokens | Number of input tokens |
 | Output Tokens | Number of output tokens generated |
 | Cost | Estimated USD cost |
+
+A `blocked` status means a guardrail rule rejected the request before it reached any model. Zero tokens and zero cost are recorded.
 
 Click any row to open the **Trace view** which shows the full routing decision: which policies ran, which models were considered, and why the final model was chosen.
 
@@ -140,7 +142,12 @@ You can provide custom instructions that are prepended to the moderation prompt.
 
 ##### Model selection
 
-All models configured in your Routerly instance are available for policy evaluation. For semantic policies, only embedding models are shown.
+The model dropdowns are filtered by type:
+
+- **Topic and Moderation** judges — show only non-embedding models (chat/completion models). Embedding-only models cannot act as LLM judges and are excluded.
+- **Semantic** embedding field — shows only models with `capabilities.embedding = true`.
+
+This prevents misconfiguration: a topic or moderation rule configured with an embedding model would fail silently at evaluation time.
 
 #### Consumer impact
 

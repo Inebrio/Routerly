@@ -268,12 +268,9 @@ the first matching enabled rule triggers the configured action.
 | `moderation` | request / response / both | `modelId`, `threshold?: number` (default 0.5) | LLM judge: block harmful content (hate, violence, sexual, self-harm) |
 
 **Action values:**
-- `block` — reject before forwarding; return a wire-faithful HTTP 200 response
-  (`finish_reason: "content_filter"` for OpenAI, `stop_reason: "refusal"` for
-  Anthropic). The `fallbackMessage` is stored on the trace but not in the wire
-  body. See [LLM Proxy — Guardrail block wire format](./llm-proxy.md#guardrail-block--wire-format).
-- `flag` — record `guardrailTriggered` on the usage record, continue
-- `log` — log only, no usage record side-effect
+- `block` — reject before forwarding; the request never reaches the model. Returns a wire-faithful HTTP 200 response (`finish_reason: "content_filter"` for OpenAI, `stop_reason: "refusal"` for Anthropic). Records a usage entry with `outcome: "blocked"`, `callType: "guardrail"`, zero tokens and cost, and `blockedBy` set to the triggering rule. See [LLM Proxy — Guardrail block wire format](./llm-proxy.md#guardrail-block--wire-format).
+- `flag` — forward the request; record `guardrailTriggered` on the usage record (outcome remains `success` or `error`).
+- `log` — log only, no usage record side-effect.
 
 **Target values:** `request` evaluates the user messages; `response` evaluates the model output; `both` evaluates both sides.
 
@@ -651,7 +648,7 @@ Query parameters:
 | `to` | ISO date | End of range |
 | `project` | string | Filter by project slug |
 | `model` | string | Filter by model ID |
-| `outcome` | string | `success`, `error`, `budget_exceeded` |
+| `outcome` | string | `success`, `error`, `budget_exceeded`, `timeout`, `blocked` |
 | `limit` | number | Max records to return (default: 100) |
 | `offset` | number | Pagination offset |
 
@@ -663,7 +660,8 @@ Query parameters:
     "totalCost": 0.1234,
     "totalCalls": 200,
     "successCalls": 188,
-    "errorCalls": 12,
+    "blockedCalls": 3,
+    "errorCalls": 9,
     "completionCalls": 180,
     "routingCalls": 8,
     "guardrailCalls": 12,
@@ -685,8 +683,18 @@ The `summary` object breaks down calls and cost by sub-activity type:
 | `completionCalls` / `completionCost` | Main model inference calls |
 | `routingCalls` / `routingCost` | LLM policy routing calls (e.g. the `llm` routing policy) |
 | `guardrailCalls` / `guardrailCost` | Model calls made by security rules (semantic embedding, topic judge, moderation judge) |
+| `blockedCalls` | Requests blocked by a guardrail rule before reaching any model |
+| `errorCalls` | Failed calls — does **not** include blocked calls |
 
-Guardrail call records appear in the `records` array with `callType: "guardrail"`.
+Guardrail judge call records appear in the `records` array with `callType: "guardrail"`. Blocked request records appear with `outcome: "blocked"` and `callType: "guardrail"`. The `errorCalls` counter excludes blocked requests — a block is a normal guardrail outcome, not a model error.
+
+The `outcome` filter on `GET /api/usage` accepts `blocked` in addition to `success`, `error`, and `budget_exceeded`.
+
+Individual usage records for blocked requests carry `guardrailTriggered` (the rule identifier, e.g. `regex:pattern` or `injection:dan-mode`) and `blockedBy` (same value; present only when the outcome is `blocked`). Records where PII was redacted carry `piiRedacted` with an array of redacted entity types. Records where a guardrail triggered on the `flag` or `log` path carry `guardrailTriggered` but not `blockedBy`.
+
+:::note Wire format unchanged
+The block response sent to the API client is standard and unchanged: HTTP 200, empty content, `finish_reason: "content_filter"` (OpenAI) or `stop_reason: "refusal"` (Anthropic). Only observability around the block changed — the usage record is now written and the summary counts it separately.
+:::
 
 ### Get Routing Trace
 
@@ -694,10 +702,14 @@ Guardrail call records appear in the `records` array with `callType: "guardrail"
 GET /api/traces/:id
 ```
 
-Returns the routing trace (`{ trace: [...] }`), including guardrail
-(`guardrail:triggered`, `guardrail:response-triggered`) and PII (`pii:scrubbed`)
-entries. Use the `x-routerly-trace-id` header from any LLM proxy response —
-present even on blocked responses — to look up its trace:
+Returns the routing trace (`{ trace: [...] }`). The trace includes:
+
+- `guardrail:evaluated` — emitted after every guardrail check (pass or skip), with a `rules` array showing each rule's `outcome` (`passed`, `triggered`, or `skipped`) and `reason`. This entry is emitted even when no rule fires, so you can see which rules ran and which were skipped.
+- `guardrail:triggered` — emitted on a request-side match (action `flag`/`log`; the request still proceeds).
+- `guardrail:response-triggered` — emitted on a response-side match.
+- `pii:scrubbed` — emitted when PII was detected and replaced.
+
+Use the `x-routerly-trace-id` header from any LLM proxy response — present even on blocked responses — to look up its trace:
 
 ```bash
 curl -s http://localhost:3000/api/traces/$TRACE_ID \

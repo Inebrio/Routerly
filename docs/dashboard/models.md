@@ -51,6 +51,12 @@ Click any column header to sort.
 
 3. Click **Save**
 
+:::tip Adding from the catalog
+Use the **Model Discovery** page (navigate to **Models**, then click **Discover**) to browse the built-in catalog. Clicking **Add** next to any entry opens the new-model form with the **Provider** and **Model ID** already filled in, and pre-populates pricing and context window from the catalog entry. You only need to supply the API key.
+:::
+
+<!-- TODO screenshot: models-new-prefilled (model form opened from catalog Add button with provider+model pre-filled) (deferred, service down) -->
+
 ### Editing a Model
 
 Click the **Edit** (pencil) icon next to a model. All fields except the Model ID are editable.
@@ -97,3 +103,24 @@ The Health tab shows real-time operational status for each model. Data is refres
 :::note Redirected from /dashboard/health
 The standalone Provider Health page has moved. `/dashboard/health` now redirects to `/dashboard/models?tab=health`.
 :::
+
+---
+
+## Model Discovery
+
+Navigate to `/dashboard/models/discover` (or click **Discover** on the Models page) to browse the built-in model catalog. The catalog lists known models from supported providers with their context window, modalities, and published pricing.
+
+<!-- TODO screenshot: models-discover (discovery catalog page) (deferred, service down) -->
+
+| Column | Description |
+|--------|-------------|
+| **Model** | Model ID; `★` marks models already configured in your Routerly instance |
+| **Provider** | Provider name |
+| **Context** | Maximum context window (e.g. `128k`, `1.0M`) |
+| **Modalities** | Supported input types (e.g. `text`, `image`) |
+| **Input /1K** | Input price per 1,000 tokens; shown as `free/local` for zero-priced or local models |
+| **Output /1K** | Output price per 1,000 tokens |
+
+Filter by **provider** using the tabs above the table, or use the search box to narrow by model ID.
+
+Click **Add** next to any model to open the new-model form with the provider and model ID pre-filled. Pricing and context window are also pre-populated from the catalog entry; supply the API key to complete registration.
