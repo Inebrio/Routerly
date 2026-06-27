@@ -153,6 +153,65 @@ describe('TestPage — clean turn', () => {
   });
 });
 
+// ── Cross-chunk SSE buffering ──────────────────────────────────────────────
+
+/** Returns a Response whose reader yields the given chunks in order. */
+function makeChunkedSSEResponse(chunks: string[], traceId = 'trace-123') {
+  const enc = new TextEncoder();
+  let i = 0;
+  return new Response(
+    new ReadableStream({
+      pull(c) {
+        if (i < chunks.length) c.enqueue(enc.encode(chunks[i++]!));
+        else c.close();
+      },
+    }),
+    { status: 200, headers: { 'x-routerly-trace-id': traceId, 'content-type': 'text/event-stream' } },
+  );
+}
+
+describe('TestPage — cross-chunk SSE buffering (handleSend / loop 2)', () => {
+  it('assembles content split across two reads without error', async () => {
+    vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
+    // JSON is split mid-string: "impressioni" in chunk 1, "smo" in chunk 2
+    global.fetch = vi.fn().mockResolvedValue(makeChunkedSSEResponse([
+      'data: {"choices":[{"delta":{"content":"impressioni',
+      'smo"},"finish_reason":null}]}\n\ndata: [DONE]\n\n',
+    ]));
+
+    await setupWithToken();
+
+    const textarea = screen.getByPlaceholderText('Type a message...');
+    await userEvent.type(textarea, 'test cross-chunk');
+    await userEvent.keyboard('{Enter}');
+
+    await waitFor(() =>
+      expect(screen.queryByText(/impressionismo/)).not.toBeNull(),
+    { timeout: 4000 });
+
+    // No error banner
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText(/unexpected end/i)).toBeNull();
+  });
+
+  it('still surfaces a data.type=error event as an error (not swallowed)', async () => {
+    vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
+    global.fetch = vi.fn().mockResolvedValue(makeChunkedSSEResponse([
+      'data: {"type":"error","message":"boom"}\n\n',
+    ]));
+
+    await setupWithToken();
+
+    const textarea = screen.getByPlaceholderText('Type a message...');
+    await userEvent.type(textarea, 'trigger service error');
+    await userEvent.keyboard('{Enter}');
+
+    await waitFor(() =>
+      expect(screen.queryByText('boom')).not.toBeNull(),
+    { timeout: 4000 });
+  });
+});
+
 describe('TestPage — Clear resets debug', () => {
   it('Clear removes messages AND resets debug sidebar', async () => {
     vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
