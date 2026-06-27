@@ -655,7 +655,7 @@ Query parameters:
 | `limit` | number | Max records to return (default: 100) |
 | `offset` | number | Pagination offset |
 
-All filters are applied server-side. `projectIds` and `modelIds` accept comma-separated values for multi-value filtering; they take precedence over the single-value `project` and `model` parameters when both are provided.
+All filters are applied server-side. `projectIds` and `modelIds` accept comma-separated values for multi-value filtering; they combine with (AND) the single-value `project` and `model` parameters when both are provided, narrowing the result to records that match every active filter.
 
 **Response summary object:**
 
@@ -725,12 +725,15 @@ The block response sent to the API client is standard and unchanged: HTTP 200, e
 GET /api/traces/:id
 ```
 
-Returns the routing trace (`{ trace: [...] }`). The trace includes:
+Returns the routing trace (`{ trace: [...] }`). All trace entries are stored out-of-band in the trace store; the wire response sent to your API client is never modified.
 
-- `guardrail:evaluated` — emitted after every guardrail check (pass or skip), with a `rules` array showing each rule's `outcome` (`passed`, `triggered`, or `skipped`) and `reason`. This entry is emitted even when no rule fires, so you can see which rules ran and which were skipped.
-- `guardrail:triggered` — emitted on a request-side match (action `flag`/`log`; the request still proceeds).
-- `guardrail:response-triggered` — emitted on a response-side match.
-- `pii:scrubbed` — emitted when PII was detected and replaced.
+| Entry | When emitted | `details` shape |
+|-------|-------------|-----------------|
+| `guardrail:evaluated` | After every guardrail check, whether or not any rule fires | `{ target: "request"\|"response", rules: [{ rule, outcome, reason? }] }` — one object per rule. `outcome` is `passed`, `triggered`, or `skipped`. `reason` is set on skipped rules (e.g. `judge-failed`) and on scoring rules (e.g. `regex:<pattern>`, `semantic:82%`). The built-in prompt-injection check appears as `rule: "injection"`. |
+| `guardrail:triggered` | When a rule with `action: flag` or `action: log` matches (request side) | `{ rule, target: "request" }` |
+| `guardrail:response-triggered` | When a rule with `action: flag` or `action: log` matches (response side) | `{ rule, target: "response" }` |
+| `pii:evaluated` | After every PII scrubbing pass when `scrubInput` or `scrubOutput` is enabled, even when nothing was redacted | `{ redacted: string[] }` — entity types found (e.g. `["EMAIL"]`). Empty array on a clean pass. `panel` indicates `"request"` or `"response"`. |
+| `pii:scrubbed` | When at least one PII entity was detected and replaced | `{ entities: string[] }` — entity types that were replaced. Also emitted alongside `pii:evaluated` on a hit. |
 
 Use the `x-routerly-trace-id` header from any LLM proxy response — present even on blocked responses — to look up its trace:
 

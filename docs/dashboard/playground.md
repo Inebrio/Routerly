@@ -63,10 +63,6 @@ bubble. The banner displays:
 
 The wire response seen by your application is a standard `finish_reason: "content_filter"` (OpenAI) or `stop_reason: "refusal"` (Anthropic) HTTP 200 — not an error. The Playground reads the trace to surface the richer block details shown in the banner.
 
-## PII Scrubbed Indicator
-
-When PII scrubbing is active, the **Technical Details** panel in the Debug sidebar shows a **"PII SCRUBBED"** entry (orange badge) for each turn where entities were detected. The entry lists each scrubbed entity type as a pill (e.g. `EMAIL`, `PHONE_NUMBER`). This indicator appears for both input scrubbing (before the request) and output scrubbing (after the response), depending on the project configuration.
-
 ## Debug Panels
 
 The **Debug** sidebar (right side of the screen) shows one collapsible section per conversation turn. Expand a turn to see:
@@ -74,9 +70,40 @@ The **Debug** sidebar (right side of the screen) shows one collapsible section p
 | Panel | Contents |
 |-------|----------|
 | **Turn summary** | Model used, token counts, latency |
-| **Technical Details** | Full routing trace: policy scores, selected model, guardrail events, PII scrubbed entries |
+| **Technical Details** | Full routing trace: policy scores, selected model, guardrail evaluation, PII scan results |
 
 These panels are invaluable for understanding why the router chose a specific model, diagnosing provider errors, or confirming that guardrails and PII scrubbing fired correctly.
+
+### Guardrails Evaluated
+
+![Playground Debug panel showing Technical Details with GUARDRAILS EVALUATED and PII SCANNED blocks](../assets/screenshot-playground-trace.png)
+
+When guardrails are configured on the project, the Technical Details section shows a **GUARDRAILS EVALUATED (REQUEST)** block after every request — whether or not any rule fired. Each row represents one rule that ran:
+
+| Column | Meaning |
+|--------|---------|
+| Rule name | The rule identifier from your guardrail config, e.g. `regex:pattern`, `semantic:topic`, or `Prompt injection` for the built-in injection check |
+| Outcome chip | `passed` (green) — the rule ran and did not match. `triggered` (red) — the rule matched; the request was blocked or flagged. `skipped` (grey) — the rule did not run, e.g. its judge model was unavailable. |
+| Reason | Shown below the rule name on skipped or scored rules, e.g. `judge-failed`, `semantic:82%`, `moderation:score=0.94` |
+
+The **Prompt injection** row (highlighted in red) represents the built-in injection detector. It is enabled per project via the `detectInjection` guardrail flag on the project Security tab or via `routerly project guardrails`.
+
+Use this block to answer: "Did the guardrail actually run? Which rule matched? Was prompt injection detected?"
+
+### PII Scanned
+
+When PII scrubbing is active, the Technical Details section always shows a **PII SCANNED (REQUEST)** and/or **PII SCANNED (RESPONSE)** block — even when nothing was redacted. This confirms that scrubbing ran.
+
+| State | Display |
+|-------|---------|
+| Nothing redacted | `0 redacted` (clean) |
+| Entities redacted | `N redacted` with entity-type pills, e.g. `EMAIL`, `PHONE_NUMBER` |
+
+When entities were redacted, a separate **PII SCRUBBED** block (orange) also appears listing the replaced entity types.
+
+:::note
+All trace data is fetched out-of-band via the trace store using the `x-routerly-trace-id` response header. The wire response returned to your application is never modified to include trace information.
+:::
 
 ---
 
