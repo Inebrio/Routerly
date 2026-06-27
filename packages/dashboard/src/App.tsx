@@ -380,7 +380,7 @@ const router = createBrowserRouter([
             ],
           },
           { path: 'usage', element: <UsagePage /> },
-          { path: 'health', element: <Navigate to="/dashboard/models?tab=health" replace /> },
+          { path: 'health', element: <Navigate to="/dashboard/models" replace /> },
           { path: 'leaderboard', element: <Navigate to="/dashboard/usage?tab=leaderboard" replace /> },
           { path: 'test', element: <TestPage /> },
           {
