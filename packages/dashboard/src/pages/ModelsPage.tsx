@@ -4,7 +4,8 @@ import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDo
 import { getModels, deleteModel, getProviderHealth, type Model, type ProviderHealth } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
-type SortKey = 'id' | 'provider' | 'input' | 'output' | 'cache' | 'context';
+type SortKey = 'id' | 'provider' | 'endpoint' | 'input' | 'output' | 'cache' | 'context'
+  | 'status' | 'errorRate' | 'p95Latency' | 'requests' | 'lastSuccess' | 'cooldown';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 20;
@@ -23,6 +24,16 @@ function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; s
 
 // ponytail: 'nodata' is a local extension; ProviderHealth['status'] covers the real statuses
 type ExtendedStatus = ProviderHealth['status'] | 'nodata';
+
+// Sort order: lower = worse (sorts last when desc, i.e. always "best first" for status col)
+// nodata sentinel ensures no-data rows sink to bottom regardless of direction
+const STATUS_SEVERITY: Record<ExtendedStatus, number> = {
+  unavailable: 0,
+  degraded:    1,
+  cooldown:    2,
+  healthy:     3,
+  nodata:      999, // always last
+};
 
 const STATUS_META: Record<ExtendedStatus, { label: string; color: string }> = {
   healthy:     { label: 'Healthy',     color: 'var(--success)' },
@@ -148,18 +159,55 @@ export function ModelsPage() {
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
+      const ha = healthMap.get(a.id);
+      const hb = healthMap.get(b.id);
+      // For health columns: no-data rows always sink to bottom regardless of direction
+      const isHealthKey = ['status', 'errorRate', 'p95Latency', 'requests', 'lastSuccess', 'cooldown'].includes(sortKey);
+      if (isHealthKey) {
+        const aNoData = !ha;
+        const bNoData = !hb;
+        if (aNoData && bNoData) return 0;
+        if (aNoData) return 1;   // a sinks
+        if (bNoData) return -1;  // b sinks
+      }
       let cmp = 0;
       switch (sortKey) {
-        case 'id':       cmp = a.id.localeCompare(b.id); break;
-        case 'provider': cmp = a.provider.localeCompare(b.provider); break;
-        case 'input':    cmp = a.cost.inputPerMillion - b.cost.inputPerMillion; break;
-        case 'output':   cmp = a.cost.outputPerMillion - b.cost.outputPerMillion; break;
-        case 'cache':    cmp = numOrInfinity(a.cost.cachePerMillion) - numOrInfinity(b.cost.cachePerMillion); break;
-        case 'context':  cmp = numOrInfinity(a.contextWindow) - numOrInfinity(b.contextWindow); break;
+        case 'id':        cmp = a.id.localeCompare(b.id); break;
+        case 'provider':  cmp = a.provider.localeCompare(b.provider); break;
+        case 'endpoint':  cmp = a.endpoint.localeCompare(b.endpoint); break;
+        case 'input':     cmp = a.cost.inputPerMillion - b.cost.inputPerMillion; break;
+        case 'output':    cmp = a.cost.outputPerMillion - b.cost.outputPerMillion; break;
+        case 'cache':     cmp = numOrInfinity(a.cost.cachePerMillion) - numOrInfinity(b.cost.cachePerMillion); break;
+        case 'context':   cmp = numOrInfinity(a.contextWindow) - numOrInfinity(b.contextWindow); break;
+        case 'status': {
+          const sa: ExtendedStatus = ha ? (cooldownTimer(ha.cooldownUntil) ? 'cooldown' : ha.status) : 'nodata';
+          const sb: ExtendedStatus = hb ? (cooldownTimer(hb.cooldownUntil) ? 'cooldown' : hb.status) : 'nodata';
+          // nodata always last; for the rest, asc = best health first (healthy > degraded > cooldown > unavailable)
+          if (sa === 'nodata' && sb === 'nodata') { cmp = 0; break; }
+          if (sa === 'nodata') { cmp = 1; break; }
+          if (sb === 'nodata') { cmp = -1; break; }
+          cmp = STATUS_SEVERITY[sb] - STATUS_SEVERITY[sa]; // higher severity = worse, sorts last on asc
+          break;
+        }
+        case 'errorRate':   cmp = (ha?.errorRate ?? Infinity) - (hb?.errorRate ?? Infinity); break;
+        case 'p95Latency':  cmp = (ha?.p95LatencyMs ?? Infinity) - (hb?.p95LatencyMs ?? Infinity); break;
+        case 'requests':    cmp = (ha?.requestsLastHour ?? Infinity) - (hb?.requestsLastHour ?? Infinity); break;
+        case 'lastSuccess': {
+          const ta = ha?.lastSuccessAt ? new Date(ha.lastSuccessAt).getTime() : -Infinity;
+          const tb = hb?.lastSuccessAt ? new Date(hb.lastSuccessAt).getTime() : -Infinity;
+          cmp = ta - tb;
+          break;
+        }
+        case 'cooldown': {
+          const ca = ha?.cooldownUntil ? new Date(ha.cooldownUntil).getTime() : 0;
+          const cb = hb?.cooldownUntil ? new Date(hb.cooldownUntil).getTime() : 0;
+          cmp = ca - cb;
+          break;
+        }
       }
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [filtered, sortKey, sortDir]);
+  }, [filtered, sortKey, sortDir, healthMap]);
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   // Clamp page when a delete removes the last row on the last page
@@ -243,18 +291,17 @@ export function ModelsPage() {
                   <tr>
                     <th style={thStyle}>{thInner('ID', 'id')}</th>
                     <th style={thStyle}>{thInner('Provider', 'provider')}</th>
-                    <th>Endpoint</th>
+                    <th style={thStyle}>{thInner('Endpoint', 'endpoint')}</th>
                     <th style={thStyle}>{thInner('Input $/1M', 'input')}</th>
                     <th style={thStyle}>{thInner('Output $/1M', 'output')}</th>
                     <th style={thStyle}>{thInner('Cache $/1M', 'cache')}</th>
                     <th style={thStyle}>{thInner('Context Size', 'context')}</th>
-                    {/* health columns — not sortable, ponytail: skip sort complexity */}
-                    <th>Status</th>
-                    <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Error rate (5m)</th>
-                    <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>P95 latency (5m)</th>
-                    <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Requests (1h)</th>
-                    <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Last success</th>
-                    <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Cooldown</th>
+                    <th style={thStyle}>{thInner('Status', 'status')}</th>
+                    <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Error rate (5m)', 'errorRate')}</th>
+                    <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('P95 latency (5m)', 'p95Latency')}</th>
+                    <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Requests (1h)', 'requests')}</th>
+                    <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Last success', 'lastSuccess')}</th>
+                    <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Cooldown', 'cooldown')}</th>
                     <th></th>
                   </tr>
                 </thead>
