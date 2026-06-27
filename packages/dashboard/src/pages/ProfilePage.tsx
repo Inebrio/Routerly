@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
+import QRCode from 'qrcode';
 import { User, Lock, ShieldCheck, ShieldOff, CheckCheck } from 'lucide-react';
 import { updateMe, setup2fa, confirm2fa, disable2fa, regenerateBackupCodes, getNotificationInbox, markNotificationsRead, type InboxItem } from '../api';
 import { useAuth } from '../AuthContext';
@@ -159,10 +160,18 @@ function ProfileSecurityTab() {
   const [tfaError, setTfaError] = useState('');
   const [tfaBusy, setTfaBusy] = useState(false);
   const [tfaEnabled, setTfaEnabled] = useState(!!user?.totpEnabled);
+  const [tfaQrImage, setTfaQrImage] = useState('');
   const [disableCode, setDisableCode] = useState('');
   const [backupVisible, setBackupVisible] = useState(false);
   const [newBackupCodes, setNewBackupCodes] = useState<string[]>([]);
   const [regenCode, setRegenCode] = useState('');
+
+  useEffect(() => {
+    if (!tfaQrUrl) { setTfaQrImage(''); return; }
+    QRCode.toDataURL(tfaQrUrl, { width: 180, margin: 2 })
+      .then(setTfaQrImage)
+      .catch(() => setTfaQrImage(''));
+  }, [tfaQrUrl]);
 
   async function handleSetup2fa() {
     setTfaError('');
@@ -337,6 +346,12 @@ function ProfileSecurityTab() {
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
               Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.), then enter the 6-digit code to confirm.
             </p>
+            {tfaQrImage && (
+              /* ponytail: white padding so QR scans in dark mode */
+              <div style={{ alignSelf: 'flex-start', background: '#fff', padding: 8, borderRadius: 8, lineHeight: 0 }}>
+                <img src={tfaQrImage} alt="2FA setup QR code" width={180} height={180} />
+              </div>
+            )}
             <div style={{ padding: '14px 16px', background: 'var(--surface-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 8px' }}>
                 Open your authenticator app (Google Authenticator, Authy, 1Password, etc.) and add a new account:
