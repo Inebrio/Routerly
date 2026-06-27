@@ -228,6 +228,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     let piiRedacted: string[] | undefined;
     if (project.pii && project.pii.scrubInput !== false && Array.isArray(body.messages)) {
       const { messages, redacted } = scrubMessages(body.messages, project.pii);
+      // "ran" signal: always emitted when input scrubbing is active, even with 0 redactions.
+      appendTrace(traceId, [{ panel: 'request', message: 'pii:evaluated', details: { redacted } }]);
       if (redacted.length > 0) {
         body.messages = messages;
         piiRedacted = redacted;
@@ -466,6 +468,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
               fullContent += remaining;
             }
             // PII output trace (#76): record entities redacted across the stream.
+            // "ran" signal: always emitted when output scrubbing is active, even with 0 redactions.
+            appendTrace(traceId, [{ panel: 'response', message: 'pii:evaluated', details: { redacted: [...outputScrubber.found] } }]);
             if (outputScrubber.found.size > 0) {
               appendTrace(traceId, [{ panel: 'response', message: 'pii:scrubbed', details: { entities: [...outputScrubber.found] } }]);
             }
@@ -661,6 +665,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           const content = response.choices?.[0]?.message?.content;
           if (typeof content === 'string') {
             const { text, found } = scrubText(content, project.pii);
+            // "ran" signal: always emitted when output scrubbing is active, even with 0 redactions.
+            appendTrace(traceId, [{ panel: 'response', message: 'pii:evaluated', details: { redacted: found } }]);
             if (found.length > 0) {
               response.choices![0]!.message.content = text;
               request.log.info({ projectId: project.id, found }, 'pii: scrubbed output');

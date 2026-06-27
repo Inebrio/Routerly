@@ -46,9 +46,11 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
   const isCacheHit     = e.message === 'cache:hit';
   const isCacheMiss    = e.message === 'cache:miss';
   const isGuardrailTriggered = e.message === 'guardrail:triggered' || e.message === 'guardrail:response-triggered';
+  const isGuardrailEvaluated = e.message === 'guardrail:evaluated';
   const isPiiScrubbed  = e.message === 'pii:scrubbed';
+  const isPiiEvaluated = e.message === 'pii:evaluated';
 
-  const labelColor = isError ? 'var(--danger)' : isGuardrailTriggered ? '#ef4444' : isPiiScrubbed ? '#f97316' : isThinking ? '#a78bfa' : isModelPrompt ? '#c4b5fd' : isRecap ? '#34d399' : isCacheEmbedding ? '#38bdf8' : isCacheHit ? '#10b981' : isCacheMiss ? '#f59e0b' : 'var(--accent)';
+  const labelColor = isError ? 'var(--danger)' : isGuardrailTriggered ? '#ef4444' : isGuardrailEvaluated ? '#fb923c' : isPiiScrubbed ? '#f97316' : isPiiEvaluated ? '#34d399' : isThinking ? '#a78bfa' : isModelPrompt ? '#c4b5fd' : isRecap ? '#34d399' : isCacheEmbedding ? '#38bdf8' : isCacheHit ? '#10b981' : isCacheMiss ? '#f59e0b' : 'var(--accent)';
   const hasDetails = e.details != null && Object.keys(e.details).length > 0;
 
   // Estrai i campi "speciali" dal JSON tecnico per non duplicarli nel fallback
@@ -74,7 +76,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
   return (
     <div style={{ marginBottom: 8 }}>
 
-      {!isRecap && !isCacheEmbedding && !isCacheHit && !isCacheMiss && !isGuardrailTriggered && !isPiiScrubbed && (
+      {!isRecap && !isCacheEmbedding && !isCacheHit && !isCacheMiss && !isGuardrailTriggered && !isGuardrailEvaluated && !isPiiScrubbed && !isPiiEvaluated && (
         <div style={{ fontSize: '0.75rem', color: labelColor, marginBottom: 3, fontWeight: 700, letterSpacing: '0.04em' }}>
           {e.message}
           {isModelPrompt && (
@@ -345,6 +347,40 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           )}
         </div>
 
+      ) : isGuardrailEvaluated ? (
+        <div style={{ background: 'rgba(251,146,60,0.07)', border: '1px solid rgba(251,146,60,0.3)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#fb923c', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            GUARDRAILS EVALUATED ({String(e.details?.target ?? '').toUpperCase()})
+          </span>
+          {Array.isArray(e.details?.rules) && (e.details.rules as Array<{ rule: string; outcome: string; reason?: string }>).map((r, i) => {
+            const isInjection = r.rule === 'injection';
+            const outcomeColor = r.outcome === 'passed' ? '#4ade80' : r.outcome === 'triggered' ? '#f87171' : 'var(--text-muted)';
+            const outcomeBg   = r.outcome === 'passed' ? 'rgba(74,222,128,0.12)' : r.outcome === 'triggered' ? 'rgba(248,113,113,0.12)' : 'rgba(148,163,184,0.10)';
+            const outcomeBorder = r.outcome === 'passed' ? 'rgba(74,222,128,0.3)' : r.outcome === 'triggered' ? 'rgba(248,113,113,0.3)' : 'rgba(148,163,184,0.2)';
+            return (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap',
+                padding: isInjection ? '5px 8px' : '3px 0',
+                background: isInjection ? 'rgba(239,68,68,0.07)' : undefined,
+                border: isInjection ? '1px solid rgba(239,68,68,0.25)' : undefined,
+                borderRadius: isInjection ? 'var(--radius-sm)' : undefined,
+              }}>
+                <span style={{ fontSize: '0.82rem', color: isInjection ? '#fca5a5' : 'var(--text-primary)', fontFamily: 'monospace', fontWeight: isInjection ? 700 : 400, flex: 1, minWidth: 0 }}>
+                  {isInjection ? 'Prompt injection' : r.rule}
+                </span>
+                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: outcomeColor, background: outcomeBg, border: `1px solid ${outcomeBorder}`, padding: '1px 7px', borderRadius: 99, whiteSpace: 'nowrap' }}>
+                  {r.outcome}
+                </span>
+                {r.reason && (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace', width: '100%', marginTop: 1 }}>
+                    {r.reason}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
       ) : isPiiScrubbed ? (
         <div style={{ background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.35)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#f97316', textTransform: 'uppercase', letterSpacing: '0.06em' }}>PII SCRUBBED</span>
@@ -356,6 +392,27 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
                 </span>
               ))}
             </div>
+          )}
+        </div>
+
+      ) : isPiiEvaluated ? (
+        <div style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            PII SCANNED ({String(e.panel ?? '').toUpperCase()})
+          </span>
+          {Array.isArray(e.details?.redacted) && e.details.redacted.length > 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.8rem', color: '#fca5a5', fontWeight: 600 }}>{e.details.redacted.length} redacted</span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {(e.details.redacted as string[]).map((entity: string, i: number) => (
+                  <span key={i} style={{ fontSize: '0.72rem', fontWeight: 600, color: '#fdba74', background: 'rgba(249,115,22,0.12)', padding: '2px 8px', borderRadius: 99, border: '1px solid rgba(249,115,22,0.25)' }}>
+                    {entity}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <span style={{ fontSize: '0.8rem', color: '#6ee7b7' }}>0 redacted</span>
           )}
         </div>
 
