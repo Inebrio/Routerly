@@ -241,6 +241,124 @@ describe('UsagePage — blockedCalls stat card', () => {
   });
 });
 
+describe('UsagePage — Rank column and sortable per-model table', () => {
+  function makeByModel(overrides: Record<string, unknown> = {}) {
+    return {
+      'cheap-model': {
+        calls: 10, inputTokens: 5000, outputTokens: 2000, cachedInputTokens: 0,
+        cost: 0.001, errors: 0, success: 10, avgLatencyMs: 200, p95LatencyMs: 400,
+        ...overrides,
+      },
+      'expensive-model': {
+        calls: 10, inputTokens: 5000, outputTokens: 2000, cachedInputTokens: 0,
+        cost: 0.05, errors: 0, success: 10, avgLatencyMs: 150, p95LatencyMs: 300,
+      },
+    };
+  }
+
+  it('renders a Rank column header', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byModel: makeByModel() });
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Rank')).toBeTruthy());
+  });
+
+  it('rank 1 is on the best cost-performance model (lowest costPer1k / successRate)', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byModel: makeByModel() });
+    renderPage();
+    await waitFor(() => screen.getByText('Rank'));
+    // cheap-model has lower cost, so should be rank 1 — star appears on it
+    const star = document.querySelector('[aria-label="Best cost-performance"]');
+    expect(star).toBeTruthy();
+    const rankRow = star?.closest('tr');
+    expect(rankRow?.textContent).toContain('cheap-model');
+  });
+
+  it('default sort is Rank ascending (rank 1 row appears first)', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byModel: makeByModel() });
+    renderPage();
+    await waitFor(() => screen.getByText('Rank'));
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    expect(rows[0]?.textContent).toContain('cheap-model');
+  });
+
+  it('re-sorting by Cost does not renumber Rank (rank values stay stable)', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byModel: makeByModel() });
+    renderPage();
+    await waitFor(() => screen.getByText('Rank'));
+    // click Cost header to re-sort
+    const costHeader = screen.getByText('Cost (USD)');
+    await userEvent.click(costHeader);
+    // rows are now sorted by cost but Rank column value on cheap-model row is still 1
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    const cheapRow = rows.find(r => r.textContent?.includes('cheap-model'));
+    // first cell is Rank — should show 1 (or the star + 1)
+    const rankCell = cheapRow?.querySelector('td:first-child');
+    expect(rankCell?.textContent).toContain('1');
+  });
+
+  it('model with zero success gets rank — (Infinity, displays as dash)', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'zero-success': {
+          calls: 5, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0,
+          cost: 0.01, errors: 5, success: 0, avgLatencyMs: 100, p95LatencyMs: 200,
+        },
+      },
+    });
+    renderPage();
+    await waitFor(() => screen.getAllByText('zero-success'));
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    const rankCell = rows[0]?.querySelector('td:first-child');
+    // Infinity rank renders as a dash character
+    expect(rankCell?.textContent?.trim()).toMatch(/^[—-]$/);
+  });
+
+  it('clicking Model header sorts alphabetically', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byModel: makeByModel() });
+    renderPage();
+    await waitFor(() => screen.getAllByText('cheap-model'));
+    // find the th>span that contains "Model" text (not the filter label)
+    const modelTh = Array.from(document.querySelectorAll('th span')).find(
+      el => el.textContent?.trim().startsWith('Model')
+    );
+    expect(modelTh).toBeTruthy();
+    await userEvent.click(modelTh!); // asc: c before e
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    expect(rows[0]?.textContent).toContain('cheap-model');
+  });
+
+  it('clicking Calls header sorts numerically', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'few-calls': { calls: 2, inputTokens: 500, outputTokens: 200, cachedInputTokens: 0, cost: 0.001, errors: 0, success: 2, avgLatencyMs: 100, p95LatencyMs: 200 },
+        'many-calls': { calls: 20, inputTokens: 5000, outputTokens: 2000, cachedInputTokens: 0, cost: 0.01, errors: 0, success: 20, avgLatencyMs: 150, p95LatencyMs: 300 },
+      },
+    });
+    renderPage();
+    await waitFor(() => screen.getByText('Calls'));
+    const callsHeader = screen.getByText('Calls');
+    await userEvent.click(callsHeader); // asc: few first
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    expect(rows[0]?.textContent).toContain('few-calls');
+  });
+
+  it('clicking a header twice reverses sort direction', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byModel: makeByModel() });
+    renderPage();
+    await waitFor(() => screen.getAllByText('cheap-model'));
+    const modelTh = Array.from(document.querySelectorAll('th span')).find(
+      el => el.textContent?.trim().startsWith('Model')
+    );
+    expect(modelTh).toBeTruthy();
+    await userEvent.click(modelTh!); // asc
+    await userEvent.click(modelTh!); // desc: e before c
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    expect(rows[0]?.textContent).toContain('expensive-model');
+  });
+});
+
 describe('UsagePage — Live mode', () => {
   it('renders the Live button', async () => {
     vi.mocked(getUsage).mockResolvedValue(makeStats());

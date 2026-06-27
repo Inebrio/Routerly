@@ -1,10 +1,21 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star } from 'lucide-react';
+import { Star, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { getUsage, getProjects, getModels, type UsageStats, type Project, type Model } from '../api';
 import { MultiSelect } from '../components/MultiSelect';
 import { DateRangePicker, PRESETS, RECENT_PRESETS, type DateRange } from '../components/DateRangePicker';
 import { useFilterState } from '../hooks/useFilterState';
+
+type ModelSortKey = 'rank' | 'model' | 'provider' | 'calls' | 'errors' | 'successRate'
+  | 'avgLatency' | 'p95Latency' | 'inputTokens' | 'outputTokens' | 'costPer1k' | 'cost';
+type SortDir = 'asc' | 'desc';
+
+function SortIcon({ col, sortKey, sortDir }: { col: ModelSortKey; sortKey: ModelSortKey; sortDir: SortDir }) {
+  if (col !== sortKey) return <ChevronsUpDown size={13} style={{ opacity: 0.35, marginLeft: 4, flexShrink: 0 }} />;
+  return sortDir === 'asc'
+    ? <ChevronUp size={13} style={{ marginLeft: 4, flexShrink: 0, color: 'var(--accent)' }} />
+    : <ChevronDown size={13} style={{ marginLeft: 4, flexShrink: 0, color: 'var(--accent)' }} />;
+}
 
 function FilterLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -39,6 +50,8 @@ export function UsagePage() {
   const [refreshing, setRefreshing]     = useState(false);
   const [page, setPage]                 = useState(1);
   const [pageSize]                      = useState(100);
+  const [modelSortKey, setModelSortKey] = useState<ModelSortKey>('rank');
+  const [modelSortDir, setModelSortDir] = useState<SortDir>('asc');
   const [newRowIds, setNewRowIds]       = useState<ReadonlySet<string>>(new Set());
   const latestTimestampRef              = useRef<string | null>(null);
   const navigate = useNavigate();
@@ -162,19 +175,82 @@ export function UsagePage() {
   const hasActiveFilters = projectIds.length > 0 || modelIds.length > 0 || callTypeFilter !== 'all' || outcomeFilter !== 'all';
   const hasReset = hasActiveFilters;
 
-  // Best model by cost/1k among those with any success (mirrors old leaderboard highlight)
-  const bestModelId = useMemo(() => {
-    if (!stats) return null;
-    let best: string | null = null;
-    let bestCost = Infinity;
-    for (const [modelId, v] of Object.entries(stats.byModel)) {
-      if (v.success <= 0) continue;
+  function handleModelSort(key: ModelSortKey) {
+    if (key === modelSortKey) setModelSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setModelSortKey(key); setModelSortDir('asc'); }
+  }
+
+  // Compute stable rank (cost-performance) over the full byModel set once.
+  // rank metric = costPer1k / successRate; lower = better. Missing data → last.
+  const rankedRows = useMemo(() => {
+    if (!stats) return [];
+    const entries = Object.entries(stats.byModel).map(([modelId, v]) => {
       const totalTok = v.inputTokens + v.outputTokens;
+      const successRate = v.calls > 0 ? v.success / v.calls : 0;
       const costPer1k = totalTok > 0 ? (v.cost * 1000) / totalTok : Infinity;
-      if (costPer1k < bestCost) { bestCost = costPer1k; best = modelId; }
-    }
-    return best;
-  }, [stats]);
+      // metric: lower is better; Infinity for zero-success or zero-token models
+      const metric = successRate > 0 && totalTok > 0 ? costPer1k / successRate : Infinity;
+      // ponytail: authoritative source first; split fallback only for slash-ids
+      const provider: string = allModels.find(m => m.id === modelId)?.provider
+        ?? (modelId.includes('/') ? (modelId.split('/')[0] ?? modelId) : modelId);
+      return { modelId, v, totalTok, successRate, costPer1k, metric, provider };
+    });
+    // Stable sort by metric to assign rank (ties share the same rank)
+    const sorted = [...entries].sort((a, b) => a.metric - b.metric);
+    let rank = 1;
+    sorted.forEach((row, i) => {
+      if (i > 0 && row.metric !== sorted[i - 1]!.metric) rank = i + 1;
+      (row as typeof row & { rank: number }).rank = row.metric === Infinity ? Infinity : rank;
+    });
+    return entries.map(row => ({
+      ...row,
+      rank: (row as typeof row & { rank: number }).rank,
+    }));
+  }, [stats, allModels]);
+
+  // Best = rank 1 (lowest metric among finite ranks)
+  const bestModelId = useMemo(() => {
+    const best = rankedRows.find(r => r.rank === 1);
+    return best?.modelId ?? null;
+  }, [rankedRows]);
+
+  const sortedModelRows = useMemo(() => {
+    return [...rankedRows].sort((a, b) => {
+      // missing/Infinity values always sink to bottom regardless of direction
+      const sentinel = (v: number) => v === Infinity || isNaN(v) ? Infinity : v;
+      const strOrLast = (s: string) => s;
+      let cmp = 0;
+      switch (modelSortKey) {
+        case 'rank':         cmp = sentinel(a.rank) - sentinel(b.rank); break;
+        case 'model':        cmp = strOrLast(a.modelId).localeCompare(strOrLast(b.modelId)); break;
+        case 'provider':     cmp = a.provider.localeCompare(b.provider); break;
+        case 'calls':        cmp = a.v.calls - b.v.calls; break;
+        case 'errors':       cmp = a.v.errors - b.v.errors; break;
+        case 'successRate':  cmp = a.successRate - b.successRate; break;
+        case 'avgLatency':   cmp = a.v.avgLatencyMs - b.v.avgLatencyMs; break;
+        case 'p95Latency':   cmp = a.v.p95LatencyMs - b.v.p95LatencyMs; break;
+        case 'inputTokens':  cmp = a.v.inputTokens - b.v.inputTokens; break;
+        case 'outputTokens': cmp = a.v.outputTokens - b.v.outputTokens; break;
+        case 'costPer1k':    cmp = sentinel(a.costPer1k) - sentinel(b.costPer1k); break;
+        case 'cost':         cmp = a.v.cost - b.v.cost; break;
+      }
+      // For numeric sentinels: Infinity rows always sink to bottom
+      if (modelSortKey !== 'model' && modelSortKey !== 'provider') {
+        const aInf = sentinel(
+          modelSortKey === 'rank' ? a.rank :
+          modelSortKey === 'costPer1k' ? a.costPer1k : 0
+        ) === Infinity;
+        const bInf = sentinel(
+          modelSortKey === 'rank' ? b.rank :
+          modelSortKey === 'costPer1k' ? b.costPer1k : 0
+        ) === Infinity;
+        if (aInf && bInf) return 0;
+        if (aInf) return 1;
+        if (bInf) return -1;
+      }
+      return modelSortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [rankedRows, modelSortKey, modelSortDir]);
 
   return (
     <>
@@ -368,61 +444,71 @@ export function UsagePage() {
               </div>
             </div>
 
-            {/* Per-model table — enriched with performance columns */}
-            {Object.keys(stats.byModel).length > 0 && (
-              <div className="table-wrap" style={{ marginBottom: 24 }}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Model</th>
-                      <th>Provider</th>
-                      <th style={{ textAlign: 'right' }}>Calls</th>
-                      <th style={{ textAlign: 'right' }}>Errors</th>
-                      <th style={{ textAlign: 'right' }}>Success rate</th>
-                      <th style={{ textAlign: 'right' }}>Avg latency</th>
-                      <th style={{ textAlign: 'right' }}>P95 latency</th>
-                      <th style={{ textAlign: 'right' }}>Input tokens</th>
-                      <th style={{ textAlign: 'right' }}>Output tokens</th>
-                      <th style={{ textAlign: 'right' }}>Cost / 1K</th>
-                      <th style={{ textAlign: 'right' }}>Cost (USD)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(stats.byModel).map(([modelId, v]) => {
-                      const isBest = modelId === bestModelId;
-                      const totalTok = v.inputTokens + v.outputTokens;
-                      // ponytail: guard divide-by-zero; guard v.calls=0
-                      const successRate = v.calls > 0 ? (v.success / v.calls) * 100 : 0;
-                      const costPer1k = totalTok > 0 ? (v.cost * 1000) / totalTok : 0;
-                      // ponytail: authoritative source first; split fallback only for slash-ids
-                      const provider = allModels.find(m => m.id === modelId)?.provider ?? (modelId.includes('/') ? modelId.split('/')[0] : modelId);
-                      return (
-                        <tr key={modelId}>
-                          <td>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                              {isBest && <Star size={13} fill="var(--warning)" color="var(--warning)" aria-label="Best cost-performance" />}
-                              <span className="mono">{modelId}</span>
-                            </span>
-                          </td>
-                          <td style={{ color: 'var(--text-secondary)' }}>{provider}</td>
-                          <td style={{ textAlign: 'right' }}>{v.calls}</td>
-                          <td style={{ textAlign: 'right', color: v.errors > 0 ? 'var(--danger)' : 'inherit' }}>{v.errors}</td>
-                          <td style={{ textAlign: 'right' }}>{successRate.toFixed(1)}%</td>
-                          <td style={{ textAlign: 'right' }}>{Math.round(v.avgLatencyMs)} ms</td>
-                          <td style={{ textAlign: 'right' }}>{Math.round(v.p95LatencyMs)} ms</td>
-                          <td style={{ textAlign: 'right' }}>{v.inputTokens.toLocaleString()}</td>
-                          <td style={{ textAlign: 'right' }}>{v.outputTokens.toLocaleString()}</td>
-                          <td style={{ textAlign: 'right' }} className="mono">
-                            {totalTok > 0 ? fmtCost(costPer1k) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
-                          </td>
-                          <td style={{ textAlign: 'right' }} className="mono">${v.cost.toFixed(8)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            {/* Per-model table — enriched with performance columns + Rank */}
+            {sortedModelRows.length > 0 && (() => {
+              const thS: React.CSSProperties = { cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' };
+              const th = (label: string, key: ModelSortKey, align?: 'right') => (
+                <th style={align ? { ...thS, textAlign: align } : thS}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: align === 'right' ? 'flex-end' : undefined }}
+                    onClick={() => handleModelSort(key)}>
+                    {label}<SortIcon col={key} sortKey={modelSortKey} sortDir={modelSortDir} />
+                  </span>
+                </th>
+              );
+              return (
+                <div className="table-wrap" style={{ marginBottom: 24 }}>
+                  <table>
+                    <thead>
+                      <tr>
+                        {th('Rank', 'rank')}
+                        {th('Model', 'model')}
+                        {th('Provider', 'provider')}
+                        {th('Calls', 'calls', 'right')}
+                        {th('Errors', 'errors', 'right')}
+                        {th('Success rate', 'successRate', 'right')}
+                        {th('Avg latency', 'avgLatency', 'right')}
+                        {th('P95 latency', 'p95Latency', 'right')}
+                        {th('Input tokens', 'inputTokens', 'right')}
+                        {th('Output tokens', 'outputTokens', 'right')}
+                        {th('Cost / 1K', 'costPer1k', 'right')}
+                        {th('Cost (USD)', 'cost', 'right')}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedModelRows.map(({ modelId, v, totalTok, successRate, costPer1k, rank, provider }) => {
+                        const isBest = modelId === bestModelId;
+                        const displayRank = rank === Infinity ? '—' : String(rank);
+                        return (
+                          <tr key={modelId}>
+                            <td style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                              {isBest
+                                ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                    <Star size={13} fill="var(--warning)" color="var(--warning)" aria-label="Best cost-performance" />
+                                    {displayRank}
+                                  </span>
+                                : displayRank}
+                            </td>
+                            <td><span className="mono">{modelId}</span></td>
+                            <td style={{ color: 'var(--text-secondary)' }}>{provider}</td>
+                            <td style={{ textAlign: 'right' }}>{v.calls}</td>
+                            <td style={{ textAlign: 'right', color: v.errors > 0 ? 'var(--danger)' : 'inherit' }}>{v.errors}</td>
+                            <td style={{ textAlign: 'right' }}>{(successRate * 100).toFixed(1)}%</td>
+                            <td style={{ textAlign: 'right' }}>{Math.round(v.avgLatencyMs)} ms</td>
+                            <td style={{ textAlign: 'right' }}>{Math.round(v.p95LatencyMs)} ms</td>
+                            <td style={{ textAlign: 'right' }}>{v.inputTokens.toLocaleString()}</td>
+                            <td style={{ textAlign: 'right' }}>{v.outputTokens.toLocaleString()}</td>
+                            <td style={{ textAlign: 'right' }} className="mono">
+                              {totalTok > 0 ? fmtCost(costPer1k) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                            </td>
+                            <td style={{ textAlign: 'right' }} className="mono">${v.cost.toFixed(8)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
 
             {/* Recent calls */}
             <>
