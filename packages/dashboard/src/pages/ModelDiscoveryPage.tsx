@@ -143,7 +143,7 @@ export function ModelDiscoveryPage() {
                       <button
                         className="btn btn-sm"
                         title="Add to routing"
-                        onClick={() => navigate(`/dashboard/models/new?provider=${encodeURIComponent(e.provider)}&modelId=${encodeURIComponent(e.id)}`)}
+                        onClick={() => navigate(`/dashboard/models/new?provider=${encodeURIComponent(e.provider)}&modelId=${encodeURIComponent(e.id)}`, { state: { catalogEntry: e } })}
                         style={{ whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4 }}
                       >
                         <Globe size={13} /> Add

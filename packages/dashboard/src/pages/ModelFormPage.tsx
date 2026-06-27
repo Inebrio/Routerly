@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { Plus, X, ChevronDown, EyeOff, Eye, ArrowLeft, Copy, Check, FlaskConical } from 'lucide-react';
-import { getModels, createModel, updateModel, testOpenAIOAuth, type Model, type ModelCapabilities, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit } from '../api';
+import { getModels, createModel, updateModel, testOpenAIOAuth, type Model, type ModelCapabilities, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit, type CatalogEntry } from '../api';
 import { providersConf } from '@routerly/shared';
 
 type Provider = keyof typeof providersConf;
@@ -305,6 +305,8 @@ export function ModelFormPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const [searchParams] = useSearchParams();
+  const { state: locationState } = useLocation();
+  const catalogEntry = (locationState as { catalogEntry?: CatalogEntry } | null)?.catalogEntry ?? null;
   const cloneSourceId = searchParams.get('clone') ? decodeURIComponent(searchParams.get('clone')!) : null;
   const prefillProvider = searchParams.get('provider');
   const prefillModelId = searchParams.get('modelId');
@@ -356,11 +358,33 @@ export function ModelFormPage() {
           const provider: Provider = (prefillProvider && PROVIDERS.includes(prefillProvider as Provider))
             ? prefillProvider as Provider
             : 'openai';
-          const firstModel = PROVIDER_MODELS[provider]?.[0];
-          const seedId = prefillModelId ?? firstModel?.id ?? '';
-          setIsCustomModel(provider === 'custom');
-          setForm({ ...EMPTY_FORM, provider, endpoint: ENDPOINT_DEFAULTS[provider] ?? '', id: seedId });
-          if (seedId) applyPreset(provider, seedId);
+
+          if (catalogEntry) {
+            const isPreset = Boolean(PROVIDER_MODELS[provider]?.find(m => m.id === catalogEntry.id));
+            setIsCustomModel(!isPreset);
+            setForm({ ...EMPTY_FORM, provider, endpoint: ENDPOINT_DEFAULTS[provider] ?? '', id: catalogEntry.id });
+            if (isPreset) {
+              // Curated preset pricing/tiers/context wins over catalog — keeps both entry paths consistent
+              applyPreset(provider, catalogEntry.id);
+            } else {
+              // Non-preset: seed from catalog; pricing is per-1k tokens → ×1000 for per-million form fields
+              setIsEmbeddingModel(catalogEntry.modalities.includes('embedding'));
+              setForm(f => ({
+                ...f,
+                inputPerMillion: catalogEntry.local ? '0' : String(catalogEntry.pricing.inputPer1kTokens * 1000),
+                outputPerMillion: catalogEntry.local ? '0' : String(catalogEntry.pricing.outputPer1kTokens * 1000),
+                contextWindow: catalogEntry.contextWindow > 0 ? String(catalogEntry.contextWindow) : '',
+              }));
+            }
+          } else {
+            const firstModel = PROVIDER_MODELS[provider]?.[0];
+            const seedId = prefillModelId ?? firstModel?.id ?? '';
+            // ponytail: if prefillModelId is not a known preset, show custom input so the id is visible/editable
+            const isPreset = Boolean(seedId && PROVIDER_MODELS[provider]?.find(m => m.id === seedId));
+            setIsCustomModel(provider === 'custom' || (Boolean(prefillModelId) && !isPreset));
+            setForm({ ...EMPTY_FORM, provider, endpoint: ENDPOINT_DEFAULTS[provider] ?? '', id: seedId });
+            if (seedId) applyPreset(provider, seedId);
+          }
         }
       } catch (e) {
         setErr(e instanceof Error ? e.message : 'Error loading models');

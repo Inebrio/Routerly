@@ -27,9 +27,14 @@ function makeModel(overrides: Record<string, unknown> = {}) {
 // Mirrors the actual route tree from App.tsx:
 //   models/new          -> ModelFormPage (new / clone / prefill)
 //   models/:id          -> ModelFormPage (edit)
-function renderPage(path: string) {
+function renderPage(path: string, state?: unknown) {
+  // Split path into pathname + search so MemoryRouter parses them correctly
+  const [pathname = '', search = ''] = path.split('?');
+  const entry = state
+    ? { pathname, search: search ? `?${search}` : '', state }
+    : path;
   return render(
-    <MemoryRouter initialEntries={[path]}>
+    <MemoryRouter initialEntries={[entry]}>
       <Routes>
         <Route path="/dashboard/models/new" element={<ModelFormPage />} />
         <Route path="/dashboard/models/:id" element={<ModelFormPage />} />
@@ -129,6 +134,74 @@ describe('ModelFormPage — edit path', () => {
     renderPage('/dashboard/models/nonexistent');
 
     await waitFor(() => expect(screen.getByText('Model not found')).toBeTruthy());
+  });
+});
+
+// ── Discovery catalogEntry state ───────────────────────────────────────────────
+
+describe('ModelFormPage — navigation state.catalogEntry', () => {
+  it('not-a-preset: shows custom input with real id, seeds pricing from catalog (×1000)', async () => {
+    const catalogEntry = {
+      id: 'ollama/qwen3:4b',
+      provider: 'ollama',
+      name: 'Qwen3 4B',
+      contextWindow: 32768,
+      modalities: ['text'],
+      pricing: { inputPer1kTokens: 0, outputPer1kTokens: 0 },
+      local: true,
+      isConfigured: false,
+    };
+
+    renderPage('/dashboard/models/new?provider=ollama&modelId=ollama%2Fqwen3%3A4b', { catalogEntry });
+
+    // Wait for provider to settle
+    await waitFor(() => {
+      const all = screen.getAllByRole('combobox') as HTMLSelectElement[];
+      expect(all[0]!.value).toBe('ollama');
+    });
+
+    // Custom text input must be visible and contain the real discovered id
+    const customInput = screen.getByPlaceholderText('e.g. my-fine-tuned-model') as HTMLInputElement;
+    expect(customInput.value).toBe('ollama/qwen3:4b');
+
+    // Pricing fields are 0 for local/free model
+    const spinners = screen.getAllByRole('spinbutton') as HTMLInputElement[];
+    const inputPrice = spinners.find(i => i.name === 'inputPerMillion' || i.placeholder?.includes('Input'));
+    // local free: value is '0'
+    const zeroFields = spinners.filter(i => i.value === '0');
+    expect(zeroFields.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('is-a-preset: selects preset in dropdown, seeds pricing', async () => {
+    const catalogEntry = {
+      id: 'claude-fable-5',
+      provider: 'anthropic',
+      name: 'Claude Fable 5',
+      contextWindow: 200000,
+      modalities: ['text'],
+      pricing: { inputPer1kTokens: 0.01, outputPer1kTokens: 0.03 },
+      local: false,
+      isConfigured: false,
+    };
+
+    renderPage('/dashboard/models/new?provider=anthropic&modelId=claude-fable-5', { catalogEntry });
+
+    await waitFor(() => {
+      const all = screen.getAllByRole('combobox') as HTMLSelectElement[];
+      expect(all[0]!.value).toBe('anthropic');
+    });
+
+    // The model preset select (second combobox) must show claude-fable-5
+    const selects = screen.getAllByRole('combobox') as HTMLSelectElement[];
+    const modelSelect = selects.find(s => s.value === 'claude-fable-5');
+    expect(modelSelect).toBeTruthy();
+
+    // Pricing must come from the curated preset (providersConf), NOT catalog ×1000.
+    // claude-fable-5 preset: input=10, output=50 — catalog entry above has output=30 (×1000), so
+    // asserting output=50 will fail if the catalog value is used instead of the preset.
+    const spinners = screen.getAllByRole('spinbutton') as HTMLInputElement[];
+    expect(spinners.find(i => i.value === '10')).toBeTruthy();  // input $/1M
+    expect(spinners.find(i => i.value === '50')).toBeTruthy();  // output $/1M (preset, not catalog×1000)
   });
 });
 
