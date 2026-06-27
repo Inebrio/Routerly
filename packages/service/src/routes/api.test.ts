@@ -558,6 +558,123 @@ describe('GET /api/usage', () => {
     expect(body.byModel.m1.errors).toBe(1)
   })
 
+  it('enriches byModel with success, avgLatencyMs and p95LatencyMs (#80)', async () => {
+    setupAdminAuth()
+    const now = new Date().toISOString()
+    // latencies 100,200,300,400 -> avg 250, p95 (ceil(4*0.95)-1 = idx 3) = 400
+    const records = [
+      { id: '1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.01, outcome: 'success', callType: 'completion', latencyMs: 100 },
+      { id: '2', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.01, outcome: 'success', callType: 'completion', latencyMs: 200 },
+      { id: '3', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.01, outcome: 'success', callType: 'completion', latencyMs: 300 },
+      { id: '4', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.01, outcome: 'error', callType: 'completion', latencyMs: 400 },
+    ]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return records
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/usage', headers: adminAuthHeaders() })
+    await app.close()
+    const m1 = JSON.parse(res.body).byModel.m1
+    expect(m1.calls).toBe(4)
+    expect(m1.success).toBe(3)
+    expect(m1.errors).toBe(1)
+    expect(m1.avgLatencyMs).toBeCloseTo(250)
+    expect(m1.p95LatencyMs).toBe(400)
+  })
+
+  it('byModel avgLatencyMs/p95LatencyMs are 0 when no record carries a latency', async () => {
+    setupAdminAuth()
+    const records = [
+      { id: '1', timestamp: new Date().toISOString(), projectId: 'p1', modelId: 'm1', inputTokens: 0, outputTokens: 0, cost: 0, outcome: 'error', callType: 'completion' },
+    ]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return records
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/usage', headers: adminAuthHeaders() })
+    await app.close()
+    const m1 = JSON.parse(res.body).byModel.m1
+    expect(m1.avgLatencyMs).toBe(0)
+    expect(m1.p95LatencyMs).toBe(0)
+    expect(m1.success).toBe(0)
+  })
+
+  describe('dashboard filters (modelIds / callType / outcome / projectIds)', () => {
+    const now = new Date().toISOString()
+    const records = [
+      { id: 'c1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.10, outcome: 'success', latencyMs: 100 }, // legacy: no callType
+      { id: 'r1', timestamp: now, projectId: 'p1', modelId: 'm2', inputTokens: 10, outputTokens: 5, cost: 0.02, outcome: 'success', callType: 'routing', latencyMs: 100 },
+      { id: 'g1', timestamp: now, projectId: 'p2', modelId: 'm2', inputTokens: 8, outputTokens: 0, cost: 0.01, outcome: 'blocked', callType: 'guardrail', latencyMs: 50 },
+      { id: 'e1', timestamp: now, projectId: 'p2', modelId: 'm1', inputTokens: 0, outputTokens: 0, cost: 0, outcome: 'error', callType: 'completion', latencyMs: 0 },
+    ]
+    const mount = () => mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return records
+      return []
+    })
+    const get = async (qs: string) => {
+      setupAdminAuth(); mount()
+      const app = await buildApp()
+      const res = await app.inject({ method: 'GET', url: `/api/usage?${qs}`, headers: adminAuthHeaders() })
+      await app.close()
+      return JSON.parse(res.body)
+    }
+
+    it('modelIds narrows byModel and summary to the set', async () => {
+      const b = await get('modelIds=m1')
+      expect(Object.keys(b.byModel)).toEqual(['m1'])
+      expect(b.summary.totalCalls).toBe(2) // c1 + e1
+    })
+
+    it('callType=completion matches legacy (no callType) records, excludes routing/guardrail', async () => {
+      const b = await get('callType=completion')
+      expect(b.summary.totalCalls).toBe(2) // c1 (legacy) + e1
+      expect(b.records.every((r: any) => r.callType !== 'routing' && r.callType !== 'guardrail')).toBe(true)
+    })
+
+    it('callType=routing matches only routing', async () => {
+      const b = await get('callType=routing')
+      expect(b.summary.totalCalls).toBe(1)
+      expect(b.records[0].id).toBe('r1')
+    })
+
+    it('outcome=success keeps only successes', async () => {
+      const b = await get('outcome=success')
+      expect(b.summary.totalCalls).toBe(2)
+      expect(b.records.every((r: any) => r.outcome === 'success')).toBe(true)
+    })
+
+    it('outcome=error excludes blocked (blocked is not an error)', async () => {
+      const b = await get('outcome=error')
+      expect(b.summary.totalCalls).toBe(1)
+      expect(b.records[0].id).toBe('e1')
+    })
+
+    it('outcome=blocked keeps only blocked', async () => {
+      const b = await get('outcome=blocked')
+      expect(b.summary.totalCalls).toBe(1)
+      expect(b.records[0].id).toBe('g1')
+    })
+
+    it('projectIds (multiselect) keeps records in the set', async () => {
+      const b = await get('projectIds=p2')
+      expect(b.records.every((r: any) => r.projectId === 'p2')).toBe(true)
+      expect(b.summary.totalCalls).toBe(2)
+    })
+
+    it("callType=all and outcome=all are no-ops", async () => {
+      const b = await get('callType=all&outcome=all')
+      expect(b.summary.totalCalls).toBe(4)
+    })
+  })
+
   it('filters by projectId', async () => {
     setupAdminAuth()
     const records = [

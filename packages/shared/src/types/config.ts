@@ -811,3 +811,19 @@ export interface UsageRecord {
   /** PII entity types redacted from this request before forwarding (#76) */
   piiRedacted?: string[];
 }
+
+/** Per-model aggregate row in the GET /api/usage response (`byModel`). */
+export interface UsageByModelEntry {
+  calls: number;
+  inputTokens: number;
+  outputTokens: number;
+  cachedInputTokens: number;
+  cost: number;
+  errors: number;
+  /** Count of outcome === 'success' (for client-side successRate = success/calls). */
+  success: number;
+  /** Mean latencyMs over records that carry a latency (0 when none). */
+  avgLatencyMs: number;
+  /** 95th-percentile latencyMs (0 when none). */
+  p95LatencyMs: number;
+}
