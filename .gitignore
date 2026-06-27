@@ -93,4 +93,4 @@ handoff.md
 # ===========================
 website/build/
 website/node_modules/
-website/.docusaurus/
+website/.docusaurus/.playwright-mcp/
