@@ -26,9 +26,9 @@ Routerly hashes passwords with bcrypt. Your current session remains active after
 
 Enable TOTP-based 2FA under the **Two-Factor Authentication** section.
 
-<!-- TODO screenshot: profile-2fa (QR code setup state) (deferred, service down) -->
+![Two-Factor Authentication setup panel showing the scannable QR code](../assets/screenshot-profile-2fa.png)
 
-When you click **Enable 2FA**, the setup panel renders a scannable **QR code image** generated directly from the `otpauth://` URI. Open any TOTP authenticator app (Google Authenticator, Authy, 1Password, etc.) and scan the QR code. If your app does not support camera scanning, the underlying setup key (base32 secret) is still shown below the image so you can enter it manually.
+When you click **Enable Two-Factor Authentication**, the setup panel renders a scannable **QR code image** generated directly from the `otpauth://` URI. Open any TOTP authenticator app (Google Authenticator, Authy, 1Password, etc.) and scan the QR code. If your app does not support camera scanning, the underlying setup key (base32 secret) is still shown below the image so you can enter it manually.
 
 Enter the 6-digit code from your authenticator app to confirm setup. Once enabled, you will be prompted for a TOTP code on every login.
 

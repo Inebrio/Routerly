@@ -55,7 +55,7 @@ Click any column header to sort.
 Use the **Model Discovery** page (navigate to **Models**, then click **Discover**) to browse the built-in catalog. Clicking **Add** next to any entry opens the new-model form with the **Provider** and **Model ID** already filled in, and pre-populates pricing and context window from the catalog entry. You only need to supply the API key.
 :::
 
-<!-- TODO screenshot: models-new-prefilled (model form opened from catalog Add button with provider+model pre-filled) (deferred, service down) -->
+![Add Model form opened from the catalog, with Provider and Model Preset pre-filled for gpt-4o and pricing auto-populated in the Pricing & Context section](../assets/screenshot-models-new-prefilled.png)
 
 ### Editing a Model
 
@@ -110,11 +110,11 @@ The standalone Provider Health page has moved. `/dashboard/health` now redirects
 
 Navigate to `/dashboard/models/discover` (or click **Discover** on the Models page) to browse the built-in model catalog. The catalog lists known models from supported providers with their context window, modalities, and published pricing.
 
-<!-- TODO screenshot: models-discover (discovery catalog page) (deferred, service down) -->
+![Model Discovery catalog showing provider filter tabs and per-model Add buttons](../assets/screenshot-models-discover.png)
 
 | Column | Description |
 |--------|-------------|
-| **Model** | Model ID; `★` marks models already configured in your Routerly instance |
+| **Model** | Model ID |
 | **Provider** | Provider name |
 | **Context** | Maximum context window (e.g. `128k`, `1.0M`) |
 | **Modalities** | Supported input types (e.g. `text`, `image`) |
@@ -123,4 +123,4 @@ Navigate to `/dashboard/models/discover` (or click **Discover** on the Models pa
 
 Filter by **provider** using the tabs above the table, or use the search box to narrow by model ID.
 
-Click **Add** next to any model to open the new-model form with the provider and model ID pre-filled. Pricing and context window are also pre-populated from the catalog entry; supply the API key to complete registration.
+Click **Add** next to any model to open the new-model form with that model's details pre-filled. If the model matches a Routerly-curated preset, the form uses the preset's pricing and context window (Input $/1M, Output $/1M, and Context Window are all populated automatically). If the model is not a known preset, the form creates a custom entry pre-filled with the catalog's pricing and context window values — note that the catalog shows prices per 1K tokens while the form stores them per 1M tokens, so Routerly converts automatically. In both cases you only need to supply the API key to complete registration.
