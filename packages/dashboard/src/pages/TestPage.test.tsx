@@ -212,6 +212,35 @@ describe('TestPage — cross-chunk SSE buffering (handleSend / loop 2)', () => {
   });
 });
 
+describe('TestPage — cross-chunk SSE buffering (ComparePanel / loop 1)', () => {
+  it('assembles content split across two reads in compare mode without error', async () => {
+    vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
+    global.fetch = vi.fn().mockResolvedValue(makeChunkedSSEResponse([
+      'data: {"choices":[{"delta":{"content":"impre',
+      'ssionismo"},"finish_reason":null}]}\n\ndata: [DONE]\n\n',
+    ]));
+
+    renderPage();
+    const tokenInput = screen.getByPlaceholderText('sk-rt-...');
+    await userEvent.clear(tokenInput);
+    await userEvent.type(tokenInput, 'sk-rt-testABCDE');
+    await waitFor(() => expect(screen.queryByText('Test')).not.toBeNull());
+
+    // Switch to Compare mode
+    await userEvent.click(screen.getByRole('button', { name: /compare/i }));
+
+    const compareTextarea = screen.getByPlaceholderText('Send the same message to both models...');
+    await userEvent.type(compareTextarea, 'test cross-chunk compare');
+    await userEvent.keyboard('{Enter}');
+
+    await waitFor(() =>
+      expect(screen.queryByText(/impressionismo/)).not.toBeNull(),
+    { timeout: 4000 });
+
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+});
+
 describe('TestPage — Clear resets debug', () => {
   it('Clear removes messages AND resets debug sidebar', async () => {
     vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
