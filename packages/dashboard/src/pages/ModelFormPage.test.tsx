@@ -108,6 +108,21 @@ describe('ModelFormPage — ?provider + ?modelId prefill', () => {
       expect(all[0]!.value).toBe('openai');
     });
   });
+
+  it('unknown modelId with no state sets isCustomModel=true (custom input shows the real id)', async () => {
+    // No router state — exercises the no-state fallback added in #81:
+    // when modelId is not a preset in PROVIDER_MODELS, isCustomModel is forced true
+    // so the editable custom input shows the raw id instead of silently dropping it.
+    renderPage('/dashboard/models/new?provider=openai&modelId=some-unknown-id');
+
+    await waitFor(() => {
+      const all = screen.getAllByRole('combobox') as HTMLSelectElement[];
+      expect(all[0]!.value).toBe('openai');
+    });
+
+    const customInput = screen.getByPlaceholderText('e.g. my-fine-tuned-model') as HTMLInputElement;
+    expect(customInput.value).toBe('some-unknown-id');
+  });
 });
 
 // ── Edit path ──────────────────────────────────────────────────────────────────
