@@ -25,7 +25,7 @@ export function ProjectLogsTab() {
   const [dateRange, setDateRange] = useFilterState<DateRange>({ key: `project-${projectId}-filters-dateRange`, defaultValue: { from: '', to: '', label: 'This month' } });
   const [modelIds, setModelIds]   = useFilterState<string[]>({ key: `project-${projectId}-filters-modelIds`, defaultValue: [] });
   const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing'>({ key: `project-${projectId}-filters-callType`, defaultValue: 'all' });
-  const [outcomeFilter, setOutcomeFilter]   = useFilterState<'all' | 'success' | 'error'>({ key: `project-${projectId}-filters-outcome`, defaultValue: 'all' });
+  const [outcomeFilter, setOutcomeFilter]   = useFilterState<'all' | 'success' | 'error' | 'blocked'>({ key: `project-${projectId}-filters-outcome`, defaultValue: 'all' });
   const [lastUpdated, setLastUpdated]       = useState<Date | null>(null);
   const [pollInterval, setPollInterval]     = useFilterState<number>({ key: `project-${projectId}-filters-pollInterval`, defaultValue: 30_000 });
   const [refreshing, setRefreshing]         = useState(false);
@@ -174,13 +174,13 @@ export function ProjectLogsTab() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
             <FilterLabel>Status</FilterLabel>
             <div style={{ display: 'flex', gap: 4 }}>
-              {(['all', 'success', 'error'] as const).map(f => (
+              {(['all', 'success', 'blocked', 'error'] as const).map(f => (
                 <button
                   key={f}
                   className={`btn btn-sm ${outcomeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
                   onClick={() => setOutcomeFilter(f)}
                 >
-                  {f === 'all' ? 'All' : f === 'success' ? 'Success' : 'Error'}
+                  {f === 'all' ? 'All' : f === 'success' ? 'Success' : f === 'blocked' ? 'Blocked' : 'Error'}
                 </button>
               ))}
             </div>
@@ -331,7 +331,7 @@ export function ProjectLogsTab() {
                         <td style={{ color: 'var(--text-muted)' }}>{r.ttftMs != null ? `${r.ttftMs}ms` : '—'}</td>
                         <td style={{ color: 'var(--text-muted)' }}>{r.tokensPerSec != null ? `${r.tokensPerSec}` : '—'}</td>
                         <td>
-                          <span className={`badge ${r.outcome === 'success' ? 'badge-success' : 'badge-error'}`}>
+                          <span className={`badge ${r.outcome === 'success' ? 'badge-success' : r.outcome === 'blocked' ? 'badge-warning' : 'badge-error'}`}>
                             {r.outcome}
                           </span>
                         </td>

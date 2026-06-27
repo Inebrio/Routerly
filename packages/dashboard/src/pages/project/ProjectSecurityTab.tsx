@@ -462,7 +462,10 @@ export function ProjectSecurityTab() {
 
   if (!project) return null;
 
-  const modelOptions = allModels.map(m => ({ value: m.id, label: m.name || m.id }));
+  // ponytail: embedding-only models can't act as chat judges — exclude them
+  const modelOptions = allModels
+    .filter(m => m.capabilities?.embedding !== true)
+    .map(m => ({ value: m.id, label: m.name || m.id }));
   const embeddingModelOptions = allModels
     .filter(m => m.capabilities?.embedding === true)
     .map(m => ({ value: m.id, label: m.name || m.id }));

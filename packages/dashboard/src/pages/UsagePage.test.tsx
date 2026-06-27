@@ -104,6 +104,63 @@ describe('UsagePage — Guardrail filter button', () => {
   });
 });
 
+describe('UsagePage — blocked outcome', () => {
+  function makeStatsWithRecord(outcomeVal: string) {
+    return {
+      summary: { totalCost: 1, totalCalls: 1, successCalls: 0, errorCalls: 0, routingCalls: 0, completionCalls: 1, routingCost: 0, completionCost: 1 },
+      byModel: {},
+      timeline: [],
+      records: [{
+        id: 'r1', timestamp: new Date().toISOString(), projectId: 'p1', modelId: 'openai/gpt-4o',
+        inputTokens: 10, outputTokens: 5, cost: 0.001, latencyMs: 500, outcome: outcomeVal,
+      }],
+    };
+  }
+
+  it('blocked outcome badge uses badge-warning not badge-error', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecord('blocked'));
+    renderPage();
+    await waitFor(() => {
+      const badge = document.querySelector('.badge-warning');
+      expect(badge).toBeTruthy();
+      expect(document.querySelector('.badge-error')).toBeNull();
+    });
+  });
+
+  it('error outcome badge uses badge-error', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecord('error'));
+    renderPage();
+    await waitFor(() => expect(document.querySelector('.badge-error')).toBeTruthy());
+  });
+
+  it('renders Blocked filter button in Status group', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Blocked' })).toBeTruthy());
+  });
+});
+
+describe('UsagePage — blockedCalls stat card', () => {
+  it('does NOT show Blocked Calls card when blockedCalls is 0', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats({ blockedCalls: 0 }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('Blocked Calls')).toBeNull());
+  });
+
+  it('does NOT show Blocked Calls card when blockedCalls is undefined', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('Blocked Calls')).toBeNull());
+  });
+
+  it('shows Blocked Calls card when blockedCalls > 0', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats({ blockedCalls: 5 }));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Blocked Calls')).toBeTruthy());
+    expect(screen.getByText('5')).toBeTruthy();
+  });
+});
+
 describe('UsagePage — Live mode', () => {
   it('renders the Live button', async () => {
     vi.mocked(getUsage).mockResolvedValue(makeStats());

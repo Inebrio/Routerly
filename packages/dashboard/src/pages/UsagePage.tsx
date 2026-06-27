@@ -207,7 +207,7 @@ export function UsagePage() {
   const [projectIds, setProjectIds]     = useFilterState<string[]>({ key: 'usage-filters-projectIds', defaultValue: [] });
   const [modelIds, setModelIds]         = useFilterState<string[]>({ key: 'usage-filters-modelIds', defaultValue: [] });
   const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing' | 'guardrail'>({ key: 'usage-filters-callType', defaultValue: 'all' });
-  const [outcomeFilter, setOutcomeFilter]   = useFilterState<'all' | 'success' | 'error'>({ key: 'usage-filters-outcome', defaultValue: 'all' });
+  const [outcomeFilter, setOutcomeFilter]   = useFilterState<'all' | 'success' | 'error' | 'blocked'>({ key: 'usage-filters-outcome', defaultValue: 'all' });
   const [loading, setLoading]           = useState(true);
   const [fetchError, setFetchError]     = useState<string | null>(null);
   const [lastUpdated, setLastUpdated]   = useState<Date | null>(null);
@@ -452,10 +452,10 @@ export function UsagePage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                   <FilterLabel>Status</FilterLabel>
                   <div style={{ display: 'flex', gap: 4 }}>
-                    {(['all', 'success', 'error'] as const).map(f => (
+                    {(['all', 'success', 'blocked', 'error'] as const).map(f => (
                       <button key={f} className={`btn btn-sm ${outcomeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
                         onClick={() => setOutcomeFilter(f)}>
-                        {f === 'all' ? 'All' : f === 'success' ? 'Success' : 'Error'}
+                        {f === 'all' ? 'All' : f === 'success' ? 'Success' : f === 'blocked' ? 'Blocked' : 'Error'}
                       </button>
                     ))}
                   </div>
@@ -518,6 +518,15 @@ export function UsagePage() {
                       </div>
                       <div className="stat-value">{stats.summary.guardrailCalls}</div>
                       <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>${(stats.summary.guardrailCost ?? 0).toFixed(4)}</div>
+                    </div>
+                  )}
+                  {(stats.summary.blockedCalls ?? 0) > 0 && (
+                    <div className="stat-card">
+                      <div className="stat-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-warning, #f59e0b)', display: 'inline-block' }} />
+                        Blocked Calls
+                      </div>
+                      <div className="stat-value">{stats.summary.blockedCalls}</div>
                     </div>
                   )}
                   <div className="stat-card">
@@ -618,7 +627,7 @@ export function UsagePage() {
                                 <td style={{ color: 'var(--text-muted)' }}>{r.ttftMs != null ? `${r.ttftMs}ms` : '—'}</td>
                                 <td style={{ color: 'var(--text-muted)' }}>{r.tokensPerSec != null ? `${r.tokensPerSec}` : '—'}</td>
                                 <td>
-                                  <span className={`badge ${r.outcome === 'success' ? 'badge-success' : 'badge-error'}`}>
+                                  <span className={`badge ${r.outcome === 'success' ? 'badge-success' : r.outcome === 'blocked' ? 'badge-warning' : 'badge-error'}`}>
                                     {r.outcome}
                                   </span>
                                 </td>
