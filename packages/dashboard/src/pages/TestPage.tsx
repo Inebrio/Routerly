@@ -136,36 +136,45 @@ function ComparePanel({
       }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
+      // ponytail: buffer incomplete SSE lines across TCP reads (cross-chunk fix)
+      let buffer = '';
+      function processLine(line: string) {
+        if (!line.startsWith('data: ')) return;
+        const dataStr = line.slice(6).trim();
+        if (dataStr === '[DONE]' || !dataStr) return;
+        try {
+          const data = JSON.parse(dataStr);
+          if (data.type === 'trace' || data.type === 'result') return;
+          if (data.type === 'error' || data.error) throw new Error(data.message || 'Service error');
+          if (data.model && !modelName) modelName = data.model as string;
+          if (data.usage) {
+            inputTokens = data.usage.prompt_tokens ?? inputTokens;
+            outputTokens = data.usage.completion_tokens ?? outputTokens;
+          }
+          const delta: string = data.choices?.[0]?.delta?.content || '';
+          if (delta) {
+            if (!assistantAdded) {
+              setMsgs(prev => [...prev, { role: 'assistant', content: '', model: modelName }]);
+              assistantAdded = true;
+            }
+            finalContent += delta;
+            setMsgs(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1]!, content: finalContent }; return u; });
+          }
+        } catch (e) {
+          if (!(e instanceof SyntaxError)) throw e;
+        }
+      }
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        for (const line of decoder.decode(value, { stream: true }).split('\n')) {
-          if (!line.startsWith('data: ')) continue;
-          const dataStr = line.slice(6).trim();
-          if (dataStr === '[DONE]' || !dataStr) continue;
-          try {
-            const data = JSON.parse(dataStr);
-            if (data.type === 'trace' || data.type === 'result') continue;
-            if (data.type === 'error' || data.error) throw new Error(data.message || 'Service error');
-            if (data.model && !modelName) modelName = data.model as string;
-            if (data.usage) {
-              inputTokens = data.usage.prompt_tokens ?? inputTokens;
-              outputTokens = data.usage.completion_tokens ?? outputTokens;
-            }
-            const delta: string = data.choices?.[0]?.delta?.content || '';
-            if (delta) {
-              if (!assistantAdded) {
-                setMsgs(prev => [...prev, { role: 'assistant', content: '', model: modelName }]);
-                assistantAdded = true;
-              }
-              finalContent += delta;
-              setMsgs(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1]!, content: finalContent }; return u; });
-            }
-          } catch (e) {
-            if (e instanceof Error && e.message !== 'Unexpected end of JSON input') throw e;
-          }
-        }
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) processLine(line);
       }
+      // flush any complete trailing line after stream close
+      const tail = buffer.trim();
+      if (tail) processLine(tail);
       const latencyMs = Date.now() - startMs;
       setMsgs(prev => { const u = [...prev]; if (assistantAdded) u[u.length - 1] = { ...u[u.length - 1]!, inputTokens, outputTokens, latencyMs }; return u; });
     } catch (e) {
@@ -413,58 +422,66 @@ export function TestPage() {
       }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
+      // ponytail: buffer incomplete SSE lines across TCP reads (cross-chunk fix)
+      let buffer = '';
+      function processLine(line: string) {
+        if (!line.startsWith('data: ')) return;
+        const dataStr = line.slice(6).trim();
+        if (dataStr === '[DONE]' || !dataStr) return;
+        try {
+          const data = JSON.parse(dataStr);
+          if (data.type === 'trace') {
+            setDebugTraceHistory(prev => {
+              const u = [...prev];
+              const cur = (u[turnIndex] as unknown[]) ?? [];
+              u[turnIndex] = [...cur, data.entry];
+              return u;
+            });
+            return;
+          }
+          if (data.type === 'result') return;
+          if (data.type === 'error' || data.error) throw new Error(data.message || data.error?.message || 'Service error');
+          if (data.model && !modelName) modelName = data.model as string;
+          if (data.usage) {
+            inputTokens = data.usage.prompt_tokens ?? inputTokens;
+            outputTokens = data.usage.completion_tokens ?? outputTokens;
+          }
+          rawChunks.push(dataStr);
 
+          // Track finish/stop reason for block detection
+          const fr: string | undefined = data.choices?.[0]?.finish_reason;
+          if (fr) finishReason = fr;
+          const sr: string | undefined = data.stop_reason;
+          if (sr) stopReason = sr;
+
+          const thinking: string | undefined = data.choices?.[0]?.delta?.thinking;
+          if (thinking) {
+            if (!assistantAdded) { setMessages(prev => [...prev, { role: 'assistant', content: '', thinking: '', model: modelName }]); assistantAdded = true; }
+            thinkingAccum += thinking;
+            setMessages(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1]!, thinking: thinkingAccum }; return u; });
+            return;
+          }
+          const delta: string = data.choices?.[0]?.delta?.content || '';
+          if (delta) {
+            if (!assistantAdded) { setMessages(prev => [...prev, { role: 'assistant', content: '', model: modelName }]); assistantAdded = true; }
+            finalContent += delta;
+            setMessages(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1]!, content: finalContent }; return u; });
+          }
+        } catch (e) {
+          if (!(e instanceof SyntaxError)) throw e;
+        }
+      }
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        for (const line of decoder.decode(value, { stream: true }).split('\n')) {
-          if (!line.startsWith('data: ')) continue;
-          const dataStr = line.slice(6).trim();
-          if (dataStr === '[DONE]' || !dataStr) continue;
-          try {
-            const data = JSON.parse(dataStr);
-            if (data.type === 'trace') {
-              setDebugTraceHistory(prev => {
-                const u = [...prev];
-                const cur = (u[turnIndex] as unknown[]) ?? [];
-                u[turnIndex] = [...cur, data.entry];
-                return u;
-              });
-              continue;
-            }
-            if (data.type === 'result') continue;
-            if (data.type === 'error' || data.error) throw new Error(data.message || data.error?.message || 'Service error');
-            if (data.model && !modelName) modelName = data.model as string;
-            if (data.usage) {
-              inputTokens = data.usage.prompt_tokens ?? inputTokens;
-              outputTokens = data.usage.completion_tokens ?? outputTokens;
-            }
-            rawChunks.push(dataStr);
-
-            // Track finish/stop reason for block detection
-            const fr: string | undefined = data.choices?.[0]?.finish_reason;
-            if (fr) finishReason = fr;
-            const sr: string | undefined = data.stop_reason;
-            if (sr) stopReason = sr;
-
-            const thinking: string | undefined = data.choices?.[0]?.delta?.thinking;
-            if (thinking) {
-              if (!assistantAdded) { setMessages(prev => [...prev, { role: 'assistant', content: '', thinking: '', model: modelName }]); assistantAdded = true; }
-              thinkingAccum += thinking;
-              setMessages(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1]!, thinking: thinkingAccum }; return u; });
-              continue;
-            }
-            const delta: string = data.choices?.[0]?.delta?.content || '';
-            if (delta) {
-              if (!assistantAdded) { setMessages(prev => [...prev, { role: 'assistant', content: '', model: modelName }]); assistantAdded = true; }
-              finalContent += delta;
-              setMessages(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1]!, content: finalContent }; return u; });
-            }
-          } catch (e) {
-            if (e instanceof Error && e.message !== 'Unexpected end of JSON input') throw e;
-          }
-        }
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) processLine(line);
       }
+      // flush any complete trailing line after stream close
+      const tail = buffer.trim();
+      if (tail) processLine(tail);
 
       const latencyMs = Date.now() - startMs;
       const isBlocked = finishReason === 'content_filter' || stopReason === 'refusal';
