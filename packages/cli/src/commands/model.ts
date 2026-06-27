@@ -484,8 +484,10 @@ Examples:
 
       for (const e of entries) {
         const configured = e.isConfigured ? chalk.green(' ★') : '';
-        const priceIn  = e.local ? chalk.green('free/local') : `$${e.pricing.inputPer1kTokens}`;
-        const priceOut = e.local ? chalk.green('free/local') : `$${e.pricing.outputPer1kTokens}`;
+        // free/local: explicit local flag OR zero-priced (a $0/$0 model is free regardless of the flag).
+        const isFree = e.local || (e.pricing.inputPer1kTokens === 0 && e.pricing.outputPer1kTokens === 0);
+        const priceIn  = isFree ? chalk.green('free/local') : `$${e.pricing.inputPer1kTokens}`;
+        const priceOut = isFree ? chalk.green('free/local') : `$${e.pricing.outputPer1kTokens}`;
         const ctx = e.contextWindow >= 1_000_000
           ? `${(e.contextWindow / 1_000_000).toFixed(1)}M`
           : `${Math.round(e.contextWindow / 1000)}k`;

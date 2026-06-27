@@ -119,6 +119,31 @@ describe('routerly model discover', () => {
     expect(output).toContain('free/local');
   });
 
+  it('labels a zero-priced model free/local even without an explicit local flag', async () => {
+    // free model, no `local: true` — must still read as free/local, not "$0".
+    mockApi.mockResolvedValue([
+      { id: 'free-model', provider: 'custom', name: 'Free', contextWindow: 8192, modalities: ['text'], pricing: { inputPer1kTokens: 0, outputPer1kTokens: 0 }, isConfigured: false },
+    ]);
+    const { lines, spy } = captureConsole();
+    await run('discover');
+    spy.mockRestore();
+    const output = lines.join('\n');
+    expect(output).toContain('free/local');
+    expect(output).not.toContain('$0');
+  });
+
+  it('shows the dollar price for a paid model', async () => {
+    mockApi.mockResolvedValue([
+      { id: 'gpt-4o', provider: 'openai', name: 'GPT-4o', contextWindow: 128000, modalities: ['text'], pricing: { inputPer1kTokens: 0.005, outputPer1kTokens: 0.015 }, isConfigured: false },
+    ]);
+    const { lines, spy } = captureConsole();
+    await run('discover');
+    spy.mockRestore();
+    const output = lines.join('\n');
+    expect(output).toContain('$0.005');
+    expect(output).not.toContain('free/local');
+  });
+
   it('prints fallback message when catalog returns 404', async () => {
     mockApi.mockRejectedValue(new ApiError(404, 'Not Found'));
     const { lines, spy } = captureConsole();
