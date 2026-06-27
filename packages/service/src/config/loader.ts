@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile, chmod } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rename, unlink, chmod } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import lockfile from 'proper-lockfile';
@@ -63,23 +63,38 @@ export async function initConfigDirs(): Promise<void> {
 
 /**
  * Reads a config file, creating it with defaults if it doesn't exist.
+ *
+ * A transient-empty read (another process mid-write under the old, non-atomic
+ * writeConfig) MUST NOT persist anything: doing so clobbered a populated file
+ * with `[]` and wiped projects.json. Writes are now atomic (temp + rename), but
+ * we also defend the read: an existing-but-empty file is re-read a couple of
+ * times to ride out any racing write, and if still empty we return the default
+ * IN MEMORY only — never writing it back. Only ENOENT (file truly missing,
+ * genuine first run) creates the file with defaults.
  */
 export async function readConfig<K extends keyof StoredTypeMap>(
   key: K,
 ): Promise<StoredTypeMap[K]> {
   const filePath = CONFIG_PATHS[key];
   try {
-    const raw = await readFile(filePath, 'utf-8');
-    const trimmed = raw.trim();
+    let raw = await readFile(filePath, 'utf-8');
+    let trimmed = raw.trim();
+    // Existing-but-empty: could be a transient truncation from a concurrent
+    // writer. Re-read a couple of times before trusting the emptiness.
+    for (let attempt = 0; !trimmed && attempt < 2; attempt++) {
+      await delay(10);
+      raw = await readFile(filePath, 'utf-8');
+      trimmed = raw.trim();
+    }
     if (!trimmed) {
-      // File exists but is empty — treat as missing
-      const defaultValue = DEFAULTS[key] as StoredTypeMap[K];
-      await writeConfig(key, defaultValue);
-      return defaultValue;
+      // Still empty after retries — return the default in memory; do NOT write
+      // it back (that is exactly how a transient empty read wiped real data).
+      return DEFAULTS[key] as StoredTypeMap[K];
     }
     return JSON.parse(trimmed) as StoredTypeMap[K];
   } catch (err: unknown) {
     if (isNodeError(err) && err.code === 'ENOENT') {
+      // Genuine first run — file truly missing. Create it with defaults.
       const defaultValue = DEFAULTS[key] as StoredTypeMap[K];
       await writeConfig(key, defaultValue);
       return defaultValue;
@@ -88,8 +103,21 @@ export async function readConfig<K extends keyof StoredTypeMap>(
   }
 }
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Monotonic temp-file suffix counter — pid + counter uniquely names each temp
+// without Date.now/Math.random, so concurrent writers never collide.
+let tmpCounter = 0;
+
 /**
  * Writes a config file atomically using a lock.
+ *
+ * The write is atomic: data goes to a sibling temp file which is then renamed
+ * over the target. rename() is atomic on POSIX, so a concurrent reader always
+ * sees either the complete old file or the complete new one — never the empty,
+ * truncated window that a direct writeFile() opens (and that wiped projects.json).
  */
 export async function writeConfig<K extends keyof StoredTypeMap>(
   key: K,
@@ -104,13 +132,22 @@ export async function writeConfig<K extends keyof StoredTypeMap>(
   try {
     await readFile(filePath);
   } catch {
-    await writeFile(filePath, '{}', 'utf-8');
+    // Seed with the correct empty default, not '{}', so a crash between here
+    // and the rename never leaves a type-wrong placeholder on disk.
+    await writeFile(filePath, JSON.stringify(DEFAULTS[key], null, 2), 'utf-8');
   }
 
+  const tmpPath = `${filePath}.tmp-${process.pid}-${tmpCounter++}`;
   let release: (() => Promise<void>) | undefined;
   try {
     release = await lockfile.lock(filePath, { retries: { retries: 5, minTimeout: 50 } });
-    await writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    // Atomic publish: full content to temp, then rename over the target.
+    await writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
+    await rename(tmpPath, filePath);
+  } catch (err) {
+    // Best-effort cleanup of the temp file on failure (rename never ran).
+    await unlink(tmpPath).catch(() => {});
+    throw err;
   } finally {
     if (release) await release();
   }
