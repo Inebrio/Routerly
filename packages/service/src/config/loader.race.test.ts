@@ -50,11 +50,11 @@ describe('loader — real-FS concurrent safety (data-loss regression)', () => {
     // burst the budget bump targets (e.g. overlapping appendUsageRecord on the
     // request hot path). Under the old 5-retry budget the back-of-the-queue
     // writers exhausted retries and threw, dropping the write; the bumped budget
-    // (10 retries, 500ms cap) lets them ride it out. Beyond ~12 simultaneous
-    // writers no modest budget suffices — that is the O(n) global-lock ceiling
-    // named in writeConfig's ponytail comment (upgrade: NDJSON append), not a
-    // case a bigger retry budget should chase. Each payload is distinct so we
-    // confirm the file ends parseable holding one writer's value.
+    // (10 retries, 500ms cap) lets them ride it out. A much larger simultaneous
+    // burst can still exhaust any modest budget — that is the O(n) global-lock
+    // ceiling named in writeConfig's ponytail comment (upgrade: append-only
+    // NDJSON writes), not a case a bigger retry budget should chase. Each payload
+    // is distinct so we confirm the file ends parseable holding one writer's value.
     const N = 10;
     const writes = Array.from({ length: N }, (_, i) =>
       writeConfig('projects', [{ id: `w${i}`, name: `Writer ${i}` }] as any),
