@@ -17,6 +17,7 @@ vi.mock('../llm/executor.js', () => ({
 }))
 vi.mock('../embeddings/index.js', () => ({ getEmbeddingProvider: vi.fn() }))
 vi.mock('../cache/semanticResponseCache.js', () => ({ lookupCache: vi.fn(() => null), storeCache: vi.fn() }))
+vi.mock('../cost/tracker.js', () => ({ trackUsage: vi.fn(() => Promise.resolve()) }))
 
 import { openaiRoutes } from './openai.js'
 import { routeRequest } from '../routing/router.js'
@@ -25,6 +26,7 @@ import { llmChat, llmStream } from '../llm/executor.js'
 import { getEmbeddingProvider } from '../embeddings/index.js'
 import { lookupCache, storeCache } from '../cache/semanticResponseCache.js'
 import { appendTrace } from '../routing/traceStore.js'
+import { trackUsage } from '../cost/tracker.js'
 
 const mockRouteRequest = vi.mocked(routeRequest)
 const mockReadConfig = vi.mocked(readConfig)
@@ -34,6 +36,7 @@ const mockGetEmbeddingProvider = vi.mocked(getEmbeddingProvider)
 const mockLookupCache = vi.mocked(lookupCache)
 const mockStoreCache = vi.mocked(storeCache)
 const mockAppendTrace = vi.mocked(appendTrace)
+const mockTrackUsage = vi.mocked(trackUsage)
 
 afterEach(() => vi.clearAllMocks())
 
@@ -1363,6 +1366,7 @@ describe('POST /v1/chat/completions — guardrail request block & PII output tra
   }
 
   it('non-streaming request block: empty content + content_filter, no fallback in wire, trace-id header', async () => {
+    mockReadConfig.mockResolvedValue([testModel])
     const app = await buildApp(blockProject)
     const res = await app.inject({
       method: 'POST', url: '/v1/chat/completions',
@@ -1380,9 +1384,48 @@ describe('POST /v1/chat/completions — guardrail request block & PII output tra
     const traceCall = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'guardrail:triggered')
     expect((traceCall![1] as any[])[0].details).toMatchObject({ action: 'block', fallbackMessage: 'nope', target: 'request' })
     expect(mockLlmChat).not.toHaveBeenCalled()
+    // C3: a blocked request is recorded with outcome 'blocked', callType 'guardrail', cost 0, blockedBy set.
+    expect(mockTrackUsage).toHaveBeenCalledTimes(1)
+    const rec = mockTrackUsage.mock.calls[0]![0]
+    expect(rec).toMatchObject({ projectId: 'proj-1', outcome: 'blocked', callType: 'guardrail', inputTokens: 0, outputTokens: 0, blockedBy: 'regex:forbidden', guardrailTriggered: 'regex:forbidden' })
+  })
+
+  it('non-streaming request block also emits a guardrail:evaluated trace (#77 C1)', async () => {
+    mockReadConfig.mockResolvedValue([testModel])
+    const app = await buildApp(blockProject)
+    await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'this is forbidden' }] }),
+    })
+    await app.close()
+    const evalCall = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'guardrail:evaluated')
+    expect(evalCall).toBeDefined()
+    expect((evalCall![1] as any[])[0].details).toMatchObject({ target: 'request', rules: [{ rule: 'regex', outcome: 'triggered', reason: 'regex:forbidden' }] })
+  })
+
+  it('clean request emits guardrail:evaluated with passed rule, no triggered, no blocked record (#77 C1)', async () => {
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmChat.mockResolvedValue(makeCompletion() as any)
+    const app = await buildApp(blockProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'all good here' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const evalCall = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'guardrail:evaluated')
+    expect((evalCall![1] as any[])[0].details).toMatchObject({ target: 'request', rules: [{ rule: 'regex', outcome: 'passed' }] })
+    const triggered = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'guardrail:triggered')
+    expect(triggered).toBeUndefined()
+    // no blocked usage record on the clean path
+    expect(mockTrackUsage.mock.calls.find(c => c[0].outcome === 'blocked')).toBeUndefined()
   })
 
   it('streaming request block: empty delta + content_filter + [DONE], no fallback', async () => {
+    mockReadConfig.mockResolvedValue([testModel])
     const app = await buildApp(blockProject)
     const res = await app.inject({
       method: 'POST', url: '/v1/chat/completions',
@@ -1396,6 +1439,10 @@ describe('POST /v1/chat/completions — guardrail request block & PII output tra
     expect(res.body).toContain('[DONE]')
     expect(res.body).not.toContain('nope')
     expect(res.headers['x-routerly-trace-id']).toBeDefined()
+    // C3: streaming block also records a blocked usage record.
+    const rec = mockTrackUsage.mock.calls.find(c => c[0].outcome === 'blocked')
+    expect(rec).toBeDefined()
+    expect(rec![0]).toMatchObject({ outcome: 'blocked', callType: 'guardrail', blockedBy: 'regex:forbidden' })
   })
 
   it('non-streaming PII output scrubbing emits a response pii:scrubbed trace entry', async () => {
@@ -1452,5 +1499,36 @@ describe('POST /v1/chat/completions — guardrail request block & PII output tra
     const piiTrace = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:scrubbed' && (c[1] as any[])[0]?.panel === 'response')
     expect(piiTrace).toBeDefined()
     expect((piiTrace![1] as any[])[0].details.entities).toContain('EMAIL')
+  })
+
+  it('non-streaming response guardrail block emits content_filter + response evaluated trace (#77 C1)', async () => {
+    const respGuard: any = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
+      guardrails: { action: 'block', fallbackMessage: 'nope', rules: [{ type: 'regex', target: 'response', config: { patterns: ['leak'] } }] },
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmChat.mockResolvedValue({
+      id: 'c1', object: 'chat.completion', created: 0, model: 'gpt-4o',
+      choices: [{ index: 0, message: { role: 'assistant', content: 'here is a leak' }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+    } as any)
+
+    const app = await buildApp(respGuard)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'go' }] }),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.choices[0].message.content).toBe('')
+    expect(body.choices[0].finish_reason).toBe('content_filter')
+    expect(res.body).not.toContain('leak')
+    const evalCall = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'guardrail:evaluated' && (c[1] as any[])[0]?.panel === 'response')
+    expect(evalCall).toBeDefined()
+    expect((evalCall![1] as any[])[0].details).toMatchObject({ target: 'response', rules: [{ rule: 'regex', outcome: 'triggered', reason: 'regex:leak' }] })
   })
 })

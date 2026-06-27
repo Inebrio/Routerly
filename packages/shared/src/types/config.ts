@@ -753,7 +753,7 @@ export interface TraceEntry {
 
 // ─── Usage & Cost types ───────────────────────────────────────────────────────
 
-export type CallOutcome = 'success' | 'error' | 'budget_exceeded' | 'timeout';
+export type CallOutcome = 'success' | 'error' | 'budget_exceeded' | 'timeout' | 'blocked';
 
 export type CallType = 'routing' | 'completion' | 'guardrail';
 
@@ -806,6 +806,8 @@ export interface UsageRecord {
   agentPolicyName?: string;
   /** Name of the guardrail rule that triggered on this request, if any (#77) */
   guardrailTriggered?: string;
+  /** Guardrail rule that BLOCKED this request (outcome 'blocked'); distinct from guardrailTriggered, which is also set on a non-blocking flag/log pass-through (#77) */
+  blockedBy?: string;
   /** PII entity types redacted from this request before forwarding (#76) */
   piiRedacted?: string[];
 }

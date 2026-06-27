@@ -1229,7 +1229,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       entry.outputTokens += r.outputTokens;
       entry.cachedInputTokens += r.cachedInputTokens ?? 0;
       entry.cost += r.cost;
-      if (r.outcome !== 'success') entry.errors++;
+      // A guardrail-blocked request is neither a success nor a model error — exclude it from the error count (#77).
+      if (r.outcome !== 'success' && r.outcome !== 'blocked') entry.errors++;
       byModel[r.modelId] = entry;
     }
 
@@ -1253,6 +1254,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const totalCost = filtered.filter(r => r.outcome === 'success').reduce((s, r) => s + r.cost, 0);
     const totalCalls = filtered.length;
     const successCalls = filtered.filter(r => r.outcome === 'success').length;
+    // Guardrail blocks are a distinct outcome — not a model error (#77).
+    const blockedCalls = filtered.filter(r => r.outcome === 'blocked').length;
 
     // Paginate records (most recent first)
     const sorted = [...filtered].reverse();
@@ -1263,7 +1266,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const paged = sorted.slice(startIdx, startIdx + pageSize);
 
     return reply.send({
-      summary: { totalCost, totalCalls, successCalls, errorCalls: totalCalls - successCalls, routingCalls, completionCalls, guardrailCalls, routingCost, completionCost, guardrailCost },
+      summary: { totalCost, totalCalls, successCalls, blockedCalls, errorCalls: totalCalls - successCalls - blockedCalls, routingCalls, completionCalls, guardrailCalls, routingCost, completionCost, guardrailCost },
       byModel,
       timeline: Object.entries(timeline).sort(([a], [b]) => a.localeCompare(b)).slice(-30),
       // Strip trace from list response to keep payload small
@@ -1550,7 +1553,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
     const providers = models.map(model => {
       const mine = records.filter(r => r.modelId === model.id);
-      const recent = mine.filter(r => new Date(r.timestamp).getTime() >= fiveMinAgo);
+      // Guardrail blocks aren't model errors — exclude them from health entirely (#77).
+      const recent = mine.filter(r => new Date(r.timestamp).getTime() >= fiveMinAgo && r.outcome !== 'blocked');
       const total = recent.length;
       const errors = recent.filter(r => r.outcome !== 'success').length;
       const errorRate = total > 0 ? errors / total : 0;

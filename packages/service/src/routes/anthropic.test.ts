@@ -13,17 +13,20 @@ vi.mock('../llm/executor.js', () => ({
     constructor(modelId: string) { super('budget_exceeded'); this.modelId = modelId }
   },
 }))
+vi.mock('../cost/tracker.js', () => ({ trackUsage: vi.fn(() => Promise.resolve()) }))
 
 import { anthropicRoutes } from './anthropic.js'
 import { routeRequest } from '../routing/router.js'
 import { readConfig } from '../config/loader.js'
 import { appendTrace } from '../routing/traceStore.js'
 import { llmMessages } from '../llm/executor.js'
+import { trackUsage } from '../cost/tracker.js'
 
 const mockRouteRequest = vi.mocked(routeRequest)
 const mockReadConfig = vi.mocked(readConfig)
 const mockAppendTrace = vi.mocked(appendTrace)
 const mockLlmMessages = vi.mocked(llmMessages)
+const mockTrackUsage = vi.mocked(trackUsage)
 
 afterEach(() => vi.clearAllMocks())
 
@@ -469,6 +472,7 @@ describe('POST /v1/messages — guardrail block & PII output trace', () => {
   } as any
 
   it('request block returns refusal wire format (empty content, stop_reason refusal, stop_details, trace-id header)', async () => {
+    mockReadConfig.mockResolvedValue([testModel])
     const app = await buildAppWith(guardProject)
     const res = await app.inject({
       method: 'POST', url: '/v1/messages',
@@ -489,6 +493,30 @@ describe('POST /v1/messages — guardrail block & PII output trace', () => {
     expect(traceCall).toBeDefined()
     expect((traceCall![1] as any[])[0].details).toMatchObject({ action: 'block', fallbackMessage: 'nope', target: 'request' })
     expect(mockLlmMessages).not.toHaveBeenCalled()
+    // C3: blocked request recorded with outcome 'blocked', callType 'guardrail', cost 0, blockedBy set.
+    expect(mockTrackUsage).toHaveBeenCalledTimes(1)
+    expect(mockTrackUsage.mock.calls[0]![0]).toMatchObject({ projectId: 'proj-1', outcome: 'blocked', callType: 'guardrail', inputTokens: 0, outputTokens: 0, blockedBy: 'regex:forbidden' })
+    // C1: evaluation trace appended on the block path.
+    const evalCall = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'guardrail:evaluated')
+    expect(evalCall).toBeDefined()
+    expect((evalCall![1] as any[])[0].details).toMatchObject({ target: 'request', rules: [{ rule: 'regex', outcome: 'triggered', reason: 'regex:forbidden' }] })
+  })
+
+  it('clean request emits guardrail:evaluated passed, no blocked record (#77 C1)', async () => {
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmMessages.mockResolvedValue({ id: 'msg-1', type: 'message', role: 'assistant', content: [{ type: 'text', text: 'fine' }], model: 'm1', stop_reason: 'end_turn', usage: { input_tokens: 1, output_tokens: 1 } } as any)
+    const app = await buildAppWith(guardProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'all good' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const evalCall = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'guardrail:evaluated')
+    expect((evalCall![1] as any[])[0].details).toMatchObject({ target: 'request', rules: [{ rule: 'regex', outcome: 'passed' }] })
+    expect(mockTrackUsage.mock.calls.find(c => c[0].outcome === 'blocked')).toBeUndefined()
   })
 
   it('response block returns refusal wire format', async () => {

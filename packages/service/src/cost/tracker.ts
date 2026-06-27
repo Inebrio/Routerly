@@ -33,6 +33,8 @@ export interface TrackUsageParams {
   agentPolicyName?: string;
   /** Name of the guardrail rule that triggered on this request (#77) */
   guardrailTriggered?: string;
+  /** Guardrail rule that blocked the request (set with outcome 'blocked') (#77) */
+  blockedBy?: string;
   /** PII entity types redacted before forwarding (#76) */
   piiRedacted?: string[];
 }
@@ -86,6 +88,7 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     ...(params.tags ? { tags: params.tags } : {}),
     ...(params.agentPolicyName ? { agentPolicyName: params.agentPolicyName } : {}),
     ...(params.guardrailTriggered ? { guardrailTriggered: params.guardrailTriggered } : {}),
+    ...(params.blockedBy ? { blockedBy: params.blockedBy } : {}),
     ...(params.piiRedacted && params.piiRedacted.length > 0 ? { piiRedacted: params.piiRedacted } : {}),
   };
 
