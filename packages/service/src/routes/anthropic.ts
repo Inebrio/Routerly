@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { randomUUID } from 'node:crypto';
-import type { MessagesRequest, Settings } from '@routerly/shared';
+import type { MessagesRequest, Settings, ProjectConfig } from '@routerly/shared';
 import { routeRequest } from '../routing/router.js';
 import { readConfig } from '../config/loader.js';
 import { setTrace, appendTrace } from '../routing/traceStore.js';
@@ -19,10 +19,10 @@ import { trackUsage } from '../cost/tracker.js';
  * Zero cost/tokens, outcome 'blocked', callType 'guardrail', attributed to the
  * project's first model. Shares the trackUsage path — no new recording channel.
  */
-async function trackBlockedRequest(project: any, blockedBy: string, traceId: string): Promise<void> {
+async function trackBlockedRequest(project: ProjectConfig, blockedBy: string, traceId: string): Promise<void> {
   const allModels = await readConfig('models');
   const firstModelId = project.models?.[0]?.modelId;
-  const model = firstModelId ? allModels.find((m: any) => m.id === firstModelId) : undefined;
+  const model = firstModelId ? allModels.find((m) => m.id === firstModelId) : undefined;
   if (!model) return; // ponytail: no project model to attribute to → nothing to record
   await trackUsage({
     projectId: project.id,

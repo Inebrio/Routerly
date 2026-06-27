@@ -35,7 +35,9 @@ export const healthPolicy: PolicyFn = async ({ candidates, config }) => {
   const recent = records.filter(r => new Date(r.timestamp) >= since);
 
   const routing = candidates.map(c => {
-    const modelRecords = recent.filter(r => r.modelId === c.model.id);
+    // Exclude guardrail-blocked records: the model never ran, so they must not
+    // dilute the error-rate denominator (consistent with the health endpoint, #77).
+    const modelRecords = recent.filter(r => r.modelId === c.model.id && r.outcome !== 'blocked');
 
     if (modelRecords.length === 0) {
       return { model: c.model.id, point: 1.0, recentCalls: 0, weightedErrorRate: 0, errorScore: 1.0 };
