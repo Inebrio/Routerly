@@ -8,6 +8,7 @@ import { UsagePage } from './UsagePage';
 vi.mock('../api', () => ({
   getUsage: vi.fn(),
   getProjects: vi.fn(),
+  getModels: vi.fn(),
 }));
 
 // Mock DateRangePicker and MultiSelect to avoid complex UI
@@ -19,7 +20,7 @@ vi.mock('../components/DateRangePicker', () => ({
 vi.mock('../components/MultiSelect', () => ({
   MultiSelect: () => <div data-testid="multi-select" />,
 }));
-import { getUsage, getProjects } from '../api';
+import { getUsage, getProjects, getModels } from '../api';
 
 // useFilterState mock must be after imports so hoisting works
 vi.mock('../hooks/useFilterState', async () => {
@@ -60,6 +61,68 @@ function renderPage() {
 
 beforeEach(() => {
   vi.mocked(getProjects).mockResolvedValue([]);
+  vi.mocked(getModels).mockResolvedValue([]);
+});
+
+describe('UsagePage — no leaderboard tab', () => {
+  it('does not render a Leaderboard tab', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Leaderboard' })).toBeNull());
+  });
+});
+
+describe('UsagePage — per-model table enriched columns', () => {
+  it('shows Provider, Success rate, Avg latency, P95 latency, Cost/1K headers', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'openai/gpt-4o': {
+          calls: 5, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0,
+          cost: 0.01, errors: 0, success: 5, avgLatencyMs: 320, p95LatencyMs: 600,
+        },
+      },
+    });
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('Provider')).toBeTruthy();
+      expect(screen.getByText('Success rate')).toBeTruthy();
+      expect(screen.getByText('Avg latency')).toBeTruthy();
+      expect(screen.getByText('P95 latency')).toBeTruthy();
+      expect(screen.getByText('Cost / 1K')).toBeTruthy();
+    });
+  });
+
+  it('renders provider derived from modelId prefix', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'openai/gpt-4o': {
+          calls: 2, inputTokens: 100, outputTokens: 50, cachedInputTokens: 0,
+          cost: 0.001, errors: 0, success: 2, avgLatencyMs: 200, p95LatencyMs: 400,
+        },
+      },
+    });
+    renderPage();
+    await waitFor(() => expect(screen.getByText('openai')).toBeTruthy());
+  });
+
+  it('renders star on best cost-per-1k model', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'openai/gpt-4o': {
+          calls: 2, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0,
+          cost: 0.001, errors: 0, success: 2, avgLatencyMs: 200, p95LatencyMs: 400,
+        },
+      },
+    });
+    renderPage();
+    await waitFor(() => {
+      const star = document.querySelector('[aria-label="Best cost-performance"]');
+      expect(star).toBeTruthy();
+    });
+  });
 });
 
 describe('UsagePage — guardrail stat card', () => {
@@ -88,7 +151,6 @@ describe('UsagePage — Guardrail filter button', () => {
     vi.mocked(getUsage).mockResolvedValue(makeStats());
     renderPage();
     await waitFor(() => {
-      // Multiple "All" buttons exist (Type + Status); test the unique ones
       expect(screen.getByRole('button', { name: 'Completion' })).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Router' })).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Guardrail' })).toBeTruthy();
@@ -173,7 +235,6 @@ describe('UsagePage — Live mode', () => {
     renderPage();
     const liveBtn = await screen.findByText(/● Live/);
     await userEvent.click(liveBtn);
-    // LIVE badge should appear
     await waitFor(() => expect(screen.getByText('LIVE')).toBeTruthy());
   });
 
@@ -191,7 +252,6 @@ describe('UsagePage — Live mode', () => {
     vi.mocked(getUsage).mockResolvedValue(makeStats());
     renderPage();
     await waitFor(() => screen.getByText(/● Live/));
-    // Find the "1m" interval button and click it
     const oneMinBtn = screen.getByRole('button', { name: '1m' });
     await userEvent.click(oneMinBtn);
     expect(oneMinBtn.className).toContain('btn-primary');

@@ -381,7 +381,7 @@ const router = createBrowserRouter([
           },
           { path: 'usage', element: <UsagePage /> },
           { path: 'health', element: <Navigate to="/dashboard/models" replace /> },
-          { path: 'leaderboard', element: <Navigate to="/dashboard/usage?tab=leaderboard" replace /> },
+          { path: 'leaderboard', element: <Navigate to="/dashboard/usage" replace /> },
           { path: 'test', element: <TestPage /> },
           {
             path: 'settings',

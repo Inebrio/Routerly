@@ -403,21 +403,41 @@ export interface UsageRecord {
   piiRedacted?: string[];
 }
 
+import type { UsageByModelEntry } from '@routerly/shared';
+export type { UsageByModelEntry };
+
 export interface UsageStats {
   summary: { totalCost: number; totalCalls: number; successCalls: number; errorCalls: number; routingCalls: number; completionCalls: number; routingCost: number; completionCost: number; guardrailCalls?: number; guardrailCost?: number; blockedCalls?: number };
-  byModel: Record<string, { calls: number; inputTokens: number; outputTokens: number; cachedInputTokens: number; cost: number; errors: number }>;
+  byModel: Record<string, UsageByModelEntry>;
   timeline: [string, number][];
   records: Array<UsageRecord>;
   pagination?: { page: number; pageSize: number; totalRecords: number; totalPages: number };
 }
 
-export const getUsage = (period = 'monthly', projectId?: string, from?: string, to?: string, page?: number, pageSize?: number) => {
+export interface GetUsageOptions {
+  period?: string;
+  projectId?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  pageSize?: number;
+  projectIds?: string[];
+  modelIds?: string[];
+  callType?: string;
+  outcome?: string;
+}
+
+export const getUsage = (period = 'monthly', projectId?: string, from?: string, to?: string, page?: number, pageSize?: number, opts?: GetUsageOptions) => {
   const params = new URLSearchParams({ period });
   if (projectId) params.set('projectId', projectId);
   if (from) params.set('from', from);
   if (to)   params.set('to', to);
   if (page != null) params.set('page', String(page));
   if (pageSize != null) params.set('pageSize', String(pageSize));
+  if (opts?.projectIds?.length) params.set('projectIds', opts.projectIds.join(','));
+  if (opts?.modelIds?.length)   params.set('modelIds',   opts.modelIds.join(','));
+  if (opts?.callType && opts.callType !== 'all') params.set('callType', opts.callType);
+  if (opts?.outcome  && opts.outcome  !== 'all') params.set('outcome',  opts.outcome);
   return request<UsageStats>(`/usage?${params.toString()}`);
 };
 
@@ -443,30 +463,6 @@ export interface ProviderHealth {
 export const getProviderHealth = () =>
   request<{ providers: ProviderHealth[] }>('/health/providers');
 
-// ── Leaderboard (#80) ───────────────────────────────────────────────────────
-
-export interface LeaderboardEntry {
-  modelId: string;
-  provider: string;
-  totalRequests: number;
-  successRate: number;
-  avgLatencyMs: number;
-  p95LatencyMs: number;
-  avgCostPer1kTokens: number;
-  totalCost: number;
-  totalTokens: number;
-  tokensPerSec: number;
-  errorRate: number;
-  trend: { date: string; cost: number }[];
-}
-
-export const getLeaderboard = (period = 'monthly', projectId?: string, from?: string, to?: string) => {
-  const params = new URLSearchParams({ period });
-  if (projectId) params.set('projectId', projectId);
-  if (from) params.set('from', from);
-  if (to)   params.set('to', to);
-  return request<LeaderboardEntry[]>(`/leaderboard?${params.toString()}`);
-};
 
 // ── Settings ──────────────────────────────────────────────────────────────
 // Channel config types live in @routerly/shared — re-export for callers that import from api.ts
