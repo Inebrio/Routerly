@@ -78,6 +78,8 @@ When the weighted error rate exceeds `circuitBreaker`, the model's score drops t
 
 Models with no recent records get score `1.0` (optimistic exploration).
 
+Guardrail-blocked requests (`outcome: "blocked"`) are **excluded from the error rate calculation**. A block is a normal policy outcome — the model was not called and did not fail. Only actual model call outcomes (`error`, `timeout`) count against a model's health score.
+
 **Use when:** you want automatic failover when a provider degrades.
 
 ---
