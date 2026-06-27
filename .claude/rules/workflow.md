@@ -10,7 +10,7 @@ Concurrency cap: **2 sub-agents at once** (the API 529s above that). Reuse a run
 
 | Role | Agent file | Model | Tools | Owns | Edits code? |
 |------|-----------|-------|-------|------|-------------|
-| **Project Manager** | *(main thread)* | opus | all (orchestration) | plan, delegate, final verify, sign-off, `claude-progress.txt` + `feature-list.json` | no — meta only (`CLAUDE.md`, `.claude/**`, progress, docs touch-ups) |
+| **Project Manager** | *(main thread)* | opus | all (orchestration) | plan, delegate, final verify, sign-off, `handoff.md` + `feature-list.json` | no — meta only (`CLAUDE.md`, `.claude/**`, progress, docs touch-ups) |
 | **Backend Developer** | `backend-developer` | opus | edit + Bash | `packages/service`, `packages/cli`, `packages/shared/src/types`, CI/Docker/release | yes (backend + tooling) |
 | **Frontend Developer** | `frontend-developer` | sonnet | edit + Bash + Chrome MCP | `packages/dashboard` | yes (UI) |
 | **QA Manager** | `qa-manager` | sonnet | edit + Bash + Chrome MCP | `*.test.ts` suite, full verification matrix, coverage ≥98% | tests only |
@@ -32,7 +32,7 @@ Reiterable. Every task — feature, fix, refactor — runs the full loop. A fail
 ```
 
 ### 0 — PLAN  *(project-manager / main thread)*
-Read `claude-progress.txt`, `git log --oneline -20`, `feature-list.json`. For any non-trivial change, **run `/graphify`** to map the affected code before planning — do not guess the structure from memory (this is the orchestrator's step; sub-agents have no Skill tool). State the task in one line. Decide **which surfaces it touches** (service / CLI / dashboard / docs) and the acceptance criteria + boundary cases to prove. Pick the agent(s) from the table. Output: a concrete task brief per agent.
+Read `handoff.md`, `git log --oneline -20`, `feature-list.json`. For any non-trivial change, **run `/graphify`** to map the affected code before planning — do not guess the structure from memory (this is the orchestrator's step; sub-agents have no Skill tool). State the task in one line. Decide **which surfaces it touches** (service / CLI / dashboard / docs) and the acceptance criteria + boundary cases to prove. Pick the agent(s) from the table. Output: a concrete task brief per agent.
 
 ### 1 — IMPLEMENT  *(backend-developer and/or frontend-developer)*
 Delegate the code. Backend and frontend run **in parallel** when the work is independent (cap 2). Each developer writes its code, self-checks (`typecheck`, its own curl / browser pass), and reports.
@@ -53,7 +53,7 @@ Updates `docs/` on **every surface the feature touches** (API/service + CLI + da
 Read-only pre-merge audit: security → constraints → correctness → conventions → reuse/over-engineering → coverage → docs parity. Severity-tagged. **BLOCKING/MAJOR → back to step 1.**
 
 ### 7 — SIGN-OFF  *(project-manager / main thread)*
-Run final independent verification (browser screenshot for UI, curl for service, command for CLI). Present the evidence. Update `claude-progress.txt` (done / discovered / remaining / open) and `feature-list.json` (`passes` field only). Commit (conventional, lowercase after the colon). **`VERIFIED DONE` requires explicit user sign-off after they see the evidence.** Then wait for the next task.
+Run final independent verification (browser screenshot for UI, curl for service, command for CLI). Present the evidence. Update `handoff.md` (done / discovered / remaining / open) and `feature-list.json` (`passes` field only). Commit (conventional, lowercase after the colon). **`VERIFIED DONE` requires explicit user sign-off after they see the evidence.** Then wait for the next task.
 
 ---
 
@@ -77,4 +77,5 @@ Run final independent verification (browser screenshot for UI, curl for service,
 - **Verification is executed, never read.** A layer is done only when it was run and observed. Status vocabulary: `VERIFIED DONE` / `VERIFIED PARTIAL` / `VERIFIED BROKEN` / `NOT VERIFIED` — never a bare "done". Full protocol: `.claude/rules/feature-verification.md`.
 - **Permissions travel the full chain** (CLAUDE.md § Permissions) and must be grantable from /dashboard/settings/roles.
 - **Reuse before you create**, in code and in UI. Touch only what the task needs.
+- **Update `handoff.md` after every phase.** Each phase (0–7) appends one block to `handoff.md` at the repo root — `## <phase> — <status>`, a one-line summary, and the next step — so the file is always the live state of the run. A new task starts a fresh `handoff.md` (overwrite the header); phases within it append. `/feature` does this automatically per step; the manual loop does it by hand.
 - One task at a time. Frequent descriptive commits. English only, everywhere.

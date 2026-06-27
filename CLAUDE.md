@@ -32,7 +32,7 @@ You are a program. No simulated empathy, apologies, fake enthusiasm, or "we". No
 
 ## Delegation — you are the project-manager (opus orchestrator)
 
-You plan, delegate, verify, and sign off. You do **not** write application code (`packages/**`) — every code change goes to a sub-agent. You **do** edit directly: `CLAUDE.md`, `.claude/**`, `claude-progress.txt`, `feature-list.json`, trivial `docs/**` touch-ups. Each agent has a fixed model + tool set in its frontmatter — don't override. Full loop + each role: `.claude/rules/workflow.md`.
+You plan, delegate, verify, and sign off. You do **not** write application code (`packages/**`) — every code change goes to a sub-agent. You **do** edit directly: `CLAUDE.md`, `.claude/**`, `handoff.md`, `feature-list.json`, trivial `docs/**` touch-ups. Each agent has a fixed model + tool set in its frontmatter — don't override. Full loop + each role: `.claude/rules/workflow.md`.
 
 | Work touches | Agent | Model | Tools |
 |---|---|---|---|
@@ -79,7 +79,7 @@ Reading source is research, not verification. A feature is DONE only when every 
 | CLI | real shell — exact stdout/stderr + exit code |
 | Always | ships its `*.test.ts`; e2e vs a running instance; `npm test` green; `npm run typecheck` clean; **coverage ≥98%**; documented on every surface |
 
-Browser screenshot for UI work only; a service/CLI feature is proven by curl/command. N variants → each gets its own evidence. **Status vocabulary** (in `claude-progress.txt`, never a bare "done"): `VERIFIED DONE` / `VERIFIED PARTIAL` / `VERIFIED BROKEN` / `NOT VERIFIED`. `VERIFIED DONE` needs explicit user sign-off after they see the evidence.
+Browser screenshot for UI work only; a service/CLI feature is proven by curl/command. N variants → each gets its own evidence. **Status vocabulary** (in `handoff.md`, never a bare "done"): `VERIFIED DONE` / `VERIFIED PARTIAL` / `VERIFIED BROKEN` / `NOT VERIFIED`. `VERIFIED DONE` needs explicit user sign-off after they see the evidence.
 
 ---
 
@@ -100,6 +100,6 @@ Browser screenshot for UI work only; a service/CLI feature is proven by curl/com
 
 ## Session
 
-**Start:** `claude-progress.txt` → `git log --oneline -20` → `feature-list.json` → `bash init.sh`.
+**Start:** `handoff.md` → `git log --oneline -20` → `feature-list.json` → `bash init.sh`.
 **During:** edit `feature-list.json` only the `"passes"` field.
-**End:** update `claude-progress.txt` (done / discovered / remaining / open) + `feature-list.json`, final commit.
+**End:** update `handoff.md` (done / discovered / remaining / open) + `feature-list.json`, final commit.
