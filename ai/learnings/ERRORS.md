@@ -66,3 +66,37 @@ needs an import attribute of "type: json"
 - Resolution: 2026-06-10 — both fixes applied
 
 ---
+
+## [ERR-20260628-001] SSE trace events pollute OpenAI-compatible streaming output
+
+**Logged**: 2026-06-28T00:31:00Z
+**Priority**: high
+**Status**: resolved (PR pending — issue #110)
+
+### Summary
+Routerly's `emit()` in `packages/service/src/routes/openai.ts` unconditionally wrote
+`{"type":"trace",...}` SSE frames into the wire stream, breaking strict
+OpenAI-compatible clients (`@ai-sdk/openai-compatible`, openai strict mode, etc.)
+that validate the first `data:` line as a `ChatCompletionChunk` with a `choices[]`
+array. The `x-routerly-no-trace` request header was documented but not honoured.
+
+### Root cause
+`emit()` (line ~230) called `reply.raw.write(...)` directly with no header check.
+The `x-routerly-no-trace` header existed in the docs but was never read from
+`request.headers`.
+
+### Fix
+Read the header near the other header reads (line ~120) and gate the `reply.raw.write`
+call. Trace entries are still recorded in the in-memory trace store via
+`appendTrace(traceId, [entry])` so the dashboard / debug surface is unaffected.
+
+### Regression coverage
+- `it('suppresses trace events from SSE stream when x-routerly-no-trace: 1 is sent')`
+- `it('emits trace events on SSE stream when x-routerly-no-trace header is absent')`
+Both tests use the all-candidates-exhausted path which calls `emit()` directly
+from the route handler, guaranteeing a trace event hits the wire.
+
+### Lesson
+When a header is documented as a feature, the implementation must read it. Add a
+failing test that exercises the documented behaviour BEFORE adding the
+implementation, so the missing wire-up is caught at the same time as the bug.

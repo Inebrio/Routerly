@@ -343,6 +343,45 @@ describe('POST /v1/chat/completions — streaming', () => {
     expect(res.body).toContain('[DONE]')
     expect(mockLlmStream).toHaveBeenCalledTimes(2)
   })
+
+  it('suppresses trace events from SSE stream when x-routerly-no-trace: 1 is sent', async () => {
+    // All-candidates-exhausted path triggers emit() directly via the route handler
+    // (line ~320), guaranteeing the SSE wire contains a {"type":"trace"} event
+    // unless the header gates it.
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmStream.mockRejectedValue(new Error('upstream failed'))
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json', 'x-routerly-no-trace': '1' },
+      payload: JSON.stringify({ model: 'gpt-4o', stream: true, messages: [{ role: 'user', content: 'Hi' }] }),
+    })
+    await app.close()
+
+    expect(res.body).not.toContain('"type":"trace"')
+    expect(res.body).toContain('[DONE]')
+  })
+
+  it('emits trace events on SSE stream when x-routerly-no-trace header is absent', async () => {
+    // Companion test: confirms traces ARE written to the wire by default
+    // (sanity-check that suppressTrace is the only thing keeping them out).
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmStream.mockRejectedValue(new Error('upstream failed'))
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', stream: true, messages: [{ role: 'user', content: 'Hi' }] }),
+    })
+    await app.close()
+
+    expect(res.body).toContain('"type":"trace"')
+    expect(res.body).toContain('[DONE]')
+  })
 })
 
 // ─── POST /v1/responses ───────────────────────────────────────────────────────

@@ -117,6 +117,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     const traceId = randomUUID();
     setTrace(traceId, []);
     const conversationId = (request.headers['x-routerly-conversation-id'] as string | undefined) || undefined;
+    const suppressTrace = (request.headers['x-routerly-no-trace'] as string | undefined) === '1';
     const isMemoryEnabled = (project.policies ?? []).some(
       (p: any) => p.type === 'llm' && p.enabled && p.config?.memory === true,
     );
@@ -227,7 +228,9 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
       const emit = (entry: TraceEntry) => {
         appendTrace(traceId, [entry]);
-        reply.raw.write(`data: ${JSON.stringify({ type: 'trace', entry })}\n\n`);
+        if (!suppressTrace) {
+          reply.raw.write(`data: ${JSON.stringify({ type: 'trace', entry })}\n\n`);
+        }
       };
 
       let sortedCandidates: Array<{ model: string; weight: number }>;
