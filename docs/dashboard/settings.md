@@ -32,37 +32,57 @@ Changes are saved immediately and take effect without a restart (except Port and
 
 Configure notification channels. Each channel routes events to a delivery method (in-app inbox, email, or webhook) and can be scoped to specific event types and recipients.
 
-![SMTP channel expanded showing Events and Recipients/Targets fields](../assets/screenshot-settings-notifications.png)
+The Notifications tab provides a **channel management interface** with a full list of configured channels and options to create, edit, test, and delete them.
 
-Each channel row shows its type badge, name, event filter summary, and target summary. Click the **>** chevron to expand a channel and edit its **Events** and **Recipients / Targets**.
+### Channel List
 
-The `Dashboard (in-app inbox)` channel shows extra context: "Routes matching events to the in-app notification inbox. No credentials required." Its targets tooltip reads "Targets control inbox visibility — only the matched users will see these notifications in their in-app inbox."
+The list displays all configured channels in a table with:
+- **Name** - friendly label
+- **Type** - channel provider (Dashboard, SMTP, Slack, etc.)
+- **Events** - event filter summary (shows first few patterns, `*` = all)
+- **Targets** - target summary (role, permission, and user counts; empty = everyone)
+- **Actions** - buttons to edit, test, and delete
 
-![Dashboard channel expanded showing events and targets with inbox-visibility note](../assets/screenshot-settings-notifications-dashboard.png)
+Click a channel row to navigate to its **edit page** for detailed configuration.
 
 ### Adding a Channel
 
-1. Click **+ Add Channel**
-2. Select the channel type: `Dashboard (in-app inbox)`, `SMTP`, `SES`, `SendGrid`, `Azure`, `Google`, `Webhook`, `Slack`, `Teams`, `PagerDuty`, `Discord`
-3. Fill in the connection details for the selected type (the `Dashboard` type requires no credentials)
-4. Optionally filter by **Events** — select specific event types to route to this channel; leave empty to receive all events
-5. Optionally set **Recipients / Targets** — pick roles, permissions, or individual users; leave empty for everyone
-6. Click **Save Settings**
-7. Click **Send Test** to verify the channel delivers a message correctly
+1. Click **+ Add Channel** (or navigate to **Settings > Notifications > New Channel**)
+2. Select the channel type: `Dashboard`, `SMTP`, `SES`, `SendGrid`, `Azure`, `Google`, `Webhook`, `Slack`, `Teams`, `PagerDuty`, or `Discord`
+3. Fill in the friendly **Name** and any required connection details:
+   - **Dashboard**: name only (no credentials)
+   - **Email providers** (SMTP, SES, SendGrid, Azure, Google): host, auth, from address
+   - **Webhooks/Native** (Webhook, Slack, Teams, PagerDuty, Discord): integration URLs and keys
+4. (Optional) Filter by **Events** - select specific event types to route to this channel; leave empty to receive all
+5. (Optional) Set **Recipients / Targets** - pick roles, permissions, or individual users; leave empty for everyone
+6. Click **Create Channel**
+7. Use **Send Test** to verify the channel works before relying on it for real events
 
 See [Concepts: Notifications](../concepts/notifications.md) for the full event taxonomy and per-type configuration fields.
 
 :::note Target scope
-**Recipients / Targets** control inbox visibility for the `Dashboard` channel and recipient resolution for email channels. Webhook and native channels (Slack, Teams, PagerDuty, Discord) deliver to a fixed endpoint — targets are stored but do not change delivery.
+**Recipients / Targets** control inbox visibility for the `Dashboard` channel and recipient resolution for email channels. Webhook and native channels (Slack, Teams, PagerDuty, Discord) deliver to a fixed endpoint - targets are stored but do not affect their delivery.
 :::
+
+### Editing a Channel
+
+Click the channel row or the **Edit** button to open the edit page. You can change:
+- **Name** - friendly label
+- **Events** - event filter (leave empty for all)
+- **Recipients / Targets** - audience filter
+- **Connection details** - provider-specific fields (host, API keys, etc.). Secret fields (passwords, API keys, tokens) show as masked (`***`) when present; clearing the field will leave it unchanged. To update a secret, re-enter it in the text field.
+
+After making changes, click **Update Channel** to save.
 
 ### Testing a Channel
 
-Click **Send Test** next to a channel. Routerly sends a test message immediately. Check for a success toast or an error with details.
+On the channel list or edit page, click **Send Test**. Routerly sends a test message immediately. Check for a success toast or an error message with details about what went wrong.
+
+For email-provider channels, you can optionally override the recipient email address before sending the test.
 
 ### Removing a Channel
 
-Click the **Delete** icon next to a channel.
+Click the **Delete** button on the channel row or edit page. You will be asked to confirm deletion.
 
 ---
 

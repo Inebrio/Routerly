@@ -46,13 +46,50 @@ The Notifications tab is your personal in-app notification inbox.
 
 It shows all notification events routed to you via any `dashboard` channel that includes you in its targets (or all events when no targeting is configured). Items are listed newest-first and include the event type, severity icon, and age.
 
+### Filtering the Inbox
+
+The inbox supports several filters to help you find relevant notifications:
+
+- **Severity** - `All`, `Info`, `Warning`, or `Critical`
+- **Event** - text search on event name (case-insensitive)
+- **Date range** - pick a start and end date; date-only values span the full day
+
+Filters work in combination: applying multiple filters shows only items matching all of them.
+
+### Table and Row Selection
+
+Each row shows the event type, severity color-coded, timestamp, and a brief detail summary. Click a row to open the **notification detail drawer** (see below).
+
+Use the checkbox column to select multiple notifications. A **bulk action bar** appears when one or more items are selected, with options to:
+- **Mark as Read** - marks selected items as read
+- **Mark as Unread** - marks selected items as unread
+- **Delete** - dismisses selected items from your inbox
+
+### Notification Detail Drawer
+
+Click on a notification row to open a detail drawer showing:
+- Full **Event ID**
+- **Event** type and **Severity**
+- **Timestamp** (ISO 8601 with full precision)
+- **Status** - read or unread with a toggle button
+- Complete **Details** object (JSON formatted)
+- **Delete** button to dismiss this item
+
+Press **Esc** to close the drawer without saving changes.
+
+The drawer's read/unread toggle is synced immediately to the server - you don't need to manually save.
+
 ### Unread Badge
 
 The notification bell icon next to your email address in the sidebar shows an unread count badge when new items arrive. Click the bell icon to open a quick-view popup showing the latest few notifications. Navigate to the **Notifications** tab here for the full inbox.
 
 ### Marking as Read
 
-Items are marked as read when you open them. Use `POST /api/notifications/inbox/read` with `{ "all": true }` to mark all as read programmatically, or `routerly notification read` from the CLI.
+Items are marked as read when you click them in the detail drawer. Use the bulk action bar to mark multiple items at once, or use the API endpoint `POST /api/notifications/inbox/read` with `{ "all": true }` to mark all as read programmatically. CLI: `routerly notification read`.
+
+### Dismissing Notifications
+
+Use the **Delete** button in the detail drawer or the bulk action bar **Delete** option. Dismissal is **per-user only** - other users' copies of the same notification remain in their inboxes unless they also dismiss it. Deleted notifications can be permanently removed by admin if needed (see `DELETE /api/notifications/inbox/delete`), but individual users can always dismiss their own copies at any time.
 
 ---
 
