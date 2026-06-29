@@ -341,6 +341,45 @@ describe('POST /v1/chat/completions — streaming', () => {
     expect(res.body).toContain('[DONE]')
     expect(mockLlmStream).toHaveBeenCalledTimes(2)
   })
+
+  it('includes trace SSE events when x-routerly-no-trace is absent', async () => {
+    async function* chunkGen() {
+      yield { id: 'c1', object: 'chat.completion.chunk', created: 1700000000, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'Hi' }, finish_reason: 'stop' }] }
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [{ panel: 'router-request', message: 'selected', details: {} }] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmStream.mockResolvedValue({ ttftMs: 50, chunks: chunkGen() } as any)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', stream: true, messages: [{ role: 'user', content: 'Hi' }] }),
+    })
+    await app.close()
+
+    expect(res.body).toContain('"type":"trace"')
+  })
+
+  it('suppresses trace SSE events when x-routerly-no-trace: 1 is set, but still streams choices', async () => {
+    async function* chunkGen() {
+      yield { id: 'c1', object: 'chat.completion.chunk', created: 1700000000, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'Hi' }, finish_reason: 'stop' }] }
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [{ panel: 'router-request', message: 'selected', details: {} }] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmStream.mockResolvedValue({ ttftMs: 50, chunks: chunkGen() } as any)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json', 'x-routerly-no-trace': '1' },
+      payload: JSON.stringify({ model: 'gpt-4o', stream: true, messages: [{ role: 'user', content: 'Hi' }] }),
+    })
+    await app.close()
+
+    expect(res.body).not.toContain('"type":"trace"')
+    expect(res.body).toContain('"choices"')
+  })
 })
 
 // ─── POST /v1/responses ───────────────────────────────────────────────────────
