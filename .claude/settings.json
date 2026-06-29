@@ -1,104 +1,33 @@
 {
-  "model": "opus",
+  "model": "sonnet",
   "autoMemoryEnabled": true,
   "alwaysThinkingEnabled": true,
-  "effortLevel": "xhigh",
-  "showThinkingSummaries": true,
   "env": {
-    "CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING": 1,
-    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "400000",
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-    "CLAUDE_CODE_AUTO_CONNECT_IDE": "true",
-    "DISABLE_ERROR_REPORTING": "1",
-    "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1"
+    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "200000",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
-  "enabledPlugins": {
-    "caveman@caveman": true,
-    "ponytail@ponytail": true,
-    "agent-browser@agent-browser": true,
-    "claude-md-management@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": true,
-    "context7@claude-plugins-official": true,
-    "episodic-memory@superpowers-marketplace": true,
-    "feature-dev@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": true,
-    "impeccable@impeccable": true,
-    "marketing-skills@marketingskills": true,
-    "playwright@claude-plugins-official": true,
-    "pyright-lsp@claude-plugins-official": true,
-    "security-guidance@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true,
-    "superpowers@superpowers-marketplace": true,
-    "typescript-lsp@claude-plugins-official": true
-  },
-  "enabledMcpjsonServers": [
-    "cloudseclist-sponsor"
-  ],
   "permissions": {
     "allow": [
-      "Bash(bash .claude/*)",
+      "Bash(npm run typecheck*)",
       "Bash(npm run build*)",
       "Bash(npm run dev*)",
       "Bash(npm run lint*)",
       "Bash(npm run format*)",
-      "Bash(npm run typecheck*)",
       "Bash(npm test*)",
-      "Bash(node -v*)",
-      "Bash(uname*)",
-      "Bash(ls*)",
+      "Bash(ls *)",
       "Bash(find . *)",
       "Bash(grep *)",
       "Bash(git status*)",
       "Bash(git log*)",
-      "Bash(git diff*)"
-    ]
-  },
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/verify-reminder.sh"
-          }
-        ]
-      }
+      "Bash(git diff*)",
+      "Bash(git add *)",
+      "Bash(git commit*)",
+      "Bash(git worktree *)",
+      "Bash(git merge*)",
+      "Bash(git checkout*)",
+      "Bash(curl http://localhost:*)",
+      "Bash(python3 -c *)"
     ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/notify-done.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/stop-verify-check.sh"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/block-danger.sh"
-          },
-          {
-            "type": "command",
-            "command": "CMD=$(jq -r '.tool_input.command'); if echo \"$CMD\" | grep -qE 'rm[[:space:]]+-[^[:space:]]*r[^[:space:]]*f'; then echo 'BLOCKED: Use trash instead of rm -rf' >&2; exit 2; fi"
-          },
-          {
-            "type": "command",
-            "command": "CMD=$(jq -r '.tool_input.command'); if echo \"$CMD\" | grep -qE 'git[[:space:]]+push.*(main|master)'; then echo 'BLOCKED: Use feature branches, not direct push to main' >&2; exit 2; fi"
-          }
-        ]
-      }
-    ]
+    "deny": []
   }
 }
