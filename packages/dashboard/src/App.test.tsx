@@ -33,8 +33,10 @@ vi.mock('./pages/SettingsPage', () => ({
   SettingsPage: () => <div>SettingsPage</div>,
   SettingsGeneralTab: () => <div>SettingsGeneralTab</div>,
   SettingsAboutTab: () => <div>SettingsAboutTab</div>,
-  SettingsNotificationsTab: () => <div>SettingsNotificationsTab</div>,
 }));
+vi.mock('./pages/NotificationChannelListPage', () => ({ NotificationChannelListPage: () => <div>NotificationChannelListPage</div> }));
+vi.mock('./pages/NotificationChannelEditPage', () => ({ NotificationChannelEditPage: () => <div>NotificationChannelEditPage</div> }));
+vi.mock('./pages/NotificationChannelCreatePage', () => ({ NotificationChannelCreatePage: () => <div>NotificationChannelCreatePage</div> }));
 vi.mock('./pages/RolesPage', () => ({ RolesPage: () => <div>RolesPage</div> }));
 vi.mock('./pages/ProfilePage', () => ({ ProfilePage: () => <div>ProfilePage</div> }));
 vi.mock('./pages/UserEditPage', () => ({ UserEditPage: () => <div>UserEditPage</div> }));

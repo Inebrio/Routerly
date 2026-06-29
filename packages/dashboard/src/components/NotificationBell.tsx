@@ -152,20 +152,37 @@ export function ProfileNotificationBadge({ anchorRef }: { anchorRef: React.RefOb
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<InboxItem[]>([]);
   const [unread, setUnread] = useState(0);
+  // In-app inbox is opt-in: stay hidden until the service reports a dashboard channel.
+  const [enabled, setEnabled] = useState(false);
 
   const load = useCallback(async () => {
     try {
       const res = await getNotificationInbox({ limit: 50 });
       setItems(res.items);
       setUnread(res.unreadCount);
+      setEnabled(res.enabled);
     } catch { /* non-critical */ }
   }, []);
 
   useEffect(() => {
     void load();
+    // Keep polling so the bell appears if a dashboard channel is added later.
     const id = setInterval(() => { void load(); }, POLL_MS);
-    return () => clearInterval(id);
+    // Refetch immediately when a notification is emitted (e.g. a channel test) or the tab regains focus.
+    const refresh = () => { void load(); };
+    window.addEventListener('routerly:notifications', refresh);
+    window.addEventListener('focus', refresh);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener('routerly:notifications', refresh);
+      window.removeEventListener('focus', refresh);
+    };
   }, [load]);
+
+  // Refetch when opening the dropdown so the preview is current.
+  useEffect(() => {
+    if (open) void load();
+  }, [open, load]);
 
   async function markAll() {
     try {
@@ -174,6 +191,8 @@ export function ProfileNotificationBadge({ anchorRef }: { anchorRef: React.RefOb
       setUnread(0);
     } catch { /* non-critical */ }
   }
+
+  if (!enabled) return null;
 
   return (
     <>

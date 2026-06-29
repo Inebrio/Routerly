@@ -670,6 +670,24 @@ export type NotificationChannel =
   | DiscordChannelConfig
   | DashboardChannelConfig;
 
+/**
+ * Secret fields per channel provider. Authoritative source of truth shared by
+ * service (for redaction), dashboard (for edit form), and CLI (for edit command).
+ */
+export const CHANNEL_SECRET_FIELDS: Record<ChannelProvider, string[]> = {
+  smtp:       ['password'],
+  ses:        ['secretAccessKey'],
+  sendgrid:   ['apiKey'],
+  azure:      ['connectionString'],
+  google:     ['clientSecret', 'refreshToken'],
+  webhook:    ['secret'],
+  slack:      ['botToken'],
+  teams:      ['webhookUrl'],
+  pagerduty:  ['integrationKey'],
+  discord:    ['webhookUrl'],
+  dashboard:  [],
+};
+
 /** Maps event name patterns (exact or glob like `budget.*`) to channel IDs (#90) */
 export interface NotificationRule {
   events: string[];
@@ -722,6 +740,11 @@ export interface NotificationInboxItem {
   details: Record<string, unknown>;
   /** User IDs that have marked this item as read */
   readBy: string[];
+  /**
+   * User IDs that have dismissed (deleted) this item. Per-user soft delete:
+   * the item stays in storage but is hidden from each listed user's inbox.
+   */
+  deletedBy?: string[];
   /**
    * User IDs allowed to see this item (U5). Undefined = visible to everyone
    * (legacy items and items from untargeted dashboard channels).
