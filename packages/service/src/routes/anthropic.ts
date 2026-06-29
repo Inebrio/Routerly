@@ -8,8 +8,6 @@ import type { TraceEntry } from '../routing/traceStore.js';
 import { llmMessages, BudgetExceededError } from '../llm/executor.js';
 import type { LLMCallContext } from '../llm/executor.js';
 import { forwardAnthropicOAuth } from './oauthForward.js';
-import { parseRoutingTags } from './requestEnrichment.js';
-import { AGENT_POLICY_HEADER, resolveAgentPolicy, agentPolicyCandidates } from '../routing/agentPolicy.js';
 import { checkGuardrails } from '../middleware/guardrails.js';
 import { scrubMessages, scrubText } from '../middleware/piiScrubber.js';
 import { trackUsage } from '../cost/tracker.js';
@@ -117,41 +115,24 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
 
     // Usage enrichment headers (#94, #95, #96)
     const endUserId = (body as any).user as string | undefined || undefined;
-    const sessionId = (request.headers['x-routerly-session-id'] as string | undefined) || undefined;
-    const rawTags = request.headers['x-routerly-tags'] as string | undefined;
-    const tags = rawTags ? parseRoutingTags(rawTags) : undefined;
 
     const allModels = await readConfig('models');
 
-    // Per-agent routing policy override (#78): X-Routerly-Policy selects a named
-    // policy in the project config that overrides the routing decision.
-    const agentPolicyName = (request.headers[AGENT_POLICY_HEADER] as string | undefined) || undefined;
-    const agentPolicy = resolveAgentPolicy(project, agentPolicyName);
-    if (agentPolicyName && !agentPolicy) {
-      request.log.warn({ projectId: project.id, agentPolicyName }, 'agent-policy: unknown policy, falling back to routing');
-    }
-
-    // 1. Resolve candidates — agent policy override bypasses routing.
+    // 1. Resolve candidates via routing.
     let sortedCandidates: Array<{ model: string; weight: number }>;
-    if (agentPolicy) {
-      const override = agentPolicyCandidates(agentPolicy, allModels);
-      emit({ panel: 'router-response', message: 'agent-policy:override', details: { policy: agentPolicy.name, models: override.map((c) => c.model) } });
-      sortedCandidates = override;
-    } else {
-      let routingResponse;
-      try {
-        routingResponse = await routeRequest(openAICompatBody, project, request.log, emit);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        request.log.error({ err }, 'Routing model failed');
-        return reply.status(503).send({
-          type: 'error',
-          error: { type: 'overloaded_error', message: `Routing failed: ${msg}` },
-        });
-      }
-      // 2. Loop through candidates (highest weight first) with fallback
-      sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
+    let routingResponse;
+    try {
+      routingResponse = await routeRequest(openAICompatBody, project, request.log, emit);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      request.log.error({ err }, 'Routing model failed');
+      return reply.status(503).send({
+        type: 'error',
+        error: { type: 'overloaded_error', message: `Routing failed: ${msg}` },
+      });
     }
+    // 2. Loop through candidates (highest weight first) with fallback
+    sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
 
     for (const candidate of sortedCandidates) {
       const model = allModels.find((m: any) => m.id === candidate.model);
@@ -173,10 +154,6 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
         emit,
         log: request.log,
         ...(endUserId ? { endUserId } : {}),
-        ...(sessionId ? { sessionId } : {}),
-        ...(tags ? { tags } : {}),
-        ...(agentPolicy ? { agentPolicyName: agentPolicy.name } : {}),
-        ...(agentPolicy?.maxCostUsd !== undefined ? { agentPolicyCostCapUsd: agentPolicy.maxCostUsd } : {}),
         ...(guardrailTriggered ? { guardrailTriggered } : {}),
         ...(piiRedacted ? { piiRedacted } : {}),
       };

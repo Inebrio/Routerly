@@ -254,13 +254,6 @@ export interface ProjectMember {
   role: string;
 }
 
-export interface ProjectSemanticCacheConfig {
-  enabled: boolean;
-  threshold?: number;
-  ttlMs?: number;
-  maxEntries?: number;
-}
-
 export type GuardrailRuleType = 'regex' | 'semantic' | 'topic' | 'moderation';
 export type GuardrailTarget = 'request' | 'response' | 'both';
 
@@ -303,7 +296,6 @@ export interface Project {
   members?: ProjectMember[];
   token?: string;
   timeoutMs?: number;
-  semanticCache?: ProjectSemanticCacheConfig;
   guardrails?: GuardrailConfig;
   pii?: PiiConfig;
 }
@@ -328,7 +320,6 @@ export const updateProject = (id: string, data: {
   policies?: RoutingPolicy[];
   models: { modelId: string; prompt?: string }[];
   timeoutMs?: number;
-  semanticCache?: ProjectSemanticCacheConfig;
   guardrails?: GuardrailConfig | null;
   pii?: PiiConfig | null;
 }) => request<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
@@ -396,8 +387,6 @@ export interface UsageRecord {
   callType?: 'routing' | 'completion';
   errorMessage?: string;
   trace?: TraceEntry[];
-  cacheHit?: boolean;
-  cacheSimilarity?: number;
   guardrailTriggered?: string;
   blockedBy?: string;
   piiRedacted?: string[];

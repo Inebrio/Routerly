@@ -66,21 +66,6 @@ export function MessageStatsCard({ stats, turnNumber, completionModel }: Message
         </span>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* cache badge */}
-          {(stats.cacheHit || stats.cacheMiss) && (
-            <span style={{
-              fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.04em',
-              padding: '2px 8px', borderRadius: 99,
-              background: stats.cacheHit ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.12)',
-              color: stats.cacheHit ? '#10b981' : '#f59e0b',
-              border: `1px solid ${stats.cacheHit ? 'rgba(16,185,129,0.4)' : 'rgba(245,158,11,0.4)'}`,
-            }}>
-              {stats.cacheHit
-                ? `⚡ HIT${stats.cacheSimilarity != null ? ` ${(stats.cacheSimilarity * 100).toFixed(0)}%` : ''}`
-                : '○ MISS'}
-            </span>
-          )}
-
           {/* latency + cost summary */}
           {stats.latencyMs != null && (
             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>

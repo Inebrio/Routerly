@@ -10,7 +10,7 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../config/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, AgentPolicy, SpendGroup, GuardrailConfig, PiiConfig, ProjectSemanticCacheConfig, UsageByModelEntry, ChannelProvider } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, SpendGroup, GuardrailConfig, PiiConfig, UsageByModelEntry, ChannelProvider } from '@routerly/shared';
 import { CHANNEL_SECRET_FIELDS } from '@routerly/shared';
 import { z } from 'zod';
 import { getGroupUsageSnapshot } from '../cost/budget.js';
@@ -811,7 +811,6 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       timeoutMs?: number;
       guardrails?: GuardrailConfig | null;
       pii?: PiiConfig | null;
-      semanticCache?: ProjectSemanticCacheConfig;
     };
   }>('/api/projects/:id', async (req, reply) => {
     if (!requirePerm(req, 'project:write', reply)) return;
@@ -860,7 +859,6 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       timeoutMs: req.body.timeoutMs ?? existing.timeoutMs ?? 30000,
       ...guardrailsUpdate,
       ...piiUpdate,
-      ...(req.body.semanticCache !== undefined ? { semanticCache: req.body.semanticCache } : {}),
     };
     projects[index] = updated;
     await writeConfig('projects', projects);
@@ -2046,58 +2044,6 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     await writeConfig('roles', filtered);
     audit(req, 'role:delete', 'success', { id: req.params.id });
     return reply.status(204).send();
-  });
-
-  // ─── Agent routing policies (#78) ─────────────────────────────────────────────
-  // Named per-agent policies live on the project; selected at request time via the
-  // X-Routerly-Policy header.
-
-  fastify.get<{ Querystring: { projectId?: string } }>('/api/agent-policies', async (req, reply) => {
-    if (!requirePerm(req, 'project:read', reply)) return;
-    const { projectId } = req.query;
-    if (!projectId) return reply.status(400).send({ error: 'projectId query parameter is required' });
-    const projects = await readConfig('projects');
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return reply.status(404).send({ error: 'Project not found' });
-    return reply.send(project.agentPolicies ?? []);
-  });
-
-  fastify.put<{ Body: { projectId: string; agentPolicies: AgentPolicy[] } }>('/api/agent-policies', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
-    const { projectId, agentPolicies } = req.body ?? {};
-    if (!projectId) return reply.status(400).send({ error: 'projectId is required' });
-    if (!Array.isArray(agentPolicies)) return reply.status(400).send({ error: 'agentPolicies must be an array' });
-
-    const validated: AgentPolicy[] = [];
-    const seen = new Set<string>();
-    for (const p of agentPolicies) {
-      const name = typeof p?.name === 'string' ? p.name.trim() : '';
-      if (!name) return reply.status(400).send({ error: 'Each policy requires a non-empty name' });
-      if (seen.has(name)) return reply.status(400).send({ error: `Duplicate policy name: ${name}` });
-      seen.add(name);
-      if (!Array.isArray(p.models) || p.models.length === 0 || !p.models.every(m => typeof m === 'string' && m.length > 0)) {
-        return reply.status(400).send({ error: `Policy "${name}" requires a non-empty models array of strings` });
-      }
-      if (p.maxCostUsd !== undefined && (typeof p.maxCostUsd !== 'number' || p.maxCostUsd < 0)) {
-        return reply.status(400).send({ error: `Policy "${name}" maxCostUsd must be a non-negative number` });
-      }
-      if (p.maxLatencyMs !== undefined && (typeof p.maxLatencyMs !== 'number' || p.maxLatencyMs < 0)) {
-        return reply.status(400).send({ error: `Policy "${name}" maxLatencyMs must be a non-negative number` });
-      }
-      validated.push({
-        name,
-        models: p.models,
-        ...(p.maxCostUsd !== undefined ? { maxCostUsd: p.maxCostUsd } : {}),
-        ...(p.maxLatencyMs !== undefined ? { maxLatencyMs: p.maxLatencyMs } : {}),
-      });
-    }
-
-    const projects = await readConfig('projects');
-    const index = projects.findIndex(p => p.id === projectId);
-    if (index === -1) return reply.status(404).send({ error: 'Project not found' });
-    projects[index] = { ...projects[index]!, agentPolicies: validated };
-    await writeConfig('projects', projects);
-    return reply.send(validated);
   });
 
   // ─── Spend groups (hierarchical org → team → key cascade, #82) ─────────────────
