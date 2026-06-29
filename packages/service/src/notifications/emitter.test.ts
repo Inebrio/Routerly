@@ -98,27 +98,31 @@ describe('resolveTargetUsers', () => {
   });
 });
 
-describe('inbox without dashboard channel (backward-compat)', () => {
-  it('appends every event for everyone (recipients undefined)', async () => {
+describe('inbox is opt-in: no dashboard channel → nothing appended', () => {
+  it('no notifications config at all → inbox stays empty', async () => {
     settings(undefined);
     await emitEvent('system.startup', 'info', { v: '1' });
-    const item = lastInbox()[0];
-    expect(item).toMatchObject({ event: 'system.startup', severity: 'info', readBy: [] });
-    expect(item.recipients).toBeUndefined();
+    expect(lastInbox()).toBeNull();
     expect(mockDispatch).not.toHaveBeenCalled();
   });
 
-  it('appends even when only external channels exist', async () => {
-    settings({ channels: [{ id: 'w', provider: 'webhook', url: 'https://x' }] });
-    await emitEvent('config.model_added', 'info', {});
-    expect(lastInbox()).toHaveLength(1);
+  it('zero channels configured → inbox stays empty', async () => {
+    settings({ channels: [] });
+    await emitEvent('system.startup', 'info', {});
+    expect(lastInbox()).toBeNull();
   });
 
-  it('trims inbox to 200 items', async () => {
+  it('only external channels exist → inbox stays empty', async () => {
+    settings({ channels: [{ id: 'w', provider: 'webhook', url: 'https://x' }] });
+    await emitEvent('config.model_added', 'info', {});
+    expect(lastInbox()).toBeNull();
+  });
+
+  it('trims inbox to 200 items when a dashboard channel matches', async () => {
     const big = Array.from({ length: 250 }, (_, i) => ({
       id: String(i), event: 'x', severity: 'info', timestamp: new Date().toISOString(), details: {}, readBy: [],
     }));
-    settings(undefined, { notifications: big });
+    settings({ channels: [{ id: 'd', provider: 'dashboard' }] }, { notifications: big });
     await emitEvent('config.model_added', 'info', {});
     expect(lastInbox()).toHaveLength(200);
   });
@@ -225,7 +229,7 @@ describe('per-channel events matching (U5)', () => {
     expect(mockDispatch).not.toHaveBeenCalled();
   });
 
-  it('dashboard channel with no events and no rule receives ALL (always-on inbox)', async () => {
+  it('dashboard channel with no events and no rule receives ALL events', async () => {
     settings({ channels: [{ id: 'd', provider: 'dashboard' }] });
     await emitEvent('anything.happened', 'info', {});
     // inbox appended for everyone; no external dispatch
@@ -353,7 +357,7 @@ describe('per-project override + cooldown (preserved)', () => {
   });
 
   it('never throws when inbox append fails', async () => {
-    settings(undefined);
+    settings({ channels: [{ id: 'd', provider: 'dashboard' }] });
     mockWrite.mockRejectedValue(new Error('disk'));
     await expect(emitEvent('system.startup', 'info', {})).resolves.toBeUndefined();
   });
@@ -377,7 +381,7 @@ describe('per-project override + cooldown (preserved)', () => {
     });
     mockWrite.mockResolvedValue(undefined);
     await expect(emitEvent('system.startup', 'info', {})).resolves.toBeUndefined();
-    // No dashboard channel known → backward-compat inbox append for everyone.
-    expect(lastInbox()).toHaveLength(1);
+    // No dashboard channel known → opt-in inbox stays empty.
+    expect(lastInbox()).toBeNull();
   });
 });

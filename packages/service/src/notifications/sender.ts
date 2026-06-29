@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import nodemailer from 'nodemailer';
 import type {
   SmtpChannelConfig,
@@ -12,6 +13,7 @@ import { sendSlack }     from './channels/slack.js';
 import { sendTeams }     from './channels/teams.js';
 import { sendPagerDuty } from './channels/pagerduty.js';
 import { sendDiscord }   from './channels/discord.js';
+import { appendToInbox } from './emitter.js';
 
 interface SendResult {
   ok: boolean;
@@ -257,7 +259,17 @@ export async function sendTestNotification(
                       return { ok: true, message: 'Test event triggered via PagerDuty.' };
     case 'discord':   await sendDiscord(channel, TEST_NATIVE_PAYLOAD);
                       return { ok: true, message: 'Test message sent via Discord.' };
-    case 'dashboard': return { ok: true, message: 'Dashboard channel delivers to the in-app inbox; nothing to send.' };
+    case 'dashboard': {
+      await appendToInbox({
+        id: randomUUID(),
+        event: 'notification.test',
+        severity: 'info',
+        timestamp: new Date().toISOString(),
+        details: { channelId: channel.id, channelName: (channel as unknown as { name?: string }).name ?? '' },
+        readBy: [],
+      });
+      return { ok: true, message: 'Test notification delivered to the in-app inbox.' };
+    }
     default:          throw new Error(`Unknown provider: ${String((channel as { provider: string }).provider)}`);
   }
 }

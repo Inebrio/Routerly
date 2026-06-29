@@ -5392,6 +5392,193 @@ describe('GET /api/notifications/inbox', () => {
   })
 })
 
+// ─── Notification inbox pagination + filters (portal table) ──────────────────
+describe('GET /api/notifications/inbox pagination + filters', () => {
+  const inbox = [
+    { id: 'n1', event: 'provider.error',      severity: 'critical', timestamp: '2026-01-05T00:00:00.000Z', details: {}, readBy: [] },
+    { id: 'n2', event: 'config.model_added',  severity: 'info',     timestamp: '2026-01-04T00:00:00.000Z', details: {}, readBy: ['admin-id'] },
+    { id: 'n3', event: 'budget.exceeded',     severity: 'warning',  timestamp: '2026-01-03T00:00:00.000Z', details: {}, readBy: [] },
+    { id: 'n4', event: 'provider.error',      severity: 'critical', timestamp: '2026-01-02T00:00:00.000Z', details: {}, readBy: [] },
+    { id: 'n5', event: 'config.model_added',  severity: 'info',     timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: ['admin-id'] },
+  ]
+
+  function setup() {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'notifications') return inbox.map(n => ({ ...n, readBy: [...n.readBy] }))
+      return []
+    })
+  }
+
+  it('returns pagination metadata and the first page when page is supplied', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?page=1&pageSize=2', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.items.map((i: any) => i.id)).toEqual(['n1', 'n2'])
+    expect(body.pagination).toEqual({ page: 1, pageSize: 2, totalRecords: 5, totalPages: 3 })
+    expect(body.unreadCount).toBe(3)
+  })
+
+  it('returns the requested page slice', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?page=2&pageSize=2', headers: adminAuthHeaders() })
+    await app.close()
+    const body = JSON.parse(res.body)
+    expect(body.items.map((i: any) => i.id)).toEqual(['n3', 'n4'])
+    expect(body.pagination.page).toBe(2)
+  })
+
+  it('clamps page above the last page to the last page', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?page=99&pageSize=2', headers: adminAuthHeaders() })
+    await app.close()
+    const body = JSON.parse(res.body)
+    expect(body.pagination.page).toBe(3)
+    expect(body.items.map((i: any) => i.id)).toEqual(['n5'])
+  })
+
+  it('filters by severity (and unreadCount stays whole-inbox)', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?page=1&pageSize=20&severity=critical', headers: adminAuthHeaders() })
+    await app.close()
+    const body = JSON.parse(res.body)
+    expect(body.items.map((i: any) => i.id)).toEqual(['n1', 'n4'])
+    expect(body.pagination.totalRecords).toBe(2)
+    expect(body.unreadCount).toBe(3)
+  })
+
+  it('filters by event substring (case-insensitive)', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?page=1&pageSize=20&event=MODEL', headers: adminAuthHeaders() })
+    await app.close()
+    const body = JSON.parse(res.body)
+    expect(body.items.map((i: any) => i.id)).toEqual(['n2', 'n5'])
+  })
+
+  it('combines unreadOnly with pagination', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?page=1&pageSize=20&unreadOnly=true', headers: adminAuthHeaders() })
+    await app.close()
+    const body = JSON.parse(res.body)
+    expect(body.items.map((i: any) => i.id)).toEqual(['n1', 'n3', 'n4'])
+    expect(body.pagination.totalRecords).toBe(3)
+  })
+
+  it('keeps the legacy flat-list shape for limit without page', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?limit=2', headers: adminAuthHeaders() })
+    await app.close()
+    const body = JSON.parse(res.body)
+    expect(body.pagination).toBeUndefined()
+    expect(body.items).toHaveLength(2)
+  })
+})
+
+// ─── GET /api/notifications/inbox/:id (detail) ───────────────────────────────
+describe('GET /api/notifications/inbox/:id', () => {
+  const inbox = [
+    { id: 'n1', event: 'provider.error', severity: 'critical', timestamp: '2026-01-02T00:00:00.000Z', details: { message: 'boom' }, readBy: ['admin-id'] },
+    { id: 'n2', event: 'private.event',  severity: 'info',     timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [], recipients: ['other-user'] },
+  ]
+
+  function setup() {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'notifications') return inbox.map(n => ({ ...n, readBy: [...n.readBy] }))
+      return []
+    })
+  }
+
+  it('returns the item with details and read flag', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox/n1', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.id).toBe('n1')
+    expect(body.details.message).toBe('boom')
+    expect(body.read).toBe(true)
+  })
+
+  it('returns 404 for an unknown id', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox/missing', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('returns 404 for an item addressed to another user (audience filter)', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox/n2', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('requires auth', async () => {
+    mockVerifyToken.mockReturnValue(null as any)
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox/n1' })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+})
+
+// ─── Notification inbox opt-in signal (enabled flag) ─────────────────────────
+describe('GET /api/notifications/inbox enabled flag', () => {
+  function setup(channels: any[]) {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'notifications') return []
+      if (type === 'settings') return { notifications: { channels } }
+      return []
+    })
+  }
+
+  it('enabled:false when no dashboard channel exists', async () => {
+    setup([{ id: 'w', provider: 'webhook', url: 'https://x' }])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).enabled).toBe(false)
+  })
+
+  it('enabled:false when there are zero channels', async () => {
+    setup([])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox', headers: adminAuthHeaders() })
+    await app.close()
+    expect(JSON.parse(res.body).enabled).toBe(false)
+  })
+
+  it('enabled:true when a dashboard channel exists', async () => {
+    setup([{ id: 'd', provider: 'dashboard' }])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).enabled).toBe(true)
+  })
+})
+
 describe('POST /api/notifications/inbox/read', () => {
   function setup(inbox: any[]) {
     mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
@@ -5505,6 +5692,286 @@ describe('POST /api/notifications/inbox/read audience filter (U5)', () => {
     await app.close()
     expect(JSON.parse(res.body).updated).toBe(1)
     expect(items.find(n => n.id === 'theirs')!.readBy).not.toContain('admin-id')
+  })
+})
+
+// ─── Notification inbox per-user mark-unread ─────────────────────────────────
+describe('POST /api/notifications/inbox/unread', () => {
+  function setup(inbox: any[]) {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'notifications') return inbox
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+  }
+
+  it('clears read mark for specific ids', async () => {
+    setup([
+      { id: 'n1', event: 'x', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: ['admin-id'] },
+      { id: 'n2', event: 'y', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: ['admin-id'] },
+    ])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/unread',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ ids: ['n1'] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).updated).toBe(1)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'notifications')![1]
+    expect(written.find((n: any) => n.id === 'n1').readBy).not.toContain('admin-id')
+    expect(written.find((n: any) => n.id === 'n2').readBy).toContain('admin-id')
+  })
+
+  it('clears all with all:true', async () => {
+    setup([
+      { id: 'n1', event: 'x', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: ['admin-id'] },
+      { id: 'n2', event: 'y', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: ['admin-id'] },
+    ])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/unread',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ all: true }),
+    })
+    await app.close()
+    expect(JSON.parse(res.body).updated).toBe(2)
+  })
+
+  it('does not double-count items already unread', async () => {
+    setup([
+      { id: 'n1', event: 'x', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [] },
+    ])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/unread',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ ids: ['n1'] }),
+    })
+    await app.close()
+    expect(JSON.parse(res.body).updated).toBe(0)
+  })
+
+  it('does not touch items the user cannot see (audience) or has dismissed', async () => {
+    const items: any[] = [
+      { id: 'mine', event: 'b', severity: 'info', timestamp: '2026-01-02T00:00:00.000Z', details: {}, readBy: ['admin-id'], recipients: ['admin-id'] },
+      { id: 'theirs', event: 'c', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: ['admin-id'], recipients: ['other-id'] },
+      { id: 'gone', event: 'd', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: ['admin-id'], deletedBy: ['admin-id'] },
+    ]
+    setup(items)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/unread',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ all: true }),
+    })
+    await app.close()
+    expect(JSON.parse(res.body).updated).toBe(1)
+    expect(items.find(n => n.id === 'mine')!.readBy).not.toContain('admin-id')
+    expect(items.find(n => n.id === 'theirs')!.readBy).toContain('admin-id')
+    expect(items.find(n => n.id === 'gone')!.readBy).toContain('admin-id')
+  })
+
+  it('returns 400 when neither ids nor all provided', async () => {
+    setup([])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/unread',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+})
+
+// ─── Notification inbox per-user delete (dismiss) ────────────────────────────
+describe('POST /api/notifications/inbox/delete', () => {
+  function setup(inbox: any[]) {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'notifications') return inbox
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+  }
+
+  it('dismisses specific ids for the current user only', async () => {
+    const items: any[] = [
+      { id: 'n1', event: 'x', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [] },
+      { id: 'n2', event: 'y', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [] },
+    ]
+    setup(items)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/delete',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ ids: ['n1'] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).deleted).toBe(1)
+    expect(items.find(n => n.id === 'n1')!.deletedBy).toContain('admin-id')
+    expect(items.find(n => n.id === 'n2')!.deletedBy).toBeUndefined()
+  })
+
+  it('dismisses all with all:true', async () => {
+    const items = [
+      { id: 'n1', event: 'x', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [] },
+      { id: 'n2', event: 'y', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [] },
+    ]
+    setup(items)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/delete',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ all: true }),
+    })
+    await app.close()
+    expect(JSON.parse(res.body).deleted).toBe(2)
+  })
+
+  it('does not double-count an already-dismissed item', async () => {
+    const items = [
+      { id: 'n1', event: 'x', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [], deletedBy: ['admin-id'] },
+    ]
+    setup(items)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/delete',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ all: true }),
+    })
+    await app.close()
+    expect(JSON.parse(res.body).deleted).toBe(0)
+    expect(mockWriteConfig).not.toHaveBeenCalledWith('notifications', expect.anything())
+  })
+
+  it('does not dismiss items the user cannot see', async () => {
+    const items: any[] = [
+      { id: 'mine', event: 'b', severity: 'info', timestamp: '2026-01-02T00:00:00.000Z', details: {}, readBy: [], recipients: ['admin-id'] },
+      { id: 'theirs', event: 'c', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [], recipients: ['other-id'] },
+    ]
+    setup(items)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/delete',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ all: true }),
+    })
+    await app.close()
+    expect(JSON.parse(res.body).deleted).toBe(1)
+    expect(items.find(n => n.id === 'theirs')!.deletedBy).toBeUndefined()
+  })
+
+  it('returns 400 when neither ids nor all provided', async () => {
+    setup([])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/delete',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+})
+
+// ─── Notification inbox hides dismissed items ────────────────────────────────
+describe('notifications inbox hides per-user dismissed items', () => {
+  const inbox = [
+    { id: 'kept', event: 'a', severity: 'info', timestamp: '2026-01-02T00:00:00.000Z', details: {}, readBy: [] },
+    { id: 'gone', event: 'b', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [], deletedBy: ['admin-id'] },
+  ]
+  function setup() {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'notifications') return inbox.map(n => ({ ...n, readBy: [...n.readBy] }))
+      return []
+    })
+  }
+
+  it('omits dismissed items from the list and unreadCount', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox', headers: adminAuthHeaders() })
+    await app.close()
+    const body = JSON.parse(res.body)
+    const ids = body.items.map((i: any) => i.id)
+    expect(ids).toContain('kept')
+    expect(ids).not.toContain('gone')
+    expect(body.unreadCount).toBe(1)
+  })
+
+  it('returns 404 for a dismissed item by id', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox/gone', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+})
+
+// ─── Notification inbox date range filter ────────────────────────────────────
+describe('GET /api/notifications/inbox date range filter', () => {
+  const inbox = [
+    { id: 'jan', event: 'a', severity: 'info', timestamp: '2026-01-10T12:00:00.000Z', details: {}, readBy: [] },
+    { id: 'feb', event: 'b', severity: 'info', timestamp: '2026-02-10T12:00:00.000Z', details: {}, readBy: [] },
+    { id: 'mar', event: 'c', severity: 'info', timestamp: '2026-03-10T12:00:00.000Z', details: {}, readBy: [] },
+  ]
+  function setup() {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'notifications') return inbox.map(n => ({ ...n, readBy: [...n.readBy] }))
+      return []
+    })
+  }
+
+  it('filters with from (inclusive, date-only spans the day)', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?from=2026-02-01', headers: adminAuthHeaders() })
+    await app.close()
+    const ids = JSON.parse(res.body).items.map((i: any) => i.id)
+    expect(ids).toEqual(expect.arrayContaining(['feb', 'mar']))
+    expect(ids).not.toContain('jan')
+  })
+
+  it('filters with to (inclusive end of day)', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?to=2026-02-10', headers: adminAuthHeaders() })
+    await app.close()
+    const ids = JSON.parse(res.body).items.map((i: any) => i.id)
+    expect(ids).toEqual(expect.arrayContaining(['jan', 'feb']))
+    expect(ids).not.toContain('mar')
+  })
+
+  it('filters with from and to together', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?from=2026-02-01&to=2026-02-28', headers: adminAuthHeaders() })
+    await app.close()
+    const ids = JSON.parse(res.body).items.map((i: any) => i.id)
+    expect(ids).toEqual(['feb'])
+  })
+
+  it('ignores an invalid date value', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?from=not-a-date', headers: adminAuthHeaders() })
+    await app.close()
+    expect(JSON.parse(res.body).items.length).toBe(3)
   })
 })
 
@@ -6026,5 +6493,340 @@ describe('GET /api/audit', () => {
     expect(body.entries).toHaveLength(1)
     expect(body.entries[0]!.userId).toBe('viewer-id')
     expect(body.pagination.totalRecords).toBe(1)
+  })
+})
+
+// ─── Notification channel redaction + new CRUD routes ────────────────────────
+
+const smtpChannel = {
+  id: 'ch-smtp',
+  provider: 'smtp',
+  name: 'My SMTP',
+  host: 'smtp.example.com',
+  port: 587,
+  secure: false,
+  fromAddress: 'no-reply@example.com',
+  username: 'user',
+  password: 'supersecret',
+}
+
+function setupChannels(channels: unknown[] = [smtpChannel]) {
+  mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+  mockReadConfig.mockImplementation(async (type: string) => {
+    if (type === 'users') return [adminUser]
+    if (type === 'roles') return []
+    if (type === 'settings') return { notifications: { channels } }
+    return []
+  })
+  mockWriteConfig.mockResolvedValue(undefined)
+}
+
+describe('GET /api/notifications/channels (redaction)', () => {
+  it('redacts smtp password in list response', async () => {
+    setupChannels()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET', url: '/api/notifications/channels',
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const channels = res.json() as Array<Record<string, unknown>>
+    expect(channels).toHaveLength(1)
+    expect(channels[0]!['password']).toBe('********')
+    expect(channels[0]!['host']).toBe('smtp.example.com')
+  })
+
+  it('returns 403 without user:write', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [{ ...adminUser, id: 'viewer-id', roleId: 'viewer' }]
+      if (type === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/channels', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+describe('GET /api/notifications/channels/:id', () => {
+  it('returns redacted channel by id', async () => {
+    setupChannels()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET', url: '/api/notifications/channels/ch-smtp',
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const ch = res.json() as Record<string, unknown>
+    expect(ch['id']).toBe('ch-smtp')
+    expect(ch['password']).toBe('********')
+    expect(ch['host']).toBe('smtp.example.com')
+  })
+
+  it('returns 404 for unknown id', async () => {
+    setupChannels()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET', url: '/api/notifications/channels/no-such-id',
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+    expect((res.json() as { error: string }).error).toMatch(/no-such-id/)
+  })
+
+  it('returns 403 without user:write', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [{ ...adminUser, id: 'viewer-id', roleId: 'viewer' }]
+      if (type === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET', url: '/api/notifications/channels/ch-smtp',
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+describe('PATCH /api/notifications/channels/:id', () => {
+  it('updates a non-secret field and keeps existing password when omitted', async () => {
+    setupChannels()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/notifications/channels/ch-smtp',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ host: 'new.smtp.example.com' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const ch = res.json() as Record<string, unknown>
+    expect(ch['host']).toBe('new.smtp.example.com')
+    // Password is redacted in response
+    expect(ch['password']).toBe('********')
+    // Stored value must still contain the original password
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')
+    expect(written).toBeDefined()
+    const storedChannels = (written![1] as any).notifications.channels as Array<Record<string, unknown>>
+    expect(storedChannels[0]!['password']).toBe('supersecret')
+    expect(storedChannels[0]!['host']).toBe('new.smtp.example.com')
+  })
+
+  it('updates password when a non-empty password is sent', async () => {
+    setupChannels()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/notifications/channels/ch-smtp',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ password: 'newpassword123' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')
+    const storedChannels = (written![1] as any).notifications.channels as Array<Record<string, unknown>>
+    expect(storedChannels[0]!['password']).toBe('newpassword123')
+  })
+
+  it('keeps existing password when empty string sent for password', async () => {
+    setupChannels()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/notifications/channels/ch-smtp',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ host: 'a.b.c', password: '' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')
+    const storedChannels = (written![1] as any).notifications.channels as Array<Record<string, unknown>>
+    expect(storedChannels[0]!['password']).toBe('supersecret')
+  })
+
+  it('rejects provider change', async () => {
+    setupChannels()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/notifications/channels/ch-smtp',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ provider: 'sendgrid' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect((res.json() as { error: string }).error).toMatch(/provider cannot be changed/i)
+  })
+
+  it('returns 404 for unknown channel', async () => {
+    setupChannels()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/notifications/channels/nope',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ host: 'x.x.x' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('returns 403 without user:write', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [{ ...adminUser, id: 'viewer-id', roleId: 'viewer' }]
+      if (type === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/notifications/channels/ch-smtp',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ host: 'x' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+describe('POST /api/notifications/channels (redaction on create)', () => {
+  it('redacts secrets in the 201 response', async () => {
+    setupChannels([])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/channels',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        provider: 'smtp', host: 'mail.x.com', port: 587, secure: false,
+        fromAddress: 'a@b.com', password: 'topsecret',
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const ch = res.json() as Record<string, unknown>
+    expect(ch['password']).toBe('********')
+    expect(ch['host']).toBe('mail.x.com')
+  })
+})
+
+describe('DELETE /api/notifications/channels/:id', () => {
+  it('removes the channel and returns 204', async () => {
+    setupChannels()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'DELETE', url: '/api/notifications/channels/ch-smtp',
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(204)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')
+    expect(written).toBeDefined()
+    const storedChannels = (written![1] as any).notifications.channels as unknown[]
+    expect(storedChannels).toHaveLength(0)
+  })
+
+  it('returns 404 for unknown channel', async () => {
+    setupChannels()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'DELETE', url: '/api/notifications/channels/nope',
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('returns 403 without user:write', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [{ ...adminUser, id: 'viewer-id', roleId: 'viewer' }]
+      if (type === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'DELETE', url: '/api/notifications/channels/ch-smtp',
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+describe('POST /api/notifications/channels/:id/test', () => {
+  it('defaults the recipient to the requesting user email for email providers when "to" is omitted', async () => {
+    setupChannels()
+    mockSendTestNotification.mockResolvedValue({ ok: true, message: 'Sent!' } as any)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/channels/ch-smtp/test',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).ok).toBe(true)
+    const call = mockSendTestNotification.mock.calls[0]!
+    expect(call[1]).toBe('admin@example.com')
+  })
+
+  it('uses the supplied recipient when provided', async () => {
+    setupChannels()
+    mockSendTestNotification.mockResolvedValue({ ok: true, message: 'Sent!' } as any)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/channels/ch-smtp/test',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ to: 'someone@else.com' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(mockSendTestNotification.mock.calls[0]![1]).toBe('someone@else.com')
+  })
+
+  it('passes an empty recipient for non-email providers', async () => {
+    setupChannels([{ id: 'ch-slack', provider: 'slack', webhookUrl: 'https://hooks.slack.test/x' }])
+    mockSendTestNotification.mockResolvedValue({ ok: true, message: 'Sent!' } as any)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/channels/ch-slack/test',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(mockSendTestNotification.mock.calls[0]![1]).toBe('')
+  })
+
+  it('returns 404 for unknown channel', async () => {
+    setupChannels()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/channels/nope/test',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('returns 403 without user:write', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [{ ...adminUser, id: 'viewer-id', roleId: 'viewer' }]
+      if (type === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/channels/ch-smtp/test',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
   })
 })

@@ -10,7 +10,8 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../config/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, AgentPolicy, SpendGroup, GuardrailConfig, PiiConfig, ProjectSemanticCacheConfig, UsageByModelEntry } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, AgentPolicy, SpendGroup, GuardrailConfig, PiiConfig, ProjectSemanticCacheConfig, UsageByModelEntry, ChannelProvider } from '@routerly/shared';
+import { CHANNEL_SECRET_FIELDS } from '@routerly/shared';
 import { z } from 'zod';
 import { getGroupUsageSnapshot } from '../cost/budget.js';
 import { getTrace } from '../routing/traceStore.js';
@@ -78,6 +79,29 @@ const notificationsConfigSchema = z.object({
                        { message: 'cooldowns supports at most 100 entries' },
                      ).optional(),
 }).strict();
+
+const REDACT_MARKER = '********';
+
+/**
+ * Returns a shallow copy of the channel with all non-empty secret fields
+ * replaced by REDACT_MARKER. Fields absent or empty in the stored config
+ * are omitted from the copy (they carry no info anyway).
+ */
+function redactChannel(channel: Record<string, unknown>): Record<string, unknown> {
+  const provider = channel['provider'] as ChannelProvider | undefined;
+  if (!provider) return { ...channel };
+  const secrets = CHANNEL_SECRET_FIELDS[provider] ?? [];
+  const out: Record<string, unknown> = { ...channel };
+  for (const field of secrets) {
+    const v = out[field];
+    if (v && typeof v === 'string' && v.length > 0) {
+      out[field] = REDACT_MARKER;
+    } else if (v === undefined || v === '') {
+      delete out[field];
+    }
+  }
+  return out;
+}
 
 async function hashPassword(p: string): Promise<string> {
   return bcrypt.hash(p, BCRYPT_ROUNDS);
@@ -165,6 +189,17 @@ function requirePerm(req: FastifyRequest, perm: Permission, reply: FastifyReply)
     return false;
   }
   return true;
+}
+
+/**
+ * Email-provider channels need a recipient to test against. When the caller
+ * supplies none, default to the requesting user's own email so a one-click
+ * test works. Native/webhook/dashboard providers ignore the recipient.
+ */
+const EMAIL_TEST_PROVIDERS = new Set(['smtp', 'ses', 'sendgrid', 'azure', 'google']);
+function resolveTestRecipient(provider: string, to: string | undefined, fallback: string): string {
+  if (to && to.trim()) return to.trim();
+  return EMAIL_TEST_PROVIDERS.has(provider) ? fallback : '';
 }
 
 // ── Spend group validation (#82) ────────────────────────────────────────────────
@@ -1501,8 +1536,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!channel) return reply.status(400).send({ error: `Channel "${channelId}" not found` });
 
     try {
+      const recipient = resolveTestRecipient(channel.provider, to, req.dashUser!.email);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await sendTestNotification(channel as any, to ?? '');
+      const result = await sendTestNotification(channel as any, recipient);
       return reply.send(result);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -1512,22 +1548,81 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── GET /api/notifications/inbox ─────────────────────────────────────────
   // Per-user in-app notification inbox (#91). Available to any authenticated user.
-  fastify.get<{ Querystring: { limit?: string; unreadOnly?: string } }>('/api/notifications/inbox', async (req, reply) => {
+  fastify.get<{ Querystring: { limit?: string; unreadOnly?: string; page?: string; pageSize?: string; severity?: string; event?: string; from?: string; to?: string } }>('/api/notifications/inbox', async (req, reply) => {
     const userId = req.dashUser!.id;
-    const limit = Math.min(Math.max(Number(req.query.limit ?? '50') || 50, 1), 200);
     const unreadOnly = req.query.unreadOnly === 'true';
-    const all = await readConfig('notifications');
+    const [all, settings] = await Promise.all([
+      readConfig('notifications'),
+      readConfig('settings'),
+    ]);
+    // In-app inbox is opt-in: active only when a `dashboard`-provider channel exists.
+    const channels = settings.notifications?.channels ?? [];
+    const enabled = channels.some(c => c.provider === 'dashboard');
     // Per-user audience filter (U5): item.recipients undefined = everyone.
-    const mine = all.filter(n => n.recipients === undefined || n.recipients.includes(userId));
+    // Per-user soft delete: items the user dismissed are hidden from their inbox.
+    const mine = all.filter(n =>
+      (n.recipients === undefined || n.recipients.includes(userId)) &&
+      !(n.deletedBy ?? []).includes(userId));
     // Newest first
     const sorted = [...mine].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-    const visible = unreadOnly ? sorted.filter(n => !n.readBy.includes(userId)) : sorted;
-    const items = visible.slice(0, limit).map(n => ({
+    // unreadCount reflects the user's whole inbox, independent of the active filters.
+    const unreadCount = sorted.filter(n => !n.readBy.includes(userId)).length;
+    const toDto = (n: typeof sorted[number]) => ({
       id: n.id, event: n.event, severity: n.severity, timestamp: n.timestamp,
       details: n.details, read: n.readBy.includes(userId),
-    }));
-    const unreadCount = sorted.filter(n => !n.readBy.includes(userId)).length;
-    return reply.send({ items, unreadCount });
+    });
+
+    // Apply filters (used by both the legacy limit slice and paginated views).
+    const severity = req.query.severity;
+    const eventQ = req.query.event?.trim().toLowerCase();
+    let filtered = sorted;
+    if (unreadOnly) filtered = filtered.filter(n => !n.readBy.includes(userId));
+    if (severity && severity !== 'all') filtered = filtered.filter(n => n.severity === severity);
+    if (eventQ) filtered = filtered.filter(n => n.event.toLowerCase().includes(eventQ));
+    // Timestamp range filter. A date-only `from`/`to` (YYYY-MM-DD) spans the full day.
+    const from = req.query.from?.trim();
+    const to = req.query.to?.trim();
+    if (from) {
+      const since = new Date(from);
+      if (from.length <= 10) since.setHours(0, 0, 0, 0);
+      if (!Number.isNaN(since.getTime())) filtered = filtered.filter(n => new Date(n.timestamp) >= since);
+    }
+    if (to) {
+      const until = new Date(to);
+      if (to.length <= 10) until.setHours(23, 59, 59, 999);
+      if (!Number.isNaN(until.getTime())) filtered = filtered.filter(n => new Date(n.timestamp) <= until);
+    }
+
+    // Back-compat: `limit` without `page` keeps the flat-list shape (NotificationBell).
+    if (req.query.limit !== undefined && req.query.page === undefined) {
+      const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
+      return reply.send({ items: filtered.slice(0, limit).map(toDto), unreadCount, enabled });
+    }
+
+    // Server-side pagination (portal convention).
+    const totalRecords = filtered.length;
+    const pageSize = Math.min(Math.max(Number(req.query.pageSize ?? '20') || 20, 1), 100);
+    const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+    const page = Math.min(Math.max(Number(req.query.page ?? '1') || 1, 1), totalPages);
+    const start = (page - 1) * pageSize;
+    const items = filtered.slice(start, start + pageSize).map(toDto);
+    return reply.send({ items, pagination: { page, pageSize, totalRecords, totalPages }, unreadCount, enabled });
+  });
+
+  // ─── GET /api/notifications/inbox/:id ──────────────────────────────────────
+  // Single in-app notification (detail view). Audience-checked: a user can only
+  // read items addressed to them (recipients undefined = everyone).
+  fastify.get<{ Params: { id: string } }>('/api/notifications/inbox/:id', async (req, reply) => {
+    const userId = req.dashUser!.id;
+    const all = await readConfig('notifications');
+    const n = all.find(x => x.id === req.params.id &&
+      (x.recipients === undefined || x.recipients.includes(userId)) &&
+      !(x.deletedBy ?? []).includes(userId));
+    if (!n) return reply.status(404).send({ error: 'Notification not found' });
+    return reply.send({
+      id: n.id, event: n.event, severity: n.severity, timestamp: n.timestamp,
+      details: n.details, read: n.readBy.includes(userId),
+    });
   });
 
   // ─── POST /api/notifications/inbox/read ────────────────────────────────────
@@ -1547,13 +1642,74 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     for (const n of items) {
       // Audience filter (U5): a user can only mark items addressed to them.
       const visibleToUser = n.recipients === undefined || n.recipients.includes(userId);
-      if (visibleToUser && (all || idSet.has(n.id)) && !n.readBy.includes(userId)) {
+      // Already-dismissed items are out of the user's inbox; don't touch them.
+      const dismissed = (n.deletedBy ?? []).includes(userId);
+      if (visibleToUser && !dismissed && (all || idSet.has(n.id)) && !n.readBy.includes(userId)) {
         n.readBy.push(userId);
         updated++;
       }
     }
     if (updated > 0) await writeConfig('notifications', items);
+    audit(req, 'notification:read', 'success', all ? { all: true, updated } : { ids: ids ?? [], updated });
     return reply.send({ updated });
+  });
+
+  // ─── POST /api/notifications/inbox/unread ──────────────────────────────────
+  // Inverse of /read: clears the current user's read mark. Self-service.
+  const inboxUnreadSchema = z.object({
+    ids: z.array(z.string()).optional(),
+    all: z.boolean().optional(),
+  }).refine(b => b.all === true || (b.ids?.length ?? 0) > 0, { message: 'Provide ids[] or all:true' });
+
+  fastify.post<{ Body: { ids?: string[]; all?: boolean } }>('/api/notifications/inbox/unread', async (req, reply) => {
+    const parsed = inboxUnreadSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid body' });
+    const userId = req.dashUser!.id;
+    const { ids, all } = parsed.data;
+    const items = await readConfig('notifications');
+    const idSet = new Set(ids ?? []);
+    let updated = 0;
+    for (const n of items) {
+      const visibleToUser = n.recipients === undefined || n.recipients.includes(userId);
+      const dismissed = (n.deletedBy ?? []).includes(userId);
+      if (visibleToUser && !dismissed && (all || idSet.has(n.id)) && n.readBy.includes(userId)) {
+        n.readBy = n.readBy.filter(u => u !== userId);
+        updated++;
+      }
+    }
+    if (updated > 0) await writeConfig('notifications', items);
+    audit(req, 'notification:unread', 'success', all ? { all: true, updated } : { ids: ids ?? [], updated });
+    return reply.send({ updated });
+  });
+
+  // ─── POST /api/notifications/inbox/delete ──────────────────────────────────
+  // Per-user dismiss: marks items as deleted for the calling user only (never
+  // global). Self-service — no permission gate, mirrors the read endpoint.
+  const inboxDeleteSchema = z.object({
+    ids: z.array(z.string()).optional(),
+    all: z.boolean().optional(),
+  }).refine(b => b.all === true || (b.ids?.length ?? 0) > 0, { message: 'Provide ids[] or all:true' });
+
+  fastify.post<{ Body: { ids?: string[]; all?: boolean } }>('/api/notifications/inbox/delete', async (req, reply) => {
+    const parsed = inboxDeleteSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid body' });
+    const userId = req.dashUser!.id;
+    const { ids, all } = parsed.data;
+    const items = await readConfig('notifications');
+    const idSet = new Set(ids ?? []);
+    let deleted = 0;
+    for (const n of items) {
+      // Audience filter (U5): a user can only dismiss items addressed to them.
+      const visibleToUser = n.recipients === undefined || n.recipients.includes(userId);
+      const already = (n.deletedBy ?? []).includes(userId);
+      if (visibleToUser && !already && (all || idSet.has(n.id))) {
+        (n.deletedBy ??= []).push(userId);
+        deleted++;
+      }
+    }
+    if (deleted > 0) await writeConfig('notifications', items);
+    audit(req, 'notification:delete', 'success', all ? { all: true, deleted } : { ids: ids ?? [], deleted });
+    return reply.send({ deleted });
   });
 
   // ─── POST /api/test/openai-oauth ─────────────────────────────────────────────
@@ -1724,7 +1880,55 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/api/notifications/channels', async (req, reply) => {
     if (!requirePerm(req, 'user:write', reply)) return;
     const settings = await readConfig('settings');
-    return reply.send(settings.notifications?.channels ?? []);
+    const channels = (settings.notifications?.channels ?? []) as unknown as Record<string, unknown>[];
+    return reply.send(channels.map(redactChannel));
+  });
+
+  // ─── GET /api/notifications/channels/:id ─────────────────────────────────────
+  fastify.get<{ Params: { id: string } }>('/api/notifications/channels/:id', async (req, reply) => {
+    if (!requirePerm(req, 'user:write', reply)) return;
+    const settings = await readConfig('settings');
+    const channels = (settings.notifications?.channels ?? []) as unknown as Record<string, unknown>[];
+    const channel  = channels.find(ch => ch['id'] === req.params.id);
+    if (!channel) return reply.status(404).send({ error: `Channel "${req.params.id}" not found` });
+    return reply.send(redactChannel(channel));
+  });
+
+  // ─── PATCH /api/notifications/channels/:id ───────────────────────────────────
+  fastify.patch<{ Params: { id: string }; Body: Record<string, unknown> }>('/api/notifications/channels/:id', async (req, reply) => {
+    if (!requirePerm(req, 'user:write', reply)) return;
+    const settings = await readConfig('settings');
+    const channels = ((settings.notifications?.channels ?? []) as unknown) as Record<string, unknown>[];
+    const idx = channels.findIndex(ch => ch['id'] === req.params.id);
+    if (idx === -1) return reply.status(404).send({ error: `Channel "${req.params.id}" not found` });
+    const stored = channels[idx]!;
+    const body = req.body ?? {};
+    // Reject provider change
+    if ('provider' in body && body['provider'] !== stored['provider']) {
+      return reply.status(400).send({ error: 'Provider cannot be changed' });
+    }
+    const provider = stored['provider'] as ChannelProvider | undefined;
+    const secrets = provider ? (CHANNEL_SECRET_FIELDS[provider] ?? []) : [];
+    // Build merged channel: start with stored, apply non-secret fields from body,
+    // then for each secret field update only when body provides a non-empty string.
+    const merged: Record<string, unknown> = { ...stored };
+    for (const [key, val] of Object.entries(body)) {
+      if (key === 'id' || key === 'provider') continue; // immutable
+      if (secrets.includes(key)) {
+        // Secret: update only when non-empty string provided
+        if (typeof val === 'string' && val.length > 0) {
+          merged[key] = val;
+        }
+        // else keep stored value (empty string or absent = no change)
+      } else {
+        merged[key] = val;
+      }
+    }
+    const updatedChannels = [...channels];
+    updatedChannels[idx] = merged;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await writeConfig('settings', { ...settings, notifications: { ...(settings.notifications ?? {}), channels: updatedChannels } } as any);
+    return reply.send(redactChannel(merged));
   });
 
   // ─── POST /api/notifications/channels ────────────────────────────────────────
@@ -1743,7 +1947,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       notifications: { ...existing, channels: [...channels, channel] },
     };
     await writeConfig('settings', updated as Settings);
-    return reply.status(201).send(channel);
+    return reply.status(201).send(redactChannel(channel as unknown as Record<string, unknown>));
   });
 
   // ─── DELETE /api/notifications/channels/:id ──────────────────────────────────
@@ -1770,8 +1974,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const channel  = channels.find(ch => ch.id === req.params.id);
     if (!channel) return reply.status(404).send({ error: `Channel "${req.params.id}" not found` });
     try {
+      const recipient = resolveTestRecipient(channel.provider, req.body?.to, req.dashUser!.email);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await sendTestNotification(channel as any, req.body?.to ?? '');
+      const result = await sendTestNotification(channel as any, recipient);
       return reply.send(result);
     } catch (e) {
       return reply.send({ ok: false, message: e instanceof Error ? e.message : String(e) });
