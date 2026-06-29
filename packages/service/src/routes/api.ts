@@ -1526,7 +1526,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── POST /api/notifications/test ─────────────────────────────────────────
   fastify.post<{ Body: { channelId: string; to: string } }>('/api/notifications/test', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'notification:write', reply)) return;
     const { channelId, to } = req.body;
     if (!channelId) return reply.status(400).send({ error: 'channelId is required' });
 
@@ -1538,7 +1538,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     try {
       const recipient = resolveTestRecipient(channel.provider, to, req.dashUser!.email);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await sendTestNotification(channel as any, recipient);
+      const result = await sendTestNotification(channel as any, recipient, req.dashUser!.id);
       return reply.send(result);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -1627,7 +1627,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── POST /api/notifications/inbox/read ────────────────────────────────────
   const inboxReadSchema = z.object({
-    ids: z.array(z.string()).optional(),
+    ids: z.array(z.string()).max(500).optional(),
     all: z.boolean().optional(),
   }).refine(b => b.all === true || (b.ids?.length ?? 0) > 0, { message: 'Provide ids[] or all:true' });
 
@@ -1657,7 +1657,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /api/notifications/inbox/unread ──────────────────────────────────
   // Inverse of /read: clears the current user's read mark. Self-service.
   const inboxUnreadSchema = z.object({
-    ids: z.array(z.string()).optional(),
+    ids: z.array(z.string()).max(500).optional(),
     all: z.boolean().optional(),
   }).refine(b => b.all === true || (b.ids?.length ?? 0) > 0, { message: 'Provide ids[] or all:true' });
 
@@ -1686,7 +1686,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // Per-user dismiss: marks items as deleted for the calling user only (never
   // global). Self-service — no permission gate, mirrors the read endpoint.
   const inboxDeleteSchema = z.object({
-    ids: z.array(z.string()).optional(),
+    ids: z.array(z.string()).max(500).optional(),
     all: z.boolean().optional(),
   }).refine(b => b.all === true || (b.ids?.length ?? 0) > 0, { message: 'Provide ids[] or all:true' });
 
@@ -1878,7 +1878,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── GET /api/notifications/channels ─────────────────────────────────────────
   fastify.get('/api/notifications/channels', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'notification:write', reply)) return;
     const settings = await readConfig('settings');
     const channels = (settings.notifications?.channels ?? []) as unknown as Record<string, unknown>[];
     return reply.send(channels.map(redactChannel));
@@ -1886,7 +1886,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── GET /api/notifications/channels/:id ─────────────────────────────────────
   fastify.get<{ Params: { id: string } }>('/api/notifications/channels/:id', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'notification:write', reply)) return;
     const settings = await readConfig('settings');
     const channels = (settings.notifications?.channels ?? []) as unknown as Record<string, unknown>[];
     const channel  = channels.find(ch => ch['id'] === req.params.id);
@@ -1896,7 +1896,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── PATCH /api/notifications/channels/:id ───────────────────────────────────
   fastify.patch<{ Params: { id: string }; Body: Record<string, unknown> }>('/api/notifications/channels/:id', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'notification:write', reply)) return;
     const settings = await readConfig('settings');
     const channels = ((settings.notifications?.channels ?? []) as unknown) as Record<string, unknown>[];
     const idx = channels.findIndex(ch => ch['id'] === req.params.id);
@@ -1933,7 +1933,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── POST /api/notifications/channels ────────────────────────────────────────
   fastify.post<{ Body: Record<string, unknown> }>('/api/notifications/channels', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'notification:write', reply)) return;
     const parsed = notificationChannelSchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.status(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid channel' });
@@ -1952,7 +1952,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── DELETE /api/notifications/channels/:id ──────────────────────────────────
   fastify.delete<{ Params: { id: string } }>('/api/notifications/channels/:id', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'notification:write', reply)) return;
     const settings = await readConfig('settings');
     const channels = settings.notifications?.channels ?? [];
     const filtered = channels.filter(ch => (ch as unknown as { id: string }).id !== req.params.id);
@@ -1968,7 +1968,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── POST /api/notifications/channels/:id/test ───────────────────────────────
   fastify.post<{ Params: { id: string }; Body: { to?: string } }>('/api/notifications/channels/:id/test', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'notification:write', reply)) return;
     const settings = await readConfig('settings');
     const channels = ((settings.notifications?.channels ?? []) as unknown) as Array<{ id: string; provider: string; [k: string]: unknown }>;
     const channel  = channels.find(ch => ch.id === req.params.id);
@@ -1976,7 +1976,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     try {
       const recipient = resolveTestRecipient(channel.provider, req.body?.to, req.dashUser!.email);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await sendTestNotification(channel as any, recipient);
+      const result = await sendTestNotification(channel as any, recipient, req.dashUser!.id);
       return reply.send(result);
     } catch (e) {
       return reply.send({ ok: false, message: e instanceof Error ? e.message : String(e) });
