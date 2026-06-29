@@ -161,6 +161,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
             reply.raw.setHeader('Connection', 'keep-alive');
             reply.raw.setHeader('x-routerly-trace-id', traceId);
             reply.raw.flushHeaders();
+
             // Wire-faithful content_filter block: empty delta + content_filter finish_reason, then [DONE].
             const chunk = JSON.stringify({ id: `chatcmpl-${traceId}`, object: 'chat.completion.chunk', choices: [{ index: 0, delta: {}, finish_reason: 'content_filter' }] });
             reply.raw.write(`data: ${chunk}\n\n`);
@@ -209,9 +210,13 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       reply.raw.setHeader('x-routerly-trace-id', traceId);
       reply.raw.flushHeaders();
 
+      const suppressTrace = request.headers['x-routerly-no-trace'] === '1';
+
       const emit = (entry: TraceEntry) => {
-        appendTrace(traceId, [entry]);
-        reply.raw.write(`data: ${JSON.stringify({ type: 'trace', entry })}\n\n`);
+                appendTrace(traceId, [entry]);
+        if (!suppressTrace) {
+                  reply.raw.write(`data: ${JSON.stringify({ type: 'trace', entry })}\n\n`);
+        }
       };
 
       let sortedCandidates: Array<{ model: string; weight: number }>;
@@ -234,6 +239,11 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         }
 
         sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
+
+        // Emit trace entries from routing response
+        for (const entry of routingResponse.trace) {
+          emit(entry);
+        }
       }
 
       for (const candidate of sortedCandidates) {

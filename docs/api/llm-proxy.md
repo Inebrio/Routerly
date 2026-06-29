@@ -133,13 +133,19 @@ present on every response, including blocked ones, and is exposed via CORS:
 x-routerly-trace-id: 018f3c2a-4b5d-7e8f-9012-34567890abcd
 ```
 
+### Request headers
+
+| Header | Value | Description |
+|--------|-------|-------------|
+| `x-routerly-no-trace` | `1` | Suppresses `{"type":"trace",...}` SSE events from the response stream. Use with OpenAI-compatible SDK clients that strictly validate SSE frame schemas and reject non-standard event types. Trace data is still recorded server-side. |
+
 ### Response (streaming)
 
 When `"stream": true`, the response is a Server-Sent Events stream. Each event has one of the following types:
 
 | SSE data prefix | Description |
 |----------------|-------------|
-| `data: {"type":"trace",...}` | Routing decision metadata (first event) |
+| `data: {"type":"trace",...}` | Routing decision metadata (first event, omitted if `x-routerly-no-trace: 1`) |
 | `data: {"type":"content",...}` | Token chunk from the model |
 | `data: [DONE]` | End of stream |
 
@@ -153,7 +159,7 @@ The `trace` event includes the selected model, policy scores, and request cost e
 POST /v1/responses
 ```
 
-OpenAI Responses API compatible endpoint. Supports stateful multi-turn conversations via `previous_response_id`.
+OpenAI Responses API compatible endpoint. Supports stateful multi-turn conversations via `previous_response_id`. The `x-routerly-no-trace: 1` request header is also supported here (see [Chat Completions request headers](#request-headers)).
 
 ### Request
 
