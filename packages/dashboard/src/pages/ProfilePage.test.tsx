@@ -17,7 +17,11 @@ vi.mock('../api', () => ({
   disable2fa: vi.fn(),
   regenerateBackupCodes: vi.fn(),
   getNotificationInbox: vi.fn(),
+  getNotificationInboxPage: vi.fn(),
+  getNotificationInboxItem: vi.fn(),
   markNotificationsRead: vi.fn(),
+  markNotificationsUnread: vi.fn(),
+  deleteNotifications: vi.fn(),
 }));
 
 // ponytail: mock AuthContext — ProfileSecurityTab reads user + updateUser
@@ -33,7 +37,7 @@ vi.mock('../components/NotificationBell', () => ({
 
 import {
   updateMe, setup2fa, confirm2fa, disable2fa,
-  regenerateBackupCodes, getNotificationInbox, markNotificationsRead,
+  regenerateBackupCodes, getNotificationInbox, getNotificationInboxPage, markNotificationsRead, markNotificationsUnread, deleteNotifications,
 } from '../api';
 import { useAuth } from '../AuthContext';
 
@@ -43,7 +47,14 @@ const mockConfirm2fa = vi.mocked(confirm2fa as (c: string) => Promise<unknown>);
 const mockDisable2fa = vi.mocked(disable2fa as (c: string) => Promise<unknown>);
 const mockRegenerateBackupCodes = vi.mocked(regenerateBackupCodes as (c: string) => Promise<unknown>);
 const mockGetInbox = vi.mocked(getNotificationInbox as (...a: unknown[]) => Promise<unknown>);
+const mockGetInboxPage = vi.mocked(getNotificationInboxPage as (...a: unknown[]) => Promise<unknown>);
 const mockMarkRead = vi.mocked(markNotificationsRead as (...a: unknown[]) => Promise<unknown>);
+const mockMarkUnread = vi.mocked(markNotificationsUnread as (...a: unknown[]) => Promise<unknown>);
+const mockDelete = vi.mocked(deleteNotifications as (...a: unknown[]) => Promise<unknown>);
+
+const emptyPage = { items: [], unreadCount: 0, pagination: { page: 1, pageSize: 20, totalRecords: 0, totalPages: 1 }, enabled: true };
+
+type InboxItemLike = { id: string; event: string; severity: 'info' | 'warning' | 'critical'; timestamp: string; read: boolean; details: Record<string, unknown> };
 const mockUseAuth = vi.mocked(useAuth);
 
 const defaultUser = { id: 'u1', email: 'test@test.com', role: 'admin', totpEnabled: false };
@@ -59,8 +70,11 @@ beforeEach(() => {
     updateUser: updateUserFn,
     can: vi.fn().mockReturnValue(true),
   });
-  mockGetInbox.mockResolvedValue({ items: [], unreadCount: 0 });
+  localStorage.clear();
+  mockGetInbox.mockResolvedValue({ items: [], unreadCount: 0, enabled: true });
+  mockGetInboxPage.mockResolvedValue(emptyPage);
   mockMarkRead.mockResolvedValue(undefined);
+  mockDelete.mockResolvedValue({ deleted: 1 });
   mockUpdateMe.mockResolvedValue(undefined);
 });
 
@@ -297,41 +311,39 @@ describe('ProfileNotificationsTab', () => {
     );
   }
 
+  function pageOf(items: InboxItemLike[], unreadCount = items.filter(i => !i.read).length) {
+    return { items, unreadCount, pagination: { page: 1, pageSize: 20, totalRecords: items.length, totalPages: 1 }, enabled: true };
+  }
+
   it('shows empty state when no notifications', async () => {
-    mockGetInbox.mockResolvedValue({ items: [], unreadCount: 0 });
+    mockGetInboxPage.mockResolvedValue(emptyPage);
     renderTab();
-    await waitFor(() => expect(screen.getByText('No notifications')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('No notifications found.')).toBeTruthy());
     expect(screen.getByText(/All caught up/)).toBeTruthy();
   });
 
-  it('renders notification items', async () => {
-    mockGetInbox.mockResolvedValue({
-      items: [
-        { id: 'n1', event: 'provider.error', severity: 'critical', timestamp: new Date().toISOString(), read: false, details: {} },
-        { id: 'n2', event: 'system.startup', severity: 'info', timestamp: new Date().toISOString(), read: true, details: {} },
-      ],
-      unreadCount: 1,
-    });
+  it('renders notification rows in a table', async () => {
+    mockGetInboxPage.mockResolvedValue(pageOf([
+      { id: 'n1', event: 'provider.error', severity: 'critical', timestamp: new Date().toISOString(), read: false, details: {} },
+      { id: 'n2', event: 'system.startup', severity: 'info', timestamp: new Date().toISOString(), read: true, details: {} },
+    ], 1));
     renderTab();
     await waitFor(() => expect(screen.getByText('provider.error')).toBeTruthy());
     expect(screen.getByText('system.startup')).toBeTruthy();
+    // Table header present (Severity also appears as a filter label)
+    expect(screen.getAllByText('Severity').length).toBeGreaterThan(0);
+    expect(screen.getByText('Date')).toBeTruthy();
   });
 
   it('shows unread count and Mark all read button', async () => {
-    mockGetInbox.mockResolvedValue({
-      items: [{ id: 'n1', event: 'x', severity: 'info', timestamp: new Date().toISOString(), read: false, details: {} }],
-      unreadCount: 1,
-    });
+    mockGetInboxPage.mockResolvedValue(pageOf([{ id: 'n1', event: 'x', severity: 'info', timestamp: new Date().toISOString(), read: false, details: {} }], 1));
     renderTab();
     await waitFor(() => expect(screen.getByText(/1 unread/)).toBeTruthy());
     expect(screen.getByText(/Mark all read/)).toBeTruthy();
   });
 
   it('marks all read when button clicked', async () => {
-    mockGetInbox.mockResolvedValue({
-      items: [{ id: 'n1', event: 'x', severity: 'info', timestamp: new Date().toISOString(), read: false, details: {} }],
-      unreadCount: 1,
-    });
+    mockGetInboxPage.mockResolvedValue(pageOf([{ id: 'n1', event: 'x', severity: 'info', timestamp: new Date().toISOString(), read: false, details: {} }], 1));
     mockMarkRead.mockResolvedValue(undefined);
     renderTab();
     await waitFor(() => screen.getByText(/Mark all read/));
@@ -340,26 +352,147 @@ describe('ProfileNotificationsTab', () => {
     await waitFor(() => expect(screen.getByText(/All caught up/)).toBeTruthy());
   });
 
-  it('marks single notification as read', async () => {
-    mockGetInbox.mockResolvedValue({
-      items: [{ id: 'n1', event: 'x', severity: 'info', timestamp: new Date().toISOString(), read: false, details: {} }],
-      unreadCount: 1,
-    });
+  it('opens the detail drawer on row click and marks the item read', async () => {
+    mockGetInboxPage.mockResolvedValue(pageOf([
+      { id: 'n1', event: 'budget.exceeded', severity: 'warning', timestamp: new Date().toISOString(), read: false, details: { projectId: 'p1' } },
+    ], 1));
     mockMarkRead.mockResolvedValue(undefined);
     renderTab();
-    await waitFor(() => screen.getByText('x'));
-    // find the CheckCheck button for single item
-    const markBtn = document.querySelector('button[title="Mark as read"]');
-    expect(markBtn).toBeTruthy();
-    await userEvent.click(markBtn!);
+    await waitFor(() => screen.getByText('budget.exceeded'));
+    await userEvent.click(screen.getByText('budget.exceeded'));
+    // Drawer shows details + the detail key
+    await waitFor(() => expect(screen.getByRole('dialog', { name: /notification detail/i })).toBeTruthy());
+    expect(screen.getByText('projectId')).toBeTruthy();
+    await userEvent.click(screen.getByText(/Mark as read/));
     expect(mockMarkRead).toHaveBeenCalledWith({ ids: ['n1'] });
   });
 
   it('silently ignores inbox load errors', async () => {
-    mockGetInbox.mockRejectedValue(new Error('network'));
+    mockGetInboxPage.mockRejectedValue(new Error('network'));
     renderTab();
-    // Should not crash; "No notifications" will show after loading finishes
-    await waitFor(() => expect(screen.getByText('No notifications')).toBeTruthy());
+    // Should not crash; empty state shows after loading finishes
+    await waitFor(() => expect(screen.getByText('No notifications found.')).toBeTruthy());
+  });
+
+  it('selecting rows reveals the bulk action bar', async () => {
+    mockGetInboxPage.mockResolvedValue(pageOf([
+      { id: 'n1', event: 'provider.error', severity: 'critical', timestamp: new Date().toISOString(), read: false, details: {} },
+    ], 1));
+    renderTab();
+    await waitFor(() => screen.getByText('provider.error'));
+    await userEvent.click(screen.getByLabelText('Select provider.error'));
+    expect(screen.getByText('1 selected')).toBeTruthy();
+  });
+
+  it('bulk marks selected rows as read', async () => {
+    mockGetInboxPage.mockResolvedValue(pageOf([
+      { id: 'n1', event: 'a', severity: 'info', timestamp: new Date().toISOString(), read: false, details: {} },
+      { id: 'n2', event: 'b', severity: 'info', timestamp: new Date().toISOString(), read: false, details: {} },
+    ], 2));
+    renderTab();
+    await waitFor(() => screen.getByLabelText('Select all'));
+    await userEvent.click(screen.getByLabelText('Select all'));
+    expect(screen.getByText('2 selected')).toBeTruthy();
+    await userEvent.click(screen.getByText(/Mark as read/));
+    expect(mockMarkRead).toHaveBeenCalledWith({ ids: ['n1', 'n2'] });
+  });
+
+  it('bulk deletes selected rows', async () => {
+    mockGetInboxPage.mockResolvedValue(pageOf([
+      { id: 'n1', event: 'a', severity: 'info', timestamp: new Date().toISOString(), read: false, details: {} },
+    ], 1));
+    renderTab();
+    await waitFor(() => screen.getByText('a'));
+    await userEvent.click(screen.getByLabelText('Select a'));
+    await userEvent.click(screen.getByText(/Delete/));
+    expect(mockDelete).toHaveBeenCalledWith({ ids: ['n1'] });
+  });
+
+  it('toggling a row checkbox twice deselects it', async () => {
+    mockGetInboxPage.mockResolvedValue(pageOf([
+      { id: 'n1', event: 'a', severity: 'info', timestamp: new Date().toISOString(), read: false, details: {} },
+    ], 1));
+    renderTab();
+    await waitFor(() => screen.getByText('a'));
+    await userEvent.click(screen.getByLabelText('Select a'));
+    expect(screen.getByText('1 selected')).toBeTruthy();
+    await userEvent.click(screen.getByLabelText('Select a'));
+    await waitFor(() => expect(screen.queryByText('1 selected')).toBeNull());
+  });
+
+  it('select-all then select-all again clears the selection', async () => {
+    mockGetInboxPage.mockResolvedValue(pageOf([
+      { id: 'n1', event: 'a', severity: 'info', timestamp: new Date().toISOString(), read: false, details: {} },
+      { id: 'n2', event: 'b', severity: 'info', timestamp: new Date().toISOString(), read: false, details: {} },
+    ], 2));
+    renderTab();
+    await waitFor(() => screen.getByLabelText('Select all'));
+    await userEvent.click(screen.getByLabelText('Select all'));
+    expect(screen.getByText('2 selected')).toBeTruthy();
+    await userEvent.click(screen.getByLabelText('Select all'));
+    await waitFor(() => expect(screen.queryByText('2 selected')).toBeNull());
+  });
+
+  it('clears selection with the Clear button', async () => {
+    mockGetInboxPage.mockResolvedValue(pageOf([
+      { id: 'n1', event: 'a', severity: 'info', timestamp: new Date().toISOString(), read: false, details: {} },
+    ], 1));
+    renderTab();
+    await waitFor(() => screen.getByText('a'));
+    await userEvent.click(screen.getByLabelText('Select a'));
+    await userEvent.click(screen.getByText('Clear'));
+    await waitFor(() => expect(screen.queryByText('1 selected')).toBeNull());
+  });
+
+  it('deletes a single notification from the detail drawer', async () => {
+    mockGetInboxPage.mockResolvedValue(pageOf([
+      { id: 'n1', event: 'budget.exceeded', severity: 'warning', timestamp: new Date().toISOString(), read: true, details: {} },
+    ], 0));
+    renderTab();
+    await waitFor(() => screen.getByText('budget.exceeded'));
+    await userEvent.click(screen.getByText('budget.exceeded'));
+    await waitFor(() => screen.getByRole('dialog', { name: /notification detail/i }));
+    await userEvent.click(screen.getByText(/Delete/));
+    expect(mockDelete).toHaveBeenCalledWith({ ids: ['n1'] });
+  });
+
+  it('marks a read notification as unread from the detail drawer', async () => {
+    mockGetInboxPage.mockResolvedValue(pageOf([
+      { id: 'n1', event: 'budget.exceeded', severity: 'warning', timestamp: new Date().toISOString(), read: true, details: {} },
+    ], 0));
+    mockMarkUnread.mockResolvedValue(undefined);
+    renderTab();
+    await waitFor(() => screen.getByText('budget.exceeded'));
+    await userEvent.click(screen.getByText('budget.exceeded'));
+    await waitFor(() => screen.getByRole('dialog', { name: /notification detail/i }));
+    await userEvent.click(screen.getByText(/Mark as unread/));
+    expect(mockMarkUnread).toHaveBeenCalledWith({ ids: ['n1'] });
+  });
+
+  it('closes the detail drawer on Escape', async () => {
+    mockGetInboxPage.mockResolvedValue(pageOf([
+      { id: 'n1', event: 'budget.exceeded', severity: 'warning', timestamp: new Date().toISOString(), read: false, details: {} },
+    ], 1));
+    renderTab();
+    await waitFor(() => screen.getByText('budget.exceeded'));
+    await userEvent.click(screen.getByText('budget.exceeded'));
+    await waitFor(() => screen.getByRole('dialog', { name: /notification detail/i }));
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: /notification detail/i })).toBeNull());
+  });
+
+  it('bulk marks selected rows as unread', async () => {
+    mockGetInboxPage.mockResolvedValue(pageOf([
+      { id: 'n1', event: 'a', severity: 'info', timestamp: new Date().toISOString(), read: true, details: {} },
+      { id: 'n2', event: 'b', severity: 'info', timestamp: new Date().toISOString(), read: true, details: {} },
+    ], 0));
+    mockMarkUnread.mockResolvedValue(undefined);
+    renderTab();
+    await waitFor(() => screen.getByLabelText('Select all'));
+    await userEvent.click(screen.getByLabelText('Select all'));
+    expect(screen.getByText('2 selected')).toBeTruthy();
+    await userEvent.click(screen.getByText(/Mark as unread/));
+    expect(mockMarkUnread).toHaveBeenCalledWith({ ids: ['n1', 'n2'] });
   });
 });
 
@@ -372,9 +505,25 @@ describe('ProfilePage — tab navigation', () => {
     expect(screen.getAllByText('Change Password').length).toBeGreaterThan(0);
   });
 
-  it('renders Notifications tab when initialTab is notifications', async () => {
-    mockGetInbox.mockResolvedValue({ items: [], unreadCount: 0 });
+  it('renders Notifications tab when initialTab is notifications and inbox enabled', async () => {
+    mockGetInbox.mockResolvedValue({ items: [], unreadCount: 0, enabled: true });
     renderProfile('notifications');
-    await waitFor(() => expect(screen.getByText('No notifications')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('No notifications found.')).toBeTruthy());
+  });
+
+  it('hides the Notifications tab when in-app notifications are disabled', async () => {
+    mockGetInbox.mockResolvedValue({ items: [], unreadCount: 0, enabled: false });
+    renderProfile('profile');
+    await waitFor(() => expect(mockGetInbox).toHaveBeenCalled());
+    expect(screen.queryByRole('link', { name: 'Notifications' })).toBeNull();
+  });
+
+  it('falls back to the profile tab when notifications route is hit but disabled', async () => {
+    mockGetInbox.mockResolvedValue({ items: [], unreadCount: 0, enabled: false });
+    renderProfile('notifications');
+    await waitFor(() => expect(mockGetInbox).toHaveBeenCalled());
+    // Security/profile tab renders instead of the notifications view.
+    await waitFor(() => expect(screen.getAllByText('Change Password').length).toBeGreaterThan(0));
+    expect(screen.queryByText('No notifications found.')).toBeNull();
   });
 });
