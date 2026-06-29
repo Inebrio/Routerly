@@ -560,6 +560,45 @@ export const testNotificationChannel = (channelId: string, to: string) =>
     body: JSON.stringify({ channelId, to }),
   });
 
+// ── Notification channel CRUD ─────────────────────────────────────────────────
+
+/**
+ * A channel as returned by GET endpoints — secret fields are replaced with
+ * '********' by the service, so they are typed optional here.
+ */
+export type RedactedChannel = Record<string, unknown> & {
+  id: string;
+  provider: string;
+  name?: string;
+  events?: string[];
+  targets?: {
+    roles?: string[];
+    permissions?: string[];
+    users?: string[];
+  };
+};
+
+export const getNotificationChannels = () =>
+  request<RedactedChannel[]>('/notifications/channels');
+
+export const getNotificationChannel = (id: string) =>
+  request<RedactedChannel>(`/notifications/channels/${id}`);
+
+export const createNotificationChannel = (body: Record<string, unknown>) =>
+  request<RedactedChannel>('/notifications/channels', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+
+export const updateNotificationChannel = (id: string, patch: Record<string, unknown>) =>
+  request<RedactedChannel>(`/notifications/channels/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  });
+
+export const deleteNotificationChannel = (id: string) =>
+  request<void>(`/notifications/channels/${id}`, { method: 'DELETE' });
+
 export const testOpenAIOAuth = (authFilePath?: string) =>
   request<{ ok: boolean; accountId?: string; expiresAt?: string | null; error?: string }>(
     '/test/openai-oauth',
@@ -587,16 +626,56 @@ export interface InboxItem {
   read: boolean;
 }
 
+export interface InboxPagination {
+  page: number;
+  pageSize: number;
+  totalRecords: number;
+  totalPages: number;
+}
+
+/** Flat-list fetch (NotificationBell, opt-in probe). */
 export const getNotificationInbox = (opts: { limit?: number; unreadOnly?: boolean } = {}) => {
   const q = new URLSearchParams();
   if (opts.limit) q.set('limit', String(opts.limit));
   if (opts.unreadOnly) q.set('unreadOnly', 'true');
   const qs = q.toString();
-  return request<{ items: InboxItem[]; unreadCount: number }>(`/notifications/inbox${qs ? `?${qs}` : ''}`);
+  return request<{ items: InboxItem[]; unreadCount: number; enabled: boolean }>(`/notifications/inbox${qs ? `?${qs}` : ''}`);
 };
+
+/** Paginated fetch with filters (notifications table). */
+export const getNotificationInboxPage = (opts: {
+  page: number;
+  pageSize: number;
+  severity?: 'info' | 'warning' | 'critical';
+  event?: string;
+  unreadOnly?: boolean;
+  from?: string;
+  to?: string;
+}) => {
+  const q = new URLSearchParams();
+  q.set('page', String(opts.page));
+  q.set('pageSize', String(opts.pageSize));
+  if (opts.severity) q.set('severity', opts.severity);
+  if (opts.event) q.set('event', opts.event);
+  if (opts.unreadOnly) q.set('unreadOnly', 'true');
+  if (opts.from) q.set('from', opts.from);
+  if (opts.to) q.set('to', opts.to);
+  return request<{ items: InboxItem[]; pagination: InboxPagination; unreadCount: number; enabled: boolean }>(
+    `/notifications/inbox?${q.toString()}`,
+  );
+};
+
+export const getNotificationInboxItem = (id: string) =>
+  request<InboxItem>(`/notifications/inbox/${id}`);
 
 export const markNotificationsRead = (body: { ids?: string[]; all?: boolean }) =>
   request<{ updated: number }>('/notifications/inbox/read', { method: 'POST', body: JSON.stringify(body) });
+
+export const markNotificationsUnread = (body: { ids?: string[]; all?: boolean }) =>
+  request<{ updated: number }>('/notifications/inbox/unread', { method: 'POST', body: JSON.stringify(body) });
+
+export const deleteNotifications = (body: { ids?: string[]; all?: boolean }) =>
+  request<{ deleted: number }>('/notifications/inbox/delete', { method: 'POST', body: JSON.stringify(body) });
 
 // ── Playground presets (#99) ──────────────────────────────────────────────
 export interface PlaygroundPreset {

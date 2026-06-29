@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
-const { mockSendMail } = vi.hoisted(() => {
+const { mockSendMail, mockAppendToInbox } = vi.hoisted(() => {
   const mockSendMail = vi.fn()
-  return { mockSendMail }
+  const mockAppendToInbox = vi.fn().mockResolvedValue(undefined)
+  return { mockSendMail, mockAppendToInbox }
 })
 
 vi.mock('nodemailer', () => ({
@@ -15,6 +16,7 @@ vi.mock('./channels/slack.js',     () => ({ sendSlack: vi.fn() }))
 vi.mock('./channels/teams.js',     () => ({ sendTeams: vi.fn() }))
 vi.mock('./channels/pagerduty.js', () => ({ sendPagerDuty: vi.fn() }))
 vi.mock('./channels/discord.js',   () => ({ sendDiscord: vi.fn() }))
+vi.mock('./emitter.js',            () => ({ appendToInbox: mockAppendToInbox }))
 
 import { sendTestNotification, dispatchNotification } from './sender.js'
 
@@ -399,6 +401,24 @@ describe('sendTestNotification', () => {
         provider: 'webhook', url: 'http://100.100.100.200/hook',
       } as any, 'any')).rejects.toThrow('private or loopback')
     })
+
+    it('rejects IPv4 unspecified 0.0.0.0', async () => {
+      await expect(sendTestNotification({
+        provider: 'webhook', url: 'http://0.0.0.0/hook',
+      } as any, 'any')).rejects.toThrow('private or loopback')
+    })
+
+    it('rejects IPv6 unspecified :: (compressed)', async () => {
+      await expect(sendTestNotification({
+        provider: 'webhook', url: 'http://[::]/hook',
+      } as any, 'any')).rejects.toThrow('private or loopback')
+    })
+
+    it('rejects IPv6 unspecified full form 0:0:0:0:0:0:0:0', async () => {
+      await expect(sendTestNotification({
+        provider: 'webhook', url: 'http://[0:0:0:0:0:0:0:0]/hook',
+      } as any, 'any')).rejects.toThrow('private or loopback')
+    })
   })
 
   it('throws for unknown provider', async () => {
@@ -426,6 +446,23 @@ describe('sendTestNotification', () => {
     const result = await sendTestNotification({ provider: 'dashboard', id: 'd' } as any, '')
     expect(result.ok).toBe(true)
     expect(result.message).toContain('inbox')
+    expect(mockAppendToInbox).toHaveBeenCalledOnce()
+    const item = mockAppendToInbox.mock.calls[0]![0]
+    expect(item.event).toBe('notification.test')
+    expect(item.details.channelId).toBe('d')
+  })
+
+  it('dashboard channel test scopes recipients to testRecipientUserId when provided', async () => {
+    await sendTestNotification({ provider: 'dashboard', id: 'd' } as any, '', 'user-42')
+    const item = mockAppendToInbox.mock.calls[0]![0]
+    expect(item.recipients).toEqual(['user-42'])
+  })
+
+  it('dashboard channel test sets recipients to empty array when testRecipientUserId is omitted', async () => {
+    await sendTestNotification({ provider: 'dashboard', id: 'd' } as any, '')
+    const item = mockAppendToInbox.mock.calls[0]![0]
+    expect(item.recipients).toEqual([])
+    expect(item.recipients).not.toBeUndefined()
   })
 })
 

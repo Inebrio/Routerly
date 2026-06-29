@@ -246,9 +246,22 @@ Durations accept `s`, `m`, `h`, `d` suffixes. Cooldown state is held in memory (
 
 Independently of external channels, every event matching a `dashboard` channel's `events` filter (or all events when no `dashboard` channel is configured) is appended to the inbox, persisted in `notifications.json`. Retention: last 200 events or 30 days, whichever is smaller.
 
-The inbox is **per-user filtered**: if a `dashboard` channel has `targets`, only the matched users see the items in their inbox. Users track their own read state independently.
+The inbox is **per-user**: each user sees only items addressed to them (matched by the `targets` of the `dashboard` channel that created the item, or all items when no targeting is configured). Each user independently:
+
+- Marks items as read or unread (tracked per-user)
+- Dismisses (deletes) items - removal is **per-user only**, never global. Other users' copies of the same notification remain in their inboxes unless they also dismiss it.
 
 Users access their inbox via the notification bell on the profile row in the sidebar, or the full **Notifications** tab under **My Profile** (`/dashboard/profile/notifications`).
+
+### Filtering and Pagination
+
+The inbox supports filtering by:
+- **Severity** - `info`, `warning`, or `critical`
+- **Event** - substring match (case-insensitive) on event name
+- **Date range** - `from` and `to` (YYYY-MM-DD or ISO 8601); date-only values span the full day
+- **Read status** - `unreadOnly` to show only unread items
+
+Results are newest-first. The API supports both flat-list mode (for dropdown bells) and server-side pagination (for the full inbox page).
 
 See the [Management API](../api/management.md#notifications-inbox) for the inbox endpoints.
 
