@@ -1,0 +1,245 @@
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, FlaskConical } from 'lucide-react';
+import { getNotificationChannel, updateNotificationChannel, testNotificationChannel, getRoles, getUsers } from '../api';
+import type { RedactedChannel, Role, User } from '../api';
+import {
+  ChannelEditFields,
+  EventsAndTargetsEditFields,
+  providerLabel,
+} from './notificationChannelFields';
+import type { ChannelProvider } from './notificationChannelFields';
+import { CHANNEL_SECRET_FIELDS } from '@routerly/shared';
+
+/** Strip masked markers from the stored channel so secret fields start blank in the form. */
+function buildInitialForm(channel: RedactedChannel): Record<string, unknown> {
+  const form: Record<string, unknown> = { ...channel };
+  const provider = channel.provider as ChannelProvider;
+  const secrets = CHANNEL_SECRET_FIELDS[provider] ?? [];
+  for (const field of secrets) {
+    delete form[field];
+  }
+  return form;
+}
+
+export function NotificationChannelEditPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [channel, setChannel] = useState<RedactedChannel | null>(null);
+  const [form, setForm] = useState<Record<string, unknown>>({});
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [testStatus, setTestStatus] = useState<{ loading: boolean; ok?: boolean; message?: string } | null>(null);
+  const [testTo, setTestTo] = useState('');
+
+  useEffect(() => {
+    if (!id) return;
+    Promise.all([
+      getNotificationChannel(id),
+      getRoles().catch(() => [] as Role[]),
+      getUsers().catch(() => [] as User[]),
+    ])
+      .then(([ch, r, u]) => {
+        setChannel(ch);
+        setForm(buildInitialForm(ch));
+        setRoles(r);
+        setUsers(u);
+      })
+      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load'))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  function onChange(field: string, value: unknown) {
+    setForm(f => ({ ...f, [field]: value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!id || !channel) return;
+    setError('');
+    setSaving(true);
+    try {
+      const provider = channel.provider as ChannelProvider;
+      const secrets = CHANNEL_SECRET_FIELDS[provider] ?? [];
+
+      const patch: Record<string, unknown> = {};
+      for (const [key, val] of Object.entries(form)) {
+        if (key === 'id' || key === 'provider') continue;
+        if (secrets.includes(key)) {
+          if (typeof val === 'string' && val.length > 0) patch[key] = val;
+        } else {
+          patch[key] = val;
+        }
+      }
+      if (Array.isArray(patch['events']) && (patch['events'] as string[]).length === 0) {
+        delete patch['events'];
+      }
+      if (patch['targets']) {
+        const t = patch['targets'] as Record<string, unknown>;
+        const clean: Record<string, unknown> = {};
+        if (Array.isArray(t['roles']) && (t['roles'] as string[]).length)             clean['roles']       = t['roles'];
+        if (Array.isArray(t['permissions']) && (t['permissions'] as string[]).length) clean['permissions'] = t['permissions'];
+        if (Array.isArray(t['users']) && (t['users'] as string[]).length)             clean['users']       = t['users'];
+        if (Object.keys(clean).length) patch['targets'] = clean;
+        else delete patch['targets'];
+      }
+
+      await updateNotificationChannel(id, patch);
+      navigate('/dashboard/settings/notifications');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleTest() {
+    if (!id || !channel) return;
+    setTestStatus({ loading: true });
+    try {
+      const res = await testNotificationChannel(id, testTo);
+      setTestStatus({ loading: false, ok: res.ok, message: res.message });
+      // A dashboard-channel test writes to the in-app inbox; refresh the bell now.
+      if (res.ok) window.dispatchEvent(new Event('routerly:notifications'));
+    } catch (e) {
+      setTestStatus({ loading: false, ok: false, message: e instanceof Error ? e.message : String(e) });
+    }
+  }
+
+  if (loading) return <div className="loading-center"><div className="spinner" /></div>;
+
+  if (error && !channel) {
+    return (
+      <>
+        <button
+          type="button"
+          className="btn-icon"
+          style={{ marginBottom: 16, display: 'inline-flex', alignItems: 'center', gap: 6, padding: 4, width: 'fit-content' }}
+          onClick={() => navigate('/dashboard/settings/notifications')}
+        >
+          <ArrowLeft size={16} />
+          <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Back</span>
+        </button>
+        <div className="form-error">{error}</div>
+      </>
+    );
+  }
+
+  const provider = (channel?.provider ?? '') as ChannelProvider;
+  // Only email-provider channels take a recipient; native/webhook/dashboard ignore it.
+  const EMAIL_PROVIDERS = new Set<ChannelProvider>(['smtp', 'ses', 'sendgrid', 'azure', 'google']);
+  const showRecipient = EMAIL_PROVIDERS.has(provider);
+
+  return (
+    <>
+      <div style={{ marginBottom: 24 }}>
+        <button
+          type="button"
+          className="btn-icon"
+          style={{ marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6, padding: 4, width: 'fit-content' }}
+          onClick={() => navigate('/dashboard/settings/notifications')}
+        >
+          <ArrowLeft size={16} />
+          <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Back to Notifications</span>
+        </button>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+          Edit {providerLabel(provider)} channel
+        </h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: 4 }}>
+          Update configuration for this notification channel.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} autoComplete="off" style={{ maxWidth: 600 }}>
+        {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
+
+          <div className="form-section">
+            <h3 className="section-title">Channel settings</h3>
+
+            <div className="form-group">
+              <label className="form-label">
+                Name <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+              </label>
+              <input
+                className="form-input"
+                value={typeof form['name'] === 'string' ? form['name'] : ''}
+                onChange={e => onChange('name', e.target.value || undefined)}
+                placeholder="Label for this channel"
+              />
+            </div>
+
+            <ChannelEditFields form={form} onChange={onChange} isEdit={true} />
+          </div>
+
+          <div className="form-section">
+            <h3 className="section-title">Events and recipients</h3>
+            <EventsAndTargetsEditFields form={form} onChange={onChange} roles={roles} users={users} />
+          </div>
+
+          {/* Test section */}
+          <div className="form-section">
+            <h3 className="section-title">Send test</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                {showRecipient && (
+                  <input
+                    type="email"
+                    className="form-input"
+                    style={{ flex: 1, maxWidth: 320 }}
+                    placeholder="recipient@example.com"
+                    value={testTo}
+                    onChange={e => setTestTo(e.target.value)}
+                  />
+                )}
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={testStatus?.loading}
+                  onClick={handleTest}
+                  style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  {testStatus?.loading
+                    ? <><div className="spinner" style={{ width: 12, height: 12 }} /> Sending…</>
+                    : <><FlaskConical size={13} /> Send Test</>}
+                </button>
+              </div>
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>
+                {showRecipient
+                  ? 'Leave empty to send to your account email. Test uses the saved channel configuration.'
+                  : 'Test uses the saved channel configuration. Save changes first to test updated settings.'}
+              </p>
+              {testStatus && !testStatus.loading && (
+                <div style={{
+                  fontSize: '0.8rem', padding: '6px 10px', borderRadius: 6,
+                  background: testStatus.ok ? 'color-mix(in srgb, var(--success) 12%, transparent)' : 'color-mix(in srgb, var(--danger) 12%, transparent)',
+                  border: `1px solid ${testStatus.ok ? 'color-mix(in srgb, var(--success) 35%, transparent)' : 'color-mix(in srgb, var(--danger) 35%, transparent)'}`,
+                  color: testStatus.ok ? 'var(--success)' : 'var(--danger)',
+                }}>
+                  {testStatus.ok ? '✓ ' : '✕ '}{testStatus.message}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, marginTop: 8, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => navigate('/dashboard/settings/notifications')}
+              disabled={saving}
+            >
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={saving}>
+              {saving
+                ? <><span className="spinner" style={{ width: 14, height: 14 }} /> Saving…</>
+                : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+    </>
+  );
+}

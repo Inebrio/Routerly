@@ -167,7 +167,7 @@ function BadgeWrapper() {
 
 describe('ProfileNotificationBadge', () => {
   beforeEach(() => {
-    mockGetInbox.mockResolvedValue({ items: [], unreadCount: 0 });
+    mockGetInbox.mockResolvedValue({ items: [], unreadCount: 0, enabled: true });
     mockMarkRead.mockResolvedValue(undefined);
   });
 
@@ -178,10 +178,18 @@ describe('ProfileNotificationBadge', () => {
     expect(btn).toBeTruthy();
   });
 
+  it('renders nothing when in-app notifications are disabled', async () => {
+    mockGetInbox.mockResolvedValue({ items: [], unreadCount: 0, enabled: false });
+    render(<BadgeWrapper />);
+    await waitFor(() => expect(mockGetInbox).toHaveBeenCalled());
+    expect(document.querySelector('button[title="Notifications"]')).toBeNull();
+  });
+
   it('shows unread badge when unreadCount > 0', async () => {
     mockGetInbox.mockResolvedValue({
       items: [{ id: 'n1', event: 'x', severity: 'info', timestamp: new Date().toISOString(), read: false, details: {} }],
       unreadCount: 1,
+      enabled: true,
     });
     render(<BadgeWrapper />);
     await waitFor(() => screen.getByText('1'));
@@ -192,6 +200,7 @@ describe('ProfileNotificationBadge', () => {
     mockGetInbox.mockResolvedValue({
       items: [],
       unreadCount: 150,
+      enabled: true,
     });
     render(<BadgeWrapper />);
     await waitFor(() => screen.getByText('99+'));
@@ -199,7 +208,7 @@ describe('ProfileNotificationBadge', () => {
   });
 
   it('opens dropdown on bell click', async () => {
-    mockGetInbox.mockResolvedValue({ items, unreadCount: 1 });
+    mockGetInbox.mockResolvedValue({ items, unreadCount: 1, enabled: true });
     render(<BadgeWrapper />);
     await waitFor(() => expect(mockGetInbox).toHaveBeenCalled());
     const btn = document.querySelector('button[title="Notifications"]')!;
@@ -208,7 +217,7 @@ describe('ProfileNotificationBadge', () => {
   });
 
   it('calls markNotificationsRead on markAll', async () => {
-    mockGetInbox.mockResolvedValue({ items, unreadCount: 1 });
+    mockGetInbox.mockResolvedValue({ items, unreadCount: 1, enabled: true });
     render(<BadgeWrapper />);
     await waitFor(() => expect(mockGetInbox).toHaveBeenCalled());
 
@@ -222,12 +231,12 @@ describe('ProfileNotificationBadge', () => {
     expect(mockMarkRead).toHaveBeenCalledWith({ all: true });
   });
 
-  it('silently ignores inbox load errors', async () => {
+  it('silently ignores inbox load errors and stays hidden (opt-in)', async () => {
     mockGetInbox.mockRejectedValue(new Error('network'));
     render(<BadgeWrapper />);
-    // Should not throw
+    // Should not throw; with no enabled signal the bell stays hidden.
     await new Promise(r => setTimeout(r, 50));
     const btn = document.querySelector('button[title="Notifications"]');
-    expect(btn).toBeTruthy();
+    expect(btn).toBeNull();
   });
 });
