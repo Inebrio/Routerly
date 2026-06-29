@@ -750,3 +750,158 @@ describe('notification channel list providerSummary', () => {
     expect(out.join(' ')).toContain('url=');
   });
 });
+
+// ── Email provider channel add ────────────────────────────────────────────────
+
+describe('notification channel add — email providers', () => {
+  it('adds an smtp channel with required fields', async () => {
+    mockApi.mockResolvedValue({ id: 'e1', provider: 'smtp', name: 'mail' });
+    const { out } = await runChannel(
+      'add', '--type', 'smtp', '--name', 'mail',
+      '--from-address', 'no-reply@x.com',
+      '--host', 'smtp.x.com', '--port', '587',
+    );
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/notifications/channels', expect.objectContaining({
+      provider: 'smtp', fromAddress: 'no-reply@x.com', host: 'smtp.x.com', port: 587, secure: false,
+    }));
+    expect(out.join(' ')).toContain('added');
+  });
+
+  it('adds an smtp channel with --secure flag and optional fields', async () => {
+    mockApi.mockResolvedValue({ id: 'e2', provider: 'smtp', name: 'mail' });
+    await runChannel(
+      'add', '--type', 'smtp', '--name', 'mail',
+      '--from-address', 'no-reply@x.com', '--from-name', 'Routerly',
+      '--host', 'smtp.x.com', '--port', '465', '--secure',
+      '--username', 'user', '--password', 'pass',
+    );
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/notifications/channels', expect.objectContaining({
+      secure: true, username: 'user', password: 'pass', fromName: 'Routerly',
+    }));
+  });
+
+  it('adds smtp with default port 587 when --port is omitted', async () => {
+    mockApi.mockResolvedValue({ id: 'e3', provider: 'smtp', name: 'mail' });
+    await runChannel('add', '--type', 'smtp', '--name', 'mail', '--from-address', 'a@b.com', '--host', 'h');
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/notifications/channels', expect.objectContaining({ port: 587 }));
+  });
+
+  it('errors when smtp is missing --host', async () => {
+    const { err } = await runChannel('add', '--type', 'smtp', '--name', 'mail', '--from-address', 'a@b.com');
+    expect(err.join(' ')).toContain('--host');
+  });
+
+  it('errors when smtp is missing --from-address', async () => {
+    const { err } = await runChannel('add', '--type', 'smtp', '--name', 'mail', '--host', 'h');
+    expect(err.join(' ')).toContain('--from-address');
+  });
+
+  it('adds a ses channel', async () => {
+    mockApi.mockResolvedValue({ id: 's1', provider: 'ses', name: 'aws-mail' });
+    const { out } = await runChannel(
+      'add', '--type', 'ses', '--name', 'aws-mail',
+      '--from-address', 'no-reply@x.com', '--region', 'us-east-1',
+      '--access-key-id', 'AKIA', '--secret-access-key', 'secret',
+    );
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/notifications/channels', expect.objectContaining({
+      provider: 'ses', region: 'us-east-1', accessKeyId: 'AKIA', secretAccessKey: 'secret',
+    }));
+    expect(out.join(' ')).toContain('added');
+  });
+
+  it('errors when ses is missing --region', async () => {
+    const { err } = await runChannel('add', '--type', 'ses', '--name', 'x', '--from-address', 'a@b.com');
+    expect(err.join(' ')).toContain('--region');
+  });
+
+  it('adds a sendgrid channel', async () => {
+    mockApi.mockResolvedValue({ id: 'sg1', provider: 'sendgrid', name: 'sg' });
+    const { out } = await runChannel(
+      'add', '--type', 'sendgrid', '--name', 'sg',
+      '--from-address', 'no-reply@x.com', '--api-key', 'SG.test',
+    );
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/notifications/channels', expect.objectContaining({
+      provider: 'sendgrid', apiKey: 'SG.test',
+    }));
+    expect(out.join(' ')).toContain('added');
+  });
+
+  it('errors when sendgrid is missing --api-key', async () => {
+    const { err } = await runChannel('add', '--type', 'sendgrid', '--name', 'x', '--from-address', 'a@b.com');
+    expect(err.join(' ')).toContain('--api-key');
+  });
+
+  it('adds an azure channel', async () => {
+    mockApi.mockResolvedValue({ id: 'az1', provider: 'azure', name: 'az' });
+    const { out } = await runChannel(
+      'add', '--type', 'azure', '--name', 'az',
+      '--from-address', 'no-reply@x.com',
+      '--connection-string', 'endpoint=https://x.communication.azure.com;accesskey=abc',
+    );
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/notifications/channels', expect.objectContaining({
+      provider: 'azure', connectionString: 'endpoint=https://x.communication.azure.com;accesskey=abc',
+    }));
+    expect(out.join(' ')).toContain('added');
+  });
+
+  it('errors when azure is missing --connection-string', async () => {
+    const { err } = await runChannel('add', '--type', 'azure', '--name', 'x', '--from-address', 'a@b.com');
+    expect(err.join(' ')).toContain('--connection-string');
+  });
+
+  it('adds a google channel', async () => {
+    mockApi.mockResolvedValue({ id: 'g1', provider: 'google', name: 'gmail' });
+    const { out } = await runChannel(
+      'add', '--type', 'google', '--name', 'gmail',
+      '--from-address', 'no-reply@gmail.com',
+      '--client-id', 'cid', '--client-secret', 'csecret', '--refresh-token', 'rtoken',
+    );
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/notifications/channels', expect.objectContaining({
+      provider: 'google', clientId: 'cid', clientSecret: 'csecret', refreshToken: 'rtoken',
+    }));
+    expect(out.join(' ')).toContain('added');
+  });
+
+  it('errors when google is missing --client-id', async () => {
+    const { err } = await runChannel(
+      'add', '--type', 'google', '--name', 'x', '--from-address', 'a@b.com',
+      '--client-secret', 'cs', '--refresh-token', 'rt',
+    );
+    expect(err.join(' ')).toContain('--client-id');
+  });
+
+  it('errors when google is missing --client-secret', async () => {
+    const { err } = await runChannel(
+      'add', '--type', 'google', '--name', 'x', '--from-address', 'a@b.com',
+      '--client-id', 'ci', '--refresh-token', 'rt',
+    );
+    expect(err.join(' ')).toContain('--client-id');
+  });
+
+  it('errors when google is missing --refresh-token', async () => {
+    const { err } = await runChannel(
+      'add', '--type', 'google', '--name', 'x', '--from-address', 'a@b.com',
+      '--client-id', 'ci', '--client-secret', 'cs',
+    );
+    expect(err.join(' ')).toContain('--client-id');
+  });
+
+  it('adds smtp with events and targets', async () => {
+    mockApi.mockResolvedValue({ id: 'e4', provider: 'smtp', name: 'mail' });
+    await runChannel(
+      'add', '--type', 'smtp', '--name', 'mail',
+      '--from-address', 'a@b.com', '--host', 'h',
+      '--events', 'budget.*', '--target-roles', 'admin',
+    );
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/notifications/channels', expect.objectContaining({
+      events: ['budget.*'], targets: { roles: ['admin'] },
+    }));
+  });
+
+  it('prints unknown type error for unknown email-looking type', async () => {
+    const { err } = await runChannel('add', '--type', 'mailgun', '--name', 'x', '--from-address', 'a@b.com');
+    expect(err.join(' ')).toContain('Unknown type');
+    expect(err.join(' ')).toContain('mailgun');
+  });
+});
+
