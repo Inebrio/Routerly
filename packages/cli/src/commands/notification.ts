@@ -216,12 +216,35 @@ export function makeNotificationCommand(): Command {
 
   const add = new Command('add').description('Add a notification channel');
   add
-    .requiredOption('--type <type>', 'Channel type: slack|teams|pagerduty|discord|dashboard')
+    .requiredOption('--type <type>', 'Channel type: slack|teams|pagerduty|discord|dashboard|smtp|ses|sendgrid|azure|google')
     .requiredOption('--name <name>', 'Friendly name for this channel')
+    // native/webhook providers
     .option('--bot-token <token>', 'Slack bot token (xoxb-…)')
     .option('--channel-id <id>', 'Slack channel ID')
     .option('--webhook-url <url>', 'Webhook URL (Teams or Discord)')
     .option('--integration-key <key>', 'PagerDuty integration key')
+    // shared email fields
+    .option('--from-address <addr>', 'Sender email address (required for email providers)')
+    .option('--from-name <name>', 'Sender display name (optional)')
+    // smtp
+    .option('--host <host>', 'SMTP host (required for smtp)')
+    .option('--port <port>', 'SMTP port (default: 587)', (v) => parseInt(v, 10))
+    .option('--secure', 'Use direct TLS/SSL (default: STARTTLS)')
+    .option('--username <user>', 'SMTP username')
+    .option('--password <pass>', 'SMTP password')
+    // ses
+    .option('--region <region>', 'AWS region (required for ses)')
+    .option('--access-key-id <id>', 'AWS access key ID')
+    .option('--secret-access-key <key>', 'AWS secret access key')
+    // sendgrid
+    .option('--api-key <key>', 'SendGrid API key (required for sendgrid)')
+    // azure
+    .option('--connection-string <str>', 'Azure Communication Services connection string (required for azure)')
+    // google
+    .option('--client-id <id>', 'Google OAuth2 client ID (required for google)')
+    .option('--client-secret <secret>', 'Google OAuth2 client secret (required for google)')
+    .option('--refresh-token <token>', 'Google OAuth2 refresh token (required for google)')
+    // routing
     .option('--events <patterns>', 'Comma-separated event patterns this channel receives (e.g. budget.*,model.added)')
     .option('--target-roles <roles>', 'Comma-separated role IDs to target')
     .option('--target-permissions <perms>', 'Comma-separated permission names to target')
@@ -230,6 +253,12 @@ export function makeNotificationCommand(): Command {
       type: string; name: string;
       botToken?: string; channelId?: string;
       webhookUrl?: string; integrationKey?: string;
+      fromAddress?: string; fromName?: string;
+      host?: string; port?: number; secure?: boolean; username?: string; password?: string;
+      region?: string; accessKeyId?: string; secretAccessKey?: string;
+      apiKey?: string;
+      connectionString?: string;
+      clientId?: string; clientSecret?: string; refreshToken?: string;
       events?: string; targetRoles?: string; targetPermissions?: string; targetUsers?: string;
     }) => {
       // ponytail: build optional shared fields once, spread into provider body
@@ -240,6 +269,17 @@ export function makeNotificationCommand(): Command {
       if (opts.targetPermissions) targets['permissions'] = opts.targetPermissions.split(',').map(s => s.trim()).filter(Boolean);
       if (opts.targetUsers)       targets['users']       = opts.targetUsers.split(',').map(s => s.trim()).filter(Boolean);
       if (Object.keys(targets).length) shared['targets'] = targets;
+
+      // Shared email fields helper
+      const emailBase = (): Record<string, unknown> => {
+        if (!opts.fromAddress) {
+          console.error(chalk.red('--from-address is required for email providers'));
+          process.exit(1);
+        }
+        const base: Record<string, unknown> = { fromAddress: opts.fromAddress };
+        if (opts.fromName) base['fromName'] = opts.fromName;
+        return base;
+      };
 
       let body: Record<string, unknown>;
       switch (opts.type) {
@@ -265,8 +305,56 @@ export function makeNotificationCommand(): Command {
         case 'dashboard':
           body = { provider: 'dashboard', ...shared };
           break;
+        case 'smtp': {
+          const base = emailBase();
+          if (!opts.host) { console.error(chalk.red('--host is required for smtp')); process.exit(1); }
+          body = {
+            provider: 'smtp', ...shared, ...base,
+            host: opts.host,
+            port: opts.port ?? 587,
+            secure: opts.secure ?? false,
+            ...(opts.username ? { username: opts.username } : {}),
+            ...(opts.password ? { password: opts.password } : {}),
+          };
+          break;
+        }
+        case 'ses': {
+          const base = emailBase();
+          if (!opts.region) { console.error(chalk.red('--region is required for ses')); process.exit(1); }
+          body = {
+            provider: 'ses', ...shared, ...base,
+            region: opts.region,
+            ...(opts.accessKeyId ? { accessKeyId: opts.accessKeyId } : {}),
+            ...(opts.secretAccessKey ? { secretAccessKey: opts.secretAccessKey } : {}),
+          };
+          break;
+        }
+        case 'sendgrid': {
+          const base = emailBase();
+          if (!opts.apiKey) { console.error(chalk.red('--api-key is required for sendgrid')); process.exit(1); }
+          body = { provider: 'sendgrid', ...shared, ...base, apiKey: opts.apiKey };
+          break;
+        }
+        case 'azure': {
+          const base = emailBase();
+          if (!opts.connectionString) { console.error(chalk.red('--connection-string is required for azure')); process.exit(1); }
+          body = { provider: 'azure', ...shared, ...base, connectionString: opts.connectionString };
+          break;
+        }
+        case 'google': {
+          const base = emailBase();
+          if (!opts.clientId || !opts.clientSecret || !opts.refreshToken) {
+            console.error(chalk.red('--client-id, --client-secret, and --refresh-token are required for google'));
+            process.exit(1);
+          }
+          body = {
+            provider: 'google', ...shared, ...base,
+            clientId: opts.clientId, clientSecret: opts.clientSecret, refreshToken: opts.refreshToken,
+          };
+          break;
+        }
         default:
-          console.error(chalk.red(`Unknown type: ${opts.type}. Must be one of: slack, teams, pagerduty, discord, dashboard`));
+          console.error(chalk.red(`Unknown type: ${opts.type}. Must be one of: slack, teams, pagerduty, discord, dashboard, smtp, ses, sendgrid, azure, google`));
           process.exit(1);
       }
       try {
