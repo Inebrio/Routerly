@@ -179,6 +179,10 @@ function isPrivateHostname(hostname: string): boolean {
   // Strip IPv6 brackets added by URL.hostname (e.g. "[::1]" → "::1")
   const h = hostname.replace(/^\[|\]$/g, '').toLowerCase();
   if (h === 'localhost' || h === '::1') return true;
+  // IPv4 unspecified
+  if (h === '0.0.0.0') return true;
+  // IPv6 unspecified (compressed and full forms)
+  if (h === '::' || h === '0:0:0:0:0:0:0:0') return true;
   // IPv4 loopback
   if (/^127\./.test(h)) return true;
   // RFC-1918 private ranges
@@ -243,6 +247,7 @@ const TEST_NATIVE_PAYLOAD = {
 export async function sendTestNotification(
   channel: NotificationChannel,
   to: string,
+  testRecipientUserId?: string,
 ): Promise<SendResult> {
   switch (channel.provider) {
     case 'smtp':      return sendSmtp(channel, to);
@@ -267,6 +272,7 @@ export async function sendTestNotification(
         timestamp: new Date().toISOString(),
         details: { channelId: channel.id, channelName: (channel as unknown as { name?: string }).name ?? '' },
         readBy: [],
+        recipients: testRecipientUserId ? [testRecipientUserId] : [],
       });
       return { ok: true, message: 'Test notification delivered to the in-app inbox.' };
     }

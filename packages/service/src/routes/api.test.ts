@@ -3335,7 +3335,7 @@ describe('requirePerm denied branches', () => {
     expect(res.statusCode).toBe(403)
   })
 
-  it('returns 403 for POST /api/notifications/test without user:write', async () => {
+  it('returns 403 for POST /api/notifications/test without notification:write', async () => {
     setupViewerAuth()
     const app = await buildApp()
     const res = await app.inject({
@@ -6537,7 +6537,7 @@ describe('GET /api/notifications/channels (redaction)', () => {
     expect(channels[0]!['host']).toBe('smtp.example.com')
   })
 
-  it('returns 403 without user:write', async () => {
+  it('returns 403 without notification:write', async () => {
     mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
     mockReadConfig.mockImplementation(async (type: string) => {
       if (type === 'users') return [{ ...adminUser, id: 'viewer-id', roleId: 'viewer' }]
@@ -6579,7 +6579,7 @@ describe('GET /api/notifications/channels/:id', () => {
     expect((res.json() as { error: string }).error).toMatch(/no-such-id/)
   })
 
-  it('returns 403 without user:write', async () => {
+  it('returns 403 without notification:write', async () => {
     mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
     mockReadConfig.mockImplementation(async (type: string) => {
       if (type === 'users') return [{ ...adminUser, id: 'viewer-id', roleId: 'viewer' }]
@@ -6674,7 +6674,7 @@ describe('PATCH /api/notifications/channels/:id', () => {
     expect(res.statusCode).toBe(404)
   })
 
-  it('returns 403 without user:write', async () => {
+  it('returns 403 without notification:write', async () => {
     mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
     mockReadConfig.mockImplementation(async (type: string) => {
       if (type === 'users') return [{ ...adminUser, id: 'viewer-id', roleId: 'viewer' }]
@@ -6739,7 +6739,7 @@ describe('DELETE /api/notifications/channels/:id', () => {
     expect(res.statusCode).toBe(404)
   })
 
-  it('returns 403 without user:write', async () => {
+  it('returns 403 without notification:write', async () => {
     mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
     mockReadConfig.mockImplementation(async (type: string) => {
       if (type === 'users') return [{ ...adminUser, id: 'viewer-id', roleId: 'viewer' }]
@@ -6813,7 +6813,7 @@ describe('POST /api/notifications/channels/:id/test', () => {
     expect(res.statusCode).toBe(404)
   })
 
-  it('returns 403 without user:write', async () => {
+  it('returns 403 without notification:write', async () => {
     mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
     mockReadConfig.mockImplementation(async (type: string) => {
       if (type === 'users') return [{ ...adminUser, id: 'viewer-id', roleId: 'viewer' }]
@@ -6828,5 +6828,202 @@ describe('POST /api/notifications/channels/:id/test', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(403)
+  })
+})
+
+// ─── notification:write permission enforcement — blocking fix ─────────────────
+// A user with user:write but NOT notification:write must get 403 on all channel
+// routes. A user with notification:write but NOT user:write must get non-403.
+
+describe('notification:write permission — channel routes enforce correct permission', () => {
+  // user:write but no notification:write → 403
+  function setupUserWriteOnly() {
+    mockVerifyToken.mockReturnValue({ sub: 'uw-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [{ ...adminUser, id: 'uw-id', roleId: 'user-writer' }]
+      if (type === 'roles') return [{ id: 'user-writer', name: 'User Writer', permissions: ['user:write'] }]
+      if (type === 'settings') return { notifications: { channels: [smtpChannel] } }
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+  }
+
+  // notification:write but no user:write → 200
+  function setupNotifWriteOnly() {
+    mockVerifyToken.mockReturnValue({ sub: 'nw-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [{ ...adminUser, id: 'nw-id', roleId: 'notif-writer' }]
+      if (type === 'roles') return [{ id: 'notif-writer', name: 'Notif Writer', permissions: ['notification:write'] }]
+      if (type === 'settings') return { notifications: { channels: [smtpChannel] } }
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+  }
+
+  it('GET /api/notifications/channels: 403 for user:write, 200 for notification:write', async () => {
+    setupUserWriteOnly()
+    const app1 = await buildApp()
+    const res403 = await app1.inject({ method: 'GET', url: '/api/notifications/channels', headers: adminAuthHeaders() })
+    await app1.close()
+    expect(res403.statusCode).toBe(403)
+
+    setupNotifWriteOnly()
+    const app2 = await buildApp()
+    const res200 = await app2.inject({ method: 'GET', url: '/api/notifications/channels', headers: adminAuthHeaders() })
+    await app2.close()
+    expect(res200.statusCode).toBe(200)
+  })
+
+  it('GET /api/notifications/channels/:id: 403 for user:write, 200 for notification:write', async () => {
+    setupUserWriteOnly()
+    const app1 = await buildApp()
+    const res403 = await app1.inject({ method: 'GET', url: '/api/notifications/channels/ch-smtp', headers: adminAuthHeaders() })
+    await app1.close()
+    expect(res403.statusCode).toBe(403)
+
+    setupNotifWriteOnly()
+    const app2 = await buildApp()
+    const res200 = await app2.inject({ method: 'GET', url: '/api/notifications/channels/ch-smtp', headers: adminAuthHeaders() })
+    await app2.close()
+    expect(res200.statusCode).toBe(200)
+  })
+
+  it('PATCH /api/notifications/channels/:id: 403 for user:write, 200 for notification:write', async () => {
+    setupUserWriteOnly()
+    const app1 = await buildApp()
+    const res403 = await app1.inject({
+      method: 'PATCH', url: '/api/notifications/channels/ch-smtp',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ host: 'new.smtp.com' }),
+    })
+    await app1.close()
+    expect(res403.statusCode).toBe(403)
+
+    setupNotifWriteOnly()
+    const app2 = await buildApp()
+    const res200 = await app2.inject({
+      method: 'PATCH', url: '/api/notifications/channels/ch-smtp',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ host: 'new.smtp.com' }),
+    })
+    await app2.close()
+    expect(res200.statusCode).toBe(200)
+  })
+
+  it('POST /api/notifications/channels: 403 for user:write, 201 for notification:write', async () => {
+    setupUserWriteOnly()
+    const app1 = await buildApp()
+    const res403 = await app1.inject({
+      method: 'POST', url: '/api/notifications/channels',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ provider: 'dashboard' }),
+    })
+    await app1.close()
+    expect(res403.statusCode).toBe(403)
+
+    setupNotifWriteOnly()
+    const app2 = await buildApp()
+    const res201 = await app2.inject({
+      method: 'POST', url: '/api/notifications/channels',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ provider: 'dashboard' }),
+    })
+    await app2.close()
+    expect(res201.statusCode).toBe(201)
+  })
+
+  it('DELETE /api/notifications/channels/:id: 403 for user:write, 204 for notification:write', async () => {
+    setupUserWriteOnly()
+    const app1 = await buildApp()
+    const res403 = await app1.inject({ method: 'DELETE', url: '/api/notifications/channels/ch-smtp', headers: adminAuthHeaders() })
+    await app1.close()
+    expect(res403.statusCode).toBe(403)
+
+    setupNotifWriteOnly()
+    const app2 = await buildApp()
+    const res204 = await app2.inject({ method: 'DELETE', url: '/api/notifications/channels/ch-smtp', headers: adminAuthHeaders() })
+    await app2.close()
+    expect(res204.statusCode).toBe(204)
+  })
+
+  it('POST /api/notifications/channels/:id/test: 403 for user:write, 200 for notification:write', async () => {
+    setupUserWriteOnly()
+    const app1 = await buildApp()
+    const res403 = await app1.inject({
+      method: 'POST', url: '/api/notifications/channels/ch-smtp/test',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app1.close()
+    expect(res403.statusCode).toBe(403)
+
+    mockSendTestNotification.mockResolvedValue({ ok: true, message: 'Sent!' } as any)
+    setupNotifWriteOnly()
+    const app2 = await buildApp()
+    const res200 = await app2.inject({
+      method: 'POST', url: '/api/notifications/channels/ch-smtp/test',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app2.close()
+    expect(res200.statusCode).toBe(200)
+  })
+
+  it('POST /api/notifications/test: 403 for user:write, 200 for notification:write', async () => {
+    setupUserWriteOnly()
+    const app1 = await buildApp()
+    const res403 = await app1.inject({
+      method: 'POST', url: '/api/notifications/test',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ channelId: 'ch-smtp', to: 'x@y.com' }),
+    })
+    await app1.close()
+    expect(res403.statusCode).toBe(403)
+
+    mockSendTestNotification.mockResolvedValue({ ok: true, message: 'Sent!' } as any)
+    setupNotifWriteOnly()
+    const app2 = await buildApp()
+    const res200 = await app2.inject({
+      method: 'POST', url: '/api/notifications/test',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ channelId: 'ch-smtp', to: 'x@y.com' }),
+    })
+    await app2.close()
+    expect(res200.statusCode).toBe(200)
+  })
+})
+
+// ─── Inbox .max(500) — oversized ids array rejected with 400 ─────────────────
+
+describe('POST /api/notifications/inbox/read — ids .max(500)', () => {
+  it('returns 400 when ids array has 501 elements', async () => {
+    setupAdminAuth()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/read',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ ids: Array.from({ length: 501 }, (_, i) => `id-${i}`) }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('accepts exactly 500 ids', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'notifications') return []
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/read',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ ids: Array.from({ length: 500 }, (_, i) => `id-${i}`) }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
   })
 })
