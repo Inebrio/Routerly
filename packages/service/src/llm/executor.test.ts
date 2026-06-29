@@ -203,15 +203,6 @@ describe('llmChat', () => {
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ callType: 'guardrail', errorMessage: 'budget_exceeded' }))
   })
 
-  it('includes cacheHit in trackUsage when ctx.cacheHit is true', async () => {
-    mockIsAllowed.mockResolvedValue(true)
-    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
-
-    const ctx = makeCtx({ cacheHit: true, cacheSimilarity: 0.92 })
-    await llmChat({ messages: [] } as any, makeModel(), ctx)
-    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ cacheHit: true, cacheSimilarity: 0.92 }))
-  })
-
   it('includes traceId in trackUsage when set in ctx', async () => {
     mockIsAllowed.mockResolvedValue(true)
     mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
@@ -548,20 +539,6 @@ describe('llmChat — additional branches', () => {
     expect(successEntry?.details?.tokensPerSec).toBe(0)
   })
 
-  it('includes traceId and cacheHit in error path trackUsage', async () => {
-    // Lines 237-238: traceId + cacheHit branches in the catch block
-    mockIsAllowed.mockResolvedValue(true)
-    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockRejectedValue(new Error('prov err')) } as any)
-    const ctx = makeCtx({ traceId: 'trace-err', cacheHit: true, cacheSimilarity: 0.85 })
-    await expect(llmChat({ messages: [] } as any, makeModel(), ctx)).rejects.toThrow('prov err')
-    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({
-      traceId: 'trace-err',
-      cacheHit: true,
-      cacheSimilarity: 0.85,
-      outcome: 'error',
-    }))
-  })
-
   it('uses model.cost.cachePerMillion when set (covers cachePerMillion ?? inputPerMillion branch)', async () => {
     // Line 177: model.cost.cachePerMillion ?? model.cost.inputPerMillion
     mockIsAllowed.mockResolvedValue(true)
@@ -670,16 +647,6 @@ describe('llmStream — additional branches', () => {
     for await (const _ of result.chunks) { /* consume */ }
     const successEntry = emitted.find(e => e.message === 'model:success')
     expect(successEntry?.details?.cachedInputTokens).toBeUndefined()
-  })
-
-  it('includes cacheHit in stream finally trackUsage when ctx.cacheHit is true (line 431)', async () => {
-    // Line 431: ctx.cacheHit branch in stream generator finally block
-    mockIsAllowed.mockResolvedValue(true)
-    mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(makeStream({ choices: [{ delta: { content: 'ok' } }] })) } as any)
-    const ctx = makeCtx({ cacheHit: true, cacheSimilarity: 0.77 })
-    const result = await llmStream({ messages: [] } as any, makeModel(), ctx)
-    for await (const _ of result.chunks) { /* consume */ }
-    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ cacheHit: true, cacheSimilarity: 0.77 }))
   })
 
   it('emits tokensPerSec=0 when latencyMs=0 in stream (line 397 false branch)', async () => {

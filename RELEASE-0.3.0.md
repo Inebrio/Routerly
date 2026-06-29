@@ -23,27 +23,19 @@ curl http://localhost:3000/v1/chat/completions \
 
 ---
 
-### #94/#95/#96 — Request Enrichment (End-User Tracking, Session IDs, Custom Tags)
+### #96 — End-User Tracking
 **Branch:** `feat/issue-96-95-94-usage-enrichment`
 
-Three complementary enrichment fields are now captured in usage records:
-
-- **End-user ID** (`#94`): pass `"user": "<id>"` in the request body — tracked per OpenAI spec
-- **Session ID** (`#95`): pass `X-Routerly-Session-Id: <id>` header
-- **Custom tags** (`#96`): pass `X-Routerly-Tags: env=prod,team=ml` header (up to 10 key=value pairs)
-
-All three appear in `/api/usage` records and are filterable.
+Pass `"user": "<id>"` in the request body (standard OpenAI field) — tracked in usage records and filterable via `/api/usage`.
 
 **How to test:**
 ```bash
 curl http://localhost:3000/v1/chat/completions \
   -H "Authorization: Bearer <token>" \
-  -H "X-Routerly-Session-Id: sess-abc123" \
-  -H "X-Routerly-Tags: env=prod,team=ml" \
   -d '{"model":"gpt-4o","messages":[{"role":"user","content":"hi"}],"user":"user-42"}'
 
 # Verify in usage records
-curl http://localhost:3000/api/usage?sessionId=sess-abc123 \
+curl http://localhost:3000/api/usage?endUserId=user-42 \
   -H "Authorization: Bearer <admin-token>"
 ```
 
@@ -95,34 +87,6 @@ New **Provider Health** page in the dashboard (nav: "Health"). Shows per-model e
 1. Open dashboard → Health
 2. Trigger some errors by calling a model with a bad API key
 3. Verify the status badge changes to "degraded"
-
----
-
-### #78 — Per-Agent Routing Policies
-**Branch:** `feat/issue-78-per-agent-routing-policies`
-
-AI agents can self-declare their routing preferences via the `X-Routerly-Policy` header. Named policies are configured per project and map to a specific model list + cost cap.
-
-**Config (project settings):**
-```json
-{
-  "agentPolicies": [
-    { "name": "cheap", "models": ["gpt-4o-mini"], "maxCostUsd": 0.01 },
-    { "name": "powerful", "models": ["claude-opus-4-5", "gpt-4o"], "maxCostUsd": 0.50 }
-  ]
-}
-```
-
-**How to test:**
-```bash
-curl http://localhost:3000/v1/chat/completions \
-  -H "Authorization: Bearer <token>" \
-  -H "X-Routerly-Policy: cheap" \
-  -d '{"model":"auto","messages":[{"role":"user","content":"hello"}]}'
-# Verify the request was routed to gpt-4o-mini
-```
-
-**API:** `GET /api/agent-policies?projectId=` and `PUT /api/agent-policies`
 
 ---
 
@@ -280,7 +244,7 @@ The following features are being implemented in the current development cycle an
 
 - `packages/shared` types changed — run `npm run build` after pulling
 - `settings.json` gains new optional fields (`spendGroups`, `metricsEnabled`, `notificationRules`, `cooldowns`)
-- `projects.json` gains new optional fields per project (`agentPolicies`, `guardrails`, `pii`, `semanticCache`, `notifications`)
+- `projects.json` gains new optional fields per project (`guardrails`, `pii`, `notifications`)
 - No breaking changes to the OpenAI or Anthropic wire format
 
 ## Running tests

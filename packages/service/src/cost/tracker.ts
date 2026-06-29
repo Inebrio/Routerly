@@ -20,17 +20,12 @@ export interface TrackUsageParams {
   errorMessage?: string;
   callType?: CallType;
   traceId?: string;
-  /** True when the routing decision was served from the semantic cache (LLM was still called) */
-  cacheHit?: boolean;
-  cacheSimilarity?: number;
   /** End-user id from OpenAI `user` field (#96) */
   endUserId?: string;
-  /** Session id from X-Routerly-Session-Id header (#94) */
+  /** Session identifier — groups related calls for cost attribution */
   sessionId?: string;
-  /** Tags from X-Routerly-Tags header (#95) */
+  /** Arbitrary key-value tags — for cost attribution and filtering */
   tags?: Record<string, string>;
-  /** Agent routing policy name from X-Routerly-Policy header (#78) */
-  agentPolicyName?: string;
   /** Name of the guardrail rule that triggered on this request (#77) */
   guardrailTriggered?: string;
   /** Guardrail rule that blocked the request (set with outcome 'blocked') (#77) */
@@ -82,11 +77,9 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     costOutput,
     priceInput: params.model.cost.inputPerMillion,
     priceOutput: params.model.cost.outputPerMillion,
-    ...(params.cacheHit ? { cacheHit: true, cacheSimilarity: params.cacheSimilarity } : {}),
     ...(params.endUserId ? { endUserId: params.endUserId } : {}),
     ...(params.sessionId ? { sessionId: params.sessionId } : {}),
     ...(params.tags ? { tags: params.tags } : {}),
-    ...(params.agentPolicyName ? { agentPolicyName: params.agentPolicyName } : {}),
     ...(params.guardrailTriggered ? { guardrailTriggered: params.guardrailTriggered } : {}),
     ...(params.blockedBy ? { blockedBy: params.blockedBy } : {}),
     ...(params.piiRedacted && params.piiRedacted.length > 0 ? { piiRedacted: params.piiRedacted } : {}),

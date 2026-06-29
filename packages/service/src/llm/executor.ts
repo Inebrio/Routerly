@@ -51,19 +51,12 @@ export interface LLMCallContext {
   traceId?: string;
   emit?: (entry: TraceEntry) => void;
   log?: Logger;
-  /** True when the routing decision was served from the semantic cache */
-  cacheHit?: boolean;
-  cacheSimilarity?: number;
   /** End-user id from the OpenAI `user` field (#96) */
   endUserId?: string;
-  /** Session id from X-Routerly-Session-Id header (#94) */
+  /** Session id (#94) */
   sessionId?: string;
-  /** Tags from X-Routerly-Tags header (#95) */
+  /** Tags (#95) */
   tags?: Record<string, string>;
-  /** Agent routing policy name from X-Routerly-Policy header (#78) */
-  agentPolicyName?: string;
-  /** Max cost per request in USD from the selected agent policy (#78) — recorded on the usage record */
-  agentPolicyCostCapUsd?: number;
   /** Name of the guardrail rule that triggered on this request, if any (#77) */
   guardrailTriggered?: string;
   /** PII entity types redacted before forwarding (#76) */
@@ -239,11 +232,9 @@ export async function llmChat(
       outcome: 'success',
       callType,
       ...(traceId !== undefined ? { traceId } : {}),
-      ...(ctx.cacheHit ? { cacheHit: true, cacheSimilarity: ctx.cacheSimilarity } : {}),
       ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
       ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
       ...(ctx.tags ? { tags: ctx.tags } : {}),
-      ...(ctx.agentPolicyName ? { agentPolicyName: ctx.agentPolicyName } : {}),
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
     }).catch(() => {});
@@ -266,11 +257,9 @@ export async function llmChat(
       errorMessage: msg,
       callType,
       ...(traceId !== undefined ? { traceId } : {}),
-      ...(ctx.cacheHit ? { cacheHit: true, cacheSimilarity: ctx.cacheSimilarity } : {}),
       ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
       ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
       ...(ctx.tags ? { tags: ctx.tags } : {}),
-      ...(ctx.agentPolicyName ? { agentPolicyName: ctx.agentPolicyName } : {}),
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
     }).catch(() => {});
@@ -465,11 +454,9 @@ export async function llmStream(
         ...(errorMessage !== undefined ? { errorMessage } : {}),
         callType,
         ...(traceId !== undefined ? { traceId } : {}),
-        ...(ctx.cacheHit ? { cacheHit: true, cacheSimilarity: ctx.cacheSimilarity } : {}),
         ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
         ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
         ...(ctx.tags ? { tags: ctx.tags } : {}),
-        ...(ctx.agentPolicyName ? { agentPolicyName: ctx.agentPolicyName } : {}),
       }).catch(() => {});
     }
   }
@@ -565,7 +552,6 @@ export async function llmMessages(
       ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
       ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
       ...(ctx.tags ? { tags: ctx.tags } : {}),
-      ...(ctx.agentPolicyName ? { agentPolicyName: ctx.agentPolicyName } : {}),
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
     }).catch(() => {});
@@ -589,7 +575,6 @@ export async function llmMessages(
       ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
       ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
       ...(ctx.tags ? { tags: ctx.tags } : {}),
-      ...(ctx.agentPolicyName ? { agentPolicyName: ctx.agentPolicyName } : {}),
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
     }).catch(() => {});

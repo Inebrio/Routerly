@@ -137,18 +137,6 @@ describe('trackUsage', () => {
     expect(record.errorMessage).toBe('Connection refused')
   })
 
-  it('sets cacheHit and cacheSimilarity fields', async () => {
-    mockGetTrace.mockReturnValue(null)
-    await trackUsage({
-      projectId: 'p', model: makeModel() as any,
-      inputTokens: 100, outputTokens: 50, latencyMs: 200,
-      outcome: 'success', cacheHit: true, cacheSimilarity: 0.95,
-    })
-    const record = mockAppendUsageRecord.mock.calls[0]![0]
-    expect(record.cacheHit).toBe(true)
-    expect(record.cacheSimilarity).toBe(0.95)
-  })
-
   it('uses completion as default callType', async () => {
     mockGetTrace.mockReturnValue(null)
     await trackUsage({

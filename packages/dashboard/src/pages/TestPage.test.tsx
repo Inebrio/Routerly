@@ -37,7 +37,7 @@ vi.mock('../utils/traceUtils.js', () => ({
     cachedTokens: null, latencyMs: null, ttftMs: null, tokensPerSec: null,
     inputCostUsd: null, outputCostUsd: null, totalCostUsd: null,
     inputPerMillion: null, outputPerMillion: null,
-    hasError: false, fallbackUsed: false, cacheHit: false, cacheMiss: false, cacheSimilarity: null,
+    hasError: false, fallbackUsed: false,
   }),
 }));
 

@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import type { ProjectConfig, ProjectSemanticCacheConfig, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig } from '@routerly/shared';
+import type { ProjectConfig, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig } from '@routerly/shared';
 
 // ─── Helper: resolve project by name or ID ────────────────────────────────────
 
@@ -715,146 +715,6 @@ Examples:
   return cmd;
 }
 
-// ─── Agent policy subcommand group ───────────────────────────────────────────
-
-function makeAgentPolicyCommand(): Command {
-  const cmd = new Command('policy').description('Manage per-agent routing policies for a project');
-
-  cmd.command('list <projectId>')
-    .description('List agent policies for a project')
-    .option('--json', 'Output as JSON')
-    .action(async (projectId: string, opts: { json?: boolean }) => {
-      try {
-        const data = await api<Array<{ name: string; models: string[]; maxCostUsd?: number }>>('GET', `/api/agent-policies?projectId=${encodeURIComponent(projectId)}`);
-
-        if (opts.json) { console.log(JSON.stringify(data, null, 2)); return; }
-
-        if (data.length === 0) {
-          console.log(chalk.yellow('No agent policies configured.'));
-          return;
-        }
-
-        const table = new Table({
-          head: ['Name', 'Models', 'Max Cost (USD)'].map(h => chalk.cyan(h)),
-        });
-        for (const p of data) {
-          table.push([p.name, p.models.join(', '), p.maxCostUsd != null ? `$${p.maxCostUsd}` : chalk.gray('—')]);
-        }
-        console.log(table.toString());
-      } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
-        process.exit(1);
-      }
-    });
-
-  cmd.command('add <projectId>')
-    .description('Add an agent policy to a project')
-    .requiredOption('--name <n>', 'Policy name')
-    .requiredOption('--models <m>', 'Comma-separated model IDs allowed')
-    .option('--max-cost <usd>', 'Maximum cost in USD')
-    .action(async (projectId: string, opts: { name: string; models: string; maxCost?: string }) => {
-      try {
-        const body: Record<string, unknown> = {
-          projectId,
-          name: opts.name,
-          models: opts.models.split(',').map(s => s.trim()).filter(Boolean),
-          ...(opts.maxCost ? { maxCostUsd: parseFloat(opts.maxCost) } : {}),
-        };
-        await api<void>('PUT', '/api/agent-policies', body);
-        console.log(chalk.green(`Agent policy "${opts.name}" added to project "${projectId}".`));
-      } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
-        process.exit(1);
-      }
-    });
-
-  cmd.command('delete <projectId>')
-    .description('Delete an agent policy by name')
-    .requiredOption('--name <n>', 'Policy name to delete')
-    .action(async (projectId: string, opts: { name: string }) => {
-      try {
-        await api<void>('PUT', '/api/agent-policies', { projectId, name: opts.name, _delete: true });
-        console.log(chalk.green(`Agent policy "${opts.name}" removed from project "${projectId}".`));
-      } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
-        process.exit(1);
-      }
-    });
-
-  return cmd;
-}
-
-// ─── Cache subcommand ─────────────────────────────────────────────────────────
-
-function makeCacheCommand(): Command {
-  const cmd = new Command('cache').description('Manage semantic response cache for a project');
-
-  cmd
-    .argument('<project>', 'Project name or ID')
-    .option('--enable', 'Enable semantic cache')
-    .option('--disable', 'Disable semantic cache')
-    .option('--threshold <value>', 'Similarity threshold (0–1, default 0.95)')
-    .option('--ttl-hours <hours>', 'Cache TTL in hours (default 1)')
-    .option('--max-entries <n>', 'Maximum cached responses per project (default 500)')
-    .addHelpText('after', `
-Examples:
-  routerly project cache my-api
-  routerly project cache my-api --enable
-  routerly project cache my-api --disable
-  routerly project cache my-api --enable --threshold 0.97 --ttl-hours 2 --max-entries 200
-`)
-    .action(async (nameOrId: string, opts: { enable?: boolean; disable?: boolean; threshold?: string; ttlHours?: string; maxEntries?: string }) => {
-      try {
-        const project = await resolveProject(nameOrId);
-        const current = project.semanticCache ?? { enabled: false };
-
-        const hasChanges = opts.enable || opts.disable || opts.threshold || opts.ttlHours || opts.maxEntries;
-
-        if (!hasChanges) {
-          // Show current config
-          console.log(chalk.bold(`\nSemantic Cache — ${project.name}`));
-          console.log(chalk.gray('  Enabled:     ') + (current.enabled ? chalk.green('yes') : chalk.yellow('no')));
-          console.log(chalk.gray('  Threshold:   ') + (current.threshold ?? 0.95));
-          console.log(chalk.gray('  TTL:         ') + `${((current.ttlMs ?? 3600000) / 3600000).toFixed(1)} h`);
-          console.log(chalk.gray('  Max entries: ') + (current.maxEntries ?? 500));
-          console.log('');
-          return;
-        }
-
-        const updated: ProjectSemanticCacheConfig = {
-          enabled: opts.enable ? true : opts.disable ? false : current.enabled,
-          threshold: opts.threshold !== undefined ? parseFloat(opts.threshold) : (current.threshold ?? 0.95),
-          ttlMs: opts.ttlHours !== undefined ? parseFloat(opts.ttlHours) * 3600000 : (current.ttlMs ?? 3600000),
-          maxEntries: opts.maxEntries !== undefined ? parseInt(opts.maxEntries) : (current.maxEntries ?? 500),
-        };
-
-        await api<void>('PUT', `/api/projects/${encodeURIComponent(project.id)}`, {
-          name: project.name,
-          models: project.models,
-          timeoutMs: project.timeoutMs,
-          autoRouting: project.autoRouting,
-          routingModelId: project.routingModelId,
-          fallbackRoutingModelIds: project.fallbackRoutingModelIds,
-          policies: project.policies,
-          semanticCache: updated,
-        });
-
-        console.log(chalk.green(`✓ Semantic cache updated for "${project.name}".`));
-        console.log(chalk.gray(`  Enabled:     `) + (updated.enabled ? chalk.green('yes') : chalk.yellow('no')));
-        console.log(chalk.gray(`  Threshold:   `) + updated.threshold);
-        console.log(chalk.gray(`  TTL:         `) + `${((updated.ttlMs ?? 3600000) / 3600000).toFixed(1)} h`);
-        console.log(chalk.gray(`  Max entries: `) + updated.maxEntries);      } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
-        process.exit(1);
-      }
-    });
-
-  return cmd;
-}
 
 // ─── Guardrail helpers ────────────────────────────────────────────────────────
 
@@ -1178,7 +1038,7 @@ Examples:
   cmd.addCommand(makeRoutingCommand());
   cmd.addCommand(makeModelSubCommand());
   cmd.addCommand(makeTokenSubCommand());
-  cmd.addCommand(makeMemberCommand());  cmd.addCommand(makeAgentPolicyCommand());
+  cmd.addCommand(makeMemberCommand());  
 
   // ── project guardrails <project> ─────────────────────────────────────────────
   cmd.command('guardrails <project>')
@@ -1302,8 +1162,6 @@ Examples:
         process.exit(1);
       }
     });
-
-  cmd.addCommand(makeCacheCommand());
 
   return cmd;
 }
