@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { randomUUID } from 'node:crypto';
-import type { ChatCompletionRequest, ModelObject, SemanticCacheConfig, ProjectConfig } from '@routerly/shared';
+import type { ChatCompletionRequest, ModelObject, ProjectConfig } from '@routerly/shared';
 import { routeRequest } from '../routing/router.js';
 import { addRoutingDecision } from '../routing/routingMemoryStore.js';
 import { readConfig } from '../config/loader.js';
@@ -9,56 +9,11 @@ import type { TraceEntry } from '../routing/traceStore.js';
 import { llmChat, llmStream, BudgetExceededError } from '../llm/executor.js';
 import { forwardOpenAIOAuthSSE } from './openaiOAuthForward.js';
 import type { LLMCallContext } from '../llm/executor.js';
-import { getEmbeddingProvider } from '../embeddings/index.js';
-import type { EmbeddingProviderType } from '../embeddings/index.js';
-import { lookupCache, storeCache } from '../cache/semanticResponseCache.js';
-import { parseRoutingTags } from './requestEnrichment.js';
-import { AGENT_POLICY_HEADER, resolveAgentPolicy, agentPolicyCandidates } from '../routing/agentPolicy.js';
 import { checkGuardrails } from '../middleware/guardrails.js';
 import { scrubMessages, scrubText, StreamingScrubber } from '../middleware/piiScrubber.js';
 import { emitEvent } from '../notifications/emitter.js';
-import { lookupResponseCache, storeResponseCache } from '../cache/llmResponseCache.js';
-import { textToVector } from '../cache/textVector.js';
 import { trackUsage } from '../cost/tracker.js';
 
-function resolveEmbeddingUpstreamModelId(modelId: string, explicitUpstreamModelId?: string): string {
-  if (explicitUpstreamModelId) return explicitUpstreamModelId;
-  return modelId.includes('/') ? modelId.split('/').slice(1).join('/') : modelId;
-}
-
-function getCacheEmbeddingText(messages: unknown[]): string {
-  const latestUserMessage = [...messages].reverse().find((message) => {
-    if (!message || typeof message !== 'object') return false;
-    return (message as { role?: string }).role === 'user';
-  }) as { content?: unknown } | undefined;
-
-  const latestContent = latestUserMessage?.content;
-  if (typeof latestContent === 'string' && latestContent.trim().length > 0) {
-    return latestContent;
-  }
-
-  if (Array.isArray(latestContent)) {
-    const parts = latestContent
-      .map((part) => {
-        if (!part || typeof part !== 'object') return null;
-        const text = (part as { text?: unknown }).text;
-        return typeof text === 'string' ? text : null;
-      })
-      .filter((part): part is string => Boolean(part && part.trim().length > 0));
-    if (parts.length > 0) return parts.join('\n');
-  }
-
-  return messages.map(
-    (message) => {
-      if (!message || typeof message !== 'object') return '';
-      const typedMessage = message as { role?: string; content?: unknown };
-      const content = typeof typedMessage.content === 'string'
-        ? typedMessage.content
-        : JSON.stringify(typedMessage.content);
-      return `${typedMessage.role ?? 'unknown'}: ${content}`;
-    },
-  ).join('\n');
-}
 
 /**
  * Records a usage event for a guardrail-blocked request (#77 observability).
@@ -154,10 +109,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       (p: any) => p.type === 'llm' && p.enabled && p.config?.memory === true,
     );
 
-    // Usage enrichment: end-user (#96), session (#94), tags (#95)
+    // Usage enrichment: end-user (#96)
     const endUserId = (body as any).user as string | undefined || undefined;
-    const sessionId = (request.headers['x-routerly-session-id'] as string | undefined) || undefined;
-    const tags = parseRoutingTags(request.headers['x-routerly-tags'] as string | undefined);
 
     // ── Content guardrails (#77) ─────────────────────────────────────────────
     // Checks input messages against the project's guardrail rules.
@@ -238,103 +191,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
 
-    // Read models list once — used by cache embedding lookup and routing candidates
+    // Read models list once
     const allModels = await readConfig('models');
-
-    // Per-agent routing policy override (#78): X-Routerly-Policy selects a named
-    // policy in the project config that overrides the routing decision.
-    const agentPolicyName = (request.headers[AGENT_POLICY_HEADER] as string | undefined) || undefined;
-    const agentPolicy = resolveAgentPolicy(project, agentPolicyName);
-    if (agentPolicyName && !agentPolicy) {
-      request.log.warn({ projectId: project.id, agentPolicyName }, 'agent-policy: unknown policy, falling back to routing');
-    }
-    const agentPolicyOverride = agentPolicy ? agentPolicyCandidates(agentPolicy, allModels) : null;
-
-    // ── Semantic response cache ────────────────────────────────────────────
-    const cachePolicy = (project.policies ?? []).find(
-      (p: any) => p.type === 'llm' && p.enabled && p.config?.cache?.enabled,
-    ) as { config: { cache: SemanticCacheConfig } } | undefined;
-
-    let cacheVector: number[] | null = null;
-    let cachedModelId: string | null = null;
-    let cacheSimilarityScore: number | null = null;
-
-    if (cachePolicy) {
-      const cacheConfig = cachePolicy.config.cache;
-      const threshold = cacheConfig.similarity_threshold ?? 0.85;
-      const ttlMs = (cacheConfig.ttl_seconds ?? 3600) * 1_000;
-
-      const messagesText = getCacheEmbeddingText(body.messages ?? []);
-
-      try {
-        const modelIds = [
-          cacheConfig.embedding_model,
-          ...(cacheConfig.embedding_fallback_models ?? []),
-        ].filter(Boolean) as string[];
-
-        for (const [index, modelId] of modelIds.entries()) {
-          try {
-            // Derive provider details from the model definition (has endpoint + apiKey already configured).
-            // Fall back to values in cacheConfig for backward compatibility.
-            const modelDef = allModels.find(m => m.id === modelId);
-            const providerType: EmbeddingProviderType =
-              modelDef?.provider === 'ollama' ? 'ollama' : (cacheConfig.embedding_provider ?? 'openai');
-            const endpoint = modelDef?.endpoint ?? cacheConfig.embedding_endpoint;
-            const apiKey = modelDef?.apiKey ?? cacheConfig.embedding_api_key;
-            const upstreamModelId = resolveEmbeddingUpstreamModelId(modelId, modelDef?.upstreamModelId);
-            appendTrace(traceId, [{
-              panel: 'response',
-              message: 'cache:embedding',
-              details: {
-                modelId,
-                upstreamModelId,
-                provider: providerType,
-                endpoint,
-                source: modelDef ? 'model-config' : 'cache-config',
-                fallback: index > 0,
-                attempt: index + 1,
-                totalCandidates: modelIds.length,
-              },
-            }]);
-            const provider = getEmbeddingProvider(providerType, endpoint, apiKey);
-            const { embeddings } = await provider.embed([messagesText], upstreamModelId);
-            cacheVector = embeddings[0] ?? null;
-            break;
-          } catch {
-            // try next fallback
-          }
-        }
-
-        if (cacheVector) {
-          const extendMs = cacheConfig.extend_on_hit ? ttlMs : undefined;
-          const hit = lookupCache(project.id, cacheVector, threshold, extendMs);
-          if (hit) {
-            request.log.info({ projectId: project.id, similarity: hit.similarity }, 'semantic-cache: hit');
-            appendTrace(traceId, [{
-              panel: 'response',
-              message: 'cache:hit',
-              details: {
-                similarity: hit.similarity,
-                modelId: hit.modelId,
-                embeddingModel: cacheConfig.embedding_model,
-                ttlExtended: !!cacheConfig.extend_on_hit,
-              },
-            }]);
-            cachedModelId = hit.modelId;
-            cacheSimilarityScore = hit.similarity;
-          } else {
-            appendTrace(traceId, [{
-              panel: 'response',
-              message: 'cache:miss',
-              details: { embeddingModel: cacheConfig.embedding_model },
-            }]);
-          }
-        }
-      } catch (err) {
-        request.log.warn({ err }, 'semantic-cache: embedding failed, proceeding without cache');
-        cacheVector = null;
-      }
-    }
 
     if (isStream) {
       // ── Streaming path: avvia SSE subito ──────────────────────────────────
@@ -357,14 +215,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       };
 
       let sortedCandidates: Array<{ model: string; weight: number }>;
-      if (agentPolicyOverride) {
-        // Agent policy override (#78): use the policy's ordered models, bypass routing.
-        emit({ panel: 'router-response', message: 'agent-policy:override', details: { policy: agentPolicy!.name, models: agentPolicyOverride.map((c) => c.model) } });
-        sortedCandidates = [...agentPolicyOverride];
-      } else if (cachedModelId) {
-        // Cache hit: skip routing, use the cached model directly
-        sortedCandidates = [{ model: cachedModelId, weight: 1 }];
-      } else {
+      {
         let routingResponse;
         try {
           routingResponse = await routeRequest(body, project, request.log, emit, request.token, traceId, conversationId);
@@ -397,14 +248,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           traceId,
           emit,
           log: request.log,
-          ...(cachedModelId !== null
-            ? { cacheHit: true as const, ...(cacheSimilarityScore !== null ? { cacheSimilarity: cacheSimilarityScore } : {}) }
-            : {}),
           ...(endUserId ? { endUserId } : {}),
-          ...(sessionId ? { sessionId } : {}),
-          ...(tags ? { tags } : {}),
-          ...(agentPolicy ? { agentPolicyName: agentPolicy.name } : {}),
-          ...(agentPolicy?.maxCostUsd !== undefined ? { agentPolicyCostCapUsd: agentPolicy.maxCostUsd } : {}),
         };
 
         if (model.provider === 'openai-oauth') {
@@ -503,12 +347,6 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
           reply.raw.write('data: [DONE]\n\n');
           request.log.info({ modelId: model.id, contentChars: fullContent.length }, 'completion: response');
-
-          // Store routing decision in semantic cache on cache miss
-          if (cachePolicy && cacheVector && !cachedModelId) {
-            const ttlMs = (cachePolicy.config.cache.ttl_seconds ?? 3600) * 1_000;
-            storeCache(project.id, cacheVector, model.id, ttlMs);
-          }
         } catch (err: unknown) {
           request.log.error({ err, modelId: model.id }, 'Streaming error mid-stream');
           reply.raw.write('data: [DONE]\n\n');
@@ -533,53 +371,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       appendTrace(traceId, [entry]);
     };
 
-    // ── Semantic response cache (non-streaming, TF bag-of-words) ────────────
-    if (project.semanticCache?.enabled && !isStream) {
-      const lastUserMsg = (body.messages ?? []).findLast((m: any) => m.role === 'user');
-      const text = typeof lastUserMsg?.content === 'string' ? lastUserMsg.content : '';
-      if (text) {
-        const vec = textToVector(text);
-        if (vec.length > 0) {
-          const threshold = project.semanticCache.threshold ?? 0.95;
-          const hit = lookupResponseCache(project.id, vec, threshold);
-          if (hit) {
-            request.log.info({ projectId: project.id, similarity: hit.similarity }, 'llm-response-cache: hit');
-            // Find first valid model for tracking (use project's first model)
-            const firstModelId = project.models[0]?.modelId;
-            const trackModel = firstModelId ? allModels.find((m: any) => m.id === firstModelId) : undefined;
-            if (trackModel) {
-              await trackUsage({
-                projectId: project.id,
-                model: trackModel,
-                inputTokens: hit.promptTokens,
-                outputTokens: hit.completionTokens,
-                latencyMs: 0,
-                outcome: 'success',
-                callType: 'completion',
-                traceId,
-                cacheHit: true,
-                cacheSimilarity: hit.similarity,
-              });
-            }
-            reply.header('x-routerly-trace-id', traceId);
-            reply.header('X-Routerly-Cache', 'HIT');
-            return reply.send(JSON.parse(hit.response));
-          }
-          // Store vec for post-call storage — attach to request context
-          (request as any)._responseCacheVec = vec;
-        }
-      }
-    }
-
     let sortedCandidates: Array<{ model: string; weight: number }>;
-    if (agentPolicyOverride) {
-      // Agent policy override (#78): use the policy's ordered models, bypass routing.
-      emit({ panel: 'router-response', message: 'agent-policy:override', details: { policy: agentPolicy!.name, models: agentPolicyOverride.map((c) => c.model) } });
-      sortedCandidates = [...agentPolicyOverride];
-    } else if (cachedModelId) {
-      // Cache hit: skip routing, use the cached model directly
-      sortedCandidates = [{ model: cachedModelId, weight: 1 }];
-    } else {
+    {
       let routingResponse;
       try {
         routingResponse = await routeRequest(body, project, request.log, emit, request.token, traceId, conversationId);
@@ -608,14 +401,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         traceId,
         emit,
         log: request.log,
-        ...(cachedModelId !== null
-          ? { cacheHit: true as const, ...(cacheSimilarityScore !== null ? { cacheSimilarity: cacheSimilarityScore } : {}) }
-          : {}),
         ...(endUserId ? { endUserId } : {}),
-        ...(sessionId ? { sessionId } : {}),
-        ...(tags ? { tags } : {}),
-        ...(agentPolicy ? { agentPolicyName: agentPolicy.name } : {}),
-        ...(agentPolicy?.maxCostUsd !== undefined ? { agentPolicyCostCapUsd: agentPolicy.maxCostUsd } : {}),
         ...(guardrailTriggered ? { guardrailTriggered } : {}),
         ...(piiRedacted ? { piiRedacted } : {}),
       };
@@ -641,25 +427,6 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           'completion: response',
         );
 
-        // Store routing decision in semantic cache on cache miss
-        if (cachePolicy && cacheVector && !cachedModelId) {
-          const ttlMs = (cachePolicy.config.cache.ttl_seconds ?? 3600) * 1_000;
-          storeCache(project.id, cacheVector, model.id, ttlMs);
-        }
-
-        // Store full response in semantic response cache (non-streaming)
-        const responseCacheVec = (request as any)._responseCacheVec as number[] | undefined;
-        if (project.semanticCache?.enabled && responseCacheVec && !isStream) {
-          storeResponseCache(
-            project.id,
-            responseCacheVec,
-            JSON.stringify(response),
-            response.usage?.prompt_tokens ?? 0,
-            response.usage?.completion_tokens ?? 0,
-            project.semanticCache.ttlMs ?? 3_600_000,
-            project.semanticCache.maxEntries ?? 500,
-          );
-        }
 
         if (project.pii?.scrubOutput === true) {
           const content = response.choices?.[0]?.message?.content;

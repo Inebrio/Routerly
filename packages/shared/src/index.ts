@@ -17,7 +17,6 @@ export type {
   ProjectToken,
   ProjectMember,
   ProjectRole,
-  AgentPolicy,
   GuardrailConfig,
   GuardrailRule,
   GuardrailRuleType,
@@ -70,8 +69,6 @@ export type {
   TraceEntry,
   UsageRecord,
   UsageByModelEntry,
-  SemanticCacheConfig,
-  ProjectSemanticCacheConfig,
   UpdateInfo,
   AvailableReleases,
 } from './types/config.js';

@@ -208,31 +208,6 @@ export interface SemanticIntentConfig {
   intents: Record<string, IntentDefinition>;
 }
 
-/** Cache configuration used inside the `llm` routing policy (`policy.config.cache`). */
-export interface SemanticCacheConfig {
-  /** Embedding provider to use: 'openai' or 'ollama'. */
-  embedding_provider: 'openai' | 'ollama';
-  /** Embedding model ID (e.g. 'text-embedding-3-small', 'nomic-embed-text'). */
-  embedding_model: string;
-  /** Fallback embedding model IDs tried in order if the primary fails. */
-  embedding_fallback_models?: string[];
-  /** API endpoint for the embedding provider. Defaults to provider's default. */
-  embedding_endpoint?: string;
-  /** API key for the embedding provider. Required for OpenAI. */
-  embedding_api_key?: string;
-  /**
-   * How long a cached response remains valid, in minutes.
-   * @default 60
-   */
-  ttl_seconds?: number;
-  extend_on_hit?: boolean;
-  /**
-   * Minimum cosine similarity between the incoming request embedding and a cached entry
-   * for the cached response to be returned.
-   * @default 0.85
-   */
-  similarity_threshold?: number;
-}
 
 /** Result of classifying a request against known intents. */
 export interface IntentClassification {
@@ -248,23 +223,6 @@ export interface IntentClassification {
   margin: number;
   /** Classification confidence status. */
   status: 'confident' | 'ambiguous' | 'unknown';
-}
-
-/**
- * A named routing policy attachable to a specific agent/request via the
- * `X-Routerly-Policy` header (#78). When present, it overrides the routing
- * decision: the request is sent to `models` in the given order (filtered to
- * models that still exist), with the standard fallback loop.
- */
-export interface AgentPolicy {
-  /** Unique policy name, referenced by the X-Routerly-Policy header */
-  name: string;
-  /** Ordered preferred model IDs — tried first to last */
-  models: string[];
-  /** Max cost per request in USD (recorded on the usage record) */
-  maxCostUsd?: number;
-  /** Max latency threshold in ms (recorded on the usage record when exceeded) */
-  maxLatencyMs?: number;
 }
 
 /** Content guardrail rule type (#77). */
@@ -384,16 +342,6 @@ export interface PlaygroundPreset {
   messages?: Array<{ role: 'user' | 'assistant'; content: string }>;
 }
 
-/** Semantic response cache config stored directly on a project (no embedding model required, uses TF bag-of-words). */
-export interface ProjectSemanticCacheConfig {
-  enabled: boolean;
-  /** Minimum cosine similarity for a cache hit (0-1, default 0.95) */
-  threshold?: number;
-  /** How long a cached response is valid in ms (default 3600000 = 1 h) */
-  ttlMs?: number;
-  /** Maximum number of cached responses per project (default 500) */
-  maxEntries?: number;
-}
 
 export interface ProjectConfig {
   id: string;
@@ -414,8 +362,6 @@ export interface ProjectConfig {
   models: ProjectModelRef[];
   /** Timeout in ms for each individual model attempt */
   timeoutMs?: number;
-  /** Named per-agent routing policies, selectable via the X-Routerly-Policy header (#78) */
-  agentPolicies?: AgentPolicy[];
   /** ID of the SpendGroup this project belongs to (#82) */
   spendGroupId?: string;
   /** Content guardrails: input blocklist + prompt-injection detection (#77) */
@@ -426,8 +372,6 @@ export interface ProjectConfig {
   notifications?: { channels: string[] };
   /** Named saved prompts for the playground (#99) */
   playgroundPresets?: PlaygroundPreset[];
-  /** Semantic response cache (TF bag-of-words similarity, non-streaming only) */
-  semanticCache?: ProjectSemanticCacheConfig;
 }
 
 export interface UserConfig {
@@ -815,18 +759,12 @@ export interface UsageRecord {
   priceInput?: number;
   /** Price per 1M output tokens in USD (from model config at call time) */
   priceOutput?: number;
-  /** True when this completion was served from the semantic response cache */
-  cacheHit?: boolean;
-  /** Cosine similarity score of the matched cache entry (0–1) */
-  cacheSimilarity?: number;
   /** End-user identifier from the OpenAI `user` field — for per-user cost attribution (#96) */
   endUserId?: string;
-  /** Session identifier from X-Routerly-Session-Id header — groups related calls (#94) */
+  /** Session identifier — groups related calls for cost attribution */
   sessionId?: string;
-  /** Arbitrary key-value tags from X-Routerly-Tags header — for cost attribution (#95) */
+  /** Arbitrary key-value tags — for cost attribution and filtering */
   tags?: Record<string, string>;
-  /** Name of the agent routing policy applied to this request via X-Routerly-Policy (#78) */
-  agentPolicyName?: string;
   /** Name of the guardrail rule that triggered on this request, if any (#77) */
   guardrailTriggered?: string;
   /** Guardrail rule that BLOCKED this request (outcome 'blocked'); distinct from guardrailTriggered, which is also set on a non-blocking flag/log pass-through (#77) */
