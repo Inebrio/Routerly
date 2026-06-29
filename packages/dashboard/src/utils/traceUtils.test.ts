@@ -93,24 +93,6 @@ describe('extractMessageStats', () => {
     expect(stats.errorMessage).toBe('Unknown error');
   });
 
-  it('sets cacheHit with similarity from cache:hit', () => {
-    const stats = extractMessageStats([
-      { message: 'cache:hit', details: { similarity: 0.97 } },
-    ]);
-    expect(stats.cacheHit).toBe(true);
-    expect(stats.cacheMiss).toBe(false);
-    expect(stats.cacheSimilarity).toBe(0.97);
-  });
-
-  it('sets cacheMiss from cache:miss', () => {
-    const stats = extractMessageStats([
-      { message: 'cache:miss', details: {} },
-    ]);
-    expect(stats.cacheHit).toBe(false);
-    expect(stats.cacheMiss).toBe(true);
-    expect(stats.cacheSimilarity).toBeNull();
-  });
-
   it('handles missing router:recap gracefully', () => {
     const stats = extractMessageStats([
       { message: 'model:success', details: { latencyMs: 500 } },

@@ -27,9 +27,6 @@ Added adapters for AWS Bedrock, Azure OpenAI, and Google Vertex AI.
 **Native notification adapters**
 Built-in adapters for Slack, Microsoft Teams, PagerDuty, and Discord.
 
-**Semantic response cache**
-Responses are cached by semantic similarity of the prompt. Repeated or semantically equivalent requests are served from cache, reducing cost and latency. Cache hits are tracked in usage logs.
-
 **Prompt playground**
 Interactive prompt editor in the dashboard with compare mode and presets. Requests are sent directly through the gateway so results reflect real routing, model selection, and cost tracking.
 

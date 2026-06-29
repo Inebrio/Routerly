@@ -397,65 +397,6 @@ describe('POST /v1/messages — subscription (anthropic-oauth) pass-through', ()
   })
 })
 
-// ─── Agent routing policies (#78) ─────────────────────────────────────────────
-describe('POST /v1/messages — X-Routerly-Policy override', () => {
-  const projectWithPolicy: ProjectConfig = {
-    id: 'proj-1', name: 'Test', tokens: [], members: [],
-    models: [{ modelId: 'm1' }, { modelId: 'm2' }],
-    agentPolicies: [{ name: 'fast', models: ['m2', 'm1'], maxCostUsd: 0.02 }],
-  }
-  const m1: any = { id: 'm1', name: 'M1', provider: 'anthropic', endpoint: '', apiKey: 'k', cost: { inputPerMillion: 3, outputPerMillion: 15 } }
-  const m2: any = { id: 'm2', name: 'M2', provider: 'anthropic', endpoint: '', apiKey: 'k', cost: { inputPerMillion: 1, outputPerMillion: 5 } }
-
-  async function buildAppWithPolicy() {
-    const app = Fastify({ logger: false })
-    app.decorateRequest('project', null as any)
-    app.decorateRequest('token', null as any)
-    app.addHook('preHandler', async (req: any) => { req.project = projectWithPolicy; req.token = undefined })
-    await app.register(anthropicRoutes)
-    await app.ready()
-    return app
-  }
-
-  it('bypasses routing and uses policy models in order', async () => {
-    mockReadConfig.mockResolvedValue([m1, m2] as any)
-    mockLlmMessages.mockResolvedValue(makeMessagesResponse() as any)
-
-    const app = await buildAppWithPolicy()
-    const res = await app.inject({
-      method: 'POST', url: '/v1/messages',
-      headers: { 'content-type': 'application/json', 'x-routerly-policy': 'fast' },
-      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'Hi' }] }),
-    })
-    await app.close()
-
-    expect(res.statusCode).toBe(200)
-    expect(mockRouteRequest).not.toHaveBeenCalled()
-    // First candidate in the policy order is m2
-    expect(mockLlmMessages.mock.calls[0]![1].id).toBe('m2')
-    const ctx = mockLlmMessages.mock.calls[0]![2] as any
-    expect(ctx.agentPolicyName).toBe('fast')
-    expect(ctx.agentPolicyCostCapUsd).toBe(0.02)
-  })
-
-  it('falls back to routing when policy name is unknown', async () => {
-    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
-    mockReadConfig.mockResolvedValue([m1, m2] as any)
-    mockLlmMessages.mockResolvedValue(makeMessagesResponse() as any)
-
-    const app = await buildAppWithPolicy()
-    const res = await app.inject({
-      method: 'POST', url: '/v1/messages',
-      headers: { 'content-type': 'application/json', 'x-routerly-policy': 'does-not-exist' },
-      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'Hi' }] }),
-    })
-    await app.close()
-
-    expect(res.statusCode).toBe(200)
-    expect(mockRouteRequest).toHaveBeenCalledTimes(1)
-  })
-})
-
 // ─── Guardrail block + PII trace wire format (#76/#77) ────────────────────────
 describe('POST /v1/messages — guardrail block & PII output trace', () => {
   function buildAppWith(project: ProjectConfig) {
