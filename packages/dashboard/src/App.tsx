@@ -17,6 +17,7 @@ import { ProjectTokenTab } from './pages/project/ProjectTokenTab';
 import { ProjectUsersTab } from './pages/project/ProjectUsersTab';
 import { ProjectLogsTab } from './pages/project/ProjectLogsTab';
 import { ProjectSecurityTab } from './pages/project/ProjectSecurityTab';
+import { ProjectEndUsersTab } from './pages/project/ProjectEndUsersTab';
 import { ProjectTokenCreatePage } from './pages/project/ProjectTokenCreatePage';
 import { ProjectTokenEditPage } from './pages/project/ProjectTokenEditPage';
 import { UsersPage } from './pages/UsersPage';
@@ -380,6 +381,7 @@ const router = createBrowserRouter([
               { path: 'users', element: <ProjectUsersTab /> },
               { path: 'logs', element: <ProjectLogsTab /> },
               { path: 'security', element: <ProjectSecurityTab /> },
+              { path: 'end-users', element: <ProjectEndUsersTab /> },
             ],
           },
           { path: 'usage', element: <UsagePage /> },
