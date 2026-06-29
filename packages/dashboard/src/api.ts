@@ -701,6 +701,20 @@ export interface AuditPage {
   pagination: { page: number; pageSize: number; totalRecords: number; totalPages: number };
 }
 
+export interface EndUser {
+  userId: string;
+  projectId: string;
+  firstSeen: string;
+  lastSeen: string;
+  requests: number;
+  totalCost: number;
+  totalTokens: number;
+}
+
+export const getEndUsers = (projectId: string) =>
+  request<{ users: EndUser[] }>(`/end-users?projectId=${encodeURIComponent(projectId)}`)
+    .then(r => r.users);
+
 export const getAuditLog = (params?: { userId?: string; action?: string; result?: string; from?: string; to?: string; page?: number; pageSize?: number }) => {
   const q = new URLSearchParams();
   if (params?.userId)                       q.set('userId', params.userId);
