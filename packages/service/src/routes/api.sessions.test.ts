@@ -330,4 +330,18 @@ describe('GET /api/end-users', () => {
     await app.close()
     expect(res.statusCode).toBe(401)
   })
+
+  it('returns 403 when user lacks report:read permission', async () => {
+    const noReportUser: any = { id: 'noreport-id', email: 'noreport@example.com', passwordHash: 'x', roleId: 'no-report', projectIds: [] }
+    mockVerifyToken.mockReturnValue({ sub: 'noreport-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [noReportUser]
+      if (t === 'roles') return [{ id: 'no-report', name: 'No Report', permissions: ['project:read'] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/end-users', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
 })
