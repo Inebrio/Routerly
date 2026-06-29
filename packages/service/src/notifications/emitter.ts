@@ -55,7 +55,7 @@ function anyPatternMatches(patterns: string[] | undefined, event: string): boole
  *  1. channel.events non-empty → match against those patterns;
  *  2. else if any rule names this channel → that rule's events must match;
  *  3. else (no per-channel events, no rule mentions it):
- *       - dashboard channels → receive all (always-on inbox backward-compat);
+ *       - dashboard channels → receive all events (default for an opted-in inbox);
  *       - external channels → receive NOTHING (opt-in, preserves pre-U5 silence).
  */
 function channelReceives(
@@ -120,10 +120,10 @@ const EMAIL_PROVIDERS = new Set(['smtp', 'ses', 'sendgrid', 'azure', 'google']);
 
 /**
  * Emit a system notification event (#89/#90/#91, reworked U5).
- *  - In-app inbox is driven by `dashboard` channels: an event lands in the inbox
- *    only when a dashboard channel matches it (audience = union of those channels'
- *    targets). Backward-compat: if NO dashboard channel exists, every event is
- *    appended visible to everyone (recipients undefined).
+ *  - In-app inbox is opt-in and driven solely by `dashboard` channels: an event
+ *    lands in the inbox only when a dashboard channel matches it (audience = union
+ *    of those channels' targets). If no dashboard channel exists, or none match the
+ *    event, nothing is appended to the inbox.
  *  - External channels (email/webhook/native) receive an event per their own
  *    `events` patterns, falling back to notificationRules, then to receive-all.
  *  - Email channels send to their resolved target users' emails (or fromAddress
@@ -145,20 +145,15 @@ export async function emitEvent(
 
   const dashboardChannels = channels.filter((c) => c.provider === 'dashboard');
 
-  // ── Inbox (U5) ──────────────────────────────────────────────────────────────
+  // ── Inbox (U5, opt-in) ────────────────────────────────────────────────────────
   try {
-    if (dashboardChannels.length === 0) {
-      // Backward-compat: no dashboard channel → inbox for everyone.
-      await appendToInbox({ id: randomUUID(), event, severity, timestamp, details, readBy: [] });
-    } else {
-      const matching = dashboardChannels.filter((c) => channelReceives(c, event, rules));
-      if (matching.length > 0) {
-        const recipients = await resolveInboxRecipients(matching);
-        await appendToInbox({
-          id: randomUUID(), event, severity, timestamp, details, readBy: [],
-          ...(recipients === undefined ? {} : { recipients }),
-        });
-      }
+    const matching = dashboardChannels.filter((c) => channelReceives(c, event, rules));
+    if (matching.length > 0) {
+      const recipients = await resolveInboxRecipients(matching);
+      await appendToInbox({
+        id: randomUUID(), event, severity, timestamp, details, readBy: [],
+        ...(recipients === undefined ? {} : { recipients }),
+      });
     }
   } catch (err) {
     opts.log?.warn({ err, event }, 'failed to append notification to inbox');
@@ -248,7 +243,7 @@ async function resolveEmailRecipients(
 }
 
 /** Append one item to the inbox file, trimming to retention bounds (#91). */
-async function appendToInbox(item: NotificationInboxItem): Promise<void> {
+export async function appendToInbox(item: NotificationInboxItem): Promise<void> {
   const existing = await readConfig('notifications');
   existing.push(item);
   const cutoff = Date.now() - MAX_INBOX_AGE_MS;
