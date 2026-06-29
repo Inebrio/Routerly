@@ -837,6 +837,74 @@ DELETE /api/notifications/channels/:id
 
 **Errors**: `404` channel not found · `403` insufficient permissions
 
+### Get Channel
+
+```
+GET /api/notifications/channels/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `user:write`)
+
+**Response `200`**
+```json
+{
+  "id": "abc-uuid",
+  "provider": "smtp",
+  "name": "Admin Alerts",
+  "host": "smtp.example.com",
+  "port": 587,
+  "fromAddress": "alerts@example.com",
+  "fromName": "Routerly",
+  "events": ["provider.error", "budget.exhausted"],
+  "targets": { "roles": ["admin"] }
+}
+```
+
+Secrets (API keys, passwords, tokens) are masked and shown as `null` when present in the channel config.
+
+**Errors**: `404` channel not found · `403` insufficient permissions
+
+### Update Channel
+
+```
+PATCH /api/notifications/channels/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `user:write`)
+
+**Request body** (all fields optional):
+```json
+{
+  "name": "Updated Name",
+  "events": ["budget.*"],
+  "targets": { "roles": ["admin"], "permissions": [], "users": [] },
+  "host": "new-smtp.example.com",
+  "port": 587,
+  "password": "new_secret_password",
+  "apiKey": "new_api_key"
+}
+```
+
+- To **clear event filters**, send an empty array: `"events": []`
+- To **clear targets**, send an empty object: `"targets": {}`
+- **Secret fields** (passwords, API keys, tokens) are only updated when explicitly provided and non-empty. Omitting a secret field leaves it unchanged.
+
+**Response `200`**
+```json
+{
+  "id": "abc-uuid",
+  "provider": "smtp",
+  "name": "Updated Name",
+  "host": "new-smtp.example.com",
+  "port": 587,
+  "fromAddress": "alerts@example.com",
+  "events": ["budget.*"],
+  "targets": { "roles": ["admin"] }
+}
+```
+
+**Errors**: `404` channel not found · `400` invalid body · `403` insufficient permissions
+
 ### Test Channel
 
 ```
@@ -859,17 +927,25 @@ POST /api/notifications/channels/:id/test
 
 ### Notifications Inbox {#notifications-inbox}
 
-The in-app notification inbox is per-user and available to any authenticated dashboard user (no special permission required). Returns only items for the current user (matched by the `targets` of the `dashboard` channel that created each item, or all items when no targeting was configured).
+The in-app notification inbox is per-user, available to any authenticated dashboard user (no special permission required). Returns only items for the current user (matched by the `targets` of the `dashboard` channel that created each item, or all items when no targeting was configured). Users can also dismiss items individually (soft delete), which removes them from their personal inbox only.
+
+#### List Inbox Items
 
 ```
-GET /api/notifications/inbox?limit=50&unreadOnly=false
+GET /api/notifications/inbox?limit=50&page=1&pageSize=20&severity=all&event=&unreadOnly=false&from=&to=
 ```
 
 **Query params:**
-- `limit` — max items to return (1–200, default 50)
-- `unreadOnly` — when `true`, returns only items the current user has not read
+- `limit` - max items in legacy flat-list response (1–200, default 50). When `page` is omitted, activates flat-list mode; presence of `page` switches to paginated mode.
+- `page` - page number for paginated response (1-indexed, default 1)
+- `pageSize` - items per page (1–100, default 20)
+- `severity` - filter by severity: `info`, `warning`, `critical`, or `all` (default `all`)
+- `event` - filter by event name substring (case-insensitive)
+- `unreadOnly` - when `true`, returns only items the current user has not read
+- `from` - start date (YYYY-MM-DD or ISO 8601 timestamp); when date-only, spans from 00:00
+- `to` - end date (YYYY-MM-DD or ISO 8601 timestamp); when date-only, spans to 23:59:59
 
-**Response `200`:**
+**Response `200` (flat-list mode when `page` omitted):**
 ```json
 {
   "items": [
@@ -882,11 +958,52 @@ GET /api/notifications/inbox?limit=50&unreadOnly=false
       "read": false
     }
   ],
-  "unreadCount": 1
+  "unreadCount": 5,
+  "enabled": true
 }
 ```
 
-Items are returned newest-first. `unreadCount` is the total unread count for the current user (independent of `limit`).
+**Response `200` (paginated mode when `page` is provided):**
+```json
+{
+  "items": [ /* … */ ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 20,
+    "totalRecords": 127,
+    "totalPages": 7
+  },
+  "unreadCount": 5,
+  "enabled": true
+}
+```
+
+- `items` - notifications newest-first
+- `unreadCount` - total unread count for the current user (independent of filters)
+- `enabled` - `true` when at least one `dashboard`-provider channel is configured; `false` when the inbox is not yet initialized
+- `pagination` - only in paginated mode (when `page` query param is present)
+
+#### Get Single Notification
+
+```
+GET /api/notifications/inbox/:id
+```
+
+**Response `200`:**
+```json
+{
+  "id": "8f3c…",
+  "event": "provider.error",
+  "severity": "critical",
+  "timestamp": "2026-06-24T12:00:00.000Z",
+  "details": { "modelId": "openai/gpt-4o", "latencyMs": 5000 },
+  "read": false
+}
+```
+
+**Errors**: `404` notification not found (either does not exist or is not in the current user's inbox)
+
+#### Mark Inbox Items as Read
 
 ```
 POST /api/notifications/inbox/read
@@ -907,6 +1024,56 @@ Returns `400` if neither is provided.
 ```json
 { "updated": 2 }
 ```
+
+All read operations are logged to the audit log as `notification:read` actions.
+
+#### Mark Inbox Items as Unread
+
+```
+POST /api/notifications/inbox/unread
+```
+
+Clears the current user's read mark on one or more notifications. Inverse of `/read`. Provide either `ids` or `all`:
+
+```json
+{ "ids": ["8f3c…"] }
+```
+```json
+{ "all": true }
+```
+
+Returns `400` if neither is provided.
+
+**Response `200`:**
+```json
+{ "updated": 1 }
+```
+
+All unread operations are logged to the audit log as `notification:unread` actions.
+
+#### Delete (Dismiss) Inbox Items
+
+```
+POST /api/notifications/inbox/delete
+```
+
+Dismisses (soft-deletes) one or more items from the current user's inbox only. Other users' copies of the same notification remain unaffected. Provide either `ids` or `all`:
+
+```json
+{ "ids": ["8f3c…", "1a2b…"] }
+```
+```json
+{ "all": true }
+```
+
+Returns `400` if neither is provided.
+
+**Response `200`:**
+```json
+{ "deleted": 2 }
+```
+
+**Important:** Deletion is **per-user only**. Global deletion is never performed. All delete operations are logged to the audit log as `notification:delete` actions.
 
 ### Test (legacy endpoint)
 

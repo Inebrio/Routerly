@@ -663,10 +663,34 @@ Manage the in-app notification inbox and delivery channels.
 ### `routerly notification list`
 
 ```
-routerly notification list [--json]
+routerly notification list [--json] [--from <date>] [--to <date>]
 ```
 
-List the 50 most recent inbox notifications. `--json` outputs the raw array.
+List the 50 most recent inbox notifications. Results are newest-first.
+
+| Option | Description |
+|--------|-------------|
+| `--json` | Output raw JSON array |
+| `--from <date>` | Only items on or after this date (YYYY-MM-DD or ISO 8601) |
+| `--to <date>` | Only items on or before this date (YYYY-MM-DD or ISO 8601) |
+
+```bash
+routerly notification list
+routerly notification list --from 2026-06-01 --to 2026-06-30
+routerly notification list --json
+```
+
+### `routerly notification show <id>`
+
+```
+routerly notification show <id> [--json]
+```
+
+Show a single notification with all details (including the `details` object). Secrets are masked.
+
+```bash
+routerly notification show 8f3c… --json
+```
 
 ### `routerly notification read [id]`
 
@@ -676,13 +700,70 @@ routerly notification read [id]
 
 Mark a notification as read. Omit `<id>` to mark all as read.
 
+```bash
+routerly notification read 8f3c…
+routerly notification read  # mark all as read
+```
+
+### `routerly notification unread [id]`
+
+```
+routerly notification unread [id]
+```
+
+Mark a notification as unread (inverse of `read`). Omit `<id>` to mark all as unread.
+
+```bash
+routerly notification unread 8f3c…
+routerly notification unread  # mark all as unread
+```
+
+### `routerly notification delete [ids...]`
+
+```
+routerly notification delete [<id> ...] [--all] [--json]
+```
+
+Dismiss (delete) one or more notifications from your inbox. Deletion is per-user only; other users' copies remain.
+
+| Option | Description |
+|--------|-------------|
+| `<id> ...` | One or more notification IDs to delete |
+| `--all` | Delete all notifications in your inbox |
+| `--json` | Output the delete count as JSON |
+
+```bash
+routerly notification delete 8f3c…
+routerly notification delete 8f3c… 1a2b… 3c4d…
+routerly notification delete --all
+routerly notification delete --all --json
+```
+
 ### `routerly notification channel list`
 
 ```
 routerly notification channel list [--json]
 ```
 
-List all configured notification channels. The table columns are: **Name**, **Type**, **Config**, **Events** (patterns routed to this channel, `*` = all), and **Targets** (who receives — `everyone` when unset).
+List all configured notification channels. The table columns are: **Name**, **Type**, **Config**, **Events** (patterns routed to this channel, `*` = all), and **Targets** (who receives - `everyone` when unset).
+
+```bash
+routerly notification channel list
+routerly notification channel list --json
+```
+
+### `routerly notification channel show <id>`
+
+```
+routerly notification channel show <id> [--json]
+```
+
+Show a single channel with all configuration fields (secrets are masked and shown as `*** (configured)`).
+
+```bash
+routerly notification channel show abc-uuid
+routerly notification channel show abc-uuid --json
+```
 
 ### `routerly notification channel add`
 
@@ -694,18 +775,26 @@ Add a notification channel.
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--type <type>` | yes | `slack`, `teams`, `pagerduty`, `discord`, or `dashboard` |
+| `--type <type>` | yes | `dashboard`, `smtp`, `ses`, `sendgrid`, `azure`, `google`, `webhook`, `slack`, `teams`, `pagerduty`, `discord` |
 | `--name <name>` | yes | Friendly label shown in the UI |
 | `--events <patterns>` | no | Comma-separated event patterns this channel receives (e.g. `budget.*,model.added`). Omit for all events. |
 | `--target-roles <roles>` | no | Comma-separated role IDs to target. Omit for everyone. |
 | `--target-permissions <perms>` | no | Comma-separated permission names to target. |
 | `--target-users <users>` | no | Comma-separated user IDs to target. |
-| `--bot-token <token>` | slack | Slack bot token (`xoxb-…`) |
-| `--channel-id <id>` | slack | Slack channel ID |
-| `--webhook-url <url>` | teams/discord | Incoming webhook URL |
-| `--integration-key <key>` | pagerduty | PagerDuty integration key |
 
-The `dashboard` type requires only `--name` (no secrets — delivery is the in-app inbox).
+**Provider-specific flags:**
+| Provider | Flags |
+|----------|-------|
+| `slack` | `--bot-token` (xoxb-…), `--channel-id` |
+| `teams` / `discord` | `--webhook-url` |
+| `pagerduty` | `--integration-key` |
+| `dashboard` | (no additional flags) |
+| `smtp` | `--host`, `--port`, `--from-address`, `--from-name`, `--username`, `--password` |
+| `ses` | `--region`, `--access-key-id`, `--secret-access-key` |
+| `sendgrid` | `--api-key` |
+| `azure` | `--connection-string` |
+| `google` | `--client-id`, `--client-secret`, `--refresh-token` |
+| `webhook` | `--url`, `--method` (POST or GET), `--secret` |
 
 ```bash
 # In-app inbox channel: budget events to admin role only
@@ -718,6 +807,67 @@ routerly notification channel add \
 routerly notification channel add \
   --type slack --name "ops-alerts" \
   --bot-token xoxb-... --channel-id C1234567890
+
+# SMTP channel for provider errors to operators
+routerly notification channel add \
+  --type smtp --name "Email Alerts" \
+  --host smtp.example.com --port 587 \
+  --from-address "alerts@example.com" \
+  --username "user@example.com" \
+  --password "secret" \
+  --events "provider.error,provider.degraded" \
+  --target-roles "operator"
+```
+
+### `routerly notification channel show <id>`
+
+```
+routerly notification channel show <id> [--json]
+```
+
+Display channel details. Secrets are masked as `*** (configured)` or `(not set)`.
+
+### `routerly notification channel edit <id>`
+
+```
+routerly notification channel edit <id> [options]
+```
+
+Edit a channel's configuration. Only provided options are updated; omitted options are left unchanged. Secret fields are only updated when explicitly provided and non-empty.
+
+| Flag | Description |
+|------|-------------|
+| `--name <name>` | New friendly name |
+| `--events <patterns>` | Comma-separated event patterns (empty string to clear all) |
+| `--target-roles <roles>` | Comma-separated role IDs |
+| `--target-permissions <perms>` | Comma-separated permission names |
+| `--target-users <users>` | Comma-separated user IDs |
+| `--host <host>` | SMTP host |
+| `--port <port>` | SMTP port |
+| `--from-address <addr>` | From email address |
+| `--from-name <name>` | From display name |
+| `--username <user>` | SMTP username |
+| `--password <pass>` | SMTP password (secret) |
+| `--region <region>` | AWS region (SES) |
+| `--access-key-id <id>` | AWS access key ID (SES) |
+| `--secret-access-key <key>` | AWS secret key (SES, secret) |
+| `--api-key <key>` | SendGrid API key (secret) |
+| `--connection-string <str>` | Azure connection string (secret) |
+| `--client-id <id>` | Google client ID |
+| `--client-secret <secret>` | Google client secret (secret) |
+| `--refresh-token <token>` | Google refresh token (secret) |
+| `--url <url>` | Webhook URL |
+| `--method <method>` | HTTP method (POST or GET) |
+| `--secret <secret>` | HMAC signing secret (secret) |
+| `--bot-token <token>` | Slack bot token (secret) |
+| `--channel-id <id>` | Slack channel ID |
+| `--webhook-url <url>` | Webhook URL (Teams/Discord, secret) |
+| `--integration-key <key>` | PagerDuty integration key (secret) |
+
+```bash
+routerly notification channel edit abc-uuid --name "Updated Name"
+routerly notification channel edit abc-uuid --events "budget.*" --target-roles "admin,operator"
+routerly notification channel edit abc-uuid --password "new_secret"
 ```
 
 ### `routerly notification channel delete <id>`
@@ -728,13 +878,26 @@ routerly notification channel delete <id>
 
 Delete a channel by ID. Use `channel list --json` to find IDs.
 
+```bash
+routerly notification channel delete abc-uuid
+```
+
 ### `routerly notification channel test <id>`
 
 ```
-routerly notification channel test <id>
+routerly notification channel test <id> [--to <email>]
 ```
 
-Send a test notification through the channel. Prints success or failure message.
+Send a test notification through the channel.
+
+| Option | Description |
+|--------|-------------|
+| `--to <email>` | Override recipient for email-provider channels (defaults to your account email) |
+
+```bash
+routerly notification channel test abc-uuid
+routerly notification channel test abc-uuid --to test@example.com
+```
 
 ---
 
