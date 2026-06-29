@@ -89,7 +89,7 @@ Items are marked as read when you click them in the detail drawer. Use the bulk 
 
 ### Dismissing Notifications
 
-Use the **Delete** button in the detail drawer or the bulk action bar **Delete** option. Dismissal is **per-user only** - other users' copies of the same notification remain in their inboxes unless they also dismiss it. Deleted notifications can be permanently removed by admin if needed (see `DELETE /api/notifications/inbox/delete`), but individual users can always dismiss their own copies at any time.
+Use the **Delete** button in the detail drawer or the bulk action bar **Delete** option (API: `POST /api/notifications/inbox/delete`, CLI: `routerly notification delete`). Dismissal is **per-user only** - other users' copies of the same notification remain in their inboxes unless they also dismiss it. There is no global delete: an item dismissed by one user is never removed from anyone else's inbox.
 
 ---
 
