@@ -71,10 +71,10 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
       const hit = result.triggered ? { triggered: result.triggered } : null;
       if (hit) {
         const fallbackMessage = project.guardrails.fallbackMessage ?? 'This request was blocked by content guardrails.';
-        request.log.warn({ projectId: project.id, rule: hit.triggered, action: project.guardrails.action }, 'guardrail: triggered');
+        request.log.warn({ projectId: project.id, rule: hit.triggered, action: result.action }, 'guardrail: triggered');
         // Trace carries the readable reason (incl. fallbackMessage); the wire response no longer ships it (#76/#77).
-        appendTrace(traceId, [{ panel: 'request', message: 'guardrail:triggered', details: { rule: hit.triggered, target: 'request', action: project.guardrails.action, fallbackMessage } }]);
-        if (project.guardrails.action === 'block') {
+        appendTrace(traceId, [{ panel: 'request', message: 'guardrail:triggered', details: { rule: hit.triggered, target: 'request', action: result.action, fallbackMessage } }]);
+        if (result.action === 'block') {
           // Usage record for the blocked request (#77): zero cost/tokens, distinct 'blocked' outcome.
           await trackBlockedRequest(project, hit.triggered, traceId);
           reply.header('x-routerly-trace-id', traceId);
@@ -188,8 +188,8 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
             if (hit) {
               const fallbackMessage = project.guardrails.fallbackMessage ?? 'Response blocked by content guardrails.';
               request.log.warn({ projectId: project.id, rule: hit.triggered }, 'guardrail: response triggered');
-              appendTrace(traceId, [{ panel: 'response', message: 'guardrail:response-triggered', details: { rule: hit.triggered, target: 'response', action: project.guardrails.action, fallbackMessage } }]);
-              if (project.guardrails.action === 'block') {
+              appendTrace(traceId, [{ panel: 'response', message: 'guardrail:response-triggered', details: { rule: hit.triggered, target: 'response', action: result.action, fallbackMessage } }]);
+              if (result.action === 'block') {
                 reply.header('x-routerly-trace-id', traceId);
                 // Wire-faithful refusal: empty content + stop_reason refusal + stop_details.
                 return reply.status(200).send({ id: `msg_${traceId}`, type: 'message', role: 'assistant', content: [], model: body.model ?? 'unknown', stop_reason: 'refusal', stop_details: { type: 'refusal' }, usage: { input_tokens: 0, output_tokens: 0 } });

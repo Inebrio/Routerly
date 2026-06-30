@@ -74,6 +74,8 @@ export interface RuleEval {
 export interface GuardrailResult {
   /** The hit string of the first rule that fired, if any. */
   triggered?: string;
+  /** Effective action for the triggered rule (per-rule override ?? global config.action). Present only when triggered is set. */
+  action?: 'block' | 'log' | 'flag';
   /** One entry per rule that ran (incl. the injection flag), for trace observability. */
   evaluated: RuleEval[];
 }
@@ -270,6 +272,11 @@ export async function checkGuardrails(
   if (activeRules.length === 0) return { evaluated };
   const results = await Promise.all(activeRules.map(rule => checkRule(rule, text, pctx, log)));
   evaluated.push(...results);
-  const hit = results.find(r => r.outcome === 'triggered');
-  return hit?.reason ? { triggered: hit.reason, evaluated } : { evaluated };
+  const hitIdx = results.findIndex(r => r.outcome === 'triggered');
+  if (hitIdx >= 0) {
+    const hit = results[hitIdx]!;
+    const effectiveAction = activeRules[hitIdx]!.action ?? config.action;
+    return hit.reason ? { triggered: hit.reason, action: effectiveAction, evaluated } : { evaluated };
+  }
+  return { evaluated };
 }

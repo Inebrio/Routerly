@@ -142,10 +142,10 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       const hit = result.triggered ? { triggered: result.triggered } : null;
       if (hit) {
         const fallbackMessage = project.guardrails.fallbackMessage ?? 'This request was blocked by content guardrails.';
-        request.log.warn({ projectId: project.id, rule: hit.triggered, action: project.guardrails.action }, 'guardrail: triggered');
+        request.log.warn({ projectId: project.id, rule: hit.triggered, action: result.action }, 'guardrail: triggered');
         // Trace carries the human-readable reason (incl. fallbackMessage) for the dashboard — it no longer ships in the wire response (#76/#77).
-        appendTrace(traceId, [{ panel: 'request', message: 'guardrail:triggered', details: { rule: hit.triggered, target: 'request', action: project.guardrails.action, fallbackMessage } }]);
-        if (project.guardrails.action === 'block') {
+        appendTrace(traceId, [{ panel: 'request', message: 'guardrail:triggered', details: { rule: hit.triggered, target: 'request', action: result.action, fallbackMessage } }]);
+        if (result.action === 'block') {
           // Usage record for the blocked request (#77): zero cost/tokens, distinct 'blocked' outcome.
           await trackBlockedRequest(project, hit.triggered, traceId);
           if (isStream) {
@@ -348,8 +348,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
             if (hit) {
               const fallbackMessage = project.guardrails!.fallbackMessage ?? 'Response blocked by content guardrails.';
               request.log.warn({ projectId: project.id, rule: hit.triggered }, 'guardrail: stream response triggered');
-              appendTrace(traceId, [{ panel: 'response', message: 'guardrail:response-triggered', details: { rule: hit.triggered, target: 'response', action: project.guardrails!.action, fallbackMessage } }]);
-              if (project.guardrails!.action === 'block') {
+              appendTrace(traceId, [{ panel: 'response', message: 'guardrail:response-triggered', details: { rule: hit.triggered, target: 'response', action: result.action, fallbackMessage } }]);
+              if (result.action === 'block') {
                 // Wire-faithful content_filter block: empty delta + content_filter finish_reason (buffered output dropped).
                 const fallbackChunk = { id: `chatcmpl-${traceId}`, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: body.model ?? '', choices: [{ index: 0, delta: {}, finish_reason: 'content_filter' }] };
                 reply.raw.write(`data: ${JSON.stringify(fallbackChunk)}\n\n`);
@@ -478,8 +478,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
             if (hit) {
               const fallbackMessage = project.guardrails.fallbackMessage ?? 'Response blocked by content guardrails.';
               request.log.warn({ projectId: project.id, rule: hit.triggered }, 'guardrail: response triggered');
-              appendTrace(traceId, [{ panel: 'response', message: 'guardrail:response-triggered', details: { rule: hit.triggered, target: 'response', action: project.guardrails.action, fallbackMessage } }]);
-              if (project.guardrails.action === 'block') {
+              appendTrace(traceId, [{ panel: 'response', message: 'guardrail:response-triggered', details: { rule: hit.triggered, target: 'response', action: result.action, fallbackMessage } }]);
+              if (result.action === 'block') {
                 reply.header('x-routerly-trace-id', traceId);
                 // Wire-faithful content_filter block: empty content + content_filter finish_reason.
                 return reply.code(200).send({ id: `chatcmpl-${traceId}`, object: 'chat.completion', choices: [{ index: 0, message: { role: 'assistant', content: '' }, finish_reason: 'content_filter' }], usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } });

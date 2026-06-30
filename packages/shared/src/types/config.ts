@@ -267,6 +267,8 @@ export interface GuardrailRule {
   enabled?: boolean;
   target: GuardrailTarget;
   config: RegexGuardConfig | SemanticGuardConfig | TopicGuardConfig | ModerationGuardConfig;
+  /** Per-rule action override. When set, takes precedence over GuardrailConfig.action. */
+  action?: 'block' | 'log';
 }
 
 /** Content guardrail configuration for a project (#77). Presence of this config activates guardrails — no separate enabled flag. */
