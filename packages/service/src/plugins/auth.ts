@@ -2,6 +2,7 @@ import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { fastifyPlugin as fp } from 'fastify-plugin';
 import type { ProjectConfig, ProjectToken } from '@routerly/shared';
 import { readConfig, writeConfig } from '../config/loader.js';
+import { emitEvent } from '../notifications/emitter.js';
 
 // Augment FastifyRequest to carry the resolved project and token
 declare module 'fastify' {
@@ -74,6 +75,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 
       // Enforce expiry
       if (token.expiresAt && new Date(token.expiresAt) < new Date()) {
+        void emitEvent('auth.token_invalid', 'warning', { projectId: project.id, reason: 'expired' }, {});
         return reply.status(401).send({ error: 'Token expired' });
       }
 
@@ -92,6 +94,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
       return;
     }
 
+    void emitEvent('auth.token_invalid', 'warning', { reason: 'not_found' }, {});
     return reply.status(401).send({
       error: 'unauthorized',
       message: 'Invalid project token.',

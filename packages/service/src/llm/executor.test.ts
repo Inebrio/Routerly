@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
 vi.mock('../providers/index.js', () => ({ getProviderAdapter: vi.fn() }))
-vi.mock('../cost/budget.js', () => ({ isAllowed: vi.fn(), isAllowedForRoutingModel: vi.fn(), checkGroupBudget: vi.fn() }))
+vi.mock('../cost/budget.js', () => ({ isAllowed: vi.fn(), isAllowedForRoutingModel: vi.fn(), checkGroupBudget: vi.fn(), getLimitUsageSnapshot: vi.fn().mockResolvedValue([]) }))
 vi.mock('../cost/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('../config/loader.js', () => ({ readConfig: vi.fn().mockResolvedValue([]) }))
 
