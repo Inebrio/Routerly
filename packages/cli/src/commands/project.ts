@@ -719,21 +719,23 @@ Examples:
 // ─── Guardrail helpers ────────────────────────────────────────────────────────
 
 function rulesSummary(rule: GuardrailRule): string {
+  let summary: string;
   switch (rule.type) {
-    case 'regex': return `${(rule.config as RegexGuardConfig).patterns.length} pattern(s)`;
+    case 'regex': summary = `${(rule.config as RegexGuardConfig).patterns.length} pattern(s)`; break;
     case 'semantic': {
       const c = rule.config as SemanticGuardConfig;
-      return `model: ${c.embeddingModelId}, ${c.examples.length} example(s), threshold: ${c.threshold ?? 0.82}`;
+      summary = `model: ${c.embeddingModelId}, ${c.examples.length} example(s), threshold: ${c.threshold ?? 0.82}`; break;
     }
     case 'topic': {
       const c = rule.config as TopicGuardConfig;
-      return `model: ${c.modelId}, threshold: ${c.threshold ?? 0.5}`;
+      summary = `model: ${c.modelId}, threshold: ${c.threshold ?? 0.5}`; break;
     }
     case 'moderation': {
       const c = rule.config as ModerationGuardConfig;
-      return `model: ${c.modelId}, threshold: ${c.threshold ?? 0.5}`;
+      summary = `model: ${c.modelId}, threshold: ${c.threshold ?? 0.5}`; break;
     }
   }
+  return rule.action ? `${summary} [${rule.action}]` : summary;
 }
 
 async function runAddRuleWizard(): Promise<GuardrailRule> {
@@ -760,6 +762,18 @@ async function runAddRuleWizard(): Promise<GuardrailRule> {
     choices: ['request', 'response', 'both'],
   }]) as { target: 'request' | 'response' | 'both' };
   const target = targetAns.target;
+
+  const actionAns = await inquirer.prompt([{
+    type: 'list',
+    name: 'action',
+    message: 'Action when this rule triggers (empty = use project global):',
+    choices: [
+      { name: 'Use project global (default)', value: 'global' },
+      { name: 'block -- return fallback message', value: 'block' },
+      { name: 'log -- record only, do not block', value: 'log' },
+    ],
+  }]) as { action: string };
+  const ruleAction = actionAns.action === 'global' ? undefined : actionAns.action as 'block' | 'log';
 
   let config: GuardrailRule['config'];
 
@@ -812,7 +826,7 @@ async function runAddRuleWizard(): Promise<GuardrailRule> {
     config = mc;
   }
 
-  return { type, target, config };
+  return { type, target, config, ...(ruleAction ? { action: ruleAction } : {}) };
 }
 
 // ─── Main project command ─────────────────────────────────────────────────────
@@ -1086,16 +1100,18 @@ Examples:
           if (!current.rules.length) {
             console.log(chalk.dim('  No rules configured.'));
           } else {
-            const col: [number, number, number, number] = [4, 12, 10, 0];
-            const header = ['#', 'Type', 'Target', 'Summary'].map((h, i) => chalk.bold(h).padEnd(col[i] ?? 0));
+            const col: [number, number, number, number, number] = [4, 12, 10, 7, 0];
+            const header = ['#', 'Type', 'Target', 'Action', 'Summary'].map((h, i) => chalk.bold(h).padEnd(col[i] ?? 0));
             console.log('Rules:');
             console.log('  ' + header.join('  '));
             current.rules.forEach((rule, idx) => {
               const summary = rulesSummary(rule);
+              const actionCell = rule.action ? chalk.cyan(rule.action) : chalk.dim('global');
               const cells = [
                 String(idx).padEnd(col[0]),
                 rule.type.padEnd(col[1]),
                 rule.target.padEnd(col[2]),
+                actionCell.padEnd(col[3]),
                 summary,
               ];
               console.log('  ' + cells.join('  '));

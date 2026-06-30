@@ -267,6 +267,7 @@ export interface GuardrailRule {
   enabled?: boolean;
   target: GuardrailTarget;
   config: RegexGuardConfig | SemanticGuardConfig | TopicGuardConfig | ModerationGuardConfig;
+  action?: 'block' | 'log';
 }
 
 export interface GuardrailConfig {

@@ -322,3 +322,20 @@ describe('checkGuardrails — rule evaluation branches', () => {
     expect(result.evaluated).toContainEqual({ rule: 'mystery', outcome: 'skipped', reason: 'unknown-type' });
   });
 });
+
+describe('checkGuardrails — per-rule action override', () => {
+  it('returns per-rule action when rule has explicit action field', async () => {
+    const rule: GuardrailRule = { ...regexRule(['secret']), action: 'log' };
+    // global action is 'block', rule overrides to 'log'
+    const result = await checkGuardrails('request', 'secret content', baseConfig([rule]), pctx);
+    expect(result.triggered).toBe('regex:secret');
+    expect(result.action).toBe('log');
+  });
+
+  it('falls back to global action when rule has no action field', async () => {
+    const rule: GuardrailRule = regexRule(['secret']); // no per-rule action
+    const result = await checkGuardrails('request', 'secret content', baseConfig([rule]), pctx);
+    expect(result.triggered).toBe('regex:secret');
+    expect(result.action).toBe('block'); // global default
+  });
+});

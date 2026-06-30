@@ -205,10 +205,10 @@ const limitSchema = z.object({
 });
 
 const guardrailRuleSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('regex'), enabled: z.boolean().optional(), target: z.enum(['request', 'response', 'both']), config: z.object({ patterns: z.array(z.string()) }) }),
-  z.object({ type: z.literal('semantic'), enabled: z.boolean().optional(), target: z.enum(['request', 'response', 'both']), config: z.object({ embeddingModelId: z.string(), examples: z.array(z.string()), threshold: z.number().min(0).max(1).optional() }) }),
-  z.object({ type: z.literal('topic'), enabled: z.boolean().optional(), target: z.enum(['request', 'response', 'both']), config: z.object({ modelId: z.string(), allowedTopics: z.string(), threshold: z.number().min(0).max(1).optional() }) }),
-  z.object({ type: z.literal('moderation'), enabled: z.boolean().optional(), target: z.enum(['request', 'response', 'both']), config: z.object({ modelId: z.string(), threshold: z.number().min(0).max(1).optional(), systemPrompt: z.string().optional() }) }),
+  z.object({ type: z.literal('regex'), enabled: z.boolean().optional(), action: z.enum(['block', 'log']).optional(), target: z.enum(['request', 'response', 'both']), config: z.object({ patterns: z.array(z.string()) }) }),
+  z.object({ type: z.literal('semantic'), enabled: z.boolean().optional(), action: z.enum(['block', 'log']).optional(), target: z.enum(['request', 'response', 'both']), config: z.object({ embeddingModelId: z.string(), examples: z.array(z.string()), threshold: z.number().min(0).max(1).optional() }) }),
+  z.object({ type: z.literal('topic'), enabled: z.boolean().optional(), action: z.enum(['block', 'log']).optional(), target: z.enum(['request', 'response', 'both']), config: z.object({ modelId: z.string(), allowedTopics: z.string(), threshold: z.number().min(0).max(1).optional() }) }),
+  z.object({ type: z.literal('moderation'), enabled: z.boolean().optional(), action: z.enum(['block', 'log']).optional(), target: z.enum(['request', 'response', 'both']), config: z.object({ modelId: z.string(), threshold: z.number().min(0).max(1).optional(), systemPrompt: z.string().optional() }) }),
 ]);
 
 const guardrailConfigSchema = z.object({

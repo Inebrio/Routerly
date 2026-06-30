@@ -6812,3 +6812,31 @@ describe('POST /api/notifications/inbox/read — ids .max(500)', () => {
     expect(res.statusCode).toBe(200)
   })
 })
+
+describe('PATCH /api/projects/:id/guardrails — per-rule action field', () => {
+  it('accepts a guardrail rule with per-rule action', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/projects/p1/guardrails',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        guardrails: {
+          action: 'block',
+          rules: [{ type: 'regex', action: 'log', target: 'request', config: { patterns: ['bad'] } }],
+        },
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+})

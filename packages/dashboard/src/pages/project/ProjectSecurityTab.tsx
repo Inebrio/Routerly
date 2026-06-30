@@ -317,6 +317,24 @@ function RuleCard({ rule, onChange, onDelete, regexErrors, modelOptions, embeddi
           {RULE_TYPE_LABELS[rule.type]}
         </span>
         <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', flex: 1 }}>{rule.target}</span>
+        {/* ponytail: per-rule action override; undefined = use global */}
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Action:</span>
+          {([undefined, 'block', 'log'] as const).map(opt => (
+            <button
+              key={opt ?? 'global'}
+              type="button"
+              className={`btn btn-sm${rule.action === opt ? ' btn-primary' : ' btn-secondary'}`}
+              style={{ fontSize: '0.7rem', padding: '1px 7px' }}
+              onClick={() => {
+                const { action: _a, ...rest } = rule;
+                onChange(opt === undefined ? rest as RuleWithId : { ...rest, action: opt });
+              }}
+            >
+              {opt === undefined ? 'Global' : opt.charAt(0).toUpperCase() + opt.slice(1)}
+            </button>
+          ))}
+        </div>
         <button
           type="button"
           onClick={onDelete}
