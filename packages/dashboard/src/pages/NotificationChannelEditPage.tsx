@@ -5,7 +5,8 @@ import { getNotificationChannel, updateNotificationChannel, testNotificationChan
 import type { RedactedChannel, Role, User } from '../api';
 import {
   ChannelEditFields,
-  EventsAndTargetsEditFields,
+  RoutingEditFields,
+  RecipientsEditFields,
   providerLabel,
 } from './notificationChannelFields';
 import type { ChannelProvider } from './notificationChannelFields';
@@ -34,6 +35,7 @@ export function NotificationChannelEditPage() {
   const [error, setError] = useState('');
   const [testStatus, setTestStatus] = useState<{ loading: boolean; ok?: boolean; message?: string } | null>(null);
   const [testTo, setTestTo] = useState('');
+  const [activeTab, setActiveTab] = useState<'connection' | 'routing' | 'recipients'>('connection');
 
   useEffect(() => {
     if (!id) return;
@@ -156,9 +158,32 @@ export function NotificationChannelEditPage() {
       <form onSubmit={handleSubmit} autoComplete="off" style={{ maxWidth: 600 }}>
         {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
 
+        {/* Tab bar */}
+        <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--border)', marginBottom: 24 }}>
+          {(['connection', 'routing', 'recipients'] as const).map(tab => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: '0 4px 12px',
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: '0.9rem', fontWeight: 500,
+                color: activeTab === tab ? 'var(--primary)' : 'var(--text-secondary)',
+                borderBottom: activeTab === tab ? '2px solid var(--primary)' : '2px solid transparent',
+                marginBottom: -1,
+                transition: 'all 0.2s',
+                textTransform: 'capitalize',
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'connection' && (
           <div className="form-section">
             <h3 className="section-title">Channel settings</h3>
-
             <div className="form-group">
               <label className="form-label">
                 Name <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
@@ -170,14 +195,23 @@ export function NotificationChannelEditPage() {
                 placeholder="Label for this channel"
               />
             </div>
-
             <ChannelEditFields form={form} onChange={onChange} isEdit={true} />
           </div>
+        )}
 
+        {activeTab === 'routing' && (
           <div className="form-section">
-            <h3 className="section-title">Events and recipients</h3>
-            <EventsAndTargetsEditFields form={form} onChange={onChange} roles={roles} users={users} />
+            <h3 className="section-title">Events and routing</h3>
+            <RoutingEditFields form={form} onChange={onChange} />
           </div>
+        )}
+
+        {activeTab === 'recipients' && (
+          <div className="form-section">
+            <h3 className="section-title">Recipients</h3>
+            <RecipientsEditFields form={form} onChange={onChange} roles={roles} users={users} />
+          </div>
+        )}
 
           {/* Test section */}
           <div className="form-section">

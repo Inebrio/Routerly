@@ -298,7 +298,6 @@ export interface Project {
   timeoutMs?: number;
   guardrails?: GuardrailConfig;
   pii?: PiiConfig;
-  notifications?: { channels: string[] };
 }
 
 export const getProjects = () => request<Project[]>('/projects');
@@ -323,7 +322,6 @@ export const updateProject = (id: string, data: {
   timeoutMs?: number;
   guardrails?: GuardrailConfig | null;
   pii?: PiiConfig | null;
-  notifications?: { channels: string[] } | null;
 }) => request<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteProject = (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' });
 export const createProjectToken = (id: string, labels?: string[]) => request<{ token: string; tokenInfo: ProjectToken }>(`/projects/${id}/tokens`, { method: 'POST', body: JSON.stringify({ labels }) });
