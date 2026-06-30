@@ -75,7 +75,7 @@ export interface GuardrailResult {
   /** The hit string of the first rule that fired, if any. */
   triggered?: string;
   /** Effective action for the triggered rule (per-rule override ?? global config.action). Present only when triggered is set. */
-  action?: 'block' | 'log' | 'flag';
+  action?: 'block' | 'log';
   /** One entry per rule that ran (incl. the injection flag), for trace observability. */
   evaluated: RuleEval[];
 }

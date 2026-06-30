@@ -274,7 +274,7 @@ export interface GuardrailRule {
 /** Content guardrail configuration for a project (#77). Presence of this config activates guardrails — no separate enabled flag. */
 export interface GuardrailConfig {
   /** What to do when a rule triggers */
-  action: 'block' | 'flag' | 'log';
+  action: 'block' | 'log';
   /** Message returned to the client when action='block' */
   fallbackMessage?: string;
   /** When true, run built-in prompt-injection detection on every request (top-level, not a rule). */

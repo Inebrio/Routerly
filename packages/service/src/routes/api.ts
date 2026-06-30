@@ -212,7 +212,7 @@ const guardrailRuleSchema = z.discriminatedUnion('type', [
 ]);
 
 const guardrailConfigSchema = z.object({
-  action: z.enum(['block', 'flag', 'log']),
+  action: z.enum(['block', 'log']),
   fallbackMessage: z.string().optional(),
   detectInjection: z.boolean().optional(),
   rules: z.array(guardrailRuleSchema),
