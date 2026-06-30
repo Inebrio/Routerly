@@ -152,6 +152,9 @@ export function ProjectTokenEditPage() {
   const [editModels, setEditModels] = useState<EditModel[]>([]);
   const [editLabels, setEditLabels] = useState<string[]>([]);
   const [editLabelInput, setEditLabelInput] = useState('');
+  const [editTags, setEditTags] = useState<Record<string, string>>({});
+  const [newTagKey, setNewTagKey] = useState('');
+  const [newTagVal, setNewTagVal] = useState('');
 
   const tokens = project?.tokens || [];
   const editingToken = tokens.find(t => t.id === tokenId);
@@ -167,6 +170,7 @@ export function ProjectTokenEditPage() {
         }))
       );
       setEditLabels(editingToken.labels || []);
+      setEditTags(editingToken.tags || {});
     }
   }, [editingToken]);
 
@@ -180,7 +184,7 @@ export function ProjectTokenEditPage() {
         modelId: m.modelId,
         limits: limitRowsToLimits(m.limitRows),
       }));
-      const updated = await updateProjectToken(projectId, tokenId, cleanedModels, editLabels);
+      const updated = await updateProjectToken(projectId, tokenId, cleanedModels, editLabels, editTags);
       setProject(p => p ? { ...p, tokens: p.tokens?.map(t => t.id === tokenId ? updated : t) || [] } : p);
       navigate(`/dashboard/projects/${projectId}/token`);
     } catch (e) { setErr(e instanceof Error ? e.message : 'Error saving token'); }
@@ -258,6 +262,33 @@ export function ProjectTokenEditPage() {
               Labels <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
             </label>
             <LabelInput labels={editLabels} setLabels={setEditLabels} input={editLabelInput} setInput={setEditLabelInput} allLabels={allLabels} />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              Tags <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+            </label>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 8 }}>
+              Key-value metadata forwarded to usage records (e.g. env=production).
+            </p>
+            {Object.entries(editTags).map(([k, v]) => (
+              <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <span className="mono" style={{ fontSize: '0.82rem', flex: 1, color: 'var(--text-primary)' }}>{k}={v}</span>
+                <button type="button" onClick={() => setEditTags(t => { const n = { ...t }; delete n[k]; return n; })}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', padding: 2 }}>
+                  <X size={13} />
+                </button>
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input className="form-input" placeholder="key" value={newTagKey} onChange={e => setNewTagKey(e.target.value)} style={{ flex: 1 }} />
+              <input className="form-input" placeholder="value" value={newTagVal} onChange={e => setNewTagVal(e.target.value)} style={{ flex: 1 }} />
+              <button type="button" className="btn btn-secondary" style={{ padding: '0 10px' }}
+                disabled={!newTagKey.trim()}
+                onClick={() => { if (newTagKey.trim()) { setEditTags(t => ({ ...t, [newTagKey.trim()]: newTagVal })); setNewTagKey(''); setNewTagVal(''); } }}>
+                <Plus size={14} />
+              </button>
+            </div>
           </div>
 
           <div style={{ marginTop: 28, borderTop: '1px solid var(--border)', paddingTop: 24 }}>

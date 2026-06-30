@@ -57,8 +57,9 @@ Manage Bearer tokens for this project.
 
 1. Click **+ New Token**
 2. Enter a **Name** (e.g. `production`, `staging`, `ci`)
-3. Optionally configure per-token limits (metric, limit value, window type, mode)
-4. Click **Create**
+3. Optionally add **Tags** — key-value metadata (e.g., `environment: production`, `team: backend`). Tags are included in every usage record created with this token, enabling filtering and analysis by custom dimensions.
+4. Optionally configure per-token limits (metric, limit value, window type, mode)
+5. Click **Create**
 
 The token value (`sk-rt-…`) is shown **once**. Copy it immediately.
 
@@ -75,6 +76,15 @@ Per-token limits let you cap spending for individual applications sharing the sa
 ### Rolling or Regenerating a Token
 
 Click the **Re-generate** icon to invalidate the current token and issue a new one. The previous token stops working immediately.
+
+### Editing a Token
+
+Click a token's **Name** to open the edit view. Here you can:
+
+- **Update Tags** — add, remove, or modify key-value metadata. Changes apply immediately to all future usage records created with this token.
+- **Modify Limits** — add or remove spending limits without touching the token value itself.
+
+Any changes to tags or limits take effect immediately and do not invalidate the token.
 
 ---
 

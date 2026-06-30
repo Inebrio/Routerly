@@ -138,6 +138,7 @@ x-routerly-trace-id: 018f3c2a-4b5d-7e8f-9012-34567890abcd
 | Header | Value | Description |
 |--------|-------|-------------|
 | `x-routerly-no-trace` | `1` | Suppresses `{"type":"trace",...}` SSE events from the response stream. Use with OpenAI-compatible SDK clients that strictly validate SSE frame schemas and reject non-standard event types. Trace data is still recorded server-side. |
+| `x-routerly-conversation-id` | string | Session identifier for grouping related requests. Appears in usage records as `sessionId` for analysis and filtering. Useful for tracking multi-turn conversations, thread IDs, or user sessions. |
 
 ### Response (streaming)
 
@@ -159,7 +160,13 @@ The `trace` event includes the selected model, policy scores, and request cost e
 POST /v1/responses
 ```
 
-OpenAI Responses API compatible endpoint. Supports stateful multi-turn conversations via `previous_response_id`. The `x-routerly-no-trace: 1` request header is also supported here (see [Chat Completions request headers](#request-headers)).
+OpenAI Responses API compatible endpoint. Supports stateful multi-turn conversations via `previous_response_id`.
+
+### Request headers
+
+Same headers as [Chat Completions](#request-headers):
+- `x-routerly-no-trace: 1` — suppresses trace events in streaming responses
+- `x-routerly-conversation-id: <string>` — session identifier for usage tracking
 
 ### Request
 
@@ -196,6 +203,12 @@ Anthropic Messages API compatible endpoint. Use this with the Anthropic SDK by s
   ]
 }
 ```
+
+### Request headers
+
+Same headers as [Chat Completions](#request-headers):
+- `x-routerly-no-trace: 1` — suppresses trace events in streaming responses
+- `x-routerly-conversation-id: <string>` — session identifier for usage tracking
 
 ### Response
 

@@ -38,8 +38,14 @@ Guardrail judge calls are charged to the project like any other model call and a
 | **Model** | Filter to specific model IDs |
 | **Type** | `All`, `Completion`, `Router`, or `Guardrail` -- filters by call sub-activity type |
 | **Status** | `All`, `Success`, `Blocked`, or `Error` -- `Blocked` shows only guardrail-blocked requests |
+| **Session ID** | Filter to requests from a specific session (from the `x-routerly-conversation-id` header) |
+| **Tags** | Filter by token metadata (e.g., `environment: production`) |
 
 Filters are applied immediately and affect the summary cards, the per-model breakdown table, and the request log simultaneously.
+
+:::tip Session tracking and custom metadata
+Use the **Session ID** filter to view all requests from a specific conversation or user session. Use the **Tags** filter to analyze traffic by team, environment, application, or any custom dimension you tag your tokens with.
+:::
 
 ---
 
@@ -122,6 +128,8 @@ The **detail panel** for each usage record shows:
 | **Guardrail Triggered** | Identifier of the first rule that fired (e.g. `regex:pattern`, `injection:dan-mode`, `topic:gpt-4o-mini`) |
 | **Blocked By** | Same as Guardrail Triggered -- present only when `outcome` is `blocked` |
 | **PII Redacted** | Comma-separated list of entity types redacted (e.g. `EMAIL, PHONE`) |
+| **Session ID** | Session identifier from the `x-routerly-conversation-id` header, if provided (useful for grouping multi-turn conversations or user sessions) |
+| **Tags** | Custom metadata from the token that made the request (e.g., `environment: production`, `team: backend`); enables filtering and analysis by custom dimensions |
 
 ### Live Polling
 

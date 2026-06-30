@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Copy, Check, ArrowLeft } from 'lucide-react';
+import { Copy, Check, ArrowLeft, Plus, X } from 'lucide-react';
 import { createProjectToken } from '../../api';
 import { useProject } from './ProjectLayout';
 import { LabelInput } from './ProjectTokenTab'; // Will be exported next
@@ -18,6 +18,9 @@ export function ProjectTokenCreatePage() {
   // Create state
   const [createLabels, setCreateLabels] = useState<string[]>([]);
   const [createLabelInput, setCreateLabelInput] = useState('');
+  const [createTags, setCreateTags] = useState<Record<string, string>>({});
+  const [newTagKey, setNewTagKey] = useState('');
+  const [newTagVal, setNewTagVal] = useState('');
   const [revealedToken, setRevealedToken] = useState<string | null>(null);
 
   const allLabels = Array.from(new Set((project.tokens || []).flatMap(t => t.labels || []))).sort();
@@ -49,7 +52,7 @@ export function ProjectTokenCreatePage() {
     e.preventDefault(); setErr(''); setLoading(true);
     if (!projectId) return;
     try {
-      const result = await createProjectToken(projectId, createLabels);
+      const result = await createProjectToken(projectId, createLabels, Object.keys(createTags).length ? createTags : undefined);
       setProject(p => p ? { ...p, tokens: [...(p.tokens || []), result.tokenInfo] } : p);
       setRevealedToken(result.token);
     } catch (e) { setErr(e instanceof Error ? e.message : 'Error creating token'); }
@@ -108,6 +111,33 @@ export function ProjectTokenCreatePage() {
                 Tag this token to identify where it's used (e.g. "production", "ci").
               </p>
               <LabelInput labels={createLabels} setLabels={setCreateLabels} input={createLabelInput} setInput={setCreateLabelInput} allLabels={allLabels} />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">
+                Tags <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+              </label>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 8 }}>
+                Key-value metadata forwarded to usage records (e.g. env=production).
+              </p>
+              {Object.entries(createTags).map(([k, v]) => (
+                <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                  <span className="mono" style={{ fontSize: '0.82rem', flex: 1, color: 'var(--text-primary)' }}>{k}={v}</span>
+                  <button type="button" onClick={() => setCreateTags(t => { const n = { ...t }; delete n[k]; return n; })}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', padding: 2 }}>
+                    <X size={13} />
+                  </button>
+                </div>
+              ))}
+              <div style={{ display: 'flex', gap: 6 }}>
+                <input className="form-input" placeholder="key" value={newTagKey} onChange={e => setNewTagKey(e.target.value)} style={{ flex: 1 }} />
+                <input className="form-input" placeholder="value" value={newTagVal} onChange={e => setNewTagVal(e.target.value)} style={{ flex: 1 }} />
+                <button type="button" className="btn btn-secondary" style={{ padding: '0 10px' }}
+                  disabled={!newTagKey.trim()}
+                  onClick={() => { if (newTagKey.trim()) { setCreateTags(t => ({ ...t, [newTagKey.trim()]: newTagVal })); setNewTagKey(''); setNewTagVal(''); } }}>
+                  <Plus size={14} />
+                </button>
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: 10, marginTop: 28 }}>

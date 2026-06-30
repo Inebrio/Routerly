@@ -157,14 +157,23 @@ export function ProjectTokenTab() {
                     )}
                   </div>
 
-                  {token.labels && token.labels.length > 0 && (
+                  {(token.labels?.length || (token.tags && Object.keys(token.tags).length > 0)) && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                      {token.labels.map(l => (
+                      {token.labels?.map(l => (
                         <span key={l} style={{
                           background: 'var(--surface-active)', border: '1px solid var(--border)',
                           padding: '2px 10px', borderRadius: 12, fontSize: '0.75rem', color: 'var(--text-secondary)'
                         }}>
                           {l}
+                        </span>
+                      ))}
+                      {token.tags && Object.entries(token.tags).map(([k, v]) => (
+                        <span key={k} style={{
+                          background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)',
+                          padding: '2px 10px', borderRadius: 12, fontSize: '0.75rem', color: 'var(--text-secondary)',
+                          fontFamily: 'monospace'
+                        }}>
+                          {k}={v}
                         </span>
                       ))}
                     </div>

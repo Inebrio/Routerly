@@ -2295,6 +2295,51 @@ describe('DELETE /api/projects/:id/tokens/:tokenId — additional branches', () 
 })
 
 describe('PUT /api/projects/:id/tokens/:tokenId — update labels', () => {
+  it('does not expose plaintext token secret in PUT response', async () => {
+    setupAdminAuth()
+    const token = { id: 'tok-1', token: 'sk-rt-secret-value', tokenSnippet: 'sk-rt-se', createdAt: new Date().toISOString() }
+    const project = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1/tokens/tok-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ labels: ['prod'] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body)).not.toHaveProperty('token')
+  })
+
+  it('rejects PUT tags exceeding 50 entries', async () => {
+    setupAdminAuth()
+    const token = { id: 'tok-1', token: 'sk-rt-xxx', tokenSnippet: 'sk-rt-xx', createdAt: new Date().toISOString() }
+    const project = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+
+    const app = await buildApp()
+    const tooManyTags = Object.fromEntries(Array.from({ length: 51 }, (_, i) => [`k${i}`, 'v']))
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1/tokens/tok-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ tags: tooManyTags }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
   it('updates token labels (covers line 542)', async () => {
     setupAdminAuth()
     const token = { id: 'tok-1', token: 'sk-rt-xxx', tokenSnippet: 'sk-rt-xx', createdAt: new Date().toISOString() }
@@ -2335,6 +2380,55 @@ describe('PUT /api/projects/:id/tokens/:tokenId — update labels', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(404)
+  })
+})
+
+describe('Token tags (#95)', () => {
+  it('creates token with tags', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/projects/p1/tokens',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ tags: { env: 'production', team: 'backend' } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const written = mockWriteConfig.mock.calls[0]![1] as any[]
+    expect(written[0].tokens[0].tags).toEqual({ env: 'production', team: 'backend' })
+  })
+
+  it('updates token tags via PUT', async () => {
+    setupAdminAuth()
+    const token = { id: 'tok-1', token: 'sk-rt-xxx', tokenSnippet: 'sk-rt-xx', createdAt: new Date().toISOString() }
+    const project = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1/tokens/tok-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ tags: { env: 'staging' } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const written = mockWriteConfig.mock.calls[0]![1] as any[]
+    expect(written[0].tokens[0].tags).toEqual({ env: 'staging' })
   })
 })
 

@@ -263,7 +263,17 @@ routerly project model set-prompt my-api openai/gpt-5.2 --prompt ""  # clear
 
 #### `routerly project token list <project>`
 
-List all API tokens for the project.
+List all API tokens for the project, including their names, IDs, creation date, and tags.
+
+```bash
+routerly project token list my-api
+```
+
+Output includes columns for:
+- **Name** — token name
+- **ID** — token identifier (first 8 characters)
+- **Created** — when the token was created
+- **Tags** — key-value metadata (comma-separated, or empty if no tags)
 
 #### `routerly project token create <project>`
 
@@ -271,12 +281,12 @@ Create a new project API token. The token value is shown **once only**.
 
 ```bash
 routerly project token create my-api
-routerly project token create my-api --labels "production,backend"
+routerly project token create my-api --tag environment=prod --tag team=backend
 ```
 
 | Option | Description |
 |--------|-------------|
-| `--labels <labels>` | Comma-separated labels for the token |
+| `--tag <key=value>` | Attach key-value metadata to the token (repeatable). Tags are included in every usage record created with this token. |
 
 Optionally add spending limits inline:
 
@@ -290,10 +300,15 @@ Limit spec examples:
 
 #### `routerly project token edit <project> <token-id>`
 
-Add or remove limits on an existing token.
+Update tags or spending limits on an existing token.
+
+```bash
+routerly project token edit my-api abc123 --tag environment=staging --tag team=qa
+```
 
 | Option | Description |
 |--------|-------------|
+| `--tag <key=value>` | Replace all tags with these key-value pairs (repeatable). Omit to keep existing tags unchanged. |
 | `--add-limit <spec>` | Add a limit (repeatable) |
 | `--remove-limit <spec>` | Remove a limit matching model+metric+window (repeatable) |
 

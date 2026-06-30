@@ -263,6 +263,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           emit,
           log: request.log,
           ...(endUserId ? { endUserId } : {}),
+          ...(conversationId ? { sessionId: conversationId } : {}),
+          ...(request.token?.tags ? { tags: request.token.tags } : {}),
         };
 
         if (model.provider === 'openai-oauth') {
@@ -427,6 +429,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         ...(endUserId ? { endUserId } : {}),
         ...(guardrailTriggered ? { guardrailTriggered } : {}),
         ...(piiRedacted ? { piiRedacted } : {}),
+        ...(conversationId ? { sessionId: conversationId } : {}),
+        ...(request.token?.tags ? { tags: request.token.tags } : {}),
       };
 
       if (model.provider === 'openai-oauth') {
