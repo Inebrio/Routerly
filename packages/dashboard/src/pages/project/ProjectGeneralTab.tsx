@@ -15,8 +15,7 @@ export function ProjectGeneralTab() {
   const [err, setErr] = useState('');
   const [servicePublicUrl, setServicePublicUrl] = useState<string>('');
 
-  // Fetch publicUrl from settings once so "How to connect" shows the correct endpoint
-  // even when the dashboard is served from a different host/port than the service.
+  // Fetch publicUrl from settings on mount.
   useEffect(() => {
     getSettings().then(s => {
       const url = s.publicUrl?.replace(/\/$/, '') ||

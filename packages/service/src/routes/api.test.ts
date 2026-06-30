@@ -2484,6 +2484,76 @@ describe('PUT /api/projects/:id — additional branches (lines 471, 481, 491)', 
   })
 })
 
+// ─── PUT /api/projects/:id — notifications.channels ─────────────────────────
+
+describe('PUT /api/projects/:id — notifications.channels', () => {
+  it('sets notifications.channels when provided', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [], notifications: { channels: ['ch_1', 'ch_2'] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).notifications).toEqual({ channels: ['ch_1', 'ch_2'] })
+  })
+
+  it('clears notifications when null', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], notifications: { channels: ['ch_1'] } }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [], notifications: null }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).notifications).toBeUndefined()
+  })
+
+  it('preserves existing notifications when field is omitted', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], notifications: { channels: ['ch_1'] } }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).notifications).toEqual({ channels: ['ch_1'] })
+  })
+})
+
 // ─── POST /api/models — optional fields coverage ──────────────────────────────
 
 describe('POST /api/models — optional fields', () => {
@@ -5913,6 +5983,29 @@ describe('PUT /api/settings notifications validation (U5)', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(400)
+  })
+
+  it('persists channels + notificationRules + cooldowns together (#90)', async () => {
+    setup()
+    const payload = {
+      notifications: {
+        channels: [{ id: 'ch1', provider: 'dashboard' }],
+        notificationRules: [{ events: ['budget.*'], channels: ['ch1'] }],
+        cooldowns: { 'provider.degraded': '15m' },
+      },
+    }
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify(payload),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')![1] as any
+    expect(written.notifications.channels).toHaveLength(1)
+    expect(written.notifications.notificationRules).toEqual([{ events: ['budget.*'], channels: ['ch1'] }])
+    expect(written.notifications.cooldowns).toEqual({ 'provider.degraded': '15m' })
   })
 })
 
