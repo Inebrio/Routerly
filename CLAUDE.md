@@ -8,10 +8,14 @@ Stack: TypeScript ESM monorepo, Node ≥20, Fastify 5, React 18 + Vite 6, Comman
 
 ## Wire-format transparency — ABSOLUTE
 
-- OpenAI / Anthropic SDK must work drop-in pointing only its base URL at Routerly.
-- No added headers, no new request fields, no changed response structure.
-- Payload changes only for explicitly requested features (guardrails, PII scrub, cache).
-- Verify any wire detail against live provider specs — never training memory.
+Routerly is a router. Its only job is to forward requests to the best provider and return the response unaltered.
+
+- **No custom headers** — never add, remove, or rename headers on request or response.
+- **No non-standard fields** — request and response payloads must be identical to what the SDK sent / what the provider returned.
+- **Drop-in compatibility** — any client using the official OpenAI or Anthropic SDK must work by changing only the base URL to Routerly. No client-side changes allowed.
+- **Provider-agnostic** — this rule applies to every provider we implement now or in the future.
+- **Payload changes only** for explicitly requested features (guardrails, PII scrub, cache) — and only the minimum necessary, verified against live provider specs.
+- Never rely on training memory for wire format details — check against live specs.
 
 ---
 
