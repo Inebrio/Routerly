@@ -347,6 +347,8 @@ export interface ProjectToken {
   models?: TokenModelRef[];
   /** Optional labels/tags to identify this token's usage */
   labels?: string[];
+  /** Arbitrary key-value metadata attached to this token, forwarded to usage records */
+  tags?: Record<string, string>;
   /** ID of the SpendGroup this token belongs to (#82) */
   spendGroupId?: string;
 }

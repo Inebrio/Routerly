@@ -349,6 +349,10 @@ POST /api/projects/:slug/tokens
 ```json
 {
   "name": "production",
+  "tags": {
+    "environment": "prod",
+    "team": "backend"
+  },
   "limits": [
     {
       "metric": "cost",
@@ -360,13 +364,29 @@ POST /api/projects/:slug/tokens
 }
 ```
 
-**Response includes the token value in plain text — returned once only.**
+**Fields:**
+- `name` — token name (required)
+- `tags` — arbitrary key-value metadata attached to the token (optional). Tags are included in every usage record created with this token.
+- `limits` — array of per-token spending limits (optional)
+
+**Response includes the token value in plain text — returned once only.** The response also includes the `tags` object.
 
 ### Update Token
 
 ```
 PUT /api/projects/:slug/tokens/:tokenId
 ```
+
+```json
+{
+  "tags": {
+    "environment": "staging"
+  }
+}
+```
+
+**Fields:**
+- `tags` — replace the token's tags. Pass an empty object `{}` to clear all tags (optional).
 
 ### Delete Token
 

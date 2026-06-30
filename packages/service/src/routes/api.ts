@@ -913,15 +913,33 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.status(204).send();
   });
 
+  const tagsSchema = z.record(z.string().max(128), z.string().max(512))
+    .optional()
+    .superRefine((val, ctx) => {
+      if (val && Object.keys(val).length > 50) {
+        ctx.addIssue({ code: 'custom', message: 'tags: maximum 50 entries' });
+      }
+    });
+
   const createTokenBodySchema = z.object({
     labels: z.array(z.string()).optional(),
+    tags: tagsSchema,
     expiresAt: z.string().datetime({ offset: true }).refine(
       v => new Date(v) > new Date(),
       { message: 'expiresAt must be in the future' }
     ).optional(),
   });
 
-  fastify.post<{ Params: { id: string }, Body: { labels?: string[]; expiresAt?: string } }>('/api/projects/:id/tokens', async (req, reply) => {
+  const updateTokenBodySchema = z.object({
+    models: z.array(z.object({
+      modelId: z.string(),
+      limits: z.array(z.any()).optional(),
+    })).optional(),
+    labels: z.array(z.string()).optional(),
+    tags: tagsSchema,
+  });
+
+  fastify.post<{ Params: { id: string }, Body: { labels?: string[]; tags?: Record<string, string>; expiresAt?: string } }>('/api/projects/:id/tokens', async (req, reply) => {
     if (!requirePerm(req, 'project:write', reply)) return;
 
     const parsed = createTokenBodySchema.safeParse(req.body);
@@ -939,6 +957,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       tokenSnippet: rawToken.substring(0, 10),
       createdAt: new Date().toISOString(),
       ...(parsed.data.labels ? { labels: parsed.data.labels } : {}),
+      ...(parsed.data.tags ? { tags: parsed.data.tags } : {}),
       ...(parsed.data.expiresAt ? { expiresAt: parsed.data.expiresAt } : {}),
     };
 
@@ -952,8 +971,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send({ token: rawToken, tokenInfo: { ...newToken, token: undefined } });
   });
 
-  fastify.put<{ Params: { id: string, tokenId: string }; Body: { models?: TokenModelRef[], labels?: string[] } }>('/api/projects/:id/tokens/:tokenId', async (req, reply) => {
+  fastify.put<{ Params: { id: string, tokenId: string }; Body: { models?: TokenModelRef[], labels?: string[], tags?: Record<string, string> } }>('/api/projects/:id/tokens/:tokenId', async (req, reply) => {
     if (!requirePerm(req, 'project:write', reply)) return;
+
+    const parsed = updateTokenBodySchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
+
     const projects = await readConfig('projects');
     const index = projects.findIndex(p => p.id === req.params.id);
     if (index === -1) return reply.status(404).send({ error: 'Project not found' });
@@ -964,11 +987,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const token = project.tokens.find(t => t.id === req.params.tokenId);
     if (!token) return reply.status(404).send({ error: 'Token not found' });
 
-    if (req.body.models !== undefined) token.models = req.body.models;
-    if (req.body.labels !== undefined) token.labels = req.body.labels;
+    if (parsed.data.models !== undefined) token.models = parsed.data.models as TokenModelRef[];
+    if (parsed.data.labels !== undefined) token.labels = parsed.data.labels;
+    if (parsed.data.tags !== undefined) token.tags = parsed.data.tags;
     await writeConfig('projects', projects);
 
-    return reply.send(token);
+    return reply.send({ ...token, token: undefined });
   });
 
   fastify.delete<{ Params: { id: string, tokenId: string } }>('/api/projects/:id/tokens/:tokenId', async (req, reply) => {

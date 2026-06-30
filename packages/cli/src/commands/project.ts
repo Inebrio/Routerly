@@ -40,6 +40,16 @@ async function resolveUserEmail(userId: string, users: UserConfig[]): Promise<st
 //   openai/gpt-5.2:cost:period:hourly:10
 //   openai/gpt-5.2:calls:rolling:1:hour:100   (rolling window: amount + unit)
 
+function parseTags(kvs: string[]): Record<string, string> | undefined {
+  if (!kvs.length) return undefined;
+  const out: Record<string, string> = {};
+  for (const kv of kvs) {
+    const eq = kv.indexOf('=');
+    if (eq === -1) { out[kv] = ''; } else { out[kv.slice(0, eq)] = kv.slice(eq + 1); }
+  }
+  return out;
+}
+
 function parseLimitSpec(spec: string): { modelId: string; limit: Limit } {
   const parts = spec.split(':');
   // model can contain '/' but we split on ':' — use first segment as model, rest as limit fields
@@ -442,15 +452,18 @@ Examples:
           return;
         }
         const table = new Table({
-          head: ['ID', 'Snippet', 'Labels', 'Created', 'Per-model limits'].map(h => chalk.cyan(h)),
+          head: ['ID', 'Snippet', 'Labels', 'Tags', 'Created', 'Per-model limits'].map(h => chalk.cyan(h)),
         });
         for (const t of tokens) {
           const labels = t.labels?.join(', ') || chalk.gray('—');
+          const tags = t.tags && Object.keys(t.tags).length
+            ? Object.entries(t.tags).map(([k, v]) => `${k}=${v}`).join(', ')
+            : chalk.gray('—');
           const created = new Date(t.createdAt).toLocaleString('it-IT');
           const limits = t.models?.length
             ? t.models.map(m => `${m.modelId}(${m.limits?.length ?? 0})`).join(', ')
             : chalk.gray('—');
-          table.push([t.id, t.tokenSnippet + '…', labels, created, limits]);
+          table.push([t.id, t.tokenSnippet + '…', labels, tags, created, limits]);
         }
         console.log(table.toString());
       } catch (err) {
@@ -467,14 +480,16 @@ Examples:
   routerly project token create my-api --labels dev,staging
 `)
     .option('--labels <tags>', 'Comma-separated labels for this token')
-    .action(async (nameOrId: string, opts: { labels?: string }) => {
+    .option('--tag <kv>', 'Key=value tag metadata (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
+    .action(async (nameOrId: string, opts: { labels?: string; tag: string[] }) => {
       try {
         const project = await resolveProject(nameOrId);
         const labels = opts.labels ? opts.labels.split(',').map(s => s.trim()).filter(Boolean) : undefined;
+        const tags = parseTags(opts.tag);
         const res = await api<{ token: string; tokenInfo: { id: string; tokenSnippet: string; createdAt: string } }>(
           'POST',
           `/api/projects/${encodeURIComponent(project.id)}/tokens`,
-          labels ? { labels } : {}
+          { ...(labels ? { labels } : {}), ...(tags ? { tags } : {}) }
         );
         console.log(chalk.green(`✓ Token created for project "${project.name}".`));
         console.log(chalk.bold('\nToken (save this — shown only once):'));
@@ -482,6 +497,7 @@ Examples:
         console.log(chalk.gray(`  ID:      ${res.tokenInfo.id}`));
         console.log(chalk.gray(`  Snippet: ${res.tokenInfo.tokenSnippet}…`));
         if (labels?.length) console.log(chalk.gray(`  Labels:  ${labels.join(', ')}`));
+        if (tags) console.log(chalk.gray(`  Tags:    ${Object.entries(tags).map(([k, v]) => `${k}=${v}`).join(', ')}`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
         else console.error(chalk.red(`Error: ${err.message}`));
@@ -514,9 +530,10 @@ Examples:
   routerly project token edit my-api <token-id> --remove-limit "openai/gpt-5.2:cost:period:hourly"
 `)
     .option('--labels <tags>', 'Comma-separated labels (replaces existing labels)')
+    .option('--tag <kv>', 'Key=value tag (repeatable; replaces all existing tags)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .option('--add-limit <spec>', 'Add a per-model limit (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .option('--remove-limit <spec>', 'Remove a limit: <model>:<metric>:<windowType> (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
-    .action(async (nameOrId: string, tokenId: string, opts: { labels?: string; addLimit: string[]; removeLimit: string[] }) => {
+    .action(async (nameOrId: string, tokenId: string, opts: { labels?: string; tag: string[]; addLimit: string[]; removeLimit: string[] }) => {
       try {
         const project = await resolveProject(nameOrId);
         const token = (project.tokens ?? []).find(t => t.id === tokenId);
@@ -552,9 +569,11 @@ Examples:
         models = models.filter(m => m.limits && m.limits.length > 0);
 
         const labels = opts.labels ? opts.labels.split(',').map(s => s.trim()).filter(Boolean) : token.labels;
+        const tags = opts.tag.length ? parseTags(opts.tag) : token.tags;
         await api<void>('PUT', `/api/projects/${encodeURIComponent(project.id)}/tokens/${encodeURIComponent(tokenId)}`, {
           models,
           ...(labels !== undefined ? { labels } : {}),
+          ...(tags !== undefined ? { tags } : {}),
         });
         console.log(chalk.green(`✓ Token "${tokenId}" updated in project "${project.name}".`));
       } catch (err) {

@@ -44,6 +44,7 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
 
     const traceId = randomUUID();
     setTrace(traceId, []);
+    const conversationId = (request.headers['x-routerly-conversation-id'] as string | undefined) || undefined;
 
     // Real project context for guardrail judge/embedding calls (#77, BUG-4).
     const guardrailPctx = { projectId: project.id, project, ...(request.token ? { token: request.token } : {}) };
@@ -156,6 +157,8 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
         ...(endUserId ? { endUserId } : {}),
         ...(guardrailTriggered ? { guardrailTriggered } : {}),
         ...(piiRedacted ? { piiRedacted } : {}),
+        ...(conversationId ? { sessionId: conversationId } : {}),
+        ...(request.token?.tags ? { tags: request.token.tags } : {}),
       };
 
       try {
