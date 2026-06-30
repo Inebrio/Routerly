@@ -25,7 +25,7 @@ import type {
   MessagesResponse,
 } from '@routerly/shared';
 import { getProviderAdapter } from '../providers/index.js';
-import { isAllowed, isAllowedForRoutingModel, checkGroupBudget } from '../cost/budget.js';
+import { isAllowed, isAllowedForRoutingModel, checkGroupBudget, getLimitUsageSnapshot } from '../cost/budget.js';
 import { readConfig } from '../config/loader.js';
 import { trackUsage } from '../cost/tracker.js';
 import { emitEvent } from '../notifications/emitter.js';
@@ -78,6 +78,36 @@ export class BudgetExceededError extends Error {
   }
 }
 
+// ─── In-memory notification state ────────────────────────────────────────────
+
+// Provider health tracking: keyed by model.id
+const providerFailCounts = new Map<string, number>(); // consecutive failures
+const providerDegraded   = new Set<string>();          // currently degraded model IDs
+
+// Budget notification deduplication
+const budgetExceededKeys = new Set<string>(); // "${projectId}:${modelId}" — awaiting reset
+const thresholdFiredKeys = new Set<string>(); // "${projectId}:${modelId}:${window}" — threshold already fired
+
+function isRateLimitError(err: unknown): boolean {
+  return /429|rate.?limit|too many/i.test(err instanceof Error ? err.message : String(err));
+}
+
+function handleProviderResult(modelId: string, provider: string, success: boolean, projectId: string, log: Logger | undefined): void {
+  if (success) {
+    providerFailCounts.set(modelId, 0);
+    if (providerDegraded.delete(modelId)) {
+      emitEvent('provider.recovered', 'info', { modelId, provider, projectId }, log ? { log } : {}).catch(() => {});
+    }
+  } else {
+    const n = (providerFailCounts.get(modelId) ?? 0) + 1;
+    providerFailCounts.set(modelId, n);
+    if (n >= 3 && !providerDegraded.has(modelId)) {
+      providerDegraded.add(modelId);
+      emitEvent('provider.degraded', 'warning', { modelId, provider, consecutiveErrors: n, projectId }, log ? { log } : {}).catch(() => {});
+    }
+  }
+}
+
 // ─── Helpers interni ─────────────────────────────────────────────────────────
 
 /** Mappa callType → panel SSE per le trace entry */
@@ -112,6 +142,8 @@ export async function checkBudget(model: ModelConfig, ctx: LLMCallContext): Prom
     groupAllowed = checkGroupBudget(project.spendGroupId, 0, settings, usage);
   }
 
+  const budgetKey = `${projectId}:${model.id}`;
+
   if (!allowed || !groupAllowed) {
     const reason = allowed ? 'spend_group_exhausted' : 'budget_exhausted';
     emit?.({
@@ -130,8 +162,36 @@ export async function checkBudget(model: ModelConfig, ctx: LLMCallContext): Prom
       callType,
       ...(traceId !== undefined ? { traceId } : {}),
     }).catch(() => {});
+    budgetExceededKeys.add(budgetKey);
     emitEvent('budget.exceeded', 'critical', { projectId, modelId: model.id, reason }, { ...(ctx.log ? { log: ctx.log } : {}) }).catch(() => {});
     throw new BudgetExceededError(model.id);
+  }
+
+  // Budget is allowed — check if a previous period was exhausted (new period started)
+  if (budgetExceededKeys.delete(budgetKey)) {
+    // Clean up threshold dedup for this project:model so it fires again in new period
+    for (const k of thresholdFiredKeys) {
+      if (k.startsWith(budgetKey + ':')) thresholdFiredKeys.delete(k);
+    }
+    emitEvent('budget.reset', 'info', { projectId, modelId: model.id }, ctx.log ? { log: ctx.log } : {}).catch(() => {});
+  }
+
+  // Check if usage is near threshold (≥80%) — only for user-facing completion calls
+  if (callType === 'completion' && isCandidate) {
+    getLimitUsageSnapshot(model, project, token).then(snapshots => {
+      for (const snap of snapshots) {
+        if (snap.value > 0 && snap.current / snap.value >= 0.8) {
+          const tKey = `${budgetKey}:${snap.window}`;
+          if (!thresholdFiredKeys.has(tKey)) {
+            thresholdFiredKeys.add(tKey);
+            emitEvent('budget.threshold_reached', 'warning', {
+              projectId, modelId: model.id, metric: snap.metric, window: snap.window,
+              current: snap.current, limit: snap.value, pct: Math.round(snap.current / snap.value * 100),
+            }, ctx.log ? { log: ctx.log } : {}).catch(() => {});
+          }
+        }
+      }
+    }).catch(() => {});
   }
 }
 
@@ -241,6 +301,7 @@ export async function llmChat(
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
     }).catch(() => {});
 
+    handleProviderResult(model.id, model.provider, true, projectId, log);
     return response;
   } catch (err: unknown) {
     const latencyMs = Date.now() - t0;
@@ -248,6 +309,10 @@ export async function llmChat(
 
     log?.warn({ err, modelId: model.id }, 'llm executor: chat call failed');
     emit?.({ panel: res, message: 'model:error', details: { modelId: model.id, error: msg, latencyMs } });
+
+    const provEvt = isRateLimitError(err) ? 'provider.rate_limited' : 'provider.error';
+    emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, projectId, error: msg }, log ? { log } : {}).catch(() => {});
+    handleProviderResult(model.id, model.provider, false, projectId, log);
 
     await trackUsage({
       projectId,
@@ -338,6 +403,9 @@ export async function llmStream(
     const msg = err instanceof Error ? err.message : String(err);
     log?.warn({ err, modelId: model.id }, 'llm executor: stream failed before first chunk');
     emit?.({ panel: res, message: 'model:error', details: { modelId: model.id, error: msg, latencyMs } });
+    const provEvt = isRateLimitError(err) ? 'provider.rate_limited' : 'provider.error';
+    emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, projectId, error: msg }, log ? { log } : {}).catch(() => {});
+    handleProviderResult(model.id, model.provider, false, projectId, log);
     await trackUsage({
       projectId, model, inputTokens: 0, outputTokens: 0, latencyMs,
       outcome: 'error',
@@ -418,6 +486,9 @@ export async function llmStream(
         message: 'model:error',
         details: { modelId: model.id, error: errorMessage, latencyMs: Date.now() - t0 },
       });
+      const provEvt = isRateLimitError(err) ? 'provider.rate_limited' : 'provider.error';
+      emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, projectId, error: errorMessage }, log ? { log } : {}).catch(() => {});
+      handleProviderResult(model.id, model.provider, false, projectId, log);
       throw err;
     } finally {
       const latencyMs = Date.now() - t0;
@@ -451,6 +522,7 @@ export async function llmStream(
           },
         });
       }
+      if (outcome === 'success') handleProviderResult(model.id, model.provider, true, projectId, log);
       await trackUsage({
         projectId, model, inputTokens, outputTokens, latencyMs, ttftMs,        ...(cachedInputTokens > 0 ? { cachedInputTokens } : {}),        outcome,
         ...(errorMessage !== undefined ? { errorMessage } : {}),

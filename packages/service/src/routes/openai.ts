@@ -246,9 +246,13 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
 
+      let streamPrimaryModelId: string | undefined;
+      let streamPrimaryFailed = false;
       for (const candidate of sortedCandidates) {
         const model = allModels.find((m: any) => m.id === candidate.model);
         if (!model) continue;
+
+        if (!streamPrimaryModelId) streamPrimaryModelId = model.id;
 
         const ctx: LLMCallContext = {
           projectId: project.id,
@@ -274,7 +278,12 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           if (!(err instanceof BudgetExceededError)) {
             request.log.warn({ err, modelId: model.id }, 'Stream failed before first chunk, trying next candidate');
           }
+          if (model.id === streamPrimaryModelId) streamPrimaryFailed = true;
           continue;
+        }
+
+        if (streamPrimaryFailed && model.id !== streamPrimaryModelId) {
+          void emitEvent('routing.fallback_used', 'info', { projectId: project.id, primaryModelId: streamPrimaryModelId, fallbackModelId: model.id, traceId }, { projectId: project.id, log: request.log });
         }
 
         try {
@@ -399,9 +408,13 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       sortedCandidates = [...routingResponse.models].sort((a: any, b: any) => b.weight - a.weight);
     }
 
+    let chatPrimaryModelId: string | undefined;
+    let chatPrimaryFailed = false;
     for (const candidate of sortedCandidates) {
       const model = allModels.find((m: any) => m.id === candidate.model);
       if (!model) continue;
+
+      if (!chatPrimaryModelId) chatPrimaryModelId = model.id;
 
       const ctx: LLMCallContext = {
         projectId: project.id,
@@ -476,12 +489,16 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
           }
         }
 
+        if (chatPrimaryFailed && model.id !== chatPrimaryModelId) {
+          void emitEvent('routing.fallback_used', 'info', { projectId: project.id, primaryModelId: chatPrimaryModelId, fallbackModelId: model.id, traceId }, { projectId: project.id, log: request.log });
+        }
         reply.header('x-routerly-trace-id', traceId);
         return reply.send(response);
       } catch (err: unknown) {
         if (!(err instanceof BudgetExceededError)) {
           request.log.warn({ err, modelId: model.id }, 'Model failed, trying next candidate');
         }
+        if (model.id === chatPrimaryModelId) chatPrimaryFailed = true;
       }
     }
 
