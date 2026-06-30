@@ -6,6 +6,7 @@ import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, P
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MultiSelect } from '../components/MultiSelect';
 import { NOTIFICATION_EVENTS } from '@routerly/shared';
+import type { NotificationRule } from '@routerly/shared';
 
 const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'error'];
 
@@ -366,6 +367,16 @@ export function SettingsNotificationsTab() {
   const [testStatus, setTestStatus]       = useState<Record<string, { loading: boolean; ok?: boolean; message?: string; warn?: boolean }>>({});
   const [roles, setRoles]   = useState<Role[]>([]);
   const [users, setUsers]   = useState<User[]>([]);
+
+  // Routing rules form state
+  const [newRuleEvents, setNewRuleEvents]     = useState<string[]>([]);
+  const [newRuleChannels, setNewRuleChannels] = useState<string[]>([]);
+  const [addRuleOpen, setAddRuleOpen]         = useState(false);
+
+  // Cooldowns form state
+  const [newCooldownEvent, setNewCooldownEvent]       = useState('');
+  const [newCooldownDuration, setNewCooldownDuration] = useState('');
+  const [addCooldownOpen, setAddCooldownOpen]         = useState(false);
   const addRef    = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -421,7 +432,7 @@ export function SettingsNotificationsTab() {
           })
         : undefined;
       await updateSettings(cleanChannels !== undefined
-        ? { ...form, notifications: { channels: cleanChannels } }
+        ? { ...form, notifications: { ...form.notifications, channels: cleanChannels } }
         : form);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -450,19 +461,52 @@ export function SettingsNotificationsTab() {
       pagerduty: { id, provider: 'pagerduty', integrationKey: '' },
       discord:   { id, provider: 'discord',   webhookUrl: '' },
     };
-    setForm(f => ({ ...f, notifications: { channels: [...(f.notifications?.channels ?? []), defaults[provider]] } }));
+    setForm(f => ({ ...f, notifications: { ...f.notifications, channels: [...(f.notifications?.channels ?? []), defaults[provider]] } }));
     setCollapsed(c => ({ ...c, [id]: false }));
   }
 
   function removeChannel(id: string) {
-    setForm(f => ({ ...f, notifications: { channels: (f.notifications?.channels ?? []).filter(ch => ch.id !== id) } }));
+    setForm(f => ({ ...f, notifications: { ...f.notifications, channels: (f.notifications?.channels ?? []).filter(ch => ch.id !== id) } }));
   }
 
   function uf(id: string, field: string, value: unknown) {
     setForm(f => ({
       ...f,
-      notifications: { channels: (f.notifications?.channels ?? []).map(ch => ch.id === id ? ({ ...ch, [field]: value } as EChannel) : ch) },
+      notifications: { ...f.notifications, channels: (f.notifications?.channels ?? []).map(ch => ch.id === id ? ({ ...ch, [field]: value } as EChannel) : ch) },
     }));
+  }
+
+  const rules    = form.notifications?.notificationRules ?? [];
+  const cooldowns = form.notifications?.cooldowns ?? {};
+
+  function setRules(next: NotificationRule[]) {
+    setForm(f => ({ ...f, notifications: { ...f.notifications, notificationRules: next } }));
+  }
+
+  function setCooldowns(next: Record<string, string>) {
+    setForm(f => ({ ...f, notifications: { ...f.notifications, cooldowns: next } }));
+  }
+
+  function addRule() {
+    if (!newRuleEvents.length || !newRuleChannels.length) return;
+    setRules([...rules, { events: newRuleEvents, channels: newRuleChannels }]);
+    setNewRuleEvents([]); setNewRuleChannels([]); setAddRuleOpen(false);
+  }
+
+  function removeRule(idx: number) {
+    setRules(rules.filter((_, i) => i !== idx));
+  }
+
+  function addCooldown() {
+    if (!newCooldownEvent || !newCooldownDuration.trim()) return;
+    setCooldowns({ ...cooldowns, [newCooldownEvent]: newCooldownDuration.trim() });
+    setNewCooldownEvent(''); setNewCooldownDuration(''); setAddCooldownOpen(false);
+  }
+
+  function removeCooldown(event: string) {
+    const next = { ...cooldowns };
+    delete next[event];
+    setCooldowns(next);
   }
 
   async function sendTest(id: string, provider: EProvider) {
@@ -668,7 +712,7 @@ export function SettingsNotificationsTab() {
                   const secure = e.target.checked;
                   const cur = ch.port ?? 587;
                   const port = secure ? (cur === 587 ? 465 : cur) : (cur === 465 ? 587 : cur);
-                  setForm(f => ({ ...f, notifications: { channels: (f.notifications?.channels ?? []).map(c => c.id === ch.id ? { ...c, secure, port } : c) } }));
+                  setForm(f => ({ ...f, notifications: { ...f.notifications, channels: (f.notifications?.channels ?? []).map(c => c.id === ch.id ? { ...c, secure, port } : c) } }));
                 }}
                 style={{ width: 16, height: 16, accentColor: 'var(--accent)', cursor: 'pointer' }} />
               <label htmlFor={`smtp-tls-${ch.id}`} style={{ cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text-primary)' }}>Use TLS / SSL</label>
@@ -912,6 +956,161 @@ export function SettingsNotificationsTab() {
                   </button>
                 ))}
           </div>
+        )}
+      </div>
+
+      {/* ── Routing Rules ── */}
+      <div style={{ marginBottom: 28 }}>
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+          Routing Rules
+        </h3>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 12px' }}>
+          Route specific events to specific channels. First matching rule wins. Events not matching any rule go to all channels.
+        </p>
+
+        {rules.length > 0 && (
+          <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', marginBottom: 12 }}>
+            {rules.map((rule, idx) => {
+              const channelNames = rule.channels.map(cid => {
+                const ch = channels.find(c => c.id === cid);
+                return ch ? (ch.name ?? ch.provider) : cid;
+              });
+              return (
+                <div key={idx} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '9px 12px',
+                  borderBottom: idx < rules.length - 1 ? '1px solid var(--border)' : 'none',
+                  background: 'var(--bg-elevated)',
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginRight: 6 }}>Events:</span>
+                    <code style={{ fontSize: '0.78rem', color: 'var(--text-primary)' }}>{rule.events.join(', ')}</code>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginRight: 6 }}>Channels:</span>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-primary)' }}>{channelNames.join(', ')}</span>
+                  </div>
+                  <button type="button" onClick={() => removeRule(idx)} title="Remove rule"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {addRuleOpen ? (
+          <div style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 14, background: 'var(--bg-elevated)', marginBottom: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 10 }}>
+              <div>
+                <label className="form-label">Events</label>
+                <MultiSelect
+                  options={EVENT_OPTIONS}
+                  value={newRuleEvents}
+                  onChange={setNewRuleEvents}
+                  placeholder="Select events…"
+                />
+              </div>
+              <div>
+                <label className="form-label">Channels</label>
+                <MultiSelect
+                  options={channels.map(c => ({ value: c.id, label: c.name ?? c.provider }))}
+                  value={newRuleChannels}
+                  onChange={setNewRuleChannels}
+                  placeholder="Select channels…"
+                />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="button" className="btn btn-primary"
+                disabled={!newRuleEvents.length || !newRuleChannels.length}
+                onClick={addRule} style={{ fontSize: '0.8rem' }}>
+                Add
+              </button>
+              <button type="button" className="btn btn-secondary"
+                onClick={() => { setAddRuleOpen(false); setNewRuleEvents([]); setNewRuleChannels([]); }}
+                style={{ fontSize: '0.8rem' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button type="button" className="btn btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            onClick={() => setAddRuleOpen(true)}>
+            <Plus size={14} /> Add Rule
+          </button>
+        )}
+      </div>
+
+      {/* ── Cooldowns ── */}
+      <div style={{ marginBottom: 28 }}>
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>
+          Cooldowns
+        </h3>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 12px' }}>
+          Minimum interval between repeated notifications for the same event type. Suppressed events are still logged internally.
+        </p>
+
+        {Object.keys(cooldowns).length > 0 && (
+          <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', marginBottom: 12 }}>
+            {Object.entries(cooldowns).map(([evt, dur], idx, arr) => (
+              <div key={evt} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '9px 12px',
+                borderBottom: idx < arr.length - 1 ? '1px solid var(--border)' : 'none',
+                background: 'var(--bg-elevated)',
+              }}>
+                <span style={{ flex: 1, fontSize: '0.8rem', color: 'var(--text-primary)', fontFamily: 'monospace' }}>{evt}</span>
+                <code style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginRight: 8 }}>{dur}</code>
+                <button type="button" onClick={() => removeCooldown(evt)} title="Remove cooldown"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {addCooldownOpen ? (
+          <div style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 14, background: 'var(--bg-elevated)', marginBottom: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 12, marginBottom: 10 }}>
+              <div>
+                <label className="form-label">Event</label>
+                <select className="form-input" value={newCooldownEvent} onChange={e => setNewCooldownEvent(e.target.value)}>
+                  <option value="">Select event…</option>
+                  {NOTIFICATION_EVENTS.map(e => (
+                    <option key={e} value={e}>{EVENT_LABELS[e] ?? e}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="form-label">Duration</label>
+                <input className="form-input" value={newCooldownDuration}
+                  onChange={e => setNewCooldownDuration(e.target.value)}
+                  placeholder="15m" />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="button" className="btn btn-primary"
+                disabled={!newCooldownEvent || !newCooldownDuration.trim()}
+                onClick={addCooldown} style={{ fontSize: '0.8rem' }}>
+                Add
+              </button>
+              <button type="button" className="btn btn-secondary"
+                onClick={() => { setAddCooldownOpen(false); setNewCooldownEvent(''); setNewCooldownDuration(''); }}
+                style={{ fontSize: '0.8rem' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button type="button" className="btn btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            onClick={() => setAddCooldownOpen(true)}>
+            <Plus size={14} /> Add Cooldown
+          </button>
         )}
       </div>
 

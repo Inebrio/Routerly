@@ -1,15 +1,36 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Search, Bell, Pencil, Trash2, FlaskConical, X, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getNotificationChannels, deleteNotificationChannel, testNotificationChannel } from '../api';
+import { getNotificationChannels, deleteNotificationChannel, testNotificationChannel, getSettings, updateSettings } from '../api';
 import type { RedactedChannel } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { MultiSelect } from '../components/MultiSelect';
 import {
   CHANNEL_PROVIDER_META,
   summariseChannel,
   providerLabel,
 } from './notificationChannelFields';
 import type { ChannelProvider } from './notificationChannelFields';
+import { NOTIFICATION_EVENTS } from '@routerly/shared';
+import type { NotificationRule } from '@routerly/shared';
+
+const EVENT_LABELS: Record<string, string> = {
+  'provider.error':          'Provider – Error',
+  'provider.degraded':       'Provider – Degraded',
+  'provider.recovered':      'Provider – Recovered',
+  'provider.rate_limited':   'Provider – Rate Limited',
+  'routing.no_candidates':   'Routing – No Candidates',
+  'routing.fallback_used':   'Routing – Fallback Used',
+  'auth.login_failed':       'Auth – Login Failed',
+  'auth.token_invalid':      'Auth – Token Invalid',
+  'config.model_added':      'Config – Model Added',
+  'config.model_deleted':    'Config – Model Deleted',
+  'config.project_created':  'Config – Project Created',
+  'config.project_deleted':  'Config – Project Deleted',
+  'system.startup':          'System – Startup',
+  'system.shutdown':         'System – Shutdown',
+};
+const EVENT_OPTIONS = NOTIFICATION_EVENTS.map(e => ({ value: e, label: EVENT_LABELS[e] ?? e }));
 
 type SortKey = 'name' | 'type' | 'summary';
 type SortDir = 'asc' | 'desc';
@@ -49,8 +70,27 @@ export function NotificationChannelListPage() {
   // Per-row test status
   const [testStates, setTestStates] = useState<Record<string, TestState>>({});
 
+  // Routing rules + cooldowns
+  const [rules, setRules] = useState<NotificationRule[]>([]);
+  const [cooldowns, setCooldowns] = useState<Record<string, string>>({});
+  const [rulesSaving, setRulesSaving] = useState(false);
+  const [rulesSaved, setRulesSaved] = useState(false);
+  const [rulesError, setRulesError] = useState('');
+
+  const [newRuleEvents, setNewRuleEvents] = useState<string[]>([]);
+  const [newRuleChannels, setNewRuleChannels] = useState<string[]>([]);
+  const [addRuleOpen, setAddRuleOpen] = useState(false);
+
+  const [newCooldownEvent, setNewCooldownEvent] = useState('');
+  const [newCooldownDuration, setNewCooldownDuration] = useState('');
+  const [addCooldownOpen, setAddCooldownOpen] = useState(false);
+
   useEffect(() => {
     load();
+    getSettings().then(s => {
+      setRules(s.notifications?.notificationRules ?? []);
+      setCooldowns(s.notifications?.cooldowns ?? {});
+    }).catch(() => {});
   }, []);
 
   function load() {
@@ -148,6 +188,49 @@ export function NotificationChannelListPage() {
       return sortDir === 'asc' ? cmp : -cmp;
     });
   }, [filtered, sortKey, sortDir]);
+
+  async function saveRulesAndCooldowns(nextRules: NotificationRule[], nextCooldowns: Record<string, string>) {
+    setRulesSaving(true); setRulesError('');
+    try {
+      const current = await getSettings();
+      await updateSettings({ ...current, notifications: { ...(current.notifications ?? {}), notificationRules: nextRules, cooldowns: nextCooldowns } });
+      setRulesSaved(true);
+      setTimeout(() => setRulesSaved(false), 2000);
+    } catch (e) {
+      setRulesError(e instanceof Error ? e.message : 'Failed to save');
+    } finally {
+      setRulesSaving(false);
+    }
+  }
+
+  function handleAddRule() {
+    if (!newRuleEvents.length || !newRuleChannels.length) return;
+    const next = [...rules, { events: newRuleEvents, channels: newRuleChannels }];
+    setRules(next);
+    setNewRuleEvents([]); setNewRuleChannels([]); setAddRuleOpen(false);
+    saveRulesAndCooldowns(next, cooldowns);
+  }
+
+  function handleRemoveRule(idx: number) {
+    const next = rules.filter((_, i) => i !== idx);
+    setRules(next);
+    saveRulesAndCooldowns(next, cooldowns);
+  }
+
+  function handleAddCooldown() {
+    if (!newCooldownEvent || !newCooldownDuration.trim()) return;
+    const next = { ...cooldowns, [newCooldownEvent]: newCooldownDuration.trim() };
+    setCooldowns(next);
+    setNewCooldownEvent(''); setNewCooldownDuration(''); setAddCooldownOpen(false);
+    saveRulesAndCooldowns(rules, next);
+  }
+
+  function handleRemoveCooldown(event: string) {
+    const next = { ...cooldowns };
+    delete next[event];
+    setCooldowns(next);
+    saveRulesAndCooldowns(rules, next);
+  }
 
   const thStyle: React.CSSProperties = { cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' };
   const thInner = (label: string, key: SortKey) => (
@@ -351,6 +434,176 @@ export function NotificationChannelListPage() {
           onConfirm={confirmState.onConfirm}
           onCancel={() => setConfirmState(null)}
         />
+      )}
+
+      {/* ── Routing Rules ── */}
+      <div style={{ marginTop: 36, marginBottom: 28 }}>
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>
+          Routing Rules
+        </h3>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 12px' }}>
+          Route specific event patterns to specific channels. First matching rule wins. Events not matching any rule go to all channels.
+        </p>
+
+        {rules.length > 0 && (
+          <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', marginBottom: 12 }}>
+            {rules.map((rule, idx) => {
+              const channelNames = rule.channels.map(cid => {
+                const ch = channels.find(c => c.id === cid);
+                return ch ? (ch.name ?? ch.provider) : cid;
+              });
+              return (
+                <div key={idx} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '9px 12px',
+                  borderBottom: idx < rules.length - 1 ? '1px solid var(--border)' : 'none',
+                  background: 'var(--bg-elevated)',
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginRight: 6 }}>Events:</span>
+                    <code style={{ fontSize: '0.78rem', color: 'var(--text-primary)' }}>{rule.events.join(', ')}</code>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginRight: 6 }}>Channels:</span>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-primary)' }}>{channelNames.join(', ')}</span>
+                  </div>
+                  <button type="button" onClick={() => handleRemoveRule(idx)} title="Remove rule"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {addRuleOpen ? (
+          <div style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 14, background: 'var(--bg-elevated)', marginBottom: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 10 }}>
+              <div>
+                <label className="form-label">Events</label>
+                <MultiSelect
+                  options={EVENT_OPTIONS}
+                  value={newRuleEvents}
+                  onChange={setNewRuleEvents}
+                  placeholder="Select events…"
+                />
+              </div>
+              <div>
+                <label className="form-label">Channels</label>
+                <MultiSelect
+                  options={channels.map(c => ({ value: c.id, label: c.name ?? c.provider }))}
+                  value={newRuleChannels}
+                  onChange={setNewRuleChannels}
+                  placeholder="Select channels…"
+                />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="button" className="btn btn-primary"
+                disabled={!newRuleEvents.length || !newRuleChannels.length || rulesSaving}
+                onClick={handleAddRule} style={{ fontSize: '0.8rem' }}>
+                Add
+              </button>
+              <button type="button" className="btn btn-secondary"
+                onClick={() => { setAddRuleOpen(false); setNewRuleEvents([]); setNewRuleChannels([]); }}
+                style={{ fontSize: '0.8rem' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button type="button" className="btn btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            onClick={() => setAddRuleOpen(true)}>
+            <Plus size={14} /> Add Rule
+          </button>
+        )}
+      </div>
+
+      {/* ── Cooldowns ── */}
+      <div style={{ marginBottom: 28 }}>
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>
+          Cooldowns
+        </h3>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 12px' }}>
+          Minimum interval between repeated notifications for the same event. Suppressed events are still logged.
+        </p>
+
+        {Object.keys(cooldowns).length > 0 && (
+          <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', marginBottom: 12 }}>
+            {Object.entries(cooldowns).map(([evt, dur], idx, arr) => (
+              <div key={evt} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '9px 12px',
+                borderBottom: idx < arr.length - 1 ? '1px solid var(--border)' : 'none',
+                background: 'var(--bg-elevated)',
+              }}>
+                <span style={{ flex: 1, fontSize: '0.8rem', color: 'var(--text-primary)', fontFamily: 'monospace' }}>{evt}</span>
+                <code style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginRight: 8 }}>{dur}</code>
+                <button type="button" onClick={() => handleRemoveCooldown(evt)} title="Remove cooldown"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {addCooldownOpen ? (
+          <div style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 14, background: 'var(--bg-elevated)', marginBottom: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 12, marginBottom: 10 }}>
+              <div>
+                <label className="form-label">Event</label>
+                <select className="form-input" value={newCooldownEvent} onChange={e => setNewCooldownEvent(e.target.value)}>
+                  <option value="">Select event…</option>
+                  {NOTIFICATION_EVENTS.map(e => (
+                    <option key={e} value={e}>{EVENT_LABELS[e] ?? e}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="form-label">Duration</label>
+                <input className="form-input" value={newCooldownDuration}
+                  onChange={e => setNewCooldownDuration(e.target.value)}
+                  placeholder="15m" />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="button" className="btn btn-primary"
+                disabled={!newCooldownEvent || !newCooldownDuration.trim() || rulesSaving}
+                onClick={handleAddCooldown} style={{ fontSize: '0.8rem' }}>
+                Add
+              </button>
+              <button type="button" className="btn btn-secondary"
+                onClick={() => { setAddCooldownOpen(false); setNewCooldownEvent(''); setNewCooldownDuration(''); }}
+                style={{ fontSize: '0.8rem' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button type="button" className="btn btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            onClick={() => setAddCooldownOpen(true)}>
+            <Plus size={14} /> Add Cooldown
+          </button>
+        )}
+      </div>
+
+      {/* Save status feedback */}
+      {rulesError && (
+        <div className="form-error" style={{ marginBottom: 12 }}>{rulesError}</div>
+      )}
+      {rulesSaved && (
+        <div style={{ marginBottom: 12, padding: '8px 12px', background: 'color-mix(in srgb, var(--success) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--success) 35%, transparent)', borderRadius: 8, fontSize: '0.85rem', color: 'var(--success)' }}>
+          Saved.
+        </div>
+      )}
+      {rulesSaving && (
+        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          <div className="spinner" style={{ width: 12, height: 12 }} /> Saving…
+        </div>
       )}
     </>
   );
