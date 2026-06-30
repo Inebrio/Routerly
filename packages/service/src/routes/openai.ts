@@ -114,8 +114,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
     // ── Content guardrails (#77) ─────────────────────────────────────────────
     // Checks input messages against the project's guardrail rules.
-    // On 'block' we short-circuit with the fallback message; 'flag'/'log' record
-    // the rule on the usage record and continue.
+    // On 'block' we short-circuit with the fallback message; 'log' records
+    // the rule on the usage record and continues.
     // Real project context for guardrail judge/embedding calls (#77, BUG-4):
     // their tokens are attributed and gated against the caller's project.
     const guardrailPctx = { projectId: project.id, project, ...(request.token ? { token: request.token } : {}) };

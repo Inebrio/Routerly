@@ -1057,7 +1057,7 @@ Examples:
   // ── project guardrails <project> ─────────────────────────────────────────────
   cmd.command('guardrails <project>')
     .description('Show or update guardrails config for a project')
-    .option('--action <action>', 'Action on violation: block | flag | log')
+    .option('--action <action>', 'Action on violation: block | log')
     .option('--fallback <message>', 'Fallback message returned to client when action=block')
     .option('--detect-injection', 'Enable built-in prompt injection detection')
     .option('--no-detect-injection', 'Disable built-in prompt injection detection')
@@ -1124,7 +1124,7 @@ Examples:
         // ── mutate ───────────────────────────────────────────────────────────────
         const updated: GuardrailConfig = { ...current, rules: [...current.rules] };
 
-        if (opts.action) updated.action = opts.action as 'block' | 'flag' | 'log';
+        if (opts.action) updated.action = opts.action as 'block' | 'log';
         if (opts.fallback !== undefined) updated.fallbackMessage = opts.fallback;
         if (opts.detectInjection !== undefined) updated.detectInjection = opts.detectInjection;
 
