@@ -163,16 +163,83 @@ export class BedrockAdapter implements ProviderAdapter {
   }
 
   async *streamCompletion(request: ChatCompletionRequest, model: ModelConfig): AsyncIterable<StreamChunk> {
-    // ponytail: Bedrock converse-stream uses multipart/mixed event chunks; complex to parse without a
-    // binary framing lib. Fall back to non-streaming + emit a single chunk so callers still work.
-    const response = await this.chatCompletion(request, model);
-    const text = response.choices[0]?.message?.content ?? '';
-    const id   = response.id;
-    const created = response.created;
-    yield {
-      id, object: 'chat.completion.chunk', created, model: response.model,
-      choices: [{ index: 0, delta: { role: 'assistant', content: text }, finish_reason: 'stop' }],
-    } as unknown as StreamChunk;
+    const { system, messages } = toBedrockMessages(request.messages);
+    const maxTokens = request.max_completion_tokens ?? request.max_tokens ?? 4096;
+    const bedrockBody: Record<string, unknown> = { messages };
+    if (system)    bedrockBody['system']          = system;
+    if (maxTokens) bedrockBody['inferenceConfig'] = { maxTokens };
+
+    const bodyStr = JSON.stringify(bedrockBody);
+    const url     = this.buildUrl(model, true);
+    const headers = this.auth(model, url, bodyStr);
+
+    const resp = await fetch(url, { method: 'POST', headers, body: bodyStr });
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => resp.statusText);
+      throw new Error(`Bedrock error ${resp.status}: ${text}`);
+    }
+    if (!resp.body) throw new Error('Bedrock stream: response body is null');
+
+    const id      = `chatcmpl-${Date.now()}`;
+    const created = Math.floor(Date.now() / 1000);
+    const modelId = getUpstreamModelId(model);
+    const reader  = resp.body.getReader();
+    let buf       = Buffer.alloc(0);
+
+    // Parse Amazon Event Stream binary frames
+    // Frame layout: totalLen(4) headersLen(4) preludeCRC(4) headers payload msgCRC(4)
+    const parseHeaders = (raw: Buffer): Record<string, string> => {
+      const out: Record<string, string> = {};
+      let pos = 0;
+      while (pos < raw.length) {
+        const nameLen = raw[pos++]!;
+        const name    = raw.subarray(pos, pos + nameLen).toString('utf-8'); pos += nameLen;
+        const vtype   = raw[pos++]!;
+        if (vtype === 7) { // string
+          const vlen = raw.readUInt16BE(pos); pos += 2;
+          out[name]  = raw.subarray(pos, pos + vlen).toString('utf-8'); pos += vlen;
+        }
+      }
+      return out;
+    };
+
+    outer: while (true) {
+      const { done, value } = await reader.read();
+      if (value) buf = Buffer.concat([buf, Buffer.from(value)]);
+
+      while (buf.length >= 12) {
+        const totalLen = buf.readUInt32BE(0);
+        if (buf.length < totalLen) break;
+
+        const frame      = buf.subarray(0, totalLen);
+        buf              = buf.subarray(totalLen);
+        const headersLen = frame.readUInt32BE(4);
+        // offset 8 = prelude CRC (skip verification)
+        const msgHeaders = parseHeaders(frame.subarray(12, 12 + headersLen));
+        const eventType  = msgHeaders[':event-type'];
+        if (!eventType) continue;
+
+        const payloadEnd = totalLen - 4; // last 4 bytes = message CRC
+        const payload    = JSON.parse(frame.subarray(12 + headersLen, payloadEnd).toString('utf-8')) as Record<string, unknown>;
+
+        if (eventType === 'contentBlockDelta') {
+          const delta = payload['delta'] as Record<string, unknown> | undefined;
+          const text  = (delta?.['text'] as string | undefined) ?? '';
+          if (text) yield {
+            id, object: 'chat.completion.chunk', created, model: modelId,
+            choices: [{ index: 0, delta: { content: text }, finish_reason: null }],
+          } as unknown as StreamChunk;
+        } else if (eventType === 'messageStop') {
+          const reason = payload['stopReason'] === 'end_turn' ? 'stop' : 'length';
+          yield {
+            id, object: 'chat.completion.chunk', created, model: modelId,
+            choices: [{ index: 0, delta: {}, finish_reason: reason }],
+          } as unknown as StreamChunk;
+        }
+      }
+
+      if (done) break outer;
+    }
   }
 
   async messages(request: MessagesRequest, model: ModelConfig): Promise<MessagesResponse> {

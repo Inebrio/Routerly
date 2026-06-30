@@ -134,3 +134,132 @@ describe('BedrockAdapter', () => {
     ).rejects.toThrow('Bedrock error 403');
   });
 });
+
+// ── Event Stream helpers ──────────────────────────────────────────────────────
+
+function makeEventFrame(eventType: string, payload: object): Buffer {
+  const nameBytes  = Buffer.from(':event-type');
+  const valueBytes = Buffer.from(eventType);
+  // header = nameLen(1) + name + valueType(1, 7=string) + valueLen(2) + value
+  const headerBuf  = Buffer.alloc(1 + nameBytes.length + 1 + 2 + valueBytes.length);
+  let pos = 0;
+  headerBuf[pos++] = nameBytes.length;
+  nameBytes.copy(headerBuf, pos); pos += nameBytes.length;
+  headerBuf[pos++] = 7; // string
+  headerBuf.writeUInt16BE(valueBytes.length, pos); pos += 2;
+  valueBytes.copy(headerBuf, pos);
+
+  const payloadBuf = Buffer.from(JSON.stringify(payload));
+  // totalLen = prelude(8) + preludeCRC(4) + headers + payload + msgCRC(4)
+  const totalLen   = 12 + headerBuf.length + payloadBuf.length + 4;
+  const frame      = Buffer.alloc(totalLen, 0);
+  frame.writeUInt32BE(totalLen, 0);
+  frame.writeUInt32BE(headerBuf.length, 4);
+  // offset 8 = prelude CRC — left as 0 (not verified)
+  headerBuf.copy(frame, 12);
+  payloadBuf.copy(frame, 12 + headerBuf.length);
+  // offset totalLen-4 = message CRC — left as 0
+  return frame;
+}
+
+function makeStreamBody(...frames: Buffer[]): ReadableStream<Uint8Array> {
+  const all = Buffer.concat(frames);
+  return new ReadableStream({
+    start(controller) {
+      controller.enqueue(all);
+      controller.close();
+    },
+  });
+}
+
+describe('BedrockAdapter streamCompletion', () => {
+  it('yields text chunks from contentBlockDelta events', async () => {
+    const body = makeStreamBody(
+      makeEventFrame('contentBlockDelta', { contentBlockIndex: 0, delta: { type: 'text', text: 'Hello' } }),
+      makeEventFrame('contentBlockDelta', { contentBlockIndex: 0, delta: { type: 'text', text: ' world' } }),
+      makeEventFrame('messageStop', { stopReason: 'end_turn' }),
+    );
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, body }) as any;
+
+    const adapter = new BedrockAdapter();
+    const chunks: any[] = [];
+    for await (const c of adapter.streamCompletion(
+      { messages: [{ role: 'user', content: 'Hi' }] } as any, baseModel,
+    )) chunks.push(c);
+
+    const textChunks = chunks.filter(c => c.choices[0]?.delta?.content);
+    expect(textChunks.map((c: any) => c.choices[0].delta.content).join('')).toBe('Hello world');
+    const stopChunk = chunks.find(c => c.choices[0]?.finish_reason === 'stop');
+    expect(stopChunk).toBeTruthy();
+  });
+
+  it('sets finish_reason to length when stopReason is max_tokens', async () => {
+    const body = makeStreamBody(
+      makeEventFrame('contentBlockDelta', { contentBlockIndex: 0, delta: { type: 'text', text: 'hi' } }),
+      makeEventFrame('messageStop', { stopReason: 'max_tokens' }),
+    );
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, body }) as any;
+
+    const adapter = new BedrockAdapter();
+    const chunks: any[] = [];
+    for await (const c of adapter.streamCompletion(
+      { messages: [{ role: 'user', content: 'Hi' }] } as any, baseModel,
+    )) chunks.push(c);
+
+    const stopChunk = chunks.find(c => c.choices[0]?.finish_reason);
+    expect(stopChunk?.choices[0].finish_reason).toBe('length');
+  });
+
+  it('handles frames split across multiple read() calls', async () => {
+    const frame = makeEventFrame('contentBlockDelta', { contentBlockIndex: 0, delta: { type: 'text', text: 'ok' } });
+    const stop  = makeEventFrame('messageStop', { stopReason: 'end_turn' });
+    const all   = Buffer.concat([frame, stop]);
+    const half  = Math.floor(all.length / 2);
+
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(all.subarray(0, half));
+        controller.enqueue(all.subarray(half));
+        controller.close();
+      },
+    });
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, body }) as any;
+
+    const adapter = new BedrockAdapter();
+    const chunks: any[] = [];
+    for await (const c of adapter.streamCompletion(
+      { messages: [{ role: 'user', content: 'Hi' }] } as any, baseModel,
+    )) chunks.push(c);
+
+    expect(chunks.some(c => c.choices[0]?.delta?.content === 'ok')).toBe(true);
+  });
+
+  it('throws on non-ok stream response', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false, status: 500, text: async () => 'Internal error',
+    }) as any;
+
+    const adapter = new BedrockAdapter();
+    await expect(async () => {
+      for await (const _ of adapter.streamCompletion(
+        { messages: [{ role: 'user', content: 'Hi' }] } as any, baseModel,
+      )) { /* drain */ }
+    }).rejects.toThrow('Bedrock error 500');
+  });
+
+  it('hits the converse-stream URL for streaming', async () => {
+    const body = makeStreamBody(makeEventFrame('messageStop', { stopReason: 'end_turn' }));
+    let capturedUrl = '';
+    global.fetch = vi.fn().mockImplementation(async (url: string) => {
+      capturedUrl = url as string;
+      return { ok: true, body };
+    }) as any;
+
+    const adapter = new BedrockAdapter();
+    for await (const _ of adapter.streamCompletion(
+      { messages: [{ role: 'user', content: 'Hi' }] } as any, baseModel,
+    )) { /* drain */ }
+
+    expect(capturedUrl).toMatch(/\/converse-stream$/);
+  });
+});
