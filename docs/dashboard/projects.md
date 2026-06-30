@@ -86,6 +86,26 @@ Available roles: `viewer`, `editor`, `admin` (or any custom role defined in [Use
 
 ---
 
+## Notifications Tab
+
+Select which notification channels receive events from this project.
+
+**Required permission:** `notification:write` to edit.
+
+### Channel Selection
+
+If **no channels are selected**, all global channels receive events from this project (default behavior).
+
+If **one or more channels are selected**, only those channels receive events from this project. Events are still recorded in the in-app inbox regardless of channel selection.
+
+This provides project-level routing: a single project can funnel its alerts to a dedicated channel (e.g. a project-specific Slack channel or email list) while other projects use the global routing rules.
+
+### Saving Changes
+
+After selecting or deselecting channels, click **Save Changes** to apply. A checkmark appears briefly to confirm the save.
+
+---
+
 ## Logs Tab
 
 A live log of recent requests routed through this project.
