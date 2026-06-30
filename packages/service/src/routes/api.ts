@@ -811,6 +811,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       timeoutMs?: number;
       guardrails?: GuardrailConfig | null;
       pii?: PiiConfig | null;
+      notifications?: { channels: string[] } | null;
     };
   }>('/api/projects/:id', async (req, reply) => {
     if (!requirePerm(req, 'project:write', reply)) return;
@@ -844,7 +845,16 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       piiUpdate = { pii: projects[index]!.pii };
     }
 
-    const { guardrails: _g, pii: _p, ...existing } = projects[index]!;
+    let notificationsUpdate: { notifications?: { channels: string[] } } = {};
+    if (req.body.notifications === null) {
+      notificationsUpdate = {};
+    } else if (req.body.notifications !== undefined) {
+      notificationsUpdate = { notifications: req.body.notifications };
+    } else if (projects[index]!.notifications) {
+      notificationsUpdate = { notifications: projects[index]!.notifications };
+    }
+
+    const { guardrails: _g, pii: _p, notifications: _n, ...existing } = projects[index]!;
     const updated: ProjectConfig = {
       ...existing,
       name: trimmedName,
@@ -859,6 +869,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       timeoutMs: req.body.timeoutMs ?? existing.timeoutMs ?? 30000,
       ...guardrailsUpdate,
       ...piiUpdate,
+      ...notificationsUpdate,
     };
     projects[index] = updated;
     await writeConfig('projects', projects);
