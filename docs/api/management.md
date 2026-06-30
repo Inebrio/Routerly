@@ -658,6 +658,56 @@ curl -s http://localhost:3000/api/traces/$TRACE_ID \
 
 ---
 
+## End Users
+
+### List End Users
+
+```
+GET /api/end-users
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `report:read`)
+
+**Query parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `projectId` | string | Filter by project ID (optional) |
+
+**Response `200`:**
+
+```json
+{
+  "users": [
+    {
+      "userId": "user-123",
+      "projectId": "proj-uuid",
+      "firstSeen": "2026-06-15T10:30:00.000Z",
+      "lastSeen": "2026-06-25T14:45:30.000Z",
+      "requests": 142,
+      "totalTokens": 45600,
+      "totalCost": 0.0456
+    }
+  ]
+}
+```
+
+**Response fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `userId` | string | End-user identifier (from `body.user` in the request) |
+| `projectId` | string | Project ID this user is attributed to |
+| `firstSeen` | ISO 8601 | Timestamp of first request |
+| `lastSeen` | ISO 8601 | Timestamp of most recent request |
+| `requests` | number | Total request count for this user |
+| `totalTokens` | number | Total tokens used (input + output) |
+| `totalCost` | number | Estimated USD cost |
+
+**Errors**: `403` insufficient permissions
+
+---
+
 ## Settings
 
 ### Get Settings

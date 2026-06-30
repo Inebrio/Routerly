@@ -547,6 +547,23 @@ routerly report calls [options]
 | `--project <slug>` | Filter to one project |
 | `--json` | JSON output |
 
+### `routerly report end-users`
+
+Lists end-users with their usage attributed to a project.
+
+```
+routerly report end-users [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--project <id>` | Filter by project ID (optional) |
+| `--json` | JSON output |
+
+Displays a table with columns: User ID, Requests, Tokens, Cost, First Seen, Last Seen.
+
+Requires `report:read` permission.
+
 ---
 
 ## `routerly service`
