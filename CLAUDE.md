@@ -110,3 +110,10 @@ Artifacts English. Chat follows user language.
 ## Session memory
 
 `.ai/state.md` (gitignored) — current task, components touched, phase, next steps. Updated at every phase transition.
+
+## Working memory (`.ai/`, gitignored)
+
+Two files are the shared memory between the main thread and all agents. Keep both updated continuously — read them at the start of any task, write them as you go.
+
+- **`.ai/state.md`** — live tracker: current task, phase, doing now, to-do, done, blockers, files touched, hand-off notes. Update at task start, on every phase change, and at the end.
+- **`.ai/memory.md`** — persistent knowledge: non-obvious facts, gotchas, working commands, decisions + why. Append whenever you learn something a future task would otherwise rediscover. Don't duplicate what this file or the code already states.

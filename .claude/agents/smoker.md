@@ -69,7 +69,16 @@ Simulate a real user session AND evaluate quality:
 For each check paste: Action → Observed result → PASS/FAIL.
 "Looks good" is not accepted — describe specifically what you saw.
 
-## Step 5 — CLI (if CLI touched)
+## Step 5 — Playground smoke (always)
+
+Open the dashboard Playground. Make at least one real call through Routerly to a live provider:
+- Send a simple prompt via the default configured model
+- Verify the response appears correctly in the UI (no error, no garbled output)
+- Check browser console for errors
+
+Paste: model used, response received (or error). This confirms end-to-end routing works.
+
+## Step 6 — CLI (if CLI touched)
 
 Run the relevant command and verify output is correct:
 ```bash
@@ -96,6 +105,11 @@ Action: <what you did>
 Result: <what happened>
 Console errors: none | <list>
 ...
+
+=== PLAYGROUND ===
+Model: <model used>
+Response: <response or error>
+Console errors: none | <list>
 
 === CLI ===
 <verbatim output>

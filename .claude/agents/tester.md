@@ -111,9 +111,26 @@ Final status: `VERIFIED DONE` | `VERIFIED PARTIAL` | `VERIFIED BROKEN` | `NOT VE
 
 Do NOT fix failures. Report exact output to orchestrator.
 
+## Playground — real provider calls (always run)
+
+Use the dashboard Playground to make real end-to-end calls through Routerly to the actual provider. These are not mocks.
+
+For each provider/model configured in the test project, run at minimum:
+- **Basic completion**: send a simple prompt, verify the response comes back correctly structured (no extra fields, no missing fields vs the provider's native response)
+- **Streaming**: send the same prompt with streaming enabled, verify SSE chunks arrive correctly and the final assembled response matches
+- **Edge cases relevant to the current feature**: if the task touched routing logic, test that the correct provider/model is selected; if it touched guardrails, test that they trigger; etc.
+
+For each call, paste:
+- Request: model, prompt, parameters used
+- Response: HTTP status, body structure (or first+last SSE chunk for streaming)
+- Verified: response is wire-identical to what the provider would return natively
+
+If any call returns malformed output, extra/missing fields, or custom headers → FAIL, add to `failures`. This is a wire-format violation.
+
 ## On end
 
 Update `.ai/state.md`:
 - Phase: Full verification done
 - Status
 - Evidence summary (with actual numbers/outputs)
+- Playground results summary

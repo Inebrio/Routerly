@@ -19,6 +19,11 @@ const TEST_SCHEMA = {
     curl_outputs: { type: 'array', items: { type: 'string' } },
     browser_observation: { type: 'string' },
     cli_output: { type: 'string' },
+    playground_results: {
+      type: 'array',
+      items: { type: 'string' },
+      description: 'One entry per real provider call: model, response summary, wire-format check result.'
+    },
     // Permission test results — separate from functional failures
     // Bugs here are tracked in state.md, do NOT block PASS status
     permission_bugs: {
@@ -28,7 +33,7 @@ const TEST_SCHEMA = {
     },
     failures: { type: 'array', items: { type: 'string' } }
   },
-  required: ['status', 'test_output', 'test_count', 'coverage_pct', 'curl_outputs', 'browser_observation', 'cli_output', 'permission_bugs', 'failures']
+  required: ['status', 'test_output', 'test_count', 'coverage_pct', 'curl_outputs', 'browser_observation', 'cli_output', 'playground_results', 'permission_bugs', 'failures']
 };
 
 const REVIEW_SCHEMA = {
@@ -41,7 +46,7 @@ const REVIEW_SCHEMA = {
   required: ['blocking', 'major', 'minor']
 };
 
-const { goal, worktreeSlug, startingBranch, tasks } = args;
+const { goal, worktreeSlug, startingBranch, tasks } = typeof args === 'string' ? JSON.parse(args) : args;
 const worktreePath = `.worktrees/${worktreeSlug}`;
 const taskSummary = tasks ? tasks.map(t => `${t.id}. ${t.description}`).join('\n') : 'See state.md';
 const MAX_LOOPS = 3;
@@ -91,9 +96,16 @@ Verify every surface. No output = FAIL. Untouched surfaces = "N/A".
 
 5. BROWSER UAT (if dashboard touched): resize 1920x1080, full session — loads, CRUD, validation, empty state, dark+light theme. Paste per-step observation in browser_observation.
 
-6. CLI (if CLI touched): run command, paste output in cli_output.
+6. PLAYGROUND — real provider calls (always):
+   Open the dashboard Playground. Make real calls through Routerly to live providers:
+   - Basic completion: verify response is wire-identical to native provider (no extra/missing fields, no custom headers)
+   - Streaming: verify SSE chunks and final response are correct
+   - Any case relevant to the current feature (routing, guardrails, etc.)
+   Push one entry per call into playground_results: "model → HTTP status: <response summary> | wire-format: OK/VIOLATION"
 
-status=PASS only if: build OK, tests pass, coverage>=98%, functional curl correct, browser UAT OK, CLI OK.
+7. CLI (if CLI touched): run command, paste output in cli_output.
+
+status=PASS only if: build OK, tests pass, coverage>=98%, functional curl correct, browser UAT OK, playground OK (no wire violations), CLI OK.
 Permission bugs go in permission_bugs but do NOT block PASS.`,
     { label: `tester:${loops}`, agentType: 'tester', schema: TEST_SCHEMA }
   );
