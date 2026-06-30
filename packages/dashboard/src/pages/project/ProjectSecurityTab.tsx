@@ -354,8 +354,7 @@ export function ProjectSecurityTab() {
   }, []);
 
   // Guardrails state
-  const [detectInjection, setDetectInjection] = useState(false);
-  const [action, setAction] = useState<'block' | 'flag' | 'log'>('block');
+  const [action, setAction] = useState<'block' | 'log'>('block');
   const [fallbackMessage, setFallbackMessage] = useState('');
   const [rules, setRules] = useState<RuleWithId[]>([]);
 
@@ -371,8 +370,7 @@ export function ProjectSecurityTab() {
     if (!project) return;
     const g = project.guardrails;
     if (g) {
-      setDetectInjection(g.detectInjection ?? false);
-      setAction(g.action ?? 'block');
+      setAction(g.action === 'flag' ? 'log' : (g.action ?? 'block'));
       setFallbackMessage(g.fallbackMessage ?? '');
       setRules((g.rules ?? []).map(r => ({ ...r, _id: crypto.randomUUID() })));
     }
@@ -432,7 +430,6 @@ export function ProjectSecurityTab() {
       const guardrailsPayload: GuardrailConfig = {
         action,
         ...(action === 'block' && fallbackMessage.trim() ? { fallbackMessage: fallbackMessage.trim() } : {}),
-        ...(detectInjection ? { detectInjection: true } : {}),
         rules: strippedRules,
       };
       const piiPayload: PiiConfig = {
@@ -478,28 +475,14 @@ export function ProjectSecurityTab() {
       <div style={{ marginBottom: 36 }}>
         <label className="form-label">Content Guardrails</label>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
-          Inspect requests and responses against configured rules. Active when rules are present or injection detection is enabled.
-        </p>
-
-        {/* Injection detection */}
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.88rem', fontWeight: 500, marginBottom: 4 }}>
-          <input
-            type="checkbox"
-            checked={detectInjection}
-            onChange={e => setDetectInjection(e.target.checked)}
-            style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
-          />
-          Detect prompt injection attacks
-        </label>
-        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: 22, marginBottom: 20 }}>
-          Applies to requests only. Detects: ignore previous instructions, DAN mode, jailbreak, you are now, disregard all.
+          Inspect requests and responses against configured rules. Active when at least one rule is configured.
         </p>
 
         {/* Action */}
         <div className="form-group" style={{ marginBottom: 16 }}>
           <label className="form-label" style={{ fontSize: '0.75rem' }}>Action when triggered</label>
           <div style={{ display: 'flex', gap: 8 }}>
-            {(['block', 'flag', 'log'] as const).map(opt => (
+            {(['block', 'log'] as const).map(opt => (
               <button
                 key={opt}
                 type="button"
@@ -512,18 +495,23 @@ export function ProjectSecurityTab() {
           </div>
         </div>
 
-        {/* Fallback message (block only) */}
+        {/* Fallback message — advanced, block only */}
         {action === 'block' && (
-          <div className="form-group" style={{ marginBottom: 16 }}>
-            <label className="form-label" style={{ fontSize: '0.75rem' }}>Fallback message</label>
-            <input
-              className="form-input"
-              type="text"
-              value={fallbackMessage}
-              onChange={e => setFallbackMessage(e.target.value)}
-              placeholder="Request blocked by content policy."
-            />
-          </div>
+          <details style={{ marginBottom: 16 }}>
+            <summary style={{ cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)', userSelect: 'none', marginBottom: 8 }}>
+              Advanced
+            </summary>
+            <div className="form-group" style={{ marginTop: 8 }}>
+              <label className="form-label" style={{ fontSize: '0.75rem' }}>Fallback message</label>
+              <input
+                className="form-input"
+                type="text"
+                value={fallbackMessage}
+                onChange={e => setFallbackMessage(e.target.value)}
+                placeholder="Request blocked by content policy."
+              />
+            </div>
+          </details>
         )}
 
         {/* Rules */}
