@@ -84,6 +84,14 @@ CLAUDE.local.md
 .claude/worktrees/
 
 # ===========================
+# Screenshots (agents save to /tmp, never project root)
+# ===========================
+*.png
+*.jpg
+*.jpeg
+*.webp
+
+# ===========================
 # Firebase
 # ===========================
 .firebase/
