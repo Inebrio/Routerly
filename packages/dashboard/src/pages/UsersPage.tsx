@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Users, Pencil } from 'lucide-react';
-import { getUsers, createUser, deleteUser, type User } from '../api';
+import { Plus, Trash2, Users, Pencil, ShieldOff } from 'lucide-react';
+import { getUsers, createUser, deleteUser, reset2faForUser, type User } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
 type AddForm = { email: string; password: string; roleId: string };
@@ -46,6 +46,17 @@ export function UsersPage() {
     });
   }
 
+  function handleReset2fa(id: string, email: string) {
+    setConfirmState({
+      message: `Reset 2FA for ${email}? They will need to re-enroll.`,
+      onConfirm: async () => {
+        setConfirmState(null);
+        await reset2faForUser(id);
+        setUsers(u => u.map(x => x.id === id ? { ...x, totpEnabled: false } : x));
+      },
+    });
+  }
+
   return (
     <>
       <div className="toolbar">
@@ -71,7 +82,12 @@ export function UsersPage() {
                   <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                     {u.projectIds.length === 0 ? 'All' : u.projectIds.join(', ')}
                   </td>
-                  <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                  <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
+                    {u.totpEnabled && (
+                      <button className="btn-icon" title="Reset 2FA" onClick={() => handleReset2fa(u.id, u.email)}>
+                        <ShieldOff size={14} />
+                      </button>
+                    )}
                     <button className="btn-icon" onClick={() => navigate(`/dashboard/settings/users/${u.id}`)}>
                       <Pencil size={14} />
                     </button>
