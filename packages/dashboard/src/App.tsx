@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { createBrowserRouter, RouterProvider, NavLink, Navigate, useNavigate, Outlet, Link } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, NavLink, Navigate, useNavigate, useLocation, Outlet, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { ThemeProvider, useTheme, type Theme } from './ThemeContext';
 import { checkSetupStatus, getSystemInfo, getSettings, updateSettings } from './api';
@@ -171,6 +171,8 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
 
 function ProtectedLayout() {
   const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('lr-sidebar') === 'collapsed');
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [isDocker, setIsDocker] = useState(false);
@@ -197,6 +199,12 @@ function ProtectedLayout() {
       })
       .catch(() => { /* non-critical */ });
   }, [user]);
+
+  useEffect(() => {
+    if (!isLoading && requireMfa && !user?.totpEnabled && !location.pathname.startsWith('/dashboard/profile')) {
+      navigate('/dashboard/profile');
+    }
+  }, [requireMfa, user?.totpEnabled, isLoading, location.pathname, navigate]);
 
   function handleToggle() {
     setCollapsed(prev => {
