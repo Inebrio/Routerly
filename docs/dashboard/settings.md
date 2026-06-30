@@ -84,6 +84,57 @@ For email-provider channels, you can optionally override the recipient email add
 
 Click the **Delete** button on the channel row or edit page. You will be asked to confirm deletion.
 
+### Routing Rules
+
+Routing rules map event patterns to one or more channels. When an event matches a rule's patterns, it is dispatched to the specified channels (in addition to any project-level overrides via the Notifications tab on the project page).
+
+By default, events are not routed to any channels — they are only recorded in the inbox. Add a rule to enable routing.
+
+**Adding a Rule:**
+
+1. Scroll to the **Routing Rules** section
+2. Click **+ Add Rule**
+3. Select one or more **Events** from the dropdown (e.g. `Provider - Error`, `Budget - Threshold`)
+4. Select one or more **Channels** to route matching events to
+5. Click **Add**
+
+The rule is applied immediately.
+
+**Event Patterns:**
+
+Rules support three pattern types:
+- **Exact name** — e.g. `provider.error` (matches only that event)
+- **Wildcard** — `*` (matches all events)
+- **Prefix glob** — e.g. `budget.*` (matches `budget.threshold`, `budget.exhausted`, etc.)
+
+**Removing a Rule:**
+
+Click the **×** icon next to a rule to delete it.
+
+See [Concepts: Notifications — Routing Rules](../concepts/notifications.md#routing-rules) for additional details.
+
+### Cooldowns
+
+Cooldowns suppress repeated dispatches of the same event type within a specified interval. Suppressed events are still recorded in the inbox and logs; they are simply not sent to external channels.
+
+This prevents alert fatigue when a system is repeatedly triggering the same issue.
+
+**Adding a Cooldown:**
+
+1. Scroll to the **Cooldowns** section
+2. Click **+ Add Cooldown**
+3. Select an **Event** from the dropdown (e.g. `Provider - Degraded`)
+4. Enter a **Duration** in format: `15m`, `1h`, `30s`, `2d` (supports `s` / `m` / `h` / `d` suffixes)
+5. Click **Add**
+
+The cooldown is applied immediately.
+
+**Removing a Cooldown:**
+
+Click the **×** icon next to a cooldown to delete it.
+
+See [Concepts: Notifications — Cooldowns](../concepts/notifications.md#cooldowns) for additional details.
+
 ---
 
 ## About Tab

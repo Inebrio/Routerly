@@ -916,6 +916,111 @@ routerly notification channel test abc-uuid
 routerly notification channel test abc-uuid --to test@example.com
 ```
 
+### `routerly notification rules`
+
+Manage notification routing rules. Routing rules map event patterns to one or more channels; matching events are dispatched to those channels.
+
+#### `routerly notification rules list`
+
+```
+routerly notification rules list [--json]
+```
+
+List all configured routing rules.
+
+```bash
+routerly notification rules list
+routerly notification rules list --json
+```
+
+Output example:
+```
+#   Events                        Channels
+1   provider.error, provider.degraded   webhook-ops
+2   budget.*                      smtp-admin
+```
+
+#### `routerly notification rules add`
+
+```
+routerly notification rules add --events <patterns> --channels <ids> [--json]
+```
+
+Add a new routing rule.
+
+| Option | Description |
+|--------|-------------|
+| `--events <patterns>` | Comma-separated event patterns (e.g. `budget.*,provider.error`). Supports exact names, wildcards, and prefix globs |
+| `--channels <ids>` | Comma-separated channel IDs to route matching events to |
+| `--json` | Output all rules as JSON after adding |
+
+```bash
+routerly notification rules add --events "provider.error,provider.degraded" --channels "webhook-ops"
+routerly notification rules add --events "budget.*" --channels "smtp-admin,slack-ops"
+```
+
+#### `routerly notification rules delete`
+
+```
+routerly notification rules delete <index>
+```
+
+Delete a routing rule by its 1-based index (as shown in `list`).
+
+```bash
+routerly notification rules delete 1
+```
+
+### `routerly notification cooldowns`
+
+Manage notification cooldown intervals. Cooldowns suppress repeated dispatches of the same event type within a time window. Suppressed events are still recorded in the inbox and logs; they are simply not sent to external channels.
+
+#### `routerly notification cooldowns list`
+
+```
+routerly notification cooldowns list [--json]
+```
+
+List all configured cooldowns.
+
+```bash
+routerly notification cooldowns list
+routerly notification cooldowns list --json
+```
+
+Output example:
+```
+Event                Duration
+provider.degraded    15m
+budget.threshold     1h
+```
+
+#### `routerly notification cooldowns set`
+
+```
+routerly notification cooldowns set <event> <duration>
+```
+
+Set a cooldown for an event. Duration format: `15m`, `1h`, `30s`, `2d` (supports `s` / `m` / `h` / `d` suffixes).
+
+```bash
+routerly notification cooldowns set provider.degraded 15m
+routerly notification cooldowns set budget.threshold 1h
+routerly notification cooldowns set provider.error 30m
+```
+
+#### `routerly notification cooldowns delete`
+
+```
+routerly notification cooldowns delete <event>
+```
+
+Delete the cooldown for an event.
+
+```bash
+routerly notification cooldowns delete provider.degraded
+```
+
 ---
 
 ## `routerly status`
