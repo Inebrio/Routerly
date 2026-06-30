@@ -1,4 +1,4 @@
-import type { PiiConfig, PiiEntity } from '@routerly/shared';
+import type { PiiConfig, PiiEntity, PiiPolicy } from '@routerly/shared';
 
 /** Detector for one PII entity type (#76). */
 interface Detector {
@@ -21,6 +21,21 @@ const DETECTORS: Detector[] = [
   // eating digits inside longer alphanumeric tokens (e.g. IBANs).
   { entity: 'PHONE', re: /(?<![\w])\+\d{1,3}[\s.-]?\(?\d{2,4}\)?(?:[\s.-]?\d{2,4}){2,4}|(?<![\w+])\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}(?![\w])/g, placeholder: '[PHONE_NUMBER]' },
 ];
+
+/** Merges entities and patterns from the base config and enabled policies for a given direction. */
+function mergeForDirection(config: PiiConfig, direction: 'input' | 'output'): { entities: PiiEntity[]; patterns: string[] } {
+  const dirFlag = direction === 'input' ? config.scrubInput : config.scrubOutput;
+  const entitySet = new Set<PiiEntity>(dirFlag ? (config.entities ?? ALL_ENTITIES) : []);
+  const patterns: string[] = dirFlag ? [...(config.customPatterns ?? [])] : [];
+  for (const p of (config.policies ?? []) as PiiPolicy[]) {
+    if (p.enabled === false) continue;
+    const active = direction === 'input' ? p.scrubInput : p.scrubOutput;
+    if (!active) continue;
+    for (const e of (p.entities ?? ALL_ENTITIES)) entitySet.add(e);
+    patterns.push(...(p.customPatterns ?? []));
+  }
+  return { entities: [...entitySet], patterns: [...new Set(patterns)] };
+}
 
 /**
  * Replaces PII entities in `text` with typed placeholders (#76).
@@ -61,8 +76,11 @@ export function scrubPii(
  * Scrubs PII from a single string — used for output scrubbing (#76).
  */
 export function scrubText(text: string, config: PiiConfig): { text: string; found: string[] } {
-  const entities = config.entities ?? ALL_ENTITIES;
-  return scrubPii(text, entities, config.customPatterns);
+  const { entities, patterns } = mergeForDirection(config, 'output');
+  // ponytail: fall back to all entities when output merge yields nothing (caller may set scrubOutput later)
+  const ents = entities.length > 0 ? entities : (config.entities ?? ALL_ENTITIES);
+  const pats = entities.length > 0 ? patterns : (config.customPatterns ?? []);
+  return scrubPii(text, ents, pats);
 }
 
 /**
@@ -122,7 +140,11 @@ export function scrubMessages(
   messages: unknown[],
   config: PiiConfig,
 ): { messages: unknown[]; redacted: string[] } {
-  const entities = config.entities ?? ALL_ENTITIES;
+  const merged = mergeForDirection(config, 'input');
+  // ponytail: when no policies defined, fall back to flat config (backward compat — callers pre-check scrubInput)
+  const hasPolicies = (config.policies?.length ?? 0) > 0;
+  const entities = (merged.entities.length > 0 || hasPolicies) ? merged.entities : (config.entities ?? ALL_ENTITIES);
+  const patterns = (merged.entities.length > 0 || hasPolicies) ? merged.patterns : (config.customPatterns ?? []);
   const redacted = new Set<string>();
 
   const scrubbed = messages.map((message) => {
@@ -130,7 +152,7 @@ export function scrubMessages(
     const content = (message as { content?: unknown }).content;
     if (typeof content !== 'string') return message;
 
-    const { text, found } = scrubPii(content, entities, config.customPatterns);
+    const { text, found } = scrubPii(content, entities, patterns);
     if (found.length === 0) return message;
     found.forEach((entity) => redacted.add(entity));
     return { ...(message as object), content: text };
