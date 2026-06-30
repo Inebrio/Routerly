@@ -74,10 +74,10 @@ function ParamSlider({ label, value, min, max, step, onChange }: {
 // ── Compare panel ─────────────────────────────────────────────────────────────
 
 function ComparePanel({
-  apiKey, systemPrompt, temperature, maxTokens, topP, availableModels,
+  apiKey, apiKeyB, systemPrompt, temperature, maxTokens, topP, availableModels,
   compareModelA, compareModelB, setCompareModelA, setCompareModelB,
 }: {
-  apiKey: string; systemPrompt: string; temperature: number; maxTokens: number; topP: number;
+  apiKey: string; apiKeyB: string; systemPrompt: string; temperature: number; maxTokens: number; topP: number;
   availableModels: Array<{ modelId: string }>;
   compareModelA: string; compareModelB: string;
   setCompareModelA: (v: string) => void; setCompareModelB: (v: string) => void;
@@ -100,8 +100,9 @@ function ComparePanel({
     setLoading: (v: boolean) => void,
     setError: (v: string | null) => void,
     abortRef: React.MutableRefObject<AbortController | null>,
+    key: string,
   ) {
-    if (!apiKey) return;
+    if (!key) return;
     setLoading(true);
     setError(null);
     const controller = new AbortController();
@@ -121,7 +122,7 @@ function ComparePanel({
     };
 
     try {
-      const cleanKey = apiKey.trim().replace(/[''"""']/g, '');
+      const cleanKey = key.trim().replace(/[''"""']/g, '');
       const res = await fetch('/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cleanKey}` },
@@ -195,8 +196,9 @@ function ComparePanel({
     const userMsg: Message = { role: 'user', content };
     setMessagesA(prev => [...prev, userMsg]);
     setMessagesB(prev => [...prev, userMsg]);
-    sendToModel(compareModelA, content, messagesA, setMessagesA, setLoadingA, setErrorA, abortARef);
-    sendToModel(compareModelB, content, messagesB, setMessagesB, setLoadingB, setErrorB, abortBRef);
+    const keyB = apiKeyB.trim() || apiKey; // ponytail: fall back to apiKey if apiKeyB empty
+    sendToModel(compareModelA, content, messagesA, setMessagesA, setLoadingA, setErrorA, abortARef, apiKey);
+    sendToModel(compareModelB, content, messagesB, setMessagesB, setLoadingB, setErrorB, abortBRef, keyB);
   }
 
   const cols = [
@@ -324,6 +326,8 @@ export function TestPage() {
   // Compare mode
   const [compareModelA, setCompareModelA] = useState('');
   const [compareModelB, setCompareModelB] = useState('');
+  const [apiKeyB, setApiKeyB] = useState('');
+  const [showKeyB, setShowKeyB] = useState(false);
 
   // Presets
   const [showPresetsPanel, setShowPresetsPanel] = useState(false);
@@ -623,38 +627,77 @@ export function TestPage() {
               ))}
             </div>
 
-            {/* Token input */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Token:</span>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <input
-                  type={showKey ? 'text' : 'password'}
-                  className="form-input"
-                  style={{ width: 220, padding: '5px 32px 5px 10px', fontSize: '0.82rem', fontFamily: 'monospace' }}
-                  placeholder="sk-rt-..."
-                  value={apiKey}
-                  onChange={e => setApiKey(e.target.value)}
-                  autoComplete="new-password"
-                />
-                <button type="button" onClick={() => setShowKey(!showKey)}
-                  style={{ position: 'absolute', right: 6, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 2 }}>
-                  {showKey ? <EyeOff size={13} /> : <Eye size={13} />}
-                </button>
+            {/* Token input(s) */}
+            {mode === 'compare' ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                {([
+                  { label: 'Token A', value: apiKey, set: setApiKey, show: showKey, setShow: setShowKey },
+                  { label: 'Token B', value: apiKeyB, set: setApiKeyB, show: showKeyB, setShow: setShowKeyB },
+                ] as const).map(({ label, value, set, show, setShow }) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{label}:</span>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <input
+                        type={show ? 'text' : 'password'}
+                        className="form-input"
+                        style={{ width: 180, padding: '5px 32px 5px 10px', fontSize: '0.82rem', fontFamily: 'monospace' }}
+                        placeholder={label === 'Token B' ? 'same as A' : 'sk-rt-...'}
+                        value={value}
+                        onChange={e => set(e.target.value)}
+                        autoComplete="new-password"
+                      />
+                      <button type="button" onClick={() => setShow(!show)}
+                        style={{ position: 'absolute', right: 6, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 2 }}>
+                        {show ? <EyeOff size={13} /> : <Eye size={13} />}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {apiKey.length >= 10 && (
+                  matchedProject ? (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#10b981' }}>
+                      <CheckCircle2 size={12} /> {matchedProject.name}
+                    </span>
+                  ) : (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#f59e0b' }}>
+                      <AlertCircle size={12} /> Unknown token
+                    </span>
+                  )
+                )}
               </div>
-              {apiKey.length >= 10 && (
-                matchedProject ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#10b981' }}>
-                    <CheckCircle2 size={12} />
-                    {matchedProject.name}
-                    {matchedToken?.labels?.length ? <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>({matchedToken.labels.join(', ')})</span> : null}
-                  </span>
-                ) : (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#f59e0b' }}>
-                    <AlertCircle size={12} /> Unknown token
-                  </span>
-                )
-              )}
-            </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Token:</span>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type={showKey ? 'text' : 'password'}
+                    className="form-input"
+                    style={{ width: 220, padding: '5px 32px 5px 10px', fontSize: '0.82rem', fontFamily: 'monospace' }}
+                    placeholder="sk-rt-..."
+                    value={apiKey}
+                    onChange={e => setApiKey(e.target.value)}
+                    autoComplete="new-password"
+                  />
+                  <button type="button" onClick={() => setShowKey(!showKey)}
+                    style={{ position: 'absolute', right: 6, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 2 }}>
+                    {showKey ? <EyeOff size={13} /> : <Eye size={13} />}
+                  </button>
+                </div>
+                {apiKey.length >= 10 && (
+                  matchedProject ? (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#10b981' }}>
+                      <CheckCircle2 size={12} />
+                      {matchedProject.name}
+                      {matchedToken?.labels?.length ? <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>({matchedToken.labels.join(', ')})</span> : null}
+                    </span>
+                  ) : (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#f59e0b' }}>
+                      <AlertCircle size={12} /> Unknown token
+                    </span>
+                  )
+                )}
+              </div>
+            )}
 
             {/* Presets button */}
             {matchedProject && (
@@ -966,6 +1009,7 @@ export function TestPage() {
         ) : (
           <ComparePanel
             apiKey={apiKey}
+            apiKeyB={apiKeyB}
             systemPrompt={systemPrompt}
             temperature={temperature}
             maxTokens={maxTokens}
