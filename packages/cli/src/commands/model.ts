@@ -207,6 +207,8 @@ Examples:
     .option('--vertex-project <id>', 'Google Cloud project ID (vertex provider)')
     .option('--vertex-location <loc>', 'Vertex AI location, e.g. us-central1 (vertex provider)')
     .option('--vertex-sa-key <path>', 'Path to service account JSON key file (vertex provider)')
+    // ChatGPT browser session
+    .option('--cf-clearance <value>', 'cf_clearance cookie for Cloudflare bypass (openai-web provider)')
     .action(async (opts: {
       id: string; provider: string; endpoint?: string; apiKey?: string;
       inputPrice?: string; outputPrice?: string; dailyBudget?: string; monthlyBudget?: string;
@@ -214,6 +216,7 @@ Examples:
       azureResource?: string; azureDeployment?: string; azureApiVersion?: string;
       awsRegion?: string; awsKeyId?: string; awsSecret?: string;
       vertexProject?: string; vertexLocation?: string; vertexSaKey?: string;
+      cfClearance?: string;
     }) => {
       const preset = PRICING_PRESETS[opts.id];
       const cost: TokenCost = {
@@ -288,6 +291,8 @@ Examples:
         ...(opts.vertexProject    ? { vertexProjectId: opts.vertexProject }                       : {}),
         ...(opts.vertexLocation   ? { vertexLocation: opts.vertexLocation }                       : {}),
         ...(vertexServiceAccountKey ? { vertexServiceAccountKey }                                 : {}),
+        // ChatGPT browser session
+        ...(opts.cfClearance      ? { cfClearance: opts.cfClearance }                             : {}),
       };
 
       try {
