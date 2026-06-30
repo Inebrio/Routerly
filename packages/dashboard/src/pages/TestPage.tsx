@@ -73,11 +73,14 @@ function ParamSlider({ label, value, min, max, step, onChange }: {
 
 // ── Compare panel ─────────────────────────────────────────────────────────────
 
+type PanelParams = { temperature: number; maxTokens: number; topP: number };
+const DEFAULT_PARAMS: PanelParams = { temperature: 0.7, maxTokens: 1024, topP: 1 };
+
 function ComparePanel({
-  apiKey, apiKeyB, systemPrompt, temperature, maxTokens, topP, availableModels,
+  apiKey, apiKeyB, systemPrompt, availableModels,
   compareModelA, compareModelB, setCompareModelA, setCompareModelB,
 }: {
-  apiKey: string; apiKeyB: string; systemPrompt: string; temperature: number; maxTokens: number; topP: number;
+  apiKey: string; apiKeyB: string; systemPrompt: string;
   availableModels: Array<{ modelId: string }>;
   compareModelA: string; compareModelB: string;
   setCompareModelA: (v: string) => void; setCompareModelB: (v: string) => void;
@@ -91,6 +94,10 @@ function ComparePanel({
   const [compareInput, setCompareInput] = useState('');
   const abortARef = useRef<AbortController | null>(null);
   const abortBRef = useRef<AbortController | null>(null);
+  const [paramsA, setParamsA] = useState<PanelParams>(DEFAULT_PARAMS);
+  const [paramsB, setParamsB] = useState<PanelParams>(DEFAULT_PARAMS);
+  const [traceHistoryA, setTraceHistoryA] = useState<unknown[][]>([]);
+  const [traceHistoryB, setTraceHistoryB] = useState<unknown[][]>([]);
 
   async function sendToModel(
     modelId: string,
@@ -101,6 +108,8 @@ function ComparePanel({
     setError: (v: string | null) => void,
     abortRef: React.MutableRefObject<AbortController | null>,
     key: string,
+    params: PanelParams,
+    setTraceHistory: React.Dispatch<React.SetStateAction<unknown[][]>>,
   ) {
     if (!key) return;
     setLoading(true);
@@ -113,12 +122,13 @@ function ComparePanel({
     let assistantAdded = false;
     let inputTokens = 0;
     let outputTokens = 0;
+    const turnTraces: unknown[] = [];
 
     const sysMsgs = systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : [];
     const payload = {
       model: modelId,
       messages: [...sysMsgs, ...prevMsgs.filter(m => m.role !== 'system'), { role: 'user' as const, content }],
-      stream: true, temperature, max_tokens: maxTokens, top_p: topP,
+      stream: true, temperature: params.temperature, max_tokens: params.maxTokens, top_p: params.topP,
     };
 
     try {
@@ -129,6 +139,7 @@ function ComparePanel({
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
+      const traceId = res.headers.get('x-routerly-trace-id');
       if (!res.ok || !res.body) {
         const body = await res.text();
         let msg = `HTTP ${res.status}`;
@@ -145,7 +156,8 @@ function ComparePanel({
         if (dataStr === '[DONE]' || !dataStr) return;
         try {
           const data = JSON.parse(dataStr);
-          if (data.type === 'trace' || data.type === 'result') return;
+          if (data.type === 'trace') { turnTraces.push(data.entry); return; }
+          if (data.type === 'result') return;
           if (data.type === 'error' || data.error) throw new Error(data.message || 'Service error');
           if (data.model && !modelName) modelName = data.model as string;
           if (data.usage) {
@@ -178,6 +190,11 @@ function ComparePanel({
       if (tail) processLine(tail);
       const latencyMs = Date.now() - startMs;
       setMsgs(prev => { const u = [...prev]; if (assistantAdded) u[u.length - 1] = { ...u[u.length - 1]!, inputTokens, outputTokens, latencyMs }; return u; });
+      let traceEntries: unknown[] = turnTraces;
+      if (traceId) {
+        try { const td = await getTrace(traceId); traceEntries = td.trace; } catch {}
+      }
+      setTraceHistory(prev => [...prev, traceEntries]);
     } catch (e) {
       if (e instanceof Error && e.name !== 'AbortError') {
         setError(e.message);
@@ -197,28 +214,35 @@ function ComparePanel({
     setMessagesA(prev => [...prev, userMsg]);
     setMessagesB(prev => [...prev, userMsg]);
     const keyB = apiKeyB.trim() || apiKey; // ponytail: fall back to apiKey if apiKeyB empty
-    sendToModel(compareModelA, content, messagesA, setMessagesA, setLoadingA, setErrorA, abortARef, apiKey);
-    sendToModel(compareModelB, content, messagesB, setMessagesB, setLoadingB, setErrorB, abortBRef, keyB);
+    sendToModel(compareModelA, content, messagesA, setMessagesA, setLoadingA, setErrorA, abortARef, apiKey, paramsA, setTraceHistoryA);
+    sendToModel(compareModelB, content, messagesB, setMessagesB, setLoadingB, setErrorB, abortBRef, keyB, paramsB, setTraceHistoryB);
   }
 
   const cols = [
-    { label: 'A', model: compareModelA, setModel: setCompareModelA, msgs: messagesA, loading: loadingA, error: errorA, abortRef: abortARef },
-    { label: 'B', model: compareModelB, setModel: setCompareModelB, msgs: messagesB, loading: loadingB, error: errorB, abortRef: abortBRef },
+    { label: 'A', model: compareModelA, setModel: setCompareModelA, msgs: messagesA, loading: loadingA, error: errorA, abortRef: abortARef, params: paramsA, setParams: setParamsA, traceHistory: traceHistoryA },
+    { label: 'B', model: compareModelB, setModel: setCompareModelB, msgs: messagesB, loading: loadingB, error: errorB, abortRef: abortBRef, params: paramsB, setParams: setParamsB, traceHistory: traceHistoryB },
   ];
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ display: 'flex', gap: 12, minHeight: 0, flex: 1 }}>
-        {cols.map(({ label, model, setModel, msgs, loading: colLoading, error: colError, abortRef }) => {
+        {cols.map(({ label, model, setModel, msgs, loading: colLoading, error: colError, abortRef, params, setParams, traceHistory }) => {
           const display = msgs.filter(m => m.role !== 'system');
           return (
             <div key={label} className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
-              <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)', display: 'flex', gap: 8, alignItems: 'center' }}>
-                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Model {label}:</span>
-                <select className="form-input" style={{ flex: 1, padding: '4px 8px', fontSize: '0.78rem' }} value={model} onChange={e => setModel(e.target.value)}>
-                  <option value="">Select model...</option>
-                  {availableModels.map(m => <option key={m.modelId} value={m.modelId}>{m.modelId}</option>)}
-                </select>
+              <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Model {label}:</span>
+                  <select className="form-input" style={{ flex: 1, padding: '4px 8px', fontSize: '0.78rem' }} value={model} onChange={e => setModel(e.target.value)}>
+                    <option value="">Select model...</option>
+                    {availableModels.map(m => <option key={m.modelId} value={m.modelId}>{m.modelId}</option>)}
+                  </select>
+                </div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <ParamSlider label="Temp" value={params.temperature} min={0} max={2} step={0.1} onChange={v => setParams((p: PanelParams) => ({ ...p, temperature: v }))} />
+                  <ParamSlider label="Max tokens" value={params.maxTokens} min={64} max={8192} step={64} onChange={v => setParams((p: PanelParams) => ({ ...p, maxTokens: v }))} />
+                  <ParamSlider label="Top-p" value={params.topP} min={0} max={1} step={0.05} onChange={v => setParams((p: PanelParams) => ({ ...p, topP: v }))} />
+                </div>
               </div>
               <div style={{ flex: 1, overflowY: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {display.length === 0 ? (
@@ -266,6 +290,29 @@ function ComparePanel({
                   </div>
                 )}
               </div>
+              {traceHistory.length > 0 && (
+                <details style={{ borderTop: '1px solid var(--border)' }}>
+                  <summary style={{ cursor: 'pointer', padding: '6px 14px', fontSize: '0.75rem', color: 'var(--text-muted)', background: 'var(--bg-surface)', userSelect: 'none', display: 'list-item' }}>
+                    Debug ({traceHistory.length} {traceHistory.length === 1 ? 'turn' : 'turns'})
+                  </summary>
+                  <div style={{ maxHeight: 200, overflowY: 'auto', padding: 10, background: 'var(--bg-base)', fontSize: '0.82rem' }}>
+                    {traceHistory.map((traces, i) => {
+                      const stats = extractMessageStats(traces as TraceEntry[]);
+                      return (
+                        <div key={i} style={{ marginBottom: 8 }}>
+                          <MessageStatsCard stats={stats} turnNumber={i + 1} />
+                          <details style={{ marginTop: 4 }}>
+                            <summary style={{ cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-muted)', padding: '4px 8px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 4, userSelect: 'none', display: 'list-item' }}>Technical Details</summary>
+                            <div style={{ marginTop: 4, padding: 8, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4 }}>
+                              {(traces as TraceEntry[]).map((entry, j) => <TraceEntryRenderer key={j} entry={entry} />)}
+                            </div>
+                          </details>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </details>
+              )}
               {colLoading && (
                 <div style={{ padding: '6px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'center' }}>
                   <button className="btn btn-danger" style={{ fontSize: '0.75rem', padding: '3px 8px', display: 'flex', gap: 4, alignItems: 'center' }} onClick={() => abortRef.current?.abort()}>
@@ -1011,9 +1058,6 @@ export function TestPage() {
             apiKey={apiKey}
             apiKeyB={apiKeyB}
             systemPrompt={systemPrompt}
-            temperature={temperature}
-            maxTokens={maxTokens}
-            topP={topP}
             availableModels={availableModels}
             compareModelA={compareModelA}
             compareModelB={compareModelB}
