@@ -56,7 +56,7 @@ const TASKS_SCHEMA = {
   required: ['tasks']
 };
 
-const { goal, worktreeSlug, tasks: initialTasks } = args;
+const { goal, worktreeSlug, tasks: initialTasks } = typeof args === 'string' ? JSON.parse(args) : args;
 const worktreePath = `.worktrees/${worktreeSlug}`;
 const MAX_LOOPS_PER_TASK = 6;
 

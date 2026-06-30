@@ -14,7 +14,7 @@ Read `.ai/state.md`. Note what changed and which surfaces were touched.
 Review `git diff main...HEAD` for:
 
 - **Security**: injection, auth bypass, secrets in code, input validation
-- **Wire-format**: any accidental payload mutation
+- **Wire-format (BLOCKING if violated)**: any added/removed/renamed headers on request or response; any extra or missing fields in request/response payloads vs the provider's native format; any non-standard behavior that would require client-side changes. Routerly is a transparent router — the wire must be identical to a direct provider call.
 - **Correctness**: logic errors, edge cases unhandled
 - **Permissions/roles**: every new or modified endpoint/feature audited for role impact. If access-controlled → verify full chain: `shared/types/config.ts` → `service/routes/api.ts` → `dashboard/api.ts` → `dashboard/pages/RolesPage.tsx` → route enforces + test exists. Missing = BLOCKING.
 - **Patterns**: imports correct, config writes via `writeConfig()`
