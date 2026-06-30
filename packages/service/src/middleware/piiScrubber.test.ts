@@ -190,6 +190,48 @@ describe('StreamingScrubber', () => {
   });
 });
 
+describe('piiScrubber — policy merging', () => {
+  it('merges entities from enabled policies for input direction', () => {
+    const messages = [{ role: 'user', content: 'ssn 123-45-6789 card 4111 1111 1111 1111' }];
+    const config: PiiConfig = {
+      // base: no scrubInput, no entities
+      policies: [
+        { name: 'strict', scrubInput: true, entities: ['SSN'] },
+        { name: 'financial', scrubInput: true, entities: ['CREDIT_CARD'] },
+      ],
+    };
+    const { messages: out, redacted } = scrubMessages(messages, config);
+    expect((out[0] as any).content).toBe('ssn [SSN] card [CREDIT_CARD]');
+    expect(redacted.sort()).toEqual(['CREDIT_CARD', 'SSN']);
+  });
+
+  it('skips disabled policies', () => {
+    const messages = [{ role: 'user', content: 'ssn 123-45-6789 mail a@b.com' }];
+    const config: PiiConfig = {
+      policies: [
+        { name: 'active', scrubInput: true, entities: ['SSN'] },
+        { name: 'off', enabled: false, scrubInput: true, entities: ['EMAIL'] },
+      ],
+    };
+    const { messages: out, redacted } = scrubMessages(messages, config);
+    expect((out[0] as any).content).toBe('ssn [SSN] mail a@b.com');
+    expect(redacted).toEqual(['SSN']);
+  });
+
+  it('does not merge output-only policy into input scrubbing', () => {
+    const messages = [{ role: 'user', content: 'ssn 123-45-6789' }];
+    const config: PiiConfig = {
+      policies: [
+        { name: 'output-only', scrubInput: false, scrubOutput: true, entities: ['SSN'] },
+      ],
+    };
+    const { messages: out, redacted } = scrubMessages(messages, config);
+    // policy only applies to output, so input is untouched
+    expect((out[0] as any).content).toBe('ssn 123-45-6789');
+    expect(redacted).toEqual([]);
+  });
+});
+
 describe('scrubPii — customPatterns', () => {
   it('applies a custom regex and adds CUSTOM to found', () => {
     const { text, found } = scrubPii('my token is tok-abc123', [], ['tok-[a-z0-9]+']);
