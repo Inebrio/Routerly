@@ -218,12 +218,24 @@ const guardrailConfigSchema = z.object({
   rules: z.array(guardrailRuleSchema),
 });
 
+const piiEntityEnum = z.enum(['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN']);
+
+const piiPolicySchema = z.object({
+  name: z.string().min(1),
+  enabled: z.boolean().optional(),
+  entities: z.array(piiEntityEnum).optional(),
+  customPatterns: z.array(z.string()).optional(),
+  scrubInput: z.boolean().optional(),
+  scrubOutput: z.boolean().optional(),
+});
+
 const piiConfigSchema = z.object({
-  entities: z.array(z.enum(['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'])).optional(),
+  entities: z.array(piiEntityEnum).optional(),
   customPatterns: z.array(z.string()).optional(),
   scrubInput: z.boolean().optional(),
   scrubOutput: z.boolean().optional(),
   outputBufferSize: z.number().int().min(10).max(500).optional(),
+  policies: z.array(piiPolicySchema).optional(),
 });
 
 const spendGroupBodySchema = z.object({

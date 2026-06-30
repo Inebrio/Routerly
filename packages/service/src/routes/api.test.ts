@@ -1573,6 +1573,39 @@ describe('PUT /api/projects/:id', () => {
     await app.close()
     expect(res.statusCode).toBe(404)
   })
+
+  it('accepts pii config with policies array', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        name: 'Test', models: [],
+        pii: {
+          scrubInput: true,
+          policies: [
+            { name: 'gdpr', scrubInput: true, entities: ['EMAIL', 'PHONE'] },
+            { name: 'financial', enabled: false, scrubOutput: true, entities: ['CREDIT_CARD', 'IBAN'] },
+          ],
+        },
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.pii.policies).toHaveLength(2)
+    expect(body.pii.policies[0].name).toBe('gdpr')
+  })
 })
 
 describe('DELETE /api/projects/:id', () => {

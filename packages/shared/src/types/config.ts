@@ -286,6 +286,19 @@ export interface GuardrailConfig {
 /** PII entity types detected and scrubbed before forwarding (#76). */
 export type PiiEntity = 'EMAIL' | 'PHONE' | 'CREDIT_CARD' | 'SSN' | 'IBAN';
 
+/** A named PII policy with its own entity set, patterns, and per-direction targets (#76). All enabled policies are merged at scrub time. */
+export interface PiiPolicy {
+  name: string;
+  /** Default true when absent. */
+  enabled?: boolean;
+  entities?: PiiEntity[];
+  customPatterns?: string[];
+  /** Include this policy when scrubbing request input. Default false. */
+  scrubInput?: boolean;
+  /** Include this policy when scrubbing model output. Default false. */
+  scrubOutput?: boolean;
+}
+
 /** PII detection and scrubbing configuration for a project (#76). Presence of this config activates PII scrubbing — no separate enabled flag. */
 export interface PiiConfig {
   /** Entity types to scrub. Defaults to all when absent. */
@@ -298,6 +311,8 @@ export interface PiiConfig {
   scrubOutput?: boolean;
   /** Suffix buffer size (chars) for streaming output scrubbing. The last N chars are held back until the next chunk arrives, so patterns spanning chunk boundaries are caught. Defaults to 30. Larger values catch longer split patterns at the cost of added latency. */
   outputBufferSize?: number;
+  /** Additional named policies merged at scrub time. */
+  policies?: PiiPolicy[];
 }
 
 export type ProjectRole = 'viewer' | 'editor' | 'admin';

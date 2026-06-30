@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import type { ProjectConfig, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig } from '@routerly/shared';
+import type { ProjectConfig, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiPolicy } from '@routerly/shared';
 
 // ─── Helper: resolve project by name or ID ────────────────────────────────────
 
@@ -1155,15 +1155,46 @@ Examples:
   cmd.command('pii <project>')
     .description('Show or update PII detection config for a project')
     .option('--entities <types>', 'Comma-separated PII entity types (e.g. EMAIL,PHONE,SSN)')
-    .action(async (nameOrId: string, opts: { entities?: string }) => {
+    .option('--add-policy <name>', 'Add a named PII policy')
+    .option('--remove-policy <name>', 'Remove a named PII policy')
+    .action(async (nameOrId: string, opts: { entities?: string; addPolicy?: string; removePolicy?: string }) => {
       try {
         const project = await resolveProject(nameOrId);
         const pii = (project as ProjectConfig & { pii?: Record<string, unknown> }).pii ?? {};
+        const current = pii as { policies?: PiiPolicy[]; entities?: string[]; customPatterns?: string[]; scrubInput?: boolean; scrubOutput?: boolean; outputBufferSize?: number };
+
+        if (opts.addPolicy) {
+          const policies = [...(current.policies ?? [])];
+          if (policies.find(p => p.name === opts.addPolicy)) {
+            console.error(chalk.red(`Policy "${opts.addPolicy}" already exists`));
+            process.exit(1);
+          }
+          policies.push({ name: opts.addPolicy, enabled: true, scrubInput: true, entities: [] });
+          await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/guardrails`, { pii: { ...current, policies } });
+          console.log(chalk.green(`Added policy "${opts.addPolicy}"`));
+          return;
+        }
+
+        if (opts.removePolicy) {
+          const policies = (current.policies ?? []).filter(p => p.name !== opts.removePolicy);
+          await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/guardrails`, { pii: { ...current, policies } });
+          console.log(chalk.green(`Removed policy "${opts.removePolicy}"`));
+          return;
+        }
 
         const hasUpdate = !!opts.entities;
         if (!hasUpdate) {
           console.log(chalk.bold(`\nPII Config — ${project.name}`));
           console.log(JSON.stringify(pii, null, 2));
+          if (current.policies?.length) {
+            console.log(chalk.bold('  Policies:'));
+            current.policies.forEach((p, i) => {
+              const status = p.enabled !== false ? chalk.green('enabled') : chalk.dim('disabled');
+              const direction = [p.scrubInput && 'input', p.scrubOutput && 'output'].filter(Boolean).join('+') || 'none';
+              const entities = p.entities?.join(', ') ?? 'all';
+              console.log(`    [${i}] "${p.name}" (${status})  target:${direction}  entities: ${entities}`);
+            });
+          }
           return;
         }
 

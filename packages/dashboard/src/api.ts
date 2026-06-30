@@ -279,12 +279,22 @@ export interface GuardrailConfig {
 
 export type PiiEntity = 'EMAIL' | 'PHONE' | 'CREDIT_CARD' | 'SSN' | 'IBAN';
 
+export interface PiiPolicy {
+  name: string;
+  enabled?: boolean;
+  entities?: PiiEntity[];
+  customPatterns?: string[];
+  scrubInput?: boolean;
+  scrubOutput?: boolean;
+}
+
 export interface PiiConfig {
   entities?: PiiEntity[];
   customPatterns?: string[];
   scrubInput?: boolean;
   scrubOutput?: boolean;
   outputBufferSize?: number;
+  policies?: PiiPolicy[];
 }
 
 export interface Project {

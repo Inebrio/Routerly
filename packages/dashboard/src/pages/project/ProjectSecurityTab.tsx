@@ -14,6 +14,7 @@ import {
   type ModerationGuardConfig,
   type PiiConfig,
   type PiiEntity,
+  type PiiPolicy,
 } from '../../api';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import { useProject } from './ProjectLayout';
@@ -67,6 +68,118 @@ function validateRegexLines(val: string): number[] {
     .filter(({ line }) => line.length > 0)
     .filter(({ line }) => { try { new RegExp(line); return false; } catch { return true; } })
     .map(({ i }) => i);
+}
+
+// ── PII Policy Card ──────────────────────────────────────────────────────────
+
+function PiiPolicyCard({
+  policy,
+  onChange,
+  onRemove,
+}: {
+  policy: PiiPolicy;
+  onChange: (p: PiiPolicy) => void;
+  onRemove: () => void;
+}) {
+  const entities: Set<PiiEntity> = new Set(policy.entities ?? ALL_PII_ENTITIES);
+
+  function toggleEntity(e: PiiEntity) {
+    const next = new Set(entities);
+    next.has(e) ? next.delete(e) : next.add(e);
+    onChange({ ...policy, entities: [...next] });
+  }
+
+  return (
+    <div style={{
+      border: '1px solid var(--border)', borderRadius: 8, padding: 16, marginBottom: 12,
+      background: 'var(--surface)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+        <input
+          className="form-input"
+          style={{ flex: 1, fontSize: '0.88rem' }}
+          placeholder="Policy name"
+          value={policy.name}
+          onChange={e => onChange({ ...policy, name: e.target.value })}
+        />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', whiteSpace: 'nowrap', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={policy.enabled !== false}
+            onChange={e => onChange({ ...policy, enabled: e.target.checked })}
+            style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
+          />
+          Enabled
+        </label>
+        <button
+          type="button"
+          onClick={onRemove}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: 4, display: 'flex' }}
+          title="Remove policy"
+        >
+          <Trash2 size={15} />
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', gap: 16, marginBottom: 10, flexWrap: 'wrap' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={policy.scrubInput === true}
+            onChange={e => onChange({ ...policy, scrubInput: e.target.checked })}
+            style={{ width: 13, height: 13, accentColor: 'var(--primary)', cursor: 'pointer' }}
+          />
+          Scrub input
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={policy.scrubOutput === true}
+            onChange={e => onChange({ ...policy, scrubOutput: e.target.checked })}
+            style={{ width: 13, height: 13, accentColor: 'var(--primary)', cursor: 'pointer' }}
+          />
+          Scrub output
+        </label>
+      </div>
+
+      <div style={{ marginBottom: 10 }}>
+        <label className="form-label" style={{ fontSize: '0.72rem' }}>Entity types</label>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {ALL_PII_ENTITIES.map(entity => {
+            const active = entities.has(entity);
+            return (
+              <label key={entity} style={{
+                display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontSize: '0.82rem',
+                padding: '3px 8px', border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
+                borderRadius: 5, background: active ? 'color-mix(in srgb, var(--primary) 12%, transparent)' : 'transparent',
+                transition: 'all 0.15s',
+              }}>
+                <input
+                  type="checkbox"
+                  checked={active}
+                  onChange={() => toggleEntity(entity)}
+                  style={{ width: 12, height: 12, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                />
+                {PII_LABELS[entity]}
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <label className="form-label" style={{ fontSize: '0.72rem' }}>Custom patterns (regex, one per line)</label>
+        <textarea
+          className="form-input"
+          rows={2}
+          value={(policy.customPatterns ?? []).join('\n')}
+          onChange={e => onChange({ ...policy, customPatterns: e.target.value.split('\n').map(s => s.trim()).filter(Boolean) })}
+          placeholder={'\\b\\d{8}\\b'}
+          style={{ resize: 'vertical', fontFamily: 'monospace', fontSize: '0.82rem' }}
+        />
+      </div>
+    </div>
+  );
 }
 
 // ── Target selector ───────────────────────────────────────────────────────────
@@ -383,6 +496,7 @@ export function ProjectSecurityTab() {
   const [scrubInput, setScrubInput] = useState(true);
   const [scrubOutput, setScrubOutput] = useState(false);
   const [outputBufferSize, setOutputBufferSize] = useState(30);
+  const [piiPolicies, setPiiPolicies] = useState<PiiPolicy[]>([]);
 
   useEffect(() => {
     if (!project) return;
@@ -399,6 +513,7 @@ export function ProjectSecurityTab() {
       setScrubInput(p.scrubInput !== false);
       setScrubOutput(p.scrubOutput === true);
       setOutputBufferSize(p.outputBufferSize ?? 30);
+      setPiiPolicies(p.policies ?? []);
     }
   }, [project]);
 
@@ -450,6 +565,7 @@ export function ProjectSecurityTab() {
         ...(action === 'block' && fallbackMessage.trim() ? { fallbackMessage: fallbackMessage.trim() } : {}),
         rules: strippedRules,
       };
+      const validPolicies = piiPolicies.filter(p => p.name.trim());
       const piiPayload: PiiConfig = {
         entities: [...piiEntities],
         scrubInput,
@@ -458,6 +574,7 @@ export function ProjectSecurityTab() {
         ...(piiCustomPatterns.trim() ? {
           customPatterns: piiCustomPatterns.split('\n').map(s => s.trim()).filter(Boolean),
         } : {}),
+        ...(validPolicies.length > 0 ? { policies: validPolicies } : {}),
       };
       const updated = await updateProject(project.id, {
         name: project.name,
@@ -658,6 +775,29 @@ export function ProjectSecurityTab() {
               Invalid regex on line(s): {piiPatternErrors.map(i => i + 1).join(', ')}
             </p>
           )}
+        </div>
+
+        <div style={{ marginTop: 24 }}>
+          <label className="form-label" style={{ fontSize: '0.75rem' }}>Named Policies</label>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
+            Additional policies merged at scrub time. Each policy controls its own entity set and direction.
+          </p>
+          {piiPolicies.map((policy, i) => (
+            <PiiPolicyCard
+              key={i}
+              policy={policy}
+              onChange={updated => setPiiPolicies(prev => prev.map((p, j) => j === i ? updated : p))}
+              onRemove={() => setPiiPolicies(prev => prev.filter((_, j) => j !== i))}
+            />
+          ))}
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{ fontSize: '0.85rem' }}
+            onClick={() => setPiiPolicies(prev => [...prev, { name: '', enabled: true, scrubInput: true, entities: [] }])}
+          >
+            + Add Policy
+          </button>
         </div>
       </div>
 

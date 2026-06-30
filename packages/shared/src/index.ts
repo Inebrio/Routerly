@@ -27,6 +27,7 @@ export type {
   ModerationGuardConfig,
   PiiConfig,
   PiiEntity,
+  PiiPolicy,
   TokenModelRef,
   RoutingPolicy,
   RoutingPolicyType,
