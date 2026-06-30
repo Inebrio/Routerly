@@ -525,6 +525,8 @@ interface ChannelBase {
   events?: string[];
   /** Per-channel minimum interval between dispatches in seconds (0 or absent = no cooldown) */
   cooldownSeconds?: number;
+  /** Project IDs this channel applies to; empty/absent = all projects */
+  projects?: string[];
   /** Recipient targeting (U5). Undefined or all-empty = everyone. */
   targets?: ChannelTargets;
 }

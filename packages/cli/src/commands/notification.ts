@@ -452,6 +452,7 @@ export function makeNotificationCommand(): Command {
     .description('Edit a notification channel interactively')
     .option('--name <name>', 'New friendly name')
     .option('--events <patterns>', 'Comma-separated event patterns (empty string to clear)')
+    .option('--projects <ids>', 'Comma-separated project IDs (empty string to clear)')
     .option('--cooldown-seconds <seconds>', 'Minimum seconds between dispatches (0 to disable)', (v) => parseInt(v, 10))
     .option('--target-roles <roles>', 'Comma-separated role IDs')
     .option('--target-permissions <perms>', 'Comma-separated permissions')
@@ -507,6 +508,12 @@ export function makeNotificationCommand(): Command {
         if (opts['events'] !== undefined) {
           const ev = String(opts['events']).trim();
           patch['events'] = ev ? ev.split(',').map(s => s.trim()).filter(Boolean) : [];
+        }
+
+        // Projects
+        if (opts['projects'] !== undefined) {
+          const pr = String(opts['projects']).trim();
+          patch['projects'] = pr ? pr.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
         }
 
         // Per-channel cooldown

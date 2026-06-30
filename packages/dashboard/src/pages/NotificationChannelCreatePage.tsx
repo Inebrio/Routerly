@@ -6,7 +6,8 @@ import type { Role, User } from '../api';
 import {
   CHANNEL_PROVIDER_META,
   ChannelEditFields,
-  EventsAndTargetsEditFields,
+  RoutingEditFields,
+  RecipientsEditFields,
   providerLabel,
 } from './notificationChannelFields';
 import type { ChannelProvider } from './notificationChannelFields';
@@ -53,6 +54,7 @@ export function NotificationChannelCreatePage() {
   const [users, setUsers] = useState<User[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState<'connection' | 'routing' | 'recipients'>('connection');
 
   useEffect(() => {
     getRoles().then(setRoles).catch(() => {});
@@ -63,6 +65,7 @@ export function NotificationChannelCreatePage() {
     setProvider(p);
     setForm(buildDefaults(p));
     setError('');
+    setActiveTab('connection');
   }
 
   function onChange(field: string, value: unknown) {
@@ -159,31 +162,60 @@ export function NotificationChannelCreatePage() {
       <form onSubmit={handleSubmit} autoComplete="off" style={{ maxWidth: 600 }}>
         {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
 
-        <div className="form-section">
-          <h3 className="section-title">Channel settings</h3>
+        {/* Tab bar */}
+        <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--border)', marginBottom: 24 }}>
+          {(['connection', 'routing', 'recipients'] as const).map(tab => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: '0 4px 12px',
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: '0.9rem', fontWeight: 500,
+                color: activeTab === tab ? 'var(--primary)' : 'var(--text-secondary)',
+                borderBottom: activeTab === tab ? '2px solid var(--primary)' : '2px solid transparent',
+                marginBottom: -1,
+                transition: 'all 0.2s',
+                textTransform: 'capitalize',
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
 
-          {/* Name field */}
-          <div className="form-group">
-            <label className="form-label">
-              Name <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
-            </label>
-            <input
-              className="form-input"
-              value={typeof form['name'] === 'string' ? form['name'] : ''}
-              onChange={e => onChange('name', e.target.value || undefined)}
-              placeholder="Label for this channel"
-            />
+        {activeTab === 'connection' && (
+          <div className="form-section">
+            <h3 className="section-title">Channel settings</h3>
+            <div className="form-group">
+              <label className="form-label">
+                Name <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+              </label>
+              <input
+                className="form-input"
+                value={typeof form['name'] === 'string' ? form['name'] : ''}
+                onChange={e => onChange('name', e.target.value || undefined)}
+                placeholder="Label for this channel"
+              />
+            </div>
+            <ChannelEditFields form={form} onChange={onChange} isEdit={false} />
           </div>
+        )}
 
-          {/* Provider-specific fields */}
-          <ChannelEditFields form={form} onChange={onChange} isEdit={false} />
-        </div>
+        {activeTab === 'routing' && (
+          <div className="form-section">
+            <h3 className="section-title">Events and routing</h3>
+            <RoutingEditFields form={form} onChange={onChange} />
+          </div>
+        )}
 
-        {/* Events + Targets */}
-        <div className="form-section">
-          <h3 className="section-title">Events and recipients</h3>
-          <EventsAndTargetsEditFields form={form} onChange={onChange} roles={roles} users={users} />
-        </div>
+        {activeTab === 'recipients' && (
+          <div className="form-section">
+            <h3 className="section-title">Recipients</h3>
+            <RecipientsEditFields form={form} onChange={onChange} roles={roles} users={users} />
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 12, marginTop: 8, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
           <button

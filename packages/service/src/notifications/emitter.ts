@@ -161,6 +161,12 @@ export async function emitEvent(
     const matchedChannels = external.filter((c) => matched.has(c.id));
     await Promise.all(
       matchedChannels.map(async (channel) => {
+        // If channel is scoped to specific projects, skip if this event isn't from one of them
+        if ((channel as any).projects?.length > 0 && opts.projectId) {
+          if (!((channel as any).projects as string[]).includes(opts.projectId)) {
+            return;
+          }
+        }
         // Per-channel cooldown: skip if within the configured interval.
         const cooldownMs = ((channel as any).cooldownSeconds ?? 0) * 1000;
         if (cooldownMs > 0) {

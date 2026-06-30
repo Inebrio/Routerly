@@ -2,12 +2,12 @@
  * Shared field rendering for notification channel forms.
  * Used by Create, Edit, and Detail pages so the field list is defined once.
  */
-import React from 'react';
-import { Bell, Users } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Bell, Users, FolderOpen } from 'lucide-react';
 import { CHANNEL_SECRET_FIELDS } from '@routerly/shared';
 import { MultiSelect } from '../components/MultiSelect';
-import { ALL_PERMISSIONS } from '../api';
-import type { Permission } from '../api';
+import { ALL_PERMISSIONS, getProjects } from '../api';
+import type { Permission, Project } from '../api';
 import type { Role, User } from '../api';
 
 export type ChannelProvider =
@@ -306,24 +306,27 @@ function EmailBaseFields({ form, onChange, isEdit }: EditFieldsProps) {
   );
 }
 
-export function EventsAndTargetsEditFields({
-  form, onChange, roles, users,
-}: {
+type TargetsProps = {
   form: Record<string, unknown>;
   onChange: (field: string, value: unknown) => void;
   roles: Role[];
   users: User[];
-}) {
-  const provider = form['provider'] as ChannelProvider;
-  const roleOptions = roles.map(r => ({ value: r.id, label: r.name }));
-  const userOptions = users.map(u => ({ value: u.id, label: u.email }));
-  const hint = targetsHint(provider);
+};
+
+/** Events + Projects + Cooldown section (Routing tab). */
+export function RoutingEditFields({
+  form, onChange,
+}: Pick<TargetsProps, 'form' | 'onChange'>) {
   const events = (form['events'] as string[] | undefined) ?? [];
-  const targets = (form['targets'] as { roles?: string[]; permissions?: string[]; users?: string[] } | undefined) ?? {};
   const cooldownSeconds = typeof form['cooldownSeconds'] === 'number' ? form['cooldownSeconds'] : 0;
+  const selectedProjects = (form['projects'] as string[] | undefined) ?? [];
+
+  const [allProjects, setAllProjects] = useState<Project[]>([]);
+  useEffect(() => { getProjects().then(setAllProjects).catch(() => {}); }, []);
+  const projectOptions = allProjects.map(p => ({ value: p.id, label: p.name }));
 
   return (
-    <div style={{ borderTop: '1px solid var(--border)', marginTop: 12, paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div>
         <div style={sectionLabel}><Bell size={11} /> Events</div>
         <MultiSelect
@@ -334,6 +337,18 @@ export function EventsAndTargetsEditFields({
         />
         <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '5px 0 0' }}>
           Leave empty to receive all events. Select specific events to filter.
+        </p>
+      </div>
+      <div>
+        <div style={sectionLabel}><FolderOpen size={11} /> Projects</div>
+        <MultiSelect
+          options={projectOptions}
+          value={selectedProjects}
+          onChange={v => onChange('projects', v.length ? v : undefined)}
+          placeholder="All projects (leave empty for all)"
+        />
+        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '5px 0 0' }}>
+          Leave empty to receive events from all projects.
         </p>
       </div>
       <div>
@@ -357,43 +372,65 @@ export function EventsAndTargetsEditFields({
           Minimum interval before this channel can fire again for the same event.
         </p>
       </div>
+    </div>
+  );
+}
+
+/** Targets (roles/permissions/users) section (Recipients tab). */
+export function RecipientsEditFields({
+  form, onChange, roles, users,
+}: TargetsProps) {
+  const provider = form['provider'] as ChannelProvider;
+  const roleOptions = roles.map(r => ({ value: r.id, label: r.name }));
+  const userOptions = users.map(u => ({ value: u.id, label: u.email }));
+  const hint = targetsHint(provider);
+  const targets = (form['targets'] as { roles?: string[]; permissions?: string[]; users?: string[] } | undefined) ?? {};
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={sectionLabel}><Users size={11} /> Recipients / Targets</div>
       <div>
-        <div style={sectionLabel}><Users size={11} /> Recipients / Targets</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div>
-            <label className="form-label" style={{ fontSize: '0.78rem' }}>Roles</label>
-            <MultiSelect
-              options={roleOptions}
-              value={targets.roles ?? []}
-              onChange={v => onChange('targets', { ...targets, roles: v.length ? v : undefined })}
-              placeholder="All roles (everyone)"
-            />
-          </div>
-          <div>
-            <label className="form-label" style={{ fontSize: '0.78rem' }}>Permissions</label>
-            <MultiSelect
-              options={PERM_OPTIONS}
-              value={(targets.permissions ?? []) as string[]}
-              onChange={v => onChange('targets', { ...targets, permissions: v.length ? (v as Permission[]) : undefined })}
-              placeholder="All permissions (everyone)"
-            />
-          </div>
-          <div>
-            <label className="form-label" style={{ fontSize: '0.78rem' }}>Individual users</label>
-            <MultiSelect
-              options={userOptions}
-              value={targets.users ?? []}
-              onChange={v => onChange('targets', { ...targets, users: v.length ? v : undefined })}
-              placeholder="All users (everyone)"
-            />
-          </div>
-        </div>
-        {hint && (
-          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '6px 0 0', padding: '6px 8px', background: 'var(--bg-surface)', borderRadius: 4, borderLeft: '2px solid var(--border)' }}>
-            {hint}
-          </p>
-        )}
+        <label className="form-label" style={{ fontSize: '0.78rem' }}>Roles</label>
+        <MultiSelect
+          options={roleOptions}
+          value={targets.roles ?? []}
+          onChange={v => onChange('targets', { ...targets, roles: v.length ? v : undefined })}
+          placeholder="All roles (everyone)"
+        />
       </div>
+      <div>
+        <label className="form-label" style={{ fontSize: '0.78rem' }}>Permissions</label>
+        <MultiSelect
+          options={PERM_OPTIONS}
+          value={(targets.permissions ?? []) as string[]}
+          onChange={v => onChange('targets', { ...targets, permissions: v.length ? (v as Permission[]) : undefined })}
+          placeholder="All permissions (everyone)"
+        />
+      </div>
+      <div>
+        <label className="form-label" style={{ fontSize: '0.78rem' }}>Individual users</label>
+        <MultiSelect
+          options={userOptions}
+          value={targets.users ?? []}
+          onChange={v => onChange('targets', { ...targets, users: v.length ? v : undefined })}
+          placeholder="All users (everyone)"
+        />
+      </div>
+      {hint && (
+        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '6px 0 0', padding: '6px 8px', background: 'var(--bg-surface)', borderRadius: 4, borderLeft: '2px solid var(--border)' }}>
+          {hint}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Combined events+targets block (kept for backward compat; not used by tabbed pages). */
+export function EventsAndTargetsEditFields({ form, onChange, roles, users }: TargetsProps) {
+  return (
+    <div style={{ borderTop: '1px solid var(--border)', marginTop: 12, paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <RoutingEditFields form={form} onChange={onChange} />
+      <RecipientsEditFields form={form} onChange={onChange} roles={roles} users={users} />
     </div>
   );
 }
