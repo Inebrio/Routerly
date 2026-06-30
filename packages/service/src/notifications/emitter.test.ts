@@ -4,7 +4,7 @@ vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn(
 vi.mock('./sender.js', () => ({ dispatchNotification: vi.fn() }));
 
 import {
-  emitEvent, matchesPattern, parseDuration, _resetCooldowns, resolveTargetUsers,
+  emitEvent, matchesPattern, _resetCooldowns, resolveTargetUsers,
 } from './emitter.js';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { dispatchNotification } from './sender.js';
@@ -34,18 +34,6 @@ const lastInbox = (): any => {
   return calls.at(-1)?.[1] ?? null;
 };
 
-describe('parseDuration', () => {
-  it('parses s/m/h/d', () => {
-    expect(parseDuration('30s')).toBe(30_000);
-    expect(parseDuration('15m')).toBe(900_000);
-    expect(parseDuration('1h')).toBe(3_600_000);
-    expect(parseDuration('2d')).toBe(172_800_000);
-  });
-  it('returns 0 for invalid', () => {
-    expect(parseDuration('')).toBe(0);
-    expect(parseDuration('abc')).toBe(0);
-  });
-});
 
 describe('matchesPattern', () => {
   it('exact match', () => expect(matchesPattern('provider.error', 'provider.error')).toBe(true));
@@ -200,11 +188,8 @@ describe('per-channel events matching (U5)', () => {
     expect(mockDispatch).not.toHaveBeenCalled();
   });
 
-  it('legacy rule fallback: dispatches when rule matches', async () => {
-    settings({
-      channels: [{ id: 'webhook-ops', provider: 'webhook', url: 'https://x' }],
-      notificationRules: [{ events: ['provider.error'], channels: ['webhook-ops'] }],
-    });
+  it('channel with matching events filter → dispatches', async () => {
+    settings({ channels: [{ id: 'webhook-ops', provider: 'webhook', url: 'https://x', events: ['provider.error'] }] });
     await emitEvent('provider.error', 'critical', { code: 500 });
     expect(mockDispatch).toHaveBeenCalledTimes(1);
     expect(mockDispatch).toHaveBeenCalledWith(
@@ -214,11 +199,8 @@ describe('per-channel events matching (U5)', () => {
     );
   });
 
-  it('legacy rule present but not matching event → no dispatch', async () => {
-    settings({
-      channels: [{ id: 'c1', provider: 'webhook', url: 'https://x' }],
-      notificationRules: [{ events: ['provider.error'], channels: ['c1'] }],
-    });
+  it('channel events filter not matching → no dispatch', async () => {
+    settings({ channels: [{ id: 'c1', provider: 'webhook', url: 'https://x', events: ['provider.error'] }] });
     await emitEvent('routing.no_candidates', 'critical', {});
     expect(mockDispatch).not.toHaveBeenCalled();
   });
@@ -238,11 +220,8 @@ describe('per-channel events matching (U5)', () => {
     expect(mockDispatch).not.toHaveBeenCalled();
   });
 
-  it('channel.events wins even when a rule also exists', async () => {
-    settings({
-      channels: [{ id: 'c1', provider: 'webhook', url: 'https://x', events: ['budget.*'] }],
-      notificationRules: [{ events: ['provider.error'], channels: ['c1'] }],
-    });
+  it('channel.events filter set to budget.* → does not receive provider.error', async () => {
+    settings({ channels: [{ id: 'c1', provider: 'webhook', url: 'https://x', events: ['budget.*'] }] });
     await emitEvent('provider.error', 'critical', {});
     expect(mockDispatch).not.toHaveBeenCalled();
   });
@@ -297,7 +276,7 @@ describe('email recipient resolution (U5)', () => {
 describe('per-project override + cooldown (preserved)', () => {
   it('merges per-project channel override', async () => {
     settings(
-      { channels: [{ id: 'proj-ch', provider: 'webhook', url: 'https://x', events: ['budget.only'] }], notificationRules: [] },
+      { channels: [{ id: 'proj-ch', provider: 'webhook', url: 'https://x', events: ['budget.only'] }] },
       { projects: [{ id: 'p1', notifications: { channels: ['proj-ch'] } }] },
     );
     await emitEvent('config.project_created', 'info', {}, { projectId: 'p1' });
@@ -308,7 +287,7 @@ describe('per-project override + cooldown (preserved)', () => {
 
   it('per-project override referencing a non-external (unknown) channel id is ignored', async () => {
     settings(
-      { channels: [{ id: 'c1', provider: 'webhook', url: 'https://x', events: ['budget.only'] }], notificationRules: [] },
+      { channels: [{ id: 'c1', provider: 'webhook', url: 'https://x', events: ['budget.only'] }] },
       { projects: [{ id: 'p1', notifications: { channels: ['does-not-exist'] } }] },
     );
     await emitEvent('config.project_created', 'info', {}, { projectId: 'p1' });
@@ -333,10 +312,9 @@ describe('per-project override + cooldown (preserved)', () => {
     expect(mockDispatch).not.toHaveBeenCalled();
   });
 
-  it('suppresses repeated dispatch within cooldown window', async () => {
+  it('suppresses repeated dispatch within per-channel cooldown window', async () => {
     settings({
-      channels: [{ id: 'c1', provider: 'webhook', url: 'https://x', events: ['provider.degraded'] }],
-      cooldowns: { 'provider.degraded': '15m' },
+      channels: [{ id: 'c1', provider: 'webhook', url: 'https://x', events: ['provider.degraded'], cooldownSeconds: 900 }],
     });
     await emitEvent('provider.degraded', 'warning', {});
     await emitEvent('provider.degraded', 'warning', {});

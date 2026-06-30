@@ -5,7 +5,6 @@ import { getEffectiveRoles } from '../auth/roles.js';
 import type {
   NotificationSeverity,
   NotificationInboxItem,
-  NotificationRule,
   NotificationChannel,
   ChannelTargets,
   UserConfig,
@@ -19,22 +18,12 @@ export { NOTIFICATION_EVENTS } from '@routerly/shared';
 const MAX_INBOX_ITEMS = 200;
 const MAX_INBOX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-/** In-memory per-event-type last-dispatch timestamp for cooldown (#90, single-node). */
-const lastDispatchAt = new Map<string, number>();
+// ponytail: in-memory per-channel cooldown; resets on restart, single-node only
+const channelLastDispatch = new Map<string, number>(); // key: `${channelId}:${event}`
 
 /** Test-only: reset cooldown state between tests. */
 export function _resetCooldowns(): void {
-  lastDispatchAt.clear();
-}
-
-/** Parse a duration like "15m", "1h", "30s", "2d" into milliseconds. Returns 0 if unparseable. */
-export function parseDuration(d: string): number {
-  const m = /^(\d+)\s*(s|m|h|d)$/.exec(d.trim());
-  if (!m) return 0;
-  const n = Number(m[1]);
-  const unit = m[2];
-  const mult = unit === 's' ? 1000 : unit === 'm' ? 60_000 : unit === 'h' ? 3_600_000 : 86_400_000;
-  return n * mult;
+  channelLastDispatch.clear();
 }
 
 /** True if event name matches a pattern: exact, `*`, or prefix glob like `budget.*`. */
@@ -51,26 +40,15 @@ function anyPatternMatches(patterns: string[] | undefined, event: string): boole
 }
 
 /**
- * Decide whether a single channel receives an event (U5):
+ * Decide whether a single channel receives an event:
  *  1. channel.events non-empty → match against those patterns;
- *  2. else if any rule names this channel → that rule's events must match;
- *  3. else (no per-channel events, no rule mentions it):
- *       - dashboard channels → receive all events (default for an opted-in inbox);
- *       - external channels → receive NOTHING (opt-in, preserves pre-U5 silence).
+ *  2. else: dashboard channels receive all; external channels must opt-in via events[].
  */
-function channelReceives(
-  channel: NotificationChannel,
-  event: string,
-  rules: NotificationRule[],
-): boolean {
+function channelReceives(channel: NotificationChannel, event: string): boolean {
   if (channel.events && channel.events.length > 0) {
     return anyPatternMatches(channel.events, event);
   }
-  const mentioningRules = rules.filter((r) => r.channels.includes(channel.id));
-  if (mentioningRules.length > 0) {
-    return mentioningRules.some((r) => anyPatternMatches(r.events, event));
-  }
-  // No events, no rule: dashboard defaults to all; external defaults to silent.
+  // No filter: dashboard defaults to all; external defaults to silent.
   return channel.provider === 'dashboard';
 }
 
@@ -141,13 +119,12 @@ export async function emitEvent(
   const settings = await readConfig('settings').catch(() => undefined);
   const notif = settings?.notifications;
   const channels = (notif?.channels ?? []) as NotificationChannel[];
-  const rules = notif?.notificationRules ?? [];
 
   const dashboardChannels = channels.filter((c) => c.provider === 'dashboard');
 
   // ── Inbox (U5, opt-in) ────────────────────────────────────────────────────────
   try {
-    const matching = dashboardChannels.filter((c) => channelReceives(c, event, rules));
+    const matching = dashboardChannels.filter((c) => channelReceives(c, event));
     if (matching.length > 0) {
       const recipients = await resolveInboxRecipients(matching);
       await appendToInbox({
@@ -165,7 +142,7 @@ export async function emitEvent(
     if (external.length === 0) return;
 
     const matched = new Set(
-      external.filter((c) => channelReceives(c, event, rules)).map((c) => c.id),
+      external.filter((c) => channelReceives(c, event)).map((c) => c.id),
     );
 
     // Per-project override (#91): merge the project's channels for its own events.
@@ -178,23 +155,23 @@ export async function emitEvent(
     }
     if (matched.size === 0) return;
 
-    // Cooldown (#90): suppress repeated dispatches of the same event type.
-    const cooldownMs = parseDuration(notif?.cooldowns?.[event] ?? '');
-    if (cooldownMs > 0) {
-      const last = lastDispatchAt.get(event);
-      if (last !== undefined && Date.now() - last < cooldownMs) {
-        opts.log?.info({ event, cooldownMs }, 'notification suppressed by cooldown');
-        return;
-      }
-    }
-    lastDispatchAt.set(event, Date.now());
-
     const payload = { event, severity, timestamp, details };
     // Every id in `matched` came from `external` (directly or via the external.some
     // guard on the project override), so the lookup always resolves.
     const matchedChannels = external.filter((c) => matched.has(c.id));
     await Promise.all(
       matchedChannels.map(async (channel) => {
+        // Per-channel cooldown: skip if within the configured interval.
+        const cooldownMs = ((channel as any).cooldownSeconds ?? 0) * 1000;
+        if (cooldownMs > 0) {
+          const key = `${channel.id}:${event}`;
+          const last = channelLastDispatch.get(key);
+          if (last !== undefined && Date.now() - last < cooldownMs) {
+            opts.log?.info({ event, channel: channel.id, cooldownMs }, 'notification suppressed by cooldown');
+            return;
+          }
+          channelLastDispatch.set(key, Date.now());
+        }
         try {
           const recipients = await resolveEmailRecipients(channel);
           await dispatchNotification(channel, payload, recipients);

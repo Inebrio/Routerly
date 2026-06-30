@@ -5821,7 +5821,7 @@ describe('POST /api/notifications/channels (U5 validation)', () => {
     mockReadConfig.mockImplementation(async (type: string) => {
       if (type === 'users') return [adminUser]
       if (type === 'roles') return []
-      if (type === 'settings') return { notifications: { channels: [], notificationRules: [{ events: ['x'], channels: ['keep'] }] } }
+      if (type === 'settings') return { notifications: { channels: [] } }
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -5840,9 +5840,6 @@ describe('POST /api/notifications/channels (U5 validation)', () => {
     const body = JSON.parse(res.body)
     expect(body.provider).toBe('dashboard')
     expect(body.id).toBeDefined()
-    // notificationRules preserved on write
-    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')![1] as any
-    expect(written.notifications.notificationRules).toHaveLength(1)
   })
 
   it('rejects an unknown provider', async () => {
@@ -5971,27 +5968,23 @@ describe('PUT /api/settings notifications validation (U5)', () => {
     expect(res.statusCode).toBe(400)
   })
 
-  it('rejects over-cap cooldowns record (>100 keys)', async () => {
+  it('rejects unknown fields in notifications config (strict schema)', async () => {
     setup()
-    const cooldowns: Record<string, string> = {}
-    for (let i = 0; i < 101; i++) cooldowns[`e${i}`] = '1m'
     const app = await buildApp()
     const res = await app.inject({
       method: 'PUT', url: '/api/settings',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ notifications: { channels: [], cooldowns } }),
+      payload: JSON.stringify({ notifications: { channels: [], unknownField: 'x' } }),
     })
     await app.close()
     expect(res.statusCode).toBe(400)
   })
 
-  it('persists channels + notificationRules + cooldowns together (#90)', async () => {
+  it('persists channels with cooldownSeconds (#90 per-channel cooldown)', async () => {
     setup()
     const payload = {
       notifications: {
-        channels: [{ id: 'ch1', provider: 'dashboard' }],
-        notificationRules: [{ events: ['budget.*'], channels: ['ch1'] }],
-        cooldowns: { 'provider.degraded': '15m' },
+        channels: [{ id: 'ch1', provider: 'dashboard', cooldownSeconds: 900 }],
       },
     }
     const app = await buildApp()
@@ -6004,8 +5997,7 @@ describe('PUT /api/settings notifications validation (U5)', () => {
     expect(res.statusCode).toBe(200)
     const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')![1] as any
     expect(written.notifications.channels).toHaveLength(1)
-    expect(written.notifications.notificationRules).toEqual([{ events: ['budget.*'], channels: ['ch1'] }])
-    expect(written.notifications.cooldowns).toEqual({ 'provider.degraded': '15m' })
+    expect(written.notifications.channels[0].cooldownSeconds).toBe(900)
   })
 })
 
