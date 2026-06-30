@@ -59,25 +59,16 @@ const channelTargetsSchema = z.object({
  * pass through unvalidated — they are exercised by the channel's own sender.
  */
 const notificationChannelSchema = z.object({
-  id:       z.string().min(1).optional(),
-  name:     z.string().optional(),
-  provider: z.enum(CHANNEL_PROVIDERS),
-  events:   z.array(z.string()).max(50).optional(),
-  targets:  channelTargetsSchema.optional(),
+  id:              z.string().min(1).optional(),
+  name:            z.string().optional(),
+  provider:        z.enum(CHANNEL_PROVIDERS),
+  events:          z.array(z.string()).max(50).optional(),
+  cooldownSeconds: z.number().int().min(0).optional(),
+  targets:         channelTargetsSchema.optional(),
 }).passthrough();
 
-const notificationRuleSchema = z.object({
-  events:   z.array(z.string()).max(50),
-  channels: z.array(z.string()).max(100),
-}).strict();
-
 const notificationsConfigSchema = z.object({
-  channels:          z.array(notificationChannelSchema).max(100).optional(),
-  notificationRules: z.array(notificationRuleSchema).max(100).optional(),
-  cooldowns:         z.record(z.string(), z.string()).refine(
-                       (c) => Object.keys(c).length <= 100,
-                       { message: 'cooldowns supports at most 100 entries' },
-                     ).optional(),
+  channels: z.array(notificationChannelSchema).max(100).optional(),
 }).strict();
 
 const REDACT_MARKER = '********';

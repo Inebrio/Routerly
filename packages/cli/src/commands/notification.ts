@@ -3,7 +3,6 @@ import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
 import { CHANNEL_SECRET_FIELDS } from '@routerly/shared';
-import type { Settings } from '@routerly/shared';
 
 interface Notification {
   id: string;
@@ -453,6 +452,7 @@ export function makeNotificationCommand(): Command {
     .description('Edit a notification channel interactively')
     .option('--name <name>', 'New friendly name')
     .option('--events <patterns>', 'Comma-separated event patterns (empty string to clear)')
+    .option('--cooldown-seconds <seconds>', 'Minimum seconds between dispatches (0 to disable)', (v) => parseInt(v, 10))
     .option('--target-roles <roles>', 'Comma-separated role IDs')
     .option('--target-permissions <perms>', 'Comma-separated permissions')
     .option('--target-users <users>', 'Comma-separated user IDs')
@@ -509,6 +509,9 @@ export function makeNotificationCommand(): Command {
           patch['events'] = ev ? ev.split(',').map(s => s.trim()).filter(Boolean) : [];
         }
 
+        // Per-channel cooldown
+        if (opts['cooldownSeconds'] !== undefined) patch['cooldownSeconds'] = opts['cooldownSeconds'];
+
         // Targets
         const targets: Record<string, unknown> = {};
         if (opts['targetRoles'])       targets['roles']       = String(opts['targetRoles']).split(',').map(s => s.trim()).filter(Boolean);
@@ -554,135 +557,6 @@ export function makeNotificationCommand(): Command {
     });
 
   cmd.addCommand(channel);
-
-  // --- rules ---
-  const rules = new Command('rules').description('Manage notification routing rules');
-
-  rules
-    .command('list')
-    .description('List notification routing rules')
-    .option('--json', 'Output as JSON')
-    .action(async (opts: { json?: boolean }) => {
-      try {
-        const settings = await api<Settings>('GET', '/api/settings');
-        const rulesList = settings.notifications?.notificationRules ?? [];
-        if (opts.json) { console.log(JSON.stringify(rulesList, null, 2)); return; }
-        if (!rulesList.length) { console.log(chalk.yellow('No routing rules configured.')); return; }
-        const table = new Table({ head: ['#', 'Events', 'Channels'].map(h => chalk.cyan(h)) });
-        rulesList.forEach((r, i) => table.push([String(i + 1), r.events.join(', '), r.channels.join(', ')]));
-        console.log(table.toString());
-      } catch (err) {
-        console.error(chalk.red(`Error: ${(err as Error).message}`));
-        process.exit(1);
-      }
-    });
-
-  rules
-    .command('add')
-    .description('Add a notification routing rule')
-    .requiredOption('--events <patterns>', 'Comma-separated event patterns, e.g. budget.*,provider.error')
-    .requiredOption('--channels <ids>', 'Comma-separated channel IDs')
-    .option('--json', 'Output updated rules as JSON')
-    .action(async (opts: { events: string; channels: string; json?: boolean }) => {
-      try {
-        const settings = await api<Settings>('GET', '/api/settings');
-        const notif = settings.notifications ?? { channels: [] };
-        const updated = [
-          ...(notif.notificationRules ?? []),
-          {
-            events: opts.events.split(',').map(s => s.trim()).filter(Boolean),
-            channels: opts.channels.split(',').map(s => s.trim()).filter(Boolean),
-          },
-        ];
-        await api<void>('PUT', '/api/settings', { ...settings, notifications: { ...notif, notificationRules: updated } });
-        if (opts.json) { console.log(JSON.stringify(updated, null, 2)); return; }
-        console.log(chalk.green('Rule added.'));
-      } catch (err) {
-        console.error(chalk.red(`Error: ${(err as Error).message}`));
-        process.exit(1);
-      }
-    });
-
-  rules
-    .command('delete <index>')
-    .description('Delete a routing rule by 1-based index (as shown in list)')
-    .action(async (indexStr: string) => {
-      try {
-        const index = parseInt(indexStr, 10);
-        const settings = await api<Settings>('GET', '/api/settings');
-        const notif = settings.notifications ?? { channels: [] };
-        const current = notif.notificationRules ?? [];
-        if (isNaN(index) || index < 1 || index > current.length) {
-          console.error(chalk.red(`Invalid index. Must be 1–${current.length}.`));
-          process.exit(1);
-        }
-        const updated = current.filter((_, i) => i !== index - 1);
-        await api<void>('PUT', '/api/settings', { ...settings, notifications: { ...notif, notificationRules: updated } });
-        console.log(chalk.green('Rule deleted.'));
-      } catch (err) {
-        console.error(chalk.red(`Error: ${(err as Error).message}`));
-        process.exit(1);
-      }
-    });
-
-  cmd.addCommand(rules);
-
-  // --- cooldowns ---
-  const cooldowns = new Command('cooldowns').description('Manage notification cooldown intervals');
-
-  cooldowns
-    .command('list')
-    .description('List notification cooldowns')
-    .option('--json', 'Output as JSON')
-    .action(async (opts: { json?: boolean }) => {
-      try {
-        const settings = await api<Settings>('GET', '/api/settings');
-        const cdMap = settings.notifications?.cooldowns ?? {};
-        if (opts.json) { console.log(JSON.stringify(cdMap, null, 2)); return; }
-        const entries = Object.entries(cdMap);
-        if (!entries.length) { console.log(chalk.yellow('No cooldowns configured.')); return; }
-        const table = new Table({ head: ['Event', 'Duration'].map(h => chalk.cyan(h)) });
-        for (const [event, dur] of entries) table.push([event, dur]);
-        console.log(table.toString());
-      } catch (err) {
-        console.error(chalk.red(`Error: ${(err as Error).message}`));
-        process.exit(1);
-      }
-    });
-
-  cooldowns
-    .command('set <event> <duration>')
-    .description('Set a cooldown for an event (e.g. 15m, 1h, 30s, 2d)')
-    .action(async (event: string, duration: string) => {
-      try {
-        const settings = await api<Settings>('GET', '/api/settings');
-        const notif = settings.notifications ?? { channels: [] };
-        const updated = { ...(notif.cooldowns ?? {}), [event]: duration };
-        await api<void>('PUT', '/api/settings', { ...settings, notifications: { ...notif, cooldowns: updated } });
-        console.log(chalk.green(`Cooldown set: ${event} → ${duration}`));
-      } catch (err) {
-        console.error(chalk.red(`Error: ${(err as Error).message}`));
-        process.exit(1);
-      }
-    });
-
-  cooldowns
-    .command('delete <event>')
-    .description('Delete the cooldown for an event')
-    .action(async (event: string) => {
-      try {
-        const settings = await api<Settings>('GET', '/api/settings');
-        const notif = settings.notifications ?? { channels: [] };
-        const { [event]: _removed, ...remaining } = notif.cooldowns ?? {};
-        await api<void>('PUT', '/api/settings', { ...settings, notifications: { ...notif, cooldowns: remaining } });
-        console.log(chalk.green(`Cooldown for ${event} deleted.`));
-      } catch (err) {
-        console.error(chalk.red(`Error: ${(err as Error).message}`));
-        process.exit(1);
-      }
-    });
-
-  cmd.addCommand(cooldowns);
 
   return cmd;
 }

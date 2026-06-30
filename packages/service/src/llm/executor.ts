@@ -28,6 +28,7 @@ import { getProviderAdapter } from '../providers/index.js';
 import { isAllowed, isAllowedForRoutingModel, checkGroupBudget } from '../cost/budget.js';
 import { readConfig } from '../config/loader.js';
 import { trackUsage } from '../cost/tracker.js';
+import { emitEvent } from '../notifications/emitter.js';
 import type { TraceEntry, TracePanel } from '../routing/traceStore.js';
 
 // ─── Tipi ────────────────────────────────────────────────────────────────────
@@ -129,6 +130,7 @@ export async function checkBudget(model: ModelConfig, ctx: LLMCallContext): Prom
       callType,
       ...(traceId !== undefined ? { traceId } : {}),
     }).catch(() => {});
+    emitEvent('budget.exceeded', 'critical', { projectId, modelId: model.id, reason }, { ...(ctx.log ? { log: ctx.log } : {}) }).catch(() => {});
     throw new BudgetExceededError(model.id);
   }
 }

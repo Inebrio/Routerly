@@ -39,22 +39,25 @@ export function isMasked(value: unknown): boolean {
   return value === REDACT_MARKER;
 }
 
-// ── Readable labels for the 14 canonical events ───────────────────────────────
+// ── Readable labels for the canonical events ──────────────────────────────────
 const EVENT_LABELS: Record<string, string> = {
-  'provider.error':          'Provider – Error',
-  'provider.degraded':       'Provider – Degraded',
-  'provider.recovered':      'Provider – Recovered',
-  'provider.rate_limited':   'Provider – Rate Limited',
-  'routing.no_candidates':   'Routing – No Candidates',
-  'routing.fallback_used':   'Routing – Fallback Used',
-  'auth.login_failed':       'Auth – Login Failed',
-  'auth.token_invalid':      'Auth – Token Invalid',
-  'config.model_added':      'Config – Model Added',
-  'config.model_deleted':    'Config – Model Deleted',
-  'config.project_created':  'Config – Project Created',
-  'config.project_deleted':  'Config – Project Deleted',
-  'system.startup':          'System – Startup',
-  'system.shutdown':         'System – Shutdown',
+  'provider.error':            'Provider – Error',
+  'provider.degraded':         'Provider – Degraded',
+  'provider.recovered':        'Provider – Recovered',
+  'provider.rate_limited':     'Provider – Rate Limited',
+  'routing.no_candidates':     'Routing – No Candidates',
+  'routing.fallback_used':     'Routing – Fallback Used',
+  'auth.login_failed':         'Auth – Login Failed',
+  'auth.token_invalid':        'Auth – Token Invalid',
+  'config.model_added':        'Config – Model Added',
+  'config.model_deleted':      'Config – Model Deleted',
+  'config.project_created':    'Config – Project Created',
+  'config.project_deleted':    'Config – Project Deleted',
+  'budget.threshold_reached':  'Budget – Threshold Reached',
+  'budget.exceeded':           'Budget – Exceeded',
+  'budget.reset':              'Budget – Reset',
+  'system.startup':            'System – Startup',
+  'system.shutdown':           'System – Shutdown',
 };
 
 import { NOTIFICATION_EVENTS } from '@routerly/shared';
@@ -317,6 +320,7 @@ export function EventsAndTargetsEditFields({
   const hint = targetsHint(provider);
   const events = (form['events'] as string[] | undefined) ?? [];
   const targets = (form['targets'] as { roles?: string[]; permissions?: string[]; users?: string[] } | undefined) ?? {};
+  const cooldownSeconds = typeof form['cooldownSeconds'] === 'number' ? form['cooldownSeconds'] : 0;
 
   return (
     <div style={{ borderTop: '1px solid var(--border)', marginTop: 12, paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -330,6 +334,27 @@ export function EventsAndTargetsEditFields({
         />
         <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '5px 0 0' }}>
           Leave empty to receive all events. Select specific events to filter.
+        </p>
+      </div>
+      <div>
+        <div style={sectionLabel}>Cooldown</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input
+            className="form-input"
+            type="number"
+            min={0}
+            style={{ width: 100 }}
+            value={cooldownSeconds}
+            onChange={e => {
+              const v = parseInt(e.target.value, 10);
+              onChange('cooldownSeconds', isNaN(v) || v <= 0 ? undefined : v);
+            }}
+            placeholder="0"
+          />
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>seconds (0 = no cooldown)</span>
+        </div>
+        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '5px 0 0' }}>
+          Minimum interval before this channel can fire again for the same event.
         </p>
       </div>
       <div>

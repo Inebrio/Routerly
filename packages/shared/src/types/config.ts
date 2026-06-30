@@ -520,9 +520,11 @@ interface ChannelBase {
   /**
    * Event-name patterns this channel receives (exact, `*`, or `prefix.*`).
    * When non-empty it is the primary routing mechanism; empty/undefined falls
-   * back to notificationRules, then to receive-all (U5).
+   * back to receive-all for dashboard channels, silence for external channels.
    */
   events?: string[];
+  /** Per-channel minimum interval between dispatches in seconds (0 or absent = no cooldown) */
+  cooldownSeconds?: number;
   /** Recipient targeting (U5). Undefined or all-empty = everyone. */
   targets?: ChannelTargets;
 }
@@ -632,19 +634,9 @@ export const CHANNEL_SECRET_FIELDS: Record<ChannelProvider, string[]> = {
   dashboard:  [],
 };
 
-/** Maps event name patterns (exact or glob like `budget.*`) to channel IDs (#90) */
-export interface NotificationRule {
-  events: string[];
-  channels: string[];
-}
-
 /** Top-level notifications configuration */
 export interface NotificationsConfig {
   channels?: NotificationChannel[];
-  /** Event-pattern → channel routing rules (#90) */
-  notificationRules?: NotificationRule[];
-  /** Per-event-type minimum interval between dispatches, e.g. { "provider.degraded": "15m" } (#90) */
-  cooldowns?: Record<string, string>;
 }
 
 /** Severity of a system notification event (#89) */
@@ -668,6 +660,9 @@ export const NOTIFICATION_EVENTS = [
   'config.model_deleted',
   'config.project_created',
   'config.project_deleted',
+  'budget.threshold_reached',
+  'budget.exceeded',
+  'budget.reset',
   'system.startup',
   'system.shutdown',
 ] as const;

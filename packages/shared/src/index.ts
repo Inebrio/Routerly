@@ -39,7 +39,6 @@ export type {
   Settings,
   SpendGroup,
   NotificationsConfig,
-  NotificationRule,
   NotificationSeverity,
   NotificationInboxItem,
   EmailConfig,
