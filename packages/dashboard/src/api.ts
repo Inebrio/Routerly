@@ -336,6 +336,7 @@ export const removeProjectMember = (id: string, userId: string) => request<void>
 export interface User {
   id: string; email: string; roleId: string; projectIds: string[];
   permissions?: string[];
+  totpEnabled?: boolean;
 }
 
 export const getUsers = () => request<User[]>('/users');
