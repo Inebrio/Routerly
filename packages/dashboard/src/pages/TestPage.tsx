@@ -228,6 +228,9 @@ function ComparePanel({
       <div style={{ display: 'flex', gap: 12, minHeight: 0, flex: 1 }}>
         {cols.map(({ label, model, setModel, msgs, loading: colLoading, error: colError, abortRef, params, setParams, traceHistory }) => {
           const display = msgs.filter(m => m.role !== 'system');
+          const assistantMsgs = display.filter(m => m.role === 'assistant');
+          const totalIn = assistantMsgs.reduce((s, m) => s + (m.inputTokens ?? 0), 0);
+          const totalOut = assistantMsgs.reduce((s, m) => s + (m.outputTokens ?? 0), 0);
           return (
             <div key={label} className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
               <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)', display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -243,6 +246,13 @@ function ComparePanel({
                   <ParamSlider label="Max tokens" value={params.maxTokens} min={64} max={8192} step={64} onChange={v => setParams((p: PanelParams) => ({ ...p, maxTokens: v }))} />
                   <ParamSlider label="Top-p" value={params.topP} min={0} max={1} step={0.05} onChange={v => setParams((p: PanelParams) => ({ ...p, topP: v }))} />
                 </div>
+                {assistantMsgs.length > 0 && (
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', paddingTop: 4, borderTop: '1px solid var(--border)', fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                    <span>temp: {params.temperature}</span>
+                    <span>↑{totalIn} ↓{totalOut} tok</span>
+                    <span>{costEstimate(totalIn, totalOut)}</span>
+                  </div>
+                )}
               </div>
               <div style={{ flex: 1, overflowY: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {display.length === 0 ? (
@@ -270,7 +280,7 @@ function ComparePanel({
                             {msg.latencyMs ? <span>{msg.latencyMs}ms</span> : null}
                             {(msg.inputTokens || msg.outputTokens) ? (
                               <span style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 4px', fontFamily: 'monospace' }}>
-                                {(msg.inputTokens ?? 0) + (msg.outputTokens ?? 0)} tok | {costEstimate(msg.inputTokens ?? 0, msg.outputTokens ?? 0)}
+                                ↑{msg.inputTokens ?? 0} ↓{msg.outputTokens ?? 0} tok | {costEstimate(msg.inputTokens ?? 0, msg.outputTokens ?? 0)}
                               </span>
                             ) : null}
                           </div>
