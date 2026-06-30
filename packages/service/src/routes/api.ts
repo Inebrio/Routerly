@@ -1481,6 +1481,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       'notifications',
       'publicUrl',
       'channel',
+      'requireMfa',
     ];
     const updated = { ...current };
     for (const key of allowed) {
