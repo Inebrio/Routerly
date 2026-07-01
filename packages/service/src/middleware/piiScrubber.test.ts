@@ -258,3 +258,31 @@ describe('scrubPii — customPatterns', () => {
     expect(found.sort()).toEqual(['CUSTOM', 'EMAIL']);
   });
 });
+
+// ─── scrubMessages edge cases (line 151 branch=0, line 34 ?? ALL_ENTITIES) ────
+
+describe('scrubMessages edge cases', () => {
+  it('passes through null/non-object messages unchanged (line 151 branch=0)', () => {
+    const config: PiiConfig = { entities: ['EMAIL'] };
+    // Messages array contains null and a string → non-objects pass through
+    const msgs: any[] = [null, 'string-message', { role: 'user', content: 'contact a@b.com' }];
+    const { messages, redacted } = scrubMessages(msgs, config);
+    expect(messages[0]).toBeNull();
+    expect(messages[1]).toBe('string-message');
+    expect(redacted).toContain('EMAIL');
+  });
+
+  it('uses ALL_ENTITIES when policy has no entities field (line 34 p.entities ?? ALL_ENTITIES)', () => {
+    const config: PiiConfig = {
+      scrubInput: true,
+      policies: [
+        { name: 'no-entities-policy', scrubInput: true }  // no entities field
+      ],
+    } as any;
+    // Policy without entities → falls back to ALL_ENTITIES in loop
+    const msgs = [{ role: 'user', content: 'call me at john@example.com or 555-1234' }];
+    const { redacted } = scrubMessages(msgs, config);
+    // Should redact EMAIL at minimum (ALL_ENTITIES includes EMAIL)
+    expect(redacted.length).toBeGreaterThan(0);
+  });
+});

@@ -60,4 +60,29 @@ describe('pushWebhook', () => {
     mockFetch.mockRejectedValue(new Error('hook down'));
     await expect(pushWebhook(integration, snapshot)).rejects.toThrow('hook down');
   });
+
+  it('includes token, cost and duration fields when maps are non-empty', async () => {
+    mockFetch.mockResolvedValue({ ok: true });
+
+    const richSnapshot = {
+      agg: {
+        requests: new Map([['r', { labels: { project: 'P', model: 'M', provider: 'openai', status: 'success' }, value: 4 }]]),
+        tokens: new Map([['t', { labels: { project: 'P', model: 'M', type: 'input' }, value: 100 }]]),
+        cost: new Map([['c', { labels: { project: 'P', model: 'M' }, value: 0.005 }]]),
+        durations: new Map([['d', { labels: { project: 'P', model: 'M' }, latencies: [10, 20, 30, 40, 50] }]]),
+      },
+      projectName: (id: string) => id,
+      modelInfo: (id: string) => ({ model: id, provider: 'openai' }),
+      projects: [],
+      models: [],
+    };
+
+    await pushWebhook(integration, richSnapshot);
+
+    const [, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(opts.body as string) as { metrics: { tokens: unknown[]; cost: unknown[]; latency_p50_ms: unknown[] } };
+    expect(body.metrics.tokens).toHaveLength(1);
+    expect(body.metrics.cost).toHaveLength(1);
+    expect(body.metrics.latency_p50_ms).toHaveLength(1);
+  });
 });

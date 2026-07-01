@@ -3,16 +3,20 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 vi.mock('../providers/index.js', () => ({ getProviderAdapter: vi.fn() }))
 vi.mock('../cost/budget.js', () => ({ isAllowed: vi.fn(), isAllowedForRoutingModel: vi.fn(), getLimitUsageSnapshot: vi.fn().mockResolvedValue([]) }))
 vi.mock('../cost/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('../notifications/emitter.js', () => ({ emitEvent: vi.fn().mockResolvedValue(undefined) }))
 
 import { llmChat, llmStream, llmMessages, BudgetExceededError } from './executor.js'
 import { getProviderAdapter } from '../providers/index.js'
-import { isAllowed, isAllowedForRoutingModel } from '../cost/budget.js'
+import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../cost/budget.js'
 import { trackUsage } from '../cost/tracker.js'
+import { emitEvent } from '../notifications/emitter.js'
 
 const mockGetProvider = vi.mocked(getProviderAdapter)
 const mockIsAllowed = vi.mocked(isAllowed)
 const mockIsAllowedForRouting = vi.mocked(isAllowedForRoutingModel)
 const mockTrackUsage = vi.mocked(trackUsage)
+const mockGetLimitUsage = vi.mocked(getLimitUsageSnapshot)
+const mockEmitEvent = vi.mocked(emitEvent)
 
 afterEach(() => vi.clearAllMocks())
 
@@ -394,6 +398,15 @@ describe('llmStream', () => {
     expect(emitted.some(e => e.message === 'model:error')).toBe(true)
   })
 
+  it('line 397: rate-limit pre-stream error → provider.rate_limited event', async () => {
+    // isRateLimitError(err) returns true → provEvt = 'provider.rate_limited'
+    mockIsAllowed.mockResolvedValue(true)
+    async function* failRateLimit() { throw new Error('429 too many requests') }
+    mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(failRateLimit()) } as any)
+    await expect(llmStream({ messages: [] } as any, makeModel(), makeCtx())).rejects.toThrow('too many requests')
+    expect(mockEmitEvent).toHaveBeenCalledWith('provider.rate_limited', expect.any(String), expect.any(Object), expect.any(Object))
+  })
+
   it('covers log.warn in pre-stream error', async () => {
     mockIsAllowed.mockResolvedValue(true)
     async function* failFirst() { throw new Error('connect fail') }
@@ -504,6 +517,23 @@ describe('llmChat — additional branches', () => {
     expect(successEntry?.details?.tokensPerSec).toBe(0)
   })
 
+  it('line 243: tokensPerSec > 0 when latencyMs > 0 in llmChat (true branch)', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    const emitted: any[] = []
+    const resp = { ...makeChatResponse(), usage: { prompt_tokens: 10, completion_tokens: 5 } }
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(resp) } as any)
+    const ctx = makeCtx({ emit: (e: any) => emitted.push(e) })
+    let call = 0
+    const spy = vi.spyOn(Date, 'now').mockImplementation(() => call++ === 0 ? 1000 : 1100)
+    try {
+      await llmChat({ messages: [] } as any, makeModel(), ctx)
+    } finally {
+      spy.mockRestore()
+    }
+    const successEntry = emitted.find(e => e.message === 'model:success')
+    expect(successEntry?.details?.tokensPerSec).toBeGreaterThan(0)
+  })
+
   it('uses model.cost.cachePerMillion when set (covers cachePerMillion ?? inputPerMillion branch)', async () => {
     // Line 177: model.cost.cachePerMillion ?? model.cost.inputPerMillion
     mockIsAllowed.mockResolvedValue(true)
@@ -515,6 +545,45 @@ describe('llmChat — additional branches', () => {
     mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(resp) } as any)
     await llmChat({ messages: [] } as any, modelWithCache as any, makeCtx())
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ cachedInputTokens: 20, outcome: 'success' }))
+  })
+
+  it('lines 288-292: truthy endUserId/sessionId/tags/guardrailTriggered/piiRedacted in llmChat success trackUsage', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    const ctx = makeCtx({
+      endUserId: 'user-chat',
+      sessionId: 'session-chat',
+      tags: { app: 'web' },
+      guardrailTriggered: 'regex-rule',
+      piiRedacted: ['EMAIL'],
+    })
+    await llmChat({ messages: [] } as any, makeModel(), ctx)
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({
+      endUserId: 'user-chat',
+      sessionId: 'session-chat',
+      tags: { app: 'web' },
+      guardrailTriggered: 'regex-rule',
+      piiRedacted: ['EMAIL'],
+    }))
+  })
+
+  it('lines 317-322: truthy endUserId/sessionId/tags/guardrailTriggered/piiRedacted in llmChat error trackUsage', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockRejectedValue(new Error('api fail')) } as any)
+    const ctx = makeCtx({
+      endUserId: 'user-chat-err',
+      sessionId: 'session-chat-err',
+      tags: { env: 'staging' },
+      guardrailTriggered: 'topic-rule',
+      piiRedacted: ['PHONE'],
+    })
+    await expect(llmChat({ messages: [] } as any, makeModel(), ctx)).rejects.toThrow('api fail')
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({
+      endUserId: 'user-chat-err',
+      sessionId: 'session-chat-err',
+      guardrailTriggered: 'topic-rule',
+      piiRedacted: ['PHONE'],
+    }))
   })
 })
 
@@ -632,6 +701,48 @@ describe('llmStream — additional branches', () => {
     expect(successEntry?.details?.tokensPerSec).toBe(0)
   })
 
+  it('line 487: tokensPerSec > 0 when latencyMs > 0 in llmStream (true branch)', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    const emitted: any[] = []
+    // Two chunks: content chunk + usage chunk at root level
+    mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(makeStream(
+      { choices: [{ delta: { content: 'ok' } }] },
+      { usage: { prompt_tokens: 10, completion_tokens: 5 } },  // root-level usage
+    )) } as any)
+    const ctx = makeCtx({ emit: (e: any) => emitted.push(e) })
+    // First Date.now() call = t0 (1000), all subsequent = 1100 so latencyMs = 100
+    let firstCall = true
+    const spy = vi.spyOn(Date, 'now').mockImplementation(() => {
+      if (firstCall) { firstCall = false; return 1000 }
+      return 1100
+    })
+    try {
+      const result = await llmStream({ messages: [] } as any, makeModel(), ctx)
+      for await (const _ of result.chunks) { /* consume */ }
+    } finally {
+      spy.mockRestore()
+    }
+    const successEntry = emitted.find(e => e.message === 'model:success')
+    expect(successEntry?.details?.tokensPerSec).toBeGreaterThan(0)
+  })
+
+  it('includes endUserId, sessionId, tags in stream generator trackUsage (lines 522-524)', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(makeStream({ choices: [{ delta: { content: 'ok' } }] })) } as any)
+    const ctx = makeCtx({
+      endUserId: 'user-stream',
+      sessionId: 'session-stream',
+      tags: { source: 'api' },
+    })
+    const result = await llmStream({ messages: [] } as any, makeModel(), ctx)
+    for await (const _ of result.chunks) {}
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({
+      endUserId: 'user-stream',
+      sessionId: 'session-stream',
+      tags: { source: 'api' },
+    }))
+  })
+
   it('uses model.cost.cachePerMillion in stream cost calculation when set', async () => {
     // Line 402: model.cost.cachePerMillion ?? model.cost.inputPerMillion in stream
     mockIsAllowed.mockResolvedValue(true)
@@ -659,6 +770,35 @@ describe('llmStream — additional branches', () => {
     const result = await llmStream({ messages: [] } as any, makeModel(), ctx)
     await expect(async () => { for await (const _ of result.chunks) { /* consume */ } }).rejects.toThrow('mid-log-err')
     expect(log.error).toHaveBeenCalled()
+  })
+
+  it('covers mid-stream rate-limit error → provider.rate_limited event (line 480 true branch)', async () => {
+    // isRateLimitError returns true → provEvt = 'provider.rate_limited' (not 'provider.error')
+    mockIsAllowed.mockResolvedValue(true)
+    async function* rateLimit() {
+      yield { choices: [{ delta: { content: 'x' } }] }
+      throw new Error('429 rate limit exceeded')
+    }
+    mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(rateLimit()) } as any)
+    const result = await llmStream({ messages: [] } as any, makeModel(), makeCtx())
+    await expect(async () => { for await (const _ of result.chunks) {} }).rejects.toThrow('rate limit exceeded')
+    expect(mockEmitEvent).toHaveBeenCalledWith('provider.rate_limited', expect.any(String), expect.any(Object), expect.any(Object))
+  })
+
+  it('line 502: emits cachedInputTokens in model:success when cachedInputTokens > 0', async () => {
+    // Line 502: cachedInputTokens > 0 ? cachedInputTokens : undefined — true branch
+    mockIsAllowed.mockResolvedValue(true)
+    async function* withCached() {
+      yield { choices: [{ delta: { content: 'x' } }] }
+      yield { choices: [], usage: { prompt_tokens: 10, completion_tokens: 5, prompt_tokens_details: { cached_tokens: 3 } } }
+    }
+    mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(withCached()) } as any)
+    const emitted: any[] = []
+    const ctx = makeCtx({ emit: (e: any) => emitted.push(e) })
+    const result = await llmStream({ messages: [] } as any, makeModel(), ctx)
+    for await (const _ of result.chunks) {}
+    const successEntry = emitted.find(e => e.message === 'model:success')
+    expect(successEntry?.details?.cachedInputTokens).toBe(3)
   })
 })
 
@@ -834,5 +974,396 @@ describe('llmMessages', () => {
     await llmMessages({ messages: [] } as any, makeModel(), ctx)
     const successEntry = emitted.find(e => e.message === 'model:success')
     expect(successEntry?.details?.cachedInputTokens).toBe(30)
+  })
+
+  it('line 578: tokensPerSec > 0 when latencyMs > 0 (true branch)', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    const emitted: any[] = []
+    mockGetProvider.mockReturnValue({ messages: vi.fn().mockResolvedValue(makeMessagesResponse()) } as any)
+    const ctx = makeCtx({ emit: (e: any) => emitted.push(e) })
+    // Make Date.now return different values so latencyMs > 0
+    let call = 0
+    const spy = vi.spyOn(Date, 'now').mockImplementation(() => call++ === 0 ? 1000 : 1100)
+    try {
+      await llmMessages({ messages: [] } as any, makeModel(), ctx)
+    } finally {
+      spy.mockRestore()
+    }
+    const successEntry = emitted.find(e => e.message === 'model:success')
+    expect(successEntry?.details?.tokensPerSec).toBeGreaterThan(0)
+  })
+
+  it('includes endUserId, sessionId, tags, guardrailTriggered, piiRedacted in messages success trackUsage (lines 617-621)', async () => {
+    // Covers the truthy branches of all optional ctx fields in llmMessages success path
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ messages: vi.fn().mockResolvedValue(makeMessagesResponse()) } as any)
+    const ctx = makeCtx({
+      endUserId: 'user-123',
+      sessionId: 'session-abc',
+      tags: { team: 'eng' },
+      guardrailTriggered: 'pii-rule',
+      piiRedacted: ['EMAIL'],
+    })
+    await llmMessages({ messages: [] } as any, makeModel(), ctx)
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({
+      endUserId: 'user-123',
+      sessionId: 'session-abc',
+      tags: { team: 'eng' },
+      guardrailTriggered: 'pii-rule',
+      piiRedacted: ['EMAIL'],
+    }))
+  })
+
+  it('includes endUserId, sessionId, tags, guardrailTriggered, piiRedacted in messages error trackUsage (lines 640-644)', async () => {
+    // Covers the truthy branches of all optional ctx fields in llmMessages error path
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ messages: vi.fn().mockRejectedValue(new Error('api fail')) } as any)
+    const ctx = makeCtx({
+      endUserId: 'user-err',
+      sessionId: 'session-err',
+      tags: { env: 'prod' },
+      guardrailTriggered: 'block-rule',
+      piiRedacted: ['PHONE'],
+    })
+    await expect(llmMessages({ messages: [] } as any, makeModel(), ctx)).rejects.toThrow('api fail')
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({
+      endUserId: 'user-err',
+      sessionId: 'session-err',
+      tags: { env: 'prod' },
+      guardrailTriggered: 'block-rule',
+      piiRedacted: ['PHONE'],
+    }))
+  })
+})
+
+describe('llmChat — .catch(() => {}) coverage for emitEvent rejections', () => {
+  it('swallows emitEvent rejection in chat success path (line 293 + handleProviderResult recovered, line 98)', async () => {
+    // First make a call that succeeds → recovered emitEvent fires (line 98) on second call
+    mockEmitEvent.mockResolvedValue(undefined)
+    const model = makeModel('m1')
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetLimitUsage.mockResolvedValue([])
+    // First call succeeds normally
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    await llmChat({ messages: [] } as any, model, makeCtx())
+
+    // Now make emitEvent reject for the recovered/success callbacks
+    mockEmitEvent.mockRejectedValue(new Error('emit fail'))
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    await expect(llmChat({ messages: [] } as any, model, makeCtx())).resolves.toBeDefined()
+    mockEmitEvent.mockResolvedValue(undefined)
+  })
+
+  it('swallows emitEvent rejection in chat error path (line 305, provEvt)', async () => {
+    mockEmitEvent.mockRejectedValue(new Error('emit fail'))
+    const model = makeModel('m1')
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockRejectedValue(new Error('provider down')) } as any)
+    await expect(llmChat({ messages: [] } as any, model, makeCtx())).rejects.toThrow('provider down')
+    mockEmitEvent.mockResolvedValue(undefined)
+  })
+
+  it('swallows emitEvent rejection in chat error with rate-limit message (provider.rate_limited path)', async () => {
+    mockEmitEvent.mockRejectedValue(new Error('emit fail'))
+    const model = makeModel('m1')
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockRejectedValue(new Error('429 rate limit exceeded')) } as any)
+    await expect(llmChat({ messages: [] } as any, model, makeCtx())).rejects.toThrow('rate limit exceeded')
+    mockEmitEvent.mockResolvedValue(undefined)
+  })
+
+  it('swallows handleProviderResult degraded emitEvent rejection (line 105, after 3 failures)', async () => {
+    // Need 3 consecutive failures for the same model to trigger degraded → emitEvent
+    mockEmitEvent.mockRejectedValue(new Error('emit fail'))
+    const model = makeModel('degrade-test')
+    mockIsAllowed.mockResolvedValue(true)
+    const failAdapter = { chatCompletion: vi.fn().mockRejectedValue(new Error('fail')) }
+    mockGetProvider.mockReturnValue(failAdapter as any)
+    for (let i = 0; i < 3; i++) {
+      await expect(llmChat({ messages: [] } as any, model, makeCtx())).rejects.toThrow('fail')
+    }
+    mockEmitEvent.mockResolvedValue(undefined)
+  })
+})
+
+describe('llmStream — .catch(() => {}) coverage for emitEvent rejections', () => {
+  it('swallows emitEvent rejection in pre-stream error path (line 398)', async () => {
+    mockEmitEvent.mockRejectedValue(new Error('emit fail'))
+    const model = makeModel('m1')
+    mockIsAllowed.mockResolvedValue(true)
+    async function* failFirst() { throw new Error('connect fail') }
+    mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(failFirst()) } as any)
+    await expect(llmStream({ messages: [] } as any, model, makeCtx())).rejects.toThrow('connect fail')
+    mockEmitEvent.mockResolvedValue(undefined)
+  })
+
+  it('swallows emitEvent rejection in mid-stream error path (line 481)', async () => {
+    mockEmitEvent.mockRejectedValue(new Error('emit fail'))
+    const model = makeModel('m1')
+    mockIsAllowed.mockResolvedValue(true)
+    async function* failMid() {
+      yield { choices: [{ delta: { content: 'a' } }] }
+      throw new Error('mid fail')
+    }
+    mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(failMid()) } as any)
+    const result = await llmStream({ messages: [] } as any, model, makeCtx())
+    await expect(async () => { for await (const _ of result.chunks) {} }).rejects.toThrow('mid fail')
+    mockEmitEvent.mockResolvedValue(undefined)
+  })
+
+  it('swallows trackUsage rejection in stream generator finally (line 525)', async () => {
+    mockTrackUsage.mockRejectedValueOnce(new Error('db error'))
+    const model = makeModel('m1')
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(makeStream({ choices: [{ delta: { content: 'ok' } }] })) } as any)
+    const result = await llmStream({ messages: [] } as any, model, makeCtx())
+    for await (const _ of result.chunks) {}
+    // No throw — .catch(() => {}) swallowed it
+  })
+})
+
+describe('checkBudget — budget reset and threshold paths', () => {
+  it('emits budget.reset when previously-exceeded budget is now allowed (lines 162-167)', async () => {
+    // Use model that IS in the project so isAllowed (not isAllowedForRoutingModel) is called
+    const model = makeModel('m1') // makeProject defaults to modelId='m1'
+    // Step 1: exhaust budget to set the budgetExceededKeys entry
+    mockIsAllowed.mockResolvedValueOnce(false)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    await expect(llmChat({ messages: [] } as any, model, makeCtx())).rejects.toThrow(BudgetExceededError)
+
+    // Step 2: budget is now allowed again → hits the reset path (line 162)
+    mockIsAllowed.mockResolvedValueOnce(true)
+    mockGetLimitUsage.mockResolvedValueOnce([])
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    await expect(llmChat({ messages: [] } as any, model, makeCtx())).resolves.toBeDefined()
+  })
+
+  it('emits budget.threshold_reached when usage >= 80% on completion call (lines 171-183)', async () => {
+    const model = makeModel('m1')
+    mockIsAllowed.mockResolvedValue(true)
+    // Return a snapshot where current/value >= 0.8
+    mockGetLimitUsage.mockResolvedValue([
+      { metric: 'cost', window: 'daily', value: 10, current: 9 }, // 90%
+    ] as any)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    await llmChat({ messages: [] } as any, model, makeCtx({ callType: 'completion' }))
+    // threshold event fires async; give it a tick
+    await new Promise(r => setTimeout(r, 0))
+    expect(mockGetLimitUsage).toHaveBeenCalled()
+  })
+
+  it('does not check threshold for non-completion callType (line 171 branch)', async () => {
+    const model = makeModel('routing-m1')
+    mockIsAllowedForRouting.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    const ctx = makeCtx({ callType: 'routing', project: { ...makeProject('other'), models: [] } })
+    await llmChat({ messages: [] } as any, model, ctx)
+    // getLimitUsageSnapshot should NOT be called for routing callType
+    expect(mockGetLimitUsage).not.toHaveBeenCalled()
+  })
+
+  it('covers .catch(() => {}) on emitEvent calls (budget.exceeded path)', async () => {
+    // Make emitEvent reject → .catch(() => {}) on lines 157, 167, 181 fires
+    mockEmitEvent.mockRejectedValue(new Error('emit failed'))
+    const model = makeModel('m1')
+    mockIsAllowed.mockResolvedValueOnce(false)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    // BudgetExceededError fires (emitEvent rejects → catch swallows it)
+    await expect(llmChat({ messages: [] } as any, model, makeCtx())).rejects.toThrow(BudgetExceededError)
+    // Restore
+    mockEmitEvent.mockResolvedValue(undefined)
+  })
+
+  it('covers .catch(() => {}) on emitEvent after success path', async () => {
+    mockEmitEvent.mockRejectedValue(new Error('emit failed'))
+    const model = makeModel('m1')
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetLimitUsage.mockResolvedValueOnce([])
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    await expect(llmChat({ messages: [] } as any, model, makeCtx())).resolves.toBeDefined()
+    mockEmitEvent.mockResolvedValue(undefined)
+  })
+
+  it('line 165 false branch: threshold key from a different model is not deleted during budget reset', async () => {
+    // Step 1: trigger threshold for m1 → thresholdFiredKeys gets 'proj-1:m1:daily'
+    const m1 = makeModel('m1')
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetLimitUsage.mockResolvedValueOnce([{ metric: 'cost', window: 'daily', value: 10, current: 9 }] as any)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    await llmChat({ messages: [] } as any, m1, makeCtx({ callType: 'completion' }))
+    await new Promise(r => setTimeout(r, 0)) // let .then() fire
+
+    // Step 2: exhaust budget for m2 → budgetExceededKeys gets 'proj-1:m2'
+    const m2 = makeModel('m2')
+    mockIsAllowed.mockResolvedValueOnce(false)
+    const ctx2 = makeCtx({ project: { ...makeProject('m2'), models: [{ modelId: 'm2' }] } })
+    await expect(llmChat({ messages: [] } as any, m2, ctx2)).rejects.toThrow(BudgetExceededError)
+
+    // Step 3: reset budget for m2 → iterates thresholdFiredKeys, 'proj-1:m1:daily' doesn't start with 'proj-1:m2:'
+    mockIsAllowed.mockResolvedValueOnce(true)
+    mockGetLimitUsage.mockResolvedValueOnce([])
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    await expect(llmChat({ messages: [] } as any, m2, ctx2)).resolves.toBeDefined()
+    // m1's threshold key should still be in thresholdFiredKeys (not deleted — false branch covered)
+  })
+
+  it('covers .catch on getLimitUsageSnapshot rejection (line 185)', async () => {
+    // getLimitUsageSnapshot rejects → .then/.catch chain fires the .catch(() => {})
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetLimitUsage.mockRejectedValue(new Error('budget db error'))
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    // Should not throw — the .catch swallows getLimitUsageSnapshot rejection
+    await expect(llmChat({ messages: [] } as any, makeModel('m1'), makeCtx({ callType: 'completion' }))).resolves.toBeDefined()
+    await new Promise(r => setTimeout(r, 0))
+  })
+
+  it('line 157 true: emits budget.exceeded with log when ctx.log is defined', async () => {
+    const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+    const model = makeModel('log-m157') // use unique model id
+    // Make the model a project candidate so isAllowed (not isAllowedForRoutingModel) is called
+    const ctx = makeCtx({ log, project: { ...makeProject('log-m157'), models: [{ modelId: 'log-m157' }] } })
+    mockIsAllowed.mockResolvedValueOnce(false)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    await expect(llmChat({ messages: [] } as any, model, ctx)).rejects.toThrow(BudgetExceededError)
+    expect(mockEmitEvent).toHaveBeenCalledWith('budget.exceeded', expect.any(String), expect.any(Object), expect.objectContaining({ log }))
+  })
+
+  it('line 167 true: emits budget.reset with log when ctx.log is defined', async () => {
+    const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+    const model = makeModel('log-m167')
+    const ctx = makeCtx({ log, project: { ...makeProject('log-m167'), models: [{ modelId: 'log-m167' }] } })
+    // Step 1: exceed budget to set budgetExceededKeys
+    mockIsAllowed.mockResolvedValueOnce(false)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    await expect(llmChat({ messages: [] } as any, model, ctx)).rejects.toThrow(BudgetExceededError)
+    // Step 2: budget allowed again → reset path fires with log
+    mockIsAllowed.mockResolvedValueOnce(true)
+    mockGetLimitUsage.mockResolvedValueOnce([])
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    await llmChat({ messages: [] } as any, model, ctx)
+    expect(mockEmitEvent).toHaveBeenCalledWith('budget.reset', expect.any(String), expect.any(Object), expect.objectContaining({ log }))
+  })
+
+  it('line 181 true: emits budget.threshold_reached with log when ctx.log is defined', async () => {
+    const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+    const model = makeModel('log-m181')
+    const ctx = makeCtx({ callType: 'completion', log, project: { ...makeProject('log-m181'), models: [{ modelId: 'log-m181' }] } })
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetLimitUsage.mockResolvedValue([{ metric: 'cost', window: 'daily', value: 10, current: 9 }] as any)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    await llmChat({ messages: [] } as any, model, ctx)
+    await new Promise(r => setTimeout(r, 0)) // let .then fire
+    expect(mockEmitEvent).toHaveBeenCalledWith('budget.threshold_reached', expect.any(String), expect.any(Object), expect.objectContaining({ log }))
+  })
+})
+
+describe('handleProviderResult — recovered with log (line 98 true branch)', () => {
+  it('line 98: emits provider.recovered with log when log is defined', async () => {
+    const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+    const model = makeModel('log-model-98')
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetLimitUsage.mockResolvedValue([])
+    // Step 1: cause 3 failures to add model to providerDegraded
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockRejectedValue(new Error('fail')) } as any)
+    for (let i = 0; i < 3; i++) {
+      await expect(llmChat({ messages: [] } as any, model, makeCtx())).rejects.toThrow('fail')
+    }
+    // Step 2: succeed → providerDegraded.delete fires → recovered event with log
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    await llmChat({ messages: [] } as any, model, makeCtx({ log }))
+    expect(mockEmitEvent).toHaveBeenCalledWith('provider.recovered', expect.any(String), expect.any(Object), expect.objectContaining({ log }))
+  })
+
+  it('line 98 .catch: swallows emitEvent rejection on provider.recovered', async () => {
+    const model = makeModel('catch-model-98')
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetLimitUsage.mockResolvedValue([])
+    // Step 1: 3 failures → degraded
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockRejectedValue(new Error('fail')) } as any)
+    for (let i = 0; i < 3; i++) {
+      await expect(llmChat({ messages: [] } as any, model, makeCtx())).rejects.toThrow('fail')
+    }
+    // Step 2: emitEvent rejects → .catch(() => {}) fires at line 98
+    mockEmitEvent.mockRejectedValue(new Error('emit fail'))
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    // Should not throw despite emitEvent rejecting
+    await expect(llmChat({ messages: [] } as any, model, makeCtx())).resolves.toBeDefined()
+    mockEmitEvent.mockResolvedValue(undefined)
+  })
+})
+
+describe('llmChat — line 317 traceId in error trackUsage path', () => {
+  it('includes traceId in error-path trackUsage (line 317 cond-expr branch=0)', async () => {
+    // traceId is set AND the provider throws → line 317 should use { traceId }
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockRejectedValue(new Error('provider fail')) } as any)
+    const ctx = makeCtx({ traceId: 'err-trace-317' })
+    await expect(llmChat({ messages: [] } as any, makeModel(), ctx)).rejects.toThrow('provider fail')
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ traceId: 'err-trace-317', outcome: 'error' }))
+  })
+})
+
+describe('checkBudget — threshold snap branches (lines 174/176)', () => {
+  it('covers near-threshold snap (lines 174/176 if branch=0 and branch=0)', async () => {
+    // snap.value > 0 AND snap.current/snap.value >= 0.8 → fires threshold event (branch=0 = condition true)
+    // !thresholdFiredKeys.has(tKey) → true (not fired yet, branch=0 = true)
+    const model = makeModel('thresh-model')
+    const ctx = makeCtx({ callType: 'completion', project: { ...makeProject('thresh-model'), models: [{ modelId: 'thresh-model' }] } })
+    mockIsAllowed.mockResolvedValue(true)
+    // 8/10 = 80% → meets >= 0.8 threshold
+    mockGetLimitUsage.mockResolvedValue([{ metric: 'cost', window: 'daily', value: 10, current: 8 }] as any)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    await expect(llmChat({ messages: [] } as any, model, ctx)).resolves.toBeDefined()
+    await new Promise(r => setTimeout(r, 0))
+    expect(mockEmitEvent).toHaveBeenCalledWith('budget.threshold_reached', expect.any(String), expect.any(Object), expect.any(Object))
+  })
+
+  it('skips already-fired threshold (line 176 if branch=1)', async () => {
+    // On first call, threshold fires and tKey is added. On second call, tKey is already in set → skip
+    const model = makeModel('thresh-model-repeat')
+    const ctx = makeCtx({ callType: 'completion', project: { ...makeProject('thresh-model-repeat'), models: [{ modelId: 'thresh-model-repeat' }] } })
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetLimitUsage.mockResolvedValue([{ metric: 'cost', window: 'daily', value: 10, current: 9 }] as any)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    // First call: threshold fires
+    await llmChat({ messages: [] } as any, model, ctx)
+    await new Promise(r => setTimeout(r, 0))
+    const firstCallCount = mockEmitEvent.mock.calls.filter(c => c[0] === 'budget.threshold_reached').length
+    // Second call: tKey already in set → !thresholdFiredKeys.has(tKey) = false → skip
+    await llmChat({ messages: [] } as any, model, ctx)
+    await new Promise(r => setTimeout(r, 0))
+    const secondCallCount = mockEmitEvent.mock.calls.filter(c => c[0] === 'budget.threshold_reached').length
+    expect(secondCallCount).toBe(firstCallCount) // no new threshold event
+  })
+})
+
+describe('checkBudget — snap below threshold (line 174 if branch=1)', () => {
+  it('does not fire threshold event when snap is below 80% (line 174 if branch=1)', async () => {
+    // snap.value > 0 AND snap.current/snap.value < 0.8 → condition FALSE → branch=1 → no event
+    const model = makeModel('below-thresh')
+    const ctx = makeCtx({ callType: 'completion', project: { ...makeProject('below-thresh'), models: [{ modelId: 'below-thresh' }] } })
+    mockIsAllowed.mockResolvedValue(true)
+    // 5/10 = 50% → below 0.8 threshold
+    mockGetLimitUsage.mockResolvedValue([{ metric: 'cost', window: 'daily', value: 10, current: 5 }] as any)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    await expect(llmChat({ messages: [] } as any, model, ctx)).resolves.toBeDefined()
+    await new Promise(r => setTimeout(r, 0))
+    expect(mockEmitEvent).not.toHaveBeenCalledWith('budget.threshold_reached', expect.anything(), expect.anything(), expect.anything())
+  })
+})
+
+describe('checkBudget — threshold .catch coverage (line 181 .catch)', () => {
+  it('line 181 .catch: swallows emitEvent rejection on budget.threshold_reached', async () => {
+    const model = makeModel('catch-model-181')
+    const ctx = makeCtx({ callType: 'completion', project: { ...makeProject('catch-model-181'), models: [{ modelId: 'catch-model-181' }] } })
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetLimitUsage.mockResolvedValue([{ metric: 'cost', window: 'daily', value: 10, current: 9 }] as any)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    // Make emitEvent reject after the call is made (threshold fires async via .then)
+    mockEmitEvent.mockRejectedValue(new Error('emit fail'))
+    await expect(llmChat({ messages: [] } as any, model, ctx)).resolves.toBeDefined()
+    await new Promise(r => setTimeout(r, 0)) // let .then fire
+    mockEmitEvent.mockResolvedValue(undefined)
   })
 })

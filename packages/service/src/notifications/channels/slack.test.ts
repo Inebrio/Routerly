@@ -55,4 +55,57 @@ describe('sendSlack', () => {
 
     await expect(sendSlack(cfg, payload)).rejects.toThrow('channel_not_found');
   });
+
+  it('throws unknown when Slack ok:false has no error field', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: false }),
+    }));
+
+    await expect(sendSlack(cfg, payload)).rejects.toThrow('unknown');
+  });
+
+  it('falls back to :bell: emoji for unknown severity', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true }),
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await sendSlack(cfg, { ...payload, severity: 'unknown' as any });
+
+    const body = JSON.parse((mockFetch.mock.calls[0] as [string, RequestInit])[1].body as string);
+    expect(body.blocks[0].text.text).toContain(':bell:');
+  });
+
+  it('includes detail fields when details present', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true }),
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await sendSlack(cfg, { ...payload, details: { foo: 'bar' } });
+
+    const body = JSON.parse((mockFetch.mock.calls[0] as [string, RequestInit])[1].body as string);
+    const fields = body.blocks[1].fields as { text: string }[];
+    expect(fields.some((f) => f.text.includes('foo'))).toBe(true);
+  });
+
+  it('sends only Time field when details is undefined (line 29 cond-expr branch=1)', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true }),
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    // No details field → payload.details is undefined → spread is empty → only Time field
+    await sendSlack(cfg, { ...payload, details: undefined as any });
+
+    const body = JSON.parse((mockFetch.mock.calls[0] as [string, RequestInit])[1].body as string);
+    const fields = body.blocks[1].fields as { text: string }[];
+    // Only the Time field should be present
+    expect(fields).toHaveLength(1);
+    expect(fields[0]!.text).toContain('Time:');
+  });
 });

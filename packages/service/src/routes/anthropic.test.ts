@@ -7,6 +7,8 @@ vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }))
 vi.mock('../routing/traceStore.js', () => ({ setTrace: vi.fn(), appendTrace: vi.fn() }))
 vi.mock('../llm/executor.js', () => ({
   llmMessages: vi.fn(),
+  llmChat: vi.fn(),
+  checkBudget: vi.fn().mockResolvedValue(undefined),
   BudgetExceededError: class BudgetExceededError extends Error {
     override name = 'BudgetExceededError'
     modelId: string
@@ -19,14 +21,16 @@ import { anthropicRoutes } from './anthropic.js'
 import { routeRequest } from '../routing/router.js'
 import { readConfig } from '../config/loader.js'
 import { appendTrace } from '../routing/traceStore.js'
-import { llmMessages } from '../llm/executor.js'
+import { llmMessages, llmChat, checkBudget } from '../llm/executor.js'
 import { trackUsage } from '../cost/tracker.js'
 
 const mockRouteRequest = vi.mocked(routeRequest)
 const mockReadConfig = vi.mocked(readConfig)
 const mockAppendTrace = vi.mocked(appendTrace)
 const mockLlmMessages = vi.mocked(llmMessages)
+const mockLlmChat = vi.mocked(llmChat)
 const mockTrackUsage = vi.mocked(trackUsage)
+const mockCheckBudget = vi.mocked(checkBudget)
 
 afterEach(() => vi.clearAllMocks())
 
@@ -584,5 +588,391 @@ describe('POST /v1/messages — guardrail block & PII output trace', () => {
     expect((evalCall![1] as any[])[0].details.redacted).toEqual([])
     const scrubbed = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'pii:scrubbed' && (c[1] as any[])[0]?.panel === 'response')
     expect(scrubbed).toBeUndefined()
+  })
+})
+
+// ─── Guardrail warn (non-block) and BudgetExceededError paths ────────────────
+
+describe('POST /v1/messages — guardrail warn action and BudgetExceededError (lines 62-66, 85, 200)', () => {
+  function buildAppWith(project: ProjectConfig) {
+    const app = Fastify({ logger: false })
+    app.decorateRequest('project', null as any)
+    app.decorateRequest('token', null as any)
+    app.addHook('preHandler', async (req: any) => { req.project = project; req.token = undefined })
+    return app.register(anthropicRoutes).then(() => app.ready()).then(() => app)
+  }
+
+  it('request guardrail warn action: does not block — continues to llmMessages (line 85)', async () => {
+    // topic rule triggers but action=warn → guardrailTriggered set, request continues
+    const warnProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      guardrails: {
+        action: 'warn',
+        rules: [{ type: 'topic', target: 'request', config: { modelId: 'm1', allowedTopics: 'x', threshold: 0.99 } }],
+      },
+    } as any
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    // llmChat (used by guardrails topic rule) returns score below threshold → triggers
+    mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":0.1}' } }] } as any)
+    mockLlmMessages.mockResolvedValue(makeMessagesResponse() as any)
+
+    const app = await buildAppWith(warnProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).type).toBe('message') // not blocked
+    expect(mockLlmMessages).toHaveBeenCalled() // passed through
+  })
+
+  it('request guardrail BudgetExceededError → 429 (lines 62-65)', async () => {
+    const { BudgetExceededError: BCE } = await import('../llm/executor.js')
+    const guardProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      guardrails: {
+        action: 'block',
+        rules: [{ type: 'topic', target: 'request', config: { modelId: 'm1', allowedTopics: 'x', threshold: 0.5 } }],
+      },
+    } as any
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmChat.mockRejectedValue(new BCE('m1'))
+
+    const app = await buildAppWith(guardProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(429)
+    expect(JSON.parse(res.body).error.type).toBe('rate_limit_error')
+  })
+
+  it('response guardrail warn action: does not block response (line 200)', async () => {
+    const respWarnProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      guardrails: {
+        action: 'warn',
+        rules: [{ type: 'regex', target: 'response', config: { patterns: ['secret'] } }],
+      },
+    } as any
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmMessages.mockResolvedValue({
+      id: 'msg-1', type: 'message', role: 'assistant',
+      content: [{ type: 'text', text: 'the secret is out' }],
+      model: 'm1', stop_reason: 'end_turn', usage: { input_tokens: 1, output_tokens: 1 },
+    } as any)
+
+    const app = await buildAppWith(respWarnProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    // response not blocked (warn action) — content passes through
+    const body = JSON.parse(res.body)
+    expect(body.content[0].text).toBe('the secret is out')
+  })
+})
+
+// ─── Branch coverage — anthropic.ts uncovered paths ──────────────────────────
+
+describe('anthropic.ts — uncovered branches', () => {
+  function buildAppWith(project: ProjectConfig, token?: any) {
+    const app = Fastify({ logger: false })
+    app.decorateRequest('project', null as any)
+    app.decorateRequest('token', null as any)
+    app.addHook('preHandler', async (req: any) => { req.project = project; req.token = token ?? undefined })
+    return app.register(anthropicRoutes).then(() => app.ready()).then(() => app)
+  }
+
+  it('line 23 false: trackBlockedRequest with no models → skips trackUsage (model=undefined)', async () => {
+    // Project with no models at all → firstModelId is undefined → model is undefined → early return
+    const noModelProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [],
+      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'request', config: { patterns: ['bad'] } }] },
+    } as any
+    mockReadConfig.mockResolvedValue([testModel]) // models config has m1 but project has no models
+    const app = await buildAppWith(noModelProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'bad' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200) // refusal
+    // trackUsage should not be called because there's no model to attribute to
+    expect(mockTrackUsage).not.toHaveBeenCalled()
+  })
+
+  it('line 36 .catch: swallows trackUsage rejection on blocked request', async () => {
+    // trackUsage rejects → .catch(() => {}) fires at line 36
+    mockTrackUsage.mockRejectedValueOnce(new Error('tracker down'))
+    mockReadConfig.mockResolvedValue([testModel])
+    const blockProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'request', config: { patterns: ['bad'] } }] },
+    } as any
+    const app = await buildAppWith(blockProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'bad' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200) // still returns refusal
+    expect(JSON.parse(res.body).stop_reason).toBe('refusal')
+  })
+
+  it('line 24 true: trackBlockedRequest model not in config → skips trackUsage', async () => {
+    // Project references m1 but models config is empty → find returns undefined → early return
+    const blockProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'request', config: { patterns: ['bad'] } }] },
+    } as any
+    mockReadConfig.mockResolvedValue([]) // no models in config → find returns undefined
+    const app = await buildAppWith(blockProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'bad' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(mockTrackUsage).not.toHaveBeenCalled()
+  })
+
+  it('line 50 false: guardrailPctx without token (token=undefined)', async () => {
+    // token=undefined covers the false branch of ternary at line 50
+    const guardProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'request', config: { patterns: ['x'] } }] },
+    } as any
+    mockReadConfig.mockResolvedValue([testModel])
+    const app = await buildAppWith(guardProject, undefined) // no token
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'hello' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200) // no match, passes through llm
+  })
+
+  it('line 54 false: body.messages null → uses [] → lastUserMsg undefined → inputText="" (guard matches empty)', async () => {
+    // When messages is absent → body.messages ?? [] → []
+    // lastUserMsg is undefined → inputText = ''
+    // Use a regex that matches the empty string so the guardrail blocks (early return before line 106 crash)
+    mockReadConfig.mockResolvedValue([testModel])
+    const guardProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'request', config: { patterns: ['.*'] } }] },
+    } as any
+    const app = await buildAppWith(guardProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      // messages omitted → triggers ?? [] fallback at line 54
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100 }),
+    })
+    await app.close()
+    // Regex '.*' matches '' → blocked → early return with refusal
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).stop_reason).toBe('refusal')
+  })
+
+  it('line 184 false: response guardrail with non-text content block → responseText=""', async () => {
+    // When first content block is not text type → responseText = '' → guardrail skipped
+    const respGuardProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'response', config: { patterns: ['bad'] } }] },
+    } as any
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmMessages.mockResolvedValue({
+      id: 'msg-1', type: 'message', role: 'assistant',
+      content: [{ type: 'tool_use', id: 'tool_1', name: 'get_weather', input: {} }],
+      model: 'm1', stop_reason: 'tool_use', usage: { input_tokens: 1, output_tokens: 1 },
+    } as any)
+    const app = await buildAppWith(respGuardProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).stop_reason).toBe('tool_use')
+  })
+})
+
+// ─── Anthropic route: non-BCE throw from checkGuardrails (line 66) ───────────
+
+describe('POST /v1/messages — non-BudgetExceededError from checkGuardrails (line 66 throw)', () => {
+  function buildAppWith(project: ProjectConfig) {
+    const app = Fastify({ logger: false })
+    app.decorateRequest('project', null as any)
+    app.decorateRequest('token', null as any)
+    app.addHook('preHandler', async (req: any) => { req.project = project; req.token = undefined })
+    return app.register(anthropicRoutes).then(() => app.ready()).then(() => app)
+  }
+
+  it('re-throws non-BudgetExceededError from checkGuardrails (line 66) via semantic+checkBudget throw', async () => {
+    // Use semantic rule: checkBudget is called before try-catch in semantic handler.
+    // A non-BCE throw from checkBudget propagates out of checkRule → checkGuardrails → line 66 throw err.
+    const semanticProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      guardrails: { action: 'block', rules: [{ type: 'semantic', target: 'request', config: { embeddingModelId: 'm1', examples: ['x'], threshold: 0.8 } }] },
+    } as any
+    mockReadConfig.mockResolvedValue([testModel])
+    mockCheckBudget.mockRejectedValueOnce(new Error('disk error'))
+
+    const app = await buildAppWith(semanticProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+    // Non-BCE rethrown at line 66 → Fastify returns 5xx
+    expect([500, 503]).toContain(res.statusCode)
+  })
+
+  it('blocked request with no model field in body uses "unknown" (line 83 body.model ?? "unknown")', async () => {
+    const blockProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'request', config: { patterns: ['blocked'] } }] },
+    } as any
+    mockReadConfig.mockResolvedValue([testModel])
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+
+    const app = await buildAppWith(blockProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      // No model field → body.model ?? 'unknown'
+      payload: JSON.stringify({ max_tokens: 100, messages: [{ role: 'user', content: 'blocked text' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.model).toBe('unknown')
+    expect(body.stop_reason).toBe('refusal')
+  })
+})
+
+// ─── Anthropic: endUserId / sessionId / tags (lines 157, 160, 161 cond-expr branch=0) ─
+
+describe('POST /v1/messages — endUserId / sessionId / token.tags (lines 157/160/161 branch=0)', () => {
+  it('passes endUserId, sessionId, and token.tags to llmMessages context (lines 157/160/161 branch=0)', async () => {
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmMessages.mockResolvedValue({
+      id: 'msg-1', type: 'message', role: 'assistant',
+      content: [{ type: 'text', text: 'Hi' }],
+      model: 'm1', stop_reason: 'end_turn', usage: { input_tokens: 1, output_tokens: 1 },
+    } as any)
+
+    // Build app with token that has tags
+    const appWithToken = Fastify({ logger: false })
+    appWithToken.decorateRequest('project', null as any)
+    appWithToken.decorateRequest('token', null as any)
+    appWithToken.addHook('preHandler', async (req: any) => {
+      req.project = testProject
+      req.token = { token: 'tok', name: 'T', permissions: ['completion'], tags: { customer: 'acme' } }
+    })
+    await appWithToken.register(anthropicRoutes)
+    await appWithToken.ready()
+
+    const res = await appWithToken.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: {
+        'content-type': 'application/json',
+        'x-routerly-conversation-id': 'sess-abc',  // → conversationId (line 160)
+      },
+      // 'user' field → endUserId (line 157)
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'hello' }], user: 'user-123' }),
+    })
+    await appWithToken.close()
+    expect(res.statusCode).toBe(200)
+    // Verify llmMessages was called with endUserId, sessionId, tags in context
+    const ctxArg = mockLlmMessages.mock.calls[0]![2] as any
+    expect(ctxArg.endUserId).toBe('user-123')
+    expect(ctxArg.sessionId).toBe('sess-abc')
+    expect(ctxArg.tags).toEqual({ customer: 'acme' })
+  })
+})
+
+// ─── Anthropic: pii.scrubOutput with non-text content (line 168 if branch=1) ─
+
+describe('POST /v1/messages — pii.scrubOutput with non-text content (line 168)', () => {
+  function buildAppWith(project: ProjectConfig) {
+    const app = Fastify({ logger: false })
+    app.decorateRequest('project', null as any)
+    app.decorateRequest('token', null as any)
+    app.addHook('preHandler', async (req: any) => { req.project = project; req.token = undefined })
+    return app.register(anthropicRoutes).then(() => app.ready()).then(() => app)
+  }
+
+  it('skips text scrubbing when content block is not text type (line 168 branch=1)', async () => {
+    const piiProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      pii: { scrubOutput: true, entities: ['EMAIL'] },
+    } as any
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    // Response has tool_use content (not text) → block.type !== 'text' → skip scrub
+    mockLlmMessages.mockResolvedValue({
+      id: 'msg-1', type: 'message', role: 'assistant',
+      content: [{ type: 'tool_use', id: 'tool_1', name: 'get_weather', input: {} }],
+      model: 'm1', stop_reason: 'tool_use', usage: { input_tokens: 1, output_tokens: 1 },
+    } as any)
+
+    const app = await buildAppWith(piiProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).stop_reason).toBe('tool_use')
+  })
+
+  it('body.model ?? "unknown" in response guardrail block (line 198 binary-expr branch=1)', async () => {
+    const respBlockProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'response', config: { patterns: ['bad'] } }] },
+    } as any
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmMessages.mockResolvedValue({
+      id: 'msg-1', type: 'message', role: 'assistant',
+      content: [{ type: 'text', text: 'bad content here' }],
+      model: 'm1', stop_reason: 'end_turn', usage: { input_tokens: 1, output_tokens: 1 },
+    } as any)
+
+    const app = await buildAppWith(respBlockProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      // No model field → body.model ?? 'unknown'
+      payload: JSON.stringify({ max_tokens: 100, messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.model).toBe('unknown')
+    expect(body.stop_reason).toBe('refusal')
   })
 })

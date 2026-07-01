@@ -61,4 +61,34 @@ describe('sendDiscord', () => {
 
     await expect(sendDiscord(cfg, payload)).rejects.toThrow('Discord HTTP 401');
   });
+
+  it('falls back to default color for unknown severity', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, text: async () => '' });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await sendDiscord(cfg, { ...payload, severity: 'unknown' as any });
+
+    const body = JSON.parse((mockFetch.mock.calls[0] as [string, RequestInit])[1].body as string);
+    expect(body.embeds[0].color).toBe(0x5865F2); // default fallback
+  });
+
+  it('includes fields when details are provided', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, text: async () => '' });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await sendDiscord(cfg, { ...payload, details: { model: 'gpt-4o', project: 'test' } });
+
+    const body = JSON.parse((mockFetch.mock.calls[0] as [string, RequestInit])[1].body as string);
+    expect(body.embeds[0].fields).toHaveLength(2);
+  });
+
+  it('omits fields when no details', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, text: async () => '' });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await sendDiscord(cfg, { event: 'test', severity: 'info', timestamp: '2024-01-01T00:00:00Z' });
+
+    const body = JSON.parse((mockFetch.mock.calls[0] as [string, RequestInit])[1].body as string);
+    expect(body.embeds[0].fields).toBeUndefined();
+  });
 });

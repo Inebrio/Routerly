@@ -373,4 +373,61 @@ describe('forwardAnthropicOAuth', () => {
     const [, init] = mockFetch.mock.calls[0] as [string, RequestInit]
     expect(init.body).toBe('raw-passthrough-string')
   })
+
+  it('line 108: .catch(() => {}) swallows trackUsage rejection on fetch-throws path', async () => {
+    mockTrackUsage.mockRejectedValueOnce(new Error('tracker down'))
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED catch-swallow')))
+
+    const app = await buildApp(oauthModel) // setProject = true so projectId is present
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude-sonnet-4-5', messages: [], max_tokens: 1 }),
+    })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    // The .catch() swallows the rejection; the outer 502 is still returned
+    expect(res.statusCode).toBe(502)
+    expect(mockTrackUsage).toHaveBeenCalledOnce()
+  })
+
+  it('line 137: .catch(() => {}) swallows trackUsage rejection on success path', async () => {
+    mockTrackUsage.mockRejectedValueOnce(new Error('tracker down'))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }),
+    ))
+
+    const app = await buildApp(oauthModel)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude-sonnet-4-5', messages: [], max_tokens: 1 }),
+    })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(res.statusCode).toBe(200)
+    expect(mockTrackUsage).toHaveBeenCalledOnce()
+  })
+
+  it('returns 502 and skips trackUsage when fetch throws and project is absent (line 107 false branch)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED no-project')))
+
+    const app = await buildApp(oauthModel, false) // setProject = false → projectId is absent
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude-sonnet-4-5', messages: [], max_tokens: 1 }),
+    })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(res.statusCode).toBe(502)
+    expect(res.json().error.message).toContain('ECONNREFUSED no-project')
+    expect(mockTrackUsage).not.toHaveBeenCalled()
+  })
 })

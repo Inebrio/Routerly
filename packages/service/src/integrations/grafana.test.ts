@@ -59,4 +59,30 @@ describe('pushGrafana', () => {
     mockFetch.mockRejectedValue(new Error('grafana down'));
     await expect(pushGrafana(integration, snapshot)).rejects.toThrow('grafana down');
   });
+
+  it('includes token, cost, duration and budget lines when maps/projects are non-empty', async () => {
+    mockFetch.mockResolvedValue({ ok: true });
+    mockBudgetRatio.mockResolvedValue(0.5);
+
+    const richSnapshot = {
+      agg: {
+        requests: new Map([['r', { labels: { project: 'P', model: 'M', provider: 'openai', status: 'success' }, value: 2 }]]),
+        tokens: new Map([['t', { labels: { project: 'P', model: 'M', provider: 'openai', type: 'input' }, value: 100 }]]),
+        cost: new Map([['c', { labels: { project: 'P', model: 'M', provider: 'openai' }, value: 0.005 }]]),
+        durations: new Map([['d', { labels: { project: 'P', model: 'M' }, latencies: [10, 20, 30, 40, 50] }]]),
+      },
+      projectName: (id: string) => id,
+      modelInfo: (id: string) => ({ model: id, provider: 'openai' }),
+      projects: [{ id: 'proj1', name: 'Project One', models: [] } as unknown as import('@routerly/shared').ProjectConfig],
+      models: [],
+    };
+
+    await pushGrafana(integration, richSnapshot);
+
+    const [, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(opts.body as string).toContain('routerly_tokens_total');
+    expect(opts.body as string).toContain('routerly_cost_usd_total');
+    expect(opts.body as string).toContain('routerly_request_duration_p50_ms');
+    expect(opts.body as string).toContain('routerly_budget_used_ratio');
+  });
 });

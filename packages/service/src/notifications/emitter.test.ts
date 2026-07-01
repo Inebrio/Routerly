@@ -363,3 +363,42 @@ describe('per-project override + cooldown (preserved)', () => {
     expect(lastInbox()).toBeNull();
   });
 });
+
+describe('project-scoped channel filtering (lines 165-166)', () => {
+  it('dispatches when channel has projects filter and event is from one of them (line 166 if branch=0)', async () => {
+    // Channel has projects: ['p1'] and event is from project p1 → dispatch (branch=0 = includes → not returned)
+    settings(
+      { channels: [{ id: 'scoped', provider: 'webhook', url: 'https://x', events: ['provider.error'], projects: ['p1'] }] },
+    );
+    await emitEvent('provider.error', 'critical', {}, { projectId: 'p1' });
+    expect(mockDispatch).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips dispatch when channel has projects filter and event is from a different project (line 166 if branch=1)', async () => {
+    // Channel has projects: ['p1'] but event is from project p2 → skip (branch=1 = not includes → return)
+    settings(
+      { channels: [{ id: 'scoped', provider: 'webhook', url: 'https://x', events: ['provider.error'], projects: ['p1'] }] },
+    );
+    await emitEvent('provider.error', 'critical', {}, { projectId: 'p2' });
+    expect(mockDispatch).not.toHaveBeenCalled();
+  });
+
+  it('dispatches when channel has projects filter but no projectId in opts (line 165 binary-expr branch=1)', async () => {
+    // channel.projects.length > 0 BUT opts.projectId is undefined → second condition false → short-circuit → no skip
+    settings(
+      { channels: [{ id: 'scoped', provider: 'webhook', url: 'https://x', events: ['provider.error'], projects: ['p1'] }] },
+    );
+    // No projectId in opts → the && short-circuits → channel is not filtered → dispatch
+    await emitEvent('provider.error', 'critical', {});
+    expect(mockDispatch).toHaveBeenCalledTimes(1);
+  });
+
+  it('dispatches when channel has no projects filter (line 165 if branch=0)', async () => {
+    // channel.projects is empty/undefined → projects?.length > 0 is false → if is false → no skip
+    settings(
+      { channels: [{ id: 'any', provider: 'webhook', url: 'https://x', events: ['provider.error'] }] },
+    );
+    await emitEvent('provider.error', 'critical', {}, { projectId: 'p1' });
+    expect(mockDispatch).toHaveBeenCalledTimes(1);
+  });
+});

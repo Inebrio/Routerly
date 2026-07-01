@@ -739,6 +739,22 @@ describe('routeRequest', () => {
     await expect(routeRequest(request, project, undefined, emit)).resolves.toBeDefined()
   })
 
+  it('same model excluded by two policies → excludeReasons has(id) already (line 237 if branch=1)', async () => {
+    // m1 excluded by both cheapest and capability → second exclusion hits line 237 false branch
+    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockIsAllowed.mockResolvedValue(true)
+    mockCheapestPolicy.mockResolvedValue({ routing: [], excludes: ['m1'] })
+    mockCapabilityPolicy.mockResolvedValue({ routing: [], excludes: ['m1'] })
+
+    const project = makeProject(['m1', 'm2'], [
+      { type: 'cheapest', enabled: true },
+      { type: 'capability', enabled: true },
+    ])
+    const result = await routeRequest(request, project)
+    // m1 excluded, m2 is only candidate
+    expect(result.models[0]!.model).toBe('m2')
+  })
+
   it('policy with routing for excluded models only → eligible.length === 0 → abstain (line 237 true branch)', async () => {
     // m1 and m2 are candidates. Policy excludes m1. Policy also returns routing for m1
     // only (not m2). After exclusion, scoringCandidates = [m2].

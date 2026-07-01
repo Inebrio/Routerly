@@ -91,6 +91,8 @@ CLAUDE.local.md
 *.jpg
 *.jpeg
 *.webp
+!docs/**/*.png
+!docs/**/*.jpg
 
 # ===========================
 # Firebase

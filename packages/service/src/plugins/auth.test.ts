@@ -291,4 +291,67 @@ describe('authPlugin', () => {
     expect(mockWriteConfig).toHaveBeenCalledWith('projects', expect.any(Array))
     await app.close()
   })
+
+  it('skips writeConfig when project is not found in projects list (pi === -1)', async () => {
+    // First call (resolveProjectByToken) returns the project, second call (lastUsedAt) returns empty list
+    mockReadConfig
+      .mockResolvedValueOnce([testProject]) // resolveProjectByToken
+      .mockResolvedValueOnce([])             // lastUsedAt update — project not in list
+    const app = await buildApp()
+    await app.inject({
+      method: 'GET',
+      url: '/v1/chat/completions',
+      headers: { authorization: 'Bearer valid-token-123' },
+    })
+    // writeConfig should NOT be called when pi === -1
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+    await app.close()
+  })
+
+  it('line 89 .catch: swallows writeConfig rejection on lastUsedAt update', async () => {
+    mockReadConfig.mockResolvedValue(JSON.parse(JSON.stringify([testProject])))
+    mockWriteConfig.mockRejectedValueOnce(new Error('disk full'))
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/chat/completions',
+      headers: { authorization: 'Bearer valid-token-123' },
+    })
+    // Request still succeeds (write failure is non-fatal)
+    expect(res.statusCode).toBe(200)
+    await app.close()
+  })
+
+  it('line 87 ?? -1: tokens undefined in second readConfig call (ti = -1)', async () => {
+    // First call: project has valid token → auth passes
+    // Second call (lastUsedAt update): project exists but tokens is undefined → ?? -1 branch
+    const projectWithUndefinedTokens: any = { id: 'proj-1', name: 'Test', tokens: undefined, members: [], models: [] }
+    mockReadConfig
+      .mockResolvedValueOnce([testProject])                 // resolveProjectByToken
+      .mockResolvedValueOnce([projectWithUndefinedTokens])  // lastUsedAt: pi !== -1 but tokens undefined
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/chat/completions',
+      headers: { authorization: 'Bearer valid-token-123' },
+    })
+    // Request succeeds — tokens undefined is handled gracefully
+    expect(res.statusCode).toBe(200)
+    await app.close()
+  })
+
+  it('line 88 ti !== -1: tokens found → updates lastUsedAt (the true branch)', async () => {
+    // Both calls return project with tokens → ti !== -1 → updates lastUsedAt
+    mockReadConfig.mockResolvedValue(JSON.parse(JSON.stringify([testProject])))
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/chat/completions',
+      headers: { authorization: 'Bearer valid-token-123' },
+    })
+    expect(res.statusCode).toBe(200)
+    // writeConfig called with updated lastUsedAt
+    expect(mockWriteConfig).toHaveBeenCalled()
+    await app.close()
+  })
 })

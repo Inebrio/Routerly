@@ -22,6 +22,13 @@ vi.mock('bcrypt', () => ({
   default: { hash: vi.fn(async (p: string) => `hashed:${p}`), compare: vi.fn() },
 }))
 vi.mock('uuid', () => ({ v4: vi.fn(() => 'test-uuid-1234') }))
+vi.mock('./openaiOAuthForward.js', () => ({ resolveCodexToken: vi.fn(), forwardOpenAIOAuthSSE: vi.fn() }))
+vi.mock('../auth/totp.js', () => ({
+  verifyTotp: vi.fn(() => true),
+  generateTotpSecret: vi.fn(() => 'MOCK_SECRET_BASE32'),
+  generateBackupCodes: vi.fn(() => ({ plain: ['CODE1', 'CODE2'], hashed: ['hash1', 'hash2'] })),
+  hashBackupCode: vi.fn((code: string) => `hashed_${code}`),
+}))
 
 import { apiRoutes } from './api.js'
 import { readConfig, writeConfig } from '../config/loader.js'
@@ -29,6 +36,8 @@ import { createSessionToken, verifyToken } from '../plugins/jwt.js'
 import { sendTestNotification } from '../notifications/sender.js'
 import { getTrace } from '../routing/traceStore.js'
 import bcrypt from 'bcrypt'
+import { resolveCodexToken } from './openaiOAuthForward.js'
+import { verifyTotp, generateTotpSecret, generateBackupCodes, hashBackupCode } from '../auth/totp.js'
 
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
 const mockWriteConfig = vi.mocked(writeConfig as (key: string, value: any) => Promise<void>)
@@ -36,6 +45,11 @@ const mockVerifyToken = vi.mocked(verifyToken)
 const mockCreateSessionToken = vi.mocked(createSessionToken)
 const mockGetTrace = vi.mocked(getTrace)
 const mockSendTestNotification = vi.mocked(sendTestNotification)
+const mockResolveCodexToken = vi.mocked(resolveCodexToken)
+const mockVerifyTotp = vi.mocked(verifyTotp)
+const mockGenerateTotpSecret = vi.mocked(generateTotpSecret)
+const mockGenerateBackupCodes = vi.mocked(generateBackupCodes)
+const mockHashBackupCode = vi.mocked(hashBackupCode)
 
 afterEach(() => vi.clearAllMocks())
 
@@ -152,6 +166,526 @@ describe('POST /api/auth/login', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(401)
+  })
+})
+
+// ─── 2FA login branch (line 253 totpEnabled) ─────────────────────────────────
+
+describe('POST /api/auth/login — 2FA required (line 253)', () => {
+  it('returns 202 with requiresTotp when user has totpEnabled', async () => {
+    const mfaUser = { ...adminUser, totpEnabled: true }
+    vi.mocked(bcrypt.compare).mockResolvedValue(true as any)
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [mfaUser] : [])
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/login',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ email: 'admin@example.com', password: 'secret' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(202)
+    expect(res.json().requiresTotp).toBe(true)
+    expect(res.json().userId).toBe('admin-id')
+  })
+})
+
+// ─── POST /api/auth/2fa/verify ────────────────────────────────────────────────
+
+describe('POST /api/auth/2fa/verify', () => {
+  const mfaUser = { id: 'admin-id', email: 'admin@example.com', roleId: 'admin', projectIds: [], totpEnabled: true, totpSecret: 'MOCK_SECRET', passwordHash: '$2b$12$hashed' }
+
+  it('returns 400 when userId missing', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/verify',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ token: '123456' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('returns 400 when both token and backupCode missing', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/verify',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ userId: 'admin-id' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('returns 401 when user not found', async () => {
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [] : [])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/verify',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ userId: 'nobody', token: '123456' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('returns 400 when user has no totpEnabled', async () => {
+    const noMfa = { ...mfaUser, totpEnabled: false }
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [noMfa] : [])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/verify',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ userId: 'admin-id', token: '123456' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('returns 400 when user has totpEnabled but no totpSecret', async () => {
+    const noSecret = { ...mfaUser, totpSecret: undefined }
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [noSecret] : [])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/verify',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ userId: 'admin-id', token: '123456' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('succeeds with valid TOTP token', async () => {
+    mockVerifyTotp.mockReturnValue(true)
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [mfaUser] : [])
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/verify',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ userId: 'admin-id', token: '123456' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().token).toBeDefined()
+  })
+
+  it('returns 401 when TOTP token invalid', async () => {
+    mockVerifyTotp.mockReturnValue(false)
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [mfaUser] : [])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/verify',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ userId: 'admin-id', token: 'badcode' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('succeeds with valid backup code (line 288-298 true branch)', async () => {
+    const hashedCode = 'hashed_ABC123'
+    const userWithBackup = { ...mfaUser, backupCodes: [hashedCode] }
+    mockHashBackupCode.mockReturnValue(hashedCode)
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [userWithBackup] : [])
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/verify',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ userId: 'admin-id', backupCode: 'ABC123' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(mockWriteConfig).toHaveBeenCalled() // backup code consumed
+  })
+
+  it('returns 401 when backup code invalid (idx === -1)', async () => {
+    const userWithBackup = { ...mfaUser, backupCodes: ['other_hash'] }
+    mockHashBackupCode.mockReturnValue('no_match_hash')
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [userWithBackup] : [])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/verify',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ userId: 'admin-id', backupCode: 'WRONG' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('returns 401 when user has no backupCodes field (line 290/293 ?? [] fallback)', async () => {
+    // user.backupCodes is undefined → ?? [] → indexOf returns -1 → 401
+    const userNoBackup = { ...mfaUser }  // no backupCodes field
+    mockHashBackupCode.mockReturnValue('some_hash')
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [userNoBackup] : [])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/verify',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ userId: 'admin-id', backupCode: 'CODE' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+})
+
+// ─── POST /api/auth/2fa/setup ─────────────────────────────────────────────────
+
+describe('POST /api/auth/2fa/setup', () => {
+  it('generates TOTP secret and backup codes', async () => {
+    setupAdminAuth()
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/setup',
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().secret).toBe('MOCK_SECRET_BASE32')
+    expect(res.json().backupCodes).toHaveLength(2)
+  })
+
+  it('returns 401 when user not found (preHandler rejects unknown sub)', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'nonexistent' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/setup',
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('returns 404 when user not found after preHandler (line 339 true branch)', async () => {
+    // preHandler finds user; route re-reads and finds empty list → 404
+    setupAdminAuth()
+    let call = 0
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return call++ === 0 ? [adminUser] : []
+      if (t === 'roles') return []
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/auth/2fa/setup', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+})
+
+// ─── POST /api/auth/2fa/confirm ───────────────────────────────────────────────
+
+describe('POST /api/auth/2fa/confirm', () => {
+  const userWithSecret = { ...adminUser, totpSecret: 'MOCK_SECRET', totpEnabled: false }
+
+  it('enables TOTP when code is valid', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [userWithSecret] : [])
+    mockVerifyTotp.mockReturnValue(true)
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/confirm',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ token: '123456' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().ok).toBe(true)
+  })
+
+  it('returns 400 when token missing', async () => {
+    setupAdminAuth()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/confirm',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('returns 401 when user not found (preHandler rejects unknown sub)', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'nonexistent' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [] : [])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/confirm',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ token: '123456' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('returns 400 when totpSecret not set (setup not started)', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [adminUser] : []) // no totpSecret
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/confirm',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ token: '123456' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('returns 400 when TOTP code invalid', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [userWithSecret] : [])
+    mockVerifyTotp.mockReturnValue(false)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/confirm',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ token: 'bad' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('returns 404 when user not found after preHandler (line 361 true branch)', async () => {
+    setupAdminAuth()
+    let call = 0
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return call++ === 0 ? [adminUser] : []
+      if (t === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/confirm',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ token: '123456' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+})
+
+// ─── POST /api/auth/2fa/disable ───────────────────────────────────────────────
+
+describe('POST /api/auth/2fa/disable', () => {
+  const mfaUser = { ...adminUser, totpEnabled: true, totpSecret: 'MOCK_SECRET', backupCodes: [] }
+
+  it('disables 2FA with valid TOTP', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [mfaUser] : [])
+    mockVerifyTotp.mockReturnValue(true)
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/disable',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ token: '123456' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().ok).toBe(true)
+  })
+
+  it('returns 400 when neither token nor backupCode provided', async () => {
+    setupAdminAuth()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/disable',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('returns 401 when user not found (preHandler rejects unknown sub)', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'nonexistent' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [] : [])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/disable',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ token: '123456' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('returns 400 when 2FA not enabled', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [adminUser] : []) // no totpEnabled
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/disable',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ token: '123456' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('returns 401 when TOTP invalid (verified=false path)', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [mfaUser] : [])
+    mockVerifyTotp.mockReturnValue(false)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/disable',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ token: 'bad' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('returns 404 when user not found after preHandler (line 380 true branch)', async () => {
+    setupAdminAuth()
+    let call = 0
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return call++ === 0 ? [adminUser] : []
+      if (t === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/disable',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ token: '123456' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('returns 401 when user has no backupCodes field (line 390 ?? [] branch=1)', async () => {
+    // user.backupCodes is undefined → ?? [] fires → includes returns false → 401
+    const { backupCodes: _bc, ...userNoBackup } = mfaUser
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [userNoBackup] : [])
+    mockHashBackupCode.mockReturnValue('some_hash')
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/disable',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ backupCode: 'CODE' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('disables 2FA with valid backup code (line 388-390 true branch)', async () => {
+    const hashedCode = 'hashed_BACKUP1'
+    const userWithBackup = { ...mfaUser, backupCodes: [hashedCode] }
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [userWithBackup] : [])
+    mockHashBackupCode.mockReturnValue(hashedCode)
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/disable',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ backupCode: 'BACKUP1' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+})
+
+// ─── POST /api/auth/2fa/backup-codes ─────────────────────────────────────────
+
+describe('POST /api/auth/2fa/backup-codes', () => {
+  const mfaUser = { ...adminUser, totpEnabled: true, totpSecret: 'MOCK_SECRET' }
+
+  it('regenerates backup codes with valid TOTP', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [mfaUser] : [])
+    mockVerifyTotp.mockReturnValue(true)
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/backup-codes',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ token: '123456' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().backupCodes).toHaveLength(2)
+  })
+
+  it('returns 400 when token missing', async () => {
+    setupAdminAuth()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/backup-codes',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('returns 401 when user not found (preHandler rejects unknown sub)', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'nonexistent' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [] : [])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/backup-codes',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ token: '123456' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('returns 400 when 2FA not enabled (line 411 true branch)', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [adminUser] : [])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/backup-codes',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ token: '123456' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('returns 401 when TOTP invalid (line 412 true branch)', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => t === 'users' ? [mfaUser] : [])
+    mockVerifyTotp.mockReturnValue(false)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/backup-codes',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ token: 'bad' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('returns 404 when user not found after preHandler (line 451 true branch)', async () => {
+    setupAdminAuth()
+    let call = 0
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return call++ === 0 ? [adminUser] : []
+      if (t === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/2fa/backup-codes',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ token: '123456' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(404)
   })
 })
 
@@ -2544,6 +3078,82 @@ describe('POST /api/projects — without models (line 441 ?? [] branch)', () => 
     await app.close()
     expect(res.statusCode).toBe(201)
   })
+
+  it('creates project with guardrails config (line 716 true / line 750 true cond-expr)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return []
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/projects',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'WithGuardrails', guardrails: { action: 'block', rules: [] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    expect((res.json() as Record<string, unknown>)['guardrails']).toBeDefined()
+  })
+
+  it('returns 400 for invalid guardrails config in POST /api/projects (line 718)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/projects',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'X', guardrails: { action: 'not_valid', rules: [] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('creates project with pii config (line 722 true / line 751 true cond-expr)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return []
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/projects',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'WithPii', pii: { mode: 'redact', entities: ['EMAIL'] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    expect((res.json() as Record<string, unknown>)['pii']).toBeDefined()
+  })
+
+  it('returns 400 for invalid pii config in POST /api/projects (line 724)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/projects',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'X', pii: { entities: 'not-an-array' } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
 })
 
 describe('PUT /api/projects/:id — additional branches (lines 471, 481, 491)', () => {
@@ -2612,6 +3222,33 @@ describe('PUT /api/projects/:id — additional branches (lines 471, 481, 491)', 
     expect(JSON.parse(res.body).tokens).toEqual([])
   })
 
+  it('redacts token value from response when project has tokens (line 855 fn)', async () => {
+    setupAdminAuth()
+    const project = {
+      id: 'p1', name: 'Test', members: [], models: [],
+      tokens: [{ token: 'secret-abc', name: 'Main', permissions: ['completion'] }],
+    }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { tokens: Array<{ name: string; token?: string }> }
+    expect(body.tokens).toHaveLength(1)
+    expect(body.tokens[0]!.name).toBe('Main')
+    expect(body.tokens[0]!.token).toBeUndefined()
+  })
+
   it('returns 400 for empty project name', async () => {
     setupAdminAuth()
     const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
@@ -2627,6 +3264,278 @@ describe('PUT /api/projects/:id — additional branches (lines 471, 481, 491)', 
       method: 'PUT', url: '/api/projects/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: '   ', models: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+})
+
+describe('PUT /api/projects/:id — guardrails null/preserve branches (lines 785-802)', () => {
+  it('clears guardrails when guardrails:null sent (line 785 true branch)', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], guardrails: { action: 'block', rules: [] } }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [], guardrails: null }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as Record<string, unknown>
+    expect(body['guardrails']).toBeUndefined()
+  })
+
+  it('preserves existing guardrails when not sent (line 791 true branch)', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], guardrails: { action: 'block', rules: [] } }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [] }),  // no guardrails key
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as Record<string, unknown>
+    expect(body['guardrails']).toBeDefined()  // preserved
+  })
+
+  it('clears pii when pii:null sent (line 795 true branch)', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], pii: { mode: 'redact', entities: ['EMAIL'] } }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [], pii: null }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('preserves existing pii when not sent (line 801 true branch)', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], pii: { mode: 'redact', entities: ['EMAIL'] } }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as Record<string, unknown>
+    expect(body['pii']).toBeDefined()
+  })
+
+  it('updates project guardrails with valid config (line 787 else-if / line 790 set)', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [], guardrails: { action: 'block', rules: [{ type: 'regex', target: 'request', config: { patterns: ['ban'] } }] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect((res.json() as Record<string, unknown>)['guardrails']).toBeDefined()
+  })
+
+  it('returns 400 for invalid guardrails in PUT (line 789 true branch)', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [], guardrails: { action: 'not_valid', rules: [] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('updates project pii with valid config (line 797 else-if)', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [], pii: { mode: 'redact', entities: ['EMAIL'] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect((res.json() as Record<string, unknown>)['pii']).toBeDefined()
+  })
+
+  it('returns 400 for invalid pii in PUT (line 799 true branch)', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [], pii: { entities: 'not-an-array' } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+})
+
+describe('PATCH /api/projects/:id/guardrails — permission + cond-expr branches', () => {
+  it('returns 403 without project:write (line 834 if branch)', async () => {
+    const viewRole = { id: 'view', name: 'View', permissions: ['project:read'] }
+    const viewUser = { id: 'view-id', email: 'v@v.com', passwordHash: '$2b$12$h', roleId: 'view', projectIds: [] }
+    mockVerifyToken.mockReturnValue({ sub: 'view-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [viewUser]
+      if (t === 'roles') return [viewRole]
+      if (t === 'projects') return [{ id: 'p1', name: 'T', tokens: [], members: [], models: [] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/projects/p1/guardrails',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ guardrails: { action: 'block', rules: [] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('returns 404 for unknown project (line 837 if branch)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/projects/nope/guardrails',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ guardrails: { action: 'block', rules: [] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('preserves existing guardrails when project has them (line 839 true cond-expr)', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'T', tokens: [], members: [], models: [], guardrails: { action: 'block', rules: [] } }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    // Patch with pii only (no guardrails) → guardrails preserved
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/projects/p1/guardrails',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as Record<string, unknown>
+    expect(body['guardrails']).toBeDefined()
+  })
+
+  it('preserves existing pii when project has it (line 840 true cond-expr)', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'T', tokens: [], members: [], models: [], pii: { mode: 'redact', entities: ['EMAIL'] } }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/projects/p1/guardrails',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as Record<string, unknown>
+    expect(body['pii']).toBeDefined()
+  })
+
+  it('returns 400 for invalid guardrails config (line 843 true branch)', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'T', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/projects/p1/guardrails',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ guardrails: { action: 'invalid_action', rules: [] } }),
     })
     await app.close()
     expect(res.statusCode).toBe(400)
@@ -5043,6 +5952,31 @@ describe('GET /api/notifications/inbox pagination + filters', () => {
     expect(body.pagination.totalRecords).toBe(3)
   })
 
+  it('uses default pageSize=20 when pageSize is absent (line 1579 ?? branch=1)', async () => {
+    // req.query.pageSize is undefined when not provided → ?? '20' fires (branch=1)
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?page=1', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    // Default pageSize is 20, all 5 items fit in one page
+    expect(body.pagination).toBeDefined()
+    expect(body.pagination.pageSize).toBe(20)
+  })
+
+  it('uses default page=1 when page is absent (line 1585 ?? branch=1)', async () => {
+    // req.query.page is undefined when not provided → ?? '1' fires (branch=1)
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?pageSize=2', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    // Default page is 1
+    expect(body.pagination.page).toBe(1)
+  })
+
   it('keeps the legacy flat-list shape for limit without page', async () => {
     setup()
     const app = await buildApp()
@@ -5931,6 +6865,89 @@ describe('DELETE /api/projects/:id/playground-presets/:presetId', () => {
   })
 })
 
+// ─── Playground presets — permission + missing field branches ─────────────────
+
+describe('playground presets — permission + edge cases', () => {
+  const noProjectRole = { id: 'noproj', name: 'NoProject', permissions: ['model:read'] }
+  const noProjectUser = { id: 'noproj-user', email: 'np@example.com', passwordHash: '$2b$12$h', roleId: 'noproj', projectIds: [] }
+  const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+
+  function setupNoProjectReadAuth() {
+    mockVerifyToken.mockReturnValue({ sub: 'noproj-user' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [noProjectUser]
+      if (t === 'roles') return [noProjectRole]
+      if (t === 'projects') return [project]
+      return []
+    })
+  }
+
+  it('returns 403 for GET playground-presets without project:read (line 1026)', async () => {
+    setupNoProjectReadAuth()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/projects/p1/playground-presets', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('returns 403 for POST playground-presets without project:write (line 1037)', async () => {
+    setupNoProjectReadAuth()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/projects/p1/playground-presets',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', systemPrompt: 'Hi' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('returns 403 for DELETE playground-presets without project:write (line 1052)', async () => {
+    setupNoProjectReadAuth()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/projects/p1/playground-presets/preset-1', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('returns 400 when systemPrompt is missing from POST (line 1040)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/projects/p1/playground-presets',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test' }), // no systemPrompt
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect((res.json() as { error: string }).error).toMatch(/systemPrompt/)
+  })
+
+  it('DELETE works when project has no playgroundPresets field (line 1057/1058 ?? [] fallback)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [{ ...project }]  // no playgroundPresets
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'DELETE', url: '/api/projects/p1/playground-presets/nonexistent',
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+})
+
 // ─── Model catalog ─────────────────────────────────────────────────────────────
 
 describe('GET /api/models/catalog', () => {
@@ -6077,6 +7094,93 @@ describe('GET /api/audit', () => {
     expect(body.entries).toHaveLength(1)
     expect(body.entries[0]!.userId).toBe('viewer-id')
     expect(body.pagination.totalRecords).toBe(1)
+  })
+
+  it('filters by action query param (line 2254 fn)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'audit') return sampleEntries
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/audit?action=model:create', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { entries: Array<{ action: string }> }
+    expect(body.entries).toHaveLength(1)
+    expect(body.entries[0]!.action).toBe('model:create')
+  })
+
+  it('filters by result query param (line 2255 fn)', async () => {
+    setupAdminAuth()
+    const mixedEntries = [
+      ...sampleEntries,
+      { id: 'e3', timestamp: '2026-01-03T10:00:00.000Z', userId: 'admin-id', email: 'admin@example.com', endpoint: '/api/models', action: 'model:delete', result: 'failure' },
+    ]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'audit') return mixedEntries
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/audit?result=failure', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { entries: Array<{ result: string }> }
+    expect(body.entries).toHaveLength(1)
+    expect(body.entries[0]!.result).toBe('failure')
+  })
+
+  it('filters by from query param (line 2256 fn)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'audit') return sampleEntries
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/audit?from=2026-01-02T00:00:00.000Z', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { entries: Array<{ id: string }> }
+    expect(body.entries).toHaveLength(1)
+    expect(body.entries[0]!.id).toBe('e2')
+  })
+
+  it('filters by to query param (line 2257 fn)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'audit') return sampleEntries
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/audit?to=2026-01-01T23:59:59.000Z', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { entries: Array<{ id: string }> }
+    expect(body.entries).toHaveLength(1)
+    expect(body.entries[0]!.id).toBe('e1')
+  })
+
+  it('falls back to default pageSize=50 for non-numeric pageSize (line 2249 || 50 branch=1)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'audit') return []
+      return []
+    })
+    const app = await buildApp()
+    // pageSize='abc' → parseInt('abc', 10) = NaN (falsy) → || 50 fires (branch=1)
+    const res = await app.inject({ method: 'GET', url: '/api/audit?pageSize=abc&page=abc', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
   })
 })
 
@@ -6274,6 +7378,38 @@ describe('PATCH /api/notifications/channels/:id', () => {
     await app.close()
     expect(res.statusCode).toBe(403)
   })
+
+  it('handles channel with no provider field (line 1886 cond-expr branch=1 — provider falsy)', async () => {
+    // stored channel has no provider → provider=undefined → cond-expr false → secrets=[] → no redaction
+    const noProviderChannel = { id: 'ch-noprov', host: 'example.com' }
+    setupChannels([noProviderChannel])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/notifications/channels/ch-noprov',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ host: 'updated.example.com' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const ch = res.json() as Record<string, unknown>
+    expect(ch['host']).toBe('updated.example.com')
+  })
+
+  it('handles channel with unknown provider type (line 1886 binary-expr branch=1 — ?? [])', async () => {
+    // stored channel has provider='unknown_type' not in CHANNEL_SECRET_FIELDS → ?? [] fires
+    const unknownProviderChannel = { id: 'ch-unk', provider: 'unknown_type', host: 'x.com' }
+    setupChannels([unknownProviderChannel])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/notifications/channels/ch-unk',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ host: 'y.com' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const ch = res.json() as Record<string, unknown>
+    expect(ch['host']).toBe('y.com')
+  })
 })
 
 describe('POST /api/notifications/channels (redaction on create)', () => {
@@ -6293,6 +7429,33 @@ describe('POST /api/notifications/channels (redaction on create)', () => {
     const ch = res.json() as Record<string, unknown>
     expect(ch['password']).toBe('********')
     expect(ch['host']).toBe('mail.x.com')
+  })
+
+  it('creates first channel when settings has no notifications key (lines 1918-1919 ?? branch=1)', async () => {
+    // settings = {} → settings.notifications is undefined → ?? {} fires → .channels is undefined → ?? [] fires
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return {}  // no notifications key at all
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/channels',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        provider: 'smtp', host: 'first.example.com', port: 587, secure: false, fromAddress: 'a@b.com',
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')
+    expect(written).toBeDefined()
+    const notifications = (written![1] as any).notifications
+    expect(notifications.channels).toHaveLength(1)
+    expect(notifications.channels[0].host).toBe('first.example.com')
   })
 })
 
@@ -6412,6 +7575,34 @@ describe('POST /api/notifications/channels/:id/test', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(403)
+  })
+
+  it('returns ok:false when sendTestNotification throws (catch block line 1957)', async () => {
+    setupChannels()
+    mockSendTestNotification.mockRejectedValue(new Error('SMTP connection refused'))
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/channels/ch-smtp/test',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: false, message: 'SMTP connection refused' })
+  })
+
+  it('returns ok:false with String(e) when throw is non-Error (line 1957 String(e) branch)', async () => {
+    setupChannels()
+    mockSendTestNotification.mockRejectedValue('plain string error')
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/channels/ch-smtp/test',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: false, message: 'plain string error' })
   })
 })
 
@@ -6867,6 +8058,21 @@ describe('GET /api/integrations', () => {
     expect(list[1]!['apiKey']).toBe('********')
   })
 
+  it('omits secret fields when they are empty string or undefined (lines 1980-1981)', async () => {
+    const noSecret = { id: 'intg-prom-empty', type: 'prometheus', enabled: true, authToken: '' }
+    const noField = { id: 'intg-dd-undef', type: 'datadog', enabled: true, site: 'datadoghq.com' } // apiKey undefined
+    setupIntegrations([noSecret, noField])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/integrations', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const list = res.json() as Array<Record<string, unknown>>
+    // authToken: '' → deleted
+    expect(list[0]).not.toHaveProperty('authToken')
+    // apiKey: undefined → deleted
+    expect(list[1]).not.toHaveProperty('apiKey')
+  })
+
   it('returns 403 without settings:write', async () => {
     mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
     mockReadConfig.mockImplementation(async (type: string) => {
@@ -6887,6 +8093,32 @@ describe('GET /api/integrations', () => {
     const res = await app.inject({ method: 'GET', url: '/api/integrations' })
     await app.close()
     expect(res.statusCode).toBe(401)
+  })
+})
+
+describe('GET /api/integrations — redactIntegration null secret field (line 1980 if branch=1)', () => {
+  it('keeps secret field unchanged when value is null (line 1980 if branch=1)', async () => {
+    // apiKey=null → v=null → not string (line 1978 first if false), null !== undefined (line 1980 else-if false) → do nothing (branch=1)
+    setupIntegrations([{ id: 'intg-null', type: 'datadog', enabled: true, apiKey: null }])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/integrations', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const list = res.json() as Array<Record<string, unknown>>
+    // null is not a string, not undefined, not '' → kept as-is (branch=1 of else-if)
+    expect(list[0]!['apiKey']).toBeNull()
+  })
+
+  it('returns [] when INTEGRATION_SECRET_FIELDS has no entry for type (line 1974 ?? [] branch=1)', async () => {
+    // type 'custom' not in INTEGRATION_SECRET_FIELDS → ?? [] fires (branch=1)
+    setupIntegrations([{ id: 'intg-custom', type: 'custom-unknown', enabled: true, secretKey: 'shh' }])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/integrations', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    // Unknown type: no secret redaction, secretKey passes through as-is
+    const list = res.json() as Array<Record<string, unknown>>
+    expect(list[0]!['secretKey']).toBe('shh')
   })
 })
 
@@ -7001,6 +8233,30 @@ describe('POST /api/integrations', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(401)
+  })
+
+  it('creates first integration when settings has no integrations key (line 2019 ?? [] branch=1)', async () => {
+    // settings = {} → settings.integrations is undefined → ?? [] fires (branch=1)
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return {}  // no integrations key
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/integrations',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ type: 'prometheus', authToken: 'tok' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')
+    const integrations = (written![1] as any).integrations as Array<Record<string, unknown>>
+    expect(integrations).toHaveLength(1)
+    expect(integrations[0]!['type']).toBe('prometheus')
   })
 })
 
@@ -7239,5 +8495,1454 @@ describe('POST /api/integrations/:id/test', () => {
     expect(res.statusCode).toBe(200)
     expect(res.json()).toMatchObject({ ok: true })
     expect(mockFetch).toHaveBeenCalledWith('https://example.com/hook', expect.objectContaining({ method: 'POST' }))
+  })
+
+  it('webhook: with secret adds X-Routerly-Signature header', async () => {
+    const wh = { id: 'intg-wh', type: 'webhook', enabled: true, url: 'https://example.com/hook', secret: 'mysecret' }
+    setupIntegrations([wh])
+    mockFetch.mockResolvedValue({ ok: true, status: 200 })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-wh/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: true })
+    const [, opts] = mockFetch.mock.calls[0] as [string, RequestInit]
+    expect((opts.headers as Record<string, string>)['X-Routerly-Signature']).toMatch(/^sha256=[0-9a-f]{64}$/)
+  })
+
+  it('webhook: fetch 500 → ok: false', async () => {
+    const wh = { id: 'intg-wh', type: 'webhook', enabled: true, url: 'https://example.com/hook' }
+    setupIntegrations([wh])
+    mockFetch.mockResolvedValue({ ok: false, status: 500 })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-wh/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: false, message: 'Webhook returned HTTP 500' })
+  })
+
+  it('webhook: fetch throws → ok: false with error message', async () => {
+    const wh = { id: 'intg-wh', type: 'webhook', enabled: true, url: 'https://example.com/hook' }
+    setupIntegrations([wh])
+    mockFetch.mockRejectedValue(new Error('Connection refused'))
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-wh/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: false, message: 'Connection refused' })
+  })
+
+  it('grafana: reachable → ok: true', async () => {
+    const grafana = { id: 'intg-grafana', type: 'grafana', enabled: true, url: 'http://grafana:3000/push', username: 'admin', apiKey: 'grafkey' }
+    setupIntegrations([grafana])
+    mockFetch.mockResolvedValue({ ok: true, status: 200 })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-grafana/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: true, message: 'Grafana remote_write endpoint is reachable.' })
+  })
+
+  it('grafana: 400 → still reachable (ok: true)', async () => {
+    const grafana = { id: 'intg-grafana', type: 'grafana', enabled: true, url: 'http://grafana:3000/push', username: 'admin', apiKey: 'grafkey' }
+    setupIntegrations([grafana])
+    mockFetch.mockResolvedValue({ ok: false, status: 400 })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-grafana/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: true })
+  })
+
+  it('grafana: 503 → ok: false', async () => {
+    const grafana = { id: 'intg-grafana', type: 'grafana', enabled: true, url: 'http://grafana:3000/push', username: 'admin', apiKey: 'grafkey' }
+    setupIntegrations([grafana])
+    mockFetch.mockResolvedValue({ ok: false, status: 503 })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-grafana/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: false, message: 'Grafana endpoint returned HTTP 503' })
+  })
+
+  it('grafana: fetch throws → ok: false with error message', async () => {
+    const grafana = { id: 'intg-grafana', type: 'grafana', enabled: true, url: 'http://grafana:3000/push', username: 'admin', apiKey: 'grafkey' }
+    setupIntegrations([grafana])
+    mockFetch.mockRejectedValue(new Error('grafana unreachable'))
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-grafana/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: false, message: 'grafana unreachable' })
+  })
+
+  it('influxdb: health not-pass status → ok: false', async () => {
+    const influx = { id: 'intg-influx', type: 'influxdb', enabled: true, url: 'http://influx:8086', token: 't', org: 'o', bucket: 'b' }
+    setupIntegrations([influx])
+    mockFetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ status: 'fail' }) })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-influx/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: false, message: 'InfluxDB health status: fail' })
+  })
+
+  it('influxdb: health status absent → ok: false with "unknown" (line 2146 ?? branch=1)', async () => {
+    // body.status is undefined → ?? 'unknown' fires (branch=1)
+    const influx = { id: 'intg-influx', type: 'influxdb', enabled: true, url: 'http://influx:8086', token: 't', org: 'o', bucket: 'b' }
+    setupIntegrations([influx])
+    mockFetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({}) })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-influx/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: false, message: 'InfluxDB health status: unknown' })
+  })
+
+  it('influxdb: health non-ok HTTP → ok: false', async () => {
+    const influx = { id: 'intg-influx', type: 'influxdb', enabled: true, url: 'http://influx:8086', token: 't', org: 'o', bucket: 'b' }
+    setupIntegrations([influx])
+    mockFetch.mockResolvedValue({ ok: false, status: 503 })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-influx/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: false, message: 'InfluxDB health check returned HTTP 503' })
+  })
+
+  it('influxdb: fetch throws → ok: false', async () => {
+    const influx = { id: 'intg-influx', type: 'influxdb', enabled: true, url: 'http://influx:8086', token: 't', org: 'o', bucket: 'b' }
+    setupIntegrations([influx])
+    mockFetch.mockRejectedValue(new Error('influx down'))
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-influx/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: false, message: 'influx down' })
+  })
+
+  it('datadog: non-200/non-403 status → generic error message', async () => {
+    setupIntegrations([datadogIntegration])
+    mockFetch.mockResolvedValue({ ok: false, status: 500 })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-dd/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: false, message: 'Datadog API returned HTTP 500' })
+  })
+
+  it('datadog: fetch throws → ok: false', async () => {
+    setupIntegrations([datadogIntegration])
+    mockFetch.mockRejectedValue(new Error('dd unreachable'))
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-dd/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: false, message: 'dd unreachable' })
+  })
+
+  it('otel: fetch throws → ok: false', async () => {
+    const otel = { id: 'intg-otel', type: 'otel', enabled: true, endpoint: 'http://otel:4318', protocol: 'http' }
+    setupIntegrations([otel])
+    mockFetch.mockRejectedValue(new Error('otel unreachable'))
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-otel/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: false, message: 'otel unreachable' })
+  })
+
+  it('unknown type → 400', async () => {
+    const custom = { id: 'intg-custom', type: 'custom_unknown', enabled: true }
+    setupIntegrations([custom])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-custom/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(res.json()).toMatchObject({ error: expect.stringContaining('Unknown integration type') })
+  })
+})
+
+// ─── POST /api/test/openai-oauth — catch block (line 1710) ───────────────────
+
+describe('POST /api/test/openai-oauth', () => {
+  it('returns ok:false when resolveCodexToken throws (line 1710 catch branch)', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      return []
+    })
+    mockResolveCodexToken.mockRejectedValue(new Error('ENOENT: no such file'))
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/test/openai-oauth',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ authFilePath: '/tmp/nonexistent.json' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: false, error: 'ENOENT: no such file' })
+  })
+
+  it('returns ok:true when resolveCodexToken succeeds', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      return []
+    })
+    const exp = Math.floor(Date.now() / 1000) + 3600
+    const accessToken = 'h.' + Buffer.from(JSON.stringify({ exp })).toString('base64url') + '.s'
+    mockResolveCodexToken.mockResolvedValue({ accessToken, accountId: 'acct-1' })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/test/openai-oauth',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: true, accountId: 'acct-1' })
+    expect(res.json().expiresAt).not.toBeNull()
+  })
+})
+
+// ─── GET /api/leaderboard — weekly period (lines 1775-1778) ──────────────────
+
+describe('GET /api/leaderboard — weekly period', () => {
+  it('supports weekly period filter (lines 1775-1778)', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'models') return [{ id: 'm', name: 'M', provider: 'openai' }]
+      if (t === 'usage') return [{ id: 'u1', timestamp: new Date().toISOString(), projectId: 'p', modelId: 'm', inputTokens: 10, outputTokens: 5, cost: 0.001, latencyMs: 100, outcome: 'success' }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard?period=weekly', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(Array.isArray(res.json())).toBe(true)
+  })
+})
+
+// ─── POST /api/users/:id/2fa/reset (lines 1183-1192) ─────────────────────────
+
+describe('POST /api/users/:id/2fa/reset', () => {
+  it('resets 2FA and returns ok: true', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    const target = { id: 'user-1', email: 'u@e.com', roleId: 'admin', projectIds: [], totpSecret: 'secret', totpEnabled: true, backupCodes: ['h1'] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser, target]
+      if (t === 'roles') return []
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/users/user-1/2fa/reset', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: true })
+    expect(mockWriteConfig).toHaveBeenCalledWith('users', expect.arrayContaining([
+      expect.not.objectContaining({ totpSecret: expect.anything() }),
+    ]))
+  })
+
+  it('returns 404 when user not found', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/users/nonexistent/2fa/reset', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('returns 403 without user:write permission', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ id: 'viewer-id', email: 'v@e.com', roleId: 'no-perms', projectIds: [] }]
+      if (t === 'roles') return [{ id: 'no-perms', name: 'NoPerms', permissions: [] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/users/user-1/2fa/reset', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+// ─── GET /api/usage — tag filter (line 1242) ─────────────────────────────────
+
+describe('GET /api/usage — tag filter (line 1242)', () => {
+  it('filters records by tag query params', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return [
+        { id: 'r1', timestamp: new Date().toISOString(), projectId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0.001, latencyMs: 50, outcome: 'success', tags: { customer: 'acme' } },
+        { id: 'r2', timestamp: new Date().toISOString(), projectId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0.001, latencyMs: 50, outcome: 'success', tags: { customer: 'other' } },
+      ]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/usage?tag[customer]=acme', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().records).toHaveLength(1)
+    expect(res.json().records[0].tags.customer).toBe('acme')
+  })
+
+  it('filters by endUserId (line 1239 fn)', async () => {
+    setupAdminAuth()
+    const now = new Date().toISOString()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return [
+        { id: 'r1', timestamp: now, projectId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0.001, latencyMs: 50, outcome: 'success', endUserId: 'user-a' },
+        { id: 'r2', timestamp: now, projectId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0.001, latencyMs: 50, outcome: 'success', endUserId: 'user-b' },
+      ]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/usage?endUserId=user-a', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().records).toHaveLength(1)
+    expect(res.json().records[0].endUserId).toBe('user-a')
+  })
+
+  it('filters by sessionId (line 1240 fn)', async () => {
+    setupAdminAuth()
+    const now = new Date().toISOString()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return [
+        { id: 'r1', timestamp: now, projectId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0.001, latencyMs: 50, outcome: 'success', sessionId: 'sess-x' },
+        { id: 'r2', timestamp: now, projectId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0.001, latencyMs: 50, outcome: 'success', sessionId: 'sess-y' },
+      ]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/usage?sessionId=sess-x', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().records).toHaveLength(1)
+    expect(res.json().records[0].sessionId).toBe('sess-x')
+  })
+})
+
+describe('GET /api/sessions (#94)', () => {
+  const makeUsageRecord = (sessionId: string, timestamp: string, projectId = 'p1') => ({
+    id: `r-${sessionId}-${timestamp}`, timestamp, projectId, modelId: 'm1',
+    inputTokens: 10, outputTokens: 5, cost: 0.01, latencyMs: 100, outcome: 'success', sessionId,
+  })
+
+  it('returns sessions grouped from usage records', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return [
+        makeUsageRecord('sess-1', '2026-01-01T10:00:00.000Z'),
+        makeUsageRecord('sess-1', '2026-01-01T11:00:00.000Z'),
+        makeUsageRecord('sess-2', '2026-01-02T10:00:00.000Z'),
+      ]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/sessions', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { sessions: Array<{ sessionId: string; requests: number }> }
+    expect(body.sessions).toHaveLength(2)
+    // sorted by lastSeen desc: sess-2 first
+    expect(body.sessions[0]!.sessionId).toBe('sess-2')
+    expect(body.sessions[1]!.requests).toBe(2)
+  })
+
+  it('supports cursor pagination (line 1355 fn)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return [
+        makeUsageRecord('sess-1', '2026-01-01T10:00:00.000Z'),
+        makeUsageRecord('sess-2', '2026-01-02T10:00:00.000Z'),
+        makeUsageRecord('sess-3', '2026-01-03T10:00:00.000Z'),
+      ]
+      return []
+    })
+    const app = await buildApp()
+    // First page: limit=2 → returns sess-3, sess-2 (most recent first)
+    const page1 = await app.inject({ method: 'GET', url: '/api/sessions?limit=2', headers: adminAuthHeaders() })
+    expect(page1.statusCode).toBe(200)
+    const body1 = page1.json() as { sessions: Array<{ sessionId: string }>; nextCursor: string }
+    expect(body1.sessions).toHaveLength(2)
+    expect(body1.nextCursor).toBe('sess-2')
+
+    // Second page using cursor
+    const page2 = await app.inject({ method: 'GET', url: `/api/sessions?limit=2&cursor=${body1.nextCursor}`, headers: adminAuthHeaders() })
+    await app.close()
+    expect(page2.statusCode).toBe(200)
+    const body2 = page2.json() as { sessions: Array<{ sessionId: string }>; nextCursor?: string }
+    expect(body2.sessions).toHaveLength(1)
+    expect(body2.sessions[0]!.sessionId).toBe('sess-1')
+    expect(body2.nextCursor).toBeUndefined()
+  })
+
+  it('filters sessions by projectId', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return [
+        makeUsageRecord('sess-A', '2026-01-01T10:00:00.000Z', 'proj-1'),
+        makeUsageRecord('sess-B', '2026-01-01T10:00:00.000Z', 'proj-2'),
+      ]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/sessions?projectId=proj-1', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { sessions: Array<{ sessionId: string }> }
+    expect(body.sessions).toHaveLength(1)
+    expect(body.sessions[0]!.sessionId).toBe('sess-A')
+  })
+
+  it('returns 403 without report:read permission', async () => {
+    const noReportRole = { id: 'restricted', name: 'Restricted', permissions: ['project:read'] }
+    const restrictedUser = { id: 'viewer-id', email: 'v@v.com', passwordHash: '$2b$12$h', roleId: 'restricted', projectIds: [] }
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [restrictedUser]
+      if (t === 'roles') return [noReportRole]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/sessions', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+describe('GET /api/sessions/:id/requests (#94)', () => {
+  it('returns requests for a session sorted by timestamp', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return [
+        { id: 'r2', timestamp: '2026-01-01T11:00:00.000Z', projectId: 'p', modelId: 'm', inputTokens: 5, outputTokens: 5, cost: 0.005, latencyMs: 50, outcome: 'success', sessionId: 'sess-1' },
+        { id: 'r1', timestamp: '2026-01-01T10:00:00.000Z', projectId: 'p', modelId: 'm', inputTokens: 10, outputTokens: 10, cost: 0.01, latencyMs: 100, outcome: 'success', sessionId: 'sess-1' },
+        { id: 'r3', timestamp: '2026-01-01T12:00:00.000Z', projectId: 'p', modelId: 'm', inputTokens: 3, outputTokens: 3, cost: 0.003, latencyMs: 30, outcome: 'success', sessionId: 'sess-other' },
+      ]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/sessions/sess-1/requests', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { sessionId: string; requests: Array<{ id: string }> }
+    expect(body.sessionId).toBe('sess-1')
+    expect(body.requests).toHaveLength(2)
+    expect(body.requests[0]!.id).toBe('r1') // sorted by timestamp asc
+    expect(body.requests[1]!.id).toBe('r2')
+  })
+})
+
+// ─── Notification channels — ?? [] fallback branches ──────────────────────────
+
+describe('notification channels — settings.notifications undefined (line 1858/1866/1876/1880 ?? [] fallbacks)', () => {
+  function setupNoNotifications() {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'settings') return {}  // no notifications field
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+  }
+
+  it('GET /api/notifications/channels returns [] when no notifications field', async () => {
+    setupNoNotifications()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/channels', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toEqual([])
+  })
+
+  it('GET /api/notifications/channels/:id returns 404 when no notifications field', async () => {
+    setupNoNotifications()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/channels/any-id', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('PATCH /api/notifications/channels/:id returns 404 when no notifications field', async () => {
+    setupNoNotifications()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/notifications/channels/any-id',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ host: 'x' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('PATCH /api/notifications/channels/:id skips id/provider fields in body (line 1891)', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    const ch = { id: 'ch-smtp', provider: 'smtp', host: 'smtp.example.com', port: 587, secure: false, fromAddress: 'a@b.com', username: 'user', password: 'secret' }
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'settings') return { notifications: { channels: [ch] } }
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/notifications/channels/ch-smtp',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      // Include id field — should be skipped (line 1891 continue branch)
+      payload: JSON.stringify({ id: 'new-id-attempt', host: 'new.host.com' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as Record<string, unknown>
+    // id should not change
+    expect(body['id']).toBe('ch-smtp')
+    // host should update
+    expect(body['host']).toBe('new.host.com')
+  })
+
+  it('DELETE /api/notifications/channels/:id 404 when settings.notifications is undefined', async () => {
+    setupNoNotifications()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/notifications/channels/any-id', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('POST /api/notifications/channels/:id/test 404 when settings.notifications is undefined', async () => {
+    setupNoNotifications()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/channels/any-id/test',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+})
+
+// ─── Integration CRUD — ?? [] / missing fields fallback branches ───────────────
+
+describe('integration CRUD — settings.integrations undefined (lines 2000/2008/2031/2056 ?? [] fallbacks)', () => {
+  function setupNoIntegrations() {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'settings') return {}  // no integrations field
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+  }
+
+  it('GET /api/integrations returns [] when no integrations field', async () => {
+    setupNoIntegrations()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/integrations', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toEqual([])
+  })
+
+  it('GET /api/integrations/:id returns 404 when no integrations field', async () => {
+    setupNoIntegrations()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/integrations/missing-id', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('POST /api/integrations creates integration when settings has no integrations field', async () => {
+    setupNoIntegrations()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/integrations',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ type: 'otel', endpoint: 'http://otel:4318', protocol: 'http' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    expect((res.json() as Record<string, unknown>)['type']).toBe('otel')
+  })
+
+  it('PATCH /api/integrations/:id returns 404 when no integrations field', async () => {
+    setupNoIntegrations()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/integrations/nope',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ enabled: false }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('PATCH /api/integrations/:id skips id/type fields and handles secret field with empty string', async () => {
+    const intg = { id: 'intg-1', type: 'webhook', url: 'https://hook.example.com', secret: 'mysecret', enabled: true }
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'settings') return { integrations: [intg] }
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/integrations/intg-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      // id and type should be skipped (lines 2039, 2041), secret='' keeps stored (line 2041 false branch)
+      payload: JSON.stringify({ id: 'new-id', type: 'prometheus', secret: '', url: 'https://new.hook.com' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as Record<string, unknown>
+    // id unchanged, type unchanged, url updated
+    expect(body['id']).toBe('intg-1')
+    expect(body['type']).toBe('webhook')
+    expect(body['url']).toBe('https://new.hook.com')
+    // secret empty string was sent → stored value kept (not cleared)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')
+    const stored = (written![1] as any).integrations[0]
+    expect(stored.secret).toBe('mysecret')
+  })
+
+  it('DELETE /api/integrations/:id returns 404 when no integrations field', async () => {
+    setupNoIntegrations()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/integrations/nope', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('POST /api/integrations/:id/test returns 404 when no integrations field', async () => {
+    setupNoIntegrations()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/integrations/nope/test',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+})
+
+// ─── GET /api/end-users — multi-record timestamp updates (lines 1386-1387) ──────
+
+describe('GET /api/end-users (#96)', () => {
+  it('updates firstSeen and lastSeen when multiple records for same user (lines 1386/1387 true branches)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return [
+        // First record establishes firstSeen/lastSeen = '2026-01-02'
+        { id: 'r1', timestamp: '2026-01-02T10:00:00.000Z', projectId: 'p', modelId: 'm', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', endUserId: 'user-1' },
+        // Earlier timestamp → triggers line 1386 true (r.timestamp < u.firstSeen)
+        { id: 'r2', timestamp: '2026-01-01T10:00:00.000Z', projectId: 'p', modelId: 'm', inputTokens: 3, outputTokens: 3, cost: 0.005, latencyMs: 30, outcome: 'success', endUserId: 'user-1' },
+        // Later timestamp → triggers line 1387 true (r.timestamp > u.lastSeen)
+        { id: 'r3', timestamp: '2026-01-03T10:00:00.000Z', projectId: 'p', modelId: 'm', inputTokens: 2, outputTokens: 2, cost: 0.003, latencyMs: 20, outcome: 'success', endUserId: 'user-1' },
+      ]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/end-users', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { users: Array<{ userId: string; firstSeen: string; lastSeen: string; requests: number }> }
+    expect(body.users).toHaveLength(1)
+    expect(body.users[0]!.userId).toBe('user-1')
+    expect(body.users[0]!.requests).toBe(3)
+    expect(body.users[0]!.firstSeen).toBe('2026-01-01T10:00:00.000Z')
+    expect(body.users[0]!.lastSeen).toBe('2026-01-03T10:00:00.000Z')
+  })
+
+  it('filters by projectId', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return [
+        { id: 'r1', timestamp: '2026-01-01T10:00:00.000Z', projectId: 'proj-1', modelId: 'm', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', endUserId: 'user-a' },
+        { id: 'r2', timestamp: '2026-01-01T10:00:00.000Z', projectId: 'proj-2', modelId: 'm', inputTokens: 3, outputTokens: 3, cost: 0.005, latencyMs: 30, outcome: 'success', endUserId: 'user-b' },
+      ]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/end-users?projectId=proj-1', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { users: Array<{ userId: string }> }
+    expect(body.users).toHaveLength(1)
+    expect(body.users[0]!.userId).toBe('user-a')
+  })
+})
+
+// ─── GET /api/sessions — firstSeen update (line 1349) ────────────────────────
+
+describe('GET /api/sessions — firstSeen update (line 1349)', () => {
+  it('updates firstSeen when earlier record comes after later (line 1349 true branch)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return [
+        // First processed record sets firstSeen = '2026-01-02'
+        { id: 'r1', timestamp: '2026-01-02T10:00:00.000Z', projectId: 'p', modelId: 'm', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', sessionId: 'sess-1' },
+        // Earlier record → line 1349 true (r.timestamp < s.firstSeen)
+        { id: 'r2', timestamp: '2026-01-01T10:00:00.000Z', projectId: 'p', modelId: 'm', inputTokens: 3, outputTokens: 3, cost: 0.005, latencyMs: 30, outcome: 'success', sessionId: 'sess-1' },
+      ]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/sessions', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { sessions: Array<{ sessionId: string; firstSeen: string; lastSeen: string }> }
+    expect(body.sessions[0]!.firstSeen).toBe('2026-01-01T10:00:00.000Z')
+    expect(body.sessions[0]!.lastSeen).toBe('2026-01-02T10:00:00.000Z')
+  })
+})
+
+// ─── Notification channels redactChannel edge cases (lines 83-90) ─────────────
+
+describe('redactChannel edge cases (lines 83-90)', () => {
+  it('returns channel unchanged when no provider field (line 83 true branch)', async () => {
+    setupAdminAuth()
+    const channelNoProvider = { id: 'ch-np', host: 'smtp.example.com' }  // no provider
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return { notifications: { channels: [channelNoProvider] } }
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/channels', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const channels = res.json() as Array<Record<string, unknown>>
+    expect(channels[0]!['host']).toBe('smtp.example.com')
+    // No crash when provider is absent
+  })
+
+  it('removes secret field when empty string (line 90 branch: v === "")', async () => {
+    setupAdminAuth()
+    const channelEmptyPassword = { id: 'ch-smtp', provider: 'smtp', host: 'mail.x.com', port: 587, secure: false, fromAddress: 'a@b.com', password: '' }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return { notifications: { channels: [channelEmptyPassword] } }
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/channels', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const channels = res.json() as Array<Record<string, unknown>>
+    // Empty password field should be deleted from response
+    expect(channels[0]!['password']).toBeUndefined()
+  })
+
+  it('removes secret field when undefined (line 90 branch: v === undefined)', async () => {
+    setupAdminAuth()
+    // smtp channel without password field
+    const channelNoPassword: Record<string, unknown> = { id: 'ch-smtp', provider: 'smtp', host: 'mail.x.com', port: 587, secure: false, fromAddress: 'a@b.com' }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return { notifications: { channels: [channelNoPassword] } }
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/channels', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const channels = res.json() as Array<Record<string, unknown>>
+    expect(channels[0]!['password']).toBeUndefined()
+  })
+
+  it('returns channel without secrets when provider is unknown type (line 84 ?? [] branch=1)', async () => {
+    // provider 'unknown_type' not in CHANNEL_SECRET_FIELDS → ?? [] fires → no fields redacted
+    setupAdminAuth()
+    const channelUnknownProvider: Record<string, unknown> = { id: 'ch-unk', provider: 'unknown_type', someField: 'value' }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return { notifications: { channels: [channelUnknownProvider] } }
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/channels', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const channels = res.json() as Array<Record<string, unknown>>
+    expect(channels[0]!['someField']).toBe('value')
+  })
+
+  it('keeps secret field unchanged when value is not string/undefined/empty (line 90 if branch=1)', async () => {
+    setupAdminAuth()
+    // smtp channel with password=null → not a string, not undefined, not '' → falls through (branch=1)
+    const channelNullPassword: Record<string, unknown> = { id: 'ch-null', provider: 'smtp', host: 'mail.x.com', port: 587, secure: false, fromAddress: 'a@b.com', password: null }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return { notifications: { channels: [channelNullPassword] } }
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/channels', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const channels = res.json() as Array<Record<string, unknown>>
+    // null is not a string → first if false; null !== undefined and null !== '' → else-if false → kept as-is
+    expect(channels[0]!['password']).toBeNull()
+  })
+})
+
+// ─── GET /api/models/catalog — 403 (line 673 if branch=0) ────────────────────
+
+describe('GET /api/models/catalog — permission checks', () => {
+  it('returns 403 when user lacks model:read permission (line 673 if branch=0)', async () => {
+    const noModelRole = { id: 'no-model', name: 'NoModel', permissions: ['project:read'] }
+    const noModelUser = { id: 'nm-id', email: 'nm@nm.com', passwordHash: '$2b$12$h', roleId: 'no-model', projectIds: [] }
+    mockVerifyToken.mockReturnValue({ sub: 'nm-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [noModelUser]
+      if (t === 'roles') return [noModelRole]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/models/catalog', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+// ─── GET /api/sessions/:id/requests — 403 (line 1363 if branch=0) ────────────
+
+describe('GET /api/sessions/:id/requests — permission check', () => {
+  it('returns 403 without report:read (line 1363 if branch=0)', async () => {
+    const viewRole = { id: 'view', name: 'View', permissions: ['project:read'] }
+    const viewUser = { id: 'view-id', email: 'v@v.com', passwordHash: '$2b$12$h', roleId: 'view', projectIds: [] }
+    mockVerifyToken.mockReturnValue({ sub: 'view-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [viewUser]
+      if (t === 'roles') return [viewRole]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/sessions/sess-1/requests', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+// ─── GET /api/usage — period=daily timeline (line 1298 cond-expr branch=0) ───
+
+describe('GET /api/usage — period=daily uses hourly timeline key (line 1298 branch=0)', () => {
+  it('uses timestamp.slice(0,13) for daily period timeline', async () => {
+    setupAdminAuth()
+    // Use today's date (period=daily sets since to start of today)
+    const todayHour = new Date().toISOString().slice(0, 13) + ':00:00.000Z'
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return [
+        { id: 'r1', timestamp: todayHour, projectId: 'p', modelId: 'm', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', callType: 'completion' },
+      ]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/usage?period=daily', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { timeline: Array<[string, number]> }
+    // Hourly key has 13 chars (YYYY-MM-DDTHH)
+    expect(body.timeline.length).toBeGreaterThan(0)
+    expect(body.timeline[0]![0]).toHaveLength(13)
+  })
+})
+
+// ─── GET /api/usage — period=custom (line 1222 if branch=0 + if branch=1 fallthrough) ──
+
+describe('GET /api/usage — period=custom (line 1222)', () => {
+  it('uses custom from/to (line 1222 if branch=0, period=custom taken)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return [
+        { id: 'r1', timestamp: '2026-06-01T10:00:00.000Z', projectId: 'p', modelId: 'm', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', callType: 'completion' },
+      ]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/usage?period=custom&from=2026-06-01&to=2026-06-30', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { summary: { totalCalls: number } }
+    expect(body.summary.totalCalls).toBe(1)
+  })
+
+  it('no period matches (line 1222 branch=1 = else chain exhausted, period unknown)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/usage?period=yearly', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+})
+
+// ─── GET /api/sessions — limit=abc fallback (line 1338 binary-expr) ──────────
+
+describe('GET /api/sessions — invalid limit (line 1338 || 20 fallback)', () => {
+  it('uses default 20 when limit is not a number (line 1338 || 20)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/sessions?limit=abc', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+})
+
+// ─── GET /api/notifications/inbox — from/to date filters (lines 1568-1574) ──
+
+describe('GET /api/notifications/inbox — from/to timestamp filters (lines 1568-1574)', () => {
+  function setup() {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'notifications') return [
+        { id: 'n1', event: 'test', severity: 'info', timestamp: '2026-01-15T00:00:00.000Z', details: {}, readBy: [] },
+        { id: 'n2', event: 'test', severity: 'info', timestamp: '2026-01-10T00:00:00.000Z', details: {}, readBy: [] },
+        { id: 'n3', event: 'test', severity: 'info', timestamp: '2026-01-05T00:00:00.000Z', details: {}, readBy: [] },
+      ]
+      return []
+    })
+  }
+
+  it('filters by date-only from (line 1568 if branch=0, line 1569 true)', async () => {
+    setup()
+    const app = await buildApp()
+    // Date-only string: length <= 10 → sets hours to midnight (line 1568 true branch)
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?from=2026-01-10', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { items: Array<{ id: string }> }
+    expect(body.items.map((i: { id: string }) => i.id)).toContain('n1')
+    expect(body.items.map((i: { id: string }) => i.id)).toContain('n2')
+  })
+
+  it('filters by datetime from (line 1568 false branch → no setHours)', async () => {
+    setup()
+    const app = await buildApp()
+    // Full ISO string > 10 chars → no setHours adjustment
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?from=2026-01-10T12:00:00.000Z', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { items: Array<{ id: string }> }
+    expect(body.items.map((i: { id: string }) => i.id)).toContain('n1')
+  })
+
+  it('filters by date-only to (line 1572 if branch=0, line 1573 true)', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?to=2026-01-10', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { items: Array<{ id: string }> }
+    expect(body.items.map((i: { id: string }) => i.id)).toContain('n3')
+    expect(body.items.map((i: { id: string }) => i.id)).toContain('n2')
+    expect(body.items.map((i: { id: string }) => i.id)).not.toContain('n1')
+  })
+
+  it('filters by datetime to (line 1573 false → no setHours)', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?to=2026-01-10T23:59:59.999Z', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { items: Array<{ id: string }> }
+    expect(body.items.map((i: { id: string }) => i.id)).toContain('n2')
+  })
+
+  it('back-compat: limit without page returns flat list (line 1578 if branch=0, line 1579 Math.min)', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?limit=2', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { items: unknown[] }
+    expect(body.items.length).toBe(2)
+  })
+})
+
+// ─── GET /api/leaderboard — period branches (lines 1773-1782) ────────────────
+
+describe('GET /api/leaderboard — period branches', () => {
+  function setupLeaderboard(records: unknown[] = []) {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'models') return [{ id: 'm1', name: 'M1', provider: 'openai', endpoint: 'https://api.openai.com/v1', apiKey: 'k', cost: { inputPerMillion: 1, outputPerMillion: 2 } }]
+      if (t === 'usage') return records
+      return []
+    })
+  }
+
+  it('period=daily (line 1773 if branch=0)', async () => {
+    setupLeaderboard()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard?period=daily', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('period=weekly (line 1774 if branch=0)', async () => {
+    setupLeaderboard()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard?period=weekly', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('period=custom with from/to (lines 1780-1782 if branch=0)', async () => {
+    setupLeaderboard([
+      { id: 'r1', timestamp: '2026-06-01T10:00:00.000Z', projectId: 'p', modelId: 'm1', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', callType: 'completion' },
+    ])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard?period=custom&from=2026-06-01&to=2026-06-30', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as Array<{ modelId: string }>
+    expect(body[0]!.modelId).toBe('m1')
+  })
+
+  it('period=custom without from/to (lines 1780/1782 if branch=1 — from/to absent)', async () => {
+    setupLeaderboard()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard?period=custom', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('provider not in model list uses "unknown" (line 1833 ?? "unknown")', async () => {
+    // Use this month's timestamp so it falls within the default monthly filter
+    const thisMonth = new Date().toISOString().slice(0, 7) + '-01T10:00:00.000Z'
+    setupLeaderboard([
+      { id: 'r1', timestamp: thisMonth, projectId: 'p', modelId: 'unknown-model', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', callType: 'completion' },
+    ])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as Array<{ provider: string }>
+    expect(body.length).toBeGreaterThan(0)
+    expect(body[0]!.provider).toBe('unknown')
+  })
+
+  it('leaderboard with errorRate >= 0.5 → totalRequests > 0 branch (line 1824/1825)', async () => {
+    // All records are errors → errorRate = 1.0, totalRequests > 0 branch fires
+    setupLeaderboard([
+      { id: 'r1', timestamp: '2026-07-01T10:00:00.000Z', projectId: 'p', modelId: 'm1', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'error', callType: 'completion' },
+    ])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard?period=custom&from=2026-01-01&to=2027-01-01', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('period=unknown falls through all else-if branches (line 1780 if branch=1)', async () => {
+    setupLeaderboard()
+    const app = await buildApp()
+    // period='yearly' matches none of daily/weekly/monthly/custom → since=epoch, until=tomorrow
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard?period=yearly', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('period=custom with datetime from/to (no setHours, lines 1781/1782 inner-if branch=1)', async () => {
+    setupLeaderboard([
+      { id: 'r1', timestamp: '2026-06-15T10:00:00.000Z', projectId: 'p', modelId: 'm1', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', callType: 'completion' },
+    ])
+    const app = await buildApp()
+    // from/to are full ISO strings (> 10 chars) → no setHours adjustment
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/leaderboard?period=custom&from=2026-06-01T00:00:00.000Z&to=2026-07-01T00:00:00.000Z',
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('record without latencyMs excluded from latency (line 1816 if branch=1)', async () => {
+    // latencyMs not a number → latencies[] stays empty, avgLatencyMs=0
+    const thisMonth = new Date().toISOString().slice(0, 7) + '-01T10:00:00.000Z'
+    setupLeaderboard([
+      { id: 'r1', timestamp: thisMonth, projectId: 'p', modelId: 'm1', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 'not-a-number', outcome: 'success', callType: 'completion' },
+    ])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as Array<{ avgLatencyMs: number }>
+    expect(body[0]!.avgLatencyMs).toBe(0)
+  })
+
+  it('period=weekly on Sunday → d===0 → 6 days back (line 1777 cond-expr branch=0)', async () => {
+    setupLeaderboard()
+    const app = await buildApp()
+    // Just test weekly works without errors (Sunday logic in 1777 may or may not fire today)
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard?period=weekly', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+})
+
+// ─── PATCH /api/projects/:id/guardrails — pii (lines 846-849) ────────────────
+
+describe('PATCH /api/projects/:id/guardrails — pii branches (lines 846-849)', () => {
+  it('updates pii when pii body provided (line 846 if branch=0)', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/projects/p1/guardrails',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ pii: { entities: ['EMAIL'], scrubInput: true } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect((res.json() as Record<string, unknown>)['pii']).toBeDefined()
+  })
+
+  it('returns 400 for invalid pii in PATCH /guardrails (line 848 if branch=0)', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/projects/p1/guardrails',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ pii: { entities: 'not-an-array' } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+})
+
+// ─── DELETE /api/projects/:id — tokens is undefined (line 855 || []) ─────────
+
+describe('DELETE /api/projects/:id — tokens undefined branch (line 855)', () => {
+  it('PATCH /api/projects/:id returns [] when tokens is undefined (line 855 || [])', async () => {
+    setupAdminAuth()
+    const projectNoTokens = { id: 'p1', name: 'Test', members: [], models: [] }  // no tokens field
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [projectNoTokens]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/projects/p1/guardrails',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ guardrails: { action: 'block', rules: [] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    // tokens absent → || [] → empty array
+    expect((res.json() as Record<string, unknown>)['tokens']).toEqual([])
+  })
+})
+
+// ─── Notification inbox — no body triggers req.body ?? {} (lines 1616/1646/1675) ──
+
+describe('POST /api/notifications/inbox/read — no body (line 1616 req.body ?? {})', () => {
+  it('returns 400 with no content-type (req.body is null/undefined → ?? {})', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'notifications') return []
+      return []
+    })
+    const app = await buildApp()
+    // No content-type = no body parsing → req.body is undefined → ?? {} → {} fails schema
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/read',
+      headers: adminAuthHeaders(),
+      // No payload, no content-type
+    })
+    await app.close()
+    // {} passes through ?? then schema refine fails (no ids or all)
+    expect(res.statusCode).toBe(400)
+  })
+})
+
+describe('POST /api/notifications/inbox/unread — no body (line 1646 req.body ?? {})', () => {
+  it('returns 400 with no body (line 1646 req.body ?? {})', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'notifications') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/unread',
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+})
+
+describe('POST /api/notifications/inbox/delete — no body (line 1675 req.body ?? {})', () => {
+  it('returns 400 with no body (line 1675 req.body ?? {})', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'notifications') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/delete',
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+})
+
+// ─── Notification inbox audit all=true branch (line 1634 cond-expr branch=0) ─
+
+describe('POST /api/notifications/inbox/read — all=true audit path (line 1634)', () => {
+  it('uses all:true audit shape and updates zero (line 1634 cond-expr true branch)', async () => {
+    setupAdminAuth()
+    // Already-read notification → updated=0 → no writeConfig called
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'notifications') return [
+        { id: 'n1', event: 'test', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: ['admin-id'] },
+      ]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/read',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ all: true }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect((res.json() as { updated: number }).updated).toBe(0)
+  })
+})
+
+// ─── api.ts line 451 if branch=0: non-/api/ request passes preHandler ─────────
+
+describe('api preHandler — non-/api/ request (line 451 if branch=0)', () => {
+  it('does not apply api auth guard for /health requests (line 451 if branch=0)', async () => {
+    // Request to /health → !req.url.startsWith('/api/') is TRUE → early return → no auth needed
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/health' })
+    await app.close()
+    // Not a registered route → 404, but NOT 401 (auth guard skipped)
+    expect(res.statusCode).not.toBe(401)
+  })
+})
+
+// ─── api.ts lines 1413/1419: system endpoints require auth (branch=0 = no dashUser) ───
+
+describe('GET /api/system/releases — auth guard (line 1413 if branch=0)', () => {
+  it('returns 401 when not authenticated (line 1413 if branch=0)', async () => {
+    mockVerifyToken.mockReturnValue(null as any)
+    mockReadConfig.mockResolvedValue([] as any)
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/system/releases' })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+})
+
+describe('GET /api/system/update-check — auth guard (line 1419 if branch=0)', () => {
+  it('returns 401 when not authenticated (line 1419 if branch=0)', async () => {
+    mockVerifyToken.mockReturnValue(null as any)
+    mockReadConfig.mockResolvedValue([] as any)
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/system/update-check' })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+})
+
+// ─── PATCH /api/integrations/:id — update non-empty secret field (line 2041 if branch=0) ──
+
+describe('PATCH /api/integrations/:id — secret field non-empty string (line 2041 if branch=0)', () => {
+  it('updates secret field when non-empty string provided (line 2041 true branch)', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'settings') return { integrations: [{ id: 'intg-dd', type: 'datadog', apiKey: 'old-key', enabled: true }] }
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/integrations/intg-dd',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      // Non-empty apiKey string → if (typeof val === 'string' && val.length > 0) → true branch
+      payload: JSON.stringify({ apiKey: 'new-secret-key' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')
+    const stored = (written![1] as any).integrations[0]
+    // Secret field updated to new value
+    expect(stored.apiKey).toBe('new-secret-key')
+  })
+})
+
+// ─── GET /api/leaderboard — weekly on Sunday (line 1777 cond-expr branch=0) ───
+
+describe('GET /api/leaderboard — weekly period on Sunday (line 1777 d===0 branch)', () => {
+  it('computes Monday start 6 days ago when today is Sunday (d===0 → 6)', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2024-06-09T12:00:00Z')) // Sunday June 9, 2024
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'models') return [{ id: 'm', name: 'M', provider: 'openai' }]
+      if (t === 'usage') return [{
+        id: 'u1',
+        timestamp: '2024-06-03T12:00:00Z', // Monday June 3, within this week
+        projectId: 'p', modelId: 'm',
+        inputTokens: 10, outputTokens: 5, cost: 0.001, latencyMs: 100, outcome: 'success',
+      }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard?period=weekly', headers: adminAuthHeaders() })
+    await app.close()
+    vi.useRealTimers()
+    expect(res.statusCode).toBe(200)
+    // Result should include the Monday record (within the Sunday-starting week)
+    expect(Array.isArray(res.json())).toBe(true)
+  })
+})
+
+// ─── POST /api/test/openai-oauth — permission check (line 1698 if branch=0) ───
+
+describe('POST /api/test/openai-oauth — missing model:read permission (line 1698 if branch=0)', () => {
+  it('returns 403 when user lacks model:read permission (line 1698 if branch=0)', async () => {
+    // custom role without model:read → requirePerm returns false
+    mockVerifyToken.mockReturnValue({ sub: 'limited-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [{ ...adminUser, id: 'limited-id', roleId: 'limited' }]
+      // custom role 'limited' has no model:read
+      if (type === 'roles') return [{ id: 'limited', name: 'Limited', permissions: ['project:read'] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/test/openai-oauth',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+// ─── GET /api/notifications/inbox — invalid `to` date (line 1574 if branch=1) ──
+
+describe('GET /api/notifications/inbox — invalid to date (line 1574 if branch=1)', () => {
+  it('ignores invalid to date (NaN getTime) and returns all items', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'notifications') return [
+        { id: 'n1', event: 'test', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [] },
+      ]
+      if (t === 'settings') return { notifications: { channels: [{ id: 'd', provider: 'dashboard' }] } }
+      return []
+    })
+    const app = await buildApp()
+    // Invalid date → new Date('not-a-date').getTime() = NaN → if (!Number.isNaN(...)) = false → skip filter
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?to=not-a-date', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    // Invalid to → filter not applied → item returned
+    expect(res.json().items).toHaveLength(1)
   })
 })

@@ -201,14 +201,27 @@ describe('buildUpstreamHeaders', () => {
     expect(headers['x-api-key']).toBe('sk-ant')
     expect(headers['authorization']).toBeUndefined()
   })
+
+  it('skips headers with undefined value (line 80 true branch)', () => {
+    const headers = buildUpstreamHeaders(openaiModel, {
+      'x-undefined-header': undefined,
+      'content-type': 'application/json',
+    })
+    expect(headers['x-undefined-header']).toBeUndefined()
+    expect(headers['content-type']).toBe('application/json')
+  })
 })
 
 // ─── passthroughHandler (integration via Fastify inject) ──────────────────────
 
-async function buildApp(project?: ProjectConfig | null) {
+async function buildApp(project?: ProjectConfig | null, parseBinary = false) {
   const app = Fastify({ logger: false })
   app.decorateRequest('project', null as any)
   app.decorateRequest('token', null as any)
+  if (parseBinary) {
+    // Register binary body parser so Buffer body reaches passthroughHandler (line 162)
+    app.addContentTypeParser('application/octet-stream', { parseAs: 'buffer' }, (_req, body, done) => done(null, body))
+  }
   if (project !== undefined) {
     app.addHook('preHandler', async (req: any) => {
       req.project = project
@@ -395,5 +408,107 @@ describe('passthroughHandler', () => {
     vi.unstubAllGlobals()
 
     expect(res.statusCode).toBe(429)
+  })
+
+  it('sends empty reply when upstream body is null (line 202)', async () => {
+    // Response with no body (null) → reply.send() without args (line 202 branch)
+    const mockFetch = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', mockFetch)
+
+    mockReadConfig.mockResolvedValue([openaiModel])
+    const app = await buildApp(testProject)
+    const res = await app.inject({ method: 'POST', url: '/v1/embeddings' })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(res.statusCode).toBe(204)
+  })
+
+  it('returns 502 with generic message when fetch rejects with non-Error (line 178 false branch)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue('socket hang up'))
+
+    mockReadConfig.mockResolvedValue([openaiModel])
+    const app = await buildApp(testProject)
+    const res = await app.inject({ method: 'GET', url: '/v1/files' })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(res.statusCode).toBe(502)
+    expect(res.json().message).toBe('upstream request failed')
+  })
+
+  it('forwards POST request with string body (line 163 branch)', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(
+      new Response('ok', { status: 200, headers: { 'content-type': 'text/plain' } }),
+    )
+    vi.stubGlobal('fetch', mockFetch)
+
+    mockReadConfig.mockResolvedValue([openaiModel])
+    const app = await buildApp(testProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/embeddings',
+      headers: { 'content-type': 'text/plain' },
+      payload: 'raw-string-body',
+    })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(res.statusCode).toBe(200)
+    const [, init] = mockFetch.mock.calls[0] as [string, RequestInit]
+    expect(init.body).toBe('raw-string-body')
+  })
+
+  it('forwards POST request with Buffer body (line 162 branch)', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(
+      new Response('ok', { status: 200, headers: { 'content-type': 'application/octet-stream' } }),
+    )
+    vi.stubGlobal('fetch', mockFetch)
+
+    mockReadConfig.mockResolvedValue([openaiModel])
+    // parseBinary=true adds an octet-stream parser so request.body is a Buffer
+    const app = await buildApp(testProject, true)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/files',
+      headers: { 'content-type': 'application/octet-stream' },
+      payload: Buffer.from('binary data'),
+    })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(res.statusCode).toBe(200)
+    const [, init] = mockFetch.mock.calls[0] as [string, RequestInit]
+    expect(Buffer.isBuffer(init.body)).toBe(true)
+  })
+
+  it('filters hop-by-hop response headers (line 183 if branch=1)', async () => {
+    // upstream returns connection header → hop-by-hop → filtered out (branch=1 of !HOP_BY_HOP_RESPONSE.has(...))
+    // x-custom is NOT hop-by-hop → forwarded (branch=0)
+    const mockFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+          'x-custom': 'keep-me',
+          'connection': 'upstream-keep-alive',
+        },
+      }),
+    )
+    vi.stubGlobal('fetch', mockFetch)
+
+    mockReadConfig.mockResolvedValue([openaiModel])
+    const app = await buildApp(testProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/embeddings',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', input: 'hello' }),
+    })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(res.statusCode).toBe(200)
+    // non-hop-by-hop headers forwarded
+    expect(res.headers['x-custom']).toBe('keep-me')
+    // hop-by-hop 'connection' is filtered — NOT equal to the upstream value
+    expect(res.headers['connection']).not.toBe('upstream-keep-alive')
   })
 })

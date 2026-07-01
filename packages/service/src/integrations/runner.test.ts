@@ -112,6 +112,15 @@ describe('startIntegrationRunner', () => {
     expect(mockWebhook).toHaveBeenCalledOnce();
   });
 
+  it('skips when settings has no integrations field (line 13 ?? [] branch=1)', async () => {
+    // settings has no integrations key → settings.integrations is undefined → ?? [] fires
+    mockReadConfig.mockResolvedValue({});
+    const h = startIntegrationRunner();
+    await tick(h);
+    clearInterval(h);
+    expect(mockSnapshot).not.toHaveBeenCalled();
+  });
+
   it('catches readConfig errors silently', async () => {
     mockReadConfig.mockRejectedValue(new Error('disk error'));
     const h = startIntegrationRunner();

@@ -88,3 +88,22 @@ describe('generateBackupCodes', () => {
     }
   });
 });
+
+import { hashBackupCode } from './totp.js';
+
+describe('hashBackupCode', () => {
+  it('returns a 64-char hex sha-256 hash and is case-insensitive', () => {
+    const hash = hashBackupCode('abcd1234');
+    expect(hash).toMatch(/^[0-9a-f]{64}$/);
+    expect(hash).toBe(hashBackupCode('ABCD1234'));
+  });
+});
+
+describe('getTotpCode — base32 invalid char skip (line 12)', () => {
+  it('ignores invalid base32 chars and still returns a 6-digit code', () => {
+    // '!' is not in B32_ALPHABET → idx === -1 → continue (line 12 true branch)
+    const secretWithInvalid = 'JBSWY3DP!EHPK3PXP';
+    const code = getTotpCode(secretWithInvalid);
+    expect(code).toMatch(/^\d{6}$/);
+  });
+});
