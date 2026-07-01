@@ -518,6 +518,10 @@ export interface Settings {
   telemetry?: TelemetryConfig;
   /** When true, all users must have 2FA enabled to access the dashboard. */
   requireMfa?: boolean;
+  /** Whether to expose the Prometheus-compatible /metrics endpoint (default true) */
+  metricsEnabled?: boolean;
+  /** Optional Bearer token required to access /metrics. Absent means no auth. */
+  prometheusAuthToken?: string | undefined;
 }
 
 export const getSettings = () => request<Settings>('/settings');
