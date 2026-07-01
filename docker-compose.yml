@@ -4,7 +4,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - routerly_data:/data
+      - ./.data/routerly:/data
     environment:
       NODE_ENV: production
       ROUTERLY_HOME: /data
@@ -22,14 +22,54 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
+      - ./.data/prometheus:/prometheus
+      - ./.data/prometheus-token:/etc/prometheus/routerly-token:ro
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
     restart: unless-stopped
-    depends_on:
-      - localrouter
 
-volumes:
-  routerly_data:
-  prometheus_data:
+  otelcollector:
+    image: otel/opentelemetry-collector-contrib:latest
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - ./otel-collector-config.yml:/etc/otelcol-contrib/config.yaml:ro
+    restart: unless-stopped
+
+  influxdb:
+    image: influxdb:2
+    ports:
+      - "8086:8086"
+    volumes:
+      - ./.data/influxdb:/var/lib/influxdb2
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_ORG: routerly
+      DOCKER_INFLUXDB_INIT_BUCKET: metrics
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: routerly-influxdb-token-dev
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: routerly-dev
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./.data/grafana:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: routerly-dev
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  webhook-echo:
+    image: mendhak/http-https-echo:latest
+    ports:
+      - "8888:8080"
+    restart: unless-stopped
+

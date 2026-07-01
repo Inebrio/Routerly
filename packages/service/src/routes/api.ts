@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, createHmac, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import bcrypt from 'bcrypt';
@@ -1956,6 +1956,219 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     } catch (e) {
       return reply.send({ ok: false, message: e instanceof Error ? e.message : String(e) });
     }
+  });
+
+  // ─── Integration CRUD ─────────────────────────────────────────────────────────
+
+  /** Secret fields per integration type — redacted to '' on read, skipped if '' on update. */
+  const INTEGRATION_SECRET_FIELDS: Record<string, string[]> = {
+    prometheus: ['authToken'],
+    otel:       [],
+    datadog:    ['apiKey'],
+    grafana:    ['apiKey'],
+    influxdb:   ['token'],
+    webhook:    ['secret'],
+  };
+
+  function redactIntegration(intg: Record<string, unknown>): Record<string, unknown> {
+    const secrets = INTEGRATION_SECRET_FIELDS[intg['type'] as string] ?? [];
+    const out: Record<string, unknown> = { ...intg };
+    for (const field of secrets) {
+      const v = out[field];
+      if (v && typeof v === 'string' && v.length > 0) {
+        out[field] = REDACT_MARKER;
+      } else if (v === undefined || v === '') {
+        delete out[field];
+      }
+    }
+    return out;
+  }
+
+  const integrationSchema = z.discriminatedUnion('type', [
+    z.object({ type: z.literal('prometheus'), enabled: z.boolean().optional(), authToken: z.string().optional() }).passthrough(),
+    z.object({ type: z.literal('otel'),       enabled: z.boolean().optional(), endpoint: z.string().min(1), protocol: z.enum(['http', 'grpc']), headers: z.record(z.string(), z.string()).optional() }).passthrough(),
+    z.object({ type: z.literal('datadog'),    enabled: z.boolean().optional(), apiKey: z.string().min(1), site: z.enum(['datadoghq.com', 'datadoghq.eu', 'us3.datadoghq.com', 'us5.datadoghq.com', 'ddog-gov.com']) }).passthrough(),
+    z.object({ type: z.literal('grafana'),    enabled: z.boolean().optional(), url: z.string().min(1), username: z.string().min(1), apiKey: z.string().min(1) }).passthrough(),
+    z.object({ type: z.literal('influxdb'),   enabled: z.boolean().optional(), url: z.string().min(1), token: z.string().min(1), org: z.string().min(1), bucket: z.string().min(1) }).passthrough(),
+    z.object({ type: z.literal('webhook'),    enabled: z.boolean().optional(), url: z.string().min(1), secret: z.string().optional(), headers: z.record(z.string(), z.string()).optional() }).passthrough(),
+  ]);
+
+  // ─── GET /api/integrations ────────────────────────────────────────────────────
+  fastify.get('/api/integrations', async (req, reply) => {
+    if (!requirePerm(req, 'settings:write', reply)) return;
+    const settings = await readConfig('settings');
+    const integrations = (settings.integrations ?? []) as unknown as Record<string, unknown>[];
+    return reply.send(integrations.map(redactIntegration));
+  });
+
+  // ─── GET /api/integrations/:id ───────────────────────────────────────────────
+  fastify.get<{ Params: { id: string } }>('/api/integrations/:id', async (req, reply) => {
+    if (!requirePerm(req, 'settings:write', reply)) return;
+    const settings = await readConfig('settings');
+    const integrations = (settings.integrations ?? []) as unknown as Record<string, unknown>[];
+    const intg = integrations.find(i => i['id'] === req.params.id);
+    if (!intg) return reply.status(404).send({ error: `Integration "${req.params.id}" not found` });
+    return reply.send(redactIntegration(intg));
+  });
+
+  // ─── POST /api/integrations ───────────────────────────────────────────────────
+  fastify.post<{ Body: Record<string, unknown> }>('/api/integrations', async (req, reply) => {
+    if (!requirePerm(req, 'settings:write', reply)) return;
+    const parsed = integrationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid integration' });
+    }
+    const intg = { ...parsed.data, id: randomUUID(), enabled: parsed.data.enabled ?? true };
+    const settings = await readConfig('settings');
+    await writeConfig('settings', { ...settings, integrations: [...(settings.integrations ?? []), intg] } as Settings);
+    return reply.status(201).send(redactIntegration(intg as unknown as Record<string, unknown>));
+  });
+
+  // ─── PATCH /api/integrations/:id ─────────────────────────────────────────────
+  fastify.patch<{ Params: { id: string }; Body: Record<string, unknown> }>('/api/integrations/:id', async (req, reply) => {
+    if (!requirePerm(req, 'settings:write', reply)) return;
+    const settings = await readConfig('settings');
+    const integrations = ((settings.integrations ?? []) as unknown) as Record<string, unknown>[];
+    const idx = integrations.findIndex(i => i['id'] === req.params.id);
+    if (idx === -1) return reply.status(404).send({ error: `Integration "${req.params.id}" not found` });
+    const stored = integrations[idx]!;
+    const secrets = INTEGRATION_SECRET_FIELDS[stored['type'] as string] ?? [];
+    const body = req.body ?? {};
+    const merged: Record<string, unknown> = { ...stored };
+    for (const [key, val] of Object.entries(body)) {
+      if (key === 'id' || key === 'type') continue;
+      if (secrets.includes(key)) {
+        if (typeof val === 'string' && val.length > 0) merged[key] = val;
+      } else {
+        merged[key] = val;
+      }
+    }
+    const updated = [...integrations];
+    updated[idx] = merged;
+    await writeConfig('settings', { ...settings, integrations: updated } as unknown as Settings);
+    return reply.send(redactIntegration(merged));
+  });
+
+  // ─── DELETE /api/integrations/:id ────────────────────────────────────────────
+  fastify.delete<{ Params: { id: string } }>('/api/integrations/:id', async (req, reply) => {
+    if (!requirePerm(req, 'settings:write', reply)) return;
+    const settings = await readConfig('settings');
+    const integrations = settings.integrations ?? [];
+    const filtered = integrations.filter(i => (i as unknown as { id: string }).id !== req.params.id);
+    if (filtered.length === integrations.length) {
+      return reply.status(404).send({ error: `Integration "${req.params.id}" not found` });
+    }
+    await writeConfig('settings', { ...settings, integrations: filtered } as Settings);
+    return reply.status(204).send();
+  });
+
+  // ─── POST /api/integrations/:id/test ─────────────────────────────────────────
+  fastify.post<{ Params: { id: string } }>('/api/integrations/:id/test', async (req, reply) => {
+    if (!requirePerm(req, 'settings:write', reply)) return;
+    const settings = await readConfig('settings');
+    const intg = (settings.integrations ?? []).find(i => (i as unknown as { id: string }).id === req.params.id) as Record<string, unknown> | undefined;
+    if (!intg) return reply.status(404).send({ error: `Integration "${req.params.id}" not found` });
+
+    const type = intg['type'] as string;
+
+    if (type === 'prometheus') {
+      const enabled = intg['enabled'] as boolean | undefined;
+      return reply.send(enabled
+        ? { ok: true,  message: 'Prometheus metrics endpoint is enabled.' }
+        : { ok: false, message: 'Integration is disabled.' });
+    }
+
+    if (type === 'otel') {
+      const endpoint = intg['endpoint'] as string;
+      const headers = (intg['headers'] as Record<string, string> | undefined) ?? {};
+      try {
+        const res = await fetch(`${endpoint}/v1/metrics`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...headers },
+          body: JSON.stringify({ resourceMetrics: [] }),
+        });
+        return reply.send(res.ok
+          ? { ok: true,  message: 'OTEL endpoint is reachable.' }
+          : { ok: false, message: `OTEL endpoint returned HTTP ${res.status}` });
+      } catch (err) {
+        return reply.send({ ok: false, message: (err as Error).message });
+      }
+    }
+
+    if (type === 'datadog') {
+      const apiKey = intg['apiKey'] as string;
+      const site   = intg['site']   as string;
+      try {
+        const res = await fetch(`https://api.${site}/api/v1/validate`, {
+          headers: { 'DD-API-KEY': apiKey },
+        });
+        if (res.status === 200)  return reply.send({ ok: true,  message: 'Datadog API key is valid.' });
+        if (res.status === 403)  return reply.send({ ok: false, message: 'Invalid Datadog API key.' });
+        return reply.send({ ok: false, message: `Datadog API returned HTTP ${res.status}` });
+      } catch (err) {
+        return reply.send({ ok: false, message: (err as Error).message });
+      }
+    }
+
+    if (type === 'grafana') {
+      const url      = intg['url']      as string;
+      const username = intg['username'] as string;
+      const apiKey   = intg['apiKey']   as string;
+      const basicAuth = Buffer.from(`${username}:${apiKey}`).toString('base64');
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-protobuf',
+            'X-Prometheus-Remote-Write-Version': '0.1.0',
+            'Authorization': `Basic ${basicAuth}`,
+          },
+          body: '',
+        });
+        // 400/415 means endpoint exists but rejects empty payload — still reachable
+        const reachable = res.ok || res.status === 400 || res.status === 415;
+        return reply.send(reachable
+          ? { ok: true,  message: 'Grafana remote_write endpoint is reachable.' }
+          : { ok: false, message: `Grafana endpoint returned HTTP ${res.status}` });
+      } catch (err) {
+        return reply.send({ ok: false, message: (err as Error).message });
+      }
+    }
+
+    if (type === 'influxdb') {
+      const url = intg['url'] as string;
+      try {
+        const res = await fetch(`${url}/health`);
+        if (!res.ok) return reply.send({ ok: false, message: `InfluxDB health check returned HTTP ${res.status}` });
+        const body = await res.json() as { status?: string };
+        return reply.send(body.status === 'pass'
+          ? { ok: true,  message: 'InfluxDB is healthy.' }
+          : { ok: false, message: `InfluxDB health status: ${body.status ?? 'unknown'}` });
+      } catch (err) {
+        return reply.send({ ok: false, message: (err as Error).message });
+      }
+    }
+
+    if (type === 'webhook') {
+      const url    = intg['url']    as string;
+      const secret = intg['secret'] as string | undefined;
+      const headers = (intg['headers'] as Record<string, string> | undefined) ?? {};
+      const payload = JSON.stringify({ type: 'test', source: 'routerly' });
+      const reqHeaders: Record<string, string> = { 'Content-Type': 'application/json', ...headers };
+      if (secret) {
+        reqHeaders['X-Routerly-Signature'] = `sha256=${createHmac('sha256', secret).update(payload).digest('hex')}`;
+      }
+      try {
+        const res = await fetch(url, { method: 'POST', headers: reqHeaders, body: payload });
+        return reply.send(res.ok
+          ? { ok: true,  message: 'Webhook responded successfully.' }
+          : { ok: false, message: `Webhook returned HTTP ${res.status}` });
+      } catch (err) {
+        return reply.send({ ok: false, message: (err as Error).message });
+      }
+    }
+
+    return reply.status(400).send({ error: `Unknown integration type: ${type}` });
   });
 
   // ─── GET /api/traces/:id ─────────────────────────────────────────────────────

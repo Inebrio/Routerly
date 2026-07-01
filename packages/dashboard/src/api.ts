@@ -405,8 +405,8 @@ export interface UsageRecord {
   piiRedacted?: string[];
 }
 
-import type { UsageByModelEntry } from '@routerly/shared';
-export type { UsageByModelEntry };
+import type { UsageByModelEntry, Integration, IntegrationType } from '@routerly/shared';
+export type { UsageByModelEntry, Integration, IntegrationType };
 
 export interface UsageStats {
   summary: { totalCost: number; totalCalls: number; successCalls: number; errorCalls: number; routingCalls: number; completionCalls: number; routingCost: number; completionCost: number; guardrailCalls?: number; guardrailCost?: number; blockedCalls?: number };
@@ -731,6 +731,23 @@ export interface EndUser {
 export const getEndUsers = (projectId: string) =>
   request<{ users: EndUser[] }>(`/end-users?projectId=${encodeURIComponent(projectId)}`)
     .then(r => r.users);
+
+// ── Integrations ──────────────────────────────────────────────────────────────
+
+export const getIntegrations = () =>
+  request<Integration[]>('/integrations');
+
+export const createIntegration = (body: Record<string, unknown>) =>
+  request<Integration>('/integrations', { method: 'POST', body: JSON.stringify(body) });
+
+export const updateIntegration = (id: string, patch: Record<string, unknown>) =>
+  request<Integration>(`/integrations/${id}`, { method: 'PATCH', body: JSON.stringify(patch) });
+
+export const deleteIntegration = (id: string) =>
+  request<void>(`/integrations/${id}`, { method: 'DELETE' });
+
+export const testIntegration = (id: string) =>
+  request<{ ok: boolean; message: string }>(`/integrations/${id}/test`, { method: 'POST' });
 
 export const getAuditLog = (params?: { userId?: string; action?: string; result?: string; from?: string; to?: string; page?: number; pageSize?: number }) => {
   const q = new URLSearchParams();

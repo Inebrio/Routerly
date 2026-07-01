@@ -137,6 +137,114 @@ See [Concepts: Notifications — Cooldowns](../concepts/notifications.md#cooldow
 
 ---
 
+## Integrations Tab {#integrations-tab}
+
+Export Routerly metrics to external monitoring and observability systems. Integrations push metrics every 60 seconds to your chosen platform.
+
+Supports: **Prometheus** (pull), **OpenTelemetry**, **Datadog**, **Grafana Cloud**, **InfluxDB**, and **Webhook**.
+
+The Integrations tab provides a **management interface** with a list of configured integrations and options to create, edit, test, enable/disable, and delete them.
+
+### Integration List
+
+The list displays all configured integrations in a table with:
+- **Name** — friendly label
+- **Type** — integration provider (Prometheus, Datadog, OpenTelemetry, etc.)
+- **Status** — enabled/disabled toggle
+- **Details** — endpoint, URL, or key identifier (truncated for readability)
+- **Actions** — buttons to edit, test, and delete
+
+Click a row to expand inline details (endpoint, protocol, headers, etc. depending on type).
+
+![Integrations tab showing a configured Prometheus integration with enabled toggle, test button, and remove button](./screenshot-integrations.png)
+
+### Adding an Integration
+
+1. Click **+ Add Integration** to open the create form
+2. Select the integration **Type**: `Prometheus`, `OpenTelemetry`, `Datadog`, `Grafana Cloud`, `InfluxDB`, or `Webhook`
+3. Enter a friendly **Name** (e.g. "Production Datadog")
+4. Fill in **type-specific configuration**:
+
+   **Prometheus** (pull-based, no push):
+   - **Auth Token** (optional) — if Routerly's `/metrics` endpoint requires bearer authentication
+
+   **OpenTelemetry** (push):
+   - **Endpoint URL** (required) — e.g. `http://localhost:4318/v1/metrics`
+   - **Protocol** (required) — `http` or `grpc`
+   - **Headers** (optional) — one per line, format `Key: Value` (e.g. `Authorization: Bearer token`)
+
+   **Datadog** (push):
+   - **API Key** (required) — your Datadog API key
+   - **Site** (required) — `datadoghq.com` (US East), `datadoghq.eu` (EU), `us3.datadoghq.com`, `us5.datadoghq.com`, or `ddog-gov.com`
+
+   **Grafana Cloud** (push):
+   - **Remote Write URL** (required) — Prometheus remote_write endpoint from your Grafana Cloud instance
+   - **Username** (required) — numeric ID from Grafana Cloud
+   - **API Key** (required) — your Grafana Cloud API key
+
+   **InfluxDB** (push):
+   - **URL** (required) — e.g. `http://localhost:8086`
+   - **Token** (required) — InfluxDB API token
+   - **Organization** (required) — org name in InfluxDB
+   - **Bucket** (required) — target bucket for metrics
+
+   **Webhook** (push):
+   - **URL** (required) — HTTPS endpoint to receive metric POST requests
+   - **Secret** (optional) — if set, Routerly signs each request with HMAC-SHA256 in the `X-Routerly-Signature` header
+   - **Headers** (optional) — custom headers to include with each request
+
+5. Check the **Enabled** toggle to activate immediately upon creation
+6. Click **Create Integration**
+7. Use **Test** to verify connectivity before relying on it for production metrics
+
+### Editing an Integration
+
+Click the **Edit** button on an integration row to open the edit page. You can change:
+- **Name** — friendly label
+- **Enabled** toggle — pause/resume without deleting
+- **Type-specific config** — provider credentials and settings. Secret fields (API keys, tokens, auth token, secret) show as masked (`***`) when present; clearing the field will leave it unchanged. To update a secret, re-enter it in the text field.
+
+After making changes, click **Update Integration** to save.
+
+### Testing an Integration
+
+On the list or edit page, click **Test**. Routerly verifies connectivity to the external system and sends a test request if applicable.
+
+- **Prometheus** — test is a no-op (always succeeds; Prometheus pulls metrics from `/metrics`, so outbound connectivity is not checked)
+- **Push types** — sends a real metrics payload and returns success or error details
+
+A toast notification shows the result immediately.
+
+### Enabling and Disabling
+
+Use the **Enabled** toggle on the list view to pause metric export to an integration without deleting it. Disabled integrations do not receive metric pushes.
+
+### Removing an Integration
+
+Click the **Delete** button on a row. You will be asked to confirm deletion.
+
+### Metrics Exported
+
+All push-type integrations (OpenTelemetry, Datadog, Grafana, InfluxDB, Webhook) receive the same metrics every 60 seconds:
+
+| Metric | Type | Dimensions | Description |
+|--------|------|-----------|-------------|
+| `routerly_requests_total` | Counter | project, model | Total request count by project and model |
+| `routerly_tokens_total` | Counter | type (input/output), project, model | Total tokens consumed |
+| `routerly_cost_usd_total` | Gauge | project, model | Estimated USD cost by project and model |
+| `routerly_request_duration_p50_ms` | Gauge | project | Median request latency per project |
+| `routerly_request_duration_p95_ms` | Gauge | project | 95th percentile latency per project |
+| `routerly_budget_used_ratio` | Gauge | project | Budget consumption ratio (0–1) per project |
+
+Each platform receives metrics in its native format:
+- **OpenTelemetry** — OTLP JSON or gRPC
+- **Datadog** — Datadog Series API v2
+- **Grafana** — Prometheus remote_write format
+- **InfluxDB** — InfluxDB v2 line protocol
+- **Webhook** — JSON POST with metric snapshot
+
+---
+
 ## About Tab
 
 ### Application

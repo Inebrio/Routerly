@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import Fastify from 'fastify'
 
 vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn() }))
@@ -6814,5 +6814,430 @@ describe('GET /api/leaderboard', () => {
     const res = await app.inject({ method: 'GET', url: '/api/leaderboard' })
     await app.close()
     expect(res.statusCode).toBe(401)
+  })
+})
+
+// ─── /api/integrations CRUD ───────────────────────────────────────────────────
+
+const prometheusIntegration = {
+  id: 'intg-prom',
+  type: 'prometheus',
+  enabled: true,
+  authToken: 'prom-secret',
+}
+
+const datadogIntegration = {
+  id: 'intg-dd',
+  type: 'datadog',
+  enabled: true,
+  apiKey: 'dd-api-key',
+  site: 'datadoghq.com',
+}
+
+function setupIntegrations(integrations: unknown[] = [prometheusIntegration]) {
+  mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+  mockReadConfig.mockImplementation(async (type: string) => {
+    if (type === 'users') return [adminUser]
+    if (type === 'roles') return []
+    if (type === 'settings') return { integrations }
+    return []
+  })
+  mockWriteConfig.mockResolvedValue(undefined)
+}
+
+describe('GET /api/integrations', () => {
+  it('returns empty array when no integrations', async () => {
+    setupIntegrations([])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/integrations', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toEqual([])
+  })
+
+  it('returns integrations with secrets redacted', async () => {
+    setupIntegrations([prometheusIntegration, datadogIntegration])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/integrations', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const list = res.json() as Array<Record<string, unknown>>
+    expect(list).toHaveLength(2)
+    expect(list[0]!['authToken']).toBe('********')
+    expect(list[1]!['apiKey']).toBe('********')
+  })
+
+  it('returns 403 without settings:write', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [{ ...adminUser, id: 'viewer-id', roleId: 'viewer' }]
+      if (type === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/integrations', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('returns 401 without auth', async () => {
+    mockVerifyToken.mockReturnValue(null as any)
+    mockReadConfig.mockResolvedValue([] as any)
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/integrations' })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+})
+
+describe('GET /api/integrations/:id', () => {
+  it('returns redacted integration by id', async () => {
+    setupIntegrations([prometheusIntegration])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/integrations/intg-prom', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const intg = res.json() as Record<string, unknown>
+    expect(intg['id']).toBe('intg-prom')
+    expect(intg['authToken']).toBe('********')
+  })
+
+  it('returns 404 for unknown id', async () => {
+    setupIntegrations([])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/integrations/no-such', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+    expect((res.json() as { error: string }).error).toMatch(/no-such/)
+  })
+
+  it('returns 403 without settings:write', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [{ ...adminUser, id: 'viewer-id', roleId: 'viewer' }]
+      if (type === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/integrations/intg-prom', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+describe('POST /api/integrations', () => {
+  it('creates a prometheus integration and assigns id', async () => {
+    setupIntegrations([])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/integrations',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ type: 'prometheus', authToken: 'my-token' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const body = res.json() as Record<string, unknown>
+    expect(body['id']).toBeDefined()
+    expect(body['type']).toBe('prometheus')
+    // authToken redacted in response
+    expect(body['authToken']).toBe('********')
+    // but stored with actual value
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')
+    const stored = (written![1] as any).integrations as Array<Record<string, unknown>>
+    expect(stored[0]!['authToken']).toBe('my-token')
+  })
+
+  it('creates a datadog integration and redacts apiKey in response', async () => {
+    setupIntegrations([])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/integrations',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ type: 'datadog', apiKey: 'secret-key', site: 'datadoghq.com' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const body = res.json() as Record<string, unknown>
+    expect(body['apiKey']).toBe('********')
+  })
+
+  it('returns 400 for missing required fields', async () => {
+    setupIntegrations([])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/integrations',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ type: 'otel' }), // missing endpoint and protocol
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('returns 403 without settings:write', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [{ ...adminUser, id: 'viewer-id', roleId: 'viewer' }]
+      if (type === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/integrations',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ type: 'prometheus' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('returns 401 without auth', async () => {
+    mockVerifyToken.mockReturnValue(null as any)
+    mockReadConfig.mockResolvedValue([] as any)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/integrations',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ type: 'prometheus' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+})
+
+describe('PATCH /api/integrations/:id', () => {
+  it('updates enabled field', async () => {
+    setupIntegrations([{ ...prometheusIntegration }])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/integrations/intg-prom',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ enabled: false }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as Record<string, unknown>
+    expect(body['enabled']).toBe(false)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')
+    const stored = (written![1] as any).integrations as Array<Record<string, unknown>>
+    expect(stored[0]!['enabled']).toBe(false)
+  })
+
+  it('skips empty secret field (keeps existing value)', async () => {
+    setupIntegrations([{ ...prometheusIntegration }])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/integrations/intg-prom',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ enabled: true, authToken: '' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')
+    const stored = (written![1] as any).integrations as Array<Record<string, unknown>>
+    expect(stored[0]!['authToken']).toBe('prom-secret')
+  })
+
+  it('returns 404 for unknown integration', async () => {
+    setupIntegrations([])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/integrations/nope',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ enabled: false }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('returns 403 without settings:write', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [{ ...adminUser, id: 'viewer-id', roleId: 'viewer' }]
+      if (type === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/integrations/intg-prom',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ enabled: false }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('returns 401 without auth', async () => {
+    mockVerifyToken.mockReturnValue(null as any)
+    mockReadConfig.mockResolvedValue([] as any)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/integrations/intg-prom',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ enabled: false }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+})
+
+describe('DELETE /api/integrations/:id', () => {
+  it('removes the integration and returns 204', async () => {
+    setupIntegrations([{ ...prometheusIntegration }])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/integrations/intg-prom', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(204)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')
+    expect((written![1] as any).integrations).toHaveLength(0)
+  })
+
+  it('returns 404 for unknown integration', async () => {
+    setupIntegrations([])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/integrations/no-such', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('returns 403 without settings:write', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [{ ...adminUser, id: 'viewer-id', roleId: 'viewer' }]
+      if (type === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/integrations/intg-prom', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('returns 401 without auth', async () => {
+    mockVerifyToken.mockReturnValue(null as any)
+    mockReadConfig.mockResolvedValue([] as any)
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/integrations/intg-prom' })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+})
+
+describe('POST /api/integrations/:id/test', () => {
+  const mockFetch = vi.fn()
+  beforeEach(() => { vi.stubGlobal('fetch', mockFetch) })
+  afterEach(() => { vi.unstubAllGlobals() })
+
+  it('returns 404 when integration not found', async () => {
+    setupIntegrations([])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/no-such/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('returns 403 without settings:write', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [{ ...adminUser, id: 'viewer-id', roleId: 'viewer' }]
+      if (type === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-prom/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('returns 401 without auth', async () => {
+    mockVerifyToken.mockReturnValue(null as any)
+    mockReadConfig.mockResolvedValue([] as any)
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-prom/test' })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('prometheus enabled → ok: true', async () => {
+    setupIntegrations([{ ...prometheusIntegration, enabled: true }])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-prom/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: true })
+  })
+
+  it('prometheus disabled → ok: false', async () => {
+    setupIntegrations([{ ...prometheusIntegration, enabled: false }])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-prom/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: false })
+  })
+
+  it('otel: fetch 200 → ok: true', async () => {
+    const otel = { id: 'intg-otel', type: 'otel', enabled: true, endpoint: 'http://otel:4318', protocol: 'http' }
+    setupIntegrations([otel])
+    mockFetch.mockResolvedValue({ ok: true, status: 200 })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-otel/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: true })
+    expect(mockFetch).toHaveBeenCalledWith('http://otel:4318/v1/metrics', expect.objectContaining({ method: 'POST' }))
+  })
+
+  it('otel: fetch 500 → ok: false', async () => {
+    const otel = { id: 'intg-otel', type: 'otel', enabled: true, endpoint: 'http://otel:4318', protocol: 'http' }
+    setupIntegrations([otel])
+    mockFetch.mockResolvedValue({ ok: false, status: 500 })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-otel/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: false, message: 'OTEL endpoint returned HTTP 500' })
+  })
+
+  it('datadog: fetch 200 → ok: true', async () => {
+    setupIntegrations([datadogIntegration])
+    mockFetch.mockResolvedValue({ ok: true, status: 200 })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-dd/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: true })
+  })
+
+  it('datadog: fetch 403 → ok: false with message', async () => {
+    setupIntegrations([datadogIntegration])
+    mockFetch.mockResolvedValue({ ok: false, status: 403 })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-dd/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: false, message: 'Invalid Datadog API key.' })
+  })
+
+  it('influxdb: health pass → ok: true', async () => {
+    const influx = { id: 'intg-influx', type: 'influxdb', enabled: true, url: 'http://influx:8086', token: 't', org: 'o', bucket: 'b' }
+    setupIntegrations([influx])
+    mockFetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ status: 'pass' }) })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-influx/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: true })
+  })
+
+  it('webhook: fetch 200 → ok: true', async () => {
+    const wh = { id: 'intg-wh', type: 'webhook', enabled: true, url: 'https://example.com/hook' }
+    setupIntegrations([wh])
+    mockFetch.mockResolvedValue({ ok: true, status: 200 })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-wh/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: true })
+    expect(mockFetch).toHaveBeenCalledWith('https://example.com/hook', expect.objectContaining({ method: 'POST' }))
   })
 })

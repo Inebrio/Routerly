@@ -420,6 +420,70 @@ export type Permission =
   | 'role:write'
   | 'audit:read';
 
+// ─── Integration types ────────────────────────────────────────────────────────
+
+export interface PrometheusIntegration {
+  id: string;
+  type: 'prometheus';
+  enabled: boolean;
+  authToken?: string;
+}
+
+export interface OtelIntegration {
+  id: string;
+  type: 'otel';
+  enabled: boolean;
+  endpoint: string;
+  protocol: 'http' | 'grpc';
+  headers?: Record<string, string>;
+}
+
+export interface DatadogIntegration {
+  id: string;
+  type: 'datadog';
+  enabled: boolean;
+  apiKey: string;
+  site: 'datadoghq.com' | 'datadoghq.eu' | 'us3.datadoghq.com' | 'us5.datadoghq.com' | 'ddog-gov.com';
+}
+
+export interface GrafanaIntegration {
+  id: string;
+  type: 'grafana';
+  enabled: boolean;
+  url: string;
+  username: string;
+  apiKey: string;
+}
+
+export interface InfluxDBIntegration {
+  id: string;
+  type: 'influxdb';
+  enabled: boolean;
+  url: string;
+  token: string;
+  org: string;
+  bucket: string;
+}
+
+export interface WebhookIntegration {
+  id: string;
+  type: 'webhook';
+  enabled: boolean;
+  url: string;
+  secret?: string;
+  headers?: Record<string, string>;
+}
+
+export type Integration =
+  | PrometheusIntegration
+  | OtelIntegration
+  | DatadogIntegration
+  | GrafanaIntegration
+  | InfluxDBIntegration
+  | WebhookIntegration;
+
+export type IntegrationType = Integration['type'];
+
 export interface TelemetryConfig {
   /** Whether the user has opted in to anonymous install metrics */
   enabled: boolean;
@@ -456,6 +520,8 @@ export interface Settings {
   telemetry?: TelemetryConfig;
   /** When true, all users must enroll in and pass 2FA before accessing the API */
   requireMfa?: boolean;
+  /** Configured integrations (metrics exporters, webhooks, etc.) */
+  integrations?: Integration[];
 }
 
 // ─── Update info ─────────────────────────────────────────────────────────────
