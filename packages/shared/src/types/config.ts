@@ -137,13 +137,6 @@ export interface ModelConfig {
   capabilities?: ModelCapabilities;
   /** Request timeout in milliseconds (default: 60000) */
   timeout?: number;
-  /**
-   * Provider-native prompt caching mode (#97).
-   * - "auto": inject cache_control at optimal breakpoint (Anthropic only)
-   * - "passthrough": forward client cache_control as-is (default)
-   * - "disabled": strip all cache_control markers before forwarding
-   */
-  promptCaching?: 'auto' | 'passthrough' | 'disabled';
 }
 
 export interface ProjectModelRef {
@@ -481,6 +474,8 @@ export interface Settings {
   channel?: string;
   /** Whether to expose the Prometheus-compatible /metrics endpoint (default true) */
   metricsEnabled?: boolean;
+  /** Optional Bearer token required to access /metrics. Absent means no auth. */
+  prometheusAuthToken?: string | undefined;
   /** Anonymous install metrics opt-in. Absent means the user has not been asked yet. */
   telemetry?: TelemetryConfig;
   /** Org/team spend groups for the hierarchical spend-limit cascade (#82) */

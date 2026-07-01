@@ -511,27 +511,5 @@ Examples:
       console.log(chalk.gray(`\n${entries.length} model${entries.length !== 1 ? 's' : ''} shown. ★ = configured in Routerly.`));
     });
 
-  // ── model set-caching ──
-  cmd.command('set-caching <modelId> <mode>')
-    .description('Set prompt caching mode for a model (auto | passthrough | disabled)')
-    .action(async (modelId: string, mode: string) => {
-      const valid = ['auto', 'passthrough', 'disabled'];
-      if (!valid.includes(mode)) {
-        console.error(chalk.red(`Invalid mode "${mode}". Use: ${valid.join(' | ')}`));
-        process.exit(1);
-      }
-      try {
-        await api<void>('PATCH', `/api/models/${encodeURIComponent(modelId)}`, { promptCaching: mode });
-        console.log(chalk.green(`Prompt caching for "${modelId}" set to "${mode}".`));
-      } catch (err) {
-        if (err instanceof ApiError && err.status === 404) {
-          console.error(chalk.red(`Model "${modelId}" not found.`));
-        } else {
-          console.error(chalk.red(`Error: ${(err as Error).message}`));
-        }
-        process.exit(1);
-      }
-    });
-
   return cmd;
 }
