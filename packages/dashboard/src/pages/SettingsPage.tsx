@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, Globe, BarChart2, Bell, Users } from 'lucide-react';
+import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, Globe, BarChart2, Bell, Users, GitBranch, Activity, TrendingUp, Database, Webhook, Dog } from 'lucide-react';
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
-import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases, getRoles, getUsers, ALL_PERMISSIONS } from '../api';
-import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, Permission } from '../api';
+import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases, getRoles, getUsers, ALL_PERMISSIONS, getIntegrations, createIntegration, updateIntegration, deleteIntegration, testIntegration } from '../api';
+import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, Permission, Integration, IntegrationType } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MultiSelect } from '../components/MultiSelect';
 import { NOTIFICATION_EVENTS } from '@routerly/shared';
@@ -80,94 +80,6 @@ function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: 
             {saving && t?.enabled ? <><div className="spinner" style={{ width: 11, height: 11 }} /> Saving…</> : 'Disable'}
           </button>
         </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Prometheus section (self-saving) ─────────────────────────────────────────
-
-function PrometheusSection({ settings, onSaved }: { settings: Settings; onSaved: (s: Settings) => void }) {
-  const [enabled, setEnabled] = useState(settings.metricsEnabled !== false);
-  const [token, setToken] = useState(settings.prometheusAuthToken ?? '');
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState('');
-
-  async function save(patch: Partial<Settings>) {
-    setSaving(true); setSaved(false); setError('');
-    try {
-      const updated = await updateSettings(patch);
-      onSaved(updated);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function handleToggle(val: boolean) {
-    setEnabled(val);
-    void save({ metricsEnabled: val });
-  }
-
-  function handleTokenSave(e: React.FormEvent) {
-    e.preventDefault();
-    const t = token.trim();
-    // ponytail: cast needed because exactOptionalPropertyTypes bars `string | undefined` in Partial<Settings>
-    void save({ prometheusAuthToken: t || undefined });
-  }
-
-  return (
-    <div style={{ marginBottom: 28 }}>
-      <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-        <BarChart2 size={13} /> Prometheus Metrics
-      </h3>
-      <div style={{ padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-elevated)' }}>
-        <p style={{ fontSize: '0.83rem', color: 'var(--text-primary)', margin: '0 0 4px' }}>
-          Expose <code>/metrics</code> in Prometheus text format. Set a token to require Bearer auth on the endpoint.
-        </p>
-        {error && <p style={{ fontSize: '0.78rem', color: 'var(--error, #e53e3e)', margin: '0 0 10px' }}>{error}</p>}
-        {saved && <p style={{ fontSize: '0.78rem', color: '#22c55e', margin: '0 0 10px' }}>Saved.</p>}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14 }}>
-          <button
-            type="button"
-            className={`btn btn-sm ${enabled ? 'btn-primary' : 'btn-secondary'}`}
-            disabled={saving || enabled}
-            onClick={() => handleToggle(true)}
-            style={{ fontSize: '0.8rem' }}
-          >
-            {saving && !enabled ? <><div className="spinner" style={{ width: 11, height: 11 }} /> Saving…</> : 'Enable'}
-          </button>
-          <button
-            type="button"
-            className={`btn btn-sm ${!enabled ? 'btn-primary' : 'btn-secondary'}`}
-            disabled={saving || !enabled}
-            onClick={() => handleToggle(false)}
-            style={{ fontSize: '0.8rem' }}
-          >
-            {saving && enabled ? <><div className="spinner" style={{ width: 11, height: 11 }} /> Saving…</> : 'Disable'}
-          </button>
-        </div>
-        <form onSubmit={handleTokenSave} style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-          <div style={{ flex: 1 }}>
-            <label className="form-label" htmlFor="prom-token">Bearer Token <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
-            <input
-              id="prom-token"
-              className="form-input"
-              type="password"
-              placeholder="Leave empty for open access"
-              value={token}
-              onChange={e => setToken(e.target.value)}
-              style={{ margin: 0 }}
-            />
-          </div>
-          <button type="submit" className="btn btn-secondary" disabled={saving} style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
-            {saving ? <><div className="spinner" style={{ width: 11, height: 11 }} /> Saving…</> : 'Save Token'}
-          </button>
-        </form>
       </div>
     </div>
   );
@@ -317,11 +229,6 @@ export function SettingsGeneralTab() {
       </div>
 
       <TelemetrySection
-        settings={settings!}
-        onSaved={updated => setSettings(updated)}
-      />
-
-      <PrometheusSection
         settings={settings!}
         onSaved={updated => setSettings(updated)}
       />
@@ -1027,6 +934,508 @@ export function SettingsNotificationsTab() {
   );
 }
 
+// ── Integrations tab ─────────────────────────────────────────────────────────
+
+const INTEGRATION_TYPES: Array<{ type: IntegrationType; label: string; description: string; Icon: React.ElementType }> = [
+  { type: 'prometheus', label: 'Prometheus',     description: 'pull — exposes /metrics',      Icon: BarChart2   },
+  { type: 'otel',       label: 'OpenTelemetry',  description: 'push — OTLP HTTP',             Icon: GitBranch   },
+  { type: 'datadog',    label: 'Datadog',         description: 'push — metrics API',           Icon: Dog         },
+  { type: 'grafana',    label: 'Grafana Cloud',   description: 'push — remote_write',          Icon: TrendingUp  },
+  { type: 'influxdb',   label: 'InfluxDB',        description: 'push — line protocol',         Icon: Database    },
+  { type: 'webhook',    label: 'Webhook',          description: 'push — HTTP POST JSON',        Icon: Webhook     },
+];
+
+const DATADOG_SITES = ['datadoghq.com', 'datadoghq.eu', 'us3.datadoghq.com', 'us5.datadoghq.com', 'ddog-gov.com'] as const;
+
+/** Convert Record<string, string> to "key: value\nkey: value" for textarea display */
+function headersToText(h?: Record<string, string>): string {
+  if (!h) return '';
+  return Object.entries(h).map(([k, v]) => `${k}: ${v}`).join('\n');
+}
+
+/** Parse "key: value" lines back to Record<string, string> */
+function textToHeaders(text: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const line of text.split('\n')) {
+    const idx = line.indexOf(':');
+    if (idx < 1) continue;
+    const k = line.slice(0, idx).trim();
+    const v = line.slice(idx + 1).trim();
+    if (k) result[k] = v;
+  }
+  return result;
+}
+
+function IntegrationIcon({ type, size = 14 }: { type: IntegrationType; size?: number }) {
+  const Icon: React.ElementType = INTEGRATION_TYPES.find(t => t.type === type)?.Icon ?? Activity;
+  return <Icon size={size} />;
+}
+
+function integrationFormFields(
+  type: IntegrationType,
+  form: Record<string, unknown>,
+  onChange: (patch: Record<string, unknown>) => void,
+): React.ReactNode {
+  switch (type) {
+    case 'prometheus':
+      return (
+        <div className="form-group">
+          <label className="form-label">Bearer Token <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+          <input className="form-input" type="password"
+            placeholder="Leave empty for open access"
+            value={(form.authToken as string) ?? ''}
+            onChange={e => onChange({ authToken: e.target.value || undefined })} />
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+            Exposes <code>/metrics</code> in Prometheus text format. Set a token to require Bearer auth.
+          </p>
+        </div>
+      );
+    case 'otel':
+      return (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 12 }}>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label">Collector endpoint</label>
+              <input className="form-input" type="url"
+                placeholder="http://otel-collector:4318"
+                value={(form.endpoint as string) ?? ''}
+                onChange={e => onChange({ endpoint: e.target.value })}
+                required />
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                Base URL of your OTLP receiver. Routerly appends <code>/v1/metrics</code>. Default HTTP port is 4318, gRPC is 4317.
+              </p>
+            </div>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label">Protocol</label>
+              <select className="form-input"
+                value={(form.protocol as string) ?? 'http'}
+                onChange={e => onChange({ protocol: e.target.value })}>
+                <option value="http">HTTP</option>
+                <option value="grpc">gRPC</option>
+              </select>
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Headers <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional, one per line: Key: Value)</span></label>
+            <textarea className="form-input" rows={3}
+              placeholder={'Authorization: Bearer token\nX-Custom: value'}
+              value={headersToText(form.headers as Record<string, string> | undefined)}
+              onChange={e => onChange({ headers: Object.keys(textToHeaders(e.target.value)).length ? textToHeaders(e.target.value) : undefined })}
+              style={{ resize: 'vertical', fontFamily: 'monospace', fontSize: '0.8rem' }} />
+          </div>
+        </>
+      );
+    case 'datadog':
+      return (
+        <>
+          <div className="form-group">
+            <label className="form-label">API Key</label>
+            <input className="form-input" type="password"
+              placeholder="Your Datadog API key"
+              value={(form.apiKey as string) ?? ''}
+              onChange={e => onChange({ apiKey: e.target.value })}
+              required />
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+              Found under <strong>Organization Settings → API Keys</strong> in your Datadog account.
+            </p>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Site</label>
+            <select className="form-input"
+              value={(form.site as string) ?? 'datadoghq.com'}
+              onChange={e => onChange({ site: e.target.value })}>
+              <option value="datadoghq.com">datadoghq.com — US1</option>
+              <option value="us3.datadoghq.com">us3.datadoghq.com — US3</option>
+              <option value="us5.datadoghq.com">us5.datadoghq.com — US5</option>
+              <option value="datadoghq.eu">datadoghq.eu — EU</option>
+              <option value="ddog-gov.com">ddog-gov.com — US1-FED</option>
+            </select>
+          </div>
+        </>
+      );
+    case 'grafana':
+      return (
+        <>
+          <div className="form-group">
+            <label className="form-label">Remote Write URL</label>
+            <input className="form-input" type="url"
+              placeholder="https://prometheus-prod-01.grafana.net/api/prom/push"
+              value={(form.url as string) ?? ''}
+              onChange={e => onChange({ url: e.target.value })}
+              required />
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+              Found in <strong>Grafana Cloud → Connections → Prometheus → Details</strong> as "Remote Write Endpoint".
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label">Username / Stack ID</label>
+              <input className="form-input"
+                placeholder="123456"
+                value={(form.username as string) ?? ''}
+                onChange={e => onChange({ username: e.target.value })}
+                required />
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                Numeric ID shown in the Prometheus connection details.
+              </p>
+            </div>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label">API Key / Token</label>
+              <input className="form-input" type="password"
+                placeholder="glc_eyJ..."
+                value={(form.apiKey as string) ?? ''}
+                onChange={e => onChange({ apiKey: e.target.value })}
+                required />
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                Grafana Cloud token with <strong>MetricsPublisher</strong> role.
+              </p>
+            </div>
+          </div>
+        </>
+      );
+    case 'influxdb':
+      return (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label">URL</label>
+              <input className="form-input" type="url"
+                placeholder="http://localhost:8086"
+                value={(form.url as string) ?? ''}
+                onChange={e => onChange({ url: e.target.value })}
+                required />
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                InfluxDB v2 instance URL. Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>
+              </p>
+            </div>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label">Token</label>
+              <input className="form-input" type="password"
+                placeholder="Your InfluxDB API token"
+                value={(form.token as string) ?? ''}
+                onChange={e => onChange({ token: e.target.value })}
+                required />
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                Must have <strong>write</strong> access to the bucket.
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label">Organization</label>
+              <input className="form-input"
+                placeholder="my-org"
+                value={(form.org as string) ?? ''}
+                onChange={e => onChange({ org: e.target.value })}
+                required />
+            </div>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label">Bucket</label>
+              <input className="form-input"
+                placeholder="metrics"
+                value={(form.bucket as string) ?? ''}
+                onChange={e => onChange({ bucket: e.target.value })}
+                required />
+            </div>
+          </div>
+        </>
+      );
+    case 'webhook':
+      return (
+        <>
+          <div className="form-group">
+            <label className="form-label">URL</label>
+            <input className="form-input" type="url"
+              placeholder="https://example.com/metrics-webhook"
+              value={(form.url as string) ?? ''}
+              onChange={e => onChange({ url: e.target.value })}
+              required />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Secret <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional — HMAC-SHA256 signing key)</span></label>
+            <input className="form-input" type="password"
+              value={(form.secret as string) ?? ''}
+              onChange={e => onChange({ secret: e.target.value || undefined })} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Headers <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional, one per line: Key: Value)</span></label>
+            <textarea className="form-input" rows={3}
+              placeholder={'Authorization: Bearer token\nX-Custom: value'}
+              value={headersToText(form.headers as Record<string, string> | undefined)}
+              onChange={e => onChange({ headers: Object.keys(textToHeaders(e.target.value)).length ? textToHeaders(e.target.value) : undefined })}
+              style={{ resize: 'vertical', fontFamily: 'monospace', fontSize: '0.8rem' }} />
+          </div>
+        </>
+      );
+  }
+}
+
+export function SettingsIntegrationsTab() {
+  const [integrations, setIntegrations] = useState<Integration[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState('');
+  const [addOpen, setAddOpen]           = useState(false);
+  const [collapsed, setCollapsed]       = useState<Record<string, boolean>>({});
+  const [forms, setForms]               = useState<Record<string, Record<string, unknown>>>({});
+  const [saving, setSaving]             = useState<Record<string, boolean>>({});
+  const [testResults, setTestResults]   = useState<Record<string, { ok: boolean; message: string } | 'testing'>>({});
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const addRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    getIntegrations()
+      .then(setIntegrations)
+      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load integrations'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    function onOutside(e: MouseEvent) {
+      if (addRef.current && !addRef.current.contains(e.target as Node)) setAddOpen(false);
+    }
+    document.addEventListener('mousedown', onOutside);
+    return () => document.removeEventListener('mousedown', onOutside);
+  }, []);
+
+  function handleAdd(type: IntegrationType) {
+    setAddOpen(false);
+    const id = `draft_${Date.now()}`;
+    const defaults: Record<IntegrationType, Record<string, unknown>> = {
+      prometheus: { type: 'prometheus', enabled: true },
+      otel:       { type: 'otel',       enabled: true, endpoint: '', protocol: 'http' },
+      datadog:    { type: 'datadog',    enabled: true, apiKey: '', site: 'datadoghq.com' },
+      grafana:    { type: 'grafana',    enabled: true, url: '', username: '', apiKey: '' },
+      influxdb:   { type: 'influxdb',   enabled: true, url: '', token: '', org: '', bucket: '' },
+      webhook:    { type: 'webhook',    enabled: true, url: '' },
+    };
+    const draft = { id, ...defaults[type] } as Integration;
+    setIntegrations(prev => [...prev, draft]);
+    setForms(f => ({ ...f, [id]: { ...draft } }));
+    setCollapsed(c => ({ ...c, [id]: false }));
+  }
+
+  async function handleToggleEnabled(integration: Integration) {
+    try {
+      const updated = await updateIntegration(integration.id, { enabled: !integration.enabled });
+      setIntegrations(prev => prev.map(i => i.id === updated.id ? updated : i));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to update integration');
+    }
+  }
+
+  async function handleSave(id: string) {
+    setSaving(s => ({ ...s, [id]: true }));
+    try {
+      const data = forms[id] ?? {};
+      if (id.startsWith('draft_')) {
+        const created = await createIntegration(data);
+        setIntegrations(prev => prev.map(i => i.id === id ? created : i));
+        setForms(f => { const n = { ...f }; delete n[id]; return n; });
+        setCollapsed(c => { const n = { ...c }; delete n[id]; n[created.id] = true; return n; });
+      } else {
+        const updated = await updateIntegration(id, data);
+        setIntegrations(prev => prev.map(i => i.id === updated.id ? updated : i));
+        setCollapsed(c => ({ ...c, [id]: true }));
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to save integration');
+    } finally {
+      setSaving(s => ({ ...s, [id]: false }));
+    }
+  }
+
+  function handleCancel(id: string) {
+    if (id.startsWith('draft_')) {
+      setIntegrations(prev => prev.filter(i => i.id !== id));
+      setForms(f => { const n = { ...f }; delete n[id]; return n; });
+    } else {
+      setCollapsed(c => ({ ...c, [id]: true }));
+    }
+  }
+
+  async function handleTest(id: string) {
+    setTestResults(r => ({ ...r, [id]: 'testing' }));
+    try {
+      const result = await testIntegration(id);
+      setTestResults(r => ({ ...r, [id]: result }));
+    } catch (e) {
+      setTestResults(r => ({ ...r, [id]: { ok: false, message: e instanceof Error ? e.message : String(e) } }));
+    }
+  }
+
+  async function handleDelete(id: string) {
+    setPendingDelete(null);
+    if (id.startsWith('draft_')) {
+      setIntegrations(prev => prev.filter(i => i.id !== id));
+      setForms(f => { const n = { ...f }; delete n[id]; return n; });
+      return;
+    }
+    try {
+      await deleteIntegration(id);
+      setIntegrations(prev => prev.filter(i => i.id !== id));
+      setForms(f => { const n = { ...f }; delete n[id]; return n; });
+      setTestResults(r => { const n = { ...r }; delete n[id]; return n; });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to delete integration');
+    }
+  }
+
+  function patchForm(id: string, patch: Record<string, unknown>) {
+    setForms(f => ({ ...f, [id]: { ...(f[id] ?? {}), ...patch } }));
+  }
+
+  if (loading) return <div className="loading-center"><div className="spinner" /></div>;
+
+  const cardHeaderStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '10px 14px', background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)',
+  };
+
+  return (
+    <div style={{ maxWidth: 600 }}>
+      {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
+
+      {integrations.length === 0 && (
+        <div style={{ padding: '40px 0 24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+          No integrations configured yet.
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: integrations.length > 0 ? 16 : 0 }}>
+        {integrations.map(integration => {
+          const meta = INTEGRATION_TYPES.find(t => t.type === integration.type);
+          const isEditing = collapsed[integration.id] === false;
+          const form = forms[integration.id] ?? { ...integration };
+          const testResult = testResults[integration.id];
+          const isSaving = saving[integration.id] ?? false;
+
+          return (
+            <div key={integration.id} style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+              {/* Card header */}
+              <div style={cardHeaderStyle}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+                  <button type="button"
+                    onClick={() => {
+                      if (!isEditing) setForms(f => ({ ...f, [integration.id]: { ...integration } }));
+                      setCollapsed(c => ({ ...c, [integration.id]: isEditing }));
+                    }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 2, display: 'flex', flexShrink: 0 }}>
+                    {isEditing ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  </button>
+                  <span style={{ color: 'var(--accent)', flexShrink: 0, display: 'flex' }}>
+                    <IntegrationIcon type={integration.type} size={14} />
+                  </span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', flexShrink: 0 }}>{meta?.label}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {integration.id}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  {/* Enabled toggle */}
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    <input type="checkbox" checked={integration.enabled}
+                      onChange={() => handleToggleEnabled(integration)}
+                      style={{ width: 14, height: 14, cursor: 'pointer' }} />
+                    Enabled
+                  </label>
+                  {/* Test button */}
+                  <button type="button" className="btn btn-secondary"
+                    style={{ fontSize: '0.75rem', padding: '3px 10px', whiteSpace: 'nowrap' }}
+                    disabled={testResult === 'testing'}
+                    onClick={() => handleTest(integration.id)}>
+                    {testResult === 'testing'
+                      ? <><div className="spinner" style={{ width: 10, height: 10 }} /> Testing…</>
+                      : 'Test'}
+                  </button>
+                  {/* Delete */}
+                  {pendingDelete === integration.id ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Remove?</span>
+                      <button type="button" onClick={() => handleDelete(integration.id)}
+                        style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: 4, border: '1px solid rgba(239,68,68,0.45)', background: 'rgba(239,68,68,0.1)', color: 'rgb(239,68,68)', cursor: 'pointer' }}>
+                        Remove
+                      </button>
+                      <button type="button" onClick={() => setPendingDelete(null)}
+                        style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: 4, border: '1px solid var(--border)', background: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => setPendingDelete(integration.id)} title="Remove integration"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center' }}>
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Test result inline badge */}
+              {testResult && testResult !== 'testing' && (
+                <div style={{
+                  padding: '6px 14px', fontSize: '0.8rem',
+                  background: testResult.ok ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
+                  borderBottom: `1px solid ${testResult.ok ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
+                  color: testResult.ok ? '#22c55e' : '#ef4444',
+                }}>
+                  {testResult.ok ? '✓ ' : '✕ '}{testResult.message}
+                </div>
+              )}
+
+              {/* Expanded form */}
+              {isEditing && (
+                <div style={{ padding: 16 }}>
+                  {integrationFormFields(integration.type, form, patch => patchForm(integration.id, patch))}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                    <button type="button" className="btn btn-primary" disabled={isSaving}
+                      style={{ fontSize: '0.83rem' }}
+                      onClick={() => handleSave(integration.id)}>
+                      {isSaving ? <><div className="spinner" style={{ width: 12, height: 12 }} /> Saving…</> : <><Save size={13} /> Save</>}
+                    </button>
+                    <button type="button" className="btn btn-secondary" disabled={isSaving}
+                      style={{ fontSize: '0.83rem' }}
+                      onClick={() => handleCancel(integration.id)}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Add integration dropdown */}
+      <div ref={addRef} style={{ position: 'relative', display: 'inline-block' }}>
+        <button type="button" className="btn btn-secondary"
+          style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+          onClick={() => setAddOpen(o => !o)}>
+          <Plus size={14} /> Add Integration
+        </button>
+        {addOpen && (
+          <div style={{
+            position: 'absolute', top: '100%', left: 0, marginTop: 6,
+            background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.35)', minWidth: 260, zIndex: 100, overflow: 'hidden',
+          }}>
+            {INTEGRATION_TYPES.map((t, i) => (
+              <button key={t.type} type="button" onClick={() => handleAdd(t.type)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                  padding: '10px 14px', background: 'none', border: 'none',
+                  cursor: 'pointer', textAlign: 'left',
+                  borderBottom: i < INTEGRATION_TYPES.length - 1 ? '1px solid var(--border)' : 'none',
+                }}>
+                <t.Icon size={13} style={{ color: 'var(--accent)' }} />
+                <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)' }}>{t.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── About tab ────────────────────────────────────────────────────────────────
 
 const FALLBACK_RELEASES: AvailableReleases = { channels: ['latest', 'stable', 'develop'], versions: [] };
@@ -1312,6 +1721,7 @@ export function SettingsAboutTab() {
 const TABS = [
   { path: 'general',       label: 'General' },
   { path: 'notifications', label: 'Notifications' },
+  { path: 'integrations',  label: 'Integrations' },
   { path: 'users',         label: 'Users' },
   { path: 'roles',         label: 'Roles' },
   { path: 'audit',         label: 'Audit Log' },

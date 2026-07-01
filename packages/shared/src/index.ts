@@ -70,6 +70,14 @@ export type {
   UsageByModelEntry,
   UpdateInfo,
   AvailableReleases,
+  Integration,
+  IntegrationType,
+  PrometheusIntegration,
+  OtelIntegration,
+  DatadogIntegration,
+  GrafanaIntegration,
+  InfluxDBIntegration,
+  WebhookIntegration,
 } from './types/config.js';
 
 export type {

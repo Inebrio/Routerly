@@ -16,6 +16,7 @@ import { makeUpdateCommand } from './commands/update.js';
 import { makeTelemetryCommand } from './commands/telemetry.js';
 import { makeNotificationCommand } from './commands/notification.js';
 import { makeAuditCommand } from './commands/audit.js';
+import { makeIntegrationsCommand } from './commands/integrations.js';
 
 const program = new Command();
 
@@ -39,5 +40,6 @@ program.addCommand(makeUpdateCommand());
 program.addCommand(makeTelemetryCommand());
 program.addCommand(makeNotificationCommand());
 program.addCommand(makeAuditCommand());
+program.addCommand(makeIntegrationsCommand());
 
 program.parse(process.argv);

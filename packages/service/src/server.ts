@@ -13,6 +13,7 @@ import { metricsRoutes } from './routes/metrics.js';
 import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage } from './config/loader.js';
 import { pingTelemetry } from './telemetry.js';
 import { updateChecker } from './update-checker.js';
+import { startIntegrationRunner } from './integrations/runner.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const { version: pkgVersion } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8')) as { version: string };
@@ -118,6 +119,7 @@ export async function startServer() {
   try {
     await server.listen({ port: settings.port, host: settings.host });
     updateChecker.start(pkgVersion, settings.channel ?? 'latest');
+    startIntegrationRunner();
   } catch (err) {
     server.log.error(err);
     process.exit(1);

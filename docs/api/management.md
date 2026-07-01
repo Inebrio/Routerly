@@ -1073,6 +1073,253 @@ Returns `200 OK` on success or an error with details. Prefer `POST /api/notifica
 
 ---
 
+## Integrations
+
+Export Routerly metrics to external monitoring systems (Prometheus, OpenTelemetry, Datadog, Grafana Cloud, InfluxDB, Webhooks).
+
+### List Integrations
+
+```
+GET /api/integrations
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `settings:write`)
+
+**Response `200`**
+```json
+{
+  "integrations": [
+    {
+      "id": "int-uuid",
+      "type": "prometheus",
+      "enabled": true,
+      "name": "Prometheus",
+      "authToken": null
+    },
+    {
+      "id": "int-uuid2",
+      "type": "otel",
+      "enabled": true,
+      "name": "OpenTelemetry",
+      "endpoint": "http://localhost:4318/v1/metrics",
+      "protocol": "http",
+      "headers": {}
+    }
+  ]
+}
+```
+
+Secret fields (authToken, apiKey, token, secret) are masked and shown as `null` when present.
+
+**Errors**: `403` insufficient permissions
+
+### Get Integration
+
+```
+GET /api/integrations/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `settings:write`)
+
+**Response `200`** (example: Datadog integration)
+```json
+{
+  "id": "int-uuid",
+  "type": "datadog",
+  "enabled": true,
+  "name": "Datadog Production",
+  "apiKey": null,
+  "site": "datadoghq.com"
+}
+```
+
+Secret fields are masked and shown as `null` when present.
+
+**Errors**: `404` integration not found · `403` insufficient permissions
+
+### Create Integration
+
+```
+POST /api/integrations
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `settings:write`)
+
+**Request body** — per-type examples:
+
+**Prometheus** (pull, optional auth)
+```json
+{
+  "type": "prometheus",
+  "name": "Prometheus",
+  "authToken": "secret-token-123"
+}
+```
+
+**OpenTelemetry** (push)
+```json
+{
+  "type": "otel",
+  "name": "OpenTelemetry Collector",
+  "endpoint": "http://localhost:4318/v1/metrics",
+  "protocol": "http",
+  "headers": {
+    "Authorization": "Bearer otel-token"
+  }
+}
+```
+
+**Datadog** (push)
+```json
+{
+  "type": "datadog",
+  "name": "Datadog",
+  "apiKey": "dd_api_key_123",
+  "site": "datadoghq.com"
+}
+```
+
+Site options: `datadoghq.com` (US East), `datadoghq.eu` (EU), `us3.datadoghq.com`, `us5.datadoghq.com`, `ddog-gov.com` (GovCloud).
+
+**Grafana Cloud** (push, Prometheus remote_write)
+```json
+{
+  "type": "grafana",
+  "name": "Grafana Cloud",
+  "url": "https://prometheus-blocks-prod-us-central1.grafana.net/api/prom/push",
+  "username": "123456",
+  "apiKey": "glc_api_key_123"
+}
+```
+
+**InfluxDB** (push, v2)
+```json
+{
+  "type": "influxdb",
+  "name": "InfluxDB",
+  "url": "http://localhost:8086",
+  "token": "my-token",
+  "org": "routerly",
+  "bucket": "metrics"
+}
+```
+
+**Webhook** (push)
+```json
+{
+  "type": "webhook",
+  "name": "Webhook",
+  "url": "https://example.com/metrics",
+  "secret": "signing-secret",
+  "headers": {
+    "X-Custom-Header": "value"
+  }
+}
+```
+
+Webhook requests are signed with HMAC-SHA256 using the `secret` field; the signature is sent in the `X-Routerly-Signature` header (format: `sha256=<hex>`).
+
+**Response `201`**
+```json
+{
+  "id": "int-uuid",
+  "type": "otel",
+  "enabled": true,
+  "name": "OpenTelemetry Collector",
+  "endpoint": "http://localhost:4318/v1/metrics",
+  "protocol": "http",
+  "headers": {}
+}
+```
+
+**Errors**: `400` invalid body · `403` insufficient permissions
+
+### Update Integration
+
+```
+PATCH /api/integrations/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `settings:write`)
+
+**Request body** (all fields optional):
+```json
+{
+  "name": "Updated Name",
+  "enabled": false,
+  "apiKey": "new-api-key"
+}
+```
+
+- To enable/disable: set `"enabled": true` or `"enabled": false`
+- Secret fields (authToken, apiKey, token, secret) are only updated when explicitly provided and non-empty. Omitting a secret field leaves it unchanged.
+- Per-type config fields (endpoint, protocol, url, etc.) can be updated individually
+
+**Response `200`**
+```json
+{
+  "id": "int-uuid",
+  "type": "otel",
+  "enabled": false,
+  "name": "Updated Name",
+  "endpoint": "http://localhost:4318/v1/metrics",
+  "protocol": "http"
+}
+```
+
+**Errors**: `404` integration not found · `400` invalid body · `403` insufficient permissions
+
+### Delete Integration
+
+```
+DELETE /api/integrations/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `settings:write`)
+
+**Response**: `204 No Content`
+
+**Errors**: `404` integration not found · `403` insufficient permissions
+
+### Test Integration
+
+```
+POST /api/integrations/:id/test
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `settings:write`)
+
+Tests connectivity to the external system. For Prometheus (pull-based), the test is a no-op (always succeeds). For push-based integrations, sends a real metrics push and returns the result.
+
+**Response `200`**
+```json
+{ "ok": true, "message": "Connection successful" }
+```
+
+**Response `200` (on push failure)**
+```json
+{ "ok": false, "message": "HTTP 401: Unauthorized" }
+```
+
+**Errors**: `404` integration not found · `403` insufficient permissions
+
+### Metrics Pushed
+
+All push-type integrations (OpenTelemetry, Datadog, Grafana, InfluxDB, Webhook) send the following metrics every 60 seconds:
+
+| Metric | Type | Labels/Dimensions | Description |
+|--------|------|-------------------|-------------|
+| `routerly_requests_total` | Counter | `project`, `model` | Total request count |
+| `routerly_tokens_total` | Counter | `type` (input/output), `project`, `model` | Total tokens consumed |
+| `routerly_cost_usd_total` | Gauge | `project`, `model` | Estimated USD cost |
+| `routerly_request_duration_p50_ms` | Gauge | `project` | Median request latency |
+| `routerly_request_duration_p95_ms` | Gauge | `project` | 95th percentile latency |
+| `routerly_budget_used_ratio` | Gauge | `project` | Budget consumption (0–1) |
+
+Each integration type sends these metrics in its native format (OTLP, Datadog Series API, Prometheus remote_write, InfluxDB line protocol, JSON webhook).
+
+---
+
 ## Audit Log
 
 ### List Audit Entries

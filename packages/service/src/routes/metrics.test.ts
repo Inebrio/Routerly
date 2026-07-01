@@ -165,4 +165,36 @@ describe('GET /metrics', () => {
     expect(res.statusCode).toBe(200);
     expect(res.headers['content-type']).toContain('text/plain');
   });
+
+  it('integration: enabled, no auth → 200', async () => {
+    setup({ settings: { integrations: [{ id: 'i1', type: 'prometheus', enabled: true }] }, models: [], projects: [], usage: [] });
+    const app = await buildApp();
+    const res = await app.inject({ method: 'GET', url: '/metrics' });
+    await app.close();
+    expect(res.statusCode).toBe(200);
+  });
+
+  it('integration: disabled → 404', async () => {
+    setup({ settings: { integrations: [{ id: 'i1', type: 'prometheus', enabled: false }] }, models: [], projects: [], usage: [] });
+    const app = await buildApp();
+    const res = await app.inject({ method: 'GET', url: '/metrics' });
+    await app.close();
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('integration: authToken, no header → 401', async () => {
+    setup({ settings: { integrations: [{ id: 'i1', type: 'prometheus', enabled: true, authToken: 'tok' }] }, models: [], projects: [], usage: [] });
+    const app = await buildApp();
+    const res = await app.inject({ method: 'GET', url: '/metrics' });
+    await app.close();
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('integration: authToken, correct header → 200', async () => {
+    setup({ settings: { integrations: [{ id: 'i1', type: 'prometheus', enabled: true, authToken: 'tok' }] }, models: [], projects: [], usage: [] });
+    const app = await buildApp();
+    const res = await app.inject({ method: 'GET', url: '/metrics', headers: { authorization: 'Bearer tok' } });
+    await app.close();
+    expect(res.statusCode).toBe(200);
+  });
 });

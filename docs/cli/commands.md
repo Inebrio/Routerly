@@ -426,6 +426,202 @@ routerly project guardrails my-api --remove-rule 2   # delete policy at index 2
 
 ---
 
+## `routerly integrations`
+
+Manage metric export integrations for external observability platforms.
+
+### `routerly integrations list`
+
+```
+routerly integrations list [--json]
+```
+
+Lists all configured integrations in a table with ID (truncated), Type, Enabled status, and Name/Endpoint.
+
+**Table columns:**
+- **ID** — integration UUID (first 8 chars)
+- **Type** — provider type (prometheus, otel, datadog, grafana, influxdb, webhook)
+- **Enabled** — yes/no status
+- **Name/Endpoint** — friendly name or primary identifier
+
+**JSON output:**
+```json
+{
+  "integrations": [
+    {
+      "id": "int-uuid",
+      "type": "prometheus",
+      "enabled": true,
+      "name": "Prometheus"
+    },
+    {
+      "id": "int-uuid2",
+      "type": "datadog",
+      "enabled": true,
+      "name": "Datadog Prod",
+      "apiKey": null,
+      "site": "datadoghq.com"
+    }
+  ]
+}
+```
+
+### `routerly integrations add`
+
+```
+routerly integrations add --type <type> [options]
+```
+
+Creates a new integration. Type-specific options vary. Without options, launches an interactive wizard.
+
+| Option | Description |
+|--------|-------------|
+| `--type <type>` | Required. One of: `prometheus`, `otel`, `datadog`, `grafana`, `influxdb`, `webhook` |
+| `--name <name>` | Friendly name (prompted if omitted) |
+
+**Type-specific options:**
+
+**Prometheus** (pull-based, optional auth):
+```bash
+routerly integrations add --type prometheus --name "Prometheus" --auth-token my-token
+```
+
+| Option | Description |
+|--------|-------------|
+| `--auth-token <token>` | Optional bearer token for `/metrics` endpoint auth |
+
+**OpenTelemetry** (push):
+```bash
+routerly integrations add --type otel --name "OTEL Collector" \
+  --endpoint http://localhost:4318/v1/metrics \
+  --protocol http \
+  --header "Authorization: Bearer token" \
+  --header "X-Custom: value"
+```
+
+| Option | Description |
+|--------|-------------|
+| `--endpoint <url>` | Required. OTLP receiver endpoint (e.g. `http://localhost:4318/v1/metrics`) |
+| `--protocol <proto>` | Required. `http` or `grpc` (default: `http`) |
+| `--header <key=value>` | Optional custom header (repeatable, format: `Key: Value`) |
+
+**Datadog** (push):
+```bash
+routerly integrations add --type datadog --name "Datadog Prod" \
+  --api-key dd_key_123 \
+  --site datadoghq.com
+```
+
+| Option | Description |
+|--------|-------------|
+| `--api-key <key>` | Required. Datadog API key |
+| `--site <site>` | Site identifier (default: `datadoghq.com`). Options: `datadoghq.com`, `datadoghq.eu`, `us3.datadoghq.com`, `us5.datadoghq.com`, `ddog-gov.com` |
+
+**Grafana Cloud** (push):
+```bash
+routerly integrations add --type grafana --name "Grafana" \
+  --url https://prometheus-blocks-prod-us-central1.grafana.net/api/prom/push \
+  --username 123456 \
+  --api-key glc_key_123
+```
+
+| Option | Description |
+|--------|-------------|
+| `--url <url>` | Required. Prometheus remote_write endpoint |
+| `--username <id>` | Required. Numeric Grafana Cloud instance ID |
+| `--api-key <key>` | Required. Grafana Cloud API key |
+
+**InfluxDB** (push):
+```bash
+routerly integrations add --type influxdb --name "InfluxDB" \
+  --url http://localhost:8086 \
+  --token influx_token_123 \
+  --org routerly \
+  --bucket metrics
+```
+
+| Option | Description |
+|--------|-------------|
+| `--url <url>` | Required. InfluxDB server URL |
+| `--token <token>` | Required. InfluxDB API token |
+| `--org <org>` | Required. Organization name |
+| `--bucket <bucket>` | Required. Target bucket name |
+
+**Webhook** (push):
+```bash
+routerly integrations add --type webhook --name "Webhook" \
+  --url https://example.com/metrics \
+  --secret signing_secret_123 \
+  --header "X-Custom: value"
+```
+
+| Option | Description |
+|--------|-------------|
+| `--url <url>` | Required. HTTPS endpoint for metric POST requests |
+| `--secret <secret>` | Optional. If set, requests are HMAC-SHA256 signed (header: `X-Routerly-Signature`) |
+| `--header <key=value>` | Optional custom header (repeatable, format: `Key: Value`) |
+
+### `routerly integrations remove`
+
+```
+routerly integrations remove <id>
+```
+
+Deletes an integration by ID. Prompts for confirmation.
+
+| Parameter | Description |
+|-----------|-------------|
+| `<id>` | Integration ID (full UUID or first 8 chars) |
+
+### `routerly integrations test`
+
+```
+routerly integrations test <id>
+```
+
+Tests connectivity to the external system. For Prometheus (pull-based), the test is a no-op. For push-based integrations, sends a real metric payload and reports success or error.
+
+| Parameter | Description |
+|-----------|-------------|
+| `<id>` | Integration ID (full UUID or first 8 chars) |
+
+**Output:**
+```
+Testing integration int-uuid2 (Datadog)...
+✓ Connection successful
+```
+
+Or on failure:
+```
+✗ Connection failed: HTTP 401 Unauthorized
+```
+
+### `routerly integrations enable`
+
+```
+routerly integrations enable <id>
+```
+
+Activates an integration (sets `enabled: true`). Metric pushes resume.
+
+| Parameter | Description |
+|-----------|-------------|
+| `<id>` | Integration ID |
+
+### `routerly integrations disable`
+
+```
+routerly integrations disable <id>
+```
+
+Pauses an integration (sets `enabled: false`). Metric pushes stop without deleting the configuration.
+
+| Parameter | Description |
+|-----------|-------------|
+| `<id>` | Integration ID |
+
+---
+
 ## `routerly user`
 
 ### `routerly user list`
