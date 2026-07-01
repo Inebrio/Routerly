@@ -117,3 +117,12 @@ Two files are the shared memory between the main thread and all agents. Keep bot
 
 - **`.ai/state.md`** — live tracker: current task, phase, doing now, to-do, done, blockers, files touched, hand-off notes. Update at task start, on every phase change, and at the end.
 - **`.ai/memory.md`** — persistent knowledge: non-obvious facts, gotchas, working commands, decisions + why. Append whenever you learn something a future task would otherwise rediscover. Don't duplicate what this file or the code already states.
+
+## Scratch files — ABSOLUTE
+
+**Never write temporary or scratch files inside the project directory.** This includes `.md` snapshots, `.png`/`.jpg` screenshots, log dumps, or any other ephemeral output.
+
+- Temp files → `/tmp/` or the session scratchpad directory provided by the runtime.
+- Screenshots → only `docs/assets/` or `docs/<section>/` when they are permanent documentation assets; never anywhere else.
+- Playwright MCP output (`.playwright-mcp/`) is auto-generated in the project root — treat it as noise; never commit it. It is gitignored.
+- Sub-agents must follow this rule too. The orchestrator is responsible for enforcing it.
