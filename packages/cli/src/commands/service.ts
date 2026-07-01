@@ -73,15 +73,26 @@ Examples:
   routerly service configure \\
     --port 443 --host 0.0.0.0 \\
     --log-level warn --timeout 60000
+
+  # Enable Prometheus metrics endpoint
+  routerly service configure --metrics true
+
+  # Require a Bearer token to access /metrics
+  routerly service configure --metrics-token mysecret
+
+  # Remove the metrics token (open access)
+  routerly service configure --metrics-token ""
 `)
     .option('--port <port>', 'HTTP port to listen on')
     .option('--host <host>', 'Host to bind to')
     .option('--dashboard <bool>', 'Enable/disable dashboard (true|false)')
     .option('--log-level <level>', 'Log level: trace|debug|info|warn|error')
     .option('--timeout <ms>', 'Default per-model timeout in ms')
+    .option('--metrics <bool>', 'Enable/disable Prometheus /metrics endpoint (true|false)')
+    .option('--metrics-token <token>', 'Optional Bearer token to protect /metrics (empty string removes it)')
     .action(async (opts: {
       port?: string; host?: string; dashboard?: string;
-      logLevel?: string; timeout?: string;
+      logLevel?: string; timeout?: string; metrics?: string; metricsToken?: string;
     }) => {
       const patch: Partial<Settings> = {};
       if (opts.port) patch.port = parseInt(opts.port, 10);
@@ -89,9 +100,11 @@ Examples:
       if (opts.dashboard !== undefined) patch.dashboardEnabled = opts.dashboard === 'true';
       if (opts.logLevel) patch.logLevel = opts.logLevel as Settings['logLevel'];
       if (opts.timeout) patch.defaultTimeoutMs = parseInt(opts.timeout, 10);
+      if (opts.metrics !== undefined) patch.metricsEnabled = opts.metrics === 'true';
+      if (opts.metricsToken !== undefined) patch.prometheusAuthToken = opts.metricsToken || undefined;
 
       if (Object.keys(patch).length === 0) {
-        console.log(chalk.yellow('No settings provided. Use --port, --host, --dashboard, --log-level, or --timeout.'));
+        console.log(chalk.yellow('No settings provided. Use --port, --host, --dashboard, --log-level, --timeout, --metrics, or --metrics-token.'));
         return;
       }
 
@@ -118,7 +131,7 @@ Examples:
         const data = await api<Array<{
           modelId: string;
           provider: string;
-          status: 'healthy' | 'degraded' | 'down';
+          status: 'healthy' | 'degraded' | 'unavailable';
           errorRate?: number;
           p95LatencyMs?: number;
           requestsPerHour?: number;
