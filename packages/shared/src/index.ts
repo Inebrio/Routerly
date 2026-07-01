@@ -38,7 +38,6 @@ export type {
   RoleConfig,
   Permission,
   Settings,
-  SpendGroup,
   NotificationsConfig,
   NotificationSeverity,
   NotificationInboxItem,

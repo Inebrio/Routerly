@@ -342,8 +342,6 @@ export interface ProjectToken {
   labels?: string[];
   /** Arbitrary key-value metadata attached to this token, forwarded to usage records */
   tags?: Record<string, string>;
-  /** ID of the SpendGroup this token belongs to (#82) */
-  spendGroupId?: string;
 }
 
 /** A saved prompt preset for the playground (#99). */
@@ -374,8 +372,6 @@ export interface ProjectConfig {
   models: ProjectModelRef[];
   /** Timeout in ms for each individual model attempt */
   timeoutMs?: number;
-  /** ID of the SpendGroup this project belongs to (#82) */
-  spendGroupId?: string;
   /** Content guardrails: input blocklist + prompt-injection detection (#77) */
   guardrails?: GuardrailConfig;
   /** PII detection and scrubbing before requests reach the model (#76) */
@@ -433,26 +429,6 @@ export interface TelemetryConfig {
   lastPingedVersion?: string;
 }
 
-/**
- * A spend group: an org- or team-level budget container in the hierarchical
- * spend-limit cascade (org → team → API key). Projects and/or tokens belong to
- * a group; a group may nest under a parent group. Child limits cannot exceed
- * parent limits (validated on write).
- */
-export interface SpendGroup {
-  id: string;
-  name: string;
-  /** Usage limits applied to all usage attributed to this group */
-  limits: Limit[];
-  /** Project IDs that belong to this group */
-  projectIds?: string[];
-  /** Token IDs that belong to this group */
-  tokenIds?: string[];
-  /** Parent group ID, for nesting (org → team) */
-  parentGroupId?: string;
-}
-
-
 export interface Settings {
   port: number;
   host: string;
@@ -478,8 +454,6 @@ export interface Settings {
   prometheusAuthToken?: string | undefined;
   /** Anonymous install metrics opt-in. Absent means the user has not been asked yet. */
   telemetry?: TelemetryConfig;
-  /** Org/team spend groups for the hierarchical spend-limit cascade (#82) */
-  spendGroups?: SpendGroup[];
   /** When true, all users must enroll in and pass 2FA before accessing the API */
   requireMfa?: boolean;
 }

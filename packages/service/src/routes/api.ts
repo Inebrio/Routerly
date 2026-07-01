@@ -10,10 +10,9 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../config/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, SpendGroup, GuardrailConfig, PiiConfig, UsageByModelEntry, ChannelProvider } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, UsageByModelEntry, ChannelProvider } from '@routerly/shared';
 import { CHANNEL_SECRET_FIELDS } from '@routerly/shared';
 import { z } from 'zod';
-import { getGroupUsageSnapshot } from '../cost/budget.js';
 import { getTrace } from '../routing/traceStore.js';
 import { sendTestNotification } from '../notifications/sender.js';
 import { emitEvent } from '../notifications/emitter.js';
@@ -34,7 +33,7 @@ function hashToken(t: string): string {
 
 const BCRYPT_ROUNDS = 12;
 
-/** 95th percentile of a numeric array (0 when empty). Same nearest-rank method as the leaderboard/health handlers. */
+/** 95th percentile of a numeric array (0 when empty). Nearest-rank method. */
 function p95(values: number[]): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((a, b) => a - b);
@@ -194,16 +193,6 @@ function resolveTestRecipient(provider: string, to: string | undefined, fallback
   return EMAIL_TEST_PROVIDERS.has(provider) ? fallback : '';
 }
 
-// ── Spend group validation (#82) ────────────────────────────────────────────────
-const limitSchema = z.object({
-  metric: z.enum(['cost', 'calls', 'input_tokens', 'output_tokens', 'total_tokens']),
-  windowType: z.enum(['period', 'rolling']),
-  period: z.enum(['hourly', 'daily', 'weekly', 'monthly', 'yearly']).optional(),
-  rollingAmount: z.number().positive().optional(),
-  rollingUnit: z.enum(['second', 'minute', 'hour', 'day', 'week', 'month']).optional(),
-  value: z.number().nonnegative(),
-});
-
 const guardrailRuleSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('regex'), enabled: z.boolean().optional(), action: z.enum(['block', 'log']).optional(), target: z.enum(['request', 'response', 'both']), config: z.object({ patterns: z.array(z.string()) }) }),
   z.object({ type: z.literal('semantic'), enabled: z.boolean().optional(), action: z.enum(['block', 'log']).optional(), target: z.enum(['request', 'response', 'both']), config: z.object({ embeddingModelId: z.string(), examples: z.array(z.string()), threshold: z.number().min(0).max(1).optional() }) }),
@@ -237,41 +226,6 @@ const piiConfigSchema = z.object({
   outputBufferSize: z.number().int().min(10).max(500).optional(),
   policies: z.array(piiPolicySchema).optional(),
 });
-
-const spendGroupBodySchema = z.object({
-  name: z.string().trim().min(1),
-  limits: z.array(limitSchema).default([]),
-  projectIds: z.array(z.string()).optional(),
-  tokenIds: z.array(z.string()).optional(),
-  parentGroupId: z.string().optional(),
-});
-
-/**
- * Enforce "child limits cannot exceed parent limits": for every cost/calls/token
- * limit of the child sharing a window with a parent limit, the child value must
- * not be greater than the parent's. Returns an error string or null if valid.
- */
-function validateAgainstParent(child: SpendGroup, groups: SpendGroup[]): string | null {
-  let parentId = child.parentGroupId;
-  const seen = new Set<string>([child.id]);
-  while (parentId) {
-    if (seen.has(parentId)) return 'Spend group hierarchy contains a cycle';
-    seen.add(parentId);
-    const parent = groups.find(g => g.id === parentId);
-    if (!parent) return `Parent group "${parentId}" not found`;
-    for (const cl of child.limits) {
-      const pl = (parent.limits ?? []).find(
-        p => p.metric === cl.metric && p.windowType === cl.windowType &&
-             p.period === cl.period && p.rollingAmount === cl.rollingAmount && p.rollingUnit === cl.rollingUnit,
-      );
-      if (pl && cl.value > pl.value) {
-        return `Limit ${cl.metric} (${cl.value}) exceeds parent limit (${pl.value})`;
-      }
-    }
-    parentId = parent.parentGroupId;
-  }
-  return null;
-}
 
 export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.decorateRequest('dashUser', null);
@@ -1806,103 +1760,6 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send({ providers });
   });
 
-  // ─── GET /api/leaderboard (#80) ──────────────────────────────────────────────
-  // Ranks models by real-world cost-performance using local usage records only.
-  fastify.get<{ Querystring: { period?: string; projectId?: string; from?: string; to?: string } }>('/api/leaderboard', async (req, reply) => {
-    if (!requirePerm(req, 'report:read', reply)) return;
-    const [models, records] = await Promise.all([readConfig('models'), readConfig('usage')]);
-    const { period = 'monthly', projectId, from, to } = req.query;
-
-    // Time window — same semantics as GET /api/usage.
-    const now = new Date();
-    let since = new Date(0);
-    let until = new Date(now.getTime() + 86400000);
-    if (period === 'daily') { since = new Date(now); since.setHours(0, 0, 0, 0); }
-    else if (period === 'weekly') {
-      since = new Date(now);
-      const d = since.getDay();
-      since.setDate(since.getDate() - (d === 0 ? 6 : d - 1));
-      since.setHours(0, 0, 0, 0);
-    } else if (period === 'monthly') { since = new Date(now); since.setDate(1); since.setHours(0, 0, 0, 0); }
-    else if (period === 'custom') {
-      if (from) { since = new Date(from); if (from.length <= 10) since.setHours(0, 0, 0, 0); }
-      if (to) { until = new Date(to); if (to.length <= 10) until.setHours(23, 59, 59, 999); }
-    }
-
-    let filtered = records.filter(r => {
-      const ts = new Date(r.timestamp);
-      return ts >= since && ts <= until;
-    });
-    if (projectId) filtered = filtered.filter(r => r.projectId === projectId);
-
-    const providerByModel = new Map(models.map(m => [m.id, m.provider]));
-
-    // 7 daily UTC bucket keys (oldest → newest) ending today, for the trend sparkline.
-    const trendKeys: string[] = [];
-    for (let i = 6; i >= 0; i--) {
-      trendKeys.push(new Date(now.getTime() - i * 86400000).toISOString().slice(0, 10));
-    }
-
-    type Acc = {
-      totalRequests: number; success: number; totalCost: number;
-      totalTokens: number; latencies: number[]; totalLatencyMs: number;
-      trend: Record<string, number>;
-    };
-    const byModel = new Map<string, Acc>();
-    for (const r of filtered) {
-      // A guardrail-blocked request never ran on the model — exclude it from both
-      // the denominator and the error count, consistent with usage summary + health (#77).
-      if (r.outcome === 'blocked') continue;
-      const a = byModel.get(r.modelId) ?? {
-        totalRequests: 0, success: 0, totalCost: 0, totalTokens: 0,
-        latencies: [], totalLatencyMs: 0, trend: {},
-      };
-      a.totalRequests++;
-      const ok = r.outcome === 'success';
-      if (ok) {
-        a.success++;
-        a.totalCost += r.cost;
-        a.totalTokens += r.inputTokens + r.outputTokens;
-        if (typeof r.latencyMs === 'number') { a.latencies.push(r.latencyMs); a.totalLatencyMs += r.latencyMs; }
-        const day = r.timestamp.slice(0, 10);
-        a.trend[day] = (a.trend[day] ?? 0) + r.cost;
-      }
-      byModel.set(r.modelId, a);
-    }
-
-    const leaderboard = [...byModel.entries()].map(([modelId, a]) => {
-      const successRate = a.totalRequests > 0 ? a.success / a.totalRequests : 0;
-      const errorRate = a.totalRequests > 0 ? 1 - successRate : 0;
-      const avgLatencyMs = a.latencies.length > 0 ? a.totalLatencyMs / a.latencies.length : 0;
-      const p95LatencyMs = p95(a.latencies);
-      const avgCostPer1kTokens = a.totalTokens > 0 ? (a.totalCost / a.totalTokens) * 1000 : 0;
-      const totalLatencySec = a.totalLatencyMs / 1000;
-      const tokensPerSec = totalLatencySec > 0 ? a.totalTokens / totalLatencySec : 0;
-      return {
-        modelId,
-        provider: providerByModel.get(modelId) ?? 'unknown',
-        totalRequests: a.totalRequests,
-        successRate,
-        avgLatencyMs,
-        p95LatencyMs,
-        avgCostPer1kTokens,
-        totalCost: a.totalCost,
-        totalTokens: a.totalTokens,
-        tokensPerSec,
-        errorRate,
-        trend: trendKeys.map(date => ({ date, cost: a.trend[date] ?? 0 })),
-      };
-    });
-
-    // Sort by cost-performance ratio (cost per 1K tokens / success rate), best first.
-    // A zero success rate sinks the model to the bottom.
-    const ratio = (m: typeof leaderboard[number]) =>
-      m.successRate > 0 ? m.avgCostPer1kTokens / m.successRate : Number.POSITIVE_INFINITY;
-    leaderboard.sort((a, b) => ratio(a) - ratio(b));
-
-    return reply.send(leaderboard);
-  });
-
   // ─── GET /api/notifications/channels ─────────────────────────────────────────
   fastify.get('/api/notifications/channels', async (req, reply) => {
     if (!requirePerm(req, 'notification:write', reply)) return;
@@ -2072,78 +1929,6 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (filtered.length === customRoles.length) return reply.status(404).send({ error: 'Role not found' });
     await writeConfig('roles', filtered);
     audit(req, 'role:delete', 'success', { id: req.params.id });
-    return reply.status(204).send();
-  });
-
-  // ─── Spend groups (hierarchical org → team → key cascade, #82) ─────────────────
-
-  // GET /api/spend-groups — list all groups with current usage per limit
-  fastify.get('/api/spend-groups', async (req, reply) => {
-    if (!requirePerm(req, 'report:read', reply)) return;
-    const settings = await readConfig('settings');
-    const groups = settings.spendGroups ?? [];
-    const usage = await readConfig('usage');
-    return reply.send(groups.map(g => ({ ...g, usage: getGroupUsageSnapshot(g, groups, usage) })));
-  });
-
-  // POST /api/spend-groups — create a group
-  fastify.post('/api/spend-groups', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
-    const parsed = spendGroupBodySchema.safeParse(req.body);
-    if (!parsed.success) return reply.status(400).send({ error: 'Invalid body', details: parsed.error.issues });
-
-    const settings = await readConfig('settings');
-    const groups = settings.spendGroups ?? [];
-    if (parsed.data.parentGroupId && !groups.some(g => g.id === parsed.data.parentGroupId)) {
-      return reply.status(400).send({ error: `Parent group "${parsed.data.parentGroupId}" not found` });
-    }
-    const group = { id: uuidv4(), ...parsed.data } as SpendGroup;
-    const conflict = validateAgainstParent(group, [...groups, group]);
-    if (conflict) return reply.status(400).send({ error: conflict });
-
-    settings.spendGroups = [...groups, group];
-    await writeConfig('settings', settings);
-    return reply.status(201).send(group);
-  });
-
-  // PUT /api/spend-groups/:id — update a group
-  fastify.put<{ Params: { id: string } }>('/api/spend-groups/:id', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
-    const parsed = spendGroupBodySchema.safeParse(req.body);
-    if (!parsed.success) return reply.status(400).send({ error: 'Invalid body', details: parsed.error.issues });
-
-    const settings = await readConfig('settings');
-    const groups = settings.spendGroups ?? [];
-    const idx = groups.findIndex(g => g.id === req.params.id);
-    if (idx === -1) return reply.status(404).send({ error: 'Spend group not found' });
-    if (parsed.data.parentGroupId === req.params.id) {
-      return reply.status(400).send({ error: 'A spend group cannot be its own parent' });
-    }
-    if (parsed.data.parentGroupId && !groups.some(g => g.id === parsed.data.parentGroupId)) {
-      return reply.status(400).send({ error: `Parent group "${parsed.data.parentGroupId}" not found` });
-    }
-    const updated = { id: req.params.id, ...parsed.data } as SpendGroup;
-    const next = groups.map(g => (g.id === req.params.id ? updated : g));
-    const conflict = validateAgainstParent(updated, next);
-    if (conflict) return reply.status(400).send({ error: conflict });
-
-    settings.spendGroups = next;
-    await writeConfig('settings', settings);
-    return reply.send(updated);
-  });
-
-  // DELETE /api/spend-groups/:id — delete a group
-  fastify.delete<{ Params: { id: string } }>('/api/spend-groups/:id', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
-    const settings = await readConfig('settings');
-    const groups = settings.spendGroups ?? [];
-    if (groups.some(g => g.parentGroupId === req.params.id)) {
-      return reply.status(409).send({ error: 'Cannot delete a group that has child groups' });
-    }
-    const filtered = groups.filter(g => g.id !== req.params.id);
-    if (filtered.length === groups.length) return reply.status(404).send({ error: 'Spend group not found' });
-    settings.spendGroups = filtered;
-    await writeConfig('settings', settings);
     return reply.status(204).send();
   });
 

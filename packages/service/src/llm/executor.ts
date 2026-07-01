@@ -25,8 +25,7 @@ import type {
   MessagesResponse,
 } from '@routerly/shared';
 import { getProviderAdapter } from '../providers/index.js';
-import { isAllowed, isAllowedForRoutingModel, checkGroupBudget, getLimitUsageSnapshot } from '../cost/budget.js';
-import { readConfig } from '../config/loader.js';
+import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../cost/budget.js';
 import { trackUsage } from '../cost/tracker.js';
 import { emitEvent } from '../notifications/emitter.js';
 import type { TraceEntry, TracePanel } from '../routing/traceStore.js';
@@ -134,18 +133,10 @@ export async function checkBudget(model: ModelConfig, ctx: LLMCallContext): Prom
     ? await isAllowed(model, project, token)
     : await isAllowedForRoutingModel(model, projectId);
 
-  // Hierarchical spend-group cascade: if the project belongs to a spend group,
-  // the org → team budget chain must also have room (#82).
-  let groupAllowed = true;
-  if (allowed && project.spendGroupId) {
-    const [settings, usage] = await Promise.all([readConfig('settings'), readConfig('usage')]);
-    groupAllowed = checkGroupBudget(project.spendGroupId, 0, settings, usage);
-  }
-
   const budgetKey = `${projectId}:${model.id}`;
 
-  if (!allowed || !groupAllowed) {
-    const reason = allowed ? 'spend_group_exhausted' : 'budget_exhausted';
+  if (!allowed) {
+    const reason = 'budget_exhausted';
     emit?.({
       panel: res,
       message: 'model:skipped',
