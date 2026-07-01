@@ -148,4 +148,21 @@ describe('GET /metrics', () => {
     await app.close();
     expect(res.body).toContain('routerly_budget_used_ratio{project="proj1"} 0');
   });
+
+  it('returns 401 when prometheusAuthToken is set and request has no token', async () => {
+    setup({ settings: { prometheusAuthToken: 'secret' }, models: [], projects: [], usage: [] });
+    const app = await buildApp();
+    const res = await app.inject({ method: 'GET', url: '/metrics' });
+    await app.close();
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('returns 200 when correct Bearer token is provided', async () => {
+    setup({ settings: { prometheusAuthToken: 'secret' }, models: [], projects: [], usage: [] });
+    const app = await buildApp();
+    const res = await app.inject({ method: 'GET', url: '/metrics', headers: { authorization: 'Bearer secret' } });
+    await app.close();
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toContain('text/plain');
+  });
 });

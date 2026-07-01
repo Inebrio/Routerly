@@ -85,6 +85,94 @@ function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: 
   );
 }
 
+// ── Prometheus section (self-saving) ─────────────────────────────────────────
+
+function PrometheusSection({ settings, onSaved }: { settings: Settings; onSaved: (s: Settings) => void }) {
+  const [enabled, setEnabled] = useState(settings.metricsEnabled !== false);
+  const [token, setToken] = useState(settings.prometheusAuthToken ?? '');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+
+  async function save(patch: Partial<Settings>) {
+    setSaving(true); setSaved(false); setError('');
+    try {
+      const updated = await updateSettings(patch);
+      onSaved(updated);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleToggle(val: boolean) {
+    setEnabled(val);
+    void save({ metricsEnabled: val });
+  }
+
+  function handleTokenSave(e: React.FormEvent) {
+    e.preventDefault();
+    const t = token.trim();
+    // ponytail: cast needed because exactOptionalPropertyTypes bars `string | undefined` in Partial<Settings>
+    void save({ prometheusAuthToken: t || undefined });
+  }
+
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <BarChart2 size={13} /> Prometheus Metrics
+      </h3>
+      <div style={{ padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-elevated)' }}>
+        <p style={{ fontSize: '0.83rem', color: 'var(--text-primary)', margin: '0 0 4px' }}>
+          Expose <code>/metrics</code> in Prometheus text format. Set a token to require Bearer auth on the endpoint.
+        </p>
+        {error && <p style={{ fontSize: '0.78rem', color: 'var(--error, #e53e3e)', margin: '0 0 10px' }}>{error}</p>}
+        {saved && <p style={{ fontSize: '0.78rem', color: '#22c55e', margin: '0 0 10px' }}>Saved.</p>}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14 }}>
+          <button
+            type="button"
+            className={`btn btn-sm ${enabled ? 'btn-primary' : 'btn-secondary'}`}
+            disabled={saving || enabled}
+            onClick={() => handleToggle(true)}
+            style={{ fontSize: '0.8rem' }}
+          >
+            {saving && !enabled ? <><div className="spinner" style={{ width: 11, height: 11 }} /> Saving…</> : 'Enable'}
+          </button>
+          <button
+            type="button"
+            className={`btn btn-sm ${!enabled ? 'btn-primary' : 'btn-secondary'}`}
+            disabled={saving || !enabled}
+            onClick={() => handleToggle(false)}
+            style={{ fontSize: '0.8rem' }}
+          >
+            {saving && enabled ? <><div className="spinner" style={{ width: 11, height: 11 }} /> Saving…</> : 'Disable'}
+          </button>
+        </div>
+        <form onSubmit={handleTokenSave} style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+          <div style={{ flex: 1 }}>
+            <label className="form-label" htmlFor="prom-token">Bearer Token <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+            <input
+              id="prom-token"
+              className="form-input"
+              type="password"
+              placeholder="Leave empty for open access"
+              value={token}
+              onChange={e => setToken(e.target.value)}
+              style={{ margin: 0 }}
+            />
+          </div>
+          <button type="submit" className="btn btn-secondary" disabled={saving} style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+            {saving ? <><div className="spinner" style={{ width: 11, height: 11 }} /> Saving…</> : 'Save Token'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ── General tab ───────────────────────────────────────────────────────────────
 
 export function SettingsGeneralTab() {
@@ -229,6 +317,11 @@ export function SettingsGeneralTab() {
       </div>
 
       <TelemetrySection
+        settings={settings!}
+        onSaved={updated => setSettings(updated)}
+      />
+
+      <PrometheusSection
         settings={settings!}
         onSaved={updated => setSettings(updated)}
       />
