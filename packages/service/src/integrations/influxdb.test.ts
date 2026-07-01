@@ -51,4 +51,46 @@ describe('pushInfluxDB', () => {
     mockFetch.mockRejectedValue(new Error('influx down'));
     await expect(pushInfluxDB(integration, snapshot)).rejects.toThrow('influx down');
   });
+
+  it('includes token, cost and duration lines when maps are non-empty', async () => {
+    mockFetch.mockResolvedValue({ ok: true });
+
+    const richSnapshot = {
+      agg: {
+        requests: new Map([['r', { labels: { project: 'P', model: 'M', provider: 'openai', status: 'success' }, value: 7 }]]),
+        tokens: new Map([['t', { labels: { project: 'P', model: 'M', type: 'input' }, value: 100 }]]),
+        cost: new Map([['c', { labels: { project: 'P', model: 'M' }, value: 0.005 }]]),
+        durations: new Map([['d', { labels: { project: 'P', model: 'M' }, latencies: [10, 20, 30, 40, 50] }]]),
+      },
+      projectName: (id: string) => id,
+      modelInfo: (id: string) => ({ model: id, provider: 'openai' }),
+      projects: [],
+      models: [],
+    };
+
+    await pushInfluxDB(integration, richSnapshot);
+
+    const [, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(opts.body as string).toContain('routerly_tokens_total');
+    expect(opts.body as string).toContain('routerly_cost_usd_total');
+    expect(opts.body as string).toContain('routerly_request_duration_p50_ms');
+    expect(opts.body as string).toContain('routerly_request_duration_p95_ms');
+  });
+
+  it('builds line without tags when labels is empty (line 20 branch=1)', async () => {
+    // empty labels → tags = '' → tagStr = '' (not `,${tags}`) → no tag set in line protocol
+    mockFetch.mockResolvedValue({ ok: true });
+    const emptyLabelSnapshot = {
+      ...snapshot,
+      agg: {
+        ...snapshot.agg,
+        requests: new Map([['k', { labels: {} as Record<string, string>, value: 5 }]]),
+      },
+    };
+    await pushInfluxDB(integration, emptyLabelSnapshot);
+    const [, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
+    // No comma before value (no tags) — line looks like "measurement value=5 ts"
+    expect(opts.body as string).toContain('routerly_requests_total value=5');
+    expect(opts.body as string).not.toContain('routerly_requests_total,');
+  });
 });

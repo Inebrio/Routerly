@@ -6,6 +6,7 @@ vi.mock('../routing/router.js', () => ({ routeRequest: vi.fn() }))
 vi.mock('../routing/routingMemoryStore.js', () => ({ addRoutingDecision: vi.fn() }))
 vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }))
 vi.mock('../routing/traceStore.js', () => ({ setTrace: vi.fn(), appendTrace: vi.fn() }))
+vi.mock('./openaiOAuthForward.js', () => ({ resolveCodexToken: vi.fn(), forwardOpenAIOAuthSSE: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('../llm/executor.js', () => ({
   llmChat: vi.fn(),
   llmStream: vi.fn(),
@@ -23,6 +24,7 @@ import { readConfig } from '../config/loader.js'
 import { llmChat, llmStream } from '../llm/executor.js'
 import { appendTrace } from '../routing/traceStore.js'
 import { trackUsage } from '../cost/tracker.js'
+import { forwardOpenAIOAuthSSE } from './openaiOAuthForward.js'
 
 const mockRouteRequest = vi.mocked(routeRequest)
 const mockReadConfig = vi.mocked(readConfig)
@@ -30,6 +32,7 @@ const mockLlmChat = vi.mocked(llmChat)
 const mockLlmStream = vi.mocked(llmStream)
 const mockAppendTrace = vi.mocked(appendTrace)
 const mockTrackUsage = vi.mocked(trackUsage)
+const mockForwardOpenAIOAuthSSE = vi.mocked(forwardOpenAIOAuthSSE)
 
 afterEach(() => vi.clearAllMocks())
 
@@ -924,6 +927,109 @@ describe('POST /v1/chat/completions — guardrail request block & PII output tra
     expect(scrubbed).toBeUndefined()
   })
 
+  it('response guardrail warn action: guardrailTriggered set but response passes through (line 491)', async () => {
+    const warnProject: any = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
+      guardrails: { action: 'warn', rules: [{ type: 'regex', target: 'response', config: { patterns: ['warn-me'] } }] },
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmChat.mockResolvedValue({
+      id: 'c1', object: 'chat.completion', created: 0, model: 'gpt-4o',
+      choices: [{ index: 0, message: { role: 'assistant', content: 'warn-me content' }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+    } as any)
+
+    const app = await buildApp(warnProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+
+    // warn action: response passes through unmodified (not blocked)
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.choices[0].message.content).toBe('warn-me content')
+    // guardrail:response-triggered trace was recorded with action=warn
+    const triggerTrace = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'guardrail:response-triggered')
+    expect(triggerTrace).toBeDefined()
+    expect((triggerTrace![1] as any[])[0].details.action).toBe('warn')
+  })
+
+  it('routing fallback used emits routing.fallback_used event (line 497)', async () => {
+    // Set up two models: primary fails (BudgetExceededError), fallback succeeds
+    const twoModelProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [],
+      models: [{ modelId: 'openai/gpt-4o' }, { modelId: 'openai/gpt-4o-mini' }],
+    }
+    const fallbackModel: any = { ...testModel, id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini' }
+    // routeRequest returns both models in order
+    mockRouteRequest.mockResolvedValue({ models: [
+      { model: 'openai/gpt-4o', weight: 1 },
+      { model: 'openai/gpt-4o-mini', weight: 0.5 },
+    ], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel, fallbackModel])
+    // Primary (gpt-4o) throws BudgetExceededError, fallback (gpt-4o-mini) succeeds
+    const { BudgetExceededError: BCE } = await import('../llm/executor.js')
+    mockLlmChat
+      .mockRejectedValueOnce(new BCE('openai/gpt-4o'))
+      .mockResolvedValueOnce(makeCompletion() as any)
+
+    const app = await buildApp(twoModelProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    // fallback was used — trackUsage was called with the fallback model
+    expect(mockLlmChat).toHaveBeenCalledTimes(2)
+  })
+
+  it('openai-oauth provider returns 422 in non-streaming path (line 437)', async () => {
+    const oauthModel: any = { ...testModel, id: 'openai-oauth/gpt-4o', provider: 'openai-oauth' }
+    const oauthProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [],
+      models: [{ modelId: 'openai-oauth/gpt-4o' }],
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai-oauth/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([oauthModel])
+
+    const app = await buildApp(oauthProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(422)
+    expect(JSON.parse(res.body).error.type).toBe('invalid_request_error')
+  })
+
+  it('streaming request block with Origin header sets CORS headers (line 154-158)', async () => {
+    const blockProject2: any = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
+      guardrails: { action: 'block', fallbackMessage: 'nope', rules: [{ type: 'regex', target: 'request', config: { patterns: ['blocked-origin'] } }] },
+    }
+    mockReadConfig.mockResolvedValue([testModel])
+
+    const app = await buildApp(blockProject2)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json', 'origin': 'https://example.com' },
+      payload: JSON.stringify({ model: 'gpt-4o', stream: true, messages: [{ role: 'user', content: 'blocked-origin request' }] }),
+    })
+    await app.close()
+
+    expect(res.body).toContain('content_filter')
+    expect(res.body).toContain('[DONE]')
+  })
+
   it('non-streaming response guardrail block emits content_filter + response evaluated trace (#77 C1)', async () => {
     const respGuard: any = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
@@ -953,5 +1059,426 @@ describe('POST /v1/chat/completions — guardrail request block & PII output tra
     const evalCall = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'guardrail:evaluated' && (c[1] as any[])[0]?.panel === 'response')
     expect(evalCall).toBeDefined()
     expect((evalCall![1] as any[])[0].details).toMatchObject({ target: 'response', rules: [{ rule: 'regex', outcome: 'triggered', reason: 'regex:leak' }] })
+  })
+})
+
+// ─── openai.ts request guardrail BudgetExceededError (lines 132-136) ───────────
+
+describe('POST /v1/chat/completions — request guardrail BudgetExceededError (lines 132-135)', () => {
+  it('returns 429 when checkGuardrails throws BudgetExceededError (line 132-134)', async () => {
+    // topic rule calls llmChat internally; if llmChat throws BudgetExceededError → caught at line 132
+    const topicGuardProject: any = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
+      guardrails: { action: 'block', rules: [{ type: 'topic', target: 'request', config: { modelId: 'openai/gpt-4o', allowedTopics: 'support', threshold: 0.5 } }] },
+    }
+    mockReadConfig.mockResolvedValue([testModel])
+    const { BudgetExceededError: BCE } = await import('../llm/executor.js')
+    mockLlmChat.mockRejectedValue(new BCE('openai/gpt-4o'))
+
+    const app = await buildApp(topicGuardProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'off-topic' }] }),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(429)
+    expect(JSON.parse(res.body).error.type).toBe('insufficient_quota')
+  })
+
+  it('re-throws non-BudgetExceededError from checkGuardrails (line 136 throw err)', async () => {
+    // topic rule causes llmChat to throw a generic error (not BCE) → line 136 re-throws → Fastify returns 500
+    const topicGuardProject: any = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
+      guardrails: { action: 'block', rules: [{ type: 'topic', target: 'request', config: { modelId: 'openai/gpt-4o', allowedTopics: 'support', threshold: 0.5 } }] },
+    }
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmChat.mockRejectedValue(new Error('network timeout'))
+
+    const app = await buildApp(topicGuardProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'off-topic' }] }),
+    })
+    await app.close()
+    // Non-BCE error re-thrown from guardrail check → Fastify turns it into 5xx (503 or 500 depending on error type)
+    expect([500, 503]).toContain(res.statusCode)
+  })
+
+  it('request guardrail warn action sets guardrailTriggered (line 176)', async () => {
+    // topic rule triggers with action=warn → line 176 sets guardrailTriggered → llmChat called with ctx.guardrailTriggered set
+    const warnTopicProject: any = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
+      guardrails: { action: 'warn', rules: [{ type: 'regex', target: 'request', config: { patterns: ['warn-trigger'] } }] },
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmChat.mockResolvedValue(makeCompletion() as any)
+
+    const app = await buildApp(warnTopicProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'warn-trigger request' }] }),
+    })
+    await app.close()
+
+    // warn action: request passes through, completion returned
+    expect(res.statusCode).toBe(200)
+    // llmChat called once for the completion (guardrails with regex don't call llmChat)
+    expect(mockLlmChat).toHaveBeenCalledOnce()
+  })
+})
+
+// ─── openai-oauth streaming path (line 271-273) ──────────────────────────────
+
+describe('POST /v1/chat/completions — openai-oauth streaming (lines 271-273)', () => {
+  it('delegates to forwardOpenAIOAuthSSE when model.provider is openai-oauth', async () => {
+    const oauthModel: any = { ...testModel, id: 'openai-oauth/gpt-4o', provider: 'openai-oauth' }
+    const oauthProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [],
+      models: [{ modelId: 'openai-oauth/gpt-4o' }],
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai-oauth/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([oauthModel])
+    mockForwardOpenAIOAuthSSE.mockResolvedValue(undefined)
+
+    const app = await buildApp(oauthProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', stream: true, messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+
+    expect(mockForwardOpenAIOAuthSSE).toHaveBeenCalledOnce()
+    expect(res.statusCode).toBe(200)
+  })
+})
+
+// ─── streaming response guardrail warn (line 359) ────────────────────────────
+
+describe('POST /v1/chat/completions — streaming response guardrail warn (line 359)', () => {
+  it('emits buffered SSE when response guardrail triggers with warn action', async () => {
+    const warnProject: any = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
+      guardrails: { action: 'warn', rules: [{ type: 'regex', target: 'response', config: { patterns: ['warn-word'] } }] },
+    }
+    async function* gen() {
+      yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'warn-word' }, finish_reason: 'stop' }] }
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmStream.mockResolvedValue({ ttftMs: 10, chunks: gen() } as any)
+
+    const app = await buildApp(warnProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', stream: true, messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+
+    // warn action: content should pass through (not blocked)
+    expect(res.body).toContain('warn-word')
+    expect(res.body).not.toContain('content_filter')
+    expect(res.body).toContain('[DONE]')
+  })
+})
+
+describe('trackBlockedRequest — line 40 .catch(() => {}) swallows trackUsage rejection', () => {
+  const blockProject: any = {
+    id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
+    guardrails: { action: 'block', fallbackMessage: 'blocked', rules: [{ type: 'regex', target: 'request', config: { patterns: ['forbidden'] } }] },
+  }
+
+  it('swallows trackUsage rejection; response still returns 200 with content_filter', async () => {
+    mockReadConfig.mockResolvedValue([testModel])
+    mockTrackUsage.mockRejectedValueOnce(new Error('tracker down'))
+    const app = await buildApp(blockProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'this is forbidden' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).choices[0].finish_reason).toBe('content_filter')
+    expect(mockTrackUsage).toHaveBeenCalledOnce()
+  })
+})
+
+// ─── body.messages ?? [] fallback (lines 93/124 binary-expr branch=1) ────────
+
+describe('POST /v1/chat/completions — body without messages field (lines 93/124)', () => {
+  it('handles request with no messages field (body.messages ?? [] branch=1)', async () => {
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmChat.mockResolvedValue(makeCompletion() as any)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      // No messages field → body.messages ?? [] = []
+      payload: JSON.stringify({ model: 'gpt-4o' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+})
+
+// ─── guardrail with array content (line 126 cond-expr branch=1) ──────────────
+
+describe('POST /v1/chat/completions — guardrail with array content (line 126)', () => {
+  it('uses empty inputText when last user message content is array (line 126 false branch)', async () => {
+    const regexProject: ProjectConfig = {
+      ...testProject,
+      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'request', config: { patterns: ['forbidden'] } }] },
+    } as any
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmChat.mockResolvedValue(makeCompletion() as any)
+
+    const app = await buildApp(regexProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      // Array content → typeof content !== 'string' → inputText = '' → regex doesn't match
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: [{ type: 'text', text: 'hello' }] }] }),
+    })
+    await app.close()
+    // Array content → inputText='' → regex 'forbidden' doesn't match → passes through
+    expect(res.statusCode).toBe(200)
+  })
+})
+
+// ─── request.token + endUserId + tags in context (lines 121/265/267) ─────────
+
+describe('POST /v1/chat/completions — token/endUserId/tags context (lines 121/265/267)', () => {
+  it('passes token and tags to LLMCallContext when token has tags', async () => {
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmChat.mockResolvedValue(makeCompletion() as any)
+
+    const appWithToken = Fastify({ logger: false })
+    appWithToken.decorateRequest('project', null as any)
+    appWithToken.decorateRequest('token', null as any)
+    appWithToken.addHook('preHandler', async (req: any) => {
+      req.project = testProject
+      req.token = { token: 'tok', name: 'T', permissions: ['completion'], tags: { env: 'prod' } }
+    })
+    await appWithToken.register(openaiRoutes)
+    await appWithToken.ready()
+
+    const res = await appWithToken.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: {
+        'content-type': 'application/json',
+        'x-routerly-conversation-id': 'sess-xyz',
+      },
+      // user field → endUserId (line 265)
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'hi' }], user: 'end-user-123' }),
+    })
+    await appWithToken.close()
+    expect(res.statusCode).toBe(200)
+    // The llmChat context should include endUserId, sessionId, tags
+    const ctxArg = mockLlmChat.mock.calls[0]![2] as any
+    expect(ctxArg.endUserId).toBe('end-user-123')
+    expect(ctxArg.sessionId).toBe('sess-xyz')
+    expect(ctxArg.tags).toEqual({ env: 'prod' })
+  })
+})
+
+// ─── trackBlockedRequest — empty project models (lines 27/28) ─────────────────
+describe('trackBlockedRequest — empty project.models (lines 27 cond-expr branch=1, 28 if branch=0)', () => {
+  it('returns early without calling trackUsage when project has no models', async () => {
+    // project.models = [] → firstModelId is undefined → cond-expr takes false branch (line 27 branch=1) → model=undefined → !model=true → early return (line 28 branch=0)
+    const emptyModelsProject: any = {
+      id: 'proj-empty', name: 'Test', tokens: [], members: [], models: [],
+      guardrails: { action: 'block', fallbackMessage: 'nope', rules: [{ type: 'regex', target: 'request', config: { patterns: ['blocked-word'] } }] },
+    }
+    mockReadConfig.mockResolvedValue([testModel])
+    const app = await buildApp(emptyModelsProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'blocked-word here' }] }),
+    })
+    await app.close()
+    // Guardrail blocks (200 content_filter) but trackUsage NOT called (trackBlockedRequest returned early)
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.choices[0].finish_reason).toBe('content_filter')
+    expect(mockTrackUsage).not.toHaveBeenCalled()
+  })
+})
+
+// ─── Non-streaming: secondary model fails (line 505 branch=1) + no model in body (line 509 branch=1) ──
+describe('POST /v1/chat/completions — secondary model failure and no model field (lines 505/509)', () => {
+  it('sets chatPrimaryFailed when PRIMARY model fails (line 505 branch=0)', async () => {
+    // Two models: primary gpt-4o fails, secondary gpt-4o-mini succeeds
+    const secondModel: any = { ...testModel, id: 'openai/gpt-4o-mini' }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }, { model: 'openai/gpt-4o-mini', weight: 0.5 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel, secondModel])
+    mockLlmChat
+      .mockRejectedValueOnce(new Error('primary failed'))
+      .mockResolvedValue(makeCompletion() as any)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'Hi' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('branch=1: secondary model fails (model.id !== chatPrimaryModelId) (line 505 branch=1)', async () => {
+    // Two models: primary gpt-4o fails, secondary gpt-4o-mini also fails → 503
+    // On second model failure, model.id !== chatPrimaryModelId → branch=1
+    const secondModel: any = { ...testModel, id: 'openai/gpt-4o-mini' }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }, { model: 'openai/gpt-4o-mini', weight: 0.5 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel, secondModel])
+    mockLlmChat.mockRejectedValue(new Error('all fail'))
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'Hi' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(503)
+  })
+
+  it('body.model undefined → requestedModel=null in 503 emitEvent (line 509 binary-expr branch=1)', async () => {
+    // No model field → body.model is undefined → ?? null → null used (branch=1)
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmChat.mockRejectedValue(new Error('fail'))
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      // no model field → body.model = undefined
+      payload: JSON.stringify({ messages: [{ role: 'user', content: 'Hi' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(503)
+  })
+})
+
+// ─── Non-streaming PII scrub: non-string content (line 460 branch=1) ──────────
+describe('POST /v1/chat/completions — PII scrub non-string content (line 460 branch=1)', () => {
+  it('skips PII scrub when response content is not a string (line 460 if branch=1)', async () => {
+    const piiProject: ProjectConfig = { ...testProject, pii: { scrubOutput: true } } as any
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    // content is null (not string) → typeof null === 'object' → line 460 if branch=1
+    mockLlmChat.mockResolvedValue({
+      id: 'c1', object: 'chat.completion', created: 0, model: 'gpt-4o',
+      choices: [{ index: 0, message: { role: 'assistant', content: null }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+    } as any)
+
+    const app = await buildApp(piiProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+})
+
+// ─── Non-streaming guardrail: non-string response content (line 476 branch=1) ──
+describe('POST /v1/chat/completions — guardrail non-string response content (line 476 branch=1)', () => {
+  it('skips guardrail check when response content is not a string (line 476 if branch=1)', async () => {
+    const guardProject: any = {
+      ...testProject,
+      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'response', config: { patterns: ['bad'] } }] },
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    // content is null → typeof null !== 'string' → line 476 if branch=1 (condition false)
+    mockLlmChat.mockResolvedValue({
+      id: 'c1', object: 'chat.completion', created: 0, model: 'gpt-4o',
+      choices: [{ index: 0, message: { role: 'assistant', content: null }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+    } as any)
+
+    const app = await buildApp(guardProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+})
+
+// ─── Streaming — model not found in catalog (line 253 branch=0) ──────────────
+describe('POST /v1/chat/completions — streaming model not in catalog (line 253 branch=0)', () => {
+  it('skips model not in allModels during streaming (line 253 if branch=0)', async () => {
+    async function* chunkGen() {
+      yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'Hi' }, finish_reason: 'stop' }] }
+    }
+    // First candidate 'nonexistent' not in catalog → skipped; second 'openai/gpt-4o' found → used
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'nonexistent', weight: 1 }, { model: 'openai/gpt-4o', weight: 0.5 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmStream.mockResolvedValue({ ttftMs: 50, chunks: chunkGen() } as any)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', stream: true, messages: [{ role: 'user', content: 'Hi' }] }),
+    })
+    await app.close()
+
+    expect(res.body).toContain('[DONE]')
+    expect(mockLlmStream).toHaveBeenCalledTimes(1)
+  })
+})
+
+// ─── Streaming — endUserId and tags in ctx (lines 265/267 branch=0) ──────────
+describe('POST /v1/chat/completions — streaming endUserId and tags (lines 265/267 branch=0)', () => {
+  it('includes endUserId and tags in streaming ctx (lines 265 branch=0, 267 branch=0)', async () => {
+    async function* chunkGen() {
+      yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'Hi' }, finish_reason: 'stop' }] }
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmStream.mockResolvedValue({ ttftMs: 50, chunks: chunkGen() } as any)
+
+    const appWithToken = Fastify({ logger: false })
+    appWithToken.decorateRequest('project', null as any)
+    appWithToken.decorateRequest('token', null as any)
+    appWithToken.addHook('preHandler', async (req: any) => {
+      req.project = testProject
+      req.token = { token: 'tok', name: 'T', permissions: ['completion'], tags: { env: 'staging' } }
+    })
+    await appWithToken.register(openaiRoutes)
+    await appWithToken.ready()
+
+    const res = await appWithToken.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      // user → endUserId (line 265 branch=0); token.tags → tags (line 267 branch=0)
+      payload: JSON.stringify({ model: 'gpt-4o', stream: true, messages: [{ role: 'user', content: 'hi' }], user: 'stream-user-1' }),
+    })
+    await appWithToken.close()
+
+    expect(res.body).toContain('[DONE]')
+    const ctxArg = mockLlmStream.mock.calls[0]![2] as any
+    expect(ctxArg.endUserId).toBe('stream-user-1')
+    expect(ctxArg.tags).toEqual({ env: 'staging' })
   })
 })

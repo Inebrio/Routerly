@@ -892,4 +892,27 @@ describe('llmPolicy', () => {
     } as unknown as PolicyInput)).rejects.toThrow('all models failed')
     expect(emit).toHaveBeenCalledWith(expect.objectContaining({ message: 'llm-policy:error' }))
   })
+
+  it('log.info includes max_completion_tokens when set (line 300 cond-expr branch=0)', async () => {
+    // log is defined + maxCompletionTokens is set → line 300 ternary evaluates both branches
+    mockReadConfig.mockResolvedValueOnce([routingModel]).mockResolvedValueOnce([project])
+    mockGetLimitUsageSnapshot.mockResolvedValue([])
+    mockGetRoutingHistory.mockReturnValue([])
+    mockLlmChat.mockResolvedValue(makeSuccessResponse([
+      { model: 'candidate-a', point: 0.8 },
+      { model: 'candidate-b', point: 0.2 },
+    ]) as any)
+
+    const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+    await llmPolicy({
+      ...makeInput({ routingModelId: 'router-model', maxCompletionTokens: 150 }),
+      log,
+    } as unknown as PolicyInput)
+
+    const routingCall = log.info.mock.calls.find(
+      (c: any) => typeof c[1] === 'string' && c[1].includes('routing request'),
+    )
+    expect(routingCall).toBeDefined()
+    expect(routingCall![0]).toHaveProperty('max_completion_tokens', 150)
+  })
 })

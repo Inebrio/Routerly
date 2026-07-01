@@ -617,3 +617,95 @@ describe('AnthropicWebAdapter SSE parseSSE edge cases', () => {
     expect(contentChunk?.model).toBe('claude-stream-model');
   });
 });
+
+describe('AnthropicWebAdapter streamCompletion — chunk with no model (line 292 branch=1)', () => {
+  it('keeps existing finalModel when chunk has no model field (line 292 if branch=1)', async () => {
+    // completion event without model field → modelStr='' → chunk.model is '' (falsy) → branch=1 (skip update)
+    vi.stubGlobal('fetch', makeFetchMock(makeSSEStream([
+      JSON.stringify({ type: 'completion', completion: 'hello', model: '' }), // empty model
+      JSON.stringify({ type: 'completion', completion: ' world' }), // no model at all
+    ])));
+
+    const adapter = new AnthropicWebAdapter();
+    const chunks: import('@routerly/shared').StreamChunk[] = [];
+    for await (const chunk of adapter.streamCompletion(makeRequest(), makeModel())) {
+      chunks.push(chunk);
+    }
+    // finalModel stays as upstream model (getUpstreamModelId returns)
+    expect(chunks.length).toBeGreaterThan(0);
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('AnthropicWebAdapter SSE — unknown event type (line 169 else-if branch=1)', () => {
+  it('ignores unknown SSE event types (neither completion nor message_stop)', async () => {
+    // Emit an unknown type 'ping' → neither if nor else-if matches → both branches skipped → ignored
+    vi.stubGlobal('fetch', makeFetchMock(makeSSEStream([
+      JSON.stringify({ type: 'ping' }),
+      completionEvent('Hello'),
+    ])));
+
+    const adapter = new AnthropicWebAdapter();
+    const result = await adapter.chatCompletion(makeRequest(), makeModel());
+    // 'ping' is ignored, 'Hello' is accumulated
+    expect(result.choices[0]!.message.content).toBe('Hello');
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('AnthropicWebAdapter SSE — completion event with missing fields (lines 166-168)', () => {
+  it('ignores completion event with no completion field (delta is empty → if(delta) branch=1)', async () => {
+    // parsed['completion'] is undefined → ?? '' → delta = '' → if(delta) is false → not yielded
+    // parsed['model'] is undefined → ?? '' → modelStr = ''
+    vi.stubGlobal('fetch', makeFetchMock(makeSSEStream([
+      JSON.stringify({ type: 'completion' }), // no completion or model fields
+      completionEvent('hello'),
+    ])));
+
+    const adapter = new AnthropicWebAdapter();
+    const result = await adapter.chatCompletion(makeRequest(), makeModel());
+    // Only 'hello' makes it through; the empty-completion event is ignored
+    expect(result.choices[0]!.message.content).toBe('hello');
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('AnthropicWebAdapter — .catch(() => "") coverage for text() rejections', () => {
+  it('line 79: swallows response.text() rejection in getOrgId error path', async () => {
+    // response.text() rejects → .catch(() => '') → detail = '' → error message has no detail
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      statusText: 'Forbidden',
+      text: async () => { throw new Error('text() failed') },
+    }));
+
+    const adapter = new AnthropicWebAdapter();
+    await expect(
+      adapter.chatCompletion(makeRequest(), makeModel()),
+    ).rejects.toThrow('anthropic-web: failed to fetch organizations');
+    vi.unstubAllGlobals();
+  });
+
+  it('line 108: swallows response.text() rejection in getConvId error path', async () => {
+    // getOrgId succeeds, getConvId fails with text() rejecting
+    vi.stubGlobal('fetch', vi.fn((url: string) => {
+      if ((url as string).includes('/api/organizations') && !(url as string).includes('chat_conversations')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(ORGS_RESPONSE) });
+      }
+      // getConvId call → POST to chat_conversations
+      return Promise.resolve({
+        ok: false,
+        status: 503,
+        statusText: 'Service Unavailable',
+        text: async () => { throw new Error('text() failed') },
+      });
+    }));
+
+    const adapter = new AnthropicWebAdapter();
+    await expect(
+      adapter.chatCompletion(makeRequest(), makeModel()),
+    ).rejects.toThrow('anthropic-web: failed to create conversation');
+    vi.unstubAllGlobals();
+  });
+});

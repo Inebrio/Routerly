@@ -177,4 +177,25 @@ describe('trackUsage', () => {
     const record = mockAppendUsageRecord.mock.calls[0]![0]
     expect(record.trace).toEqual([])
   })
+
+  it('includes optional fields when provided (lines 80-85)', async () => {
+    mockGetTrace.mockReturnValue(null)
+    await trackUsage({
+      projectId: 'p', model: makeModel() as any,
+      inputTokens: 10, outputTokens: 5, latencyMs: 100, outcome: 'success',
+      endUserId: 'user-1',
+      sessionId: 'sess-1',
+      tags: { env: 'prod' },
+      guardrailTriggered: 'regex:bad',
+      blockedBy: 'regex:bad',
+      piiRedacted: ['NAME'],
+    })
+    const record = mockAppendUsageRecord.mock.calls[0]![0]
+    expect(record.endUserId).toBe('user-1')
+    expect(record.sessionId).toBe('sess-1')
+    expect(record.tags).toEqual({ env: 'prod' })
+    expect(record.guardrailTriggered).toBe('regex:bad')
+    expect(record.blockedBy).toBe('regex:bad')
+    expect(record.piiRedacted).toEqual(['NAME'])
+  })
 })

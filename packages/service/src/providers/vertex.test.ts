@@ -260,6 +260,22 @@ describe('VertexAdapter — streamCompletion', () => {
     )) {}
     expect(capturedModel).toBe('gemini-1.5-pro');
   });
+
+  it('uses model id directly when no slash (line 96 false branch)', async () => {
+    let capturedModel = '';
+    async function* fakeStream() {}
+    mockCreate.mockImplementationOnce(async (opts: { model: string }) => {
+      capturedModel = opts.model;
+      return fakeStream();
+    });
+    const { VertexAdapter } = await import('./vertex.js');
+    const noSlashModel = { ...baseModel, id: 'gemini-2.0-flash' }; // no slash
+    for await (const _ of new VertexAdapter().streamCompletion(
+      { messages: [{ role: 'user' as const, content: 'Hi' }] } as any,
+      noSlashModel,
+    )) {}
+    expect(capturedModel).toBe('gemini-2.0-flash');
+  });
 });
 
 describe('VertexAdapter — getClient', () => {
@@ -268,5 +284,103 @@ describe('VertexAdapter — getClient', () => {
     expect(() => (new VertexAdapter() as any).getClient(baseModel)).toThrow(
       'VertexAdapter: use chatCompletion/streamCompletion directly',
     );
+  });
+});
+
+describe('VertexAdapter — buildClient fallback branches (lines 67-68)', () => {
+  it('uses empty string when apiKey is undefined and no saKey (line 67 ?? branch)', async () => {
+    mockCreate.mockResolvedValueOnce({ ...chatResponse, choices: [{ index: 0, message: { role: 'assistant', content: 'ok' }, finish_reason: 'stop' }] });
+    const { VertexAdapter } = await import('./vertex.js');
+    // No vertexServiceAccountKey, no apiKey → saKey='' (falsy) → token = (model.apiKey ?? '') = ''
+    // No vertexProjectId → project = '' (covers line 68 ?? '' branch)
+    const minimalModel = { ...baseModel, apiKey: undefined, vertexProjectId: undefined, vertexServiceAccountKey: undefined };
+    await new VertexAdapter().chatCompletion(
+      { messages: [{ role: 'user' as const, content: 'hi' }] } as any,
+      minimalModel,
+    );
+    expect(mockCreate).toHaveBeenCalled();
+    const ctorArgs = mockConstructorArgs[0]!;
+    expect(ctorArgs['apiKey']).toBe('');
+  });
+});
+
+describe('VertexAdapter — messages', () => {
+  it('converts Anthropic messages and returns MessagesResponse', async () => {
+    mockCreate.mockResolvedValueOnce(chatResponse);
+    const { VertexAdapter } = await import('./vertex.js');
+
+    const result = await new VertexAdapter().messages(
+      {
+        model: 'gemini-1.5-pro',
+        messages: [{ role: 'user', content: 'Hello' }],
+        max_tokens: 100,
+      } as any,
+      baseModel,
+    );
+
+    expect(mockCreate).toHaveBeenCalledOnce();
+    expect(result).toHaveProperty('type', 'message');
+    expect(result.content[0]).toMatchObject({ type: 'text' });
+  });
+
+  it('prepends system message when present', async () => {
+    mockCreate.mockResolvedValueOnce(chatResponse);
+    const { VertexAdapter } = await import('./vertex.js');
+
+    await new VertexAdapter().messages(
+      {
+        model: 'gemini-1.5-pro',
+        messages: [{ role: 'user', content: 'Hi' }],
+        system: 'You are helpful.',
+        max_tokens: 50,
+      } as any,
+      baseModel,
+    );
+
+    const calledWith = mockCreate.mock.calls[0]?.[0] as { messages: { role: string }[] };
+    expect(calledWith.messages[0]?.role).toBe('system');
+  });
+
+  it('passes messages directly when no system prompt', async () => {
+    mockCreate.mockResolvedValueOnce(chatResponse);
+    const { VertexAdapter } = await import('./vertex.js');
+
+    await new VertexAdapter().messages(
+      {
+        model: 'gemini-1.5-pro',
+        messages: [{ role: 'user', content: 'Hello' }],
+        max_tokens: 100,
+      } as any,
+      { ...baseModel, id: 'gemini-2.0-flash' }, // no slash prefix — exercises the no-slash branch
+    );
+
+    const calledWith = mockCreate.mock.calls[0]?.[0] as { messages: { role: string }[]; model: string };
+    expect(calledWith.messages[0]?.role).toBe('user');
+    expect(calledWith.model).toBe('gemini-2.0-flash');
+  });
+});
+
+describe('VertexAdapter — token exchange error fallback', () => {
+  it('uses statusText when resp.text() throws', async () => {
+    const { generateKeyPairSync } = await import('node:crypto');
+    const { privateKey: key } = generateKeyPairSync('rsa', {
+      modulusLength: 2048,
+      privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+    });
+    const saKey = JSON.stringify({ client_email: 'fallback@test.iam.gserviceaccount.com', private_key: key });
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+      text: async () => { throw new Error('text failed'); },
+    }) as any;
+
+    const { VertexAdapter } = await import('./vertex.js');
+    await expect(
+      new VertexAdapter().chatCompletion(
+        { messages: [{ role: 'user' as const, content: 'Hi' }] } as any,
+        { ...baseModel, vertexServiceAccountKey: saKey },
+      ),
+    ).rejects.toThrow('Vertex token exchange failed 500: Internal Server Error');
   });
 });

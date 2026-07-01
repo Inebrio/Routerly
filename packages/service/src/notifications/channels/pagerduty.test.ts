@@ -62,4 +62,24 @@ describe('sendPagerDuty', () => {
 
     await expect(sendPagerDuty(cfg, payload)).rejects.toThrow('PagerDuty HTTP 403');
   });
+
+  it('falls back to info severity for unknown severity value', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, text: async () => '' });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await sendPagerDuty(cfg, { ...payload, severity: 'unknown' as any });
+
+    const body = JSON.parse((mockFetch.mock.calls[0] as [string, RequestInit])[1].body as string);
+    expect(body.payload.severity).toBe('info');
+  });
+
+  it('uses empty object when no details provided', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, text: async () => '' });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await sendPagerDuty(cfg, { event: 'test', severity: 'info', timestamp: '2024-01-01T00:00:00Z' });
+
+    const body = JSON.parse((mockFetch.mock.calls[0] as [string, RequestInit])[1].body as string);
+    expect(body.payload.custom_details).toEqual({});
+  });
 });

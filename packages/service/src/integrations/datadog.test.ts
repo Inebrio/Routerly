@@ -46,4 +46,30 @@ describe('pushDatadog', () => {
     mockFetch.mockRejectedValue(new Error('dd unreachable'));
     await expect(pushDatadog(integration, snapshot)).rejects.toThrow('dd unreachable');
   });
+
+  it('includes token, cost and duration series when maps are non-empty', async () => {
+    mockFetch.mockResolvedValue({ ok: true });
+
+    const richSnapshot = {
+      agg: {
+        requests: new Map([['r', { labels: { project: 'P', model: 'M', provider: 'openai', status: 'success' }, value: 3 }]]),
+        tokens: new Map([['t', { labels: { project: 'P', model: 'M', provider: 'openai', type: 'input' }, value: 100 }]]),
+        cost: new Map([['c', { labels: { project: 'P', model: 'M', provider: 'openai' }, value: 0.005 }]]),
+        durations: new Map([['d', { labels: { project: 'P', model: 'M' }, latencies: [10, 20, 30, 40, 50] }]]),
+      },
+      projectName: (id: string) => id,
+      modelInfo: (id: string) => ({ model: id, provider: 'openai' }),
+      projects: [],
+      models: [],
+    };
+
+    await pushDatadog(integration, richSnapshot);
+
+    const [, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(opts.body as string) as { series: { metric: string }[] };
+    expect(body.series.some((s) => s.metric === 'routerly.tokens.total')).toBe(true);
+    expect(body.series.some((s) => s.metric === 'routerly.cost.usd.total')).toBe(true);
+    expect(body.series.some((s) => s.metric === 'routerly.request.duration.p50.ms')).toBe(true);
+    expect(body.series.some((s) => s.metric === 'routerly.request.duration.p95.ms')).toBe(true);
+  });
 });

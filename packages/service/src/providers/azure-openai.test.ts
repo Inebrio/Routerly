@@ -82,4 +82,20 @@ describe('AzureOpenAIAdapter', () => {
     expect(resp.choices[0]!.message.content).toBe('Hello');
     expect(resp.object).toBe('chat.completion');
   });
+
+  it('falls back to empty strings when azureResourceName and azureDeploymentId are missing', async () => {
+    const { AzureOpenAIAdapter } = await import('./azure-openai.js');
+    const adapter = new AzureOpenAIAdapter();
+    const minimalModel = { ...baseModel, azureResourceName: undefined, azureDeploymentId: undefined, apiKey: undefined };
+
+    await adapter.chatCompletion(
+      { messages: [{ role: 'user' as const, content: 'Hi' }] } as any,
+      minimalModel as any,
+    );
+
+    const callArg = mockConstructorArgs[0]!;
+    expect(callArg.baseURL).toBe('https://.openai.azure.com/openai/deployments/');
+    expect(callArg.apiKey).toBe('');
+    expect((callArg.defaultHeaders as Record<string, string>)['api-key']).toBe('');
+  });
 });
