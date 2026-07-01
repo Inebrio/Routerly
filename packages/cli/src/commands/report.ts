@@ -166,59 +166,6 @@ Examples:
       }
     });
 
-  // ── report leaderboard ──
-  cmd.command('leaderboard')
-    .description('Show model performance leaderboard')
-    .option('--period <period>', 'Period: daily | weekly | monthly', 'weekly')
-    .option('--project <id>', 'Filter by project ID')
-    .option('--json', 'Output as JSON')
-    .action(async (opts: { period: string; project?: string; json?: boolean }) => {
-      try {
-        const params = new URLSearchParams({ period: opts.period });
-        if (opts.project) params.set('projectId', opts.project);
-
-        const data = await api<Array<{
-          modelId: string;
-          provider: string;
-          requests: number;
-          successRate: number;
-          avgLatencyMs: number;
-          costPer1kTokens: number;
-          totalCost: number;
-        }>>('GET', `/api/leaderboard?${params.toString()}`);
-
-        if (opts.json) { console.log(JSON.stringify(data, null, 2)); return; }
-
-        if (data.length === 0) {
-          console.log(chalk.yellow('No leaderboard data for this period.'));
-          return;
-        }
-
-        console.log(chalk.bold(`\nModel Leaderboard — ${opts.period.toUpperCase()}\n`));
-        const table = new Table({
-          head: ['Rank', 'Model', 'Provider', 'Requests', 'Success%', 'Avg Latency', 'Cost/1K tokens', 'Total Cost'].map(h => chalk.cyan(h)),
-        });
-
-        data.forEach((row, i) => {
-          const rank = i === 0 ? chalk.yellow('★ 1') : String(i + 1);
-          table.push([
-            rank,
-            row.modelId,
-            row.provider,
-            row.requests,
-            `${(row.successRate * 100).toFixed(1)}%`,
-            `${row.avgLatencyMs}ms`,
-            `$${row.costPer1kTokens.toFixed(4)}`,
-            `$${row.totalCost.toFixed(6)}`,
-          ]);
-        });
-        console.log(table.toString());
-      } catch (err) {
-        console.error(chalk.red(`Error: ${(err as Error).message}`));
-        process.exit(1);
-      }
-    });
-
   // ── report sessions ──
   cmd.command('sessions')
     .description('Show usage sessions')
