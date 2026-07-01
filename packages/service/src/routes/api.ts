@@ -1760,6 +1760,97 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send({ providers });
   });
 
+  // ─── GET /api/leaderboard (#80) ──────────────────────────────────────────────
+  // Ranks models by real-world cost-performance using local usage records only.
+  fastify.get<{ Querystring: { period?: string; projectId?: string; from?: string; to?: string } }>('/api/leaderboard', async (req, reply) => {
+    if (!requirePerm(req, 'report:read', reply)) return;
+    const [models, records] = await Promise.all([readConfig('models'), readConfig('usage')]);
+    const { period = 'monthly', projectId, from, to } = req.query;
+
+    const now = new Date();
+    let since = new Date(0);
+    let until = new Date(now.getTime() + 86400000);
+    if (period === 'daily') { since = new Date(now); since.setHours(0, 0, 0, 0); }
+    else if (period === 'weekly') {
+      since = new Date(now);
+      const d = since.getDay();
+      since.setDate(since.getDate() - (d === 0 ? 6 : d - 1));
+      since.setHours(0, 0, 0, 0);
+    } else if (period === 'monthly') { since = new Date(now); since.setDate(1); since.setHours(0, 0, 0, 0); }
+    else if (period === 'custom') {
+      if (from) { since = new Date(from); if (from.length <= 10) since.setHours(0, 0, 0, 0); }
+      if (to) { until = new Date(to); if (to.length <= 10) until.setHours(23, 59, 59, 999); }
+    }
+
+    let filtered = records.filter(r => {
+      const ts = new Date(r.timestamp);
+      return ts >= since && ts <= until;
+    });
+    if (projectId) filtered = filtered.filter(r => r.projectId === projectId);
+
+    const providerByModel = new Map(models.map(m => [m.id, m.provider]));
+
+    const trendKeys: string[] = [];
+    for (let i = 6; i >= 0; i--) {
+      trendKeys.push(new Date(now.getTime() - i * 86400000).toISOString().slice(0, 10));
+    }
+
+    type Acc = {
+      totalRequests: number; success: number; totalCost: number;
+      totalTokens: number; latencies: number[]; totalLatencyMs: number;
+      trend: Record<string, number>;
+    };
+    const byModel = new Map<string, Acc>();
+    for (const r of filtered) {
+      if (r.outcome === 'blocked') continue;
+      const a = byModel.get(r.modelId) ?? {
+        totalRequests: 0, success: 0, totalCost: 0, totalTokens: 0,
+        latencies: [], totalLatencyMs: 0, trend: {},
+      };
+      a.totalRequests++;
+      const ok = r.outcome === 'success';
+      if (ok) {
+        a.success++;
+        a.totalCost += r.cost;
+        a.totalTokens += r.inputTokens + r.outputTokens;
+        if (typeof r.latencyMs === 'number') { a.latencies.push(r.latencyMs); a.totalLatencyMs += r.latencyMs; }
+        const day = r.timestamp.slice(0, 10);
+        a.trend[day] = (a.trend[day] ?? 0) + r.cost;
+      }
+      byModel.set(r.modelId, a);
+    }
+
+    const leaderboard = [...byModel.entries()].map(([modelId, a]) => {
+      const successRate = a.totalRequests > 0 ? a.success / a.totalRequests : 0;
+      const errorRate = a.totalRequests > 0 ? 1 - successRate : 0;
+      const avgLatencyMs = a.latencies.length > 0 ? a.totalLatencyMs / a.latencies.length : 0;
+      const p95LatencyMs = p95(a.latencies);
+      const avgCostPer1kTokens = a.totalTokens > 0 ? (a.totalCost / a.totalTokens) * 1000 : 0;
+      const totalLatencySec = a.totalLatencyMs / 1000;
+      const tokensPerSec = totalLatencySec > 0 ? a.totalTokens / totalLatencySec : 0;
+      return {
+        modelId,
+        provider: providerByModel.get(modelId) ?? 'unknown',
+        totalRequests: a.totalRequests,
+        successRate,
+        avgLatencyMs,
+        p95LatencyMs,
+        avgCostPer1kTokens,
+        totalCost: a.totalCost,
+        totalTokens: a.totalTokens,
+        tokensPerSec,
+        errorRate,
+        trend: trendKeys.map(date => ({ date, cost: a.trend[date] ?? 0 })),
+      };
+    });
+
+    const ratio = (m: typeof leaderboard[number]) =>
+      m.successRate > 0 ? m.avgCostPer1kTokens / m.successRate : Number.POSITIVE_INFINITY;
+    leaderboard.sort((a, b) => ratio(a) - ratio(b));
+
+    return reply.send(leaderboard);
+  });
+
   // ─── GET /api/notifications/channels ─────────────────────────────────────────
   fastify.get('/api/notifications/channels', async (req, reply) => {
     if (!requirePerm(req, 'notification:write', reply)) return;

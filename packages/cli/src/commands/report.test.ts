@@ -243,6 +243,53 @@ describe('report calls', () => {
   });
 });
 
+// ── report leaderboard ───────────────────────────────────────────────────────
+
+const leaderboardFixture = [
+  { modelId: 'gpt-4o', provider: 'openai', requests: 100, successRate: 0.98, avgLatencyMs: 320, costPer1kTokens: 0.005, totalCost: 0.50 },
+  { modelId: 'gpt-4o-mini', provider: 'openai', requests: 200, successRate: 0.99, avgLatencyMs: 150, costPer1kTokens: 0.00015, totalCost: 0.03 },
+];
+
+describe('report leaderboard', () => {
+  it('prints leaderboard table', async () => {
+    mockApi.mockResolvedValue(leaderboardFixture);
+    const { out } = await run('leaderboard');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('/api/leaderboard'));
+    expect(out.join('\n')).toContain('gpt-4o');
+  });
+
+  it('marks rank-1 with a star', async () => {
+    mockApi.mockResolvedValue(leaderboardFixture);
+    const { out } = await run('leaderboard');
+    expect(out.join('\n')).toContain('★');
+  });
+
+  it('outputs JSON with --json flag', async () => {
+    mockApi.mockResolvedValue(leaderboardFixture);
+    const { out } = await run('leaderboard', '--json');
+    const parsed = JSON.parse(out.join('\n'));
+    expect(Array.isArray(parsed)).toBe(true);
+  });
+
+  it('prints empty message when no data', async () => {
+    mockApi.mockResolvedValue([]);
+    const { out } = await run('leaderboard');
+    expect(out.join('\n')).toContain('No leaderboard data');
+  });
+
+  it('appends --project filter', async () => {
+    mockApi.mockResolvedValue(leaderboardFixture);
+    await run('leaderboard', '--project', 'p1');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('projectId=p1'));
+  });
+
+  it('exits 1 on API error', async () => {
+    mockApi.mockRejectedValue(new Error('boom'));
+    const { err } = await run('leaderboard');
+    expect(err.join('\n')).toContain('boom');
+  });
+});
+
 // ── report sessions ──────────────────────────────────────────────────────────
 
 const sessionsFixture = [

@@ -6639,3 +6639,180 @@ describe('PATCH /api/projects/:id/guardrails — per-rule action field', () => {
     expect(res.statusCode).toBe(200)
   })
 })
+
+// ─── GET /api/leaderboard (#80) ───────────────────────────────────────────────
+
+describe('GET /api/leaderboard', () => {
+  function setupLb(models: any[], usage: any[]) {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'models') return models
+      if (t === 'usage') return usage
+      return []
+    })
+  }
+
+  function rec(o: Partial<any>): any {
+    return {
+      id: `r-${Math.random()}`,
+      timestamp: new Date().toISOString(),
+      projectId: 'p1', modelId: 'm', inputTokens: 500, outputTokens: 500,
+      cost: 0.01, latencyMs: 1000, outcome: 'success', ...o,
+    }
+  }
+
+  it('aggregates per-model stats from usage records', async () => {
+    setupLb(
+      [{ id: 'm', name: 'M', provider: 'openai' }],
+      [
+        rec({ inputTokens: 500, outputTokens: 500, cost: 0.015, latencyMs: 1000 }),
+        rec({ inputTokens: 500, outputTokens: 500, cost: 0.015, latencyMs: 1000 }),
+      ],
+    )
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard?period=monthly', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json()
+    expect(body).toHaveLength(1)
+    const e = body[0]
+    expect(e.modelId).toBe('m')
+    expect(e.provider).toBe('openai')
+    expect(e.totalRequests).toBe(2)
+    expect(e.successRate).toBe(1)
+    expect(e.errorRate).toBe(0)
+    expect(e.totalTokens).toBe(2000)
+    expect(e.totalCost).toBeCloseTo(0.03)
+    expect(e.avgCostPer1kTokens).toBeCloseTo(0.015)
+    expect(e.avgLatencyMs).toBe(1000)
+    expect(e.p95LatencyMs).toBe(1000)
+    expect(e.tokensPerSec).toBeCloseTo(1000)
+    expect(e.trend).toHaveLength(7)
+  })
+
+  it('computes success rate from mixed outcomes', async () => {
+    setupLb(
+      [{ id: 'm', name: 'M', provider: 'openai' }],
+      [rec({ outcome: 'success' }), rec({ outcome: 'error' }), rec({ outcome: 'success' }), rec({ outcome: 'success' })],
+    )
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard', headers: adminAuthHeaders() })
+    await app.close()
+    const e = res.json()[0]
+    expect(e.totalRequests).toBe(4)
+    expect(e.successRate).toBeCloseTo(0.75)
+    expect(e.errorRate).toBeCloseTo(0.25)
+  })
+
+  it('excludes guardrail-blocked records from the leaderboard error rate (#77)', async () => {
+    setupLb(
+      [{ id: 'm', name: 'M', provider: 'openai' }],
+      [
+        rec({ outcome: 'success' }),
+        rec({ outcome: 'success' }),
+        rec({ outcome: 'blocked', callType: 'guardrail', cost: 0, inputTokens: 0, outputTokens: 0, latencyMs: 0 }),
+      ],
+    )
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard', headers: adminAuthHeaders() })
+    await app.close()
+    const e = res.json()[0]
+    expect(e.totalRequests).toBe(2)
+    expect(e.successRate).toBe(1)
+    expect(e.errorRate).toBe(0)
+  })
+
+  it('ranks by cost-performance ratio (best first)', async () => {
+    setupLb(
+      [
+        { id: 'cheap', name: 'Cheap', provider: 'ollama' },
+        { id: 'pricey', name: 'Pricey', provider: 'openai' },
+      ],
+      [
+        rec({ modelId: 'cheap', cost: 0.001, inputTokens: 500, outputTokens: 500, outcome: 'success' }),
+        rec({ modelId: 'pricey', cost: 0.1, inputTokens: 500, outputTokens: 500, outcome: 'success' }),
+      ],
+    )
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard', headers: adminAuthHeaders() })
+    await app.close()
+    const body = res.json()
+    expect(body.map((e: any) => e.modelId)).toEqual(['cheap', 'pricey'])
+  })
+
+  it('sinks models with zero success rate to the bottom', async () => {
+    setupLb(
+      [
+        { id: 'good', name: 'Good', provider: 'openai' },
+        { id: 'broken', name: 'Broken', provider: 'openai' },
+      ],
+      [
+        rec({ modelId: 'good', cost: 0.02, outcome: 'success' }),
+        rec({ modelId: 'broken', cost: 0.001, outcome: 'error' }),
+      ],
+    )
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard', headers: adminAuthHeaders() })
+    await app.close()
+    const body = res.json()
+    expect(body[body.length - 1].modelId).toBe('broken')
+    expect(body[body.length - 1].successRate).toBe(0)
+  })
+
+  it('filters by projectId', async () => {
+    setupLb(
+      [{ id: 'm', name: 'M', provider: 'openai' }],
+      [rec({ projectId: 'p1' }), rec({ projectId: 'p2' })],
+    )
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard?projectId=p1', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.json()[0].totalRequests).toBe(1)
+  })
+
+  it('respects a custom time window', async () => {
+    const old = rec({ timestamp: '2020-01-01T00:00:00.000Z' })
+    const recent = rec({ timestamp: new Date().toISOString() })
+    setupLb([{ id: 'm', name: 'M', provider: 'openai' }], [old, recent])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/leaderboard?period=custom&from=${new Date(Date.now() - 86400000).toISOString().slice(0, 10)}`,
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.json()[0].totalRequests).toBe(1)
+  })
+
+  it('returns an empty array when there is no usage', async () => {
+    setupLb([{ id: 'm', name: 'M', provider: 'openai' }], [])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.json()).toEqual([])
+  })
+
+  it('returns 403 without report:read permission', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ id: 'viewer-id', email: 'v@e.com', roleId: 'no-perms', projectIds: [] }]
+      if (t === 'roles') return [{ id: 'no-perms', name: 'NoPerms', permissions: [] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('returns 401 without auth', async () => {
+    mockVerifyToken.mockReturnValue(null as any)
+    mockReadConfig.mockResolvedValue([] as any)
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard' })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+})
