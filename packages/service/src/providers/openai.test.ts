@@ -219,7 +219,7 @@ describe('OpenAIAdapter.getClient — fallback branches (lines 15-18)', () => {
     // apiKey=undefined → ?? '' branch; endpoint='' → || default branch; timeout=undefined → ?? 60000 branch
     await adapter.chatCompletion(
       { model: 'gpt-4o', messages: [{ role: 'user', content: 'hi' }] } as any,
-      makeModel({ apiKey: undefined, endpoint: '', timeout: undefined }),
+      makeModel({ apiKey: undefined, endpoint: '' }),
     );
     // Just asserting it doesn't throw is sufficient to cover the branches
     expect(create).toHaveBeenCalled();

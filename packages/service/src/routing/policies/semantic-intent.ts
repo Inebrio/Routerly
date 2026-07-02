@@ -2,6 +2,7 @@ import type { SemanticIntentConfig } from '@routerly/shared';
 import { providersConf } from '@routerly/shared';
 import { classifyIntent } from '../intent/classifier.js';
 import { trackUsage } from '../../cost/tracker.js';
+import { readConfig } from '../../config/loader.js';
 import type { PolicyFn } from './types.js';
 
 /** Lookup input cost (per 1M tokens) for an embedding model from the static providers catalogue. */
@@ -79,11 +80,29 @@ export const semanticIntentPolicy: PolicyFn = async ({
     embeddingModel: cfg.embedding_model,
   }, 'semantic-intent policy: input');
 
+  // ── Resolve embedding credentials from model registry ─────────────────────
+  // The dashboard saves embedding_provider/embedding_model but not apiKey/endpoint.
+  // Look them up from models.json so classifyIntent doesn't get a 401.
+  let resolvedCfg: SemanticIntentConfig = cfg;
+  {
+    const allModels = await readConfig('models');
+    const modelEntry = allModels.find((m: { id: string }) => m.id === cfg.embedding_model);
+    if (!modelEntry) {
+      log?.warn({ embeddingModel: cfg.embedding_model }, 'semantic-intent policy: embedding model not in registry, passing all candidates through');
+      return { routing: candidates.map(c => ({ model: c.model.id, point: 1.0 })) };
+    }
+    resolvedCfg = {
+      ...cfg,
+      ...(modelEntry.apiKey ? { embedding_api_key: modelEntry.apiKey } : {}),
+      ...(modelEntry.endpoint ? { embedding_endpoint: modelEntry.endpoint } : {}),
+    };
+  }
+
   // ── Classify ───────────────────────────────────────────────────────────────
   let classifyResult;
   try {
     const t0 = Date.now();
-    classifyResult = await classifyIntent(userText, cfg);
+    classifyResult = await classifyIntent(userText, resolvedCfg);
     const latencyMs = Date.now() - t0;
 
     // Track the embedding API call as a routing-type usage record so it appears
