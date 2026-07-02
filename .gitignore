@@ -76,13 +76,15 @@ CLAUDE.local.md
 .tmp/
 
 # ===========================
-# Claude Code
+# Claude Code / AI tools
 # ===========================
 CLAUDE.local.md
 .ai/
 .worktrees/
 .claude/settings.local.json
 .claude/worktrees/
+.impeccable/
+.playwright-mcp/
 
 # ===========================
 # Screenshots / agent scratch (never in project root)
@@ -93,7 +95,6 @@ CLAUDE.local.md
 *.webp
 !docs/**/*.png
 !docs/**/*.jpg
-.playwright-mcp/
 
 # ===========================
 # Firebase
@@ -106,8 +107,3 @@ CLAUDE.local.md
 website/build/
 website/node_modules/
 website/.docusaurus/
-
-# ===========================
-# Playwright MCP scratch
-# ===========================
-.playwright-mcp/
