@@ -21,7 +21,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./.data/prometheus:/prometheus
       - ./.data/prometheus-token:/etc/prometheus/routerly-token:ro
     command:
@@ -35,7 +35,7 @@ services:
       - "4317:4317"
       - "4318:4318"
     volumes:
-      - ./otel-collector-config.yml:/etc/otelcol-contrib/config.yaml:ro
+      - ./docker/otel-collector-config.yml:/etc/otelcol-contrib/config.yaml:ro
     restart: unless-stopped
 
   influxdb:
@@ -59,7 +59,7 @@ services:
       - "3001:3000"
     volumes:
       - ./.data/grafana:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
     environment:
       GF_SECURITY_ADMIN_PASSWORD: routerly-dev
       GF_USERS_ALLOW_SIGN_UP: "false"
