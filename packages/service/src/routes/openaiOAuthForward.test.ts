@@ -482,7 +482,7 @@ describe('forwardOpenAIOAuthSSE', () => {
     vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
     mockFetch.mockResolvedValue({ ok: true, status: 200, body: makeReadableStream('') })
 
-    const modelNoEndpoint: ModelConfig = { ...oauthModel, endpoint: undefined }
+    const modelNoEndpoint: ModelConfig = { ...oauthModel, endpoint: undefined as any }
     const raw = makeRaw()
     await forwardOpenAIOAuthSSE(raw as any, {}, modelNoEndpoint, makeLog(), 'trace-defbase', 'proj-1')
 

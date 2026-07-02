@@ -22,6 +22,14 @@ vi.mock('../../cost/tracker.js', () => ({
   trackUsage: vi.fn().mockResolvedValue(undefined),
 }));
 
+// Default: return a model entry matching the baseConfig embedding_model.
+const mockReadConfig = vi.fn().mockResolvedValue([
+  { id: 'text-embedding-3-small', apiKey: 'sk-test', endpoint: 'https://api.openai.com/v1' },
+]);
+vi.mock('../../config/loader.js', () => ({
+  readConfig: (...args: any[]) => mockReadConfig(...args),
+}));
+
 import { semanticIntentPolicy } from './semantic-intent.js';
 import type { PolicyInput } from './types.js';
 import type { SemanticIntentConfig } from '@routerly/shared';
@@ -72,6 +80,10 @@ describe('semanticIntentPolicy', () => {
   beforeEach(() => {
     clearIntentCache();
     vi.clearAllMocks();
+    // Restore default registry mock after clearAllMocks (clearAllMocks resets mockResolvedValue).
+    mockReadConfig.mockResolvedValue([
+      { id: 'text-embedding-3-small', apiKey: 'sk-test', endpoint: 'https://api.openai.com/v1' },
+    ]);
   });
 
   afterEach(() => vi.clearAllMocks());
@@ -228,6 +240,23 @@ describe('semanticIntentPolicy', () => {
       request: {
         model: 'auto',
         messages: [{ role: 'user', content: [{ type: 'text', text: 'hello' }] as any }],
+      } as any,
+      candidates: [makeCandidate('coder-model')],
+      config: baseConfig,
+    });
+
+    expect(result.routing.every(r => r.point === 1.0)).toBe(true);
+  });
+
+  it('falls back to concatenating non-user string messages when no user string message exists', async () => {
+    // No user message with string content → ?? right side fires → filter/map/join on assistant message
+    const requestVec = [0, 0, 0]; // zero → unknown status
+    mockProvider.embed.mockResolvedValue({ embeddings: [requestVec], inputTokens: 0 });
+
+    const result = await semanticIntentPolicy({
+      request: {
+        model: 'auto',
+        messages: [{ role: 'assistant', content: 'some assistant text' }],
       } as any,
       candidates: [makeCandidate('coder-model')],
       config: baseConfig,
@@ -394,6 +423,10 @@ describe('semanticIntentPolicy', () => {
       embeddings: texts.map(() => vec),
       inputTokens: 7,
     }));
+    // Include the nonexistent-model in the registry so the policy proceeds past the lookup.
+    mockReadConfig.mockResolvedValue([
+      { id: 'nonexistent-model', apiKey: 'sk-x', endpoint: 'https://example.com/v1' },
+    ]);
 
     // Use a provider/model combo that does not exist in providersConf → input cost = 0
     await semanticIntentPolicy({
@@ -417,9 +450,91 @@ describe('semanticIntentPolicy', () => {
   });
 });
 
+// ── Model registry lookup (Fix #112) ─────────────────────────────────────────
+
+describe('semanticIntentPolicy — model registry credential injection', () => {
+  const defaultRegistryEntry = { id: 'text-embedding-3-small', apiKey: 'sk-from-registry', endpoint: 'https://api.openai.com/v1' };
+
+  beforeEach(() => {
+    clearIntentCache();
+    vi.clearAllMocks();
+    mockReadConfig.mockResolvedValue([defaultRegistryEntry]);
+  });
+
+  afterEach(() => {
+    // Restore default so sibling describe blocks are not affected.
+    mockReadConfig.mockResolvedValue([defaultRegistryEntry]);
+  });
+
+  it('injects apiKey from model registry into classifyIntent config', async () => {
+    // The embed mock (called inside classifyIntent) gets invoked only when credentials are injected.
+    // We verify the policy proceeds past the credential lookup by checking classification was called.
+    const vec = [1, 0, 0];
+    mockProvider.embed.mockResolvedValue({ embeddings: [vec], inputTokens: 0 });
+
+    const result = await semanticIntentPolicy({
+      request: makeRequest('write code'),
+      candidates: [makeCandidate('coder-model'), makeCandidate('chat-model')],
+      config: baseConfig, // no apiKey/endpoint in config
+    });
+
+    // Classification succeeded — embedding provider was called
+    expect(mockProvider.embed).toHaveBeenCalled();
+    expect(result.routing).toHaveLength(2);
+  });
+
+  it('passes all candidates through when embedding model is not in registry', async () => {
+    mockReadConfig.mockResolvedValue([]); // empty registry
+
+    const log = { warn: vi.fn(), info: vi.fn() } as any;
+    const result = await semanticIntentPolicy({
+      request: makeRequest('write code'),
+      candidates: [makeCandidate('coder-model'), makeCandidate('chat-model')],
+      config: baseConfig,
+      log,
+    });
+
+    // Should degrade gracefully
+    expect(result.routing.every(r => r.point === 1.0)).toBe(true);
+    expect(log.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ embeddingModel: 'text-embedding-3-small' }),
+      expect.any(String),
+    );
+    // classifyIntent should NOT have been called
+    expect(mockProvider.embed).not.toHaveBeenCalled();
+  });
+
+  it('runs without injecting credentials when model entry has no apiKey or endpoint', async () => {
+    // Covers the false branches on the ternaries at lines 96–97:
+    //   ...(modelEntry.apiKey ? {...} : {}) → {} (no apiKey)
+    //   ...(modelEntry.endpoint ? {...} : {}) → {} (no endpoint)
+    mockReadConfig.mockResolvedValue([{ id: 'text-embedding-3-small' }]);
+
+    const vec = [0, 0, 0]; // → unknown → pass all through
+    mockProvider.embed.mockResolvedValue({ embeddings: [vec], inputTokens: 0 });
+
+    const result = await semanticIntentPolicy({
+      request: makeRequest('write code'),
+      candidates: [makeCandidate('coder-model')],
+      config: baseConfig,
+    });
+
+    expect(mockProvider.embed).toHaveBeenCalled();
+    expect(result.routing.every(r => r.point === 1.0)).toBe(true);
+  });
+});
+
 // ── Line 113: log?.warn with err instanceof Error → TRUE branch ───────────────
 
 describe('semanticIntentPolicy — line 113 err instanceof Error TRUE branch', () => {
+  beforeEach(() => {
+    clearIntentCache();
+    vi.clearAllMocks();
+    mockReadConfig.mockResolvedValue([
+      { id: 'text-embedding-3-small', apiKey: 'sk-test', endpoint: 'https://api.openai.com/v1' },
+    ]);
+  });
+
   it('logs err.message when the thrown value is an Error instance and log is provided', async () => {
     mockProvider.embed.mockRejectedValue(new Error('embedding network error'));
 

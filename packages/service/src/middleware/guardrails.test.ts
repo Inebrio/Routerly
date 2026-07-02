@@ -396,7 +396,7 @@ describe('checkGuardrails — semantic rule edge cases', () => {
 
     const rule: GuardrailRule = { type: 'semantic', target: 'request', config: { embeddingModelId: noSlashModel.id, examples: ['z'] } } as any;
     await checkGuardrails('request', 'safe text', baseConfig([rule]), pctx);
-    const callArgs = mockClassifyIntent.mock.calls[0]![1] as Record<string, unknown>;
+    const callArgs = mockClassifyIntent.mock.calls[0]![1] as unknown as Record<string, unknown>;
     expect(callArgs).not.toHaveProperty('embedding_endpoint');
     expect(callArgs).not.toHaveProperty('embedding_api_key');
   });
