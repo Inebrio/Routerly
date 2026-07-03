@@ -10,7 +10,7 @@ export function LoginPage() {
   const location = useLocation();
   const redirectTo = (() => {
     const to = new URLSearchParams(location.search).get('to');
-    return to && to.startsWith('/dashboard/') ? to : '/dashboard/overview';
+    return to && to.startsWith('/dashboard/') && !to.startsWith('/dashboard/login') ? to : '/dashboard/overview';
   })();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

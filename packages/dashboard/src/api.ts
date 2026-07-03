@@ -85,7 +85,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     localStorage.removeItem('lr_user');
     localStorage.removeItem('lr_refresh_token');
     localStorage.removeItem('lr_expires_at');
-    window.location.href = `/dashboard/login?to=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+    if (window.location.pathname !== '/dashboard/login') {
+      window.location.href = `/dashboard/login?to=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+    }
     throw new Error('Unauthorized');
   }
 
