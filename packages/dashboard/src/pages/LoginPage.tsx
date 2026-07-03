@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { checkSetupStatus, verify2fa } from '../api';
 import { Logo } from '../components/Logo';
@@ -7,6 +7,11 @@ import { Logo } from '../components/Logo';
 export function LoginPage() {
   const { login, loginDirect, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = (() => {
+    const to = new URLSearchParams(location.search).get('to');
+    return to && to.startsWith('/dashboard/') ? to : '/dashboard/overview';
+  })();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -19,7 +24,7 @@ export function LoginPage() {
   const [useBackupCode, setUseBackupCode] = useState(false);
 
   useEffect(() => {
-    if (user) { navigate('/dashboard/overview', { replace: true }); return; }
+    if (user) { navigate(redirectTo, { replace: true }); return; }
     checkSetupStatus()
       .then(({ needsSetup }) => {
         if (needsSetup) navigate('/dashboard/setup', { replace: true });
@@ -38,7 +43,7 @@ export function LoginPage() {
       if (result?.requiresTotp) {
         setTotpUserId(result.userId);
       } else {
-        navigate('/dashboard/overview', { replace: true });
+        navigate(redirectTo, { replace: true });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
@@ -58,7 +63,7 @@ export function LoginPage() {
         useBackupCode ? totpCode : undefined,
       );
       loginDirect(result.token, result.user);
-      navigate('/dashboard/overview', { replace: true });
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : '2FA verification failed');
     } finally {

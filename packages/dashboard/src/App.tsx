@@ -228,7 +228,7 @@ function ProtectedLayout() {
   const showUpdateBanner = !bannerDismissed && !isDocker && user?.role === 'admin' && updateInfo?.available;
 
   if (isLoading) return <div className="loading-center"><div className="spinner" /></div>;
-  if (!user) return <Navigate to="/dashboard/login" replace />;
+  if (!user) return <Navigate to={`/dashboard/login?to=${encodeURIComponent(location.pathname + location.search)}`} replace />;
   return (
     <div className={`app-shell${collapsed ? ' sidebar-collapsed' : ''}`}>
       <Sidebar collapsed={collapsed} onToggle={handleToggle} />
