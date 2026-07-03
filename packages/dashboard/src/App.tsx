@@ -35,8 +35,8 @@ import { UserEditPage } from './pages/UserEditPage';
 import { HelpPage } from './pages/HelpPage';
 import { ModelDiscoveryPage } from './pages/ModelDiscoveryPage';
 import { AuditPage } from './pages/AuditPage';
-import { ProviderHealthPage } from './pages/ProviderHealthPage';
-import { LayoutDashboard, Cpu, FolderOpen, BarChart2, Activity, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Logo } from './components/Logo';
 import { ProfileNotificationBadge } from './components/NotificationBell';
 
@@ -96,7 +96,6 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
-    { to: '/dashboard/health', icon: <Activity size={17} />, label: 'Health' },
     { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Playground' },
   ];
 
@@ -395,7 +394,7 @@ const router = createBrowserRouter([
             ],
           },
           { path: 'usage', element: <UsagePage /> },
-          { path: 'health', element: <ProviderHealthPage /> },
+          { path: 'health', element: <Navigate to="/dashboard/models?tab=health" replace /> },
           { path: 'test', element: <TestPage /> },
           {
             path: 'settings',
