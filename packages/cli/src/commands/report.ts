@@ -180,10 +180,10 @@ Examples:
         const data = await api<Array<{
           modelId: string;
           provider: string;
-          requests: number;
+          totalRequests: number;
           successRate: number;
           avgLatencyMs: number;
-          costPer1kTokens: number;
+          avgCostPer1kTokens: number;
           totalCost: number;
         }>>('GET', `/api/leaderboard?${params.toString()}`);
 
@@ -205,10 +205,10 @@ Examples:
             rank,
             row.modelId,
             row.provider,
-            row.requests,
+            row.totalRequests,
             `${(row.successRate * 100).toFixed(1)}%`,
             `${row.avgLatencyMs}ms`,
-            `$${row.costPer1kTokens.toFixed(4)}`,
+            `$${row.avgCostPer1kTokens.toFixed(4)}`,
             `$${row.totalCost.toFixed(6)}`,
           ]);
         });

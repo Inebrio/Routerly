@@ -500,7 +500,7 @@ export function UsagePage() {
                             <td style={{ textAlign: 'right' }} className="mono">
                               {totalTok > 0 ? fmtCost(costPer1k) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                             </td>
-                            <td style={{ textAlign: 'right' }} className="mono">${v.cost.toFixed(8)}</td>
+                            <td style={{ textAlign: 'right' }} className="mono">${(v.cost ?? 0).toFixed(8)}</td>
                           </tr>
                         );
                       })}
@@ -569,7 +569,7 @@ export function UsagePage() {
                             </td>
                             <td>{r.inputTokens}</td>
                             <td>{r.outputTokens}</td>
-                            <td className="mono" style={{ fontSize: '0.78rem' }}>${r.cost.toFixed(8)}</td>
+                            <td className="mono" style={{ fontSize: '0.78rem' }}>${(r.cost ?? 0).toFixed(8)}</td>
                             <td style={{ color: 'var(--text-muted)' }}>{r.latencyMs}ms</td>
                             <td style={{ color: 'var(--text-muted)' }}>{r.ttftMs != null ? `${r.ttftMs}ms` : '—'}</td>
                             <td style={{ color: 'var(--text-muted)' }}>{r.tokensPerSec != null ? `${r.tokensPerSec}` : '—'}</td>
