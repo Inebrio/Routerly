@@ -5,6 +5,7 @@ import { getModels, deleteModel, getProviderHealth, type Model, type ProviderHea
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
 type SortKey = 'id' | 'provider' | 'endpoint' | 'input' | 'output' | 'cache' | 'context';
+type HealthSortKey = 'id' | 'provider' | 'status' | 'errorRate' | 'p95Latency' | 'requests' | 'lastSuccess' | 'cooldown';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 20;
@@ -12,7 +13,7 @@ const HEALTH_REFRESH_MS = 30_000;
 
 function numOrInfinity(v: number | null | undefined) { return v ?? Infinity; }
 
-function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) {
+function SortIcon({ col, sortKey, sortDir }: { col: string; sortKey: string; sortDir: SortDir }) {
   if (col !== sortKey) return <ChevronsUpDown size={13} style={{ opacity: 0.35, marginLeft: 4, flexShrink: 0 }} />;
   return sortDir === 'asc'
     ? <ChevronUp size={13} style={{ marginLeft: 4, flexShrink: 0, color: 'var(--accent)' }} />
@@ -96,6 +97,12 @@ export function ModelsPage() {
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const healthActive = useRef(true);
 
+  // Health tab state
+  const [hSearch, setHSearch] = useState('');
+  const [hSortKey, setHSortKey] = useState<HealthSortKey>('status');
+  const [hSortDir, setHSortDir] = useState<SortDir>('asc');
+  const [hPage, setHPage] = useState(1);
+
   // Load models once
   useEffect(() => { load(); }, []);
 
@@ -172,9 +179,56 @@ export function ModelsPage() {
   }, [filtered, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-  // Clamp page when a delete removes the last row on the last page
   useEffect(() => { if (page > totalPages) setPage(Math.max(1, totalPages)); }, [page, totalPages]);
   const paginated = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // ── Health tab computed ────────────────────────────────────────────────────
+  const hFiltered = useMemo(() => {
+    const q = hSearch.trim().toLowerCase();
+    if (!q) return models;
+    return models.filter(m => m.id.toLowerCase().includes(q) || m.provider.toLowerCase().includes(q));
+  }, [models, hSearch]);
+
+  const hSorted = useMemo(() => [...hFiltered].sort((a, b) => {
+    const ha = healthMap.get(a.id);
+    const hb = healthMap.get(b.id);
+    if (!ha && !hb) return 0;
+    if (!ha) return 1;
+    if (!hb) return -1;
+    const sa: ExtendedStatus = cooldownTimer(ha.cooldownUntil) ? 'cooldown' : ha.status;
+    const sb: ExtendedStatus = cooldownTimer(hb.cooldownUntil) ? 'cooldown' : hb.status;
+    let cmp = 0;
+    switch (hSortKey) {
+      case 'id':          cmp = a.id.localeCompare(b.id); break;
+      case 'provider':    cmp = a.provider.localeCompare(b.provider); break;
+      case 'status':      cmp = STATUS_SEVERITY[sb] - STATUS_SEVERITY[sa]; break;
+      case 'errorRate':   cmp = ha.errorRate - hb.errorRate; break;
+      case 'p95Latency':  cmp = (ha.p95LatencyMs ?? Infinity) - (hb.p95LatencyMs ?? Infinity); break;
+      case 'requests':    cmp = ha.requestsLastHour - hb.requestsLastHour; break;
+      case 'lastSuccess': cmp = (ha.lastSuccessAt ? new Date(ha.lastSuccessAt).getTime() : -Infinity)
+                              - (hb.lastSuccessAt ? new Date(hb.lastSuccessAt).getTime() : -Infinity); break;
+      case 'cooldown':    cmp = (ha.cooldownUntil ? new Date(ha.cooldownUntil).getTime() : 0)
+                              - (hb.cooldownUntil ? new Date(hb.cooldownUntil).getTime() : 0); break;
+    }
+    return hSortDir === 'asc' ? cmp : -cmp;
+  }), [hFiltered, hSortKey, hSortDir, healthMap]);
+
+  const hTotalPages = Math.max(1, Math.ceil(hSorted.length / PAGE_SIZE));
+  useEffect(() => { if (hPage > hTotalPages) setHPage(Math.max(1, hTotalPages)); }, [hPage, hTotalPages]);
+  useEffect(() => { setHPage(1); }, [hSearch]);
+  const hPaginated = hSorted.slice((hPage - 1) * PAGE_SIZE, hPage * PAGE_SIZE);
+
+  function handleHSort(key: HealthSortKey) {
+    if (key === hSortKey) setHSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setHSortKey(key); setHSortDir('asc'); }
+  }
+  const hTh = (label: string, key: HealthSortKey, align?: 'right') => (
+    <th style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', textAlign: align }} onClick={() => handleHSort(key)}>
+      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+        {label}<SortIcon col={key} sortKey={hSortKey} sortDir={hSortDir} />
+      </span>
+    </th>
+  );
 
   const thStyle: React.CSSProperties = { cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' };
   const thInner = (label: string, key: SortKey) => (
@@ -322,60 +376,94 @@ export function ModelsPage() {
           ) : models.length === 0 ? (
             <div className="empty-state"><Server size={40} /><p>No models configured.</p></div>
           ) : (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Model</th>
-                    <th>Provider</th>
-                    <th>Status</th>
-                    <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Error rate (5m)</th>
-                    <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>P95 latency (1h)</th>
-                    <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Requests (1h)</th>
-                    <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Last success</th>
-                    <th style={{ textAlign: 'right' }}>Cooldown</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...models]
-                    .sort((a, b) => {
-                      const ha = healthMap.get(a.id);
-                      const hb = healthMap.get(b.id);
-                      const sa: ExtendedStatus = ha ? (cooldownTimer(ha.cooldownUntil) ? 'cooldown' : ha.status) : 'nodata';
-                      const sb: ExtendedStatus = hb ? (cooldownTimer(hb.cooldownUntil) ? 'cooldown' : hb.status) : 'nodata';
-                      const diff = STATUS_SEVERITY[sa] - STATUS_SEVERITY[sb];
-                      return diff !== 0 ? diff : a.id.localeCompare(b.id);
-                    })
-                    .map(m => {
-                      const h = healthMap.get(m.id);
-                      const cd = h ? cooldownTimer(h.cooldownUntil) : null;
-                      const status: ExtendedStatus = h ? (cd ? 'cooldown' : h.status) : 'nodata';
-                      return (
-                        <tr key={m.id}>
-                          <td><span className="mono">{m.id}</span></td>
-                          <td><span className={`badge badge-${m.provider}`}>{m.provider}</span></td>
-                          <td><StatusBadge status={status} /></td>
-                          <td style={{ textAlign: 'right' }}>
-                            {h ? `${(h.errorRate * 100).toFixed(1)}%` : <span style={{ color: 'var(--text-muted)' }}>—</span>}
-                          </td>
-                          <td style={{ textAlign: 'right' }}>
-                            {h ? (h.p95LatencyMs == null ? '—' : `${Math.round(h.p95LatencyMs)} ms`) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
-                          </td>
-                          <td style={{ textAlign: 'right' }}>
-                            {h ? h.requestsLastHour : <span style={{ color: 'var(--text-muted)' }}>—</span>}
-                          </td>
-                          <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
-                            {h ? relativeTime(h.lastSuccessAt) : '—'}
-                          </td>
-                          <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
-                            {h ? (cd ?? '—') : '—'}
-                          </td>
+            <>
+              <div className="toolbar">
+                <span className="toolbar-title">
+                  {hFiltered.length !== models.length
+                    ? `${hFiltered.length} of ${models.length} model${models.length !== 1 ? 's' : ''}`
+                    : `${models.length} model${models.length !== 1 ? 's' : ''}`}
+                </span>
+                <div style={{ position: 'relative' }}>
+                  <Search size={14} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                  <input
+                    value={hSearch}
+                    onChange={e => setHSearch(e.target.value)}
+                    placeholder="Filter models…"
+                    style={{ paddingLeft: 28, paddingRight: hSearch ? 28 : 10, height: 32, fontSize: '0.85rem', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', outline: 'none', width: 200 }}
+                  />
+                  {hSearch && (
+                    <button onClick={() => setHSearch('')} style={{ position: 'absolute', right: 7, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+              </div>
+              {hSorted.length === 0 ? (
+                <div className="empty-state"><Search size={40} /><p>No models match the filter.</p></div>
+              ) : (
+                <>
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          {hTh('Model', 'id')}
+                          {hTh('Provider', 'provider')}
+                          {hTh('Status', 'status')}
+                          {hTh('Error rate (5m)', 'errorRate', 'right')}
+                          {hTh('P95 latency (1h)', 'p95Latency', 'right')}
+                          {hTh('Requests (1h)', 'requests', 'right')}
+                          {hTh('Last success', 'lastSuccess', 'right')}
+                          {hTh('Cooldown', 'cooldown', 'right')}
                         </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
-            </div>
+                      </thead>
+                      <tbody>
+                        {hPaginated.map(m => {
+                          const h = healthMap.get(m.id);
+                          const cd = h ? cooldownTimer(h.cooldownUntil) : null;
+                          const status: ExtendedStatus = h ? (cd ? 'cooldown' : h.status) : 'nodata';
+                          return (
+                            <tr key={m.id}>
+                              <td><span className="mono">{m.id}</span></td>
+                              <td><span className={`badge badge-${m.provider}`}>{m.provider}</span></td>
+                              <td><StatusBadge status={status} /></td>
+                              <td style={{ textAlign: 'right' }}>
+                                {h ? `${(h.errorRate * 100).toFixed(1)}%` : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                              </td>
+                              <td style={{ textAlign: 'right' }}>
+                                {h ? (h.p95LatencyMs == null ? '—' : `${Math.round(h.p95LatencyMs)} ms`) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                              </td>
+                              <td style={{ textAlign: 'right' }}>
+                                {h ? h.requestsLastHour : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                              </td>
+                              <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
+                                {h ? relativeTime(h.lastSuccessAt) : '—'}
+                              </td>
+                              <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
+                                {h ? (cd ?? '—') : '—'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  {hTotalPages > 1 && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16, padding: '10px 0' }}>
+                      <button className="btn btn-sm btn-secondary" disabled={hPage <= 1} onClick={() => setHPage(p => Math.max(1, p - 1))}>
+                        ← Previous
+                      </button>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                        Page {hPage} of {hTotalPages}
+                        <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>({hSorted.length} models)</span>
+                      </span>
+                      <button className="btn btn-sm btn-secondary" disabled={hPage >= hTotalPages} onClick={() => setHPage(p => p + 1)}>
+                        Next →
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </>
           )
         )}
       </div>
