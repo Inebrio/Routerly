@@ -24,7 +24,7 @@ When the project enables them, two pre-request stages run on `/v1/chat/completio
   configured security rules (regex, injection patterns, semantic similarity, topic
   classification, moderation). With `action: "block"` a triggering request never
   reaches the provider and Routerly returns a wire-faithful response (see below).
-  With `flag` or `log`, the request proceeds and the rule name is recorded on the
+  With `action: "log"`, the request proceeds and the rule name is recorded on the
   usage record.
 - **PII scrubbing:** detected entities (`EMAIL`, `PHONE`, `CREDIT_CARD`,
   `SSN`, `IBAN`) in message string content are replaced with typed placeholders
@@ -137,7 +137,7 @@ x-routerly-trace-id: 018f3c2a-4b5d-7e8f-9012-34567890abcd
 
 | Header | Value | Description |
 |--------|-------|-------------|
-| `x-routerly-no-trace` | `1` | Suppresses `{"type":"trace",...}` SSE events from the response stream. Use with OpenAI-compatible SDK clients that strictly validate SSE frame schemas and reject non-standard event types. Trace data is still recorded server-side. |
+| `x-routerly-no-trace` | `1` | Suppresses `data: {"type":"trace",...}` SSE events from the streaming response wire. Trace data is still recorded server-side and accessible via `GET /api/traces/:id`. Use with strict OpenAI-compatible SDK clients that validate SSE frame schemas and reject non-standard event types. Applies to all three endpoints (`/v1/chat/completions`, `/v1/responses`, `/v1/messages`). |
 | `x-routerly-conversation-id` | string | Session identifier for grouping related requests. Appears in usage records as `sessionId` for analysis and filtering. Useful for tracking multi-turn conversations, thread IDs, or user sessions. |
 
 ### Response (streaming)

@@ -116,7 +116,7 @@ export const semanticIntentPolicy: PolicyFn = async ({
           id: cfg.embedding_model,
           name: cfg.embedding_model,
           provider: cfg.embedding_provider as any,
-          endpoint: cfg.embedding_endpoint ?? '',
+          endpoint: resolvedCfg.embedding_endpoint ?? '',
           cost: { inputPerMillion, outputPerMillion: 0 },
         },
         inputTokens: classifyResult.inputTokens,

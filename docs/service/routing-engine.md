@@ -208,16 +208,18 @@ Classifies the incoming request by semantic intent using embedding-based similar
 | `ambiguous` | `topScore ≥ absolute_threshold` but `margin < ambiguity_threshold` | Union of top-2 intents' `candidate_models` |
 | `unknown` | `topScore < absolute_threshold` | All candidates (no filtering) |
 
-If the embedding call itself fails, the policy degrades gracefully and passes all candidates through unchanged.
+**Credential resolution:** When `embedding_model` is set, the policy automatically looks up `apiKey` and `endpoint` from the service's `models.json` registry. This lets the dashboard save only the model ID without storing API keys in project config. If the embedding model is not found in the registry, the policy logs a warning and passes all candidates through.
+
+If the embedding call itself fails (e.g. provider is unavailable), the policy degrades gracefully and passes all candidates through unchanged.
 
 #### Configuration
 
 | Config key | Default | Description |
 |------------|---------|-------------|
 | `embedding_provider` | _(required)_ | `openai` or `ollama` |
-| `embedding_model` | _(required)_ | Embedding model ID. The model must have `capabilities.embedding = true` |
-| `embedding_endpoint` | — | Custom base URL (useful for self-hosted Ollama) |
-| `embedding_api_key` | — | API key override (defaults to the provider's global key) |
+| `embedding_model` | _(required)_ | Embedding model ID. The model must have `capabilities.embedding = true` in `models.json`. Credentials (`apiKey`, `endpoint`) are resolved from the model registry automatically. |
+| `embedding_endpoint` | — | Custom base URL override (useful for self-hosted Ollama). If not provided, the endpoint is looked up from the model registry. |
+| `embedding_api_key` | — | API key override. If not provided, the key is looked up from the model registry. |
 | `absolute_threshold` | `0.60` | Minimum cosine similarity to recognise a match |
 | `ambiguity_threshold` | `0.08` | Minimum margin between top-2 scores to resolve ambiguity |
 | `intents` | _(required)_ | Map of intent name → `{ examples: string[], candidate_models: string[] }` |
