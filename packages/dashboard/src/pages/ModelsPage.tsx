@@ -4,8 +4,7 @@ import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDo
 import { getModels, deleteModel, getProviderHealth, type Model, type ProviderHealth } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
-type SortKey = 'id' | 'provider' | 'endpoint' | 'input' | 'output' | 'cache' | 'context'
-  | 'status' | 'errorRate' | 'p95Latency' | 'requests' | 'lastSuccess' | 'cooldown';
+type SortKey = 'id' | 'provider' | 'endpoint' | 'input' | 'output' | 'cache' | 'context';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 20;
@@ -158,55 +157,19 @@ export function ModelsPage() {
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
-      const ha = healthMap.get(a.id);
-      const hb = healthMap.get(b.id);
-      // For health columns: no-data rows always sink to bottom regardless of direction
-      const isHealthKey = ['status', 'errorRate', 'p95Latency', 'requests', 'lastSuccess', 'cooldown'].includes(sortKey);
-      if (isHealthKey) {
-        const aNoData = !ha;
-        const bNoData = !hb;
-        if (aNoData && bNoData) return 0;
-        if (aNoData) return 1;   // a sinks
-        if (bNoData) return -1;  // b sinks
-      }
       let cmp = 0;
       switch (sortKey) {
-        case 'id':        cmp = a.id.localeCompare(b.id); break;
-        case 'provider':  cmp = a.provider.localeCompare(b.provider); break;
-        case 'endpoint':  cmp = a.endpoint.localeCompare(b.endpoint); break;
-        case 'input':     cmp = a.cost.inputPerMillion - b.cost.inputPerMillion; break;
-        case 'output':    cmp = a.cost.outputPerMillion - b.cost.outputPerMillion; break;
-        case 'cache':     cmp = numOrInfinity(a.cost.cachePerMillion) - numOrInfinity(b.cost.cachePerMillion); break;
-        case 'context':   cmp = numOrInfinity(a.contextWindow) - numOrInfinity(b.contextWindow); break;
-        case 'status': {
-          const sa: ExtendedStatus = ha ? (cooldownTimer(ha.cooldownUntil) ? 'cooldown' : ha.status) : 'nodata';
-          const sb: ExtendedStatus = hb ? (cooldownTimer(hb.cooldownUntil) ? 'cooldown' : hb.status) : 'nodata';
-          // nodata always last; for the rest, asc = best health first (healthy > degraded > cooldown > unavailable)
-          if (sa === 'nodata' && sb === 'nodata') { cmp = 0; break; }
-          if (sa === 'nodata') { cmp = 1; break; }
-          if (sb === 'nodata') { cmp = -1; break; }
-          cmp = STATUS_SEVERITY[sb] - STATUS_SEVERITY[sa]; // higher severity = worse, sorts last on asc
-          break;
-        }
-        case 'errorRate':   cmp = (ha?.errorRate ?? Infinity) - (hb?.errorRate ?? Infinity); break;
-        case 'p95Latency':  cmp = (ha?.p95LatencyMs ?? Infinity) - (hb?.p95LatencyMs ?? Infinity); break;
-        case 'requests':    cmp = (ha?.requestsLastHour ?? Infinity) - (hb?.requestsLastHour ?? Infinity); break;
-        case 'lastSuccess': {
-          const ta = ha?.lastSuccessAt ? new Date(ha.lastSuccessAt).getTime() : -Infinity;
-          const tb = hb?.lastSuccessAt ? new Date(hb.lastSuccessAt).getTime() : -Infinity;
-          cmp = ta - tb;
-          break;
-        }
-        case 'cooldown': {
-          const ca = ha?.cooldownUntil ? new Date(ha.cooldownUntil).getTime() : 0;
-          const cb = hb?.cooldownUntil ? new Date(hb.cooldownUntil).getTime() : 0;
-          cmp = ca - cb;
-          break;
-        }
+        case 'id':       cmp = a.id.localeCompare(b.id); break;
+        case 'provider': cmp = a.provider.localeCompare(b.provider); break;
+        case 'endpoint': cmp = a.endpoint.localeCompare(b.endpoint); break;
+        case 'input':    cmp = a.cost.inputPerMillion - b.cost.inputPerMillion; break;
+        case 'output':   cmp = a.cost.outputPerMillion - b.cost.outputPerMillion; break;
+        case 'cache':    cmp = numOrInfinity(a.cost.cachePerMillion) - numOrInfinity(b.cost.cachePerMillion); break;
+        case 'context':  cmp = numOrInfinity(a.contextWindow) - numOrInfinity(b.contextWindow); break;
       }
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [filtered, sortKey, sortDir, healthMap]);
+  }, [filtered, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   // Clamp page when a delete removes the last row on the last page
@@ -233,13 +196,7 @@ export function ModelsPage() {
     <>
       <div className="page-header" style={{ paddingBottom: 0 }}>
         <h1>Models</h1>
-        <p>LLM providers registered with Routerly
-          {healthUpdatedAt && (
-            <span style={{ color: 'var(--text-muted)', marginLeft: 8, fontSize: '0.82rem' }}>
-              · health updated {relativeTime(healthUpdatedAt.toISOString())} (every 30s)
-            </span>
-          )}
-        </p>
+        <p>LLM providers registered with Routerly</p>
         <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--border)', marginTop: 12 }}>
           <button style={tabStyle('models')} onClick={() => setTab('models')}>Models</button>
           <button style={tabStyle('health')} onClick={() => setTab('health')}>Health</button>
@@ -298,7 +255,7 @@ export function ModelsPage() {
             ) : (
               <>
                 <div className="table-wrap" style={{ overflowX: 'auto' }}>
-                  <table style={{ minWidth: 1000 }}>
+                  <table style={{ minWidth: 700 }}>
                     <thead>
                       <tr>
                         <th style={thStyle}>{thInner('ID', 'id')}</th>
@@ -308,21 +265,11 @@ export function ModelsPage() {
                         <th style={thStyle}>{thInner('Output $/1M', 'output')}</th>
                         <th style={thStyle}>{thInner('Cache $/1M', 'cache')}</th>
                         <th style={thStyle}>{thInner('Context Size', 'context')}</th>
-                        <th style={thStyle}>{thInner('Status', 'status')}</th>
-                        <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Error rate (5m)', 'errorRate')}</th>
-                        <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('P95 latency (1h)', 'p95Latency')}</th>
-                        <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Requests (1h)', 'requests')}</th>
-                        <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Last success', 'lastSuccess')}</th>
-                        <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Cooldown', 'cooldown')}</th>
                         <th></th>
                       </tr>
                     </thead>
                     <tbody>
-                      {paginated.map(m => {
-                        const h = healthMap.get(m.id);
-                        const cd = h ? cooldownTimer(h.cooldownUntil) : null;
-                        const status: ExtendedStatus = h ? (cd ? 'cooldown' : h.status) : 'nodata';
-                        return (
+                      {paginated.map(m => (
                           <tr key={m.id}>
                             <td><span className="mono">{m.id}</span></td>
                             <td><span className={`badge badge-${m.provider}`}>{m.provider}</span></td>
@@ -331,22 +278,6 @@ export function ModelsPage() {
                             <td>${m.cost.outputPerMillion}</td>
                             <td>{m.cost.cachePerMillion != null ? `$${m.cost.cachePerMillion}` : <span className="text-muted">—</span>}</td>
                             <td>{m.contextWindow != null ? `${(m.contextWindow / 1000).toFixed(0)}k` : <span className="text-muted">—</span>}</td>
-                            <td><StatusBadge status={status} /></td>
-                            <td style={{ textAlign: 'right' }}>
-                              {h ? `${(h.errorRate * 100).toFixed(1)}%` : <span style={{ color: 'var(--text-muted)' }}>—</span>}
-                            </td>
-                            <td style={{ textAlign: 'right' }}>
-                              {h ? (h.p95LatencyMs == null ? '—' : `${Math.round(h.p95LatencyMs)} ms`) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
-                            </td>
-                            <td style={{ textAlign: 'right' }}>
-                              {h ? h.requestsLastHour : <span style={{ color: 'var(--text-muted)' }}>—</span>}
-                            </td>
-                            <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
-                              {h ? relativeTime(h.lastSuccessAt) : '—'}
-                            </td>
-                            <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
-                              {h ? (cd ?? '—') : '—'}
-                            </td>
                             <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                               <Link to={`/dashboard/models/new?clone=${encodeURIComponent(m.id)}`} className="btn-icon" title="Clone">
                                 <Copy size={15} />
@@ -359,8 +290,7 @@ export function ModelsPage() {
                               </button>
                             </td>
                           </tr>
-                        );
-                      })}
+                        ))}
                     </tbody>
                   </table>
                 </div>
