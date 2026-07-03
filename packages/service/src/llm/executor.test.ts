@@ -344,6 +344,27 @@ describe('llmStream', () => {
     for await (const _ of result.chunks) { /* consume */ }
     expect(emitted.some(e => e.message === 'model:thinking')).toBe(true)
   })
+
+  it('records timeout outcome when TTFT exceeds project timeoutMs', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    let resolveNever: () => void
+    const neverFirst = new Promise<void>(r => { resolveNever = r })
+    const returnSpy = vi.fn().mockResolvedValue({ value: undefined as any, done: true })
+    mockGetProvider.mockReturnValue({
+      streamCompletion: vi.fn().mockReturnValue({
+        [Symbol.asyncIterator]: () => ({
+          next: () => neverFirst.then(() => ({ value: undefined as any, done: true })),
+          return: returnSpy,
+        }),
+      }),
+    } as any)
+
+    const ctxWithTimeout = makeCtx({ project: { ...makeProject(), timeoutMs: 50 } })
+    await expect(llmStream({ messages: [] } as any, makeModel(), ctxWithTimeout)).rejects.toThrow('TTFT timeout')
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'timeout' }))
+
+    resolveNever!()
+  })
 })
 
   it('swallows trackUsage rejection in success path', async () => {

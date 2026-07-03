@@ -370,7 +370,9 @@ export interface ProjectConfig {
   /** Ordered list of routing policies applied to requests */
   policies?: RoutingPolicy[];
   models: ProjectModelRef[];
-  /** Timeout in ms for each individual model attempt */
+  /** TTFT timeout per model attempt (ms). If the first response byte hasn't arrived
+   *  within this time, the attempt is aborted and the next candidate is tried.
+   *  Does not limit total response duration. Default: 5000. */
   timeoutMs?: number;
   /** Content guardrails: input blocklist + prompt-injection detection (#77) */
   guardrails?: GuardrailConfig;

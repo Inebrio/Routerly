@@ -746,7 +746,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         modelId: m.modelId,
         ...(m.prompt ? { prompt: m.prompt } : {}),
       })),
-      timeoutMs: req.body.timeoutMs ?? 30000,
+      timeoutMs: req.body.timeoutMs ?? 5000,
       ...(guardrails ? { guardrails } : {}),
       ...(pii ? { pii } : {}),
     };
@@ -814,7 +814,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         modelId: m.modelId,
         ...(m.prompt ? { prompt: m.prompt } : {}),
       })),
-      timeoutMs: req.body.timeoutMs ?? existing.timeoutMs ?? 30000,
+      timeoutMs: req.body.timeoutMs ?? existing.timeoutMs ?? 5000,
       ...guardrailsUpdate,
       ...piiUpdate,
     };
