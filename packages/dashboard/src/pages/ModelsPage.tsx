@@ -79,8 +79,11 @@ function cooldownTimer(iso: string | null): string | null {
 // ── Models page ────────────────────────────────────────────────────────────────
 
 export function ModelsPage() {
-  // ponytail: keep useSearchParams to avoid breaking any lingering ?tab= links
-  const [, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get('tab') === 'health' ? 'health' : 'models';
+  function setTab(t: 'models' | 'health') {
+    setSearchParams(t === 'health' ? { tab: 'health' } : {}, { replace: true });
+  }
 
   const [models, setModels] = useState<Model[]>([]);
   const [healthMap, setHealthMap] = useState<Map<string, ProviderHealth>>(new Map());
@@ -95,11 +98,7 @@ export function ModelsPage() {
   const healthActive = useRef(true);
 
   // Load models once
-  useEffect(() => {
-    // Clear ?tab= param from URL silently if present
-    setSearchParams({}, { replace: true });
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   async function load() {
     setLoading(true);
@@ -221,9 +220,18 @@ export function ModelsPage() {
     </span>
   );
 
+  const tabStyle = (t: 'models' | 'health'): React.CSSProperties => ({
+    padding: '0 4px 12px',
+    fontSize: '0.9rem', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer',
+    color: tab === t ? 'var(--primary)' : 'var(--text-secondary)',
+    borderBottom: tab === t ? '2px solid var(--primary)' : '2px solid transparent',
+    transition: 'color 0.15s',
+    marginBottom: -1,
+  });
+
   return (
     <>
-      <div className="page-header">
+      <div className="page-header" style={{ paddingBottom: 0 }}>
         <h1>Models</h1>
         <p>LLM providers registered with Routerly
           {healthUpdatedAt && (
@@ -232,157 +240,213 @@ export function ModelsPage() {
             </span>
           )}
         </p>
-      </div>
-      <div className="page-body">
-        <div className="toolbar">
-          <span className="toolbar-title">
-            {filtered.length !== models.length
-              ? `${filtered.length} of ${models.length} model${models.length !== 1 ? 's' : ''}`
-              : `${models.length} model${models.length !== 1 ? 's' : ''}`}
-          </span>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {/* Provider filter */}
-            <select
-              value={providerFilter}
-              onChange={e => setProviderFilter(e.target.value)}
-              style={{
-                height: 32, padding: '0 10px', fontSize: '0.85rem', borderRadius: 6,
-                border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
-                outline: 'none',
-              }}
-            >
-              <option value="">All providers</option>
-              {providerOptions.map(p => <option key={p} value={p}>{p}</option>)}
-            </select>
-            {/* Search */}
-            <div style={{ position: 'relative' }}>
-              <Search size={14} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Filter models…"
-                style={{ paddingLeft: 28, paddingRight: search ? 28 : 10, height: 32, fontSize: '0.85rem', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', outline: 'none', width: 200 }}
-              />
-              {search && (
-                <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 7, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>
-                  <X size={13} />
-                </button>
-              )}
-            </div>
-            <Link to="/dashboard/models/discover" className="btn">
-              <Telescope size={16} /> Discover
-            </Link>
-            <Link to="/dashboard/models/new" className="btn btn-primary">
-              <Plus size={16} /> Add Model
-            </Link>
-          </div>
+        <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--border)', marginTop: 12 }}>
+          <button style={tabStyle('models')} onClick={() => setTab('models')}>Models</button>
+          <button style={tabStyle('health')} onClick={() => setTab('health')}>Health</button>
         </div>
-        {loading ? (
-          <div className="loading-center"><div className="spinner" /></div>
-        ) : models.length === 0 ? (
-          <div className="empty-state"><Server size={40} /><p>No models yet. Add one to get started.</p></div>
-        ) : sorted.length === 0 ? (
-          <div className="empty-state"><Search size={40} /><p>No models match the active filters.</p></div>
-        ) : (
+      </div>
+      <div className="page-body" style={{ paddingTop: 24 }}>
+        {tab === 'models' && (
           <>
-            <div className="table-wrap" style={{ overflowX: 'auto' }}>
-              <table style={{ minWidth: 1000 }}>
+            <div className="toolbar">
+              <span className="toolbar-title">
+                {filtered.length !== models.length
+                  ? `${filtered.length} of ${models.length} model${models.length !== 1 ? 's' : ''}`
+                  : `${models.length} model${models.length !== 1 ? 's' : ''}`}
+              </span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <select
+                  value={providerFilter}
+                  onChange={e => setProviderFilter(e.target.value)}
+                  style={{
+                    height: 32, padding: '0 10px', fontSize: '0.85rem', borderRadius: 6,
+                    border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
+                    outline: 'none',
+                  }}
+                >
+                  <option value="">All providers</option>
+                  {providerOptions.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+                <div style={{ position: 'relative' }}>
+                  <Search size={14} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                  <input
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Filter models…"
+                    style={{ paddingLeft: 28, paddingRight: search ? 28 : 10, height: 32, fontSize: '0.85rem', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', outline: 'none', width: 200 }}
+                  />
+                  {search && (
+                    <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 7, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+                <Link to="/dashboard/models/discover" className="btn">
+                  <Telescope size={16} /> Discover
+                </Link>
+                <Link to="/dashboard/models/new" className="btn btn-primary">
+                  <Plus size={16} /> Add Model
+                </Link>
+              </div>
+            </div>
+            {loading ? (
+              <div className="loading-center"><div className="spinner" /></div>
+            ) : models.length === 0 ? (
+              <div className="empty-state"><Server size={40} /><p>No models yet. Add one to get started.</p></div>
+            ) : sorted.length === 0 ? (
+              <div className="empty-state"><Search size={40} /><p>No models match the active filters.</p></div>
+            ) : (
+              <>
+                <div className="table-wrap" style={{ overflowX: 'auto' }}>
+                  <table style={{ minWidth: 1000 }}>
+                    <thead>
+                      <tr>
+                        <th style={thStyle}>{thInner('ID', 'id')}</th>
+                        <th style={thStyle}>{thInner('Provider', 'provider')}</th>
+                        <th style={thStyle}>{thInner('Endpoint', 'endpoint')}</th>
+                        <th style={thStyle}>{thInner('Input $/1M', 'input')}</th>
+                        <th style={thStyle}>{thInner('Output $/1M', 'output')}</th>
+                        <th style={thStyle}>{thInner('Cache $/1M', 'cache')}</th>
+                        <th style={thStyle}>{thInner('Context Size', 'context')}</th>
+                        <th style={thStyle}>{thInner('Status', 'status')}</th>
+                        <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Error rate (5m)', 'errorRate')}</th>
+                        <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('P95 latency (5m)', 'p95Latency')}</th>
+                        <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Requests (1h)', 'requests')}</th>
+                        <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Last success', 'lastSuccess')}</th>
+                        <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Cooldown', 'cooldown')}</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginated.map(m => {
+                        const h = healthMap.get(m.id);
+                        const cd = h ? cooldownTimer(h.cooldownUntil) : null;
+                        const status: ExtendedStatus = h ? (cd ? 'cooldown' : h.status) : 'nodata';
+                        return (
+                          <tr key={m.id}>
+                            <td><span className="mono">{m.id}</span></td>
+                            <td><span className={`badge badge-${m.provider}`}>{m.provider}</span></td>
+                            <td><span className="mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{m.endpoint}</span></td>
+                            <td>${m.cost.inputPerMillion}</td>
+                            <td>${m.cost.outputPerMillion}</td>
+                            <td>{m.cost.cachePerMillion != null ? `$${m.cost.cachePerMillion}` : <span className="text-muted">—</span>}</td>
+                            <td>{m.contextWindow != null ? `${(m.contextWindow / 1000).toFixed(0)}k` : <span className="text-muted">—</span>}</td>
+                            <td><StatusBadge status={status} /></td>
+                            <td style={{ textAlign: 'right' }}>
+                              {h ? `${(h.errorRate * 100).toFixed(1)}%` : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              {h ? (h.p95LatencyMs == null ? '—' : `${Math.round(h.p95LatencyMs)} ms`) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              {h ? h.requestsLastHour : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                            </td>
+                            <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
+                              {h ? relativeTime(h.lastSuccessAt) : '—'}
+                            </td>
+                            <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
+                              {h ? (cd ?? '—') : '—'}
+                            </td>
+                            <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                              <Link to={`/dashboard/models/new?clone=${encodeURIComponent(m.id)}`} className="btn-icon" title="Clone">
+                                <Copy size={15} />
+                              </Link>
+                              <Link to={`/dashboard/models/${encodeURIComponent(m.id)}`} className="btn-icon" title="Edit">
+                                <Edit2 size={15} />
+                              </Link>
+                              <button className="btn-icon danger" onClick={() => handleDelete(m.id)} title="Remove">
+                                <Trash2 size={15} />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {totalPages > 1 && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+                    marginTop: 16, padding: '10px 0',
+                  }}>
+                    <button className="btn btn-sm btn-secondary" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>
+                      ← Previous
+                    </button>
+                    <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                      Page {page} of {totalPages}
+                      <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>({sorted.length} models)</span>
+                    </span>
+                    <button className="btn btn-sm btn-secondary" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+                      Next →
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        {tab === 'health' && (
+          loading ? (
+            <div className="loading-center"><div className="spinner" /></div>
+          ) : models.length === 0 ? (
+            <div className="empty-state"><Server size={40} /><p>No models configured.</p></div>
+          ) : (
+            <div className="table-wrap">
+              <table>
                 <thead>
                   <tr>
-                    <th style={thStyle}>{thInner('ID', 'id')}</th>
-                    <th style={thStyle}>{thInner('Provider', 'provider')}</th>
-                    <th style={thStyle}>{thInner('Endpoint', 'endpoint')}</th>
-                    <th style={thStyle}>{thInner('Input $/1M', 'input')}</th>
-                    <th style={thStyle}>{thInner('Output $/1M', 'output')}</th>
-                    <th style={thStyle}>{thInner('Cache $/1M', 'cache')}</th>
-                    <th style={thStyle}>{thInner('Context Size', 'context')}</th>
-                    <th style={thStyle}>{thInner('Status', 'status')}</th>
-                    <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Error rate (5m)', 'errorRate')}</th>
-                    <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('P95 latency (5m)', 'p95Latency')}</th>
-                    <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Requests (1h)', 'requests')}</th>
-                    <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Last success', 'lastSuccess')}</th>
-                    <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Cooldown', 'cooldown')}</th>
-                    <th></th>
+                    <th>Model</th>
+                    <th>Provider</th>
+                    <th>Status</th>
+                    <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Error rate (5m)</th>
+                    <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>P95 latency (5m)</th>
+                    <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Requests (1h)</th>
+                    <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Last success</th>
+                    <th style={{ textAlign: 'right' }}>Cooldown</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {paginated.map(m => {
-                    const h = healthMap.get(m.id);
-                    const cd = h ? cooldownTimer(h.cooldownUntil) : null;
-                    const status: ExtendedStatus = h ? (cd ? 'cooldown' : h.status) : 'nodata';
-                    return (
-                      <tr key={m.id}>
-                        <td><span className="mono">{m.id}</span></td>
-                        <td><span className={`badge badge-${m.provider}`}>{m.provider}</span></td>
-                        <td><span className="mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{m.endpoint}</span></td>
-                        <td>${m.cost.inputPerMillion}</td>
-                        <td>${m.cost.outputPerMillion}</td>
-                        <td>{m.cost.cachePerMillion != null ? `$${m.cost.cachePerMillion}` : <span className="text-muted">—</span>}</td>
-                        <td>{m.contextWindow != null ? `${(m.contextWindow / 1000).toFixed(0)}k` : <span className="text-muted">—</span>}</td>
-                        {/* health columns */}
-                        <td><StatusBadge status={status} /></td>
-                        <td style={{ textAlign: 'right' }}>
-                          {h ? `${(h.errorRate * 100).toFixed(1)}%` : <span style={{ color: 'var(--text-muted)' }}>—</span>}
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          {h ? (h.p95LatencyMs == null ? '—' : `${Math.round(h.p95LatencyMs)} ms`) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          {h ? h.requestsLastHour : <span style={{ color: 'var(--text-muted)' }}>—</span>}
-                        </td>
-                        <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
-                          {h ? relativeTime(h.lastSuccessAt) : '—'}
-                        </td>
-                        <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
-                          {h ? (cd ?? '—') : '—'}
-                        </td>
-                        <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                          <Link to={`/dashboard/models/new?clone=${encodeURIComponent(m.id)}`} className="btn-icon" title="Clone">
-                            <Copy size={15} />
-                          </Link>
-                          <Link to={`/dashboard/models/${encodeURIComponent(m.id)}`} className="btn-icon" title="Edit">
-                            <Edit2 size={15} />
-                          </Link>
-                          <button className="btn-icon danger" onClick={() => handleDelete(m.id)} title="Remove">
-                            <Trash2 size={15} />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {[...models]
+                    .sort((a, b) => {
+                      const ha = healthMap.get(a.id);
+                      const hb = healthMap.get(b.id);
+                      const sa: ExtendedStatus = ha ? (cooldownTimer(ha.cooldownUntil) ? 'cooldown' : ha.status) : 'nodata';
+                      const sb: ExtendedStatus = hb ? (cooldownTimer(hb.cooldownUntil) ? 'cooldown' : hb.status) : 'nodata';
+                      const diff = STATUS_SEVERITY[sa] - STATUS_SEVERITY[sb];
+                      return diff !== 0 ? diff : a.id.localeCompare(b.id);
+                    })
+                    .map(m => {
+                      const h = healthMap.get(m.id);
+                      const cd = h ? cooldownTimer(h.cooldownUntil) : null;
+                      const status: ExtendedStatus = h ? (cd ? 'cooldown' : h.status) : 'nodata';
+                      return (
+                        <tr key={m.id}>
+                          <td><span className="mono">{m.id}</span></td>
+                          <td><span className={`badge badge-${m.provider}`}>{m.provider}</span></td>
+                          <td><StatusBadge status={status} /></td>
+                          <td style={{ textAlign: 'right' }}>
+                            {h ? `${(h.errorRate * 100).toFixed(1)}%` : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            {h ? (h.p95LatencyMs == null ? '—' : `${Math.round(h.p95LatencyMs)} ms`) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            {h ? h.requestsLastHour : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                          </td>
+                          <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
+                            {h ? relativeTime(h.lastSuccessAt) : '—'}
+                          </td>
+                          <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
+                            {h ? (cd ?? '—') : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
             </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-                marginTop: 16, padding: '10px 0',
-              }}>
-                <button
-                  className="btn btn-sm btn-secondary"
-                  disabled={page <= 1}
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                >
-                  ← Previous
-                </button>
-                <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                  Page {page} of {totalPages}
-                  <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>
-                    ({sorted.length} models)
-                  </span>
-                </span>
-                <button
-                  className="btn btn-sm btn-secondary"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage(p => p + 1)}
-                >
-                  Next →
-                </button>
-              </div>
-            )}
-          </>
+          )
         )}
       </div>
       {confirmState && (
