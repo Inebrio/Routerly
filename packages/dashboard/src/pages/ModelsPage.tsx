@@ -310,7 +310,7 @@ export function ModelsPage() {
                         <th style={thStyle}>{thInner('Context Size', 'context')}</th>
                         <th style={thStyle}>{thInner('Status', 'status')}</th>
                         <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Error rate (5m)', 'errorRate')}</th>
-                        <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('P95 latency (5m)', 'p95Latency')}</th>
+                        <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('P95 latency (1h)', 'p95Latency')}</th>
                         <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Requests (1h)', 'requests')}</th>
                         <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Last success', 'lastSuccess')}</th>
                         <th style={{ ...thStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{thInner('Cooldown', 'cooldown')}</th>
@@ -400,7 +400,7 @@ export function ModelsPage() {
                     <th>Provider</th>
                     <th>Status</th>
                     <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Error rate (5m)</th>
-                    <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>P95 latency (5m)</th>
+                    <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>P95 latency (1h)</th>
                     <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Requests (1h)</th>
                     <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Last success</th>
                     <th style={{ textAlign: 'right' }}>Cooldown</th>

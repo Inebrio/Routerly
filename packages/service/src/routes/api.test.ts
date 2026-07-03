@@ -5756,8 +5756,8 @@ describe('GET /api/health/providers', () => {
     expect(providers[0].status).toBe('unavailable')
   })
 
-  it('only counts records from the last 5 minutes for error rate and p95', async () => {
-    // One old success (outside 5min) + recent errors only inside window
+  it('uses 5m window for error rate, 1h window for p95', async () => {
+    // One old success (10min ago, outside 5m error window, inside 1h p95 window) + recent error
     setupHealth(
       [{ id: 'm', name: 'M', provider: 'openai' }],
       [rec('m', 'success', 50, 10 * 60_000), rec('m', 'error', 500, 1000)],
