@@ -877,7 +877,7 @@ Examples:
             p.models.length,
             (p.tokens ?? []).length,
             (p.members ?? []).length,
-            `${(p.timeoutMs ?? 30000) / 1000}s`,
+            `${(p.timeoutMs ?? 5000) / 1000}s`,
           ]);
         }
         console.log(table.toString());
@@ -902,7 +902,7 @@ Examples:
 
         console.log(chalk.bold(`\n── ${project.name} ──────────────────────────────────`));
         console.log(chalk.gray(`  ID:      `) + project.id);
-        console.log(chalk.gray(`  Timeout: `) + `${(project.timeoutMs ?? 30000) / 1000}s`);
+        console.log(chalk.gray(`  Timeout: `) + `${(project.timeoutMs ?? 5000) / 1000}s`);
 
         // Routing
         console.log(chalk.bold('\n  Routing'));
@@ -971,7 +971,7 @@ Examples:
   routerly project create --name "Smart API" --routing-model ollama/qwen3.5:9b --auto-routing
 `)
     .requiredOption('--name <name>', 'Project name')
-    .option('--timeout <ms>', 'Request timeout in milliseconds (default: 30000)')
+    .option('--timeout <ms>', 'TTFT timeout per model attempt in milliseconds (default: 5000). Aborts if first response byte not received in time.')
     .option('--routing-model <id>', 'Model ID for routing decisions')
     .option('--auto-routing', 'Enable auto-routing (default: true)')
     .option('--no-auto-routing', 'Disable auto-routing')
@@ -979,7 +979,7 @@ Examples:
       try {
         const body: Record<string, unknown> = {
           name: opts.name,
-          timeoutMs: opts.timeout ? parseInt(opts.timeout) : 30000,
+          timeoutMs: opts.timeout ? parseInt(opts.timeout) : 5000,
           autoRouting: opts.autoRouting !== undefined ? opts.autoRouting : true,
           models: [],
         };

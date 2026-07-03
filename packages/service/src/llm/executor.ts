@@ -384,22 +384,34 @@ export async function llmStream(
 
   const iter = adapter.streamCompletion(streamRequest, model)[Symbol.asyncIterator]();
 
+  const ttftTimeoutMs = callType === 'completion' ? ctx.project.timeoutMs : undefined;
+
   // Attende il primo chunk per poter misurare il TTFT.
   // Se fallisce qui il chiamante può tentare il candidato successivo.
   let firstChunk: IteratorResult<StreamChunk>;
   try {
-    firstChunk = await iter.next();
+    if (ttftTimeoutMs) {
+      let timer: ReturnType<typeof setTimeout>;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`TTFT timeout after ${ttftTimeoutMs}ms`)), ttftTimeoutMs);
+      });
+      firstChunk = await Promise.race([iter.next(), timeoutPromise]).finally(() => clearTimeout(timer!));
+    } else {
+      firstChunk = await iter.next();
+    }
   } catch (err: unknown) {
+    void iter.return?.();
     const latencyMs = Date.now() - t0;
     const msg = err instanceof Error ? err.message : String(err);
-    log?.warn({ err, modelId: model.id }, 'llm executor: stream failed before first chunk');
+    const isTtftTimeout = msg.startsWith('TTFT timeout');
+    log?.warn({ err, modelId: model.id }, isTtftTimeout ? 'llm executor: TTFT timeout' : 'llm executor: stream failed before first chunk');
     emit?.({ panel: res, message: 'model:error', details: { modelId: model.id, error: msg, latencyMs } });
     const provEvt = isRateLimitError(err) ? 'provider.rate_limited' : 'provider.error';
     emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, projectId, error: msg }, log ? { log } : {}).catch(() => {});
     handleProviderResult(model.id, model.provider, false, projectId, log);
     await trackUsage({
       projectId, model, inputTokens: 0, outputTokens: 0, latencyMs,
-      outcome: 'error',
+      outcome: isTtftTimeout ? 'timeout' : 'error',
       errorMessage: msg,
       callType,
       ...(traceId !== undefined ? { traceId } : {}),

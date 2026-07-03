@@ -45,8 +45,8 @@ export function UsagePage() {
   const [loading, setLoading]           = useState(true);
   const [fetchError, setFetchError]     = useState<string | null>(null);
   const [lastUpdated, setLastUpdated]   = useState<Date | null>(null);
-  const [pollInterval, setPollInterval] = useFilterState<number>({ key: 'usage-filters-pollInterval', defaultValue: 30_000 });
-  const [liveMode, setLiveMode]         = useState(false);
+  const [pollInterval, setPollInterval] = useFilterState<number>({ key: 'usage-filters-pollInterval', defaultValue: 2_000 });
+  const [liveMode, setLiveMode]         = useState(true);
   const [refreshing, setRefreshing]     = useState(false);
   const [page, setPage]                 = useState(1);
   const [pageSize]                      = useState(100);

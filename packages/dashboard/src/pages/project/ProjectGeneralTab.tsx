@@ -31,21 +31,21 @@ export function ProjectGeneralTab() {
 
   const [form, setForm] = useState({
     name: '',
-    timeoutMs: '30000',
+    timeoutMs: '5000',
   });
 
   useEffect(() => {
     if (project) {
       setForm({
         name: project.name,
-        timeoutMs: String(project.timeoutMs ?? 30000),
+        timeoutMs: String(project.timeoutMs ?? 5000),
       });
     }
   }, [project]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isDirty = isEdit
     ? form.name !== (project?.name ?? '') ||
-      form.timeoutMs !== String(project?.timeoutMs ?? 30000)
+      form.timeoutMs !== String(project?.timeoutMs ?? 5000)
     : form.name !== '';
 
   // Once the token is revealed the form is "done" — don't block navigation anymore.
@@ -199,9 +199,9 @@ export function ProjectGeneralTab() {
           {showAdvanced && (
             <div style={{ marginTop: 16 }}>
               <div className="form-group">
-                <label className="form-label">Global Timeout (ms)</label>
+                <label className="form-label">TTFT Timeout (ms)</label>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
-                  Maximum time an API request can take before Routerly aborts it.
+                  If a model does not send the first response byte within this time, Routerly aborts it and tries the next candidate. Does not limit total response duration.
                 </p>
                 <input
                   className="form-input"
@@ -209,7 +209,7 @@ export function ProjectGeneralTab() {
                   value={form.timeoutMs}
                   onChange={e => setForm(f => ({ ...f, timeoutMs: e.target.value }))}
                   min={1000}
-                  max={300000}
+                  max={50000}
                 />
               </div>
 
