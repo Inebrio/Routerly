@@ -114,7 +114,9 @@ If you run Ollama on a different machine, change the `endpoint` to match. Router
 
 ## Custom Adapter
 
-For any provider that exposes an OpenAI-compatible `/v1/chat/completions` endpoint. Uses the `openai` SDK with a custom `baseURL`.
+For any provider that exposes an OpenAI-compatible `/v1/chat/completions` endpoint.
+
+**Wire-format transparency:** `chatCompletion()` and `streamCompletion()` use raw `fetch` (not the OpenAI SDK) to guarantee 100% wire-format transparency. Some SDKs (like OpenAI) normalize or strip non-standard response fields (e.g. DeepSeek's `reasoning_content`) before returning; using raw fetch ensures such fields reach the client unmodified. The `messages()` method uses the SDK because it converts Anthropic→OpenAI format anyway, so SDK normalization is harmless there.
 
 **Required field:** `endpoint` must be set to the provider's base URL.
 
@@ -128,7 +130,7 @@ For any provider that exposes an OpenAI-compatible `/v1/chat/completions` endpoi
 }
 ```
 
-This adapter works with LM Studio, llama.cpp server, vLLM, LocalAI, and any other service that implements the OpenAI `/v1/chat/completions` interface.
+This adapter works with LM Studio, llama.cpp server, vLLM, LocalAI, DeepSeek, and any other service that implements the OpenAI `/v1/chat/completions` interface.
 
 ---
 
