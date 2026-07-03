@@ -254,33 +254,36 @@ export function UsagePage() {
 
   return (
     <>
-      <div className="page-header" style={{ paddingBottom: 0 }}>
-        <h1>
-          Usage
-          {liveMode && (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em',
-              padding: '3px 10px', borderRadius: 99, marginLeft: 12,
-              background: 'rgba(239,68,68,0.12)',
-              color: '#ef4444',
-              border: '1px solid rgba(239,68,68,0.35)',
-              verticalAlign: 'middle',
-              animation: 'live-pulse 2s ease-in-out infinite',
-            }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
-              LIVE
-            </span>
-          )}
-        </h1>
-        <p>
-          Detailed call logs and per-model breakdown
-          {lastUpdated && (
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: 12 }}>
-              · updated at {lastUpdated.toLocaleTimeString()}
-            </span>
-          )}
-          <span style={{ marginLeft: 16, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      <div className="page-header">
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+          <div>
+            <h1 style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              Usage
+              {liveMode && (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em',
+                  padding: '3px 10px', borderRadius: 99,
+                  background: 'rgba(239,68,68,0.12)',
+                  color: '#ef4444',
+                  border: '1px solid rgba(239,68,68,0.35)',
+                  animation: 'live-pulse 2s ease-in-out infinite',
+                }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
+                  LIVE
+                </span>
+              )}
+            </h1>
+            <p style={{ margin: 0 }}>
+              Detailed call logs and per-model breakdown
+              {lastUpdated && (
+                <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginLeft: 8 }}>
+                  · updated at {lastUpdated.toLocaleTimeString()}
+                </span>
+              )}
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, paddingTop: 4 }}>
             {POLL_OPTIONS.map(o => (
               <button
                 key={o.value}
@@ -311,8 +314,8 @@ export function UsagePage() {
             >
               {refreshing ? '…' : '↻ Now'}
             </button>
-          </span>
-        </p>
+          </div>
+        </div>
       </div>
       <div className="page-body" style={{ paddingTop: 24 }}>
         {/* Filters */}
