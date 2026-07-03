@@ -1729,11 +1729,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const errors = recent.filter(r => r.outcome !== 'success').length;
       const errorRate = total > 0 ? errors / total : 0;
 
-      // p95 latency over the last 5 minutes (null when no sample — health distinguishes "no data" from 0ms)
-      const latencies = recent.map(r => r.latencyMs).filter((n): n is number => typeof n === 'number');
-      const p95LatencyMs = latencies.length > 0 ? p95(latencies) : null;
-
       const requestsLastHour = mine.filter(r => new Date(r.timestamp).getTime() >= oneHourAgo).length;
+
+      // p95 latency over the last hour (null when no sample — health distinguishes "no data" from 0ms)
+      const lastHourNonBlocked = mine.filter(r => new Date(r.timestamp).getTime() >= oneHourAgo && r.outcome !== 'blocked');
+      const latencies = lastHourNonBlocked.map(r => r.latencyMs).filter((n): n is number => typeof n === 'number');
+      const p95LatencyMs = latencies.length > 0 ? p95(latencies) : null;
 
       const lastSuccess = [...mine].reverse().find(r => r.outcome === 'success');
       const lastSuccessAt = lastSuccess ? lastSuccess.timestamp : null;
