@@ -9,6 +9,78 @@ Complete reference for all `routerly` CLI commands.
 
 ---
 
+## `routerly catalog`
+
+Manage the provider catalog repositories and cache.
+
+### `routerly catalog repos list`
+
+```
+routerly catalog repos list [--json]
+```
+
+List all configured provider repositories with their status.
+
+**Columns:**
+- **#** — priority (1 = checked first)
+- **URL** — repository endpoint
+- **File** — name of the last successfully resolved catalog file
+- **Updated** — timestamp from the catalog (when the snapshot was created)
+- **Last Check** — when Routerly last fetched from this repo
+- **Status** — Active / Disabled / Error (with error details on hover or in JSON)
+
+The default repo (Inebrio) is always present. Additional repos are appended at lower priority.
+
+### `routerly catalog repos add`
+
+```
+routerly catalog repos add <url>
+```
+
+Add a new repository to the list. The repo is appended at the end (lowest priority). It is enabled by default.
+
+```bash
+routerly catalog repos add https://your-org.com/catalog/
+```
+
+### `routerly catalog repos remove`
+
+```
+routerly catalog repos remove <url>
+```
+
+Remove a repository by URL. Requires `settings:write` permission.
+
+```bash
+routerly catalog repos remove https://your-org.com/catalog/
+```
+
+### `routerly catalog repos enable`
+
+```
+routerly catalog repos enable <url>
+```
+
+Enable a previously disabled repository.
+
+### `routerly catalog repos disable`
+
+```
+routerly catalog repos disable <url>
+```
+
+Disable a repository without removing it from the list. Disabled repos are not fetched.
+
+### `routerly catalog refresh`
+
+```
+routerly catalog refresh
+```
+
+Invalidate the in-memory catalog cache and fetch all enabled repositories immediately. Useful after adding a new repo or when you know the catalog has been updated.
+
+---
+
 ## `routerly auth`
 
 ### `routerly auth login`
@@ -89,6 +161,38 @@ Prints the active account alias, email, role, and server URL.
 ```
 routerly model list [--json]
 ```
+
+**Columns:**
+- **ID** — model identifier
+- **Provider** — provider name
+- **Endpoint** — base URL (custom endpoint or provider default)
+- **Catalog** — tracking status: `(catalog)` (auto-synced), `(partial override)` (some fields locked), or empty (no catalog entry)
+
+---
+
+### `routerly model show`
+
+```
+routerly model show <id> [--json]
+```
+
+Display all details of a model, including pricing, context window, capabilities, and (if applicable) catalog tracking status.
+
+**Output includes:**
+- Model configuration (ID, provider, endpoint, API key status, enabled flag)
+- Pricing (input/output/cache rates, pricing tiers, context window)
+- Capabilities (vision, function calling, JSON mode, embeddings)
+- Catalog tracking section (only if the model is linked to a catalog entry):
+  - **Auto-synced fields** — fields currently tracking the catalog
+  - **Overridden fields** — locked fields with their catalog defaults shown
+  - **Last synced** — timestamp of the most recent auto-sync
+
+```bash
+routerly model show gpt-5-mini
+routerly model show gpt-5-mini --json
+```
+
+---
 
 ### `routerly model add`
 

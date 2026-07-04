@@ -137,6 +137,53 @@ See [Concepts: Notifications — Cooldowns](../concepts/notifications.md#cooldow
 
 ---
 
+## Provider Catalog Tab {#catalog-tab}
+
+Configure the provider and model catalog repositories. Routerly fetches the catalog dynamically from one or more remote repositories at runtime, enabling rapid updates without service restarts.
+
+The default catalog source is the official Inebrio repository. Add custom repositories to merge additional providers or override defaults.
+
+### Repository List
+
+The table displays all configured repositories with the following columns:
+
+- **#** — Priority (row order). Row 1 is checked first on merge conflict. Use arrow buttons to reorder.
+- **URL** — Repository endpoint (clickable, opens in new tab)
+- **File** — Filename of the last resolved catalog snapshot (or `—` if never fetched)
+- **Updated** — Timestamp from the catalog registry, indicating when the snapshot was created (or `—`)
+- **Last Check** — When Routerly last attempted to fetch from this repo (or `—` if never checked)
+- **Status** — `Active` (green) for enabled repos, `Disabled` (muted) for disabled repos, or `Error` (red with tooltip showing details)
+
+### Reordering Repositories
+
+Click the up/down arrow buttons on each row to change priority. The first repo in the list wins on merge conflict. Up arrow is disabled on row 1 (topmost); down arrow is disabled on the last row.
+
+### Editing a Repository
+
+Click **Edit** to modify:
+- **URL** — the repository endpoint (required)
+- **Enabled** — checkbox to enable or disable the repo without removing it
+
+Click **Save** to persist changes or **Cancel** to discard.
+
+### Removing a Repository
+
+Click the **Remove** (trash icon) button to delete a repository from the list immediately. The default Inebrio repository cannot be removed.
+
+### Adding a Repository
+
+1. Scroll to the **Add Repository** form below the table
+2. Enter the repository **URL** (e.g. `https://your-org.com/catalog/`)
+3. Click **Add Repository**
+
+The new repo is appended at the end of the list (lowest priority). Enable/disable or reorder as needed.
+
+### Refresh
+
+Click the **Refresh** button in the top right to invalidate the 6-hour in-memory cache and fetch all enabled repositories immediately. The estimated next automatic refresh time is shown below the button. Useful after adding a new repo or when you know the catalog has been updated.
+
+---
+
 ## Integrations Tab {#integrations-tab}
 
 Export Routerly metrics to external monitoring and observability systems. Integrations push metrics every 60 seconds to your chosen platform.

@@ -9,6 +9,78 @@ A **provider** is an LLM platform that Routerly knows how to communicate with. E
 
 ---
 
+## Provider Catalog
+
+Routerly fetches its provider and model catalog dynamically at runtime from one or more remote repositories instead of relying on hardcoded definitions. This enables rapid updates to supported models and providers without service restarts.
+
+### Default Catalog Source
+
+By default, Routerly fetches the catalog from the official Inebrio repository:
+
+```
+https://raw.githubusercontent.com/Inebrio/Routerly-Providers/main/
+```
+
+### How Resolution Works
+
+When fetching the catalog, Routerly applies the following resolution order:
+
+1. **Channel override** — if configured for a repo, use the named channel (e.g. `stable`, `latest`)
+2. **Semver range match** — select the catalog version matching your Routerly version (e.g. `^0.3.0`)
+3. **Default channel fallback** — if no semver match, use the repo's default channel
+4. **Direct fallback** — if all else fails, load `providers.json` directly from the repo root
+
+Each catalog file is timestamped as an immutable snapshot (format: `providers/providers.YYYYMMDDHHMMSS.json`) and verified with SHA-256 checksums after download.
+
+### Caching and Refresh
+
+The catalog is cached in memory for 6 hours after the first fetch. All repositories are fetched together in a single batch. To force an immediate refresh, use:
+
+```bash
+routerly catalog refresh
+```
+
+Or via the dashboard: **Settings > Provider Catalog > Refresh Cache** button.
+
+### Multiple Repositories
+
+You can add multiple custom repositories alongside the default one. Repositories are processed in reverse order (last added = first checked), so the first repo in your list wins on merge conflict.
+
+Add a custom repo:
+
+```bash
+routerly catalog repos add https://your-org.com/catalog/
+```
+
+See [CLI: routerly catalog](../cli/commands.md#routerly-catalog) for full repository management commands, or use the dashboard **Settings > Provider Catalog** tab.
+
+### Per-Repository Status
+
+Each configured repository tracks:
+- **Resolved File** — the filename of the catalog last successfully fetched (e.g. `providers.20260630120000.json`)
+- **Updated At** — timestamp from the catalog registry (when the snapshot was created)
+- **Last Checked** — when Routerly last attempted to fetch from this repo
+- **Status** — Active (green), Disabled (muted), or Error (red with details)
+
+### Catalog-Tracked Model Fields
+
+When you add a model from the catalog, Routerly tracks which fields (input price, output price, context window, capabilities, etc.) came from the catalog. Catalog-tracked fields automatically sync with the provider's catalog every 6 hours — or immediately when you manually refresh the catalog via **Settings > Provider Catalog > Refresh Cache** or `routerly catalog refresh`.
+
+**Auto-sync fields:**
+- Input price per 1M tokens
+- Output price per 1M tokens
+- Cache read price per 1M tokens (if applicable)
+- Cache write price per 1M tokens (if applicable)
+- Pricing tiers (e.g., Anthropic's >200k token tier)
+- Context window
+- Capabilities (vision, function calling, JSON, etc.)
+
+If you manually edit any of these fields, Routerly stops auto-syncing that specific field — it becomes **locked** at your custom value. You can unlock a field by resetting it back to the catalog default. See the dashboard and CLI docs for field-reset instructions.
+
+Models not found in any catalog (local Ollama instances, custom endpoints) do not have catalog tracking — they remain fully manual.
+
+---
+
 ## Supported Providers
 
 | Provider | ID | Authentication | Notes |

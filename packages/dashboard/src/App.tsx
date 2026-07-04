@@ -25,7 +25,7 @@ import { UsagePage } from './pages/UsagePage';
 import { UsageRecordPage } from './pages/UsageRecordPage';
 import { TestPage } from './pages/TestPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { SettingsGeneralTab, SettingsAboutTab, SettingsIntegrationsTab } from './pages/SettingsPage';
+import { SettingsGeneralTab, SettingsAboutTab, SettingsIntegrationsTab, SettingsCatalogTab } from './pages/SettingsPage';
 import { NotificationChannelListPage } from './pages/NotificationChannelListPage';
 import { NotificationChannelEditPage } from './pages/NotificationChannelEditPage';
 import { NotificationChannelCreatePage } from './pages/NotificationChannelCreatePage';
@@ -406,6 +406,7 @@ const router = createBrowserRouter([
               { path: 'notifications/new', element: <NotificationChannelCreatePage /> },
               { path: 'notifications/:id', element: <NotificationChannelEditPage /> },
               { path: 'integrations', element: <SettingsIntegrationsTab /> },
+              { path: 'catalog', element: <SettingsCatalogTab /> },
               { path: 'users', element: <UsersPage /> },
               { path: 'users/:userId', element: <UserEditPage /> },
               { path: 'roles', element: <RolesPage /> },

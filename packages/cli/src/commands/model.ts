@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import type { ModelConfig, TokenCost, Limit, PricingTier } from '@routerly/shared';
+import type { ModelConfig, TokenCost, Limit, PricingTier, CatalogField } from '@routerly/shared';
 
 // ─── Interactive wizard helpers ───────────────────────────────────────────────
 
@@ -146,15 +146,93 @@ Examples:
           return;
         }
         const table = new Table({
-          head: ['ID', 'Provider', 'Endpoint', 'Input $/1M', 'Output $/1M'].map(h => chalk.cyan(h)),
+          head: ['ID', 'Provider', 'Endpoint', 'Input $/1M', 'Output $/1M', 'Catalog'].map(h => chalk.cyan(h)),
         });
         for (const m of models) {
-          table.push([m.id, m.provider, m.endpoint, `$${m.cost.inputPerMillion}`, `$${m.cost.outputPerMillion}`]);
+          const overridden = m.fieldOverrides ? Object.values(m.fieldOverrides).some(Boolean) : false;
+          const catalogLabel = overridden
+            ? chalk.yellow('partial override')
+            : m.catalogDefaults
+              ? chalk.green('catalog')
+              : '';
+          table.push([m.id, m.provider, m.endpoint, `$${m.cost.inputPerMillion}`, `$${m.cost.outputPerMillion}`, catalogLabel]);
         }
         console.log(table.toString());
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
+      }
+    });
+
+  // ── model show ──
+  cmd.command('show <id>')
+    .description('Show details for a registered model')
+    .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  routerly model show gpt-4o
+  routerly model show gpt-4o --json
+`)
+    .action(async (id: string, opts: { json?: boolean }) => {
+      let models: ModelConfig[];
+      try {
+        models = await api<ModelConfig[]>('GET', '/api/models');
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+
+      const m = models.find(x => x.id === id);
+      if (!m) {
+        console.error(chalk.red(`Model "${id}" not found.`));
+        process.exit(1);
+      }
+
+      if (opts.json) {
+        console.log(JSON.stringify(m, null, 2));
+        return;
+      }
+
+      const line = (label: string, value: string) =>
+        `  ${chalk.bold(label.padEnd(22))} ${value}`;
+
+      console.log(chalk.bold(`\nModel: ${m.id}`));
+      console.log(line('Provider', m.provider));
+      console.log(line('Endpoint', m.endpoint));
+      if (m.contextWindow) console.log(line('Context window', `${m.contextWindow.toLocaleString()} tokens`));
+      if (m.capabilities) {
+        const caps = Object.entries(m.capabilities)
+          .filter(([, v]) => v)
+          .map(([k]) => k)
+          .join(', ');
+        if (caps) console.log(line('Capabilities', caps));
+      }
+
+      console.log(chalk.bold('\nPricing:'));
+      console.log(line('Input $/1M', `$${m.cost.inputPerMillion}`));
+      console.log(line('Output $/1M', `$${m.cost.outputPerMillion}`));
+      if (m.cost.cachePerMillion !== undefined) console.log(line('Cache read $/1M', `$${m.cost.cachePerMillion}`));
+      if (m.cost.cacheWritePerMillion !== undefined) console.log(line('Cache write $/1M', `$${m.cost.cacheWritePerMillion}`));
+
+      // Catalog tracking section
+      const overriddenKeys = m.fieldOverrides
+        ? (Object.entries(m.fieldOverrides) as [CatalogField, boolean | undefined][]).filter(([, v]) => v).map(([k]) => k)
+        : [];
+
+      console.log(chalk.bold('\nCatalog tracking:'));
+      if (overriddenKeys.length > 0) {
+        console.log('  Overridden fields:');
+        for (const field of overriddenKeys) {
+          const def = m.catalogDefaults?.[field];
+          const defStr = def !== undefined
+            ? chalk.gray(`(catalog default: ${typeof def === 'number' && (field === 'inputPerMillion' || field === 'outputPerMillion' || field === 'cachePerMillion' || field === 'cacheWritePerMillion') ? `$${def}` : String(def)})`)
+            : '';
+          console.log(`    ${chalk.yellow(field.padEnd(24))} ${chalk.cyan('Override')} ${defStr}`);
+        }
+      } else if (m.catalogDefaults) {
+        console.log(chalk.green('  Prices: auto-synced from catalog'));
+      } else {
+        console.log(chalk.gray('  (no catalog tracking)'));
       }
     });
 

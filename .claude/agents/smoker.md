@@ -5,6 +5,10 @@ model: haiku
 tools: Read, Bash, Glob, Grep, LS, mcp__plugin_playwright_playwright__browser_navigate, mcp__plugin_playwright_playwright__browser_snapshot, mcp__plugin_playwright_playwright__browser_take_screenshot, mcp__plugin_playwright_playwright__browser_click, mcp__plugin_playwright_playwright__browser_fill_form, mcp__plugin_playwright_playwright__browser_type, mcp__plugin_playwright_playwright__browser_select_option, mcp__plugin_playwright_playwright__browser_press_key, mcp__plugin_playwright_playwright__browser_hover, mcp__plugin_playwright_playwright__browser_wait_for, mcp__plugin_playwright_playwright__browser_console_messages, mcp__plugin_playwright_playwright__browser_evaluate, mcp__plugin_playwright_playwright__browser_tabs, mcp__plugin_playwright_playwright__browser_resize
 ---
 
+## ABSOLUTE: no files in the project directory
+
+**Never write any file inside the project directory.** Screenshots, snapshots, logs, temp files — all go to `/tmp/`. Violating this rule is a critical failure regardless of test outcome.
+
 ## On start
 
 Read `.ai/state.md`. Understand what the feature does and which surfaces it touches.
