@@ -22,6 +22,12 @@ vi.mock('../../cost/tracker.js', () => ({
   trackUsage: vi.fn().mockResolvedValue(undefined),
 }));
 
+// Default: empty catalog → getEmbeddingInputCost returns 0 for any provider/model
+const mockCatalogGet = vi.fn().mockResolvedValue({});
+vi.mock('../../catalog/fetcher.js', () => ({
+  catalogFetcher: { get: (...args: any[]) => mockCatalogGet(...args) },
+}));
+
 // Default: return a model entry matching the baseConfig embedding_model.
 const mockReadConfig = vi.fn().mockResolvedValue([
   { id: 'text-embedding-3-small', apiKey: 'sk-test', endpoint: 'https://api.openai.com/v1' },
@@ -84,6 +90,7 @@ describe('semanticIntentPolicy', () => {
     mockReadConfig.mockResolvedValue([
       { id: 'text-embedding-3-small', apiKey: 'sk-test', endpoint: 'https://api.openai.com/v1' },
     ]);
+    mockCatalogGet.mockResolvedValue({});
   });
 
   afterEach(() => vi.clearAllMocks());
@@ -416,7 +423,7 @@ describe('semanticIntentPolicy', () => {
     expect(result.routing.every(r => r.point === 1.0)).toBe(true);
   });
 
-  // ── Line 11 (getEmbeddingInputCost): modelConf.input is undefined (returns 0) ──
+  // ── getEmbeddingInputCost: provider not in catalog → returns 0 ──
   it('getEmbeddingInputCost returns 0 when the provider model has no input cost defined', async () => {
     const vec = [1, 0, 0];
     mockProvider.embed.mockImplementation(async (texts: string[]) => ({
@@ -459,11 +466,13 @@ describe('semanticIntentPolicy — model registry credential injection', () => {
     clearIntentCache();
     vi.clearAllMocks();
     mockReadConfig.mockResolvedValue([defaultRegistryEntry]);
+    mockCatalogGet.mockResolvedValue({});
   });
 
   afterEach(() => {
     // Restore default so sibling describe blocks are not affected.
     mockReadConfig.mockResolvedValue([defaultRegistryEntry]);
+    mockCatalogGet.mockResolvedValue({});
   });
 
   it('injects apiKey from model registry into classifyIntent config', async () => {
@@ -533,6 +542,7 @@ describe('semanticIntentPolicy — line 113 err instanceof Error TRUE branch', (
     mockReadConfig.mockResolvedValue([
       { id: 'text-embedding-3-small', apiKey: 'sk-test', endpoint: 'https://api.openai.com/v1' },
     ]);
+    mockCatalogGet.mockResolvedValue({});
   });
 
   it('logs err.message when the thrown value is an Error instance and log is provided', async () => {

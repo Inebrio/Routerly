@@ -193,6 +193,16 @@ export interface Model {
   limits?: Limit[];
   /** @deprecated use limits */ globalThresholds?: { daily?: number; weekly?: number; monthly?: number };
   capabilities?: ModelCapabilities;
+  fieldOverrides?: Partial<Record<string, boolean>>;
+  catalogDefaults?: {
+    inputPerMillion?: number;
+    outputPerMillion?: number;
+    cachePerMillion?: number;
+    cacheWritePerMillion?: number;
+    pricingTiers?: PricingTier[];
+    contextWindow?: number;
+    capabilities?: ModelCapabilities;
+  };
 }
 
 export const getModels = () => request<Model[]>('/models');
@@ -202,14 +212,42 @@ export interface CatalogEntry {
   provider: string;
   name: string;
   contextWindow: number;
-  modalities: string[];
   pricing: { inputPer1kTokens: number; outputPer1kTokens: number };
   local?: boolean;
-  notes?: string;
+  embedding?: boolean;
   isConfigured: boolean;
 }
 
 export const getModelCatalog = () => request<CatalogEntry[]>('/models/catalog');
+
+export type ProviderCatalog = Record<string, {
+  endpoint: string;
+  models: Array<{
+    id: string;
+    input: number;
+    output: number;
+    cache?: number;
+    cacheWrite?: number;
+    contextWindow?: number;
+    notes?: string;
+    deprecated?: boolean;
+    capabilities?: { embedding?: boolean };
+  }>;
+}>;
+
+export const getProviders = () => request<ProviderCatalog>('/providers');
+export const refreshCatalog = () => request<RepoStatus[]>('/catalog/refresh', { method: 'POST' });
+export const probeRepo = (url: string) => request<{ ok: boolean; error?: string }>(`/catalog/probe?url=${encodeURIComponent(url)}`);
+
+export interface RepoStatus {
+  url: string;
+  enabled: boolean;
+  resolvedFile: string | null;
+  updatedAt: string | null;
+  lastChecked: string | null;
+  error: string | null;
+}
+export const getCatalogStatus = () => request<RepoStatus[]>('/catalog/status');
 export const createModel = (data: {
   id: string; name?: string; provider: string; endpoint: string; apiKey?: string; cfClearance?: string;
   cloneFrom?: string; upstreamModelId?: string;
@@ -220,6 +258,7 @@ export const createModel = (data: {
   pricingTiers?: PricingTier[];
   limits?: Limit[];
   capabilities?: ModelCapabilities;
+  fieldOverrides?: Partial<Record<string, boolean>>;
 }) => request<Model>('/models', { method: 'POST', body: JSON.stringify(data) });
 export const updateModel = (id: string, data: {
   id?: string;
@@ -232,6 +271,7 @@ export const updateModel = (id: string, data: {
   pricingTiers?: PricingTier[];
   limits?: Limit[];
   capabilities?: ModelCapabilities;
+  fieldOverrides?: Partial<Record<string, boolean>>;
 }) => request<Model>(`/models/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteModel = (id: string) => request<void>(`/models/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
@@ -407,8 +447,8 @@ export interface UsageRecord {
   piiRedacted?: string[];
 }
 
-import type { UsageByModelEntry, Integration, IntegrationType } from '@routerly/shared';
-export type { UsageByModelEntry, Integration, IntegrationType };
+import type { UsageByModelEntry, Integration, IntegrationType, ProviderRepo } from '@routerly/shared';
+export type { UsageByModelEntry, Integration, IntegrationType, ProviderRepo };
 
 export interface UsageStats {
   summary: { totalCost: number; totalCalls: number; successCalls: number; errorCalls: number; routingCalls: number; completionCalls: number; routingCost: number; completionCost: number; guardrailCalls?: number; guardrailCost?: number; blockedCalls?: number };
@@ -524,6 +564,8 @@ export interface Settings {
   metricsEnabled?: boolean;
   /** Optional Bearer token required to access /metrics. Absent means no auth. */
   prometheusAuthToken?: string | undefined;
+  /** Provider catalog repositories. */
+  providerRepos?: ProviderRepo[];
 }
 
 export const getSettings = () => request<Settings>('/settings');

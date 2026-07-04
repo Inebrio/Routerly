@@ -10,8 +10,10 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../config/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, UsageByModelEntry, ChannelProvider } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, UsageByModelEntry, ChannelProvider, ProviderRepo } from '@routerly/shared';
 import { CHANNEL_SECRET_FIELDS } from '@routerly/shared';
+import { catalogFetcher } from '../catalog/fetcher.js';
+import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
 import { getTrace } from '../routing/traceStore.js';
 import { sendTestNotification } from '../notifications/sender.js';
@@ -119,38 +121,6 @@ async function verifyPassword(
 }
 
 
-// ── Static model catalog ──────────────────────────────────────────────────────
-interface CatalogEntry {
-  id: string;
-  provider: string;
-  name: string;
-  contextWindow: number;
-  modalities: string[];
-  pricing: { inputPer1kTokens: number; outputPer1kTokens: number };
-  local?: boolean;
-  notes?: string;
-}
-
-const MODEL_CATALOG: CatalogEntry[] = [
-  // OpenAI
-  { id: 'gpt-4o',       provider: 'openai',    name: 'GPT-4o',       contextWindow: 128000,  modalities: ['text', 'vision'], pricing: { inputPer1kTokens: 0.005,   outputPer1kTokens: 0.015  } },
-  { id: 'gpt-4o-mini',  provider: 'openai',    name: 'GPT-4o mini',  contextWindow: 128000,  modalities: ['text'],           pricing: { inputPer1kTokens: 0.00015, outputPer1kTokens: 0.0006 } },
-  { id: 'gpt-4-turbo',  provider: 'openai',    name: 'GPT-4 Turbo',  contextWindow: 128000,  modalities: ['text'],           pricing: { inputPer1kTokens: 0.01,    outputPer1kTokens: 0.03   } },
-  { id: 'o1',           provider: 'openai',    name: 'o1',           contextWindow: 200000,  modalities: ['text'],           pricing: { inputPer1kTokens: 0.015,   outputPer1kTokens: 0.060  } },
-  { id: 'o3-mini',      provider: 'openai',    name: 'o3-mini',      contextWindow: 200000,  modalities: ['text'],           pricing: { inputPer1kTokens: 0.0011,  outputPer1kTokens: 0.0044 } },
-  // Anthropic
-  { id: 'claude-opus-4-5',   provider: 'anthropic', name: 'Claude Opus 4.5',   contextWindow: 200000, modalities: ['text', 'vision'], pricing: { inputPer1kTokens: 0.015,   outputPer1kTokens: 0.075   } },
-  { id: 'claude-sonnet-4-5', provider: 'anthropic', name: 'Claude Sonnet 4.5', contextWindow: 200000, modalities: ['text'],           pricing: { inputPer1kTokens: 0.003,   outputPer1kTokens: 0.015   } },
-  { id: 'claude-haiku-4-5',  provider: 'anthropic', name: 'Claude Haiku 4.5',  contextWindow: 200000, modalities: ['text'],           pricing: { inputPer1kTokens: 0.00025, outputPer1kTokens: 0.00125 } },
-  // Google
-  { id: 'gemini-2.0-flash', provider: 'gemini', name: 'Gemini 2.0 Flash', contextWindow: 1048576, modalities: ['text'], pricing: { inputPer1kTokens: 0.0001,   outputPer1kTokens: 0.0004 } },
-  { id: 'gemini-1.5-pro',   provider: 'gemini', name: 'Gemini 1.5 Pro',   contextWindow: 2097152, modalities: ['text'], pricing: { inputPer1kTokens: 0.00125,  outputPer1kTokens: 0.005  } },
-  { id: 'gemini-1.5-flash', provider: 'gemini', name: 'Gemini 1.5 Flash', contextWindow: 1048576, modalities: ['text'], pricing: { inputPer1kTokens: 0.000075, outputPer1kTokens: 0.0003 } },
-  // Ollama
-  { id: 'llama3',   provider: 'ollama', name: 'Llama 3',   contextWindow: 8192,  modalities: ['text'], pricing: { inputPer1kTokens: 0, outputPer1kTokens: 0 }, local: true },
-  { id: 'mistral',  provider: 'ollama', name: 'Mistral',   contextWindow: 32768, modalities: ['text'], pricing: { inputPer1kTokens: 0, outputPer1kTokens: 0 }, local: true },
-];
-
 // ── Module augmentation ───────────────────────────────────────────────────────
 declare module 'fastify' {
   interface FastifyRequest {
@@ -229,6 +199,11 @@ const piiConfigSchema = z.object({
 
 export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.decorateRequest('dashUser', null);
+
+  // Initialize catalog fetcher with configured repos on startup
+  readConfig('settings').then((s: Settings) => {
+    if (s.providerRepos?.length) catalogFetcher.setRepos(s.providerRepos);
+  }).catch(() => {});
 
   // ─── POST /api/auth/login ────────────────────────────────────────────────────
   fastify.post<{ Body: { email: string; password: string } }>('/api/auth/login', async (req, reply) => {
@@ -492,6 +467,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       pricingTiers?: PricingTier[];
       limits?: Limit[];
       capabilities?: ModelCapabilities;
+      fieldOverrides?: Partial<Record<string, boolean>>;
       /** @deprecated use limits */ dailyBudget?: number;
       /** @deprecated use limits */ weeklyBudget?: number;
       /** @deprecated use limits */ monthlyBudget?: number;
@@ -539,6 +515,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...(req.body.contextWindow !== undefined ? { contextWindow: req.body.contextWindow } : {}),
       ...(req.body.upstreamModelId ? { upstreamModelId: req.body.upstreamModelId } : {}),
       ...(req.body.capabilities ? { capabilities: req.body.capabilities } : {}),
+      ...(req.body.fieldOverrides ? { fieldOverrides: req.body.fieldOverrides } : {}),
     };
     models.push(model);
     await writeConfig('models', models);
@@ -559,6 +536,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       pricingTiers?: PricingTier[];
       limits?: Limit[];
       capabilities?: ModelCapabilities;
+      fieldOverrides?: Partial<Record<string, boolean>>;
       /** @deprecated use limits */ dailyBudget?: number;
       /** @deprecated use limits */ weeklyBudget?: number;
       /** @deprecated use limits */ monthlyBudget?: number;
@@ -616,6 +594,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
           : {}),
       // capabilities: if provided in body use it; if absent clear (unchecking the checkbox removes it)
       ...(req.body.capabilities ? { capabilities: req.body.capabilities } : {}),
+      ...(req.body.fieldOverrides !== undefined
+        ? { fieldOverrides: req.body.fieldOverrides }
+        : existing.fieldOverrides !== undefined ? { fieldOverrides: existing.fieldOverrides } : {}),
+      ...(existing.catalogDefaults !== undefined ? { catalogDefaults: existing.catalogDefaults } : {}),
     };
     models[index] = model;
     await writeConfig('models', models);
@@ -668,15 +650,75 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.status(204).send();
   });
 
-  // ── Model catalog (static, cross-referenced with configured models) ──────────
+  // ── Model catalog (dynamic, cross-referenced with configured models) ─────────
   fastify.get('/api/models/catalog', async (req, reply) => {
     if (!requirePerm(req, 'model:read', reply)) return;
-    const configured = await readConfig('models');
-    const configuredIds = new Set(configured.map(m => m.id));
-    return reply.send(MODEL_CATALOG.map(entry => ({
-      ...entry,
-      isConfigured: configuredIds.has(entry.id),
-    })));
+    const [catalog, configured] = await Promise.all([
+      catalogFetcher.get(pkgVersion),
+      readConfig('models'),
+    ]);
+    // Configured IDs use "provider/modelId" format; strip prefix for catalog lookup
+    const configuredIds = new Set(configured.map((m: { id: string }) =>
+      m.id.includes('/') ? m.id.split('/').slice(1).join('/') : m.id
+    ));
+    const entries = Object.entries(catalog).flatMap(([providerKey, providerData]) =>
+      providerData.models
+        .filter(m => !m.deprecated)
+        .map(m => ({
+          id: m.id,
+          provider: providerKey,
+          name: m.notes ?? m.id,
+          contextWindow: m.contextWindow ?? 0,
+          pricing: {
+            inputPer1kTokens: m.input / 1000,
+            outputPer1kTokens: m.output / 1000,
+          },
+          local: providerKey === 'ollama',
+          embedding: m.capabilities?.embedding === true,
+          isConfigured: configuredIds.has(m.id),
+        }))
+    );
+    return reply.send(entries);
+  });
+
+  fastify.get('/api/providers', async (req, reply) => {
+    if (!requirePerm(req, 'model:read', reply)) return;
+    const catalog = await catalogFetcher.get(pkgVersion);
+    return reply.send(catalog);
+  });
+
+  fastify.post('/api/catalog/refresh', async (req, reply) => {
+    if (!requirePerm(req, 'settings:write', reply)) return;
+    catalogFetcher.invalidate();
+    try { await catalogFetcher.get(pkgVersion); } catch { /* best-effort */ }
+    await syncModelsFromCatalog(pkgVersion).catch(() => {});
+    audit(req, 'catalog:refresh', 'success');
+    return reply.send(catalogFetcher.getStatus());
+  });
+
+  fastify.get('/api/catalog/status', async (req, reply) => {
+    if (!requirePerm(req, 'settings:read', reply)) return;
+    const current = catalogFetcher.getStatus();
+    if (current.length > 0 && current.every(s => s.lastChecked === null && s.enabled !== false)) {
+      try { await catalogFetcher.get(pkgVersion); } catch { /* best-effort */ }
+      await syncModelsFromCatalog(pkgVersion).catch(() => {});
+    }
+    return reply.send(catalogFetcher.getStatus());
+  });
+
+  fastify.get('/api/catalog/probe', async (req, reply) => {
+    if (!requirePerm(req, 'settings:write', reply)) return;
+    const url = (req.query as { url?: string }).url;
+    if (!url) return reply.status(400).send({ error: 'url required' });
+    try {
+      const base = url.endsWith('/') ? url : url + '/';
+      const res = await fetch(base + 'index.json');
+      if (!res.ok) return reply.send({ ok: false, error: `index.json: HTTP ${res.status}` });
+      await res.json();
+      return reply.send({ ok: true });
+    } catch (e) {
+      return reply.send({ ok: false, error: (e as Error).message });
+    }
   });
 
   // ══════════════════════════════════════════════════════════════════════════════
@@ -1463,6 +1505,18 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid notifications config' });
       }
     }
+    const providerReposPatch = (req.body as Partial<Settings>).providerRepos;
+    if (providerReposPatch !== undefined) {
+      const repoSchema = z.array(z.object({
+        url: z.string().url(),
+        channel: z.string().optional(),
+        enabled: z.boolean(),
+      }));
+      const parsed = repoSchema.safeParse(providerReposPatch);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid providerRepos' });
+      }
+    }
     const current = await readConfig('settings');
     const allowed: (keyof Settings)[] = [
       'defaultTimeoutMs',
@@ -1472,6 +1526,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       'publicUrl',
       'channel',
       'requireMfa',
+      'providerRepos',
     ];
     const updated = { ...current };
     for (const key of allowed) {
@@ -1500,6 +1555,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     await writeConfig('settings', updated);
     if ((req.body as Partial<Settings>).channel !== undefined) {
       updateChecker.updateChannel(updated.channel ?? 'latest');
+    }
+    if ((req.body as Partial<Settings>).providerRepos !== undefined) {
+      catalogFetcher.setRepos((updated as Settings).providerRepos ?? []);
     }
     audit(req, 'settings:update', 'success');
     return reply.send(updated);

@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { Plus, X, ChevronDown, EyeOff, Eye, ArrowLeft, Copy, Check, FlaskConical } from 'lucide-react';
-import { getModels, createModel, updateModel, testOpenAIOAuth, type Model, type ModelCapabilities, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit, type CatalogEntry } from '../api';
-import { providersConf } from '@routerly/shared';
+import { getModels, createModel, updateModel, testOpenAIOAuth, getProviders, type Model, type ModelCapabilities, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit, type CatalogEntry, type ProviderCatalog } from '../api';
 
-type Provider = keyof typeof providersConf;
+type Provider = string;
 type ProviderModel = {
   id: string;
   input: number;
@@ -24,18 +23,10 @@ type ProviderModel = {
 };
 
 // ── Constants ──────────────────────────────────────────────────────────────────
-const PROVIDERS = Object.keys(providersConf) as Provider[];
-
-const PROVIDER_LABELS: Partial<Record<Provider, string>> = {
+const PROVIDER_LABELS: Partial<Record<string, string>> = {
   'anthropic-oauth': 'Anthropic (Pro/Max subscription)',
   'openai-oauth': 'OpenAI (ChatGPT Plus/Pro subscription)',
 };
-const ENDPOINT_DEFAULTS = Object.fromEntries(
-  PROVIDERS.map(p => [p, providersConf[p as Provider]?.endpoint])
-) as Record<Provider, string>;
-const PROVIDER_MODELS = Object.fromEntries(
-  PROVIDERS.map(p => [p, providersConf[p as Provider]?.models as ProviderModel[]])
-) as Record<Provider, ProviderModel[]>;
 
 const WEB_PROVIDERS = ['openai-web', 'anthropic-web'] as const;
 type WebProvider = typeof WEB_PROVIDERS[number];
@@ -267,7 +258,7 @@ const EMPTY_FORM = {
   customProviderName: '',
   id: '',
   provider: 'openai' as Provider,
-  endpoint: ENDPOINT_DEFAULTS.openai,
+  endpoint: '',
   apiKey: '',
   cfClearance: '',
   inputPerMillion: '',
@@ -314,6 +305,15 @@ export function ModelFormPage() {
   const isCloning = Boolean(cloneSourceId);
   const editingModelId = isEditing ? decodeURIComponent(id!) : null;
 
+  const [catalog, setCatalog] = useState<ProviderCatalog>({});
+  const PROVIDERS = Object.keys(catalog);
+  const ENDPOINT_DEFAULTS: Record<string, string> = Object.fromEntries(
+    PROVIDERS.map(p => [p, catalog[p]?.endpoint ?? ''])
+  );
+  const PROVIDER_MODELS: Record<string, ProviderModel[]> = Object.fromEntries(
+    PROVIDERS.map(p => [p, (catalog[p]?.models ?? []) as ProviderModel[]])
+  );
+
   const [models, setModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(isEditing);
 
@@ -329,24 +329,35 @@ export function ModelFormPage() {
   const [showCfClearance, setShowCfClearance] = useState(false);
   const [isCustomModel, setIsCustomModel] = useState(false);
   const [isEmbeddingModel, setIsEmbeddingModel] = useState(false);
+  const [fieldOverrides, setFieldOverrides] = useState<Record<string, boolean>>({});
+  const [catalogDefaults, setCatalogDefaults] = useState<Model['catalogDefaults']>(undefined);
 
   useEffect(() => {
     async function init() {
       try {
-        const allModels = await getModels();
+        // Fetch catalog and models in parallel; use cat directly to avoid state timing issues
+        const [cat, allModels] = await Promise.all([
+          getProviders().catch(() => ({} as ProviderCatalog)),
+          getModels(),
+        ]);
+        setCatalog(cat);
         setModels(allModels);
+
+        const catProviders = Object.keys(cat);
+        const catEndpoints: Record<string, string> = Object.fromEntries(catProviders.map(p => [p, cat[p]?.endpoint ?? '']));
+        const catModels: Record<string, ProviderModel[]> = Object.fromEntries(catProviders.map(p => [p, (cat[p]?.models ?? []) as ProviderModel[]]));
 
         if (isEditing && editingModelId) {
           const model = allModels.find(m => m.id === editingModelId);
           if (model) {
-            editModel(model);
+            editModel(model, catModels);
           } else {
             setErr('Model not found');
           }
         } else if (isCloning && cloneSourceId) {
           const source = allModels.find(m => m.id === cloneSourceId);
           if (source) {
-            editModel(source);
+            editModel(source, catModels);
             // Clear the ID so the user must choose a new one
             setForm(f => ({ ...f, customId: '' }));
           } else {
@@ -355,20 +366,20 @@ export function ModelFormPage() {
         } else {
           // Initialize new — honour ?provider=&modelId= from discovery, fall back to openai default
           // ponytail: reuse handleProviderChange logic inline to avoid calling a function that also resets form state mid-init
-          const provider: Provider = (prefillProvider && PROVIDERS.includes(prefillProvider as Provider))
-            ? prefillProvider as Provider
+          const provider: Provider = (prefillProvider && catProviders.includes(prefillProvider))
+            ? prefillProvider
             : 'openai';
 
           if (catalogEntry) {
-            const isPreset = Boolean(PROVIDER_MODELS[provider]?.find(m => m.id === catalogEntry.id));
+            const isPreset = Boolean(catModels[provider]?.find(m => m.id === catalogEntry.id));
             setIsCustomModel(!isPreset);
-            setForm({ ...EMPTY_FORM, provider, endpoint: ENDPOINT_DEFAULTS[provider] ?? '', id: catalogEntry.id });
+            setForm({ ...EMPTY_FORM, provider, endpoint: catEndpoints[provider] ?? '', id: catalogEntry.id });
             if (isPreset) {
               // Curated preset pricing/tiers/context wins over catalog — keeps both entry paths consistent
-              applyPreset(provider, catalogEntry.id);
+              applyPreset(provider, catalogEntry.id, catModels);
             } else {
               // Non-preset: seed from catalog; pricing is per-1k tokens → ×1000 for per-million form fields
-              setIsEmbeddingModel(catalogEntry.modalities.includes('embedding'));
+              setIsEmbeddingModel(catalogEntry.embedding === true);
               setForm(f => ({
                 ...f,
                 inputPerMillion: catalogEntry.local ? '0' : String(catalogEntry.pricing.inputPer1kTokens * 1000),
@@ -377,13 +388,13 @@ export function ModelFormPage() {
               }));
             }
           } else {
-            const firstModel = PROVIDER_MODELS[provider]?.[0];
+            const firstModel = catModels[provider]?.[0];
             const seedId = prefillModelId ?? firstModel?.id ?? '';
             // ponytail: if prefillModelId is not a known preset, show custom input so the id is visible/editable
-            const isPreset = Boolean(seedId && PROVIDER_MODELS[provider]?.find(m => m.id === seedId));
+            const isPreset = Boolean(seedId && catModels[provider]?.find(m => m.id === seedId));
             setIsCustomModel(provider === 'custom' || (Boolean(prefillModelId) && !isPreset));
-            setForm({ ...EMPTY_FORM, provider, endpoint: ENDPOINT_DEFAULTS[provider] ?? '', id: seedId });
-            if (seedId) applyPreset(provider, seedId);
+            setForm({ ...EMPTY_FORM, provider, endpoint: catEndpoints[provider] ?? '', id: seedId });
+            if (seedId) applyPreset(provider, seedId, catModels);
           }
         }
       } catch (e) {
@@ -396,8 +407,75 @@ export function ModelFormPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isEditing, editingModelId]);
 
-  function applyPreset(provider: Provider, modelId: string) {
-    const preset = PROVIDER_MODELS[provider]?.find(m => m.id === modelId);
+  // ── Catalog override helpers ───────────────────────────────────────────────
+  function setOverride(field: string, on: boolean) {
+    setFieldOverrides(prev => on
+      ? { ...prev, [field]: true }
+      : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== field)));
+  }
+
+  function FieldBadge({ field }: { field: string }) {
+    const overridden = !!fieldOverrides[field];
+    const defVal = catalogDefaults?.[field as keyof typeof catalogDefaults];
+    const hasCatalog = defVal !== undefined && defVal !== null;
+    // Only show a badge when the catalog has data for this field
+    if (!hasCatalog && !overridden) return null;
+
+    const fmtDefault = () => {
+      if (typeof defVal === 'number') return String(defVal);
+      if (typeof defVal === 'boolean') return defVal ? 'yes' : 'no';
+      if (typeof defVal === 'object') return JSON.stringify(defVal);
+      return String(defVal);
+    };
+
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginLeft: 8 }}>
+        {overridden ? (
+          <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: 9999, background: 'rgba(245,158,11,0.12)', color: '#f59e0b', fontWeight: 600 }}>
+            Override
+          </span>
+        ) : (
+          <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: 9999, background: 'rgba(34,197,94,0.12)', color: '#22c55e', fontWeight: 600 }}>
+            Auto
+          </span>
+        )}
+        {hasCatalog && (
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+            Default: {fmtDefault()}
+          </span>
+        )}
+        {overridden && hasCatalog && (
+          <button
+            type="button"
+            onClick={() => {
+              setOverride(field, false);
+              // Reset the form field to the catalog default
+              if (field === 'inputPerMillion' || field === 'outputPerMillion' || field === 'cachePerMillion' || field === 'cacheWritePerMillion' || field === 'contextWindow') {
+                setForm(f => ({ ...f, [field]: typeof defVal === 'number' ? String(defVal) : '' }));
+              } else if (field === 'pricingTiers' && Array.isArray(defVal)) {
+                setTierRows((defVal as PricingTier[]).map(t => ({
+                  metric: t.metric,
+                  above: String(t.above),
+                  input: String(t.inputPerMillion),
+                  output: String(t.outputPerMillion),
+                  cache: t.cachePerMillion != null ? String(t.cachePerMillion) : '',
+                })));
+              } else if (field === 'capabilities' && typeof defVal === 'object' && defVal !== null) {
+                const caps = defVal as ModelCapabilities;
+                setIsEmbeddingModel(caps.embedding === true);
+              }
+            }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.72rem', padding: 0, textDecoration: 'underline' }}
+          >
+            Reset
+          </button>
+        )}
+      </span>
+    );
+  }
+
+  function applyPreset(provider: Provider, modelId: string, pm: Record<string, ProviderModel[]> = PROVIDER_MODELS) {
+    const preset = pm[provider]?.find(m => m.id === modelId);
     if (!preset) {
       setForm(f => ({ ...f, id: modelId, inputPerMillion: '', outputPerMillion: '', cachePerMillion: '', cacheWritePerMillion: '', contextWindow: '' }));
       setTierRows([]); setShowAdvanced(false);
@@ -448,9 +526,9 @@ export function ModelFormPage() {
     applyPreset(form.provider, modelId);
   }
 
-  function editModel(model: Model) {
+  function editModel(model: Model, pm: Record<string, ProviderModel[]> = PROVIDER_MODELS) {
     const provider = model.provider as Provider;
-    const providerPresets = PROVIDER_MODELS[provider] ?? [];
+    const providerPresets = pm[provider] ?? [];
 
     const prefix = `${provider}/`;
     let formId = '';
@@ -489,6 +567,8 @@ export function ModelFormPage() {
 
     setIsCustomModel(customModel);
     setIsEmbeddingModel(model.capabilities?.embedding === true);
+    setFieldOverrides(model.fieldOverrides ? { ...model.fieldOverrides } as Record<string, boolean> : {});
+    setCatalogDefaults(model.catalogDefaults);
     setErr(''); setShowToken(false);
 
     const m = model as Model & {
@@ -552,14 +632,17 @@ export function ModelFormPage() {
   function addTier() {
     setTierRows(rows => [...rows, { ...EMPTY_TIER }]);
     setShowAdvanced(true);
+    setOverride('pricingTiers', true);
   }
 
   function removeTier(idx: number) {
     setTierRows(rows => rows.filter((_, i) => i !== idx));
+    setOverride('pricingTiers', true);
   }
 
   function updateTier(idx: number, field: keyof TierRow, value: string) {
     setTierRows(rows => rows.map((r, i) => i === idx ? { ...r, [field]: value } : r));
+    setOverride('pricingTiers', true);
   }
 
   function effectiveId(): string {
@@ -621,6 +704,7 @@ export function ModelFormPage() {
         ...(form.cacheWritePerMillion ? { cacheWritePerMillion: parseFloat(form.cacheWritePerMillion) } : {}),
         ...(form.contextWindow ? { contextWindow: parseInt(form.contextWindow, 10) } : {}),
         ...(pricingTiersPayload.length ? { pricingTiers: pricingTiersPayload } : {}),
+        ...(Object.keys(fieldOverrides).length ? { fieldOverrides } : {}),
         limits: limitRows
           .filter(l => l.value !== '' && !isNaN(parseFloat(l.value)))
           .map(rowToLimit),
@@ -951,12 +1035,13 @@ export function ModelFormPage() {
                 type="checkbox"
                 id="cap-embedding"
                 checked={isEmbeddingModel}
-                onChange={e => setIsEmbeddingModel(e.target.checked)}
+                onChange={e => { setIsEmbeddingModel(e.target.checked); setOverride('capabilities', true); }}
                 style={{ width: 16, height: 16, cursor: 'pointer' }}
               />
               <label htmlFor="cap-embedding" style={{ cursor: 'pointer', marginBottom: 0 }}>
                 Embedding model
                 <span style={{ marginLeft: 8, fontSize: '0.75rem', color: 'var(--text-muted)' }}>This model generates vector embeddings (not chat completions)</span>
+                <FieldBadge field="capabilities" />
               </label>
             </div>
           </div>
@@ -968,34 +1053,34 @@ export function ModelFormPage() {
 
             <div className="grid-3">
               <div className="form-group">
-                <label className="form-label">Input $/1M</label>
+                <label className="form-label">Input $/1M<FieldBadge field="inputPerMillion" /></label>
                 <input className="form-input" type="number" step="any" value={form.inputPerMillion}
-                  onChange={e => setForm(f => ({ ...f, inputPerMillion: e.target.value }))} placeholder="5.00" required />
+                  onChange={e => { setForm(f => ({ ...f, inputPerMillion: e.target.value })); setOverride('inputPerMillion', true); }} placeholder="5.00" required />
               </div>
               <div className="form-group">
-                <label className="form-label">Output $/1M</label>
+                <label className="form-label">Output $/1M<FieldBadge field="outputPerMillion" /></label>
                 <input className="form-input" type="number" step="any" value={form.outputPerMillion}
-                  onChange={e => setForm(f => ({ ...f, outputPerMillion: e.target.value }))} placeholder="15.00" required />
+                  onChange={e => { setForm(f => ({ ...f, outputPerMillion: e.target.value })); setOverride('outputPerMillion', true); }} placeholder="15.00" required />
               </div>
               <div className="form-group">
-                <label className="form-label">Cache read $/1M <span style={{ color: 'var(--text-muted)' }}>(opt.)</span></label>
+                <label className="form-label">Cache read $/1M <span style={{ color: 'var(--text-muted)' }}>(opt.)</span><FieldBadge field="cachePerMillion" /></label>
                 <input className="form-input" type="number" step="any" value={form.cachePerMillion}
-                  onChange={e => setForm(f => ({ ...f, cachePerMillion: e.target.value }))} placeholder="—" />
+                  onChange={e => { setForm(f => ({ ...f, cachePerMillion: e.target.value })); setOverride('cachePerMillion', true); }} placeholder="—" />
               </div>
             </div>
 
             <div className="grid-3">
               <div className="form-group">
-                <label className="form-label">Cache write $/1M <span style={{ color: 'var(--text-muted)' }}>(opt.)</span></label>
+                <label className="form-label">Cache write $/1M <span style={{ color: 'var(--text-muted)' }}>(opt.)</span><FieldBadge field="cacheWritePerMillion" /></label>
                 <input className="form-input" type="number" step="any" value={form.cacheWritePerMillion}
-                  onChange={e => setForm(f => ({ ...f, cacheWritePerMillion: e.target.value }))} placeholder="—" />
+                  onChange={e => { setForm(f => ({ ...f, cacheWritePerMillion: e.target.value })); setOverride('cacheWritePerMillion', true); }} placeholder="—" />
               </div>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Context Window <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(tokens, optional)</span></label>
+              <label className="form-label">Context Window <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(tokens, optional)</span><FieldBadge field="contextWindow" /></label>
               <input className="form-input" type="number" step="1000" value={form.contextWindow}
-                onChange={e => setForm(f => ({ ...f, contextWindow: e.target.value }))} placeholder="128000" />
+                onChange={e => { setForm(f => ({ ...f, contextWindow: e.target.value })); setOverride('contextWindow', true); }} placeholder="128000" />
             </div>
           </div>
 
@@ -1008,6 +1093,7 @@ export function ModelFormPage() {
               {tierRows.length > 0 && (
                 <span style={{ marginLeft: 6, background: 'var(--accent)', color: '#fff', fontSize: '0.75rem', borderRadius: 12, padding: '2px 8px' }}>{tierRows.length}</span>
               )}
+              <FieldBadge field="pricingTiers" />
             </button>
             <p className="section-desc" style={{ marginTop: 8 }}>
               Override pricing when a metric exceeds a threshold. For example: "Above 200 000 context tokens, prices change."

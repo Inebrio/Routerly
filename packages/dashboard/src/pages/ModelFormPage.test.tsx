@@ -8,10 +8,12 @@ vi.mock('../api', () => ({
   createModel: vi.fn(),
   updateModel: vi.fn(),
   testOpenAIOAuth: vi.fn(),
+  getProviders: vi.fn(),
 }));
 
-import { getModels } from '../api';
+import { getModels, getProviders } from '../api';
 const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
+const mockGetProviders = vi.mocked(getProviders);
 
 function makeModel(overrides: Record<string, unknown> = {}) {
   return {
@@ -45,6 +47,30 @@ function renderPage(path: string, state?: unknown) {
 
 beforeEach(() => {
   mockGetModels.mockResolvedValue([]);
+  mockGetProviders.mockResolvedValue({
+    openai: {
+      endpoint: 'https://api.openai.com/v1',
+      models: [
+        { id: 'gpt-4o', input: 2.5, output: 10 },
+        { id: 'gpt-5.2', input: 1.75, output: 14 },
+      ],
+    },
+    anthropic: {
+      endpoint: 'https://api.anthropic.com',
+      models: [
+        { id: 'claude-fable-5', input: 10, output: 50, contextWindow: 200000 },
+        { id: 'claude-sonnet-4-6', input: 3, output: 15 },
+      ],
+    },
+    ollama: {
+      endpoint: 'http://localhost:11434/v1',
+      models: [],
+    },
+    custom: {
+      endpoint: '',
+      models: [],
+    },
+  } as Parameters<typeof mockGetProviders.mockResolvedValue>[0]);
 });
 
 afterEach(() => vi.clearAllMocks());
