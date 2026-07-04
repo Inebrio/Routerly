@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, Globe, BarChart2, Bell, Users, GitBranch, Activity, TrendingUp, Database, Webhook, Dog } from 'lucide-react';
+import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, ChevronUp, Globe, BarChart2, Bell, Users, GitBranch, Activity, TrendingUp, Database, Webhook, Dog } from 'lucide-react';
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
-import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases, getRoles, getUsers, ALL_PERMISSIONS, getIntegrations, createIntegration, updateIntegration, deleteIntegration, testIntegration } from '../api';
-import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, Permission, Integration, IntegrationType } from '../api';
+import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases, getRoles, getUsers, ALL_PERMISSIONS, getIntegrations, createIntegration, updateIntegration, deleteIntegration, testIntegration, refreshCatalog, getCatalogStatus, probeRepo } from '../api';
+import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, Permission, Integration, IntegrationType, ProviderRepo, RepoStatus } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MultiSelect } from '../components/MultiSelect';
 import { NOTIFICATION_EVENTS } from '@routerly/shared';
@@ -1436,6 +1436,284 @@ export function SettingsIntegrationsTab() {
   );
 }
 
+// ── Catalog tab ──────────────────────────────────────────────────────────────
+
+const DEFAULT_REPO_URL = 'https://raw.githubusercontent.com/Inebrio/Routerly-Providers/main/';
+
+export function SettingsCatalogTab() {
+  const [repos, setRepos] = useState<ProviderRepo[]>([]);
+  const [status, setStatus] = useState<RepoStatus[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [newUrl, setNewUrl] = useState('');
+  const [addError, setAddError] = useState('');
+  const [probing, setProbing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [saved, setSaved] = useState('');
+  const [editIdx, setEditIdx] = useState<number | null>(null);
+  const [editUrl, setEditUrl] = useState('');
+  const [editEnabled, setEditEnabled] = useState(true);
+  const [editError, setEditError] = useState('');
+  const [confirmRemoveIdx, setConfirmRemoveIdx] = useState<number | null>(null);
+
+  useEffect(() => {
+    Promise.all([
+      getSettings(),
+      getCatalogStatus().catch(() => [] as RepoStatus[]),
+    ])
+      .then(([s, st]) => {
+        setRepos(s.providerRepos ?? [{ url: DEFAULT_REPO_URL, enabled: true }]);
+        setStatus(st);
+      })
+      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load settings'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function persist(updated: ProviderRepo[], doRefresh = false) {
+    setRepos(updated);
+    await updateSettings({ providerRepos: updated } as Partial<Settings>);
+    if (doRefresh) {
+      const st = await refreshCatalog().catch(() => [] as RepoStatus[]);
+      setStatus(st);
+    }
+    setSaved('Saved.');
+    setTimeout(() => setSaved(''), 2000);
+  }
+
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    const url = newUrl.trim();
+    if (!url) return;
+    setAddError('');
+    if (repos.some(r => r.url === url)) {
+      setAddError('This URL is already in the list.');
+      return;
+    }
+    setProbing(true);
+    try {
+      const probe = await probeRepo(url);
+      if (!probe.ok) {
+        setAddError(probe.error ?? 'Could not reach a valid provider catalog at this URL.');
+        return;
+      }
+    } catch {
+      setAddError('Could not reach a valid provider catalog at this URL.');
+      return;
+    } finally {
+      setProbing(false);
+    }
+    await persist([...repos, { url, enabled: true }], true);
+    setNewUrl('');
+  }
+
+  function startEdit(idx: number) {
+    const repo = repos[idx];
+    if (!repo) return;
+    setEditIdx(idx);
+    setEditUrl(repo.url);
+    setEditEnabled(repo.enabled);
+    setEditError('');
+  }
+
+  async function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (editIdx === null) return;
+    const url = editUrl.trim();
+    setEditError('');
+    if (repos.some((r, i) => i !== editIdx && r.url === url)) {
+      setEditError('This URL is already in the list.');
+      return;
+    }
+    const urlChanged = url !== repos[editIdx]?.url;
+    await persist(repos.map((r, i) => i === editIdx ? { ...r, url, enabled: editEnabled } : r), urlChanged);
+    setEditIdx(null);
+  }
+
+  async function confirmRemove(idx: number) {
+    if (editIdx === idx) setEditIdx(null);
+    await persist(repos.filter((_, i) => i !== idx));
+    setConfirmRemoveIdx(null);
+  }
+
+  async function move(idx: number, dir: -1 | 1) {
+    const next = idx + dir;
+    if (next < 0 || next >= repos.length) return;
+    const updated = [...repos];
+    [updated[idx], updated[next]] = [updated[next]!, updated[idx]!];
+    await persist(updated);
+    if (editIdx === idx) setEditIdx(next);
+    else if (editIdx === next) setEditIdx(idx);
+  }
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    try {
+      const st = await refreshCatalog().catch(() => [] as RepoStatus[]);
+      setStatus(st);
+      setSaved('Refreshed.');
+      setTimeout(() => setSaved(''), 2000);
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  function fmtDate(iso: string | null) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  }
+
+  function fileLabel(f: string | null) {
+    if (!f) return '—';
+    const m = f.match(/\.(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\.json$/);
+    if (m) {
+      const dt = new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z`);
+      return dt.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
+    }
+    const parts = f.split('/');
+    return parts[parts.length - 1] ?? f;
+  }
+
+  const latestChecked = status.reduce<string | null>((max, s) =>
+    s.lastChecked && (!max || s.lastChecked > max) ? s.lastChecked : max, null);
+  const nextRefreshLabel = latestChecked
+    ? new Date(new Date(latestChecked).getTime() + 6 * 60 * 60 * 1000).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+    : null;
+
+  const COL = '40px 1fr 130px 130px 72px 90px';
+
+  if (loading) return <div className="loading-center"><div className="spinner" /></div>;
+
+  return (
+    <div>
+      {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', margin: 0 }}>
+          Provider Catalog Repositories
+        </h3>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+          <button type="button" className="btn btn-secondary"
+            style={{ fontSize: '0.78rem', padding: '4px 12px', display: 'flex', alignItems: 'center', gap: 5 }}
+            disabled={refreshing}
+            onClick={() => void handleRefresh()}>
+            {refreshing ? <><div className="spinner" style={{ width: 10, height: 10 }} /> Refreshing…</> : 'Refresh'}
+          </button>
+          {nextRefreshLabel && (
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Next: {nextRefreshLabel}</span>
+          )}
+        </div>
+      </div>
+
+      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 16, marginTop: 0 }}>
+        Row order determines merge priority — row 1 wins on conflict. Use the arrows to reorder.
+      </p>
+
+      {saved && (
+        <div style={{ marginBottom: 16, padding: '10px 14px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, fontSize: '0.85rem', color: '#22c55e' }}>
+          {saved}
+        </div>
+      )}
+
+      <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', marginBottom: 20 }}>
+        {/* Header */}
+        <div style={{ display: 'grid', gridTemplateColumns: COL, gap: 0, background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)', padding: '6px 14px' }}>
+          {['#', 'URL', 'Updated', 'Last Check', 'Status', ''].map(h => (
+            <span key={h} style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</span>
+          ))}
+        </div>
+
+        {repos.length === 0 && (
+          <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+            No repositories configured. The default Routerly public catalog will be used.
+          </div>
+        )}
+
+        {repos.map((repo, idx) => {
+          const st = status.find(s => s.url === repo.url);
+          return (
+            <div key={idx} style={{ borderBottom: idx < repos.length - 1 ? '1px solid var(--border)' : 'none' }}>
+              {editIdx === idx ? (
+                <form onSubmit={e => void handleSaveEdit(e)} style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10, background: 'var(--bg-elevated)' }}>
+                  <div>
+                    <label className="form-label" htmlFor={`edit-url-${idx}`}>URL</label>
+                    <input id={`edit-url-${idx}`} className="form-input" type="url" value={editUrl}
+                      onChange={e => { setEditUrl(e.target.value); setEditError(''); }} required autoFocus />
+                    {editError && <div className="form-error" style={{ marginTop: 4 }}>{editError}</div>}
+                  </div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.85rem' }}>
+                    <input type="checkbox" checked={editEnabled} onChange={e => setEditEnabled(e.target.checked)} />
+                    Enabled
+                  </label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button type="submit" className="btn btn-primary" style={{ fontSize: '0.8rem', padding: '4px 14px' }}>Save</button>
+                    <button type="button" className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '4px 14px' }} onClick={() => setEditIdx(null)}>Cancel</button>
+                  </div>
+                </form>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: COL, alignItems: 'center', padding: '8px 14px', gap: 0 }}>
+                  {/* Priority + arrows */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
+                    <button type="button" onClick={() => void move(idx, -1)} disabled={idx === 0}
+                      style={{ background: 'none', border: 'none', cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? 'var(--border)' : 'var(--text-muted)', padding: '1px 4px', display: 'flex' }}>
+                      <ChevronUp size={12} />
+                    </button>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1 }}>{idx + 1}</span>
+                    <button type="button" onClick={() => void move(idx, 1)} disabled={idx === repos.length - 1}
+                      style={{ background: 'none', border: 'none', cursor: idx === repos.length - 1 ? 'default' : 'pointer', color: idx === repos.length - 1 ? 'var(--border)' : 'var(--text-muted)', padding: '1px 4px', display: 'flex' }}>
+                      <ChevronDown size={12} />
+                    </button>
+                  </div>
+                  {/* URL */}
+                  <span style={{ fontSize: '0.78rem', fontFamily: 'monospace', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }} title={repo.url}>{repo.url}</span>
+                  {/* Updated at */}
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{fmtDate(st?.updatedAt ?? null)}</span>
+                  {/* Last checked */}
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{fmtDate(st?.lastChecked ?? null)}</span>
+                  {/* Status */}
+                  <span style={{ fontSize: '0.75rem', color: st?.error ? '#ef4444' : repo.enabled ? '#22c55e' : 'var(--text-muted)' }}
+                    title={st?.error ?? ''}>
+                    {st?.error ? 'Error' : repo.enabled ? 'Active' : 'Disabled'}
+                  </span>
+                  {/* Actions */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button type="button" className="btn btn-secondary" style={{ fontSize: '0.72rem', padding: '2px 8px' }} onClick={() => startEdit(idx)}>Edit</button>
+                    <button type="button" onClick={() => setConfirmRemoveIdx(idx)} title="Remove"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center' }}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <form onSubmit={e => void handleAdd(e)} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', maxWidth: 600 }}>
+        <div style={{ flex: 1 }}>
+          <label className="form-label" htmlFor="catalog-url">Add Repository</label>
+          <input id="catalog-url" className="form-input" type="url" placeholder="https://example.com/catalog/"
+            value={newUrl} onChange={e => { setNewUrl(e.target.value); setAddError(''); }} required />
+          {addError && <div className="form-error" style={{ marginTop: 4 }}>{addError}</div>}
+        </div>
+        <button type="submit" className="btn btn-primary" style={{ fontSize: '0.83rem', display: 'flex', alignItems: 'center', gap: 5 }} disabled={probing}>
+          {probing ? <><div className="spinner" style={{ width: 10, height: 10 }} /> Checking…</> : <><Plus size={14} /> Add</>}
+        </button>
+      </form>
+
+      {confirmRemoveIdx !== null && (
+        <ConfirmDialog
+          message={`Remove repository "${repos[confirmRemoveIdx]?.url}"?`}
+          onConfirm={() => void confirmRemove(confirmRemoveIdx)}
+          onCancel={() => setConfirmRemoveIdx(null)}
+          confirmLabel="Remove"
+          danger={true}
+        />
+      )}
+    </div>
+  );
+}
+
 // ── About tab ────────────────────────────────────────────────────────────────
 
 const FALLBACK_RELEASES: AvailableReleases = { channels: ['latest', 'stable', 'develop'], versions: [] };
@@ -1722,6 +2000,7 @@ const TABS = [
   { path: 'general',       label: 'General' },
   { path: 'notifications', label: 'Notifications' },
   { path: 'integrations',  label: 'Integrations' },
+  { path: 'catalog',       label: 'Provider Catalog' },
   { path: 'users',         label: 'Users' },
   { path: 'roles',         label: 'Roles' },
   { path: 'audit',         label: 'Audit Log' },

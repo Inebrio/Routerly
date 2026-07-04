@@ -75,6 +75,20 @@ Click the **Edit** (pencil) icon next to a model. All fields except the Model ID
 
 To update the API key, enter a new value -- Routerly re-encrypts it immediately.
 
+#### Catalog Tracking and Field Overrides
+
+Models linked to the catalog show status badges on editable fields:
+
+- **Auto** (green badge) — field is synced from the catalog; your edit will override it
+- **Override** (amber badge) — field is manually locked to your custom value; it will not auto-sync
+- No badge — model is not in the catalog (local Ollama, custom endpoint) or field is always manual (API key, enabled status)
+
+**To override a catalog field:** edit it normally. The badge changes to "Override" and the field is locked. An edit indicator appears showing the catalog default value.
+
+**To reset an overridden field:** click the **Reset** button next to it. The field reverts to the catalog value and the override lock is removed. Auto-sync resumes.
+
+The override status is saved with the model; if you edit the same model again, your locks persist.
+
 ### Cloning a Model
 
 Click the **Clone** icon to create a copy of a model entry. Useful when registering a fine-tuned variant that shares the same provider and pricing as a base model.
@@ -97,19 +111,28 @@ Removing a model that is assigned to active project routing configurations will 
 
 ## Model Discovery
 
-Navigate to `/dashboard/models/discover` (or click **Discover** on the Models page) to browse the built-in model catalog. The catalog lists known models from supported providers with their context window, modalities, and published pricing.
+Navigate to `/dashboard/models/discover` (or click **Discover** on the Models page) to browse the built-in model catalog. The catalog lists known models from supported providers with their context window and published pricing.
 
-![Model Discovery catalog showing provider filter tabs and per-model Add buttons](../assets/screenshot-models-discover.png)
+![Model Discovery catalog showing provider filter and per-model Add buttons](../assets/screenshot-models-discover.png)
 
 | Column | Description |
 |--------|-------------|
-| **Model** | Model ID |
-| **Provider** | Provider name |
-| **Context** | Maximum context window (e.g. `128k`, `1.0M`) |
-| **Modalities** | Supported input types (e.g. `text`, `image`) |
-| **Input /1K** | Input price per 1,000 tokens; shown as `free/local` for zero-priced or local models |
-| **Output /1K** | Output price per 1,000 tokens |
+| **Model** | Model ID (sortable) |
+| **Provider** | Provider name (sortable) |
+| **Context** | Maximum context window, e.g. `128k`, `1.0M` (sortable) |
+| **Input /1M** | Input price per 1,000,000 tokens; `free` for zero-priced models (sortable) |
+| **Output /1M** | Output price per 1,000,000 tokens (sortable) |
 
-Filter by **provider** using the tabs above the table, or use the search box to narrow by model ID.
+Click any column header to sort ascending; click again to reverse. All five columns are sortable.
 
-Click **Add** next to any model to open the new-model form with that model's details pre-filled. If the model matches a Routerly-curated preset, the form uses the preset's pricing and context window (Input $/1M, Output $/1M, and Context Window are all populated automatically). If the model is not a known preset, the form creates a custom entry pre-filled with the catalog's pricing and context window values -- note that the catalog shows prices per 1K tokens while the form stores them per 1M tokens, so Routerly converts automatically. In both cases you only need to supply the API key to complete registration.
+**Filters (two rows):**
+
+- **Search** — filter by model ID or name substring
+- **Provider** — multi-select dropdown; leave empty to show all providers
+- **Context** — limit by context window size: All, <32k, 32k–200k, 200k–1M, >1M
+- **Price /1M** — filter by input price tier: All, Free, <$1, $1–$5, >$5
+- **Show** — All, Configured only (models already added to Routerly), Embedding only
+
+Click **Reset filters** to clear all filters at once.
+
+Click **Add** next to any model to open the new-model form with that model's details pre-filled. Pricing and context window are populated automatically from the catalog. You only need to supply the API key to complete registration.

@@ -28,6 +28,20 @@ export interface TokenCost {
   pricingTiers?: PricingTier[];
 }
 
+/** Fields in ModelConfig that can be sourced from and auto-synced with the provider catalog */
+export type CatalogField = 'inputPerMillion' | 'outputPerMillion' | 'cachePerMillion' | 'cacheWritePerMillion' | 'pricingTiers' | 'contextWindow' | 'capabilities';
+
+/** Last known catalog values for auto-synced fields (used to show defaults in UI) */
+export interface CatalogDefaults {
+  inputPerMillion?: number;
+  outputPerMillion?: number;
+  cachePerMillion?: number;
+  cacheWritePerMillion?: number;
+  pricingTiers?: PricingTier[];
+  contextWindow?: number;
+  capabilities?: ModelCapabilities;
+}
+
 /** What dimension is being measured for a limit */
 export type LimitMetric = 'cost' | 'calls' | 'input_tokens' | 'output_tokens' | 'total_tokens';
 
@@ -137,6 +151,10 @@ export interface ModelConfig {
   capabilities?: ModelCapabilities;
   /** Request timeout in milliseconds (default: 60000) */
   timeout?: number;
+  /** Fields manually overridden by user; these won't auto-sync from catalog */
+  fieldOverrides?: Partial<Record<CatalogField, boolean>>;
+  /** Last known catalog values for catalog-trackable fields; used to show defaults in UI */
+  catalogDefaults?: CatalogDefaults;
 }
 
 export interface ProjectModelRef {
@@ -495,6 +513,15 @@ export interface TelemetryConfig {
   lastPingedVersion?: string;
 }
 
+export interface ProviderRepo {
+  /** Raw base URL of the provider catalog repo (e.g. https://raw.githubusercontent.com/Inebrio/Routerly-Providers/main/) */
+  url: string;
+  /** Channel override: 'stable' | 'latest' | 'beta'. If omitted, Routerly resolves by version range. */
+  channel?: string;
+  /** Whether this repo is active. Disabled repos are kept in config but skipped at fetch time. */
+  enabled: boolean;
+}
+
 export interface Settings {
   port: number;
   host: string;
@@ -524,6 +551,8 @@ export interface Settings {
   requireMfa?: boolean;
   /** Configured integrations (metrics exporters, webhooks, etc.) */
   integrations?: Integration[];
+  /** Provider catalog repos. Fetched at runtime via HTTP. First repo takes precedence on conflict. */
+  providerRepos?: ProviderRepo[];
 }
 
 // ─── Update info ─────────────────────────────────────────────────────────────
