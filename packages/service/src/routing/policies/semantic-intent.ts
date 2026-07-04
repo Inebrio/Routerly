@@ -1,15 +1,19 @@
 import type { SemanticIntentConfig } from '@routerly/shared';
-import { providersConf } from '@routerly/shared';
 import { classifyIntent } from '../intent/classifier.js';
 import { trackUsage } from '../../cost/tracker.js';
 import { readConfig } from '../../config/loader.js';
+import { catalogFetcher } from '../../catalog/fetcher.js';
 import type { PolicyFn } from './types.js';
 
-/** Lookup input cost (per 1M tokens) for an embedding model from the static providers catalogue. */
-function getEmbeddingInputCost(provider: string, modelId: string): number {
-  const providerConf = (providersConf as Record<string, { models?: Array<{ id: string; input?: number }> }>)[provider];
-  const modelConf = providerConf?.models?.find(m => m.id === modelId);
-  return modelConf?.input ?? 0;
+/** Lookup input cost (per 1M tokens) for an embedding model from the live catalog. */
+async function getEmbeddingInputCost(provider: string, modelId: string): Promise<number> {
+  try {
+    const catalog = await catalogFetcher.get(process.env['npm_package_version'] ?? '0.0.0');
+    const modelConf = catalog[provider]?.models?.find((m: { id: string }) => m.id === modelId);
+    return modelConf?.input ?? 0;
+  } catch {
+    return 0;
+  }
 }
 
 /**
@@ -109,7 +113,7 @@ export const semanticIntentPolicy: PolicyFn = async ({
     // in the dashboard alongside llm-policy routing calls.
     // The embedding model is not in models.json, so we build a synthetic ModelConfig.
     if (projectId) {
-      const inputPerMillion = getEmbeddingInputCost(cfg.embedding_provider, cfg.embedding_model);
+      const inputPerMillion = await getEmbeddingInputCost(cfg.embedding_provider, cfg.embedding_model);
       await trackUsage({
         projectId,
         model: {

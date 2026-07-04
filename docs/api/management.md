@@ -134,9 +134,17 @@ POST /api/models
   "inputPrice": 0.25,
   "outputPrice": 2.0,
   "contextWindow": 128000,
-  "capabilities": ["functionCalling", "json"]
+  "capabilities": ["functionCalling", "json"],
+  "fieldOverrides": { "inputPrice": true }
 }
 ```
+
+**Request fields:**
+- `fieldOverrides` (optional) — object mapping field names to `true` to lock them against catalog sync. Supported fields: `inputPrice`, `outputPrice`, `cachePrice`, `cacheWritePrice`, `pricingTiers`, `contextWindow`, `capabilities`.
+
+**Response includes:**
+- `catalogDefaults` (if model is in catalog) — last known catalog values for each tracked field
+- `fieldOverrides` (if any) — which fields are locked against auto-sync
 
 ### Get Model
 
@@ -144,11 +152,25 @@ POST /api/models
 GET /api/models/:id
 ```
 
+**Response includes:**
+- `catalogDefaults` (if model is in catalog) — object with keys: `inputPrice`, `outputPrice`, `cachePrice`, `cacheWritePrice`, `pricingTiers`, `contextWindow`, `capabilities` (whichever were synced from the catalog)
+- `fieldOverrides` (if any) — object with field names as keys, all values set to `true`
+
 ### Update Model
 
 ```
 PUT /api/models/:id
 ```
+
+**Request body** (all fields optional):
+```json
+{
+  "inputPrice": 0.5,
+  "fieldOverrides": { "inputPrice": true, "contextWindow": false }
+}
+```
+
+Changing a field value automatically sets `fieldOverrides[fieldName] = true`. To unlock a field for auto-sync, send `"fieldOverrides[fieldName] = false"`. When all overrides are cleared, the `fieldOverrides` object is removed from the model config.
 
 ### Delete Model
 
@@ -736,6 +758,23 @@ GET /api/end-users
 GET /api/settings
 ```
 
+**Response `200`:**
+```json
+{
+  "port": 3000,
+  "logLevel": "info",
+  "defaultTimeoutMs": 30000,
+  "publicUrl": "https://routerly.example.com",
+  "providerRepos": [
+    {
+      "url": "https://raw.githubusercontent.com/Inebrio/Routerly-Providers/main/",
+      "enabled": true,
+      "channel": null
+    }
+  ]
+}
+```
+
 ### Update Settings
 
 ```
@@ -747,9 +786,161 @@ PUT /api/settings
   "port": 3000,
   "logLevel": "info",
   "defaultTimeoutMs": 30000,
-  "publicUrl": "https://routerly.example.com"
+  "publicUrl": "https://routerly.example.com",
+  "providerRepos": [
+    {
+      "url": "https://raw.githubusercontent.com/Inebrio/Routerly-Providers/main/",
+      "enabled": true
+    },
+    {
+      "url": "https://your-org.com/catalog/",
+      "enabled": true
+    }
+  ]
 }
 ```
+
+**Fields:**
+- `port`, `logLevel`, `defaultTimeoutMs`, `publicUrl` — service configuration (optional)
+- `providerRepos` — array of provider repository objects (optional)
+
+**ProviderRepo object:**
+- `url` — repository endpoint (required)
+- `enabled` — whether the repo is active (optional, default `true`)
+- `channel` — named channel to prefer (optional, e.g. `stable`, `latest`)
+
+---
+
+## Catalog
+
+Manage provider and model catalog repositories and cache.
+
+### Get Provider Catalog
+
+```
+GET /api/providers
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `model:read`)
+
+Returns the full provider catalog fetched from configured repositories.
+
+**Response `200`:**
+```json
+{
+  "providers": [
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "models": [
+        {
+          "id": "gpt-5.2",
+          "name": "GPT-5.2",
+          "contextWindow": 128000,
+          "inputPrice": 1.75,
+          "outputPrice": 14.0,
+          "capabilities": ["functionCalling", "json", "vision"]
+        }
+      ]
+    },
+    {
+      "id": "anthropic",
+      "name": "Anthropic",
+      "models": [
+        {
+          "id": "claude-opus-4-6",
+          "name": "Claude Opus 4.6",
+          "contextWindow": 200000,
+          "inputPrice": 5.0,
+          "outputPrice": 25.0,
+          "capabilities": ["functionCalling", "json"]
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Errors**: `403` insufficient permissions
+
+### Get Catalog Status
+
+```
+GET /api/catalog/status
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `settings:read`)
+
+Returns per-repository status information.
+
+**Response `200`:**
+```json
+{
+  "repos": [
+    {
+      "url": "https://raw.githubusercontent.com/Inebrio/Routerly-Providers/main/",
+      "enabled": true,
+      "resolvedFile": "providers/providers.20260630120000.json",
+      "updatedAt": "2026-06-30T12:00:00.000Z",
+      "lastChecked": "2026-06-30T14:30:00.000Z",
+      "error": null
+    },
+    {
+      "url": "https://your-org.com/catalog/",
+      "enabled": true,
+      "resolvedFile": null,
+      "updatedAt": null,
+      "lastChecked": "2026-06-30T14:30:00.000Z",
+      "error": "HTTP 404: Not Found"
+    }
+  ],
+  "cachedAt": "2026-06-30T14:30:00.000Z",
+  "expiresAt": "2026-06-30T14:35:00.000Z"
+}
+```
+
+**Fields:**
+- `url` — repository endpoint
+- `enabled` — whether this repo is active
+- `resolvedFile` — filename of the last successfully fetched catalog (null if never fetched)
+- `updatedAt` — timestamp from the catalog registry (null if never fetched)
+- `lastChecked` — when Routerly last attempted to fetch from this repo
+- `error` — error message if the last fetch failed (null on success)
+- `cachedAt` — when the current catalog was loaded into memory
+- `expiresAt` — when the 5-minute cache expires
+
+**Errors**: `403` insufficient permissions
+
+### Refresh Catalog Cache
+
+```
+POST /api/catalog/refresh
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `settings:write`)
+
+Invalidate the in-memory cache and fetch all enabled repositories immediately.
+
+**Response `200`:**
+```json
+{ "ok": true, "message": "Catalog refreshed successfully" }
+```
+
+**Response `200` (partial failure — some repos errored):**
+```json
+{
+  "ok": false,
+  "message": "Catalog refresh completed with errors",
+  "errors": [
+    {
+      "url": "https://your-org.com/catalog/",
+      "error": "HTTP 404: Not Found"
+    }
+  ]
+}
+```
+
+**Errors**: `403` insufficient permissions
 
 ---
 

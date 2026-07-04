@@ -1,18 +1,53 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, X, Globe, HardDrive } from 'lucide-react';
+import { Search, X, Globe, HardDrive, ArrowLeft, ChevronLeft, ChevronRight, Check, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { getModelCatalog, type CatalogEntry } from '../api';
+import { MultiSelect } from '../components/MultiSelect';
 
-const PROVIDERS = ['All', 'openai', 'anthropic', 'gemini', 'ollama'] as const;
+const PAGE_SIZE = 25;
 
-function fmtPrice(p: number): string {
-  if (p === 0) return 'free';
-  return `$${p.toFixed(5).replace(/\.?0+$/, '')}`;
+type CtxFilter = 'all' | 'small' | 'medium' | 'large' | 'xl';
+type PriceFilter = 'all' | 'free' | 'low' | 'mid' | 'high';
+type SortCol = 'model' | 'provider' | 'context' | 'input' | 'output';
+type SortDir = 'asc' | 'desc';
+
+function FilterLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span style={{ fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+      {children}
+    </span>
+  );
+}
+
+function fmtPricePer1M(per1kTokens: number): string {
+  if (per1kTokens === 0) return 'free';
+  const p = per1kTokens * 1000;
+  if (p >= 10) return `$${p.toFixed(0)}`;
+  if (p >= 1)  return `$${p.toFixed(2).replace(/\.?0+$/, '')}`;
+  return `$${p.toFixed(4).replace(/\.?0+$/, '')}`;
 }
 
 function fmtCtx(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   return `${Math.round(n / 1000)}k`;
+}
+
+function matchCtx(e: CatalogEntry, f: CtxFilter): boolean {
+  const c = e.contextWindow;
+  if (f === 'small')  return c < 32_000;
+  if (f === 'medium') return c >= 32_000 && c <= 200_000;
+  if (f === 'large')  return c > 200_000 && c <= 1_000_000;
+  if (f === 'xl')     return c > 1_000_000;
+  return true;
+}
+
+function matchPrice(e: CatalogEntry, f: PriceFilter): boolean {
+  if (f === 'free') return !!e.local;
+  const inp = e.pricing.inputPer1kTokens * 1000;
+  if (f === 'low')  return !e.local && inp < 1;
+  if (f === 'mid')  return !e.local && inp >= 1 && inp <= 5;
+  if (f === 'high') return !e.local && inp > 5;
+  return true;
 }
 
 export function ModelDiscoveryPage() {
@@ -21,7 +56,14 @@ export function ModelDiscoveryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [provider, setProvider] = useState<string>('All');
+  const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
+  const [ctxFilter, setCtxFilter] = useState<CtxFilter>('all');
+  const [priceFilter, setPriceFilter] = useState<PriceFilter>('all');
+  const [onlyConfigured, setOnlyConfigured] = useState(false);
+  const [onlyEmbedding, setOnlyEmbedding] = useState(false);
+  const [page, setPage] = useState(1);
+  const [sortCol, setSortCol] = useState<SortCol>('model');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   useEffect(() => {
     getModelCatalog()
@@ -30,53 +72,156 @@ export function ModelDiscoveryPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const providerOptions = useMemo(() =>
+    Array.from(new Set(entries.map(e => e.provider))).sort().map(p => ({ value: p, label: p })),
+    [entries]
+  );
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return entries.filter(e =>
-      (provider === 'All' || e.provider === provider) &&
-      (!q || e.id.toLowerCase().includes(q) || e.name.toLowerCase().includes(q))
+      (selectedProviders.length === 0 || selectedProviders.includes(e.provider)) &&
+      matchCtx(e, ctxFilter) &&
+      matchPrice(e, priceFilter) &&
+      (!onlyConfigured || e.isConfigured) &&
+      (!onlyEmbedding || e.embedding) &&
+      (!q || e.id.toLowerCase().includes(q) || e.name?.toLowerCase().includes(q))
     );
-  }, [entries, search, provider]);
+  }, [entries, search, selectedProviders, ctxFilter, priceFilter, onlyConfigured, onlyEmbedding]);
+
+  useEffect(() => { setPage(1); }, [search, selectedProviders, ctxFilter, priceFilter, onlyConfigured, onlyEmbedding]);
+
+  function toggleSort(col: SortCol) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortCol(col); setSortDir('asc'); }
+    setPage(1);
+  }
+
+  const sorted = useMemo(() => {
+    const dir = sortDir === 'asc' ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      switch (sortCol) {
+        case 'model':    return dir * a.id.localeCompare(b.id);
+        case 'provider': return dir * a.provider.localeCompare(b.provider);
+        case 'context':  return dir * (a.contextWindow - b.contextWindow);
+        case 'input':    return dir * (a.pricing.inputPer1kTokens - b.pricing.inputPer1kTokens);
+        case 'output':   return dir * (a.pricing.outputPer1kTokens - b.pricing.outputPer1kTokens);
+      }
+    });
+  }, [filtered, sortCol, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const paginated = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const startIdx = (page - 1) * PAGE_SIZE + 1;
+  const endIdx = Math.min(page * PAGE_SIZE, sorted.length);
+
+  const hasReset = selectedProviders.length > 0 || ctxFilter !== 'all' || priceFilter !== 'all' || onlyConfigured || onlyEmbedding || search.trim();
+  function resetFilters() {
+    setSelectedProviders([]); setCtxFilter('all'); setPriceFilter('all');
+    setOnlyConfigured(false); setOnlyEmbedding(false); setSearch('');
+  }
 
   return (
     <>
       <div className="page-header">
+        <button
+          className="btn-icon"
+          onClick={() => navigate('/dashboard/models')}
+          style={{ marginBottom: 16, display: 'inline-flex', padding: 4, width: 'fit-content' }}
+        >
+          <ArrowLeft size={16} />
+          <span style={{ marginLeft: 6, fontSize: '0.8rem', fontWeight: 500 }}>Back to Models</span>
+        </button>
         <h1>Model Discovery</h1>
-        <p>Browse available models and their capabilities</p>
+        <p>Browse available models and add them to your routing configuration</p>
       </div>
       <div className="page-body">
-        <div className="toolbar">
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            {PROVIDERS.map(p => (
-              <button
-                key={p}
-                onClick={() => setProvider(p)}
-                className={`badge badge-${p === 'All' ? 'default' : p}`}
-                style={{
-                  cursor: 'pointer',
-                  border: provider === p ? '2px solid var(--accent)' : '2px solid transparent',
-                  padding: '3px 10px',
-                  borderRadius: 12,
-                  background: provider === p ? 'var(--accent-subtle, var(--surface-raised))' : 'var(--surface)',
-                  fontWeight: provider === p ? 600 : 400,
-                }}
-              >
-                {p === 'All' ? 'All' : p.charAt(0).toUpperCase() + p.slice(1)}
-              </button>
-            ))}
+
+        {/* Filters */}
+        <div className="card" style={{ padding: '16px 24px', marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {/* Row 1: search + provider */}
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, maxWidth: 300 }}>
+              <FilterLabel>Search</FilterLabel>
+              <div style={{ position: 'relative' }}>
+                <Search size={13} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                <input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Model ID or name…"
+                  className="form-input"
+                  style={{ paddingLeft: 28, paddingRight: search ? 28 : 10, width: '100%', boxSizing: 'border-box' }}
+                />
+                {search && (
+                  <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 7, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex' }}>
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, maxWidth: 320 }}>
+              <FilterLabel>Provider</FilterLabel>
+              <MultiSelect
+                options={providerOptions}
+                value={selectedProviders}
+                onChange={setSelectedProviders}
+                placeholder="All providers"
+              />
+            </div>
+
+            {!loading && !error && (
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', marginLeft: 'auto', paddingBottom: 8 }}>
+                {filtered.length === entries.length ? `${entries.length} models` : `${filtered.length} of ${entries.length}`}
+              </span>
+            )}
           </div>
-          <div style={{ position: 'relative' }}>
-            <Search size={14} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search models…"
-              style={{ paddingLeft: 28, paddingRight: search ? 28 : 10, height: 32, fontSize: '0.85rem', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', outline: 'none', width: 200 }}
-            />
-            {search && (
-              <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 7, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>
-                <X size={13} />
-              </button>
+
+          {/* Divider */}
+          <div style={{ borderTop: '1px solid var(--border)' }} />
+
+          {/* Row 2: toggle filters */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'flex-end' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <FilterLabel>Context</FilterLabel>
+              <div style={{ display: 'flex', gap: 5 }}>
+                {(['all', 'small', 'medium', 'large', 'xl'] as CtxFilter[]).map(f => (
+                  <button key={f} className={`btn btn-sm ${ctxFilter === f ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setCtxFilter(f)}>
+                    {{ all: 'All', small: '< 32k', medium: '32k–200k', large: '200k–1M', xl: '> 1M' }[f]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <FilterLabel>Price / 1M</FilterLabel>
+              <div style={{ display: 'flex', gap: 5 }}>
+                {(['all', 'free', 'low', 'mid', 'high'] as PriceFilter[]).map(f => (
+                  <button key={f} className={`btn btn-sm ${priceFilter === f ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setPriceFilter(f)}>
+                    {{ all: 'All', free: 'Free', low: '< $1', mid: '$1–$5', high: '> $5' }[f]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <FilterLabel>Show</FilterLabel>
+              <div style={{ display: 'flex', gap: 5 }}>
+                <button className={`btn btn-sm ${onlyConfigured ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setOnlyConfigured(v => !v)}>
+                  Configured
+                </button>
+                <button className={`btn btn-sm ${onlyEmbedding ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setOnlyEmbedding(v => !v)}>
+                  Embedding
+                </button>
+              </div>
+            </div>
+
+            {hasReset && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <FilterLabel>&nbsp;</FilterLabel>
+                <button className="btn btn-sm btn-secondary" onClick={resetFilters}>Reset filters</button>
+              </div>
             )}
           </div>
         </div>
@@ -86,79 +231,115 @@ export function ModelDiscoveryPage() {
         ) : error ? (
           <div className="empty-state"><p style={{ color: 'var(--error)' }}>Failed to load catalog: {error}</p></div>
         ) : filtered.length === 0 ? (
-          <div className="empty-state"><Search size={40} /><p>No models match your filters.</p></div>
-        ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Model</th>
-                  <th>Provider</th>
-                  <th>Context</th>
-                  <th>Modalities</th>
-                  <th>Input /1K</th>
-                  <th>Output /1K</th>
-                  <th>Status</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(e => (
-                  <tr key={e.id}>
-                    <td>
-                      <span className="mono">{e.id}</span>
-                      {e.local && (
-                        <span title="Runs locally" style={{ marginLeft: 6, color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', verticalAlign: 'middle' }}>
-                          <HardDrive size={12} />
-                        </span>
-                      )}
-                    </td>
-                    <td><span className={`badge badge-${e.provider}`}>{e.provider}</span></td>
-                    <td style={{ whiteSpace: 'nowrap' }}>{fmtCtx(e.contextWindow)}</td>
-                    <td>
-                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                        {e.modalities.map(m => (
-                          <span key={m} style={{ fontSize: '0.72rem', padding: '1px 6px', borderRadius: 8, background: 'var(--surface-raised, var(--border))', color: 'var(--text-muted)' }}>
-                            {m}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      {e.local ? <span style={{ color: 'var(--success, green)', fontWeight: 600 }}>local/free</span> : fmtPrice(e.pricing.inputPer1kTokens)}
-                    </td>
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      {e.local ? <span style={{ color: 'var(--success, green)', fontWeight: 600 }}>local/free</span> : fmtPrice(e.pricing.outputPer1kTokens)}
-                    </td>
-                    <td>
-                      {e.isConfigured ? (
-                        <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: 10, background: 'var(--success-bg, #d1fae5)', color: 'var(--success-text, #065f46)', fontWeight: 600 }}>
-                          Configured
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>—</span>
-                      )}
-                    </td>
-                    <td>
-                      <button
-                        className="btn btn-sm"
-                        title="Add to routing"
-                        onClick={() => navigate(`/dashboard/models/new?provider=${encodeURIComponent(e.provider)}&modelId=${encodeURIComponent(e.id)}`, { state: { catalogEntry: e } })}
-                        style={{ whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                      >
-                        <Globe size={13} /> Add
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="empty-state">
+            <Search size={36} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
+            <p>No models match your filters.</p>
+            <button type="button" className="btn btn-secondary" onClick={resetFilters} style={{ marginTop: 8 }}>Reset filters</button>
           </div>
-        )}
-        {!loading && !error && (
-          <p style={{ marginTop: 12, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-            {filtered.length} of {entries.length} models shown. Prices in USD per 1K tokens.
-          </p>
+        ) : (
+          <>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    {([
+                      { col: 'model' as SortCol, label: 'Model' },
+                      { col: 'provider' as SortCol, label: 'Provider' },
+                      { col: 'context' as SortCol, label: 'Context' },
+                      { col: 'input' as SortCol, label: 'Input / 1M' },
+                      { col: 'output' as SortCol, label: 'Output / 1M' },
+                    ]).map(({ col, label }) => {
+                      const active = sortCol === col;
+                      const Icon = active ? (sortDir === 'asc' ? ChevronUp : ChevronDown) : ChevronsUpDown;
+                      return (
+                        <th key={col} onClick={() => toggleSort(col)} style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            {label}
+                            <Icon size={13} style={{ opacity: active ? 1 : 0.4, color: active ? 'var(--accent)' : undefined }} />
+                          </span>
+                        </th>
+                      );
+                    })}
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginated.map(e => (
+                    <tr key={`${e.provider}/${e.id}`}>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                            <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 500 }}>{e.id}</span>
+                            {e.isConfigured && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.68rem', fontWeight: 600, padding: '1px 6px', borderRadius: 8, background: 'rgba(34,197,94,0.1)', color: '#22c55e', whiteSpace: 'nowrap' }}>
+                                <Check size={9} strokeWidth={3} /> Configured
+                              </span>
+                            )}
+                            {e.embedding && (
+                              <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: 8, background: 'rgba(99,102,241,0.12)', color: '#818cf8', whiteSpace: 'nowrap' }}>embedding</span>
+                            )}
+                            {e.local && (
+                              <span title="Runs locally" style={{ color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center' }}>
+                                <HardDrive size={11} />
+                              </span>
+                            )}
+                          </div>
+                          {e.name && e.name !== e.id && (
+                            <span style={{ fontSize: '0.73rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 380 }} title={e.name}>
+                              {e.name}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td><span className={`badge badge-${e.provider}`}>{e.provider}</span></td>
+                      <td style={{ whiteSpace: 'nowrap' }}>{e.contextWindow > 0 ? fmtCtx(e.contextWindow) : '—'}</td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        {e.local ? <span style={{ color: 'var(--success, #22c55e)', fontWeight: 600, fontSize: '0.82rem' }}>free</span> : fmtPricePer1M(e.pricing.inputPer1kTokens)}
+                      </td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        {e.local ? <span style={{ color: 'var(--success, #22c55e)', fontWeight: 600, fontSize: '0.82rem' }}>free</span> : fmtPricePer1M(e.pricing.outputPer1kTokens)}
+                      </td>
+                      <td>
+                        <button
+                          className={`btn btn-sm${e.isConfigured ? ' btn-secondary' : ''}`}
+                          onClick={() => navigate(`/dashboard/models/new?provider=${encodeURIComponent(e.provider)}&modelId=${encodeURIComponent(e.id)}`, { state: { catalogEntry: e } })}
+                          style={{ whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        >
+                          <Globe size={12} /> {e.isConfigured ? 'Add again' : 'Add'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 16 }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8rem' }}
+                  disabled={page === 1}
+                  onClick={() => setPage(p => p - 1)}
+                >
+                  <ChevronLeft size={14} /> Prev
+                </button>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  {startIdx}–{endIdx} of {filtered.length}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8rem' }}
+                  disabled={page === totalPages}
+                  onClick={() => setPage(p => p + 1)}
+                >
+                  Next <ChevronRight size={14} />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </>

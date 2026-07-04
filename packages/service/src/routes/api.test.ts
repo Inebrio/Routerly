@@ -29,6 +29,19 @@ vi.mock('../auth/totp.js', () => ({
   generateBackupCodes: vi.fn(() => ({ plain: ['CODE1', 'CODE2'], hashed: ['hash1', 'hash2'] })),
   hashBackupCode: vi.fn((code: string) => `hashed_${code}`),
 }))
+vi.mock('../catalog/fetcher.js', () => ({
+  catalogFetcher: {
+    get: vi.fn().mockResolvedValue({
+      openai:    { endpoint: 'https://api.openai.com/v1',    models: [{ id: 'gpt-4o',     input: 5,    output: 15,   contextWindow: 128000 }, { id: 'gpt-4o-mini', input: 0.15, output: 0.6, contextWindow: 128000 }] },
+      anthropic: { endpoint: 'https://api.anthropic.com',    models: [{ id: 'claude-sonnet-4-5', input: 3, output: 15, contextWindow: 200000 }] },
+      gemini:    { endpoint: 'https://generativelanguage.google.com', models: [{ id: 'gemini-2.0-flash', input: 0.1, output: 0.4, contextWindow: 1048576 }] },
+      ollama:    { endpoint: 'http://localhost:11434/v1',    models: [{ id: 'llama3', input: 0, output: 0, contextWindow: 8192 }] },
+    }),
+    setRepos: vi.fn(),
+    invalidate: vi.fn(),
+    getStatus: vi.fn().mockReturnValue([]),
+  },
+}))
 
 import { apiRoutes } from './api.js'
 import { readConfig, writeConfig } from '../config/loader.js'
@@ -38,7 +51,9 @@ import { getTrace } from '../routing/traceStore.js'
 import bcrypt from 'bcrypt'
 import { resolveCodexToken } from './openaiOAuthForward.js'
 import { verifyTotp, generateTotpSecret, generateBackupCodes, hashBackupCode } from '../auth/totp.js'
+import { catalogFetcher } from '../catalog/fetcher.js'
 
+const mockCatalogFetcher = vi.mocked(catalogFetcher)
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
 const mockWriteConfig = vi.mocked(writeConfig as (key: string, value: any) => Promise<void>)
 const mockVerifyToken = vi.mocked(verifyToken)
@@ -7019,6 +7034,106 @@ describe('GET /api/models/catalog', () => {
     expect(providers.has('anthropic')).toBe(true)
     expect(providers.has('gemini')).toBe(true)
     expect(providers.has('ollama')).toBe(true)
+  })
+})
+
+// ── GET /api/providers ────────────────────────────────────────────────────────
+
+describe('GET /api/providers', () => {
+  it('returns 200 with catalog for permitted user', async () => {
+    setupAdminAuth()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/providers', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body) as Record<string, unknown>
+    expect(typeof body).toBe('object')
+    expect(body['openai']).toBeDefined()
+  })
+
+  it('returns 403 for user without model:read', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'noperm-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ id: 'noperm-id', email: 'noperm@example.com', passwordHash: 'hashed', roleId: 'noperm', projectIds: [] }]
+      if (t === 'roles') return [{ id: 'noperm', name: 'NoPerm', permissions: [] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/providers', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+// ── POST /api/catalog/refresh ─────────────────────────────────────────────────
+
+describe('POST /api/catalog/refresh', () => {
+  it('returns 200 and invalidates cache for settings:write user', async () => {
+    setupAdminAuth()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/catalog/refresh', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(Array.isArray(JSON.parse(res.body))).toBe(true)
+    expect(mockCatalogFetcher.invalidate).toHaveBeenCalled()
+    expect(mockCatalogFetcher.get).toHaveBeenCalled()
+  })
+
+  it('returns 403 for user without settings:write', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'noperm-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ id: 'noperm-id', email: 'noperm@example.com', passwordHash: 'hashed', roleId: 'noperm', projectIds: [] }]
+      if (t === 'roles') return [{ id: 'noperm', name: 'NoPerm', permissions: ['model:read'] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/catalog/refresh', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+// ── PUT /api/settings — providerRepos validation ──────────────────────────────
+
+describe('PUT /api/settings — providerRepos', () => {
+  it('accepts valid providerRepos and updates catalogFetcher', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return {}
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ providerRepos: [{ url: 'https://example.com/', enabled: true }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(mockCatalogFetcher.setRepos).toHaveBeenCalled()
+  })
+
+  it('rejects invalid providerRepos url with 400', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return {}
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ providerRepos: [{ url: 'not-a-url', enabled: true }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
   })
 })
 
