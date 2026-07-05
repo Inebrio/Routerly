@@ -133,16 +133,21 @@ The **detail panel** for each usage record shows:
 
 ### Live Polling
 
-The usage table auto-refreshes to show new requests as they arrive. Use the interval selector in the top-right:
+The page starts in **Live** mode, which refreshes every 2 seconds. A red pulsing badge appears next to the page title while Live is active.
+
+To change the refresh interval, click any option in the interval selector directly. Doing so automatically exits Live mode and applies the selected interval:
 
 | Interval | Meaning |
 |----------|---------|
+| **Live** | Refresh every 2 seconds (default on page load) |
+| Off | Manual refresh only (click the refresh button) |
 | 5 s | Refresh every 5 seconds |
 | 15 s | Refresh every 15 seconds |
 | 30 s | Refresh every 30 seconds |
 | 1 min | Refresh every minute |
 | 5 min | Refresh every 5 minutes |
-| Now | Manual refresh only |
+
+The **Period** filter (date range picker) works independently of Live mode. You can change the displayed time window at any time, even while Live polling is active, without turning it off first.
 
 ---
 
