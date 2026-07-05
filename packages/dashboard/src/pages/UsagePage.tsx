@@ -83,9 +83,11 @@ export function UsagePage() {
     if (!dateRange.from && !dateRange.to) {
       const now = new Date();
       const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-      setDateRange({ from, to: today, label: 'This month' });
+      setDateRange({ from, to: today, label: 'Questo mese' });
     } else if (dateRange.to && dateRange.to.slice(0, 10) < today) {
-      const preset = PRESETS.find(p => p.label === dateRange.label);
+      // ponytail: 'This month' is a legacy EN label stored in older localStorage entries
+      const label = dateRange.label === 'This month' ? 'Questo mese' : dateRange.label;
+      const preset = PRESETS.find(p => p.label === label);
       if (preset) setDateRange(preset.range());
     }
   }, []);
@@ -289,8 +291,7 @@ export function UsagePage() {
                 key={o.value}
                 className={`btn btn-sm ${!liveMode && pollInterval === o.value ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={() => { setLiveMode(false); setPollInterval(o.value); }}
-                disabled={liveMode}
-              >
+                  >
                 {o.label}
               </button>
             ))}
