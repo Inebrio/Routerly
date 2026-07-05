@@ -106,11 +106,13 @@ export async function startServer() {
       null;
 
     if (event !== null) {
-      pingTelemetry(installId, event);
-      await writeConfig('settings', {
-        ...settings,
-        telemetry: { ...settings.telemetry, lastPingedVersion: pkgVersion },
-      });
+      const ok = await pingTelemetry(installId, event);
+      if (ok) {
+        await writeConfig('settings', {
+          ...settings,
+          telemetry: { ...settings.telemetry, lastPingedVersion: pkgVersion },
+        });
+      }
     }
   }
 

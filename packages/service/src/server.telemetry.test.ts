@@ -12,7 +12,7 @@ const { version: CURRENT_VERSION } = JSON.parse(
 
 const { mockPing, mockReadConfig, mockWriteConfig, mockInitConfigDirs, mockLoadSecret } =
   vi.hoisted(() => ({
-    mockPing: vi.fn(),
+    mockPing: vi.fn().mockResolvedValue(true),
     mockReadConfig: vi.fn(),
     mockWriteConfig: vi.fn().mockResolvedValue(undefined),
     mockInitConfigDirs: vi.fn().mockResolvedValue(undefined),
@@ -122,6 +122,16 @@ describe('startServer() startup telemetry', () => {
     await startServer();
 
     expect(mockPing).not.toHaveBeenCalled();
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('does not update lastPingedVersion when ping fails', async () => {
+    mockPing.mockResolvedValueOnce(false);
+    mockReadConfig.mockResolvedValue(makeSettings({ enabled: true, installId: 'uuid-fail' }));
+
+    await startServer();
+
+    expect(mockPing).toHaveBeenCalledWith('uuid-fail', 'install');
     expect(mockWriteConfig).not.toHaveBeenCalled();
   });
 });

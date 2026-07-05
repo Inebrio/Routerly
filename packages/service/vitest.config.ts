@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     include: ['src/**/*.test.ts'],
     setupFiles: ['./src/test-setup.ts'],
+    env: { ROUTERLY_TELEMETRY_DISABLED: '1' },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'json'],
