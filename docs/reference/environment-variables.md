@@ -39,6 +39,17 @@ environment:
   - ROUTERLY_PORT=3000
 ```
 
+## Developer / Testing Variables
+
+These variables are intended for local development and test environments. Do not set them in production.
+
+| Variable | Effect |
+|----------|--------|
+| `ROUTERLY_TELEMETRY_DISABLED` | Any non-empty value disables all `pingTelemetry` calls. Set automatically in `vitest.config.ts` to prevent unit tests from sending real pings to `telemetry.routerly.ai`. |
+| `ROUTERLY_SKIP_TRACKING` | Any non-empty value makes `appendUsageRecord` a no-op. Use when running end-to-end tests against a local service instance to keep `usage.json` clean. |
+
+---
+
 ## Precedence
 
 Environment variables always take precedence over values in `settings.json`. The lookup order is:

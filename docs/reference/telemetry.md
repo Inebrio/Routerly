@@ -55,7 +55,7 @@ The `installId` is a random string generated locally the moment you opt in. It h
 
 The service checks on every startup whether a ping is due (version changed or first run after opt-in). If telemetry is disabled or no version change is detected, nothing is sent.
 
-Events are fire-and-forget with a 3-second timeout. If the request fails (network error, server down), Routerly continues normally — no retry, no error.
+Events have a 3-second timeout. If the request fails (network error, server down), Routerly continues normally. Because `lastPingedVersion` is only written on a successful ping, the event will be retried on the next startup until it succeeds.
 
 ---
 
