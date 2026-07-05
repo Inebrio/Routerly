@@ -15,8 +15,9 @@ export const TELEMETRY_ENDPOINT = 'https://telemetry.routerly.ai/ping';
 
 export type TelemetryEvent = 'install' | 'upgrade' | 'uninstall';
 
-export function pingTelemetry(installId: string, event: TelemetryEvent): void {
-  // Outer try/catch: any synchronous error (bad env, missing globals) is silently swallowed.
+export async function pingTelemetry(installId: string, event: TelemetryEvent): Promise<boolean> {
+  // ponytail: env guard prevents accidental real pings in test environments
+  if (process.env['ROUTERLY_TELEMETRY_DISABLED']) return false;
   try {
     const payload = {
       event,
@@ -25,13 +26,16 @@ export function pingTelemetry(installId: string, event: TelemetryEvent): void {
       installId,
     };
 
-    fetch(TELEMETRY_ENDPOINT, {
+    const res = await fetch(TELEMETRY_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(3000),
-    })
-      .then(res => console.log(`[telemetry] ${event} sent → ${res.status}`))
-      .catch(err => console.log(`[telemetry] ${event} failed → ${(err as Error).message}`));
-  } catch { /* never propagate to the caller */ }
+    });
+    console.log(`[telemetry] ${event} sent → ${res.status}`);
+    return res.ok;
+  } catch (err) {
+    console.log(`[telemetry] ${event} failed → ${(err as Error).message}`);
+    return false;
+  }
 }

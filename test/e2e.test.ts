@@ -15,7 +15,10 @@
  *   ROUTERLY_TEST_TOKEN=sk-rt-... ROUTERLY_TEST_ADMIN_EMAIL=... ROUTERLY_TEST_ADMIN_PASSWORD=... npm test
  *
  * When ROUTERLY_TEST_TOKEN is not set, all tests in this file are skipped
- * silently — the regular unit/integration suite still runs normally.
+ * silently -- the regular unit/integration suite still runs normally.
+ *
+ * To prevent e2e test LLM calls from writing to ~/.routerly/data/usage.json,
+ * start the local Routerly server with ROUTERLY_SKIP_TRACKING=1.
  */
 
 import { describe, it, expect, beforeAll } from 'vitest'

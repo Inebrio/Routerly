@@ -205,6 +205,18 @@ describe('writeConfig', () => {
 })
 
 describe('appendUsageRecord', () => {
+  it('skips write when ROUTERLY_SKIP_TRACKING is set', async () => {
+    const orig = process.env['ROUTERLY_SKIP_TRACKING']
+    process.env['ROUTERLY_SKIP_TRACKING'] = '1'
+    try {
+      await appendUsageRecord({ id: 'skip-test' } as any)
+      expect(mockWriteFile).not.toHaveBeenCalled()
+    } finally {
+      if (orig === undefined) delete process.env['ROUTERLY_SKIP_TRACKING']
+      else process.env['ROUTERLY_SKIP_TRACKING'] = orig
+    }
+  })
+
   it('reads existing usage and appends new record', async () => {
     const existing = [{ id: 'r1' }]
     mockReadFile.mockResolvedValueOnce(JSON.stringify(existing) as any)

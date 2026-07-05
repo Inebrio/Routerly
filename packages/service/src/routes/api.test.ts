@@ -1616,6 +1616,8 @@ describe('PUT /api/settings', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(200)
+    const written = mockWriteConfig.mock.calls[0]![1] as any
+    expect(written.telemetry.lastPingedVersion).toBe('0.3.0')
   })
 
   it('disables telemetry when setting telemetry.enabled=false', async () => {
@@ -4780,7 +4782,7 @@ describe('PUT /api/settings — additional branches', () => {
     await app.close()
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
-    expect(body.telemetry.lastPingedVersion).toBe('0.1.0')
+    expect(body.telemetry.lastPingedVersion).toBe('0.3.0') // always set to current pkgVersion, not preserved from old config
   })
 
   it('disables telemetry when installId already exists (covers line 912 ?? branch)', async () => {

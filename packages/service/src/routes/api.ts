@@ -1543,9 +1543,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         updated.telemetry = {
           enabled: true,
           installId,
-          ...(current.telemetry?.lastPingedVersion !== undefined
-            ? { lastPingedVersion: current.telemetry.lastPingedVersion }
-            : {}),
+          lastPingedVersion: pkgVersion, // ponytail: marks current version as pinged, prevents double-install on next startup
         };
         if (!wasEnabled) pingTelemetry(installId, 'install');
       } else {
