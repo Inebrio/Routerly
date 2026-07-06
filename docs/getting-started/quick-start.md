@@ -51,6 +51,8 @@ On first launch you will see the **Setup** screen. Enter an email address and pa
 
 ## Step 3: Register a Model
 
+![Models page — add a model by clicking + Add Model or use Discover to pre-fill from the catalog](../assets/screenshot-models.png)
+
 A **model** is a specific LLM available through a provider. You register it once with its API key; Routerly reuses it across all projects.
 
 **Via CLI:**
@@ -141,6 +143,8 @@ curl http://localhost:3000/v1/chat/completions \
 ---
 
 ## Step 6: Check Usage
+
+![Usage page showing total cost, call counts, per-model breakdown, and request log](../assets/screenshot-usage.png)
 
 Open **Usage** in the dashboard or use the CLI:
 

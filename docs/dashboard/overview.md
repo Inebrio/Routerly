@@ -7,6 +7,8 @@ sidebar_position: 2
 
 The Overview page is the dashboard home screen. It shows a snapshot of activity across all projects for the selected time period.
 
+![Overview page showing summary cards, cost chart, and per-model call breakdown](../assets/screenshot-overview.png)
+
 ---
 
 ## Period Selector

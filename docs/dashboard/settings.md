@@ -13,6 +13,8 @@ Open Settings from the **Settings** item in the sidebar.
 
 ## General Tab
 
+![Settings General tab showing server info, runtime settings, and anonymous metrics toggle](../assets/screenshot-settings.png)
+
 ### Service Configuration
 
 | Field | Description |
@@ -29,6 +31,8 @@ Changes are saved immediately and take effect without a restart (except Port and
 ---
 
 ## Notifications Tab {#notifications-tab}
+
+![Settings Notifications tab showing configured channels list with type, events, and action buttons](../assets/screenshot-settings-notifications.png)
 
 Configure notification channels. Each channel routes events to a delivery method (in-app inbox, email, or webhook) and can be scoped to specific event types and recipients.
 
@@ -203,7 +207,7 @@ The list displays all configured integrations in a table with:
 
 Click a row to expand inline details (endpoint, protocol, headers, etc. depending on type).
 
-![Integrations tab showing a configured Prometheus integration with enabled toggle, test button, and remove button](./screenshot-integrations.png)
+![Integrations tab showing configured integrations with enabled toggle, test button, and delete button](../assets/screenshot-settings-integrations.png)
 
 ### Adding an Integration
 

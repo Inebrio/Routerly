@@ -11,6 +11,8 @@ The Projects page gives you an overview of all projects and provides access to e
 
 ## Projects List
 
+![Projects list showing project names, slugs, token count, and daily cost summary](../assets/screenshot-projects.png)
+
 The list shows each project's name, slug, number of tokens, assigned models, and a summary of today's cost and call count.
 
 Click any project to open its detail view, which has seven tabs.

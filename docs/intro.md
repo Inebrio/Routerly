@@ -126,6 +126,8 @@ Open `http://localhost:3000/dashboard` to manage everything from the web UI.
 
 ---
 
+![Routerly dashboard overview showing cost cards, chart, and per-model breakdown](./assets/screenshot-overview.png)
+
 ## Next Steps
 
 - [Install Routerly](./getting-started/installation.md)

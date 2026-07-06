@@ -18,6 +18,8 @@ The Setup screen appears the first time you open the Routerly dashboard at `http
 
 After account creation you are redirected to the login page. Log in with the credentials you just created.
 
+![Login page after completing setup](../assets/screenshot-login.png)
+
 ---
 
 ## Setup API
