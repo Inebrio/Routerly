@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope, Zap } from 'lucide-react';
+import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope, FlaskConical } from 'lucide-react';
 import { getModels, deleteModel, testModel, getProviderHealth, type Model, type ProviderHealth } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
@@ -351,7 +351,7 @@ export function ModelsPage() {
                                 return null;
                               })()}
                               <button className="btn-icon" onClick={() => handleTest(m.id)} title="Test">
-                                <Zap size={15} />
+                                <FlaskConical size={15} />
                               </button>
                               <Link to={`/dashboard/models/new?clone=${encodeURIComponent(m.id)}`} className="btn-icon" title="Clone">
                                 <Copy size={15} />
