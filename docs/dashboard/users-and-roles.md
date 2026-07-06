@@ -35,6 +35,8 @@ Routerly has a role-based access control (RBAC) system for the dashboard. Users 
 
 ## Managing Users
 
+![Users list showing email, role badge, and action buttons](../assets/screenshot-settings-users.png)
+
 ### Adding a User
 
 1. Open **Users** in the sidebar
@@ -55,6 +57,8 @@ Click the **Delete** icon and confirm. The user's session is invalidated immedia
 ---
 
 ## Custom Roles
+
+![Roles page showing built-in roles and their permission badges](../assets/screenshot-settings-roles.png)
 
 Custom roles let you define granular permission sets for specific team members.
 
