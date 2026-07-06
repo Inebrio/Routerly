@@ -50,6 +50,19 @@ describe('GeminiAdapter.chatCompletion', () => {
     await adapter.chatCompletion({ model: 'auto', messages: [], stream: true } as any, makeModel())
     expect(mockCreate.mock.calls[0]![0].stream).toBe(false)
   })
+
+  it('strips provider prefix from model ID before upstream call (#115)', async () => {
+    mockCreate.mockResolvedValue({
+      id: '1', choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 1, completion_tokens: 1 },
+    })
+
+    await adapter.chatCompletion(
+      { model: 'gemini/gemini-2.5-pro', messages: [{ role: 'user', content: 'hi' }] },
+      makeModel('gemini/gemini-2.5-pro'),
+    )
+    expect(mockCreate.mock.calls[0]![0].model).toBe('gemini-2.5-pro')
+  })
 })
 
 describe('GeminiAdapter.streamCompletion', () => {
@@ -68,6 +81,20 @@ describe('GeminiAdapter.streamCompletion', () => {
     }
     expect(received).toHaveLength(2)
     expect(received[0].choices[0].delta.content).toBe('Hel')
+  })
+
+  it('strips provider prefix from model ID before upstream call (#115)', async () => {
+    mockCreate.mockReturnValue({
+      [Symbol.asyncIterator]: async function* () {},
+    })
+
+    // consume the generator
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    for await (const _ of adapter.streamCompletion(
+      { model: 'gemini/gemini-2.5-pro', messages: [] },
+      makeModel('gemini/gemini-2.5-pro'),
+    )) { /* noop */ }
+    expect(mockCreate.mock.calls[0]![0].model).toBe('gemini-2.5-pro')
   })
 })
 
@@ -141,5 +168,19 @@ describe('GeminiAdapter.messages', () => {
     await adapter.messages(request, makeModel())
     const callMessages = mockCreate.mock.calls[0]![0].messages
     expect(callMessages[0].role).toBe('user')
+  })
+
+  it('strips provider prefix from model ID before upstream call (#115)', async () => {
+    mockCreate.mockResolvedValue({
+      id: '1', model: 'gemini-2.5-pro',
+      choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 1, completion_tokens: 1 },
+    })
+
+    await adapter.messages(
+      { model: 'gemini/gemini-2.5-pro', max_tokens: 100, messages: [{ role: 'user', content: 'hi' }] },
+      makeModel('gemini/gemini-2.5-pro'),
+    )
+    expect(mockCreate.mock.calls[0]![0].model).toBe('gemini-2.5-pro')
   })
 })
