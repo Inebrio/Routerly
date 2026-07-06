@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope } from 'lucide-react';
-import { getModels, deleteModel, getProviderHealth, type Model, type ProviderHealth } from '../api';
+import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope, Zap } from 'lucide-react';
+import { getModels, deleteModel, testModel, getProviderHealth, type Model, type ProviderHealth } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
 type SortKey = 'id' | 'provider' | 'endpoint' | 'input' | 'output' | 'cache' | 'context';
@@ -95,6 +95,7 @@ export function ModelsPage() {
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [page, setPage] = useState(1);
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, 'loading' | { ok: boolean; latencyMs: number; error?: string }>>({});
   const healthActive = useRef(true);
 
   // Health tab state
@@ -128,6 +129,12 @@ export function ModelsPage() {
     const id = setInterval(fetchHealth, HEALTH_REFRESH_MS);
     return () => { healthActive.current = false; clearInterval(id); };
   }, []);
+
+  async function handleTest(id: string) {
+    setTestResults(r => ({ ...r, [id]: 'loading' }));
+    const result = await testModel(id);
+    setTestResults(r => ({ ...r, [id]: result }));
+  }
 
   function handleDelete(id: string) {
     setConfirmState({
@@ -332,7 +339,20 @@ export function ModelsPage() {
                             <td>${m.cost.outputPerMillion}</td>
                             <td>{m.cost.cachePerMillion != null ? `$${m.cost.cachePerMillion}` : <span className="text-muted">—</span>}</td>
                             <td>{m.contextWindow != null ? `${(m.contextWindow / 1000).toFixed(0)}k` : <span className="text-muted">—</span>}</td>
-                            <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                            <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
+                              {(() => {
+                                const tr = testResults[m.id];
+                                if (tr === 'loading') return <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>…</span>;
+                                if (tr) return (
+                                  <span style={{ fontSize: '0.7rem', color: tr.ok ? 'var(--success)' : 'var(--danger)', whiteSpace: 'nowrap' }} title={tr.error}>
+                                    {tr.ok ? `✓ ${tr.latencyMs}ms` : `✗ ${tr.error?.slice(0, 30)}`}
+                                  </span>
+                                );
+                                return null;
+                              })()}
+                              <button className="btn-icon" onClick={() => handleTest(m.id)} title="Test">
+                                <Zap size={15} />
+                              </button>
                               <Link to={`/dashboard/models/new?clone=${encodeURIComponent(m.id)}`} className="btn-icon" title="Clone">
                                 <Copy size={15} />
                               </Link>

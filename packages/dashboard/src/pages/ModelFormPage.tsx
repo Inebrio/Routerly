@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
-import { Plus, X, ChevronDown, EyeOff, Eye, ArrowLeft, Copy, Check, FlaskConical } from 'lucide-react';
-import { getModels, createModel, updateModel, testOpenAIOAuth, getProviders, type Model, type ModelCapabilities, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit, type CatalogEntry, type ProviderCatalog } from '../api';
+import { Plus, X, ChevronDown, EyeOff, Eye, ArrowLeft, Copy, Check, FlaskConical, Zap } from 'lucide-react';
+import { getModels, createModel, updateModel, testOpenAIOAuth, testModel, getProviders, type Model, type ModelCapabilities, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit, type CatalogEntry, type ProviderCatalog } from '../api';
 
 type Provider = string;
 type ProviderModel = {
@@ -316,6 +316,7 @@ export function ModelFormPage() {
 
   const [models, setModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(isEditing);
+  const [testState, setTestState] = useState<null | 'loading' | { ok: boolean; latencyMs: number; error?: string }>(null);
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [tierRows, setTierRows] = useState<TierRow[]>([]);
@@ -1245,11 +1246,23 @@ export function ModelFormPage() {
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-start', marginTop: 32, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-start', marginTop: 32, paddingTop: 16, borderTop: '1px solid var(--border)', alignItems: 'center' }}>
             <button type="button" className="btn btn-secondary" onClick={goBack} disabled={saving}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={saving}>
               {saving ? <span className="spinner" /> : (editingModelId ? 'Save Changes' : isCloning ? 'Create Clone' : 'Create Model')}
             </button>
+            {editingModelId && (
+              <button type="button" className="btn btn-secondary" disabled={testState === 'loading'}
+                onClick={async () => { setTestState('loading'); setTestState(await testModel(editingModelId)); }}>
+                {testState === 'loading' ? <span className="spinner" /> : <Zap size={14} />}
+                {testState === 'loading' ? ' Testing…' : ' Test'}
+              </button>
+            )}
+            {testState && testState !== 'loading' && (
+              <span style={{ fontSize: '0.82rem', color: testState.ok ? 'var(--success)' : 'var(--danger)' }}>
+                {testState.ok ? `✓ ${testState.latencyMs}ms` : `✗ ${testState.error?.slice(0, 60)}`}
+              </span>
+            )}
           </div>
         </form>
       </div>
