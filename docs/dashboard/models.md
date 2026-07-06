@@ -129,8 +129,8 @@ Click any column header to sort ascending; click again to reverse. All five colu
 
 - **Search** — filter by model ID or name substring
 - **Provider** — multi-select dropdown; leave empty to show all providers
-- **Context** — limit by context window size: All, <32k, 32k–200k, 200k–1M, >1M
-- **Price /1M** — filter by input price tier: All, Free, <$1, $1–$5, >$5
+- **Context** — limit by context window size: All, &lt;32k, 32k–200k, 200k–1M, &gt;1M
+- **Price /1M** — filter by input price tier: All, Free, &lt;$1, $1–$5, &gt;$5
 - **Show** — All, Configured only (models already added to Routerly), Embedding only
 
 Click **Reset filters** to clear all filters at once.
