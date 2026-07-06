@@ -187,7 +187,9 @@ async function checkRule(
       );
       const raw = response.choices?.[0]?.message?.content;
       const rawStr = typeof raw === 'string' ? raw : '';
-      const parsed = JSON.parse(rawStr) as { score?: unknown };
+      // Extract JSON object in case the model adds preamble text
+      const jsonMatch = rawStr.match(/\{[^}]+\}/);
+      const parsed = JSON.parse(jsonMatch?.[0] ?? rawStr) as { score?: unknown };
       const score = typeof parsed.score === 'number' ? parsed.score : 1;
       if (score < (cfg.threshold ?? 0.5)) {
         return { rule: ruleId, outcome: 'triggered', reason: `topic:score=${score.toFixed(2)}` };
@@ -195,8 +197,8 @@ async function checkRule(
     } catch (err) {
       // Over-limit judge call must fail the request like an over-limit completion (BUG-4).
       if (err instanceof BudgetExceededError) throw err;
-      log?.warn({ err }, 'guardrail:topic: judge call failed, skipping');
-      return { rule: ruleId, outcome: 'skipped', reason: 'judge-failed' };
+      log?.error({ err }, 'guardrail:topic: judge call failed, skipping');
+      return { rule: ruleId, outcome: 'skipped', reason: `judge-failed: ${err instanceof Error ? err.message : String(err)}` };
     }
     return { rule: ruleId, outcome: 'passed' };
   }
@@ -229,7 +231,9 @@ async function checkRule(
       );
       const raw = response.choices?.[0]?.message?.content;
       const rawStr = typeof raw === 'string' ? raw : '';
-      const parsed = JSON.parse(rawStr) as { score?: unknown };
+      // Extract JSON object in case the model adds preamble text
+      const jsonMatch = rawStr.match(/\{[^}]+\}/);
+      const parsed = JSON.parse(jsonMatch?.[0] ?? rawStr) as { score?: unknown };
       const score = typeof parsed.score === 'number' ? parsed.score : 0;
       if (score > (cfg.threshold ?? 0.5)) {
         return { rule: ruleId, outcome: 'triggered', reason: `moderation:score=${score.toFixed(2)}` };
@@ -237,8 +241,8 @@ async function checkRule(
     } catch (err) {
       // Over-limit judge call must fail the request like an over-limit completion (BUG-4).
       if (err instanceof BudgetExceededError) throw err;
-      log?.warn({ err }, 'guardrail:moderation: judge call failed, skipping');
-      return { rule: ruleId, outcome: 'skipped', reason: 'judge-failed' };
+      log?.error({ err }, 'guardrail:moderation: judge call failed, skipping');
+      return { rule: ruleId, outcome: 'skipped', reason: `judge-failed: ${err instanceof Error ? err.message : String(err)}` };
     }
     return { rule: ruleId, outcome: 'passed' };
   }

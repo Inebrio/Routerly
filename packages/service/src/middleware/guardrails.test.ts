@@ -297,7 +297,7 @@ describe('checkGuardrails — rule evaluation branches', () => {
     mockReadConfig.mockResolvedValue([judgeModel] as any);
     mockLlmChat.mockRejectedValue(new Error('judge down'));
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRule()]), pctx);
-    expect(result.evaluated).toContainEqual({ rule: `topic:${judgeModel.id}`, outcome: 'skipped', reason: 'judge-failed' });
+    expect(result.evaluated).toContainEqual({ rule: `topic:${judgeModel.id}`, outcome: 'skipped', reason: 'judge-failed: judge down' });
   });
 
   it('topic rule triggers when off-topic (below threshold)', async () => {
@@ -435,7 +435,7 @@ describe('checkGuardrails — judge rule threshold defaults', () => {
     mockLlmChat.mockRejectedValue(new Error('moderation judge down'));
     const rule: GuardrailRule = moderationRule();
     const result = await checkGuardrails('request', 'hi', baseConfig([rule]), pctx);
-    expect(result.evaluated).toContainEqual({ rule: `moderation:${judgeModel.id}`, outcome: 'skipped', reason: 'judge-failed' });
+    expect(result.evaluated).toContainEqual({ rule: `moderation:${judgeModel.id}`, outcome: 'skipped', reason: 'judge-failed: moderation judge down' });
   });
 
   it('over-limit moderation judge call propagates BudgetExceededError', async () => {

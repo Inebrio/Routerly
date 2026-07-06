@@ -23,6 +23,11 @@ export class GeminiAdapter implements ProviderAdapter {
     return new OpenAI({ apiKey, baseURL });
   }
 
+  private getUpstreamModelId(model: ModelConfig): string {
+    if (model.id.includes('/')) return model.id.split('/').slice(1).join('/');
+    return model.id;
+  }
+
   async chatCompletion(
     request: ChatCompletionRequest,
     model: ModelConfig,
@@ -30,7 +35,7 @@ export class GeminiAdapter implements ProviderAdapter {
     const client = this.getClient(model);
     const { stream: _stream, ...rest } = request;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = await client.chat.completions.create({ ...rest, stream: false } as any);
+    const response = await client.chat.completions.create({ ...rest, model: this.getUpstreamModelId(model), stream: false } as any);
     return response as unknown as ChatCompletionResponse;
   }
 
@@ -41,7 +46,7 @@ export class GeminiAdapter implements ProviderAdapter {
     const client = this.getClient(model);
     const { stream: _stream, ...rest } = request;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stream: any = await client.chat.completions.create({ ...rest, stream: true } as any);
+    const stream: any = await client.chat.completions.create({ ...rest, model: this.getUpstreamModelId(model), stream: true } as any);
     for await (const chunk of stream) {
       yield chunk as unknown as StreamChunk;
     }
@@ -49,7 +54,7 @@ export class GeminiAdapter implements ProviderAdapter {
 
   async messages(request: MessagesRequest, model: ModelConfig): Promise<MessagesResponse> {
     const client = this.getClient(model);
-    const upstreamModel = model.id;
+    const upstreamModel = this.getUpstreamModelId(model);
     const { messages, system } = anthropicToOpenAIMessages(request);
     const openAIMessages = system
       ? [{ role: 'system' as const, content: system }, ...messages]
