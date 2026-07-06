@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
-import { Plus, X, ChevronDown, EyeOff, Eye, ArrowLeft, Copy, Check, FlaskConical, Zap } from 'lucide-react';
+import { Plus, X, ChevronDown, EyeOff, Eye, ArrowLeft, Copy, Check, FlaskConical } from 'lucide-react';
 import { getModels, createModel, updateModel, testOpenAIOAuth, testModel, getProviders, type Model, type ModelCapabilities, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit, type CatalogEntry, type ProviderCatalog } from '../api';
 
 type Provider = string;
@@ -1254,7 +1254,7 @@ export function ModelFormPage() {
             {editingModelId && (
               <button type="button" className="btn btn-secondary" disabled={testState === 'loading'}
                 onClick={async () => { setTestState('loading'); setTestState(await testModel(editingModelId)); }}>
-                {testState === 'loading' ? <span className="spinner" /> : <Zap size={14} />}
+                {testState === 'loading' ? <span className="spinner" /> : <FlaskConical size={14} />}
                 {testState === 'loading' ? ' Testing…' : ' Test'}
               </button>
             )}
