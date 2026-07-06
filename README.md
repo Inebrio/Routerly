@@ -59,7 +59,7 @@ routerly start
 Open `http://localhost:3000/dashboard` to manage models, projects, and monitor usage in real time.
 Your app connects to `http://localhost:3000` using the project token as the API key.
 
-**Learn more:** [Dashboard guide](docs/dashboard/README.md) — [CLI reference](docs/cli/README.md) — [Installation options](docs/getting-started/installation.md)
+**Learn more:** [Dashboard guide](docs/dashboard/overview.md) — [CLI reference](docs/cli/commands.md) — [Installation options](docs/getting-started/installation.md)
 
 ---
 
@@ -76,6 +76,7 @@ Your app connects to `http://localhost:3000` using the project token as the API 
 - **Intelligent routing**: 9 configurable policies score every request in parallel — cheapest, fastest, healthiest, most capable, or LLM-native (uses an AI to decide which AI to use)
 - **Zero infrastructure**: no database, no Redis, no PostgreSQL — config lives in a JSON file
 - **Drop-in compatible**: swap the base URL in your client. Nothing else changes. Supports both OpenAI and Anthropic native formats
+- **Alerts you care about**: budget thresholds, provider errors, and rate-limit events delivered to Slack, email, webhooks, PagerDuty, and more
 - **Free forever**: self-hosted, AGPL-3.0, you pay only what your providers charge — zero markup
 
 ---
@@ -101,8 +102,8 @@ Your app connects to `http://localhost:3000` using the project token as the API 
 | Admin CLI | ✅ | ✅ | ❌ |
 | Data privacy (stays on your infra) | ✅ | ✅ | ❌ |
 | Setup complexity | minimal | moderate | none (managed) |
+| Multi-channel notifications | ✅ | ⚠️ limited | ❌ |
 | SSO / LDAP login | 🔜 | ✅ | ❌ |
-| Configurable notifications | 🔜 | ⚠️ limited | ❌ |
 
 **Routerly is the only option where the gateway itself is intelligent.** LiteLLM and OpenRouter are proxies, they forward requests based on static rules you define upfront. Routerly uses a language model to dynamically evaluate every request in context and pick the best candidate in real time. That means smarter cost savings, better fallback decisions, and routing that adapts to your workload automatically. And if you don't want to involve an LLM, Routerly's built-in deterministic policies (cheapest, health, performance, capability, budget-remaining…) work entirely on their own, no external call needed.
 
@@ -182,6 +183,10 @@ A full-featured command-line tool lets you manage models, projects, users, roles
 ![Usage](docs/assets/screenshot-usage.png)
 
 *Usage breakdown: filter by time range, model and project*
+
+![Playground](docs/assets/screenshot-playground-trace.png)
+
+*Playground: test models directly in the browser, with routing trace and cost breakdown*
 
 ---
 
@@ -320,14 +325,8 @@ Contributions are welcome. See the [Development Guide](docs/contributing/develop
 
 ## Roadmap
 
-### Multi-Channel Notifications
-Get alerted when a budget threshold is crossed, a provider goes down, or error rates spike, on the channel you already use. Notifications are fully configurable: Slack, email, webhooks, PagerDuty, and more. Each rule can target a different channel with its own severity filter.
-
 ### Enterprise SSO
 Log in to the dashboard with your existing identity provider, Google, Microsoft Entra ID, GitHub, Keycloak, any OAuth 2.0 / OIDC provider, or LDAP. No separate user management required: roles and permissions sync automatically from your directory. Purpose-built for corporate and enterprise environments where user accounts are already centrally managed.
-
-### Enterprise / corporate environment
-Rolling Routerly out across a company where IT already manages identities in Azure AD, Okta, or LDAP. SSO login means your team logs into the dashboard without a separate password, access follows the same joiner/mover/leaver process as every other internal tool, and you can enforce MFA at the identity-provider level. Budget alerts on Slack or email keep finance and engineering teams in sync without anyone polling a dashboard.
 
 ---
 
