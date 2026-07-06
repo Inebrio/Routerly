@@ -197,11 +197,12 @@ Examples:
   policyCmd.command('enable <project> <type>')
     .description('Enable a routing policy (adds it if not present)')
     .addHelpText('after', `
-Policy types: health, context, capability, budget-remaining, rate-limit, llm, performance, fairness, cheapest, semantic-intent
+Policy types: health, context, capability, budget-remaining, rate-limit, llm, performance, fairness, cheapest, semantic-intent, model-preference
 
 Examples:
   routerly project routing policy enable my-api health
   routerly project routing policy enable my-api llm --config '{"memoryCount":3}'
+  routerly project routing policy enable my-api model-preference --config '{"bonus":0.8}'
   routerly project routing policy enable my-api semantic-intent --config '{"embedding_provider":"openai","embedding_model":"text-embedding-3-small","absolute_threshold":0.60,"ambiguity_threshold":0.08,"intents":{"coding":{"examples":["write a python function"],"candidate_models":["qwen-coder"]}}}'
 `)
     .option('--config <json>', 'Policy-specific configuration as JSON')

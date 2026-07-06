@@ -13,6 +13,7 @@ import { rateLimitPolicy } from './policies/rate-limit.js';
 import { fairnessPolicy } from './policies/fairness.js';
 import { budgetRemainingPolicy } from './policies/budget-remaining.js';
 import { semanticIntentPolicy } from './policies/semantic-intent.js';
+import { modelPreferencePolicy } from './policies/model-preference.js';
 import type { PolicyFn } from './policies/types.js';
 import type { TraceEntry, TracePanel } from './traceStore.js';
 
@@ -42,6 +43,7 @@ const POLICY_MAP: Record<string, PolicyFn> = {
   fairness: fairnessPolicy,
   'budget-remaining': budgetRemainingPolicy,
   'semantic-intent': semanticIntentPolicy,
+  'model-preference': modelPreferencePolicy,
 };
 
 export async function routeRequest(

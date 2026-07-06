@@ -15,7 +15,7 @@ type PolicyItem = RoutingPolicy & {
   internalId: string;
 };
 
-const ALL_POLICY_TYPES = ['health', 'context', 'capability', 'budget-remaining', 'rate-limit', 'semantic-intent', 'llm', 'performance', 'fairness', 'cheapest'] as const;
+const ALL_POLICY_TYPES = ['health', 'context', 'capability', 'budget-remaining', 'rate-limit', 'semantic-intent', 'llm', 'performance', 'fairness', 'cheapest', 'model-preference'] as const;
 
 const POLICY_LABELS: Record<string, string> = {
   llm:               'AI Routing Policy',
@@ -28,6 +28,7 @@ const POLICY_LABELS: Record<string, string> = {
   performance:       'Performance Policy',
   fairness:          'Fairness Policy',
   cheapest:          'Cheapest Policy',
+  'model-preference':'Model Preference Policy',
 };
 
 const POLICY_DESCRIPTIONS: Record<string, string> = {
@@ -41,6 +42,7 @@ const POLICY_DESCRIPTIONS: Record<string, string> = {
   fairness:         'Distributes traffic evenly by penalizing models that received more successful calls recently. Acts as a soft round-robin to prevent load from concentrating on a single model.',
   'budget-remaining': 'Scores models based on remaining budget headroom across all configured limits. Prefers models with more room before their thresholds are hit, spreading consumption proactively.',
   'semantic-intent':  'Classifies the request by semantic intent using embeddings, then restricts the candidate pool to the models mapped to that intent. Confident matches hard-filter the pool; ambiguous matches merge top-2 pools; unknown requests pass all candidates through.',
+  'model-preference': 'When the client requests a specific model (not routerly/ada), awards a configurable bonus score to that model. When no preference is expressed, the policy abstains. Position in the list controls how much the preference weighs against other policies.',
 };
 
 export function ProjectRoutingTab() {
@@ -1196,6 +1198,20 @@ export function ProjectRoutingTab() {
                           style={{ width: 80, padding: '4px 8px', fontSize: '0.8rem' }}
                           value={policy.config?.windowMinutes ?? 60}
                           onChange={e => updatePolicyConfig(idx, { windowMinutes: Number(e.target.value) })}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {policy.type === 'model-preference' && policy.enabled && (
+                    <div style={{ paddingLeft: 30, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Bonus (0.0 – 1.0)</label>
+                        <input
+                          type="number" min={0} max={1} step={0.1}
+                          className="form-input"
+                          style={{ width: 80, padding: '4px 8px', fontSize: '0.8rem' }}
+                          value={policy.config?.bonus ?? 1.0}
+                          onChange={e => updatePolicyConfig(idx, { bonus: Number(e.target.value) })}
                         />
                       </div>
                     </div>
