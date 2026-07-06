@@ -16,6 +16,7 @@ import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
 import { getTrace } from '../routing/traceStore.js';
+import { getProviderAdapter } from '../providers/index.js';
 import { sendTestNotification } from '../notifications/sender.js';
 import { emitEvent } from '../notifications/emitter.js';
 import { ALL_PERMISSIONS, BUILT_IN_ROLES, getEffectiveRoles } from '../auth/roles.js';
@@ -637,6 +638,21 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const model = models.find(m => m.id === req.params.id);
     if (!model) return reply.status(404).send({ error: 'Not found' });
     return reply.send({ apiKey: model.apiKey ?? null });
+  });
+
+  fastify.post<{ Params: { id: string } }>('/api/models/:id/test', async (req, reply) => {
+    if (!requirePerm(req, 'model:read', reply)) return;
+    const models = await readConfig('models');
+    const model = models.find((m: { id: string }) => m.id === req.params.id);
+    if (!model) return reply.status(404).send({ error: 'Not found' });
+    const t0 = Date.now();
+    try {
+      const adapter = getProviderAdapter(model);
+      await adapter.chatCompletion({ model: model.id, messages: [{ role: 'user', content: 'ping' }], max_tokens: 5 }, model);
+      return reply.send({ ok: true, latencyMs: Date.now() - t0 });
+    } catch (err) {
+      return reply.send({ ok: false, latencyMs: Date.now() - t0, error: err instanceof Error ? err.message : String(err) });
+    }
   });
 
   fastify.delete<{ Params: { id: string } }>('/api/models/:id', async (req, reply) => {
