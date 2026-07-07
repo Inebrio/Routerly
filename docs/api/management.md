@@ -236,34 +236,46 @@ Use `PATCH /api/projects/:id/guardrails` for partial updates (guardrails or PII 
 
 #### Guardrails
 
-Guardrails evaluate each request and/or response against an ordered list of rules;
-the first matching enabled rule triggers the configured action.
+Guardrails evaluate each request and/or response against an ordered list of independent rules;
+each enabled rule is evaluated in sequence, and a matching rule triggers its configured
+block and/or log actions independently.
 
 ```json
 {
   "guardrails": {
-    "enabled": true,
-    "action": "block",
-    "fallbackMessage": "This request was blocked by content guardrails.",
+    "detectInjection": true,
     "rules": [
       {
         "type": "regex",
         "enabled": true,
         "target": "request",
+        "block": true,
+        "log": false,
+        "blockMessage": "Your request contains blocked content.",
         "config": { "patterns": ["competitor", "rival\\s+product"] }
       },
       {
-        "type": "injection",
+        "type": "semantic",
         "enabled": true,
-        "target": "request",
-        "config": {}
+        "target": "both",
+        "block": false,
+        "log": true,
+        "config": {
+          "embeddingModelId": "text-embedding-3-small",
+          "examples": ["example of blocked content"],
+          "threshold": 0.82
+        }
       },
       {
         "type": "topic",
         "enabled": true,
-        "target": "both",
+        "target": "response",
+        "block": true,
+        "log": true,
+        "useJudgeResponse": true,
+        "blockMessage": "This topic is not allowed. Please rephrase your request.",
         "config": {
-          "modelId": "openai/gpt-4o-mini",
+          "modelId": "claude-haiku-4-5",
           "allowedTopics": "Customer support questions about our product only",
           "threshold": 0.5
         }
@@ -271,8 +283,10 @@ the first matching enabled rule triggers the configured action.
       {
         "type": "moderation",
         "enabled": true,
-        "target": "both",
-        "config": { "modelId": "openai/gpt-4o-mini", "threshold": 0.7 }
+        "target": "request",
+        "block": true,
+        "log": true,
+        "config": { "modelId": "claude-haiku-4-5", "threshold": 0.5 }
       }
     ]
   }
@@ -284,40 +298,61 @@ the first matching enabled rule triggers the configured action.
 | Type | Target | Config fields | Description |
 |------|--------|---------------|-------------|
 | `regex` | request / response / both | `patterns: string[]` | Block text matching any regex pattern (case-insensitive) |
-| `injection` | request | _(none)_ | Detect prompt injection attacks (built-in patterns: "ignore previous instructions", DAN mode, jailbreak, etc.) |
 | `semantic` | request / response / both | `embeddingModelId`, `examples: string[]`, `threshold?: number` (default 0.82) | Block semantically similar content using embedding cosine similarity |
 | `topic` | request / response / both | `modelId`, `allowedTopics: string`, `threshold?: number` (default 0.5) | LLM judge: block content not matching the allowed topics description |
 | `moderation` | request / response / both | `modelId`, `threshold?: number` (default 0.5) | LLM judge: block harmful content (hate, violence, sexual, self-harm) |
 
-**Action values:**
-- `block` — reject before forwarding; the request never reaches the model. Returns a wire-faithful HTTP 200 response (`finish_reason: "content_filter"` for OpenAI, `stop_reason: "refusal"` for Anthropic). Records a usage entry with `outcome: "blocked"`, `callType: "guardrail"`, zero tokens and cost, and `blockedBy` set to the triggering rule. See [LLM Proxy — Guardrail block wire format](./llm-proxy.md#guardrail-block--wire-format).
-- `flag` — forward the request; record `guardrailTriggered` on the usage record (outcome remains `success` or `error`).
-- `log` — log only, no usage record side-effect.
+**Rule fields:**
+- `block?: boolean`: reject the request/response when this rule triggers. When true and the rule target includes `response`, the entire response is buffered before the block decision, which disables streaming for the request.
+- `log?: boolean`: record the trigger in usage (monitor) for audit purposes, independently of whether the rule blocks.
+- `blockMessage?: string`: custom message returned to the client when this rule blocks. Falls back to a built-in default when absent. Ignored when `useJudgeResponse` is true and the judge returns a message.
+- `useJudgeResponse?: boolean`: (topic/moderation only) use the judge model's own explanation as the block response. The judge is asked to return `{ score, message }`; on block, the `message` is returned to the client, falling back to `blockMessage` (then a built-in default) when the judge fails or returns none.
+
+**detectInjection flag:**
+- When `true`, run a built-in prompt-injection detector on every request before rule evaluation. A hit blocks and is logged (equivalent to a rule with `block: true, log: true`). Injection detection does not support custom messages.
 
 **Target values:** `request` evaluates the user messages; `response` evaluates the model output; `both` evaluates both sides.
+
+**Streaming interaction:** When any enabled rule has `block: true` AND `target` is `response` or `both`, the entire response must be buffered before the block decision is made. In this case, streaming is disabled for the request, and the client receives the full response as a single chunk.
 
 #### PII
 
 ```json
 {
   "pii": {
-    "enabled": true,
-    "entities": ["EMAIL", "PHONE", "CREDIT_CARD", "SSN", "IBAN"],
-    "scrubInput": true,
-    "scrubOutput": false
+    "policies": [
+      {
+        "name": "default",
+        "enabled": true,
+        "target": "both",
+        "entities": ["EMAIL", "PHONE", "CREDIT_CARD", "SSN", "IBAN"],
+        "outputBufferSize": 30
+      },
+      {
+        "name": "pii-request-only",
+        "enabled": true,
+        "target": "request",
+        "entities": ["EMAIL", "PHONE"],
+        "customPatterns": ["\\b[A-Z]{2}[0-9]{6,8}\\b"]
+      }
+    ]
   }
 }
 ```
 
-`pii.entities` defaults to all entity types when omitted. Matched values in
-message string content are replaced with typed placeholders
-(`[EMAIL]`, `[PHONE_NUMBER]`, `[CREDIT_CARD]`, `[SSN]`, `[IBAN]`) before the
-request is forwarded to the provider.
+PII configuration contains a list of named policies. All enabled policies are merged per-direction
+at scrub time (request scrubbing merges policies with `target: request` or `target: both`;
+response scrubbing merges policies with `target: response` or `target: both`).
 
-`scrubInput` (default `true`) controls whether user message content is scrubbed
-before sending to the provider. `scrubOutput` (default `false`) controls whether
-the provider's response content is scrubbed before returning to the caller. Set
-`scrubOutput: true` when your model may echo or repeat sensitive values in its reply.
+**Policy fields:**
+- `name: string`: unique identifier for this policy
+- `enabled?: boolean`: default true when absent; when false, this policy is skipped
+- `target: 'request' | 'response' | 'both'`: which side(s) to scrub
+- `entities?: PiiEntity[]`: entity types to detect (EMAIL, PHONE, CREDIT_CARD, SSN, IBAN). Defaults to all types when omitted.
+- `customPatterns?: string[]`: additional regex patterns to scrub (case-insensitive)
+- `outputBufferSize?: number`: (response scrubbing only) suffix buffer size in characters (10-500, default 30). Used to catch patterns spanning chunk boundaries when streaming. When multiple response policies are active, the largest value wins.
+
+Matched values in message content are replaced with typed placeholders (`[EMAIL]`, `[PHONE_NUMBER]`, `[CREDIT_CARD]`, `[SSN]`, `[IBAN]`) before the request is forwarded to the provider and before the response is returned to the caller.
 
 When a guardrail triggers or PII is redacted, the usage record gains
 `guardrailTriggered` (the rule type) and/or `piiRedacted` (the list of redacted
@@ -340,11 +375,12 @@ instead of original sensitive values and responds based on the modified message.
 Disable specific entity types if your application requires the model to see the
 original values.
 
-Guardrails with `block` action return a wire-faithful HTTP 200 response — they
-do **not** return HTTP 400. See [LLM Proxy — Guardrail block wire format](./llm-proxy.md#guardrail-block--wire-format).
+A rule with `block: true` returns a wire-faithful HTTP 200 response when it
+triggers. It does **not** return HTTP 400. See [LLM Proxy: Guardrail block wire format](./llm-proxy.md#guardrail-block--wire-format).
 
-Guardrails with `flag` or `log` action forward requests to the model with no
-consumer-visible impact. The event is recorded on the usage record for audit purposes.
+A rule with `log: true` (and `block` unset) forwards the request to the model with no
+consumer-visible impact; the match is recorded on the usage record for audit purposes.
+`block` and `log` are independent, so a rule may do both: block the request and record the match.
 
 ### Delete Project
 
@@ -685,11 +721,11 @@ Returns the routing trace (`{ trace: [...] }`). All trace entries are stored out
 
 | Entry | When emitted | `details` shape |
 |-------|-------------|-----------------|
-| `guardrail:evaluated` | After every guardrail check, whether or not any rule fires | `{ target: "request"\|"response", rules: [{ rule, outcome, reason? }] }` — one object per rule. `outcome` is `passed`, `triggered`, or `skipped`. `reason` is set on skipped rules (e.g. `judge-failed`) and on scoring rules (e.g. `regex:<pattern>`, `semantic:82%`). The built-in prompt-injection check appears as `rule: "injection"`. |
-| `guardrail:triggered` | When a rule with `action: flag` or `action: log` matches (request side) | `{ rule, target: "request" }` |
-| `guardrail:response-triggered` | When a rule with `action: flag` or `action: log` matches (response side) | `{ rule, target: "response" }` |
-| `pii:evaluated` | After every PII scrubbing pass when `scrubInput` or `scrubOutput` is enabled, even when nothing was redacted | `{ redacted: string[] }` — entity types found (e.g. `["EMAIL"]`). Empty array on a clean pass. `panel` indicates `"request"` or `"response"`. |
-| `pii:scrubbed` | When at least one PII entity was detected and replaced | `{ entities: string[] }` — entity types that were replaced. Also emitted alongside `pii:evaluated` on a hit. |
+| `guardrail:evaluated` | After every guardrail check on each target, whether or not any rule fires | `{ target: "request"\|"response", rules: [{ rule, outcome, reason? }] }`. One object per rule. `outcome` is `passed`, `triggered`, or `skipped`. `reason` is set on skipped rules (e.g. `judge-failed`) and on scoring rules (e.g. `regex:<pattern>`, `semantic:82%`). The built-in prompt-injection check appears as `rule: "injection"`. |
+| `guardrail:triggered` | Emitted whenever a rule triggers (block or log) on the request side | `{ rule, target, block, log, blockMessage }` |
+| `guardrail:response-triggered` | Emitted whenever a rule triggers (block or log) on the response side | `{ rule, target, block, log, blockMessage }` |
+| `pii:evaluated` | After every PII scrubbing pass, whether or not anything was redacted | `{ redacted: string[] }`. Entity types found (e.g. `["EMAIL"]`). Empty array on a clean pass. `panel` indicates `"request"` or `"response"`. |
+| `pii:scrubbed` | When at least one PII entity was detected and replaced | `{ entities: string[] }`. Entity types that were replaced. Also emitted alongside `pii:evaluated` on a hit. |
 
 Use the `x-routerly-trace-id` header from any LLM proxy response — present even on blocked responses — to look up its trace:
 

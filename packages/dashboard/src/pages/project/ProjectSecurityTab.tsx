@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, Trash2 } from 'lucide-react';
+import { Check, Trash2, AlertTriangle } from 'lucide-react';
 import {
   getModels,
   updateProject,
@@ -51,13 +51,13 @@ function makeDefaultRule(type: GuardrailRuleType): RuleWithId {
   const _id = crypto.randomUUID();
   switch (type) {
     case 'regex':
-      return { _id, type, target: 'request', config: { patterns: [] } };
+      return { _id, type, target: 'request', block: true, config: { patterns: [] } };
     case 'semantic':
-      return { _id, type, target: 'request', config: { embeddingModelId: '', examples: [], threshold: 0.82 } };
+      return { _id, type, target: 'request', block: true, config: { embeddingModelId: '', examples: [], threshold: 0.82 } };
     case 'topic':
-      return { _id, type, target: 'both', config: { modelId: '', allowedTopics: '', threshold: 0.5 } };
+      return { _id, type, target: 'both', block: true, config: { modelId: '', allowedTopics: '', threshold: 0.5 } };
     case 'moderation':
-      return { _id, type, target: 'both', config: { modelId: '', threshold: 0.5 } };
+      return { _id, type, target: 'both', block: true, config: { modelId: '', threshold: 0.5 } };
   }
 }
 
@@ -82,11 +82,26 @@ function PiiPolicyCard({
   onRemove: () => void;
 }) {
   const entities: Set<PiiEntity> = new Set(policy.entities ?? ALL_PII_ENTITIES);
+  const showsResponse = policy.target === 'response' || policy.target === 'both';
 
   function toggleEntity(e: PiiEntity) {
     const next = new Set(entities);
     next.has(e) ? next.delete(e) : next.add(e);
     onChange({ ...policy, entities: [...next] });
+  }
+
+  // TargetSelector inline (same logic as the guardrail one below)
+  function handleTargetToggle(side: 'request' | 'response') {
+    const reqChecked = policy.target === 'request' || policy.target === 'both';
+    const resChecked = policy.target === 'response' || policy.target === 'both';
+    const newReq = side === 'request' ? !reqChecked : reqChecked;
+    const newRes = side === 'response' ? !resChecked : resChecked;
+    if (!newReq && !newRes) return;
+    let next: GuardrailTarget;
+    if (newReq && newRes) next = 'both';
+    else if (newReq) next = 'request';
+    else next = 'response';
+    onChange({ ...policy, target: next });
   }
 
   return (
@@ -121,26 +136,39 @@ function PiiPolicyCard({
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: 16, marginBottom: 10, flexWrap: 'wrap' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', cursor: 'pointer' }}>
-          <input
-            type="checkbox"
-            checked={policy.scrubInput === true}
-            onChange={e => onChange({ ...policy, scrubInput: e.target.checked })}
-            style={{ width: 13, height: 13, accentColor: 'var(--primary)', cursor: 'pointer' }}
-          />
-          Scrub input
-        </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', cursor: 'pointer' }}>
-          <input
-            type="checkbox"
-            checked={policy.scrubOutput === true}
-            onChange={e => onChange({ ...policy, scrubOutput: e.target.checked })}
-            style={{ width: 13, height: 13, accentColor: 'var(--primary)', cursor: 'pointer' }}
-          />
-          Scrub output
-        </label>
+      {/* Target selector (reuses the same checkbox pattern as TargetSelector) */}
+      <div className="form-group" style={{ marginBottom: 10 }}>
+        <label className="form-label" style={{ fontSize: '0.72rem' }}>Apply to</label>
+        <div style={{ display: 'flex', gap: 16 }}>
+          {(['request', 'response'] as const).map(side => (
+            <label key={side} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.85rem' }}>
+              <input
+                type="checkbox"
+                checked={side === 'request' ? (policy.target === 'request' || policy.target === 'both') : (policy.target === 'response' || policy.target === 'both')}
+                onChange={() => handleTargetToggle(side)}
+                style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
+              />
+              {side}
+            </label>
+          ))}
+        </div>
       </div>
+
+      {/* Streaming buffer — only when response is targeted */}
+      {showsResponse && (
+        <div className="form-group" style={{ marginBottom: 10, marginLeft: 0 }}>
+          <label className="form-label" style={{ fontSize: '0.72rem' }}>Streaming buffer size (characters)</label>
+          <input
+            className="form-input"
+            type="number"
+            min={10}
+            max={500}
+            value={policy.outputBufferSize ?? 30}
+            onChange={e => onChange({ ...policy, outputBufferSize: Math.max(10, Math.min(500, Number(e.target.value))) })}
+            style={{ width: 100 }}
+          />
+        </div>
+      )}
 
       <div style={{ marginBottom: 10 }}>
         <label className="form-label" style={{ fontSize: '0.72rem' }}>Entity types</label>
@@ -413,6 +441,11 @@ function RuleCard({ rule, onChange, onDelete, regexErrors, modelOptions, embeddi
   modelOptions: { value: string; label: string }[];
   embeddingModelOptions: { value: string; label: string }[];
 }) {
+  const supportsJudge = rule.type === 'topic' || rule.type === 'moderation';
+  const blockMessageLabel = supportsJudge && rule.useJudgeResponse
+    ? 'Fallback message (used if the judge fails)'
+    : 'Block message';
+
   return (
     <div style={{
       background: 'var(--surface-active)',
@@ -430,24 +463,29 @@ function RuleCard({ rule, onChange, onDelete, regexErrors, modelOptions, embeddi
           {RULE_TYPE_LABELS[rule.type]}
         </span>
         <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', flex: 1 }}>{rule.target}</span>
-        {/* ponytail: per-rule action override; undefined = use global */}
-        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Action:</span>
-          {([undefined, 'block', 'log'] as const).map(opt => (
-            <button
-              key={opt ?? 'global'}
-              type="button"
-              className={`btn btn-sm${rule.action === opt ? ' btn-primary' : ' btn-secondary'}`}
-              style={{ fontSize: '0.7rem', padding: '1px 7px' }}
-              onClick={() => {
-                const { action: _a, ...rest } = rule;
-                onChange(opt === undefined ? rest as RuleWithId : { ...rest, action: opt });
-              }}
-            >
-              {opt === undefined ? 'Global' : opt.charAt(0).toUpperCase() + opt.slice(1)}
-            </button>
-          ))}
-        </div>
+
+        {/* Block and Log independent checkboxes */}
+        <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          <input
+            type="checkbox"
+            data-testid="rule-block"
+            checked={rule.block === true}
+            onChange={e => onChange({ ...rule, block: e.target.checked })}
+            style={{ width: 13, height: 13, accentColor: 'var(--primary)', cursor: 'pointer' }}
+          />
+          Block
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          <input
+            type="checkbox"
+            data-testid="rule-log"
+            checked={rule.log === true}
+            onChange={e => onChange({ ...rule, log: e.target.checked })}
+            style={{ width: 13, height: 13, accentColor: 'var(--primary)', cursor: 'pointer' }}
+          />
+          Log
+        </label>
+
         <button
           type="button"
           onClick={onDelete}
@@ -457,6 +495,45 @@ function RuleCard({ rule, onChange, onDelete, regexErrors, modelOptions, embeddi
           <Trash2 size={14} />
         </button>
       </div>
+
+      {/* Block message — shown when block is checked */}
+      {rule.block && (
+        <div className="form-group" style={{ marginTop: 10, marginBottom: 0 }}>
+          <label className="form-label" style={{ fontSize: '0.72rem' }}>{blockMessageLabel}</label>
+          <input
+            className="form-input"
+            data-testid="rule-block-message"
+            type="text"
+            value={rule.blockMessage ?? ''}
+            onChange={e => {
+              const val = e.target.value;
+              const next: RuleWithId = { ...rule };
+              if (val) next.blockMessage = val; else delete next.blockMessage;
+              onChange(next);
+            }}
+            placeholder="Request blocked by content policy."
+            style={{ fontSize: '0.85rem' }}
+          />
+        </div>
+      )}
+
+      {/* Use judge response — topic/moderation only */}
+      {supportsJudge && (
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', cursor: 'pointer', marginTop: 10 }}>
+          <input
+            type="checkbox"
+            data-testid="rule-use-judge"
+            checked={rule.useJudgeResponse === true}
+            onChange={e => {
+              const next: RuleWithId = { ...rule };
+              if (e.target.checked) next.useJudgeResponse = true; else delete next.useJudgeResponse;
+              onChange(next);
+            }}
+            style={{ width: 13, height: 13, accentColor: 'var(--primary)', cursor: 'pointer' }}
+          />
+          Use judge response
+        </label>
+      )}
 
       {rule.type === 'regex'      && <RegexFields      rule={rule} onChange={onChange} regexErrors={regexErrors} />}
       {rule.type === 'semantic'   && <SemanticFields   rule={rule} onChange={onChange} modelOptions={embeddingModelOptions} />}
@@ -469,6 +546,37 @@ function RuleCard({ rule, onChange, onDelete, regexErrors, modelOptions, embeddi
 // ── Add-rule picker ───────────────────────────────────────────────────────────
 
 const ALL_RULE_TYPES: GuardrailRuleType[] = ['regex', 'semantic', 'topic', 'moderation'];
+
+// ── Streaming-disabled warning ────────────────────────────────────────────────
+
+function StreamingDisabledWarning() {
+  return (
+    <div
+      data-testid="streaming-disabled-warning"
+      style={{
+        display: 'flex', gap: 10, alignItems: 'flex-start',
+        padding: '12px 16px',
+        marginBottom: 16,
+        borderRadius: 8,
+        background: 'color-mix(in srgb, #f59e0b 10%, transparent)',
+        border: '1px solid color-mix(in srgb, #f59e0b 40%, transparent)',
+      }}
+    >
+      <AlertTriangle size={16} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />
+      <div>
+        <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 600, color: '#b45309' }}>
+          Streaming disabled for this project
+        </p>
+        <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+          One or more rules are configured to block responses (target: response or both). Because the entire response must be
+          inspected before a blocking decision can be made, Routerly holds the response in full before returning it
+          to the client. Streaming is not available while a response-blocking rule is active; clients will receive the
+          complete response at once instead of in incremental chunks.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 // ── Main component ────────────────────────────────────────────────────────────
 
@@ -485,50 +593,24 @@ export function ProjectSecurityTab() {
   }, []);
 
   // Guardrails state
-  const [action, setAction] = useState<'block' | 'log'>('block');
-  const [fallbackMessage, setFallbackMessage] = useState('');
+  const [detectInjection, setDetectInjection] = useState(false);
   const [rules, setRules] = useState<RuleWithId[]>([]);
 
   // PII state
-  const [piiEntities, setPiiEntities] = useState<Set<PiiEntity>>(new Set(ALL_PII_ENTITIES));
-  const [piiCustomPatterns, setPiiCustomPatterns] = useState('');
-  const [piiPatternErrors, setPiiPatternErrors] = useState<number[]>([]);
-  const [scrubInput, setScrubInput] = useState(true);
-  const [scrubOutput, setScrubOutput] = useState(false);
-  const [outputBufferSize, setOutputBufferSize] = useState(30);
   const [piiPolicies, setPiiPolicies] = useState<PiiPolicy[]>([]);
 
   useEffect(() => {
     if (!project) return;
     const g = project.guardrails;
     if (g) {
-      setAction(g.action === 'flag' ? 'log' : (g.action ?? 'block'));
-      setFallbackMessage(g.fallbackMessage ?? '');
+      setDetectInjection(g.detectInjection === true);
       setRules((g.rules ?? []).map(r => ({ ...r, _id: crypto.randomUUID() })));
     }
     const p = project.pii;
     if (p) {
-      setPiiEntities(new Set(p.entities ?? ALL_PII_ENTITIES));
-      setPiiCustomPatterns((p.customPatterns ?? []).join('\n'));
-      setScrubInput(p.scrubInput !== false);
-      setScrubOutput(p.scrubOutput === true);
-      setOutputBufferSize(p.outputBufferSize ?? 30);
       setPiiPolicies(p.policies ?? []);
     }
   }, [project]);
-
-  function togglePiiEntity(entity: PiiEntity) {
-    setPiiEntities(prev => {
-      const next = new Set(prev);
-      next.has(entity) ? next.delete(entity) : next.add(entity);
-      return next;
-    });
-  }
-
-  function validatePiiPatterns(val: string) {
-    setPiiCustomPatterns(val);
-    setPiiPatternErrors(validateRegexLines(val));
-  }
 
   function updateRule(id: string, updated: RuleWithId) {
     setRules(prev => prev.map(r => r._id === id ? updated : r));
@@ -551,7 +633,12 @@ export function ProjectSecurityTab() {
     }
   }
   const hasRegexErrors = Object.keys(regexErrorsByRule).length > 0;
-  const saveDisabled = saving || hasRegexErrors || piiPatternErrors.length > 0;
+  const saveDisabled = saving || hasRegexErrors;
+
+  // Show streaming-disabled warning when any rule blocks a response
+  const hasResponseBlockingRule = rules.some(
+    r => r.block === true && (r.target === 'response' || r.target === 'both'),
+  );
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -561,20 +648,12 @@ export function ProjectSecurityTab() {
     try {
       const strippedRules: GuardrailRule[] = rules.map(({ _id: _dropped, ...rest }) => rest);
       const guardrailsPayload: GuardrailConfig = {
-        action,
-        ...(action === 'block' && fallbackMessage.trim() ? { fallbackMessage: fallbackMessage.trim() } : {}),
+        ...(detectInjection ? { detectInjection } : {}),
         rules: strippedRules,
       };
       const validPolicies = piiPolicies.filter(p => p.name.trim());
       const piiPayload: PiiConfig = {
-        entities: [...piiEntities],
-        scrubInput,
-        scrubOutput,
-        outputBufferSize,
-        ...(piiCustomPatterns.trim() ? {
-          customPatterns: piiCustomPatterns.split('\n').map(s => s.trim()).filter(Boolean),
-        } : {}),
-        ...(validPolicies.length > 0 ? { policies: validPolicies } : {}),
+        policies: validPolicies,
       };
       const updated = await updateProject(project.id, {
         name: project.name,
@@ -613,41 +692,24 @@ export function ProjectSecurityTab() {
           Inspect requests and responses against configured rules. Active when at least one rule is configured.
         </p>
 
-        {/* Action */}
+        {/* Detect injection toggle */}
         <div className="form-group" style={{ marginBottom: 16 }}>
-          <label className="form-label" style={{ fontSize: '0.75rem' }}>Action when triggered</label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {(['block', 'log'] as const).map(opt => (
-              <button
-                key={opt}
-                type="button"
-                className={`btn btn-sm${action === opt ? ' btn-primary' : ' btn-secondary'}`}
-                onClick={() => setAction(opt)}
-              >
-                {opt.charAt(0).toUpperCase() + opt.slice(1)}
-              </button>
-            ))}
-          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.88rem' }}>
+            <input
+              type="checkbox"
+              checked={detectInjection}
+              onChange={e => setDetectInjection(e.target.checked)}
+              style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
+            />
+            Detect prompt injection
+          </label>
+          <p style={{ margin: '4px 0 0 22px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            Runs built-in injection detection on every request; a hit blocks and is logged.
+          </p>
         </div>
 
-        {/* Fallback message — advanced, block only */}
-        {action === 'block' && (
-          <details style={{ marginBottom: 16 }}>
-            <summary style={{ cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)', userSelect: 'none', marginBottom: 8 }}>
-              Advanced
-            </summary>
-            <div className="form-group" style={{ marginTop: 8 }}>
-              <label className="form-label" style={{ fontSize: '0.75rem' }}>Fallback message</label>
-              <input
-                className="form-input"
-                type="text"
-                value={fallbackMessage}
-                onChange={e => setFallbackMessage(e.target.value)}
-                placeholder="Request blocked by content policy."
-              />
-            </div>
-          </details>
-        )}
+        {/* Streaming-disabled warning */}
+        {hasResponseBlockingRule && <StreamingDisabledWarning />}
 
         {/* Rules */}
         <div>
@@ -687,118 +749,34 @@ export function ProjectSecurityTab() {
         </div>
       </div>
 
-      {/* ── PII Scrubbing ──────────────────────────────────────────────────── */}
+      {/* ── PII Policies ───────────────────────────────────────────────────── */}
       <div style={{ marginBottom: 32 }}>
-        <label className="form-label">PII Scrubbing</label>
+        <label className="form-label">PII Policies</label>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
-          Detect and redact personal data before it reaches the model. Active when entity types are selected.
+          Detect and redact personal data. Each policy targets request input, model response, or both, and controls its own entity set.
         </p>
 
-        <div className="form-group" style={{ marginBottom: 16 }}>
-          <label className="form-label" style={{ fontSize: '0.75rem' }}>Apply to</label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.88rem' }}>
-              <input
-                type="checkbox"
-                checked={scrubInput}
-                onChange={e => setScrubInput(e.target.checked)}
-                style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
-              />
-              Request — messages sent to the model
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.88rem' }}>
-              <input
-                type="checkbox"
-                checked={scrubOutput}
-                onChange={e => setScrubOutput(e.target.checked)}
-                style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
-              />
-              Response — model output returned to the consumer
-            </label>
-            {scrubOutput && (
-              <div className="form-group" style={{ marginBottom: 0, marginLeft: 22 }}>
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Streaming buffer size (characters)</label>
-                <input
-                  className="form-input"
-                  type="number"
-                  min={10}
-                  max={500}
-                  value={outputBufferSize}
-                  onChange={e => setOutputBufferSize(Math.max(10, Math.min(500, Number(e.target.value))))}
-                  style={{ width: 100 }}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="form-group" style={{ marginBottom: 16 }}>
-          <label className="form-label" style={{ fontSize: '0.75rem' }}>Entity types</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {ALL_PII_ENTITIES.map(entity => {
-              const active = piiEntities.has(entity);
-              return (
-                <label key={entity} style={{
-                  display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.85rem',
-                  padding: '4px 10px', border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
-                  borderRadius: 6, background: active ? 'color-mix(in srgb, var(--primary) 12%, transparent)' : 'transparent',
-                  transition: 'all 0.15s',
-                }}>
-                  <input
-                    type="checkbox"
-                    checked={active}
-                    onChange={() => togglePiiEntity(entity)}
-                    style={{ width: 13, height: 13, accentColor: 'var(--primary)', cursor: 'pointer' }}
-                  />
-                  {PII_LABELS[entity]}
-                </label>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="form-group" style={{ marginBottom: 0 }}>
-          <label className="form-label" style={{ fontSize: '0.75rem' }}>Custom patterns (regex, one per line)</label>
-          <textarea
-            className="form-input"
-            rows={3}
-            value={piiCustomPatterns}
-            onChange={e => validatePiiPatterns(e.target.value)}
-            placeholder={'\\b\\d{8}\\b'}
-            style={{
-              resize: 'vertical', fontFamily: 'monospace', fontSize: '0.85rem',
-              ...(piiPatternErrors.length > 0 ? { borderColor: 'var(--error, #ef4444)' } : {}),
-            }}
+        {piiPolicies.map((policy, i) => (
+          <PiiPolicyCard
+            key={i}
+            policy={policy}
+            onChange={updated => setPiiPolicies(prev => prev.map((p, j) => j === i ? updated : p))}
+            onRemove={() => setPiiPolicies(prev => prev.filter((_, j) => j !== i))}
           />
-          {piiPatternErrors.length > 0 && (
-            <p style={{ fontSize: '0.75rem', color: 'var(--error, #ef4444)', marginTop: 2 }}>
-              Invalid regex on line(s): {piiPatternErrors.map(i => i + 1).join(', ')}
-            </p>
-          )}
-        </div>
-
-        <div style={{ marginTop: 24 }}>
-          <label className="form-label" style={{ fontSize: '0.75rem' }}>Named Policies</label>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
-            Additional policies merged at scrub time. Each policy controls its own entity set and direction.
+        ))}
+        {piiPolicies.length === 0 && (
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: 12 }}>
+            No PII policies configured.
           </p>
-          {piiPolicies.map((policy, i) => (
-            <PiiPolicyCard
-              key={i}
-              policy={policy}
-              onChange={updated => setPiiPolicies(prev => prev.map((p, j) => j === i ? updated : p))}
-              onRemove={() => setPiiPolicies(prev => prev.filter((_, j) => j !== i))}
-            />
-          ))}
-          <button
-            type="button"
-            className="btn btn-secondary"
-            style={{ fontSize: '0.85rem' }}
-            onClick={() => setPiiPolicies(prev => [...prev, { name: '', enabled: true, scrubInput: true, entities: [] }])}
-          >
-            + Add Policy
-          </button>
-        </div>
+        )}
+        <button
+          type="button"
+          className="btn btn-secondary"
+          style={{ fontSize: '0.85rem' }}
+          onClick={() => setPiiPolicies(prev => [...prev, { name: '', enabled: true, target: 'request', entities: [] }])}
+        >
+          + Add Policy
+        </button>
       </div>
 
       <button

@@ -278,17 +278,24 @@ export interface GuardrailRule {
   enabled?: boolean;
   target: GuardrailTarget;
   config: RegexGuardConfig | SemanticGuardConfig | TopicGuardConfig | ModerationGuardConfig;
-  /** Per-rule action override. When set, takes precedence over GuardrailConfig.action. */
-  action?: 'block' | 'log';
+  /** Stop the request/response when this rule triggers. */
+  block?: boolean;
+  /** Record the trigger in usage (monitor) even when it does not block. */
+  log?: boolean;
+  /** Static message returned to the client when this rule blocks. Falls back to a built-in default when absent. */
+  blockMessage?: string;
+  /**
+   * (topic/moderation only) Use the judge model's own explanation as the block
+   * response. The judge is asked to return `{ score, message }`; on block the
+   * `message` is returned to the client, falling back to `blockMessage` (then a
+   * built-in default) when the judge fails or returns none.
+   */
+  useJudgeResponse?: boolean;
 }
 
-/** Content guardrail configuration for a project (#77). Presence of this config activates guardrails — no separate enabled flag. */
+/** Content guardrail configuration for a project (#77). Presence of this config activates guardrails — no separate enabled flag. Each rule carries its own block/log action. */
 export interface GuardrailConfig {
-  /** What to do when a rule triggers */
-  action: 'block' | 'log';
-  /** Message returned to the client when action='block' */
-  fallbackMessage?: string;
-  /** When true, run built-in prompt-injection detection on every request (top-level, not a rule). */
+  /** When true, run built-in prompt-injection detection on every request (top-level, not a rule). A hit blocks and is logged. */
   detectInjection?: boolean;
   /** Ordered list of rules evaluated in sequence; first match wins. */
   rules: GuardrailRule[];
@@ -297,33 +304,35 @@ export interface GuardrailConfig {
 /** PII entity types detected and scrubbed before forwarding (#76). */
 export type PiiEntity = 'EMAIL' | 'PHONE' | 'CREDIT_CARD' | 'SSN' | 'IBAN';
 
-/** A named PII policy with its own entity set, patterns, and per-direction targets (#76). All enabled policies are merged at scrub time. */
+/**
+ * A named PII policy with its own entity set, patterns, direction, and streaming
+ * buffer (#76). All enabled policies are merged per-direction at scrub time.
+ */
 export interface PiiPolicy {
   name: string;
   /** Default true when absent. */
   enabled?: boolean;
   entities?: PiiEntity[];
   customPatterns?: string[];
-  /** Include this policy when scrubbing request input. Default false. */
-  scrubInput?: boolean;
-  /** Include this policy when scrubbing model output. Default false. */
-  scrubOutput?: boolean;
+  /** Which side(s) to scrub: request input, model response, or both. */
+  target: GuardrailTarget;
+  /**
+   * Suffix buffer size (chars) for streaming response scrubbing. The last N chars
+   * are held back until the next chunk arrives, so patterns spanning chunk
+   * boundaries are caught. Defaults to 30. Only relevant when `target` includes
+   * response. When several response policies are active the largest value wins.
+   */
+  outputBufferSize?: number;
 }
 
-/** PII detection and scrubbing configuration for a project (#76). Presence of this config activates PII scrubbing — no separate enabled flag. */
+/**
+ * PII detection and scrubbing configuration for a project (#76). Just a list of
+ * named policies; the presence of at least one enabled policy activates
+ * scrubbing. Each policy controls its own entity set, patterns, and direction.
+ */
 export interface PiiConfig {
-  /** Entity types to scrub. Defaults to all when absent. */
-  entities?: PiiEntity[];
-  /** Custom regex patterns to scrub; matches replaced with [REDACTED]. */
-  customPatterns?: string[];
-  /** Scrub PII from request messages before forwarding to the model. Defaults to true. */
-  scrubInput?: boolean;
-  /** Scrub PII from model responses before returning to the consumer. Defaults to false. Uses suffix buffering in streaming mode. */
-  scrubOutput?: boolean;
-  /** Suffix buffer size (chars) for streaming output scrubbing. The last N chars are held back until the next chunk arrives, so patterns spanning chunk boundaries are caught. Defaults to 30. Larger values catch longer split patterns at the cost of added latency. */
-  outputBufferSize?: number;
-  /** Additional named policies merged at scrub time. */
-  policies?: PiiPolicy[];
+  /** Named policies merged per-direction at scrub time. */
+  policies: PiiPolicy[];
 }
 
 export type ProjectRole = 'viewer' | 'editor' | 'admin';

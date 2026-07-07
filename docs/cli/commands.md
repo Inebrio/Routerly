@@ -455,7 +455,7 @@ routerly project member remove my-api --email user@example.com
 
 ### Guardrails — `routerly project guardrails`
 
-Manage the content guardrail configuration for a project. Guardrails evaluate each request and/or response against a set of active security policies; all policies run in parallel and apply the configured action (`block`, `flag`, or `log`) independently.
+Manage the content guardrail configuration for a project. Guardrails evaluate each request and/or response against an ordered list of rules; each enabled rule is evaluated and triggers its configured block and/or log actions independently.
 
 #### `routerly project guardrails <project>`
 
@@ -470,34 +470,35 @@ Output example:
 
 ```
 Guardrails - my-api
-Enabled: yes   Action: block   Fallback: "This request was blocked"
+Detect Injection: yes
 
-Active Security Policies:
+Active Security Rules:
   #   Type          Target      Summary
-  0   regex         request     2 pattern(s)
-  1   injection     request     (built-in patterns)
-  2   semantic      both        model: text-embedding-3-small, 3 example(s), threshold: 0.82
-  3   topic         both        model: gpt-4o-mini, threshold: 0.5
-  4   moderation    both        model: claude-haiku-4-5, threshold: 0.5
+  0   regex         request     2 pattern(s) [block]
+  1   semantic      both        model: text-embedding-3-small, 3 example(s) [log]
+  2   topic         response    model: claude-haiku-4-5 [block+log] [judge-response]
+  3   moderation    request     model: claude-haiku-4-5 [block]
 ```
 
-#### Master toggle and action
+The summary suffix shows action tags:
+- `[block]`: the rule blocks on trigger
+- `[log]`: the rule logs trigger in usage (monitor)
+- `[block+log]`: the rule both blocks and logs
+- `[judge-response]`: the rule uses the judge model's message as the block reply
+
+#### Detect Injection
 
 ```bash
-routerly project guardrails my-api --enable
-routerly project guardrails my-api --disable
-routerly project guardrails my-api --action block
-routerly project guardrails my-api --fallback "Your request was blocked by content policy."
+routerly project guardrails my-api --detect-injection
+routerly project guardrails my-api --no-detect-injection
 ```
 
 | Option | Description |
 |--------|-------------|
-| `--enable` | Enable the guardrail master toggle |
-| `--disable` | Disable the guardrail master toggle |
-| `--action <block\|flag\|log>` | Action taken when a rule triggers |
-| `--fallback <message>` | Message returned to the client when `action=block` |
+| `--detect-injection` | Enable built-in prompt-injection detector (blocks and logs on hit) |
+| `--no-detect-injection` | Disable prompt-injection detector |
 
-#### Adding a security policy
+#### Adding a security rule
 
 ```bash
 routerly project guardrails my-api --add-rule
@@ -505,28 +506,83 @@ routerly project guardrails my-api --add-rule
 
 Launches an interactive wizard. Steps:
 
-1. **Policy type** — choose from:
-   - `regex` — block requests/responses matching regex patterns
-   - `injection` — detect prompt injection attacks (built-in patterns, no config required)
-   - `semantic` — block semantically similar content using embeddings
-   - `topic` — block off-topic requests using an LLM judge
-   - `moderation` — detect harmful content using an LLM judge
+1. **Rule type**: choose from:
+   - `regex`: block requests/responses matching regex patterns
+   - `semantic`: block semantically similar content using embeddings
+   - `topic`: block off-topic requests using an LLM judge
+   - `moderation`: detect harmful content using an LLM judge
 
-2. **Target** — `request`, `response`, or `both` (skipped for `injection`, which always targets `request`)
+2. **Target**: `request`, `response`, or `both`
 
-3. **Type-specific fields** — prompts depend on the policy type selected
+3. **Block and Log**: independent checkboxes.
+   - Block: reject when this rule triggers (default: true on add)
+   - Log: record the trigger in usage (default: false on add)
 
-New security policies are appended to the end of the list and are active by default.
+4. **Block Message**: custom message returned when the rule blocks (prompted only if Block is enabled). Leave empty for built-in default.
 
-#### Removing a security policy
+5. **Judge Response**: (topic/moderation only, when Block is enabled) use the judge model's own explanation as the block message. When true, the judge is asked to return `{ score, message }` and the message is returned on block, with the static Block Message as fallback if the judge fails.
+
+6. **Type-specific fields**: prompts depend on the rule type selected.
+
+New rules are appended to the end of the list and are active by default.
+
+#### Removing a security rule
 
 ```bash
-routerly project guardrails my-api --remove-rule 2   # delete policy at index 2
+routerly project guardrails my-api --remove-rule 2   # delete rule at index 2
 ```
 
 | Option | Description |
 |--------|-------------|
-| `--remove-rule <index>` | Remove the security policy at 0-based index |
+| `--remove-rule <index>` | Remove the security rule at 0-based index |
+
+---
+
+### PII: `routerly project pii`
+
+Manage PII scrubbing policies for a project. PII detection and scrubbing configuration uses named policies, each with its own entity set, patterns, direction, and streaming buffer.
+
+#### `routerly project pii list <project>`
+
+List all PII policies for a project.
+
+```bash
+routerly project pii list my-api
+routerly project pii list my-api --json
+```
+
+Output example:
+
+```
+PII Policies - my-api
+  #   Name               Enabled   Target     Entities
+  0   default            yes       both       EMAIL, PHONE, CREDIT_CARD, SSN, IBAN
+  1   pii-request-only   yes       request    EMAIL, PHONE
+```
+
+#### `routerly project pii add <project>`
+
+Add a new PII policy.
+
+```bash
+routerly project pii add my-api
+```
+
+Launches an interactive wizard. Steps:
+
+1. **Policy name**: unique identifier for this policy
+2. **Target**: `request`, `response`, or `both` (which side(s) to scrub)
+3. **Entities**: comma-separated list of entity types to detect (EMAIL, PHONE, CREDIT_CARD, SSN, IBAN). Leave empty to include none.
+4. **Custom patterns**: comma-separated regex patterns to scrub in addition to entity detection. Leave empty for none.
+5. **Output buffer size**: (response scrubbing only) suffix buffer size in characters (default 30, valid range: 10 to 500). Used to catch patterns spanning chunk boundaries when streaming. Prompted only when target includes response.
+
+#### `routerly project pii remove <project> <policy-name>`
+
+Remove a PII policy by name.
+
+```bash
+routerly project pii remove my-api default
+```
 
 ---
 

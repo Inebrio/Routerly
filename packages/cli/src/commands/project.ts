@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import type { ProjectConfig, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiPolicy } from '@routerly/shared';
+import type { ProjectConfig, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiConfig, PiiPolicy } from '@routerly/shared';
 
 // ─── Helper: resolve project by name or ID ────────────────────────────────────
 
@@ -739,23 +739,29 @@ Examples:
 // ─── Guardrail helpers ────────────────────────────────────────────────────────
 
 function rulesSummary(rule: GuardrailRule): string {
-  let summary: string;
+  let detail: string;
   switch (rule.type) {
-    case 'regex': summary = `${(rule.config as RegexGuardConfig).patterns.length} pattern(s)`; break;
+    case 'regex': detail = `${(rule.config as RegexGuardConfig).patterns.length} pattern(s)`; break;
     case 'semantic': {
       const c = rule.config as SemanticGuardConfig;
-      summary = `model: ${c.embeddingModelId}, ${c.examples.length} example(s), threshold: ${c.threshold ?? 0.82}`; break;
+      detail = `model: ${c.embeddingModelId}, ${c.examples.length} example(s), threshold: ${c.threshold ?? 0.82}`; break;
     }
     case 'topic': {
       const c = rule.config as TopicGuardConfig;
-      summary = `model: ${c.modelId}, threshold: ${c.threshold ?? 0.5}`; break;
+      detail = `model: ${c.modelId}, threshold: ${c.threshold ?? 0.5}`; break;
     }
     case 'moderation': {
       const c = rule.config as ModerationGuardConfig;
-      summary = `model: ${c.modelId}, threshold: ${c.threshold ?? 0.5}`; break;
+      detail = `model: ${c.modelId}, threshold: ${c.threshold ?? 0.5}`; break;
     }
   }
-  return rule.action ? `${summary} [${rule.action}]` : summary;
+  // build action badge: [block], [log], [block+log], or nothing
+  const parts: string[] = [];
+  if (rule.block) parts.push('block');
+  if (rule.log) parts.push('log');
+  const badge = parts.length ? ` [${parts.join('+')}]` : '';
+  const judge = rule.useJudgeResponse ? ' [judge-response]' : '';
+  return `${detail}${badge}${judge}`;
 }
 
 async function runAddRuleWizard(): Promise<GuardrailRule> {
@@ -783,17 +789,31 @@ async function runAddRuleWizard(): Promise<GuardrailRule> {
   }]) as { target: 'request' | 'response' | 'both' };
   const target = targetAns.target;
 
-  const actionAns = await inquirer.prompt([{
-    type: 'list',
-    name: 'action',
-    message: 'Action when this rule triggers (empty = use project global):',
-    choices: [
-      { name: 'Use project global (default)', value: 'global' },
-      { name: 'block -- return fallback message', value: 'block' },
-      { name: 'log -- record only, do not block', value: 'log' },
-    ],
-  }]) as { action: string };
-  const ruleAction = actionAns.action === 'global' ? undefined : actionAns.action as 'block' | 'log';
+  const actionAns = await inquirer.prompt([
+    { type: 'confirm', name: 'block', message: 'Block request/response when triggered?', default: true },
+    { type: 'confirm', name: 'log', message: 'Log trigger in usage (monitor)?', default: false },
+  ]) as { block: boolean; log: boolean };
+
+  let blockMessage: string | undefined;
+  if (actionAns.block) {
+    const bmAns = await inquirer.prompt([{
+      type: 'input',
+      name: 'blockMessage',
+      message: 'Block message returned to client (leave empty for built-in default):',
+    }]) as { blockMessage: string };
+    blockMessage = bmAns.blockMessage.trim() || undefined;
+  }
+
+  let useJudgeResponse: boolean | undefined;
+  if ((type === 'topic' || type === 'moderation') && actionAns.block) {
+    const judgeAns = await inquirer.prompt([{
+      type: 'confirm',
+      name: 'useJudgeResponse',
+      message: "Use judge model's explanation as the block message?",
+      default: false,
+    }]) as { useJudgeResponse: boolean };
+    useJudgeResponse = judgeAns.useJudgeResponse || undefined;
+  }
 
   let config: GuardrailRule['config'];
 
@@ -846,7 +866,12 @@ async function runAddRuleWizard(): Promise<GuardrailRule> {
     config = mc;
   }
 
-  return { type, target, config, ...(ruleAction ? { action: ruleAction } : {}) };
+  const rule: GuardrailRule = { type, target, config };
+  if (actionAns.block) rule.block = true;
+  if (actionAns.log) rule.log = true;
+  if (blockMessage) rule.blockMessage = blockMessage;
+  if (useJudgeResponse) rule.useJudgeResponse = true;
+  return rule;
 }
 
 // ─── Main project command ─────────────────────────────────────────────────────
@@ -1077,33 +1102,28 @@ Examples:
   // ── project guardrails <project> ─────────────────────────────────────────────
   cmd.command('guardrails <project>')
     .description('Show or update guardrails config for a project')
-    .option('--action <action>', 'Action on violation: block | log')
-    .option('--fallback <message>', 'Fallback message returned to client when action=block')
     .option('--detect-injection', 'Enable built-in prompt injection detection')
     .option('--no-detect-injection', 'Disable built-in prompt injection detection')
     .option('--add-rule', 'Add a new rule (interactive wizard)')
     .option('--remove-rule <index>', 'Remove rule by 0-based index')
-
     .option('--json', 'Output raw JSON (show only)')
     .addHelpText('after', `
 Examples:
   routerly project guardrails my-api
-  routerly project guardrails my-api --enable
-  routerly project guardrails my-api --action block --fallback "Request blocked."
+  routerly project guardrails my-api --detect-injection
+  routerly project guardrails my-api --no-detect-injection
   routerly project guardrails my-api --add-rule
   routerly project guardrails my-api --remove-rule 2
 `)
     .action(async (nameOrId: string, opts: {
-      action?: string; fallback?: string;
       detectInjection?: boolean;
       addRule?: boolean; removeRule?: string; json?: boolean;
     }) => {
       try {
         const project = await resolveProject(nameOrId);
-        const current: GuardrailConfig = project.guardrails ?? { action: 'block', rules: [] };
+        const current: GuardrailConfig = project.guardrails ?? { rules: [] };
 
-        const isUpdate = opts.action || opts.fallback !== undefined ||
-          opts.detectInjection !== undefined ||
+        const isUpdate = opts.detectInjection !== undefined ||
           opts.addRule || opts.removeRule !== undefined;
 
         if (!isUpdate) {
@@ -1113,25 +1133,22 @@ Examples:
             return;
           }
           console.log(chalk.bold(`\nGuardrails — ${project.name}`));
-          const fallbackStr = current.fallbackMessage ? `"${current.fallbackMessage}"` : chalk.dim('(none)');
           const injLabel = current.detectInjection ? chalk.green('yes') : chalk.dim('no');
-          console.log(`Action: ${chalk.cyan(current.action)}   Fallback: ${fallbackStr}   Injection detection: ${injLabel}\n`);
+          console.log(`Injection detection: ${injLabel}\n`);
 
           if (!current.rules.length) {
             console.log(chalk.dim('  No rules configured.'));
           } else {
-            const col: [number, number, number, number, number] = [4, 12, 10, 7, 0];
-            const header = ['#', 'Type', 'Target', 'Action', 'Summary'].map((h, i) => chalk.bold(h).padEnd(col[i] ?? 0));
+            const col: [number, number, number, number] = [4, 12, 10, 0];
+            const header = ['#', 'Type', 'Target', 'Summary'].map((h, i) => chalk.bold(h).padEnd(col[i] ?? 0));
             console.log('Rules:');
             console.log('  ' + header.join('  '));
             current.rules.forEach((rule, idx) => {
               const summary = rulesSummary(rule);
-              const actionCell = rule.action ? chalk.cyan(rule.action) : chalk.dim('global');
               const cells = [
                 String(idx).padEnd(col[0]),
                 rule.type.padEnd(col[1]),
                 rule.target.padEnd(col[2]),
-                actionCell.padEnd(col[3]),
                 summary,
               ];
               console.log('  ' + cells.join('  '));
@@ -1144,8 +1161,6 @@ Examples:
         // ── mutate ───────────────────────────────────────────────────────────────
         const updated: GuardrailConfig = { ...current, rules: [...current.rules] };
 
-        if (opts.action) updated.action = opts.action as 'block' | 'log';
-        if (opts.fallback !== undefined) updated.fallbackMessage = opts.fallback;
         if (opts.detectInjection !== undefined) updated.detectInjection = opts.detectInjection;
 
         if (opts.removeRule !== undefined) {
@@ -1172,63 +1187,131 @@ Examples:
     });
 
   // ── project pii <project> ────────────────────────────────────────────────────
-  cmd.command('pii <project>')
-    .description('Show or update PII detection config for a project')
-    .option('--entities <types>', 'Comma-separated PII entity types (e.g. EMAIL,PHONE,SSN)')
-    .option('--add-policy <name>', 'Add a named PII policy')
-    .option('--remove-policy <name>', 'Remove a named PII policy')
-    .action(async (nameOrId: string, opts: { entities?: string; addPolicy?: string; removePolicy?: string }) => {
+  const piiCmd = new Command('pii').description('Manage PII detection policies for a project');
+
+  piiCmd.command('list <project>')
+    .description('List PII policies for a project')
+    .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  routerly project pii list my-api
+  routerly project pii list my-api --json
+`)
+    .action(async (nameOrId: string, opts: { json?: boolean }) => {
       try {
         const project = await resolveProject(nameOrId);
-        const pii = (project as ProjectConfig & { pii?: Record<string, unknown> }).pii ?? {};
-        const current = pii as { policies?: PiiPolicy[]; entities?: string[]; customPatterns?: string[]; scrubInput?: boolean; scrubOutput?: boolean; outputBufferSize?: number };
-
-        if (opts.addPolicy) {
-          const policies = [...(current.policies ?? [])];
-          if (policies.find(p => p.name === opts.addPolicy)) {
-            console.error(chalk.red(`Policy "${opts.addPolicy}" already exists`));
-            process.exit(1);
-          }
-          policies.push({ name: opts.addPolicy, enabled: true, scrubInput: true, entities: [] });
-          await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/guardrails`, { pii: { ...current, policies } });
-          console.log(chalk.green(`Added policy "${opts.addPolicy}"`));
-          return;
-        }
-
-        if (opts.removePolicy) {
-          const policies = (current.policies ?? []).filter(p => p.name !== opts.removePolicy);
-          await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/guardrails`, { pii: { ...current, policies } });
-          console.log(chalk.green(`Removed policy "${opts.removePolicy}"`));
-          return;
-        }
-
-        const hasUpdate = !!opts.entities;
-        if (!hasUpdate) {
-          console.log(chalk.bold(`\nPII Config — ${project.name}`));
+        const pii = (project as ProjectConfig & { pii?: PiiConfig }).pii ?? { policies: [] };
+        const policies = pii.policies ?? [];
+        if (opts.json) {
           console.log(JSON.stringify(pii, null, 2));
-          if (current.policies?.length) {
-            console.log(chalk.bold('  Policies:'));
-            current.policies.forEach((p, i) => {
-              const status = p.enabled !== false ? chalk.green('enabled') : chalk.dim('disabled');
-              const direction = [p.scrubInput && 'input', p.scrubOutput && 'output'].filter(Boolean).join('+') || 'none';
-              const entities = p.entities?.join(', ') ?? 'all';
-              console.log(`    [${i}] "${p.name}" (${status})  target:${direction}  entities: ${entities}`);
-            });
-          }
           return;
         }
+        console.log(chalk.bold(`\nPII Policies — ${project.name}`));
+        if (!policies.length) {
+          console.log(chalk.dim('  No PII policies configured.'));
+          console.log('');
+          return;
+        }
+        const table = new Table({
+          head: ['#', 'Name', 'Enabled', 'Target', 'Entities', 'Patterns', 'Buffer'].map(h => chalk.cyan(h)),
+        });
+        policies.forEach((p, i) => {
+          const enabled = p.enabled !== false ? chalk.green('yes') : chalk.dim('no');
+          const entities = p.entities?.join(', ') || chalk.dim('(none)');
+          const patterns = p.customPatterns?.length ? String(p.customPatterns.length) : chalk.dim('0');
+          const buffer = p.outputBufferSize !== undefined ? String(p.outputBufferSize) : chalk.dim('30');
+          table.push([i, p.name, enabled, p.target, entities, patterns, buffer]);
+        });
+        console.log(table.toString());
+        console.log('');
+      } catch (err) {
+        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
 
-        const patch: Record<string, unknown> = { ...pii };
-        if (opts.entities) patch.entities = opts.entities.split(',').map(s => s.trim()).filter(Boolean);
+  piiCmd.command('add <project>')
+    .description('Add a PII policy to a project (interactive wizard)')
+    .addHelpText('after', `
+Examples:
+  routerly project pii add my-api
+`)
+    .action(async (nameOrId: string) => {
+      try {
+        const { default: inquirer } = await import('inquirer');
+        const project = await resolveProject(nameOrId);
+        const pii = (project as ProjectConfig & { pii?: PiiConfig }).pii ?? { policies: [] };
+        const policies = [...(pii.policies ?? [])];
 
-        await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/guardrails`, { pii: patch });
-        console.log(chalk.green(`PII config updated for "${project.name}".`));
+        const ans = await inquirer.prompt([
+          { type: 'input', name: 'name', message: 'Policy name:', validate: (v: string) => v.trim().length > 0 || 'Required' },
+          { type: 'list', name: 'target', message: 'Apply to:', choices: ['request', 'response', 'both'] },
+          { type: 'input', name: 'entities', message: 'Entity types to detect (comma-separated, e.g. EMAIL,PHONE,SSN — leave empty for none):', default: '' },
+          { type: 'input', name: 'customPatterns', message: 'Custom regex patterns (comma-separated — leave empty for none):', default: '' },
+        ]) as { name: string; target: 'request' | 'response' | 'both'; entities: string; customPatterns: string };
+
+        let outputBufferSize: number | undefined;
+        if (ans.target === 'response' || ans.target === 'both') {
+          const bufAns = await inquirer.prompt([{
+            type: 'input',
+            name: 'outputBufferSize',
+            message: 'Streaming output buffer size in chars (default 30):',
+            default: '30',
+            validate: (v: string) => { const n = parseInt(v); return (!isNaN(n) && n >= 10 && n <= 500) || 'Must be a number between 10 and 500'; },
+          }]) as { outputBufferSize: string };
+          const n = parseInt(bufAns.outputBufferSize);
+          if (n !== 30) outputBufferSize = n;
+        }
+
+        const name = ans.name.trim();
+        if (policies.find(p => p.name === name)) {
+          console.error(chalk.red(`Policy "${name}" already exists.`));
+          process.exit(1);
+        }
+
+        const policy: PiiPolicy = { name, enabled: true, target: ans.target };
+        const entities = ans.entities.split(',').map((s: string) => s.trim()).filter(Boolean) as PiiPolicy['entities'];
+        if (entities?.length) policy.entities = entities;
+        const patterns = ans.customPatterns.split(',').map((s: string) => s.trim()).filter(Boolean);
+        if (patterns.length) policy.customPatterns = patterns;
+        if (outputBufferSize !== undefined) policy.outputBufferSize = outputBufferSize;
+
+        policies.push(policy);
+        await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/guardrails`, { pii: { policies } });
+        console.log(chalk.green(`PII policy "${name}" added to "${project.name}".`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
         else console.error(chalk.red(`Error: ${err.message}`));
         process.exit(1);
       }
     });
+
+  piiCmd.command('remove <project> <policy-name>')
+    .description('Remove a PII policy from a project')
+    .addHelpText('after', `
+Examples:
+  routerly project pii remove my-api my-policy
+`)
+    .action(async (nameOrId: string, policyName: string) => {
+      try {
+        const project = await resolveProject(nameOrId);
+        const pii = (project as ProjectConfig & { pii?: PiiConfig }).pii ?? { policies: [] };
+        const before = pii.policies ?? [];
+        const policies = before.filter(p => p.name !== policyName);
+        if (policies.length === before.length) {
+          console.error(chalk.red(`Policy "${policyName}" not found in "${project.name}".`));
+          process.exit(1);
+        }
+        await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/guardrails`, { pii: { policies } });
+        console.log(chalk.green(`PII policy "${policyName}" removed from "${project.name}".`));
+      } catch (err) {
+        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
+        else console.error(chalk.red(`Error: ${err.message}`));
+        process.exit(1);
+      }
+    });
+
+  cmd.addCommand(piiCmd);
 
   return cmd;
 }

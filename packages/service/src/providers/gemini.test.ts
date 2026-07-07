@@ -8,10 +8,10 @@ vi.mock('openai', () => ({
   }),
 }))
 
-import { GeminiAdapter } from './gemini.js'
+import { GeminiAdapter, unwrapGeminiError } from './gemini.js'
 import type { ModelConfig, MessagesRequest } from '@routerly/shared'
 
-afterEach(() => { vi.clearAllMocks() })
+afterEach(() => { vi.clearAllMocks(); vi.unstubAllGlobals() })
 
 function makeModel(id = 'gemini-1.5-flash'): ModelConfig {
   return {
@@ -182,5 +182,51 @@ describe('GeminiAdapter.messages', () => {
       makeModel('gemini/gemini-2.5-pro'),
     )
     expect(mockCreate.mock.calls[0]![0].model).toBe('gemini-2.5-pro')
+  })
+})
+
+describe('unwrapGeminiError', () => {
+  it('unwraps array-wrapped Gemini error so the SDK can read .error', async () => {
+    const upstream = new Response(
+      JSON.stringify([{ error: { code: 429, message: 'You exceeded your current quota' } }]),
+      { status: 429, headers: { 'content-type': 'application/json' } },
+    )
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(upstream))
+
+    const res = await unwrapGeminiError('https://generativelanguage.googleapis.com/x', {})
+    expect(res.status).toBe(429)
+    const body = await res.json() as { error?: { message?: string } }
+    expect(body.error?.message).toBe('You exceeded your current quota')
+  })
+
+  it('passes successful responses through untouched (body not consumed)', async () => {
+    const ok = new Response('data: chunk', { status: 200 })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ok))
+
+    const res = await unwrapGeminiError('https://x', {})
+    expect(res).toBe(ok)
+    expect(await res.text()).toBe('data: chunk')
+  })
+
+  it('forwards object-shaped error bodies unchanged', async () => {
+    const upstream = new Response(
+      JSON.stringify({ error: { code: 401, message: 'API key not valid' } }),
+      { status: 401, headers: { 'content-type': 'application/json' } },
+    )
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(upstream))
+
+    const res = await unwrapGeminiError('https://x', {})
+    expect(res.status).toBe(401)
+    const body = await res.json() as { error?: { message?: string } }
+    expect(body.error?.message).toBe('API key not valid')
+  })
+
+  it('forwards non-JSON error bodies as-is', async () => {
+    const upstream = new Response('502 Bad Gateway', { status: 502 })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(upstream))
+
+    const res = await unwrapGeminiError('https://x', {})
+    expect(res.status).toBe(502)
+    expect(await res.text()).toBe('502 Bad Gateway')
   })
 })

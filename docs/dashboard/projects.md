@@ -164,72 +164,82 @@ Configure request filtering and data protection for this project.
 
 **Required permission:** `project:update`
 
+### Detect Injection
+
+Toggle the built-in prompt-injection detector on or off. When enabled, every request is scanned for known injection patterns (e.g. "ignore previous instructions", DAN mode). A hit blocks the request and is logged in usage.
+
 ### Content Guardrails
 
-Enable guardrails to evaluate requests and/or responses against an ordered list of security policies. All security policies run in parallel — multiple policies can be active simultaneously and all execute on every request.
+Enable guardrails to evaluate requests and/or responses against an ordered list of independent rules. Each enabled rule is evaluated in sequence and triggers its configured block and/or log actions independently.
 
-When enabled, configure:
+#### Rule Cards
 
-- **Action** — what to do when a policy triggers:
-  - `Block`: reject before forwarding to the model; return a wire-faithful HTTP 200 with `finish_reason: "content_filter"` (OpenAI) or `stop_reason: "refusal"` (Anthropic)
-  - `Flag`: forward but tag the usage record as `guardrailTriggered` for audit
-  - `Log`: forward silently, write to service logs only
-- **Fallback message** (Block only) — error message returned to the client
-- **Security policies** — list of policy cards; click **+ Add policy** to add one
+Each rule card displays:
+- **Type**: rule category (regex, semantic, topic, moderation)
+- **Target**: request, response, or both
+- **Block** checkbox: when checked, the rule rejects requests/responses on a match
+- **Log** checkbox: when checked, the rule records the trigger in usage even if it doesn't block
+- **Block message**: custom message returned to the client when this rule blocks (appears only if Block is enabled). Leave empty for built-in default.
+- **Use judge response**: (topic/moderation only, when Block is enabled) use the judge model's own explanation as the block message instead of the static block message. The judge is asked to return `{ score, message }`. If the judge fails or returns no message, the static block message is used as fallback.
 
-Each security policy has a **type** and **target** (request / response / both):
+Each rule also displays type-specific configuration fields:
 
 | Type | Target | Config |
 |------|--------|--------|
-| **Regex** | request / response / both | One regex pattern per line (case-insensitive) |
-| **Injection** | request only | No config — uses built-in patterns (jailbreak, DAN, "ignore previous instructions") |
+| **Regex** | request / response / both | Regex patterns (one per line, case-insensitive) |
 | **Semantic** | request / response / both | Embedding model ID, example phrases to block, similarity threshold (0-1, default 0.82) |
 | **Topic** | request / response / both | Judge model ID, allowed-topics description, score threshold (0-1, default 0.5) |
-| **Moderation** | request / response / both | Judge model ID, harm score threshold (0-1, default 0.5) |
-
-##### Moderation policy instructions
-
-You can provide custom instructions that are prepended to the moderation prompt. The JSON response format instruction is always appended automatically and cannot be overridden. This ensures the moderation system always returns structured scores for consistent evaluation.
+| **Moderation** | request / response / both | Judge model ID, harm score threshold (0-1, default 0.5). Optionally provide custom system instructions. |
 
 ##### Model selection
 
 The model dropdowns are filtered by type:
 
-- **Topic and Moderation** judges — show only non-embedding models (chat/completion models). Embedding-only models cannot act as LLM judges and are excluded.
-- **Semantic** embedding field — shows only models with `capabilities.embedding = true`.
+- **Topic and Moderation** judges: show only non-embedding models (chat/completion models). Embedding-only models cannot act as LLM judges and are excluded.
+- **Semantic** embedding field: shows only models with `capabilities.embedding = true`.
 
-This prevents misconfiguration: a topic or moderation rule configured with an embedding model would fail silently at evaluation time.
+#### Streaming Interaction Notice
+
+When a rule has **Block** enabled AND **Target** is response or both, the entire response must be buffered before the block decision is made. In this case, streaming is automatically disabled for the request, and the client receives the full response as a single chunk.
+
+A clear notice box appears on the form when this condition is detected:
+
+> "Responses will be buffered (no streaming) because one or more rules with Block enabled target the response."
 
 #### Consumer impact
 
-When a policy matches and action is `Block`, the request is rejected before reaching the model. Routerly returns **HTTP 200** with a wire-faithful content-filter response — `finish_reason: "content_filter"` (OpenAI) or `stop_reason: "refusal"` (Anthropic) — with empty content. The fallback message is stored on the trace but does not appear in the wire response. API consumers that check `finish_reason`/`stop_reason` will detect the block; those that only read message content will receive an empty reply.
+When a rule matches and Block is enabled, the request is rejected before reaching the model (or the response is rejected before being sent to the client). Routerly returns HTTP 200 with a wire-faithful content-filter response: `finish_reason: "content_filter"` (OpenAI) or `stop_reason: "refusal"` (Anthropic), with empty content. The block message is stored on the trace but does not appear in the wire response. API consumers that check `finish_reason`/`stop_reason` will detect the block; those that only read message content will receive an empty reply.
 
-When action is `Flag` or `Log`, the request is forwarded with no consumer-visible impact. The triggering policy type is recorded on the usage record.
+When Block is unchecked (Log only) or when a rule is skipped, the request is forwarded with no consumer-visible impact. The triggering rule is recorded on the usage record for audit purposes.
 
 ### PII Scrubbing
 
-Enable PII scrubbing to automatically detect and replace sensitive data before requests reach the model, and optionally in the model's response before it is returned to the caller.
+Enable PII scrubbing to automatically detect and replace sensitive data in requests before they reach the model, and optionally in responses before they are returned to the caller.
 
-When enabled, configure:
+PII configuration uses a list of named policies. Click **+ Add policy** to create a new policy. Each policy has:
 
-- **Scrub input** (default on) — scrub user message content before forwarding to the provider.
-- **Scrub output** (default off) — scrub the provider's response content before returning it to the caller. Enable this when the model may echo or repeat sensitive values in its reply.
+- **Name**: unique identifier for this policy
+- **Enabled** toggle: when off, this policy is skipped
+- **Target**: request, response, or both (which side(s) to scrub)
+- **Entity types**: checkboxes for EMAIL, PHONE, CREDIT_CARD, SSN, IBAN. All types are selected by default. Uncheck any type to exclude it from scrubbing.
+- **Custom patterns**: optional regex patterns in addition to entity detection
+- **Streaming buffer size**: (response scrubbing only) suffix buffer size in characters (10-500, default 30). Used to catch patterns spanning chunk boundaries when streaming. Only appears when Target includes response.
 
-Select which entity types to scrub:
+All enabled policies with the same direction (request/response) are merged at scrub time. When multiple response policies are active, the largest buffer size is used.
+
+Matched values are replaced with typed placeholders:
 
 | Entity Type | Placeholder | Notes |
 |-------------|-------------|-------|
-| `Email` | `[EMAIL]` | Email addresses |
-| `Phone` | `[PHONE_NUMBER]` | Phone numbers (US and international formats) |
-| `Credit Card` | `[CREDIT_CARD]` | Card numbers (PAN) |
+| `EMAIL` | `[EMAIL]` | Email addresses |
+| `PHONE` | `[PHONE_NUMBER]` | Phone numbers (US and international formats) |
+| `CREDIT_CARD` | `[CREDIT_CARD]` | Card numbers (PAN) |
 | `SSN` | `[SSN]` | US Social Security Numbers |
 | `IBAN` | `[IBAN]` | International Bank Account Numbers |
 
-All types are selected by default. Uncheck any type to exclude it from scrubbing. Matched values are replaced with their typed placeholders and never stored or forwarded to the model.
-
 #### Consumer impact
 
-PII scrubbing modifies message content before it reaches the model. Original sensitive values are replaced with typed placeholders. The model receives and responds based on the modified version and cannot reference the original values.
+PII scrubbing modifies message content before it reaches the model and/or before responses are returned to the caller. Original sensitive values are replaced with typed placeholders. The model receives and responds based on the modified version and cannot reference the original values.
 
 API consumers calling this project's endpoint should be aware that their messages will be modified in-flight. If your application logic requires the model to see exact credit card numbers, email addresses, or phone numbers, disable scrubbing for those entity types. The usage record will include a `piiRedacted` field listing which entity types were detected and scrubbed.
 
