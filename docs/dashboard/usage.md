@@ -115,11 +115,11 @@ The trace also includes guardrail and PII entries when those features are active
 | Trace entry | When |
 |-------------|------|
 | `guardrail:evaluated` | After every guardrail check -- shows each rule's `outcome` (`passed`, `triggered`, or `skipped`) and `reason`, even when no rule fires |
-| `guardrail:triggered` | A request-side rule matched (action `flag`/`log`; request continued) |
-| `guardrail:response-triggered` | A response-side rule matched |
+| `guardrail:triggered` | A request-side rule matched with log action (request continued) |
+| `guardrail:response-triggered` | A response-side rule matched with log action (response continued) |
 | `pii:scrubbed` | PII was detected and replaced in the request or response |
 
-For a **blocked** request (`action: block`), the trace includes the `guardrail:evaluated` entry and the `fallbackMessage`. The fallback message is stored on the trace only -- it is not included in the wire response sent to the client.
+For a **blocked** request (rule with `block: true`), the trace includes the `guardrail:evaluated` entry and the block message (custom, judge response, or built-in default). The block message is stored on the trace only -- it is not included in the wire response sent to the client.
 
 The **detail panel** for each usage record shows:
 

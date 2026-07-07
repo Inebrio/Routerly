@@ -164,16 +164,23 @@ function resolveTestRecipient(provider: string, to: string | undefined, fallback
   return EMAIL_TEST_PROVIDERS.has(provider) ? fallback : '';
 }
 
+const ruleCommonFields = {
+  enabled: z.boolean().optional(),
+  target: z.enum(['request', 'response', 'both']),
+  block: z.boolean().optional(),
+  log: z.boolean().optional(),
+  blockMessage: z.string().optional(),
+  useJudgeResponse: z.boolean().optional(),
+};
+
 const guardrailRuleSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('regex'), enabled: z.boolean().optional(), action: z.enum(['block', 'log']).optional(), target: z.enum(['request', 'response', 'both']), config: z.object({ patterns: z.array(z.string()) }) }),
-  z.object({ type: z.literal('semantic'), enabled: z.boolean().optional(), action: z.enum(['block', 'log']).optional(), target: z.enum(['request', 'response', 'both']), config: z.object({ embeddingModelId: z.string(), examples: z.array(z.string()), threshold: z.number().min(0).max(1).optional() }) }),
-  z.object({ type: z.literal('topic'), enabled: z.boolean().optional(), action: z.enum(['block', 'log']).optional(), target: z.enum(['request', 'response', 'both']), config: z.object({ modelId: z.string(), allowedTopics: z.string(), threshold: z.number().min(0).max(1).optional() }) }),
-  z.object({ type: z.literal('moderation'), enabled: z.boolean().optional(), action: z.enum(['block', 'log']).optional(), target: z.enum(['request', 'response', 'both']), config: z.object({ modelId: z.string(), threshold: z.number().min(0).max(1).optional(), systemPrompt: z.string().optional() }) }),
+  z.object({ type: z.literal('regex'), ...ruleCommonFields, config: z.object({ patterns: z.array(z.string()) }) }),
+  z.object({ type: z.literal('semantic'), ...ruleCommonFields, config: z.object({ embeddingModelId: z.string(), examples: z.array(z.string()), threshold: z.number().min(0).max(1).optional() }) }),
+  z.object({ type: z.literal('topic'), ...ruleCommonFields, config: z.object({ modelId: z.string(), allowedTopics: z.string(), threshold: z.number().min(0).max(1).optional() }) }),
+  z.object({ type: z.literal('moderation'), ...ruleCommonFields, config: z.object({ modelId: z.string(), threshold: z.number().min(0).max(1).optional(), systemPrompt: z.string().optional() }) }),
 ]);
 
 const guardrailConfigSchema = z.object({
-  action: z.enum(['block', 'log']),
-  fallbackMessage: z.string().optional(),
   detectInjection: z.boolean().optional(),
   rules: z.array(guardrailRuleSchema),
 });
@@ -185,17 +192,12 @@ const piiPolicySchema = z.object({
   enabled: z.boolean().optional(),
   entities: z.array(piiEntityEnum).optional(),
   customPatterns: z.array(z.string()).optional(),
-  scrubInput: z.boolean().optional(),
-  scrubOutput: z.boolean().optional(),
+  target: z.enum(['request', 'response', 'both']),
+  outputBufferSize: z.number().int().min(10).max(500).optional(),
 });
 
 const piiConfigSchema = z.object({
-  entities: z.array(piiEntityEnum).optional(),
-  customPatterns: z.array(z.string()).optional(),
-  scrubInput: z.boolean().optional(),
-  scrubOutput: z.boolean().optional(),
-  outputBufferSize: z.number().int().min(10).max(500).optional(),
-  policies: z.array(piiPolicySchema).optional(),
+  policies: z.array(piiPolicySchema),
 });
 
 export const apiRoutes: FastifyPluginAsync = async (fastify) => {
@@ -1093,7 +1095,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     Body: { name: string; systemPrompt: string; messages?: Array<{ role: 'user' | 'assistant'; content: string }> };
   }>('/api/projects/:id/playground-presets', async (req, reply) => {
     if (!requirePerm(req, 'project:write', reply)) return;
-    const { name, systemPrompt, messages } = req.body ?? {};
+    const { name, systemPrompt, messages } = req.body;
     if (!name?.trim()) return reply.status(400).send({ error: 'name is required' });
     if (systemPrompt === undefined) return reply.status(400).send({ error: 'systemPrompt is required' });
     const projects = await readConfig('projects');
@@ -1518,7 +1520,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (notifPatch !== undefined) {
       const parsed = notificationsConfigSchema.safeParse(notifPatch);
       if (!parsed.success) {
-        return reply.status(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid notifications config' });
+        return reply.status(400).send({ error: parsed.error.issues[0]!.message });
       }
     }
     const providerReposPatch = (req.body as Partial<Settings>).providerRepos;
@@ -1530,7 +1532,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       }));
       const parsed = repoSchema.safeParse(providerReposPatch);
       if (!parsed.success) {
-        return reply.status(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid providerRepos' });
+        return reply.status(400).send({ error: parsed.error.issues[0]!.message });
       }
     }
     const current = await readConfig('settings');
@@ -1685,12 +1687,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   }).refine(b => b.all === true || (b.ids?.length ?? 0) > 0, { message: 'Provide ids[] or all:true' });
 
   fastify.post<{ Body: { ids?: string[]; all?: boolean } }>('/api/notifications/inbox/read', async (req, reply) => {
-    const parsed = inboxReadSchema.safeParse(req.body ?? {});
-    if (!parsed.success) return reply.status(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid body' });
+    const parsed = inboxReadSchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.issues[0]!.message });
     const userId = req.dashUser!.id;
     const { ids, all } = parsed.data;
     const items = await readConfig('notifications');
-    const idSet = new Set(ids ?? []);
+    const idSet = new Set(ids); // ponytail: ids is always defined when all=false (Zod refine ensures either ids or all)
     let updated = 0;
     for (const n of items) {
       // Audience filter (U5): a user can only mark items addressed to them.
@@ -1703,7 +1705,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
     if (updated > 0) await writeConfig('notifications', items);
-    audit(req, 'notification:read', 'success', all ? { all: true, updated } : { ids: ids ?? [], updated });
+    audit(req, 'notification:read', 'success', all ? { all: true, updated } : { ids: ids!, updated }); // ponytail: when !all, Zod ensures ids is defined
     return reply.send({ updated });
   });
 
@@ -1715,12 +1717,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   }).refine(b => b.all === true || (b.ids?.length ?? 0) > 0, { message: 'Provide ids[] or all:true' });
 
   fastify.post<{ Body: { ids?: string[]; all?: boolean } }>('/api/notifications/inbox/unread', async (req, reply) => {
-    const parsed = inboxUnreadSchema.safeParse(req.body ?? {});
-    if (!parsed.success) return reply.status(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid body' });
+    const parsed = inboxUnreadSchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.issues[0]!.message });
     const userId = req.dashUser!.id;
     const { ids, all } = parsed.data;
     const items = await readConfig('notifications');
-    const idSet = new Set(ids ?? []);
+    const idSet = new Set(ids);
     let updated = 0;
     for (const n of items) {
       const visibleToUser = n.recipients === undefined || n.recipients.includes(userId);
@@ -1731,7 +1733,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
     if (updated > 0) await writeConfig('notifications', items);
-    audit(req, 'notification:unread', 'success', all ? { all: true, updated } : { ids: ids ?? [], updated });
+    audit(req, 'notification:unread', 'success', all ? { all: true, updated } : { ids: ids!, updated });
     return reply.send({ updated });
   });
 
@@ -1744,12 +1746,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   }).refine(b => b.all === true || (b.ids?.length ?? 0) > 0, { message: 'Provide ids[] or all:true' });
 
   fastify.post<{ Body: { ids?: string[]; all?: boolean } }>('/api/notifications/inbox/delete', async (req, reply) => {
-    const parsed = inboxDeleteSchema.safeParse(req.body ?? {});
-    if (!parsed.success) return reply.status(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid body' });
+    const parsed = inboxDeleteSchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.issues[0]!.message });
     const userId = req.dashUser!.id;
     const { ids, all } = parsed.data;
     const items = await readConfig('notifications');
-    const idSet = new Set(ids ?? []);
+    const idSet = new Set(ids);
     let deleted = 0;
     for (const n of items) {
       // Audience filter (U5): a user can only dismiss items addressed to them.
@@ -1761,7 +1763,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
     if (deleted > 0) await writeConfig('notifications', items);
-    audit(req, 'notification:delete', 'success', all ? { all: true, deleted } : { ids: ids ?? [], deleted });
+    audit(req, 'notification:delete', 'success', all ? { all: true, deleted } : { ids: ids!, deleted });
     return reply.send({ deleted });
   });
 
@@ -1894,8 +1896,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     const leaderboard = [...byModel.entries()].map(([modelId, a]) => {
-      const successRate = a.totalRequests > 0 ? a.success / a.totalRequests : 0;
-      const errorRate = a.totalRequests > 0 ? 1 - successRate : 0;
+      const successRate = a.success / a.totalRequests; // ponytail: totalRequests >= 1 for every byModel entry (incremented before insert)
+      const errorRate = 1 - successRate;
       const avgLatencyMs = a.latencies.length > 0 ? a.totalLatencyMs / a.latencies.length : 0;
       const p95LatencyMs = p95(a.latencies);
       const avgCostPer1kTokens = a.totalTokens > 0 ? (a.totalCost / a.totalTokens) * 1000 : 0;
@@ -1950,7 +1952,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const idx = channels.findIndex(ch => ch['id'] === req.params.id);
     if (idx === -1) return reply.status(404).send({ error: `Channel "${req.params.id}" not found` });
     const stored = channels[idx]!;
-    const body = req.body ?? {};
+    const body = req.body; // ponytail: Fastify always provides body as Record<string,unknown> for JSON content-type
     // Reject provider change
     if ('provider' in body && body['provider'] !== stored['provider']) {
       return reply.status(400).send({ error: 'Provider cannot be changed' });
@@ -1975,7 +1977,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const updatedChannels = [...channels];
     updatedChannels[idx] = merged;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await writeConfig('settings', { ...settings, notifications: { ...(settings.notifications ?? {}), channels: updatedChannels } } as any);
+    await writeConfig('settings', { ...settings, notifications: { ...settings.notifications, channels: updatedChannels } } as any); // ponytail: notifications always defined when channel was found
     return reply.send(redactChannel(merged));
   });
 
@@ -1984,7 +1986,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!requirePerm(req, 'notification:write', reply)) return;
     const parsed = notificationChannelSchema.safeParse(req.body);
     if (!parsed.success) {
-      return reply.status(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid channel' });
+      return reply.status(400).send({ error: parsed.error.issues[0]!.message });
     }
     const channel = { ...parsed.data, id: parsed.data.id ?? randomUUID() };
     const settings  = await readConfig('settings');
@@ -2009,7 +2011,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
     await writeConfig('settings', {
       ...settings,
-      notifications: { ...(settings.notifications ?? {}), channels: filtered },
+      notifications: { ...settings.notifications, channels: filtered }, // ponytail: settings.notifications is always defined when filtered.length < channels.length
     });
     return reply.status(204).send();
   });
@@ -2089,7 +2091,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!requirePerm(req, 'settings:write', reply)) return;
     const parsed = integrationSchema.safeParse(req.body);
     if (!parsed.success) {
-      return reply.status(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid integration' });
+      return reply.status(400).send({ error: parsed.error.issues[0]!.message });
     }
     const intg = { ...parsed.data, id: randomUUID(), enabled: parsed.data.enabled ?? true };
     const settings = await readConfig('settings');
@@ -2105,8 +2107,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const idx = integrations.findIndex(i => i['id'] === req.params.id);
     if (idx === -1) return reply.status(404).send({ error: `Integration "${req.params.id}" not found` });
     const stored = integrations[idx]!;
-    const secrets = INTEGRATION_SECRET_FIELDS[stored['type'] as string] ?? [];
-    const body = req.body ?? {};
+    const secrets = INTEGRATION_SECRET_FIELDS[stored['type'] as string] ?? []; // stored type always in schema
+    const body = req.body;
     const merged: Record<string, unknown> = { ...stored };
     for (const [key, val] of Object.entries(body)) {
       if (key === 'id' || key === 'type') continue;

@@ -324,7 +324,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
         <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              {e.details?.target === 'request' ? 'REQUEST' : 'RESPONSE'} GUARDRAIL {e.details?.action === 'block' ? 'BLOCKED' : 'TRIGGERED'}
+              {e.details?.target === 'request' ? 'REQUEST' : 'RESPONSE'} GUARDRAIL {e.details?.block === true ? 'BLOCKED' : 'TRIGGERED'}
             </span>
             <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#fca5a5', background: 'rgba(239,68,68,0.12)', padding: '1px 7px', borderRadius: 99, border: '1px solid rgba(239,68,68,0.25)' }}>
               {String(e.details?.target ?? '—')}
@@ -337,12 +337,12 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
             </div>
             <div>
               <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>Action</div>
-              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{String(e.details?.action ?? '—')}</div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{[e.details?.block && 'block', e.details?.log && 'log'].filter(Boolean).join('+') || '—'}</div>
             </div>
           </div>
-          {e.details?.fallbackMessage && (
+          {e.details?.blockMessage && (
             <div style={{ fontSize: '0.8rem', color: '#fca5a5', fontStyle: 'italic', paddingTop: 4, borderTop: '1px solid rgba(239,68,68,0.2)' }}>
-              {String(e.details.fallbackMessage)}
+              {String(e.details.blockMessage)}
             </div>
           )}
         </div>

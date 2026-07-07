@@ -21,6 +21,7 @@ vi.mock('./notifications/emitter.js', () => ({ emitEvent: vi.fn(async () => {}) 
 vi.mock('./update-checker.js', () => ({
   updateChecker: { start: vi.fn(), check: vi.fn(), getLastResult: vi.fn(() => null), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))
+vi.mock('./config/migrate.js', () => ({ migrateProjectConfigs: vi.fn(async () => 0) }))
 
 import { buildServer, startServer } from './server.js'
 import { readConfig, writeConfig } from './config/loader.js'
@@ -137,6 +138,18 @@ describe('startServer', () => {
     await startServer()
 
     expect(mockPingTelemetry).not.toHaveBeenCalled()
+  })
+
+  it('logs migrated count when migrateProjectConfigs returns > 0', async () => {
+    const { migrateProjectConfigs } = await import('./config/migrate.js')
+    vi.mocked(migrateProjectConfigs).mockResolvedValueOnce(3)
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    mockReadConfig.mockResolvedValue({ logLevel: 'silent', dashboardEnabled: false, port: 3094, host: '127.0.0.1', telemetry: { enabled: false } } as any)
+
+    await startServer()
+
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('migrated 3'))
+    logSpy.mockRestore()
   })
 
   it('prunes orphan usage records on startup and logs when any removed (BUG-5)', async () => {

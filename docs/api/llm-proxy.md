@@ -17,26 +17,26 @@ The proxy also accepts the Anthropic SDK's native `x-api-key: sk-rt-YOUR_PROJECT
 
 ## Content Guardrails and PII Scrubbing
 
-When the project enables them, two pre-request stages run on `/v1/chat/completions`,
-`/v1/responses` and `/v1/messages` before the request reaches a provider:
+When the project enables them, security stages run on `/v1/chat/completions`,
+`/v1/responses` and `/v1/messages` before and after routing to the provider:
 
-- **Guardrails:** input message string content is checked against the project's
-  configured security rules (regex, injection patterns, semantic similarity, topic
-  classification, moderation). With `action: "block"` a triggering request never
-  reaches the provider and Routerly returns a wire-faithful response (see below).
-  With `action: "log"`, the request proceeds and the rule name is recorded on the
-  usage record.
-- **PII scrubbing:** detected entities (`EMAIL`, `PHONE`, `CREDIT_CARD`,
-  `SSN`, `IBAN`) in message string content are replaced with typed placeholders
-  before forwarding. Redacted entity types are recorded on the usage record.
-  The `scrubInput`/`scrubOutput` flags control which direction is scrubbed.
+- **Guardrails:** message content is checked against the project's configured
+  security rules (regex, semantic similarity, topic judge, moderation judge, injection
+  detection). Each rule can have block and/or log actions enabled independently.
+  When a rule with `block: true` triggers, the request/response is rejected and
+  Routerly returns a wire-faithful response (see below). When a rule triggers with
+  `log: true`, the rule name is recorded on the usage record and the request proceeds.
+- **PII scrubbing:** detected entities (`EMAIL`, `PHONE`, `CREDIT_CARD`, `SSN`, `IBAN`)
+  in message string content are replaced with typed placeholders before forwarding
+  and/or before returning responses. Redacted entity types are recorded on the usage
+  record. Each PII policy specifies whether to scrub requests, responses, or both.
 
 Array (multimodal) message content is not inspected by either stage. See the
-[management API](./management.md) for the `guardrails` and `pii` project fields.
+[management API](./management.md) for the `guardrails` and `pii` project configuration.
 
 ### Guardrail block — wire format
 
-When a guardrail with `action: "block"` triggers, Routerly returns **HTTP 200**
+When a guardrail rule with `block: true` triggers, Routerly returns **HTTP 200**
 and mimics the provider's native content-filter format. No HTTP error is returned.
 The `x-routerly-trace-id` header is always present on the response (including
 blocked responses) and is exposed via CORS.
@@ -82,7 +82,7 @@ data: [DONE]
 ```
 
 :::note
-The `fallbackMessage` configured on the project is **not** included in the wire
+The block message configured on the triggering rule is **not** included in the wire
 response. It is stored on the trace record only and is retrievable via
 `GET /api/traces/:id`. This preserves wire-format compatibility with existing
 OpenAI and Anthropic SDKs that do not expect a text body on content-filter events.

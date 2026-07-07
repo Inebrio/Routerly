@@ -44,6 +44,7 @@ vi.mock('./plugins/auth.js', () => ({ default: vi.fn() }));
 vi.mock('./routes/api.js', () => ({ apiRoutes: vi.fn() }));
 vi.mock('./routes/openai.js', () => ({ openaiRoutes: vi.fn() }));
 vi.mock('./routes/anthropic.js', () => ({ anthropicRoutes: vi.fn() }));
+vi.mock('./config/migrate.js', () => ({ migrateProjectConfigs: vi.fn(async () => 0) }));
 
 import { startServer } from './server.js';
 

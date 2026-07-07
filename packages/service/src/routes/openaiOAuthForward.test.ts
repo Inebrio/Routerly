@@ -279,6 +279,19 @@ describe('forwardOpenAIOAuthSSE', () => {
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ projectId: 'proj-1', outcome: 'error' }))
   })
 
+  it('handles upstream.text() rejection gracefully (line 187 .catch callback)', async () => {
+    // upstream is !ok, and text() throws → .catch(() => '') fires, errBody becomes ''
+    vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
+    mockFetch.mockResolvedValue({ ok: false, status: 503, text: async () => { throw new Error('body read error') }, body: null })
+
+    const raw = makeRaw()
+    const log = makeLog()
+    await forwardOpenAIOAuthSSE(raw as any, {}, oauthModel, log, 'trace-4b', 'proj-1')
+
+    expect(raw.chunks.at(-1)).toBe('data: [DONE]\n\n')
+    expect(log.warn).toHaveBeenCalled()
+  })
+
   it('writes [DONE] and logs on fetch throw', async () => {
     vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
     mockFetch.mockRejectedValue(new Error('network error'))
@@ -374,26 +387,30 @@ describe('forwardOpenAIOAuthSSE', () => {
 
   it('flushes scrubber remainder when it yields content (lines 252-258)', async () => {
     vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
-    // SSE stream with PII-containing delta that will be buffered by StreamingScrubber
+    // Short content with an email address — scrubber buffer never exceeds N=30 → push() returns ''
+    // all content stays in buffer → flush() emits the scrubbed email in a final chunk
     const upstreamSSE = [
       'event: response.output_text.delta',
-      'data: {"delta":"Hello JOHN DOE here","output_index":0,"content_index":0}',
+      'data: {"delta":"send to a@b.com","output_index":0,"content_index":0}',
       '',
     ].join('\n')
     mockFetch.mockResolvedValue({ ok: true, status: 200, body: makeReadableStream(upstreamSSE) })
 
     const raw = makeRaw()
-    const piiConfig = { enabled: true, scrubOutput: true, policies: [{ name: 'default', entities: ['NAME'] }] } as any
+    // Valid target + valid entities → scrubber is created
+    const piiConfig = { policies: [{ name: 'default', target: 'response', entities: ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'] }] } as any
     await forwardOpenAIOAuthSSE(raw as any, {}, oauthModel, makeLog(), 'trace-flush', 'proj-1', piiConfig)
 
-    // scrubber.flush() should have produced a final chunk or at minimum the DONE sentinel is present
     const joined = raw.chunks.join('')
+    // flush() emits remaining buffer with [EMAIL] instead of a@b.com
+    expect(joined).toContain('[EMAIL]')
+    expect(joined).not.toContain('a@b.com')
     expect(joined).toContain('data: [DONE]')
   })
 
   it('handles empty scrubber flush (line 253 false branch — flushed.length === 0)', async () => {
-    // scrubOutput=true but no text deltas → push() never called → buffer stays empty → flush() returns ''
-    // → flushed.length === 0 → if branch=1 (false) → no flush chunk emitted
+    // scrubber active but no text deltas → push() never called → buffer stays empty → flush() returns ''
+    // → flushed.length === 0 → if-branch false → no flush chunk emitted
     vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
     // Stream with no delta events (only a non-delta event)
     const upstreamSSE = [
@@ -404,13 +421,14 @@ describe('forwardOpenAIOAuthSSE', () => {
     mockFetch.mockResolvedValue({ ok: true, status: 200, body: makeReadableStream(upstreamSSE) })
 
     const raw = makeRaw()
-    const piiConfig = { enabled: true, scrubOutput: true, policies: [] } as any
+    // Valid target + valid entities → scrubber is created; but no deltas arrive → flush() returns ''
+    const piiConfig = { policies: [{ name: 'default', target: 'response', entities: ['EMAIL'] }] } as any
     await forwardOpenAIOAuthSSE(raw as any, {}, oauthModel, makeLog(), 'trace-flush2', 'proj-1', piiConfig)
 
     const joined = raw.chunks.join('')
     expect(joined).toContain('data: [DONE]')
-    // No flush chunk — only the stop chunk and DONE
-    const contentChunks = raw.chunks.filter(c => c.includes('"content"') && !c.includes('"content":{}'))
+    // No flush chunk with content — only the stop chunk and DONE sentinel
+    const contentChunks = raw.chunks.filter(c => c.includes('"content"') && !c.includes('"content":{}') && !c.includes('"content":""'))
     expect(contentChunks.length).toBe(0)
   })
 
@@ -446,6 +464,28 @@ describe('forwardOpenAIOAuthSSE', () => {
     const raw = makeRaw()
     await forwardOpenAIOAuthSSE(raw as any, {}, oauthModel, makeLog(), 'trace-empty-block', 'proj-1')
     expect(raw.chunks).toContain('data: [DONE]\n\n')
+  })
+
+  it('creates scrubber from customPatterns when entities array is empty (line 207 outPii.customPatterns?.length branch)', async () => {
+    // outPii.entities?.length = 0 (falsy) BUT outPii.customPatterns?.length > 0 (truthy) → scrubber IS created
+    vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
+    const upstreamSSE = [
+      'event: response.output_text.delta',
+      'data: {"delta":"my secret tok-abc123 here","output_index":0,"content_index":0}',
+      '',
+    ].join('\n')
+    mockFetch.mockResolvedValue({ ok: true, status: 200, body: makeReadableStream(upstreamSSE) })
+
+    const raw = makeRaw()
+    // Policy with empty entities but customPatterns → scrubber uses customPatterns
+    const piiConfig = { policies: [{ name: 'default', target: 'response', entities: [], customPatterns: ['tok-[a-z0-9]+'] }] } as any
+    await forwardOpenAIOAuthSSE(raw as any, {}, oauthModel, makeLog(), 'trace-custpat', 'proj-1', piiConfig)
+
+    const joined = raw.chunks.join('')
+    // customPattern 'tok-[a-z0-9]+' should be redacted
+    expect(joined).toContain('[REDACTED]')
+    expect(joined).not.toContain('tok-abc123')
+    expect(joined).toContain('data: [DONE]')
   })
 
   it('includes tools in payload when body.tools is set (line 116 if branch=0)', async () => {

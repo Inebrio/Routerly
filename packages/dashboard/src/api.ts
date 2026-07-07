@@ -311,12 +311,18 @@ export interface GuardrailRule {
   enabled?: boolean;
   target: GuardrailTarget;
   config: RegexGuardConfig | SemanticGuardConfig | TopicGuardConfig | ModerationGuardConfig;
-  action?: 'block' | 'log';
+  /** Stop the request/response when this rule triggers. */
+  block?: boolean;
+  /** Record the trigger in usage (monitor) even when it does not block. */
+  log?: boolean;
+  /** Static message returned to the client when this rule blocks. */
+  blockMessage?: string;
+  /** (topic/moderation only) Use the judge model's own explanation as the block response. */
+  useJudgeResponse?: boolean;
 }
 
 export interface GuardrailConfig {
-  action: 'block' | 'flag' | 'log';
-  fallbackMessage?: string;
+  /** When true, run built-in prompt-injection detection on every request. */
   detectInjection?: boolean;
   rules: GuardrailRule[];
 }
@@ -328,17 +334,15 @@ export interface PiiPolicy {
   enabled?: boolean;
   entities?: PiiEntity[];
   customPatterns?: string[];
-  scrubInput?: boolean;
-  scrubOutput?: boolean;
+  /** Which side(s) to scrub: request input, model response, or both. */
+  target: GuardrailTarget;
+  /** Suffix buffer size (chars) for streaming response scrubbing. Only relevant when target includes response. */
+  outputBufferSize?: number;
 }
 
 export interface PiiConfig {
-  entities?: PiiEntity[];
-  customPatterns?: string[];
-  scrubInput?: boolean;
-  scrubOutput?: boolean;
-  outputBufferSize?: number;
-  policies?: PiiPolicy[];
+  /** Named policies merged per-direction at scrub time. */
+  policies: PiiPolicy[];
 }
 
 export interface Project {

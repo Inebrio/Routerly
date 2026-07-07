@@ -11,6 +11,7 @@ import { anthropicRoutes } from './routes/anthropic.js';
 import { apiRoutes } from './routes/api.js';
 import { metricsRoutes } from './routes/metrics.js';
 import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage } from './config/loader.js';
+import { migrateProjectConfigs } from './config/migrate.js';
 import { pingTelemetry } from './telemetry.js';
 import { updateChecker } from './update-checker.js';
 import { startIntegrationRunner } from './integrations/runner.js';
@@ -95,6 +96,11 @@ export async function startServer() {
   if (orphansRemoved > 0) {
     // eslint-disable-next-line no-console
     console.log(`[startup] pruned ${orphansRemoved} orphan usage record(s) (no matching project)`);
+  }
+  const migrated = await migrateProjectConfigs();
+  if (migrated > 0) {
+    // eslint-disable-next-line no-console
+    console.log(`[startup] migrated ${migrated} project(s) to new guardrails/PII config shape`);
   }
   const settings = await readConfig('settings');
 

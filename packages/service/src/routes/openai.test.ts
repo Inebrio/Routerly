@@ -621,10 +621,8 @@ describe('POST /v1/chat/completions — streaming response guardrail (block)', (
     id: 'proj-guard', name: 'GuardTest', tokens: [], members: [],
     models: [{ modelId: 'openai/gpt-4o' }],
     guardrails: {
-      action: 'block',
-      fallbackMessage: 'Response blocked by content guardrails.',
       // No `enabled` field on the rule — presence + target is what activates it (#77).
-      rules: [{ type: 'regex', target: 'response', config: { patterns: ['forbidden'] } }],
+      rules: [{ type: 'regex', target: 'response', block: true, config: { patterns: ['forbidden'] } }],
     },
   }
 
@@ -681,7 +679,7 @@ describe('POST /v1/chat/completions — streaming response guardrail (block)', (
 describe('POST /v1/chat/completions — guardrail request block & PII output trace', () => {
   const blockProject: any = {
     id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
-    guardrails: { action: 'block', fallbackMessage: 'nope', rules: [{ type: 'regex', target: 'request', config: { patterns: ['forbidden'] } }] },
+    guardrails: { rules: [{ type: 'regex', target: 'request', block: true, config: { patterns: ['forbidden'] } }] },
   }
 
   it('non-streaming request block: empty content + content_filter, no fallback in wire, trace-id header', async () => {
@@ -701,7 +699,7 @@ describe('POST /v1/chat/completions — guardrail request block & PII output tra
     expect(res.body).not.toContain('nope')
     expect(res.headers['x-routerly-trace-id']).toBeDefined()
     const traceCall = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'guardrail:triggered')
-    expect((traceCall![1] as any[])[0].details).toMatchObject({ action: 'block', fallbackMessage: 'nope', target: 'request' })
+    expect((traceCall![1] as any[])[0].details).toMatchObject({ block: true, target: 'request' })
     expect(mockLlmChat).not.toHaveBeenCalled()
     // C3: a blocked request is recorded with outcome 'blocked', callType 'guardrail', cost 0, blockedBy set.
     expect(mockTrackUsage).toHaveBeenCalledTimes(1)
@@ -767,7 +765,7 @@ describe('POST /v1/chat/completions — guardrail request block & PII output tra
   it('non-streaming PII output scrubbing emits a response pii:scrubbed trace entry', async () => {
     const piiProject: any = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
-      pii: { scrubOutput: true },
+      pii: { policies: [{ name: 'default', target: 'response', entities: ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'] }] },
     }
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
     mockReadConfig.mockResolvedValue([testModel])
@@ -795,7 +793,7 @@ describe('POST /v1/chat/completions — guardrail request block & PII output tra
   it('streaming PII output scrubbing accumulates entities and traces at flush', async () => {
     const piiProject: any = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
-      pii: { scrubOutput: true },
+      pii: { policies: [{ name: 'default', target: 'response', entities: ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'] }] },
     }
     async function* gen() {
       yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'reach me at a@b.com ' }, finish_reason: null }] }
@@ -823,7 +821,7 @@ describe('POST /v1/chat/completions — guardrail request block & PII output tra
   it('clean input with PII active emits pii:evaluated (redacted []) and no pii:scrubbed, wire response unchanged', async () => {
     const piiProject: any = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
-      pii: { scrubInput: true },
+      pii: { policies: [{ name: 'default', target: 'request', entities: ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'] }] },
     }
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
     mockReadConfig.mockResolvedValue([testModel])
@@ -850,7 +848,7 @@ describe('POST /v1/chat/completions — guardrail request block & PII output tra
   it('input with a PII hit emits BOTH pii:evaluated (entities) and pii:scrubbed', async () => {
     const piiProject: any = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
-      pii: { scrubInput: true },
+      pii: { policies: [{ name: 'default', target: 'request', entities: ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'] }] },
     }
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
     mockReadConfig.mockResolvedValue([testModel])
@@ -876,7 +874,7 @@ describe('POST /v1/chat/completions — guardrail request block & PII output tra
   it('clean output (non-streaming) with scrubOutput active emits pii:evaluated (redacted []) and no pii:scrubbed', async () => {
     const piiProject: any = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
-      pii: { scrubOutput: true },
+      pii: { policies: [{ name: 'default', target: 'response', entities: ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'] }] },
     }
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
     mockReadConfig.mockResolvedValue([testModel])
@@ -902,7 +900,7 @@ describe('POST /v1/chat/completions — guardrail request block & PII output tra
   it('clean output (streaming) with scrubOutput active emits pii:evaluated (redacted []) and no pii:scrubbed', async () => {
     const piiProject: any = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
-      pii: { scrubOutput: true },
+      pii: { policies: [{ name: 'default', target: 'response', entities: ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'] }] },
     }
     async function* gen() {
       yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'all clean here' }, finish_reason: 'stop' }] }
@@ -930,7 +928,7 @@ describe('POST /v1/chat/completions — guardrail request block & PII output tra
   it('response guardrail warn action: guardrailTriggered set but response passes through (line 491)', async () => {
     const warnProject: any = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
-      guardrails: { action: 'warn', rules: [{ type: 'regex', target: 'response', config: { patterns: ['warn-me'] } }] },
+      guardrails: { rules: [{ type: 'regex', target: 'response', log: true, config: { patterns: ['warn-me'] } }] },
     }
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
     mockReadConfig.mockResolvedValue([testModel])
@@ -955,7 +953,7 @@ describe('POST /v1/chat/completions — guardrail request block & PII output tra
     // guardrail:response-triggered trace was recorded with action=warn
     const triggerTrace = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'guardrail:response-triggered')
     expect(triggerTrace).toBeDefined()
-    expect((triggerTrace![1] as any[])[0].details.action).toBe('warn')
+    expect((triggerTrace![1] as any[])[0].details.log).toBe(true)
   })
 
   it('routing fallback used emits routing.fallback_used event (line 497)', async () => {
@@ -1014,7 +1012,7 @@ describe('POST /v1/chat/completions — guardrail request block & PII output tra
   it('streaming request block with Origin header sets CORS headers (line 154-158)', async () => {
     const blockProject2: any = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
-      guardrails: { action: 'block', fallbackMessage: 'nope', rules: [{ type: 'regex', target: 'request', config: { patterns: ['blocked-origin'] } }] },
+      guardrails: { rules: [{ type: 'regex', target: 'request', block: true, config: { patterns: ['blocked-origin'] } }] },
     }
     mockReadConfig.mockResolvedValue([testModel])
 
@@ -1033,7 +1031,7 @@ describe('POST /v1/chat/completions — guardrail request block & PII output tra
   it('non-streaming response guardrail block emits content_filter + response evaluated trace (#77 C1)', async () => {
     const respGuard: any = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
-      guardrails: { action: 'block', fallbackMessage: 'nope', rules: [{ type: 'regex', target: 'response', config: { patterns: ['leak'] } }] },
+      guardrails: { rules: [{ type: 'regex', target: 'response', block: true, config: { patterns: ['leak'] } }] },
     }
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
     mockReadConfig.mockResolvedValue([testModel])
@@ -1069,7 +1067,7 @@ describe('POST /v1/chat/completions — request guardrail BudgetExceededError (l
     // topic rule calls llmChat internally; if llmChat throws BudgetExceededError → caught at line 132
     const topicGuardProject: any = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
-      guardrails: { action: 'block', rules: [{ type: 'topic', target: 'request', config: { modelId: 'openai/gpt-4o', allowedTopics: 'support', threshold: 0.5 } }] },
+      guardrails: { rules: [{ type: 'topic', target: 'request', block: true, config: { modelId: 'openai/gpt-4o', allowedTopics: 'support', threshold: 0.5 } }] },
     }
     mockReadConfig.mockResolvedValue([testModel])
     const { BudgetExceededError: BCE } = await import('../llm/executor.js')
@@ -1091,7 +1089,7 @@ describe('POST /v1/chat/completions — request guardrail BudgetExceededError (l
     // topic rule causes llmChat to throw a generic error (not BCE) → line 136 re-throws → Fastify returns 500
     const topicGuardProject: any = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
-      guardrails: { action: 'block', rules: [{ type: 'topic', target: 'request', config: { modelId: 'openai/gpt-4o', allowedTopics: 'support', threshold: 0.5 } }] },
+      guardrails: { rules: [{ type: 'topic', target: 'request', block: true, config: { modelId: 'openai/gpt-4o', allowedTopics: 'support', threshold: 0.5 } }] },
     }
     mockReadConfig.mockResolvedValue([testModel])
     mockLlmChat.mockRejectedValue(new Error('network timeout'))
@@ -1111,7 +1109,7 @@ describe('POST /v1/chat/completions — request guardrail BudgetExceededError (l
     // topic rule triggers with action=warn → line 176 sets guardrailTriggered → llmChat called with ctx.guardrailTriggered set
     const warnTopicProject: any = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
-      guardrails: { action: 'warn', rules: [{ type: 'regex', target: 'request', config: { patterns: ['warn-trigger'] } }] },
+      guardrails: { rules: [{ type: 'regex', target: 'request', log: true, config: { patterns: ['warn-trigger'] } }] },
     }
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
     mockReadConfig.mockResolvedValue([testModel])
@@ -1164,7 +1162,7 @@ describe('POST /v1/chat/completions — streaming response guardrail warn (line 
   it('emits buffered SSE when response guardrail triggers with warn action', async () => {
     const warnProject: any = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
-      guardrails: { action: 'warn', rules: [{ type: 'regex', target: 'response', config: { patterns: ['warn-word'] } }] },
+      guardrails: { rules: [{ type: 'regex', target: 'response', log: true, config: { patterns: ['warn-word'] } }] },
     }
     async function* gen() {
       yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'warn-word' }, finish_reason: 'stop' }] }
@@ -1191,7 +1189,7 @@ describe('POST /v1/chat/completions — streaming response guardrail warn (line 
 describe('trackBlockedRequest — line 40 .catch(() => {}) swallows trackUsage rejection', () => {
   const blockProject: any = {
     id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
-    guardrails: { action: 'block', fallbackMessage: 'blocked', rules: [{ type: 'regex', target: 'request', config: { patterns: ['forbidden'] } }] },
+    guardrails: { rules: [{ type: 'regex', target: 'request', block: true, config: { patterns: ['forbidden'] } }] },
   }
 
   it('swallows trackUsage rejection; response still returns 200 with content_filter', async () => {
@@ -1236,7 +1234,7 @@ describe('POST /v1/chat/completions — guardrail with array content (line 126)'
   it('uses empty inputText when last user message content is array (line 126 false branch)', async () => {
     const regexProject: ProjectConfig = {
       ...testProject,
-      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'request', config: { patterns: ['forbidden'] } }] },
+      guardrails: { rules: [{ type: 'regex', target: 'request', block: true, config: { patterns: ['forbidden'] } }] },
     } as any
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
     mockReadConfig.mockResolvedValue([testModel])
@@ -1298,7 +1296,7 @@ describe('trackBlockedRequest — empty project.models (lines 27 cond-expr branc
     // project.models = [] → firstModelId is undefined → cond-expr takes false branch (line 27 branch=1) → model=undefined → !model=true → early return (line 28 branch=0)
     const emptyModelsProject: any = {
       id: 'proj-empty', name: 'Test', tokens: [], members: [], models: [],
-      guardrails: { action: 'block', fallbackMessage: 'nope', rules: [{ type: 'regex', target: 'request', config: { patterns: ['blocked-word'] } }] },
+      guardrails: { rules: [{ type: 'regex', target: 'request', block: true, config: { patterns: ['blocked-word'] } }] },
     }
     mockReadConfig.mockResolvedValue([testModel])
     const app = await buildApp(emptyModelsProject)
@@ -1376,7 +1374,7 @@ describe('POST /v1/chat/completions — secondary model failure and no model fie
 // ─── Non-streaming PII scrub: non-string content (line 460 branch=1) ──────────
 describe('POST /v1/chat/completions — PII scrub non-string content (line 460 branch=1)', () => {
   it('skips PII scrub when response content is not a string (line 460 if branch=1)', async () => {
-    const piiProject: ProjectConfig = { ...testProject, pii: { scrubOutput: true } } as any
+    const piiProject: ProjectConfig = { ...testProject, pii: { policies: [{ name: 'default', target: 'response', entities: ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'] }] } } as any
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
     mockReadConfig.mockResolvedValue([testModel])
     // content is null (not string) → typeof null === 'object' → line 460 if branch=1
@@ -1402,7 +1400,7 @@ describe('POST /v1/chat/completions — guardrail non-string response content (l
   it('skips guardrail check when response content is not a string (line 476 if branch=1)', async () => {
     const guardProject: any = {
       ...testProject,
-      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'response', config: { patterns: ['bad'] } }] },
+      guardrails: { rules: [{ type: 'regex', target: 'response', block: true, config: { patterns: ['bad'] } }] },
     }
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
     mockReadConfig.mockResolvedValue([testModel])
@@ -1480,5 +1478,106 @@ describe('POST /v1/chat/completions — streaming endUserId and tags (lines 265/
     const ctxArg = mockLlmStream.mock.calls[0]![2] as any
     expect(ctxArg.endUserId).toBe('stream-user-1')
     expect(ctxArg.tags).toEqual({ env: 'staging' })
+  })
+})
+
+// ─── Guardrail request check: BudgetExceededError → 429 (line 133) ────────────
+
+describe('POST /v1/chat/completions — guardrail BudgetExceededError → 429', () => {
+  it('non-streaming: over-limit guardrail judge call returns 429', async () => {
+    const { BudgetExceededError } = await import('../llm/executor.js')
+
+    // Project with a topic guardrail rule → checkGuardrails calls llmChat (already mocked)
+    const projectWithTopicGuardrail: any = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
+      guardrails: {
+        rules: [{ type: 'topic', target: 'request', block: true, config: { modelId: 'openai/gpt-4o', allowedTopics: 'support' } }],
+      },
+    }
+    // readConfig('models') called by guardrails.ts checkRule → return testModel
+    mockReadConfig.mockResolvedValue([testModel])
+    // llmChat throws BudgetExceededError → checkRule re-throws it → openai.ts catches it → 429
+    mockLlmChat.mockRejectedValue(new BudgetExceededError('openai/gpt-4o'))
+
+    const app = await buildApp(projectWithTopicGuardrail)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(429)
+    const body = JSON.parse(res.body)
+    expect(body.error.type).toBe('insufficient_quota')
+  })
+})
+
+// ─── Streaming response guardrail log-only path (lines 362-365) ───────────────
+
+describe('POST /v1/chat/completions — streaming response guardrail log-only', () => {
+  it('log-only response trigger: content is not suppressed, no content_filter emitted', async () => {
+    const projectWithLogGuardrail: any = {
+      id: 'proj-log', name: 'LogTest', tokens: [], members: [],
+      models: [{ modelId: 'openai/gpt-4o' }],
+      guardrails: {
+        rules: [{ type: 'regex', target: 'response', log: true, config: { patterns: ['sensitive'] } }],
+      },
+    }
+
+    async function* gen() {
+      yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'this is sensitive data' }, finish_reason: 'stop' }] }
+    }
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmStream.mockResolvedValue({ ttftMs: 10, chunks: gen() } as any)
+
+    const app = await buildApp(projectWithLogGuardrail)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', stream: true, messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+
+    // log-only: content passes through unchanged, no content_filter
+    expect(res.body).not.toContain('content_filter')
+    expect(res.body).toContain('[DONE]')
+  })
+})
+
+// ─── Non-streaming response guardrail log-only path (line 499) ────────────────
+
+describe('POST /v1/chat/completions — non-streaming response guardrail log-only', () => {
+  it('log-only response trigger: response is returned unchanged, no content_filter', async () => {
+    const projectWithLogGuardrail: any = {
+      id: 'proj-log2', name: 'LogTest2', tokens: [], members: [],
+      models: [{ modelId: 'openai/gpt-4o' }],
+      guardrails: {
+        rules: [{ type: 'regex', target: 'response', log: true, config: { patterns: ['sensitive'] } }],
+      },
+    }
+
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmChat.mockResolvedValue({
+      id: 'c1', object: 'chat.completion', created: 0, model: 'gpt-4o',
+      choices: [{ index: 0, message: { role: 'assistant', content: 'this is sensitive data' }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+    } as any)
+
+    const app = await buildApp(projectWithLogGuardrail)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+
+    // log-only: response is 200 with original content, no content_filter
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.choices[0].message.content).toBe('this is sensitive data')
+    expect(body.choices[0].finish_reason).toBe('stop')
   })
 })

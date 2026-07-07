@@ -3,8 +3,8 @@ import { homedir } from 'node:os';
 import type { FastifyBaseLogger } from 'fastify';
 import type { ServerResponse } from 'node:http';
 import type { ModelConfig, PiiConfig } from '@routerly/shared';
+import { mergePolicies, StreamingScrubber } from '../middleware/piiScrubber.js';
 import { trackUsage } from '../cost/tracker.js';
-import { StreamingScrubber } from '../middleware/piiScrubber.js';
 
 const CHATGPT_BASE = 'https://chatgpt.com';
 const CODEX_PATH = '/backend-api/codex/responses';
@@ -203,7 +203,8 @@ export async function forwardOpenAIOAuthSSE(
   const created = Math.floor(Date.now() / 1000);
   let buffer = '';
   // ponytail: null when PII scrubbing disabled, avoids per-chunk branch overhead
-  const scrubber = piiConfig?.scrubOutput === true ? new StreamingScrubber(piiConfig) : null;
+  const outPii = piiConfig?.policies?.length ? mergePolicies(piiConfig.policies, 'output') : null;
+  const scrubber = (outPii && (outPii.entities?.length || outPii.customPatterns?.length)) ? new StreamingScrubber(outPii) : null;
 
   function emitTextDelta(dataStr: string) {
     try {
@@ -238,7 +239,7 @@ export async function forwardOpenAIOAuthSSE(
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
       const blocks = buffer.split('\n\n');
-      buffer = blocks.pop() ?? '';
+      buffer = blocks.pop()!; // ponytail: split always returns ≥1 element; pop() is never undefined
       for (const block of blocks) {
         if (block.trim()) processBlock(block);
       }

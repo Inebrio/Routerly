@@ -413,7 +413,7 @@ describe('POST /v1/messages — guardrail block & PII output trace', () => {
 
   const guardProject: ProjectConfig = {
     id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
-    guardrails: { action: 'block', fallbackMessage: 'nope', rules: [{ type: 'regex', target: 'request', config: { patterns: ['forbidden'] } }] },
+    guardrails: { rules: [{ type: 'regex', target: 'request', block: true, config: { patterns: ['forbidden'] } }] },
   } as any
 
   it('request block returns refusal wire format (empty content, stop_reason refusal, stop_details, trace-id header)', async () => {
@@ -436,7 +436,7 @@ describe('POST /v1/messages — guardrail block & PII output trace', () => {
     // trace carries the readable reason for the dashboard
     const traceCall = mockAppendTrace.mock.calls.find(c => (c[1] as any[])[0]?.message === 'guardrail:triggered')
     expect(traceCall).toBeDefined()
-    expect((traceCall![1] as any[])[0].details).toMatchObject({ action: 'block', fallbackMessage: 'nope', target: 'request' })
+    expect((traceCall![1] as any[])[0].details).toMatchObject({ block: true, target: 'request' })
     expect(mockLlmMessages).not.toHaveBeenCalled()
     // C3: blocked request recorded with outcome 'blocked', callType 'guardrail', cost 0, blockedBy set.
     expect(mockTrackUsage).toHaveBeenCalledTimes(1)
@@ -467,7 +467,7 @@ describe('POST /v1/messages — guardrail block & PII output trace', () => {
   it('response block returns refusal wire format', async () => {
     const respGuard: ProjectConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
-      guardrails: { action: 'block', fallbackMessage: 'nope', rules: [{ type: 'regex', target: 'response', config: { patterns: ['leak'] } }] },
+      guardrails: { rules: [{ type: 'regex', target: 'response', block: true, config: { patterns: ['leak'] } }] },
     } as any
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
     mockReadConfig.mockResolvedValue([testModel])
@@ -490,7 +490,7 @@ describe('POST /v1/messages — guardrail block & PII output trace', () => {
   it('PII output scrubbing emits a response pii:scrubbed trace entry', async () => {
     const piiProject: ProjectConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
-      pii: { scrubOutput: true },
+      pii: { policies: [{ name: 'default', target: 'response', entities: ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'] }] },
     } as any
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
     mockReadConfig.mockResolvedValue([testModel])
@@ -514,7 +514,7 @@ describe('POST /v1/messages — guardrail block & PII output trace', () => {
   it('clean input with PII active emits pii:evaluated (redacted []) and no pii:scrubbed, wire response unchanged', async () => {
     const piiProject: ProjectConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
-      pii: { scrubInput: true },
+      pii: { policies: [{ name: 'default', target: 'request', entities: ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'] }] },
     } as any
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
     mockReadConfig.mockResolvedValue([testModel])
@@ -541,7 +541,7 @@ describe('POST /v1/messages — guardrail block & PII output trace', () => {
   it('input with a PII hit emits BOTH pii:evaluated (entities) and pii:scrubbed', async () => {
     const piiProject: ProjectConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
-      pii: { scrubInput: true },
+      pii: { policies: [{ name: 'default', target: 'request', entities: ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'] }] },
     } as any
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
     mockReadConfig.mockResolvedValue([testModel])
@@ -567,7 +567,7 @@ describe('POST /v1/messages — guardrail block & PII output trace', () => {
   it('clean output (non-streaming) with scrubOutput active emits pii:evaluated (redacted []) and no pii:scrubbed', async () => {
     const piiProject: ProjectConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
-      pii: { scrubOutput: true },
+      pii: { policies: [{ name: 'default', target: 'response', entities: ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'] }] },
     } as any
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
     mockReadConfig.mockResolvedValue([testModel])
@@ -607,8 +607,7 @@ describe('POST /v1/messages — guardrail warn action and BudgetExceededError (l
     const warnProject: ProjectConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
       guardrails: {
-        action: 'warn',
-        rules: [{ type: 'topic', target: 'request', config: { modelId: 'm1', allowedTopics: 'x', threshold: 0.99 } }],
+        rules: [{ type: 'topic', target: 'request', log: true, config: { modelId: 'm1', allowedTopics: 'x', threshold: 0.99 } }],
       },
     } as any
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
@@ -635,8 +634,7 @@ describe('POST /v1/messages — guardrail warn action and BudgetExceededError (l
     const guardProject: ProjectConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
       guardrails: {
-        action: 'block',
-        rules: [{ type: 'topic', target: 'request', config: { modelId: 'm1', allowedTopics: 'x', threshold: 0.5 } }],
+        rules: [{ type: 'topic', target: 'request', block: true, config: { modelId: 'm1', allowedTopics: 'x', threshold: 0.5 } }],
       },
     } as any
     mockReadConfig.mockResolvedValue([testModel])
@@ -658,8 +656,7 @@ describe('POST /v1/messages — guardrail warn action and BudgetExceededError (l
     const respWarnProject: ProjectConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
       guardrails: {
-        action: 'warn',
-        rules: [{ type: 'regex', target: 'response', config: { patterns: ['secret'] } }],
+        rules: [{ type: 'regex', target: 'response', log: true, config: { patterns: ['secret'] } }],
       },
     } as any
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
@@ -700,7 +697,7 @@ describe('anthropic.ts — uncovered branches', () => {
     // Project with no models at all → firstModelId is undefined → model is undefined → early return
     const noModelProject: ProjectConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [],
-      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'request', config: { patterns: ['bad'] } }] },
+      guardrails: { rules: [{ type: 'regex', target: 'request', block: true, config: { patterns: ['bad'] } }] },
     } as any
     mockReadConfig.mockResolvedValue([testModel]) // models config has m1 but project has no models
     const app = await buildAppWith(noModelProject)
@@ -721,7 +718,7 @@ describe('anthropic.ts — uncovered branches', () => {
     mockReadConfig.mockResolvedValue([testModel])
     const blockProject: ProjectConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
-      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'request', config: { patterns: ['bad'] } }] },
+      guardrails: { rules: [{ type: 'regex', target: 'request', block: true, config: { patterns: ['bad'] } }] },
     } as any
     const app = await buildAppWith(blockProject)
     const res = await app.inject({
@@ -738,7 +735,7 @@ describe('anthropic.ts — uncovered branches', () => {
     // Project references m1 but models config is empty → find returns undefined → early return
     const blockProject: ProjectConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
-      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'request', config: { patterns: ['bad'] } }] },
+      guardrails: { rules: [{ type: 'regex', target: 'request', block: true, config: { patterns: ['bad'] } }] },
     } as any
     mockReadConfig.mockResolvedValue([]) // no models in config → find returns undefined
     const app = await buildAppWith(blockProject)
@@ -756,7 +753,7 @@ describe('anthropic.ts — uncovered branches', () => {
     // token=undefined covers the false branch of ternary at line 50
     const guardProject: ProjectConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
-      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'request', config: { patterns: ['x'] } }] },
+      guardrails: { rules: [{ type: 'regex', target: 'request', block: true, config: { patterns: ['x'] } }] },
     } as any
     mockReadConfig.mockResolvedValue([testModel])
     const app = await buildAppWith(guardProject, undefined) // no token
@@ -776,7 +773,7 @@ describe('anthropic.ts — uncovered branches', () => {
     mockReadConfig.mockResolvedValue([testModel])
     const guardProject: ProjectConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
-      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'request', config: { patterns: ['.*'] } }] },
+      guardrails: { rules: [{ type: 'regex', target: 'request', block: true, config: { patterns: ['.*'] } }] },
     } as any
     const app = await buildAppWith(guardProject)
     const res = await app.inject({
@@ -795,7 +792,7 @@ describe('anthropic.ts — uncovered branches', () => {
     // When first content block is not text type → responseText = '' → guardrail skipped
     const respGuardProject: ProjectConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
-      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'response', config: { patterns: ['bad'] } }] },
+      guardrails: { rules: [{ type: 'regex', target: 'response', block: true, config: { patterns: ['bad'] } }] },
     } as any
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
     mockReadConfig.mockResolvedValue([testModel])
@@ -832,7 +829,7 @@ describe('POST /v1/messages — non-BudgetExceededError from checkGuardrails (li
     // A non-BCE throw from checkBudget propagates out of checkRule → checkGuardrails → line 66 throw err.
     const semanticProject: ProjectConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
-      guardrails: { action: 'block', rules: [{ type: 'semantic', target: 'request', config: { embeddingModelId: 'm1', examples: ['x'], threshold: 0.8 } }] },
+      guardrails: { rules: [{ type: 'semantic', target: 'request', block: true, config: { embeddingModelId: 'm1', examples: ['x'], threshold: 0.8 } }] },
     } as any
     mockReadConfig.mockResolvedValue([testModel])
     mockCheckBudget.mockRejectedValueOnce(new Error('disk error'))
@@ -851,7 +848,7 @@ describe('POST /v1/messages — non-BudgetExceededError from checkGuardrails (li
   it('blocked request with no model field in body uses "unknown" (line 83 body.model ?? "unknown")', async () => {
     const blockProject: ProjectConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
-      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'request', config: { patterns: ['blocked'] } }] },
+      guardrails: { rules: [{ type: 'regex', target: 'request', block: true, config: { patterns: ['blocked'] } }] },
     } as any
     mockReadConfig.mockResolvedValue([testModel])
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
@@ -927,7 +924,7 @@ describe('POST /v1/messages — pii.scrubOutput with non-text content (line 168)
   it('skips text scrubbing when content block is not text type (line 168 branch=1)', async () => {
     const piiProject: ProjectConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
-      pii: { scrubOutput: true, entities: ['EMAIL'] },
+      pii: { policies: [{ name: 'default', target: 'response' as const, entities: ['EMAIL' as const] }] },
     } as any
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
     mockReadConfig.mockResolvedValue([testModel])
@@ -952,7 +949,7 @@ describe('POST /v1/messages — pii.scrubOutput with non-text content (line 168)
   it('body.model ?? "unknown" in response guardrail block (line 198 binary-expr branch=1)', async () => {
     const respBlockProject: ProjectConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
-      guardrails: { action: 'block', rules: [{ type: 'regex', target: 'response', config: { patterns: ['bad'] } }] },
+      guardrails: { rules: [{ type: 'regex', target: 'response', block: true, config: { patterns: ['bad'] } }] },
     } as any
     mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
     mockReadConfig.mockResolvedValue([testModel])

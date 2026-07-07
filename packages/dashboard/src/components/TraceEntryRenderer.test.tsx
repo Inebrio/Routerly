@@ -10,7 +10,7 @@ describe('TraceEntryRenderer — guardrail:triggered', () => {
       <TraceEntryRenderer entry={{
         message: 'guardrail:triggered',
         panel: 'request',
-        details: { rule: 'regex:competitor', target: 'request', action: 'block' },
+        details: { rule: 'regex:competitor', target: 'request', block: true },
       }} />
     );
     expect(screen.getByText(/REQUEST GUARDRAIL BLOCKED/i)).toBeTruthy();
@@ -21,7 +21,7 @@ describe('TraceEntryRenderer — guardrail:triggered', () => {
       <TraceEntryRenderer entry={{
         message: 'guardrail:triggered',
         panel: 'response',
-        details: { rule: 'topic:score=0.20', target: 'response', action: 'block' },
+        details: { rule: 'topic:score=0.20', target: 'response', block: true },
       }} />
     );
     expect(screen.getByText(/RESPONSE GUARDRAIL BLOCKED/i)).toBeTruthy();
@@ -32,41 +32,41 @@ describe('TraceEntryRenderer — guardrail:triggered', () => {
       <TraceEntryRenderer entry={{
         message: 'guardrail:triggered',
         panel: 'request',
-        details: { rule: 'semantic:safe', target: 'both', action: 'block' },
+        details: { rule: 'semantic:safe', target: 'both', block: true },
       }} />
     );
     expect(screen.getByText(/RESPONSE GUARDRAIL BLOCKED/i)).toBeTruthy();
   });
 
-  it('shows rule and action', () => {
+  it('shows rule and block action summary', () => {
     render(
       <TraceEntryRenderer entry={{
         message: 'guardrail:triggered',
         panel: 'request',
-        details: { rule: 'regex:competitor', target: 'request', action: 'block' },
+        details: { rule: 'regex:competitor', target: 'request', block: true, log: true },
       }} />
     );
     expect(screen.getByText('regex:competitor')).toBeTruthy();
-    expect(screen.getByText('block')).toBeTruthy();
+    expect(screen.getByText('block+log')).toBeTruthy();
   });
 
-  it('shows fallbackMessage when present', () => {
+  it('shows blockMessage when present', () => {
     render(
       <TraceEntryRenderer entry={{
         message: 'guardrail:triggered',
         panel: 'request',
-        details: { rule: 'regex:x', target: 'request', action: 'block', fallbackMessage: 'Content blocked.' },
+        details: { rule: 'regex:x', target: 'request', block: true, blockMessage: 'Content blocked.' },
       }} />
     );
     expect(screen.getByText('Content blocked.')).toBeTruthy();
   });
 
-  it('shows TRIGGERED (not BLOCKED) when action is not block', () => {
+  it('shows TRIGGERED (not BLOCKED) when block is not true', () => {
     render(
       <TraceEntryRenderer entry={{
         message: 'guardrail:triggered',
         panel: 'request',
-        details: { rule: 'regex:x', target: 'request', action: 'flag' },
+        details: { rule: 'regex:x', target: 'request', log: true },
       }} />
     );
     expect(screen.getByText(/REQUEST GUARDRAIL TRIGGERED/i)).toBeTruthy();
@@ -77,7 +77,7 @@ describe('TraceEntryRenderer — guardrail:triggered', () => {
       <TraceEntryRenderer entry={{
         message: 'guardrail:response-triggered',
         panel: 'response',
-        details: { rule: 'moderation:unsafe', target: 'response', action: 'block' },
+        details: { rule: 'moderation:unsafe', target: 'response', block: true },
       }} />
     );
     expect(screen.getByText(/RESPONSE GUARDRAIL BLOCKED/i)).toBeTruthy();

@@ -1,8 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { scrubPii, scrubMessages, StreamingScrubber } from './piiScrubber.js';
-import type { PiiConfig } from '@routerly/shared';
+import { scrubPii, scrubMessages, scrubText, StreamingScrubber, mergePolicies } from './piiScrubber.js';
+import type { EffectivePii } from './piiScrubber.js';
+import type { PiiPolicy } from '@routerly/shared';
 
 const ALL = ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'];
+
+// Helpers: build EffectivePii directly (callers use mergePolicies in production)
+const allEntitiesEff: EffectivePii = { entities: ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'] };
+const emptyEff: EffectivePii = { entities: [], customPatterns: [] };
 
 describe('scrubPii — single entity types', () => {
   it('redacts EMAIL', () => {
@@ -81,15 +86,13 @@ describe('scrubPii — selection and combinations', () => {
 });
 
 describe('scrubMessages', () => {
-  const cfg: PiiConfig = {};
-
   it('scrubs string content across messages and aggregates redacted entities', () => {
     const messages = [
       { role: 'user', content: 'my email is a@b.com' },
       { role: 'assistant', content: 'ok' },
       { role: 'user', content: 'my ssn is 123-45-6789' },
     ];
-    const { messages: out, redacted } = scrubMessages(messages, cfg);
+    const { messages: out, redacted } = scrubMessages(messages, allEntitiesEff);
     expect((out[0] as any).content).toBe('my email is [EMAIL]');
     expect((out[2] as any).content).toBe('my ssn is [SSN]');
     expect(redacted.sort()).toEqual(['EMAIL', 'SSN']);
@@ -97,7 +100,7 @@ describe('scrubMessages', () => {
 
   it('leaves array (multimodal) content untouched', () => {
     const messages = [{ role: 'user', content: [{ type: 'text', text: 'a@b.com' }] }];
-    const { messages: out, redacted } = scrubMessages(messages, cfg);
+    const { messages: out, redacted } = scrubMessages(messages, allEntitiesEff);
     expect(out[0]).toBe(messages[0]);
     expect(redacted).toEqual([]);
   });
@@ -111,13 +114,14 @@ describe('scrubMessages', () => {
 
   it('returns no redactions for clean messages', () => {
     const messages = [{ role: 'user', content: 'hello world' }];
-    const { redacted } = scrubMessages(messages, cfg);
+    const { redacted } = scrubMessages(messages, allEntitiesEff);
     expect(redacted).toEqual([]);
   });
 
   it('applies customPatterns via scrubMessages', () => {
     const messages = [{ role: 'user', content: 'my token is tok-abc123' }];
     const { messages: out, redacted } = scrubMessages(messages, {
+      entities: [],
       customPatterns: ['tok-[a-z0-9]+'],
     });
     expect((out[0] as any).content).toBe('my token is [REDACTED]');
@@ -126,11 +130,11 @@ describe('scrubMessages', () => {
 });
 
 describe('StreamingScrubber', () => {
-  const cfg = (outputBufferSize?: number): import('@routerly/shared').PiiConfig =>
-    ({ ...(outputBufferSize !== undefined ? { outputBufferSize } : {}) });
+  const eff = (outputBufferSize?: number): EffectivePii =>
+    ({ entities: ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'], ...(outputBufferSize !== undefined ? { outputBufferSize } : {}) });
 
   it('catches a pattern wholly within one chunk', () => {
-    const s = new StreamingScrubber(cfg(30));
+    const s = new StreamingScrubber(eff(30));
     // push a short chunk — under N, so nothing emitted yet
     s.push('contact ');
     const out = s.push('a@b.com end');
@@ -141,7 +145,7 @@ describe('StreamingScrubber', () => {
   });
 
   it('catches a pattern split across two pushes with N=30', () => {
-    const s = new StreamingScrubber(cfg(30));
+    const s = new StreamingScrubber(eff(30));
     // Split "mario@example.com" across two pushes, both halves < 30 chars
     s.push('contact mario@exa');
     const out2 = s.push('mple.com today');
@@ -154,7 +158,7 @@ describe('StreamingScrubber', () => {
   it('documents expected miss: pattern split with first half > N chars', () => {
     // ponytail: known ceiling — if the first half of a PII token is longer than N,
     // it will be emitted before the second half arrives. Increase outputBufferSize to fix.
-    const s = new StreamingScrubber(cfg(5)); // tiny buffer
+    const s = new StreamingScrubber(eff(5)); // tiny buffer
     const out1 = s.push('mario@example.c'); // 15 chars > 5 → emits 10 chars un-scrubbed
     s.push('om');
     const remaining = s.flush();
@@ -165,7 +169,7 @@ describe('StreamingScrubber', () => {
   });
 
   it('flush() scrubs and returns remaining buffer', () => {
-    const s = new StreamingScrubber(cfg(30));
+    const s = new StreamingScrubber(eff(30));
     s.push('hello ');
     // buffer is 6 chars < 30, nothing emitted
     const remaining = s.flush();
@@ -173,59 +177,168 @@ describe('StreamingScrubber', () => {
   });
 
   it('empty push returns empty string', () => {
-    const s = new StreamingScrubber(cfg(30));
+    const s = new StreamingScrubber(eff(30));
     expect(s.push('')).toBe('');
   });
 
   it('flush() on fresh scrubber returns empty string', () => {
-    const s = new StreamingScrubber(cfg(30));
+    const s = new StreamingScrubber(eff(30));
     expect(s.flush()).toBe('');
   });
 
   it('resets buffer after flush', () => {
-    const s = new StreamingScrubber(cfg(30));
+    const s = new StreamingScrubber(eff(30));
     s.push('some text');
     s.flush();
     expect(s.flush()).toBe('');
   });
+
+  it('uses outputBufferSize from EffectivePii', () => {
+    const s = new StreamingScrubber(eff(100));
+    // With n=100, pushing 50 chars stays buffered
+    const out = s.push('a'.repeat(50));
+    expect(out).toBe('');
+  });
 });
 
-describe('piiScrubber — policy merging', () => {
+// ─── mergePolicies ─────────────────────────────────────────────────────────────
+
+describe('mergePolicies', () => {
+  it('includes request-target policy for input direction', () => {
+    const policies: PiiPolicy[] = [
+      { name: 'req', target: 'request', entities: ['SSN'] },
+    ];
+    const result = mergePolicies(policies, 'input');
+    expect(result.entities).toContain('SSN');
+  });
+
+  it('includes both-target policy for input direction', () => {
+    const policies: PiiPolicy[] = [
+      { name: 'both', target: 'both', entities: ['EMAIL'] },
+    ];
+    const result = mergePolicies(policies, 'input');
+    expect(result.entities).toContain('EMAIL');
+  });
+
+  it('excludes response-only policy for input direction', () => {
+    const policies: PiiPolicy[] = [
+      { name: 'res', target: 'response', entities: ['EMAIL'] },
+    ];
+    const result = mergePolicies(policies, 'input');
+    expect(result.entities).toEqual([]);
+  });
+
+  it('includes response-target policy for output direction', () => {
+    const policies: PiiPolicy[] = [
+      { name: 'res', target: 'response', entities: ['PHONE'] },
+    ];
+    const result = mergePolicies(policies, 'output');
+    expect(result.entities).toContain('PHONE');
+  });
+
+  it('excludes request-only policy for output direction', () => {
+    const policies: PiiPolicy[] = [
+      { name: 'req', target: 'request', entities: ['SSN'] },
+    ];
+    const result = mergePolicies(policies, 'output');
+    expect(result.entities).toEqual([]);
+  });
+
+  it('skips disabled policies', () => {
+    const policies: PiiPolicy[] = [
+      { name: 'off', target: 'both', enabled: false, entities: ['EMAIL'] },
+      { name: 'on', target: 'both', entities: ['SSN'] },
+    ];
+    const result = mergePolicies(policies, 'input');
+    expect(result.entities).not.toContain('EMAIL');
+    expect(result.entities).toContain('SSN');
+  });
+
+  it('unions entities from multiple matching policies', () => {
+    const policies: PiiPolicy[] = [
+      { name: 'a', target: 'both', entities: ['SSN'] },
+      { name: 'b', target: 'both', entities: ['EMAIL'] },
+    ];
+    const result = mergePolicies(policies, 'input');
+    expect(result.entities?.sort()).toEqual(['EMAIL', 'SSN']);
+  });
+
+  it('deduplicates customPatterns', () => {
+    const policies: PiiPolicy[] = [
+      { name: 'a', target: 'both', customPatterns: ['tok-[a-z]+'] },
+      { name: 'b', target: 'both', customPatterns: ['tok-[a-z]+', 'sec-[0-9]+'] },
+    ];
+    const result = mergePolicies(policies, 'input');
+    // Set dedup: tok-[a-z]+ appears once
+    expect(result.customPatterns?.filter(p => p === 'tok-[a-z]+').length).toBe(1);
+    expect(result.customPatterns).toContain('sec-[0-9]+');
+  });
+
+  it('outputBufferSize = max across matched policies', () => {
+    const policies: PiiPolicy[] = [
+      { name: 'a', target: 'response', outputBufferSize: 40 },
+      { name: 'b', target: 'response', outputBufferSize: 80 },
+      { name: 'c', target: 'response' }, // no outputBufferSize
+    ];
+    const result = mergePolicies(policies, 'output');
+    expect(result.outputBufferSize).toBe(80);
+  });
+
+  it('outputBufferSize is undefined when no policy specifies it', () => {
+    const policies: PiiPolicy[] = [
+      { name: 'a', target: 'both' },
+    ];
+    const result = mergePolicies(policies, 'output');
+    expect(result.outputBufferSize).toBeUndefined();
+  });
+
+  it('uses ALL_ENTITIES when policy has no entities field', () => {
+    const policies: PiiPolicy[] = [
+      { name: 'default', target: 'both' }, // no entities
+    ];
+    const result = mergePolicies(policies, 'input');
+    expect(result.entities?.sort()).toEqual(['CREDIT_CARD', 'EMAIL', 'IBAN', 'PHONE', 'SSN']);
+  });
+
+  it('returns empty entities and patterns when no policies match', () => {
+    const result = mergePolicies([], 'input');
+    expect(result.entities).toEqual([]);
+    expect(result.customPatterns).toEqual([]);
+  });
+});
+
+describe('piiScrubber — policy-driven scrubbing via mergePolicies', () => {
   it('merges entities from enabled policies for input direction', () => {
     const messages = [{ role: 'user', content: 'ssn 123-45-6789 card 4111 1111 1111 1111' }];
-    const config: PiiConfig = {
-      // base: no scrubInput, no entities
-      policies: [
-        { name: 'strict', scrubInput: true, entities: ['SSN'] },
-        { name: 'financial', scrubInput: true, entities: ['CREDIT_CARD'] },
-      ],
-    };
-    const { messages: out, redacted } = scrubMessages(messages, config);
+    const policies: PiiPolicy[] = [
+      { name: 'strict', target: 'request', entities: ['SSN'] },
+      { name: 'financial', target: 'request', entities: ['CREDIT_CARD'] },
+    ];
+    const eff = mergePolicies(policies, 'input');
+    const { messages: out, redacted } = scrubMessages(messages, eff);
     expect((out[0] as any).content).toBe('ssn [SSN] card [CREDIT_CARD]');
     expect(redacted.sort()).toEqual(['CREDIT_CARD', 'SSN']);
   });
 
   it('skips disabled policies', () => {
     const messages = [{ role: 'user', content: 'ssn 123-45-6789 mail a@b.com' }];
-    const config: PiiConfig = {
-      policies: [
-        { name: 'active', scrubInput: true, entities: ['SSN'] },
-        { name: 'off', enabled: false, scrubInput: true, entities: ['EMAIL'] },
-      ],
-    };
-    const { messages: out, redacted } = scrubMessages(messages, config);
+    const policies: PiiPolicy[] = [
+      { name: 'active', target: 'request', entities: ['SSN'] },
+      { name: 'off', enabled: false, target: 'request', entities: ['EMAIL'] },
+    ];
+    const eff = mergePolicies(policies, 'input');
+    const { messages: out, redacted } = scrubMessages(messages, eff);
     expect((out[0] as any).content).toBe('ssn [SSN] mail a@b.com');
     expect(redacted).toEqual(['SSN']);
   });
 
   it('does not merge output-only policy into input scrubbing', () => {
     const messages = [{ role: 'user', content: 'ssn 123-45-6789' }];
-    const config: PiiConfig = {
-      policies: [
-        { name: 'output-only', scrubInput: false, scrubOutput: true, entities: ['SSN'] },
-      ],
-    };
-    const { messages: out, redacted } = scrubMessages(messages, config);
+    const policies: PiiPolicy[] = [
+      { name: 'output-only', target: 'response', entities: ['SSN'] },
+    ];
+    const eff = mergePolicies(policies, 'input');
+    const { messages: out, redacted } = scrubMessages(messages, eff);
     // policy only applies to output, so input is untouched
     expect((out[0] as any).content).toBe('ssn 123-45-6789');
     expect(redacted).toEqual([]);
@@ -259,30 +372,45 @@ describe('scrubPii — customPatterns', () => {
   });
 });
 
-// ─── scrubMessages edge cases (line 151 branch=0, line 34 ?? ALL_ENTITIES) ────
+// ─── scrubMessages edge cases ────────────────────────────────────────────────
 
 describe('scrubMessages edge cases', () => {
-  it('passes through null/non-object messages unchanged (line 151 branch=0)', () => {
-    const config: PiiConfig = { entities: ['EMAIL'] };
-    // Messages array contains null and a string → non-objects pass through
+  it('passes through null/non-object messages unchanged', () => {
     const msgs: any[] = [null, 'string-message', { role: 'user', content: 'contact a@b.com' }];
-    const { messages, redacted } = scrubMessages(msgs, config);
+    const { messages, redacted } = scrubMessages(msgs, { entities: ['EMAIL'] });
     expect(messages[0]).toBeNull();
     expect(messages[1]).toBe('string-message');
     expect(redacted).toContain('EMAIL');
   });
 
-  it('uses ALL_ENTITIES when policy has no entities field (line 34 p.entities ?? ALL_ENTITIES)', () => {
-    const config: PiiConfig = {
-      scrubInput: true,
-      policies: [
-        { name: 'no-entities-policy', scrubInput: true }  // no entities field
-      ],
-    } as any;
-    // Policy without entities → falls back to ALL_ENTITIES in loop
+  it('scrubMessages with empty entities does not scrub (no entities = nothing to find)', () => {
+    // Empty entities in EffectivePii → nothing to scrub (callers guard with entities?.length check)
     const msgs = [{ role: 'user', content: 'call me at john@example.com or 555-1234' }];
-    const { redacted } = scrubMessages(msgs, config);
-    // Should redact EMAIL at minimum (ALL_ENTITIES includes EMAIL)
-    expect(redacted.length).toBeGreaterThan(0);
+    const { redacted } = scrubMessages(msgs, emptyEff);
+    expect(redacted).toEqual([]);
+  });
+
+  it('scrubText with empty entities does not scrub', () => {
+    const { text, found } = scrubText('call a@b.com', emptyEff);
+    expect(text).toBe('call a@b.com');
+    expect(found).toEqual([]);
+  });
+
+  // ─── entities=undefined branch (lines 107 and 169 false branch) ───────────────
+  it('scrubText falls back to ALL_ENTITIES when EffectivePii.entities is undefined', () => {
+    // entities field not present → `effective.entities !== undefined` is false → uses ALL_ENTITIES
+    const eff: EffectivePii = {}; // no entities key
+    const { text, found } = scrubText('email me at a@b.com', eff);
+    expect(text).toBe('email me at [EMAIL]');
+    expect(found).toContain('EMAIL');
+  });
+
+  it('scrubMessages falls back to ALL_ENTITIES when EffectivePii.entities is undefined', () => {
+    // Same branch in scrubMessages (line 169)
+    const eff: EffectivePii = {}; // no entities key
+    const msgs = [{ role: 'user', content: 'my ssn 123-45-6789' }];
+    const { messages, redacted } = scrubMessages(msgs, eff);
+    expect((messages[0] as any).content).toBe('my ssn [SSN]');
+    expect(redacted).toContain('SSN');
   });
 });

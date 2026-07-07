@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
-  Send, Square, Paperclip, AlertCircle, Eye, EyeOff, CheckCircle2,
+  Send, Square, Paperclip, AlertCircle, AlertTriangle, Eye, EyeOff, CheckCircle2,
   ChevronLeft, ChevronRight, Code, Trash2, Save, BookOpen,
   SplitSquareHorizontal, MessageSquare,
 } from 'lucide-react';
@@ -17,7 +17,7 @@ interface GuardrailBlock {
   rule: string;
   target: string;
   action: string;
-  fallbackMessage?: string;
+  blockMessage?: string;
 }
 
 interface Message {
@@ -30,6 +30,8 @@ interface Message {
   latencyMs?: number;
   rawJson?: string;
   blocked?: GuardrailBlock;
+  /** finish_reason from the final SSE chunk */
+  finishReason?: string;
 }
 
 interface ContentPart {
@@ -380,6 +382,9 @@ export function TestPage() {
   const [debugTraceHistory, setDebugTraceHistory] = useState<(unknown[] | null)[]>([]);
   const [showDebugSidebar, setShowDebugSidebar] = useState(true);
 
+  // Stream toggle (disabled when streamingDisabled)
+  const [streamEnabled, setStreamEnabled] = useState(true);
+
   // Compare mode
   const [compareModelA, setCompareModelA] = useState('');
   const [compareModelB, setCompareModelB] = useState('');
@@ -404,6 +409,14 @@ export function TestPage() {
   }, [apiKey, projects]);
 
   const availableModels = useMemo(() => matchedProject?.models ?? [], [matchedProject]);
+
+  // ponytail: response-blocking rule => whole response must be buffered => no streaming
+  const streamingDisabled = useMemo(
+    () => matchedProject?.guardrails?.rules?.some(
+      r => r.block === true && (r.target === 'response' || r.target === 'both'),
+    ) ?? false,
+    [matchedProject],
+  );
 
   useEffect(() => { getProjects().then(setProjects).catch(console.error); }, []);
 
@@ -450,7 +463,9 @@ export function TestPage() {
     const payload = {
       model: modelToUse,
       messages: [...sysMsgs, ...newMessages],
-      stream: true, temperature, max_tokens: maxTokens, top_p: topP,
+      // ponytail: streamingDisabled forces stream=false; otherwise respect user toggle
+      stream: streamingDisabled ? false : streamEnabled,
+      temperature, max_tokens: maxTokens, top_p: topP,
     };
 
     let finalContent = '';
@@ -569,12 +584,15 @@ export function TestPage() {
       if (isBlocked) {
         const guardEntry = traceEntries.find(e => e.message === 'guardrail:triggered' || e.message === 'guardrail:response-triggered');
         if (guardEntry?.details) {
-          const fm = guardEntry.details.fallbackMessage ? String(guardEntry.details.fallbackMessage) : undefined;
+          const bk = guardEntry.details.block;
+          const lg = guardEntry.details.log;
+          const action = [bk && 'block', lg && 'log'].filter(Boolean).join('+') || 'block';
+          const bm = guardEntry.details.blockMessage ? String(guardEntry.details.blockMessage) : undefined;
           blocked = {
             rule: String(guardEntry.details.rule ?? '—'),
             target: String(guardEntry.details.target ?? '—'),
-            action: String(guardEntry.details.action ?? 'block'),
-            ...(fm ? { fallbackMessage: fm } : {}),
+            action,
+            ...(bm ? { blockMessage: bm } : {}),
           };
         } else {
           // No trace entry found — still mark as blocked with minimal info
@@ -588,6 +606,7 @@ export function TestPage() {
         rawJson: rawChunks.join('\n'),
         ...(thinkingAccum ? { thinking: thinkingAccum } : {}),
         ...(blocked ? { blocked } : {}),
+        ...(finishReason ? { finishReason } : {}),
       };
       setMessages(prev => { const u = [...prev]; if (assistantAdded) u[u.length - 1] = fullMsg; else u.push(fullMsg); return u; });
     } catch (e) {
@@ -830,6 +849,26 @@ export function TestPage() {
           <>
             {/* Chat card */}
             <div className="card" style={{ flex: 2, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
+              {/* Streaming-disabled banner */}
+              {streamingDisabled && (
+                <div
+                  data-testid="streaming-disabled-banner"
+                  style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 10,
+                    padding: '10px 16px',
+                    background: 'color-mix(in srgb, #f59e0b 10%, transparent)',
+                    borderBottom: '1px solid color-mix(in srgb, #f59e0b 40%, transparent)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <AlertTriangle size={15} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />
+                  <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                    <strong style={{ color: '#b45309' }}>Streaming not available</strong> — this project has a
+                    response-blocking guardrail active. Routerly must inspect the full response before delivery,
+                    so responses arrive all at once.
+                  </p>
+                </div>
+              )}
               {/* Controls */}
               <div style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)', flexShrink: 0 }}>
                 <button onClick={() => setSystemPromptOpen(!systemPromptOpen)}
@@ -856,6 +895,29 @@ export function TestPage() {
                   <ParamSlider label="Temp" value={temperature} min={0} max={2} step={0.1} onChange={setTemperature} />
                   <ParamSlider label="Max tokens" value={maxTokens} min={64} max={8192} step={64} onChange={setMaxTokens} />
                   <ParamSlider label="Top-p" value={topP} min={0} max={1} step={0.05} onChange={setTopP} />
+                  <label
+                    title={streamingDisabled ? 'Streaming is not available: a response-blocking guardrail requires the full response to be inspected before delivery.' : undefined}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 5,
+                      fontSize: '0.75rem',
+                      color: streamingDisabled ? 'var(--text-muted)' : 'var(--text-secondary)',
+                      cursor: streamingDisabled ? 'not-allowed' : 'pointer',
+                      opacity: streamingDisabled ? 0.55 : 1,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      data-testid="stream-toggle"
+                      checked={streamingDisabled ? false : streamEnabled}
+                      disabled={streamingDisabled}
+                      onChange={e => setStreamEnabled(e.target.checked)}
+                      style={{ width: 13, height: 13, accentColor: 'var(--primary)', cursor: streamingDisabled ? 'not-allowed' : 'pointer' }}
+                    />
+                    Stream
+                    {streamingDisabled && (
+                      <AlertTriangle size={12} style={{ color: '#f59e0b' }} aria-label="Streaming unavailable" />
+                    )}
+                  </label>
                   {messages.length > 0 && (
                     <button className="btn" style={{ fontSize: '0.73rem', marginLeft: 'auto' }} onClick={() => { setMessages([]); setShowRaw({}); setDebugTraceHistory([]); }}>Clear</button>
                   )}
@@ -909,9 +971,9 @@ export function TestPage() {
                                 <div style={{ fontSize: '0.8rem', color: '#fca5a5' }}>{msg.blocked.action}</div>
                               </div>
                             </div>
-                            {msg.blocked.fallbackMessage && (
+                            {msg.blocked.blockMessage && (
                               <div style={{ fontSize: '0.8rem', color: '#fca5a5', fontStyle: 'italic', paddingTop: 4, borderTop: '1px solid rgba(239,68,68,0.25)', marginTop: 2 }}>
-                                {msg.blocked.fallbackMessage}
+                                {msg.blocked.blockMessage}
                               </div>
                             )}
                           </div>
@@ -944,7 +1006,7 @@ export function TestPage() {
                               )
                           )}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, fontSize: '0.7rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
                           <span style={{ textTransform: 'capitalize' }}>{isAssistant && msg.model ? msg.model : msg.role}</span>
                           {isAssistant && (msg.inputTokens || msg.outputTokens) && (
                             <span style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 5px', fontFamily: 'monospace' }}>
@@ -952,6 +1014,36 @@ export function TestPage() {
                             </span>
                           )}
                           {isAssistant && msg.latencyMs ? <span>{msg.latencyMs}ms</span> : null}
+                          {/* Truncation badge — response cut off by max_tokens */}
+                          {isAssistant && msg.finishReason === 'length' && (
+                            <span
+                              data-testid="truncation-badge"
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 3,
+                                background: 'color-mix(in srgb, #f59e0b 12%, transparent)',
+                                border: '1px solid color-mix(in srgb, #f59e0b 40%, transparent)',
+                                borderRadius: 4, padding: '1px 6px',
+                                color: '#b45309', fontWeight: 600,
+                              }}
+                            >
+                              <AlertTriangle size={10} /> Truncated — response cut off by max tokens
+                            </span>
+                          )}
+                          {/* Buffered-by-guardrail note */}
+                          {isAssistant && streamingDisabled && !msg.blocked && (
+                            <span
+                              data-testid="buffered-note"
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 3,
+                                background: 'color-mix(in srgb, #f59e0b 8%, transparent)',
+                                border: '1px solid color-mix(in srgb, #f59e0b 30%, transparent)',
+                                borderRadius: 4, padding: '1px 6px',
+                                color: 'var(--text-muted)',
+                              }}
+                            >
+                              <AlertTriangle size={10} style={{ color: '#f59e0b' }} /> Held for security review
+                            </span>
+                          )}
                           {isAssistant && msg.rawJson && (
                             <button
                               onClick={() => setShowRaw(prev => ({ ...prev, [i]: !prev[i] }))}

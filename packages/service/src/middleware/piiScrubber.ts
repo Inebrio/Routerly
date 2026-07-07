@@ -1,4 +1,4 @@
-import type { PiiConfig, PiiEntity, PiiPolicy } from '@routerly/shared';
+import type { PiiEntity, PiiPolicy } from '@routerly/shared';
 
 /** Detector for one PII entity type (#76). */
 interface Detector {
@@ -22,19 +22,47 @@ const DETECTORS: Detector[] = [
   { entity: 'PHONE', re: /(?<![\w])\+\d{1,3}[\s.-]?\(?\d{2,4}\)?(?:[\s.-]?\d{2,4}){2,4}|(?<![\w+])\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}(?![\w])/g, placeholder: '[PHONE_NUMBER]' },
 ];
 
-/** Merges entities and patterns from the base config and enabled policies for a given direction. */
-function mergeForDirection(config: PiiConfig, direction: 'input' | 'output'): { entities: PiiEntity[]; patterns: string[] } {
-  const dirFlag = direction === 'input' ? config.scrubInput : config.scrubOutput;
-  const entitySet = new Set<PiiEntity>(dirFlag ? (config.entities ?? ALL_ENTITIES) : []);
-  const patterns: string[] = dirFlag ? [...(config.customPatterns ?? [])] : [];
-  for (const p of (config.policies ?? []) as PiiPolicy[]) {
+/**
+ * Effective PII config derived from merging one or more policies for a direction.
+ * Passed to scrubText / scrubMessages / StreamingScrubber instead of the raw PiiConfig.
+ */
+export interface EffectivePii {
+  entities?: PiiEntity[];
+  customPatterns?: string[];
+  outputBufferSize?: number;
+}
+
+/**
+ * Merges enabled policies for the given direction into a flat EffectivePii.
+ * A policy is included when enabled!==false AND target matches direction:
+ *   input  => target 'request' or 'both'
+ *   output => target 'response' or 'both'
+ * outputBufferSize = max across matched policies (default 30 when none specify).
+ */
+export function mergePolicies(policies: PiiPolicy[], direction: 'input' | 'output'): EffectivePii {
+  const entitySet = new Set<PiiEntity>();
+  const patternSet = new Set<string>();
+  let bufferSize: number | undefined;
+
+  for (const p of policies) {
     if (p.enabled === false) continue;
-    const active = direction === 'input' ? p.scrubInput : p.scrubOutput;
-    if (!active) continue;
+    const matches = direction === 'input'
+      ? (p.target === 'request' || p.target === 'both')
+      : (p.target === 'response' || p.target === 'both');
+    if (!matches) continue;
     for (const e of (p.entities ?? ALL_ENTITIES)) entitySet.add(e);
-    patterns.push(...(p.customPatterns ?? []));
+    for (const pat of (p.customPatterns ?? [])) patternSet.add(pat);
+    if (p.outputBufferSize !== undefined) {
+      bufferSize = bufferSize === undefined ? p.outputBufferSize : Math.max(bufferSize, p.outputBufferSize);
+    }
   }
-  return { entities: [...entitySet], patterns: [...new Set(patterns)] };
+
+  const result: EffectivePii = {
+    entities: [...entitySet],
+    customPatterns: [...patternSet],
+  };
+  if (bufferSize !== undefined) result.outputBufferSize = bufferSize;
+  return result;
 }
 
 /**
@@ -73,14 +101,12 @@ export function scrubPii(
 }
 
 /**
- * Scrubs PII from a single string — used for output scrubbing (#76).
+ * Scrubs PII from a single string using the effective config (output direction).
  */
-export function scrubText(text: string, config: PiiConfig): { text: string; found: string[] } {
-  const { entities, patterns } = mergeForDirection(config, 'output');
-  // ponytail: fall back to all entities when output merge yields nothing (caller may set scrubOutput later)
-  const ents = entities.length > 0 ? entities : (config.entities ?? ALL_ENTITIES);
-  const pats = entities.length > 0 ? patterns : (config.customPatterns ?? []);
-  return scrubPii(text, ents, pats);
+export function scrubText(text: string, effective: EffectivePii): { text: string; found: string[] } {
+  const entities = effective.entities !== undefined ? effective.entities : ALL_ENTITIES;
+  const patterns = effective.customPatterns ?? [];
+  return scrubPii(text, entities, patterns);
 }
 
 /**
@@ -93,13 +119,13 @@ export function scrubText(text: string, config: PiiConfig): { text: string; foun
 export class StreamingScrubber {
   private buffer = '';
   private readonly n: number;
-  private readonly config: PiiConfig;
+  private readonly effective: EffectivePii;
   /** Distinct entity types redacted across all chunks — for the response trace (#76). */
   readonly found = new Set<string>();
 
-  constructor(config: PiiConfig) {
-    this.n = config.outputBufferSize ?? 30;
-    this.config = config;
+  constructor(effective: EffectivePii) {
+    this.n = effective.outputBufferSize ?? 30;
+    this.effective = effective;
   }
 
   /** Push a new text chunk. Returns the portion safe to emit (scrubbed). */
@@ -115,14 +141,14 @@ export class StreamingScrubber {
     if (lastSpace <= 0) return '';
     const safe = this.buffer.slice(0, lastSpace + 1);
     this.buffer = this.buffer.slice(lastSpace + 1);
-    const { text: scrubbed, found } = scrubText(safe, this.config);
+    const { text: scrubbed, found } = scrubText(safe, this.effective);
     found.forEach((e) => this.found.add(e));
     return scrubbed;
   }
 
   /** Call at stream end. Scrubs and returns the remaining buffer. */
   flush(): string {
-    const { text: result, found } = scrubText(this.buffer, this.config);
+    const { text: result, found } = scrubText(this.buffer, this.effective);
     found.forEach((e) => this.found.add(e));
     this.buffer = '';
     return result;
@@ -138,13 +164,10 @@ export class StreamingScrubber {
  */
 export function scrubMessages(
   messages: unknown[],
-  config: PiiConfig,
+  effective: EffectivePii,
 ): { messages: unknown[]; redacted: string[] } {
-  const merged = mergeForDirection(config, 'input');
-  // ponytail: when no policies defined, fall back to flat config (backward compat — callers pre-check scrubInput)
-  const hasPolicies = (config.policies?.length ?? 0) > 0;
-  const entities = (merged.entities.length > 0 || hasPolicies) ? merged.entities : (config.entities ?? ALL_ENTITIES);
-  const patterns = (merged.entities.length > 0 || hasPolicies) ? merged.patterns : (config.customPatterns ?? []);
+  const entities = effective.entities !== undefined ? effective.entities : ALL_ENTITIES;
+  const patterns = effective.customPatterns ?? [];
   const redacted = new Set<string>();
 
   const scrubbed = messages.map((message) => {

@@ -9,7 +9,7 @@ import { llmMessages, BudgetExceededError } from '../llm/executor.js';
 import type { LLMCallContext } from '../llm/executor.js';
 import { forwardAnthropicOAuth } from './oauthForward.js';
 import { checkGuardrails } from '../middleware/guardrails.js';
-import { scrubMessages, scrubText } from '../middleware/piiScrubber.js';
+import { mergePolicies, scrubMessages, scrubText } from '../middleware/piiScrubber.js';
 import { trackUsage } from '../cost/tracker.js';
 
 /**
@@ -71,25 +71,26 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
       }
       const hit = result.triggered ? { triggered: result.triggered } : null;
       if (hit) {
-        const fallbackMessage = project.guardrails.fallbackMessage ?? 'This request was blocked by content guardrails.';
-        request.log.warn({ projectId: project.id, rule: hit.triggered, action: result.action }, 'guardrail: triggered');
-        // Trace carries the readable reason (incl. fallbackMessage); the wire response no longer ships it (#76/#77).
-        appendTrace(traceId, [{ panel: 'request', message: 'guardrail:triggered', details: { rule: hit.triggered, target: 'request', action: result.action, fallbackMessage } }]);
-        if (result.action === 'block') {
+        const blockMessage = result.blockMessage ?? 'This request was blocked by content guardrails.';
+        request.log.warn({ projectId: project.id, rule: hit.triggered, block: result.block, log: result.log }, 'guardrail: triggered');
+        appendTrace(traceId, [{ panel: 'request', message: 'guardrail:triggered', details: { rule: hit.triggered, target: 'request', block: result.block, log: result.log, blockMessage } }]);
+        if (result.block) {
           // Usage record for the blocked request (#77): zero cost/tokens, distinct 'blocked' outcome.
           await trackBlockedRequest(project, hit.triggered, traceId);
           reply.header('x-routerly-trace-id', traceId);
           // Wire-faithful refusal: empty content + stop_reason refusal + stop_details.
           return reply.status(200).send({ id: `msg_${traceId}`, type: 'message', role: 'assistant', content: [], model: body.model ?? 'unknown', stop_reason: 'refusal', stop_details: { type: 'refusal' }, usage: { input_tokens: 0, output_tokens: 0 } });
         }
-        guardrailTriggered = hit.triggered;
+        // log-only: record trigger and continue
+        if (result.log) guardrailTriggered = hit.triggered;
       }
     }
 
     // ── PII scrubbing (#76) ──────────────────────────────────────────────────
     let piiRedacted: string[] | undefined;
-    if (project.pii && project.pii.scrubInput !== false && Array.isArray(body.messages)) {
-      const { messages, redacted } = scrubMessages(body.messages, project.pii);
+    const inPii = project.pii?.policies?.length ? mergePolicies(project.pii.policies, 'input') : null;
+    if (inPii && (inPii.entities?.length || inPii.customPatterns?.length) && Array.isArray(body.messages)) {
+      const { messages, redacted } = scrubMessages(body.messages, inPii);
       // "ran" signal: always emitted when input scrubbing is active, even with 0 redactions.
       appendTrace(traceId, [{ panel: 'request', message: 'pii:evaluated', details: { redacted } }]);
       if (redacted.length > 0) {
@@ -163,10 +164,11 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
 
       try {
         const response = await llmMessages(body, model, ctx);
-        if (project.pii?.scrubOutput === true) {
+        const outPii = project.pii?.policies?.length ? mergePolicies(project.pii.policies, 'output') : null;
+        if (outPii && (outPii.entities?.length || outPii.customPatterns?.length)) {
           const block = response?.content?.[0];
           if (block?.type === 'text' && typeof block.text === 'string') {
-            const { text, found } = scrubText(block.text, project.pii);
+            const { text, found } = scrubText(block.text, outPii);
             // "ran" signal: always emitted when output scrubbing is active, even with 0 redactions.
             appendTrace(traceId, [{ panel: 'response', message: 'pii:evaluated', details: { redacted: found } }]);
             if (found.length > 0) {
@@ -189,15 +191,18 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
             }
             const hit = result.triggered ? { triggered: result.triggered } : null;
             if (hit) {
-              const fallbackMessage = project.guardrails.fallbackMessage ?? 'Response blocked by content guardrails.';
-              request.log.warn({ projectId: project.id, rule: hit.triggered }, 'guardrail: response triggered');
-              appendTrace(traceId, [{ panel: 'response', message: 'guardrail:response-triggered', details: { rule: hit.triggered, target: 'response', action: result.action, fallbackMessage } }]);
-              if (result.action === 'block') {
+              const blockMessage = result.blockMessage ?? 'Response blocked by content guardrails.';
+              request.log.warn({ projectId: project.id, rule: hit.triggered, block: result.block, log: result.log }, 'guardrail: response triggered');
+              appendTrace(traceId, [{ panel: 'response', message: 'guardrail:response-triggered', details: { rule: hit.triggered, target: 'response', block: result.block, log: result.log, blockMessage } }]);
+              if (result.block) {
+                // Usage record for the blocked response (#77): zero cost/tokens, distinct 'blocked' outcome.
+                await trackBlockedRequest(project, hit.triggered, traceId);
                 reply.header('x-routerly-trace-id', traceId);
                 // Wire-faithful refusal: empty content + stop_reason refusal + stop_details.
                 return reply.status(200).send({ id: `msg_${traceId}`, type: 'message', role: 'assistant', content: [], model: body.model ?? 'unknown', stop_reason: 'refusal', stop_details: { type: 'refusal' }, usage: { input_tokens: 0, output_tokens: 0 } });
               }
-              guardrailTriggered = hit.triggered;
+              // log-only: record trigger and continue
+              if (result.log) guardrailTriggered = hit.triggered;
             }
           }
         }

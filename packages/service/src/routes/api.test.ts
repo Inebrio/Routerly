@@ -13,6 +13,10 @@ vi.mock('../plugins/jwt.js', () => ({
 vi.mock('../notifications/sender.js', () => ({ sendTestNotification: vi.fn() }))
 vi.mock('../notifications/emitter.js', () => ({ emitEvent: vi.fn() }))
 vi.mock('../routing/traceStore.js', () => ({ getTrace: vi.fn() }))
+const mockChatCompletion = vi.fn()
+vi.mock('../providers/index.js', () => ({
+  getProviderAdapter: vi.fn(() => ({ chatCompletion: mockChatCompletion })),
+}))
 vi.mock('../update-checker.js', () => ({
   updateChecker: { getLastResult: vi.fn(() => null), check: vi.fn(), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))
@@ -2106,6 +2110,35 @@ describe('PUT /api/projects/:id', () => {
     expect(JSON.parse(res.body).name).toBe('New Name')
   })
 
+  it('redacts tokens in response when project has tokens (line 915 map callback)', async () => {
+    // Project has a token → t => ({ ...t, token: undefined }) map callback is exercised
+    setupAdminAuth()
+    const project = {
+      id: 'p1', name: 'Old Name', members: [], models: [],
+      tokens: [{ id: 'tok1', name: 'Test', token: 'sk-secret-value', created: '', createdBy: '' }],
+    }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'New Name', models: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    // token field must be stripped in response
+    expect(body.tokens[0].token).toBeUndefined()
+    expect(body.tokens[0].id).toBe('tok1')
+  })
+
   it('returns 404 for unknown project', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -2143,10 +2176,9 @@ describe('PUT /api/projects/:id', () => {
       payload: JSON.stringify({
         name: 'Test', models: [],
         pii: {
-          scrubInput: true,
           policies: [
-            { name: 'gdpr', scrubInput: true, entities: ['EMAIL', 'PHONE'] },
-            { name: 'financial', enabled: false, scrubOutput: true, entities: ['CREDIT_CARD', 'IBAN'] },
+            { name: 'gdpr', target: 'request', entities: ['EMAIL', 'PHONE'] },
+            { name: 'financial', enabled: false, target: 'response', entities: ['CREDIT_CARD', 'IBAN'] },
           ],
         },
       }),
@@ -3109,7 +3141,7 @@ describe('POST /api/projects — without models (line 441 ?? [] branch)', () => 
     const res = await app.inject({
       method: 'POST', url: '/api/projects',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'WithGuardrails', guardrails: { action: 'block', rules: [] } }),
+      payload: JSON.stringify({ name: 'WithGuardrails', guardrails: { rules: [] } }),
     })
     await app.close()
     expect(res.statusCode).toBe(201)
@@ -3128,7 +3160,7 @@ describe('POST /api/projects — without models (line 441 ?? [] branch)', () => 
     const res = await app.inject({
       method: 'POST', url: '/api/projects',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'X', guardrails: { action: 'not_valid', rules: [] } }),
+      payload: JSON.stringify({ name: 'X', guardrails: { rules: [{ type: 'regex', config: { patterns: ['x'] } }] } }),
     })
     await app.close()
     expect(res.statusCode).toBe(400)
@@ -3147,7 +3179,7 @@ describe('POST /api/projects — without models (line 441 ?? [] branch)', () => 
     const res = await app.inject({
       method: 'POST', url: '/api/projects',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'WithPii', pii: { mode: 'redact', entities: ['EMAIL'] } }),
+      payload: JSON.stringify({ name: 'WithPii', pii: { policies: [{ name: 'default', target: 'request', entities: ['EMAIL'] }] } }),
     })
     await app.close()
     expect(res.statusCode).toBe(201)
@@ -3166,7 +3198,7 @@ describe('POST /api/projects — without models (line 441 ?? [] branch)', () => 
     const res = await app.inject({
       method: 'POST', url: '/api/projects',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'X', pii: { entities: 'not-an-array' } }),
+      payload: JSON.stringify({ name: 'X', pii: { policies: 'not-an-array' } }),
     })
     await app.close()
     expect(res.statusCode).toBe(400)
@@ -3290,7 +3322,7 @@ describe('PUT /api/projects/:id — additional branches (lines 471, 481, 491)', 
 describe('PUT /api/projects/:id — guardrails null/preserve branches (lines 785-802)', () => {
   it('clears guardrails when guardrails:null sent (line 785 true branch)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], guardrails: { action: 'block', rules: [] } }
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], guardrails: { rules: [] } }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
@@ -3312,7 +3344,7 @@ describe('PUT /api/projects/:id — guardrails null/preserve branches (lines 785
 
   it('preserves existing guardrails when not sent (line 791 true branch)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], guardrails: { action: 'block', rules: [] } }
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], guardrails: { rules: [] } }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
@@ -3388,7 +3420,7 @@ describe('PUT /api/projects/:id — guardrails null/preserve branches (lines 785
     const res = await app.inject({
       method: 'PUT', url: '/api/projects/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'Test', models: [], guardrails: { action: 'block', rules: [{ type: 'regex', target: 'request', config: { patterns: ['ban'] } }] } }),
+      payload: JSON.stringify({ name: 'Test', models: [], guardrails: { rules: [{ type: 'regex', target: 'request', block: true, config: { patterns: ['ban'] } }] } }),
     })
     await app.close()
     expect(res.statusCode).toBe(200)
@@ -3408,7 +3440,7 @@ describe('PUT /api/projects/:id — guardrails null/preserve branches (lines 785
     const res = await app.inject({
       method: 'PUT', url: '/api/projects/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'Test', models: [], guardrails: { action: 'not_valid', rules: [] } }),
+      payload: JSON.stringify({ name: 'Test', models: [], guardrails: { rules: [{ type: 'regex', config: { patterns: ['x'] } }] } }),
     })
     await app.close()
     expect(res.statusCode).toBe(400)
@@ -3428,7 +3460,7 @@ describe('PUT /api/projects/:id — guardrails null/preserve branches (lines 785
     const res = await app.inject({
       method: 'PUT', url: '/api/projects/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'Test', models: [], pii: { mode: 'redact', entities: ['EMAIL'] } }),
+      payload: JSON.stringify({ name: 'Test', models: [], pii: { policies: [{ name: 'default', target: 'request', entities: ['EMAIL'] }] } }),
     })
     await app.close()
     expect(res.statusCode).toBe(200)
@@ -3448,7 +3480,7 @@ describe('PUT /api/projects/:id — guardrails null/preserve branches (lines 785
     const res = await app.inject({
       method: 'PUT', url: '/api/projects/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'Test', models: [], pii: { entities: 'not-an-array' } }),
+      payload: JSON.stringify({ name: 'Test', models: [], pii: { policies: 'not-an-array' } }),
     })
     await app.close()
     expect(res.statusCode).toBe(400)
@@ -3470,7 +3502,7 @@ describe('PATCH /api/projects/:id/guardrails — permission + cond-expr branches
     const res = await app.inject({
       method: 'PATCH', url: '/api/projects/p1/guardrails',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ guardrails: { action: 'block', rules: [] } }),
+      payload: JSON.stringify({ guardrails: { rules: [] } }),
     })
     await app.close()
     expect(res.statusCode).toBe(403)
@@ -3488,7 +3520,7 @@ describe('PATCH /api/projects/:id/guardrails — permission + cond-expr branches
     const res = await app.inject({
       method: 'PATCH', url: '/api/projects/nope/guardrails',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ guardrails: { action: 'block', rules: [] } }),
+      payload: JSON.stringify({ guardrails: { rules: [] } }),
     })
     await app.close()
     expect(res.statusCode).toBe(404)
@@ -3496,7 +3528,7 @@ describe('PATCH /api/projects/:id/guardrails — permission + cond-expr branches
 
   it('preserves existing guardrails when project has them (line 839 true cond-expr)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'T', tokens: [], members: [], models: [], guardrails: { action: 'block', rules: [] } }
+    const project = { id: 'p1', name: 'T', tokens: [], members: [], models: [], guardrails: { rules: [] } }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
@@ -3552,10 +3584,39 @@ describe('PATCH /api/projects/:id/guardrails — permission + cond-expr branches
     const res = await app.inject({
       method: 'PATCH', url: '/api/projects/p1/guardrails',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ guardrails: { action: 'invalid_action', rules: [] } }),
+      payload: JSON.stringify({ guardrails: { rules: [{ type: 'regex', config: { patterns: ['x'] } }] } }),
     })
     await app.close()
     expect(res.statusCode).toBe(400)
+  })
+
+  it('redacts tokens in response when project has tokens (line 915 map callback)', async () => {
+    // Project has tokens → t => ({ ...t, token: undefined }) map callback at line 915 is exercised
+    setupAdminAuth()
+    const project = {
+      id: 'p1', name: 'T', members: [], models: [],
+      tokens: [{ id: 'tok1', name: 'TestTok', token: 'sk-secret-value', created: '', createdBy: '' }],
+    }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/projects/p1/guardrails',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ guardrails: { rules: [] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    // token field must be stripped in response
+    expect(body.tokens[0].token).toBeUndefined()
+    expect(body.tokens[0].id).toBe('tok1')
   })
 })
 
@@ -7938,8 +7999,7 @@ describe('PATCH /api/projects/:id/guardrails — per-rule action field', () => {
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({
         guardrails: {
-          action: 'block',
-          rules: [{ type: 'regex', action: 'log', target: 'request', config: { patterns: ['bad'] } }],
+          rules: [{ type: 'regex', target: 'request', log: true, config: { patterns: ['bad'] } }],
         },
       }),
     })
@@ -8450,6 +8510,21 @@ describe('PATCH /api/integrations/:id', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(401)
+  })
+
+  it('patches integration with unknown type (line 2110 ?? [] branch)', async () => {
+    // stored type not in INTEGRATION_SECRET_FIELDS → secrets = [] via ?? fallback
+    setupIntegrations([{ id: 'intg-custom', type: 'custom-unknown', enabled: true }])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/integrations/intg-custom',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ enabled: false }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as Record<string, unknown>
+    expect(body['enabled']).toBe(false)
   })
 })
 
@@ -9782,7 +9857,7 @@ describe('PATCH /api/projects/:id/guardrails — pii branches (lines 846-849)', 
     const res = await app.inject({
       method: 'PATCH', url: '/api/projects/p1/guardrails',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ pii: { entities: ['EMAIL'], scrubInput: true } }),
+      payload: JSON.stringify({ pii: { policies: [{ name: 'default', target: 'request', entities: ['EMAIL'] }] } }),
     })
     await app.close()
     expect(res.statusCode).toBe(200)
@@ -9802,7 +9877,7 @@ describe('PATCH /api/projects/:id/guardrails — pii branches (lines 846-849)', 
     const res = await app.inject({
       method: 'PATCH', url: '/api/projects/p1/guardrails',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ pii: { entities: 'not-an-array' } }),
+      payload: JSON.stringify({ pii: { policies: 'not-an-array' } }),
     })
     await app.close()
     expect(res.statusCode).toBe(400)
@@ -9826,7 +9901,7 @@ describe('DELETE /api/projects/:id — tokens undefined branch (line 855)', () =
     const res = await app.inject({
       method: 'PATCH', url: '/api/projects/p1/guardrails',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ guardrails: { action: 'block', rules: [] } }),
+      payload: JSON.stringify({ guardrails: { rules: [] } }),
     })
     await app.close()
     expect(res.statusCode).toBe(200)
@@ -10061,5 +10136,293 @@ describe('GET /api/notifications/inbox — invalid to date (line 1574 if branch=
     expect(res.statusCode).toBe(200)
     // Invalid to → filter not applied → item returned
     expect(res.json().items).toHaveLength(1)
+  })
+})
+
+// ─── POST /api/models/:id/test ────────────────────────────────────────────────
+
+describe('POST /api/models/:id/test', () => {
+  it('returns ok:true when adapter succeeds', async () => {
+    setupAdminAuth()
+    const model = { id: 'openai/gpt-4o', provider: 'openai', apiKey: 'sk-x', cost: { inputPerMillion: 5, outputPerMillion: 15 } }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'models') return [model]
+      return []
+    })
+    mockChatCompletion.mockResolvedValue({ choices: [{ message: { content: 'pong' } }] })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/openai%2Fgpt-4o/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().ok).toBe(true)
+    expect(typeof res.json().latencyMs).toBe('number')
+  })
+
+  it('returns ok:false with error when adapter throws', async () => {
+    setupAdminAuth()
+    const model = { id: 'openai/gpt-4o', provider: 'openai', apiKey: 'sk-x', cost: { inputPerMillion: 5, outputPerMillion: 15 } }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'models') return [model]
+      return []
+    })
+    mockChatCompletion.mockRejectedValue(new Error('401 Unauthorized'))
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/openai%2Fgpt-4o/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().ok).toBe(false)
+    expect(res.json().error).toBe('401 Unauthorized')
+  })
+
+  it('returns 404 for unknown model', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'models') return []
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/missing/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('returns 403 without model:read permission', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    // ponytail: 'limited' is a custom role (not in BUILT_IN_ROLES) so resolvePermissions returns []
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ id: 'viewer-id', email: 'v@test.com', passwordHash: 'h', roleId: 'limited' }]
+      if (t === 'roles') return [{ id: 'limited', name: 'Limited', permissions: [] }]
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/any/test', headers: { authorization: 'Bearer viewer-token' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+// ─── GET /api/catalog/status (lines 717-725) ──────────────────────────────────
+
+describe('GET /api/catalog/status', () => {
+  it('returns current status when entries already have lastChecked (no re-fetch)', async () => {
+    setupAdminAuth()
+    mockCatalogFetcher.getStatus.mockReturnValue([
+      { provider: 'openai', enabled: true, lastChecked: '2026-01-01T00:00:00.000Z' } as any,
+    ])
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/catalog/status', headers: adminAuthHeaders() })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    expect(Array.isArray(JSON.parse(res.body))).toBe(true)
+    // lastChecked is non-null → skip fetch branch
+    expect(mockCatalogFetcher.get).not.toHaveBeenCalled()
+  })
+
+  it('fetches catalog when entries have lastChecked=null (auto-init branch — lines 720-723)', async () => {
+    setupAdminAuth()
+    // All entries have lastChecked=null → condition true → calls catalogFetcher.get
+    mockCatalogFetcher.getStatus
+      .mockReturnValueOnce([
+        { provider: 'openai', enabled: true, lastChecked: null } as any,
+      ])
+      .mockReturnValue([
+        { provider: 'openai', enabled: true, lastChecked: '2026-01-01T00:00:00.000Z' } as any,
+      ])
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/catalog/status', headers: adminAuthHeaders() })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    expect(mockCatalogFetcher.get).toHaveBeenCalled()
+  })
+
+  it('returns 403 without settings:read permission', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'noperm-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ id: 'noperm-id', email: 'np@np.com', passwordHash: 'h', roleId: 'noperm', projectIds: [] }]
+      if (t === 'roles') return [{ id: 'noperm', name: 'NoPerm', permissions: [] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/catalog/status', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+// ─── GET /api/catalog/probe (lines 727-740) ───────────────────────────────────
+
+describe('GET /api/catalog/probe', () => {
+  it('returns 400 when url query param is missing', async () => {
+    setupAdminAuth()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/catalog/probe', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(JSON.parse(res.body).error).toBe('url required')
+  })
+
+  it('returns { ok: true } when index.json is accessible (lines 731-736)', async () => {
+    setupAdminAuth()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ providers: [] }),
+    }))
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/catalog/probe?url=https://example.com/repo/', headers: adminAuthHeaders() })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body)).toMatchObject({ ok: true })
+  })
+
+  it('returns { ok: false } when index.json returns non-ok status (line 734 true branch)', async () => {
+    setupAdminAuth()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+    }))
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/catalog/probe?url=https://example.com/repo/', headers: adminAuthHeaders() })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.ok).toBe(false)
+    expect(body.error).toContain('404')
+  })
+
+  it('returns { ok: false, error } on fetch throw (line 737-739 catch branch)', async () => {
+    setupAdminAuth()
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network error')))
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/catalog/probe?url=https://example.com/', headers: adminAuthHeaders() })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.ok).toBe(false)
+    expect(body.error).toBe('network error')
+  })
+
+  it('appends slash to url when missing (line 732 false branch — url does not end with /)', async () => {
+    setupAdminAuth()
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({}),
+    })
+    vi.stubGlobal('fetch', mockFetch)
+
+    const app = await buildApp()
+    await app.inject({ method: 'GET', url: '/api/catalog/probe?url=https://example.com/repo', headers: adminAuthHeaders() })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    // Called with trailing slash appended
+    expect(mockFetch).toHaveBeenCalledWith('https://example.com/repo/index.json')
+  })
+
+  it('returns 403 without settings:write permission', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'noperm-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ id: 'noperm-id', email: 'np@np.com', passwordHash: 'h', roleId: 'noperm', projectIds: [] }]
+      if (t === 'roles') return [{ id: 'noperm', name: 'NoPerm', permissions: ['settings:read'] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/catalog/probe?url=https://example.com/', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+// ─── POST /api/test/openai-oauth — branch coverage (lines 1777-1783) ──────────
+
+describe('POST /api/test/openai-oauth — additional branch coverage (lines 1777-1783)', () => {
+  it('returns expiresAt:null when JWT payload has no exp field (lines 1779 false, 1780 false)', async () => {
+    // Token with valid 3-part structure but no `exp` in payload → typeof exp !== 'number' → exp=0 → null
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      return []
+    })
+    const noExpToken = 'h.' + Buffer.from(JSON.stringify({ sub: 'acct-no-exp' })).toString('base64url') + '.s'
+    mockResolveCodexToken.mockResolvedValue({ accessToken: noExpToken, accountId: 'acct-2' })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/test/openai-oauth',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: true, accountId: 'acct-2', expiresAt: null })
+  })
+
+  it('formats non-Error rejection with String() (line 1783 false branch)', async () => {
+    // Reject with a plain string → err instanceof Error is FALSE → String(err) used
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      return []
+    })
+    mockResolveCodexToken.mockRejectedValue('connection refused')
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/test/openai-oauth',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: false, error: 'connection refused' })
+  })
+
+  it('handles token with no dot separators — payloadB64 defaults to empty string (line 1777 true branch)', async () => {
+    // Token without dots → split('.')[1] is undefined → ?? '' fires → JSON.parse('') throws → catch
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      return []
+    })
+    mockResolveCodexToken.mockResolvedValue({ accessToken: 'malformedtoken', accountId: 'acct-3' })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/test/openai-oauth',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    // JSON.parse('') throws SyntaxError → ok: false
+    expect(res.json().ok).toBe(false)
   })
 })

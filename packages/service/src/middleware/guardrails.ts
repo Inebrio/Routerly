@@ -33,6 +33,8 @@ const MODERATION_JSON_INSTRUCTION = 'Respond ONLY with a JSON object: {"score": 
 
 const DEFAULT_MODERATION_PROMPT = `You are a content safety classifier. Evaluate the following text for harmful content.\nCategories: hate speech, violence, sexual content, self-harm.\n${MODERATION_JSON_INSTRUCTION}`;
 
+const JUDGE_RESPONSE_JSON_INSTRUCTION = 'Respond ONLY with a JSON object: {"score": <number between 0 and 1>, "message": "<short user-facing reason>"} where 0 means completely safe and 1 means severely harmful. Do not include any other text.';
+
 /** Built-in prompt-injection detection patterns (#77). */
 const INJECTION_PATTERNS: Array<{ name: string; re: RegExp }> = [
   { name: 'ignore-instructions', re: /ignore\s+(previous|above|prior)\s+instructions?/i },
@@ -68,14 +70,20 @@ export interface RuleEval {
   outcome: 'passed' | 'triggered' | 'skipped';
   /** Triggered: the hit string. Skipped: why (model-not-found, embedding-failed, judge-failed). */
   reason?: string;
+  /** Judge-generated user-facing message (topic/moderation with useJudgeResponse only, when triggered). */
+  judgeMessage?: string;
 }
 
 /** Result of evaluating all guardrail rules for one target. */
 export interface GuardrailResult {
   /** The hit string of the first rule that fired, if any. */
   triggered?: string;
-  /** Effective action for the triggered rule (per-rule override ?? global config.action). Present only when triggered is set. */
-  action?: 'block' | 'log';
+  /** When triggered: whether to block the request/response. */
+  block?: boolean;
+  /** When triggered: whether to log the trigger (record in usage). */
+  log?: boolean;
+  /** When triggered+block: the message to return to the client. */
+  blockMessage?: string;
   /** One entry per rule that ran (incl. the injection flag), for trace observability. */
   evaluated: RuleEval[];
 }
@@ -147,7 +155,7 @@ async function checkRule(
           latencyMs: 0,
           outcome: 'success',
           callType: 'guardrail',
-        }).catch(() => {});
+        }).catch(() => {}); // ponytail: fire-and-forget error suppressor
       }
       if (classification.status === 'confident' && classification.topIntent === 'blocked') {
         return { rule: ruleId, outcome: 'triggered', reason: `semantic:${Math.round((classification.topScore ?? 0) * 100)}%` };
@@ -168,6 +176,8 @@ async function checkRule(
       log?.warn({ modelId: cfg.modelId }, 'guardrail:topic: model not found, skipping');
       return { rule: ruleId, outcome: 'skipped', reason: 'model-not-found' };
     }
+    // When useJudgeResponse, ask for {score, message} so the judge explanation can be used as block message.
+    const jsonInstruction = rule.useJudgeResponse ? JUDGE_RESPONSE_JSON_INSTRUCTION : 'Respond ONLY with a JSON object: {"score": <number between 0 and 1>} where 1 means completely on-topic and 0 means completely off-topic. Do not include any other text.';
     try {
       const response = await llmChat(
         {
@@ -175,11 +185,11 @@ async function checkRule(
           messages: [
             {
               role: 'system',
-              content: `You are a topic classifier. Evaluate whether the following text is on-topic.\nAllowed topics: ${cfg.allowedTopics}\nRespond ONLY with a JSON object: {"score": <number between 0 and 1>} where 1 means completely on-topic and 0 means completely off-topic. Do not include any other text.`,
+              content: `You are a topic classifier. Evaluate whether the following text is on-topic.\nAllowed topics: ${cfg.allowedTopics}\n${jsonInstruction}`,
             },
             { role: 'user', content: text },
           ],
-          max_tokens: 32,
+          max_tokens: 64,
           temperature: 0,
         },
         model,
@@ -189,10 +199,14 @@ async function checkRule(
       const rawStr = typeof raw === 'string' ? raw : '';
       // Extract JSON object in case the model adds preamble text
       const jsonMatch = rawStr.match(/\{[^}]+\}/);
-      const parsed = JSON.parse(jsonMatch?.[0] ?? rawStr) as { score?: unknown };
+      const parsed = JSON.parse(jsonMatch?.[0] ?? rawStr) as { score?: unknown; message?: unknown };
       const score = typeof parsed.score === 'number' ? parsed.score : 1;
       if (score < (cfg.threshold ?? 0.5)) {
-        return { rule: ruleId, outcome: 'triggered', reason: `topic:score=${score.toFixed(2)}` };
+        const ruleEval: RuleEval = { rule: ruleId, outcome: 'triggered', reason: `topic:score=${score.toFixed(2)}` };
+        if (rule.useJudgeResponse && typeof parsed.message === 'string' && parsed.message.trim()) {
+          ruleEval.judgeMessage = parsed.message.trim();
+        }
+        return ruleEval;
       }
     } catch (err) {
       // Over-limit judge call must fail the request like an over-limit completion (BUG-4).
@@ -212,18 +226,22 @@ async function checkRule(
       log?.warn({ modelId: cfg.modelId }, 'guardrail:moderation: model not found, skipping');
       return { rule: ruleId, outcome: 'skipped', reason: 'model-not-found' };
     }
+    // When useJudgeResponse, extend system prompt to request {score, message}.
+    const jsonInstruction = rule.useJudgeResponse ? JUDGE_RESPONSE_JSON_INSTRUCTION : MODERATION_JSON_INSTRUCTION;
+    const systemContent = cfg.systemPrompt
+      ? `${cfg.systemPrompt.trim()}\n${jsonInstruction}`
+      : rule.useJudgeResponse
+        ? `You are a content safety classifier. Evaluate the following text for harmful content.\nCategories: hate speech, violence, sexual content, self-harm.\n${JUDGE_RESPONSE_JSON_INSTRUCTION}`
+        : DEFAULT_MODERATION_PROMPT;
     try {
       const response = await llmChat(
         {
           model: model.id,
           messages: [
-            {
-              role: 'system',
-              content: cfg.systemPrompt ? `${cfg.systemPrompt.trim()}\n${MODERATION_JSON_INSTRUCTION}` : DEFAULT_MODERATION_PROMPT,
-            },
+            { role: 'system', content: systemContent },
             { role: 'user', content: text },
           ],
-          max_tokens: 32,
+          max_tokens: 64,
           temperature: 0,
         },
         model,
@@ -233,10 +251,14 @@ async function checkRule(
       const rawStr = typeof raw === 'string' ? raw : '';
       // Extract JSON object in case the model adds preamble text
       const jsonMatch = rawStr.match(/\{[^}]+\}/);
-      const parsed = JSON.parse(jsonMatch?.[0] ?? rawStr) as { score?: unknown };
+      const parsed = JSON.parse(jsonMatch?.[0] ?? rawStr) as { score?: unknown; message?: unknown };
       const score = typeof parsed.score === 'number' ? parsed.score : 0;
       if (score > (cfg.threshold ?? 0.5)) {
-        return { rule: ruleId, outcome: 'triggered', reason: `moderation:score=${score.toFixed(2)}` };
+        const ruleEval: RuleEval = { rule: ruleId, outcome: 'triggered', reason: `moderation:score=${score.toFixed(2)}` };
+        if (rule.useJudgeResponse && typeof parsed.message === 'string' && parsed.message.trim()) {
+          ruleEval.judgeMessage = parsed.message.trim();
+        }
+        return ruleEval;
       }
     } catch (err) {
       // Over-limit judge call must fail the request like an over-limit completion (BUG-4).
@@ -252,9 +274,18 @@ async function checkRule(
 
 /**
  * Checks text against all enabled guardrail rules for the given target.
- * Returns the first rule that fired (`triggered`) plus a per-rule `evaluated`
- * summary for trace observability (#77). All rules run even when one fires
- * (Promise.all), so the trace records the full evaluation, not just the hit.
+ *
+ * Decision logic (in order):
+ * 1. Injection hit (detectInjection, request target) => block=true, log=true.
+ * 2. Among triggered rules (first-match order):
+ *    a. First triggered rule with block===true => block=true, log=rule.log??false,
+ *       blockMessage=(useJudgeResponse && judgeMessage) ? judgeMessage : rule.blockMessage.
+ *    b. Else first triggered rule with log===true => block=false, log=true.
+ *    c. Else (neither block nor log) => no block/log fields set (inert trigger).
+ * 3. Nothing triggered => only evaluated array returned.
+ *
+ * All rules run even when one fires (Promise.all) for observability (#77).
+ * Rules with enabled===false are skipped.
  */
 export async function checkGuardrails(
   target: GuardrailTarget,
@@ -268,19 +299,54 @@ export async function checkGuardrails(
   if (config.detectInjection && target === 'request') {
     const hit = checkInjection(text);
     evaluated.push(hit ? { rule: 'injection', outcome: 'triggered', reason: hit } : { rule: 'injection', outcome: 'passed' });
-    if (hit) return { triggered: hit, evaluated };
+    if (hit) return { triggered: hit, block: true, log: true, evaluated };
   }
+  // Filter: must match target AND be enabled
   const activeRules = config.rules.filter(
-    r => r.target === target || r.target === 'both',
+    r => r.enabled !== false && (r.target === target || r.target === 'both'),
   );
   if (activeRules.length === 0) return { evaluated };
   const results = await Promise.all(activeRules.map(rule => checkRule(rule, text, pctx, log)));
   evaluated.push(...results);
-  const hitIdx = results.findIndex(r => r.outcome === 'triggered');
-  if (hitIdx >= 0) {
-    const hit = results[hitIdx]!;
-    const effectiveAction = activeRules[hitIdx]!.action ?? config.action;
-    return hit.reason ? { triggered: hit.reason, action: effectiveAction, evaluated } : { evaluated };
+
+  // First-match: find each triggered rule's rule config and eval result together
+  for (let i = 0; i < results.length; i++) {
+    const eval_ = results[i]!;
+    if (eval_.outcome !== 'triggered' || !eval_.reason) continue;
+
+    const rule = activeRules[i]!;
+
+    // First blocker wins
+    if (rule.block === true) {
+      // blockMessage: prefer judge message (when useJudgeResponse) over static blockMessage
+      const blockMessage = (rule.useJudgeResponse && eval_.judgeMessage)
+        ? eval_.judgeMessage
+        : rule.blockMessage;
+      return {
+        triggered: eval_.reason,
+        block: true,
+        log: rule.log ?? false,
+        ...(blockMessage ? { blockMessage } : {}),
+        evaluated,
+      };
+    }
+  }
+
+  // No blocker: find first log-only trigger
+  for (let i = 0; i < results.length; i++) {
+    const eval_ = results[i]!;
+    if (eval_.outcome !== 'triggered' || !eval_.reason) continue;
+    const rule = activeRules[i]!;
+    if (rule.log === true) {
+      return { triggered: eval_.reason, block: false, log: true, evaluated };
+    }
+  }
+
+  // Inert triggers (neither block nor log) or no triggers: return evaluated only
+  // ponytail: still surface triggered for observability even when inert
+  const firstTriggered = results.find(r => r.outcome === 'triggered' && r.reason);
+  if (firstTriggered?.reason) {
+    return { triggered: firstTriggered.reason, evaluated };
   }
   return { evaluated };
 }
