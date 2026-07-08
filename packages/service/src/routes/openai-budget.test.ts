@@ -83,7 +83,7 @@ describe('POST /v1/chat/completions — BudgetExceededError from guardrail (non-
     const app = await buildApp()
     const res = await app.inject({
       method: 'POST', url: '/v1/chat/completions',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', 'x-routerly-trace': '1' },
       payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'hi' }] }),
     })
     await app.close()

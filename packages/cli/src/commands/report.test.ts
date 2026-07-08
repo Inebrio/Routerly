@@ -246,8 +246,8 @@ describe('report calls', () => {
 // ── report leaderboard ───────────────────────────────────────────────────────
 
 const leaderboardFixture = [
-  { modelId: 'gpt-4o', provider: 'openai', requests: 100, successRate: 0.98, avgLatencyMs: 320, costPer1kTokens: 0.005, totalCost: 0.50 },
-  { modelId: 'gpt-4o-mini', provider: 'openai', requests: 200, successRate: 0.99, avgLatencyMs: 150, costPer1kTokens: 0.00015, totalCost: 0.03 },
+  { modelId: 'gpt-4o', provider: 'openai', totalRequests: 100, successRate: 0.98, avgLatencyMs: 320, avgCostPer1kTokens: 0.005, totalCost: 0.50 },
+  { modelId: 'gpt-4o-mini', provider: 'openai', totalRequests: 200, successRate: 0.99, avgLatencyMs: 150, avgCostPer1kTokens: 0.00015, totalCost: 0.03 },
 ];
 
 describe('report leaderboard', () => {

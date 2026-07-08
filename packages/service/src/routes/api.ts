@@ -175,9 +175,9 @@ const ruleCommonFields = {
 
 const guardrailRuleSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('regex'), ...ruleCommonFields, config: z.object({ patterns: z.array(z.string()) }) }),
-  z.object({ type: z.literal('semantic'), ...ruleCommonFields, config: z.object({ embeddingModelId: z.string(), examples: z.array(z.string()), threshold: z.number().min(0).max(1).optional() }) }),
-  z.object({ type: z.literal('topic'), ...ruleCommonFields, config: z.object({ modelId: z.string(), allowedTopics: z.string(), threshold: z.number().min(0).max(1).optional() }) }),
-  z.object({ type: z.literal('moderation'), ...ruleCommonFields, config: z.object({ modelId: z.string(), threshold: z.number().min(0).max(1).optional(), systemPrompt: z.string().optional() }) }),
+  z.object({ type: z.literal('semantic'), ...ruleCommonFields, config: z.object({ embeddingModelId: z.string(), examples: z.array(z.string()), threshold: z.number().min(0).max(1).optional(), fallbackModelIds: z.array(z.string()).optional() }) }),
+  z.object({ type: z.literal('topic'), ...ruleCommonFields, config: z.object({ modelId: z.string(), allowedTopics: z.string(), threshold: z.number().min(0).max(1).optional(), fallbackModelIds: z.array(z.string()).optional() }) }),
+  z.object({ type: z.literal('moderation'), ...ruleCommonFields, config: z.object({ modelId: z.string(), threshold: z.number().min(0).max(1).optional(), systemPrompt: z.string().optional(), fallbackModelIds: z.array(z.string()).optional() }) }),
 ]);
 
 const guardrailConfigSchema = z.object({

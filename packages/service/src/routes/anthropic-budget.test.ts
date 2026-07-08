@@ -78,7 +78,7 @@ describe('POST /v1/messages — guardrail BudgetExceededError → 429 (line 41-4
     const app = await buildApp()
     const res = await app.inject({
       method: 'POST', url: '/v1/messages',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', 'x-routerly-trace': '1' },
       payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'hi' }] }),
     })
     await app.close()

@@ -102,7 +102,7 @@ beforeEach(() => {
 // ── Tests ──────────────────────────────────────────────────────────────────
 
 describe('TestPage — blocked turn (content_filter)', () => {
-  it('shows "Request blocked by guardrail" when target=request', async () => {
+  it('shows blockMessage as a normal assistant bubble (no red box)', async () => {
     vi.mocked(getTrace).mockResolvedValue({
       trace: [
         { message: 'guardrail:triggered', panel: 'request', details: { rule: 'regex:x', target: 'request', block: true, blockMessage: 'Blocked.' } },
@@ -116,15 +116,16 @@ describe('TestPage — blocked turn (content_filter)', () => {
     await userEvent.type(textarea, 'competitor');
     await userEvent.keyboard('{Enter}');
 
+    // blockMessage appears as plain text in the assistant bubble
     await waitFor(() =>
-      expect(screen.queryByText(/request blocked by guardrail/i)).not.toBeNull(),
+      expect(screen.queryByText('Blocked.')).not.toBeNull(),
     { timeout: 4000 });
 
-    expect(screen.getByText('regex:x')).toBeTruthy();
-    expect(screen.getByText('Blocked.')).toBeTruthy();
+    // NO red "blocked by guardrail" header in the chat
+    expect(screen.queryByText(/blocked by guardrail/i)).toBeNull();
   });
 
-  it('shows "Response blocked by guardrail" when target=response', async () => {
+  it('shows generic fallback text when blockMessage is absent', async () => {
     vi.mocked(getTrace).mockResolvedValue({
       trace: [
         { message: 'guardrail:triggered', panel: 'response', details: { rule: 'mod:x', target: 'response', block: true } },
@@ -139,8 +140,11 @@ describe('TestPage — blocked turn (content_filter)', () => {
     await userEvent.keyboard('{Enter}');
 
     await waitFor(() =>
-      expect(screen.queryByText(/response blocked by guardrail/i)).not.toBeNull(),
+      expect(screen.queryByText(/blocked by a guardrail/i)).not.toBeNull(),
     { timeout: 4000 });
+
+    // Still no red header box
+    expect(screen.queryByText(/blocked by guardrail/i)).toBeNull();
   });
 });
 
@@ -614,7 +618,7 @@ describe('TestPage — fetch HTTP error', () => {
 // ── Blocked turn without matching trace entry ─────────────────────────────────
 
 describe('TestPage — blocked turn without trace entry', () => {
-  it('shows minimal block info when trace has no guardrail entry', async () => {
+  it('shows generic block text as normal bubble when trace has no guardrail entry', async () => {
     vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
     global.fetch = vi.fn().mockResolvedValue(makeSSEResponse('content_filter'));
 
@@ -624,9 +628,12 @@ describe('TestPage — blocked turn without trace entry', () => {
     await userEvent.type(textarea, 'blocked with no trace');
     await userEvent.keyboard('{Enter}');
 
+    // Fallback message shown as a normal bubble when blockMessage is absent
     await waitFor(() =>
-      expect(screen.queryByText(/blocked by guardrail/i)).not.toBeNull(),
+      expect(screen.queryByText(/blocked by a guardrail/i)).not.toBeNull(),
     { timeout: 4000 });
+    // No red box header
+    expect(screen.queryByText(/blocked by guardrail/i)).toBeNull();
   });
 });
 

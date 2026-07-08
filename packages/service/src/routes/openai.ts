@@ -88,6 +88,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     const project = request.project;
     const body = request.body;
     const isStream = body.stream === true;
+    // Only emit x-routerly-trace-id when the Playground opts in (wire-format transparency).
+    const traceOptIn = request.headers['x-routerly-trace'] === '1';
     const startMs = Date.now();
 
     const msgs = body.messages ?? [];
@@ -112,25 +114,50 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     // Usage enrichment: end-user (#96)
     const endUserId = (body as any).user as string | undefined || undefined;
 
+    // ── PII scrubbing — input (#76) ──────────────────────────────────────────
+    // Runs BEFORE guardrails so the judge never sees raw PII.
+    // Trace order: pii:evaluated/pii:scrubbed -> guardrail:evaluated/guardrail:triggered.
+    let piiRedacted: string[] | undefined;
+    const inPii = project.pii?.policies?.length ? mergePolicies(project.pii.policies, 'input') : null;
+    if (inPii && (inPii.entities?.length || inPii.customPatterns?.length) && Array.isArray(body.messages)) {
+      const { messages, redacted } = scrubMessages(body.messages, inPii);
+      // "ran" signal: always emitted when input scrubbing is active, even with 0 redactions.
+      appendTrace(traceId, [{ panel: 'request', message: 'pii:evaluated', details: { redacted } }]);
+      if (redacted.length > 0) {
+        body.messages = messages;
+        piiRedacted = redacted;
+        request.log.info({ projectId: project.id, redacted }, 'pii: scrubbed');
+        appendTrace(traceId, [{ panel: 'request', message: 'pii:scrubbed', details: { entities: redacted } }]);
+      }
+    }
+
     // ── Content guardrails (#77) ─────────────────────────────────────────────
-    // Checks input messages against the project's guardrail rules.
-    // On 'block' we short-circuit with the fallback message; 'log' records
-    // the rule on the usage record and continues.
+    // Evaluates the SCRUBBED messages so PII is never sent to the judge.
+    // Scans the full conversation (conversationText) to detect multi-turn bypass (#7).
     // Real project context for guardrail judge/embedding calls (#77, BUG-4):
     // their tokens are attributed and gated against the caller's project.
     const guardrailPctx = { projectId: project.id, project, ...(request.token ? { token: request.token } : {}) };
     let guardrailTriggered: string | undefined;
+
+    // ponytail: local helper for string|array content extraction — two call sites, no new module.
+    function messageText(content: unknown): string {
+      if (typeof content === 'string') return content;
+      if (Array.isArray(content)) return content.filter((p: any) => p?.type === 'text' && typeof p.text === 'string').map((p: any) => p.text as string).join('\n');
+      return '';
+    }
+
     if (project.guardrails) {
-      const msgs = body.messages ?? [];
-      const lastUserMsg = [...msgs].reverse().find((m: any) => m?.role === 'user');
-      const inputText = typeof lastUserMsg?.content === 'string' ? lastUserMsg.content : '';
+      const scrubbedMsgs = body.messages ?? [];
+      const lastUserMsg = [...scrubbedMsgs].reverse().find((m: any) => m?.role === 'user');
+      const primaryText = messageText(lastUserMsg?.content);
+      const conversationText = scrubbedMsgs.map((m: any) => `${m?.role ?? 'user'}: ${messageText(m?.content)}`).join('\n');
       let result: Awaited<ReturnType<typeof checkGuardrails>>;
       try {
-        result = await checkGuardrails('request', inputText, project.guardrails, guardrailPctx, request.log);
+        result = await checkGuardrails('request', primaryText, project.guardrails, guardrailPctx, request.log, conversationText);
       } catch (err: unknown) {
         // Over-limit guardrail judge call: fail the request like an over-limit completion (BUG-4).
         if (err instanceof BudgetExceededError) {
-          reply.header('x-routerly-trace-id', traceId);
+          if (traceOptIn) reply.header('x-routerly-trace-id', traceId);
           return reply.code(429).send({ error: { message: 'Usage limit exceeded by content-guardrail check.', type: 'insufficient_quota' } });
         }
         throw err;
@@ -154,12 +181,12 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
             if (_origin) {
               reply.raw.setHeader('Access-Control-Allow-Origin', _origin);
               reply.raw.setHeader('Access-Control-Allow-Credentials', 'true');
-              reply.raw.setHeader('Access-Control-Expose-Headers', 'x-routerly-trace-id');
+              if (traceOptIn) reply.raw.setHeader('Access-Control-Expose-Headers', 'x-routerly-trace-id');
             }
             reply.raw.setHeader('Content-Type', 'text/event-stream');
             reply.raw.setHeader('Cache-Control', 'no-cache');
             reply.raw.setHeader('Connection', 'keep-alive');
-            reply.raw.setHeader('x-routerly-trace-id', traceId);
+            if (traceOptIn) reply.raw.setHeader('x-routerly-trace-id', traceId);
             reply.raw.flushHeaders();
 
             // Wire-faithful content_filter block: empty delta + content_filter finish_reason, then [DONE].
@@ -169,28 +196,12 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
             reply.raw.end();
             return;
           }
-          reply.header('x-routerly-trace-id', traceId);
+          if (traceOptIn) reply.header('x-routerly-trace-id', traceId);
           // Wire-faithful content_filter block: empty content + content_filter finish_reason.
           return reply.code(200).send({ id: `chatcmpl-${traceId}`, object: 'chat.completion', created: Math.floor(Date.now() / 1000), model: body.model ?? '', choices: [{ index: 0, message: { role: 'assistant', content: '' }, finish_reason: 'content_filter' }], usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } });
         }
         // log-only: record trigger and continue
         if (result.log) guardrailTriggered = hit.triggered;
-      }
-    }
-
-    // ── PII scrubbing (#76) ──────────────────────────────────────────────────
-    // Redact PII entities from message content before forwarding to the provider.
-    let piiRedacted: string[] | undefined;
-    const inPii = project.pii?.policies?.length ? mergePolicies(project.pii.policies, 'input') : null;
-    if (inPii && (inPii.entities?.length || inPii.customPatterns?.length) && Array.isArray(body.messages)) {
-      const { messages, redacted } = scrubMessages(body.messages, inPii);
-      // "ran" signal: always emitted when input scrubbing is active, even with 0 redactions.
-      appendTrace(traceId, [{ panel: 'request', message: 'pii:evaluated', details: { redacted } }]);
-      if (redacted.length > 0) {
-        body.messages = messages;
-        piiRedacted = redacted;
-        request.log.info({ projectId: project.id, redacted }, 'pii: scrubbed');
-        appendTrace(traceId, [{ panel: 'request', message: 'pii:scrubbed', details: { entities: redacted } }]);
       }
     }
 
@@ -204,12 +215,12 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       if (origin) {
         reply.raw.setHeader('Access-Control-Allow-Origin', origin);
         reply.raw.setHeader('Access-Control-Allow-Credentials', 'true');
-        reply.raw.setHeader('Access-Control-Expose-Headers', 'x-routerly-trace-id');
+        if (traceOptIn) reply.raw.setHeader('Access-Control-Expose-Headers', 'x-routerly-trace-id');
       }
       reply.raw.setHeader('Content-Type', 'text/event-stream');
       reply.raw.setHeader('Cache-Control', 'no-cache');
       reply.raw.setHeader('Connection', 'keep-alive');
-      reply.raw.setHeader('x-routerly-trace-id', traceId);
+      if (traceOptIn) reply.raw.setHeader('x-routerly-trace-id', traceId);
       reply.raw.flushHeaders();
 
       const suppressTrace = request.headers['x-routerly-no-trace'] === '1';
@@ -495,7 +506,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
               if (result.block) {
                 // Usage record for the blocked response (#77): zero cost/tokens, distinct 'blocked' outcome.
                 await trackBlockedRequest(project, hit.triggered, traceId);
-                reply.header('x-routerly-trace-id', traceId);
+                if (traceOptIn) reply.header('x-routerly-trace-id', traceId);
                 // Wire-faithful content_filter block: empty content + content_filter finish_reason.
                 return reply.code(200).send({ id: `chatcmpl-${traceId}`, object: 'chat.completion', created: Math.floor(Date.now() / 1000), model: body.model ?? '', choices: [{ index: 0, message: { role: 'assistant', content: '' }, finish_reason: 'content_filter' }], usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } });
               }
@@ -508,7 +519,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         if (chatPrimaryFailed && model.id !== chatPrimaryModelId) {
           void emitEvent('routing.fallback_used', 'info', { projectId: project.id, primaryModelId: chatPrimaryModelId, fallbackModelId: model.id, traceId }, { projectId: project.id, log: request.log });
         }
-        reply.header('x-routerly-trace-id', traceId);
+        if (traceOptIn) reply.header('x-routerly-trace-id', traceId);
         return reply.send(response);
       } catch (err: unknown) {
         if (!(err instanceof BudgetExceededError)) {

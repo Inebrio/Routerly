@@ -17,15 +17,25 @@ Guardrails evaluate messages against an ordered list of independent rules. Each 
 
 A rule can have Block enabled, Log enabled, both, or neither. These actions are evaluated independently, so a rule can log without blocking, block without logging, or do both simultaneously.
 
+### Processing Order
+
+On each request, security processing follows a strict order:
+
+1. **Request side:** PII scrubbing (request policies) first, then guardrail rules (request/both target)
+2. **Provider call:** Routed to the selected model
+3. **Response side:** PII scrubbing (response policies) first, then guardrail rules (response/both target)
+
+Critical: on the request side, PII is scrubbed BEFORE guardrails evaluate the message. This means the guardrail judge never sees raw PII data, only the scrubbed version.
+
 ### Rule Types
 
-**Regex:** Match text against one or more regex patterns (case-insensitive). No external model required.
+**Regex:** Match text against one or more regex patterns (case-insensitive). No external model required. Evaluates the last user message only.
 
-**Semantic:** Use an embedding model to detect semantically similar content. Computes cosine similarity against provided examples and triggers if the score exceeds the threshold (default 0.82).
+**Semantic:** Use an embedding model to detect semantically similar content. Computes cosine similarity against provided examples and triggers if the score exceeds the threshold (default 0.82). Evaluates the last user message only. Supports optional fallback embedding models (tried in order if the primary fails).
 
-**Topic:** Use an LLM judge model to evaluate whether content matches allowed topics. The judge receives the message and a natural-language description of allowed topics, scores the request 0-1, and triggers if the score falls below the threshold (default 0.5, meaning off-topic).
+**Topic:** Use an LLM judge model to evaluate whether content matches allowed topics. The judge receives the ENTIRE conversation history (all messages the final model will see) and scores the latest user request 0-1, read in the full context of the conversation rather than in isolation. This means a request that only looks disallowed given earlier turns (a rephrasing, softening, follow-up, insistence, or continuation of an earlier disallowed request) is caught. Triggers if the score falls below the threshold (default 0.5, meaning off-topic). Supports optional fallback judge models.
 
-**Moderation:** Use an LLM judge model to detect harmful content (hate, violence, sexual, self-harm). The judge scores the request 0-1 and triggers if the score exceeds the threshold (default 0.5).
+**Moderation:** Use an LLM judge model to detect harmful content (hate, violence, sexual, self-harm). The judge receives the ENTIRE conversation history and scores the latest user request 0-1, read in the full context of the conversation. A request that pursues disallowed content by rephrasing, softening, insisting on, or continuing an earlier refused request is judged on that intent, not on the isolated wording of the last message. Triggers if the score exceeds the threshold (default 0.5). Supports optional fallback judge models.
 
 ### Judge Response Option
 
@@ -37,6 +47,27 @@ Rules that use an LLM judge (topic and moderation) support an optional "use judg
 4. If no static block message is configured, a built-in default is used
 
 This allows the judge model to provide contextual explanations for blocks (e.g. "This request appears to be about product pricing, which is outside our allowed topics").
+
+### Judge JSON Repair
+
+When model-based guardrail rules (topic, moderation, semantic) invoke an LLM judge, the judge's response is expected to be JSON. If the response is malformed, Routerly attempts to repair it by:
+
+1. Stripping code fences and preamble text
+2. Extracting the first balanced JSON object `{...}`
+3. Repairing common LLM formatting slop (trailing commas, unterminated strings, missing closing braces)
+4. Parsing the repaired JSON
+
+If repair fails, the rule is recorded as skipped (judge-failed) and execution continues to the next rule.
+
+Critical: JSON repair applies ONLY to the guardrail judge's internal response. The client-facing provider response is never altered. Wire-format transparency is absolute.
+
+### Fallback Models
+
+Model-based guardrail rules (topic, moderation, semantic) support an optional ordered list of fallback model IDs. If the primary judge/embedding model is missing or returns a model error, Routerly tries the fallbacks in order.
+
+Exception: if the judge model returns a usage/budget-exceeded error, the rule fails immediately and does NOT fall through to fallbacks. Budget exceeded is fail-closed, treating it as a blocked rule.
+
+When a fallback is used, it is recorded in the trace as `skipped: <reason>` for the primary model and a fresh evaluation for the fallback.
 
 ### Prompt Injection Detection
 
@@ -124,11 +155,16 @@ When PII is detected and redacted, the usage record gains a `piiRedacted` field 
 
 ## Combined Behavior
 
-When both guardrails and PII scrubbing are active:
+When both guardrails and PII scrubbing are active, the processing order is:
 
-1. **Request flow:** Guardrail rules (request/both target) are evaluated; if any rule blocks, the request is rejected. Otherwise, request-direction PII policies scrub the message before forwarding.
-2. **Response flow:** Response PII policies scrub the provider's response. Then, guardrail rules (response/both target) are evaluated; if any rule blocks, the response is rejected.
+1. **Request flow:**
+   - Injection detection (if enabled)
+   - PII scrubbing (request policies) so the judge never sees raw PII
+   - Guardrail rules (request/both target) evaluate the scrubbed request before it is forwarded to the model
+2. **Response flow:**
+   - PII scrubbing (response policies) on the provider's response
+   - Guardrail rules (response/both target) evaluate the scrubbed response
 
-Injection detection runs first in the request flow, before rule evaluation.
+If any request-side guardrail blocks, the request is rejected and does not reach the model. If any response-side guardrail blocks, the response is rejected before being returned to the client.
 
-Both block outcomes return HTTP 200 with wire-faithful content-filter responses (`finish_reason: "content_filter"` for OpenAI, `stop_reason: "refusal"` for Anthropic). The usage record will have `outcome: "blocked"` and `callType: "guardrail"`, with `blockedBy` set to the rule identifier.
+Both block outcomes return HTTP 200 with wire-faithful content-filter responses (`finish_reason: "content_filter"` for OpenAI, `stop_reason: "refusal"` for Anthropic). Empty content is returned. The usage record will have `outcome: "blocked"` and `callType: "guardrail"`, with `blockedBy` set to the rule identifier.

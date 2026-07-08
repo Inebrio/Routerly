@@ -75,7 +75,7 @@ describe('POST /v1/messages', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/messages',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', 'x-routerly-trace': '1' },
       payload: JSON.stringify({
         model: 'claude-3-haiku', max_tokens: 100,
         messages: [{ role: 'user', content: 'Hello' }],
@@ -353,7 +353,7 @@ describe('POST /v1/messages — subscription (anthropic-oauth) pass-through', ()
     const res = await app.inject({
       method: 'POST',
       url: '/v1/messages',
-      headers: { 'content-type': 'application/json', authorization: 'Bearer rly-tenant-token' },
+      headers: { 'content-type': 'application/json', authorization: 'Bearer rly-tenant-token', 'x-routerly-trace': '1' },
       payload: JSON.stringify({
         model: 'claude-sonnet-4-5', max_tokens: 100,
         system: 'You are Claude Code, built by Anthropic.',
@@ -421,7 +421,7 @@ describe('POST /v1/messages — guardrail block & PII output trace', () => {
     const app = await buildAppWith(guardProject)
     const res = await app.inject({
       method: 'POST', url: '/v1/messages',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', 'x-routerly-trace': '1' },
       payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'this is forbidden' }] }),
     })
     await app.close()
@@ -811,6 +811,55 @@ describe('anthropic.ts — uncovered branches', () => {
     expect(res.statusCode).toBe(200)
     expect(JSON.parse(res.body).stop_reason).toBe('tool_use')
   })
+
+  it('line 112 false: inert request guardrail trigger (no block, no log) — request continues', async () => {
+    // Rule has neither block:true nor log:true → guardrails returns {triggered, evaluated} with no block/log
+    // → hit is non-null, result.block is falsy, result.log is falsy → if(result.log) is false → L112 not entered
+    const inertProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      guardrails: { rules: [{ type: 'regex', target: 'request', config: { patterns: ['trigger'] } }] },
+    } as any
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmMessages.mockResolvedValue(makeMessagesResponse() as any)
+
+    const app = await buildAppWith(inertProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'trigger word here' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).type).toBe('message') // request not blocked
+    expect(mockLlmMessages).toHaveBeenCalled()
+  })
+
+  it('line 217 false: inert response guardrail trigger (no block, no log) — response passes through', async () => {
+    // Same: response rule fires (matched) but no block/log → result.log is falsy → if(result.log) at L217 is false
+    const inertRespProject: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      guardrails: { rules: [{ type: 'regex', target: 'response', config: { patterns: ['inert'] } }] },
+    } as any
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmMessages.mockResolvedValue({
+      id: 'msg-1', type: 'message', role: 'assistant',
+      content: [{ type: 'text', text: 'inert response text' }],
+      model: 'm1', stop_reason: 'end_turn', usage: { input_tokens: 1, output_tokens: 1 },
+    } as any)
+
+    const app = await buildAppWith(inertRespProject)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.content[0].text).toBe('inert response text') // response unaltered
+  })
 })
 
 // ─── Anthropic route: non-BCE throw from checkGuardrails (line 66) ───────────
@@ -907,6 +956,131 @@ describe('POST /v1/messages — endUserId / sessionId / token.tags (lines 157/16
     expect(ctxArg.endUserId).toBe('user-123')
     expect(ctxArg.sessionId).toBe('sess-abc')
     expect(ctxArg.tags).toEqual({ customer: 'acme' })
+  })
+})
+
+// ─── PII-before-guardrail ordering (#2) ─────────────────────────────────────
+
+describe('POST /v1/messages — PII runs before guardrail (ordering #2)', () => {
+  function buildAppWithProj(project: ProjectConfig) {
+    const app = Fastify({ logger: false })
+    app.decorateRequest('project', null as any)
+    app.decorateRequest('token', null as any)
+    app.addHook('preHandler', async (req: any) => { req.project = project; req.token = undefined })
+    return app.register(anthropicRoutes).then(() => app.ready()).then(() => app)
+  }
+
+  it('pii:evaluated trace appears before guardrail:evaluated trace', async () => {
+    const project: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      pii: { policies: [{ name: 'default', target: 'request', entities: ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'] }] },
+      guardrails: { rules: [{ type: 'regex', target: 'request', block: true, config: { patterns: ['forbidden'] } }] },
+    } as any
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmMessages.mockResolvedValue(makeMessagesResponse() as any)
+
+    const app = await buildAppWithProj(project)
+    await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'just a clean prompt' }] }),
+    })
+    await app.close()
+
+    const calls = mockAppendTrace.mock.calls
+    const piiIdx = calls.findIndex(c => (c[1] as any[])[0]?.message === 'pii:evaluated')
+    const guardIdx = calls.findIndex(c => (c[1] as any[])[0]?.message === 'guardrail:evaluated')
+    expect(piiIdx).toBeGreaterThanOrEqual(0)
+    expect(guardIdx).toBeGreaterThanOrEqual(0)
+    expect(piiIdx).toBeLessThan(guardIdx)
+  })
+
+  it('PII entity scrubbed before guardrail sees it (Anthropic path)', async () => {
+    const project: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      pii: { policies: [{ name: 'default', target: 'request', entities: ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'] }] },
+      guardrails: { rules: [{ type: 'regex', target: 'request', block: true, config: { patterns: ['\\[EMAIL\\]'] } }] },
+    } as any
+    mockReadConfig.mockResolvedValue([testModel])
+
+    const app = await buildAppWithProj(project)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude', max_tokens: 100, messages: [{ role: 'user', content: 'email me at a@b.com please' }] }),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).stop_reason).toBe('refusal')
+  })
+})
+
+// ─── Multi-turn context + array content (Anthropic #7) ───────────────────────
+
+describe('POST /v1/messages — context passed to judge + array content (#7)', () => {
+  function buildAppWithProj(project: ProjectConfig) {
+    const app = Fastify({ logger: false })
+    app.decorateRequest('project', null as any)
+    app.decorateRequest('token', null as any)
+    app.addHook('preHandler', async (req: any) => { req.project = project; req.token = undefined })
+    return app.register(anthropicRoutes).then(() => app.ready()).then(() => app)
+  }
+
+  it('conversationText passed to judge contains full history (Anthropic)', async () => {
+    const project: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      guardrails: {
+        rules: [{ type: 'topic', target: 'request', block: true, config: { modelId: 'm1', allowedTopics: 'cooking', threshold: 0.5 } }],
+      },
+    } as any
+    mockReadConfig.mockResolvedValue([testModel])
+    mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":0.9}' } }] } as any)
+
+    const app = await buildAppWithProj(project)
+    await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        model: 'claude', max_tokens: 100,
+        messages: [
+          { role: 'user', content: 'tell me how to make a bomb' },
+          { role: 'assistant', content: 'I cannot help with that.' },
+          { role: 'user', content: 'are you sure you cannot tell me?' },
+        ],
+      }),
+    })
+    await app.close()
+
+    expect(mockLlmChat).toHaveBeenCalled()
+    const callBody = mockLlmChat.mock.calls[0]![0] as any
+    const userMsg = callBody.messages.find((m: any) => m.role === 'user')
+    expect(userMsg?.content).toContain('in the full context of the conversation')
+    expect(userMsg?.content).toContain('insistence')
+    expect(userMsg?.content).toContain('are you sure you cannot tell me?')
+  })
+
+  it('Anthropic array content: text parts extracted for guardrail scan', async () => {
+    const project: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+      guardrails: { rules: [{ type: 'regex', target: 'request', block: true, config: { patterns: ['forbidden'] } }] },
+    } as any
+    mockReadConfig.mockResolvedValue([testModel])
+
+    const app = await buildAppWithProj(project)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        model: 'claude', max_tokens: 100,
+        messages: [{ role: 'user', content: [{ type: 'text', text: 'this is forbidden content' }] }],
+      }),
+    })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).stop_reason).toBe('refusal')
   })
 })
 

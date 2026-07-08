@@ -475,8 +475,8 @@ Detect Injection: yes
 Active Security Rules:
   #   Type          Target      Summary
   0   regex         request     2 pattern(s) [block]
-  1   semantic      both        model: text-embedding-3-small, 3 example(s) [log]
-  2   topic         response    model: claude-haiku-4-5 [block+log] [judge-response]
+  1   semantic      both        model: text-embedding-3-small (+1 fallback), 3 example(s) [log]
+  2   topic         response    model: claude-haiku-4-5 (+1 fallback) [block+log] [judge-response]
   3   moderation    request     model: claude-haiku-4-5 [block]
 ```
 
@@ -485,6 +485,7 @@ The summary suffix shows action tags:
 - `[log]`: the rule logs trigger in usage (monitor)
 - `[block+log]`: the rule both blocks and logs
 - `[judge-response]`: the rule uses the judge model's message as the block reply
+- `(+N fallback)`: the rule has N fallback models configured (topic/moderation/semantic only)
 
 #### Detect Injection
 
@@ -523,6 +524,8 @@ Launches an interactive wizard. Steps:
 5. **Judge Response**: (topic/moderation only, when Block is enabled) use the judge model's own explanation as the block message. When true, the judge is asked to return `{ score, message }` and the message is returned on block, with the static Block Message as fallback if the judge fails.
 
 6. **Type-specific fields**: prompts depend on the rule type selected.
+
+7. **Fallback models** (topic/moderation/semantic only, when Block is enabled): comma-separated list of fallback model IDs to try if the primary model is unavailable or errors. Leave empty for none. If the primary model returns a budget-exceeded error, fallbacks are not tried (fail-closed).
 
 New rules are appended to the end of the list and are active by default.
 

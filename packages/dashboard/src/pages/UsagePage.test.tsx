@@ -366,40 +366,40 @@ describe('UsagePage — Live mode', () => {
     await waitFor(() => expect(screen.getByText(/● Live/)).toBeTruthy());
   });
 
-  it('toggling Live activates live mode indicator', async () => {
+  it('LIVE indicator is visible on mount (liveMode defaults true)', async () => {
     vi.mocked(getUsage).mockResolvedValue(makeStats());
     renderPage();
-    const liveBtn = await screen.findByText(/● Live/);
-    await userEvent.click(liveBtn);
     await waitFor(() => expect(screen.getByText('LIVE')).toBeTruthy());
   });
 
-  it('toggling Live twice returns to normal mode', async () => {
+  it('toggling Live off hides the LIVE indicator', async () => {
     vi.mocked(getUsage).mockResolvedValue(makeStats());
     renderPage();
-    const liveBtn = await screen.findByText(/● Live/);
-    await userEvent.click(liveBtn);  // enable
     await waitFor(() => screen.getByText('LIVE'));
-    await userEvent.click(liveBtn);  // disable
+    const liveBtn = screen.getByText(/● Live/);
+    await userEvent.click(liveBtn); // disable
     await waitFor(() => expect(screen.queryByText('LIVE')).toBeNull());
   });
 
-  it('clicking a poll-interval button while live mode is off sets interval', async () => {
+  it('toggling Live off then on restores the LIVE indicator', async () => {
     vi.mocked(getUsage).mockResolvedValue(makeStats());
     renderPage();
-    await waitFor(() => screen.getByText(/● Live/));
-    const oneMinBtn = screen.getByRole('button', { name: '1m' });
-    await userEvent.click(oneMinBtn);
-    expect(oneMinBtn.className).toContain('btn-primary');
+    await waitFor(() => screen.getByText('LIVE'));
+    const liveBtn = screen.getByText(/● Live/);
+    await userEvent.click(liveBtn); // disable
+    await waitFor(() => expect(screen.queryByText('LIVE')).toBeNull());
+    await userEvent.click(liveBtn); // re-enable
+    await waitFor(() => expect(screen.getByText('LIVE')).toBeTruthy());
   });
 
-  it('poll-interval buttons are disabled when live mode is active', async () => {
+  it('clicking a poll-interval button exits live mode and marks interval active', async () => {
     vi.mocked(getUsage).mockResolvedValue(makeStats());
     renderPage();
-    const liveBtn = await screen.findByText(/● Live/);
-    await userEvent.click(liveBtn);
     await waitFor(() => screen.getByText('LIVE'));
     const oneMinBtn = screen.getByRole('button', { name: '1m' });
-    expect(oneMinBtn).toBeDisabled();
+    await userEvent.click(oneMinBtn); // exits live mode, selects 1m interval
+    expect(oneMinBtn.className).toContain('btn-primary');
+    // LIVE indicator disappears once live mode is off
+    await waitFor(() => expect(screen.queryByText('LIVE')).toBeNull());
   });
 });

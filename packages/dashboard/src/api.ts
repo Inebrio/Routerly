@@ -302,9 +302,9 @@ export type GuardrailRuleType = 'regex' | 'semantic' | 'topic' | 'moderation';
 export type GuardrailTarget = 'request' | 'response' | 'both';
 
 export interface RegexGuardConfig { patterns: string[]; }
-export interface SemanticGuardConfig { embeddingModelId: string; examples: string[]; threshold?: number; }
-export interface TopicGuardConfig { modelId: string; allowedTopics: string; threshold?: number; }
-export interface ModerationGuardConfig { modelId: string; threshold?: number; systemPrompt?: string; }
+export interface SemanticGuardConfig { embeddingModelId: string; fallbackModelIds?: string[]; examples: string[]; threshold?: number; }
+export interface TopicGuardConfig { modelId: string; fallbackModelIds?: string[]; allowedTopics: string; threshold?: number; }
+export interface ModerationGuardConfig { modelId: string; fallbackModelIds?: string[]; threshold?: number; systemPrompt?: string; }
 
 export interface GuardrailRule {
   type: GuardrailRuleType;

@@ -3148,6 +3148,38 @@ describe('POST /api/projects — without models (line 441 ?? [] branch)', () => 
     expect((res.json() as Record<string, unknown>)['guardrails']).toBeDefined()
   })
 
+  it('fallbackModelIds accepted + persisted on topic/moderation/semantic rules (#5 Zod round-trip)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return []
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const guardrails = {
+      rules: [
+        { type: 'topic', target: 'request', block: true, config: { modelId: 'm1', allowedTopics: 'support', fallbackModelIds: ['m2', 'm3'] } },
+        { type: 'moderation', target: 'request', block: true, config: { modelId: 'm1', fallbackModelIds: ['m2'] } },
+        { type: 'semantic', target: 'request', block: true, config: { embeddingModelId: 'm1', examples: ['x'], fallbackModelIds: ['m2'] } },
+      ],
+    }
+    const res = await app.inject({
+      method: 'POST', url: '/api/projects',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'FallbackTest', guardrails }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const body = res.json() as any
+    expect(body.guardrails).toBeDefined()
+    const rules = body.guardrails.rules
+    expect(rules[0].config.fallbackModelIds).toEqual(['m2', 'm3'])
+    expect(rules[1].config.fallbackModelIds).toEqual(['m2'])
+    expect(rules[2].config.fallbackModelIds).toEqual(['m2'])
+  })
+
   it('returns 400 for invalid guardrails config in POST /api/projects (line 718)', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
