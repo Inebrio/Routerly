@@ -269,13 +269,27 @@ describe('ModelsPage — pagination', () => {
   });
 });
 
-// ── Health columns in the merged table ────────────────────────────────────────
+// helper: switch to the Health tab
+async function switchToHealthTab() {
+  const healthTabBtn = screen.getByRole('button', { name: 'Health' });
+  await userEvent.click(healthTabBtn);
+}
+
+// ── Health columns in the health tab ──────────────────────────────────────────
 
 describe('ModelsPage — health columns (merged table)', () => {
-  it('shows health columns headers in the table', async () => {
+  it('shows both Models and Health tab buttons', async () => {
+    renderPage();
+    await waitFor(() => screen.queryByText(/No models yet/) || screen.queryByText(/model/));
+    expect(screen.getByRole('button', { name: 'Models' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Health' })).toBeTruthy();
+  });
+
+  it('shows health columns headers in the health tab', async () => {
     mockGetModels.mockResolvedValue([makeModel()]);
     renderPage();
     await waitFor(() => screen.getByText('gpt-4o'));
+    await switchToHealthTab();
     expect(screen.getByText('Status')).toBeTruthy();
     expect(screen.getByText(/Error rate/)).toBeTruthy();
     expect(screen.getByText(/P95 latency/)).toBeTruthy();
@@ -289,6 +303,7 @@ describe('ModelsPage — health columns (merged table)', () => {
     mockGetProviderHealth.mockResolvedValue({ providers: [makeHealthProvider()] });
     renderPage();
     await waitFor(() => screen.getByText('gpt-4o'));
+    await switchToHealthTab();
     await waitFor(() => expect(screen.getByText('Healthy')).toBeTruthy());
   });
 
@@ -297,6 +312,7 @@ describe('ModelsPage — health columns (merged table)', () => {
     mockGetProviderHealth.mockResolvedValue({ providers: [] });
     renderPage();
     await waitFor(() => screen.getByText('gpt-4o'));
+    await switchToHealthTab();
     await waitFor(() => expect(screen.getByText('No data')).toBeTruthy());
   });
 
@@ -305,7 +321,8 @@ describe('ModelsPage — health columns (merged table)', () => {
     mockGetProviderHealth.mockResolvedValue({ providers: [] });
     renderPage();
     await waitFor(() => screen.getByText('gpt-4o'));
-    // multiple — cells expected (error rate, p95, requests, last success, cooldown)
+    await switchToHealthTab();
+    // multiple dash cells expected (error rate, p95, requests, last success, cooldown)
     const cells = Array.from(document.querySelectorAll('td'));
     const dashCells = cells.filter(td => td.textContent === '—');
     expect(dashCells.length).toBeGreaterThan(0);
@@ -319,6 +336,7 @@ describe('ModelsPage — health columns (merged table)', () => {
     });
     renderPage();
     await waitFor(() => screen.getByText('gpt-4o'));
+    await switchToHealthTab();
     await waitFor(() => expect(screen.getAllByText('Cooldown').length).toBeGreaterThan(0));
   });
 
@@ -329,6 +347,7 @@ describe('ModelsPage — health columns (merged table)', () => {
     });
     renderPage();
     await waitFor(() => screen.getByText('gpt-4o'));
+    await switchToHealthTab();
     await waitFor(() => screen.getByText('Healthy'));
     const dashes = Array.from(document.querySelectorAll('td')).filter(td => td.textContent === '—');
     expect(dashes.length).toBeGreaterThan(0);
@@ -341,6 +360,7 @@ describe('ModelsPage — health columns (merged table)', () => {
     });
     renderPage();
     await waitFor(() => screen.getByText('gpt-4o'));
+    await switchToHealthTab();
     await waitFor(() => expect(screen.getByText('never')).toBeTruthy());
   });
 
@@ -352,13 +372,16 @@ describe('ModelsPage — health columns (merged table)', () => {
     });
     renderPage();
     await waitFor(() => screen.getByText('gpt-4o'));
+    await switchToHealthTab();
     await waitFor(() => expect(screen.getByText(/\d+d ago/)).toBeTruthy());
   });
 
-  it('model with no health entry still appears in the table', async () => {
+  it('model with no health entry still appears in the health table', async () => {
     mockGetModels.mockResolvedValue([makeModel({ id: 'orphan-model' })]);
     mockGetProviderHealth.mockResolvedValue({ providers: [] });
     renderPage();
+    await waitFor(() => screen.getByText('orphan-model'));
+    await switchToHealthTab();
     await waitFor(() => expect(screen.getByText('orphan-model')).toBeTruthy());
   });
 
@@ -372,27 +395,22 @@ describe('ModelsPage — health columns (merged table)', () => {
     });
     renderPage();
     await waitFor(() => screen.getByText('gpt-4o'));
-    expect(screen.getByText('local-model')).toBeTruthy();
+    await switchToHealthTab();
     await waitFor(() => expect(screen.getByText('Healthy')).toBeTruthy());
+    expect(screen.getByText('local-model')).toBeTruthy();
     expect(screen.getByText('No data')).toBeTruthy();
-  });
-
-  it('no tab buttons rendered (tab bar removed)', async () => {
-    renderPage();
-    await waitFor(() => screen.queryByText(/No models yet/) || screen.queryByText(/model/));
-    expect(screen.queryByRole('button', { name: 'Health' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Models' })).toBeNull();
   });
 });
 
 // ── Sortable health + endpoint columns ────────────────────────────────────────
 
 describe('ModelsPage — sortable health and endpoint columns', () => {
-  it('Endpoint header is sortable (renders sort icon)', async () => {
+  it('Endpoint header is sortable in Models tab (renders sort icon)', async () => {
     mockGetModels.mockResolvedValue([
       makeModel({ id: 'b-model', endpoint: 'https://z.com/v1' }),
       makeModel({ id: 'a-model', endpoint: 'https://a.com/v1' }),
     ]);
+    // Endpoint sort lives under the Models tab (default tab)
     renderPage();
     await waitFor(() => screen.getByText('b-model'));
     const endpointHeader = screen.getByText('Endpoint');
@@ -402,7 +420,7 @@ describe('ModelsPage — sortable health and endpoint columns', () => {
     expect(rows[0]?.textContent).toContain('a-model');
   });
 
-  it('Status header sorts healthy before degraded on asc', async () => {
+  it('Status header sorts healthy before degraded by default (asc = best first)', async () => {
     mockGetModels.mockResolvedValue([
       makeModel({ id: 'deg-model', provider: 'openai' }),
       makeModel({ id: 'healthy-model', provider: 'openai' }),
@@ -415,8 +433,12 @@ describe('ModelsPage — sortable health and endpoint columns', () => {
     });
     renderPage();
     await waitFor(() => screen.getByText('healthy-model'));
+    await switchToHealthTab();
+    // Default hSortKey='status', hSortDir='asc' already orders healthy first.
+    // Clicking once flips to desc (degraded first); click twice to restore asc.
     const statusHeader = screen.getByText('Status');
-    await userEvent.click(statusHeader); // asc: healthy first (higher severity score)
+    await userEvent.click(statusHeader); // desc: degraded first
+    await userEvent.click(statusHeader); // asc again: healthy first
     const rows = Array.from(document.querySelectorAll('tbody tr'));
     expect(rows[0]?.textContent).toContain('healthy-model');
   });
@@ -431,6 +453,7 @@ describe('ModelsPage — sortable health and endpoint columns', () => {
     });
     renderPage();
     await waitFor(() => screen.getByText('no-health'));
+    await switchToHealthTab();
     const statusHeader = screen.getByText('Status');
     await userEvent.click(statusHeader); // asc
     const rows = Array.from(document.querySelectorAll('tbody tr'));
@@ -454,6 +477,7 @@ describe('ModelsPage — sortable health and endpoint columns', () => {
     });
     renderPage();
     await waitFor(() => screen.getByText('high-err'));
+    await switchToHealthTab();
     const errHeader = screen.getByText(/Error rate/);
     await userEvent.click(errHeader); // asc: low error first
     const rows = Array.from(document.querySelectorAll('tbody tr'));
@@ -465,9 +489,10 @@ describe('ModelsPage — sortable health and endpoint columns', () => {
     mockGetProviderHealth.mockResolvedValue({ providers: [makeHealthProvider()] });
     renderPage();
     await waitFor(() => screen.getByText('gpt-4o'));
+    await switchToHealthTab();
     const p95Header = screen.getByText(/P95 latency/);
     await userEvent.click(p95Header);
-    // ChevronUp/Down would be in the DOM — check the header span has the icon
+    // ChevronUp/Down is in the DOM inside the th after click
     expect(p95Header.closest('th') ?? p95Header).toBeTruthy();
   });
 });

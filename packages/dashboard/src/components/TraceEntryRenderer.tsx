@@ -352,7 +352,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#fb923c', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             GUARDRAILS EVALUATED ({String(e.details?.target ?? '').toUpperCase()})
           </span>
-          {Array.isArray(e.details?.rules) && (e.details.rules as Array<{ rule: string; outcome: string; reason?: string }>).map((r, i) => {
+          {Array.isArray(e.details?.rules) && (e.details.rules as Array<{ rule: string; outcome: string; reason?: string; judgeRaw?: string }>).map((r, i) => {
             const isInjection = r.rule === 'injection';
             const outcomeColor = r.outcome === 'passed' ? '#4ade80' : r.outcome === 'triggered' ? '#f87171' : 'var(--text-muted)';
             const outcomeBg   = r.outcome === 'passed' ? 'rgba(74,222,128,0.12)' : r.outcome === 'triggered' ? 'rgba(248,113,113,0.12)' : 'rgba(148,163,184,0.10)';
@@ -376,6 +376,18 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
                     {r.reason}
                   </span>
                 )}
+                {r.judgeRaw && (() => {
+                  let parsed: unknown = null;
+                  try { parsed = JSON.parse(r.judgeRaw); } catch { /* non-JSON raw */ }
+                  return (
+                    <details style={{ width: '100%', marginTop: 2 }}>
+                      <summary style={{ fontSize: '0.7rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>Judge response</summary>
+                      <pre style={{ margin: '4px 0 0', fontSize: '0.72rem', color: 'var(--text-secondary)', fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-all', overflowX: 'auto', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '6px 8px' }}>
+                        {parsed != null ? JSON.stringify(parsed, null, 2) : r.judgeRaw}
+                      </pre>
+                    </details>
+                  );
+                })()}
               </div>
             );
           })}

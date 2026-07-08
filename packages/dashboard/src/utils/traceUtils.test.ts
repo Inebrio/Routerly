@@ -101,6 +101,67 @@ describe('extractMessageStats', () => {
     expect(stats.routerScore).toBeNull();
     expect(stats.latencyMs).toBe(500);
   });
+
+  it('defaults guardrail fields when no guardrail traces present', () => {
+    const stats = extractMessageStats([
+      { message: 'model:success', details: { latencyMs: 500 } },
+    ]);
+    expect(stats.guardrailBlocked).toBe(false);
+    expect(stats.guardrailInputTokens).toBeNull();
+    expect(stats.guardrailOutputTokens).toBeNull();
+    expect(stats.guardrailCostUsd).toBeNull();
+  });
+
+  it('sums guardrail judge tokens across evaluated rules and computes cost', () => {
+    const stats = extractMessageStats([
+      {
+        message: 'guardrail:evaluated',
+        details: {
+          rules: [
+            { rule: 'a', usage: { inputTokens: 100, outputTokens: 10 } },
+            { rule: 'b', usage: { inputTokens: 200, outputTokens: 20 } },
+          ],
+        },
+      },
+    ]);
+    expect(stats.guardrailInputTokens).toBe(300);
+    expect(stats.guardrailOutputTokens).toBe(30);
+    // 300 * 0.000005 + 30 * 0.000015
+    expect(stats.guardrailCostUsd).toBeCloseTo(0.00195, 10);
+  });
+
+  it('leaves guardrail token fields null when evaluated rules carry no usage', () => {
+    const stats = extractMessageStats([
+      { message: 'guardrail:evaluated', details: { rules: [{ rule: 'a' }] } },
+    ]);
+    expect(stats.guardrailInputTokens).toBeNull();
+    expect(stats.guardrailCostUsd).toBeNull();
+  });
+
+  it('sets guardrailBlocked=true on a triggered blocking rule (no completion)', () => {
+    const stats = extractMessageStats([
+      { message: 'guardrail:evaluated', details: { rules: [{ rule: 'a', usage: { inputTokens: 50, outputTokens: 5 } }] } },
+      { message: 'guardrail:triggered', details: { block: true } },
+    ]);
+    expect(stats.guardrailBlocked).toBe(true);
+    expect(stats.guardrailInputTokens).toBe(50);
+    // blocked turn still surfaces judge cost even though inputTokens/outputTokens are null
+    expect(stats.inputTokens).toBeNull();
+  });
+
+  it('detects response-side block via guardrail:response-triggered', () => {
+    const stats = extractMessageStats([
+      { message: 'guardrail:response-triggered', details: { block: true } },
+    ]);
+    expect(stats.guardrailBlocked).toBe(true);
+  });
+
+  it('does not set guardrailBlocked when a rule only logged (block=false)', () => {
+    const stats = extractMessageStats([
+      { message: 'guardrail:triggered', details: { block: false } },
+    ]);
+    expect(stats.guardrailBlocked).toBe(false);
+  });
 });
 
 describe('formatDuration', () => {

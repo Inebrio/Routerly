@@ -744,15 +744,18 @@ function rulesSummary(rule: GuardrailRule): string {
     case 'regex': detail = `${(rule.config as RegexGuardConfig).patterns.length} pattern(s)`; break;
     case 'semantic': {
       const c = rule.config as SemanticGuardConfig;
-      detail = `model: ${c.embeddingModelId}, ${c.examples.length} example(s), threshold: ${c.threshold ?? 0.82}`; break;
+      const semFb = c.fallbackModelIds?.length ? ` (+${c.fallbackModelIds.length} fallback)` : '';
+      detail = `model: ${c.embeddingModelId}, ${c.examples.length} example(s), threshold: ${c.threshold ?? 0.82}${semFb}`; break;
     }
     case 'topic': {
       const c = rule.config as TopicGuardConfig;
-      detail = `model: ${c.modelId}, threshold: ${c.threshold ?? 0.5}`; break;
+      const topicFb = c.fallbackModelIds?.length ? ` (+${c.fallbackModelIds.length} fallback)` : '';
+      detail = `model: ${c.modelId}, threshold: ${c.threshold ?? 0.5}${topicFb}`; break;
     }
     case 'moderation': {
       const c = rule.config as ModerationGuardConfig;
-      detail = `model: ${c.modelId}, threshold: ${c.threshold ?? 0.5}`; break;
+      const modFb = c.fallbackModelIds?.length ? ` (+${c.fallbackModelIds.length} fallback)` : '';
+      detail = `model: ${c.modelId}, threshold: ${c.threshold ?? 0.5}${modFb}`; break;
     }
   }
   // build action badge: [block], [log], [block+log], or nothing
@@ -838,6 +841,14 @@ async function runAddRuleWizard(): Promise<GuardrailRule> {
       examples: ans.examples.split(',').map((s: string) => s.trim()).filter(Boolean),
       threshold: parseFloat(ans.threshold),
     };
+    const fbSemantic = await inquirer.prompt([{
+      type: 'input',
+      name: 'fallbackModelIds',
+      message: 'Fallback embedding model IDs (comma-separated, leave empty for none):',
+      default: '',
+    }]) as { fallbackModelIds: string };
+    const semFallbacks = fbSemantic.fallbackModelIds.split(',').map((s: string) => s.trim()).filter((s: string) => s && s !== sc.embeddingModelId);
+    if (semFallbacks.length) sc.fallbackModelIds = semFallbacks;
     config = sc;
 
   } else if (type === 'topic') {
@@ -851,6 +862,14 @@ async function runAddRuleWizard(): Promise<GuardrailRule> {
       allowedTopics: ans.allowedTopics.trim(),
       threshold: parseFloat(ans.threshold),
     };
+    const fbTopic = await inquirer.prompt([{
+      type: 'input',
+      name: 'fallbackModelIds',
+      message: 'Fallback judge model IDs (comma-separated, leave empty for none):',
+      default: '',
+    }]) as { fallbackModelIds: string };
+    const topicFallbacks = fbTopic.fallbackModelIds.split(',').map((s: string) => s.trim()).filter((s: string) => s && s !== tc.modelId);
+    if (topicFallbacks.length) tc.fallbackModelIds = topicFallbacks;
     config = tc;
 
   } else {
@@ -863,6 +882,14 @@ async function runAddRuleWizard(): Promise<GuardrailRule> {
       modelId: ans.modelId.trim(),
       threshold: parseFloat(ans.threshold),
     };
+    const fbMod = await inquirer.prompt([{
+      type: 'input',
+      name: 'fallbackModelIds',
+      message: 'Fallback judge model IDs (comma-separated, leave empty for none):',
+      default: '',
+    }]) as { fallbackModelIds: string };
+    const modFallbacks = fbMod.fallbackModelIds.split(',').map((s: string) => s.trim()).filter((s: string) => s && s !== mc.modelId);
+    if (modFallbacks.length) mc.fallbackModelIds = modFallbacks;
     config = mc;
   }
 

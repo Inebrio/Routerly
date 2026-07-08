@@ -187,9 +187,9 @@ Each rule also displays type-specific configuration fields:
 | Type | Target | Config |
 |------|--------|--------|
 | **Regex** | request / response / both | Regex patterns (one per line, case-insensitive) |
-| **Semantic** | request / response / both | Embedding model ID, example phrases to block, similarity threshold (0-1, default 0.82) |
-| **Topic** | request / response / both | Judge model ID, allowed-topics description, score threshold (0-1, default 0.5) |
-| **Moderation** | request / response / both | Judge model ID, harm score threshold (0-1, default 0.5). Optionally provide custom system instructions. |
+| **Semantic** | request / response / both | Embedding model ID, optional fallback embedding models (multi-select, tried in order), example phrases to block, similarity threshold (0-1, default 0.82) |
+| **Topic** | request / response / both | Judge model ID, optional fallback judge models (multi-select, tried in order), allowed-topics description, score threshold (0-1, default 0.5) |
+| **Moderation** | request / response / both | Judge model ID, optional fallback judge models (multi-select, tried in order), harm score threshold (0-1, default 0.5). Optionally provide custom system instructions. |
 
 ##### Model selection
 
@@ -197,6 +197,10 @@ The model dropdowns are filtered by type:
 
 - **Topic and Moderation** judges: show only non-embedding models (chat/completion models). Embedding-only models cannot act as LLM judges and are excluded.
 - **Semantic** embedding field: shows only models with `capabilities.embedding = true`.
+
+##### Fallback models
+
+For topic, moderation, and semantic rules, below the primary model selector is an optional "Fallback models (optional, tried in order)" multi-select field. Select zero or more fallback models that will be tried in order if the primary model is unavailable or returns an error. If the primary model returns a budget-exceeded error, fallbacks are not tried (fail-closed on budget).
 
 #### Streaming Interaction Notice
 

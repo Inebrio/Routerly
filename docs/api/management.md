@@ -262,6 +262,7 @@ block and/or log actions independently.
         "log": true,
         "config": {
           "embeddingModelId": "text-embedding-3-small",
+          "fallbackModelIds": ["text-embedding-3-large"],
           "examples": ["example of blocked content"],
           "threshold": 0.82
         }
@@ -276,6 +277,7 @@ block and/or log actions independently.
         "blockMessage": "This topic is not allowed. Please rephrase your request.",
         "config": {
           "modelId": "claude-haiku-4-5",
+          "fallbackModelIds": ["gpt-4-mini"],
           "allowedTopics": "Customer support questions about our product only",
           "threshold": 0.5
         }
@@ -286,7 +288,11 @@ block and/or log actions independently.
         "target": "request",
         "block": true,
         "log": true,
-        "config": { "modelId": "claude-haiku-4-5", "threshold": 0.5 }
+        "config": { 
+          "modelId": "claude-haiku-4-5",
+          "fallbackModelIds": ["gpt-4-mini"],
+          "threshold": 0.5 
+        }
       }
     ]
   }
@@ -298,15 +304,18 @@ block and/or log actions independently.
 | Type | Target | Config fields | Description |
 |------|--------|---------------|-------------|
 | `regex` | request / response / both | `patterns: string[]` | Block text matching any regex pattern (case-insensitive) |
-| `semantic` | request / response / both | `embeddingModelId`, `examples: string[]`, `threshold?: number` (default 0.82) | Block semantically similar content using embedding cosine similarity |
-| `topic` | request / response / both | `modelId`, `allowedTopics: string`, `threshold?: number` (default 0.5) | LLM judge: block content not matching the allowed topics description |
-| `moderation` | request / response / both | `modelId`, `threshold?: number` (default 0.5) | LLM judge: block harmful content (hate, violence, sexual, self-harm) |
+| `semantic` | request / response / both | `embeddingModelId`, `fallbackModelIds?: string[]`, `examples: string[]`, `threshold?: number` (default 0.82) | Block semantically similar content using embedding cosine similarity; fallback models tried in order if primary fails |
+| `topic` | request / response / both | `modelId`, `fallbackModelIds?: string[]`, `allowedTopics: string`, `threshold?: number` (default 0.5) | LLM judge: block content not matching the allowed topics description; fallback judges tried in order if primary fails |
+| `moderation` | request / response / both | `modelId`, `fallbackModelIds?: string[]`, `threshold?: number` (default 0.5) | LLM judge: block harmful content (hate, violence, sexual, self-harm); fallback judges tried in order if primary fails |
 
 **Rule fields:**
 - `block?: boolean`: reject the request/response when this rule triggers. When true and the rule target includes `response`, the entire response is buffered before the block decision, which disables streaming for the request.
 - `log?: boolean`: record the trigger in usage (monitor) for audit purposes, independently of whether the rule blocks.
 - `blockMessage?: string`: custom message returned to the client when this rule blocks. Falls back to a built-in default when absent. Ignored when `useJudgeResponse` is true and the judge returns a message.
 - `useJudgeResponse?: boolean`: (topic/moderation only) use the judge model's own explanation as the block response. The judge is asked to return `{ score, message }`; on block, the `message` is returned to the client, falling back to `blockMessage` (then a built-in default) when the judge fails or returns none.
+
+**Fallback models (topic/moderation/semantic only):**
+- `fallbackModelIds?: string[]`: ordered list of model IDs to try if the primary model is unavailable or returns an error (other than budget/usage exceeded). Fallbacks are tried in order. If a model returns a usage or budget-exceeded error, the rule fails immediately without trying further fallbacks (fail-closed on budget).
 
 **detectInjection flag:**
 - When `true`, run a built-in prompt-injection detector on every request before rule evaluation. A hit blocks and is logged (equivalent to a rule with `block: true, log: true`). Injection detection does not support custom messages.

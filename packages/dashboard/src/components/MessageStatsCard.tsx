@@ -1,4 +1,4 @@
-import { Clock, Zap, FileText, TrendingUp, DollarSign, AlertTriangle, CheckCircle2, XCircle, GitBranch, Cpu } from 'lucide-react';
+import { Clock, Zap, FileText, TrendingUp, DollarSign, AlertTriangle, CheckCircle2, XCircle, GitBranch, Cpu, ShieldAlert } from 'lucide-react';
 import type { MessageStats } from '../utils/traceUtils';
 import { formatDuration, formatTokensPerSec, formatTokens, formatCost } from '../utils/traceUtils';
 
@@ -8,9 +8,7 @@ interface MessageStatsProps {
   completionModel?: string;
 }
 
-function ScoreBar({ value }: { value: number | null }) {
-  if (value == null) return <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>—</span>;
-
+function ScoreBar({ value }: { value: number }) {
   const pct = Math.floor(value * 100);
   const color = value >= 0.7 ? '#4ade80' : value >= 0.4 ? '#facc15' : '#f87171';
 
@@ -27,13 +25,14 @@ function ScoreBar({ value }: { value: number | null }) {
 }
 
 export function MessageStatsCard({ stats, turnNumber, completionModel }: MessageStatsProps) {
-  const status = stats.hasError ? 'error' : stats.fallbackUsed ? 'fallback' : 'success';
+  const status = stats.hasError ? 'error' : stats.guardrailBlocked ? 'blocked' : stats.fallbackUsed ? 'fallback' : 'success';
   const hasRoutingInfo = stats.selectedModel != null || stats.routerScore != null;
   const hasCompletionInfo = stats.latencyMs != null || stats.inputTokens != null || completionModel != null;
   const fallbackActive = stats.fallbackUsed && completionModel && completionModel !== stats.selectedModel?.split('/').pop();
 
   const borderColor =
     status === 'error' ? 'var(--danger)' :
+    status === 'blocked' ? 'var(--danger)' :
     status === 'fallback' ? '#f59e0b' :
     'var(--border)';
 
@@ -54,7 +53,7 @@ export function MessageStatsCard({ stats, turnNumber, completionModel }: Message
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '10px 14px',
-        background: status === 'error'
+        background: status === 'error' || status === 'blocked'
           ? 'rgba(239,68,68,0.08)'
           : status === 'fallback'
           ? 'rgba(245,158,11,0.07)'
@@ -77,9 +76,16 @@ export function MessageStatsCard({ stats, turnNumber, completionModel }: Message
               {formatCost(stats.totalCostUsd)}
             </span>
           )}
+          {/* blocked turn has no completion cost, surface guardrail judge cost instead */}
+          {stats.totalCostUsd == null && stats.guardrailCostUsd != null && (
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+              {formatCost(stats.guardrailCostUsd)}
+            </span>
+          )}
 
           {/* status icon */}
           {status === 'error' && <XCircle size={15} style={{ color: 'var(--danger)' }} />}
+          {status === 'blocked' && <ShieldAlert size={15} style={{ color: 'var(--danger)' }} />}
           {status === 'fallback' && <AlertTriangle size={15} style={{ color: '#f59e0b' }} />}
           {status === 'success' && <CheckCircle2 size={15} style={{ color: '#10b981' }} />}
         </div>
@@ -137,7 +143,7 @@ export function MessageStatsCard({ stats, turnNumber, completionModel }: Message
                 gap: 6,
               }}>
                 <AlertTriangle size={12} style={{ flexShrink: 0, marginTop: 1 }} />
-                <span>{stats.errorMessage} — fallback triggered</span>
+                <span>{stats.errorMessage}: fallback triggered</span>
               </div>
             )}
           </div>
@@ -255,6 +261,35 @@ export function MessageStatsCard({ stats, turnNumber, completionModel }: Message
             {stats.cachedTokens != null && stats.cachedTokens > 0 && (
               <div style={{ marginTop: 8, fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
                 💾 Cached: {formatTokens(stats.cachedTokens)} tokens
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Guardrail block (may have no completion → otherwise the card body is empty) ── */}
+        {stats.guardrailBlocked && (
+          <div style={{
+            padding: '10px 12px',
+            background: 'var(--bg-base)',
+            border: '1px solid var(--danger)',
+            borderRadius: 6,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <ShieldAlert size={13} style={{ color: 'var(--danger)', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--danger)' }}>
+                Guardrail Blocked
+              </span>
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: stats.guardrailInputTokens != null ? 8 : 0 }}>
+              Request blocked by a guardrail. See Technical Details for the triggered rule.
+            </div>
+            {stats.guardrailInputTokens != null && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                <span>
+                  <FileText size={11} style={{ display: 'inline', marginRight: 3 }} />
+                  Judge tokens ({formatTokens(stats.guardrailInputTokens)} / {formatTokens(stats.guardrailOutputTokens)})
+                </span>
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatCost(stats.guardrailCostUsd)}</span>
               </div>
             )}
           </div>

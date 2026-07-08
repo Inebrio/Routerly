@@ -17,6 +17,7 @@ import {
   type PiiPolicy,
 } from '../../api';
 import { SearchableSelect } from '../../components/SearchableSelect';
+import { MultiSelect } from '../../components/MultiSelect';
 import { useProject } from './ProjectLayout';
 
 const ALL_PII_ENTITIES: PiiEntity[] = ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'];
@@ -306,6 +307,15 @@ function SemanticFields({ rule, onChange, modelOptions }: {
         />
       </div>
       <div className="form-group" style={{ marginBottom: 0 }}>
+        <label className="form-label" style={{ fontSize: '0.75rem' }}>Fallback models (optional, tried in order)</label>
+        <MultiSelect
+          options={modelOptions.filter(o => o.value !== cfg.embeddingModelId)}
+          value={cfg.fallbackModelIds ?? []}
+          onChange={v => onChange({ ...rule, config: { ...cfg, fallbackModelIds: v } })}
+          placeholder="No fallback models..."
+        />
+      </div>
+      <div className="form-group" style={{ marginBottom: 0 }}>
         <label className="form-label" style={{ fontSize: '0.75rem' }}>Example texts to block (one per line)</label>
         <textarea
           className="form-input"
@@ -355,6 +365,15 @@ function TopicFields({ rule, onChange, modelOptions }: {
         />
       </div>
       <div className="form-group" style={{ marginBottom: 0 }}>
+        <label className="form-label" style={{ fontSize: '0.75rem' }}>Fallback models (optional, tried in order)</label>
+        <MultiSelect
+          options={modelOptions.filter(o => o.value !== cfg.modelId)}
+          value={cfg.fallbackModelIds ?? []}
+          onChange={v => onChange({ ...rule, config: { ...cfg, fallbackModelIds: v } })}
+          placeholder="No fallback models..."
+        />
+      </div>
+      <div className="form-group" style={{ marginBottom: 0 }}>
         <label className="form-label" style={{ fontSize: '0.75rem' }}>Allowed topics (natural language)</label>
         <textarea
           className="form-input"
@@ -398,6 +417,15 @@ function ModerationFields({ rule, onChange, modelOptions }: {
           value={cfg.modelId}
           onChange={v => onChange({ ...rule, config: { ...cfg, modelId: v } })}
           placeholder="Select judge model..."
+        />
+      </div>
+      <div className="form-group" style={{ marginBottom: 0 }}>
+        <label className="form-label" style={{ fontSize: '0.75rem' }}>Fallback models (optional, tried in order)</label>
+        <MultiSelect
+          options={modelOptions.filter(o => o.value !== cfg.modelId)}
+          value={cfg.fallbackModelIds ?? []}
+          onChange={v => onChange({ ...rule, config: { ...cfg, fallbackModelIds: v } })}
+          placeholder="No fallback models..."
         />
       </div>
       <div className="form-group" style={{ marginBottom: 0 }}>

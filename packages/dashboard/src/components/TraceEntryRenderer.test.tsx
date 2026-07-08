@@ -196,6 +196,65 @@ describe('TraceEntryRenderer — guardrail:evaluated', () => {
   });
 });
 
+describe('TraceEntryRenderer — guardrail:evaluated judgeRaw', () => {
+  it('renders "Judge response" summary when judgeRaw is present', () => {
+    render(
+      <TraceEntryRenderer entry={{
+        message: 'guardrail:evaluated',
+        panel: 'request',
+        details: {
+          target: 'request',
+          rules: [{ rule: 'topic', outcome: 'triggered', judgeRaw: '{"score":0.9,"message":"off-topic"}' }],
+        },
+      }} />
+    );
+    expect(screen.getByText('Judge response')).toBeTruthy();
+  });
+
+  it('shows pretty-printed JSON inside details when judgeRaw is valid JSON', () => {
+    render(
+      <TraceEntryRenderer entry={{
+        message: 'guardrail:evaluated',
+        panel: 'request',
+        details: {
+          target: 'request',
+          rules: [{ rule: 'moderation', outcome: 'passed', judgeRaw: '{"score":0.1}' }],
+        },
+      }} />
+    );
+    // pretty-printed JSON contains the key on its own line
+    expect(screen.getByText(/score/)).toBeTruthy();
+  });
+
+  it('shows raw string inside details when judgeRaw is non-JSON', () => {
+    render(
+      <TraceEntryRenderer entry={{
+        message: 'guardrail:evaluated',
+        panel: 'request',
+        details: {
+          target: 'request',
+          rules: [{ rule: 'topic', outcome: 'triggered', judgeRaw: 'not json at all' }],
+        },
+      }} />
+    );
+    expect(screen.getByText('not json at all')).toBeTruthy();
+  });
+
+  it('does not render "Judge response" when judgeRaw is absent', () => {
+    render(
+      <TraceEntryRenderer entry={{
+        message: 'guardrail:evaluated',
+        panel: 'request',
+        details: {
+          target: 'request',
+          rules: [{ rule: 'regex:x', outcome: 'passed' }],
+        },
+      }} />
+    );
+    expect(screen.queryByText('Judge response')).toBeNull();
+  });
+});
+
 describe('TraceEntryRenderer — pii:evaluated', () => {
   it('shows "0 redacted" when redacted is empty', () => {
     render(

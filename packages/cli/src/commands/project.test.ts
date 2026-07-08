@@ -389,6 +389,193 @@ describe('pii add', () => {
   });
 });
 
+// ─── rulesSummary fallback suffix ─────────────────────────────────────────────
+
+describe('rulesSummary fallback suffix', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  it('renders (+2 fallback) for a topic rule with 2 fallbacks', async () => {
+    const project = {
+      ...baseProject,
+      guardrails: {
+        rules: [{
+          type: 'topic' as const, target: 'request' as const,
+          config: { modelId: 'gpt-4', allowedTopics: 'coding', threshold: 0.5, fallbackModelIds: ['m2', 'm3'] },
+        }],
+      },
+    };
+    mockApi.mockResolvedValueOnce([project]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    expect(lines.join('\n')).toContain('(+2 fallback)');
+  });
+
+  it('renders (+1 fallback) for a moderation rule with 1 fallback', async () => {
+    const project = {
+      ...baseProject,
+      guardrails: {
+        rules: [{
+          type: 'moderation' as const, target: 'both' as const,
+          config: { modelId: 'gpt-4', threshold: 0.5, fallbackModelIds: ['gpt-3.5'] },
+        }],
+      },
+    };
+    mockApi.mockResolvedValueOnce([project]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    expect(lines.join('\n')).toContain('(+1 fallback)');
+  });
+
+  it('renders (+2 fallback) for a semantic rule with 2 fallbacks', async () => {
+    const project = {
+      ...baseProject,
+      guardrails: {
+        rules: [{
+          type: 'semantic' as const, target: 'request' as const,
+          config: { embeddingModelId: 'embed-1', examples: ['hack'], threshold: 0.82, fallbackModelIds: ['embed-2', 'embed-3'] },
+        }],
+      },
+    };
+    mockApi.mockResolvedValueOnce([project]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    expect(lines.join('\n')).toContain('(+2 fallback)');
+  });
+
+  it('renders no fallback suffix when fallbackModelIds is absent', async () => {
+    const project = {
+      ...baseProject,
+      guardrails: {
+        rules: [{
+          type: 'topic' as const, target: 'request' as const,
+          config: { modelId: 'gpt-4', allowedTopics: 'coding', threshold: 0.5 },
+        }],
+      },
+    };
+    mockApi.mockResolvedValueOnce([project]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    expect(lines.join('\n')).not.toContain('fallback');
+  });
+});
+
+// ─── runAddRuleWizard fallbackModelIds ────────────────────────────────────────
+
+describe('runAddRuleWizard fallbackModelIds', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  it('topic rule: comma-separated input yields fallbackModelIds with primary filtered, order preserved', async () => {
+    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+           .mockResolvedValueOnce(undefined);
+
+    vi.doMock('inquirer', () => ({
+      default: {
+        prompt: vi.fn()
+          // type
+          .mockResolvedValueOnce({ type: 'topic' })
+          // target
+          .mockResolvedValueOnce({ target: 'request' })
+          // block + log
+          .mockResolvedValueOnce({ block: false, log: false })
+          // judge (topic+block=false skips useJudgeResponse prompt)
+          // modelId, allowedTopics, threshold
+          .mockResolvedValueOnce({ modelId: 'm1primary', allowedTopics: 'coding', threshold: '0.5' })
+          // fallback
+          .mockResolvedValueOnce({ fallbackModelIds: 'm2, m3, m1primary' }),
+      },
+    }));
+
+    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
+    const payload = patchCall![2] as { guardrails: { rules: GuardrailRule[] } };
+    const cfg = payload.guardrails.rules[0]!.config as { fallbackModelIds?: string[] };
+    expect(cfg.fallbackModelIds).toEqual(['m2', 'm3']);
+    vi.doUnmock('inquirer');
+  });
+
+  it('topic rule: empty fallback input yields no fallbackModelIds key', async () => {
+    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+           .mockResolvedValueOnce(undefined);
+
+    vi.doMock('inquirer', () => ({
+      default: {
+        prompt: vi.fn()
+          .mockResolvedValueOnce({ type: 'topic' })
+          .mockResolvedValueOnce({ target: 'request' })
+          .mockResolvedValueOnce({ block: false, log: false })
+          .mockResolvedValueOnce({ modelId: 'gpt-4', allowedTopics: 'coding', threshold: '0.5' })
+          .mockResolvedValueOnce({ fallbackModelIds: '' }),
+      },
+    }));
+
+    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
+    const payload = patchCall![2] as { guardrails: { rules: GuardrailRule[] } };
+    expect(payload.guardrails.rules[0]!.config).not.toHaveProperty('fallbackModelIds');
+    vi.doUnmock('inquirer');
+  });
+
+  it('moderation rule: carries fallbackModelIds', async () => {
+    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+           .mockResolvedValueOnce(undefined);
+
+    vi.doMock('inquirer', () => ({
+      default: {
+        prompt: vi.fn()
+          .mockResolvedValueOnce({ type: 'moderation' })
+          .mockResolvedValueOnce({ target: 'request' })
+          .mockResolvedValueOnce({ block: false, log: false })
+          // modelId + threshold
+          .mockResolvedValueOnce({ modelId: 'mod-primary', threshold: '0.5' })
+          // fallback
+          .mockResolvedValueOnce({ fallbackModelIds: 'mod-b, mod-c' }),
+      },
+    }));
+
+    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
+    const payload = patchCall![2] as { guardrails: { rules: GuardrailRule[] } };
+    const cfg = payload.guardrails.rules[0]!.config as { fallbackModelIds?: string[] };
+    expect(cfg.fallbackModelIds).toEqual(['mod-b', 'mod-c']);
+    vi.doUnmock('inquirer');
+  });
+
+  it('semantic rule: carries fallbackModelIds', async () => {
+    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+           .mockResolvedValueOnce(undefined);
+
+    vi.doMock('inquirer', () => ({
+      default: {
+        prompt: vi.fn()
+          .mockResolvedValueOnce({ type: 'semantic' })
+          .mockResolvedValueOnce({ target: 'request' })
+          .mockResolvedValueOnce({ block: false, log: false })
+          // embeddingModelId, examples, threshold
+          .mockResolvedValueOnce({ embeddingModelId: 'embed-primary', examples: 'hack the system', threshold: '0.82' })
+          // fallback
+          .mockResolvedValueOnce({ fallbackModelIds: 'embed-2, embed-3' }),
+      },
+    }));
+
+    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
+    const payload = patchCall![2] as { guardrails: { rules: GuardrailRule[] } };
+    const cfg = payload.guardrails.rules[0]!.config as { fallbackModelIds?: string[] };
+    expect(cfg.fallbackModelIds).toEqual(['embed-2', 'embed-3']);
+    vi.doUnmock('inquirer');
+  });
+});
+
 // ─── pii remove ──────────────────────────────────────────────────────────────
 
 describe('pii remove', () => {

@@ -32,6 +32,8 @@ vi.mock('./pages/TestPage', () => ({ TestPage: () => <div>TestPage</div> }));
 vi.mock('./pages/SettingsPage', () => ({
   SettingsPage: () => <div>SettingsPage</div>,
   SettingsGeneralTab: () => <div>SettingsGeneralTab</div>,
+  SettingsIntegrationsTab: () => <div>SettingsIntegrationsTab</div>,
+  SettingsCatalogTab: () => <div>SettingsCatalogTab</div>,
   SettingsAboutTab: () => <div>SettingsAboutTab</div>,
 }));
 vi.mock('./pages/NotificationChannelListPage', () => ({ NotificationChannelListPage: () => <div>NotificationChannelListPage</div> }));

@@ -27,6 +27,9 @@ interface Message {
   model?: string;
   inputTokens?: number;
   outputTokens?: number;
+  /** Guardrail judge token usage for this turn, summed from the trace (shown even when blocked). */
+  guardrailInputTokens?: number;
+  guardrailOutputTokens?: number;
   latencyMs?: number;
   rawJson?: string;
   blocked?: GuardrailBlock;
@@ -137,7 +140,7 @@ function ComparePanel({
       const cleanKey = key.trim().replace(/[''"""']/g, '');
       const res = await fetch('/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cleanKey}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cleanKey}`, 'x-routerly-trace': '1' },
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
@@ -283,6 +286,11 @@ function ComparePanel({
                             {(msg.inputTokens || msg.outputTokens) ? (
                               <span style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 4px', fontFamily: 'monospace' }}>
                                 ↑{msg.inputTokens ?? 0} ↓{msg.outputTokens ?? 0} tok | {costEstimate(msg.inputTokens ?? 0, msg.outputTokens ?? 0)}
+                              </span>
+                            ) : null}
+                            {(msg.guardrailInputTokens || msg.guardrailOutputTokens) ? (
+                              <span title="Guardrail judge tokens" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 4px', fontFamily: 'monospace' }}>
+                                guardrail ↑{msg.guardrailInputTokens ?? 0} ↓{msg.guardrailOutputTokens ?? 0} tok | {costEstimate(msg.guardrailInputTokens ?? 0, msg.guardrailOutputTokens ?? 0)}
                               </span>
                             ) : null}
                           </div>
@@ -483,7 +491,7 @@ export function TestPage() {
       const cleanKey = apiKey.trim().replace(/[''"""']/g, '');
       const res = await fetch('/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cleanKey}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cleanKey}`, 'x-routerly-trace': '1' },
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
@@ -600,6 +608,16 @@ export function TestPage() {
         }
       }
 
+      // Sum guardrail judge token usage across evaluated rules (request + response), so the
+      // Playground surfaces guardrail cost per turn — including a blocked turn, which has no completion.
+      let guardrailIn = 0, guardrailOut = 0;
+      for (const e of traceEntries) {
+        if (e.message !== 'guardrail:evaluated') continue;
+        const rules = (e.details as { rules?: Array<{ usage?: { inputTokens?: number; outputTokens?: number } }> }).rules;
+        if (!Array.isArray(rules)) continue;
+        for (const r of rules) { guardrailIn += r.usage?.inputTokens ?? 0; guardrailOut += r.usage?.outputTokens ?? 0; }
+      }
+
       const fullMsg: Message = {
         role: 'assistant', content: finalContent, model: modelName,
         inputTokens, outputTokens, latencyMs,
@@ -607,6 +625,7 @@ export function TestPage() {
         ...(thinkingAccum ? { thinking: thinkingAccum } : {}),
         ...(blocked ? { blocked } : {}),
         ...(finishReason ? { finishReason } : {}),
+        ...(guardrailIn || guardrailOut ? { guardrailInputTokens: guardrailIn, guardrailOutputTokens: guardrailOut } : {}),
       };
       setMessages(prev => { const u = [...prev]; if (assistantAdded) u[u.length - 1] = fullMsg; else u.push(fullMsg); return u; });
     } catch (e) {
@@ -947,52 +966,23 @@ export function TestPage() {
                             </div>
                           </details>
                         )}
-                        {/* Blocked guardrail box — shown above the bubble */}
-                        {isAssistant && msg.blocked && (
-                          <div style={{
-                            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.5)',
-                            borderRadius: '12px 12px 4px 12px', padding: '10px 14px',
-                            display: 'flex', flexDirection: 'column', gap: 4, width: '100%', boxSizing: 'border-box',
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                              <AlertCircle size={13} /> {msg.blocked.target === 'request' ? 'Request' : 'Response'} blocked by guardrail
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 6, marginTop: 2 }}>
-                              <div>
-                                <div style={{ fontSize: '0.62rem', color: 'rgba(239,68,68,0.7)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Rule</div>
-                                <div style={{ fontSize: '0.8rem', color: '#fca5a5', fontFamily: 'monospace', fontWeight: 600 }}>{msg.blocked.rule}</div>
-                              </div>
-                              <div>
-                                <div style={{ fontSize: '0.62rem', color: 'rgba(239,68,68,0.7)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Target</div>
-                                <div style={{ fontSize: '0.8rem', color: '#fca5a5' }}>{msg.blocked.target}</div>
-                              </div>
-                              <div>
-                                <div style={{ fontSize: '0.62rem', color: 'rgba(239,68,68,0.7)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Action</div>
-                                <div style={{ fontSize: '0.8rem', color: '#fca5a5' }}>{msg.blocked.action}</div>
-                              </div>
-                            </div>
-                            {msg.blocked.blockMessage && (
-                              <div style={{ fontSize: '0.8rem', color: '#fca5a5', fontStyle: 'italic', paddingTop: 4, borderTop: '1px solid rgba(239,68,68,0.25)', marginTop: 2 }}>
-                                {msg.blocked.blockMessage}
-                              </div>
-                            )}
-                          </div>
-                        )}
                         <div style={{
-                          background: isAssistant ? (msg.blocked ? 'rgba(239,68,68,0.05)' : 'var(--bg-elevated)') : 'var(--primary)',
+                          background: isAssistant ? 'var(--bg-elevated)' : 'var(--primary)',
                           color: isAssistant ? 'var(--text-primary)' : '#fff',
                           padding: '10px 14px',
                           borderRadius: isAssistant ? '16px 16px 16px 4px' : '16px 16px 4px 16px',
-                          border: isAssistant ? (msg.blocked ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--border)') : 'none',
+                          border: isAssistant ? '1px solid var(--border)' : 'none',
                           fontSize: '0.9rem', lineHeight: 1.5,
-                          display: isAssistant && msg.blocked && !msg.content ? 'none' : undefined,
                         }}>
                           {isAssistant ? (
-                            typeof msg.content === 'string'
-                              ? (showRawThis
-                                  ? <pre style={{ margin: 0, fontSize: '0.75rem', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{msg.rawJson ?? msg.content}</pre>
-                                  : <MdContent>{msg.content}</MdContent>)
-                              : <MdContent>{(msg.content as ContentPart[]).filter(c => c.type === 'text').map(c => c.text).join('')}</MdContent>
+                            // ponytail: blocked with no content → show blockMessage as plain text
+                            (msg.blocked && !msg.content)
+                              ? <span style={{ whiteSpace: 'pre-wrap' }}>{msg.blocked.blockMessage ?? 'This message was blocked by a guardrail.'}</span>
+                              : (typeof msg.content === 'string'
+                                  ? (showRawThis
+                                      ? <pre style={{ margin: 0, fontSize: '0.75rem', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{msg.rawJson ?? msg.content}</pre>
+                                      : <MdContent>{msg.content}</MdContent>)
+                                  : <MdContent>{(msg.content as ContentPart[]).filter(c => c.type === 'text').map(c => c.text).join('')}</MdContent>)
                           ) : (
                             typeof msg.content === 'string'
                               ? <span style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</span>
@@ -1008,11 +998,16 @@ export function TestPage() {
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, fontSize: '0.7rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
                           <span style={{ textTransform: 'capitalize' }}>{isAssistant && msg.model ? msg.model : msg.role}</span>
-                          {isAssistant && (msg.inputTokens || msg.outputTokens) && (
+                          {isAssistant && (msg.inputTokens || msg.outputTokens) ? (
                             <span style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 5px', fontFamily: 'monospace' }}>
                               tokens: {(msg.inputTokens ?? 0) + (msg.outputTokens ?? 0)} | {costEstimate(msg.inputTokens ?? 0, msg.outputTokens ?? 0)}
                             </span>
-                          )}
+                          ) : null}
+                          {isAssistant && (msg.guardrailInputTokens || msg.guardrailOutputTokens) ? (
+                            <span title="Guardrail judge tokens" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 5px', fontFamily: 'monospace' }}>
+                              guardrail: {(msg.guardrailInputTokens ?? 0) + (msg.guardrailOutputTokens ?? 0)} | {costEstimate(msg.guardrailInputTokens ?? 0, msg.guardrailOutputTokens ?? 0)}
+                            </span>
+                          ) : null}
                           {isAssistant && msg.latencyMs ? <span>{msg.latencyMs}ms</span> : null}
                           {/* Truncation badge — response cut off by max_tokens */}
                           {isAssistant && msg.finishReason === 'length' && (

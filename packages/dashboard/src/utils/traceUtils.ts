@@ -26,6 +26,11 @@ export interface MessageStats {
   hasError: boolean;
   errorMessage?: string;
   fallbackUsed: boolean;
+  // Guardrail judge activity, present even on a blocked turn, which has no completion
+  guardrailBlocked: boolean;
+  guardrailInputTokens: number | null;
+  guardrailOutputTokens: number | null;
+  guardrailCostUsd: number | null;
 }
 
 /**
@@ -50,6 +55,10 @@ export function extractMessageStats(traces: TraceEntry[]): MessageStats {
     outputPerMillion: null,
     hasError: false,
     fallbackUsed: false,
+    guardrailBlocked: false,
+    guardrailInputTokens: null,
+    guardrailOutputTokens: null,
+    guardrailCostUsd: null,
   };
 
   if (!traces || traces.length === 0) return stats;
@@ -89,6 +98,29 @@ export function extractMessageStats(traces: TraceEntry[]): MessageStats {
       stats.hasError = true;
     }
   }
+
+  // Guardrail judge usage + block state. A blocked turn has no completion, so this is
+  // the only signal the Debug card has to render (otherwise the turn box is empty).
+  // ponytail: only topic/moderation judges attach usage; semantic (embedding) rules
+  // are tracked for billing but carry no usage on the eval, so they are not summed here.
+  let gIn = 0, gOut = 0, sawUsage = false;
+  for (const e of traces) {
+    if (e.message !== 'guardrail:evaluated') continue;
+    const rules = e.details?.rules;
+    if (!Array.isArray(rules)) continue;
+    for (const r of rules) {
+      if (r?.usage) { gIn += r.usage.inputTokens ?? 0; gOut += r.usage.outputTokens ?? 0; sawUsage = true; }
+    }
+  }
+  if (sawUsage) {
+    stats.guardrailInputTokens = gIn;
+    stats.guardrailOutputTokens = gOut;
+    // ponytail: flat estimate, same as the message-bubble footer; no per-model lookup here
+    stats.guardrailCostUsd = gIn * 0.000005 + gOut * 0.000015;
+  }
+  stats.guardrailBlocked = traces.some(
+    (e) => (e.message === 'guardrail:triggered' || e.message === 'guardrail:response-triggered') && e.details?.block === true,
+  );
 
   return stats;
 }

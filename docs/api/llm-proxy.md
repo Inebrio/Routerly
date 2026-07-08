@@ -38,8 +38,8 @@ Array (multimodal) message content is not inspected by either stage. See the
 
 When a guardrail rule with `block: true` triggers, Routerly returns **HTTP 200**
 and mimics the provider's native content-filter format. No HTTP error is returned.
-The `x-routerly-trace-id` header is always present on the response (including
-blocked responses) and is exposed via CORS.
+The `x-routerly-trace-id` header is present on blocked responses only when the
+client sends `x-routerly-trace: 1` (see [Response headers](#response-headers)).
 
 **OpenAI `/v1/chat/completions` (non-streaming):**
 
@@ -88,7 +88,7 @@ response. It is stored on the trace record only and is retrievable via
 OpenAI and Anthropic SDKs that do not expect a text body on content-filter events.
 :::
 
-Use the `x-routerly-trace-id` response header to look up the full trace:
+When the Playground sends `x-routerly-trace: 1`, the `x-routerly-trace-id` response header can be used to look up the full trace:
 
 ```bash
 curl -s http://localhost:3000/api/traces/$TRACE_ID \
@@ -126,8 +126,14 @@ The `model` field can be:
 
 ### Response (non-streaming)
 
-Standard OpenAI `ChatCompletion` object. The `x-routerly-trace-id` header is
-present on every response, including blocked ones, and is exposed via CORS:
+Standard OpenAI `ChatCompletion` object. Normal API clients (using the OpenAI or
+Anthropic SDKs) receive a fully standard response with no Routerly-specific headers.
+
+### Response headers
+
+| Header | Condition | Description |
+|--------|-----------|-------------|
+| `x-routerly-trace-id` | Only when `x-routerly-trace: 1` was sent | Trace ID for the request. Used by the Routerly Playground to fetch routing debug data via `GET /api/traces/:id`. Standard SDK clients do not receive this header. |
 
 ```
 x-routerly-trace-id: 018f3c2a-4b5d-7e8f-9012-34567890abcd
@@ -137,6 +143,7 @@ x-routerly-trace-id: 018f3c2a-4b5d-7e8f-9012-34567890abcd
 
 | Header | Value | Description |
 |--------|-------|-------------|
+| `x-routerly-trace` | `1` | Opt in to receiving the `x-routerly-trace-id` response header. Used by the Routerly Playground. Standard API clients should not send this header. |
 | `x-routerly-no-trace` | `1` | Suppresses `data: {"type":"trace",...}` SSE events from the streaming response wire. Trace data is still recorded server-side and accessible via `GET /api/traces/:id`. Use with strict OpenAI-compatible SDK clients that validate SSE frame schemas and reject non-standard event types. Applies to all three endpoints (`/v1/chat/completions`, `/v1/responses`, `/v1/messages`). |
 | `x-routerly-conversation-id` | string | Session identifier for grouping related requests. Appears in usage records as `sessionId` for analysis and filtering. Useful for tracking multi-turn conversations, thread IDs, or user sessions. |
 

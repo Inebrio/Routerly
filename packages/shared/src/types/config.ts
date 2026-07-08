@@ -249,6 +249,8 @@ export interface RegexGuardConfig {
 export interface SemanticGuardConfig {
   /** Model ID from project's configured models — must be an embedding model. */
   embeddingModelId: string;
+  /** Ordered fallback embedding model IDs, tried in order if the primary fails (not-found or call error). */
+  fallbackModelIds?: string[];
   /** Example texts to block (similarity above threshold triggers). */
   examples: string[];
   /** Cosine similarity threshold 0-1, default 0.82. */
@@ -258,6 +260,8 @@ export interface SemanticGuardConfig {
 export interface TopicGuardConfig {
   /** Judge model ID from project's configured models (any LLM provider). */
   modelId: string;
+  /** Ordered fallback judge model IDs, tried in order if the primary fails. */
+  fallbackModelIds?: string[];
   /** Natural language description of allowed topics. */
   allowedTopics: string;
   /** Score 0-1, default 0.5. BELOW threshold = off-topic = blocked. */
@@ -267,6 +271,8 @@ export interface TopicGuardConfig {
 export interface ModerationGuardConfig {
   /** Judge model ID from project's configured models (any LLM provider). */
   modelId: string;
+  /** Ordered fallback judge model IDs, tried in order if the primary fails. */
+  fallbackModelIds?: string[];
   /** Harm score 0-1, default 0.5. ABOVE threshold = blocked. */
   threshold?: number;
   /** Custom system prompt for the moderation judge model. Falls back to the built-in classifier prompt when omitted. */
