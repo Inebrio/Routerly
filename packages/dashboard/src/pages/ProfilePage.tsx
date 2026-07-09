@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useSearchParams } from 'react-router-dom';
 import QRCode from 'qrcode';
 import { User, Lock, ShieldCheck, ShieldOff, CheckCheck, Circle, RefreshCw, X, Trash2 } from 'lucide-react';
 import { updateMe, setup2fa, confirm2fa, disable2fa, regenerateBackupCodes, getNotificationInbox, getNotificationInboxPage, markNotificationsRead, markNotificationsUnread, deleteNotifications, type InboxItem, type InboxPagination } from '../api';
@@ -161,6 +161,7 @@ function NotificationDetailDrawer({
 }
 
 export function ProfileNotificationsTab() {
+  const [searchParams] = useSearchParams();
   const [items, setItems] = useState<InboxItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [pagination, setPagination] = useState<InboxPagination>({ page: 1, pageSize: PAGE_SIZE, totalRecords: 0, totalPages: 1 });
@@ -197,6 +198,14 @@ export function ProfileNotificationsTab() {
   // Reset to page 1 and clear selection when filters change.
   useEffect(() => { setPage(1); setCheckedIds(new Set()); }, [severity, eventFilter, unreadOnly, dateRange.from, dateRange.to]);
   useEffect(() => { void load(page); }, [load, page]);
+
+  // Auto-select notification when navigating from the bell dropdown (?notification=<id>).
+  const notifParam = searchParams.get('notification');
+  useEffect(() => {
+    if (!notifParam || loading) return;
+    const found = items.find(n => n.id === notifParam);
+    if (found) setSelected(found);
+  }, [notifParam, items, loading]);
 
   function toggleOne(id: string) {
     setCheckedIds(prev => {
