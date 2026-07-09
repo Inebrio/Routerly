@@ -72,7 +72,7 @@ const notificationChannelSchema = z.object({
 
 const notificationsConfigSchema = z.object({
   channels: z.array(notificationChannelSchema).max(100).optional(),
-}).strict();
+}).passthrough();
 
 const REDACT_MARKER = '********';
 

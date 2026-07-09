@@ -6742,7 +6742,7 @@ describe('PUT /api/settings notifications validation (U5)', () => {
     expect(res.statusCode).toBe(400)
   })
 
-  it('rejects unknown fields in notifications config (strict schema)', async () => {
+  it('accepts unknown fields in notifications config (passthrough schema)', async () => {
     setup()
     const app = await buildApp()
     const res = await app.inject({
@@ -6751,7 +6751,7 @@ describe('PUT /api/settings notifications validation (U5)', () => {
       payload: JSON.stringify({ notifications: { channels: [], unknownField: 'x' } }),
     })
     await app.close()
-    expect(res.statusCode).toBe(400)
+    expect(res.statusCode).toBe(200)
   })
 
   it('persists channels with cooldownSeconds (#90 per-channel cooldown)', async () => {
