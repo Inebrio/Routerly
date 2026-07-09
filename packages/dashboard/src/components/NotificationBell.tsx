@@ -111,12 +111,15 @@ export function NotificationDropdown({
         </div>
       ) : (
         preview.map(n => (
-          <div
+          <Link
             key={n.id}
+            to={`/dashboard/profile/notifications?notification=${n.id}`}
+            onClick={onClose}
             style={{
               display: 'flex', gap: 8, padding: '10px 12px',
               borderBottom: '1px solid var(--border)',
               background: n.read ? 'transparent' : 'var(--bg-card)',
+              textDecoration: 'none', color: 'inherit',
             }}
           >
             <span style={{ marginTop: 1 }}>{severityIcon(n.severity)}</span>
@@ -128,7 +131,7 @@ export function NotificationDropdown({
                 {timeAgo(n.timestamp)}
               </span>
             </span>
-          </div>
+          </Link>
         ))
       )}
 
