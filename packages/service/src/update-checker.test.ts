@@ -134,13 +134,23 @@ describe('UpdateChecker.check()', () => {
     expect(result.available).toBe(false);
   });
 
-  it('returns available=false for non-semver tag names (parseSemver returns null)', async () => {
-    stubGithubOk({ tag_name: 'not-a-version', html_url: '', prerelease: false });
+  it('returns available=false for non-semver tag names with no version in name', async () => {
+    stubGithubOk({ tag_name: 'not-a-version', name: '', html_url: '', prerelease: false });
 
     checker.start('0.1.5', 'latest');
     const result = await checker.check();
 
     expect(result.available).toBe(false);
+  });
+
+  it('extracts version from release name for rolling channels (develop/stable)', async () => {
+    stubGithubOk({ tag_name: 'develop', name: 'Routerly 0.3.0 (develop channel)', html_url: 'https://example.com', prerelease: true });
+
+    checker.start('0.2.0', 'develop');
+    const result = await checker.check();
+
+    expect(result.available).toBe(true);
+    expect(result.latestVersion).toBe('0.3.0');
   });
 
   it('keeps existing cached result when a subsequent check fails', async () => {
