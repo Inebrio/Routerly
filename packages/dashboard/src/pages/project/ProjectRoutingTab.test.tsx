@@ -12,7 +12,7 @@ vi.mock('../../api', () => ({
 // ponytail: useBlocker requires a data router; mock the hook so MemoryRouter works
 const mockUseUnsavedChanges = vi.fn(() => ({ isBlocked: false, proceed: vi.fn(), reset: vi.fn() }));
 vi.mock('../../hooks/useUnsavedChanges', () => ({
-  useUnsavedChanges: (...args: unknown[]) => mockUseUnsavedChanges(...args),
+  useUnsavedChanges: (...args: unknown[]) => mockUseUnsavedChanges(...(args as [])),
   UnsavedChangesModal: ({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) => (
     <div data-testid="unsaved-changes-modal">
       <button onClick={onConfirm}>Leave anyway</button>

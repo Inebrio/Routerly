@@ -169,7 +169,7 @@ describe('NotificationChannelCreatePage — form view', () => {
     await renderWithProvider('webhook');
     await userEvent.click(screen.getByRole('button', { name: /Create Channel/ }));
     await waitFor(() => expect(mockCreate).toHaveBeenCalled());
-    const arg = mockCreate.mock.calls[0][0] as Record<string, unknown>;
+    const arg = mockCreate.mock.calls[0]![0] as Record<string, unknown>;
     expect(arg['url']).toBeUndefined();
     expect(arg['method']).toBe('POST');
   });
@@ -180,7 +180,7 @@ describe('NotificationChannelCreatePage — form view', () => {
     await userEvent.click(screen.getByTestId('set-events-empty'));
     await userEvent.click(screen.getByRole('button', { name: /Create Channel/ }));
     await waitFor(() => expect(mockCreate).toHaveBeenCalled());
-    const arg = mockCreate.mock.calls[0][0] as Record<string, unknown>;
+    const arg = mockCreate.mock.calls[0]![0] as Record<string, unknown>;
     expect(arg['events']).toBeUndefined();
   });
 
@@ -190,7 +190,7 @@ describe('NotificationChannelCreatePage — form view', () => {
     await userEvent.click(screen.getByTestId('set-events-full'));
     await userEvent.click(screen.getByRole('button', { name: /Create Channel/ }));
     await waitFor(() => expect(mockCreate).toHaveBeenCalled());
-    const arg = mockCreate.mock.calls[0][0] as Record<string, unknown>;
+    const arg = mockCreate.mock.calls[0]![0] as Record<string, unknown>;
     expect(arg['events']).toEqual(['budget.exceeded']);
   });
 
@@ -200,7 +200,7 @@ describe('NotificationChannelCreatePage — form view', () => {
     await userEvent.click(screen.getByTestId('set-targets-empty'));
     await userEvent.click(screen.getByRole('button', { name: /Create Channel/ }));
     await waitFor(() => expect(mockCreate).toHaveBeenCalled());
-    const arg = mockCreate.mock.calls[0][0] as Record<string, unknown>;
+    const arg = mockCreate.mock.calls[0]![0] as Record<string, unknown>;
     expect(arg['targets']).toBeUndefined();
   });
 
@@ -210,7 +210,7 @@ describe('NotificationChannelCreatePage — form view', () => {
     await userEvent.click(screen.getByTestId('set-targets-full'));
     await userEvent.click(screen.getByRole('button', { name: /Create Channel/ }));
     await waitFor(() => expect(mockCreate).toHaveBeenCalled());
-    const arg = mockCreate.mock.calls[0][0] as Record<string, unknown>;
+    const arg = mockCreate.mock.calls[0]![0] as Record<string, unknown>;
     expect((arg['targets'] as Record<string, unknown>)['roles']).toEqual(['admin']);
   });
 
@@ -220,7 +220,7 @@ describe('NotificationChannelCreatePage — form view', () => {
     await userEvent.click(screen.getByTestId('set-targets-permissions'));
     await userEvent.click(screen.getByRole('button', { name: /Create Channel/ }));
     await waitFor(() => expect(mockCreate).toHaveBeenCalled());
-    const arg = mockCreate.mock.calls[0][0] as Record<string, unknown>;
+    const arg = mockCreate.mock.calls[0]![0] as Record<string, unknown>;
     expect((arg['targets'] as Record<string, unknown>)['permissions']).toEqual(['admin:read']);
   });
 
@@ -230,7 +230,7 @@ describe('NotificationChannelCreatePage — form view', () => {
     await userEvent.click(screen.getByTestId('set-targets-users'));
     await userEvent.click(screen.getByRole('button', { name: /Create Channel/ }));
     await waitFor(() => expect(mockCreate).toHaveBeenCalled());
-    const arg = mockCreate.mock.calls[0][0] as Record<string, unknown>;
+    const arg = mockCreate.mock.calls[0]![0] as Record<string, unknown>;
     expect((arg['targets'] as Record<string, unknown>)['users']).toEqual(['user-1']);
   });
 

@@ -576,7 +576,7 @@ describe('ProfileNotificationsTab — filter interactions', () => {
     // Find the one inside the Status group by looking for all "All" buttons and clicking the last one.
     const allBtns = screen.getAllByRole('button', { name: 'All' });
     // Last "All" is the unread-only toggle (Status section renders after Severity)
-    await userEvent.click(allBtns[allBtns.length - 1]);
+    await userEvent.click(allBtns[allBtns.length - 1]!);
     await waitFor(() => expect(mockGetInboxPage).toHaveBeenCalledWith(
       expect.objectContaining({ unreadOnly: true })
     ));

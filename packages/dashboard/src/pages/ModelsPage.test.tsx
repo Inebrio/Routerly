@@ -1208,7 +1208,7 @@ describe('ModelsPage — branch coverage', () => {
     await waitFor(() => screen.getByText('hm-00'));
     // Delete a model (now 20 models → hTotalPages=1)
     const allDeleteBtns = screen.getAllByTitle('Remove');
-    await userEvent.click(allDeleteBtns[0]);
+    await userEvent.click(allDeleteBtns[0]!);
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
     await waitFor(() => expect(screen.queryByText('hm-00')).toBeNull());
     // Switch back to health tab: hPage(2) > hTotalPages(1) → resets

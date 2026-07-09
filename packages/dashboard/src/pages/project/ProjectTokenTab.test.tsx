@@ -624,8 +624,9 @@ describe('ProjectTokenTab — delete setProject callback', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
     await waitFor(() => expect(mockDeleteProjectToken).toHaveBeenCalled());
     // Invoke the captured updater with the full project to cover the p => callback (L108)
-    if (capturedUpdater) {
-      const result = capturedUpdater(mockProject);
+    const updater1 = capturedUpdater as ((p: unknown) => unknown) | null;
+    if (updater1) {
+      const result = updater1(mockProject);
       // token tok-1 should be filtered out
       expect((result as typeof mockProject).tokens).toEqual([]);
     }
@@ -655,9 +656,10 @@ describe('ProjectTokenTab — delete setProject callback', () => {
     await userEvent.click(screen.getByTitle('Revoke Token'));
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
     await waitFor(() => expect(mockDeleteProjectToken).toHaveBeenCalled());
-    if (capturedUpdater) {
+    const updater2 = capturedUpdater as ((p: unknown) => unknown) | null;
+    if (updater2) {
       // null project → returns null (covers the falsy branch of p ? ... : p)
-      const result = capturedUpdater(null);
+      const result = updater2(null);
       expect(result).toBeNull();
     }
   });
