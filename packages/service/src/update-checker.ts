@@ -40,6 +40,7 @@ function isNewer(candidate: string, current: string): boolean {
 
 interface GithubRelease {
   tag_name: string;
+  name: string;
   html_url: string;
   prerelease: boolean;
   draft: boolean;
@@ -150,9 +151,12 @@ export class UpdateChecker {
     const channel = this._channel;
     try {
       const release = await fetchRelease(channel);
-      const latestVersion = release.tag_name.startsWith('v')
-        ? release.tag_name.slice(1)
-        : release.tag_name;
+      const rawTag = release.tag_name.startsWith('v') ? release.tag_name.slice(1) : release.tag_name;
+      // For rolling channels (develop, stable) the tag_name is not semver.
+      // Extract version from the release title, e.g. "Routerly 0.3.0 (develop channel)".
+      const latestVersion = parseSemver(rawTag)
+        ? rawTag
+        : (release.name?.match(/(\d+\.\d+\.\d+)/)?.[1] ?? rawTag);
 
       const result: UpdateInfo = {
         available: isNewer(latestVersion, this._currentVersion),
