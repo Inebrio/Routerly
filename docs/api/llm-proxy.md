@@ -82,8 +82,9 @@ data: [DONE]
 ```
 
 :::note
-The block message configured on the triggering rule is **not** included in the wire
-response. It is stored on the trace record only and is retrievable via
+The block message for the triggering rule (the judge's explanation, or a built-in
+default) is **not** included in the wire response. It is stored on the trace record
+only and is retrievable via
 `GET /api/traces/:id`. This preserves wire-format compatibility with existing
 OpenAI and Anthropic SDKs that do not expect a text body on content-filter events.
 :::

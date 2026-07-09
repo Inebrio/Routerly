@@ -455,7 +455,7 @@ routerly project member remove my-api --email user@example.com
 
 ### Guardrails — `routerly project guardrails`
 
-Manage the content guardrail configuration for a project. Guardrails evaluate each request and/or response against an ordered list of rules; each enabled rule is evaluated and triggers its configured block and/or log actions independently.
+Manage the content guardrail configuration for a project. Guardrails evaluate each request and/or response against an ordered list of rules; each enabled rule is evaluated and triggers its configured actions independently.
 
 #### `routerly project guardrails <project>`
 
@@ -473,31 +473,19 @@ Guardrails - my-api
 Detect Injection: yes
 
 Active Security Rules:
-  #   Type          Target      Summary
-  0   regex         request     2 pattern(s) [block]
-  1   semantic      both        model: text-embedding-3-small (+1 fallback), 3 example(s) [log]
-  2   topic         response    model: claude-haiku-4-5 (+1 fallback) [block+log] [judge-response]
-  3   moderation    request     model: claude-haiku-4-5 [block]
+  #   Type          Scope                Summary
+  0   regex         request              2 pattern(s)
+  1   semantic      both                 model: text-embedding-3-small (+1 fallback), 3 example(s)
+  2   topic         request+inject       model: claude-haiku-4-5 (+1 fallback)
+  3   moderation    response             model: claude-haiku-4-5
 ```
 
-The summary suffix shows action tags:
-- `[block]`: the rule blocks on trigger
-- `[log]`: the rule logs trigger in usage (monitor)
-- `[block+log]`: the rule both blocks and logs
-- `[judge-response]`: the rule uses the judge model's message as the block reply
-- `(+N fallback)`: the rule has N fallback models configured (topic/moderation/semantic only)
-
-#### Detect Injection
-
-```bash
-routerly project guardrails my-api --detect-injection
-routerly project guardrails my-api --no-detect-injection
-```
-
-| Option | Description |
-|--------|-------------|
-| `--detect-injection` | Enable built-in prompt-injection detector (blocks and logs on hit) |
-| `--no-detect-injection` | Disable prompt-injection detector |
+The Scope column shows the active flags:
+- `request`: judge the user messages (hard block + log on trigger)
+- `response`: judge the model response (hard block + log on trigger)
+- `inject`: append the rule instruction to the request system prompt (soft steer, no block)
+- Combinations like `request+response`, `request+inject`, etc. indicate multiple flags are enabled
+- Regex/semantic rules show only `request`, `response`, or `both` (no inject)
 
 #### Adding a security rule
 
@@ -513,19 +501,23 @@ Launches an interactive wizard. Steps:
    - `topic`: block off-topic requests using an LLM judge
    - `moderation`: detect harmful content using an LLM judge
 
-2. **Target**: `request`, `response`, or `both`
+2. **Scope flags** (topic/moderation only):
+   - Three independent checkboxes: Request (judge the user message), Inject (append to system prompt), Response (judge the model response)
+   - At least one must be enabled
+   - Request and Response toggle hard blocks + logging; Inject is soft steering only
+   - For regex/semantic: choice of request, response, or both (no inject option)
 
-3. **Block and Log**: independent checkboxes.
-   - Block: reject when this rule triggers (default: true on add)
-   - Log: record the trigger in usage (default: false on add)
+3. **Judge configuration** (topic/moderation only, when Request and/or Response is checked):
+   - Judge model ID: select from available models (filtered to exclude embedding-only models)
+   - Optional fallback judge models: comma-separated list of model IDs to try if the primary is unavailable or errors. If the primary model returns a budget-exceeded error, fallbacks are not tried (fail-closed).
 
-4. **Block Message**: custom message returned when the rule blocks (prompted only if Block is enabled). Leave empty for built-in default.
+4. **Threshold**: harm score for moderation (default 0.5, triggers when score > threshold), or topic score for topic (default 0.5, triggers when score < threshold for off-topic).
 
-5. **Judge Response**: (topic/moderation only, when Block is enabled) use the judge model's own explanation as the block message. When true, the judge is asked to return `{ score, message }` and the message is returned on block, with the static Block Message as fallback if the judge fails.
-
-6. **Type-specific fields**: prompts depend on the rule type selected.
-
-7. **Fallback models** (topic/moderation/semantic only, when Block is enabled): comma-separated list of fallback model IDs to try if the primary model is unavailable or errors. Leave empty for none. If the primary model returns a budget-exceeded error, fallbacks are not tried (fail-closed).
+5. **Type-specific fields**: prompts depend on the rule type selected.
+   - **Regex**: regex patterns (one per line, case-insensitive)
+   - **Semantic**: embedding model, fallback models, example phrases to block, similarity threshold
+   - **Topic**: allowed-topics description
+   - **Moderation**: custom instructions (required; used for injection or passed to the judge)
 
 New rules are appended to the end of the list and are active by default.
 
@@ -543,7 +535,7 @@ routerly project guardrails my-api --remove-rule 2   # delete rule at index 2
 
 ### PII: `routerly project pii`
 
-Manage PII scrubbing policies for a project. PII detection and scrubbing configuration uses named policies, each with its own entity set, patterns, direction, and streaming buffer.
+Manage PII scrubbing policies for a project. PII detection and scrubbing configuration uses policies, each with its own entity set, patterns, direction, and streaming buffer.
 
 #### `routerly project pii list <project>`
 
@@ -558,10 +550,12 @@ Output example:
 
 ```
 PII Policies - my-api
-  #   Name               Enabled   Target     Entities
-  0   default            yes       both       EMAIL, PHONE, CREDIT_CARD, SSN, IBAN
-  1   pii-request-only   yes       request    EMAIL, PHONE
+  #   Enabled   Target     Entities
+  0   yes       both       EMAIL, PHONE, CREDIT_CARD, SSN, IBAN
+  1   yes       request    EMAIL, PHONE
 ```
+
+Policies are identified by their 0-based index (`#` column).
 
 #### `routerly project pii add <project>`
 
@@ -573,19 +567,21 @@ routerly project pii add my-api
 
 Launches an interactive wizard. Steps:
 
-1. **Policy name**: unique identifier for this policy
-2. **Target**: `request`, `response`, or `both` (which side(s) to scrub)
-3. **Entities**: comma-separated list of entity types to detect (EMAIL, PHONE, CREDIT_CARD, SSN, IBAN). Leave empty to include none.
-4. **Custom patterns**: comma-separated regex patterns to scrub in addition to entity detection. Leave empty for none.
-5. **Output buffer size**: (response scrubbing only) suffix buffer size in characters (default 30, valid range: 10 to 500). Used to catch patterns spanning chunk boundaries when streaming. Prompted only when target includes response.
+1. **Target**: `request`, `response`, or `both` (which side(s) to scrub)
+2. **Entities**: comma-separated list of entity types to detect (EMAIL, PHONE, CREDIT_CARD, SSN, IBAN). Leave empty to include none.
+3. **Custom patterns**: comma-separated regex patterns to scrub in addition to entity detection. Leave empty for none.
+4. **Output buffer size**: (response scrubbing only) suffix buffer size in characters (default 30, valid range: 10 to 500). Used to catch patterns spanning chunk boundaries when streaming. Prompted only when target includes response.
 
-#### `routerly project pii remove <project> <policy-name>`
+#### `routerly project pii remove <project> <index>`
 
-Remove a PII policy by name.
+Remove a PII policy by its 0-based index (from `pii list`).
 
 ```bash
-routerly project pii remove my-api default
+routerly project pii remove my-api 0   # Remove the first policy
+routerly project pii remove my-api 1   # Remove the second policy
 ```
+
+The index is validated against the current policy list.
 
 ---
 

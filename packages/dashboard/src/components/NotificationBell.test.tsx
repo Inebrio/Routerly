@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach, afterAll } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -238,5 +238,121 @@ describe('ProfileNotificationBadge', () => {
     await new Promise(r => setTimeout(r, 50));
     const btn = document.querySelector('button[title="Notifications"]');
     expect(btn).toBeNull();
+  });
+
+  it('closes dropdown when clicking outside (line 73 onClose branch)', async () => {
+    mockGetInbox.mockResolvedValue({ items, unreadCount: 1, enabled: true });
+    render(<BadgeWrapper />);
+    await waitFor(() => expect(mockGetInbox).toHaveBeenCalled());
+
+    // Open the dropdown
+    const btn = document.querySelector('button[title="Notifications"]')!;
+    await userEvent.click(btn);
+    expect(screen.getByText('provider.error')).toBeTruthy();
+
+    // Click outside (on document.body) — triggers the mousedown handler that calls onClose
+    await act(async () => {
+      document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    });
+
+    // Dropdown items should no longer be visible
+    await waitFor(() => {
+      expect(screen.queryByText('provider.error')).toBeNull();
+    });
+  });
+
+  it('dropdown onClose prop (line 222) closes the dropdown when View all clicked', async () => {
+    mockGetInbox.mockResolvedValue({ items, unreadCount: 1, enabled: true });
+    render(<BadgeWrapper />);
+    await waitFor(() => expect(mockGetInbox).toHaveBeenCalled());
+
+    // Open
+    const btn = document.querySelector('button[title="Notifications"]')!;
+    await userEvent.click(btn);
+    expect(screen.getByText('View all notifications')).toBeTruthy();
+
+    // The "View all" link calls onClose (line 222 closure)
+    await userEvent.click(screen.getByText('View all notifications'));
+
+    // Dropdown now closed — provider.error no longer in DOM
+    await waitFor(() => {
+      expect(screen.queryByText('provider.error')).toBeNull();
+    });
+  });
+
+  it('silently ignores markNotificationsRead errors', async () => {
+    mockGetInbox.mockResolvedValue({ items, unreadCount: 1, enabled: true });
+    mockMarkRead.mockRejectedValue(new Error('network'));
+    render(<BadgeWrapper />);
+    await waitFor(() => expect(mockGetInbox).toHaveBeenCalled());
+
+    const btn = document.querySelector('button[title="Notifications"]')!;
+    await userEvent.click(btn);
+    const markBtn = screen.getByText(/Mark all read/);
+    // Should not throw even though markNotificationsRead rejects
+    await userEvent.click(markBtn);
+    await new Promise(r => setTimeout(r, 50));
+    // Bell still visible
+    expect(document.querySelector('button[title="Notifications"]')).toBeTruthy();
+  });
+
+  it('setInterval callback triggers a reload after POLL_MS (line 170 interval fn)', async () => {
+    vi.useFakeTimers();
+    mockGetInbox.mockResolvedValue({ items: [], unreadCount: 0, enabled: true });
+    render(<BadgeWrapper />);
+    // flush initial load
+    await act(async () => { await Promise.resolve(); });
+    const callsBefore = mockGetInbox.mock.calls.length;
+    // Advance past POLL_MS (60_000ms) — fires the setInterval callback
+    await act(async () => { vi.advanceTimersByTime(61_000); });
+    await act(async () => { await Promise.resolve(); });
+    expect(mockGetInbox.mock.calls.length).toBeGreaterThan(callsBefore);
+    vi.useRealTimers();
+  });
+
+  it('routerly:notifications event triggers a reload (line 170 refresh fn)', async () => {
+    mockGetInbox.mockResolvedValue({ items: [], unreadCount: 0, enabled: true });
+    render(<BadgeWrapper />);
+    await waitFor(() => expect(mockGetInbox).toHaveBeenCalled());
+    const callsBefore = mockGetInbox.mock.calls.length;
+    // Fire the custom event — triggers the refresh callback registered at line 170
+    await act(async () => { window.dispatchEvent(new Event('routerly:notifications')); });
+    await waitFor(() => expect(mockGetInbox.mock.calls.length).toBeGreaterThan(callsBefore));
+  });
+
+  it('window focus event triggers a reload (line 172 refresh fn)', async () => {
+    mockGetInbox.mockResolvedValue({ items: [], unreadCount: 0, enabled: true });
+    render(<BadgeWrapper />);
+    await waitFor(() => expect(mockGetInbox).toHaveBeenCalled());
+    const callsBefore = mockGetInbox.mock.calls.length;
+    // Fire focus — triggers the refresh callback registered at line 172
+    await act(async () => { window.dispatchEvent(new Event('focus')); });
+    await waitFor(() => expect(mockGetInbox.mock.calls.length).toBeGreaterThan(callsBefore));
+  });
+});
+
+// ── NotificationDropdown — upward positioning branch (line 51) ───────────────
+
+describe('NotificationDropdown — upward position when near bottom of viewport', () => {
+  it('opens upward when spaceBelow < maxH (line 51 false branch)', () => {
+    // Simulate anchor near bottom: window.innerHeight=400, r.top=350 → spaceBelow=50 < 360
+    const ref = { current: null } as React.RefObject<HTMLElement | null>;
+    const div = document.createElement('div');
+    Object.defineProperty(div, 'getBoundingClientRect', {
+      value: () => ({ top: 350, bottom: 380, left: 100, right: 200, width: 100, height: 30 }),
+    });
+    (ref as any).current = div;
+    Object.defineProperty(window, 'innerHeight', { value: 400, writable: true, configurable: true });
+
+    const { container } = render(
+      <MemoryRouter>
+        <NotificationDropdown anchorRef={ref} open={true} onClose={() => {}} items={[]} unread={0} onMarkAll={() => {}} />
+      </MemoryRouter>
+    );
+    // Component rendered without crash — upward branch executed
+    expect(container).toBeTruthy();
+
+    // Restore
+    Object.defineProperty(window, 'innerHeight', { value: 768, writable: true, configurable: true });
   });
 });

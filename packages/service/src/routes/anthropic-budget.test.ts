@@ -21,6 +21,7 @@ vi.mock('../llm/executor.js', () => ({
 }))
 vi.mock('../middleware/guardrails.js', () => ({
   checkGuardrails: vi.fn(),
+  buildRequestInjection: vi.fn(() => null),
 }))
 vi.mock('../middleware/piiScrubber.js', () => ({
   mergePolicies: vi.fn(() => null),

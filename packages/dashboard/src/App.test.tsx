@@ -350,6 +350,29 @@ describe('Sidebar — ThemeSelector', () => {
   });
 });
 
+// ── Sidebar NavLink active state — Settings and Help (lines 151, 159) ────────
+
+describe('Sidebar — Settings and Help NavLink active class', () => {
+  it('Settings NavLink gets active class when on settings route (line 151 true branch)', async () => {
+    renderApp();
+    await waitFor(() => screen.getByText('Overview'));
+    // sidebar is expanded → title is undefined, use nav-label text
+    const settingsLink = Array.from(document.querySelectorAll('a.nav-item')).find(el => el.textContent?.includes('Settings')) as HTMLElement | undefined;
+    expect(settingsLink).toBeTruthy();
+    await userEvent.click(settingsLink!);
+    await waitFor(() => expect(settingsLink!.className).toContain('active'));
+  });
+
+  it('Help NavLink gets active class when on help route (line 159 true branch)', async () => {
+    renderApp();
+    await waitFor(() => screen.getByText('Overview'));
+    const helpLink = Array.from(document.querySelectorAll('a.nav-item')).find(el => el.textContent?.includes('Help')) as HTMLElement | undefined;
+    expect(helpLink).toBeTruthy();
+    await userEvent.click(helpLink!);
+    await waitFor(() => expect(helpLink!.className).toContain('active'));
+  });
+});
+
 describe('Sidebar — Sign Out', () => {
   it('calls logout and navigates to login on Sign Out click', async () => {
     renderApp();
@@ -376,5 +399,15 @@ describe('ProtectedLayout — unauthenticated', () => {
     });
     renderApp();
     await waitFor(() => expect(screen.getByText('LoginPage')).toBeTruthy(), { timeout: 3000 });
+  });
+});
+
+// ── SetupGuard — needsSetup: true (line 333) — MUST BE LAST (corrupts router state) ──
+
+describe('SetupGuard — needsSetup true', () => {
+  it('navigates to /dashboard/setup when needsSetup is true', async () => {
+    mockCheckSetup.mockResolvedValue({ needsSetup: true });
+    renderApp();
+    await waitFor(() => expect(screen.queryByText('SetupPage')).toBeTruthy(), { timeout: 3000 });
   });
 });

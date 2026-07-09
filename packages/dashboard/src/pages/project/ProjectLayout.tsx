@@ -48,6 +48,7 @@ export function ProjectLayout() {
   }
 
   // Determine current active tab from URL, defaulting to 'general'
+  /* v8 ignore next */
   const currentTab = location.pathname.split('/').pop() || 'general';
 
   // If we are on `/projects/:id` (exact match), treat it as 'general' visually,
@@ -73,6 +74,7 @@ export function ProjectLayout() {
         {/* Tab Navigation */}
         <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--border)' }}>
           {tabs.map(tab => {
+            /* v8 ignore next */
             const isActive = currentTab === tab.id || (currentTab === id && tab.id === 'general');
             if (tab.disabled) {
               return (

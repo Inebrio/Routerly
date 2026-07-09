@@ -237,8 +237,7 @@ Use `PATCH /api/projects/:id/guardrails` for partial updates (guardrails or PII 
 #### Guardrails
 
 Guardrails evaluate each request and/or response against an ordered list of independent rules;
-each enabled rule is evaluated in sequence, and a matching rule triggers its configured
-block and/or log actions independently.
+each enabled rule is evaluated in sequence and triggers its configured actions independently.
 
 ```json
 {
@@ -251,14 +250,13 @@ block and/or log actions independently.
         "target": "request",
         "block": true,
         "log": false,
-        "blockMessage": "Your request contains blocked content.",
         "config": { "patterns": ["competitor", "rival\\s+product"] }
       },
       {
         "type": "semantic",
         "enabled": true,
         "target": "both",
-        "block": false,
+        "block": true,
         "log": true,
         "config": {
           "embeddingModelId": "text-embedding-3-small",
@@ -270,11 +268,19 @@ block and/or log actions independently.
       {
         "type": "topic",
         "enabled": true,
+        "target": "request",
+        "inject": true,
+        "config": {
+          "modelId": "claude-haiku-4-5",
+          "fallbackModelIds": ["gpt-4-mini"],
+          "allowedTopics": "Customer support questions about our product only",
+          "threshold": 0.5
+        }
+      },
+      {
+        "type": "topic",
+        "enabled": true,
         "target": "response",
-        "block": true,
-        "log": true,
-        "useJudgeResponse": true,
-        "blockMessage": "This topic is not allowed. Please rephrase your request.",
         "config": {
           "modelId": "claude-haiku-4-5",
           "fallbackModelIds": ["gpt-4-mini"],
@@ -286,12 +292,12 @@ block and/or log actions independently.
         "type": "moderation",
         "enabled": true,
         "target": "request",
-        "block": true,
-        "log": true,
+        "inject": false,
         "config": { 
           "modelId": "claude-haiku-4-5",
           "fallbackModelIds": ["gpt-4-mini"],
-          "threshold": 0.5 
+          "threshold": 0.5,
+          "systemPrompt": "You are a content safety classifier for customer support conversations."
         }
       }
     ]
@@ -305,24 +311,30 @@ block and/or log actions independently.
 |------|--------|---------------|-------------|
 | `regex` | request / response / both | `patterns: string[]` | Block text matching any regex pattern (case-insensitive) |
 | `semantic` | request / response / both | `embeddingModelId`, `fallbackModelIds?: string[]`, `examples: string[]`, `threshold?: number` (default 0.82) | Block semantically similar content using embedding cosine similarity; fallback models tried in order if primary fails |
-| `topic` | request / response / both | `modelId`, `fallbackModelIds?: string[]`, `allowedTopics: string`, `threshold?: number` (default 0.5) | LLM judge: block content not matching the allowed topics description; fallback judges tried in order if primary fails |
-| `moderation` | request / response / both | `modelId`, `fallbackModelIds?: string[]`, `threshold?: number` (default 0.5) | LLM judge: block harmful content (hate, violence, sexual, self-harm); fallback judges tried in order if primary fails |
+| `topic` | request / response / both (or omitted for inject-only) | `modelId` (optional for inject-only), `fallbackModelIds?: string[]`, `allowedTopics: string`, `threshold?: number` (default 0.5) | LLM judge: block content not matching the allowed topics description; fallback judges tried in order if primary fails. When `target` is omitted and `inject: true`, injects only (no judge) |
+| `moderation` | request / response / both (or omitted for inject-only) | `modelId` (optional for inject-only), `fallbackModelIds?: string[]`, `threshold?: number` (default 0.5), `systemPrompt?: string` | LLM judge: block harmful content (hate, violence, sexual, self-harm); fallback judges tried in order if primary fails. When `target` is omitted and `inject: true`, injects only (no judge) |
 
 **Rule fields:**
-- `block?: boolean`: reject the request/response when this rule triggers. When true and the rule target includes `response`, the entire response is buffered before the block decision, which disables streaming for the request.
-- `log?: boolean`: record the trigger in usage (monitor) for audit purposes, independently of whether the rule blocks.
-- `blockMessage?: string`: custom message returned to the client when this rule blocks. Falls back to a built-in default when absent. Ignored when `useJudgeResponse` is true and the judge returns a message.
-- `useJudgeResponse?: boolean`: (topic/moderation only) use the judge model's own explanation as the block response. The judge is asked to return `{ score, message }`; on block, the `message` is returned to the client, falling back to `blockMessage` (then a built-in default) when the judge fails or returns none.
+- `enabled?: boolean`: default true when absent; when false, the rule is skipped
+- `target?: 'request' | 'response' | 'both'`: which side(s) the judge evaluates. Required for regex/semantic. Optional for topic/moderation (omit to enable inject-only). When set, a judge model is required (`config.modelId`).
+- `inject?: boolean`: (topic/moderation only) append this rule's instruction to the request system prompt. Independent of `target`. When true on a topic/moderation rule, the rule steers the model without calling the judge (soft enforcement).
+- `block?: boolean`: auto-managed when `target` is set (always true for judged rules); accepted on input for backward compatibility but ignored.
+- `log?: boolean`: auto-managed when `target` is set (always true for judged rules); accepted on input for backward compatibility but ignored.
+- `blockMessage?: string`: the block message now comes from the judge's `reason` field. This field is still accepted on input for backward compatibility but is no longer surfaced by the dashboard or CLI.
+- `useJudgeResponse?: boolean`: auto-managed (always true for judged rules); accepted on input for backward compatibility but ignored.
 
 **Fallback models (topic/moderation/semantic only):**
 - `fallbackModelIds?: string[]`: ordered list of model IDs to try if the primary model is unavailable or returns an error (other than budget/usage exceeded). Fallbacks are tried in order. If a model returns a usage or budget-exceeded error, the rule fails immediately without trying further fallbacks (fail-closed on budget).
 
+**Judge scoring (topic/moderation with judge):**
+- The judge responds with `{"reason": "<explanation>", "score": <0.00-10.00>}`. The reason is in the user's language and becomes the block message. The score (0.00-10.00) is normalized to 0-1 before threshold comparison. Topic rules trigger when normalized score < threshold (off-topic); moderation rules trigger when normalized score > threshold (harmful).
+
 **detectInjection flag:**
-- When `true`, run a built-in prompt-injection detector on every request before rule evaluation. A hit blocks and is logged (equivalent to a rule with `block: true, log: true`). Injection detection does not support custom messages.
+- When `true`, run a built-in prompt-injection detector on every request before rule evaluation. A hit blocks and is logged. Injection detection does not support custom messages.
 
-**Target values:** `request` evaluates the user messages; `response` evaluates the model output; `both` evaluates both sides.
+**Target values:** `request` evaluates the user messages; `response` evaluates the model output; `both` evaluates both sides; omitted (for topic/moderation) skips the judge entirely when `inject: true`.
 
-**Streaming interaction:** When any enabled rule has `block: true` AND `target` is `response` or `both`, the entire response must be buffered before the block decision is made. In this case, streaming is disabled for the request, and the client receives the full response as a single chunk.
+**Streaming interaction:** When any enabled rule has `target` as `response` or `both` (judge on response), the entire response must be buffered before the block decision is made. In this case, streaming is disabled for the request, and the client receives the full response as a single chunk.
 
 #### PII
 
@@ -331,14 +343,12 @@ block and/or log actions independently.
   "pii": {
     "policies": [
       {
-        "name": "default",
         "enabled": true,
         "target": "both",
         "entities": ["EMAIL", "PHONE", "CREDIT_CARD", "SSN", "IBAN"],
         "outputBufferSize": 30
       },
       {
-        "name": "pii-request-only",
         "enabled": true,
         "target": "request",
         "entities": ["EMAIL", "PHONE"],
@@ -349,12 +359,11 @@ block and/or log actions independently.
 }
 ```
 
-PII configuration contains a list of named policies. All enabled policies are merged per-direction
+PII configuration contains a list of policies. All enabled policies are merged per-direction
 at scrub time (request scrubbing merges policies with `target: request` or `target: both`;
 response scrubbing merges policies with `target: response` or `target: both`).
 
 **Policy fields:**
-- `name: string`: unique identifier for this policy
 - `enabled?: boolean`: default true when absent; when false, this policy is skipped
 - `target: 'request' | 'response' | 'both'`: which side(s) to scrub
 - `entities?: PiiEntity[]`: entity types to detect (EMAIL, PHONE, CREDIT_CARD, SSN, IBAN). Defaults to all types when omitted.

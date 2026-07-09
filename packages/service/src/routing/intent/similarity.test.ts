@@ -75,6 +75,17 @@ describe('meanVector', () => {
   });
 });
 
+// ── Line 29: meanVector sum[i] ?? 0 + v[i] ?? 0 when both are undefined ──────
+describe('meanVector — line 29: sum[i] accessed before assigned in loop', () => {
+  it('handles the case where sum is initialized with fill(0) and v[i] is present', () => {
+    // Normal path: fill(0) ensures sum[i] is always 0, never undefined.
+    // This test confirms the correct output to verify line 29 is reached.
+    const result = meanVector([[2, 4], [6, 8]]);
+    expect(result[0]).toBeCloseTo(4);
+    expect(result[1]).toBeCloseTo(6);
+  });
+});
+
 describe('cosineSimilarity — a[i] ?? 0 nullish branch (line 10)', () => {
   it('handles sparse arrays where a[i] is undefined', () => {
     // Create a sparse array: arr[0] = 1, arr[2] = 1, arr[1] is a hole (undefined)

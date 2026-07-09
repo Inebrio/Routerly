@@ -1147,3 +1147,90 @@ describe('POST /v1/messages — pii.scrubOutput with non-text content (line 168)
     expect(body.stop_reason).toBe('refusal')
   })
 })
+
+// ── Lines 123-125: request injection into system (string / array / missing) ───
+describe('POST /v1/messages — guardrail request injection branches (lines 123-125)', () => {
+  // A topic rule with inject:true produces injection text via buildRequestInjection.
+  const injectProject: ProjectConfig = {
+    id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
+    guardrails: {
+      rules: [{
+        type: 'topic',
+        inject: true,
+        config: { allowedTopics: 'cooking' },
+      }],
+    },
+  } as any
+
+  function buildInjectApp() {
+    const app = Fastify({ logger: false })
+    app.decorateRequest('project', null as any)
+    app.decorateRequest('token', null as any)
+    app.addHook('preHandler', async (req: any) => { req.project = injectProject; req.token = undefined })
+    return app.register(anthropicRoutes).then(() => app.ready()).then(() => app)
+  }
+
+  it('line 123: appends injection to string system field', async () => {
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    const captured: any[] = []
+    mockLlmMessages.mockImplementation(async (body: any) => { captured.push(body); return makeMessagesResponse() as any })
+    const app = await buildInjectApp()
+    await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        model: 'claude', max_tokens: 100,
+        system: 'You are a helpful assistant.',
+        messages: [{ role: 'user', content: 'what can I cook?' }],
+      }),
+    })
+    await app.close()
+    const sentSystem = captured[0]?.system as string
+    expect(typeof sentSystem).toBe('string')
+    expect(sentSystem).toContain('You are a helpful assistant.')
+    expect(sentSystem).toContain('cooking')
+  })
+
+  it('line 124: pushes injection object into array system field', async () => {
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    const captured: any[] = []
+    mockLlmMessages.mockImplementation(async (body: any) => { captured.push(body); return makeMessagesResponse() as any })
+    const app = await buildInjectApp()
+    await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        model: 'claude', max_tokens: 100,
+        system: [{ type: 'text', text: 'You are helpful.' }],
+        messages: [{ role: 'user', content: 'what can I cook?' }],
+      }),
+    })
+    await app.close()
+    const sentSystem = captured[0]?.system as Array<{ type: string; text: string }>
+    expect(Array.isArray(sentSystem)).toBe(true)
+    const injected = sentSystem.find((s) => s.text?.includes('cooking'))
+    expect(injected).toBeDefined()
+  })
+
+  it('line 125: sets system to injection when system field is absent', async () => {
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'm1', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    const captured: any[] = []
+    mockLlmMessages.mockImplementation(async (body: any) => { captured.push(body); return makeMessagesResponse() as any })
+    const app = await buildInjectApp()
+    await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        model: 'claude', max_tokens: 100,
+        messages: [{ role: 'user', content: 'what can I cook?' }],
+      }),
+    })
+    await app.close()
+    const sentSystem = captured[0]?.system as string
+    expect(typeof sentSystem).toBe('string')
+    expect(sentSystem).toContain('cooking')
+  })
+})

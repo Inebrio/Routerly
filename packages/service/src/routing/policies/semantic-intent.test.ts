@@ -565,3 +565,37 @@ describe('semanticIntentPolicy — line 113 err instanceof Error TRUE branch', (
     );
   });
 });
+
+// ── Line 15: getEmbeddingInputCost catch { return 0 } when catalogFetcher.get throws ──
+describe('semanticIntentPolicy — line 15: getEmbeddingInputCost catch branch', () => {
+  beforeEach(() => {
+    clearIntentCache();
+    vi.clearAllMocks();
+    mockReadConfig.mockResolvedValue([
+      { id: 'text-embedding-3-small', apiKey: 'sk-test', endpoint: 'https://api.openai.com/v1' },
+    ]);
+  });
+
+  it('returns 0 cost and continues when catalogFetcher.get throws (line 15 catch branch)', async () => {
+    // catalogFetcher.get throws → catch → return 0 → trackUsage called with inputPerMillion 0
+    mockCatalogGet.mockRejectedValue(new Error('catalog unavailable'));
+
+    const vec = [1, 0, 0];
+    mockProvider.embed.mockResolvedValue({ embeddings: [vec], inputTokens: 5 });
+
+    const result = await semanticIntentPolicy({
+      request: makeRequest('compute something'),
+      candidates: [makeCandidate('coder-model')],
+      config: { ...baseConfig, absolute_threshold: 0.0 },
+      projectId: 'proj-catch-test',
+    });
+
+    // Policy still runs; embedding cost falls back to 0
+    expect(result.routing).toHaveLength(1);
+    expect(trackUsage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: expect.objectContaining({ cost: { inputPerMillion: 0, outputPerMillion: 0 } }),
+      }),
+    );
+  });
+});

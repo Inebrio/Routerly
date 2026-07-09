@@ -29,6 +29,7 @@ vi.mock('../cache/llmResponseCache.js', () => ({ lookupResponseCache: vi.fn(() =
 vi.mock('../cache/textVector.js', () => ({ textToVector: vi.fn(() => []) }))
 vi.mock('../middleware/guardrails.js', () => ({
   checkGuardrails: vi.fn(),
+  buildRequestInjection: vi.fn(() => null),
 }))
 vi.mock('../cost/tracker.js', () => ({
   trackUsage: vi.fn().mockResolvedValue(undefined),

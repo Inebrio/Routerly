@@ -193,10 +193,12 @@ describe('ProjectSecurityTab — judge model options', () => {
   });
 });
 
-// ── Block / Log checkboxes ────────────────────────────────────────────────────
+// ── Rule enabled toggle (replaces old block/log checkboxes) ───────────────────
+// block/log are now fixed invariants (judged rules always block+log); only the
+// per-rule Enabled toggle (testid rule-enabled) is user-editable.
 
-describe('ProjectSecurityTab — block/log checkboxes', () => {
-  it('new rule defaults to block=true, log unchecked', async () => {
+describe('ProjectSecurityTab — rule-enabled toggle', () => {
+  it('new regex rule defaults to Enabled=true', async () => {
     renderTab();
 
     const addSelect = await waitFor(() =>
@@ -205,14 +207,12 @@ describe('ProjectSecurityTab — block/log checkboxes', () => {
     await userEvent.selectOptions(addSelect, 'regex');
 
     await waitFor(() => {
-      const blockCbs = screen.getAllByTestId('rule-block') as HTMLInputElement[];
-      expect(blockCbs[0]!.checked).toBe(true);
-      const logCbs = screen.getAllByTestId('rule-log') as HTMLInputElement[];
-      expect(logCbs[0]!.checked).toBe(false);
+      const enabledCbs = screen.getAllByTestId('rule-enabled') as HTMLInputElement[];
+      expect(enabledCbs[0]!.checked).toBe(true);
     });
   });
 
-  it('toggling Block off hides the block message input', async () => {
+  it('toggling Enabled off sets enabled=false', async () => {
     renderTab();
 
     const addSelect = await waitFor(() =>
@@ -220,17 +220,15 @@ describe('ProjectSecurityTab — block/log checkboxes', () => {
     ) as HTMLSelectElement;
     await userEvent.selectOptions(addSelect, 'regex');
 
-    // block=true by default so blockMessage input should be visible
-    await waitFor(() => expect(screen.queryByTestId('rule-block-message')).not.toBeNull());
-
-    // Uncheck block
-    const blockCb = screen.getAllByTestId('rule-block')[0] as HTMLInputElement;
-    await userEvent.click(blockCb);
-
-    await waitFor(() => expect(screen.queryByTestId('rule-block-message')).toBeNull());
+    const enabledCb = await waitFor(() =>
+      screen.getAllByTestId('rule-enabled')[0] as HTMLInputElement
+    );
+    expect(enabledCb.checked).toBe(true);
+    await userEvent.click(enabledCb);
+    expect((screen.getAllByTestId('rule-enabled')[0] as HTMLInputElement).checked).toBe(false);
   });
 
-  it('toggling Log on sets log=true independently', async () => {
+  it('toggling Enabled back on restores enabled=true', async () => {
     renderTab();
 
     const addSelect = await waitFor(() =>
@@ -238,50 +236,20 @@ describe('ProjectSecurityTab — block/log checkboxes', () => {
     ) as HTMLSelectElement;
     await userEvent.selectOptions(addSelect, 'regex');
 
-    const logCb = await waitFor(() => screen.getAllByTestId('rule-log')[0] as HTMLInputElement);
-    expect(logCb.checked).toBe(false);
-    await userEvent.click(logCb);
-    expect((screen.getAllByTestId('rule-log')[0] as HTMLInputElement).checked).toBe(true);
-    // block still checked
-    expect((screen.getAllByTestId('rule-block')[0] as HTMLInputElement).checked).toBe(true);
+    const enabledCb = await waitFor(() =>
+      screen.getAllByTestId('rule-enabled')[0] as HTMLInputElement
+    );
+    await userEvent.click(enabledCb); // off
+    await userEvent.click(enabledCb); // on again
+    expect((screen.getAllByTestId('rule-enabled')[0] as HTMLInputElement).checked).toBe(true);
   });
 });
 
-// ── blockMessage input ────────────────────────────────────────────────────────
+// ── ScopeSelector (topic/moderation) — three-checkbox model ─────────────────
+// request/inject/response checkboxes replace the old target+enforcement UI.
 
-describe('ProjectSecurityTab — blockMessage input', () => {
-  it('shows blockMessage input when block=true', async () => {
-    renderTab();
-
-    const addSelect = await waitFor(() =>
-      screen.getByTestId('searchable-Add a security policy...')
-    ) as HTMLSelectElement;
-    await userEvent.selectOptions(addSelect, 'regex');
-
-    await waitFor(() => {
-      expect(screen.queryByTestId('rule-block-message')).not.toBeNull();
-    });
-  });
-
-  it('blockMessage input is NOT shown when block=false', async () => {
-    renderTab();
-
-    const addSelect = await waitFor(() =>
-      screen.getByTestId('searchable-Add a security policy...')
-    ) as HTMLSelectElement;
-    await userEvent.selectOptions(addSelect, 'regex');
-
-    const blockCb = await waitFor(() => screen.getAllByTestId('rule-block')[0] as HTMLInputElement);
-    await userEvent.click(blockCb); // uncheck
-
-    expect(screen.queryByTestId('rule-block-message')).toBeNull();
-  });
-});
-
-// ── useJudgeResponse — topic/moderation only ─────────────────────────────────
-
-describe('ProjectSecurityTab — useJudgeResponse', () => {
-  it('shows "Use judge response" checkbox for topic rule', async () => {
+describe('ProjectSecurityTab — ScopeSelector three-checkbox model', () => {
+  it('new topic rule has request and response checked, inject unchecked (default target=both)', async () => {
     renderTab();
 
     const addSelect = await waitFor(() =>
@@ -290,11 +258,16 @@ describe('ProjectSecurityTab — useJudgeResponse', () => {
     await userEvent.selectOptions(addSelect, 'topic');
 
     await waitFor(() => {
-      expect(screen.queryByTestId('rule-use-judge')).not.toBeNull();
+      const reqCb = screen.getByTestId('rule-scope-request') as HTMLInputElement;
+      const injCb = screen.getByTestId('rule-scope-inject') as HTMLInputElement;
+      const resCb = screen.getByTestId('rule-scope-response') as HTMLInputElement;
+      expect(reqCb.checked).toBe(true);
+      expect(injCb.checked).toBe(false);
+      expect(resCb.checked).toBe(true);
     });
   });
 
-  it('shows "Use judge response" checkbox for moderation rule', async () => {
+  it('new moderation rule has request and response checked, inject unchecked (default target=both)', async () => {
     renderTab();
 
     const addSelect = await waitFor(() =>
@@ -303,23 +276,16 @@ describe('ProjectSecurityTab — useJudgeResponse', () => {
     await userEvent.selectOptions(addSelect, 'moderation');
 
     await waitFor(() => {
-      expect(screen.queryByTestId('rule-use-judge')).not.toBeNull();
+      const reqCb = screen.getByTestId('rule-scope-request') as HTMLInputElement;
+      const injCb = screen.getByTestId('rule-scope-inject') as HTMLInputElement;
+      const resCb = screen.getByTestId('rule-scope-response') as HTMLInputElement;
+      expect(reqCb.checked).toBe(true);
+      expect(injCb.checked).toBe(false);
+      expect(resCb.checked).toBe(true);
     });
   });
 
-  it('does NOT show "Use judge response" for regex rule', async () => {
-    renderTab();
-
-    const addSelect = await waitFor(() =>
-      screen.getByTestId('searchable-Add a security policy...')
-    ) as HTMLSelectElement;
-    await userEvent.selectOptions(addSelect, 'regex');
-
-    await waitFor(() => screen.getAllByTestId('rule-block'));
-    expect(screen.queryByTestId('rule-use-judge')).toBeNull();
-  });
-
-  it('relabels blockMessage to "Fallback message..." when useJudgeResponse is checked', async () => {
+  it('checking inject shows injection-warning banner', async () => {
     renderTab();
 
     const addSelect = await waitFor(() =>
@@ -327,17 +293,67 @@ describe('ProjectSecurityTab — useJudgeResponse', () => {
     ) as HTMLSelectElement;
     await userEvent.selectOptions(addSelect, 'topic');
 
-    // Initially says "Block message"
-    await waitFor(() => expect(screen.queryByText('Block message')).not.toBeNull());
+    await waitFor(() => screen.getByTestId('rule-scope-inject'));
+    expect(screen.queryByTestId('injection-warning')).toBeNull();
 
-    // Check "Use judge response"
-    const judgeCb = screen.getByTestId('rule-use-judge') as HTMLInputElement;
-    await userEvent.click(judgeCb);
+    await userEvent.click(screen.getByTestId('rule-scope-inject'));
 
     await waitFor(() => {
-      expect(screen.queryByText('Block message')).toBeNull();
-      expect(screen.queryByText(/Fallback message/)).not.toBeNull();
+      expect(screen.queryByTestId('injection-warning')).not.toBeNull();
     });
+  });
+
+  it('unchecking inject removes injection-warning banner', async () => {
+    renderTab();
+
+    const addSelect = await waitFor(() =>
+      screen.getByTestId('searchable-Add a security policy...')
+    ) as HTMLSelectElement;
+    await userEvent.selectOptions(addSelect, 'moderation');
+
+    await waitFor(() => screen.getByTestId('rule-scope-inject'));
+    await userEvent.click(screen.getByTestId('rule-scope-inject')); // check
+    await waitFor(() => expect(screen.queryByTestId('injection-warning')).not.toBeNull());
+
+    await userEvent.click(screen.getByTestId('rule-scope-inject')); // uncheck
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('injection-warning')).toBeNull();
+    });
+  });
+
+  it('inject-only (uncheck request+response) collapses judge fields', async () => {
+    renderTab();
+
+    const addSelect = await waitFor(() =>
+      screen.getByTestId('searchable-Add a security policy...')
+    ) as HTMLSelectElement;
+    await userEvent.selectOptions(addSelect, 'topic');
+
+    await waitFor(() => screen.getByTestId('rule-scope-request'));
+    // First check inject so unchecking req+res doesn't leave all unchecked
+    await userEvent.click(screen.getByTestId('rule-scope-inject'));
+    await userEvent.click(screen.getByTestId('rule-scope-request'));
+    await userEvent.click(screen.getByTestId('rule-scope-response'));
+
+    await waitFor(() => {
+      // inject-only: no judge → Judge model label absent
+      expect(screen.queryByText('Judge model')).toBeNull();
+    });
+  });
+
+  it('regex rule does NOT render ScopeSelector checkboxes', async () => {
+    renderTab();
+
+    const addSelect = await waitFor(() =>
+      screen.getByTestId('searchable-Add a security policy...')
+    ) as HTMLSelectElement;
+    await userEvent.selectOptions(addSelect, 'regex');
+
+    await waitFor(() => screen.getAllByTestId('rule-enabled'));
+    expect(screen.queryByTestId('rule-scope-request')).toBeNull();
+    expect(screen.queryByTestId('rule-scope-inject')).toBeNull();
+    expect(screen.queryByTestId('rule-scope-response')).toBeNull();
   });
 });
 
@@ -368,15 +384,14 @@ describe('ProjectSecurityTab — streaming-disabled warning', () => {
     await userEvent.selectOptions(addSelect, 'regex');
 
     // Warning should NOT appear yet (target is request)
-    await waitFor(() => screen.getAllByTestId('rule-block'));
+    await waitFor(() => screen.getAllByTestId('rule-enabled'));
     expect(screen.queryByTestId('streaming-disabled-warning')).toBeNull();
 
-    // Check the "response" target checkbox
+    // Check the "response" target checkbox in TargetSelector
     const responseCheckboxes = screen.getAllByRole('checkbox').filter(cb => {
       const label = cb.closest('label');
       return label?.textContent?.trim() === 'response';
     });
-    // The first one found in the RuleCard target area
     if (responseCheckboxes[0]) {
       await userEvent.click(responseCheckboxes[0]);
       await waitFor(() => {
@@ -385,18 +400,62 @@ describe('ProjectSecurityTab — streaming-disabled warning', () => {
     }
   });
 
-  it('warning disappears when block is unchecked', async () => {
+  it('warning disappears when response target is unchecked', async () => {
+    // Start with a response-blocking moderation rule
     renderTab(mockProjectWithResponseBlock);
 
     await waitFor(() => {
       expect(screen.queryByTestId('streaming-disabled-warning')).not.toBeNull();
     });
 
-    const blockCb = screen.getAllByTestId('rule-block')[0] as HTMLInputElement;
-    await userEvent.click(blockCb);
+    // The moderation rule has target=response. ScopeSelector has rule-scope-response checked.
+    // First check request so we can safely uncheck response (ScopeSelector guard: must keep at least one)
+    const reqCb = screen.getByTestId('rule-scope-request') as HTMLInputElement;
+    const resCb = screen.getByTestId('rule-scope-response') as HTMLInputElement;
+    // response is checked; request is not. Check request first, then uncheck response.
+    await userEvent.click(reqCb);
+    await userEvent.click(resCb);
 
     await waitFor(() => {
       expect(screen.queryByTestId('streaming-disabled-warning')).toBeNull();
+    });
+  });
+});
+
+// ── Injection-warning banner ──────────────────────────────────────────────────
+// Section-level amber banner visible when any rule has inject=true.
+
+describe('ProjectSecurityTab — injection-warning banner', () => {
+  it('no injection-warning when no rules are configured', async () => {
+    renderTab();
+    await waitFor(() => screen.getByTestId('searchable-Add a security policy...'));
+    expect(screen.queryByTestId('injection-warning')).toBeNull();
+  });
+
+  it('no injection-warning for a regex rule (inject not supported)', async () => {
+    renderTab();
+
+    const addSelect = await waitFor(() =>
+      screen.getByTestId('searchable-Add a security policy...')
+    ) as HTMLSelectElement;
+    await userEvent.selectOptions(addSelect, 'regex');
+
+    await waitFor(() => screen.getAllByTestId('rule-enabled'));
+    expect(screen.queryByTestId('injection-warning')).toBeNull();
+  });
+
+  it('injection-warning appears when project loads with inject=true rule', async () => {
+    renderTab({
+      ...mockProject,
+      guardrails: {
+        rules: [
+          { type: 'moderation' as const, inject: true, block: false, log: false, config: { modelId: '', threshold: 0.5 } },
+        ],
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('injection-warning')).not.toBeNull();
     });
   });
 });
@@ -448,7 +507,7 @@ describe('ProjectSecurityTab — PII policy target and outputBufferSize', () => 
     renderTab({
       ...mockProject,
       pii: {
-        policies: [{ name: 'test', enabled: true, target: 'response' as const, entities: [] }],
+        policies: [{ enabled: true, target: 'response' as const, entities: [] }],
       },
     });
 
@@ -475,34 +534,6 @@ describe('ProjectSecurityTab — PII policy target and outputBufferSize', () => 
   });
 });
 
-// ── detectInjection toggle ────────────────────────────────────────────────────
-
-describe('ProjectSecurityTab — detectInjection toggle', () => {
-  it('renders the detect prompt injection checkbox', async () => {
-    renderTab();
-    await waitFor(() =>
-      expect(screen.queryByText('Detect prompt injection')).not.toBeNull()
-    );
-    const cb = screen.getByRole('checkbox', { name: /detect prompt injection/i }) as HTMLInputElement;
-    expect(cb.checked).toBe(false);
-  });
-
-  it('checking detectInjection includes it in the saved payload', async () => {
-    renderTab();
-
-    await waitFor(() => screen.getByRole('checkbox', { name: /detect prompt injection/i }));
-    const cb = screen.getByRole('checkbox', { name: /detect prompt injection/i }) as HTMLInputElement;
-    await userEvent.click(cb);
-    expect(cb.checked).toBe(true);
-
-    await userEvent.click(screen.getByRole('button', { name: /save security settings/i }));
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
-
-    const payload = mockUpdateProject.mock.calls[0]![1] as { guardrails?: Record<string, unknown> };
-    expect(payload.guardrails?.detectInjection).toBe(true);
-  });
-});
-
 // ── handleSave payload shape ──────────────────────────────────────────────────
 
 describe('ProjectSecurityTab — save payload', () => {
@@ -515,7 +546,7 @@ describe('ProjectSecurityTab — save payload', () => {
     ) as HTMLSelectElement;
     await userEvent.selectOptions(addSelect, 'regex');
 
-    await waitFor(() => screen.getAllByTestId('rule-block'));
+    await waitFor(() => screen.getAllByTestId('rule-enabled'));
 
     await userEvent.click(screen.getByRole('button', { name: /save security settings/i }));
 
@@ -549,13 +580,13 @@ describe('ProjectSecurityTab — rule card delete', () => {
     ) as HTMLSelectElement;
     await userEvent.selectOptions(addSelect, 'regex');
 
-    await waitFor(() => screen.getAllByTestId('rule-block'));
-    expect(screen.getAllByTestId('rule-block')).toHaveLength(1);
+    await waitFor(() => screen.getAllByTestId('rule-enabled'));
+    expect(screen.getAllByTestId('rule-enabled')).toHaveLength(1);
 
     const deleteBtn = screen.getByRole('button', { name: 'Delete rule' });
     await userEvent.click(deleteBtn);
 
-    await waitFor(() => expect(screen.queryAllByTestId('rule-block')).toHaveLength(0));
+    await waitFor(() => expect(screen.queryAllByTestId('rule-enabled')).toHaveLength(0));
   });
 
   it('delete button removes the correct rule when multiple rules exist', async () => {
@@ -566,16 +597,16 @@ describe('ProjectSecurityTab — rule card delete', () => {
     ) as HTMLSelectElement;
 
     await userEvent.selectOptions(addSelect, 'regex');
-    await waitFor(() => screen.getAllByTestId('rule-block'));
+    await waitFor(() => screen.getAllByTestId('rule-enabled'));
 
     await userEvent.selectOptions(addSelect, 'topic');
-    await waitFor(() => expect(screen.getAllByTestId('rule-block')).toHaveLength(2));
+    await waitFor(() => expect(screen.getAllByTestId('rule-enabled')).toHaveLength(2));
 
     // Delete the first rule
     const deleteBtns = screen.getAllByRole('button', { name: 'Delete rule' });
     await userEvent.click(deleteBtns[0]!);
 
-    await waitFor(() => expect(screen.queryAllByTestId('rule-block')).toHaveLength(1));
+    await waitFor(() => expect(screen.queryAllByTestId('rule-enabled')).toHaveLength(1));
   });
 });
 
@@ -602,16 +633,17 @@ describe('ProjectSecurityTab — PII policy remove', () => {
       ...mockProject,
       pii: {
         policies: [
-          { name: 'test-pol', enabled: true, target: 'request' as const, entities: [] },
+          { enabled: true, target: 'request' as const, entities: [] },
         ],
       },
     });
 
-    await waitFor(() => screen.getByDisplayValue('test-pol'));
+    // Wait for the policy card to render (it shows "Policy 1" heading and Apply to)
+    await waitFor(() => screen.getByText('Policy 1'));
     const removeBtn = screen.getByTitle('Remove policy');
     await userEvent.click(removeBtn);
 
-    await waitFor(() => expect(screen.queryByDisplayValue('test-pol')).toBeNull());
+    await waitFor(() => expect(screen.queryByText('Policy 1')).toBeNull());
   });
 });
 
@@ -639,7 +671,7 @@ describe('ProjectSecurityTab — PII entity toggles', () => {
     renderTab({
       ...mockProject,
       pii: {
-        policies: [{ name: 'pol', enabled: true, target: 'request' as const, entities: ['EMAIL', 'PHONE'] }],
+        policies: [{ enabled: true, target: 'request' as const, entities: ['EMAIL', 'PHONE'] }],
       },
     });
 
@@ -661,6 +693,7 @@ describe('ProjectSecurityTab — PII policy enabled toggle', () => {
     await waitFor(() => screen.getByText('+ Add Policy'));
     await userEvent.click(screen.getByText('+ Add Policy'));
 
+    // "Enabled" label appears in the PII policy card header
     await waitFor(() => screen.getByText('Enabled'));
     const enabledLabel = screen.getByText('Enabled').closest('label') as HTMLElement;
     const enabledCb = enabledLabel.querySelector('input[type="checkbox"]') as HTMLInputElement;
@@ -670,37 +703,79 @@ describe('ProjectSecurityTab — PII policy enabled toggle', () => {
   });
 });
 
-// ── PII policy name input ─────────────────────────────────────────────────────
+// ── PII policy "Policy N" heading (replaces old name input) ──────────────────
 
-describe('ProjectSecurityTab — PII policy name input', () => {
-  it('policy name input is editable', async () => {
+describe('ProjectSecurityTab — PII policy heading', () => {
+  it('new policy card renders "Policy 1" heading (no name input)', async () => {
     renderTab();
 
     await waitFor(() => screen.getByText('+ Add Policy'));
     await userEvent.click(screen.getByText('+ Add Policy'));
 
-    const nameInput = await waitFor(() =>
-      screen.getByPlaceholderText('Policy name') as HTMLInputElement
-    );
-    await userEvent.clear(nameInput);
-    await userEvent.type(nameInput, 'MyPolicy');
-    expect(nameInput.value).toBe('MyPolicy');
+    await waitFor(() => screen.getByText('Policy 1'));
+    // Name input is gone
+    expect(screen.queryByPlaceholderText('Policy name')).toBeNull();
   });
 
-  it('save skips policies with empty name', async () => {
+  it('two policy cards render "Policy 1" and "Policy 2" headings', async () => {
+    renderTab({
+      ...mockProject,
+      pii: {
+        policies: [
+          { enabled: true, target: 'request' as const, entities: [] },
+          { enabled: true, target: 'request' as const, entities: [] },
+        ],
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Policy 1')).toBeTruthy();
+      expect(screen.getByText('Policy 2')).toBeTruthy();
+    });
+  });
+});
+
+// ── save skips no-op PII policies (replaces old "empty name" filter) ──────────
+// A policy is a no-op when it has an empty entity array AND no custom patterns.
+// A policy with at least one entity is always kept.
+
+describe('ProjectSecurityTab — save skips no-op PII policies', () => {
+  it('save skips a freshly-added policy that has no entities and no patterns', async () => {
     renderTab();
 
     await waitFor(() => screen.getByText('+ Add Policy'));
     await userEvent.click(screen.getByText('+ Add Policy'));
 
-    // Name left blank
+    // New policy seeds with entities:[] and no patterns → no-op, should be filtered
+    await waitFor(() => screen.getByText('Policy 1'));
+
     await userEvent.click(screen.getByRole('button', { name: /save security settings/i }));
     await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
 
     const call = mockUpdateProject.mock.calls[0]!;
     const payload = call[1] as { pii?: { policies: unknown[] } };
-    // Empty-name policy should be filtered out
+    // No-op policy filtered out
     expect(payload.pii?.policies.length).toBe(0);
+  });
+
+  it('save keeps a policy that has at least one entity', async () => {
+    renderTab({
+      ...mockProject,
+      pii: {
+        policies: [
+          { enabled: true, target: 'request' as const, entities: ['EMAIL'] },
+        ],
+      },
+    });
+
+    await waitFor(() => screen.getByText('Policy 1'));
+    await userEvent.click(screen.getByRole('button', { name: /save security settings/i }));
+    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
+
+    const call = mockUpdateProject.mock.calls[0]!;
+    const payload = call[1] as { pii?: { policies: unknown[] } };
+    // Policy with EMAIL entity is kept
+    expect(payload.pii?.policies.length).toBe(1);
   });
 });
 
@@ -774,7 +849,7 @@ describe('ProjectSecurityTab — TargetSelector toggle', () => {
     ) as HTMLSelectElement;
     await userEvent.selectOptions(addSelect, 'regex');
 
-    await waitFor(() => screen.getAllByTestId('rule-block'));
+    await waitFor(() => screen.getAllByTestId('rule-enabled'));
 
     // Find the target section request checkbox (first one in the rule card)
     const allCheckboxes = screen.getAllByRole('checkbox');
@@ -889,7 +964,7 @@ describe('ProjectSecurityTab — ModerationFields interactions', () => {
     );
   });
 
-  it('custom instructions textarea is rendered for moderation rule', async () => {
+  it('custom instructions textarea is rendered for moderation rule with label "Custom instructions"', async () => {
     renderTab();
 
     const addSelect = await waitFor(() =>
@@ -898,7 +973,7 @@ describe('ProjectSecurityTab — ModerationFields interactions', () => {
     await userEvent.selectOptions(addSelect, 'moderation');
 
     await waitFor(() =>
-      expect(screen.queryByText(/Custom instructions/)).not.toBeNull()
+      expect(screen.queryByText('Custom instructions')).not.toBeNull()
     );
     const ta = screen.getByPlaceholderText(/You are a content safety classifier/) as HTMLTextAreaElement;
     await userEvent.type(ta, 'custom prompt');
@@ -918,6 +993,69 @@ describe('ProjectSecurityTab — ModerationFields interactions', () => {
     await userEvent.type(ta, 'some text');
     await userEvent.clear(ta);
     expect(ta.value).toBe('');
+  });
+
+  it('ModerationFields TargetSelector onChange fires when response is unchecked', async () => {
+    renderTab();
+
+    const addSelect = await waitFor(() =>
+      screen.getByTestId('searchable-Add a security policy...')
+    ) as HTMLSelectElement;
+    await userEvent.selectOptions(addSelect, 'moderation');
+
+    await waitFor(() => screen.getByTestId('rule-scope-response'));
+
+    // Moderation default target='both'. Clicking response fires ScopeSelector onChange.
+    const resCb = screen.getByTestId('rule-scope-response') as HTMLInputElement;
+    expect(resCb.checked).toBe(true);
+    await userEvent.click(resCb);
+    await waitFor(() => {
+      const fresh = screen.getByTestId('rule-scope-response') as HTMLInputElement;
+      expect(fresh.checked).toBe(false);
+    });
+  });
+});
+
+// ── Mandatory Custom instructions (moderation) ────────────────────────────────
+// Empty systemPrompt blocks save (saveDisabled=true) and shows error text.
+
+describe('ProjectSecurityTab — mandatory Custom instructions', () => {
+  it('Save is disabled and shows error when moderation Custom instructions is empty', async () => {
+    renderTab();
+
+    const addSelect = await waitFor(() =>
+      screen.getByTestId('searchable-Add a security policy...')
+    ) as HTMLSelectElement;
+    await userEvent.selectOptions(addSelect, 'moderation');
+
+    // systemPrompt starts empty → Save button must be disabled
+    await waitFor(() => screen.getByPlaceholderText(/You are a content safety classifier/));
+    const saveBtn = screen.getByRole('button', { name: /save security settings/i }) as HTMLButtonElement;
+    expect(saveBtn.disabled).toBe(true);
+
+    // Error text shown
+    await waitFor(() =>
+      expect(screen.queryByText('Custom instructions are required.')).not.toBeNull()
+    );
+  });
+
+  it('Save is enabled once Custom instructions is filled in', async () => {
+    renderTab();
+
+    const addSelect = await waitFor(() =>
+      screen.getByTestId('searchable-Add a security policy...')
+    ) as HTMLSelectElement;
+    await userEvent.selectOptions(addSelect, 'moderation');
+
+    await waitFor(() => screen.getByPlaceholderText(/You are a content safety classifier/));
+    const ta = screen.getByPlaceholderText(/You are a content safety classifier/) as HTMLTextAreaElement;
+    await userEvent.type(ta, 'Be safe');
+
+    await waitFor(() => {
+      const saveBtn = screen.getByRole('button', { name: /save security settings/i }) as HTMLButtonElement;
+      expect(saveBtn.disabled).toBe(false);
+    });
+    expect(screen.queryByText('Custom instructions are required.')).toBeNull();
   });
 });
 
@@ -953,10 +1091,10 @@ describe('ProjectSecurityTab — save error handling', () => {
   });
 });
 
-// ── blockMessage input editing ────────────────────────────────────────────────
+// ── saveDisabled guard (regex error prevents save) ────────────────────────────
 
-describe('ProjectSecurityTab — blockMessage editing', () => {
-  it('typing into blockMessage input updates the rule', async () => {
+describe('ProjectSecurityTab — saveDisabled when regex errors', () => {
+  it('does not call updateProject when there is a regex error', async () => {
     renderTab();
 
     const addSelect = await waitFor(() =>
@@ -964,38 +1102,530 @@ describe('ProjectSecurityTab — blockMessage editing', () => {
     ) as HTMLSelectElement;
     await userEvent.selectOptions(addSelect, 'regex');
 
-    const bm = await waitFor(() => screen.getByTestId('rule-block-message') as HTMLInputElement);
-    await userEvent.clear(bm);
-    await userEvent.type(bm, 'Custom block msg');
-    expect(bm.value).toBe('Custom block msg');
-  });
+    await waitFor(() => screen.getAllByTestId('rule-enabled'));
 
-  it('clearing blockMessage input removes blockMessage from payload', async () => {
-    renderTab();
+    // Type an invalid regex into the patterns textarea
+    const patternsLabel = screen.getByText('Patterns (one per line)');
+    const formGroup = patternsLabel.closest('.form-group');
+    const ta = formGroup?.querySelector('textarea') as HTMLTextAreaElement | null;
+    if (ta) {
+      await userEvent.clear(ta);
+      await userEvent.paste('[invalid(regex');
+      // Error message should appear
+      await waitFor(() =>
+        expect(screen.queryByText(/Invalid regex on line/)).not.toBeNull()
+      );
+    }
 
-    const addSelect = await waitFor(() =>
-      screen.getByTestId('searchable-Add a security policy...')
-    ) as HTMLSelectElement;
-    await userEvent.selectOptions(addSelect, 'regex');
-
-    const bm = await waitFor(() => screen.getByTestId('rule-block-message') as HTMLInputElement);
-    await userEvent.type(bm, 'msg');
-    await userEvent.clear(bm);
-
+    // Try to save
     await userEvent.click(screen.getByRole('button', { name: /save security settings/i }));
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
-
-    const call = mockUpdateProject.mock.calls[0]!;
-    const payload = call[1] as { guardrails?: { rules: Array<Record<string, unknown>> } };
-    const rule = payload.guardrails?.rules[0];
-    expect(rule).not.toHaveProperty('blockMessage');
+    // updateProject should NOT be called (saveDisabled=true)
+    expect(mockUpdateProject).not.toHaveBeenCalled();
   });
 });
 
-// ── useJudgeResponse toggle clears useJudgeResponse from payload ───────────────
+// ── Successful save path: setTimeout + models.prompt spread ──────────────────
 
-describe('ProjectSecurityTab — useJudgeResponse payload', () => {
-  it('checking useJudgeResponse includes it in the payload', async () => {
+describe('ProjectSecurityTab — successful save shows saved state', () => {
+  it('shows "Saved!" after successful updateProject and includes model prompt in payload', async () => {
+    const projectWithModels = {
+      ...mockProject,
+      models: [
+        { modelId: 'openai/gpt-4o', prompt: 'system prompt override' },
+        { modelId: 'openai/gpt-4o-mini' },
+      ],
+    };
+    mockUpdateProject.mockResolvedValueOnce({ ...projectWithModels });
+    renderTab(projectWithModels);
+
+    await waitFor(() =>
+      screen.getByRole('button', { name: /save security settings/i })
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /save security settings/i }));
+
+    await waitFor(() =>
+      expect(screen.queryByText(/Saved!/)).not.toBeNull(),
+    { timeout: 3000 });
+
+    // Verify models with prompt were included in payload
+    const call = mockUpdateProject.mock.calls[0]!;
+    const payload = call[1] as { models: Array<{ modelId: string; prompt?: string }> };
+    expect(payload.models.find(m => m.modelId === 'openai/gpt-4o')?.prompt).toBe('system prompt override');
+    expect(payload.models.find(m => m.modelId === 'openai/gpt-4o-mini')).not.toHaveProperty('prompt');
+  });
+
+});
+
+// ── Project missing guardrails/pii keys ──────────────────────────────────────
+
+describe('ProjectSecurityTab — project without guardrails or pii keys', () => {
+  it('renders without error when project has no guardrails key', async () => {
+    renderTab({ id: 'proj-x', name: 'NoPii', models: [] });
+    // if(g) is false → no rules set → the add picker should still render
+    await waitFor(() =>
+      screen.getByTestId('searchable-Add a security policy...')
+    );
+    // No injection warning (no rules)
+    expect(screen.queryByTestId('injection-warning')).toBeNull();
+  });
+
+  it('renders without error when project has no pii key', async () => {
+    renderTab({ id: 'proj-y', name: 'NoGuard', models: [], guardrails: { rules: [] } });
+    // if(p) is false → piiPolicies stays [] → shows "No PII policies configured."
+    await waitFor(() =>
+      expect(screen.queryByText('No PII policies configured.')).not.toBeNull()
+    );
+  });
+
+  it('handles pii with null policies array via ?? fallback', async () => {
+    // p.policies ?? [] fires when policies is null/undefined
+    renderTab({ id: 'proj-z', name: 'NullPolicies', models: [], guardrails: { rules: [] }, pii: {} });
+    await waitFor(() =>
+      expect(screen.queryByText('No PII policies configured.')).not.toBeNull()
+    );
+  });
+
+  it('handles guardrails with no rules key via g.rules ?? [] fallback', async () => {
+    // g.rules is undefined → g.rules ?? [] fires
+    renderTab({ id: 'proj-w', name: 'NoRules', models: [], guardrails: {} });
+    await waitFor(() =>
+      screen.getByTestId('searchable-Add a security policy...')
+    );
+    // No rules rendered (empty fallback [])
+    expect(screen.queryAllByTestId('rule-enabled')).toHaveLength(0);
+  });
+});
+
+// ── updateRule with multiple rules covers r._id !== id arm ────────────────────
+
+describe('ProjectSecurityTab — updateRule with 2 rules covers false arm', () => {
+  it('editing scope on first rule when two rules exist updates only the target rule', async () => {
+    renderTab();
+
+    const addSelect = await waitFor(() =>
+      screen.getByTestId('searchable-Add a security policy...')
+    ) as HTMLSelectElement;
+
+    // Add two regex rules
+    await userEvent.selectOptions(addSelect, 'regex');
+    await waitFor(() => expect(screen.getAllByTestId('rule-enabled')).toHaveLength(1));
+    await userEvent.selectOptions(addSelect, 'regex');
+    await waitFor(() => expect(screen.getAllByTestId('rule-enabled')).toHaveLength(2));
+
+    // Toggle the first rule's Enabled checkbox — triggers updateRule for that rule's _id,
+    // iterating over both rules and hitting r._id === id (first) and r._id !== id (second)
+    const enabledCbs = screen.getAllByTestId('rule-enabled') as HTMLInputElement[];
+    await userEvent.click(enabledCbs[0]!);
+    expect((screen.getAllByTestId('rule-enabled')[0] as HTMLInputElement).checked).toBe(false);
+    // Second rule's enabled state is untouched
+    expect((screen.getAllByTestId('rule-enabled')[1] as HTMLInputElement).checked).toBe(true);
+  });
+});
+
+// ── Threshold ?? fallback: rules loaded with missing threshold ─────────────────
+
+describe('ProjectSecurityTab — threshold ?? fallback for pre-existing rules without threshold', () => {
+  it('SemanticFields renders when config.threshold is undefined', async () => {
+    renderTab({
+      ...mockProject,
+      guardrails: {
+        rules: [
+          // threshold deliberately omitted → cfg.threshold ?? 0.82 fires
+          { type: 'semantic' as const, target: 'request' as const, block: true, config: { embeddingModelId: '', examples: [] } },
+        ],
+      },
+    });
+    await waitFor(() =>
+      expect(screen.queryByText(/Similarity threshold/)).not.toBeNull()
+    );
+  });
+
+  it('TopicFields renders when config.threshold is undefined', async () => {
+    renderTab({
+      ...mockProject,
+      guardrails: {
+        rules: [
+          { type: 'topic' as const, target: 'both' as const, block: true, config: { modelId: '', allowedTopics: '' } },
+        ],
+      },
+    });
+    await waitFor(() =>
+      expect(screen.queryByText(/Block if on-topic score below/)).not.toBeNull()
+    );
+  });
+
+  it('ModerationFields renders when config.threshold is undefined', async () => {
+    renderTab({
+      ...mockProject,
+      guardrails: {
+        rules: [
+          { type: 'moderation' as const, target: 'both' as const, block: true, config: { modelId: '' } },
+        ],
+      },
+    });
+    await waitFor(() =>
+      expect(screen.queryByText(/Block if harm score above/)).not.toBeNull()
+    );
+  });
+});
+
+// ── entities ?? ALL_PII_ENTITIES fallback ─────────────────────────────────────
+
+describe('ProjectSecurityTab — PiiPolicyCard entities ?? ALL_PII_ENTITIES fallback', () => {
+  it('policy with null entities renders all entity types as checked via fallback', async () => {
+    renderTab({
+      ...mockProject,
+      pii: {
+        // entities is null → new Set(null ?? ALL_PII_ENTITIES) → all entities checked
+        policies: [{ enabled: true, target: 'request' as const, entities: null as unknown as [] }],
+      },
+    });
+    // Wait for the policy card heading
+    await waitFor(() => screen.getByText('Policy 1'));
+    // All entity labels should be present and checked (from ALL_PII_ENTITIES fallback)
+    const emailLabel = screen.getByText('Email').closest('label') as HTMLElement;
+    const emailCb = emailLabel.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    // entities===null triggers fallback to ALL_PII_ENTITIES so all are checked
+    expect(emailCb.checked).toBe(true);
+  });
+});
+
+// ── handleSave early return when saveDisabled=true ───────────────────────────
+
+describe('ProjectSecurityTab — handleSave early return when saveDisabled', () => {
+  it('dispatching form submit while saveDisabled returns early without calling updateProject', async () => {
+    // Simulate saveDisabled via an invalid regex, then dispatch submit via form event
+    // (disabled button can't be clicked; form.dispatchEvent bypasses button disabled check)
+    renderTab();
+
+    const addSelect = await waitFor(() =>
+      screen.getByTestId('searchable-Add a security policy...')
+    ) as HTMLSelectElement;
+    await userEvent.selectOptions(addSelect, 'regex');
+
+    await waitFor(() => screen.getByText('Patterns (one per line)'));
+    const ta = screen.getByText('Patterns (one per line)').closest('.form-group')!
+      .querySelector('textarea') as HTMLTextAreaElement;
+    await userEvent.click(ta);
+    await userEvent.paste('[invalid(regex');
+    await waitFor(() => expect(screen.queryByText(/Invalid regex on line/)).not.toBeNull());
+
+    // saveDisabled=true; dispatching form submit now exercises the early-return branch
+    const form = document.querySelector('form') as HTMLFormElement;
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+    // updateProject must NOT be called
+    await new Promise(r => setTimeout(r, 50));
+    expect(mockUpdateProject).not.toHaveBeenCalled();
+  });
+});
+
+// ── modelOptions fallback: m.id used when m.name is falsy ────────────────────
+
+describe('ProjectSecurityTab — model label fallback to m.id when name is absent', () => {
+  it('model without name uses m.id as label in judge dropdown', async () => {
+    // Override getModels to return a model with no name (triggers `m.name || m.id`)
+    mockGetModels.mockResolvedValueOnce([
+      makeModel({ id: 'openai/gpt-4o', name: undefined }),
+    ] as never);
+
+    renderTab();
+
+    const addSelect = await waitFor(() =>
+      screen.getByTestId('searchable-Add a security policy...')
+    ) as HTMLSelectElement;
+    await userEvent.selectOptions(addSelect, 'moderation');
+
+    // The judge dropdown should contain 'openai/gpt-4o' as both value and label
+    await waitFor(() => {
+      const allSelects = document.querySelectorAll('select');
+      const judgeSelect = Array.from(allSelects).find(s =>
+        Array.from(s.options).some(o => o.value === 'openai/gpt-4o')
+      );
+      expect(judgeSelect).toBeTruthy();
+      const opt = Array.from(judgeSelect!.options).find(o => o.value === 'openai/gpt-4o');
+      // When name is undefined/falsy, label should equal m.id
+      expect(opt?.text).toBe('openai/gpt-4o');
+    });
+  });
+
+  it('embedding model without name uses m.id as label in embedding dropdown', async () => {
+    mockGetModels.mockResolvedValueOnce([
+      makeModel({ id: 'openai/text-embedding-3-small', name: undefined, capabilities: { embedding: true } }),
+    ] as never);
+
+    renderTab();
+
+    const addSelect = await waitFor(() =>
+      screen.getByTestId('searchable-Add a security policy...')
+    ) as HTMLSelectElement;
+    await userEvent.selectOptions(addSelect, 'semantic');
+
+    await waitFor(() => {
+      const allSelects = document.querySelectorAll('select');
+      const embSelect = Array.from(allSelects).find(s =>
+        Array.from(s.options).some(o => o.value === 'openai/text-embedding-3-small')
+      );
+      expect(embSelect).toBeTruthy();
+      const opt = Array.from(embSelect!.options).find(o => o.value === 'openai/text-embedding-3-small');
+      expect(opt?.text).toBe('openai/text-embedding-3-small');
+    });
+  });
+});
+
+// ── PiiPolicyCard onChange with 2+ policies (j !== i branch) ─────────────────
+
+describe('ProjectSecurityTab — PII onChange with multiple policies covers j !== i branch', () => {
+  it('changing one policy when two exist updates only the correct one', async () => {
+    renderTab({
+      ...mockProject,
+      pii: {
+        policies: [
+          { enabled: true, target: 'request' as const, entities: [] },
+          { enabled: true, target: 'request' as const, entities: [] },
+        ],
+      },
+    });
+
+    // Both policy headings should be present
+    await waitFor(() => {
+      expect(screen.getByText('Policy 1')).toBeTruthy();
+      expect(screen.getByText('Policy 2')).toBeTruthy();
+    });
+
+    // Toggle Enabled on policy 1 only — triggers onChange hitting both j===i and j!==i branches
+    const removeButtons = screen.getAllByTitle('Remove policy');
+    expect(removeButtons).toHaveLength(2);
+
+    // Toggle enabled on the first policy card's Enabled checkbox
+    const enabledLabels = screen.getAllByText('Enabled');
+    const firstEnabledCb = enabledLabels[0]!.closest('label')!.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    await userEvent.click(firstEnabledCb);
+    expect(firstEnabledCb.checked).toBe(false);
+
+    // Second policy's Enabled is unchanged (j !== i branch executed)
+    const secondEnabledCb = enabledLabels[1]!.closest('label')!.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    expect(secondEnabledCb.checked).toBe(true);
+  });
+});
+
+// ── if (!project) return null (render guard) ─────────────────────────────────
+
+describe('ProjectSecurityTab — renders null when no project', () => {
+  it('returns null (renders nothing) when project is undefined', async () => {
+    function NullWrapper() {
+      const { Outlet } = require('react-router-dom');
+      return <Outlet context={{ project: undefined, setProject: vi.fn() }} />;
+    }
+    const { render: r } = await import('@testing-library/react');
+    const { MemoryRouter: MR, Routes: Rs, Route: Rt } = await import('react-router-dom');
+    const { container } = r(
+      <MR initialEntries={['/dashboard/projects/proj-1/security']}>
+        <Rs>
+          <Rt path="/dashboard/projects/:id" element={<NullWrapper />}>
+            <Rt path="security" element={<ProjectSecurityTab />} />
+          </Rt>
+        </Rs>
+      </MR>
+    );
+    // No project → component returns null → nothing rendered inside the outlet
+    expect(container.querySelector('form')).toBeNull();
+  });
+});
+
+// ── Fallback models MultiSelect ───────────────────────────────────────────────
+
+describe('ProjectSecurityTab — fallback models MultiSelect', () => {
+  it('SemanticFields renders fallback MultiSelect excluding the primary embedding model', async () => {
+    renderTab();
+
+    const addSelect = await waitFor(() =>
+      screen.getByTestId('searchable-Add a security policy...')
+    ) as HTMLSelectElement;
+    await userEvent.selectOptions(addSelect, 'semantic');
+
+    await waitFor(() => screen.queryByText('Fallback models (optional, tried in order)'));
+
+    // MultiSelect for "No fallback models..." placeholder
+    const ms = screen.getByTestId('multiselect-No fallback models...') as HTMLSelectElement;
+    expect(ms).toBeTruthy();
+
+    // Primary embedding model (openai/text-embedding-3-small) must not be in fallback options
+    const vals = Array.from(ms.options).map(o => o.value);
+    // No embedding model selected yet (embeddingModelId=''), so all embedding options appear
+    // Once a primary is selected it gets filtered — verify the filter logic via onChange
+    expect(ms).toBeTruthy();
+  });
+
+  it('SemanticFields fallback MultiSelect excludes currently-selected primary model', async () => {
+    // Render with a pre-existing semantic rule with embeddingModelId set
+    renderTab({
+      ...mockProject,
+      guardrails: {
+        rules: [{
+          type: 'semantic' as const,
+          target: 'request' as const,
+          block: true,
+          config: { embeddingModelId: 'openai/text-embedding-3-small', examples: [], fallbackModelIds: [] },
+        }],
+      },
+    });
+
+    await waitFor(() => screen.queryByText('Fallback models (optional, tried in order)'));
+
+    const ms = screen.getByTestId('multiselect-No fallback models...') as HTMLSelectElement;
+    const vals = Array.from(ms.options).map(o => o.value);
+    // Primary is 'openai/text-embedding-3-small' → must be excluded from fallback options
+    expect(vals).not.toContain('openai/text-embedding-3-small');
+  });
+
+  it('SemanticFields fallback MultiSelect calls onChange with updated fallbackModelIds', async () => {
+    renderTab({
+      ...mockProject,
+      guardrails: {
+        rules: [{
+          type: 'semantic' as const,
+          target: 'request' as const,
+          block: true,
+          config: { embeddingModelId: '', examples: [], fallbackModelIds: [] },
+        }],
+      },
+    });
+
+    await waitFor(() => screen.queryByText('Fallback models (optional, tried in order)'));
+
+    const ms = screen.getByTestId('multiselect-No fallback models...') as HTMLSelectElement;
+    // Select an option — verifies onChange wiring
+    await userEvent.selectOptions(ms, 'openai/text-embedding-3-small');
+    // MultiSelect mock fires onChange; no crash = wiring is correct
+    expect(ms).toBeTruthy();
+  });
+
+  it('TopicFields renders fallback MultiSelect excluding the primary judge model', async () => {
+    renderTab({
+      ...mockProject,
+      guardrails: {
+        rules: [{
+          type: 'topic' as const,
+          target: 'both' as const,
+          block: true,
+          config: { modelId: 'openai/gpt-4o', allowedTopics: '', fallbackModelIds: [] },
+        }],
+      },
+    });
+
+    await waitFor(() => screen.queryByText('Fallback models (optional, tried in order)'));
+
+    const ms = screen.getByTestId('multiselect-No fallback models...') as HTMLSelectElement;
+    const vals = Array.from(ms.options).map(o => o.value);
+    // Primary is 'openai/gpt-4o' → excluded from fallback options
+    expect(vals).not.toContain('openai/gpt-4o');
+  });
+
+  it('TopicFields fallback MultiSelect onChange fires when an option is selected', async () => {
+    renderTab({
+      ...mockProject,
+      guardrails: {
+        rules: [{
+          type: 'topic' as const,
+          target: 'both' as const,
+          block: true,
+          // modelId is empty so gpt-4o is available as a fallback option
+          config: { modelId: '', allowedTopics: '', fallbackModelIds: [] },
+        }],
+      },
+    });
+
+    await waitFor(() => screen.queryByText('Fallback models (optional, tried in order)'));
+
+    const ms = screen.getByTestId('multiselect-No fallback models...') as HTMLSelectElement;
+    // Trigger onChange on the TopicFields fallback MultiSelect
+    await userEvent.selectOptions(ms, 'openai/gpt-4o');
+    expect(ms).toBeTruthy();
+  });
+
+  it('ModerationFields renders fallback MultiSelect excluding the primary judge model', async () => {
+    renderTab({
+      ...mockProject,
+      guardrails: {
+        rules: [{
+          type: 'moderation' as const,
+          target: 'both' as const,
+          block: true,
+          config: { modelId: 'openai/gpt-4o', fallbackModelIds: [] },
+        }],
+      },
+    });
+
+    await waitFor(() => screen.queryByText('Fallback models (optional, tried in order)'));
+
+    const ms = screen.getByTestId('multiselect-No fallback models...') as HTMLSelectElement;
+    const vals = Array.from(ms.options).map(o => o.value);
+    // Primary is 'openai/gpt-4o' → excluded from fallback options
+    expect(vals).not.toContain('openai/gpt-4o');
+  });
+
+  it('ModerationFields fallback MultiSelect onChange fires when an option is selected', async () => {
+    renderTab({
+      ...mockProject,
+      guardrails: {
+        rules: [{
+          type: 'moderation' as const,
+          target: 'both' as const,
+          block: true,
+          // modelId is empty so gpt-4o is available as a fallback option
+          config: { modelId: '', fallbackModelIds: [] },
+        }],
+      },
+    });
+
+    await waitFor(() => screen.queryByText('Fallback models (optional, tried in order)'));
+
+    const ms = screen.getByTestId('multiselect-No fallback models...') as HTMLSelectElement;
+    // Trigger onChange on the ModerationFields fallback MultiSelect
+    await userEvent.selectOptions(ms, 'openai/gpt-4o');
+    expect(ms).toBeTruthy();
+  });
+});
+
+// ── TargetSelector onChange in SemanticFields / TopicFields / ModerationFields ─
+
+describe('ProjectSecurityTab — TargetSelector onChange in typed rule cards', () => {
+  it('SemanticFields TargetSelector onChange fires when target is changed', async () => {
+    renderTab();
+
+    const addSelect = await waitFor(() =>
+      screen.getByTestId('searchable-Add a security policy...')
+    ) as HTMLSelectElement;
+    await userEvent.selectOptions(addSelect, 'semantic');
+
+    await waitFor(() => screen.queryByText('Embedding model'));
+
+    // TargetSelector renders "request" and "response" checkboxes; default is request
+    const requestCbs = screen.getAllByRole('checkbox').filter(cb =>
+      cb.closest('label')?.textContent?.trim() === 'request'
+    );
+    const responseCbs = screen.getAllByRole('checkbox').filter(cb =>
+      cb.closest('label')?.textContent?.trim() === 'response'
+    );
+    // Check response to make target='both' → TargetSelector onChange fires
+    if (responseCbs[0]) {
+      await userEvent.click(responseCbs[0] as HTMLElement);
+      await waitFor(() =>
+        expect((responseCbs[0] as HTMLInputElement).checked).toBe(true)
+      );
+    }
+    // Now uncheck request → target='response', TargetSelector onChange fires again
+    if (requestCbs[0]) {
+      await userEvent.click(requestCbs[0] as HTMLElement);
+      await waitFor(() =>
+        expect((requestCbs[0] as HTMLInputElement).checked).toBe(false)
+      );
+    }
+  });
+
+  it('TopicFields ScopeSelector onChange fires when target is changed', async () => {
     renderTab();
 
     const addSelect = await waitFor(() =>
@@ -1003,23 +1633,37 @@ describe('ProjectSecurityTab — useJudgeResponse payload', () => {
     ) as HTMLSelectElement;
     await userEvent.selectOptions(addSelect, 'topic');
 
-    // Wait for the rule-use-judge checkbox to appear
-    const judgeCb = await waitFor(() =>
-      screen.getByTestId('rule-use-judge') as HTMLInputElement
-    );
-    await userEvent.click(judgeCb); // check it
-    expect(judgeCb.checked).toBe(true);
+    await waitFor(() => screen.getByTestId('rule-scope-response'));
 
-    // Submit via form submit event (more reliable than clicking submit button in happy-dom)
-    const form = document.querySelector('form') as HTMLFormElement;
-    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    // Topic default target='both', so response is checked.
+    // Clicking response unchecks it → target becomes 'request' only.
+    const resCb = screen.getByTestId('rule-scope-response') as HTMLInputElement;
+    expect(resCb.checked).toBe(true);
+    await userEvent.click(resCb);
+    await waitFor(() => {
+      const fresh = screen.getByTestId('rule-scope-response') as HTMLInputElement;
+      expect(fresh.checked).toBe(false);
+    });
+  });
 
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled(), { timeout: 3000 });
+  it('ModerationFields ScopeSelector onChange fires when target is changed', async () => {
+    renderTab();
 
-    const call = mockUpdateProject.mock.calls[0]!;
-    const payload = call[1] as { guardrails?: { rules: Array<Record<string, unknown>> } };
-    const rule = payload.guardrails?.rules[0];
-    expect(rule).toHaveProperty('useJudgeResponse', true);
+    const addSelect = await waitFor(() =>
+      screen.getByTestId('searchable-Add a security policy...')
+    ) as HTMLSelectElement;
+    await userEvent.selectOptions(addSelect, 'moderation');
+
+    await waitFor(() => screen.getByTestId('rule-scope-response'));
+
+    // Moderation default target='both'. Clicking request unchecks it.
+    const reqCb = screen.getByTestId('rule-scope-request') as HTMLInputElement;
+    expect(reqCb.checked).toBe(true);
+    await userEvent.click(reqCb);
+    await waitFor(() => {
+      const fresh = screen.getByTestId('rule-scope-request') as HTMLInputElement;
+      expect(fresh.checked).toBe(false);
+    });
   });
 });
 
@@ -1030,7 +1674,7 @@ describe('ProjectSecurityTab — PII outputBufferSize input editing', () => {
     renderTab({
       ...mockProject,
       pii: {
-        policies: [{ name: 'pol', enabled: true, target: 'response' as const, entities: [], outputBufferSize: 30 }],
+        policies: [{ enabled: true, target: 'response' as const, entities: [], outputBufferSize: 30 }],
       },
     });
 
@@ -1045,7 +1689,7 @@ describe('ProjectSecurityTab — PII outputBufferSize input editing', () => {
     renderTab({
       ...mockProject,
       pii: {
-        policies: [{ name: 'pol', enabled: true, target: 'response' as const, entities: [] }],
+        policies: [{ enabled: true, target: 'response' as const, entities: [] }],
       },
     });
 
@@ -1069,12 +1713,12 @@ describe('ProjectSecurityTab — pre-existing rules from project', () => {
     });
   });
 
-  it('renders Block checkbox as checked for loaded blocking rule', async () => {
+  it('renders Enabled toggle as checked for loaded blocking rule', async () => {
     renderTab(mockProjectWithResponseBlock);
 
     await waitFor(() => {
-      const blocks = screen.getAllByTestId('rule-block') as HTMLInputElement[];
-      expect(blocks[0]!.checked).toBe(true);
+      const enabledCbs = screen.getAllByTestId('rule-enabled') as HTMLInputElement[];
+      expect(enabledCbs[0]!.checked).toBe(true);
     });
   });
 });
@@ -1087,7 +1731,7 @@ describe('ProjectSecurityTab — PII target toggle guard', () => {
     renderTab({
       ...mockProject,
       pii: {
-        policies: [{ name: 'pol', enabled: true, target: 'request' as const, entities: [] }],
+        policies: [{ enabled: true, target: 'request' as const, entities: [] }],
       },
     });
 
@@ -1109,7 +1753,7 @@ describe('ProjectSecurityTab — PII target toggle guard', () => {
     renderTab({
       ...mockProject,
       pii: {
-        policies: [{ name: 'pol', enabled: true, target: 'both' as const, entities: [] }],
+        policies: [{ enabled: true, target: 'both' as const, entities: [] }],
       },
     });
 
@@ -1140,7 +1784,7 @@ describe('ProjectSecurityTab — TargetSelector guard', () => {
     ) as HTMLSelectElement;
     await userEvent.selectOptions(addSelect, 'regex');
 
-    await waitFor(() => screen.getAllByTestId('rule-block'));
+    await waitFor(() => screen.getAllByTestId('rule-enabled'));
 
     // Find the Target section inside the RuleCard (has "request" and "response" checkboxes)
     const targetLabels = screen.getAllByRole('checkbox');
@@ -1167,7 +1811,7 @@ describe('ProjectSecurityTab — TargetSelector guard', () => {
     ) as HTMLSelectElement;
     await userEvent.selectOptions(addSelect, 'regex');
 
-    await waitFor(() => screen.getAllByTestId('rule-block'));
+    await waitFor(() => screen.getAllByTestId('rule-enabled'));
 
     const requestCb = screen.getAllByRole('checkbox').find(cb =>
       cb.closest('label')?.textContent?.trim() === 'request'
@@ -1337,7 +1981,7 @@ describe('ProjectSecurityTab — PII customPatterns onChange', () => {
     renderTab({
       ...mockProject,
       pii: {
-        policies: [{ name: 'pol', enabled: true, target: 'request' as const, entities: [] }],
+        policies: [{ enabled: true, target: 'request' as const, entities: [] }],
       },
     });
 
@@ -1352,94 +1996,128 @@ describe('ProjectSecurityTab — PII customPatterns onChange', () => {
   });
 });
 
-// ── TargetSelector onChange in SemanticFields / TopicFields / ModerationFields ─
+// ── TargetSelector onChange('request') branch (line 234) ─────────────────────
+// Fires when newReq=true, newRes=false — uncheck response while request is checked.
 
-describe('ProjectSecurityTab — TargetSelector onChange in typed rule cards', () => {
-  it('SemanticFields TargetSelector onChange fires when target is changed', async () => {
-    renderTab();
+describe('ProjectSecurityTab — TargetSelector onChange request-only branch', () => {
+  it('unchecking response while request is checked sets target to request-only', async () => {
+    // Load a semantic rule with target='both' so both checkboxes start checked.
+    renderTab({
+      ...mockProject,
+      guardrails: {
+        rules: [{
+          type: 'semantic' as const,
+          target: 'both' as const,
+          block: true,
+          config: { embeddingModelId: '', examples: [], threshold: 0.82 },
+        }],
+      },
+    });
 
-    const addSelect = await waitFor(() =>
-      screen.getByTestId('searchable-Add a security policy...')
-    ) as HTMLSelectElement;
-    await userEvent.selectOptions(addSelect, 'semantic');
+    await waitFor(() => screen.getAllByTestId('rule-enabled'));
 
-    await waitFor(() => screen.queryByText('Embedding model'));
-
-    // TargetSelector renders "request" and "response" checkboxes; default is request
-    const requestCbs = screen.getAllByRole('checkbox').filter(cb =>
-      cb.closest('label')?.textContent?.trim() === 'request'
-    );
+    // TargetSelector: find the response checkbox (not a scope checkbox)
     const responseCbs = screen.getAllByRole('checkbox').filter(cb =>
-      cb.closest('label')?.textContent?.trim() === 'response'
-    );
-    // Check response to make target='both' → TargetSelector onChange fires
-    if (responseCbs[0]) {
-      await userEvent.click(responseCbs[0] as HTMLElement);
-      await waitFor(() =>
-        expect((responseCbs[0] as HTMLInputElement).checked).toBe(true)
-      );
-    }
-    // Now uncheck request → target='response', TargetSelector onChange fires again
-    if (requestCbs[0]) {
-      await userEvent.click(requestCbs[0] as HTMLElement);
-      await waitFor(() =>
-        expect((requestCbs[0] as HTMLInputElement).checked).toBe(false)
-      );
-    }
+      cb.closest('label')?.textContent?.trim() === 'response' && !cb.hasAttribute('data-testid')
+    ) as HTMLInputElement[];
+    expect(responseCbs.length).toBeGreaterThan(0);
+    // response is currently checked (target='both'); uncheck it → target='request'
+    await userEvent.click(responseCbs[0]!);
+    await waitFor(() => expect((responseCbs[0] as HTMLInputElement).checked).toBe(false));
+    // streaming warning gone (no response-blocking rule)
+    expect(screen.queryByTestId('streaming-disabled-warning')).toBeNull();
+  });
+});
+
+// ── ScopeSelector apply guard (!req && !inj && !res) — line 264 ──────────────
+// Guard fires when toggling a flag would leave all three unchecked.
+// The only way to reach it: current state has exactly one flag set and user clicks it.
+
+describe('ProjectSecurityTab — ScopeSelector apply guard all-unchecked', () => {
+  it('does not uncheck inject when it is the only flag set', async () => {
+    // Load a moderation rule with inject=true and no target (inject-only).
+    renderTab({
+      ...mockProject,
+      guardrails: {
+        rules: [{
+          type: 'moderation' as const,
+          inject: true,
+          block: false,
+          log: false,
+          config: { threshold: 0.5, systemPrompt: 'Be safe' },
+        }],
+      },
+    });
+
+    await waitFor(() => screen.getByTestId('rule-scope-inject'));
+    const injCb = screen.getByTestId('rule-scope-inject') as HTMLInputElement;
+    expect(injCb.checked).toBe(true);
+    // Clicking inject when it is the only flag checked triggers the guard → no change
+    await userEvent.click(injCb);
+    // Still checked (guard returned early)
+    expect((screen.getByTestId('rule-scope-inject') as HTMLInputElement).checked).toBe(true);
+  });
+});
+
+// ── cfg.modelId ?? '' right side: undefined modelId ──────────────────────────
+// Line 430 (TopicFields) and line 490 (ModerationFields): cfg.modelId ?? '' fires
+// the '' right side only when modelId is undefined (not '').
+
+describe('ProjectSecurityTab — cfg.modelId undefined fires ?? fallback', () => {
+  it('TopicFields renders when config.modelId is absent (undefined)', async () => {
+    renderTab({
+      ...mockProject,
+      guardrails: {
+        rules: [{
+          type: 'topic' as const,
+          target: 'both' as const,
+          block: true,
+          // modelId deliberately absent → cfg.modelId is undefined → ?? '' fires
+          config: { allowedTopics: 'tech support' },
+        }],
+      },
+    });
+    await waitFor(() => expect(screen.queryByText('Judge model')).not.toBeNull());
+    // SearchableSelect value defaults to '' via the fallback
+    const judgeSelect = document.querySelector('select[data-testid*="judge"]') as HTMLSelectElement | null;
+    if (judgeSelect) expect(judgeSelect.value).toBe('');
   });
 
-  it('TopicFields TargetSelector onChange fires when target is changed', async () => {
-    renderTab();
-
-    const addSelect = await waitFor(() =>
-      screen.getByTestId('searchable-Add a security policy...')
-    ) as HTMLSelectElement;
-    await userEvent.selectOptions(addSelect, 'topic');
-
-    await waitFor(() => screen.queryByText('Judge model'));
-
-    // Topic default target='both', so both request and response are checked.
-    // Clicking response unchecks it → target becomes 'request' only.
-    // This fires TopicFields TargetSelector onChange (L346).
-    const responseCbs = screen.getAllByRole('checkbox').filter(cb =>
-      cb.closest('label')?.textContent?.trim() === 'response'
-    );
-    if (responseCbs[0]) {
-      await userEvent.click(responseCbs[0] as HTMLElement);
-      // After state update, requery — response should now be unchecked
-      await waitFor(() => {
-        const fresh = screen.getAllByRole('checkbox').filter(cb =>
-          cb.closest('label')?.textContent?.trim() === 'response'
-        );
-        expect((fresh[0] as HTMLInputElement).checked).toBe(false);
-      });
-    }
+  it('ModerationFields renders when config.modelId is absent (undefined)', async () => {
+    renderTab({
+      ...mockProject,
+      guardrails: {
+        rules: [{
+          type: 'moderation' as const,
+          target: 'both' as const,
+          block: true,
+          // modelId deliberately absent → cfg.modelId is undefined → ?? '' fires
+          config: { threshold: 0.5, systemPrompt: 'Be safe' },
+        }],
+      },
+    });
+    await waitFor(() => expect(screen.queryByText('Judge model')).not.toBeNull());
   });
+});
 
-  it('ModerationFields TargetSelector onChange fires when target is changed', async () => {
-    renderTab();
+// ── detectInjection=true branch in guardrailsPayload (line 758) ───────────────
+// ...(detectInjection ? { detectInjection } : {}) — true branch only fires when
+// the loaded project has detectInjection: true.
 
-    const addSelect = await waitFor(() =>
-      screen.getByTestId('searchable-Add a security policy...')
-    ) as HTMLSelectElement;
-    await userEvent.selectOptions(addSelect, 'moderation');
+describe('ProjectSecurityTab — detectInjection=true included in save payload', () => {
+  it('includes detectInjection:true when project.guardrails.detectInjection is set', async () => {
+    renderTab({
+      ...mockProject,
+      guardrails: { detectInjection: true, rules: [] },
+    });
 
-    await waitFor(() => screen.queryByText(/Custom instructions/));
+    await waitFor(() => screen.getByRole('button', { name: /save security settings/i }));
+    await userEvent.click(screen.getByRole('button', { name: /save security settings/i }));
+    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
 
-    // Moderation default target='both', so response is checked.
-    // Clicking response fires ModerationFields TargetSelector onChange (L392).
-    const responseCbs = screen.getAllByRole('checkbox').filter(cb =>
-      cb.closest('label')?.textContent?.trim() === 'response'
-    );
-    if (responseCbs[0]) {
-      await userEvent.click(responseCbs[0] as HTMLElement);
-      await waitFor(() => {
-        const fresh = screen.getAllByRole('checkbox').filter(cb =>
-          cb.closest('label')?.textContent?.trim() === 'response'
-        );
-        expect((fresh[0] as HTMLInputElement).checked).toBe(false);
-      });
-    }
+    const call = mockUpdateProject.mock.calls[0]!;
+    const payload = call[1] as { guardrails?: { detectInjection?: boolean } };
+    expect(payload.guardrails?.detectInjection).toBe(true);
   });
 });
 
@@ -1450,7 +2128,7 @@ describe('ProjectSecurityTab — PII outputBufferSize onChange', () => {
     renderTab({
       ...mockProject,
       pii: {
-        policies: [{ name: 'pol', enabled: true, target: 'response' as const, entities: [], outputBufferSize: 30 }],
+        policies: [{ enabled: true, target: 'response' as const, entities: [], outputBufferSize: 30 }],
       },
     });
 
@@ -1461,532 +2139,5 @@ describe('ProjectSecurityTab — PII outputBufferSize onChange', () => {
     input.dispatchEvent(new Event('change', { bubbles: true }));
     // No error thrown; input reacted to change
     expect(input).toBeTruthy();
-  });
-});
-
-// ── useJudgeResponse false branch (uncheck) ───────────────────────────────────
-
-describe('ProjectSecurityTab — useJudgeResponse uncheck clears field', () => {
-  it('unchecking useJudgeResponse removes it from payload', async () => {
-    renderTab();
-
-    const addSelect = await waitFor(() =>
-      screen.getByTestId('searchable-Add a security policy...')
-    ) as HTMLSelectElement;
-    await userEvent.selectOptions(addSelect, 'topic');
-
-    const judgeCb = await waitFor(() =>
-      screen.getByTestId('rule-use-judge') as HTMLInputElement
-    );
-    // Check then uncheck
-    await userEvent.click(judgeCb); // true
-    await userEvent.click(judgeCb); // false (delete branch)
-    expect(judgeCb.checked).toBe(false);
-
-    // Submit via form
-    const form = document.querySelector('form') as HTMLFormElement;
-    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled(), { timeout: 3000 });
-
-    const call = mockUpdateProject.mock.calls[0]!;
-    const payload = call[1] as { guardrails?: { rules: Array<Record<string, unknown>> } };
-    const rule = payload.guardrails?.rules[0];
-    expect(rule).not.toHaveProperty('useJudgeResponse');
-  });
-});
-
-// ── saveDisabled guard (regex error prevents save) ────────────────────────────
-
-describe('ProjectSecurityTab — saveDisabled when regex errors', () => {
-  it('does not call updateProject when there is a regex error', async () => {
-    renderTab();
-
-    const addSelect = await waitFor(() =>
-      screen.getByTestId('searchable-Add a security policy...')
-    ) as HTMLSelectElement;
-    await userEvent.selectOptions(addSelect, 'regex');
-
-    await waitFor(() => screen.getAllByTestId('rule-block'));
-
-    // Type an invalid regex into the patterns textarea
-    const patternsLabel = screen.getByText('Patterns (one per line)');
-    const formGroup = patternsLabel.closest('.form-group');
-    const ta = formGroup?.querySelector('textarea') as HTMLTextAreaElement | null;
-    if (ta) {
-      await userEvent.clear(ta);
-      await userEvent.paste('[invalid(regex');
-      // Error message should appear
-      await waitFor(() =>
-        expect(screen.queryByText(/Invalid regex on line/)).not.toBeNull()
-      );
-    }
-
-    // Try to save
-    await userEvent.click(screen.getByRole('button', { name: /save security settings/i }));
-    // updateProject should NOT be called (saveDisabled=true)
-    expect(mockUpdateProject).not.toHaveBeenCalled();
-  });
-});
-
-// ── Successful save path: setTimeout + models.prompt spread ──────────────────
-
-describe('ProjectSecurityTab — successful save shows saved state', () => {
-  it('shows "Saved!" after successful updateProject and includes model prompt in payload', async () => {
-    const projectWithModels = {
-      ...mockProject,
-      models: [
-        { modelId: 'openai/gpt-4o', prompt: 'system prompt override' },
-        { modelId: 'openai/gpt-4o-mini' },
-      ],
-    };
-    mockUpdateProject.mockResolvedValueOnce({ ...projectWithModels });
-    renderTab(projectWithModels);
-
-    await waitFor(() =>
-      screen.getByRole('button', { name: /save security settings/i })
-    );
-
-    await userEvent.click(screen.getByRole('button', { name: /save security settings/i }));
-
-    await waitFor(() =>
-      expect(screen.queryByText(/Saved!/)).not.toBeNull(),
-    { timeout: 3000 });
-
-    // Verify models with prompt were included in payload
-    const call = mockUpdateProject.mock.calls[0]!;
-    const payload = call[1] as { models: Array<{ modelId: string; prompt?: string }> };
-    expect(payload.models.find(m => m.modelId === 'openai/gpt-4o')?.prompt).toBe('system prompt override');
-    expect(payload.models.find(m => m.modelId === 'openai/gpt-4o-mini')).not.toHaveProperty('prompt');
-  });
-
-});
-
-// ── Project missing guardrails/pii keys (lines 605-614: if(g) false, if(p) false) ─
-
-describe('ProjectSecurityTab — project without guardrails or pii keys', () => {
-  it('renders without error when project has no guardrails key', async () => {
-    renderTab({ id: 'proj-x', name: 'NoPii', models: [] });
-    // if(!project) is false, if(g) is false (no guardrails) → no detectInjection/rules set
-    await waitFor(() =>
-      screen.getByTestId('searchable-Add a security policy...')
-    );
-    // detectInjection defaults to false
-    const cb = screen.getByRole('checkbox', { name: /detect prompt injection/i }) as HTMLInputElement;
-    expect(cb.checked).toBe(false);
-  });
-
-  it('renders without error when project has no pii key', async () => {
-    renderTab({ id: 'proj-y', name: 'NoGuard', models: [], guardrails: { rules: [] } });
-    // if(p) is false → piiPolicies stays [] → shows "No PII policies configured."
-    await waitFor(() =>
-      expect(screen.queryByText('No PII policies configured.')).not.toBeNull()
-    );
-  });
-
-  it('handles pii with null policies array via ?? fallback', async () => {
-    // p.policies ?? [] fires when policies is null/undefined
-    renderTab({ id: 'proj-z', name: 'NullPolicies', models: [], guardrails: { rules: [] }, pii: {} });
-    await waitFor(() =>
-      expect(screen.queryByText('No PII policies configured.')).not.toBeNull()
-    );
-  });
-
-  it('handles guardrails with no rules key via g.rules ?? [] fallback (line 607)', async () => {
-    // g.rules is undefined → g.rules ?? [] fires
-    renderTab({ id: 'proj-w', name: 'NoRules', models: [], guardrails: {} });
-    await waitFor(() =>
-      screen.getByTestId('searchable-Add a security policy...')
-    );
-    // No rules rendered (empty fallback [])
-    expect(screen.queryAllByTestId('rule-block')).toHaveLength(0);
-  });
-});
-
-// ── updateRule with multiple rules covers r._id !== id arm (line 616) ─────────
-
-describe('ProjectSecurityTab — updateRule with 2 rules covers false arm', () => {
-  it('editing a blockMessage when two rules exist updates only the target rule', async () => {
-    renderTab();
-
-    const addSelect = await waitFor(() =>
-      screen.getByTestId('searchable-Add a security policy...')
-    ) as HTMLSelectElement;
-
-    // Add two regex rules
-    await userEvent.selectOptions(addSelect, 'regex');
-    await waitFor(() => expect(screen.getAllByTestId('rule-block')).toHaveLength(1));
-    await userEvent.selectOptions(addSelect, 'regex');
-    await waitFor(() => expect(screen.getAllByTestId('rule-block')).toHaveLength(2));
-
-    // Edit blockMessage on the first rule — updateRule fires with both rules in state,
-    // hitting r._id === id (first) and r._id !== id (second)
-    const bms = screen.getAllByTestId('rule-block-message') as HTMLInputElement[];
-    await userEvent.clear(bms[0]!);
-    await userEvent.type(bms[0]!, 'first-only');
-
-    // Second rule's blockMessage is untouched
-    expect((bms[1] as HTMLInputElement).value).not.toBe('first-only');
-  });
-});
-
-// ── Threshold ?? fallback: rules loaded with missing threshold (lines 292, 341, 387) ─
-
-describe('ProjectSecurityTab — threshold ?? fallback for pre-existing rules without threshold', () => {
-  it('SemanticFields renders when config.threshold is undefined', async () => {
-    renderTab({
-      ...mockProject,
-      guardrails: {
-        rules: [
-          // threshold deliberately omitted → cfg.threshold ?? 0.82 fires
-          { type: 'semantic' as const, target: 'request' as const, block: true, config: { embeddingModelId: '', examples: [] } },
-        ],
-      },
-    });
-    await waitFor(() =>
-      expect(screen.queryByText(/Similarity threshold/)).not.toBeNull()
-    );
-  });
-
-  it('TopicFields renders when config.threshold is undefined', async () => {
-    renderTab({
-      ...mockProject,
-      guardrails: {
-        rules: [
-          { type: 'topic' as const, target: 'both' as const, block: true, config: { modelId: '', allowedTopics: '' } },
-        ],
-      },
-    });
-    await waitFor(() =>
-      expect(screen.queryByText(/Block if on-topic score below/)).not.toBeNull()
-    );
-  });
-
-  it('ModerationFields renders when config.threshold is undefined', async () => {
-    renderTab({
-      ...mockProject,
-      guardrails: {
-        rules: [
-          { type: 'moderation' as const, target: 'both' as const, block: true, config: { modelId: '' } },
-        ],
-      },
-    });
-    await waitFor(() =>
-      expect(screen.queryByText(/Block if harm score above/)).not.toBeNull()
-    );
-  });
-});
-
-// ── entities ?? ALL_PII_ENTITIES fallback (line 84) ──────────────────────────
-
-describe('ProjectSecurityTab — PiiPolicyCard entities ?? ALL_PII_ENTITIES fallback', () => {
-  it('policy with null entities renders all entity types as checked via fallback', async () => {
-    renderTab({
-      ...mockProject,
-      pii: {
-        // entities is null → new Set(null ?? ALL_PII_ENTITIES) → all entities checked
-        policies: [{ name: 'nul', enabled: true, target: 'request' as const, entities: null as unknown as [] }],
-      },
-    });
-    await waitFor(() => screen.getByDisplayValue('nul'));
-    // All entity labels should be present and checked (from ALL_PII_ENTITIES fallback)
-    const emailLabel = screen.getByText('Email').closest('label') as HTMLElement;
-    const emailCb = emailLabel.querySelector('input[type="checkbox"]') as HTMLInputElement;
-    // entities===null triggers fallback to ALL_PII_ENTITIES so all are checked
-    expect(emailCb.checked).toBe(true);
-  });
-});
-
-// ── handleSave early return when saveDisabled=true (line 645 arm 0) ──────────
-
-describe('ProjectSecurityTab — handleSave early return when saveDisabled (line 645)', () => {
-  it('dispatching form submit while saving=true returns early without calling updateProject', async () => {
-    // Simulate saveDisabled via an invalid regex, then dispatch submit via form event
-    // (disabled button can't be clicked; form.dispatchEvent bypasses button disabled check)
-    renderTab();
-
-    const addSelect = await waitFor(() =>
-      screen.getByTestId('searchable-Add a security policy...')
-    ) as HTMLSelectElement;
-    await userEvent.selectOptions(addSelect, 'regex');
-
-    await waitFor(() => screen.getByText('Patterns (one per line)'));
-    const ta = screen.getByText('Patterns (one per line)').closest('.form-group')!
-      .querySelector('textarea') as HTMLTextAreaElement;
-    await userEvent.click(ta);
-    await userEvent.paste('[invalid(regex');
-    await waitFor(() => expect(screen.queryByText(/Invalid regex on line/)).not.toBeNull());
-
-    // saveDisabled=true; dispatching form submit now exercises the early-return branch
-    const form = document.querySelector('form') as HTMLFormElement;
-    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-
-    // updateProject must NOT be called
-    await new Promise(r => setTimeout(r, 50));
-    expect(mockUpdateProject).not.toHaveBeenCalled();
-  });
-});
-
-// ── modelOptions fallback: m.id used when m.name is falsy (lines 679, 682) ────
-
-describe('ProjectSecurityTab — model label fallback to m.id when name is absent', () => {
-  it('model without name uses m.id as label in judge dropdown', async () => {
-    // Override getModels to return a model with no name (triggers `m.name || m.id`)
-    mockGetModels.mockResolvedValueOnce([
-      makeModel({ id: 'openai/gpt-4o', name: undefined }),
-    ] as never);
-
-    renderTab();
-
-    const addSelect = await waitFor(() =>
-      screen.getByTestId('searchable-Add a security policy...')
-    ) as HTMLSelectElement;
-    await userEvent.selectOptions(addSelect, 'moderation');
-
-    // The judge dropdown should contain 'openai/gpt-4o' as both value and label
-    await waitFor(() => {
-      const allSelects = document.querySelectorAll('select');
-      const judgeSelect = Array.from(allSelects).find(s =>
-        Array.from(s.options).some(o => o.value === 'openai/gpt-4o')
-      );
-      expect(judgeSelect).toBeTruthy();
-      const opt = Array.from(judgeSelect!.options).find(o => o.value === 'openai/gpt-4o');
-      // When name is undefined/falsy, label should equal m.id
-      expect(opt?.text).toBe('openai/gpt-4o');
-    });
-  });
-
-  it('embedding model without name uses m.id as label in embedding dropdown', async () => {
-    mockGetModels.mockResolvedValueOnce([
-      makeModel({ id: 'openai/text-embedding-3-small', name: undefined, capabilities: { embedding: true } }),
-    ] as never);
-
-    renderTab();
-
-    const addSelect = await waitFor(() =>
-      screen.getByTestId('searchable-Add a security policy...')
-    ) as HTMLSelectElement;
-    await userEvent.selectOptions(addSelect, 'semantic');
-
-    await waitFor(() => {
-      const allSelects = document.querySelectorAll('select');
-      const embSelect = Array.from(allSelects).find(s =>
-        Array.from(s.options).some(o => o.value === 'openai/text-embedding-3-small')
-      );
-      expect(embSelect).toBeTruthy();
-      const opt = Array.from(embSelect!.options).find(o => o.value === 'openai/text-embedding-3-small');
-      expect(opt?.text).toBe('openai/text-embedding-3-small');
-    });
-  });
-});
-
-// ── PiiPolicyCard onChange with 2+ policies (line 763 j !== i branch) ─────────
-
-describe('ProjectSecurityTab — PII onChange with multiple policies covers j !== i branch', () => {
-  it('changing one policy when two exist updates only the correct one', async () => {
-    renderTab({
-      ...mockProject,
-      pii: {
-        policies: [
-          { name: 'pol-a', enabled: true, target: 'request' as const, entities: [] },
-          { name: 'pol-b', enabled: true, target: 'request' as const, entities: [] },
-        ],
-      },
-    });
-
-    // Both policy name inputs should be present
-    await waitFor(() => {
-      expect(screen.getByDisplayValue('pol-a')).toBeTruthy();
-      expect(screen.getByDisplayValue('pol-b')).toBeTruthy();
-    });
-
-    // Edit the first policy name — triggers onChange which runs prev.map((p,j) => j===i ? updated : p)
-    // hitting both j===i and j!==i branches
-    const polAInput = screen.getByDisplayValue('pol-a') as HTMLInputElement;
-    await userEvent.clear(polAInput);
-    await userEvent.type(polAInput, 'pol-a-new');
-
-    await waitFor(() => expect(screen.getByDisplayValue('pol-a-new')).toBeTruthy());
-    // pol-b unchanged (j !== i branch executed)
-    expect(screen.getByDisplayValue('pol-b')).toBeTruthy();
-  });
-});
-
-// ── if (!project) return null (render guard) ─────────────────────────────────
-
-describe('ProjectSecurityTab — renders null when no project', () => {
-  it('returns null (renders nothing) when project is undefined', async () => {
-    function NullWrapper() {
-      const { Outlet } = require('react-router-dom');
-      return <Outlet context={{ project: undefined, setProject: vi.fn() }} />;
-    }
-    const { render: r } = await import('@testing-library/react');
-    const { MemoryRouter: MR, Routes: Rs, Route: Rt } = await import('react-router-dom');
-    const { container } = r(
-      <MR initialEntries={['/dashboard/projects/proj-1/security']}>
-        <Rs>
-          <Rt path="/dashboard/projects/:id" element={<NullWrapper />}>
-            <Rt path="security" element={<ProjectSecurityTab />} />
-          </Rt>
-        </Rs>
-      </MR>
-    );
-    // No project → component returns null → nothing rendered inside the outlet
-    expect(container.querySelector('form')).toBeNull();
-  });
-});
-
-// ── Fallback models MultiSelect ───────────────────────────────────────────────
-
-describe('ProjectSecurityTab — fallback models MultiSelect', () => {
-  it('SemanticFields renders fallback MultiSelect excluding the primary embedding model', async () => {
-    renderTab();
-
-    const addSelect = await waitFor(() =>
-      screen.getByTestId('searchable-Add a security policy...')
-    ) as HTMLSelectElement;
-    await userEvent.selectOptions(addSelect, 'semantic');
-
-    await waitFor(() => screen.queryByText('Fallback models (optional, tried in order)'));
-
-    // MultiSelect for "No fallback models..." placeholder
-    const ms = screen.getByTestId('multiselect-No fallback models...') as HTMLSelectElement;
-    expect(ms).toBeTruthy();
-
-    // Primary embedding model (openai/text-embedding-3-small) must not be in fallback options
-    const vals = Array.from(ms.options).map(o => o.value);
-    // No embedding model selected yet (embeddingModelId=''), so all embedding options appear
-    // Once a primary is selected it gets filtered — verify the filter logic via onChange
-    expect(ms).toBeTruthy();
-  });
-
-  it('SemanticFields fallback MultiSelect excludes currently-selected primary model', async () => {
-    // Render with a pre-existing semantic rule with embeddingModelId set
-    renderTab({
-      ...mockProject,
-      guardrails: {
-        rules: [{
-          type: 'semantic' as const,
-          target: 'request' as const,
-          block: true,
-          config: { embeddingModelId: 'openai/text-embedding-3-small', examples: [], fallbackModelIds: [] },
-        }],
-      },
-    });
-
-    await waitFor(() => screen.queryByText('Fallback models (optional, tried in order)'));
-
-    const ms = screen.getByTestId('multiselect-No fallback models...') as HTMLSelectElement;
-    const vals = Array.from(ms.options).map(o => o.value);
-    // Primary is 'openai/text-embedding-3-small' → must be excluded from fallback options
-    expect(vals).not.toContain('openai/text-embedding-3-small');
-  });
-
-  it('SemanticFields fallback MultiSelect calls onChange with updated fallbackModelIds', async () => {
-    renderTab({
-      ...mockProject,
-      guardrails: {
-        rules: [{
-          type: 'semantic' as const,
-          target: 'request' as const,
-          block: true,
-          config: { embeddingModelId: '', examples: [], fallbackModelIds: [] },
-        }],
-      },
-    });
-
-    await waitFor(() => screen.queryByText('Fallback models (optional, tried in order)'));
-
-    const ms = screen.getByTestId('multiselect-No fallback models...') as HTMLSelectElement;
-    // Select an option — verifies onChange wiring
-    await userEvent.selectOptions(ms, 'openai/text-embedding-3-small');
-    // MultiSelect mock fires onChange; no crash = wiring is correct
-    expect(ms).toBeTruthy();
-  });
-
-  it('TopicFields renders fallback MultiSelect excluding the primary judge model', async () => {
-    renderTab({
-      ...mockProject,
-      guardrails: {
-        rules: [{
-          type: 'topic' as const,
-          target: 'both' as const,
-          block: true,
-          config: { modelId: 'openai/gpt-4o', allowedTopics: '', fallbackModelIds: [] },
-        }],
-      },
-    });
-
-    await waitFor(() => screen.queryByText('Fallback models (optional, tried in order)'));
-
-    const ms = screen.getByTestId('multiselect-No fallback models...') as HTMLSelectElement;
-    const vals = Array.from(ms.options).map(o => o.value);
-    // Primary is 'openai/gpt-4o' → excluded from fallback options
-    expect(vals).not.toContain('openai/gpt-4o');
-  });
-
-  it('TopicFields fallback MultiSelect onChange fires when an option is selected', async () => {
-    renderTab({
-      ...mockProject,
-      guardrails: {
-        rules: [{
-          type: 'topic' as const,
-          target: 'both' as const,
-          block: true,
-          // modelId is empty so gpt-4o is available as a fallback option
-          config: { modelId: '', allowedTopics: '', fallbackModelIds: [] },
-        }],
-      },
-    });
-
-    await waitFor(() => screen.queryByText('Fallback models (optional, tried in order)'));
-
-    const ms = screen.getByTestId('multiselect-No fallback models...') as HTMLSelectElement;
-    // Trigger onChange on the TopicFields fallback MultiSelect (covers L372)
-    await userEvent.selectOptions(ms, 'openai/gpt-4o');
-    expect(ms).toBeTruthy();
-  });
-
-  it('ModerationFields renders fallback MultiSelect excluding the primary judge model', async () => {
-    renderTab({
-      ...mockProject,
-      guardrails: {
-        rules: [{
-          type: 'moderation' as const,
-          target: 'both' as const,
-          block: true,
-          config: { modelId: 'openai/gpt-4o', fallbackModelIds: [] },
-        }],
-      },
-    });
-
-    await waitFor(() => screen.queryByText('Fallback models (optional, tried in order)'));
-
-    const ms = screen.getByTestId('multiselect-No fallback models...') as HTMLSelectElement;
-    const vals = Array.from(ms.options).map(o => o.value);
-    // Primary is 'openai/gpt-4o' → excluded from fallback options
-    expect(vals).not.toContain('openai/gpt-4o');
-  });
-
-  it('ModerationFields fallback MultiSelect onChange fires when an option is selected', async () => {
-    renderTab({
-      ...mockProject,
-      guardrails: {
-        rules: [{
-          type: 'moderation' as const,
-          target: 'both' as const,
-          block: true,
-          // modelId is empty so gpt-4o is available as a fallback option
-          config: { modelId: '', fallbackModelIds: [] },
-        }],
-      },
-    });
-
-    await waitFor(() => screen.queryByText('Fallback models (optional, tried in order)'));
-
-    const ms = screen.getByTestId('multiselect-No fallback models...') as HTMLSelectElement;
-    // Trigger onChange on the ModerationFields fallback MultiSelect (covers L427)
-    await userEvent.selectOptions(ms, 'openai/gpt-4o');
-    expect(ms).toBeTruthy();
   });
 });

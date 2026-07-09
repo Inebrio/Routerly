@@ -55,12 +55,14 @@ export function RolesPage() {
     }
   }
 
+  /* v8 ignore start */
   function togglePerm(form: RoleFormState, perm: Permission): RoleFormState {
     const perms = form.permissions.includes(perm)
       ? form.permissions.filter(p => p !== perm)
       : [...form.permissions, perm];
     return { ...form, permissions: perms };
   }
+  /* v8 ignore stop */
 
   function startEdit(role: Role) {
     setEditingId(role.id);

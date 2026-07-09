@@ -303,13 +303,14 @@ export type GuardrailTarget = 'request' | 'response' | 'both';
 
 export interface RegexGuardConfig { patterns: string[]; }
 export interface SemanticGuardConfig { embeddingModelId: string; fallbackModelIds?: string[]; examples: string[]; threshold?: number; }
-export interface TopicGuardConfig { modelId: string; fallbackModelIds?: string[]; allowedTopics: string; threshold?: number; }
-export interface ModerationGuardConfig { modelId: string; fallbackModelIds?: string[]; threshold?: number; systemPrompt?: string; }
+export interface TopicGuardConfig { modelId?: string; fallbackModelIds?: string[]; allowedTopics: string; threshold?: number; }
+export interface ModerationGuardConfig { modelId?: string; fallbackModelIds?: string[]; threshold?: number; systemPrompt?: string; }
 
 export interface GuardrailRule {
   type: GuardrailRuleType;
   enabled?: boolean;
-  target: GuardrailTarget;
+  /** Judge/scan scope. Required for regex/semantic; omit on topic/moderation for inject-only. */
+  target?: GuardrailTarget;
   config: RegexGuardConfig | SemanticGuardConfig | TopicGuardConfig | ModerationGuardConfig;
   /** Stop the request/response when this rule triggers. */
   block?: boolean;
@@ -319,6 +320,11 @@ export interface GuardrailRule {
   blockMessage?: string;
   /** (topic/moderation only) Use the judge model's own explanation as the block response. */
   useJudgeResponse?: boolean;
+  /**
+   * (topic/moderation only) Inject the rule instruction into the request system prompt
+   * (steer, no block). Independent of the judge; injection always applies to the request.
+   */
+  inject?: boolean;
 }
 
 export interface GuardrailConfig {
@@ -330,7 +336,6 @@ export interface GuardrailConfig {
 export type PiiEntity = 'EMAIL' | 'PHONE' | 'CREDIT_CARD' | 'SSN' | 'IBAN';
 
 export interface PiiPolicy {
-  name: string;
   enabled?: boolean;
   entities?: PiiEntity[];
   customPatterns?: string[];
@@ -341,7 +346,7 @@ export interface PiiPolicy {
 }
 
 export interface PiiConfig {
-  /** Named policies merged per-direction at scrub time. */
+  /** Policies merged per-direction at scrub time. */
   policies: PiiPolicy[];
 }
 

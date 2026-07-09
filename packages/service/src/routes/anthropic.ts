@@ -8,7 +8,7 @@ import type { TraceEntry } from '../routing/traceStore.js';
 import { llmMessages, BudgetExceededError } from '../llm/executor.js';
 import type { LLMCallContext } from '../llm/executor.js';
 import { forwardAnthropicOAuth } from './oauthForward.js';
-import { checkGuardrails } from '../middleware/guardrails.js';
+import { checkGuardrails, buildRequestInjection } from '../middleware/guardrails.js';
 import { mergePolicies, scrubMessages, scrubText } from '../middleware/piiScrubber.js';
 import { trackUsage } from '../cost/tracker.js';
 
@@ -112,6 +112,17 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
         }
         // log-only: record trigger and continue
         if (result.log) guardrailTriggered = hit.triggered;
+      }
+
+      // Inject guardrail steering into the outgoing system (enforcement inject/both).
+      // Reached only when the request passed (block paths return above).
+      // ponytail: append after the client's system (guardrail text last); switch to
+      // prepend if the guardrail must take precedence over the user's system.
+      const injection = buildRequestInjection(project.guardrails);
+      if (injection) {
+        if (typeof body.system === 'string' && body.system.trim()) body.system = `${body.system}\n\n${injection}`;
+        else if (Array.isArray(body.system)) (body.system as Array<{ type: string; text: string }>).push({ type: 'text', text: injection });
+        else (body as { system?: string }).system = injection;
       }
     }
 

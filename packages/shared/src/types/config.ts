@@ -258,8 +258,8 @@ export interface SemanticGuardConfig {
 }
 
 export interface TopicGuardConfig {
-  /** Judge model ID from project's configured models (any LLM provider). */
-  modelId: string;
+  /** Judge model ID from project's configured models (any LLM provider). Optional only when enforcement is 'inject' (no judge call). */
+  modelId?: string;
   /** Ordered fallback judge model IDs, tried in order if the primary fails. */
   fallbackModelIds?: string[];
   /** Natural language description of allowed topics. */
@@ -269,8 +269,8 @@ export interface TopicGuardConfig {
 }
 
 export interface ModerationGuardConfig {
-  /** Judge model ID from project's configured models (any LLM provider). */
-  modelId: string;
+  /** Judge model ID from project's configured models (any LLM provider). Optional only when enforcement is 'inject' (no judge call). */
+  modelId?: string;
   /** Ordered fallback judge model IDs, tried in order if the primary fails. */
   fallbackModelIds?: string[];
   /** Harm score 0-1, default 0.5. ABOVE threshold = blocked. */
@@ -282,7 +282,12 @@ export interface ModerationGuardConfig {
 export interface GuardrailRule {
   type: GuardrailRuleType;
   enabled?: boolean;
-  target: GuardrailTarget;
+  /**
+   * Where the rule's judge/scan runs: 'request', 'response', or 'both'. Required for
+   * regex/semantic. For topic/moderation it may be omitted when the rule only injects
+   * (inject-only, no judge). request+response are two independent flags in the UI.
+   */
+  target?: GuardrailTarget;
   config: RegexGuardConfig | SemanticGuardConfig | TopicGuardConfig | ModerationGuardConfig;
   /** Stop the request/response when this rule triggers. */
   block?: boolean;
@@ -297,6 +302,14 @@ export interface GuardrailRule {
    * built-in default) when the judge fails or returns none.
    */
   useJudgeResponse?: boolean;
+  /**
+   * (topic/moderation only) Inject the rule's instruction (allowedTopics / systemPrompt)
+   * into the outgoing request system prompt so the serving model self-enforces. Soft:
+   * this steers the model, it does not guarantee a block. Mutates the request payload.
+   * Independent of the judge: a rule may inject and/or judge (request/response) in any
+   * combination. Injection always applies to the request regardless of `target`.
+   */
+  inject?: boolean;
 }
 
 /** Content guardrail configuration for a project (#77). Presence of this config activates guardrails — no separate enabled flag. Each rule carries its own block/log action. */
@@ -311,11 +324,10 @@ export interface GuardrailConfig {
 export type PiiEntity = 'EMAIL' | 'PHONE' | 'CREDIT_CARD' | 'SSN' | 'IBAN';
 
 /**
- * A named PII policy with its own entity set, patterns, direction, and streaming
+ * A PII policy with its own entity set, patterns, direction, and streaming
  * buffer (#76). All enabled policies are merged per-direction at scrub time.
  */
 export interface PiiPolicy {
-  name: string;
   /** Default true when absent. */
   enabled?: boolean;
   entities?: PiiEntity[];
@@ -333,11 +345,11 @@ export interface PiiPolicy {
 
 /**
  * PII detection and scrubbing configuration for a project (#76). Just a list of
- * named policies; the presence of at least one enabled policy activates
+ * policies; the presence of at least one enabled policy activates
  * scrubbing. Each policy controls its own entity set, patterns, and direction.
  */
 export interface PiiConfig {
-  /** Named policies merged per-direction at scrub time. */
+  /** Policies merged per-direction at scrub time. */
   policies: PiiPolicy[];
 }
 

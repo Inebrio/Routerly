@@ -11,11 +11,13 @@ Routerly supports two independent security systems: content guardrails and PII s
 
 ## Content Guardrails
 
-Guardrails evaluate messages against an ordered list of independent rules. Each rule has two independent actions that can trigger on a match:
-- **Block**: reject the request/response before it reaches (or leaves) the model
-- **Log**: record the trigger in usage for audit purposes
+Guardrails evaluate messages against an ordered list of independent rules. Each rule has independent scope flags that control how it evaluates:
+- **Request** / **Response**: run the judge on that side (hard block + log on trigger)
+- **Inject**: append the rule instruction to the outgoing request system prompt so the serving model self-enforces (soft steer, no block, mutates payload)
 
-A rule can have Block enabled, Log enabled, both, or neither. These actions are evaluated independently, so a rule can log without blocking, block without logging, or do both simultaneously.
+Topic and moderation rules can combine these flags in any way; regex and semantic rules only support request/response (no inject). A rule must have at least one flag enabled.
+
+For topic/moderation rules with a judge (request and/or response enabled), the block and log actions are automatic: all judged rules block and log on trigger. Rules with only inject enabled skip the judge entirely (soft steering only).
 
 ### Processing Order
 
@@ -33,20 +35,26 @@ Critical: on the request side, PII is scrubbed BEFORE guardrails evaluate the me
 
 **Semantic:** Use an embedding model to detect semantically similar content. Computes cosine similarity against provided examples and triggers if the score exceeds the threshold (default 0.82). Evaluates the last user message only. Supports optional fallback embedding models (tried in order if the primary fails).
 
-**Topic:** Use an LLM judge model to evaluate whether content matches allowed topics. The judge receives the ENTIRE conversation history (all messages the final model will see) and scores the latest user request 0-1, read in the full context of the conversation rather than in isolation. This means a request that only looks disallowed given earlier turns (a rephrasing, softening, follow-up, insistence, or continuation of an earlier disallowed request) is caught. Triggers if the score falls below the threshold (default 0.5, meaning off-topic). Supports optional fallback judge models.
+**Topic:** Use an LLM judge model to evaluate whether content matches allowed topics. The judge receives the ENTIRE conversation history (all messages the final model will see) and scores the latest user request on a 0.00 to 10.00 anchored rubric (0.00 = completely off-topic, 5.00 = borderline, 10.00 = fully on-topic), read in the full context of the conversation rather than in isolation. This means a request that only looks disallowed given earlier turns (a rephrasing, softening, follow-up, insistence, or continuation of an earlier disallowed request) is caught. The score is normalized to 0-1 and triggers if it falls below the threshold (default 0.5, meaning off-topic). Supports optional fallback judge models.
 
-**Moderation:** Use an LLM judge model to detect harmful content (hate, violence, sexual, self-harm). The judge receives the ENTIRE conversation history and scores the latest user request 0-1, read in the full context of the conversation. A request that pursues disallowed content by rephrasing, softening, insisting on, or continuing an earlier refused request is judged on that intent, not on the isolated wording of the last message. Triggers if the score exceeds the threshold (default 0.5). Supports optional fallback judge models.
+**Moderation:** Use an LLM judge model to detect harmful content (hate, violence, sexual, self-harm). The judge receives the ENTIRE conversation history and scores the latest user request on a 0.00 to 10.00 anchored rubric (0.00 = completely safe, 5.00 = borderline, 10.00 = severely harmful), read in the full context of the conversation. A request that pursues disallowed content by rephrasing, softening, insisting on, or continuing an earlier refused request is judged on that intent, not on the isolated wording of the last message. The score is normalized to 0-1 and triggers if it exceeds the threshold (default 0.5). Supports optional fallback judge models.
 
-### Judge Response Option
+### Judge Scoring and Block Messages
 
-Rules that use an LLM judge (topic and moderation) support an optional "use judge response" flag. When enabled:
+When a judge rule blocks, the judge model is asked to respond with a JSON object containing a reason FIRST, then a fine-grained score:
 
-1. The judge is asked to return both a score and a message: `{ score: number, message?: string }`
-2. On block, the judge's message is returned to the client as the block reply
-3. If the judge fails or returns no message, the static block message is used as fallback
-4. If no static block message is configured, a built-in default is used
+```json
+{
+  "reason": "<one short sentence explaining the rating>",
+  "score": 5.50
+}
+```
 
-This allows the judge model to provide contextual explanations for blocks (e.g. "This request appears to be about product pricing, which is outside our allowed topics").
+The reason is written in the same language as the user's latest message and is returned to the client as the block message. The score (0.00-10.00) is normalized to 0-1 before the threshold check (making backward-compatible thresholds).
+
+The reason-first rubric (with anchored scales for both topic and moderation) prevents bimodal score collapse that occurs when small models respond to holistic 0-1 scores at temperature 0. Judge models produce more nuanced and consistent results when asked to explain their reasoning before numbering it.
+
+If the judge fails or returns no reason, a built-in default block message is used.
 
 ### Judge JSON Repair
 
@@ -71,29 +79,32 @@ When a fallback is used, it is recorded in the trace as `skipped: <reason>` for 
 
 ### Prompt Injection Detection
 
-The `detectInjection` flag enables a built-in prompt-injection detector that runs on every request before rule evaluation. Detection uses heuristic patterns (e.g. "ignore previous instructions", DAN mode, jailbreak attempts). A hit is equivalent to a rule with `block: true, log: true` and does not support custom messages.
+The `detectInjection` flag enables a built-in prompt-injection detector that runs on every request before rule evaluation. Detection uses heuristic patterns (e.g. "ignore previous instructions", DAN mode, jailbreak attempts). A hit is equivalent to a rule block and is logged but does not support custom messages.
 
-### Block Message
+### Injection Flag: Soft Steering
 
-Each rule can have a custom `blockMessage` that is returned to the client when the rule blocks. If omitted, a built-in default is used. For rules with "use judge response" enabled, the judge's message takes priority, with `blockMessage` serving as fallback.
+The `inject` flag (topic/moderation only) appends the rule's instruction to the outgoing request system prompt so the serving model self-enforces the policy. Injection is soft steering: it does not guarantee a block, does not call the judge, and does not log (unless the judge also flags the rule, which happens when a rule has both `inject` and a `target`). The request payload is mutated with the injected text, which is an explicit opt-in guardrail feature allowed under wire-format transparency.
 
-### Target: Request, Response, or Both
+Injection always applies to the request regardless of the `target` setting (which only scopes the judge). A rule with only `inject` enabled (no `target`) skips the judge entirely and just steers.
 
-Rules can evaluate:
-- **request:** User messages before they are sent to the model
-- **response:** Model responses before they are returned to the client
-- **both:** Both user and model messages
+### Scope: Request, Response, or Both (or Inject Only)
+
+Judged rules can evaluate:
+- **request:** Judge the user messages before they are sent to the model
+- **response:** Judge the model responses before they are returned to the client
+- **both:** Judge both user and model messages
+- **inject only:** Skip the judge and append the rule instruction to the system prompt only (topic/moderation only)
 
 ### Streaming Interaction
 
-When **any** enabled rule has Block enabled AND Target is response or both, the entire response must be buffered before the block decision is made. This disables streaming for the request, and the client receives the full response as a single chunk.
+When **any** enabled judged rule has a `response` or `both` target, the entire response must be buffered before the block decision is made. This disables streaming for the request, and the client receives the full response as a single chunk.
 
 All other configurations allow streaming:
-- Response-target rules with Log only (no Block) allow streaming
-- Request-only rules always allow streaming
-- Response rules with Block disabled allow streaming
+- Request-only judged rules allow streaming
+- Inject-only rules allow streaming
+- Regex/semantic rules on request allow streaming
 
-The Playground and dashboard Security tab clearly indicate when streaming will be disabled due to response-blocking rules.
+The Playground and dashboard Security tab clearly indicate when streaming will be disabled due to response-side judge rules.
 
 ### Enabled Flag
 
@@ -109,7 +120,7 @@ When a request is blocked by a guardrail, a usage entry is created with `outcome
 
 ## PII Scrubbing
 
-PII detection and scrubbing uses a list of named policies. Each policy defines:
+PII detection and scrubbing uses a list of policies. Each policy defines:
 - Which entity types and custom patterns to detect
 - Which direction(s) to scrub (request, response, or both)
 - A streaming buffer size for response scrubbing

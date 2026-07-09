@@ -905,3 +905,75 @@ describe('notification channel add — email providers', () => {
   });
 });
 
+// ── channel edit — uncovered lines 456 (cooldownSeconds) and 515-516 (projects) ──
+
+// ── providerSummary default branch (email providers, line 42) ─────────────────
+
+describe('notification channel list — providerSummary email default branch', () => {
+  it('renders smtp fromAddress as "from=<address>" in list', async () => {
+    // smtp hits the default: branch in providerSummary; fromAddress absent → from=
+    mockApi.mockResolvedValue([{ id: 's1', provider: 'smtp', name: 'mail' }]);
+    const { out } = await runChannel('list');
+    expect(out.join(' ')).toContain('from=');
+  });
+});
+
+// ── ses channel without optional AWS creds (lines 327-328) ───────────────────
+
+describe('notification channel add ses — without optional AWS creds', () => {
+  it('adds ses without access-key-id and secret-access-key', async () => {
+    mockApi.mockResolvedValue({ id: 'ses-1', provider: 'ses', name: 'aws' });
+    const { out } = await runChannel(
+      'add', '--type', 'ses', '--name', 'aws',
+      '--from-address', 'no-reply@x.com', '--region', 'us-east-1',
+      // no --access-key-id, no --secret-access-key
+    );
+    expect(out.join(' ')).toContain('added');
+    // Verify neither field is in the body
+    const call = mockApi.mock.calls.find(c => c[0] === 'POST');
+    const body = call![2] as Record<string, unknown>;
+    expect(body).not.toHaveProperty('accessKeyId');
+    expect(body).not.toHaveProperty('secretAccessKey');
+  });
+});
+
+// ── channel show — unknown provider CHANNEL_SECRET_FIELDS fallback (line 431) ─
+
+describe('notification channel show — unknown provider', () => {
+  it('renders a channel with an unknown provider (no secrets fields known)', async () => {
+    mockApi.mockResolvedValue({
+      id: 'u1', provider: 'custom-unknown', name: 'test',
+      someField: 'value123',
+    });
+    const { out } = await runChannel('show', 'u1');
+    // Should render without crashing; someField shown as plain value
+    expect(out.join(' ')).toContain('value123');
+  });
+});
+
+describe('notification channel edit — cooldown and projects', () => {
+  it('patches cooldownSeconds when --cooldown-seconds is provided', async () => {
+    mockApi.mockResolvedValue({ id: 'ch1', provider: 'dashboard', name: 'x' });
+    await runChannel('edit', 'ch1', '--cooldown-seconds', '300');
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/notifications/channels/ch1', expect.objectContaining({
+      cooldownSeconds: 300,
+    }));
+  });
+
+  it('patches projects when --projects is provided with comma-separated IDs', async () => {
+    mockApi.mockResolvedValue({ id: 'ch1', provider: 'dashboard', name: 'x' });
+    await runChannel('edit', 'ch1', '--projects', 'proj-1,proj-2');
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/notifications/channels/ch1', expect.objectContaining({
+      projects: ['proj-1', 'proj-2'],
+    }));
+  });
+
+  it('patches projects as empty array when --projects is empty string', async () => {
+    mockApi.mockResolvedValue({ id: 'ch1', provider: 'dashboard', name: 'x' });
+    await runChannel('edit', 'ch1', '--projects', '');
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/notifications/channels/ch1', expect.objectContaining({
+      projects: [],
+    }));
+  });
+});
+

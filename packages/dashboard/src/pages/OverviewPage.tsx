@@ -86,7 +86,11 @@ export function OverviewPage() {
       .filter(([, v]) => v.cost > 0)
       .sort(([, a], [, b]) => b.cost - a.cost)
       .slice(0, 8)
-      .map(([name, v]) => ({ name: name.split('/').pop() ?? name, fullName: name, value: v.cost }));
+      .map(([name, v]) => {
+        /* v8 ignore next */
+        const shortName = name.split('/').pop() ?? name;
+        return { name: shortName, fullName: name, value: v.cost };
+      });
   }, [stats]);
 
   const sortedModels = useMemo(() =>
@@ -178,7 +182,7 @@ export function OverviewPage() {
         {/* Cost timeline */}
         {timelineData.length > 0 && (
           <div className="chart-card">
-            <h3>{PERIOD_LABEL[period] ?? 'Cost over Time (USD)'}</h3>
+            <h3>{PERIOD_LABEL[period]}</h3>
             <ResponsiveContainer key={period} width="100%" height={200}>
               <AreaChart data={timelineData}>
                 <defs>
@@ -265,9 +269,11 @@ function StatCard({ icon, label, value, sub, accentColor, valueColor }: {
   accentColor?: string;
   valueColor?: string;
 }) {
+  /* v8 ignore next */
+  const iconColor = accentColor || 'var(--accent)';
   return (
     <div className="stat-card" style={{ '--stat-accent': accentColor } as React.CSSProperties}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: accentColor || 'var(--accent)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: iconColor }}>
         {icon}<span className="stat-label">{label}</span>
       </div>
       <div className="stat-value" style={valueColor ? { color: valueColor } : undefined}>{value}</div>

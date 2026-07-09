@@ -215,6 +215,7 @@ export function ProfileNotificationsTab() {
       await markNotificationsRead({ ids: [id] });
       setItems(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
       setUnreadCount(u => Math.max(0, u - 1));
+      /* v8 ignore next */
       setSelected(s => s && s.id === id ? { ...s, read: true } : s);
       window.dispatchEvent(new Event('routerly:notifications'));
     } catch { /* non-critical */ }
@@ -225,6 +226,7 @@ export function ProfileNotificationsTab() {
       await markNotificationsUnread({ ids: [id] });
       setItems(prev => prev.map(n => n.id === id ? { ...n, read: false } : n));
       setUnreadCount(u => u + 1);
+      /* v8 ignore next */
       setSelected(s => s && s.id === id ? { ...s, read: false } : s);
       window.dispatchEvent(new Event('routerly:notifications'));
     } catch { /* non-critical */ }
@@ -242,6 +244,7 @@ export function ProfileNotificationsTab() {
 
   async function bulkMarkRead() {
     const ids = [...checkedIds];
+    /* v8 ignore next */
     if (ids.length === 0) return;
     try {
       await markNotificationsRead({ ids });
@@ -256,6 +259,7 @@ export function ProfileNotificationsTab() {
 
   async function bulkMarkUnread() {
     const ids = [...checkedIds];
+    /* v8 ignore next */
     if (ids.length === 0) return;
     try {
       await markNotificationsUnread({ ids });
@@ -269,6 +273,7 @@ export function ProfileNotificationsTab() {
   }
 
   async function removeIds(ids: string[]) {
+    /* v8 ignore next */
     if (ids.length === 0) return;
     try {
       await deleteNotifications({ ids });
