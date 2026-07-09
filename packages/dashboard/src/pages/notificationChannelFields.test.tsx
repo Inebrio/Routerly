@@ -610,8 +610,8 @@ describe('RoutingEditFields', () => {
 // ── RecipientsEditFields ──────────────────────────────────────────────────────
 
 describe('RecipientsEditFields', () => {
-  const roles = [{ id: 'r1', name: 'Admin' }, { id: 'r2', name: 'Editor' }];
-  const users = [{ id: 'u1', email: 'alice@example.com' }];
+  const roles = [{ id: 'r1', name: 'Admin' }, { id: 'r2', name: 'Editor' }] as unknown as import('../api').Role[];
+  const users = [{ id: 'u1', email: 'alice@example.com' }] as unknown as import('../api').User[];
 
   it('renders roles, permissions, and users sections', () => {
     render(<RecipientsEditFields
@@ -893,7 +893,7 @@ describe('RecipientsEditFields — targets undefined', () => {
       form={{ provider: 'smtp' }}
       onChange={vi.fn()}
       roles={[]}
-      users={[{ id: 'u1', email: 'a@b.com' }]}
+      users={[{ id: 'u1', email: 'a@b.com' }] as unknown as import('../api').User[]}
     />);
     expect(screen.getByText('Recipients / Targets')).toBeTruthy();
   });
@@ -902,8 +902,8 @@ describe('RecipientsEditFields — targets undefined', () => {
     render(<RecipientsEditFields
       form={{ provider: 'smtp', targets: { roles: ['r1'] } }}
       onChange={vi.fn()}
-      roles={[{ id: 'r1', name: 'Admin' }]}
-      users={[{ id: 'u1', email: 'a@b.com' }]}
+      roles={[{ id: 'r1', name: 'Admin' }] as unknown as import('../api').Role[]}
+      users={[{ id: 'u1', email: 'a@b.com' }] as unknown as import('../api').User[]}
     />);
     expect(screen.getByText('Individual users')).toBeTruthy();
   });
@@ -935,7 +935,7 @@ describe('RecipientsEditFields — deselect all users fires onChange with undefi
       form={{ provider: 'smtp', targets: { users: ['u1'] } }}
       onChange={onChange}
       roles={[]}
-      users={[{ id: 'u1', email: 'alice@example.com' }]}
+      users={[{ id: 'u1', email: 'alice@example.com' }] as unknown as import('../api').User[]}
     />);
     const userSelect = screen.getByTestId('multiselect-All users (everyone)') as HTMLSelectElement;
     await userEvent.deselectOptions(userSelect, ['u1']);

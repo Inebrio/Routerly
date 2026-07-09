@@ -466,7 +466,7 @@ describe('UsagePage — records table', () => {
       byModel: {},
       timeline: [],
       records,
-    };
+    } as never;
   }
 
   it('renders "No usage records" empty state when records array is empty', async () => {
@@ -540,9 +540,9 @@ describe('UsagePage — records table', () => {
 
   it('shows "X / total" count in Recent Calls when pagination present', async () => {
     vi.mocked(getUsage).mockResolvedValue({
-      ...makeStatsWithRecords([makeRecord()]),
-      pagination: { page: 1, totalPages: 3, totalRecords: 250 },
-    });
+      ...makeStatsWithRecords([makeRecord()]) as object,
+      pagination: { page: 1, pageSize: 20, totalPages: 3, totalRecords: 250 },
+    } as never);
     renderPage();
     await waitFor(() => expect(screen.getByText(/1 \/ 250/)).toBeTruthy());
   });
@@ -557,8 +557,8 @@ describe('UsagePage — pagination controls', () => {
       byModel: {},
       timeline: [],
       records: [{ id: 'r1', timestamp: new Date().toISOString(), projectId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 0, outcome: 'success' }],
-      pagination: { page, totalPages, totalRecords: totalPages * 100 },
-    };
+      pagination: { page, pageSize: 20, totalPages, totalRecords: totalPages * 100 },
+    } as never;
   }
 
   it('shows pagination controls when totalPages > 1', async () => {
@@ -1245,9 +1245,9 @@ describe('UsagePage — record cost null fallback', () => {
       records: [{
         id: 'r-null-cost', timestamp: new Date().toISOString(), projectId: 'p',
         modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1,
-        cost: null, latencyMs: 100, outcome: 'success',
+        cost: null as unknown as number, latencyMs: 100, outcome: 'success',
       }],
-    });
+    } as never);
     renderPage();
     await waitFor(() => screen.getAllByText('openai/gpt-4o').length > 0);
     // cost ?? 0 → 0.toFixed(8) → "$0.00000000"

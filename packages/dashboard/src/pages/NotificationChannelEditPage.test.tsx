@@ -229,7 +229,7 @@ describe('NotificationChannelEditPage — form rendering', () => {
     await userEvent.click(screen.getByTestId('set-secret'));
     await userEvent.click(screen.getByRole('button', { name: /Save Changes/ }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
-    const patch = mockUpdate.mock.calls[0][1] as Record<string, unknown>;
+    const patch = mockUpdate.mock.calls[0]![1] as Record<string, unknown>;
     expect(patch['password']).toBe('new-pass');
   });
 
@@ -258,7 +258,7 @@ describe('NotificationChannelEditPage — submit', () => {
     await userEvent.click(screen.getByTestId('clear-secret')); // sets password = ''
     await userEvent.click(screen.getByRole('button', { name: /Save Changes/ }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
-    const patch = mockUpdate.mock.calls[0][1] as Record<string, unknown>;
+    const patch = mockUpdate.mock.calls[0]![1] as Record<string, unknown>;
     expect(patch['password']).toBeUndefined(); // empty secret excluded
   });
 
@@ -267,7 +267,7 @@ describe('NotificationChannelEditPage — submit', () => {
     await waitFor(() => screen.getByRole('button', { name: /Save Changes/ }));
     await userEvent.click(screen.getByRole('button', { name: /Save Changes/ }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
-    const patch = mockUpdate.mock.calls[0][1] as Record<string, unknown>;
+    const patch = mockUpdate.mock.calls[0]![1] as Record<string, unknown>;
     expect(patch['id']).toBeUndefined();
     expect(patch['provider']).toBeUndefined();
   });
@@ -279,7 +279,7 @@ describe('NotificationChannelEditPage — submit', () => {
     await userEvent.click(screen.getByTestId('set-events-empty'));
     await userEvent.click(screen.getByRole('button', { name: /Save Changes/ }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
-    const patch = mockUpdate.mock.calls[0][1] as Record<string, unknown>;
+    const patch = mockUpdate.mock.calls[0]![1] as Record<string, unknown>;
     expect(patch['events']).toBeUndefined();
   });
 
@@ -290,7 +290,7 @@ describe('NotificationChannelEditPage — submit', () => {
     await userEvent.click(screen.getByTestId('set-events-full'));
     await userEvent.click(screen.getByRole('button', { name: /Save Changes/ }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
-    const patch = mockUpdate.mock.calls[0][1] as Record<string, unknown>;
+    const patch = mockUpdate.mock.calls[0]![1] as Record<string, unknown>;
     expect(patch['events']).toEqual(['budget.exceeded']);
   });
 
@@ -301,7 +301,7 @@ describe('NotificationChannelEditPage — submit', () => {
     await userEvent.click(screen.getByTestId('set-targets-empty'));
     await userEvent.click(screen.getByRole('button', { name: /Save Changes/ }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
-    const patch = mockUpdate.mock.calls[0][1] as Record<string, unknown>;
+    const patch = mockUpdate.mock.calls[0]![1] as Record<string, unknown>;
     expect(patch['targets']).toBeUndefined();
   });
 
@@ -312,7 +312,7 @@ describe('NotificationChannelEditPage — submit', () => {
     await userEvent.click(screen.getByTestId('set-targets-full'));
     await userEvent.click(screen.getByRole('button', { name: /Save Changes/ }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
-    const patch = mockUpdate.mock.calls[0][1] as Record<string, unknown>;
+    const patch = mockUpdate.mock.calls[0]![1] as Record<string, unknown>;
     expect((patch['targets'] as Record<string, unknown>)['roles']).toEqual(['admin']);
   });
 
@@ -323,7 +323,7 @@ describe('NotificationChannelEditPage — submit', () => {
     await userEvent.click(screen.getByTestId('set-targets-permissions'));
     await userEvent.click(screen.getByRole('button', { name: /Save Changes/ }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
-    const patch = mockUpdate.mock.calls[0][1] as Record<string, unknown>;
+    const patch = mockUpdate.mock.calls[0]![1] as Record<string, unknown>;
     expect((patch['targets'] as Record<string, unknown>)['permissions']).toEqual(['admin:read']);
   });
 
@@ -334,7 +334,7 @@ describe('NotificationChannelEditPage — submit', () => {
     await userEvent.click(screen.getByTestId('set-targets-users'));
     await userEvent.click(screen.getByRole('button', { name: /Save Changes/ }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
-    const patch = mockUpdate.mock.calls[0][1] as Record<string, unknown>;
+    const patch = mockUpdate.mock.calls[0]![1] as Record<string, unknown>;
     expect((patch['targets'] as Record<string, unknown>)['users']).toEqual(['user-1']);
   });
 

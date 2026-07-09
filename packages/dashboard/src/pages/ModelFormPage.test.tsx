@@ -2488,7 +2488,7 @@ describe('ModelFormPage — showToken toggle for non-oauth provider', () => {
 
     // Find the eye toggle button — it's a button with no text inside the relative div
     const eyeBtn = Array.from(document.querySelectorAll('button[type="button"]')).find(b =>
-      b.style.position === 'absolute' && b.style.background === 'none'
+      (b as HTMLButtonElement).style.position === 'absolute' && (b as HTMLButtonElement).style.background === 'none'
     ) as HTMLButtonElement | undefined;
 
     if (eyeBtn) {
@@ -3194,7 +3194,7 @@ describe('ModelFormPage — applyPreset pricingTier without cache', () => {
           { id: 'gpt-4o-mini', input: 0.15, output: 0.6, pricingTiers: [{ metric: 'context_tokens', above: 128000, input: 0.3, output: 1.2 }] },
         ],
       },
-    } as Parameters<typeof mockGetProviders.mockResolvedValue>[0]);
+    } as unknown as Parameters<typeof mockGetProviders.mockResolvedValue>[0]);
 
     renderPage('/dashboard/models/new?provider=openai&modelId=gpt-4o-mini');
 

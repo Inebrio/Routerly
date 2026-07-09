@@ -913,7 +913,7 @@ describe('SettingsNotificationsTab', () => {
     await waitFor(() => screen.getByRole('button', { name: /Save Settings/i }));
     await userEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
     await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
-    const call = mockUpdateSettings.mock.calls[0]![0] as { notifications?: { channels?: { targets?: Record<string, unknown[]> }[] } };
+    const call = mockUpdateSettings.mock.calls[0]![0] as unknown as { notifications?: { channels?: { targets?: Record<string, unknown[]> }[] } };
     const ch = call.notifications?.channels?.[0];
     expect(ch?.targets?.roles).toBeUndefined();
     expect(ch?.targets?.users).toBeUndefined();
@@ -3605,7 +3605,7 @@ describe('SettingsNotificationsTab — summariseChannel singular and sendTest br
     await waitFor(() => screen.getByRole('button', { name: /Save Settings/i }));
     await userEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
     await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
-    const call = mockUpdateSettings.mock.calls[0]![0] as { notifications: { channels: Array<{ events?: string[]; targets?: Record<string, unknown> }> } };
+    const call = mockUpdateSettings.mock.calls[0]![0] as unknown as { notifications: { channels: Array<{ events?: string[]; targets?: Record<string, unknown> }> } };
     // events is non-empty → kept
     expect(call.notifications.channels[0]?.events).toEqual(['system.startup']);
     // roles is non-empty → kept; users is empty → deleted

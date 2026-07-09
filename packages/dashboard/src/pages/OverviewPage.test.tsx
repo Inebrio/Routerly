@@ -374,7 +374,7 @@ describe('OverviewPage — dark theme', () => {
         // @ts-expect-error spread types
         else super(...args);
       }
-      static now() { return sunday.getTime(); }
+      static override now() { return sunday.getTime(); }
     } as unknown as typeof Date;
     globalThis.Date = MockDate;
 

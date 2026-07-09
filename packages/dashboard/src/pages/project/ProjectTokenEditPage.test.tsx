@@ -306,7 +306,7 @@ describe('ProjectTokenEditPage — model override toggle', () => {
       // X buttons have no text label; they contain an SVG icon.
       // Find by proximity to a limit row grid.
       const parent = b.parentElement;
-      return parent?.style?.display === 'flex' || b.title === '' && b.type === 'button' && !b.disabled && b.textContent === '';
+      return parent?.style?.display === 'flex' || b.title === '' && (b as HTMLButtonElement).type === 'button' && !(b as HTMLButtonElement).disabled && b.textContent === '';
     });
     // Find the specific X on the limit row (not the tag X)
     // The limit row renders an X button as last child of its grid div
@@ -588,7 +588,7 @@ describe('ProjectTokenEditPage — rolling limit in token models (lines 67, 79)'
     await waitFor(() => expect(mockUpdateProjectToken).toHaveBeenCalled());
     const [, , cleanedModels] = mockUpdateProjectToken.mock.calls[0] as [string, string, Array<{modelId: string; limits: unknown[]}>];
     // rowToLimit rolling was called → the saved limit should have rollingAmount
-    expect(cleanedModels[0].limits[0]).toMatchObject({ windowType: 'rolling', rollingAmount: 6 });
+    expect(cleanedModels[0]!.limits[0]).toMatchObject({ windowType: 'rolling', rollingAmount: 6 });
   });
 });
 
@@ -855,7 +855,7 @@ describe('ProjectTokenEditPage — limitRowsToLimits filters empty values', () =
     await waitFor(() => expect(mockUpdateProjectToken).toHaveBeenCalled());
     const [, , cleanedModels] = mockUpdateProjectToken.mock.calls[0] as [string, string, Array<{modelId: string; limits: unknown[]}>];
     // Empty value → filtered out → no limits passed
-    expect(cleanedModels[0].limits).toHaveLength(0);
+    expect(cleanedModels[0]!.limits).toHaveLength(0);
   });
 });
 
@@ -944,7 +944,7 @@ describe('ProjectTokenEditPage — rowToLimit rollingAmount NaN fallback (line 6
     await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
     await waitFor(() => expect(mockUpdateProjectToken).toHaveBeenCalled());
     const [, , cleanedModels] = mockUpdateProjectToken.mock.calls[0] as [string, string, Array<{modelId: string; limits: Array<{rollingAmount: number}>}>];
-    expect(cleanedModels[0].limits[0].rollingAmount).toBe(1);
+    expect(cleanedModels[0]!.limits[0]!.rollingAmount).toBe(1);
   });
 });
 
@@ -1133,7 +1133,7 @@ describe('ProjectTokenEditPage — addLimitRow model mismatch branch (line 208)'
     await waitFor(() => screen.getAllByRole('button', { name: 'Add limit' }));
     // Click "Add limit" on gpt-4o (first one)
     const addBtns = screen.getAllByRole('button', { name: 'Add limit' });
-    await userEvent.click(addBtns[0]);
+    await userEvent.click(addBtns[0]!);
     // gpt-3.5 row unchanged; page didn't crash
     expect(screen.getAllByRole('button', { name: 'Add limit' }).length).toBeGreaterThan(0);
   });
@@ -1196,7 +1196,7 @@ describe('ProjectTokenEditPage — removeLimitRow model mismatch (line 229)', ()
     await userEvent.click(gpt35Cb);
     await waitFor(() => screen.getAllByRole('button', { name: 'Add limit' }));
     const addBtns = screen.getAllByRole('button', { name: 'Add limit' });
-    await userEvent.click(addBtns[addBtns.length - 1]); // add limit to gpt-3.5
+    await userEvent.click(addBtns[addBtns.length - 1]!); // add limit to gpt-3.5
     // Now remove the limit from gpt-3.5
     await waitFor(() => screen.getAllByText('Metric').length >= 2);
     const limitGrids = document.querySelectorAll('[style*="grid-template-columns"]');
@@ -1264,7 +1264,7 @@ describe('ProjectTokenEditPage — updateLimitRow model mismatch path (line 217)
     await waitFor(() => screen.getAllByRole('button', { name: 'Add limit' }));
     // Add a limit to gpt-3.5 so it has a row
     const addBtns = screen.getAllByRole('button', { name: 'Add limit' });
-    await userEvent.click(addBtns[addBtns.length - 1]);
+    await userEvent.click(addBtns[addBtns.length - 1]!);
     await waitFor(() => screen.getAllByText('Metric').length >= 2);
     // Now change metric on gpt-4o's limit row (first metric select)
     // Use fireEvent.change + act to flush React's setState callback

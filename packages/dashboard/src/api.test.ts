@@ -134,7 +134,7 @@ describe('authHeaders', () => {
     const { getModels } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, []));
     await getModels();
-    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(call[1].headers['Authorization']).toBe('Bearer my-token');
   });
 
@@ -142,7 +142,7 @@ describe('authHeaders', () => {
     const { getModels } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, []));
     await getModels();
-    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(call[1].headers['Authorization']).toBeUndefined();
   });
 });
@@ -154,7 +154,7 @@ describe('Content-Type header', () => {
     const { login } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { token: 't', user: {} }));
     await login('a@b.com', 'pw').catch(() => {});
-    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(call[1].headers['Content-Type']).toBe('application/json');
   });
 
@@ -162,7 +162,7 @@ describe('Content-Type header', () => {
     const { getModels } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, []));
     await getModels();
-    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(call[1].headers['Content-Type']).toBeUndefined();
   });
 });
@@ -187,9 +187,9 @@ describe('proactive token refresh', () => {
     await getModels();
 
     // First fetch must be to refresh endpoint
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/auth/refresh');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/auth/refresh');
     // Second fetch is the actual request
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[1][0]).toContain('/models');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[1]![0]).toContain('/models');
   });
 
   it('does not refresh when token is not expiring soon', async () => {
@@ -202,7 +202,7 @@ describe('proactive token refresh', () => {
     await getModels();
 
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(1);
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/models');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/models');
   });
 
   it('skips proactive refresh for /auth/login', async () => {
@@ -216,7 +216,7 @@ describe('proactive token refresh', () => {
 
     // Only one fetch call (no refresh prefix)
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(1);
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/auth/login');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/auth/login');
   });
 
   it('skips proactive refresh for /auth/refresh', async () => {
@@ -458,7 +458,7 @@ describe('login', () => {
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { token: 't', user: { id: '1' } }));
     const result = await login('a@b.com', 'pw');
     expect(result).toEqual({ token: 't', user: { id: '1' } });
-    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(call[0]).toContain('/auth/login');
     expect(call[1].method).toBe('POST');
   });
@@ -475,7 +475,7 @@ describe('verify2fa', () => {
     const { verify2fa } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { token: 't', user: {} }));
     await verify2fa('uid', '123456');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/auth/2fa/verify');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/auth/2fa/verify');
   });
 });
 
@@ -502,7 +502,7 @@ describe('disable2fa', () => {
     const { disable2fa } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { ok: true }));
     await disable2fa('tok');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/auth/2fa/disable');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/auth/2fa/disable');
   });
 });
 
@@ -520,7 +520,7 @@ describe('reset2faForUser', () => {
     const { reset2faForUser } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { ok: true }));
     await reset2faForUser('uid1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/users/uid1/2fa/reset');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/users/uid1/2fa/reset');
   });
 });
 
@@ -540,7 +540,7 @@ describe('setupFirstAdmin', () => {
     const { setupFirstAdmin } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { token: 't', user: {} }));
     await setupFirstAdmin('a@b.com', 'pw');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/setup/first-admin');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/setup/first-admin');
   });
 });
 
@@ -559,7 +559,7 @@ describe('getModelCatalog', () => {
     const { getModelCatalog } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, []));
     await getModelCatalog();
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/models/catalog');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/models/catalog');
   });
 });
 
@@ -568,7 +568,7 @@ describe('getProviders', () => {
     const { getProviders } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, {}));
     await getProviders();
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/providers');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/providers');
   });
 });
 
@@ -577,7 +577,7 @@ describe('refreshCatalog', () => {
     const { refreshCatalog } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, []));
     await refreshCatalog();
-    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(call[0]).toContain('/catalog/refresh');
     expect(call[1].method).toBe('POST');
   });
@@ -588,7 +588,7 @@ describe('probeRepo', () => {
     const { probeRepo } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { ok: true }));
     await probeRepo('https://example.com/catalog.json');
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toContain('/catalog/probe?url=');
     expect(url).toContain(encodeURIComponent('https://example.com/catalog.json'));
   });
@@ -599,7 +599,7 @@ describe('getCatalogStatus', () => {
     const { getCatalogStatus } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, []));
     await getCatalogStatus();
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/catalog/status');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/catalog/status');
   });
 });
 
@@ -610,7 +610,7 @@ describe('createModel', () => {
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'm1' }));
     const result = await createModel(body);
     expect(result).toEqual({ id: 'm1' });
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('POST');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('POST');
   });
 
   it('throws on error', async () => {
@@ -627,16 +627,16 @@ describe('updateModel', () => {
     const body = { provider: 'openai', endpoint: 'x', inputPerMillion: 1, outputPerMillion: 2 };
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'm1' }));
     await updateModel('m1', body);
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toContain('/models/m1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('PUT');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('PUT');
   });
 
   it('encodes special chars in model id', async () => {
     const { updateModel } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'a/b' }));
     await updateModel('a/b', { provider: 'x', endpoint: 'x', inputPerMillion: 1, outputPerMillion: 2 });
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toContain(encodeURIComponent('a/b'));
   });
 });
@@ -646,7 +646,7 @@ describe('deleteModel', () => {
     const { deleteModel } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ status: 204, ok: true, text: vi.fn() } as unknown as Response);
     await deleteModel('m1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('DELETE');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('DELETE');
   });
 });
 
@@ -656,7 +656,7 @@ describe('testModel', () => {
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { ok: true, latencyMs: 100 }));
     const result = await testModel('m1');
     expect(result.ok).toBe(true);
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('POST');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('POST');
   });
 });
 
@@ -667,7 +667,7 @@ describe('getProjects', () => {
     const { getProjects } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, []));
     await getProjects();
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/projects');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/projects');
   });
 });
 
@@ -676,7 +676,7 @@ describe('createProject', () => {
     const { createProject } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'p1' }));
     await createProject({ name: 'P', models: [] });
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('POST');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('POST');
   });
 });
 
@@ -685,7 +685,7 @@ describe('updateProject', () => {
     const { updateProject } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'p1' }));
     await updateProject('p1', { name: 'P', models: [] });
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('PUT');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('PUT');
   });
 });
 
@@ -694,7 +694,7 @@ describe('deleteProject', () => {
     const { deleteProject } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ status: 204, ok: true, text: vi.fn() } as unknown as Response);
     await deleteProject('p1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('DELETE');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('DELETE');
   });
 });
 
@@ -703,14 +703,14 @@ describe('createProjectToken', () => {
     const { createProjectToken } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { token: 't', tokenInfo: {} }));
     await createProjectToken('p1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/projects/p1/tokens');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/projects/p1/tokens');
   });
 
   it('includes tags when provided', async () => {
     const { createProjectToken } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { token: 't', tokenInfo: {} }));
     await createProjectToken('p1', ['lbl'], { env: 'prod' });
-    const body = JSON.parse((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body as string);
+    const body = JSON.parse((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].body as string);
     expect(body.tags).toEqual({ env: 'prod' });
     expect(body.labels).toEqual(['lbl']);
   });
@@ -719,7 +719,7 @@ describe('createProjectToken', () => {
     const { createProjectToken } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { token: 't', tokenInfo: {} }));
     await createProjectToken('p1', ['lbl']);
-    const body = JSON.parse((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body as string);
+    const body = JSON.parse((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].body as string);
     expect(body.tags).toBeUndefined();
   });
 });
@@ -729,14 +729,14 @@ describe('updateProjectToken', () => {
     const { updateProjectToken } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, {}));
     await updateProjectToken('p1', 'tk1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/projects/p1/tokens/tk1');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/projects/p1/tokens/tk1');
   });
 
   it('includes tags in body when provided', async () => {
     const { updateProjectToken } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, {}));
     await updateProjectToken('p1', 'tk1', undefined, undefined, { env: 'prod' });
-    const body = JSON.parse((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body as string);
+    const body = JSON.parse((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].body as string);
     expect(body.tags).toEqual({ env: 'prod' });
   });
 
@@ -744,7 +744,7 @@ describe('updateProjectToken', () => {
     const { updateProjectToken } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, {}));
     await updateProjectToken('p1', 'tk1', undefined, undefined, undefined);
-    const body = JSON.parse((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body as string);
+    const body = JSON.parse((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].body as string);
     expect('tags' in body).toBe(false);
   });
 });
@@ -754,7 +754,7 @@ describe('deleteProjectToken', () => {
     const { deleteProjectToken } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ status: 204, ok: true, text: vi.fn() } as unknown as Response);
     await deleteProjectToken('p1', 'tk1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('DELETE');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('DELETE');
   });
 });
 
@@ -770,14 +770,14 @@ describe('project members', () => {
     const { updateProjectMember } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { userId: 'u1', role: 'admin' }));
     await updateProjectMember('p1', 'u1', 'admin');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('PUT');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('PUT');
   });
 
   it('removeProjectMember DELETE /projects/:id/members/:userId', async () => {
     const { removeProjectMember } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ status: 204, ok: true, text: vi.fn() } as unknown as Response);
     await removeProjectMember('p1', 'u1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('DELETE');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('DELETE');
   });
 });
 
@@ -788,7 +788,7 @@ describe('getUsers', () => {
     const { getUsers } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, []));
     await getUsers();
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/users');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/users');
   });
 });
 
@@ -797,7 +797,7 @@ describe('createUser', () => {
     const { createUser } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'u1' }));
     await createUser({ email: 'a@b.com', password: 'pw' });
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('POST');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('POST');
   });
 });
 
@@ -806,7 +806,7 @@ describe('updateUser', () => {
     const { updateUser } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'u1' }));
     await updateUser('u1', { email: 'new@b.com' });
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('PUT');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('PUT');
   });
 });
 
@@ -815,7 +815,7 @@ describe('deleteUser', () => {
     const { deleteUser } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ status: 204, ok: true, text: vi.fn() } as unknown as Response);
     await deleteUser('u1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('DELETE');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('DELETE');
   });
 });
 
@@ -826,7 +826,7 @@ describe('getRoles', () => {
     const { getRoles } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, []));
     await getRoles();
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/roles');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/roles');
   });
 });
 
@@ -835,7 +835,7 @@ describe('createRole', () => {
     const { createRole } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'r1' }));
     await createRole({ id: 'r1', name: 'R', permissions: [] });
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('POST');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('POST');
   });
 });
 
@@ -844,7 +844,7 @@ describe('updateRole', () => {
     const { updateRole } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'r1' }));
     await updateRole('r 1', { name: 'R2' });
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toContain(encodeURIComponent('r 1'));
   });
 });
@@ -854,7 +854,7 @@ describe('deleteRole', () => {
     const { deleteRole } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ status: 204, ok: true, text: vi.fn() } as unknown as Response);
     await deleteRole('r1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('DELETE');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('DELETE');
   });
 });
 
@@ -865,7 +865,7 @@ describe('getUsage', () => {
     const { getUsage } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { summary: {}, byModel: {}, timeline: [], records: [] }));
     await getUsage();
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toContain('period=monthly');
   });
 
@@ -878,7 +878,7 @@ describe('getUsage', () => {
       callType: 'completion',
       outcome: 'success',
     });
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toContain('period=daily');
     expect(url).toContain('projectId=p1');
     expect(url).toContain('from=2024-01-01');
@@ -895,7 +895,7 @@ describe('getUsage', () => {
     const { getUsage } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { summary: {}, byModel: {}, timeline: [], records: [] }));
     await getUsage('daily', undefined, undefined, undefined, undefined, undefined, { callType: 'all', outcome: 'all' });
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).not.toContain('callType');
     expect(url).not.toContain('outcome');
   });
@@ -904,7 +904,7 @@ describe('getUsage', () => {
     const { getUsage } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { summary: {}, byModel: {}, timeline: [], records: [] }));
     await getUsage('daily', undefined, undefined, undefined, undefined, undefined, { projectIds: [], modelIds: [] });
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).not.toContain('projectIds');
     expect(url).not.toContain('modelIds');
   });
@@ -915,7 +915,7 @@ describe('getUsageRecord', () => {
     const { getUsageRecord } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'r1' }));
     await getUsageRecord('r1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/usage/r1');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/usage/r1');
   });
 });
 
@@ -924,7 +924,7 @@ describe('getTrace', () => {
     const { getTrace } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { trace: [] }));
     await getTrace('t1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/traces/t1');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/traces/t1');
   });
 });
 
@@ -935,7 +935,7 @@ describe('getProviderHealth', () => {
     const { getProviderHealth } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { providers: [] }));
     await getProviderHealth();
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/health/providers');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/health/providers');
   });
 });
 
@@ -955,7 +955,7 @@ describe('updateSettings', () => {
     const { updateSettings } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { port: 4000, host: 'localhost' }));
     await updateSettings({ port: 4000 });
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('PUT');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('PUT');
   });
 });
 
@@ -966,7 +966,7 @@ describe('getSystemInfo', () => {
     const { getSystemInfo } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { version: '1.0.0' }));
     await getSystemInfo();
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/system/info');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/system/info');
   });
 });
 
@@ -975,7 +975,7 @@ describe('checkForUpdates', () => {
     const { checkForUpdates } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { available: false }));
     await checkForUpdates();
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/system/update-check');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/system/update-check');
   });
 });
 
@@ -984,7 +984,7 @@ describe('triggerUpdate', () => {
     const { triggerUpdate } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { message: 'ok' }));
     await triggerUpdate();
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('POST');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('POST');
   });
 });
 
@@ -993,7 +993,7 @@ describe('getAvailableReleases', () => {
     const { getAvailableReleases } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { channels: [], versions: [] }));
     await getAvailableReleases();
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/system/releases');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/system/releases');
   });
 });
 
@@ -1013,7 +1013,7 @@ describe('getNotificationChannels', () => {
     const { getNotificationChannels } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, []));
     await getNotificationChannels();
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/notifications/channels');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/notifications/channels');
   });
 });
 
@@ -1022,7 +1022,7 @@ describe('getNotificationChannel', () => {
     const { getNotificationChannel } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'ch1', provider: 'smtp' }));
     await getNotificationChannel('ch1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/notifications/channels/ch1');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/notifications/channels/ch1');
   });
 });
 
@@ -1031,7 +1031,7 @@ describe('createNotificationChannel', () => {
     const { createNotificationChannel } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'ch1', provider: 'smtp' }));
     await createNotificationChannel({ provider: 'smtp' });
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('POST');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('POST');
   });
 });
 
@@ -1040,7 +1040,7 @@ describe('updateNotificationChannel', () => {
     const { updateNotificationChannel } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'ch1', provider: 'smtp' }));
     await updateNotificationChannel('ch1', { name: 'new' });
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('PATCH');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('PATCH');
   });
 });
 
@@ -1049,7 +1049,7 @@ describe('deleteNotificationChannel', () => {
     const { deleteNotificationChannel } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ status: 204, ok: true, text: vi.fn() } as unknown as Response);
     await deleteNotificationChannel('ch1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('DELETE');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('DELETE');
   });
 });
 
@@ -1067,7 +1067,7 @@ describe('testOpenAIOAuth', () => {
     const { testOpenAIOAuth } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { ok: true }));
     await testOpenAIOAuth('/path/to/file');
-    const body = JSON.parse((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body as string);
+    const body = JSON.parse((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].body as string);
     expect(body.authFilePath).toBe('/path/to/file');
   });
 });
@@ -1088,7 +1088,7 @@ describe('updateMe', () => {
     const { updateMe } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'me', email: 'a@b.com', roleId: 'admin' }));
     await updateMe({ currentPassword: 'old', newPassword: 'new' });
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('PUT');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('PUT');
   });
 });
 
@@ -1099,7 +1099,7 @@ describe('getNotificationInbox', () => {
     const { getNotificationInbox } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { items: [], unreadCount: 0, enabled: true }));
     await getNotificationInbox();
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     // No query string when no opts
     expect(url).toMatch(/\/notifications\/inbox$/);
   });
@@ -1108,7 +1108,7 @@ describe('getNotificationInbox', () => {
     const { getNotificationInbox } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { items: [], unreadCount: 0, enabled: true }));
     await getNotificationInbox({ limit: 10 });
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toContain('limit=10');
   });
 
@@ -1116,7 +1116,7 @@ describe('getNotificationInbox', () => {
     const { getNotificationInbox } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { items: [], unreadCount: 0, enabled: true }));
     await getNotificationInbox({ unreadOnly: true });
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toContain('unreadOnly=true');
   });
 
@@ -1124,7 +1124,7 @@ describe('getNotificationInbox', () => {
     const { getNotificationInbox } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { items: [], unreadCount: 0, enabled: true }));
     await getNotificationInbox({ limit: 5, unreadOnly: true });
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toContain('limit=5');
     expect(url).toContain('unreadOnly=true');
   });
@@ -1135,7 +1135,7 @@ describe('getNotificationInboxPage', () => {
     const { getNotificationInboxPage } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { items: [], pagination: {}, unreadCount: 0, enabled: true }));
     await getNotificationInboxPage({ page: 2, pageSize: 25 });
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toContain('page=2');
     expect(url).toContain('pageSize=25');
   });
@@ -1144,7 +1144,7 @@ describe('getNotificationInboxPage', () => {
     const { getNotificationInboxPage } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { items: [], pagination: {}, unreadCount: 0, enabled: true }));
     await getNotificationInboxPage({ page: 1, pageSize: 10, severity: 'critical', event: 'budget.exceeded', unreadOnly: true, from: '2024-01-01', to: '2024-01-31' });
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toContain('severity=critical');
     expect(url).toContain('event=budget.exceeded');
     expect(url).toContain('unreadOnly=true');
@@ -1156,7 +1156,7 @@ describe('getNotificationInboxPage', () => {
     const { getNotificationInboxPage } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { items: [], pagination: {}, unreadCount: 0, enabled: true }));
     await getNotificationInboxPage({ page: 1, pageSize: 10 });
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).not.toContain('severity');
     expect(url).not.toContain('event');
     expect(url).not.toContain('unreadOnly');
@@ -1170,7 +1170,7 @@ describe('getNotificationInboxItem', () => {
     const { getNotificationInboxItem } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'n1' }));
     await getNotificationInboxItem('n1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/notifications/inbox/n1');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/notifications/inbox/n1');
   });
 });
 
@@ -1179,7 +1179,7 @@ describe('markNotificationsRead', () => {
     const { markNotificationsRead } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { updated: 1 }));
     await markNotificationsRead({ ids: ['n1'] });
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/notifications/inbox/read');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/notifications/inbox/read');
   });
 });
 
@@ -1188,7 +1188,7 @@ describe('markNotificationsUnread', () => {
     const { markNotificationsUnread } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { updated: 1 }));
     await markNotificationsUnread({ all: true });
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/notifications/inbox/unread');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/notifications/inbox/unread');
   });
 });
 
@@ -1197,7 +1197,7 @@ describe('deleteNotifications', () => {
     const { deleteNotifications } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { deleted: 2 }));
     await deleteNotifications({ all: true });
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/notifications/inbox/delete');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/notifications/inbox/delete');
   });
 });
 
@@ -1208,7 +1208,7 @@ describe('getPlaygroundPresets', () => {
     const { getPlaygroundPresets } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, []));
     await getPlaygroundPresets('p1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/projects/p1/playground-presets');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/projects/p1/playground-presets');
   });
 });
 
@@ -1217,7 +1217,7 @@ describe('createPlaygroundPreset', () => {
     const { createPlaygroundPreset } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'pp1', name: 'P', systemPrompt: 'S' }));
     await createPlaygroundPreset('p1', { name: 'P', systemPrompt: 'S' });
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('POST');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('POST');
   });
 });
 
@@ -1226,7 +1226,7 @@ describe('deletePlaygroundPreset', () => {
     const { deletePlaygroundPreset } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ status: 204, ok: true, text: vi.fn() } as unknown as Response);
     await deletePlaygroundPreset('p1', 'pp1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('DELETE');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('DELETE');
   });
 });
 
@@ -1239,7 +1239,7 @@ describe('getEndUsers', () => {
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { users }));
     const result = await getEndUsers('p1');
     expect(result).toEqual(users);
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toContain('projectId=p1');
   });
 });
@@ -1251,7 +1251,7 @@ describe('getIntegrations', () => {
     const { getIntegrations } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, []));
     await getIntegrations();
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/integrations');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/integrations');
   });
 });
 
@@ -1260,7 +1260,7 @@ describe('createIntegration', () => {
     const { createIntegration } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'i1', type: 'grafana' }));
     await createIntegration({ type: 'grafana' });
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('POST');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('POST');
   });
 });
 
@@ -1269,7 +1269,7 @@ describe('updateIntegration', () => {
     const { updateIntegration } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'i1', type: 'grafana' }));
     await updateIntegration('i1', { enabled: false });
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('PATCH');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('PATCH');
   });
 });
 
@@ -1278,7 +1278,7 @@ describe('deleteIntegration', () => {
     const { deleteIntegration } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ status: 204, ok: true, text: vi.fn() } as unknown as Response);
     await deleteIntegration('i1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('DELETE');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('DELETE');
   });
 });
 
@@ -1287,7 +1287,7 @@ describe('testIntegration', () => {
     const { testIntegration } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { ok: true, message: 'ok' }));
     await testIntegration('i1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].method).toBe('POST');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('POST');
   });
 });
 
@@ -1298,7 +1298,7 @@ describe('getAuditLog', () => {
     const { getAuditLog } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { entries: [], pagination: {} }));
     await getAuditLog();
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     // No query string when all params absent
     expect(url).toMatch(/\/audit$/);
   });
@@ -1307,7 +1307,7 @@ describe('getAuditLog', () => {
     const { getAuditLog } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { entries: [], pagination: {} }));
     await getAuditLog({ userId: 'u1', action: 'create', result: 'success', from: '2024-01-01', to: '2024-01-31', page: 2, pageSize: 50 });
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toContain('userId=u1');
     expect(url).toContain('action=create');
     expect(url).toContain('result=success');
@@ -1321,7 +1321,7 @@ describe('getAuditLog', () => {
     const { getAuditLog } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { entries: [], pagination: {} }));
     await getAuditLog({ result: 'all' });
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).not.toContain('result');
   });
 
@@ -1329,7 +1329,7 @@ describe('getAuditLog', () => {
     const { getAuditLog } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { entries: [], pagination: {} }));
     await getAuditLog({});
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toMatch(/\/audit$/);
   });
 });
