@@ -750,21 +750,18 @@ function rulesSummary(rule: GuardrailRule): string {
     case 'topic': {
       const c = rule.config as TopicGuardConfig;
       const topicFb = c.fallbackModelIds?.length ? ` (+${c.fallbackModelIds.length} fallback)` : '';
-      detail = `model: ${c.modelId}, threshold: ${c.threshold ?? 0.5}${topicFb}`; break;
+      detail = c.modelId ? `model: ${c.modelId}, threshold: ${c.threshold ?? 0.5}${topicFb}` : `topics: ${c.allowedTopics.slice(0, 40)}`; break;
     }
     case 'moderation': {
       const c = rule.config as ModerationGuardConfig;
       const modFb = c.fallbackModelIds?.length ? ` (+${c.fallbackModelIds.length} fallback)` : '';
-      detail = `model: ${c.modelId}, threshold: ${c.threshold ?? 0.5}${modFb}`; break;
+      detail = c.modelId ? `model: ${c.modelId}, threshold: ${c.threshold ?? 0.5}${modFb}` : 'inject-only'; break;
     }
   }
-  // build action badge: [block], [log], [block+log], or nothing
-  const parts: string[] = [];
-  if (rule.block) parts.push('block');
-  if (rule.log) parts.push('log');
-  const badge = parts.length ? ` [${parts.join('+')}]` : '';
-  const judge = rule.useJudgeResponse ? ' [judge-response]' : '';
-  return `${detail}${badge}${judge}`;
+  // block/log/judge-response are fixed invariants for judged rules — no signal.
+  // Only the inject flag varies independently of the Target column.
+  const inj = rule.inject ? ' [inject]' : '';
+  return `${detail}${inj}`;
 }
 
 async function runAddRuleWizard(): Promise<GuardrailRule> {
@@ -784,38 +781,41 @@ async function runAddRuleWizard(): Promise<GuardrailRule> {
   }]) as { type: GuardrailRuleType };
   const type = typeAns.type;
 
-  const targetAns = await inquirer.prompt([{
-    type: 'list',
-    name: 'target',
-    message: 'Apply to:',
-    choices: ['request', 'response', 'both'],
-  }]) as { target: 'request' | 'response' | 'both' };
-  const target = targetAns.target;
-
-  const actionAns = await inquirer.prompt([
-    { type: 'confirm', name: 'block', message: 'Block request/response when triggered?', default: true },
-    { type: 'confirm', name: 'log', message: 'Log trigger in usage (monitor)?', default: false },
-  ]) as { block: boolean; log: boolean };
-
-  let blockMessage: string | undefined;
-  if (actionAns.block) {
-    const bmAns = await inquirer.prompt([{
-      type: 'input',
-      name: 'blockMessage',
-      message: 'Block message returned to client (leave empty for built-in default):',
-    }]) as { blockMessage: string };
-    blockMessage = bmAns.blockMessage.trim() || undefined;
+  // Scope. regex/semantic scan one side (request/response/both). topic/moderation use
+  // three independent flags: request/response judge that side, inject steers the
+  // outgoing system prompt. At least one required; inject-only omits the judge.
+  let target: 'request' | 'response' | 'both' | undefined;
+  let inject = false;
+  if (type === 'topic' || type === 'moderation') {
+    const scopeAns = await inquirer.prompt([{
+      type: 'checkbox',
+      name: 'scope',
+      message: 'Apply to:',
+      choices: [
+        { name: 'request  - judge the request', value: 'request' },
+        { name: 'inject   - inject the rule into the request system prompt (steer, no block)', value: 'inject' },
+        { name: 'response - judge the response', value: 'response' },
+      ],
+      validate: (v: readonly string[]) => v.length > 0 || 'Select at least one',
+    }]) as { scope: string[] };
+    const req = scopeAns.scope.includes('request');
+    const res = scopeAns.scope.includes('response');
+    inject = scopeAns.scope.includes('inject');
+    target = req && res ? 'both' : req ? 'request' : res ? 'response' : undefined;
+  } else {
+    const targetAns = await inquirer.prompt([{
+      type: 'list',
+      name: 'target',
+      message: 'Apply to:',
+      choices: ['request', 'response', 'both'],
+    }]) as { target: 'request' | 'response' | 'both' };
+    target = targetAns.target;
   }
-
-  let useJudgeResponse: boolean | undefined;
-  if ((type === 'topic' || type === 'moderation') && actionAns.block) {
-    const judgeAns = await inquirer.prompt([{
-      type: 'confirm',
-      name: 'useJudgeResponse',
-      message: "Use judge model's explanation as the block message?",
-      default: false,
-    }]) as { useJudgeResponse: boolean };
-    useJudgeResponse = judgeAns.useJudgeResponse || undefined;
+  const judgeActive = !!target; // a side is judged/scanned
+  const injectOnly = !judgeActive; // topic/moderation with inject only, no judge
+  // Judged rules always block + log (fixed invariants). inject-only rules only steer.
+  if (inject) {
+    console.log(chalk.yellow('  Note: injection appends the rule instruction to the outgoing request payload. No extra model call is made and nothing is blocked; the serving model self-enforces.'));
   }
 
   let config: GuardrailRule['config'];
@@ -852,52 +852,52 @@ async function runAddRuleWizard(): Promise<GuardrailRule> {
     config = sc;
 
   } else if (type === 'topic') {
-    const ans = await inquirer.prompt([
-      { type: 'input', name: 'modelId', message: 'Judge model ID:', validate: (v: string) => v.trim().length > 0 || 'Required' },
+    const topicAns = await inquirer.prompt([
       { type: 'input', name: 'allowedTopics', message: 'Allowed topics (describe in natural language):', validate: (v: string) => v.trim().length > 0 || 'Required' },
-      { type: 'input', name: 'threshold', message: 'On-topic score threshold (0-1, default 0.5):', default: '0.5' },
-    ]) as { modelId: string; allowedTopics: string; threshold: string };
-    const tc: TopicGuardConfig = {
-      modelId: ans.modelId.trim(),
-      allowedTopics: ans.allowedTopics.trim(),
-      threshold: parseFloat(ans.threshold),
-    };
-    const fbTopic = await inquirer.prompt([{
-      type: 'input',
-      name: 'fallbackModelIds',
-      message: 'Fallback judge model IDs (comma-separated, leave empty for none):',
-      default: '',
-    }]) as { fallbackModelIds: string };
-    const topicFallbacks = fbTopic.fallbackModelIds.split(',').map((s: string) => s.trim()).filter((s: string) => s && s !== tc.modelId);
-    if (topicFallbacks.length) tc.fallbackModelIds = topicFallbacks;
+    ]) as { allowedTopics: string };
+    const tc: TopicGuardConfig = { allowedTopics: topicAns.allowedTopics.trim() };
+    if (!injectOnly) {
+      const jAns = await inquirer.prompt([
+        { type: 'input', name: 'modelId', message: 'Judge model ID:', validate: (v: string) => v.trim().length > 0 || 'Required' },
+        { type: 'input', name: 'threshold', message: 'On-topic score threshold (0-1, default 0.5):', default: '0.5' },
+        { type: 'input', name: 'fallbackModelIds', message: 'Fallback judge model IDs (comma-separated, leave empty for none):', default: '' },
+      ]) as { modelId: string; threshold: string; fallbackModelIds: string };
+      tc.modelId = jAns.modelId.trim();
+      tc.threshold = parseFloat(jAns.threshold);
+      const topicFallbacks = jAns.fallbackModelIds.split(',').map((s: string) => s.trim()).filter((s: string) => s && s !== tc.modelId);
+      if (topicFallbacks.length) tc.fallbackModelIds = topicFallbacks;
+    }
     config = tc;
 
   } else {
-    // moderation
-    const ans = await inquirer.prompt([
-      { type: 'input', name: 'modelId', message: 'Judge model ID:', validate: (v: string) => v.trim().length > 0 || 'Required' },
-      { type: 'input', name: 'threshold', message: 'Harm score threshold (0-1, default 0.5):', default: '0.5' },
-    ]) as { modelId: string; threshold: string };
-    const mc: ModerationGuardConfig = {
-      modelId: ans.modelId.trim(),
-      threshold: parseFloat(ans.threshold),
-    };
-    const fbMod = await inquirer.prompt([{
+    // moderation — instructions/policy required (inject-only injects it; judged uses it as
+    // the classifier prompt). Mirrors the dashboard's mandatory Custom instructions field.
+    const spAns = await inquirer.prompt([{
       type: 'input',
-      name: 'fallbackModelIds',
-      message: 'Fallback judge model IDs (comma-separated, leave empty for none):',
-      default: '',
-    }]) as { fallbackModelIds: string };
-    const modFallbacks = fbMod.fallbackModelIds.split(',').map((s: string) => s.trim()).filter((s: string) => s && s !== mc.modelId);
-    if (modFallbacks.length) mc.fallbackModelIds = modFallbacks;
+      name: 'systemPrompt',
+      message: 'Custom moderation instructions:',
+      validate: (v: string) => v.trim().length > 0 || 'Required',
+    }]) as { systemPrompt: string };
+    const mc: ModerationGuardConfig = { systemPrompt: spAns.systemPrompt.trim() };
+    if (!injectOnly) {
+      const jAns = await inquirer.prompt([
+        { type: 'input', name: 'modelId', message: 'Judge model ID:', validate: (v: string) => v.trim().length > 0 || 'Required' },
+        { type: 'input', name: 'threshold', message: 'Harm score threshold (0-1, default 0.5):', default: '0.5' },
+        { type: 'input', name: 'fallbackModelIds', message: 'Fallback judge model IDs (comma-separated, leave empty for none):', default: '' },
+      ]) as { modelId: string; threshold: string; fallbackModelIds: string };
+      mc.modelId = jAns.modelId.trim();
+      mc.threshold = parseFloat(jAns.threshold);
+      const modFallbacks = jAns.fallbackModelIds.split(',').map((s: string) => s.trim()).filter((s: string) => s && s !== mc.modelId);
+      if (modFallbacks.length) mc.fallbackModelIds = modFallbacks;
+    }
     config = mc;
   }
 
-  const rule: GuardrailRule = { type, target, config };
-  if (actionAns.block) rule.block = true;
-  if (actionAns.log) rule.log = true;
-  if (blockMessage) rule.blockMessage = blockMessage;
-  if (useJudgeResponse) rule.useJudgeResponse = true;
+  const rule: GuardrailRule = { type, config };
+  if (target) rule.target = target;
+  if (judgeActive) { rule.block = true; rule.log = true; }
+  if (judgeActive && (type === 'topic' || type === 'moderation')) rule.useJudgeResponse = true;
+  if (inject) rule.inject = true;
   return rule;
 }
 
@@ -1129,29 +1129,23 @@ Examples:
   // ── project guardrails <project> ─────────────────────────────────────────────
   cmd.command('guardrails <project>')
     .description('Show or update guardrails config for a project')
-    .option('--detect-injection', 'Enable built-in prompt injection detection')
-    .option('--no-detect-injection', 'Disable built-in prompt injection detection')
     .option('--add-rule', 'Add a new rule (interactive wizard)')
     .option('--remove-rule <index>', 'Remove rule by 0-based index')
     .option('--json', 'Output raw JSON (show only)')
     .addHelpText('after', `
 Examples:
   routerly project guardrails my-api
-  routerly project guardrails my-api --detect-injection
-  routerly project guardrails my-api --no-detect-injection
   routerly project guardrails my-api --add-rule
   routerly project guardrails my-api --remove-rule 2
 `)
     .action(async (nameOrId: string, opts: {
-      detectInjection?: boolean;
       addRule?: boolean; removeRule?: string; json?: boolean;
     }) => {
       try {
         const project = await resolveProject(nameOrId);
         const current: GuardrailConfig = project.guardrails ?? { rules: [] };
 
-        const isUpdate = opts.detectInjection !== undefined ||
-          opts.addRule || opts.removeRule !== undefined;
+        const isUpdate = opts.addRule || opts.removeRule !== undefined;
 
         if (!isUpdate) {
           // ── show ──────────────────────────────────────────────────────────────
@@ -1159,9 +1153,7 @@ Examples:
             console.log(JSON.stringify(current, null, 2));
             return;
           }
-          console.log(chalk.bold(`\nGuardrails — ${project.name}`));
-          const injLabel = current.detectInjection ? chalk.green('yes') : chalk.dim('no');
-          console.log(`Injection detection: ${injLabel}\n`);
+          console.log(chalk.bold(`\nGuardrails — ${project.name}\n`));
 
           if (!current.rules.length) {
             console.log(chalk.dim('  No rules configured.'));
@@ -1175,7 +1167,7 @@ Examples:
               const cells = [
                 String(idx).padEnd(col[0]),
                 rule.type.padEnd(col[1]),
-                rule.target.padEnd(col[2]),
+                (rule.target ?? 'inject').padEnd(col[2]),
                 summary,
               ];
               console.log('  ' + cells.join('  '));
@@ -1187,8 +1179,6 @@ Examples:
 
         // ── mutate ───────────────────────────────────────────────────────────────
         const updated: GuardrailConfig = { ...current, rules: [...current.rules] };
-
-        if (opts.detectInjection !== undefined) updated.detectInjection = opts.detectInjection;
 
         if (opts.removeRule !== undefined) {
           const idx = parseInt(opts.removeRule, 10);
@@ -1240,14 +1230,14 @@ Examples:
           return;
         }
         const table = new Table({
-          head: ['#', 'Name', 'Enabled', 'Target', 'Entities', 'Patterns', 'Buffer'].map(h => chalk.cyan(h)),
+          head: ['#', 'Enabled', 'Target', 'Entities', 'Patterns', 'Buffer'].map(h => chalk.cyan(h)),
         });
         policies.forEach((p, i) => {
           const enabled = p.enabled !== false ? chalk.green('yes') : chalk.dim('no');
           const entities = p.entities?.join(', ') || chalk.dim('(none)');
           const patterns = p.customPatterns?.length ? String(p.customPatterns.length) : chalk.dim('0');
           const buffer = p.outputBufferSize !== undefined ? String(p.outputBufferSize) : chalk.dim('30');
-          table.push([i, p.name, enabled, p.target, entities, patterns, buffer]);
+          table.push([i, enabled, p.target, entities, patterns, buffer]);
         });
         console.log(table.toString());
         console.log('');
@@ -1271,11 +1261,10 @@ Examples:
         const policies = [...(pii.policies ?? [])];
 
         const ans = await inquirer.prompt([
-          { type: 'input', name: 'name', message: 'Policy name:', validate: (v: string) => v.trim().length > 0 || 'Required' },
           { type: 'list', name: 'target', message: 'Apply to:', choices: ['request', 'response', 'both'] },
           { type: 'input', name: 'entities', message: 'Entity types to detect (comma-separated, e.g. EMAIL,PHONE,SSN — leave empty for none):', default: '' },
           { type: 'input', name: 'customPatterns', message: 'Custom regex patterns (comma-separated — leave empty for none):', default: '' },
-        ]) as { name: string; target: 'request' | 'response' | 'both'; entities: string; customPatterns: string };
+        ]) as { target: 'request' | 'response' | 'both'; entities: string; customPatterns: string };
 
         let outputBufferSize: number | undefined;
         if (ans.target === 'response' || ans.target === 'both') {
@@ -1290,13 +1279,7 @@ Examples:
           if (n !== 30) outputBufferSize = n;
         }
 
-        const name = ans.name.trim();
-        if (policies.find(p => p.name === name)) {
-          console.error(chalk.red(`Policy "${name}" already exists.`));
-          process.exit(1);
-        }
-
-        const policy: PiiPolicy = { name, enabled: true, target: ans.target };
+        const policy: PiiPolicy = { enabled: true, target: ans.target };
         const entities = ans.entities.split(',').map((s: string) => s.trim()).filter(Boolean) as PiiPolicy['entities'];
         if (entities?.length) policy.entities = entities;
         const patterns = ans.customPatterns.split(',').map((s: string) => s.trim()).filter(Boolean);
@@ -1305,7 +1288,7 @@ Examples:
 
         policies.push(policy);
         await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/guardrails`, { pii: { policies } });
-        console.log(chalk.green(`PII policy "${name}" added to "${project.name}".`));
+        console.log(chalk.green(`PII policy added to "${project.name}".`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
         else console.error(chalk.red(`Error: ${err.message}`));
@@ -1313,24 +1296,25 @@ Examples:
       }
     });
 
-  piiCmd.command('remove <project> <policy-name>')
-    .description('Remove a PII policy from a project')
+  piiCmd.command('remove <project> <index>')
+    .description('Remove a PII policy from a project by its index (see `pii list`)')
     .addHelpText('after', `
 Examples:
-  routerly project pii remove my-api my-policy
+  routerly project pii remove my-api 0
 `)
-    .action(async (nameOrId: string, policyName: string) => {
+    .action(async (nameOrId: string, indexStr: string) => {
       try {
         const project = await resolveProject(nameOrId);
         const pii = (project as ProjectConfig & { pii?: PiiConfig }).pii ?? { policies: [] };
         const before = pii.policies ?? [];
-        const policies = before.filter(p => p.name !== policyName);
-        if (policies.length === before.length) {
-          console.error(chalk.red(`Policy "${policyName}" not found in "${project.name}".`));
+        const index = Number(indexStr);
+        if (!Number.isInteger(index) || index < 0 || index >= before.length) {
+          console.error(chalk.red(`Invalid index "${indexStr}". Use \`pii list\` to see valid indices (0 to ${Math.max(0, before.length - 1)}).`));
           process.exit(1);
         }
+        const policies = before.filter((_, i) => i !== index);
         await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/guardrails`, { pii: { policies } });
-        console.log(chalk.green(`PII policy "${policyName}" removed from "${project.name}".`));
+        console.log(chalk.green(`PII policy #${index} removed from "${project.name}".`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
         else console.error(chalk.red(`Error: ${err.message}`));

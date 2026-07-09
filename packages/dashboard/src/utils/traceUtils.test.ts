@@ -234,3 +234,62 @@ describe('formatTokens', () => {
     expect(result).toContain('1');
   });
 });
+
+// ── Additional branch coverage ────────────────────────────────────────────────
+
+describe('extractMessageStats — uncovered branches', () => {
+  it('routerScore is null when final[0] has neither score nor weight (line 70 ?? null)', () => {
+    // Both score and weight absent → the rightmost ?? null fires
+    const stats = extractMessageStats([
+      { message: 'router:recap', details: { final: [{ model: 'openai/gpt-4o' }] } },
+    ]);
+    expect(stats.selectedModel).toBe('openai/gpt-4o');
+    expect(stats.routerScore).toBeNull();
+  });
+
+  it('model:success with all optional fields absent falls through ?? null (line 79 paths)', () => {
+    // Pass a success entry with only latencyMs; the rest must be null via ?? null
+    const stats = extractMessageStats([
+      { message: 'model:success', details: { latencyMs: 100 } },
+    ]);
+    expect(stats.latencyMs).toBe(100);
+    expect(stats.inputTokens).toBeNull();
+    expect(stats.outputTokens).toBeNull();
+    expect(stats.cachedTokens).toBeNull();
+    expect(stats.ttftMs).toBeNull();
+    expect(stats.tokensPerSec).toBeNull();
+    expect(stats.inputCostUsd).toBeNull();
+    expect(stats.outputCostUsd).toBeNull();
+    expect(stats.totalCostUsd).toBeNull();
+    expect(stats.inputPerMillion).toBeNull();
+    expect(stats.outputPerMillion).toBeNull();
+  });
+
+  it('guardrail loop skips entries whose details.rules is not an array (line 110 continue)', () => {
+    // rules is a string, not an array → continue fires, sawUsage stays false
+    const stats = extractMessageStats([
+      { message: 'guardrail:evaluated', details: { rules: 'not-an-array' } },
+    ]);
+    expect(stats.guardrailInputTokens).toBeNull();
+    expect(stats.guardrailCostUsd).toBeNull();
+  });
+
+  it('guardrail loop skips a rule entry that has no usage object (line 112 r?.usage falsy)', () => {
+    // One rule with usage, one without — sawUsage=true, counts only from first
+    const stats = extractMessageStats([
+      {
+        message: 'guardrail:evaluated',
+        details: {
+          rules: [
+            { rule: 'a', usage: { inputTokens: 50, outputTokens: 5 } },
+            { rule: 'b' }, // no usage
+            { rule: 'c', usage: { inputTokens: undefined, outputTokens: undefined } }, // ?? 0 path
+          ],
+        },
+      },
+    ]);
+    // 50 + 0 = 50; 5 + 0 = 5
+    expect(stats.guardrailInputTokens).toBe(50);
+    expect(stats.guardrailOutputTokens).toBe(5);
+  });
+});

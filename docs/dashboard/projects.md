@@ -164,32 +164,45 @@ Configure request filtering and data protection for this project.
 
 **Required permission:** `project:update`
 
-### Detect Injection
-
-Toggle the built-in prompt-injection detector on or off. When enabled, every request is scanned for known injection patterns (e.g. "ignore previous instructions", DAN mode). A hit blocks the request and is logged in usage.
-
 ### Content Guardrails
 
-Enable guardrails to evaluate requests and/or responses against an ordered list of independent rules. Each enabled rule is evaluated in sequence and triggers its configured block and/or log actions independently.
+Enable guardrails to evaluate requests and/or responses against an ordered list of independent rules. Each enabled rule is evaluated in sequence.
+
+#### Injection Warning
+
+When one or more rules have the **Inject** flag enabled, an amber warning banner appears above the rule list:
+
+> "One or more rules inject their instruction into the outgoing request's system prompt. The request payload is modified. No extra judge call is made, and nothing is blocked."
+
+This is a soft steering feature (no block, no judge call) and is fully transparent.
 
 #### Rule Cards
 
 Each rule card displays:
 - **Type**: rule category (regex, semantic, topic, moderation)
-- **Target**: request, response, or both
-- **Block** checkbox: when checked, the rule rejects requests/responses on a match
-- **Log** checkbox: when checked, the rule records the trigger in usage even if it doesn't block
-- **Block message**: custom message returned to the client when this rule blocks (appears only if Block is enabled). Leave empty for built-in default.
-- **Use judge response**: (topic/moderation only, when Block is enabled) use the judge model's own explanation as the block message instead of the static block message. The judge is asked to return `{ score, message }`. If the judge fails or returns no message, the static block message is used as fallback.
+- **Enabled** toggle: when off, this rule is skipped during evaluation
+- **Scope flags** (topic/moderation only): three independent checkboxes:
+  - **Request**: judge the user messages before they reach the model (hard block + log on trigger)
+  - **Inject**: append this rule's instruction to the request system prompt so the model self-enforces (soft steer, no block). For topic rules, injects the allowed-topics description; for moderation, injects the custom instructions (or a built-in default).
+  - **Response**: judge the model's response before it reaches the client (hard block + log on trigger)
+  - At least one flag must be enabled. Inject-only rules (no Request or Response) skip the judge entirely.
+- Scope options (regex/semantic only): Request, Response, or Both (no Inject option)
+- Judge configuration fields (topic/moderation only; visible when Request and/or Response is checked):
+  - **Judge Model**: dropdown of available judge models (filtered to exclude embedding-only models)
+  - **Fallback Models** (optional): multi-select of fallback judge models tried in order if the primary is unavailable or errors
+  - **Harm/Topic Threshold**: slider (0-1, default 0.5). For moderation, triggers when score > threshold. For topic, triggers when score < threshold (off-topic).
+- Type-specific configuration fields:
 
-Each rule also displays type-specific configuration fields:
+| Type | Config |
+|------|--------|
+| **Regex** | Regex patterns (one per line, case-insensitive) |
+| **Semantic** | Embedding model ID, optional fallback embedding models (multi-select, tried in order), example phrases to block, similarity threshold (0-1, default 0.82) |
+| **Topic** | Allowed-topics description, score threshold (0-1, default 0.5) |
+| **Moderation** | Custom instructions (required): instructions to inject or pass to the judge. Score threshold (0-1, default 0.5). |
 
-| Type | Target | Config |
-|------|--------|--------|
-| **Regex** | request / response / both | Regex patterns (one per line, case-insensitive) |
-| **Semantic** | request / response / both | Embedding model ID, optional fallback embedding models (multi-select, tried in order), example phrases to block, similarity threshold (0-1, default 0.82) |
-| **Topic** | request / response / both | Judge model ID, optional fallback judge models (multi-select, tried in order), allowed-topics description, score threshold (0-1, default 0.5) |
-| **Moderation** | request / response / both | Judge model ID, optional fallback judge models (multi-select, tried in order), harm score threshold (0-1, default 0.5). Optionally provide custom system instructions. |
+##### Judge response (reason-first scoring)
+
+For topic and moderation rules with a judge (Request and/or Response enabled), the judge is asked to respond with a reason first, then a fine-grained score from 0.00 to 10.00. The reason (in the user's language) becomes the block message when the rule triggers. The score is normalized to 0-1 before the threshold check. This anchored rubric prevents bimodal score collapse on small models.
 
 ##### Model selection
 
@@ -200,29 +213,30 @@ The model dropdowns are filtered by type:
 
 ##### Fallback models
 
-For topic, moderation, and semantic rules, below the primary model selector is an optional "Fallback models (optional, tried in order)" multi-select field. Select zero or more fallback models that will be tried in order if the primary model is unavailable or returns an error. If the primary model returns a budget-exceeded error, fallbacks are not tried (fail-closed on budget).
+For topic, moderation, and semantic rules, the "Fallback models (optional, tried in order)" multi-select field allows selecting zero or more fallback models that will be tried in order if the primary model is unavailable or returns an error. If the primary model returns a budget-exceeded error, fallbacks are not tried (fail-closed on budget).
 
 #### Streaming Interaction Notice
 
-When a rule has **Block** enabled AND **Target** is response or both, the entire response must be buffered before the block decision is made. In this case, streaming is automatically disabled for the request, and the client receives the full response as a single chunk.
+When a rule has the **Response** flag enabled (and thus requires buffering the response before the judge verdict), streaming is automatically disabled for the request, and the client receives the full response as a single chunk.
 
 A clear notice box appears on the form when this condition is detected:
 
-> "Responses will be buffered (no streaming) because one or more rules with Block enabled target the response."
+> "Responses will be buffered (no streaming) because one or more rules judge the response."
 
 #### Consumer impact
 
-When a rule matches and Block is enabled, the request is rejected before reaching the model (or the response is rejected before being sent to the client). Routerly returns HTTP 200 with a wire-faithful content-filter response: `finish_reason: "content_filter"` (OpenAI) or `stop_reason: "refusal"` (Anthropic), with empty content. The block message is stored on the trace but does not appear in the wire response. API consumers that check `finish_reason`/`stop_reason` will detect the block; those that only read message content will receive an empty reply.
+When a judged rule has its Request or Response flag enabled and triggers, the request or response is rejected before reaching the model (or before being sent to the client). Routerly returns HTTP 200 with a wire-faithful content-filter response: `finish_reason: "content_filter"` (OpenAI) or `stop_reason: "refusal"` (Anthropic), with empty content. The block message (from the judge's reason field) is stored on the trace but does not appear in the wire response. API consumers that check `finish_reason`/`stop_reason` will detect the block; those that only read message content will receive an empty reply.
 
-When Block is unchecked (Log only) or when a rule is skipped, the request is forwarded with no consumer-visible impact. The triggering rule is recorded on the usage record for audit purposes.
+When a rule has only the Inject flag enabled (soft steering), the rule steers the model without calling the judge and does not block or log. The request is forwarded with no consumer-visible impact.
+
+When a rule is skipped (disabled, unavailable model, judge error), the request is forwarded with no consumer-visible impact. The skipped rule is recorded on the usage record for audit purposes.
 
 ### PII Scrubbing
 
 Enable PII scrubbing to automatically detect and replace sensitive data in requests before they reach the model, and optionally in responses before they are returned to the caller.
 
-PII configuration uses a list of named policies. Click **+ Add policy** to create a new policy. Each policy has:
+PII configuration uses a list of policies. Click **+ Add policy** to create a new policy. Each policy is displayed as "Policy 1", "Policy 2", etc. (1-based numbering). Each policy has:
 
-- **Name**: unique identifier for this policy
 - **Enabled** toggle: when off, this policy is skipped
 - **Target**: request, response, or both (which side(s) to scrub)
 - **Entity types**: checkboxes for EMAIL, PHONE, CREDIT_CARD, SSN, IBAN. All types are selected by default. Uncheck any type to exclude it from scrubbing.

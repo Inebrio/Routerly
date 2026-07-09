@@ -2187,7 +2187,7 @@ describe('PUT /api/projects/:id', () => {
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
     expect(body.pii.policies).toHaveLength(2)
-    expect(body.pii.policies[0].name).toBe('gdpr')
+    expect(body.pii.policies[0].target).toBe('request')
   })
 })
 
@@ -10456,5 +10456,103 @@ describe('POST /api/test/openai-oauth — additional branch coverage (lines 1777
     expect(res.statusCode).toBe(200)
     // JSON.parse('') throws SyntaxError → ok: false
     expect(res.json().ok).toBe(false)
+  })
+})
+
+// ── guardrailRuleSchema superRefine — uncovered branches (lines 191, 197-198, 203) ──
+
+describe('guardrailRuleSchema superRefine — uncovered validation branches', () => {
+  function setupProject(projectId: string) {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [{ id: projectId, name: 'P', tokens: [], members: [], models: [] }]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+  }
+
+  // Line 191: inject:true on a regex rule (only valid for topic/moderation)
+  it('line 191 — returns 400 when inject:true is set on a regex rule', async () => {
+    setupProject('p-inject-regex')
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT',
+      url: '/api/projects/p-inject-regex',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        name: 'P', models: [],
+        guardrails: {
+          rules: [{
+            type: 'regex',
+            target: 'request',
+            inject: true,     // inject is only valid for topic/moderation → line 191 fires
+            block: true,
+            config: { patterns: ['bad'] },
+          }],
+        },
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    // Response is { error: 'Invalid guardrails config', details: [{message: '...'}] }
+    const body = res.json() as { details?: Array<{ message: string }> }
+    const msgs = body.details?.map(d => d.message).join(' ') ?? ''
+    expect(msgs).toMatch(/inject/i)
+  })
+
+  // Lines 197-198: topic rule with no target AND inject:false (must judge or inject)
+  it('lines 197-198 — returns 400 when topic rule has neither target nor inject', async () => {
+    setupProject('p-no-target-no-inject')
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT',
+      url: '/api/projects/p-no-target-no-inject',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        name: 'P', models: [],
+        guardrails: {
+          rules: [{
+            type: 'topic',
+            // target omitted, inject omitted (false) → line 198 fires
+            block: false,
+            config: { modelId: 'm1', allowedTopics: 'technology' },
+          }],
+        },
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as { details?: Array<{ message: string }> }
+    const msgs = body.details?.map(d => d.message).join(' ') ?? ''
+    expect(msgs).toMatch(/target|inject/i)
+  })
+
+  // Line 203: topic rule with target but no config.modelId
+  it('line 203 — returns 400 when topic rule has target but missing config.modelId', async () => {
+    setupProject('p-no-modelid')
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT',
+      url: '/api/projects/p-no-modelid',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        name: 'P', models: [],
+        guardrails: {
+          rules: [{
+            type: 'topic',
+            target: 'request',   // target set
+            block: true,
+            config: { allowedTopics: 'technology' },  // no modelId → line 203 fires
+          }],
+        },
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as { details?: Array<{ message: string }> }
+    const msgs = body.details?.map(d => d.message).join(' ') ?? ''
+    expect(msgs).toMatch(/modelId/i)
   })
 })

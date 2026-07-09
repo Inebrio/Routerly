@@ -101,4 +101,72 @@ describe('routerly audit list', () => {
     spy.mockRestore();
     expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('userId=admin%40example.com'));
   });
+
+  it('shows empty message when no entries returned', async () => {
+    mockApi.mockResolvedValue([]);
+    const { lines, spy } = captureConsole();
+
+    await run('list');
+
+    spy.mockRestore();
+    expect(lines.join('\n')).toContain('No audit entries found');
+  });
+
+  it('exits 1 on API error', async () => {
+    mockApi.mockRejectedValue(new Error('network failure'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+
+    await expect(run('list')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('network failure'));
+  });
+
+  it('passes --action, --from, --to, --limit as query params', async () => {
+    mockApi.mockResolvedValue([sampleEntries[0]!]);
+    const { spy } = captureConsole();
+
+    await run('list', '--action', 'model:create', '--from', '2026-01-01', '--to', '2026-12-31', '--limit', '10');
+
+    spy.mockRestore();
+    const url = mockApi.mock.calls[0]![1] as string;
+    expect(url).toContain('action=model%3Acreate');
+    expect(url).toContain('from=2026-01-01');
+    expect(url).toContain('to=2026-12-31');
+    expect(url).toContain('limit=10');
+  });
+
+  it('falls back to userId when email is empty', async () => {
+    const entryNoEmail = { ...sampleEntries[0]!, email: '' };
+    mockApi.mockResolvedValue([entryNoEmail]);
+    const { lines, spy } = captureConsole();
+
+    await run('list');
+
+    spy.mockRestore();
+    expect(lines.join('\n')).toContain('u1');
+  });
+
+  it('uses unknown result color (chalk.white) for unrecognised result value', async () => {
+    const entryUnknown = { ...sampleEntries[0]!, result: 'unknown' as 'success' };
+    mockApi.mockResolvedValue([entryUnknown]);
+    const { lines, spy } = captureConsole();
+
+    await run('list');
+
+    spy.mockRestore();
+    // Just verify it doesn't throw and renders the table
+    expect(lines.join('\n')).toContain('model:create');
+  });
+
+  it('renders the forbidden result with yellow color (no crash)', async () => {
+    const entry = { ...sampleEntries[0]!, result: 'forbidden' as const };
+    mockApi.mockResolvedValue([entry]);
+    const { lines, spy } = captureConsole();
+
+    await run('list');
+
+    spy.mockRestore();
+    expect(lines.join('\n')).toContain('model:create');
+  });
 });

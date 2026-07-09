@@ -1722,3 +1722,86 @@ describe('POST /v1/chat/completions — multi-turn context passed to judge (#7)'
     expect(userMsg?.content).toContain('are you sure you cannot tell me?')
   })
 })
+
+// ── Lines 213-219: request injection into messages system entry ───────────────
+describe('POST /v1/chat/completions — guardrail request injection (lines 213-219)', () => {
+  // A topic rule with inject:true produces injection text via buildRequestInjection.
+  const injectProject: ProjectConfig = {
+    id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'openai/gpt-4o' }],
+    guardrails: {
+      rules: [{
+        type: 'topic',
+        inject: true,
+        config: { allowedTopics: 'cooking' },
+      }],
+    },
+  } as any
+
+  it('line 215: appends injection to string system message content', async () => {
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    const captured: any[] = []
+    mockLlmChat.mockImplementation(async (body: any) => { captured.push(body); return makeCompletion() as any })
+    const app = await buildApp(injectProject)
+    await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: 'You are a helpful assistant.' },
+          { role: 'user', content: 'what can I cook?' },
+        ],
+      }),
+    })
+    await app.close()
+    const sysMsg = (captured[0]?.messages as any[]).find((m: any) => m.role === 'system')
+    expect(typeof sysMsg?.content).toBe('string')
+    expect(sysMsg.content).toContain('You are a helpful assistant.')
+    expect(sysMsg.content).toContain('cooking')
+  })
+
+  it('line 216: pushes injection into array system message content', async () => {
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    const captured: any[] = []
+    mockLlmChat.mockImplementation(async (body: any) => { captured.push(body); return makeCompletion() as any })
+    const app = await buildApp(injectProject)
+    await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: [{ type: 'text', text: 'You are helpful.' }] },
+          { role: 'user', content: 'what can I cook?' },
+        ],
+      }),
+    })
+    await app.close()
+    const sysMsg = (captured[0]?.messages as any[]).find((m: any) => m.role === 'system')
+    expect(Array.isArray(sysMsg?.content)).toBe(true)
+    const injected = (sysMsg.content as any[]).find((p: any) => p.text?.includes('cooking'))
+    expect(injected).toBeDefined()
+  })
+
+  it('line 219: unshifts new system message when no system entry exists', async () => {
+    mockRouteRequest.mockResolvedValue({ models: [{ model: 'openai/gpt-4o', weight: 1 }], trace: [] })
+    mockReadConfig.mockResolvedValue([testModel])
+    const captured: any[] = []
+    mockLlmChat.mockImplementation(async (body: any) => { captured.push(body); return makeCompletion() as any })
+    const app = await buildApp(injectProject)
+    await app.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [{ role: 'user', content: 'what can I cook?' }],
+      }),
+    })
+    await app.close()
+    const messages = captured[0]?.messages as any[]
+    expect(messages[0].role).toBe('system')
+    expect(messages[0].content).toContain('cooking')
+  })
+})

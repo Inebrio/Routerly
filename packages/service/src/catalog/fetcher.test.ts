@@ -247,4 +247,101 @@ describe('CatalogFetcher', () => {
       expect(result).toEqual({});
     });
   });
+
+  // ── Line 90: getStatus() before any get() call (repoStatus map empty → ?? fallback) ──
+  describe('getStatus — default status before first fetch', () => {
+    it('returns default status entry when no fetch has been made yet (line 90 ?? branch)', async () => {
+      // No fetch mock needed: getStatus called before get() → repoStatus.get(url) returns
+      // undefined → ?? { url, enabled, ...defaults } branch fires (line 90 right side).
+      const fetcher = await freshFetcher();
+      fetcher.setRepos([{ url: 'https://example.com/', enabled: true }]);
+      const statuses = fetcher.getStatus();
+      expect(statuses).toHaveLength(1);
+      expect(statuses[0]!.url).toBe('https://example.com/');
+      expect(statuses[0]!.resolvedFile).toBeNull();
+      expect(statuses[0]!.lastChecked).toBeNull();
+      expect(statuses[0]!.error).toBeNull();
+    });
+  });
+
+  // ── Line 171: no-change path when upstreamUpdatedAt matches cached meta ──
+  describe('no-change fetch (upstream signals no change)', () => {
+    it('skips re-download when upstreamUpdatedAt and resolvedFile are unchanged (line 171 branch)', async () => {
+      const updateTs = '2024-01-01T00:00:00.000Z';
+      const index = JSON.stringify({
+        schemaVersion: 1,
+        channels: { stable: 'providers-stable.json' },
+        default: 'stable',
+        providers: { 'providers-stable.json': { updatedAt: updateTs } },
+      });
+
+      let fetchCount = 0;
+      vi.stubGlobal('fetch', async (url: string) => {
+        if (url.endsWith('index.json')) {
+          return { ok: true, status: 200, json: async () => JSON.parse(index), text: async () => index };
+        }
+        fetchCount++;
+        return { ok: true, status: 200, json: async () => JSON.parse(CATALOG), text: async () => CATALOG };
+      });
+
+      // Use fake timers to advance past the cache TTL without clearing the repo maps.
+      // invalidate() clears repoMeta and repoCatalog, which would prevent the no-change path.
+      vi.useFakeTimers();
+      const fetcher = await freshFetcher();
+      fetcher.setRepos([{ url: 'https://example.com/', enabled: true }]);
+
+      // First call: fetches providers file (fetchCount = 1) and caches meta
+      await fetcher.get('0.2.0');
+      const firstCount = fetchCount;
+
+      // Advance 7 hours to expire the cache TTL (6 hours) without clearing maps
+      vi.advanceTimersByTime(7 * 60 * 60 * 1000);
+
+      // Second call: cache expired → re-runs fetchRepo with existing repoMeta/repoCatalog
+      // index still shows same updatedAt → no-change path fires (line 171)
+      await fetcher.get('0.2.0');
+      vi.useRealTimers();
+
+      // providers file should NOT have been fetched again
+      expect(fetchCount).toBe(firstCount);
+    });
+  });
+
+  // ── Lines 202-204: resolveFile falls back to null (no matching channel/version/default) ──
+  describe('resolveFile — returns null when nothing matches', () => {
+    it('returns providers.json fallback when index resolves no file and has no usable default', async () => {
+      // index has no channels and no versions — resolveFile returns null → falls back to providers.json
+      const index = JSON.stringify({
+        schemaVersion: 1,
+        // No default, no channels, no versions
+      });
+      mockFetch({
+        'index.json': { ok: true, body: index },
+        'providers.json': { ok: true, body: CATALOG },
+      });
+      const fetcher = await freshFetcher();
+      fetcher.setRepos([{ url: 'https://example.com/', enabled: true }]);
+      const result = await fetcher.get('0.2.0');
+      expect(result).toHaveProperty('openai');
+    });
+
+    it('returns null when default channel exists but channels map is empty (lines 202-204 ?? null)', async () => {
+      // index.default is set but index.channels is absent → channels?.[default] is undefined
+      // → falls to versions (none) → checks default again (undefined channels) → returns null
+      // → fetcher falls through to providers.json
+      const index = JSON.stringify({
+        schemaVersion: 1,
+        default: 'stable',
+        // no channels object → index.channels is undefined → both channel lookups fail → null
+      });
+      mockFetch({
+        'index.json': { ok: true, body: index },
+        'providers.json': { ok: true, body: CATALOG },
+      });
+      const fetcher = await freshFetcher();
+      fetcher.setRepos([{ url: 'https://example.com/', enabled: true }]);
+      const result = await fetcher.get('0.2.0');
+      expect(result).toHaveProperty('openai');
+    });
+  });
 });

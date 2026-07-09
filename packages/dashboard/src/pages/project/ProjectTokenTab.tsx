@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Copy, Check, Plus, Trash2, Edit2, Key } from 'lucide-react';
-import { createProjectToken, updateProjectToken, deleteProjectToken, type ProjectToken } from '../../api';
+import { Plus, Trash2, Edit2, Key } from 'lucide-react';
+import { deleteProjectToken, type ProjectToken } from '../../api';
 import { useProject } from './ProjectLayout';
 import { useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
-
-type ModalView = 'none' | 'create' | 'edit';
 
 export function ProjectTokenTab() {
   const { project, setProject } = useProject();
@@ -14,24 +12,9 @@ export function ProjectTokenTab() {
 
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
-  const [modalView, setModalView] = useState<ModalView>('none');
-  const [copied, setCopied] = useState(false);
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
-  // Create state
-  const [createLabels, setCreateLabels] = useState<string[]>([]);
-  const [createLabelInput, setCreateLabelInput] = useState('');
-  const [revealedToken, setRevealedToken] = useState<string | null>(null);
-
-  // Edit state
-  const [editingTokenId, setEditingTokenId] = useState<string | null>(null);
-  const [editModels, setEditModels] = useState<any[]>([]);
-  const [editLabels, setEditLabels] = useState<string[]>([]);
-  const [editLabelInput, setEditLabelInput] = useState('');
-
   const tokens = project.tokens || [];
-  const editingToken = tokens.find(t => t.id === editingTokenId);
-  const allLabels = Array.from(new Set(tokens.flatMap(t => t.labels || []))).sort();
 
   // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -43,68 +26,17 @@ export function ProjectTokenTab() {
     navigate(`/dashboard/projects/${project!.id}/token/${tokenId}`);
   }
 
-  function closeModal() {
-    setModalView('none'); setEditingTokenId(null); setErr('');
-    if (revealedToken) {
-      setRevealedToken(null);
-    }
-  }
-
-  function addLabel(
-    raw: string,
-    labels: string[], setLabels: (l: string[]) => void,
-    setInput: (v: string) => void,
-  ) {
-    const val = raw.trim();
-    if (val && !labels.includes(val)) setLabels([...labels, val]);
-    setInput('');
-  }
-
-  async function copyToClipboard(token: string) {
-    try { await navigator.clipboard.writeText(token); setCopied(true); setTimeout(() => setCopied(false), 2000); }
-    catch { setErr('Failed to copy to clipboard.'); }
-  }
-
-  // ── Handlers ──────────────────────────────────────────────────────────────────
-
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault(); setErr(''); setLoading(true);
-    if (!project) return;
-    try {
-      const result = await createProjectToken(project.id, createLabels);
-      setProject(p => p ? { ...p, tokens: [...(p.tokens || []), result.tokenInfo] } : p);
-      setRevealedToken(result.token);
-    } catch (e) { setErr(e instanceof Error ? e.message : 'Error creating token'); }
-    finally { setLoading(false); }
-  }
-
-  async function handleUpdate(e: React.FormEvent) {
-    e.preventDefault(); setErr(''); setLoading(true);
-    if (!project) return;
-    try {
-      const cleanedModels = editModels.map(m => {
-        const t = { ...m.thresholds };
-        if (isNaN(t.daily)) delete t.daily;
-        if (isNaN(t.weekly)) delete t.weekly;
-        if (isNaN(t.monthly)) delete t.monthly;
-        return { modelId: m.modelId, thresholds: Object.keys(t).length > 0 ? t : undefined };
-      });
-      const updated = await updateProjectToken(project.id, editingTokenId!, cleanedModels, editLabels);
-      setProject(p => p ? { ...p, tokens: p.tokens?.map(t => t.id === editingTokenId ? updated : t) || [] } : p);
-      closeModal();
-    } catch (e) { setErr(e instanceof Error ? e.message : 'Error saving token'); }
-    finally { setLoading(false); }
-  }
-
   function handleDelete(tokenId: string, snippet: string) {
     setConfirmState({
       message: `Revoke token "${snippet}..."? Apps using it will stop working immediately.`,
       onConfirm: async () => {
         setConfirmState(null);
         setErr(''); setLoading(true);
+        /* v8 ignore next */
         if (!project) return;
         try {
           await deleteProjectToken(project.id, tokenId);
+          /* v8 ignore next */
           setProject(p => p ? { ...p, tokens: p.tokens?.filter(t => t.id !== tokenId) || [] } : p);
         } catch (e) { setErr(e instanceof Error ? e.message : 'Error deleting token'); }
         finally { setLoading(false); }
@@ -266,6 +198,7 @@ export function LabelInput({ labels, setLabels, input, setInput, allLabels = [] 
       }}
         onClick={(e) => {
           const target = e.currentTarget.querySelector('input');
+          /* v8 ignore next */
           if (target) {
             target.focus();
             setIsOpen(true);

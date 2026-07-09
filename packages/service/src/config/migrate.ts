@@ -95,7 +95,7 @@ function migratePii(raw: unknown): PiiConfig | undefined {
     const scrubIn = legacy.scrubInput === true;
     const scrubOut = legacy.scrubOutput === true;
     const target = scrubIn && scrubOut ? 'both' : scrubOut ? 'response' : 'request';
-    const policy: PiiPolicy = { name: 'default', target };
+    const policy: PiiPolicy = { target };
     // ponytail: legacy had PII fully off (both scrub flags false) → keep it off, don't silently activate request scrub
     if (!scrubIn && !scrubOut) policy.enabled = false;
     if (legacy.entities?.length) policy.entities = legacy.entities as NonNullable<PiiPolicy['entities']>;

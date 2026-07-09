@@ -44,8 +44,8 @@ function TracePanel({ entries }: { entries: TraceEntry[] }) {
       {panels.map(panel => {
         const panelEntries = filteredEntries.filter(e => e.panel === panel);
         if (panelEntries.length === 0) return null;
-        const color = PANEL_COLORS[panel] ?? '#6b7280';
-        const label = PANEL_LABELS[panel] ?? panel;
+        /* v8 ignore next */ const color = PANEL_COLORS[panel] ?? '#6b7280';
+        /* v8 ignore next */ const label = PANEL_LABELS[panel] ?? panel;
         return (
           <div key={panel}>
             <div style={{

@@ -587,6 +587,53 @@ describe('getLimitUsageSnapshot – additional branches', () => {
   })
 })
 
+// ── Line 77: resolveLimits called with undefined obj (the !obj → [] branch) ──
+describe('resolveLimits — line 77: obj is undefined (via resolveLevel pass-through)', () => {
+  it('returns empty snapshot when model has no limits and project has no limits (obj=undefined in resolveLimits)', async () => {
+    // When projectModelRef has neither limits nor thresholds, resolveLevel returns null
+    // → applyResolution returns inherited (globalLimits).
+    // To trigger resolveLimits(undefined): this is an internal call. We cover it indirectly
+    // by calling getLimitUsageSnapshot with a model that has no global limits and a project
+    // model ref that has no limits either → limits array stays empty → [] returned.
+    mockReadConfig.mockResolvedValue([])
+    const model = makeModel('m', []) // no limits
+    const project: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [],
+      models: [{ modelId: 'm' }], // no limits/thresholds on this ref
+    }
+    const snapshots = await getLimitUsageSnapshot(model, project)
+    // No limits configured at any level → empty snapshot
+    expect(snapshots).toEqual([])
+  })
+})
+
+// ── Line 210: ROLLING_UNIT_MS[unit] ?? 86_400_000 when rollingUnit is unknown ──
+describe('getLimitUsageSnapshot — line 210: unknown rollingUnit falls back to 86400000', () => {
+  it('uses 86_400_000ms fallback when rollingUnit is an unrecognised value', async () => {
+    // Pass a rollingUnit value not in the ROLLING_UNIT_MS map → ?? 86_400_000 fires
+    const record = makeRecord('m', 5, 0)  // cost=5, recent
+    mockReadConfig.mockResolvedValue([record])
+    const model = makeModel('m')
+    const project: ProjectConfig = {
+      id: 'proj-1', name: 'Test', tokens: [], members: [],
+      models: [{
+        modelId: 'm',
+        limits: [{
+          metric: 'cost',
+          windowType: 'rolling',
+          rollingAmount: 1,
+          rollingUnit: 'fortnight' as any, // unknown unit → ?? 86_400_000
+          value: 10,
+        }],
+      }],
+    }
+    const snapshots = await getLimitUsageSnapshot(model, project)
+    // Should return a snapshot using the fallback window (1 day)
+    expect(snapshots).toHaveLength(1)
+    expect(snapshots[0]!.current).toBeCloseTo(5)
+  })
+})
+
 describe('startOfPeriod – Sunday (day === 0) branch (line 19)', () => {
   it('sets diff to -6 when current day is Sunday', async () => {
     vi.useFakeTimers()

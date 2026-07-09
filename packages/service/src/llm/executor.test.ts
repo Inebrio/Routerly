@@ -1374,6 +1374,44 @@ describe('checkBudget — snap below threshold (line 174 if branch=1)', () => {
   })
 })
 
+// ── Lines 387 + 407: llmStream with callType !== 'completion' ─────────────────
+describe('llmStream — callType routing (lines 387+407 branches)', () => {
+  it('line 387: skips TTFT timeout when callType is not completion (routing)', async () => {
+    // callType='routing' → ttftTimeoutMs = undefined → takes else branch (iter.next() directly)
+    mockIsAllowedForRouting.mockResolvedValue(true)
+    const chunk = { choices: [{ delta: { content: 'routed' } }] }
+    mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(makeStream(chunk)) } as any)
+
+    const ctx = makeCtx({
+      callType: 'routing' as const,
+      project: { ...makeProject('other'), timeoutMs: 5000, models: [] },
+    })
+    const result = await llmStream({ messages: [] } as any, makeModel(), ctx)
+    const collected: any[] = []
+    for await (const c of result.chunks) collected.push(c)
+    expect(collected).toHaveLength(1)
+    // trackUsage called (proves stream completed without timeout interference)
+    expect(mockTrackUsage).toHaveBeenCalled()
+  })
+
+  it('line 407: isTtftTimeout=false branch when error does not start with TTFT timeout', async () => {
+    // callType='completion' + pre-stream error with generic message → isTtftTimeout = false
+    mockIsAllowed.mockResolvedValue(true)
+    async function* failFirst() { throw new Error('provider refused') }
+    mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(failFirst()) } as any)
+
+    const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+    const ctx = makeCtx({ log, callType: 'completion' as const })
+    await expect(llmStream({ messages: [] } as any, makeModel(), ctx)).rejects.toThrow('provider refused')
+    // warn called with the non-timeout log message
+    expect(log.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ err: expect.any(Error) }),
+      'llm executor: stream failed before first chunk',
+    )
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'error' }))
+  })
+})
+
 describe('checkBudget — threshold .catch coverage (line 181 .catch)', () => {
   it('line 181 .catch: swallows emitEvent rejection on budget.threshold_reached', async () => {
     const model = makeModel('catch-model-181')

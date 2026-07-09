@@ -404,7 +404,7 @@ describe('migrateProjectConfigs — PII flat to policies', () => {
     const policy = saved.pii.policies[0];
     expect(policy.entities).toBeUndefined();
     expect(policy.customPatterns).toBeUndefined();
-    expect(policy.name).toBe('default');
+    expect(policy.target).toBe('request');
   });
 });
 

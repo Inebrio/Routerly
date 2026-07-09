@@ -207,6 +207,26 @@ describe('routerly update run', () => {
     expect(lines.some(l => l.includes('Update started') || l.includes('back online'))).toBe(true);
   });
 
+  it('proceeds when readline answer is "y" (without --yes flag)', async () => {
+    // Covers the false branch of line 107: answer IS 'y', so we proceed (don't abort)
+    mockRlAnswer.mockImplementation((_prompt: string, cb: (ans: string) => void) => cb('y'));
+    mockApi.mockResolvedValueOnce({ message: 'Update started.' });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
+    vi.useFakeTimers();
+
+    const { spy } = captureConsole();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const runPromise = run('run'); // no --yes → uses readline
+    await vi.advanceTimersByTimeAsync(3000);
+    await runPromise;
+
+    spy.mockRestore();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/system/update');
+  });
+
   it('aborts without calling the API when confirmation is declined', async () => {
     mockRlAnswer.mockImplementation((_prompt: string, cb: (ans: string) => void) => cb('n'));
     const { lines, spy } = captureConsole();
@@ -216,5 +236,231 @@ describe('routerly update run', () => {
     spy.mockRestore();
     expect(mockApi).not.toHaveBeenCalled();
     expect(lines.some(l => l.includes('Aborted'))).toBe(true);
+  });
+
+  it('exits 1 with ApiError message when POST fails', async () => {
+    mockApi.mockRejectedValueOnce(new ApiError(403, 'admin only'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+
+    await expect(run('run', '--yes')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('admin only'));
+  });
+
+  it('exits 1 with generic message when POST throws non-ApiError', async () => {
+    mockApi.mockRejectedValueOnce(new Error('connection refused'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+
+    await expect(run('run', '--yes')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Update request failed'));
+  });
+
+  it('prints timeout warning when service does not come back', async () => {
+    mockApi.mockResolvedValueOnce({ message: 'Update started.' });
+    // fetch always fails (service restarting) — keep attempts < 20 by using a counter
+    const fetchMock = vi.fn().mockRejectedValue(new Error('ECONNREFUSED'));
+    vi.stubGlobal('fetch', fetchMock);
+    // Override setTimeout to be instant so the poll loop doesn't take 60s
+    vi.useFakeTimers();
+
+    const { lines, spy } = captureConsole();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const runPromise = run('run', '--yes');
+
+    // Drain 20 poll iterations instantly
+    for (let i = 0; i < 21; i++) {
+      await vi.advanceTimersByTimeAsync(3000);
+    }
+
+    await runPromise;
+    spy.mockRestore();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+
+    expect(lines.some(l => l.includes('did not come back') || l.includes('60 s'))).toBe(true);
+  });
+
+  it('writes a dot to stdout on each failed health poll attempt', async () => {
+    mockApi.mockResolvedValueOnce({ message: 'Update started.' });
+    // First fetch fails (dot), second fetch ok (done)
+    let calls = 0;
+    const fetchMock = vi.fn().mockImplementation(() => {
+      calls++;
+      if (calls === 1) return Promise.reject(new Error('still starting'));
+      return Promise.resolve({ ok: true });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.useFakeTimers();
+
+    const writeSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const { spy } = captureConsole();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const runPromise = run('run', '--yes');
+    await vi.advanceTimersByTimeAsync(3000); // first poll (fails → dot)
+    await vi.advanceTimersByTimeAsync(3000); // second poll (ok)
+    await runPromise;
+
+    spy.mockRestore();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+    expect(writeSpy).toHaveBeenCalledWith(expect.stringContaining('.'));
+    writeSpy.mockRestore();
+  });
+
+  it('falls back to localhost URL when account is null', async () => {
+    // Override getCurrentAccount to return null for this test
+    const { getCurrentAccount } = await import('../store.js');
+    vi.mocked(getCurrentAccount).mockResolvedValueOnce(null as never);
+
+    mockApi.mockResolvedValueOnce({ message: 'Update started.' });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.useFakeTimers();
+
+    const { spy } = captureConsole();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const runPromise = run('run', '--yes');
+    await vi.advanceTimersByTimeAsync(3000);
+    await runPromise;
+
+    spy.mockRestore();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+
+    // Should have polled the fallback URL
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3000/health');
+  });
+
+  it('dots on poll with ok:false response (fetch succeeds but not healthy)', async () => {
+    mockApi.mockResolvedValueOnce({ message: 'Update started.' });
+    // First poll: ok=false (dot written), second: ok=true (done)
+    let calls = 0;
+    const fetchMock = vi.fn().mockImplementation(() => {
+      calls++;
+      return Promise.resolve({ ok: calls >= 2 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.useFakeTimers();
+
+    const writeSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const { spy } = captureConsole();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const runPromise = run('run', '--yes');
+    await vi.advanceTimersByTimeAsync(3000);
+    await vi.advanceTimersByTimeAsync(3000);
+    await runPromise;
+
+    spy.mockRestore();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+    expect(writeSpy).toHaveBeenCalledWith(expect.stringContaining('.'));
+    writeSpy.mockRestore();
+  });
+});
+
+// ── update channel — error paths ─────────────────────────────────────────────
+
+describe('routerly update channel — error paths', () => {
+  it('exits 1 with ApiError message when GET settings fails', async () => {
+    mockApi.mockRejectedValueOnce(new ApiError(500, 'server error'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+
+    await expect(run('channel')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('server error'));
+  });
+
+  it('exits 1 with generic message when GET settings throws non-ApiError', async () => {
+    mockApi.mockRejectedValueOnce(new Error('ECONNREFUSED'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+
+    await expect(run('channel')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Failed to communicate'));
+  });
+
+  it('exits 1 with ApiError message when PUT settings fails', async () => {
+    mockApi.mockRejectedValueOnce(new ApiError(403, 'forbidden'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+
+    await expect(run('channel', 'stable')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
+  });
+
+  it('exits 1 with generic message when PUT settings throws non-ApiError', async () => {
+    mockApi.mockRejectedValueOnce(new Error('network error'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+
+    await expect(run('channel', 'stable')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Failed to communicate'));
+  });
+
+  it('uses the provided channel name when updated.channel is undefined', async () => {
+    // PUT returns object without channel field — fallback to arg name
+    mockApi.mockResolvedValueOnce({});
+    const { lines, spy } = captureConsole();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await run('channel', 'v1.0.0');
+    spy.mockRestore();
+    expect(lines.some(l => l.includes('v1.0.0'))).toBe(true);
+  });
+});
+
+// ── update check — error paths ────────────────────────────────────────────────
+
+describe('routerly update check — error paths', () => {
+  it('exits 1 with ApiError message', async () => {
+    mockApi.mockRejectedValueOnce(new ApiError(503, 'service unavailable'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+
+    await expect(run('check')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('service unavailable'));
+  });
+
+  it('exits 1 with service-not-running message on generic error', async () => {
+    mockApi.mockRejectedValueOnce(new Error('ECONNREFUSED'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+
+    await expect(run('check')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Failed to check for updates'));
+  });
+
+  it('update available without releaseUrl omits release notes line', async () => {
+    mockApi.mockResolvedValueOnce({
+      available: true, currentVersion: '0.1.0', latestVersion: '0.2.0',
+      channel: 'latest', checkedAt: '2026-07-08T00:00:00.000Z',
+      // no releaseUrl
+    });
+    const { lines, spy } = captureConsole();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await run('check');
+    spy.mockRestore();
+    expect(lines.some(l => l.includes('0.2.0'))).toBe(true);
+    expect(lines.every(l => !l.includes('Release notes:'))).toBe(true);
   });
 });

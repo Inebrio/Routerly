@@ -37,6 +37,16 @@ describe('catalog repos list', () => {
     expect(console.log).toHaveBeenCalled();
   });
 
+  it('renders empty string for channel when channel is absent', async () => {
+    // Covers the r.channel ?? '' branch (line 39) — repo has no channel field
+    mockApi.mockResolvedValueOnce({ providerRepos: [
+      { url: 'https://example.com/no-channel', enabled: false },
+    ]});
+    const cmd = makeCatalogCommand();
+    await cmd.parseAsync(['node', 'routerly', 'repos', 'list']);
+    expect(console.log).toHaveBeenCalled();
+  });
+
   it('prints message when empty', async () => {
     mockApi.mockResolvedValueOnce({ providerRepos: [] });
     const cmd = makeCatalogCommand();

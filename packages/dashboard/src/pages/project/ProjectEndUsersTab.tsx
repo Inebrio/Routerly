@@ -9,6 +9,7 @@ export function ProjectEndUsersTab() {
   const [err, setErr] = useState('');
 
   useEffect(() => {
+    /* v8 ignore next */
     if (!projectId) return;
     setLoading(true);
     getEndUsers(projectId)

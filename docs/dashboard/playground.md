@@ -42,7 +42,7 @@ The model actually used is shown above each assistant response. If routing assig
 
 Responses stream in real time when the selected project's routing configuration supports streaming. A stop button (⏹) appears while a response is in progress - click it to abort.
 
-**Streaming disabled notice:** When the project has one or more guardrail rules with Block enabled that target responses, streaming is automatically disabled because the entire response must be buffered before the block decision is made. You will see a banner at the top of the chat area explaining this, and the stream toggle will be disabled.
+**Streaming disabled notice:** When the project has one or more guardrail rules that judge responses (Response flag enabled), streaming is automatically disabled because the entire response must be buffered before the block decision is made. You will see a banner at the top of the chat area explaining this, and the stream toggle will be disabled.
 
 ### Image Attachments
 
@@ -52,10 +52,7 @@ Click the **Attach Image** button (or paste an image) to include image content i
 
 ## Guardrail Block Indicator
 
-When a security rule with Block enabled triggers, the block message is displayed as a normal assistant message in the chat (not a red box). The message shown is:
-
-- For rules with **Use judge response** enabled (topic/moderation only): the judge model's own explanation, in the same language as the user's latest message. Falls back to the static block message if the judge fails or returns no message.
-- For all other blocking rules: the custom block message or a built-in default.
+When a judged guardrail rule (topic/moderation with Request or Response flag) triggers, the block message is displayed as a normal assistant message in the chat (not a red box). The message shown is the judge model's own explanation, in the same language as the user's latest message. If the judge fails or returns no explanation, a built-in default is used.
 
 The wire response seen by your application is a standard `finish_reason: "content_filter"` (OpenAI) or `stop_reason: "refusal"` (Anthropic) HTTP 200 response, not an error. Empty content is returned. The Playground displays the block message here for convenience, but it is stored only in the trace, not in the wire response sent to API consumers.
 
@@ -81,10 +78,9 @@ When guardrails are configured on the project, the Technical Details section sho
 | Column | Meaning |
 |--------|---------|
 | Rule name | The rule identifier from your guardrail config, e.g. `regex:pattern`, `semantic`, `topic`, or `Prompt injection` for the built-in injection detector |
-| Outcome chip | `passed` (green): the rule ran and did not match. `triggered` (red): the rule matched and triggered its block/log actions. `skipped` (grey): the rule did not run, e.g. its judge model was unavailable. |
+| Outcome chip | `passed` (green): the rule ran and did not match. `triggered` (red): the rule matched and is logged/blocking. `skipped` (grey): the rule did not run, e.g. its judge model was unavailable. |
 | Reason | Shown below the rule name on skipped or scored rules, e.g. `judge-failed`, `semantic:82%`, `moderation:score=0.94` |
-| Actions | Tag showing [block], [log], [block+log], or [judge-response] when applicable |
-| Judge response | (collapsible, model-judge rules only) Shows the judge model's raw response and the parsed JSON (score and message). Useful for debugging why a rule scored a certain way. |
+| Judge response | (collapsible, model-judge rules only) Shows the judge model's raw response and the parsed JSON (reason and score). Useful for debugging why a rule scored a certain way. |
 
 The **Prompt injection** row represents the built-in injection detector. It is enabled per project via the **Detect Injection** toggle on the project Security tab or via `routerly project guardrails`.
 

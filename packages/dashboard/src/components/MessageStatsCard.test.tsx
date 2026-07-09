@@ -166,4 +166,26 @@ describe('MessageStatsCard — routing and completion', () => {
     expect(screen.getByText(/Input \(—\)/)).toBeTruthy();
     expect(screen.getByText(/Output \(—\)/)).toBeTruthy();
   });
+
+  // Covers ScoreBar line 13: value in [0.4, 0.7) → '#facc15' (yellow) branch
+  it('renders yellow ScoreBar for routerScore in the middle band [0.4, 0.7)', () => {
+    render(
+      <MessageStatsCard
+        turnNumber={1}
+        stats={baseStats({ selectedModel: 'openai/gpt-4o', routerScore: 0.55 })}
+      />,
+    );
+    expect(screen.getByText('0.550')).toBeTruthy();
+  });
+
+  // Covers ScoreBar line 13: value < 0.4 → '#f87171' (red) branch
+  it('renders red ScoreBar for routerScore below 0.4', () => {
+    render(
+      <MessageStatsCard
+        turnNumber={1}
+        stats={baseStats({ selectedModel: 'openai/gpt-4o', routerScore: 0.2 })}
+      />,
+    );
+    expect(screen.getByText('0.200')).toBeTruthy();
+  });
 });

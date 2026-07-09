@@ -480,6 +480,51 @@ describe('passthroughHandler', () => {
     expect(Buffer.isBuffer(init.body)).toBe(true)
   })
 
+  // ── Line 49: body.model is non-string (number) → wanted = undefined → falls back to first model ──
+  it('falls back to first model when body.model is a non-string value (line 49 false branch)', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'content-type': 'application/json' } }),
+    )
+    vi.stubGlobal('fetch', mockFetch)
+
+    // Project has two models; body.model is a number (non-string) → wanted branch is skipped → first model used
+    const project: ProjectConfig = {
+      ...testProject,
+      models: [{ modelId: 'openai/gpt-4o' }, { modelId: 'anthropic/claude-3-5-sonnet' }],
+    }
+    mockReadConfig.mockResolvedValue([openaiModel, anthropicModel])
+    const app = await buildApp(project)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/embeddings',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 42 }), // model is a number, not a string
+    })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    // First model (openai) should be used
+    expect(res.statusCode).toBe(200)
+    const [url] = mockFetch.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('api.openai.com')
+  })
+
+  // ── Line 123: url.split('?')[0] ?? url — the ?? url fallback (split always returns array ──
+  // The ?? url branch is TypeScript-defensive and unreachable in practice. The test below
+  // covers the more important adjacent code (reserved path check with query string).
+  it('returns 404 for reserved path /api/x?q=1 (split preserves reserved namespace check)', async () => {
+    const mockFetch = vi.fn()
+    vi.stubGlobal('fetch', mockFetch)
+
+    const app = await buildApp(testProject)
+    const res = await app.inject({ method: 'GET', url: '/api/info?q=1' })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(res.statusCode).toBe(404)
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
   it('filters hop-by-hop response headers (line 183 if branch=1)', async () => {
     // upstream returns connection header → hop-by-hop → filtered out (branch=1 of !HOP_BY_HOP_RESPONSE.has(...))
     // x-custom is NOT hop-by-hop → forwarded (branch=0)

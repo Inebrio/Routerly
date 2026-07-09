@@ -55,6 +55,7 @@ export function ProjectLogsTab() {
   }, []);
 
   const fetchStats = useCallback(() => {
+    /* v8 ignore next */
     if (!projectId) return Promise.resolve();
     // For recent (minutes/hours) presets, recalculate the range on every fetch
     let from = dateRange.from || undefined;

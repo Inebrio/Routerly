@@ -206,7 +206,7 @@ describe('StreamingScrubber', () => {
 describe('mergePolicies', () => {
   it('includes request-target policy for input direction', () => {
     const policies: PiiPolicy[] = [
-      { name: 'req', target: 'request', entities: ['SSN'] },
+      { target: 'request', entities: ['SSN'] },
     ];
     const result = mergePolicies(policies, 'input');
     expect(result.entities).toContain('SSN');
@@ -214,7 +214,7 @@ describe('mergePolicies', () => {
 
   it('includes both-target policy for input direction', () => {
     const policies: PiiPolicy[] = [
-      { name: 'both', target: 'both', entities: ['EMAIL'] },
+      { target: 'both', entities: ['EMAIL'] },
     ];
     const result = mergePolicies(policies, 'input');
     expect(result.entities).toContain('EMAIL');
@@ -222,7 +222,7 @@ describe('mergePolicies', () => {
 
   it('excludes response-only policy for input direction', () => {
     const policies: PiiPolicy[] = [
-      { name: 'res', target: 'response', entities: ['EMAIL'] },
+      { target: 'response', entities: ['EMAIL'] },
     ];
     const result = mergePolicies(policies, 'input');
     expect(result.entities).toEqual([]);
@@ -230,7 +230,7 @@ describe('mergePolicies', () => {
 
   it('includes response-target policy for output direction', () => {
     const policies: PiiPolicy[] = [
-      { name: 'res', target: 'response', entities: ['PHONE'] },
+      { target: 'response', entities: ['PHONE'] },
     ];
     const result = mergePolicies(policies, 'output');
     expect(result.entities).toContain('PHONE');
@@ -238,7 +238,7 @@ describe('mergePolicies', () => {
 
   it('excludes request-only policy for output direction', () => {
     const policies: PiiPolicy[] = [
-      { name: 'req', target: 'request', entities: ['SSN'] },
+      { target: 'request', entities: ['SSN'] },
     ];
     const result = mergePolicies(policies, 'output');
     expect(result.entities).toEqual([]);
@@ -246,8 +246,8 @@ describe('mergePolicies', () => {
 
   it('skips disabled policies', () => {
     const policies: PiiPolicy[] = [
-      { name: 'off', target: 'both', enabled: false, entities: ['EMAIL'] },
-      { name: 'on', target: 'both', entities: ['SSN'] },
+      { target: 'both', enabled: false, entities: ['EMAIL'] },
+      { target: 'both', entities: ['SSN'] },
     ];
     const result = mergePolicies(policies, 'input');
     expect(result.entities).not.toContain('EMAIL');
@@ -256,8 +256,8 @@ describe('mergePolicies', () => {
 
   it('unions entities from multiple matching policies', () => {
     const policies: PiiPolicy[] = [
-      { name: 'a', target: 'both', entities: ['SSN'] },
-      { name: 'b', target: 'both', entities: ['EMAIL'] },
+      { target: 'both', entities: ['SSN'] },
+      { target: 'both', entities: ['EMAIL'] },
     ];
     const result = mergePolicies(policies, 'input');
     expect(result.entities?.sort()).toEqual(['EMAIL', 'SSN']);
@@ -265,8 +265,8 @@ describe('mergePolicies', () => {
 
   it('deduplicates customPatterns', () => {
     const policies: PiiPolicy[] = [
-      { name: 'a', target: 'both', customPatterns: ['tok-[a-z]+'] },
-      { name: 'b', target: 'both', customPatterns: ['tok-[a-z]+', 'sec-[0-9]+'] },
+      { target: 'both', customPatterns: ['tok-[a-z]+'] },
+      { target: 'both', customPatterns: ['tok-[a-z]+', 'sec-[0-9]+'] },
     ];
     const result = mergePolicies(policies, 'input');
     // Set dedup: tok-[a-z]+ appears once
@@ -276,9 +276,9 @@ describe('mergePolicies', () => {
 
   it('outputBufferSize = max across matched policies', () => {
     const policies: PiiPolicy[] = [
-      { name: 'a', target: 'response', outputBufferSize: 40 },
-      { name: 'b', target: 'response', outputBufferSize: 80 },
-      { name: 'c', target: 'response' }, // no outputBufferSize
+      { target: 'response', outputBufferSize: 40 },
+      { target: 'response', outputBufferSize: 80 },
+      { target: 'response' }, // no outputBufferSize
     ];
     const result = mergePolicies(policies, 'output');
     expect(result.outputBufferSize).toBe(80);
@@ -286,7 +286,7 @@ describe('mergePolicies', () => {
 
   it('outputBufferSize is undefined when no policy specifies it', () => {
     const policies: PiiPolicy[] = [
-      { name: 'a', target: 'both' },
+      { target: 'both' },
     ];
     const result = mergePolicies(policies, 'output');
     expect(result.outputBufferSize).toBeUndefined();
@@ -294,7 +294,7 @@ describe('mergePolicies', () => {
 
   it('uses ALL_ENTITIES when policy has no entities field', () => {
     const policies: PiiPolicy[] = [
-      { name: 'default', target: 'both' }, // no entities
+      { target: 'both' }, // no entities
     ];
     const result = mergePolicies(policies, 'input');
     expect(result.entities?.sort()).toEqual(['CREDIT_CARD', 'EMAIL', 'IBAN', 'PHONE', 'SSN']);
@@ -311,8 +311,8 @@ describe('piiScrubber — policy-driven scrubbing via mergePolicies', () => {
   it('merges entities from enabled policies for input direction', () => {
     const messages = [{ role: 'user', content: 'ssn 123-45-6789 card 4111 1111 1111 1111' }];
     const policies: PiiPolicy[] = [
-      { name: 'strict', target: 'request', entities: ['SSN'] },
-      { name: 'financial', target: 'request', entities: ['CREDIT_CARD'] },
+      { target: 'request', entities: ['SSN'] },
+      { target: 'request', entities: ['CREDIT_CARD'] },
     ];
     const eff = mergePolicies(policies, 'input');
     const { messages: out, redacted } = scrubMessages(messages, eff);
@@ -323,8 +323,8 @@ describe('piiScrubber — policy-driven scrubbing via mergePolicies', () => {
   it('skips disabled policies', () => {
     const messages = [{ role: 'user', content: 'ssn 123-45-6789 mail a@b.com' }];
     const policies: PiiPolicy[] = [
-      { name: 'active', target: 'request', entities: ['SSN'] },
-      { name: 'off', enabled: false, target: 'request', entities: ['EMAIL'] },
+      { target: 'request', entities: ['SSN'] },
+      { enabled: false, target: 'request', entities: ['EMAIL'] },
     ];
     const eff = mergePolicies(policies, 'input');
     const { messages: out, redacted } = scrubMessages(messages, eff);
@@ -335,7 +335,7 @@ describe('piiScrubber — policy-driven scrubbing via mergePolicies', () => {
   it('does not merge output-only policy into input scrubbing', () => {
     const messages = [{ role: 'user', content: 'ssn 123-45-6789' }];
     const policies: PiiPolicy[] = [
-      { name: 'output-only', target: 'response', entities: ['SSN'] },
+      { target: 'response', entities: ['SSN'] },
     ];
     const eff = mergePolicies(policies, 'input');
     const { messages: out, redacted } = scrubMessages(messages, eff);

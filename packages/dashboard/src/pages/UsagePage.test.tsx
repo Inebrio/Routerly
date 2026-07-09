@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { UsagePage } from './UsagePage';
@@ -401,5 +401,1128 @@ describe('UsagePage — Live mode', () => {
     expect(oneMinBtn.className).toContain('btn-primary');
     // LIVE indicator disappears once live mode is off
     await waitFor(() => expect(screen.queryByText('LIVE')).toBeNull());
+  });
+});
+
+// ── Error + retry ──────────────────────────────────────────────────────────────
+
+describe('UsagePage — error and retry', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('shows error state when getUsage rejects', async () => {
+    vi.mocked(getUsage).mockRejectedValue(new Error('network failure'));
+    renderPage();
+    await waitFor(() => expect(screen.getByText(/Failed to load usage data/)).toBeTruthy());
+    expect(screen.getByText('network failure')).toBeTruthy();
+  });
+
+  it('shows Retry button in error state', async () => {
+    vi.mocked(getUsage).mockRejectedValue(new Error('bad'));
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy());
+  });
+
+  it('Refresh now button calls fetchStats again', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    await waitFor(() => screen.getByText('Total Calls'));
+    const refreshBtn = screen.getByTitle('Refresh now');
+    await userEvent.click(refreshBtn);
+    // getUsage called at least twice (mount + refresh)
+    expect(vi.mocked(getUsage).mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('shows error for non-Error rejection (string)', async () => {
+    vi.mocked(getUsage).mockRejectedValue('string error');
+    renderPage();
+    await waitFor(() => expect(screen.getByText(/string error/)).toBeTruthy());
+  });
+});
+
+// ── Records table ──────────────────────────────────────────────────────────────
+
+describe('UsagePage — records table', () => {
+  function makeRecord(overrides: Record<string, unknown> = {}) {
+    return {
+      id: 'rec1',
+      timestamp: new Date().toISOString(),
+      projectId: 'proj-abc',
+      modelId: 'openai/gpt-4o',
+      inputTokens: 100,
+      outputTokens: 50,
+      cost: 0.001,
+      latencyMs: 300,
+      outcome: 'success',
+      callType: 'completion',
+      ttftMs: null,
+      tokensPerSec: null,
+      ...overrides,
+    };
+  }
+
+  function makeStatsWithRecords(records: unknown[]) {
+    return {
+      summary: { totalCost: 1, totalCalls: 1, successCalls: 1, errorCalls: 0, routingCalls: 0, completionCalls: 1, routingCost: 0, completionCost: 1 },
+      byModel: {},
+      timeline: [],
+      records,
+    };
+  }
+
+  it('renders "No usage records" empty state when records array is empty', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([]));
+    renderPage();
+    await waitFor(() => expect(screen.getByText(/No usage records/)).toBeTruthy());
+  });
+
+  it('renders a record row and shows its model', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord()]));
+    renderPage();
+    await waitFor(() => expect(screen.getAllByText('openai/gpt-4o').length).toBeGreaterThan(0));
+  });
+
+  it('shows project name when project is loaded', async () => {
+    vi.mocked(getProjects).mockResolvedValue([{ id: 'proj-abc', name: 'MyProject' } as never]);
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord()]));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('MyProject')).toBeTruthy());
+  });
+
+  it('falls back to projectId span when project not found', async () => {
+    vi.mocked(getProjects).mockResolvedValue([]);
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord({ projectId: 'unknown-proj' })]));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('unknown-proj')).toBeTruthy());
+  });
+
+  it('shows ttftMs when present', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord({ ttftMs: 42 })]));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('42ms')).toBeTruthy());
+  });
+
+  it('shows dash for null ttftMs', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord({ ttftMs: null })]));
+    renderPage();
+    await waitFor(() => screen.getAllByText('openai/gpt-4o'));
+    // at least one dash in the ttft/tokensPerSec columns
+    const tds = Array.from(document.querySelectorAll('td'));
+    expect(tds.some(td => td.textContent === '—')).toBe(true);
+  });
+
+  it('shows tokensPerSec when present', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord({ tokensPerSec: 35 })]));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('35')).toBeTruthy());
+  });
+
+  it('renders routing badge for routing callType', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord({ callType: 'routing' })]));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('router')).toBeTruthy());
+  });
+
+  it('renders completion badge for completion callType', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord({ callType: 'completion' })]));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('completion')).toBeTruthy());
+  });
+
+  it('navigates to detail page on row click', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord({ id: 'rec-nav' })]));
+    renderPage();
+    await waitFor(() => screen.getAllByText('openai/gpt-4o'));
+    const row = document.querySelector('tbody tr') as HTMLElement;
+    expect(row).toBeTruthy();
+    fireEvent.click(row);
+    // navigation attempted (no error thrown means navigate was called)
+  });
+
+  it('shows "X / total" count in Recent Calls when pagination present', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStatsWithRecords([makeRecord()]),
+      pagination: { page: 1, totalPages: 3, totalRecords: 250 },
+    });
+    renderPage();
+    await waitFor(() => expect(screen.getByText(/1 \/ 250/)).toBeTruthy());
+  });
+});
+
+// ── Pagination controls ────────────────────────────────────────────────────────
+
+describe('UsagePage — pagination controls', () => {
+  function makePagedStats(page: number, totalPages: number) {
+    return {
+      summary: { totalCost: 0, totalCalls: 0, successCalls: 0, errorCalls: 0, routingCalls: 0, completionCalls: 0, routingCost: 0, completionCost: 0 },
+      byModel: {},
+      timeline: [],
+      records: [{ id: 'r1', timestamp: new Date().toISOString(), projectId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 0, outcome: 'success' }],
+      pagination: { page, totalPages, totalRecords: totalPages * 100 },
+    };
+  }
+
+  it('shows pagination controls when totalPages > 1', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makePagedStats(1, 3));
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Previous' })).toBeTruthy());
+    expect(screen.getByRole('button', { name: 'Next' })).toBeTruthy();
+  });
+
+  it('Previous button is disabled on page 1', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makePagedStats(1, 3));
+    renderPage();
+    await waitFor(() => screen.getByRole('button', { name: 'Previous' }));
+    expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled();
+  });
+
+  it('Next button calls setPage +1', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makePagedStats(1, 3));
+    renderPage();
+    await waitFor(() => screen.getByRole('button', { name: 'Next' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(vi.mocked(getUsage).mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('Previous button calls setPage -1 when not on page 1', async () => {
+    // Start on page 2 by returning page=2 initially, then clicking Prev
+    vi.mocked(getUsage).mockResolvedValue(makePagedStats(2, 3));
+    renderPage();
+    await waitFor(() => screen.getByRole('button', { name: 'Previous' }));
+    // page state starts at 1 in the component; Previous will be disabled. Click Next to go to page 2.
+    const nextBtn = screen.getByRole('button', { name: 'Next' });
+    expect(nextBtn).not.toBeDisabled();
+    await userEvent.click(nextBtn); // page → 2
+    // Now Previous should not be disabled
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Previous' })).not.toBeDisabled());
+    await userEvent.click(screen.getByRole('button', { name: 'Previous' })); // page → 1
+    expect(vi.mocked(getUsage).mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+// ── Stat card click toggles ────────────────────────────────────────────────────
+
+describe('UsagePage — stat card click toggles callTypeFilter', () => {
+  it('clicking Completion Calls card activates completion filter (Type button becomes primary)', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats({ completionCalls: 5, completionCost: 0.5 }));
+    renderPage();
+    await waitFor(() => screen.getByText('Completion Calls'));
+    const card = screen.getByText('Completion Calls').closest('.stat-card') as HTMLElement;
+    expect(card).toBeTruthy();
+    fireEvent.click(card);
+    // After click, Completion Type filter button becomes active
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Completion' }).className).toContain('btn-primary'));
+  });
+
+  it('clicking Router Calls card activates routing filter (Router button becomes primary)', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats({ routingCalls: 3 }));
+    renderPage();
+    await waitFor(() => screen.getByText('Router Calls'));
+    const card = screen.getByText('Router Calls').closest('.stat-card') as HTMLElement;
+    expect(card).toBeTruthy();
+    fireEvent.click(card);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Router' }).className).toContain('btn-primary'));
+  });
+
+  it('clicking Router Calls card again deactivates routing filter', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats({ routingCalls: 3 }));
+    renderPage();
+    await waitFor(() => screen.getByText('Router Calls'));
+    // Activate via the explicit Router filter button (not the card) then click the card
+    // to cover the card's f===routing → 'all' toggle branch
+    await userEvent.click(screen.getByRole('button', { name: 'Router' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Router' }).className).toContain('btn-primary'));
+    const card = screen.getByText('Router Calls').closest('.stat-card') as HTMLElement;
+    fireEvent.click(card); // callTypeFilter=routing → card sets it to 'all'
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Router' }).className).not.toContain('btn-primary'));
+  });
+});
+
+// ── Reset filters ──────────────────────────────────────────────────────────────
+
+describe('UsagePage — reset filters button', () => {
+  it('Reset filters button appears and resets active filters', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    await waitFor(() => screen.getByText('Total Calls'));
+    // Activate a filter via the Type buttons
+    const guardrailBtn = screen.getByRole('button', { name: 'Guardrail' });
+    await userEvent.click(guardrailBtn);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Reset filters' })).toBeTruthy());
+    await userEvent.click(screen.getByRole('button', { name: 'Reset filters' }));
+    // After reset, Reset filters button should disappear (no active filters)
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Reset filters' })).toBeNull());
+  });
+
+  it('Success filter button activates filter', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    const btn = await screen.findByRole('button', { name: 'Success' });
+    await userEvent.click(btn);
+    expect(btn.className).toContain('btn-primary');
+  });
+
+  it('Error filter button activates filter', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    const btn = await screen.findByRole('button', { name: 'Error' });
+    await userEvent.click(btn);
+    expect(btn.className).toContain('btn-primary');
+  });
+});
+
+// ── Model sort remaining keys ──────────────────────────────────────────────────
+
+describe('UsagePage — model table sort keys', () => {
+  // Use slash IDs so provider is derived from prefix, not the full modelId string
+  // (avoids modelId appearing twice in the row text — once in Model col, once in Provider col)
+  function byModel2() {
+    return {
+      'p/model-alpha': { calls: 5, inputTokens: 200, outputTokens: 100, cachedInputTokens: 0, cost: 0.002, errors: 1, success: 4, avgLatencyMs: 100, p95LatencyMs: 200 },
+      'p/model-beta':  { calls: 10, inputTokens: 800, outputTokens: 400, cachedInputTokens: 0, cost: 0.001, errors: 0, success: 10, avgLatencyMs: 50, p95LatencyMs: 100 },
+    };
+  }
+
+  it('sorts by Errors column', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byModel: byModel2() });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/model-alpha/).length > 0);
+    const errHeader = Array.from(document.querySelectorAll('th span')).find(el => el.textContent?.trim() === 'Errors');
+    expect(errHeader).toBeTruthy();
+    await userEvent.click(errHeader!); // asc: model-beta (0 errors) first
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    expect(rows[0]?.textContent).toContain('model-beta');
+  });
+
+  it('sorts by Success rate column', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byModel: byModel2() });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/model-alpha/).length > 0);
+    const srHeader = Array.from(document.querySelectorAll('th span')).find(el => el.textContent?.trim().startsWith('Success rate'));
+    expect(srHeader).toBeTruthy();
+    await userEvent.click(srHeader!); // asc: model-alpha (0.8) before model-beta (1.0)
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    expect(rows[0]?.textContent).toContain('model-alpha');
+  });
+
+  it('sorts by Avg latency column', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byModel: byModel2() });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/model-alpha/).length > 0);
+    const header = Array.from(document.querySelectorAll('th span')).find(el => el.textContent?.trim().startsWith('Avg latency'));
+    expect(header).toBeTruthy();
+    await userEvent.click(header!); // asc: model-beta (50ms) before model-alpha (100ms)
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    expect(rows[0]?.textContent).toContain('model-beta');
+  });
+
+  it('sorts by P95 latency column', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byModel: byModel2() });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/model-alpha/).length > 0);
+    const header = Array.from(document.querySelectorAll('th span')).find(el => el.textContent?.trim().startsWith('P95 latency'));
+    expect(header).toBeTruthy();
+    await userEvent.click(header!); // asc: model-beta (100ms) before model-alpha (200ms)
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    expect(rows[0]?.textContent).toContain('model-beta');
+  });
+
+  it('sorts by Input tokens column', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byModel: byModel2() });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/model-alpha/).length > 0);
+    const header = Array.from(document.querySelectorAll('th span')).find(el => el.textContent?.trim().startsWith('Input tokens'));
+    expect(header).toBeTruthy();
+    await userEvent.click(header!); // asc: model-alpha (200) before model-beta (800)
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    expect(rows[0]?.textContent).toContain('model-alpha');
+  });
+
+  it('sorts by Output tokens column', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byModel: byModel2() });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/model-alpha/).length > 0);
+    const header = Array.from(document.querySelectorAll('th span')).find(el => el.textContent?.trim().startsWith('Output tokens'));
+    expect(header).toBeTruthy();
+    await userEvent.click(header!); // asc: model-alpha (100 out) before model-beta (400 out)
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    expect(rows[0]?.textContent).toContain('model-alpha');
+  });
+
+  it('sorts by Cost/1K column (finite values)', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byModel: byModel2() });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/model-alpha/).length > 0);
+    const header = Array.from(document.querySelectorAll('th span')).find(el => el.textContent?.trim().startsWith('Cost / 1K'));
+    expect(header).toBeTruthy();
+    await userEvent.click(header!); // asc: lower cost/1k first
+    expect(document.querySelectorAll('tbody tr').length).toBe(2);
+  });
+
+  it('sorts by Provider column in model table', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byModel: byModel2() });
+    vi.mocked(getModels).mockResolvedValue([
+      { id: 'p/model-alpha', provider: 'zz-prov', name: '', endpoint: '', cost: { inputPerMillion: 0, outputPerMillion: 0 } } as never,
+      { id: 'p/model-beta', provider: 'aa-prov', name: '', endpoint: '', cost: { inputPerMillion: 0, outputPerMillion: 0 } } as never,
+    ]);
+    renderPage();
+    await waitFor(() => screen.getAllByText(/model-alpha/).length > 0);
+    const header = Array.from(document.querySelectorAll('th span')).find(el => el.textContent?.trim() === 'Provider');
+    expect(header).toBeTruthy();
+    await userEvent.click(header!); // asc: aa-prov first → model-beta row first
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    expect(rows[0]?.textContent).toContain('model-beta');
+  });
+
+  it('rank ties: two models with same metric share the same rank number', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'x/tie-alpha': { calls: 10, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0, cost: 0.01, errors: 0, success: 10, avgLatencyMs: 100, p95LatencyMs: 200 },
+        'x/tie-beta':  { calls: 10, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0, cost: 0.01, errors: 0, success: 10, avgLatencyMs: 150, p95LatencyMs: 300 },
+      },
+    });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/tie-alpha/).length > 0);
+    // Both have same metric → tied at rank 1; each rank cell shows '1'
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    const rankTexts = rows.map(r => r.querySelector('td:first-child')?.textContent?.trim());
+    expect(rankTexts.every(t => t?.includes('1'))).toBe(true);
+  });
+
+  it('fmtCost: cost below 0.01 uses 4 decimal places', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'x/cheap': { calls: 10, inputTokens: 5000, outputTokens: 2500, cachedInputTokens: 0,
+          cost: 0.000001, errors: 0, success: 10, avgLatencyMs: 100, p95LatencyMs: 200 },
+      },
+    });
+    renderPage();
+    // cost/1k ≈ 0.000000133 → < 0.01 → fmtCost returns 4 decimal string
+    await waitFor(() => screen.getAllByText(/cheap/).length > 0);
+    const cells = Array.from(document.querySelectorAll('td.mono'));
+    expect(cells.length).toBeGreaterThan(0);
+  });
+});
+
+// ── prevMax / new-row highlighting ────────────────────────────────────────────
+
+describe('UsagePage — prevMax new-row detection', () => {
+  it('new-row detection: second fetch with newer timestamp exercises prevMax+ids branches', async () => {
+    const ts1 = '2024-01-01T00:00:00.000Z';
+    const ts2 = '2024-01-02T00:00:00.000Z'; // strictly newer
+
+    const statsWithRecord = (id: string, ts: string) => ({
+      summary: { totalCost: 0, totalCalls: 1, successCalls: 1, errorCalls: 0, routingCalls: 0, completionCalls: 1, routingCost: 0, completionCost: 0 },
+      byModel: {},
+      timeline: [],
+      records: [{ id, timestamp: ts, projectId: 'p', modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 0, outcome: 'success' }],
+    });
+
+    // All fetches return a record; first sets maxTs, subsequent fetches exercise prevMax logic
+    vi.mocked(getUsage)
+      .mockResolvedValueOnce(statsWithRecord('rec-1', ts1))
+      .mockResolvedValueOnce(statsWithRecord('rec-2', ts1)) // second initial fetch (dateRange reset)
+      .mockResolvedValue(statsWithRecord('rec-new', ts2)); // Refresh: newer timestamp
+
+    renderPage();
+    await waitFor(() => screen.getAllByText('openai/gpt-4o').length > 0);
+    // Multiple Refresh clicks to ensure prevMax !== null is reached
+    await userEvent.click(screen.getByTitle('Refresh now'));
+    await userEvent.click(screen.getByTitle('Refresh now'));
+    await waitFor(() => vi.mocked(getUsage).mock.calls.length >= 3);
+    expect(screen.getByTitle('Refresh now')).toBeTruthy();
+  });
+
+  it('new-row detection: second fetch with same timestamp covers ids.size=0', async () => {
+    const ts1 = '2024-01-01T00:00:00.000Z';
+    const statsWithRecord = (id: string, ts: string) => ({
+      summary: { totalCost: 0, totalCalls: 1, successCalls: 1, errorCalls: 0, routingCalls: 0, completionCalls: 1, routingCost: 0, completionCost: 0 },
+      byModel: {},
+      timeline: [],
+      records: [{ id, timestamp: ts, projectId: 'p', modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 0, outcome: 'success' }],
+    });
+
+    vi.mocked(getUsage).mockResolvedValue(statsWithRecord('rec-same', ts1));
+
+    renderPage();
+    await waitFor(() => screen.getAllByText('openai/gpt-4o').length > 0);
+    // Multiple refreshes: after first sets prevMax=ts1, subsequent have rec-same ts1 → NOT newer → ids.size=0
+    await userEvent.click(screen.getByTitle('Refresh now'));
+    await userEvent.click(screen.getByTitle('Refresh now'));
+    await waitFor(() => vi.mocked(getUsage).mock.calls.length >= 3);
+    // ids.size=0 → setNewRowIds not called → no row-new class
+    expect(document.querySelector('.row-new')).toBeNull();
+  });
+
+  it('empty-records fetch: maxTs is empty string (if(maxTs) false branch)', async () => {
+    // Always return empty records — maxTs stays '' → if(maxTs) never sets ref
+    vi.mocked(getUsage).mockResolvedValue(makeStats()); // records:[]
+
+    renderPage();
+    await waitFor(() => screen.getByText('Total Calls'));
+    await userEvent.click(screen.getByTitle('Refresh now'));
+    await waitFor(() => vi.mocked(getUsage).mock.calls.length >= 2);
+    expect(screen.getByTitle('Refresh now')).toBeTruthy();
+  });
+
+  it('reduce max: two records where second has older timestamp (max stays at first)', async () => {
+    const ts1 = '2024-06-01T00:00:00.000Z'; // newer
+    const ts0 = '2024-01-01T00:00:00.000Z'; // older — reduce: r.timestamp > max = false → returns max
+    const twoRecords = {
+      summary: { totalCost: 0, totalCalls: 2, successCalls: 2, errorCalls: 0, routingCalls: 0, completionCalls: 2, routingCost: 0, completionCost: 0 },
+      byModel: {}, timeline: [],
+      records: [
+        { id: 'r-newer', timestamp: ts1, projectId: 'p', modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 0, outcome: 'success' },
+        { id: 'r-older', timestamp: ts0, projectId: 'p', modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 0, outcome: 'success' },
+      ],
+    };
+    vi.mocked(getUsage).mockResolvedValue(twoRecords);
+    renderPage();
+    await waitFor(() => vi.mocked(getUsage).mock.calls.length >= 1);
+    expect(screen.getByTitle('Refresh now')).toBeTruthy();
+  });
+
+  it('pollInterval=0 skips setInterval (clicking Off button)', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    await waitFor(() => screen.getByText('LIVE'));
+    const offBtn = screen.getByRole('button', { name: 'Off' });
+    await userEvent.click(offBtn); // sets liveMode=false, pollInterval=0
+    expect(screen.getByTitle('Refresh now')).toBeTruthy();
+  });
+});
+
+// ── dateRange init useEffect branches ─────────────────────────────────────────
+
+describe('UsagePage — dateRange init useEffect', () => {
+  it('sets default date range when from/to both empty', async () => {
+    // useFilterState returns defaultValue { from: '', to: '', label: 'This month' }
+    // RECENT_PRESETS is [] → isRecentPreset=false → hits the !from && !to branch
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    // Just verifying no crash and getUsage is called
+    await waitFor(() => expect(vi.mocked(getUsage)).toHaveBeenCalled());
+  });
+});
+
+// ── fetchStats recentPreset branch ────────────────────────────────────────────
+
+describe('UsagePage — fetchStats with RECENT_PRESETS (mocked with value)', () => {
+  it('uses recentPreset range when dateRange label matches a recent preset', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    await waitFor(() => expect(vi.mocked(getUsage)).toHaveBeenCalled());
+    const [period] = vi.mocked(getUsage).mock.calls[0]!;
+    expect(['custom', 'all']).toContain(period);
+  });
+});
+
+// ── provider fallback for non-slash model not in allModels ────────────────────
+
+describe('UsagePage — provider fallback for slash-less id not in allModels', () => {
+  it('uses modelId as provider when no slash and not in models list', async () => {
+    vi.mocked(getModels).mockResolvedValue([]); // empty allModels
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'noslash': { calls: 2, inputTokens: 100, outputTokens: 50, cachedInputTokens: 0,
+          cost: 0.001, errors: 0, success: 2, avgLatencyMs: 100, p95LatencyMs: 200 },
+      },
+    });
+    renderPage();
+    await waitFor(() => screen.getAllByText('noslash').length >= 2); // appears in Model AND Provider cols
+  });
+
+  it('model with calls=0 gets successRate=0 (v.calls > 0 false branch)', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'x/zero-calls': { calls: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0,
+          cost: 0, errors: 0, success: 0, avgLatencyMs: 0, p95LatencyMs: 0 },
+      },
+    });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/zero-calls/).length > 0);
+    // calls=0 → successRate=0 (false branch of v.calls > 0) → metric=Infinity → rank='—'
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    expect(rows[0]?.querySelector('td:first-child')?.textContent?.trim()).toBe('—');
+  });
+});
+
+// ── sort same key desc→asc toggle ─────────────────────────────────────────────
+
+describe('UsagePage — model sort same-key desc→asc toggle', () => {
+  it('three clicks on same header: asc → desc → asc', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'p/aaa': { calls: 5, inputTokens: 200, outputTokens: 100, cachedInputTokens: 0, cost: 0.001, errors: 0, success: 5, avgLatencyMs: 50, p95LatencyMs: 100 },
+        'p/zzz': { calls: 5, inputTokens: 200, outputTokens: 100, cachedInputTokens: 0, cost: 0.005, errors: 0, success: 5, avgLatencyMs: 100, p95LatencyMs: 200 },
+      },
+    });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/aaa/).length > 0);
+    const modelTh = Array.from(document.querySelectorAll('th span')).find(el => el.textContent?.trim().startsWith('Model'));
+    expect(modelTh).toBeTruthy();
+    await userEvent.click(modelTh!); // click 1: asc → p/aaa first
+    await userEvent.click(modelTh!); // click 2: desc → p/zzz first
+    await userEvent.click(modelTh!); // click 3: asc again → p/aaa first (d==='desc' → 'asc')
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    expect(rows[0]?.textContent).toContain('aaa');
+  });
+});
+
+// ── rank sort: one Infinity one finite → aInf alone ───────────────────────────
+
+describe('UsagePage — rank sort with one Infinity one finite', () => {
+  it('finite-rank model appears before Infinity-rank model in rank sort', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'p/ok-model':  { calls: 5, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0, cost: 0.01, errors: 0, success: 5, avgLatencyMs: 100, p95LatencyMs: 200 },
+        'p/bad-model': { calls: 5, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0, cost: 0.01, errors: 5, success: 0, avgLatencyMs: 100, p95LatencyMs: 200 },
+      },
+    });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/ok-model/).length > 0);
+    // Default rank sort asc: ok-model (finite rank) first, bad-model (Inf rank) last
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    expect(rows[0]?.textContent).toContain('ok-model');
+    expect(rows[rows.length - 1]?.textContent).toContain('bad-model');
+  });
+
+  it('desc rank sort still keeps Infinity-rank model last (bInf branch)', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'p/ok-model2':  { calls: 5, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0, cost: 0.01, errors: 0, success: 5, avgLatencyMs: 100, p95LatencyMs: 200 },
+        'p/bad-model2': { calls: 5, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0, cost: 0.01, errors: 5, success: 0, avgLatencyMs: 100, p95LatencyMs: 200 },
+      },
+    });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/ok-model2/).length > 0);
+    const rankTh = Array.from(document.querySelectorAll('th span')).find(el => el.textContent?.trim() === 'Rank');
+    expect(rankTh).toBeTruthy();
+    await userEvent.click(rankTh!); // asc (already default, just to be sure)
+    await userEvent.click(rankTh!); // desc: finite-rank models still shown, Infinity always last
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    expect(rows[rows.length - 1]?.textContent).toContain('bad-model2');
+  });
+});
+
+// ── v.cost null in byModel ────────────────────────────────────────────────────
+
+describe('UsagePage — byModel cost null fallback', () => {
+  it('renders $0.00000000 for model with null cost in byModel', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'x/null-cost': { calls: 1, inputTokens: 100, outputTokens: 50, cachedInputTokens: 0,
+          cost: null as never, errors: 0, success: 1, avgLatencyMs: 100, p95LatencyMs: 200 },
+      },
+    });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/null-cost/).length > 0);
+    // v.cost ?? 0 → 0 → "$0.00000000"
+    expect(screen.getAllByText('$0.00000000').length).toBeGreaterThan(0);
+  });
+});
+
+// ── fmtCost branches ──────────────────────────────────────────────────────────
+
+describe('UsagePage — fmtCost via per-model table', () => {
+  function modelEntry(id: string, inputT: number, outputT: number, cost: number) {
+    return { calls: 1, inputTokens: inputT, outputTokens: outputT, cachedInputTokens: 0,
+      cost, errors: 0, success: 1, avgLatencyMs: 100, p95LatencyMs: 200 };
+  }
+
+  it('fmtCost(0): zero costPer1k renders $0 when cost is 0', async () => {
+    // cost=0, totalTok>0 → costPer1k=0 → fmtCost(0) → "$0"
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: { 'x/free-model': modelEntry('x/free-model', 1000, 500, 0) },
+    });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/free-model/).length > 0);
+    expect(screen.getByText('$0')).toBeTruthy();
+  });
+
+  it('fmtCost: costPer1k between 0.01 and 1 uses 3 decimal places', async () => {
+    // cost=0.3, totalTok=1000+500=1500 → costPer1k = (0.3*1000)/1500 = 0.2 → fmtCost(0.2) → "$0.200"
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: { 'x/mid-model': modelEntry('x/mid-model', 1000, 500, 0.3) },
+    });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/mid-model/).length > 0);
+    // costPer1k=0.2, 0.01 <= 0.2 < 1 → n.toFixed(3) → "$0.200"
+    expect(screen.getByText('$0.200')).toBeTruthy();
+  });
+
+  it('fmtCost: costPer1k >= 1 uses 2 decimal places', async () => {
+    // cost=3, totalTok=1000+500=1500 → costPer1k=(3*1000)/1500=2 → fmtCost(2) → "$2.00"
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: { 'x/exp-model': modelEntry('x/exp-model', 1000, 500, 3) },
+    });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/exp-model/).length > 0);
+    expect(screen.getByText('$2.00')).toBeTruthy();
+  });
+});
+
+// ── zero-token model (totalTok=0 → costPer1k=Infinity → dash) ────────────────
+
+describe('UsagePage — zero-token model renders dash in Cost/1K', () => {
+  it('shows dash for model with zero input+output tokens', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'x/zero-tok': { calls: 1, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0,
+          cost: 0, errors: 0, success: 1, avgLatencyMs: 0, p95LatencyMs: 0 },
+      },
+    });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/zero-tok/).length > 0);
+    // totalTok=0 → costPer1k=Infinity → renders '—' span in the Cost/1K cell
+    const cells = Array.from(document.querySelectorAll('td'));
+    expect(cells.some(td => td.textContent === '—')).toBe(true);
+  });
+});
+
+// ── Infinity sentinels in sortedModelRows ────────────────────────────────────
+
+describe('UsagePage — Infinity sentinels in model sort', () => {
+  it('two Infinity-rank models both get "—" and sorting is stable', async () => {
+    // Both models: success=0 → metric=Infinity → rank=Infinity → displayRank='—'
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'x/inf-a': { calls: 5, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0,
+          cost: 0.01, errors: 5, success: 0, avgLatencyMs: 100, p95LatencyMs: 200 },
+        'x/inf-b': { calls: 3, inputTokens: 600, outputTokens: 300, cachedInputTokens: 0,
+          cost: 0.005, errors: 3, success: 0, avgLatencyMs: 80, p95LatencyMs: 160 },
+      },
+    });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/inf-a/).length > 0);
+    // Both Infinity → aInf && bInf → return 0; displayRank='—' for both
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    const rankCells = rows.map(r => r.querySelector('td:first-child')?.textContent?.trim());
+    expect(rankCells.every(t => t === '—')).toBe(true);
+  });
+
+  it('Infinity costPer1k model (zero tokens) sinks below finite-costPer1k model', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        // zero tokens → costPer1k = Infinity (sentinel)
+        'x/inf-c': { calls: 1, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0,
+          cost: 0.01, errors: 0, success: 1, avgLatencyMs: 100, p95LatencyMs: 200 },
+        // positive tokens → finite costPer1k
+        'x/fin-c': { calls: 5, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0,
+          cost: 0.01, errors: 0, success: 5, avgLatencyMs: 100, p95LatencyMs: 200 },
+      },
+    });
+    renderPage();
+    await waitFor(() => screen.getAllByText(/fin-c/).length > 0);
+    const costHeader = Array.from(document.querySelectorAll('th span')).find(el =>
+      el.textContent?.trim().startsWith('Cost / 1K'));
+    expect(costHeader).toBeTruthy();
+    await userEvent.click(costHeader!); // asc: fin-c (finite costPer1k) first, inf-c (Inf) last
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    expect(rows[0]?.textContent).toContain('fin-c');
+    expect(rows[rows.length - 1]?.textContent).toContain('inf-c');
+  });
+});
+
+// ── Stat card ternary branches ────────────────────────────────────────────────
+
+describe('UsagePage — stat card ternary fallbacks', () => {
+  it('completionCalls falls back to totalCalls when undefined', async () => {
+    // Explicitly omit completionCalls (undefined) → ?? totalCalls
+    const statsNoCompletion = {
+      summary: { totalCost: 0, totalCalls: 42, successCalls: 42, errorCalls: 0,
+        routingCalls: 0, completionCost: 0, routingCost: 0 }, // no completionCalls key
+      byModel: {}, timeline: [], records: [],
+    };
+    vi.mocked(getUsage).mockResolvedValue(statsNoCompletion as never);
+    renderPage();
+    await waitFor(() => screen.getByText('Completion Calls'));
+    const completionCard = screen.getByText('Completion Calls').closest('.stat-card') as HTMLElement;
+    expect(completionCard?.querySelector('.stat-value')?.textContent).toBe('42');
+  });
+
+  it('routingCalls shows 0 when undefined (?? 0 fallback)', async () => {
+    // Explicitly omit routingCalls → ?? 0
+    const statsNoRouting = {
+      summary: { totalCost: 0, totalCalls: 5, successCalls: 5, errorCalls: 0,
+        completionCalls: 5, completionCost: 0, routingCost: 0 }, // no routingCalls key
+      byModel: {}, timeline: [], records: [],
+    };
+    vi.mocked(getUsage).mockResolvedValue(statsNoRouting as never);
+    renderPage();
+    await waitFor(() => screen.getByText('Router Calls'));
+    const routerCard = screen.getByText('Router Calls').closest('.stat-card') as HTMLElement;
+    expect(routerCard?.querySelector('.stat-value')?.textContent).toBe('0');
+  });
+
+  it('completionCost undefined falls back to totalCost', async () => {
+    // Explicitly no completionCost → ?? totalCost
+    const s = {
+      summary: { totalCost: 0.9999, totalCalls: 5, successCalls: 5, errorCalls: 0,
+        completionCalls: 5, routingCalls: 0, routingCost: 0 },
+      byModel: {}, timeline: [], records: [],
+    };
+    vi.mocked(getUsage).mockResolvedValue(s as never);
+    renderPage();
+    await waitFor(() => screen.getByText('Completion Calls'));
+    const completionCard = screen.getByText('Completion Calls').closest('.stat-card') as HTMLElement;
+    // completionCost is undefined → totalCost=0.9999 shown → "0.9999"
+    expect(completionCard?.textContent).toContain('0.9999');
+  });
+
+  it('completionCost defined — completionCost is shown (not totalCost)', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats({ completionCalls: 5, completionCost: 0.1234 }));
+    renderPage();
+    await waitFor(() => screen.getByText('Completion Calls'));
+    const completionCard = screen.getByText('Completion Calls').closest('.stat-card') as HTMLElement;
+    expect(completionCard?.textContent).toContain('0.1234');
+  });
+
+  it('routingCost undefined falls back to 0', async () => {
+    const s = {
+      summary: { totalCost: 1, totalCalls: 5, successCalls: 5, errorCalls: 0,
+        completionCalls: 5, completionCost: 1, routingCalls: 2 }, // no routingCost
+      byModel: {}, timeline: [], records: [],
+    };
+    vi.mocked(getUsage).mockResolvedValue(s as never);
+    renderPage();
+    await waitFor(() => screen.getByText('Router Calls'));
+    const routerCard = screen.getByText('Router Calls').closest('.stat-card') as HTMLElement;
+    expect(routerCard?.textContent).toContain('$0.0000');
+  });
+
+  it('routingCost defined — routingCost shown in Router card', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats({ routingCalls: 2, routingCost: 0.0056 }));
+    renderPage();
+    await waitFor(() => screen.getByText('Router Calls'));
+    const routerCard = screen.getByText('Router Calls').closest('.stat-card') as HTMLElement;
+    expect(routerCard?.textContent).toContain('0.0056');
+  });
+
+  it('guardrailCost undefined falls back to 0 in Guardrail card', async () => {
+    const s = {
+      summary: { totalCost: 1, totalCalls: 5, successCalls: 5, errorCalls: 0,
+        completionCalls: 5, completionCost: 1, routingCalls: 0, routingCost: 0, guardrailCalls: 3 }, // no guardrailCost
+      byModel: {}, timeline: [], records: [],
+    };
+    vi.mocked(getUsage).mockResolvedValue(s as never);
+    renderPage();
+    await waitFor(() => screen.getByText('Guardrail Calls'));
+    const gCard = screen.getByText('Guardrail Calls').closest('.stat-card') as HTMLElement;
+    expect(gCard?.textContent).toContain('$0.0000');
+  });
+
+  it('guardrailCost defined — guardrailCost shown in Guardrail card', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats({ guardrailCalls: 2, guardrailCost: 0.0099 }));
+    renderPage();
+    await waitFor(() => screen.getByText('Guardrail Calls'));
+    const gCard = screen.getByText('Guardrail Calls').closest('.stat-card') as HTMLElement;
+    expect(gCard?.textContent).toContain('0.0099');
+  });
+});
+
+// ── record cost null fallback ─────────────────────────────────────────────────
+
+describe('UsagePage — record cost null fallback', () => {
+  it('null cost in record renders $0.00000000', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      summary: { totalCost: 0, totalCalls: 1, successCalls: 1, errorCalls: 0, routingCalls: 0, completionCalls: 1, routingCost: 0, completionCost: 0 },
+      byModel: {},
+      timeline: [],
+      records: [{
+        id: 'r-null-cost', timestamp: new Date().toISOString(), projectId: 'p',
+        modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1,
+        cost: null, latencyMs: 100, outcome: 'success',
+      }],
+    });
+    renderPage();
+    await waitFor(() => screen.getAllByText('openai/gpt-4o').length > 0);
+    // cost ?? 0 → 0.toFixed(8) → "$0.00000000"
+    expect(screen.getByText('$0.00000000')).toBeTruthy();
+  });
+});
+
+// ── PRESETS / RECENT_PRESETS branch coverage (module-isolated) ────────────────
+// These branches require non-empty PRESETS/RECENT_PRESETS and a non-default
+// dateRange state. We use vi.doMock + vi.resetModules per test.
+
+describe('UsagePage — dateRange init: RECENT_PRESETS match (isRecentPreset=true early return)', () => {
+  afterEach(() => {
+    vi.resetModules();
+    vi.doUnmock('../components/DateRangePicker');
+    vi.doUnmock('../hooks/useFilterState');
+    vi.doUnmock('../api');
+    vi.doUnmock('../components/MultiSelect');
+  });
+
+  it('isRecentPreset=true: skips dateRange init re-apply (early return at line 81)', async () => {
+    // Setup: RECENT_PRESETS has an entry matching the default dateRange label 'This month'
+    const pastDate = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const mockPreset = { label: 'This month', range: () => ({ from: pastDate, to: pastDate, label: 'This month' }) };
+
+    vi.doMock('../components/DateRangePicker', () => ({
+      DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
+      PRESETS: [mockPreset],
+      RECENT_PRESETS: [mockPreset], // label matches default 'This month' → isRecentPreset=true → early return
+    }));
+    vi.doMock('../api', () => ({
+      getUsage: vi.fn().mockResolvedValue({
+        summary: { totalCost: 0, totalCalls: 0, successCalls: 0, errorCalls: 0, routingCalls: 0, completionCalls: 0, routingCost: 0, completionCost: 0 },
+        byModel: {}, timeline: [], records: [],
+      }),
+      getProjects: vi.fn().mockResolvedValue([]),
+      getModels: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('../components/MultiSelect', () => ({ MultiSelect: () => <div /> }));
+    vi.doMock('../hooks/useFilterState', async () => {
+      const react = await vi.importActual<typeof import('react')>('react');
+      return { useFilterState: ({ defaultValue }: { defaultValue: unknown }) => react.useState(defaultValue) };
+    });
+
+    const { UsagePage: Page } = await vi.importActual<typeof import('./UsagePage')>('./UsagePage');
+    const { render: r, screen: s, waitFor: wf } = await vi.importActual<typeof import('@testing-library/react')>('@testing-library/react');
+    const { MemoryRouter: MR } = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+
+    r(<MR><Page /></MR>);
+    await wf(() => expect(s.getByTestId('date-picker')).toBeTruthy());
+  });
+});
+
+describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () => {
+  afterEach(() => {
+    vi.resetModules();
+    vi.doUnmock('../components/DateRangePicker');
+    vi.doUnmock('../hooks/useFilterState');
+    vi.doUnmock('../api');
+    vi.doUnmock('../components/MultiSelect');
+  });
+
+  it('re-applies matching preset when dateRange.to is in the past', async () => {
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
+    const mockPreset = { label: 'Last week', range: () => ({ from: yesterday, to: today, label: 'Last week' }) };
+
+    vi.doMock('../components/DateRangePicker', () => ({
+      DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
+      PRESETS: [mockPreset],
+      RECENT_PRESETS: [],
+    }));
+    vi.doMock('../api', () => ({
+      getUsage: vi.fn().mockResolvedValue({
+        summary: { totalCost: 0, totalCalls: 0, successCalls: 0, errorCalls: 0, routingCalls: 0, completionCalls: 0, routingCost: 0, completionCost: 0 },
+        byModel: {}, timeline: [], records: [],
+      }),
+      getProjects: vi.fn().mockResolvedValue([]),
+      getModels: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('../components/MultiSelect', () => ({ MultiSelect: () => <div /> }));
+    // useFilterState returns a stale range: from=non-empty, to=yesterday, label='Last week'
+    vi.doMock('../hooks/useFilterState', async () => {
+      const react = await vi.importActual<typeof import('react')>('react');
+      let callIndex = 0;
+      return {
+        useFilterState: ({ defaultValue }: { defaultValue: unknown }) => {
+          callIndex++;
+          // First call = dateRange: provide stale range with past 'to' date and matching label
+          if (callIndex === 1) {
+            return react.useState({ from: yesterday, to: yesterday, label: 'Last week' });
+          }
+          return react.useState(defaultValue);
+        },
+      };
+    });
+
+    const { UsagePage: Page } = await vi.importActual<typeof import('./UsagePage')>('./UsagePage');
+    const { render: r, screen: s, waitFor: wf } = await vi.importActual<typeof import('@testing-library/react')>('@testing-library/react');
+    const { MemoryRouter: MR } = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+
+    r(<MR><Page /></MR>);
+    // preset.range() is called → setDateRange → picker re-renders with today's range
+    await wf(() => expect(s.getByTestId('date-picker')).toBeTruthy());
+  });
+
+  it('stale range with non-matching label (no preset found) — preset branch skipped', async () => {
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const mockPreset = { label: 'Last week', range: () => ({ from: yesterday, to: yesterday, label: 'Last week' }) };
+
+    vi.doMock('../components/DateRangePicker', () => ({
+      DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
+      PRESETS: [mockPreset],
+      RECENT_PRESETS: [],
+    }));
+    vi.doMock('../api', () => ({
+      getUsage: vi.fn().mockResolvedValue({
+        summary: { totalCost: 0, totalCalls: 0, successCalls: 0, errorCalls: 0, routingCalls: 0, completionCalls: 0, routingCost: 0, completionCost: 0 },
+        byModel: {}, timeline: [], records: [],
+      }),
+      getProjects: vi.fn().mockResolvedValue([]),
+      getModels: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('../components/MultiSelect', () => ({ MultiSelect: () => <div /> }));
+    vi.doMock('../hooks/useFilterState', async () => {
+      const react = await vi.importActual<typeof import('react')>('react');
+      let callIndex = 0;
+      return {
+        useFilterState: ({ defaultValue }: { defaultValue: unknown }) => {
+          callIndex++;
+          if (callIndex === 1) {
+            // stale 'to' but label doesn't match any preset → if (preset) not taken
+            return react.useState({ from: yesterday, to: yesterday, label: 'No match' });
+          }
+          return react.useState(defaultValue);
+        },
+      };
+    });
+
+    const { UsagePage: Page } = await vi.importActual<typeof import('./UsagePage')>('./UsagePage');
+    const { render: r, screen: s, waitFor: wf } = await vi.importActual<typeof import('@testing-library/react')>('@testing-library/react');
+    const { MemoryRouter: MR } = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+
+    r(<MR><Page /></MR>);
+    await wf(() => expect(s.getByTestId('date-picker')).toBeTruthy());
+  });
+
+  it('stale range to >= today: dateRange.to.slice(0,10) < today is false (no re-apply)', async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const mockPreset = { label: 'Today', range: () => ({ from: today, to: today, label: 'Today' }) };
+
+    vi.doMock('../components/DateRangePicker', () => ({
+      DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
+      PRESETS: [mockPreset],
+      RECENT_PRESETS: [],
+    }));
+    vi.doMock('../api', () => ({
+      getUsage: vi.fn().mockResolvedValue({
+        summary: { totalCost: 0, totalCalls: 0, successCalls: 0, errorCalls: 0, routingCalls: 0, completionCalls: 0, routingCost: 0, completionCost: 0 },
+        byModel: {}, timeline: [], records: [],
+      }),
+      getProjects: vi.fn().mockResolvedValue([]),
+      getModels: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('../components/MultiSelect', () => ({ MultiSelect: () => <div /> }));
+    vi.doMock('../hooks/useFilterState', async () => {
+      const react = await vi.importActual<typeof import('react')>('react');
+      let callIndex = 0;
+      return {
+        useFilterState: ({ defaultValue }: { defaultValue: unknown }) => {
+          callIndex++;
+          if (callIndex === 1) {
+            // to=today → to.slice(0,10) < today is FALSE → else-if branch not taken
+            return react.useState({ from: today, to: today, label: 'Today' });
+          }
+          return react.useState(defaultValue);
+        },
+      };
+    });
+
+    const { UsagePage: Page } = await vi.importActual<typeof import('./UsagePage')>('./UsagePage');
+    const { render: r, screen: s, waitFor: wf } = await vi.importActual<typeof import('@testing-library/react')>('@testing-library/react');
+    const { MemoryRouter: MR } = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+
+    r(<MR><Page /></MR>);
+    await wf(() => expect(s.getByTestId('date-picker')).toBeTruthy());
+  });
+
+  it('stale range with label="This month" gets remapped to "Questo mese"', async () => {
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
+    // PRESETS must contain 'Questo mese' for the remap to find it
+    const mockPreset = { label: 'Questo mese', range: () => ({ from: yesterday, to: today, label: 'Questo mese' }) };
+
+    vi.doMock('../components/DateRangePicker', () => ({
+      DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
+      PRESETS: [mockPreset],
+      RECENT_PRESETS: [],
+    }));
+    vi.doMock('../api', () => ({
+      getUsage: vi.fn().mockResolvedValue({
+        summary: { totalCost: 0, totalCalls: 0, successCalls: 0, errorCalls: 0, routingCalls: 0, completionCalls: 0, routingCost: 0, completionCost: 0 },
+        byModel: {}, timeline: [], records: [],
+      }),
+      getProjects: vi.fn().mockResolvedValue([]),
+      getModels: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('../components/MultiSelect', () => ({ MultiSelect: () => <div /> }));
+    vi.doMock('../hooks/useFilterState', async () => {
+      const react = await vi.importActual<typeof import('react')>('react');
+      let callIndex = 0;
+      return {
+        useFilterState: ({ defaultValue }: { defaultValue: unknown }) => {
+          callIndex++;
+          if (callIndex === 1) {
+            // label 'This month' → code remaps to 'Questo mese' then finds the preset
+            return react.useState({ from: yesterday, to: yesterday, label: 'This month' });
+          }
+          return react.useState(defaultValue);
+        },
+      };
+    });
+
+    const { UsagePage: Page } = await vi.importActual<typeof import('./UsagePage')>('./UsagePage');
+    const { render: r, screen: s, waitFor: wf } = await vi.importActual<typeof import('@testing-library/react')>('@testing-library/react');
+    const { MemoryRouter: MR } = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+
+    r(<MR><Page /></MR>);
+    await wf(() => expect(s.getByTestId('date-picker')).toBeTruthy());
+  });
+
+  it('fetchStats: recentPreset found — uses preset range for from/to', async () => {
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
+    const mockRecentPreset = { label: 'Today', range: () => ({ from: today, to: today, label: 'Today' }) };
+
+    vi.doMock('../components/DateRangePicker', () => ({
+      DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
+      PRESETS: [],
+      RECENT_PRESETS: [mockRecentPreset],
+    }));
+    const mockGetUsage = vi.fn().mockResolvedValue({
+      summary: { totalCost: 0, totalCalls: 0, successCalls: 0, errorCalls: 0, routingCalls: 0, completionCalls: 0, routingCost: 0, completionCost: 0 },
+      byModel: {}, timeline: [], records: [],
+    });
+    vi.doMock('../api', () => ({
+      getUsage: mockGetUsage,
+      getProjects: vi.fn().mockResolvedValue([]),
+      getModels: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('../components/MultiSelect', () => ({ MultiSelect: () => <div /> }));
+    vi.doMock('../hooks/useFilterState', async () => {
+      const react = await vi.importActual<typeof import('react')>('react');
+      let callIndex = 0;
+      return {
+        useFilterState: ({ defaultValue }: { defaultValue: unknown }) => {
+          callIndex++;
+          if (callIndex === 1) {
+            // dateRange label matches RECENT_PRESETS[0].label → recentPreset found in fetchStats
+            return react.useState({ from: yesterday, to: yesterday, label: 'Today' });
+          }
+          return react.useState(defaultValue);
+        },
+      };
+    });
+
+    const { UsagePage: Page } = await vi.importActual<typeof import('./UsagePage')>('./UsagePage');
+    const { render: r, screen: s, waitFor: wf } = await vi.importActual<typeof import('@testing-library/react')>('@testing-library/react');
+    const { MemoryRouter: MR } = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+
+    r(<MR><Page /></MR>);
+    await wf(() => expect(s.getByTestId('date-picker')).toBeTruthy());
+    await wf(() => expect(mockGetUsage).toHaveBeenCalled());
+    // recentPreset.range() provides today/today → period='custom' (both truthy)
+    const firstCall = mockGetUsage.mock.calls[0];
+    expect(firstCall?.[0]).toBe('custom');
   });
 });

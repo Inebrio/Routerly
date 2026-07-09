@@ -129,4 +129,26 @@ describe('performancePolicy', () => {
     const result = await performancePolicy(makeInput([{ model: makeModel('no-data') }]))
     expect(result.routing[0]!.avgLatencyMs).toBeNull()
   })
+
+  // ── Line 68: weightedTotal > 0 path exercised with halfLifeMinutes > 0 (exponential decay) ──
+  it('line 68: uses weighted average with exponential decay (halfLifeMinutes > 0)', async () => {
+    // Two records for the same model: one recent (high weight), one old (lower weight)
+    const recentRecord = makeRecord('m1', 1, 100)  // 1 minute ago
+    const olderRecord  = makeRecord('m1', 15, 500) // 15 minutes ago
+    mockReadConfig.mockResolvedValue([recentRecord, olderRecord])
+
+    const result = await performancePolicy(makeInput(
+      [{ model: makeModel('m1') }, { model: makeModel('m2') }],
+      { halfLifeMinutes: 5, windowMinutes: 60 }, // decay enabled
+    ))
+    // m1 has data; weighted average should be closer to recent (low latency) record
+    // m2 has no data → avgLatencyMs = null
+    const m1 = result.routing.find(r => r.model === 'm1')!
+    const m2 = result.routing.find(r => r.model === 'm2')!
+    expect(m1.avgLatencyMs).not.toBeNull()
+    expect(m2.avgLatencyMs).toBeNull()
+    // Only m1 has data → withData.length < 2 → comparison impossible → both get 1.0
+    expect(m1.point).toBe(1.0)
+    expect(m2.point).toBe(1.0)
+  })
 })

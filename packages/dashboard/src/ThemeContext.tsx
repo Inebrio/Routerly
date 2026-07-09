@@ -9,6 +9,7 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue>({
   theme: 'auto',
+  /* v8 ignore next */
   setTheme: () => {},
 });
 

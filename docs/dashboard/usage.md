@@ -119,7 +119,7 @@ The trace also includes guardrail and PII entries when those features are active
 | `guardrail:response-triggered` | A response-side rule matched with log action (response continued) |
 | `pii:scrubbed` | PII was detected and replaced in the request or response |
 
-For a **blocked** request (rule with `block: true`), the trace includes the `guardrail:evaluated` entry and the block message (custom, judge response, or built-in default). The block message is stored on the trace only -- it is not included in the wire response sent to the client.
+For a **blocked** request (judged rule that triggers), the trace includes the `guardrail:evaluated` entry and the block message (from the judge's reason field, or a built-in default if the judge fails). The block message is stored on the trace only and is not included in the wire response sent to the client.
 
 The **detail panel** for each usage record shows:
 

@@ -9,7 +9,7 @@ import type { TraceEntry } from '../routing/traceStore.js';
 import { llmChat, llmStream, BudgetExceededError } from '../llm/executor.js';
 import { forwardOpenAIOAuthSSE } from './openaiOAuthForward.js';
 import type { LLMCallContext } from '../llm/executor.js';
-import { checkGuardrails } from '../middleware/guardrails.js';
+import { checkGuardrails, buildRequestInjection } from '../middleware/guardrails.js';
 import { mergePolicies, scrubMessages, scrubText, StreamingScrubber } from '../middleware/piiScrubber.js';
 import { emitEvent } from '../notifications/emitter.js';
 import { trackUsage } from '../cost/tracker.js';
@@ -202,6 +202,22 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
         }
         // log-only: record trigger and continue
         if (result.log) guardrailTriggered = hit.triggered;
+      }
+
+      // Inject guardrail steering into the outgoing system prompt (enforcement inject/both).
+      // Reached only when the request passed (block paths return above).
+      // ponytail: append after the client's system message (guardrail text last); switch
+      // to unshift/prepend if the guardrail must take precedence over the user's system.
+      const injection = buildRequestInjection(project.guardrails);
+      if (injection && Array.isArray(body.messages)) {
+        const sys = body.messages.find((m: any) => m?.role === 'system');
+        if (sys) {
+          if (typeof sys.content === 'string') sys.content = `${sys.content}\n\n${injection}`;
+          else if (Array.isArray(sys.content)) sys.content.push({ type: 'text', text: injection });
+          else sys.content = injection;
+        } else {
+          body.messages.unshift({ role: 'system', content: injection });
+        }
       }
     }
 
