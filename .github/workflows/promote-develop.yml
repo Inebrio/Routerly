@@ -42,7 +42,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -f develop
-          git push origin develop --force
+          git push origin refs/tags/develop:refs/tags/develop --force
 
       - name: Delete existing develop release (if any)
         env:
