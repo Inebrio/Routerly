@@ -127,9 +127,9 @@ class CatalogFetcher {
       }
     }
 
-    // Merge in reverse order so first repo wins
+    // Last repo in the list overrides earlier ones
     const merged: ProviderCatalog = {};
-    for (const repo of [...this.repos].reverse()) {
+    for (const repo of this.repos) {
       const cat = this.repoCatalog.get(repo.url);
       if (cat && repo.enabled) Object.assign(merged, cat);
     }

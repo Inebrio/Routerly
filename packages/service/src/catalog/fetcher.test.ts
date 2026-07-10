@@ -181,14 +181,12 @@ describe('CatalogFetcher', () => {
   });
 
   describe('multi-repo merging', () => {
-    it('first repo wins when keys overlap', async () => {
-      // Implementation reverses repos before iterating, then Object.assign — so repo[0] is applied last and wins
+    it('last repo wins when keys overlap', async () => {
       const catalog1 = JSON.stringify({ openai: { endpoint: 'https://custom.example.com/v1', models: [] } });
       const catalog2 = JSON.stringify({ openai: { endpoint: 'https://api.openai.com/v1', models: [] } });
 
       vi.stubGlobal('fetch', async (url: string) => {
         if (url.endsWith('index.json')) return { ok: false, status: 404, json: async () => ({}), text: async () => '' };
-        // Route by host
         const body = url.includes('repo1') ? catalog1 : catalog2;
         return { ok: true, status: 200, json: async () => JSON.parse(body), text: async () => body };
       });
@@ -199,8 +197,8 @@ describe('CatalogFetcher', () => {
         { url: 'https://repo2.example.com/', enabled: true },
       ]);
       const result = await fetcher.get('0.2.0');
-      // First repo (index 0) wins because it is applied last (reversed iteration + Object.assign)
-      expect((result as any).openai.endpoint).toBe('https://custom.example.com/v1');
+      // Last repo (index 1) wins — it is applied last via Object.assign
+      expect((result as any).openai.endpoint).toBe('https://api.openai.com/v1');
     });
 
     it('skips disabled repos', async () => {
