@@ -327,7 +327,8 @@ describe('CatalogFetcher', () => {
       const [firstStatus] = fetcher.getStatus();
       const firstUpdatedAt = firstStatus!.updatedAt;
       const firstLastChecked = firstStatus!.lastChecked;
-      expect(firstUpdatedAt).toBe(firstLastChecked); // first download: both set to same checkedAt
+      expect(firstUpdatedAt).toBe(updateTs); // updatedAt = upstream timestamp, not local check time
+      expect(firstUpdatedAt).not.toBe(firstLastChecked);
 
       vi.advanceTimersByTime(7 * 60 * 60 * 1000);
       await fetcher.get('0.2.0');

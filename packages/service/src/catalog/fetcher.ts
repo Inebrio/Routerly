@@ -118,7 +118,7 @@ class CatalogFetcher {
         }
         this.repoStatus.set(repo.url, {
           url: repo.url, enabled: true, resolvedFile: result.resolvedFile,
-          updatedAt: result.changed ? checkedAt : (prev?.updatedAt ?? null),
+          updatedAt: result.changed ? (result.upstreamMeta?.upstreamUpdatedAt ?? checkedAt) : (prev?.updatedAt ?? null),
           lastChecked: checkedAt, error: null,
         });
       } catch (err) {
