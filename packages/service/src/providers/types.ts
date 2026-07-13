@@ -25,4 +25,7 @@ export interface ProviderAdapter {
 
   /** Anthropic messages endpoint (optional, only for anthropic-compatible providers) */
   messages?(request: MessagesRequest, model: ModelConfig): Promise<MessagesResponse>;
+
+  /** Anthropic messages streaming — yields SSE-formatted lines (event: ...\ndata: ...\n\n) */
+  messagesStream?(request: MessagesRequest, model: ModelConfig): AsyncGenerator<string>;
 }

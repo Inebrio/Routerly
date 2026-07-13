@@ -315,22 +315,20 @@ export class AnthropicAdapter implements ProviderAdapter {
   async messages(request: MessagesRequest, model: ModelConfig): Promise<MessagesResponse> {
     const client = this.getClient(model);
     const upstreamModel = this.getUpstreamModelId(model);
-
-    const params: any = {
-      model: upstreamModel,
-      max_tokens: request.max_tokens,
-      messages: request.messages.map((m) => ({
-        role: m.role,
-        content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
-      })),
-      stream: false,
-    };
-    if (request.system) {
-      params.system = request.system;
-    }
-
+    const { model: _m, stream: _s, ...rest } = request as any;
+    const params: any = { ...rest, model: upstreamModel, stream: false };
     const response = await client.messages.create(params);
-
     return response as unknown as MessagesResponse;
+  }
+
+  async *messagesStream(request: MessagesRequest, model: ModelConfig): AsyncGenerator<string> {
+    const client = this.getClient(model);
+    const upstreamModel = this.getUpstreamModelId(model);
+    const { model: _m, stream: _s, ...rest } = request as any;
+    const params: any = { ...rest, model: upstreamModel, stream: true };
+    const stream = await client.messages.create(params) as unknown as AsyncIterable<any>;
+    for await (const event of stream) {
+      yield `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`;
+    }
   }
 }
