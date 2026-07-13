@@ -5,10 +5,11 @@ import { routeRequest } from '../routing/router.js';
 import { readConfig } from '../config/loader.js';
 import { setTrace, appendTrace } from '../routing/traceStore.js';
 import type { TraceEntry } from '../routing/traceStore.js';
-import { llmMessages, checkBudget, BudgetExceededError } from '../llm/executor.js';
+import { llmMessages, llmChat, llmStream, checkBudget, BudgetExceededError } from '../llm/executor.js';
 import type { LLMCallContext } from '../llm/executor.js';
 import { getProviderAdapter } from '../providers/index.js';
-import { forwardAnthropicOAuth } from './oauthForward.js';
+import { forwardAnthropicOAuth, forwardAnthropicApiKey } from './oauthForward.js';
+import type { ChatCompletionRequest, MessagesResponse } from '@routerly/shared';
 import { checkGuardrails, buildRequestInjection } from '../middleware/guardrails.js';
 import { mergePolicies, scrubMessages, scrubText } from '../middleware/piiScrubber.js';
 import { trackUsage } from '../cost/tracker.js';
@@ -35,6 +36,56 @@ async function trackBlockedRequest(project: ProjectConfig, blockedBy: string, tr
     guardrailTriggered: blockedBy,
     blockedBy,
   }).catch(() => {});
+}
+
+/** Convert a MessagesRequest to an OpenAI-compat ChatCompletionRequest for non-Anthropic providers. */
+function toChat(body: MessagesRequest): ChatCompletionRequest {
+  const msgs: Array<{ role: string; content: string }> = [];
+  if (body.system) {
+    msgs.push({ role: 'system', content: typeof body.system === 'string' ? body.system : JSON.stringify(body.system) });
+  }
+  for (const m of body.messages) {
+    msgs.push({
+      role: m.role,
+      content: typeof m.content === 'string' ? m.content :
+        Array.isArray(m.content) ? (m.content as Array<{ type: string; text?: string }>).filter(b => b.type === 'text').map(b => b.text ?? '').join('') : '',
+    });
+  }
+  return { model: body.model, messages: msgs as ChatCompletionRequest['messages'], max_tokens: body.max_tokens, stream: body.stream ?? false, ...(body.temperature != null ? { temperature: body.temperature } : {}), ...(body.top_p != null ? { top_p: body.top_p } : {}) };
+}
+
+/** Convert an OpenAI ChatCompletionResponse to Anthropic MessagesResponse. */
+function chatToMessages(chat: import('@routerly/shared').ChatCompletionResponse, id: string, requestedModel: string): MessagesResponse {
+  const choice = chat.choices?.[0];
+  const msgContent = choice?.message?.content;
+  return { id: chat.id || `msg_${id}`, type: 'message', role: 'assistant', content: [{ type: 'text', text: typeof msgContent === 'string' ? msgContent : '' }], model: chat.model || requestedModel, stop_reason: choice?.finish_reason === 'stop' ? 'end_turn' : 'max_tokens', stop_sequence: null, usage: { input_tokens: chat.usage?.prompt_tokens ?? 0, output_tokens: chat.usage?.completion_tokens ?? 0 } };
+}
+
+/** Convert OpenAI StreamChunks to Anthropic SSE event lines. */
+async function* chunksToAnthropicSSE(
+  chunks: AsyncIterable<import('@routerly/shared').StreamChunk>,
+  msgId: string,
+  requestedModel: string,
+): AsyncGenerator<string> {
+  let started = false;
+  for await (const chunk of chunks) {
+    if (!started) {
+      started = true;
+      const chunkAny = chunk as any;
+      yield `event: message_start\ndata: ${JSON.stringify({ type: 'message_start', message: { id: msgId, type: 'message', role: 'assistant', content: [], stop_reason: null, stop_sequence: null, model: chunk.model || requestedModel, usage: { input_tokens: chunkAny.usage?.prompt_tokens ?? 0, output_tokens: 0 } } })}\n\n`;
+      yield `event: content_block_start\ndata: ${JSON.stringify({ type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } })}\n\n`;
+      yield `event: ping\ndata: {"type":"ping"}\n\n`;
+    }
+    const text = chunk.choices?.[0]?.delta?.content;
+    if (text) yield `event: content_block_delta\ndata: ${JSON.stringify({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } })}\n\n`;
+    const finish = chunk.choices?.[0]?.finish_reason;
+    if (finish) {
+      const outTokens = (chunk as any).usage?.completion_tokens ?? 0;
+      yield `event: content_block_stop\ndata: ${JSON.stringify({ type: 'content_block_stop', index: 0 })}\n\n`;
+      yield `event: message_delta\ndata: ${JSON.stringify({ type: 'message_delta', delta: { stop_reason: finish === 'stop' ? 'end_turn' : 'max_tokens', stop_sequence: null }, usage: { output_tokens: outTokens } })}\n\n`;
+      yield `event: message_stop\ndata: {"type":"message_stop"}\n\n`;
+    }
+  }
 }
 
 export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
@@ -166,13 +217,21 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
       const model = allModels.find((m: any) => m.id === candidate.model);
       if (!model) continue;
 
-      // Subscription / OAuth models forward verbatim (no SDK, no routing
-      // transforms, no fallback) so the client's system block is preserved.
+      // ── OAuth models: verbatim pass-through with OAuth token ─────────────────
       if (model.provider === 'anthropic-oauth') {
         if (traceOptIn) reply.header('x-routerly-trace-id', traceId);
         return forwardAnthropicOAuth(request, reply, model);
       }
 
+      // ── Anthropic API-key models: verbatim pass-through with x-api-key ───────
+      // Transparent forwarding preserves all Claude Code fields (context_management,
+      // effort, betas, tools, etc.) without SDK intermediation.
+      if (model.provider === 'anthropic' || model.provider === 'anthropic-web') {
+        if (traceOptIn) reply.header('x-routerly-trace-id', traceId);
+        return forwardAnthropicApiKey(request, reply, model);
+      }
+
+      // ── Non-Anthropic providers: convert format and route ─────────────────────
       const ctx: LLMCallContext = {
         projectId: project.id,
         project,
@@ -188,99 +247,35 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
         ...(request.token?.tags ? { tags: request.token.tags } : {}),
       };
 
-      // ── Streaming path ────────────────────────────────────────────────────────
       if (body.stream) {
-        const adapter = getProviderAdapter(model);
-        if (!adapter.messagesStream) continue; // provider doesn't support native streaming
+        const chatBody = toChat(body);
+        let streamResult;
+        try {
+          streamResult = await llmStream(chatBody, model, ctx);
+        } catch (err) {
+          if (!(err instanceof BudgetExceededError)) {
+            request.log.warn({ err, modelId: model.id }, 'Anthropic messages stream failed, trying next candidate');
+          }
+          continue;
+        }
         reply.raw.setHeader('Content-Type', 'text/event-stream');
         reply.raw.setHeader('Cache-Control', 'no-cache');
         reply.raw.setHeader('Connection', 'keep-alive');
         if (traceOptIn) reply.raw.setHeader('x-routerly-trace-id', traceId);
         reply.raw.flushHeaders();
         try {
-          await checkBudget(model, ctx);
-          let inputTokens = 0, outputTokens = 0, cachedInput = 0, cacheCreation = 0;
-          const t0 = Date.now();
-          for await (const chunk of adapter.messagesStream(body, model)) {
-            reply.raw.write(chunk);
-            const m = chunk.match(/^data: (.+)$/m);
-            if (m) {
-              try {
-                const evt = JSON.parse(m[1] as string);
-                if (evt.type === 'message_start') {
-                  inputTokens = evt.message?.usage?.input_tokens ?? 0;
-                  cachedInput = evt.message?.usage?.cache_read_input_tokens ?? 0;
-                  cacheCreation = evt.message?.usage?.cache_creation_input_tokens ?? 0;
-                } else if (evt.type === 'message_delta') {
-                  outputTokens = evt.usage?.output_tokens ?? 0;
-                }
-              } catch { /* ignore */ }
-            }
+          for await (const line of chunksToAnthropicSSE(streamResult.chunks, `msg_${traceId}`, body.model)) {
+            reply.raw.write(line);
           }
-          reply.raw.end();
-          if (inputTokens || outputTokens) {
-            await trackUsage({
-              projectId: project.id, model, inputTokens, outputTokens,
-              ...(cachedInput ? { cachedInputTokens: cachedInput } : {}),
-              ...(cacheCreation ? { cacheCreationInputTokens: cacheCreation } : {}),
-              latencyMs: Date.now() - t0, outcome: 'success', callType: 'completion', traceId,
-              ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
-              ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
-              ...(ctx.tags ? { tags: ctx.tags } : {}),
-            }).catch(() => {});
-          }
-        } catch (err) {
-          if (!reply.raw.headersSent) continue;
-          reply.raw.end();
-        }
+        } catch { /* mid-stream error, nothing to do */ }
+        reply.raw.end();
         return reply;
       }
 
       try {
-        const response = await llmMessages(body, model, ctx);
-        const outPii = project.pii?.policies?.length ? mergePolicies(project.pii.policies, 'output') : null;
-        if (outPii && (outPii.entities?.length || outPii.customPatterns?.length)) {
-          const block = response?.content?.[0];
-          if (block?.type === 'text' && typeof block.text === 'string') {
-            const { text, found } = scrubText(block.text, outPii);
-            // "ran" signal: always emitted when output scrubbing is active, even with 0 redactions.
-            appendTrace(traceId, [{ panel: 'response', message: 'pii:evaluated', details: { redacted: found } }]);
-            if (found.length > 0) {
-              block.text = text;
-              request.log.info({ projectId: project.id, found }, 'pii: scrubbed output');
-              // PII output trace (#76).
-              appendTrace(traceId, [{ panel: 'response', message: 'pii:scrubbed', details: { entities: found } }]);
-            }
-          }
-        }
-
-        // ── Response guardrail (#77) ───────────────────────────────────────────
-        if (project.guardrails) {
-          const block = response?.content?.[0];
-          const responseText = block?.type === 'text' && typeof block.text === 'string' ? block.text : '';
-          if (responseText) {
-            const result = await checkGuardrails('response', responseText, project.guardrails, guardrailPctx, request.log);
-            if (result.evaluated.length > 0) {
-              appendTrace(traceId, [{ panel: 'response', message: 'guardrail:evaluated', details: { target: 'response', rules: result.evaluated } }]);
-            }
-            const hit = result.triggered ? { triggered: result.triggered } : null;
-            if (hit) {
-              const blockMessage = result.blockMessage ?? 'Response blocked by content guardrails.';
-              request.log.warn({ projectId: project.id, rule: hit.triggered, block: result.block, log: result.log }, 'guardrail: response triggered');
-              appendTrace(traceId, [{ panel: 'response', message: 'guardrail:response-triggered', details: { rule: hit.triggered, target: 'response', block: result.block, log: result.log, blockMessage } }]);
-              if (result.block) {
-                // Usage record for the blocked response (#77): zero cost/tokens, distinct 'blocked' outcome.
-                await trackBlockedRequest(project, hit.triggered, traceId);
-                if (traceOptIn) reply.header('x-routerly-trace-id', traceId);
-                // Wire-faithful refusal: empty content + stop_reason refusal + stop_details.
-                return reply.status(200).send({ id: `msg_${traceId}`, type: 'message', role: 'assistant', content: [], model: body.model ?? 'unknown', stop_reason: 'refusal', stop_details: { type: 'refusal' }, usage: { input_tokens: 0, output_tokens: 0 } });
-              }
-              // log-only: record trigger and continue
-              if (result.log) guardrailTriggered = hit.triggered;
-            }
-          }
-        }
-
+        const chatBody = toChat(body);
+        const chatResp = await llmChat(chatBody, model, ctx);
+        const response = chatToMessages(chatResp, traceId, body.model);
         if (traceOptIn) reply.header('x-routerly-trace-id', traceId);
         return reply.send(response);
       } catch (err: unknown) {

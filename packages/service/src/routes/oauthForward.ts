@@ -147,3 +147,74 @@ export async function forwardAnthropicOAuth(
   }
   return reply.send();
 }
+
+const DROP_API_KEY_REQUEST = new Set([
+  'host', 'content-length', 'connection', 'transfer-encoding', 'authorization', 'x-api-key',
+]);
+
+/**
+ * Verbatim pass-through for standard Anthropic API-key models.
+ * Swaps the inbound project token for the model's x-api-key, replaces the
+ * model field in the body with the upstream model id, and pipes the response
+ * back as-is — preserving streaming, betas, and all client-specific fields.
+ */
+export async function forwardAnthropicApiKey(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  model: ModelConfig,
+): Promise<unknown> {
+  const startMs = Date.now();
+  const projectId = request.project?.id ?? '';
+  const { method, url } = request;
+  const targetUrl = buildUpstreamUrl(model, url);
+
+  const headers: Record<string, string> = {};
+  for (const [key, value] of Object.entries(request.headers)) {
+    if (value === undefined) continue;
+    const lower = key.toLowerCase();
+    if (DROP_API_KEY_REQUEST.has(lower)) continue;
+    headers[lower] = Array.isArray(value) ? value.join(', ') : value;
+  }
+  headers['x-api-key'] = model.apiKey ?? '';
+  if (!headers['anthropic-version']) headers['anthropic-version'] = '2023-06-01';
+
+  let body: string | undefined;
+  if (method !== 'GET' && method !== 'HEAD' && request.body != null) {
+    const stripped = model.id.split('/').slice(1).join('/');
+    const upstreamModel = model.upstreamModelId ?? (stripped || model.id);
+    const parsed = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
+    body = JSON.stringify({ ...parsed as Record<string, unknown>, model: upstreamModel });
+  }
+
+  let upstream: Response;
+  try {
+    upstream = await fetch(targetUrl, {
+      method, headers, ...(body !== undefined ? { body, duplex: 'half' } : {}),
+    } as RequestInit);
+  } catch (err) {
+    request.log.error({ err, url: targetUrl }, 'api-key pass-through upstream error');
+    if (projectId) {
+      void trackUsage({ projectId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion' }).catch(() => {});
+    }
+    return reply.code(502).send({ type: 'error', error: { type: 'api_error', message: err instanceof Error ? err.message : 'upstream request failed' } });
+  }
+
+  request.log.info(
+    { provider: model.provider, modelId: model.id, path: url, upstreamHost: new URL(targetUrl).host, status: upstream.status, projectId },
+    'api-key pass-through',
+  );
+
+  if (projectId) {
+    void trackUsage({ projectId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion' }).catch(() => {});
+  }
+
+  upstream.headers.forEach((value, key) => {
+    if (!HOP_BY_HOP_RESPONSE.has(key.toLowerCase())) reply.header(key, value);
+  });
+
+  reply.code(upstream.status);
+  if (upstream.body) {
+    return reply.send(Readable.fromWeb(upstream.body as Parameters<typeof Readable.fromWeb>[0]));
+  }
+  return reply.send();
+}
