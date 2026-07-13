@@ -5,8 +5,9 @@ import { routeRequest } from '../routing/router.js';
 import { readConfig } from '../config/loader.js';
 import { setTrace, appendTrace } from '../routing/traceStore.js';
 import type { TraceEntry } from '../routing/traceStore.js';
-import { llmMessages, BudgetExceededError } from '../llm/executor.js';
+import { llmMessages, checkBudget, BudgetExceededError } from '../llm/executor.js';
 import type { LLMCallContext } from '../llm/executor.js';
+import { getProviderAdapter } from '../providers/index.js';
 import { forwardAnthropicOAuth } from './oauthForward.js';
 import { checkGuardrails, buildRequestInjection } from '../middleware/guardrails.js';
 import { mergePolicies, scrubMessages, scrubText } from '../middleware/piiScrubber.js';
@@ -186,6 +187,54 @@ export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
         ...(conversationId ? { sessionId: conversationId } : {}),
         ...(request.token?.tags ? { tags: request.token.tags } : {}),
       };
+
+      // ── Streaming path ────────────────────────────────────────────────────────
+      if (body.stream) {
+        const adapter = getProviderAdapter(model);
+        if (!adapter.messagesStream) continue; // provider doesn't support native streaming
+        reply.raw.setHeader('Content-Type', 'text/event-stream');
+        reply.raw.setHeader('Cache-Control', 'no-cache');
+        reply.raw.setHeader('Connection', 'keep-alive');
+        if (traceOptIn) reply.raw.setHeader('x-routerly-trace-id', traceId);
+        reply.raw.flushHeaders();
+        try {
+          await checkBudget(model, ctx);
+          let inputTokens = 0, outputTokens = 0, cachedInput = 0, cacheCreation = 0;
+          const t0 = Date.now();
+          for await (const chunk of adapter.messagesStream(body, model)) {
+            reply.raw.write(chunk);
+            const m = chunk.match(/^data: (.+)$/m);
+            if (m) {
+              try {
+                const evt = JSON.parse(m[1] as string);
+                if (evt.type === 'message_start') {
+                  inputTokens = evt.message?.usage?.input_tokens ?? 0;
+                  cachedInput = evt.message?.usage?.cache_read_input_tokens ?? 0;
+                  cacheCreation = evt.message?.usage?.cache_creation_input_tokens ?? 0;
+                } else if (evt.type === 'message_delta') {
+                  outputTokens = evt.usage?.output_tokens ?? 0;
+                }
+              } catch { /* ignore */ }
+            }
+          }
+          reply.raw.end();
+          if (inputTokens || outputTokens) {
+            await trackUsage({
+              projectId: project.id, model, inputTokens, outputTokens,
+              ...(cachedInput ? { cachedInputTokens: cachedInput } : {}),
+              ...(cacheCreation ? { cacheCreationInputTokens: cacheCreation } : {}),
+              latencyMs: Date.now() - t0, outcome: 'success', callType: 'completion', traceId,
+              ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
+              ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
+              ...(ctx.tags ? { tags: ctx.tags } : {}),
+            }).catch(() => {});
+          }
+        } catch (err) {
+          if (!reply.raw.headersSent) continue;
+          reply.raw.end();
+        }
+        return reply;
+      }
 
       try {
         const response = await llmMessages(body, model, ctx);

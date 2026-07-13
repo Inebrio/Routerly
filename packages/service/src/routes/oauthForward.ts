@@ -91,8 +91,12 @@ export async function forwardAnthropicOAuth(
 
   let body: string | undefined;
   if (method !== 'GET' && method !== 'HEAD' && request.body != null) {
-    body =
-      typeof request.body === 'string' ? request.body : JSON.stringify(request.body);
+    // Replace `model` with the upstream model ID (strip provider prefix).
+    // Everything else forwarded verbatim — preserves system blocks, tool-use, etc.
+    const stripped = model.id.split('/').slice(1).join('/');
+    const upstreamModel = model.upstreamModelId ?? (stripped || model.id);
+    const parsed = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
+    body = JSON.stringify({ ...parsed as Record<string, unknown>, model: upstreamModel });
   }
 
   let upstream: Response;
