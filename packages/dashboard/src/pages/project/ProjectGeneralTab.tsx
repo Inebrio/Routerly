@@ -13,14 +13,28 @@ export function ProjectGeneralTab() {
   const [saving, setSaving] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [err, setErr] = useState('');
-  const [servicePublicUrl, setServicePublicUrl] = useState<string>('');
+  const [endpointOptions, setEndpointOptions] = useState<string[]>([]);
+  const [selectedEndpoint, setSelectedEndpoint] = useState<string>('');
 
-  // Fetch publicUrl from settings on mount.
+  // Fetch publicUrl + local addresses from settings on mount.
   useEffect(() => {
     getSettings().then(s => {
-      const url = s.publicUrl?.replace(/\/$/, '') ||
-        `${window.location.protocol}//${window.location.hostname}:${s.port}`;
-      setServicePublicUrl(url);
+      if (s.publicUrl) {
+        const url = s.publicUrl.replace(/\/$/, '');
+        setEndpointOptions([url]);
+        setSelectedEndpoint(url);
+      } else {
+        const proto = window.location.protocol;
+        const port = s.port;
+        const fallback = `${proto}//${window.location.hostname}:${port}`;
+        const options = [fallback];
+        (s.localAddresses ?? []).forEach(ip => {
+          const url = `${proto}//${ip}:${port}`;
+          if (!options.includes(url)) options.push(url);
+        });
+        setEndpointOptions(options);
+        setSelectedEndpoint(options[0] ?? fallback);
+      }
     }).catch(() => {});
   }, []);
 
@@ -91,16 +105,36 @@ export function ProjectGeneralTab() {
   }
 
 
+  function writeToClipboard(text: string): Promise<void> {
+    if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
+    // Fallback for non-secure contexts (HTTP, docker self-hosted via IP)
+    return new Promise((resolve, reject) => {
+      const el = document.createElement('textarea');
+      el.value = text;
+      el.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
+      document.body.appendChild(el);
+      el.focus();
+      el.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(el);
+      ok ? resolve() : reject(new Error('execCommand failed'));
+    });
+  }
+
   async function copyToken(token: string) {
-    await navigator.clipboard.writeText(token);
-    setCopied(true);
-    setTimeout(/* v8 ignore next */ () => setCopied(false), 2000);
+    try {
+      await writeToClipboard(token);
+      setCopied(true);
+      setTimeout(/* v8 ignore next */ () => setCopied(false), 2000);
+    } catch { setErr('Copy failed — please select and copy the token manually.'); }
   }
 
   async function copyEndpoint(value: string) {
-    await navigator.clipboard.writeText(value);
-    setCopiedEndpoint(value);
-    setTimeout(/* v8 ignore next */ () => setCopiedEndpoint(null), 2000);
+    try {
+      await writeToClipboard(value);
+      setCopiedEndpoint(value);
+      setTimeout(/* v8 ignore next */ () => setCopiedEndpoint(null), 2000);
+    } catch { /* silently ignore — user can copy manually */ }
   }
 
   // ── Token reveal view (after project creation) ───────────────────────────────
@@ -142,9 +176,7 @@ export function ProjectGeneralTab() {
     <>
       {/* ── Connection info (only when editing an existing project) ────────────── */}
       {isEdit && project && (() => {
-        // Use admin-configured publicUrl (Settings → Public URL).
-        // Falls back to window.location.origin while the fetch is in flight or if unset.
-        const baseUrl = (servicePublicUrl || window.location.origin) + '/v1';
+        const baseUrl = (selectedEndpoint || window.location.origin) + '/v1';
         return (
           <div style={{ marginBottom: 28, padding: '12px 16px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, maxWidth: 480 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
@@ -156,6 +188,18 @@ export function ProjectGeneralTab() {
               both use the same <code style={{ fontSize: '0.75rem' }}>/v1</code> prefix; the final path is appended automatically by the SDK.
               Use a <Link to={`/dashboard/projects/${project.id}/tokens`} style={{ color: 'var(--color-primary, #6366f1)' }}>project token</Link> as the API key.
             </p>
+            {endpointOptions.length > 1 && (
+              <select
+                className="form-input"
+                value={selectedEndpoint}
+                onChange={e => setSelectedEndpoint(e.target.value)}
+                style={{ marginBottom: 8, fontSize: '0.82rem', fontFamily: 'monospace' }}
+              >
+                {endpointOptions.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-input, var(--bg-tertiary, var(--bg-secondary)))', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 10px', fontFamily: 'monospace', fontSize: '0.82rem', color: 'var(--text-primary)', minWidth: 0 }}>
                 <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{baseUrl}</span>

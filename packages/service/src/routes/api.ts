@@ -2,6 +2,7 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { createHash, createHmac, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
+import { networkInterfaces } from 'node:os';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
@@ -1530,7 +1531,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/api/settings', async (req, reply) => {
     if (!requirePerm(req, 'settings:read', reply)) return;
     const settings = await readConfig('settings');
-    return reply.send(settings);
+    const localAddresses = Object.values(networkInterfaces())
+      .flat()
+      .filter((n): n is NonNullable<typeof n> => n !== undefined && n.family === 'IPv4' && !n.internal)
+      .map(n => n.address);
+    return reply.send({ ...settings, localAddresses });
   });
 
   // ─── PUT /api/settings ─────────────────────────────────────────────────────

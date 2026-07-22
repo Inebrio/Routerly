@@ -4,6 +4,79 @@ All notable changes to Routerly are documented in this file.
 
 ---
 
+## [0.3.0] — 2026-07-13
+
+### New features
+
+**Content guardrails and PII scrubbing**
+Per-project content guardrails inspect every request/response against configurable rules (keyword, regex, semantic judge). PII scrubbing strips sensitive entities before forwarding to the provider. Each rule carries an independent block or log action. Blocked requests are recorded in usage logs and visible in the dashboard with a guardrail trace.
+
+**Hierarchical spend limits**
+Budget limits can be set at org, team, and API-key level and cascade in priority order. Requests blocked by a budget gate are recorded in usage logs.
+
+**Per-agent routing policies via request header**
+Clients can override the project routing policy per-request using the `X-Routerly-Policy` header, enabling different routing strategies for different agents in the same project.
+
+**Provider health dashboard**
+A new Health tab inside the Models page shows real-time latency, error rates, and p95 metrics for every configured provider. The table is sortable, filterable, and paginated.
+
+**Prometheus metrics endpoint**
+`GET /metrics` exposes a Prometheus-compatible metrics stream. An optional bearer token can be required. Includes a Docker Compose integration example.
+
+**Per-end-user and session tracking**
+Usage records include end-user ID, session ID, and token-level key-value tags set at the project token level. A new End Users tab in the project detail page shows per-user consumption.
+
+**Enterprise cloud providers**
+New built-in adapters: AWS Bedrock (Converse/ConverseStream), Azure OpenAI, and Google Vertex AI.
+
+**Web session providers**
+`anthropic-web` and `openai-web` adapters relay requests through authenticated browser sessions. CLI supports `--cf-clearance` for Cloudflare-protected endpoints.
+
+**Provider-native prompt caching**
+Anthropic prompt caching headers are forwarded transparently. Cache read/write token counts appear in the per-request cost breakdown.
+
+**2FA / TOTP enrollment**
+Users can enroll a TOTP authenticator from their Profile page. Admins can require 2FA for all users. A reset-2FA action is available in the Users list.
+
+**Model discovery**
+A new Discovery page lets admins query any configured provider for its available models and add them directly to Routerly. The CLI command `routerly models discover` covers the same surface.
+
+**Dynamic provider catalog**
+Provider metadata (models, pricing, context windows) is loaded from one or more configurable git repositories. Multiple repos are merged in order; later repos override earlier entries on key conflict.
+
+**Notification system**
+Full notification stack: channels (in-app inbox, SMTP, Slack, Teams, PagerDuty, Discord), event routing rules with cooldowns, per-channel event and target scopes, and per-user dismiss for the in-app inbox.
+
+**Prompt playground with compare mode**
+An interactive playground lets users send prompts to any project model and inspect the full response, cost, and trace. Compare mode runs the same prompt against two models side by side.
+
+**Metrics export integrations**
+Push usage data to InfluxDB, Datadog, or any custom HTTP endpoint. Configured from Settings → Integrations.
+
+**Transparent pass-through proxy**
+Any request path not handled by the gateway is forwarded to the matched provider verbatim, preserving all headers and the response body. This enables full Claude Code compatibility without any client-side changes.
+
+**Claude Code integration**
+Routerly can be used as a drop-in proxy for Claude Code by setting `ANTHROPIC_BASE_URL` to the Routerly service URL. All Anthropic SDK methods, streaming, and tool-use calls work transparently.
+
+### Bug fixes and maintenance
+
+- Fixed config write lock retry budget for high-concurrency scenarios
+- Fixed guardrail/blocked breakdown in CLI `report usage`
+- Fixed dashboard: prevent login redirect loop and double-encoded `to` param
+- Fixed notification dropdown z-index and 2FA UX improvements
+- Fixed Gemini: strip provider prefix from model ID before upstream call
+- Fixed routing fairness policy and added OAuth usage tracking
+- Hardened SSRF protection on notification channel target resolution
+- Improved catalog: use upstream content-change timestamp; last repo in list no longer silently overrides earlier ones on key conflict
+- Fixed update checker: extract semver from release name for rolling channels
+
+### Breaking changes
+
+None. The OpenAI and Anthropic wire formats are unchanged.
+
+---
+
 ## [0.2.0] — 2026-06-10
 
 ### New features
