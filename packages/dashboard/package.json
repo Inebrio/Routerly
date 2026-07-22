@@ -31,7 +31,7 @@
     "@vitejs/plugin-react": "^5.2.0",
     "@vitest/coverage-v8": "^4.1.8",
     "happy-dom": "^20.10.2",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.3",
     "typescript": "^5.4.5",
     "vite": "^8.0.16",
     "vitest": "^4.1.8"
