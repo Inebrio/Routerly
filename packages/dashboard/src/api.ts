@@ -576,6 +576,8 @@ export interface Settings {
   prometheusAuthToken?: string | undefined;
   /** Provider catalog repositories. */
   providerRepos?: ProviderRepo[];
+  /** Non-loopback IPv4 addresses of the machine running the service — injected at runtime, not persisted. */
+  localAddresses?: string[];
 }
 
 export const getSettings = () => request<Settings>('/settings');

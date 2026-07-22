@@ -62,7 +62,7 @@ export function ProjectsPage() {
               </thead>
               <tbody>
                 {projects.map(p => (
-                  <tr key={p.id}>
+                  <tr key={p.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/dashboard/projects/${p.id}`)}>
                     <td><strong style={{ color: 'var(--text-primary)' }}>{p.name}</strong></td>
                     <td>
                       <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
@@ -85,7 +85,7 @@ export function ProjectsPage() {
                     <td style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
                       {p.models.map(m => m.modelId).join(', ')}
                     </td>
-                    <td style={{ display: 'flex', gap: 6 }}>
+                    <td style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
                       <button className="btn-icon" onClick={() => navigate(`/dashboard/projects/${p.id}`)} title="Edit project">
                         <Pencil size={15} />
                       </button>
