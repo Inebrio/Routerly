@@ -156,7 +156,7 @@ export function SettingsGeneralTab() {
           Host and port are configured via environment variables or the settings file and cannot be changed here.
         </p>
         <div className="form-group" style={{ marginTop: 14 }}>
-          <label className="form-label" htmlFor="s-publicurl">Service Host</label>
+          <label className="form-label" htmlFor="s-publicurl">Public URL</label>
           <input
             id="s-publicurl"
             className="form-input"

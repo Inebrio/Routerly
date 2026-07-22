@@ -159,6 +159,14 @@ describe('ProjectsPage — navigation', () => {
     await userEvent.click(screen.getByTitle('Edit project'));
     expect(navigateFn).toHaveBeenCalledWith('/dashboard/projects/p1');
   });
+
+  it('navigates to project detail on row click', async () => {
+    mockGetProjects.mockResolvedValue([makeProject({ id: 'p1', name: 'Alpha' })]);
+    renderPage();
+    await waitFor(() => screen.getByText('Alpha'));
+    await userEvent.click(screen.getByText('Alpha'));
+    expect(navigateFn).toHaveBeenCalledWith('/dashboard/projects/p1');
+  });
 });
 
 // ── Delete flow ────────────────────────────────────────────────────────────────
