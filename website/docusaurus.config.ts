@@ -45,15 +45,15 @@ const config: Config = {
           routeBasePath: '/',
           sidebarPath: './sidebars.ts',
           editUrl: 'https://github.com/Inebrio/Routerly/edit/main/',
-          lastVersion: 'current',
+          lastVersion: '0.2.0',
           versions: {
             current: {
-              label: '0.3.0',
-              badge: false,
+              label: 'next',
+              badge: true,
             },
             '0.2.0': {
               label: '0.2.0',
-              badge: true,
+              badge: false,
             },
             '0.1.5': {
               label: '0.1.5',

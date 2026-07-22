@@ -435,7 +435,7 @@ tbody tr {
   transition: background 0.1s;
 }
 
-tbody tr:hover { background: var(--bg-card); }
+tbody tr:hover { background: var(--bg-elevated); }
 
 tbody td {
   padding: 12px 16px;
@@ -947,13 +947,13 @@ td .badge {
   padding: 12px 16px;
   border-bottom: 1px solid #F1F5F9;
 }
-[data-theme="light"] tbody tr:hover { background: #F8FAFC; }
+[data-theme="light"] tbody tr:hover { background: #EDF2F7; }
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]):not([data-theme="light"]) thead th { background: #F8FAFC; border-bottom: 1px solid #E2E8F0; padding: 10px 16px; font-size: 11px; color: #64748B; }
   :root:not([data-theme="dark"]):not([data-theme="light"]) tbody tr { border-top: none; }
   :root:not([data-theme="dark"]):not([data-theme="light"]) tbody td { color: #0F172A; padding: 12px 16px; border-bottom: 1px solid #F1F5F9; }
-  :root:not([data-theme="dark"]):not([data-theme="light"]) tbody tr:hover { background: #F8FAFC; }
+  :root:not([data-theme="dark"]):not([data-theme="light"]) tbody tr:hover { background: #EDF2F7; }
 }
 
 /* ─── Action icons (light) ───────────────────────────────────────────────── */
