@@ -1,6 +1,6 @@
 import { routingModule } from './routing.js'
-import { budgetModule } from './budget.js'
-import { usageModule } from './usage.js'
+import { budgetModule } from './budget/index.js'
+import { usageModule } from './usage/index.js'
 import { guardrailsModule } from './guardrails.js'
 import { piiModule } from './pii.js'
 import { loggingModule } from './logging.js'
