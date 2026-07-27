@@ -14,7 +14,7 @@ function makeMockProvider(vectors: Record<string, number[]>) {
 
 // Mock the embedding index so we can inject a fake provider.
 const mockProvider = makeMockProvider({});
-vi.mock('../../embeddings/index.js', () => ({
+vi.mock('../../modules/embeddings/dispatch.js', () => ({
   getEmbeddingProvider: vi.fn(() => mockProvider),
 }));
 

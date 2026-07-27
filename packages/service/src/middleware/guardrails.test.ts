@@ -12,7 +12,7 @@ vi.mock('../llm/executor.js', () => ({
 }));
 vi.mock('../cost/tracker.js', () => ({ trackUsage: vi.fn(() => Promise.resolve()) }));
 vi.mock('../routing/intent/classifier.js', () => ({ classifyIntent: vi.fn() }));
-vi.mock('../embeddings/index.js', () => ({ getEmbeddingProvider: vi.fn() }));
+vi.mock('../modules/embeddings/dispatch.js', () => ({ getEmbeddingProvider: vi.fn() }));
 
 import { checkGuardrails, buildRequestInjection, type GuardrailProjectCtx } from './guardrails.js';
 import { readConfig } from '../modules/config/loader.js';

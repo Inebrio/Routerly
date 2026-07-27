@@ -10,7 +10,7 @@ import type {
 import type { ProjectConfig, ProjectToken } from '@routerly/shared';
 import type { FastifyBaseLogger } from 'fastify';
 import { classifyIntent } from '../routing/intent/classifier.js';
-import { getEmbeddingProvider } from '../embeddings/index.js';
+import { getEmbeddingProvider } from '../modules/embeddings/dispatch.js';
 import { llmChat, checkBudget, BudgetExceededError } from '../llm/executor.js';
 import type { LLMCallContext } from '../llm/executor.js';
 import { readConfig } from '../modules/config/loader.js';
