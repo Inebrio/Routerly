@@ -12,7 +12,7 @@ const mark = (id: string, phase: string, fn: (c: ProxyContext) => void): Process
 })
 
 describe('runProxy', () => {
-  it('a kind:"block" result skips every phase except finalize', async () => {
+  it('a kind:"block" result skips every phase except egress and finalize', async () => {
     const reg = new ProcessorRegistry<ProxyContext>()
     const trail: string[] = []
     reg.contribute(mark('a', 'request.preprocess', (c) => {
@@ -20,9 +20,11 @@ describe('runProxy', () => {
       c.result = { kind: 'block', status: 200 }
     }))
     reg.contribute(mark('b', 'upstream.execute', () => { trail.push('upstream') }))
+    reg.contribute(mark('e', 'egress', () => { trail.push('egress') }))
     reg.contribute(mark('c', 'finalize', () => { trail.push('finalize') }))
     await runProxy(reg, fakeCtx())
-    expect(trail).toEqual(['preprocess', 'finalize']) // upstream skipped, finalize still runs
+    // upstream skipped, egress still runs (it writes the block response) and finalize still runs
+    expect(trail).toEqual(['preprocess', 'egress', 'finalize'])
   })
 
   it('a kind:"json" result does NOT stop the walk (egress must still run)', async () => {
