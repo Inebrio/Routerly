@@ -7,7 +7,7 @@ const { mockReadConfig, mockGetLimitUsageSnapshot } = vi.hoisted(() => ({
 }));
 
 vi.mock('../modules/config/loader.js', () => ({ readConfig: mockReadConfig }));
-vi.mock('../cost/budget.js', () => ({ getLimitUsageSnapshot: mockGetLimitUsageSnapshot }));
+vi.mock('../modules/budget/budget.js', () => ({ getLimitUsageSnapshot: mockGetLimitUsageSnapshot }));
 
 import { getMetricsSnapshot, projectBudgetRatio } from './metrics-snapshot.js';
 import type { ModelConfig, ProjectConfig } from '@routerly/shared';

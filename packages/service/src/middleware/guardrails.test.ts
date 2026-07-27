@@ -10,14 +10,14 @@ vi.mock('../llm/executor.js', () => ({
     constructor(modelId: string) { super('budget_exceeded'); this.modelId = modelId; }
   },
 }));
-vi.mock('../cost/tracker.js', () => ({ trackUsage: vi.fn(() => Promise.resolve()) }));
+vi.mock('../modules/usage/tracker.js', () => ({ trackUsage: vi.fn(() => Promise.resolve()) }));
 vi.mock('../routing/intent/classifier.js', () => ({ classifyIntent: vi.fn() }));
 vi.mock('../modules/embeddings/dispatch.js', () => ({ getEmbeddingProvider: vi.fn() }));
 
 import { checkGuardrails, buildRequestInjection, type GuardrailProjectCtx } from './guardrails.js';
 import { readConfig } from '../modules/config/loader.js';
 import { llmChat, checkBudget, BudgetExceededError } from '../llm/executor.js';
-import { trackUsage } from '../cost/tracker.js';
+import { trackUsage } from '../modules/usage/tracker.js';
 import { classifyIntent } from '../routing/intent/classifier.js';
 import type { GuardrailConfig, GuardrailRule } from '@routerly/shared';
 

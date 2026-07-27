@@ -4,7 +4,7 @@ import type { FastifyBaseLogger } from 'fastify';
 import type { ServerResponse } from 'node:http';
 import type { ModelConfig, PiiConfig } from '@routerly/shared';
 import { mergePolicies, StreamingScrubber } from '../middleware/piiScrubber.js';
-import { trackUsage } from '../cost/tracker.js';
+import { trackUsage } from '../modules/usage/tracker.js';
 
 const CHATGPT_BASE = 'https://chatgpt.com';
 const CODEX_PATH = '/backend-api/codex/responses';

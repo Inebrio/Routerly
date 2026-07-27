@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
 vi.mock('../modules/provider/registry.js', () => ({ getProviderAdapter: vi.fn() }))
-vi.mock('../cost/budget.js', () => ({
+vi.mock('../modules/budget/budget.js', () => ({
   isAllowed: vi.fn().mockResolvedValue(true),
   isAllowedForRoutingModel: vi.fn().mockResolvedValue(true),
   getLimitUsageSnapshot: vi.fn().mockResolvedValue([]),
 }))
-vi.mock('../cost/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('../modules/usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('../notifications/emitter.js', () => ({ emitEvent: vi.fn().mockResolvedValue(undefined) }))
 
 import { llmChat } from './executor.js'

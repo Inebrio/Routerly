@@ -1,5 +1,5 @@
 import type { PolicyFn } from './types.js';
-import { getLimitUsageSnapshot } from '../../cost/budget.js';
+import { getLimitUsageSnapshot } from '../../modules/budget/budget.js';
 import { readConfig } from '../../modules/config/loader.js';
 
 /**

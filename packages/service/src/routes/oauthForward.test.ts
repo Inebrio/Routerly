@@ -3,8 +3,8 @@ import Fastify from 'fastify'
 import type { ProjectConfig, ModelConfig } from '@routerly/shared'
 import { buildOAuthForwardHeaders, forwardAnthropicOAuth } from './oauthForward.js'
 
-vi.mock('../cost/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
-import { trackUsage } from '../cost/tracker.js'
+vi.mock('../modules/usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
+import { trackUsage } from '../modules/usage/tracker.js'
 const mockTrackUsage = vi.mocked(trackUsage)
 
 afterEach(() => vi.clearAllMocks())

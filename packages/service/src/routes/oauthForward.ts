@@ -2,7 +2,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Readable } from 'node:stream';
 import type { ModelConfig } from '@routerly/shared';
 import { buildUpstreamUrl } from './passthrough.js';
-import { trackUsage } from '../cost/tracker.js';
+import { trackUsage } from '../modules/usage/tracker.js';
 
 /**
  * Faithful pass-through for subscription / OAuth models (Flow A).

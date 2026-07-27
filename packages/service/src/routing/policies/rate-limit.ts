@@ -1,5 +1,5 @@
 import type { PolicyFn } from './types.js';
-import { readUsageRecords } from '../../cost/usageStore.js';
+import { readUsageRecords } from '../../modules/usage/usageStore.js';
 
 /**
  * Policy: rate-limit
