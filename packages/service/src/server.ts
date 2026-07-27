@@ -17,6 +17,7 @@ import { updateChecker } from './update-checker.js';
 import { startIntegrationRunner } from './integrations/runner.js';
 import { buildKernel } from './core/bootstrap.js';
 import { configModule } from './modules/config/index.js';
+import { providerModule } from './modules/provider/index.js';
 import type { Kernel } from './core/index.js';
 
 // The modular kernel (0.4.0) is decorated onto the Fastify instance so later
@@ -46,12 +47,13 @@ export async function buildServer() {
   });
 
   // ─── Modular kernel (0.4.0) ───────────────────────────────────────────────
-  // Boots alongside Fastify; registers the config module so config/loader.ts is
-  // reachable via CONFIG_STORE for later plans. loadSecret()/initConfigDirs()
-  // already ran in startServer() before buildServer(); the config module does no
-  // IO at register time, so this is order-safe. Additive only, no existing
+  // Boots alongside Fastify; registers the config and provider modules so
+  // config/loader.ts and providers/index.ts are reachable via CONFIG_STORE and
+  // PROVIDER_REGISTRY for later plans. loadSecret()/initConfigDirs() already
+  // ran in startServer() before buildServer(); neither module does IO at
+  // register time, so this is order-safe. Additive only, no existing
   // registration is touched.
-  const kernel = await buildKernel([configModule]);
+  const kernel = await buildKernel([configModule, providerModule]);
   fastify.decorate('kernel', kernel);
   fastify.addHook('onClose', async () => {
     await kernel.stop();
