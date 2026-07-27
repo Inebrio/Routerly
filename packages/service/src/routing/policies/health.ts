@@ -1,6 +1,5 @@
 import type { PolicyFn } from './types.js';
-import { readConfig } from '../../config/loader.js';
-import type { UsageRecord } from '@routerly/shared';
+import { readUsageRecords } from '../../cost/usageStore.js';
 
 /**
  * Policy: health
@@ -26,7 +25,7 @@ export const healthPolicy: PolicyFn = async ({ candidates, config }) => {
   const pseudoCounts: number    = config?.pseudoCounts    ?? 2;
   const circuitBreaker: number  = config?.circuitBreaker  ?? 0.9;
 
-  const records: UsageRecord[] = await readConfig('usage');
+  const records = await readUsageRecords();
   const now                    = Date.now();
   const windowMs               = windowMinutes * 60 * 1000;
   const halfLifeMs             = halfLifeMinutes * 60 * 1000;

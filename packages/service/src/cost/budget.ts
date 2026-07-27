@@ -1,5 +1,5 @@
 import type { Limit, LimitPeriod, LimitsMode, RollingUnit, ModelConfig, ProjectConfig, ProjectToken, UsageRecord } from '@routerly/shared';
-import { readConfig } from '../config/loader.js';
+import { readUsageRecords } from './usageStore.js';
 
 // ─── Window helpers ────────────────────────────────────────────────────────────
 
@@ -190,7 +190,7 @@ export async function getLimitUsageSnapshot(
 
   if (!limits.length) return [];
 
-  const records = await readConfig('usage');
+  const records = await readUsageRecords();
   const now = new Date();
 
   const relevant = (records as UsageRecord[]).filter(
@@ -248,7 +248,7 @@ export async function isAllowedForRoutingModel(
 
   if (!limits.length) return true;
 
-  const records = await readConfig('usage');
+  const records = await readUsageRecords();
   const now = new Date();
 
   const relevant = (records as UsageRecord[]).filter(
@@ -283,7 +283,7 @@ export async function isAllowed(
 
   if (!limits.length) return true;
 
-  const records = await readConfig('usage');
+  const records = await readUsageRecords();
   const now = new Date();
 
   const relevant = (records as UsageRecord[]).filter(

@@ -1,6 +1,5 @@
 import type { PolicyFn } from './types.js';
-import { readConfig } from '../../config/loader.js';
-import type { UsageRecord } from '@routerly/shared';
+import { readUsageRecords } from '../../cost/usageStore.js';
 
 /**
  * Policy: fairness
@@ -23,7 +22,7 @@ import type { UsageRecord } from '@routerly/shared';
 export const fairnessPolicy: PolicyFn = async ({ candidates, config, projectId }) => {
   const windowMinutes: number = config?.windowMinutes ?? 60;
 
-  const records: UsageRecord[] = await readConfig('usage');
+  const records = await readUsageRecords();
   const now      = Date.now();
   const windowMs = windowMinutes * 60 * 1000;
   const since    = new Date(now - windowMs);
