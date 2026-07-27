@@ -52,6 +52,8 @@ export {
   ModuleGraphError,
   MissingDependencyError,
   DependencyCycleError,
+  AlterableRegistry,
+  createRouteRegistry,
 } from './index.js'
 
 export type {
@@ -61,4 +63,6 @@ export type {
   Runtime,
   Processor,
   Token,
+  Contribution,
+  RouteContribution,
 } from './index.js'

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import * as sdk from './sdk.js'
+import { AlterableRegistry, createRouteRegistry } from './sdk.js'
 
 describe('module SDK barrel', () => {
   it('re-exports every runtime authoring symbol', () => {
@@ -31,5 +32,16 @@ describe('module SDK barrel', () => {
     const c = new sdk.ServiceContainer()
     void mod.register({ container: c, events: new sdk.EventBus() })
     expect(c.resolve(sdk.token<number>('sample.value'))).toBe(42)
+  })
+
+  it('exports AlterableRegistry and createRouteRegistry', () => {
+    expect(AlterableRegistry).toBeDefined()
+    expect(createRouteRegistry).toBeDefined()
+  })
+
+  it('AlterableRegistry round-trips a contribution via the sdk barrel', () => {
+    const reg = new AlterableRegistry<number>()
+    reg.contribute({ id: 'x', value: 1 })
+    expect(reg.ordered()).toEqual([1])
   })
 })
