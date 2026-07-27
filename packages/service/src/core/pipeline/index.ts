@@ -1,5 +1,5 @@
-import { AlterableRegistry } from './hooks/registry.js'
-import { isShortCircuit, type ShortCircuit } from './result.js'
+import { AlterableRegistry } from '../hooks/registry.js'
+import { isShortCircuit, type ShortCircuit } from '../result.js'
 
 export interface Processor<C> {
   id: string

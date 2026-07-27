@@ -1,5 +1,5 @@
 import { Kernel } from './kernel.js'
-import type { RouterlyModule } from './module.js'
+import type { RouterlyModule } from '../modules/index.js'
 
 /**
  * Assemble a Kernel from the given modules and return it already started.

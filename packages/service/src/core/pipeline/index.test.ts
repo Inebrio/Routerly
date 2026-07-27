@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { ProcessorRegistry, type Processor } from './processors.js'
-import { shortCircuit } from './result.js'
-import { MissingDependencyError } from './errors.js'
+import { ProcessorRegistry, type Processor } from './index.js'
+import { shortCircuit } from '../result.js'
+import { MissingDependencyError } from '../errors.js'
 
 interface Ctx {
   trail: string[]

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { Kernel } from './kernel.js'
-import { defineModule } from './module.js'
-import { ModuleGraphError, MissingDependencyError } from './errors.js'
+import { defineModule } from '../modules/index.js'
+import { ModuleGraphError, MissingDependencyError } from '../errors.js'
 
 const trace = (log: string[], id: string) =>
   defineModule({

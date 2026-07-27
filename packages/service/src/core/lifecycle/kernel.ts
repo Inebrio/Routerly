@@ -1,8 +1,8 @@
-import { ServiceContainer } from './container.js'
-import { EventBus } from './events.js'
-import { topologicalSort, type GraphNode } from './graph.js'
-import { KernelError, ModuleGraphError } from './errors.js'
-import type { RouterlyModule } from './module.js'
+import { ServiceContainer } from '../container/index.js'
+import { EventBus } from '../events/index.js'
+import { topologicalSort, type GraphNode } from '../graph.js'
+import { KernelError, ModuleGraphError } from '../errors.js'
+import type { RouterlyModule } from '../modules/index.js'
 
 export class Kernel {
   readonly container = new ServiceContainer()
