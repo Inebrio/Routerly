@@ -1,5 +1,5 @@
 import type { IntentClassification, SemanticIntentConfig } from '@routerly/shared';
-import { getEmbeddingProvider } from '../../modules/embeddings/dispatch.js';
+import { getEmbeddingProvider } from '../../embeddings/dispatch.js';
 import { cosineSimilarity } from './similarity.js';
 import { getIntentCentroid } from './cache.js';
 

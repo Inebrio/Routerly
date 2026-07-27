@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
-vi.mock('../modules/config/loader.js', () => ({ readConfig: vi.fn() }))
-vi.mock('../modules/budget/budget.js', () => ({ isAllowed: vi.fn(), getViolatedLimits: vi.fn() }))
+vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }))
+vi.mock('../budget/budget.js', () => ({ isAllowed: vi.fn(), getViolatedLimits: vi.fn() }))
 vi.mock('./policies/cheapest.js', () => ({ cheapestPolicy: vi.fn() }))
 vi.mock('./policies/context.js', () => ({ contextPolicy: vi.fn() }))
 vi.mock('./policies/health.js', () => ({ healthPolicy: vi.fn() }))
@@ -14,8 +14,8 @@ vi.mock('./policies/budget-remaining.js', () => ({ budgetRemainingPolicy: vi.fn(
 vi.mock('./policies/semantic-intent.js', () => ({ semanticIntentPolicy: vi.fn() }))
 
 import { routeRequest } from './router.js'
-import { readConfig } from '../modules/config/loader.js'
-import { isAllowed, getViolatedLimits } from '../modules/budget/budget.js'
+import { readConfig } from '../config/loader.js'
+import { isAllowed, getViolatedLimits } from '../budget/budget.js'
 import { cheapestPolicy } from './policies/cheapest.js'
 import { capabilityPolicy } from './policies/capability.js'
 import { llmPolicy } from './policies/llm.js'

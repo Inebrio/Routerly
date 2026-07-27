@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
 const { mockEmbed } = vi.hoisted(() => ({ mockEmbed: vi.fn() }))
-vi.mock('../../modules/embeddings/dispatch.js', () => ({
+vi.mock('../../embeddings/dispatch.js', () => ({
   getEmbeddingProvider: vi.fn(() => ({ embed: mockEmbed })),
 }))
 

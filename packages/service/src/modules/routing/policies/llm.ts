@@ -1,10 +1,10 @@
 import type { ModelConfig, ProjectConfig } from '@routerly/shared';
-import { readConfig } from '../../modules/config/loader.js';
-import { llmChat, BudgetExceededError } from '../../llm/executor.js';
+import { readConfig } from '../../config/loader.js';
+import { llmChat, BudgetExceededError } from '../../../llm/executor.js';
 import { getRoutingHistory } from '../routingMemoryStore.js';
-import type { LLMCallContext } from '../../llm/executor.js';
-import { getLimitUsageSnapshot } from '../../modules/budget/budget.js';
-import type { LimitSnapshot } from '../../modules/budget/budget.js';
+import type { LLMCallContext } from '../../../llm/executor.js';
+import { getLimitUsageSnapshot } from '../../budget/budget.js';
+import type { LimitSnapshot } from '../../budget/budget.js';
 import type { PolicyFn } from './types.js';
 
 function buildSystemPrompt(

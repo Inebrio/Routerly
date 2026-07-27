@@ -1,7 +1,7 @@
 import type { ChatCompletionRequest, ModelConfig, ProjectConfig, ProjectToken, RoutingCandidate } from '@routerly/shared';
-import { readConfig } from '../modules/config/loader.js';
-import { isAllowed, getViolatedLimits } from '../modules/budget/budget.js';
-import type { LimitSnapshot } from '../modules/budget/budget.js';
+import { readConfig } from '../config/loader.js';
+import { isAllowed, getViolatedLimits } from '../budget/budget.js';
+import type { LimitSnapshot } from '../budget/budget.js';
 import type { CandidateModel } from './policies/types.js';
 import { contextPolicy } from './policies/context.js';
 import { cheapestPolicy } from './policies/cheapest.js';
@@ -15,7 +15,7 @@ import { budgetRemainingPolicy } from './policies/budget-remaining.js';
 import { semanticIntentPolicy } from './policies/semantic-intent.js';
 import { modelPreferencePolicy } from './policies/model-preference.js';
 import type { PolicyFn } from './policies/types.js';
-import type { TraceEntry, TracePanel } from './traceStore.js';
+import type { TraceEntry, TracePanel } from '../../routing/traceStore.js';
 
 function te(panel: TracePanel, message: string, details: Record<string, unknown>): TraceEntry {
   return { panel, message, details };

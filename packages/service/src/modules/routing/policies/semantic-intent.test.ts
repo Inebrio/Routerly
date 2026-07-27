@@ -14,17 +14,17 @@ function makeMockProvider(vectors: Record<string, number[]>) {
 
 // Mock the embedding index so we can inject a fake provider.
 const mockProvider = makeMockProvider({});
-vi.mock('../../modules/embeddings/dispatch.js', () => ({
+vi.mock('../../embeddings/dispatch.js', () => ({
   getEmbeddingProvider: vi.fn(() => mockProvider),
 }));
 
-vi.mock('../../modules/usage/tracker.js', () => ({
+vi.mock('../../usage/tracker.js', () => ({
   trackUsage: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Default: empty catalog → getEmbeddingInputCost returns 0 for any provider/model
 const mockCatalogGet = vi.fn().mockResolvedValue({});
-vi.mock('../../modules/catalog/fetcher.js', () => ({
+vi.mock('../../catalog/fetcher.js', () => ({
   catalogFetcher: { get: (...args: any[]) => mockCatalogGet(...args) },
 }));
 
@@ -32,7 +32,7 @@ vi.mock('../../modules/catalog/fetcher.js', () => ({
 const mockReadConfig = vi.fn().mockResolvedValue([
   { id: 'text-embedding-3-small', apiKey: 'sk-test', endpoint: 'https://api.openai.com/v1' },
 ]);
-vi.mock('../../modules/config/loader.js', () => ({
+vi.mock('../../config/loader.js', () => ({
   readConfig: (...args: any[]) => mockReadConfig(...args),
 }));
 
@@ -78,7 +78,7 @@ const baseConfig: SemanticIntentConfig = {
   },
 };
 
-import { trackUsage } from '../../modules/usage/tracker.js';
+import { trackUsage } from '../../usage/tracker.js';
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
