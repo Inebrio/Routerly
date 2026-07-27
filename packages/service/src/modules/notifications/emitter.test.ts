@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 
-vi.mock('../modules/config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn() }));
+vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn() }));
 vi.mock('./sender.js', () => ({ dispatchNotification: vi.fn() }));
 
 import {
   emitEvent, matchesPattern, _resetCooldowns, resolveTargetUsers,
 } from './emitter.js';
-import { readConfig, writeConfig } from '../modules/config/loader.js';
+import { readConfig, writeConfig } from '../config/loader.js';
 import { dispatchNotification } from './sender.js';
 
 const mockRead = vi.mocked(readConfig as (key: string) => Promise<any>);
