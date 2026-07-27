@@ -1,8 +1,8 @@
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { fastifyPlugin as fp } from 'fastify-plugin';
 import type { ProjectConfig, ProjectToken } from '@routerly/shared';
-import { readConfig, writeConfig } from '../modules/config/loader.js';
-import { emitEvent } from '../notifications/emitter.js';
+import { readConfig, writeConfig } from '../config/loader.js';
+import { emitEvent } from '../../notifications/emitter.js';
 
 // Augment FastifyRequest to carry the resolved project and token
 declare module 'fastify' {

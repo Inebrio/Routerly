@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import Fastify from 'fastify'
 
-vi.mock('../modules/config/loader.js', () => ({
+vi.mock('../config/loader.js', () => ({
   readConfig: vi.fn(),
   writeConfig: vi.fn().mockResolvedValue(undefined),
 }))
 
 import authPlugin, { extractProjectToken } from './auth.js'
-import { readConfig, writeConfig } from '../modules/config/loader.js'
+import { readConfig, writeConfig } from '../config/loader.js'
 import type { ProjectConfig } from '@routerly/shared'
 
 const mockReadConfig = vi.mocked(readConfig)
