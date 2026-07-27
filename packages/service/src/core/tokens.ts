@@ -56,6 +56,13 @@ export const AUTH = token<{
   getEffectiveRoles: typeof import('../modules/auth/roles.js').getEffectiveRoles;
 }>('auth.registry');
 
+export const NOTIFICATIONS = token<{
+  emitEvent: typeof import('../modules/notifications/emitter.js').emitEvent;
+  appendToInbox: typeof import('../modules/notifications/emitter.js').appendToInbox;
+  dispatchNotification: typeof import('../modules/notifications/sender.js').dispatchNotification;
+  sendTestNotification: typeof import('../modules/notifications/sender.js').sendTestNotification;
+}>('notifications.registry');
+
 export const ROUTER = token<{
   routeRequest(
     request: ChatCompletionRequest,
