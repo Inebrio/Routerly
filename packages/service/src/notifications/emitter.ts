@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { readConfig, writeConfig } from '../modules/config/loader.js';
 import { dispatchNotification } from './sender.js';
-import { getEffectiveRoles } from '../auth/roles.js';
+import { getEffectiveRoles } from '../modules/auth/roles.js';
 import type {
   NotificationSeverity,
   NotificationInboxItem,

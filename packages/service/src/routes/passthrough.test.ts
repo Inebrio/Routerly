@@ -3,8 +3,8 @@ import Fastify from 'fastify'
 import type { ProjectConfig, ModelConfig } from '@routerly/shared'
 
 vi.mock('../modules/config/loader.js', () => ({ readConfig: vi.fn() }))
-vi.mock('../plugins/auth.js', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../plugins/auth.js')>()
+vi.mock('../modules/auth/auth.js', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../modules/auth/auth.js')>()
   return {
     ...original,
     resolveProjectByToken: vi.fn(),
@@ -12,7 +12,7 @@ vi.mock('../plugins/auth.js', async (importOriginal) => {
 })
 
 import { readConfig } from '../modules/config/loader.js'
-import { resolveProjectByToken } from '../plugins/auth.js'
+import { resolveProjectByToken } from '../modules/auth/auth.js'
 import {
   pickUpstreamModel,
   buildUpstreamUrl,
