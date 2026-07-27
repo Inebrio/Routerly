@@ -16,7 +16,7 @@ import { CHANNEL_SECRET_FIELDS } from '@routerly/shared';
 import { catalogFetcher } from '../modules/catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../modules/catalog/sync.js';
 import { z } from 'zod';
-import { getTrace } from '../routing/traceStore.js';
+import { getTrace } from '../modules/logging/traceStore.js';
 import { getProviderAdapter } from '../modules/provider/registry.js';
 import { sendTestNotification } from '../notifications/sender.js';
 import { emitEvent } from '../notifications/emitter.js';

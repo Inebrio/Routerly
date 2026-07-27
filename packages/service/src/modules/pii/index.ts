@@ -3,7 +3,7 @@ import { PROXY_PIPELINE } from '../../core/tokens.js'
 import type { ProxyContext } from '../../reverse-proxy/context.js'
 import type { ChatCompletionRequest } from '@routerly/shared'
 import { mergePolicies, scrubMessages } from './piiScrubber.js'
-import { appendTrace } from '../../routing/traceStore.js'
+import { appendTrace } from '../logging/traceStore.js'
 import { applyResponseScrub, wrapWithStreamingScrubber } from '../../reverse-proxy/helpers.js'
 
 const input: Processor<ProxyContext> = {

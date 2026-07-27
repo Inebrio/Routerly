@@ -15,7 +15,7 @@ import { budgetRemainingPolicy } from './policies/budget-remaining.js';
 import { semanticIntentPolicy } from './policies/semantic-intent.js';
 import { modelPreferencePolicy } from './policies/model-preference.js';
 import type { PolicyFn } from './policies/types.js';
-import type { TraceEntry, TracePanel } from '../../routing/traceStore.js';
+import type { TraceEntry, TracePanel } from '../logging/traceStore.js';
 
 function te(panel: TracePanel, message: string, details: Record<string, unknown>): TraceEntry {
   return { panel, message, details };

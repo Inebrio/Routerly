@@ -3,8 +3,8 @@ import { ROUTER, PROXY_PIPELINE } from '../../core/tokens.js'
 import type { ProxyContext } from '../../reverse-proxy/context.js'
 import { routeRequest } from './router.js'
 import { addRoutingDecision } from './routingMemoryStore.js'
-import { appendTrace } from '../../routing/traceStore.js'
-import type { TraceEntry } from '../../routing/traceStore.js'
+import { appendTrace } from '../logging/traceStore.js'
+import type { TraceEntry } from '../logging/traceStore.js'
 
 const prepare: Processor<ProxyContext> = {
   id: 'routing.prepare',

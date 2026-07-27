@@ -1,5 +1,5 @@
 import type { ChatCompletionRequest, BudgetThresholds, ModelConfig, ProjectToken } from '@routerly/shared';
-import type { TraceEntry } from '../../../routing/traceStore.js';
+import type { TraceEntry } from '../../logging/traceStore.js';
 
 /** Rappresenta un modello candidato con il peso accumulato durante la pipeline */
 export interface CandidateModel {
