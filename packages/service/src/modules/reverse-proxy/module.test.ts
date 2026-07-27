@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { ServiceContainer, EventBus } from '../core/index.js'
-import { PROXY_PIPELINE } from '../core/tokens.js'
+import { ServiceContainer, EventBus } from '../../core/index.js'
+import { PROXY_PIPELINE } from '../../core/tokens.js'
 import { reverseProxyModule } from './module.js'
 import { getProxyPipeline } from './run.js'
 import { openaiTransportProcessors } from './lanes/openai.js'

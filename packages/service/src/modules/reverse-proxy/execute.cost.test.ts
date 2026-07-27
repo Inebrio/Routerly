@@ -1,17 +1,17 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
-vi.mock('../modules/provider/registry.js', () => ({ getProviderAdapter: vi.fn() }))
-vi.mock('../modules/budget/budget.js', () => ({
+vi.mock('../provider/registry.js', () => ({ getProviderAdapter: vi.fn() }))
+vi.mock('../budget/budget.js', () => ({
   isAllowed: vi.fn().mockResolvedValue(true),
   isAllowedForRoutingModel: vi.fn().mockResolvedValue(true),
   getLimitUsageSnapshot: vi.fn().mockResolvedValue([]),
 }))
-vi.mock('../modules/usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
-vi.mock('../modules/notifications/emitter.js', () => ({ emitEvent: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('../usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('../notifications/emitter.js', () => ({ emitEvent: vi.fn().mockResolvedValue(undefined) }))
 
-import { llmChat } from './executor.js'
-import { getProviderAdapter } from '../modules/provider/registry.js'
-import { calculateCost } from '../lib/cost.js'
+import { llmChat } from './execute.js'
+import { getProviderAdapter } from '../provider/registry.js'
+import { calculateCost } from '../../lib/cost.js'
 
 const mockGetProvider = vi.mocked(getProviderAdapter)
 

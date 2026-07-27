@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ProcessorRegistry, type Processor } from '../core/index.js'
+import { ProcessorRegistry, type Processor } from '../../core/index.js'
 import { runProxy, PROXY_PHASES, setProxyPipeline, getProxyPipeline } from './run.js'
 import type { ProxyContext } from './context.js'
 

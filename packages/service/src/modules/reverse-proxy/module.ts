@@ -1,5 +1,5 @@
-import { defineModule, ProcessorRegistry } from '../core/index.js'
-import { PROXY_PIPELINE } from '../core/tokens.js'
+import { defineModule, ProcessorRegistry } from '../../core/index.js'
+import { PROXY_PIPELINE } from '../../core/tokens.js'
 import type { ProxyContext } from './context.js'
 import { setProxyPipeline } from './run.js'
 import { openaiTransportProcessors } from './lanes/openai.js'

@@ -3,9 +3,9 @@ import type {
   ChatCompletionRequest, ChatCompletionResponse, MessagesRequest, ProjectConfig,
 } from '@routerly/shared'
 import type { ProxyContext, ProxyResult } from './context.js'
-import { StreamingScrubber, scrubText } from '../modules/pii/piiScrubber.js'
-import type { EffectivePii } from '../modules/pii/piiScrubber.js'
-import { checkGuardrails } from '../modules/guardrails/guardrails.js'
+import { StreamingScrubber, scrubText } from '../pii/piiScrubber.js'
+import type { EffectivePii } from '../pii/piiScrubber.js'
+import { checkGuardrails } from '../guardrails/guardrails.js'
 
 // ponytail: string|array content extraction, the exact inline helper from both routes.
 function messageText(content: unknown): string {

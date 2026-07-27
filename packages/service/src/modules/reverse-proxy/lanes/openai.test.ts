@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ProcessorRegistry } from '../../core/index.js'
+import { ProcessorRegistry } from '../../../core/index.js'
 import { openaiTransportProcessors, openaiEgress } from './openai.js'
 import type { ProxyContext } from '../context.js'
 

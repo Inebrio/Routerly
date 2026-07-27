@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
-vi.mock('../modules/provider/registry.js', () => ({ getProviderAdapter: vi.fn() }))
-vi.mock('../modules/budget/budget.js', () => ({ isAllowed: vi.fn(), isAllowedForRoutingModel: vi.fn(), getLimitUsageSnapshot: vi.fn().mockResolvedValue([]) }))
-vi.mock('../modules/usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
-vi.mock('../modules/notifications/emitter.js', () => ({ emitEvent: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('../provider/registry.js', () => ({ getProviderAdapter: vi.fn() }))
+vi.mock('../budget/budget.js', () => ({ isAllowed: vi.fn(), isAllowedForRoutingModel: vi.fn(), getLimitUsageSnapshot: vi.fn().mockResolvedValue([]) }))
+vi.mock('../usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('../notifications/emitter.js', () => ({ emitEvent: vi.fn().mockResolvedValue(undefined) }))
 
-import { llmChat, llmStream, llmMessages, BudgetExceededError } from './executor.js'
-import { getProviderAdapter } from '../modules/provider/registry.js'
-import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../modules/budget/budget.js'
-import { trackUsage } from '../modules/usage/tracker.js'
-import { emitEvent } from '../modules/notifications/emitter.js'
+import { llmChat, llmStream, llmMessages, BudgetExceededError } from './execute.js'
+import { getProviderAdapter } from '../provider/registry.js'
+import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../budget/budget.js'
+import { trackUsage } from '../usage/tracker.js'
+import { emitEvent } from '../notifications/emitter.js'
 
 const mockGetProvider = vi.mocked(getProviderAdapter)
 const mockIsAllowed = vi.mocked(isAllowed)

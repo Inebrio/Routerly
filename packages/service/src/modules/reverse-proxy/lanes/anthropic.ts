@@ -3,15 +3,15 @@ import type { FastifyRequest, FastifyReply } from 'fastify'
 import type {
   MessagesRequest, MessagesResponse, ChatCompletionRequest, ChatCompletionResponse, StreamChunk,
 } from '@routerly/shared'
-import type { Processor } from '../../core/index.js'
+import type { Processor } from '../../../core/index.js'
 import type { ProxyContext } from '../context.js'
 import { getProxyPipeline } from '../run.js'
-import { readConfig } from '../../modules/config/loader.js'
-import { appendTrace } from '../../modules/logging/traceStore.js'
-import type { TraceEntry } from '../../modules/logging/traceStore.js'
-import { llmChat, llmStream, BudgetExceededError } from '../../llm/executor.js'
-import type { LLMCallContext } from '../../llm/executor.js'
-import { forwardAnthropicOAuth, forwardAnthropicApiKey } from '../../routes/oauthForward.js'
+import { readConfig } from '../../config/loader.js'
+import { appendTrace } from '../../logging/traceStore.js'
+import type { TraceEntry } from '../../logging/traceStore.js'
+import { llmChat, llmStream, BudgetExceededError } from '../execute.js'
+import type { LLMCallContext } from '../execute.js'
+import { forwardAnthropicOAuth, forwardAnthropicApiKey } from '../../../routes/oauthForward.js'
 
 // ─── protocol translation (anthropic.ts L42-89, moved verbatim) ──────────────────
 /** Convert a MessagesRequest to an OpenAI-compat ChatCompletionRequest for non-Anthropic providers. */
