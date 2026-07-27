@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { createHmac } from 'node:crypto'
 
-vi.mock('../modules/config/loader.js', () => ({
+vi.mock('../config/loader.js', () => ({
   getOrCreateSecret: vi.fn(),
 }))
 
-import { getOrCreateSecret } from '../modules/config/loader.js'
+import { getOrCreateSecret } from '../config/loader.js'
 import { loadSecret, signToken, verifyToken, createSessionToken, generateRawToken } from './jwt.js'
 
 const mockGetOrCreateSecret = vi.mocked(getOrCreateSecret)
@@ -28,7 +28,7 @@ describe('loadSecret', () => {
 describe('getSecret — throws when not initialised (line 12 throw branch)', () => {
   it('throws when signToken called before loadSecret (via fresh module)', async () => {
     vi.resetModules()
-    vi.doMock('../modules/config/loader.js', () => ({ getOrCreateSecret: vi.fn() }))
+    vi.doMock('../config/loader.js', () => ({ getOrCreateSecret: vi.fn() }))
     const { signToken: freshSignToken } = await import('./jwt.js')
     // _secret is undefined in fresh module → getSecret() throws
     expect(() => freshSignToken({ sub: 'test' })).toThrow('JWT secret not initialised')
