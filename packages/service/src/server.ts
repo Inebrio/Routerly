@@ -18,6 +18,7 @@ import { startIntegrationRunner } from './integrations/runner.js';
 import { buildKernel } from './core/bootstrap.js';
 import { configModule } from './modules/config/index.js';
 import { providerModule } from './modules/provider/index.js';
+import { reverseProxyModule } from './reverse-proxy/index.js';
 import type { Kernel } from './core/index.js';
 
 // The modular kernel (0.4.0) is decorated onto the Fastify instance so later
@@ -53,7 +54,7 @@ export async function buildServer() {
   // ran in startServer() before buildServer(); neither module does IO at
   // register time, so this is order-safe. Additive only, no existing
   // registration is touched.
-  const kernel = await buildKernel([configModule, providerModule]);
+  const kernel = await buildKernel([configModule, providerModule, reverseProxyModule]);
   fastify.decorate('kernel', kernel);
   fastify.addHook('onClose', async () => {
     await kernel.stop();
