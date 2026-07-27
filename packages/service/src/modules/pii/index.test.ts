@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { ServiceContainer, EventBus, ProcessorRegistry } from '../core/index.js'
-import { PROXY_PIPELINE } from '../core/tokens.js'
-import type { ProxyContext } from '../reverse-proxy/context.js'
-import { piiModule } from './pii.js'
+import { ServiceContainer, EventBus, ProcessorRegistry } from '../../core/index.js'
+import { PROXY_PIPELINE } from '../../core/tokens.js'
+import type { ProxyContext } from '../../reverse-proxy/context.js'
+import { piiModule } from './index.js'
 
 function harness() {
   const container = new ServiceContainer()

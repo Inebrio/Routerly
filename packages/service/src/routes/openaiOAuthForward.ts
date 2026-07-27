@@ -3,7 +3,7 @@ import { homedir } from 'node:os';
 import type { FastifyBaseLogger } from 'fastify';
 import type { ServerResponse } from 'node:http';
 import type { ModelConfig, PiiConfig } from '@routerly/shared';
-import { mergePolicies, StreamingScrubber } from '../middleware/piiScrubber.js';
+import { mergePolicies, StreamingScrubber } from '../modules/pii/piiScrubber.js';
 import { trackUsage } from '../modules/usage/tracker.js';
 
 const CHATGPT_BASE = 'https://chatgpt.com';

@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
-vi.mock('../middleware/guardrails.js', () => ({ checkGuardrails: vi.fn() }))
+vi.mock('../modules/guardrails/guardrails.js', () => ({ checkGuardrails: vi.fn() }))
 
 import {
   buildContentFilterBlock, primaryText, conversationText, wrapWithStreamingScrubber,
   applyResponseScrub, wrapWithResponseGuardrail, assembledResponseText,
 } from './helpers.js'
 import type { ProxyContext } from './context.js'
-import { checkGuardrails } from '../middleware/guardrails.js'
+import { checkGuardrails } from '../modules/guardrails/guardrails.js'
 
 const mockCheckGuardrails = vi.mocked(checkGuardrails)
 
