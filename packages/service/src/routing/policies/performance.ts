@@ -1,6 +1,5 @@
 import type { PolicyFn } from './types.js';
-import { readConfig } from '../../config/loader.js';
-import type { UsageRecord } from '@routerly/shared';
+import { readUsageRecords } from '../../cost/usageStore.js';
 
 /**
  * Policy: performance
@@ -32,7 +31,7 @@ export const performancePolicy: PolicyFn = async ({ candidates, config }) => {
   const halfLifeMinutes: number  = config?.halfLifeMinutes  ?? 5;
   const minSamples: number       = config?.minSamples       ?? 1;
 
-  const records: UsageRecord[] = await readConfig('usage');
+  const records = await readUsageRecords();
   const now                    = Date.now();
   const windowMs               = windowMinutes * 60 * 1000;
   const halfLifeMs             = halfLifeMinutes * 60 * 1000;
