@@ -1,5 +1,5 @@
 import type { UsageRecord } from '@routerly/shared'
-import { readConfig } from '../modules/config/loader.js'
+import { readConfig } from '../config/loader.js'
 
 // Single canonical usage read. All budget checks and usage-scanning routing policies
 // go through here instead of each calling readConfig('usage') with its own cast.
