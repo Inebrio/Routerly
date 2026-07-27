@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getEmbeddingProvider } from './index.js'
+import { getEmbeddingProvider } from './dispatch.js'
 
 describe('getEmbeddingProvider', () => {
   it('returns OpenAI provider for type=openai', () => {
