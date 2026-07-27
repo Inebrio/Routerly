@@ -5,7 +5,7 @@ vi.mock('../modules/config/loader.js', () => ({ readConfig: vi.fn(), writeConfig
 vi.mock('node:child_process', () => ({
   spawn: vi.fn(() => ({ unref: vi.fn() })),
 }))
-vi.mock('../plugins/jwt.js', () => ({
+vi.mock('../modules/auth/jwt.js', () => ({
   createSessionToken: vi.fn(() => 'test-jwt'),
   verifyToken: vi.fn(),
   generateRawToken: vi.fn(() => 'raw-refresh-token-xxxx'),
@@ -23,7 +23,7 @@ vi.mock('uuid', () => ({ v4: vi.fn(() => 'test-uuid-1234') }))
 
 import { apiRoutes } from './api.js'
 import { readConfig } from '../modules/config/loader.js'
-import { verifyToken } from '../plugins/jwt.js'
+import { verifyToken } from '../modules/auth/jwt.js'
 
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
 const mockVerifyToken = vi.mocked(verifyToken)

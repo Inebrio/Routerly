@@ -5,7 +5,7 @@ vi.mock('../modules/config/loader.js', () => ({ readConfig: vi.fn(), writeConfig
 vi.mock('node:child_process', () => ({
   spawn: vi.fn(() => ({ unref: vi.fn() })),
 }))
-vi.mock('../plugins/jwt.js', () => ({
+vi.mock('../modules/auth/jwt.js', () => ({
   createSessionToken: vi.fn(() => 'test-jwt'),
   verifyToken: vi.fn(),
   generateRawToken: vi.fn(() => 'raw-refresh-token-xxxx'),
@@ -27,7 +27,7 @@ vi.mock('bcrypt', () => ({
 }))
 vi.mock('uuid', () => ({ v4: vi.fn(() => 'test-uuid-1234') }))
 vi.mock('./openaiOAuthForward.js', () => ({ resolveCodexToken: vi.fn(), forwardOpenAIOAuthSSE: vi.fn() }))
-vi.mock('../auth/totp.js', () => ({
+vi.mock('../modules/auth/totp.js', () => ({
   verifyTotp: vi.fn(() => true),
   generateTotpSecret: vi.fn(() => 'MOCK_SECRET_BASE32'),
   generateBackupCodes: vi.fn(() => ({ plain: ['CODE1', 'CODE2'], hashed: ['hash1', 'hash2'] })),
@@ -49,12 +49,12 @@ vi.mock('../modules/catalog/fetcher.js', () => ({
 
 import { apiRoutes } from './api.js'
 import { readConfig, writeConfig } from '../modules/config/loader.js'
-import { createSessionToken, verifyToken } from '../plugins/jwt.js'
+import { createSessionToken, verifyToken } from '../modules/auth/jwt.js'
 import { sendTestNotification } from '../notifications/sender.js'
 import { getTrace } from '../modules/logging/traceStore.js'
 import bcrypt from 'bcrypt'
 import { resolveCodexToken } from './openaiOAuthForward.js'
-import { verifyTotp, generateTotpSecret, generateBackupCodes, hashBackupCode } from '../auth/totp.js'
+import { verifyTotp, generateTotpSecret, generateBackupCodes, hashBackupCode } from '../modules/auth/totp.js'
 import { catalogFetcher } from '../modules/catalog/fetcher.js'
 
 const mockCatalogFetcher = vi.mocked(catalogFetcher)
