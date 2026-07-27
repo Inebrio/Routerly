@@ -2,16 +2,16 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the dependency-free modular kernel (`packages/service/src/core/`) — DI container, module manifest + lifecycle, dependency graph with topological ordering, typed hierarchical event bus, and processor DAG — as isolated infrastructure that no existing code depends on yet.
+**Goal:** Build the dependency-free modular kernel (`packages/service/src/core/`) - DI container, module manifest + lifecycle, dependency graph with topological ordering, typed hierarchical event bus, and processor DAG - as isolated infrastructure that no existing code depends on yet.
 
 **Architecture:** A `core/` package inside `packages/service/src` that provides the abstract lifecycle and composition primitives described in the 0.4.0 refactory notes. This plan builds ONLY the kernel mechanics with unit tests; it does NOT migrate any existing service behavior, does NOT wire real modules (routing, reverse-proxy, cache…), and does NOT touch `server.ts`, `routes/`, `llm/` or `routing/`. Those are later plans (see "Plan sequence" at the end). The kernel is decision-complete: the notes give concrete TS contracts for every piece here.
 
-**Tech Stack:** TypeScript ESM (NodeNext, `.js` import specifiers), Vitest, no new runtime dependencies (topological sort and wildcard matching are hand-rolled — stdlib only).
+**Tech Stack:** TypeScript ESM (NodeNext, `.js` import specifiers), Vitest, no new runtime dependencies (topological sort and wildcard matching are hand-rolled - stdlib only).
 
 ## Global Constraints
 
 - **Module system:** NodeNext ESM. Every relative import MUST use a `.js` extension (e.g. `import { X } from './x.js'`). Node builtins use the `node:` prefix.
-- **TypeScript:** `strict`, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `noImplicitOverride` all on. Optional object properties must be omitted, not set to `undefined`. Array/record index access returns `T | undefined` — narrow before use.
+- **TypeScript:** `strict`, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `noImplicitOverride` all on. Optional object properties must be omitted, not set to `undefined`. Array/record index access returns `T | undefined` - narrow before use.
 - **Tests:** Vitest. Test files are `*.test.ts` in the SAME directory as the source. Run per-file with `npx vitest run <path>` from `packages/service/`.
 - **Coverage: NO coverage gate for this refactory phase.** The standing 98% repo threshold is explicitly waived here (owner decision, 2026-07-26). Write MINIMAL behavioral tests only: one happy-path assertion per exported function plus the error branches that a later module actually relies on. Do not chase line/branch coverage. Speed of execution and behavioral correctness take priority; deep verification is done by browser UAT + curl at integration time, not by unit coverage.
 - **No new dependencies.** Do not add anything to `package.json`.
@@ -92,7 +92,7 @@ describe('errors', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/core/errors.test.ts`
-Expected: FAIL — cannot find module `./result.js` / `./errors.js`.
+Expected: FAIL - cannot find module `./result.js` / `./errors.js`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -177,9 +177,9 @@ git commit -m "feat(core): result and kernel error primitives"
   - `interface Token<T> { readonly key: string; readonly _type?: T }`
   - `function token<T>(key: string): Token<T>`
   - `class ServiceContainer` with:
-    - `register<T>(token: Token<T>, value: T): void` — throws `KernelError` code `'DUPLICATE_SERVICE'` if the key is already registered
+    - `register<T>(token: Token<T>, value: T): void` - throws `KernelError` code `'DUPLICATE_SERVICE'` if the key is already registered
     - `has(token: Token<unknown>): boolean`
-    - `resolve<T>(token: Token<T>): T` — throws `MissingDependencyError` if absent
+    - `resolve<T>(token: Token<T>): T` - throws `MissingDependencyError` if absent
     - `tryResolve<T>(token: Token<T>): T | undefined`
 
 The `_type` phantom field on `Token` is never assigned at runtime; it only carries the type for `resolve`.
@@ -223,7 +223,7 @@ describe('ServiceContainer', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/core/container.test.ts`
-Expected: FAIL — cannot find module `./container.js`.
+Expected: FAIL - cannot find module `./container.js`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -281,7 +281,7 @@ git commit -m "feat(core): typed service container"
 
 ---
 
-### Task 3: Dependency graph — topological sort with cycle & missing-node detection
+### Task 3: Dependency graph - topological sort with cycle & missing-node detection
 
 **Files:**
 - Create: `packages/service/src/core/graph.ts`
@@ -296,7 +296,7 @@ git commit -m "feat(core): typed service container"
     - Throws `MissingDependencyError` if any `dependsOn` / `before` / `after` names an unknown id.
     - Throws `DependencyCycleError` (with the offending `cycle`) if the graph is cyclic.
 
-This is Kahn's algorithm with a weight-aware ready-set. Hand-rolled — no library.
+This is Kahn's algorithm with a weight-aware ready-set. Hand-rolled - no library.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -359,7 +359,7 @@ describe('topologicalSort', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/core/graph.test.ts`
-Expected: FAIL — cannot find module `./graph.js`.
+Expected: FAIL - cannot find module `./graph.js`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -475,11 +475,11 @@ git commit -m "feat(core): dependency graph topological sort"
 **Interfaces:**
 - Consumes: nothing.
 - Produces:
-  - `function topicMatches(pattern: string, topic: string): boolean` — segments split on `/`, leading slash normalized away, no trailing slash. `*` matches exactly one segment; `**` matches zero or more segments.
+  - `function topicMatches(pattern: string, topic: string): boolean` - segments split on `/`, leading slash normalized away, no trailing slash. `*` matches exactly one segment; `**` matches zero or more segments.
   - `type EventListener = (topic: string, payload: unknown) => void`
   - `class EventBus` with:
     - `subscribe(pattern: string, listener: EventListener): () => void` (returns an unsubscribe fn)
-    - `publish(topic: string, payload?: unknown): void` — synchronous, best-effort in-process dispatch. A throwing listener MUST NOT stop other listeners; collected errors are reported to an optional `onListenerError` callback passed to the constructor.
+    - `publish(topic: string, payload?: unknown): void` - synchronous, best-effort in-process dispatch. A throwing listener MUST NOT stop other listeners; collected errors are reported to an optional `onListenerError` callback passed to the constructor.
     - `constructor(opts?: { onListenerError?: (err: unknown, topic: string) => void })`
 
 > Delivery-guarantee decision for this plan: dispatch is **synchronous, in-process, best-effort** (the notes' default). Reliable/at-least-once delivery for billing-critical usage events is explicitly out of scope here and belongs to the usage-persistence module plan.
@@ -550,7 +550,7 @@ describe('EventBus', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/core/events.test.ts`
-Expected: FAIL — cannot find module `./events.js`.
+Expected: FAIL - cannot find module `./events.js`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -675,7 +675,7 @@ describe('defineModule', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/core/module.test.ts`
-Expected: FAIL — cannot find module `./module.js`.
+Expected: FAIL - cannot find module `./module.js`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -736,7 +736,7 @@ git commit -m "feat(core): module manifest and defineModule"
 
 ---
 
-### Task 6: Kernel — load, order, register, start, stop modules
+### Task 6: Kernel - load, order, register, start, stop modules
 
 **Files:**
 - Create: `packages/service/src/core/kernel.ts`
@@ -749,8 +749,8 @@ git commit -m "feat(core): module manifest and defineModule"
     - `constructor(modules: readonly RouterlyModule[])`
     - `readonly container: ServiceContainer`
     - `readonly events: EventBus`
-    - `async start(): Promise<void>` — validates unique ids (throws `ModuleGraphError` on duplicate), builds `GraphNode[]` from each manifest's `dependsOn` (keys) + `before` + `after` + `weight`, topologically sorts, calls every `register` in order, then every `start` in order. Verifies each manifest `dependsOn` id is present (throws `MissingDependencyError` if a declared module dependency id is not in the set).
-    - `async stop(): Promise<void>` — calls `stop` in REVERSE start order; a throwing `stop` is caught and does not prevent stopping the rest.
+    - `async start(): Promise<void>` - validates unique ids (throws `ModuleGraphError` on duplicate), builds `GraphNode[]` from each manifest's `dependsOn` (keys) + `before` + `after` + `weight`, topologically sorts, calls every `register` in order, then every `start` in order. Verifies each manifest `dependsOn` id is present (throws `MissingDependencyError` if a declared module dependency id is not in the set).
+    - `async stop(): Promise<void>` - calls `stop` in REVERSE start order; a throwing `stop` is caught and does not prevent stopping the rest.
     - `readonly startedOrder: readonly string[]` (populated after `start`, for assertions)
 
 - [ ] **Step 1: Write the failing test**
@@ -843,7 +843,7 @@ describe('Kernel', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/core/kernel.test.ts`
-Expected: FAIL — cannot find module `./kernel.js`.
+Expected: FAIL - cannot find module `./kernel.js`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -949,8 +949,8 @@ git commit -m "feat(core): module kernel lifecycle runner"
   - `interface Processor<C> { id: string; phase: string; before?: string[]; after?: string[]; weight?: number; run(context: C): void | Promise<void> }`
   - `class ProcessorRegistry<C>` with:
     - `contribute(p: Processor<C>): void`
-    - `orderedFor(phase: string): Processor<C>[]` — returns the processors registered for `phase`, ordered by `topologicalSort` over their `before`/`after`/`weight` (references scoped to the same phase; a cross-phase `before`/`after` id is ignored, not an error).
-    - `async runPhase(phase: string, context: C): Promise<void>` — runs each processor in order; `run` is awaited sequentially.
+    - `orderedFor(phase: string): Processor<C>[]` - returns the processors registered for `phase`, ordered by `topologicalSort` over their `before`/`after`/`weight` (references scoped to the same phase; a cross-phase `before`/`after` id is ignored, not an error).
+    - `async runPhase(phase: string, context: C): Promise<void>` - runs each processor in order; `run` is awaited sequentially.
 
 Parallel processors are explicitly out of scope for this plan (the notes leave the artifact-reduction contract open). Sequential ordering only here.
 
@@ -1012,7 +1012,7 @@ describe('ProcessorRegistry', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/core/processors.test.ts`
-Expected: FAIL — cannot find module `./processors.js`.
+Expected: FAIL - cannot find module `./processors.js`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -1127,7 +1127,7 @@ git commit -m "feat(core): public barrel export for modular kernel"
 ## Self-review notes
 
 - **Spec coverage (this plan's slice):** DI container (Kernel modulare §DI) → Task 2. Dependency graph + topological order + `weight` tiebreak + cycle/missing errors (Kernel modulare §Moduli, Ristrutturazione §Moduli) → Tasks 3, 6. Typed event bus with `/`, `*`, `**` (Kernel modulare §Topic gerarchici) → Task 4. Module manifest + `register`/`start`/`stop` lifecycle (Ristrutturazione §Moduli) → Tasks 5, 6. Processor DAG per phase (Kernel modulare §Processor) → Task 7. `ShortCircuit` primitive (Ristrutturazione §Hook, cache short-circuit) → Task 1.
-- **Deliberately deferred (needs decisions — see plan sequence below):** parallel processors + artifact reduction; reliable event delivery for billing-critical usage; the closed-phase-list-vs-DAG question; `ProxyContext` shape; capability/token contribution model beyond DI; contrib npm SDK surface.
+- **Deliberately deferred (needs decisions - see plan sequence below):** parallel processors + artifact reduction; reliable event delivery for billing-critical usage; the closed-phase-list-vs-DAG question; `ProxyContext` shape; capability/token contribution model beyond DI; contrib npm SDK surface.
 - **Type consistency:** `GraphNode` is the single ordering contract consumed by both `Kernel` (Task 6) and `ProcessorRegistry` (Task 7). `Token<T>`/`token` naming consistent across Tasks 2, 8. `ModuleRegistry`/`Runtime` both `{ container, events }` in Tasks 5, 6.
 
 ---
@@ -1138,7 +1138,7 @@ Open questions are now LOCKED (owner decisions, see `2026-07-26-refactory-roadma
 
 | # | Plan file | Deliverable |
 |---|-----------|-------------|
-| 1 | `2026-07-26-modular-kernel-foundation.md` (this doc) | `core/` primitives — additive, nothing wired |
+| 1 | `2026-07-26-modular-kernel-foundation.md` (this doc) | `core/` primitives - additive, nothing wired |
 | 2 | `2026-07-26-kernel-bootstrap-config-module.md` | Kernel boots inside `server.ts`; config wrapped as first module; routes untouched |
 | 3 | `2026-07-26-provider-model-module.md` | `getProviderAdapter` behind a provider-registry module; frozen `ProviderAdapter` contract |
 | 4 | `2026-07-26-reverse-proxy-pipeline.md` | Phase pipeline + `ProxyContext`; OpenAI/Anthropic routes delegate 1:1; wire byte-identical |

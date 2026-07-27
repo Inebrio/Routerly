@@ -14,7 +14,7 @@ export const usageModule: RouterlyModule = defineModule({
       phase: 'finalize',
       async run(ctx) {
         // Only the guardrail-blocked usage event lives here (today: trackBlockedRequest in routes/*.ts).
-        // Completion / stream / messages / passthrough usage is self-tracked upstream — do not re-record.
+        // Completion / stream / messages / passthrough usage is self-tracked upstream, do not re-record.
         const blockedBy = ctx.blockedBy
         if (!blockedBy) return
         const models = await store.readConfig('models')

@@ -5,35 +5,35 @@
 **Goal:** Expose the module-authoring contract as a stable PUBLIC export (the "module SDK") so a future contrib module could be written against it, and lay down the contrib registration seam and the surface/metamodule contract as PREDISPOSITION ONLY. Nothing here loads, discovers, or imports a contrib module at runtime; nothing here changes any externally observable behavior (roadmap decision #6). The deliverable is a curated public surface plus a documented, empty extension point, not a loader.
 
 **Architecture:** Three additive files under `packages/service/src/core/`:
-1. `core/sdk.ts` — a curated re-export barrel over `core/index.js` (Plan 1) that names exactly the authoring surface a module author uses, with a doc-comment block describing how to write a module. It is intentionally NARROWER than `core/index.js`: it omits internal kernel mechanics (`Kernel`, `topologicalSort`, `GraphNode`, `topicMatches`) that a module author never touches, so the authoring contract does not drift when the internal barrel grows.
-2. `core/contrib.ts` — `export const CONTRIB_MODULES: RouterlyModule[] = []`. The empty extension point. Plan 2's kernel bootstrap spreads it into its static module array; because it is empty, `startedOrder` is unchanged. No filesystem scan, no `import()`, no npm resolution.
-3. `core/surface.ts` — a single types-only `SurfaceContribution` interface documenting the intended `surface.*` capability contract (dashboard page / CLI command / API route a future frontend-loadable module would declare). Types-only: erased at compile time, zero runtime, wired to nothing. Runtime frontend module loading is explicitly deferred (see Self-review).
+1. `core/sdk.ts` - a curated re-export barrel over `core/index.js` (Plan 1) that names exactly the authoring surface a module author uses, with a doc-comment block describing how to write a module. It is intentionally NARROWER than `core/index.js`: it omits internal kernel mechanics (`Kernel`, `topologicalSort`, `GraphNode`, `topicMatches`) that a module author never touches, so the authoring contract does not drift when the internal barrel grows.
+2. `core/contrib.ts` - `export const CONTRIB_MODULES: RouterlyModule[] = []`. The empty extension point. Plan 2's kernel bootstrap spreads it into its static module array; because it is empty, `startedOrder` is unchanged. No filesystem scan, no `import()`, no npm resolution.
+3. `core/surface.ts` - a single types-only `SurfaceContribution` interface documenting the intended `surface.*` capability contract (dashboard page / CLI command / API route a future frontend-loadable module would declare). Types-only: erased at compile time, zero runtime, wired to nothing. Runtime frontend module loading is explicitly deferred (see Self-review).
 
 **Tech Stack:** TypeScript ESM (NodeNext, `.js` import specifiers), Node ≥20, Vitest. No new runtime dependencies.
 
 ## Global Constraints
 
 - **Module system:** NodeNext ESM. Every relative import MUST use a `.js` extension. Node builtins use the `node:` prefix.
-- **TypeScript:** `strict`, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `noImplicitOverride`, `isolatedModules` all on. Optional object properties must be omitted, not set to `undefined`. Type-only re-exports MUST use `export type { ... }` (isolatedModules). Index access returns `T | undefined` — narrow before use.
-- **Coverage: NO coverage gate** for this refactory phase (owner decision, 2026-07-26). Minimal behavioral tests only: (a) the SDK barrel re-exports the expected runtime symbols (one import test asserting they are defined); (b) an empty `CONTRIB_MODULES` spread into a kernel does not change `startedOrder`. Do not chase line/branch coverage. `core/surface.ts` is types-only and has nothing to test at runtime — `npm run typecheck` is its only gate.
+- **TypeScript:** `strict`, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `noImplicitOverride`, `isolatedModules` all on. Optional object properties must be omitted, not set to `undefined`. Type-only re-exports MUST use `export type { ... }` (isolatedModules). Index access returns `T | undefined` - narrow before use.
+- **Coverage: NO coverage gate** for this refactory phase (owner decision, 2026-07-26). Minimal behavioral tests only: (a) the SDK barrel re-exports the expected runtime symbols (one import test asserting they are defined); (b) an empty `CONTRIB_MODULES` spread into a kernel does not change `startedOrder`. Do not chase line/branch coverage. `core/surface.ts` is types-only and has nothing to test at runtime - `npm run typecheck` is its only gate.
 - **No new dependencies.** Do not add anything to `package.json`.
-- **Predisposition ONLY — ABSOLUTE.** No dynamic `import()`, no `fs` scanning, no network, no discovery, no runtime frontend module loading. `CONTRIB_MODULES` is a literal empty array and stays empty. `SurfaceContribution` is wired to nothing.
+- **Predisposition ONLY - ABSOLUTE.** No dynamic `import()`, no `fs` scanning, no network, no discovery, no runtime frontend module loading. `CONTRIB_MODULES` is a literal empty array and stays empty. `SurfaceContribution` is wired to nothing.
 - **Zero behavior change.** `@routerly/shared` (`index.ts` and `browser.ts`) and the service wire/management API stay FROZEN (roadmap decision #2). Spreading an empty array into the bootstrap module list is a structural no-op.
 - **Public surface names MUST match `core/index.ts` exactly.** `core/sdk.ts` re-exports a subset of `core/index.js`; every re-exported name must be a name `core/index.ts` already exports. Do not invent or rename symbols.
 - **English only** for all code, comments, identifiers, and commit messages. No em dashes.
 - **Scope fence:** create files only under `packages/service/src/core/`; Task 2 makes one additive one-line edit to Plan 2's kernel bootstrap. Do NOT modify `core/index.ts`, any other `core/*` file, any module, any route, or `server.ts` beyond that one spread.
 
 **Hard prerequisites (Plans 1 and 2).** This plan imports:
-- `core/index.js` (Plan 1) — source of `defineModule`, `RouterlyModule`, `ModuleManifest`, `ModuleRegistry`, `Runtime`, `Processor`, `ProcessorRegistry`, `token`, `Token`, `EventBus`, `ServiceContainer`, `shortCircuit`, `isShortCircuit`, `KernelError`, `ModuleGraphError`, `MissingDependencyError`, `DependencyCycleError`, and `Kernel` (used by the Task 2 test).
+- `core/index.js` (Plan 1) - source of `defineModule`, `RouterlyModule`, `ModuleManifest`, `ModuleRegistry`, `Runtime`, `Processor`, `ProcessorRegistry`, `token`, `Token`, `EventBus`, `ServiceContainer`, `shortCircuit`, `isShortCircuit`, `KernelError`, `ModuleGraphError`, `MissingDependencyError`, `DependencyCycleError`, and `Kernel` (used by the Task 2 test).
 - The module array Plan 2 assembles in `packages/service/src/server.ts` and passes to `buildKernel([...])` (Plan 3 appends `providerModule` to it). There is NO `createKernel()` factory: `buildKernel(modules): Promise<Kernel>` is defined once in `core/bootstrap.ts`, and the module array lives at the `server.ts` call site.
 
-As of writing, Plans 1 and 2 are not yet committed. If either is unmerged when this plan starts, block and land them first — this plan re-exports names Plan 1 defines and edits a module list Plan 2 creates; it cannot do either against files that do not exist.
+As of writing, Plans 1 and 2 are not yet committed. If either is unmerged when this plan starts, block and land them first - this plan re-exports names Plan 1 defines and edits a module list Plan 2 creates; it cannot do either against files that do not exist.
 
 **All commands below run from `packages/service/`** unless stated otherwise.
 
 ---
 
-### Task 1: Module SDK — curated public authoring barrel
+### Task 1: Module SDK - curated public authoring barrel
 
 **Files:**
 - Create: `packages/service/src/core/sdk.ts`
@@ -92,7 +92,7 @@ describe('module SDK barrel', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/core/sdk.test.ts`
-Expected: FAIL — cannot find module `./sdk.js`.
+Expected: FAIL - cannot find module `./sdk.js`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -102,7 +102,7 @@ Expected: FAIL — cannot find module `./sdk.js`.
  * Routerly module SDK (0.4.0 refactory, Plan 6).
  *
  * The stable, public authoring surface for Routerly modules. A future contrib
- * module — in-tree or, later, distributed as an npm package — is written
+ * module - in-tree or, later, distributed as an npm package - is written
  * against exactly these names. It is a curated view of `core/index.js`: it
  * omits internal kernel mechanics (Kernel, topologicalSort, GraphNode,
  * topicMatches) so the authoring contract does not drift as the kernel grows.
@@ -183,7 +183,7 @@ git commit -m "feat(core): public module SDK authoring barrel"
 
 ---
 
-### Task 2: Contrib registration seam — empty, spread into the bootstrap
+### Task 2: Contrib registration seam - empty, spread into the bootstrap
 
 **Files:**
 - Create: `packages/service/src/core/contrib.ts`
@@ -193,7 +193,7 @@ git commit -m "feat(core): public module SDK authoring barrel"
 **Interfaces:**
 - Consumes: `RouterlyModule` from `./index.js`; the existing `buildKernel([...])` module array assembled in `server.ts` (Plan 2).
 - Produces:
-  - `export const CONTRIB_MODULES: RouterlyModule[] = []` — the documented, inert extension point. Empty now, empty by policy for this phase.
+  - `export const CONTRIB_MODULES: RouterlyModule[] = []` - the documented, inert extension point. Empty now, empty by policy for this phase.
   - The bootstrap module array now ends with `...CONTRIB_MODULES`. Because it is empty, the kernel's module list, ordering, and `startedOrder` are byte-identical.
 
 - [ ] **Step 1: Write the failing test**
@@ -224,7 +224,7 @@ describe('CONTRIB_MODULES', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/core/contrib.test.ts`
-Expected: FAIL — cannot find module `./contrib.js`.
+Expected: FAIL - cannot find module `./contrib.js`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -240,7 +240,7 @@ import type { RouterlyModule } from './index.js'
  * module here is all it takes to register one.
  *
  * PREDISPOSITION ONLY (roadmap decision #6): this array is empty and stays
- * empty for this phase. There is NO dynamic loading — no filesystem scan, no
+ * empty for this phase. There is NO dynamic loading - no filesystem scan, no
  * `import()`, no npm resolution. Contrib modules are added here by editing this
  * file, statically, against the module SDK (`./sdk.js`). Automatic discovery is
  * deferred; see the plan's Self-review.
@@ -260,7 +260,7 @@ Expected: PASS (both groups green).
 - [ ] **Step 5: Locate and edit the server.ts module array**
 
 Run: `grep -rn "buildKernel(" packages/service/src/`
-Expected: one call site — the module array Plan 2 assembles in `server.ts` (Plan 3/4/5 have appended `providerModule`, `reverseProxyModule`, `...coreModules`). The single `new Kernel(...)` stays inside `core/bootstrap.ts::buildKernel`; the `grep -rn "new Kernel(" packages/service/src/` check returns exactly one match, there. If Plan 2 is unmerged, STOP: this edit has no target. Land Plan 2 first (hard prerequisite).
+Expected: one call site - the module array Plan 2 assembles in `server.ts` (Plan 3/4/5 have appended `providerModule`, `reverseProxyModule`, `...coreModules`). The single `new Kernel(...)` stays inside `core/bootstrap.ts::buildKernel`; the `grep -rn "new Kernel(" packages/service/src/` check returns exactly one match, there. If Plan 2 is unmerged, STOP: this edit has no target. Land Plan 2 first (hard prerequisite).
 
 Add the import and spread `...CONTRIB_MODULES` as the LAST element (so contrib modules order after all built-ins). Minimal diff against the `server.ts` call site:
 
@@ -277,7 +277,7 @@ const kernel = await buildKernel([configModule, providerModule, reverseProxyModu
 - [ ] **Step 6: Typecheck + full suite (empty spread changes nothing)**
 
 Run: `npm run typecheck && npm test`
-Expected: exit 0; all suites green, including Plan 2's kernel-bootstrap test. If that test asserts on `startedOrder`, it is UNCHANGED — spreading an empty array adds no module. No new bootstrap test is required here; Task 2's unit test proves the empty-spread invariant in isolation and `npm test` proves the live bootstrap still boots identically.
+Expected: exit 0; all suites green, including Plan 2's kernel-bootstrap test. If that test asserts on `startedOrder`, it is UNCHANGED - spreading an empty array adds no module. No new bootstrap test is required here; Task 2's unit test proves the empty-spread invariant in isolation and `npm test` proves the live bootstrap still boots identically.
 
 - [ ] **Step 7: Commit**
 
@@ -289,7 +289,7 @@ git commit -m "feat(core): inert contrib module registration seam"
 
 ---
 
-### Task 3: Surface/metamodule contract — types-only predisposition
+### Task 3: Surface/metamodule contract - types-only predisposition
 
 **Files:**
 - Create: `packages/service/src/core/surface.ts`
@@ -306,7 +306,7 @@ git commit -m "feat(core): inert contrib module registration seam"
 /**
  * Surface / metamodule contract (0.4.0 refactory, Plan 6).
  *
- * PREDISPOSITION ONLY (roadmap decision #6) — TYPES, NO IMPLEMENTATION.
+ * PREDISPOSITION ONLY (roadmap decision #6) - TYPES, NO IMPLEMENTATION.
  *
  * A "surface" is a user-facing entry point a module exposes: a dashboard page,
  * a CLI command, or a management API route. The eventual metamodule / runtime
@@ -355,7 +355,7 @@ export interface SurfaceContribution {
 - [ ] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
-Expected: exit 0. The file compiles and is erased (no runtime emit beyond an empty module). It imports nothing and is imported by nothing — no behavior touched.
+Expected: exit 0. The file compiles and is erased (no runtime emit beyond an empty module). It imports nothing and is imported by nothing - no behavior touched.
 
 - [ ] **Step 3: Confirm it is inert (no consumer)**
 
@@ -379,13 +379,13 @@ git commit -m "feat(core): surface/metamodule contract stub (types-only)"
   - Scope 3 (surface/metamodule contract, types + comments only) → Task 3: single `SurfaceContribution` interface, wired to nothing.
 - **Nothing dynamic is loaded.** No `import()`, no `fs`, no network, no discovery, no npm resolution, no runtime frontend module loading anywhere in the three files. `grep -rn "import(" packages/service/src/core/{sdk,contrib,surface}.ts` returns nothing. `CONTRIB_MODULES` is a literal `[]`.
 - **No behavior change.** `core/sdk.ts` and `core/surface.ts` are pure re-exports / types (erased). `core/contrib.ts` is an empty array; spreading `...[]` into the bootstrap list yields the identical module list, so `startedOrder` and boot behavior are byte-identical (Task 2 Step 6). `@routerly/shared` and the service wire/management API are never opened (roadmap decision #2).
-- **Public surface names match `core/index.ts` exactly.** Every symbol in `core/sdk.ts` is re-exported FROM `./index.js` — `defineModule`, `ProcessorRegistry`, `token`, `EventBus`, `ServiceContainer`, `shortCircuit`, `isShortCircuit`, `KernelError`, `ModuleGraphError`, `MissingDependencyError`, `DependencyCycleError` (values) and `RouterlyModule`, `ModuleManifest`, `ModuleRegistry`, `Runtime`, `Processor`, `Token` (types). Task 1 Step 5 typecheck fails if any name is not exported by `core/index.ts`. The SDK is a strict subset: internal mechanics (`Kernel`, `topologicalSort`, `GraphNode`, `topicMatches`, `ShortCircuit`, `EventListener`) are intentionally NOT re-exported — a curated authoring contract, not the full barrel.
+- **Public surface names match `core/index.ts` exactly.** Every symbol in `core/sdk.ts` is re-exported FROM `./index.js` - `defineModule`, `ProcessorRegistry`, `token`, `EventBus`, `ServiceContainer`, `shortCircuit`, `isShortCircuit`, `KernelError`, `ModuleGraphError`, `MissingDependencyError`, `DependencyCycleError` (values) and `RouterlyModule`, `ModuleManifest`, `ModuleRegistry`, `Runtime`, `Processor`, `Token` (types). Task 1 Step 5 typecheck fails if any name is not exported by `core/index.ts`. The SDK is a strict subset: internal mechanics (`Kernel`, `topologicalSort`, `GraphNode`, `topicMatches`, `ShortCircuit`, `EventListener`) are intentionally NOT re-exported - a curated authoring contract, not the full barrel.
 - **Minimal tests only (no coverage gate).** Two test files: `sdk.test.ts` (barrel re-exports the expected symbols + a round-trip) and `contrib.test.ts` (empty array + empty-spread leaves `startedOrder` unchanged). `surface.ts` is types-only and typecheck-gated. No coverage percentage is asserted (owner decision, 2026-07-26).
 - **Deferred as FUTURE work (explicitly, not gaps):**
   - **Contrib discovery / distribution.** No filesystem scan, npm resolution, or `import()` to auto-load contrib modules. Contrib modules are added statically to `CONTRIB_MODULES`. A discovery mechanism is added only when a real out-of-tree contrib module needs to ship. This is the roadmap decision #6 line, honored.
   - **Runtime frontend module loading.** No dynamic UI/CLI/API mounting. `SurfaceContribution` fixes the declaration shape only; the collector/validator/mounter and any dynamic frontend load are deferred. Nothing returns or reads a `SurfaceContribution` today (Task 3 Step 3 proves no consumer).
   - **Provider contribution hook.** Plan 3 deliberately left the provider registry as the static record with no contribution seam and pointed here. This plan does NOT add one either: it would be a speculative seam with zero consumers. When a contrib provider module actually exists, it registers via `CONTRIB_MODULES` like any other module; a provider-contribution point is added then, not now.
-- **YAGNI honored.** `core/surface.ts` is a single interface, not a set of stub files. No `@routerly/module-sdk` package, no loader, no registry mutation, no manifest-discovery format. The deliverable is a stable public surface (the SDK barrel) plus a documented empty extension point — no scaffolding "for later".
+- **YAGNI honored.** `core/surface.ts` is a single interface, not a set of stub files. No `@routerly/module-sdk` package, no loader, no registry mutation, no manifest-discovery format. The deliverable is a stable public surface (the SDK barrel) plus a documented empty extension point - no scaffolding "for later".
 
 ---
 
@@ -393,7 +393,7 @@ git commit -m "feat(core): surface/metamodule contract stub (types-only)"
 
 | # | Plan file | Deliverable |
 |---|-----------|-------------|
-| 1 | `2026-07-26-modular-kernel-foundation.md` | `core/` primitives — additive, nothing wired |
+| 1 | `2026-07-26-modular-kernel-foundation.md` | `core/` primitives - additive, nothing wired |
 | 2 | `2026-07-26-kernel-bootstrap-config-module.md` | Kernel boots inside `server.ts`; config wrapped as first module; `core/tokens.ts` + bootstrap module list defined |
 | 3 | `2026-07-26-provider-model-module.md` | `getProviderAdapter` also reachable via `PROVIDER_REGISTRY`; adapters + frozen contract unchanged |
 | 4 | `2026-07-26-reverse-proxy-pipeline.md` | Phase pipeline + `ProxyContext`; routes delegate 1:1; wire byte-identical |
