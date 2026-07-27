@@ -6,7 +6,7 @@ import { networkInterfaces } from 'node:os';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
-import { pingTelemetry } from '../../telemetry.js';
+import { pingTelemetry } from '../telemetry/telemetry.js';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
@@ -21,7 +21,7 @@ import { getProviderAdapter } from '../provider/registry.js';
 import { sendTestNotification } from '../notifications/sender.js';
 import { emitEvent } from '../notifications/emitter.js';
 import { ALL_PERMISSIONS, BUILT_IN_ROLES, getEffectiveRoles } from '../auth/roles.js';
-import { updateChecker } from '../../update-checker.js';
+import { updateChecker } from '../update-checker/update-checker.js';
 import { logAudit } from '../audit/logger.js';
 import type { AuditEntry } from '../audit/logger.js';
 

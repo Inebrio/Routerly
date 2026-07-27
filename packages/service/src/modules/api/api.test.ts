@@ -17,10 +17,10 @@ const mockChatCompletion = vi.fn()
 vi.mock('../provider/registry.js', () => ({
   getProviderAdapter: vi.fn(() => ({ chatCompletion: mockChatCompletion })),
 }))
-vi.mock('../../update-checker.js', () => ({
+vi.mock('../update-checker/update-checker.js', () => ({
   updateChecker: { getLastResult: vi.fn(() => null), check: vi.fn(), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))
-vi.mock('../../telemetry.js', () => ({ pingTelemetry: vi.fn() }))
+vi.mock('../telemetry/telemetry.js', () => ({ pingTelemetry: vi.fn() }))
 vi.mock('../audit/logger.js', () => ({ logAudit: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('bcrypt', () => ({
   default: { hash: vi.fn(async (p: string) => `hashed:${p}`), compare: vi.fn() },
@@ -1656,7 +1656,7 @@ describe('PUT /api/settings', () => {
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
-    const { updateChecker } = await import('../../update-checker.js')
+    const { updateChecker } = await import('../update-checker/update-checker.js')
     const app = await buildApp()
     const res = await app.inject({
       method: 'PUT', url: '/api/settings',
@@ -2497,7 +2497,7 @@ describe('DELETE /api/projects/:id/members/:userId', () => {
 describe('GET /api/system/releases', () => {
   it('returns available releases', async () => {
     setupAdminAuth()
-    const { updateChecker } = await import('../../update-checker.js')
+    const { updateChecker } = await import('../update-checker/update-checker.js')
     vi.mocked(updateChecker.getAvailableReleases).mockResolvedValue([{ version: '0.3.0', tag: 'v0.3.0', channel: 'latest', publishedAt: '' }] as any)
 
     const app = await buildApp()
@@ -2510,7 +2510,7 @@ describe('GET /api/system/releases', () => {
 describe('GET /api/system/update-check', () => {
   it('triggers update check and returns result', async () => {
     setupAdminAuth()
-    const { updateChecker } = await import('../../update-checker.js')
+    const { updateChecker } = await import('../update-checker/update-checker.js')
     vi.mocked(updateChecker.check).mockResolvedValue({ hasUpdate: false, currentVersion: '0.2.0' } as any)
 
     const app = await buildApp()
@@ -5753,7 +5753,7 @@ describe('GET /api/usage — custom period without to (line 752 FALSE branch)', 
 describe('PUT /api/settings — telemetry re-enabled when already enabled (line 910 FALSE branch)', () => {
   it('does NOT call pingTelemetry when telemetry was already enabled', async () => {
     setupAdminAuth()
-    const { pingTelemetry } = await import('../../telemetry.js')
+    const { pingTelemetry } = await import('../telemetry/telemetry.js')
     const mockPing = vi.mocked(pingTelemetry)
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]

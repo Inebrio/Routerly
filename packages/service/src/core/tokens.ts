@@ -10,6 +10,8 @@ import type {
   ProjectToken,
   ChatCompletionRequest,
   ProviderRepo,
+  UpdateInfo,
+  AvailableReleases,
 } from '@routerly/shared';
 
 // Each token wraps existing functions/types. Modules register these; processors
@@ -103,3 +105,16 @@ export const API_REVERSE_PROXY = token<{
 }>('api-reverse-proxy.registry');
 
 export const API_ROUTES = token<AlterableRegistry<RouteContribution>>('api.routes');
+
+export const TELEMETRY = token<{
+  pingTelemetry: typeof import('../modules/telemetry/telemetry.js').pingTelemetry;
+}>('telemetry.registry');
+
+export const UPDATE_CHECKER = token<{
+  start(currentVersion: string, channel: string): void;
+  updateChannel(channel: string): void;
+  check(): Promise<UpdateInfo>;
+  getAvailableReleases(): Promise<AvailableReleases>;
+  getLastResult(): UpdateInfo | null;
+  stop(): void;
+}>('update-checker.registry');

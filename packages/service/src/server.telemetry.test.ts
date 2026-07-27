@@ -19,7 +19,7 @@ const { mockPing, mockReadConfig, mockWriteConfig, mockInitConfigDirs, mockLoadS
     mockLoadSecret: vi.fn().mockResolvedValue(undefined),
   }));
 
-vi.mock('./telemetry.js', () => ({ pingTelemetry: mockPing }));
+vi.mock('./modules/telemetry/telemetry.js', () => ({ pingTelemetry: mockPing }));
 vi.mock('./modules/config/loader.js', () => ({
   initConfigDirs: mockInitConfigDirs,
   readConfig: mockReadConfig,
@@ -28,7 +28,7 @@ vi.mock('./modules/config/loader.js', () => ({
   appendUsageRecord: vi.fn(),
 }));
 vi.mock('./modules/auth/jwt.js', () => ({ loadSecret: mockLoadSecret }));
-vi.mock('./update-checker.js', () => ({ updateChecker: { start: vi.fn() } }));
+vi.mock('./modules/update-checker/update-checker.js', () => ({ updateChecker: { start: vi.fn() } }));
 
 vi.mock('fastify', () => ({
   default: vi.fn(() => ({
