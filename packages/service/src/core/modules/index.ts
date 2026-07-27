@@ -1,6 +1,6 @@
-import type { ServiceContainer } from './container.js'
-import type { EventBus } from './events.js'
-import { KernelError } from './errors.js'
+import type { ServiceContainer } from '../container/index.js'
+import type { EventBus } from '../events/index.js'
+import { KernelError } from '../errors.js'
 
 export interface ModuleManifest {
   id: string

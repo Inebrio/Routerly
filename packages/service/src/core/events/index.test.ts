@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { EventBus, topicMatches } from './events.js'
+import { EventBus, topicMatches } from './index.js'
 
 describe('topicMatches', () => {
   it('matches exact topics and normalizes leading slash', () => {

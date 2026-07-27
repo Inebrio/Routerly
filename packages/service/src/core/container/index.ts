@@ -1,4 +1,4 @@
-import { KernelError, MissingDependencyError } from './errors.js'
+import { KernelError, MissingDependencyError } from '../errors.js'
 
 export interface Token<T> {
   readonly key: string

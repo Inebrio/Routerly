@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildKernel } from './bootstrap.js'
-import { defineModule } from './index.js'
+import { defineModule } from '../index.js'
 
 describe('buildKernel', () => {
   it('assembles and starts the given modules', async () => {

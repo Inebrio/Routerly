@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { ServiceContainer, token } from './container.js'
-import { MissingDependencyError, KernelError } from './errors.js'
+import { ServiceContainer, token } from './index.js'
+import { MissingDependencyError, KernelError } from '../errors.js'
 
 interface Clock {
   now(): number
