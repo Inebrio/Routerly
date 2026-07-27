@@ -51,7 +51,7 @@ export async function buildServer() {
 
   // ─── Modular kernel (0.4.0) ───────────────────────────────────────────────
   // Boots alongside Fastify; registers the config and provider modules so
-  // config/loader.ts and providers/index.ts are reachable via CONFIG_STORE and
+  // modules/config/loader.ts and modules/provider/registry.ts are reachable via CONFIG_STORE and
   // PROVIDER_REGISTRY for later plans. loadSecret()/initConfigDirs() already
   // ran in startServer() before buildServer(); neither module does IO at
   // register time, so this is order-safe. Additive only, no existing

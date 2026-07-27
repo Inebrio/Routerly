@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
-vi.mock('../providers/index.js', () => ({ getProviderAdapter: vi.fn() }))
+vi.mock('../modules/provider/registry.js', () => ({ getProviderAdapter: vi.fn() }))
 vi.mock('../cost/budget.js', () => ({
   isAllowed: vi.fn().mockResolvedValue(true),
   isAllowedForRoutingModel: vi.fn().mockResolvedValue(true),
@@ -10,7 +10,7 @@ vi.mock('../cost/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(und
 vi.mock('../notifications/emitter.js', () => ({ emitEvent: vi.fn().mockResolvedValue(undefined) }))
 
 import { llmChat } from './executor.js'
-import { getProviderAdapter } from '../providers/index.js'
+import { getProviderAdapter } from '../modules/provider/registry.js'
 import { calculateCost } from '../lib/cost.js'
 
 const mockGetProvider = vi.mocked(getProviderAdapter)
