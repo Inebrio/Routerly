@@ -4,7 +4,7 @@ vi.mock('proper-lockfile', () => ({
   default: { lock: vi.fn() },
 }))
 
-vi.mock('../lib/paths.js', () => ({
+vi.mock('../../lib/paths.js', () => ({
   CONFIG_PATHS: {
     base: '/test',
     config: '/test/config',

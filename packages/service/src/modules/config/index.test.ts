@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { ServiceContainer, EventBus } from '../../core/index.js'
 import { configModule } from './index.js'
 import { CONFIG_STORE } from '../../core/tokens.js'
-import { readConfig, writeConfig, appendUsageRecord } from '../../config/loader.js'
+import { readConfig, writeConfig, appendUsageRecord } from './loader.js'
 
 describe('config module', () => {
   it('registers CONFIG_STORE with the real loader functions', async () => {

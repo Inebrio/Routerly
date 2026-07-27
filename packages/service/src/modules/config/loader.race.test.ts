@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFile } from 'node:fs/promises';
 import { readConfig, writeConfig, initConfigDirs } from './loader.js';
-import { CONFIG_PATHS } from '../lib/paths.js';
+import { CONFIG_PATHS } from '../../lib/paths.js';
 
 // Real-filesystem proof of the data-loss fix (no fs mocks). Runs against the
 // isolated temp ROUTERLY_HOME forced by test-setup.ts, so it never touches real
