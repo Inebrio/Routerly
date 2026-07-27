@@ -2,6 +2,7 @@
 import { token, type ProcessorRegistry } from './index.js';
 import type { ProviderAdapter } from '../modules/provider/types.js';
 import type { ProviderCatalog, RepoStatus } from '../modules/catalog/fetcher.js';
+import type { EmbeddingProvider, EmbeddingProviderType } from '../modules/embeddings/dispatch.js';
 import type { RouteResult } from '../routing/router.js';
 import type {
   ModelConfig,
@@ -32,6 +33,14 @@ export const CATALOG = token<{
   getStatus(): RepoStatus[];
   syncModelsFromCatalog: typeof import('../modules/catalog/sync.js').syncModelsFromCatalog;
 }>('catalog.registry');
+
+export const EMBEDDINGS = token<{
+  getEmbeddingProvider(
+    type: EmbeddingProviderType,
+    endpoint?: string,
+    apiKey?: string,
+  ): EmbeddingProvider;
+}>('embeddings.registry');
 
 export const ROUTER = token<{
   routeRequest(
