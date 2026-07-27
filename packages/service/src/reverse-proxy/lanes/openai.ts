@@ -35,7 +35,9 @@ export function buildOpenAIContext(req: FastifyRequest, reply: FastifyReply): Pr
   }
 }
 
-// ─── upstream.execute: the provider call ONLY (openai.ts L286-314 stream / L456-490 non-stream) ───
+// ─── upstream.execute: the provider call ONLY (mirrors the stream/non-stream provider-call
+// blocks in routes/openai.ts; no fixed line numbers here, that file is being replaced by this
+// pipeline and its lines keep moving) ───
 export const openaiUpstream: Processor<ProxyContext> = {
   id: 'openai:upstream',
   phase: 'upstream.execute',
@@ -202,7 +204,11 @@ export const openaiEgress: Processor<ProxyContext> = {
 
     if (result.kind === 'block') {
       if (result.body === undefined) return // a streaming block already wrote its own bytes
-      if (traceOptIn) reply.header('x-routerly-trace-id', ctx.traceId)
+      // No trace header here: neither block producer in this file (openai-oauth's 422,
+      // openai:attempt's 503) sets it in the live route today. A future block-producing
+      // processor (Plan 5 guardrail/budget) that needs the header must call
+      // reply.header('x-routerly-trace-id', ctx.traceId) itself before assigning ctx.result,
+      // same as routes/openai.ts does at its guardrail/content-filter block sites.
       reply.code(result.status ?? 200).send(result.body)
       return
     }

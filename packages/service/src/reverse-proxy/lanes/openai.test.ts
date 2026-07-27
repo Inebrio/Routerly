@@ -26,6 +26,27 @@ describe('openai transport lane', () => {
     expect(headers['x-routerly-trace-id']).toBe('t1')
   })
 
+  it('egress sends a block result without the trace header, even when trace is opted in', async () => {
+    for (const status of [422, 503] as const) {
+      const sent: unknown[] = []
+      let sentStatus: number | undefined
+      const headers: Record<string, string> = {}
+      const reply: any = {
+        send: (b: unknown) => sent.push(b),
+        header: (k: string, v: string) => { headers[k] = v },
+        code: (c: number) => { sentStatus = c; return reply },
+      }
+      const ctx = {
+        protocol: 'openai', reply, traceEnabled: true, traceId: 't1',
+        result: { kind: 'block', status, body: { error: { message: 'x', type: 'server_error' } } },
+      } as unknown as ProxyContext
+      await openaiEgress.run(ctx)
+      expect(sentStatus).toBe(status)
+      expect(sent).toEqual([{ error: { message: 'x', type: 'server_error' } }])
+      expect(headers['x-routerly-trace-id']).toBeUndefined()
+    }
+  })
+
   it('egress no-ops on passthrough', async () => {
     let called = false
     const reply: any = { send: () => { called = true }, header: () => {}, code: () => reply, hijack: () => { called = true } }
