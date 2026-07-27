@@ -2,7 +2,7 @@
  * Routerly module SDK (0.4.0 refactory, Plan 6).
  *
  * The stable, public authoring surface for Routerly modules. A future contrib
- * module — in-tree or, later, distributed as an npm package — is written
+ * module (in-tree or, later, distributed as an npm package) is written
  * against exactly these names. It is a curated view of `core/index.js`: it
  * omits internal kernel mechanics (Kernel, topologicalSort, GraphNode,
  * topicMatches) so the authoring contract does not drift as the kernel grows.
