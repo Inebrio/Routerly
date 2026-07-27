@@ -1,16 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ModelConfig } from '@routerly/shared';
 
-vi.mock('../catalog/fetcher.js', () => ({
+vi.mock('./fetcher.js', () => ({
   catalogFetcher: { get: vi.fn() },
 }));
-vi.mock('../modules/config/loader.js', () => ({
+vi.mock('../config/loader.js', () => ({
   readConfig: vi.fn(),
   writeConfig: vi.fn(() => Promise.resolve()),
 }));
 
-import { catalogFetcher } from '../catalog/fetcher.js';
-import { readConfig, writeConfig } from '../modules/config/loader.js';
+import { catalogFetcher } from './fetcher.js';
+import { readConfig, writeConfig } from '../config/loader.js';
 import { syncModelsFromCatalog } from './sync.js';
 
 const mockGet = vi.mocked(catalogFetcher.get);
