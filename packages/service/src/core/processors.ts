@@ -1,5 +1,4 @@
-import { topologicalSort, type GraphNode } from './graph.js'
-import { KernelError } from './errors.js'
+import { AlterableRegistry } from './hooks/registry.js'
 import { isShortCircuit, type ShortCircuit } from './result.js'
 
 export interface Processor<C> {
@@ -12,40 +11,33 @@ export interface Processor<C> {
 }
 
 export class ProcessorRegistry<C> {
-  private readonly byPhase = new Map<string, Processor<C>[]>()
+  private readonly byPhase = new Map<string, AlterableRegistry<Processor<C>>>()
+
+  private registryFor(phase: string): AlterableRegistry<Processor<C>> {
+    let reg = this.byPhase.get(phase)
+    if (!reg) {
+      reg = new AlterableRegistry<Processor<C>>()
+      this.byPhase.set(phase, reg)
+    }
+    return reg
+  }
 
   contribute(p: Processor<C>): void {
-    const list = this.byPhase.get(p.phase) ?? []
-    list.push(p)
-    this.byPhase.set(p.phase, list)
+    this.registryFor(p.phase).contribute({
+      id: p.id,
+      ...(p.before !== undefined ? { before: p.before } : {}),
+      ...(p.after !== undefined ? { after: p.after } : {}),
+      ...(p.weight !== undefined ? { weight: p.weight } : {}),
+      value: p,
+    })
+  }
+
+  override(phase: string, id: string, alter: (previous: Processor<C>) => Processor<C>): void {
+    this.registryFor(phase).override(id, alter)
   }
 
   orderedFor(phase: string): Processor<C>[] {
-    const list = this.byPhase.get(phase) ?? []
-    const ids = new Set(list.map((p) => p.id))
-    // Cross-phase before/after references are silently ignored: they refer
-    // to processors outside this phase's node set, so they cannot express a
-    // real ordering constraint here.
-    const scoped = (refs: string[] | undefined): string[] =>
-      (refs ?? []).filter((r) => ids.has(r))
-    const nodes: GraphNode[] = list.map((p) => ({
-      id: p.id,
-      before: scoped(p.before),
-      after: scoped(p.after),
-      weight: p.weight ?? 0,
-    }))
-    const order = topologicalSort(nodes)
-    const index = new Map(list.map((p) => [p.id, p]))
-    return order.map((id) => {
-      const found = index.get(id)
-      if (!found) {
-        // Unreachable: `order` is topologicalSort's output over the exact
-        // same ids present in `list`/`index`. A miss here means the node set
-        // and the graph diverged, which is a real bug, not a normal path.
-        throw new KernelError(`resolved processor not found: ${id}`, 'PROCESSOR_NOT_FOUND')
-      }
-      return found
-    })
+    return this.byPhase.get(phase)?.ordered() ?? []
   }
 
   async runPhase(phase: string, context: C): Promise<void> {
