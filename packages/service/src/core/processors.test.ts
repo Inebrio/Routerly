@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { ProcessorRegistry, type Processor } from './processors.js'
+import { shortCircuit } from './result.js'
 
 interface Ctx {
   trail: string[]
@@ -45,5 +46,30 @@ describe('ProcessorRegistry', () => {
     const ctx: Ctx = { trail: [] }
     await reg.runPhase('nope', ctx)
     expect(ctx.trail).toEqual([])
+  })
+
+  it('stops the phase when a processor returns shortCircuit', async () => {
+    const reg = new ProcessorRegistry<Ctx>()
+    reg.contribute({
+      id: 'first',
+      phase: 'p',
+      run(c) {
+        c.trail.push('first')
+        return shortCircuit({ stopped: true })
+      },
+    })
+    reg.contribute({ id: 'second', phase: 'p', after: ['first'], run: (c) => { c.trail.push('second') } })
+    const ctx: Ctx = { trail: [] }
+    await reg.runPhase('p', ctx)
+    expect(ctx.trail).toEqual(['first'])
+  })
+
+  it('runs every processor when none short-circuits (no regression)', async () => {
+    const reg = new ProcessorRegistry<Ctx>()
+    reg.contribute(step('a', 'p'))
+    reg.contribute(step('b', 'p', { after: ['a'] }))
+    const ctx: Ctx = { trail: [] }
+    await reg.runPhase('p', ctx)
+    expect(ctx.trail).toEqual(['a', 'b'])
   })
 })

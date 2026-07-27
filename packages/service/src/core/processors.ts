@@ -1,5 +1,6 @@
 import { topologicalSort, type GraphNode } from './graph.js'
 import { KernelError } from './errors.js'
+import { isShortCircuit, type ShortCircuit } from './result.js'
 
 export interface Processor<C> {
   id: string
@@ -7,7 +8,7 @@ export interface Processor<C> {
   before?: string[]
   after?: string[]
   weight?: number
-  run(context: C): void | Promise<void>
+  run(context: C): void | Promise<void> | ShortCircuit | Promise<ShortCircuit | void>
 }
 
 export class ProcessorRegistry<C> {
@@ -49,7 +50,8 @@ export class ProcessorRegistry<C> {
 
   async runPhase(phase: string, context: C): Promise<void> {
     for (const p of this.orderedFor(phase)) {
-      await p.run(context)
+      const outcome = await p.run(context)
+      if (isShortCircuit(outcome)) return
     }
   }
 }
