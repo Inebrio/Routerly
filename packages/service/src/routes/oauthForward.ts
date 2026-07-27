@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Readable } from 'node:stream';
 import type { ModelConfig } from '@routerly/shared';
-import { buildUpstreamUrl } from './passthrough.js';
+import { buildUpstreamUrl } from '../modules/api-reverse-proxy/passthrough.js';
 import { trackUsage } from '../modules/usage/tracker.js';
 
 /**
