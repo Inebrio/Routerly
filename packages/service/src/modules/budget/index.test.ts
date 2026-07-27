@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { ServiceContainer, EventBus, ProcessorRegistry } from '../core/index.js'
-import { BUDGET, PROXY_PIPELINE } from '../core/tokens.js'
-import type { ProxyContext } from '../reverse-proxy/context.js'
-import { isAllowed, getViolatedLimits, getLimitUsageSnapshot } from '../cost/budget.js'
-import { budgetModule } from './budget.js'
+import { ServiceContainer, EventBus, ProcessorRegistry } from '../../core/index.js'
+import { BUDGET, PROXY_PIPELINE } from '../../core/tokens.js'
+import type { ProxyContext } from '../../reverse-proxy/context.js'
+import { isAllowed, getViolatedLimits, getLimitUsageSnapshot } from './budget.js'
+import { budgetModule } from './index.js'
 
 function harness() {
   const container = new ServiceContainer()

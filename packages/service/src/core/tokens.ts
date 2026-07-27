@@ -59,9 +59,9 @@ export const USAGE_TRACKER = token<{
 }>('usage.tracker');
 
 export const BUDGET = token<{
-  isAllowed: typeof import('../cost/budget.js').isAllowed;
-  getViolatedLimits: typeof import('../cost/budget.js').getViolatedLimits;
-  getLimitUsageSnapshot: typeof import('../cost/budget.js').getLimitUsageSnapshot;
+  isAllowed: typeof import('../modules/budget/budget.js').isAllowed;
+  getViolatedLimits: typeof import('../modules/budget/budget.js').getViolatedLimits;
+  getLimitUsageSnapshot: typeof import('../modules/budget/budget.js').getLimitUsageSnapshot;
 }>('cost.budget');
 
 // ProxyContext is defined in Plan 4 (reverse-proxy/context.ts). Until then the
