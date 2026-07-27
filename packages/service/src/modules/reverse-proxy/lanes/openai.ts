@@ -10,7 +10,7 @@ import type { TraceEntry } from '../../logging/traceStore.js'
 import { llmChat, llmStream, BudgetExceededError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
 import { emitEvent } from '../../notifications/emitter.js'
-import { forwardOpenAIOAuthSSE } from '../../../routes/openaiOAuthForward.js'
+import { forwardOpenAIOAuthSSE } from './openaiOAuthForward.js'
 
 /** Build the initial ProxyContext for an OpenAI request. protocol.decode is identity: request === original. */
 export function buildOpenAIContext(req: FastifyRequest, reply: FastifyReply): ProxyContext {

@@ -9,7 +9,7 @@ import { loadSecret } from './modules/auth/jwt.js';
 import { openaiRoutes } from './modules/api-reverse-proxy/openai.js';
 import { anthropicRoutes } from './modules/api-reverse-proxy/anthropic.js';
 import { apiRoutes } from './modules/api/api.js';
-import { metricsRoutes } from './routes/metrics.js';
+import { metricsRoutes } from './modules/observability/metrics.js';
 import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage } from './modules/config/loader.js';
 import { migrateProjectConfigs } from './modules/config/migrate.js';
 import { pingTelemetry } from './telemetry.js';

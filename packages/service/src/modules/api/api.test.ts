@@ -26,7 +26,7 @@ vi.mock('bcrypt', () => ({
   default: { hash: vi.fn(async (p: string) => `hashed:${p}`), compare: vi.fn() },
 }))
 vi.mock('uuid', () => ({ v4: vi.fn(() => 'test-uuid-1234') }))
-vi.mock('../../routes/openaiOAuthForward.js', () => ({ resolveCodexToken: vi.fn(), forwardOpenAIOAuthSSE: vi.fn() }))
+vi.mock('../reverse-proxy/lanes/openaiOAuthForward.js', () => ({ resolveCodexToken: vi.fn(), forwardOpenAIOAuthSSE: vi.fn() }))
 vi.mock('../auth/totp.js', () => ({
   verifyTotp: vi.fn(() => true),
   generateTotpSecret: vi.fn(() => 'MOCK_SECRET_BASE32'),
@@ -53,7 +53,7 @@ import { createSessionToken, verifyToken } from '../auth/jwt.js'
 import { sendTestNotification } from '../notifications/sender.js'
 import { getTrace } from '../logging/traceStore.js'
 import bcrypt from 'bcrypt'
-import { resolveCodexToken } from '../../routes/openaiOAuthForward.js'
+import { resolveCodexToken } from '../reverse-proxy/lanes/openaiOAuthForward.js'
 import { verifyTotp, generateTotpSecret, generateBackupCodes, hashBackupCode } from '../auth/totp.js'
 import { catalogFetcher } from '../catalog/fetcher.js'
 

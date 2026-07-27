@@ -66,6 +66,7 @@ export const NOTIFICATIONS = token<{
 export const OBSERVABILITY = token<{
   getMetricsSnapshot: typeof import('../modules/observability/metrics-snapshot.js').getMetricsSnapshot;
   startIntegrationRunner: typeof import('../modules/observability/runner.js').startIntegrationRunner;
+  metricsRoutes: typeof import('../modules/observability/metrics.js').metricsRoutes;
 }>('observability.registry');
 
 export const ROUTER = token<{

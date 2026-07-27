@@ -11,7 +11,7 @@ import { appendTrace } from '../../logging/traceStore.js'
 import type { TraceEntry } from '../../logging/traceStore.js'
 import { llmChat, llmStream, BudgetExceededError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
-import { forwardAnthropicOAuth, forwardAnthropicApiKey } from '../../../routes/oauthForward.js'
+import { forwardAnthropicOAuth, forwardAnthropicApiKey } from './oauthForward.js'
 
 // ─── protocol translation (anthropic.ts L42-89, moved verbatim) ──────────────────
 /** Convert a MessagesRequest to an OpenAI-compat ChatCompletionRequest for non-Anthropic providers. */
