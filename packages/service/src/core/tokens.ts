@@ -1,12 +1,14 @@
 // packages/service/src/core/tokens.ts
 import { token, type ProcessorRegistry } from './index.js';
 import type { ProviderAdapter } from '../modules/provider/types.js';
+import type { ProviderCatalog, RepoStatus } from '../modules/catalog/fetcher.js';
 import type { RouteResult } from '../routing/router.js';
 import type {
   ModelConfig,
   ProjectConfig,
   ProjectToken,
   ChatCompletionRequest,
+  ProviderRepo,
 } from '@routerly/shared';
 
 // Each token wraps existing functions/types. Modules register these; processors
@@ -22,6 +24,14 @@ export const CONFIG_STORE = token<{
 export const PROVIDER_REGISTRY = token<{
   getProviderAdapter(model: ModelConfig): ProviderAdapter;
 }>('provider.registry');
+
+export const CATALOG = token<{
+  get(routerlyVersion: string): Promise<ProviderCatalog>;
+  setRepos(repos: ProviderRepo[]): void;
+  invalidate(): void;
+  getStatus(): RepoStatus[];
+  syncModelsFromCatalog: typeof import('../modules/catalog/sync.js').syncModelsFromCatalog;
+}>('catalog.registry');
 
 export const ROUTER = token<{
   routeRequest(
