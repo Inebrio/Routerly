@@ -1,6 +1,6 @@
 import type { CatalogField, CatalogDefaults } from '@routerly/shared';
-import { catalogFetcher } from '../catalog/fetcher.js';
-import { readConfig, writeConfig } from '../modules/config/loader.js';
+import { catalogFetcher } from './fetcher.js';
+import { readConfig, writeConfig } from '../config/loader.js';
 
 export async function syncModelsFromCatalog(pkgVersion: string): Promise<boolean> {
   const [catalog, models] = await Promise.all([
