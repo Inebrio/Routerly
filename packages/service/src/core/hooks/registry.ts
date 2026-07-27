@@ -29,6 +29,10 @@ export class AlterableRegistry<T> {
     this.items.set(id, { ...existing, value: alter(existing.value) })
   }
 
+  get(id: string): T | undefined {
+    return this.items.get(id)?.value
+  }
+
   ordered(): T[] {
     const ids = new Set(this.items.keys())
     const scoped = (refs: string[] | undefined): string[] => (refs ?? []).filter((r) => ids.has(r))
