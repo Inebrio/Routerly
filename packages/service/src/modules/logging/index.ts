@@ -1,6 +1,6 @@
 import { defineModule, type Processor, type RouterlyModule } from '../../core/index.js'
 import { PROXY_PIPELINE } from '../../core/tokens.js'
-import type { ProxyContext } from '../../reverse-proxy/context.js'
+import type { ProxyContext } from '../reverse-proxy/context.js'
 import { setTrace, getTrace } from './traceStore.js'
 
 const ingress: Processor<ProxyContext> = {

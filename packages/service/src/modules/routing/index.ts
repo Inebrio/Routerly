@@ -1,6 +1,6 @@
 import { defineModule, type Processor, type RouterlyModule } from '../../core/index.js'
 import { ROUTER, PROXY_PIPELINE } from '../../core/tokens.js'
-import type { ProxyContext } from '../../reverse-proxy/context.js'
+import type { ProxyContext } from '../reverse-proxy/context.js'
 import { routeRequest } from './router.js'
 import { addRoutingDecision } from './routingMemoryStore.js'
 import { appendTrace } from '../logging/traceStore.js'

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
 vi.mock('../../config/loader.js', () => ({ readConfig: vi.fn() }))
-vi.mock('../../../llm/executor.js', () => ({
+vi.mock('../../reverse-proxy/execute.js', () => ({
   llmChat: vi.fn(),
   BudgetExceededError: class BudgetExceededError extends Error {
     constructor(msg = 'budget') { super(msg); this.name = 'BudgetExceededError' }
@@ -12,7 +12,7 @@ vi.mock('../../budget/budget.js', () => ({ getLimitUsageSnapshot: vi.fn() }))
 
 import { llmPolicy } from './llm.js'
 import { readConfig } from '../../config/loader.js'
-import { llmChat, BudgetExceededError } from '../../../llm/executor.js'
+import { llmChat, BudgetExceededError } from '../../reverse-proxy/execute.js'
 import { getRoutingHistory } from '../routingMemoryStore.js'
 import { getLimitUsageSnapshot } from '../../budget/budget.js'
 import type { PolicyInput } from './types.js'

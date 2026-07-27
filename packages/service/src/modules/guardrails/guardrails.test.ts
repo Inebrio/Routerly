@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
 vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), appendUsageRecord: vi.fn() }));
-vi.mock('../../llm/executor.js', () => ({
+vi.mock('../reverse-proxy/execute.js', () => ({
   llmChat: vi.fn(),
   checkBudget: vi.fn(() => Promise.resolve()),
   BudgetExceededError: class BudgetExceededError extends Error {
@@ -16,7 +16,7 @@ vi.mock('../embeddings/dispatch.js', () => ({ getEmbeddingProvider: vi.fn() }));
 
 import { checkGuardrails, buildRequestInjection, type GuardrailProjectCtx } from './guardrails.js';
 import { readConfig } from '../config/loader.js';
-import { llmChat, checkBudget, BudgetExceededError } from '../../llm/executor.js';
+import { llmChat, checkBudget, BudgetExceededError } from '../reverse-proxy/execute.js';
 import { trackUsage } from '../usage/tracker.js';
 import { classifyIntent } from '../routing/intent/classifier.js';
 import type { GuardrailConfig, GuardrailRule } from '@routerly/shared';
