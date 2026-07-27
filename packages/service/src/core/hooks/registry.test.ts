@@ -34,4 +34,22 @@ describe('AlterableRegistry', () => {
     reg.contribute({ id: 'a', value: 'A', after: ['outside-this-registry'] })
     expect(reg.ordered()).toEqual(['A'])
   })
+
+  it('gets a contribution value by id', () => {
+    const reg = new AlterableRegistry<string>()
+    reg.contribute({ id: 'a', value: 'A' })
+    expect(reg.get('a')).toBe('A')
+  })
+
+  it('get returns undefined for an unknown id', () => {
+    const reg = new AlterableRegistry<string>()
+    expect(reg.get('missing')).toBeUndefined()
+  })
+
+  it('get reflects an override', () => {
+    const reg = new AlterableRegistry<string>()
+    reg.contribute({ id: 'a', value: 'A' })
+    reg.override('a', (prev) => prev + '!')
+    expect(reg.get('a')).toBe('A!')
+  })
 })
