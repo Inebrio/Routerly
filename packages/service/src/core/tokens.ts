@@ -94,3 +94,9 @@ export const BUDGET = token<{
 // pipeline registry is parameterized over `unknown`; Plan 4 narrows the generic
 // to ProxyContext. The token key 'proxy.pipeline' is frozen now.
 export const PROXY_PIPELINE = token<ProcessorRegistry<unknown>>('proxy.pipeline');
+
+export const API_REVERSE_PROXY = token<{
+  openaiRoutes: typeof import('../modules/api-reverse-proxy/openai.js').openaiRoutes;
+  anthropicRoutes: typeof import('../modules/api-reverse-proxy/anthropic.js').anthropicRoutes;
+  passthroughHandler: typeof import('../modules/api-reverse-proxy/passthrough.js').passthroughHandler;
+}>('api-reverse-proxy.registry');
