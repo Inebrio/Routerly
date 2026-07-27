@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calculateCost } from './calculator.js'
+import { calculateCost } from './cost.js'
 import type { ModelConfig } from '@routerly/shared'
 
 function model(overrides: Partial<ModelConfig['cost']> = {}): ModelConfig {
