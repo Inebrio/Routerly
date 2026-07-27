@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Register the remaining core capabilities of `packages/service/src` as kernel modules. Each module (a) exposes its existing, already-tested functions behind the frozen DI tokens (`ROUTER` → `routeRequest`, `USAGE_TRACKER` → `trackUsage`, `BUDGET` → `{ isAllowed, getViolatedLimits, getLimitUsageSnapshot }`) and (b) contributes its own granular reverse-proxy processor(s) for that concern (roadmap decision #13, full-granular extraction). Plan 4 is transport-only and DARK; it contributes ONLY transport processors and never had inline concern contributions to move. This plan's modules are the sole source of the concern processors. After this plan the ownership map is: `routing` module owns the `routing.prepare` processor (calls `routeRequest`) plus OpenAI-lane routing memory; `budget` module owns the per-candidate `isAllowed` check in `upstream.prepare`; `usage` module owns the `trackUsage` processor in `finalize`; `guardrails` module owns the request/response-guardrail processors; `pii` module owns the input/output-PII processors; `logging` module owns the ingress/finalize trace processors; `cache` module is an empty no-op predisposition (there is NO response cache in the codebase today — YAGNI). Net request behavior is byte-for-byte unchanged: this is a reorganization of ownership, not a rewrite.
+**Goal:** Register the remaining core capabilities of `packages/service/src` as kernel modules. Each module (a) exposes its existing, already-tested functions behind the frozen DI tokens (`ROUTER` → `routeRequest`, `USAGE_TRACKER` → `trackUsage`, `BUDGET` → `{ isAllowed, getViolatedLimits, getLimitUsageSnapshot }`) and (b) contributes its own granular reverse-proxy processor(s) for that concern (roadmap decision #13, full-granular extraction). Plan 4 is transport-only and DARK; it contributes ONLY transport processors and never had inline concern contributions to move. This plan's modules are the sole source of the concern processors. After this plan the ownership map is: `routing` module owns the `routing.prepare` processor (calls `routeRequest`) plus OpenAI-lane routing memory; `budget` module owns the per-candidate `isAllowed` check in `upstream.prepare`; `usage` module owns the `trackUsage` processor in `finalize`; `guardrails` module owns the request/response-guardrail processors; `pii` module owns the input/output-PII processors; `logging` module owns the ingress/finalize trace processors; `cache` module is an empty no-op predisposition (there is NO response cache in the codebase today - YAGNI). Net request behavior is byte-for-byte unchanged: this is a reorganization of ownership, not a rewrite.
 
-**Architecture:** The kernel (`core/`, Plan 1), its bootstrap + `CONFIG_STORE` (Plan 2), the `PROVIDER_REGISTRY` (Plan 3) and the reverse-proxy pipeline + `ProxyContext` + `PROXY_PIPELINE` (Plan 4) already exist. This plan adds one `RouterlyModule` per capability under `packages/service/src/modules/`. Every module's `register()` resolves `PROXY_PIPELINE` from the container, registers its own DI token value (built from the real existing exports — the wrapper strategy), and contributes its `Processor<ProxyContext>` entries. Each processor body calls the EXISTING function with its EXISTING signature. There is a single shared `PROXY_PIPELINE` registry (the frozen token is singular); OpenAI-lane-only processors reproduce the current asymmetry by guarding on `ctx.protocol === 'openai'` and returning early otherwise — matching `routes/anthropic.ts`, which has neither output PII, response guardrails, nor routing memory. These modules are added to the `server.ts` `buildKernel([...])` array; they are the exclusive source of the concern processors. Plan 4 contributes only transport processors and is not modified by this plan.
+**Architecture:** The kernel (`core/`, Plan 1), its bootstrap + `CONFIG_STORE` (Plan 2), the `PROVIDER_REGISTRY` (Plan 3) and the reverse-proxy pipeline + `ProxyContext` + `PROXY_PIPELINE` (Plan 4) already exist. This plan adds one `RouterlyModule` per capability under `packages/service/src/modules/`. Every module's `register()` resolves `PROXY_PIPELINE` from the container, registers its own DI token value (built from the real existing exports - the wrapper strategy), and contributes its `Processor<ProxyContext>` entries. Each processor body calls the EXISTING function with its EXISTING signature. There is a single shared `PROXY_PIPELINE` registry (the frozen token is singular); OpenAI-lane-only processors reproduce the current asymmetry by guarding on `ctx.protocol === 'openai'` and returning early otherwise - matching `routes/anthropic.ts`, which has neither output PII, response guardrails, nor routing memory. These modules are added to the `server.ts` `buildKernel([...])` array; they are the exclusive source of the concern processors. Plan 4 contributes only transport processors and is not modified by this plan.
 
 **Tech Stack:** TypeScript ESM (NodeNext, `.js` import specifiers), Node ≥20, Fastify 5, Vitest. No new runtime dependencies.
 
@@ -15,22 +15,22 @@
   - DI tokens from `core/tokens.js`: `CONFIG_STORE`, `PROVIDER_REGISTRY`, `ROUTER`, `USAGE_TRACKER`, `BUDGET`, `PROXY_PIPELINE` (exact keys and value shapes are frozen in the roadmap §"Frozen DI service tokens").
   - `ProxyContext` / `ProxyResult` from `reverse-proxy/context.js` (frozen shape, roadmap §"Frozen ProxyContext shape").
   - The phase names from the frozen phase list: `ingress`, `request.preprocess`, `routing.prepare`, `upstream.prepare`, `response.postprocess`, `finalize` (this plan contributes only to these).
-  - The module manifest ids declared by earlier plans: `'config'` (Plan 2), `'provider'` (Plan 3 — canonical id per roadmap §"Canonical names"; NOT `provider-model`), `'reverse-proxy'` (Plan 4). The id strings are the only coupling; every `dependsOn` key in this plan's manifests uses these exact strings.
-- **Wrapper strategy is absolute.** No processor body reimplements logic. It calls the real `routeRequest` / `trackUsage` / `isAllowed` / `checkGuardrails` / `buildRequestInjection` / `mergePolicies` / `scrubMessages` / `scrubText` / `StreamingScrubber` / `addRoutingDecision` / `setTrace` / `getTrace`. The executor (`llm/executor.ts`) stays untouched — the `upstream.execute` processor (Plan 4) still calls `llmChat`/`llmStream`/`llmMessages`/`forward*`, and those continue to self-track budget and usage. This plan does NOT add a second usage or budget record for the executor/passthrough paths (no double count).
+  - The module manifest ids declared by earlier plans: `'config'` (Plan 2), `'provider'` (Plan 3 - canonical id per roadmap §"Canonical names"; NOT `provider-model`), `'reverse-proxy'` (Plan 4). The id strings are the only coupling; every `dependsOn` key in this plan's manifests uses these exact strings.
+- **Wrapper strategy is absolute.** No processor body reimplements logic. It calls the real `routeRequest` / `trackUsage` / `isAllowed` / `checkGuardrails` / `buildRequestInjection` / `mergePolicies` / `scrubMessages` / `scrubText` / `StreamingScrubber` / `addRoutingDecision` / `setTrace` / `getTrace`. The executor (`llm/executor.ts`) stays untouched - the `upstream.execute` processor (Plan 4) still calls `llmChat`/`llmStream`/`llmMessages`/`forward*`, and those continue to self-track budget and usage. This plan does NOT add a second usage or budget record for the executor/passthrough paths (no double count).
 - **Preserve asymmetry (roadmap decision #8).** Output-PII, response-guardrail and routing-memory processors run for the OpenAI lane only (`ctx.protocol === 'openai'` guard). Input-PII and request-guardrail processors run for both lanes (both `routes/openai.ts` and `routes/anthropic.ts` call them today).
 - **Ordering within a phase is fixed by `before`/`after`/`weight` and verified.** Confirmed current order: in `request.preprocess`, input PII runs BEFORE request guardrails (`routes/openai.ts`: "Runs BEFORE guardrails so the judge never sees raw PII"). In `response.postprocess`, output PII runs before response guardrails. The Task 8 ordering test locks the full per-phase sequence.
 - **No coverage gate** (roadmap decision #1). Minimal behavioral tests only: each module registers its token/processors, resolving the token returns the real function, and the processor appears in the phase's ordered list. Heavy verification is the roadmap curl byte-diff + browser UAT (roadmap §"Verification protocol"), run at the atomic flip (Task 12) where the pipeline goes live.
 - **Module system:** NodeNext ESM. Every relative import uses a `.js` extension. Node builtins use the `node:` prefix.
 - **TypeScript:** `strict`, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `noImplicitOverride`. Optional properties omitted, not set to `undefined`. Index access narrowed before use.
 - **Wire transparency + management API + `@routerly/shared` are FROZEN** (roadmap decision #2). `ProxyContext` is an INTERNAL type (`reverse-proxy/context.ts`); its `blockedBy` and `guardrailTriggered` fields are Plan-4-owned (frozen shape) and this plan only reads/writes them.
-- **Scope fence:** create files under `packages/service/src/modules/`. The edits to existing files are: the `...coreModules` append to the `server.ts` `buildKernel([...])` array (Task 8); the dedup edits to `llm/executor.ts`, `cost/budget.ts`, and the usage-scanning routing policies (Tasks 9-11); and the atomic route flip in `routes/openai.ts` / `routes/anthropic.ts` plus deletion of the now-dead inline handlers (Task 12). `reverse-proxy/context.ts` is NOT edited by this plan — `ctx.blockedBy` and `ctx.guardrailTriggered` are Plan-4-owned; this plan only uses them. Plan 4's reverse-proxy files are NOT edited by this plan (it is transport-only and had no inline concern contributions to remove).
+- **Scope fence:** create files under `packages/service/src/modules/`. The edits to existing files are: the `...coreModules` append to the `server.ts` `buildKernel([...])` array (Task 8); the dedup edits to `llm/executor.ts`, `cost/budget.ts`, and the usage-scanning routing policies (Tasks 9-11); and the atomic route flip in `routes/openai.ts` / `routes/anthropic.ts` plus deletion of the now-dead inline handlers (Task 12). `reverse-proxy/context.ts` is NOT edited by this plan - `ctx.blockedBy` and `ctx.guardrailTriggered` are Plan-4-owned; this plan only uses them. Plan 4's reverse-proxy files are NOT edited by this plan (it is transport-only and had no inline concern contributions to remove).
 - **English only** for all code, comments, identifiers, and commit messages. No em dashes.
 
 **All commands below run from `packages/service/`** unless stated otherwise.
 
 ---
 
-### Task 1: Routing module — `ROUTER` token + `routing.prepare` + routing memory
+### Task 1: Routing module - `ROUTER` token + `routing.prepare` + routing memory
 
 **Files:**
 - Create: `packages/service/src/modules/routing.ts`
@@ -41,9 +41,9 @@
   - `defineModule`, `ProcessorRegistry`, `type Processor` from `../core/index.js`
   - `ROUTER`, `PROXY_PIPELINE` from `../core/tokens.js`
   - `type ProxyContext` from `../reverse-proxy/context.js`
-  - `routeRequest` from `../routing/router.js` — `routeRequest(request, project, log?, emit?, token?, traceId?, conversationId?): Promise<{ models: RoutingCandidate[]; trace: TraceEntry[] }>`
-  - `addRoutingDecision` from `../routing/routingMemoryStore.js` — `addRoutingDecision(projectId: string, conversationId: string, model: string): void`
-  - `appendTrace` from `../routing/traceStore.js` — `appendTrace(id: string, entries: TraceEntry[]): void`
+  - `routeRequest` from `../routing/router.js` - `routeRequest(request, project, log?, emit?, token?, traceId?, conversationId?): Promise<{ models: RoutingCandidate[]; trace: TraceEntry[] }>`
+  - `addRoutingDecision` from `../routing/routingMemoryStore.js` - `addRoutingDecision(projectId: string, conversationId: string, model: string): void`
+  - `appendTrace` from `../routing/traceStore.js` - `appendTrace(id: string, entries: TraceEntry[]): void`
 - Produces:
   - `const routingModule: RouterlyModule` (default export via `defineModule`), manifest `{ id: 'routing', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0' } }`.
   - Registers `ROUTER` → `{ routeRequest }` (the real function reference).
@@ -89,7 +89,7 @@ describe('routing module', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/modules/routing.test.ts`
-Expected: FAIL — cannot find module `./routing.js`.
+Expected: FAIL - cannot find module `./routing.js`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -166,7 +166,7 @@ git commit -m "feat(modules): routing module wraps routeRequest + routing memory
 
 ---
 
-### Task 2: Budget module — `BUDGET` token + `upstream.prepare` per-candidate `isAllowed`
+### Task 2: Budget module - `BUDGET` token + `upstream.prepare` per-candidate `isAllowed`
 
 **Files:**
 - Create: `packages/service/src/modules/budget.ts`
@@ -181,7 +181,7 @@ git commit -m "feat(modules): routing module wraps routeRequest + routing memory
 - Produces:
   - `const budgetModule: RouterlyModule`, manifest `{ id: 'budget', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0', 'provider': '^0.4.0' } }`.
   - Registers `BUDGET` → `{ isAllowed, getViolatedLimits, getLimitUsageSnapshot }`.
-  - Contributes processor `{ id: 'budget.upstream', phase: 'upstream.prepare' }`: for the current attempt candidate (`ctx.attempt.model`), calls `BUDGET.isAllowed(model, ctx.project, ctx.token)`. On `false`, marks the candidate ineligible so `routing.execute` advances to the next candidate (sets `ctx.attempt = undefined`). It does NOT record usage or emit budget events — the executor's `checkBudget` (inside `upstream.execute`) remains the single authoritative recorder, unchanged. In the normal flow `routeRequest` already pre-filtered over-budget candidates, so this re-check is a cheap idempotent guard and the set of attempted candidates is identical to today.
+  - Contributes processor `{ id: 'budget.upstream', phase: 'upstream.prepare' }`: for the current attempt candidate (`ctx.attempt.model`), calls `BUDGET.isAllowed(model, ctx.project, ctx.token)`. On `false`, marks the candidate ineligible so `routing.execute` advances to the next candidate (sets `ctx.attempt = undefined`). It does NOT record usage or emit budget events - the executor's `checkBudget` (inside `upstream.execute`) remains the single authoritative recorder, unchanged. In the normal flow `routeRequest` already pre-filtered over-budget candidates, so this re-check is a cheap idempotent guard and the set of attempted candidates is identical to today.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -223,7 +223,7 @@ describe('budget module', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/modules/budget.test.ts`
-Expected: FAIL — cannot find module `./budget.js`.
+Expected: FAIL - cannot find module `./budget.js`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -280,7 +280,7 @@ git commit -m "feat(modules): budget module wraps isAllowed for upstream.prepare
 
 ---
 
-### Task 3: Usage module — `USAGE_TRACKER` token + `finalize` blocked-usage recording
+### Task 3: Usage module - `USAGE_TRACKER` token + `finalize` blocked-usage recording
 
 **Files:**
 - Create: `packages/service/src/modules/usage.ts`
@@ -291,11 +291,11 @@ git commit -m "feat(modules): budget module wraps isAllowed for upstream.prepare
   - `defineModule`, `type Processor`, `type RouterlyModule` from `../core/index.js`
   - `USAGE_TRACKER`, `CONFIG_STORE`, `PROXY_PIPELINE` from `../core/tokens.js`
   - `type ProxyContext` from `../reverse-proxy/context.js`
-  - `trackUsage` from `../cost/tracker.js` — `trackUsage(params: TrackUsageParams): Promise<void>`
+  - `trackUsage` from `../cost/tracker.js` - `trackUsage(params: TrackUsageParams): Promise<void>`
 - Produces:
   - `const usageModule: RouterlyModule`, manifest `{ id: 'usage', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0', config: '^0.4.0' } }`.
   - Registers `USAGE_TRACKER` → `{ trackUsage }`.
-  - Contributes processor `{ id: 'usage.finalize', phase: 'finalize' }`: records the guardrail-blocked usage event that `routes/*.ts` record inline today via `trackBlockedRequest` (zero tokens, `outcome: 'blocked'`, `callType: 'guardrail'`, attributed to the project's first model). It fires only when `ctx.blockedBy` is set (a guardrail block, set in Task 4). Completion, streaming, messages and verbatim-passthrough usage are self-tracked inside the executor and the `forward*` helpers and are NOT re-recorded here (no double count — roadmap decision #3, usage persistence unchanged).
+  - Contributes processor `{ id: 'usage.finalize', phase: 'finalize' }`: records the guardrail-blocked usage event that `routes/*.ts` record inline today via `trackBlockedRequest` (zero tokens, `outcome: 'blocked'`, `callType: 'guardrail'`, attributed to the project's first model). It fires only when `ctx.blockedBy` is set (a guardrail block, set in Task 4). Completion, streaming, messages and verbatim-passthrough usage are self-tracked inside the executor and the `forward*` helpers and are NOT re-recorded here (no double count - roadmap decision #3, usage persistence unchanged).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -336,7 +336,7 @@ describe('usage module', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/modules/usage.test.ts`
-Expected: FAIL — cannot find module `./usage.js`.
+Expected: FAIL - cannot find module `./usage.js`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -358,7 +358,7 @@ export const usageModule: RouterlyModule = defineModule({
       phase: 'finalize',
       async run(ctx) {
         // Only the guardrail-blocked usage event lives here (today: trackBlockedRequest in routes/*.ts).
-        // Completion / stream / messages / passthrough usage is self-tracked upstream — do not re-record.
+        // Completion / stream / messages / passthrough usage is self-tracked upstream - do not re-record.
         const blockedBy = ctx.blockedBy
         if (!blockedBy) return
         const models = await store.readConfig('models')
@@ -399,7 +399,7 @@ git commit -m "feat(modules): usage module wraps trackUsage in finalize"
 
 ---
 
-### Task 4: Guardrails module — request + response guardrail processors
+### Task 4: Guardrails module - request + response guardrail processors
 
 **Files:**
 - Create: `packages/service/src/modules/guardrails.ts`
@@ -419,7 +419,7 @@ git commit -m "feat(modules): usage module wraps trackUsage in finalize"
 - Produces:
   - `const guardrailsModule: RouterlyModule`, manifest `{ id: 'guardrails', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0' } }`.
   - Contributes processor `{ id: 'guardrail.request', phase: 'request.preprocess', after: ['pii.input'] }` (both lanes): runs `checkGuardrails('request', ...)`; on `block`, sets `ctx.blockedBy = result.triggered` and `ctx.result = { kind: 'block', status: 403, body: <wire-faithful content_filter payload built by Plan 4's error helper> }`, then `shortCircuit`. On no block, applies `buildRequestInjection(ctx.project.guardrails)` to the outgoing request exactly as `routes/openai.ts` does (prepend a system message). Ordered AFTER `pii.input` so the judge never sees raw PII (matches current route order).
-  - Contributes processor `{ id: 'guardrail.response', phase: 'response.postprocess', after: ['pii.output'] }`: OpenAI-lane only (`ctx.protocol === 'openai'` guard). For a non-streaming `kind: 'json'` result it runs `checkGuardrails('response', <assembled content>, ...)` in place and, on block, replaces `ctx.result` with the wire-faithful block. For a `kind: 'stream'` result it WRAPS the iterator: `ctx.result.body = wrapWithResponseGuardrail(ctx.result.body, ...)` (the SSE-buffering guardrail transform from Plan 4's `reverse-proxy/helpers.ts`, lifted verbatim into generator form). Because it is `after: ['pii.output']`, it wraps SECOND — its wrapper is outermost, so the guardrail buffer sees text the PII scrubber already cleaned, byte-identical to today's inline order (PII scrub before guardrail check). `egress` pumps the doubly-wrapped iterator.
+  - Contributes processor `{ id: 'guardrail.response', phase: 'response.postprocess', after: ['pii.output'] }`: OpenAI-lane only (`ctx.protocol === 'openai'` guard). For a non-streaming `kind: 'json'` result it runs `checkGuardrails('response', <assembled content>, ...)` in place and, on block, replaces `ctx.result` with the wire-faithful block. For a `kind: 'stream'` result it WRAPS the iterator: `ctx.result.body = wrapWithResponseGuardrail(ctx.result.body, ...)` (the SSE-buffering guardrail transform from Plan 4's `reverse-proxy/helpers.ts`, lifted verbatim into generator form). Because it is `after: ['pii.output']`, it wraps SECOND - its wrapper is outermost, so the guardrail buffer sees text the PII scrubber already cleaned, byte-identical to today's inline order (PII scrub before guardrail check). `egress` pumps the doubly-wrapped iterator.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -452,7 +452,7 @@ describe('guardrails module', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/modules/guardrails.test.ts`
-Expected: FAIL — cannot find module `./guardrails.js`.
+Expected: FAIL - cannot find module `./guardrails.js`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -571,7 +571,7 @@ git commit -m "feat(modules): guardrails module owns request+response guardrail 
 
 ---
 
-### Task 5: PII module — input + output PII processors
+### Task 5: PII module - input + output PII processors
 
 **Files:**
 - Create: `packages/service/src/modules/pii.ts`
@@ -633,7 +633,7 @@ describe('pii module', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/modules/pii.test.ts`
-Expected: FAIL — cannot find module `./pii.js`.
+Expected: FAIL - cannot find module `./pii.js`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -687,7 +687,7 @@ const output: Processor<ProxyContext> = {
     }
     // Streaming: WRAP the raw provider iterator with the per-chunk StreamingScrubber. This is the
     // innermost wrapper (pii.output runs first via weight -10); guardrail.response wraps around it
-    // second, so the guardrail buffer sees already-scrubbed text — identical to today's inline order.
+    // second, so the guardrail buffer sees already-scrubbed text - identical to today's inline order.
     // wrapWithStreamingScrubber lives in Plan 4's reverse-proxy/helpers.ts.
     if (ctx.result?.kind === 'stream') {
       ctx.result.body = wrapWithStreamingScrubber(ctx.result.body as AsyncIterable<unknown>, effective)
@@ -721,7 +721,7 @@ git commit -m "feat(modules): pii module owns input+output PII processors"
 
 ---
 
-### Task 6: Logging module — ingress + finalize trace processors
+### Task 6: Logging module - ingress + finalize trace processors
 
 **Files:**
 - Create: `packages/service/src/modules/logging.ts`
@@ -738,7 +738,7 @@ git commit -m "feat(modules): pii module owns input+output PII processors"
 - Produces:
   - `const loggingModule: RouterlyModule`, manifest `{ id: 'logging', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0' } }`.
   - Contributes processor `{ id: 'logging.ingress', phase: 'ingress', weight: -100 }` (runs first in ingress): opens the per-request trace buffer with `setTrace(ctx.traceId, [])`, exactly as `routes/*.ts` do at request start. `traceId`, `traceEnabled`, `traceSuppressed`, `conversationId` are populated by Plan 4's ingress from headers before processors run; this processor only initializes the trace store.
-  - Contributes processor `{ id: 'logging.finalize', phase: 'finalize', after: ['usage.finalize'] }`: a no-op flush hook — the trace buffer is snapshotted by `trackUsage` via `getTrace(traceId)` (unchanged). Present so the trace-lifecycle owner is explicit and future trace teardown has a home. It reads `getTrace(ctx.traceId)` and drops it into `ctx.routeTrace` if not already set, so downstream consumers see the final trace.
+  - Contributes processor `{ id: 'logging.finalize', phase: 'finalize', after: ['usage.finalize'] }`: a no-op flush hook - the trace buffer is snapshotted by `trackUsage` via `getTrace(traceId)` (unchanged). Present so the trace-lifecycle owner is explicit and future trace teardown has a home. It reads `getTrace(ctx.traceId)` and drops it into `ctx.routeTrace` if not already set, so downstream consumers see the final trace.
   - Audit (`audit/logger.ts` `logAudit`) and telemetry (`telemetry.ts` `pingTelemetry`) are NOT request-pipeline concerns and are NOT moved: `logAudit` stays wired in `routes/api.ts` (management plane) and `pingTelemetry` stays wired in `server.ts` (startup) and `routes/api.ts`. The logging module is their nominal owner for the module map; their call sites and behavior are unchanged. This is documented in the Self-review inventory.
 
 - [ ] **Step 1: Write the failing test**
@@ -783,7 +783,7 @@ describe('logging module', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/modules/logging.test.ts`
-Expected: FAIL — cannot find module `./logging.js`.
+Expected: FAIL - cannot find module `./logging.js`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -840,13 +840,13 @@ git commit -m "feat(modules): logging module owns ingress+finalize trace process
 
 ---
 
-### Task 7: Cache module — no-op predisposition (YAGNI)
+### Task 7: Cache module - no-op predisposition (YAGNI)
 
 **Files:**
 - Create: `packages/service/src/modules/cache.ts`
 - Test: `packages/service/src/modules/cache.test.ts`
 
-**Rationale (verified by grep):** There is NO response cache in the codebase today. The only caches are `routing/intent/cache.ts` (embedding/intent classification cache, internal to the classifier) and `catalog/fetcher.ts` (6h catalog TTL). Neither short-circuits a completion request. Per the roadmap's `request.preprocess` cache-hit short-circuit predisposition and YAGNI, this module is registered as a pure no-op: it declares the capability slot and the module map entry but contributes NO processor. When a real response cache is built, its `cache.lookup` processor (phase `request.preprocess`, `weight: -100`, before `pii.input`) will `shortCircuit` on a hit — that processor is intentionally not written now.
+**Rationale (verified by grep):** There is NO response cache in the codebase today. The only caches are `routing/intent/cache.ts` (embedding/intent classification cache, internal to the classifier) and `catalog/fetcher.ts` (6h catalog TTL). Neither short-circuits a completion request. Per the roadmap's `request.preprocess` cache-hit short-circuit predisposition and YAGNI, this module is registered as a pure no-op: it declares the capability slot and the module map entry but contributes NO processor. When a real response cache is built, its `cache.lookup` processor (phase `request.preprocess`, `weight: -100`, before `pii.input`) will `shortCircuit` on a hit - that processor is intentionally not written now.
 
 **Interfaces:**
 - Consumes: `defineModule`, `type RouterlyModule` from `../core/index.js`.
@@ -878,7 +878,7 @@ describe('cache module', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/modules/cache.test.ts`
-Expected: FAIL — cannot find module `./cache.js`.
+Expected: FAIL - cannot find module `./cache.js`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -917,7 +917,7 @@ git commit -m "feat(modules): cache module no-op predisposition (no response cac
 **Files:**
 - Create: `packages/service/src/modules/index.ts`
 - Create: `packages/service/src/modules/ordering.test.ts`
-- Edit: `packages/service/src/server.ts` — append `...coreModules` to the existing `buildKernel([...])` array (roadmap §"Canonical names": there is NO `createKernel` factory and NO `new Kernel([...])` outside `core/bootstrap.ts`; the module array is assembled at the `buildKernel([...])` call site in `server.ts`).
+- Edit: `packages/service/src/server.ts` - append `...coreModules` to the existing `buildKernel([...])` array (roadmap §"Canonical names": there is NO `createKernel` factory and NO `new Kernel([...])` outside `core/bootstrap.ts`; the module array is assembled at the `buildKernel([...])` call site in `server.ts`).
 
 **Interfaces:**
 - Consumes: every module from Tasks 1–7; `buildKernel` (already imported in `server.ts` from Plan 2); `PROXY_PIPELINE` from `../core/tokens.js`.
@@ -985,11 +985,11 @@ describe('core modules processor ordering', () => {
 - [ ] **Step 2: Run the ordering test to verify it fails**
 
 Run: `npx vitest run src/modules/ordering.test.ts`
-Expected: FAIL — cannot find module `./index.js` (until the barrel is added) or an order mismatch if a `before`/`after`/`weight` hint is wrong. Fix the hints in the offending module until the sequence matches, then this test passes.
+Expected: FAIL - cannot find module `./index.js` (until the barrel is added) or an order mismatch if a `before`/`after`/`weight` hint is wrong. Fix the hints in the offending module until the sequence matches, then this test passes.
 
 - [ ] **Step 3: Append `coreModules` to the `server.ts` `buildKernel([...])` array**
 
-`server.ts` already builds the kernel via `buildKernel([...])` (Plan 2 started it as `buildKernel([configModule])`; Plan 3 added `providerModule`; Plan 4 appended `reverseProxyModule`). Edit that SAME array in place to spread `coreModules` at the tail (canonical wiring pattern — do NOT introduce `createKernel` or a bare `new Kernel([...])`; the only `new Kernel(` in the tree lives inside `core/bootstrap.ts::buildKernel`):
+`server.ts` already builds the kernel via `buildKernel([...])` (Plan 2 started it as `buildKernel([configModule])`; Plan 3 added `providerModule`; Plan 4 appended `reverseProxyModule`). Edit that SAME array in place to spread `coreModules` at the tail (canonical wiring pattern - do NOT introduce `createKernel` or a bare `new Kernel([...])`; the only `new Kernel(` in the tree lives inside `core/bootstrap.ts::buildKernel`):
 
 ```ts
 import { coreModules } from './modules/index.js'
@@ -1002,7 +1002,7 @@ const kernel = await buildKernel([
 ])
 ```
 
-Nothing is deleted from Plan 4. Plan 4 is transport-only and never contributed concern processors inline (roadmap decision #13); its transport processors (`protocol.decode`, `routing.execute` candidate-loop control, `upstream.execute` executor + `forward*` dispatch, `protocol.encode`, `egress` hijack + CORS + SSE trace frames + pumping the pre-wrapped streaming iterator, and the `error` block mapping) stay exactly as Plan 4 built them. The concern processors now populate `PROXY_PIPELINE` from the Plan 5 modules. The routes are still untouched — the pipeline is DARK until Task 12.
+Nothing is deleted from Plan 4. Plan 4 is transport-only and never contributed concern processors inline (roadmap decision #13); its transport processors (`protocol.decode`, `routing.execute` candidate-loop control, `upstream.execute` executor + `forward*` dispatch, `protocol.encode`, `egress` hijack + CORS + SSE trace frames + pumping the pre-wrapped streaming iterator, and the `error` block mapping) stay exactly as Plan 4 built them. The concern processors now populate `PROXY_PIPELINE` from the Plan 5 modules. The routes are still untouched - the pipeline is DARK until Task 12.
 
 - [ ] **Step 4: Typecheck**
 
@@ -1015,11 +1015,11 @@ Run: `npx vitest run src/modules`
 Expected: all module tests green, including `ordering.test.ts`.
 
 Run: `npm test`
-Expected: the existing suites (routes, executor, budget, guardrails, pii, routing) still green — this plan added files and moved registration; it did not change any wrapped function.
+Expected: the existing suites (routes, executor, budget, guardrails, pii, routing) still green - this plan added files and moved registration; it did not change any wrapped function.
 
-- [ ] **Step 6: Green-check (pipeline is DARK — behavior must be unchanged)**
+- [ ] **Step 6: Green-check (pipeline is DARK - behavior must be unchanged)**
 
-The pipeline is dark after this task: the routes still call the old inline handlers, so registering the modules must not change any live behavior. Boot a local Routerly on `:3000` and confirm it starts cleanly and the roadmap smoke set (non-streaming OpenAI, streaming OpenAI, Anthropic passthrough, `/v1/models`) responds exactly as before — this is a sanity check that adding modules to `buildKernel` did not break boot or the hot path, NOT the byte-diff gate. The full curl byte-diff vs `main` runs at the atomic flip (Task 12), which is where the pipeline goes live. If boot fails or any smoke response changes here, a module's `register()` has a side effect on live traffic — fix before commit.
+The pipeline is dark after this task: the routes still call the old inline handlers, so registering the modules must not change any live behavior. Boot a local Routerly on `:3000` and confirm it starts cleanly and the roadmap smoke set (non-streaming OpenAI, streaming OpenAI, Anthropic passthrough, `/v1/models`) responds exactly as before - this is a sanity check that adding modules to `buildKernel` did not break boot or the hot path, NOT the byte-diff gate. The full curl byte-diff vs `main` runs at the atomic flip (Task 12), which is where the pipeline goes live. If boot fails or any smoke response changes here, a module's `register()` has a side effect on live traffic - fix before commit.
 
 - [ ] **Step 7: Commit**
 
@@ -1030,7 +1030,7 @@ git commit -m "feat(modules): wire core modules into kernel (dark pipeline, rout
 
 ---
 
-### Task 9: Dedup — unify all cost math onto `calculateCost`
+### Task 9: Dedup - unify all cost math onto `calculateCost`
 
 > Decision #11 (aggressive dedup). The executor computes the completion cost inline at three sites (`llm/executor.ts` chat ~L247-250, stream ~L503-506, messages ~L593-596): `totalCostUsd = inputCostUsd + cachedCostUsd + outputCostUsd`. This inline total OMITS `cacheCreationInputTokens`, so it is a second, less-correct implementation of the cost formula. `cost/calculator.ts::calculateCost(inputTokens, outputTokens, model, cachedInputTokens?, cacheCreationInputTokens?)` is the canonical one and accounts for cache-creation. This task removes the inline total and routes all three sites through `calculateCost`.
 
@@ -1096,7 +1096,7 @@ describe('executor cost is computed by calculateCost (cache-creation aware)', ()
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/llm/executor.cost.test.ts`
-Expected: FAIL — emitted `totalCostUsd` omits the 400 cache-creation tokens, so it differs from `calculateCost`.
+Expected: FAIL - emitted `totalCostUsd` omits the 400 cache-creation tokens, so it differs from `calculateCost`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -1143,14 +1143,14 @@ git commit -m "refactor(cost): route executor cost through calculateCost (dedup,
 
 ---
 
-### Task 10: Dedup — remove dead `selectModel`
+### Task 10: Dedup - remove dead `selectModel`
 
 > Decision #11. `routing/selector.ts::selectModel` is a third, largely-unused model-selection path. Remove it IF AND ONLY IF a repo-wide grep proves no remaining caller. Never delete a proven-referenced export.
 
 **Files:**
 - Delete (conditional on Step 1): `packages/service/src/routing/selector.ts`, `packages/service/src/routing/selector.test.ts`
 
-- [ ] **Step 1: Prove there are no callers (grep gate — MANDATORY FIRST)**
+- [ ] **Step 1: Prove there are no callers (grep gate - MANDATORY FIRST)**
 
 Run exactly:
 
@@ -1180,7 +1180,7 @@ git commit -m "refactor(routing): remove dead selectModel path (grep-gated, zero
 
 ---
 
-### Task 11: Dedup — single `usage.json` scan helper
+### Task 11: Dedup - single `usage.json` scan helper
 
 > Decision #11. `readConfig('usage')` full-file scans are re-implemented at seven sites: `cost/budget.ts` (x3) and the `performance` / `health` / `rate-limit` / `fairness` routing policies. The `budget-remaining` policy reads usage transitively through `cost/budget.ts`, so it is covered once those route through the helper. Introduce ONE shared read helper and route all direct readers through it. Behavior is identical (same records read); only the number of read implementations drops to one.
 
@@ -1191,7 +1191,7 @@ git commit -m "refactor(routing): remove dead selectModel path (grep-gated, zero
 
 **Interfaces:**
 - Consumes: `readConfig` from `../config/loader.js`; `type UsageRecord` from `@routerly/shared`.
-- Produces: `export async function readUsageRecords(): Promise<UsageRecord[]>` — the single canonical usage read. Every current `await readConfig('usage')` (with its `as UsageRecord[]` cast) is replaced by `await readUsageRecords()`.
+- Produces: `export async function readUsageRecords(): Promise<UsageRecord[]>` - the single canonical usage read. Every current `await readConfig('usage')` (with its `as UsageRecord[]` cast) is replaced by `await readUsageRecords()`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1228,7 +1228,7 @@ describe('readUsageRecords', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/cost/usageStore.test.ts`
-Expected: FAIL — cannot find module `./usageStore.js`.
+Expected: FAIL - cannot find module `./usageStore.js`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -1239,7 +1239,7 @@ import { readConfig } from '../config/loader.js'
 
 // Single canonical usage read. All budget checks and usage-scanning routing policies
 // go through here instead of each calling readConfig('usage') with its own cast.
-// ponytail: thin wrapper by design — the value is ONE scan implementation + ONE type
+// ponytail: thin wrapper by design - the value is ONE scan implementation + ONE type
 // cast. Upgrade point: if usage.json growth (issue #124) forces a windowed or streamed
 // read, change it here once and every phase inherits it.
 export async function readUsageRecords(): Promise<UsageRecord[]> {
@@ -1257,7 +1257,7 @@ Expected: PASS.
 - [ ] **Step 5: Typecheck + full suite (parity of all usage scans)**
 
 Run: `npm run typecheck && npm test`
-Expected: green — budget checks and all four usage-scanning policies read the same records as before, now through one helper.
+Expected: green - budget checks and all four usage-scanning policies read the same records as before, now through one helper.
 
 - [ ] **Step 6: Commit**
 
@@ -1281,17 +1281,17 @@ If the note path has moved, locate it first with `mcp__obsidian-personal__search
 
 ---
 
-### Task 12: Atomic flip — route OpenAI + Anthropic through the pipeline; delete old inline handlers; full curl byte-diff gate
+### Task 12: Atomic flip - route OpenAI + Anthropic through the pipeline; delete old inline handlers; full curl byte-diff gate
 
 > **This is the single gate for the whole dark pipeline (Plans 4 + 5).** Everything before this task is dark and non-breaking: the kernel, config, provider, transport pipeline, and all concern modules are registered but `routes/openai.ts` / `routes/anthropic.ts` still serve live traffic through the old inline handlers. This task makes the pipeline LIVE by flipping the routes to `runProxy`, deletes the now-dead inline handlers, and gates the change on a full curl byte-diff vs a `main` build. The **streaming byte-diff is the highest-risk check** (roadmap §"Honest risk note"): the stream-transform-chain (`upstream.execute` raw iterator → `pii.output` wrap → `guardrail.response` wrap → `egress` pump) and the verbatim-passthrough lanes are the two places a subtle difference silently breaks Claude Code / SDK clients. If any byte-diff fails, REVERT the one-line route flip and the service stays green on the untouched inline handlers.
 
 **Files:**
-- Edit: `packages/service/src/routes/openai.ts` — POST handler builds the lane `ProxyContext` and calls `runProxy(getProxyPipeline(), ctx)`; delete the dead inline `handleOpenAICompletion` body + now-unused imports.
-- Edit: `packages/service/src/routes/anthropic.ts` — POST handler builds the lane `ProxyContext` and calls `runProxy(getProxyPipeline(), ctx)`; delete the dead inline Anthropic handler body + now-unused imports.
+- Edit: `packages/service/src/routes/openai.ts` - POST handler builds the lane `ProxyContext` and calls `runProxy(getProxyPipeline(), ctx)`; delete the dead inline `handleOpenAICompletion` body + now-unused imports.
+- Edit: `packages/service/src/routes/anthropic.ts` - POST handler builds the lane `ProxyContext` and calls `runProxy(getProxyPipeline(), ctx)`; delete the dead inline Anthropic handler body + now-unused imports.
 
 **Interfaces:**
-- Consumes: `runProxy`, `getProxyPipeline` (or the typed `PROXY_PIPELINE` narrowing at the use site), and the `ProxyContext` builder from Plan 4's `reverse-proxy/`. The auth/trace plugins already decorate `req`/`reply` exactly as today — the handler only assembles `ProxyContext` from the decorated request and delegates.
-- Produces: both POST routes delegate to the pipeline; the inline handler functions and their orphaned imports are gone. No `@routerly/shared` type, no `/api/*` route, no header, and no SSE frame changes — the wire output must be byte-identical to `main`.
+- Consumes: `runProxy`, `getProxyPipeline` (or the typed `PROXY_PIPELINE` narrowing at the use site), and the `ProxyContext` builder from Plan 4's `reverse-proxy/`. The auth/trace plugins already decorate `req`/`reply` exactly as today - the handler only assembles `ProxyContext` from the decorated request and delegates.
+- Produces: both POST routes delegate to the pipeline; the inline handler functions and their orphaned imports are gone. No `@routerly/shared` type, no `/api/*` route, no header, and no SSE frame changes - the wire output must be byte-identical to `main`.
 
 - [ ] **Step 1: Flip the OpenAI route to `runProxy`**
 
@@ -1302,7 +1302,7 @@ const ctx = buildOpenAIProxyContext(req, reply) // Plan 4 lane builder: fills pr
 await runProxy(getProxyPipeline(), ctx)
 ```
 
-Then delete the inline `handleOpenAICompletion` function body and every import it alone used (executor calls, guardrail/pii calls, block-payload builders, etc.) — those concerns now live in the modules and Plan 4's transport processors. Let the typechecker (Step 4) prove which imports are now orphaned.
+Then delete the inline `handleOpenAICompletion` function body and every import it alone used (executor calls, guardrail/pii calls, block-payload builders, etc.) - those concerns now live in the modules and Plan 4's transport processors. Let the typechecker (Step 4) prove which imports are now orphaned.
 
 - [ ] **Step 2: Flip the Anthropic route to `runProxy`**
 
@@ -1318,11 +1318,11 @@ Delete the inline Anthropic handler body and its now-unused imports. `/v1/messag
 - [ ] **Step 3: Typecheck + full suite**
 
 Run: `npm run typecheck && npm test`
-Expected: exit 0 and green. The typecheck surfaces every orphaned import left by the deleted handlers — remove each until clean. Existing route tests exercise the flipped path through the pipeline.
+Expected: exit 0 and green. The typecheck surfaces every orphaned import left by the deleted handlers - remove each until clean. Existing route tests exercise the flipped path through the pipeline.
 
 - [ ] **Step 4: FULL curl byte-diff vs a `main` build (THE GATE)**
 
-Build `main` and the flipped branch, run each against the roadmap §"Verification protocol" smoke set with a local Routerly on `:3000` and the test project token, and diff the raw bytes. The streaming diff is the highest-risk line — compare SSE frames verbatim (`data:` chunks, trace frames, `[DONE]`), not just the decoded text.
+Build `main` and the flipped branch, run each against the roadmap §"Verification protocol" smoke set with a local Routerly on `:3000` and the test project token, and diff the raw bytes. The streaming diff is the highest-risk line - compare SSE frames verbatim (`data:` chunks, trace frames, `[DONE]`), not just the decoded text.
 
 ```bash
 # capture each response from BOTH builds and `diff` them; they must be byte-identical
@@ -1330,11 +1330,11 @@ Build `main` and the flipped branch, run each against the roadmap §"Verificatio
 curl -s localhost:3000/v1/chat/completions -H "Authorization: Bearer $ROUTERLY_TEST_TOKEN" \
   -H 'content-type: application/json' \
   -d '{"model":"routerly/ada","messages":[{"role":"user","content":"ping"}]}'
-# 2. streaming OpenAI  (HIGHEST RISK — stream-transform-chain; diff SSE frames byte-for-byte)
+# 2. streaming OpenAI  (HIGHEST RISK - stream-transform-chain; diff SSE frames byte-for-byte)
 curl -sN localhost:3000/v1/chat/completions -H "Authorization: Bearer $ROUTERLY_TEST_TOKEN" \
   -H 'content-type: application/json' \
   -d '{"model":"routerly/ada","stream":true,"messages":[{"role":"user","content":"ping"}]}'
-# 3. Anthropic passthrough (verbatim lane — must stay byte-verbatim)
+# 3. Anthropic passthrough (verbatim lane - must stay byte-verbatim)
 curl -sN localhost:3000/v1/messages -H "Authorization: Bearer $ROUTERLY_TEST_TOKEN" \
   -H 'content-type: application/json' -H 'anthropic-version: 2023-06-01' \
   -d '{"model":"claude-sonnet-4","max_tokens":64,"messages":[{"role":"user","content":"ping"}]}'
@@ -1342,7 +1342,7 @@ curl -sN localhost:3000/v1/messages -H "Authorization: Bearer $ROUTERLY_TEST_TOK
 curl -s localhost:3000/v1/models -H "Authorization: Bearer $ROUTERLY_TEST_TOKEN"
 ```
 
-Expected: every response byte-identical to the `main` build. Per decision #11, the diff applies to the WIRE response only — internal `usage.json` cost figures may legitimately shift (cache-creation-aware calculator) and are NOT part of this gate.
+Expected: every response byte-identical to the `main` build. Per decision #11, the diff applies to the WIRE response only - internal `usage.json` cost figures may legitimately shift (cache-creation-aware calculator) and are NOT part of this gate.
 
 - [ ] **Step 5: Browser UAT (build dashboard first)**
 
@@ -1350,7 +1350,7 @@ Run: `npm run build --workspace=packages/dashboard`, then log in, open a project
 
 - [ ] **Step 6: Revert path if the gate fails**
 
-If ANY byte-diff in Step 4 fails (streaming especially), REVERT the one-line route flip in the offending route (restore the inline handler call) — the service returns to green on the untouched inline handlers, and the pipeline goes back to dark. Diagnose the diff (most likely the stream-transform-chain wrap order or an `egress` framing detail), fix in Plan 4's transport/helpers or the Plan 5 wrap processors, and re-run the gate. Do NOT commit a failing flip.
+If ANY byte-diff in Step 4 fails (streaming especially), REVERT the one-line route flip in the offending route (restore the inline handler call) - the service returns to green on the untouched inline handlers, and the pipeline goes back to dark. Diagnose the diff (most likely the stream-transform-chain wrap order or an `egress` framing detail), fix in Plan 4's transport/helpers or the Plan 5 wrap processors, and re-run the gate. Do NOT commit a failing flip.
 
 - [ ] **Step 7: Update the KB note (pipeline is live)**
 
@@ -1376,7 +1376,7 @@ git commit -m "feat(reverse-proxy): atomic flip routes to runProxy; delete inlin
 
 ## Self-review
 
-### FEATURE INVENTORY — parity proof
+### FEATURE INVENTORY - parity proof
 
 Every capability present before this plan remains reachable after it. Each row names the module (or unchanged call site) that now owns the capability and confirms it is still wired.
 
@@ -1420,20 +1420,20 @@ Every capability present before this plan remains reachable after it. Each row n
 | Catalog sync | `syncModelsFromCatalog` | `provider` (Plan 3) | management / startup (`routes/api.ts`) | n/a | yes (unchanged, not a pipeline concern; roadmap decision #9) |
 | Telemetry | `pingTelemetry` | `logging` (nominal) | startup (`server.ts`) + `routes/api.ts` | n/a | yes (unchanged call sites) |
 | Audit | `logAudit` | `logging` (nominal) | management (`routes/api.ts`) | n/a | yes (unchanged call sites) |
-| Response cache | none (does not exist) | `cache` (no-op predisposition) | — | — | n/a (YAGNI; slot reserved, no processor) |
+| Response cache | none (does not exist) | `cache` (no-op predisposition) | - | - | n/a (YAGNI; slot reserved, no processor) |
 
 Nothing is dropped. Every routing policy, every guardrail rule type, PII input+output (incl. streaming buffer), budget/limits, catalog sync, routing memory, telemetry and audit is accounted for and still wired.
 
-### Processor ordering — unchanged vs Plan 4
+### Processor ordering - unchanged vs Plan 4
 
 The Task 8 `ordering.test.ts` asserts the exact per-phase sequence the modules produce:
 
 - `ingress`: `[logging.ingress]`
-- `request.preprocess`: `[pii.input, guardrail.request]` — input PII before request guardrail (matches `routes/*.ts`: "Runs BEFORE guardrails so the judge never sees raw PII"), enforced by `pii.input` `weight: -10` and `guardrail.request` `after: ['pii.input']`.
-- `routing.prepare`: `[routing.prepare, routing.memory]` — memory after routing, enforced by `after: ['routing.prepare']`.
+- `request.preprocess`: `[pii.input, guardrail.request]` - input PII before request guardrail (matches `routes/*.ts`: "Runs BEFORE guardrails so the judge never sees raw PII"), enforced by `pii.input` `weight: -10` and `guardrail.request` `after: ['pii.input']`.
+- `routing.prepare`: `[routing.prepare, routing.memory]` - memory after routing, enforced by `after: ['routing.prepare']`.
 - `upstream.prepare`: `[budget.upstream]`.
-- `response.postprocess`: `[pii.output, guardrail.response]` — output PII before response guardrail, enforced by `pii.output` `weight: -10` and `guardrail.response` `after: ['pii.output']`.
-- `finalize`: `[usage.finalize, logging.finalize]` — trace flush after usage, enforced by `logging.finalize` `after: ['usage.finalize']`.
+- `response.postprocess`: `[pii.output, guardrail.response]` - output PII before response guardrail, enforced by `pii.output` `weight: -10` and `guardrail.response` `after: ['pii.output']`.
+- `finalize`: `[usage.finalize, logging.finalize]` - trace flush after usage, enforced by `logging.finalize` `after: ['usage.finalize']`.
 
 This is the same order the current inline route handlers ran (Plan 4 is transport-only; the concern order is reproduced entirely by these modules). The wrapped functions are byte-for-byte identical; combined with the roadmap curl byte-diff + browser UAT at the atomic flip (Task 12), the wire output is unchanged. The asymmetry is preserved: `routing.memory`, `pii.output` and `guardrail.response` early-return for `ctx.protocol !== 'openai'`, reproducing `routes/anthropic.ts` having none of them, against the single shared `PROXY_PIPELINE`.
 
@@ -1450,6 +1450,6 @@ Aggressive dedup of duplicated internal computation, in scope for Plan 5 (Tasks 
 
 - **Single `PROXY_PIPELINE`, protocol guard for asymmetry.** The frozen token is singular, so OpenAI-only processors guard on `ctx.protocol` rather than living in a separate registry. Simplest approach consistent with the frozen contract.
 - **Executor stays the authoritative budget/usage recorder.** `budget.upstream` only gates candidate eligibility; `usage.finalize` records only the guardrail-blocked event. This avoids the double-count a naive "trackUsage in finalize for everything" would cause, and honors roadmap decision #3 (usage persistence unchanged).
-- **`cache` is a no-op** — verified by grep that no response cache exists. Not invented (YAGNI).
+- **`cache` is a no-op** - verified by grep that no response cache exists. Not invented (YAGNI).
 - **`ProxyContext.blockedBy?` and `ProxyContext.guardrailTriggered?`** are Plan-4-owned fields on the frozen shape; this plan adds no context field, it only reads/writes them (`blockedBy` hands the guardrail block reason to `usage.finalize`; `guardrailTriggered` carries the log-only trigger for internal usage attribution). `ProxyContext` is internal (not a frozen public contract).
-- **Streaming stream-transform-chain (roadmap decision #13).** In `response.postprocess` the `pii.output` processor (weight -10, first) WRAPS the raw provider iterator with `wrapWithStreamingScrubber`, then `guardrail.response` (`after: ['pii.output']`, second) WRAPS that with `wrapWithResponseGuardrail`. PII wrapper innermost, guardrail wrapper outermost — identical to today's inline order (PII scrub before guardrail check). Plan 4's `egress` only PUMPS the doubly-wrapped iterator. The wrap helpers live in Plan 4's `reverse-proxy/helpers.ts` and are the existing `StreamingScrubber` / buffering code lifted verbatim into generator form (the one place decision #6's "no rewrite" is stretched to "re-shape into a generator"). The streaming curl byte-diff at Task 12 is the acceptance gate.
+- **Streaming stream-transform-chain (roadmap decision #13).** In `response.postprocess` the `pii.output` processor (weight -10, first) WRAPS the raw provider iterator with `wrapWithStreamingScrubber`, then `guardrail.response` (`after: ['pii.output']`, second) WRAPS that with `wrapWithResponseGuardrail`. PII wrapper innermost, guardrail wrapper outermost - identical to today's inline order (PII scrub before guardrail check). Plan 4's `egress` only PUMPS the doubly-wrapped iterator. The wrap helpers live in Plan 4's `reverse-proxy/helpers.ts` and are the existing `StreamingScrubber` / buffering code lifted verbatim into generator form (the one place decision #6's "no rewrite" is stretched to "re-shape into a generator"). The streaming curl byte-diff at Task 12 is the acceptance gate.

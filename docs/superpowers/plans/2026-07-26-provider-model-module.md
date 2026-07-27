@@ -11,13 +11,13 @@
 ## Global Constraints
 
 - **Module system:** NodeNext ESM. Every relative import MUST use a `.js` extension. Node builtins use the `node:` prefix.
-- **TypeScript:** `strict`, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `noImplicitOverride` all on. Optional object properties must be omitted, not set to `undefined`. Index access returns `T | undefined` — narrow before use.
+- **TypeScript:** `strict`, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `noImplicitOverride` all on. Optional object properties must be omitted, not set to `undefined`. Index access returns `T | undefined` - narrow before use.
 - **Tests:** Vitest. Test files are `*.test.ts` in the SAME directory as the source. Run per-file with `npx vitest run <path>` from `packages/service/`.
 - **Coverage: NO coverage gate** for this refactory phase (owner decision, 2026-07-26). Minimal behavioral tests only: resolving `PROVIDER_REGISTRY` returns `getProviderAdapter`, which returns a working adapter for a known provider (`openai`) and throws for a provider with no adapter (`mistral`). Do not chase line/branch coverage.
 - **No new dependencies.** Do not add anything to `package.json`.
-- **Wrapper strategy — ABSOLUTE.** Hand back the REAL `getProviderAdapter`. Do NOT rewrite adapters, the `adapters` record, or the lookup. The module is a registration shell only; no logic is copied.
-- **Frozen `ProviderAdapter` contract (roadmap decision #2).** `messages` / `messagesStream` stay OPTIONAL — `executor.ts:564` guards on `if (!adapter.messages)`. Do NOT make them required. Do NOT touch `providers/types.ts`.
-- **The 7 adapterless providers stay throwing.** `mistral`, `cohere`, `xai`, `deepseek`, `groq`, `together`, `perplexity` are in the `Provider` union (`shared/types/config.ts`) but have no entry in the `adapters` record, so `getProviderAdapter` throws `Unknown provider ...` for them today. Preserve that exactly — do NOT add adapters for them.
+- **Wrapper strategy - ABSOLUTE.** Hand back the REAL `getProviderAdapter`. Do NOT rewrite adapters, the `adapters` record, or the lookup. The module is a registration shell only; no logic is copied.
+- **Frozen `ProviderAdapter` contract (roadmap decision #2).** `messages` / `messagesStream` stay OPTIONAL - `executor.ts:564` guards on `if (!adapter.messages)`. Do NOT make them required. Do NOT touch `providers/types.ts`.
+- **The 7 adapterless providers stay throwing.** `mistral`, `cohere`, `xai`, `deepseek`, `groq`, `together`, `perplexity` are in the `Provider` union (`shared/types/config.ts`) but have no entry in the `adapters` record, so `getProviderAdapter` throws `Unknown provider ...` for them today. Preserve that exactly - do NOT add adapters for them.
 - **Single-instance model identity is unchanged (roadmap decision #9).** No `ModelDefinition`/`ModelInstance` split, no alias layer. `ModelConfig` stays the sole routable entity. This plan reorganizes only WHERE `getProviderAdapter` is reachable from, not the model data model.
 - **English only** for all code, comments, identifiers, and commit messages. No em dashes.
 - **Scope fence:** create files only under `packages/service/src/modules/provider/`; Task 2 makes one additive edit to the kernel bootstrap module list. Do NOT modify `providers/index.ts`, `providers/types.ts`, any adapter, `executor.ts`, or any route.
@@ -31,13 +31,13 @@ export const PROVIDER_REGISTRY = token<{
 }>('provider.registry')
 ```
 
-Do NOT define `PROVIDER_REGISTRY` in this plan — import it. If Plan 2 is not merged when this plan starts, block and land Plan 2 first (it is a hard prerequisite: this plan cannot register a token that does not exist).
+Do NOT define `PROVIDER_REGISTRY` in this plan - import it. If Plan 2 is not merged when this plan starts, block and land Plan 2 first (it is a hard prerequisite: this plan cannot register a token that does not exist).
 
 **All commands below run from `packages/service/`** unless stated otherwise.
 
 ---
 
-### Task 1: Provider module — register `getProviderAdapter` under `PROVIDER_REGISTRY`
+### Task 1: Provider module - register `getProviderAdapter` under `PROVIDER_REGISTRY`
 
 **Files:**
 - Create: `packages/service/src/modules/provider/index.ts`
@@ -50,9 +50,9 @@ Do NOT define `PROVIDER_REGISTRY` in this plan — import it. If Plan 2 is not m
   - `getProviderAdapter` from `../../providers/index.js` (existing, UNCHANGED).
   - `ModelConfig`, `ProviderAdapter` types (existing).
 - Produces:
-  - `export const providerModule: RouterlyModule` — manifest `{ id: 'provider', version: '0.4.0', dependsOn: { config: '^0.4.0' } }`. `register({ container })` calls `container.register(PROVIDER_REGISTRY, { getProviderAdapter })`. No `start` / `stop` (nothing to boot or tear down).
+  - `export const providerModule: RouterlyModule` - manifest `{ id: 'provider', version: '0.4.0', dependsOn: { config: '^0.4.0' } }`. `register({ container })` calls `container.register(PROVIDER_REGISTRY, { getProviderAdapter })`. No `start` / `stop` (nothing to boot or tear down).
 
-The value stored under the token is literally `{ getProviderAdapter }` — the real function reference. No wrapper closure, no re-implementation.
+The value stored under the token is literally `{ getProviderAdapter }` - the real function reference. No wrapper closure, no re-implementation.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -98,7 +98,7 @@ describe('provider module', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/modules/provider/index.test.ts`
-Expected: FAIL — cannot find module `./index.js` (the module does not exist yet).
+Expected: FAIL - cannot find module `./index.js` (the module does not exist yet).
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -117,7 +117,7 @@ import { getProviderAdapter } from '../../providers/index.js'
  * existing callers (executor.ts, routes/*) are untouched. Zero behavior change.
  *
  * ponytail: value is the real function, not a closure. No dynamic/contrib
- * adapter registration here (roadmap decisions #6/#9) — see Self-review.
+ * adapter registration here (roadmap decisions #6/#9) - see Self-review.
  */
 export const providerModule = defineModule({
   manifest: { id: 'provider', version: '0.4.0', dependsOn: { config: '^0.4.0' } },
@@ -153,10 +153,10 @@ git commit -m "feat(provider): expose getProviderAdapter via PROVIDER_REGISTRY m
 - [ ] **Step 1: Locate the server.ts module array**
 
 Run: `grep -rn "buildKernel(" packages/service/src/`
-Expected: one call site — the module array Plan 2 assembles in `server.ts`, e.g.:
+Expected: one call site - the module array Plan 2 assembles in `server.ts`, e.g.:
 
 ```ts
-// packages/service/src/server.ts (illustrative — Plan 2's actual shape)
+// packages/service/src/server.ts (illustrative - Plan 2's actual shape)
 import { buildKernel } from './core/bootstrap.js'
 import { configModule } from './modules/config/index.js'
 
@@ -186,7 +186,7 @@ Expected: exit 0. Catches any path or type mismatch in the wiring.
 - [ ] **Step 4: Verify the kernel boots with both modules and the token resolves**
 
 Run: `npm test`
-Expected: previously-passing suites still green, including Plan 2's kernel-bootstrap test. If Plan 2's bootstrap test asserts on `startedOrder`, confirm it now lists `provider` after `config` (dependency order). No new test file is required here — Task 1 proves the module's `register` contract in isolation; `npm test` proves it slots into the live kernel without breaking boot.
+Expected: previously-passing suites still green, including Plan 2's kernel-bootstrap test. If Plan 2's bootstrap test asserts on `startedOrder`, confirm it now lists `provider` after `config` (dependency order). No new test file is required here - Task 1 proves the module's `register` contract in isolation; `npm test` proves it slots into the live kernel without breaking boot.
 
 - [ ] **Step 5: Commit**
 
@@ -197,7 +197,7 @@ git commit -m "feat(provider): register provider module in kernel bootstrap"
 
 ---
 
-### Task 3: Verification — no behavior change, contract untouched
+### Task 3: Verification - no behavior change, contract untouched
 
 **Files:** none created. This task confirms the predisposition changed nothing observable.
 
@@ -208,7 +208,7 @@ git commit -m "feat(provider): register provider module in kernel bootstrap"
 - [ ] **Step 1: Confirm direct callers are unchanged**
 
 Run: `grep -rn "getProviderAdapter" packages/service/src/llm/executor.ts packages/service/src/routes/anthropic.ts packages/service/src/routes/api.ts`
-Expected: unchanged from before this plan — all still `import { getProviderAdapter } from '../providers/index.js'` and call it directly (`executor.ts:209`, `:362`, `:563`; `routes/api.ts:676`). This plan added a DI path; it did NOT migrate any caller.
+Expected: unchanged from before this plan - all still `import { getProviderAdapter } from '../providers/index.js'` and call it directly (`executor.ts:209`, `:362`, `:563`; `routes/api.ts:676`). This plan added a DI path; it did NOT migrate any caller.
 
 - [ ] **Step 2: Confirm the frozen contract is untouched**
 
@@ -218,7 +218,7 @@ Expected: empty. `providers/types.ts` (the `ProviderAdapter` interface with opti
 - [ ] **Step 3: Typecheck + full suite**
 
 Run: `npm run typecheck && npm test`
-Expected: exit 0; all suites green. The service behaves identically — `getProviderAdapter` is now reachable two ways (direct import AND `PROVIDER_REGISTRY`), and both return the same adapter instances from the same static record.
+Expected: exit 0; all suites green. The service behaves identically - `getProviderAdapter` is now reachable two ways (direct import AND `PROVIDER_REGISTRY`), and both return the same adapter instances from the same static record.
 
 - [ ] **Step 4: Commit (if any tracking file changed)**
 
@@ -249,7 +249,7 @@ git status
 
 | # | Plan file | Deliverable |
 |---|-----------|-------------|
-| 1 | `2026-07-26-modular-kernel-foundation.md` | `core/` primitives — additive, nothing wired |
+| 1 | `2026-07-26-modular-kernel-foundation.md` | `core/` primitives - additive, nothing wired |
 | 2 | `2026-07-26-kernel-bootstrap-config-module.md` | Kernel boots inside `server.ts`; config wrapped as first module; `core/tokens.ts` defined |
 | 3 | `2026-07-26-provider-model-module.md` (this doc) | `getProviderAdapter` also reachable via `PROVIDER_REGISTRY`; adapters + frozen contract unchanged |
 | 4 | `2026-07-26-reverse-proxy-pipeline.md` | Phase pipeline + `ProxyContext`; routes delegate 1:1; wire byte-identical |
