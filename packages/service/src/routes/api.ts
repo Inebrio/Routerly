@@ -22,8 +22,8 @@ import { sendTestNotification } from '../notifications/sender.js';
 import { emitEvent } from '../notifications/emitter.js';
 import { ALL_PERMISSIONS, BUILT_IN_ROLES, getEffectiveRoles } from '../auth/roles.js';
 import { updateChecker } from '../update-checker.js';
-import { logAudit } from '../audit/logger.js';
-import type { AuditEntry } from '../audit/logger.js';
+import { logAudit } from '../modules/audit/logger.js';
+import type { AuditEntry } from '../modules/audit/logger.js';
 
 const { version: pkgVersion } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf-8')) as { version: string };
 
