@@ -63,6 +63,11 @@ export const NOTIFICATIONS = token<{
   sendTestNotification: typeof import('../modules/notifications/sender.js').sendTestNotification;
 }>('notifications.registry');
 
+export const OBSERVABILITY = token<{
+  getMetricsSnapshot: typeof import('../modules/observability/metrics-snapshot.js').getMetricsSnapshot;
+  startIntegrationRunner: typeof import('../modules/observability/runner.js').startIntegrationRunner;
+}>('observability.registry');
+
 export const ROUTER = token<{
   routeRequest(
     request: ChatCompletionRequest,
