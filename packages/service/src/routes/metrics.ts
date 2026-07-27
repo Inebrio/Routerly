@@ -8,7 +8,7 @@ import {
   renderMetric,
   type Metric,
   type Sample,
-} from '../integrations/metrics-snapshot.js';
+} from '../modules/observability/metrics-snapshot.js';
 
 export const metricsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/metrics', async (request, reply) => {

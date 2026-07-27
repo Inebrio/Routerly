@@ -14,7 +14,7 @@ import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage } from './mod
 import { migrateProjectConfigs } from './modules/config/migrate.js';
 import { pingTelemetry } from './telemetry.js';
 import { updateChecker } from './update-checker.js';
-import { startIntegrationRunner } from './integrations/runner.js';
+import { startIntegrationRunner } from './modules/observability/runner.js';
 import { buildKernel } from './core/lifecycle/bootstrap.js';
 import { configModule } from './modules/config/index.js';
 import { providerModule } from './modules/provider/index.js';
