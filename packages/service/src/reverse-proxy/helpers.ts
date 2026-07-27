@@ -60,8 +60,9 @@ export function primaryText(request: Pick<ChatCompletionRequest, 'messages'>): s
 
 /**
  * Full conversation text for multi-turn guardrail scanning (openai.ts L153).
- * Uses `m?.role ?? 'user'` (the OpenAI form). Anthropic messages always carry a
- * role, so the `?? 'user'` fallback never fires and the bytes are identical.
+ * Uses `m?.role ?? 'user'` (the OpenAI form). Assumes well-formed, Zod-validated
+ * messages (Anthropic always carries a role); on that assumption the `?? 'user'`
+ * fallback never fires and the bytes are identical to anthropic.ts's inline code.
  */
 export function conversationText(request: Pick<ChatCompletionRequest, 'messages'>): string {
   const msgs = request.messages ?? []
@@ -78,6 +79,9 @@ export function assembledResponseText(ctx: ProxyContext): string {
 /**
  * Non-streaming output PII scrub, in place, per first choice (openai.ts L493-506).
  * Returns the found entity list; the caller (Plan 5 pii.output) emits the trace.
+ * Callers MUST gate this behind a "should scrub" check (entities/patterns configured)
+ * themselves: scrubText defaults to ALL_ENTITIES when effective.entities is undefined,
+ * and this function does not gate that on its own.
  */
 export function applyResponseScrub(ctx: ProxyContext, effective: EffectivePii): string[] {
   const response = ctx.result?.body as ChatCompletionResponse | undefined

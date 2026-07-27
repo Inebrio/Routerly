@@ -1,8 +1,17 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+
+vi.mock('../middleware/guardrails.js', () => ({ checkGuardrails: vi.fn() }))
+
 import {
   buildContentFilterBlock, primaryText, conversationText, wrapWithStreamingScrubber,
+  applyResponseScrub, wrapWithResponseGuardrail, assembledResponseText,
 } from './helpers.js'
 import type { ProxyContext } from './context.js'
+import { checkGuardrails } from '../middleware/guardrails.js'
+
+const mockCheckGuardrails = vi.mocked(checkGuardrails)
+
+afterEach(() => vi.resetAllMocks())
 
 function ctxOf(partial: Partial<ProxyContext>): ProxyContext {
   return { protocol: 'openai', traceId: 't1', request: { model: 'm', messages: [] }, ...partial } as unknown as ProxyContext
@@ -46,5 +55,84 @@ describe('helpers', () => {
     }
     const out = await collect(wrapWithStreamingScrubber(src(), effective, ctxOf({})))
     expect((out[1] as any).choices[0].delta.content).toBe('hello')
+  })
+
+  it('assembledResponseText extracts the first choice message content', () => {
+    const ctx = ctxOf({ result: { kind: 'json', body: { choices: [{ message: { content: 'hi there' } }] } } as any })
+    expect(assembledResponseText(ctx)).toBe('hi there')
+  })
+
+  it('assembledResponseText returns empty string when content is absent or non-string', () => {
+    expect(assembledResponseText(ctxOf({ result: { kind: 'json', body: { choices: [{ message: {} }] } } as any }))).toBe('')
+    expect(assembledResponseText(ctxOf({}))).toBe('')
+    expect(assembledResponseText(ctxOf({ result: { kind: 'json', body: { choices: [{ message: { content: 42 } }] } } as any }))).toBe('')
+  })
+
+  it('applyResponseScrub mutates the message content in place and returns found entities', () => {
+    const body: any = { choices: [{ message: { content: 'contact me at john@example.com please' } }] }
+    const ctx = ctxOf({ result: { kind: 'json', body } as any })
+    const found = applyResponseScrub(ctx, { entities: ['EMAIL'], customPatterns: [] })
+    expect(found).toEqual(['EMAIL'])
+    expect(body.choices[0].message.content).toBe('contact me at [EMAIL] please')
+  })
+
+  it('applyResponseScrub is a no-op when content is not a string', () => {
+    const body: any = { choices: [{ message: {} }] }
+    const ctx = ctxOf({ result: { kind: 'json', body } as any })
+    const found = applyResponseScrub(ctx, { entities: ['EMAIL'], customPatterns: [] })
+    expect(found).toEqual([])
+    expect(body.choices[0].message).toEqual({})
+  })
+
+  it('applyResponseScrub is a no-op when nothing is found', () => {
+    const body: any = { choices: [{ message: { content: 'nothing sensitive here' } }] }
+    const ctx = ctxOf({ result: { kind: 'json', body } as any })
+    const found = applyResponseScrub(ctx, { entities: ['EMAIL'], customPatterns: [] })
+    expect(found).toEqual([])
+    expect(body.choices[0].message.content).toBe('nothing sensitive here')
+  })
+
+  describe('wrapWithResponseGuardrail', () => {
+    const project = {
+      guardrails: {
+        rules: [{ id: 'r1', enabled: true, block: true, target: 'response' }],
+      },
+    } as any
+
+    async function* src() {
+      yield { choices: [{ index: 0, delta: { content: 'hello ' }, finish_reason: null }] }
+      yield { choices: [{ index: 0, delta: { content: 'world' }, finish_reason: null }] }
+    }
+
+    it('BLOCK path: drops buffered chunks, yields a single content_filter chunk, sets ctx.blockedBy', async () => {
+      mockCheckGuardrails.mockResolvedValue({ triggered: 'r1', block: true, evaluated: [] } as any)
+      const ctx = ctxOf({})
+      const out = await collect(wrapWithResponseGuardrail(src(), project, {}, { info: vi.fn() } as any, ctx))
+      expect(out).toHaveLength(1)
+      expect((out[0] as any).choices[0].finish_reason).toBe('content_filter')
+      expect((out[0] as any).choices[0].delta).toEqual({})
+      expect(ctx.blockedBy).toBe('r1')
+    })
+
+    it('PASS-THROUGH path: no block rule configured, all chunks yielded unchanged, blockedBy unset', async () => {
+      const passProject = {} as any
+      const ctx = ctxOf({})
+      const out = await collect(wrapWithResponseGuardrail(src(), passProject, {}, { info: vi.fn() } as any, ctx))
+      expect(out).toHaveLength(2)
+      expect((out[0] as any).choices[0].delta.content).toBe('hello ')
+      expect((out[1] as any).choices[0].delta.content).toBe('world')
+      expect(ctx.blockedBy).toBeUndefined()
+      expect(mockCheckGuardrails).not.toHaveBeenCalled()
+    })
+
+    it('PASS-THROUGH path: block rule configured but checkGuardrails does not trigger a block', async () => {
+      mockCheckGuardrails.mockResolvedValue({ evaluated: [] } as any)
+      const ctx = ctxOf({})
+      const out = await collect(wrapWithResponseGuardrail(src(), project, {}, { info: vi.fn() } as any, ctx))
+      expect(out).toHaveLength(2)
+      expect((out[0] as any).choices[0].delta.content).toBe('hello ')
+      expect((out[1] as any).choices[0].delta.content).toBe('world')
+      expect(ctx.blockedBy).toBeUndefined()
+    })
   })
 })
