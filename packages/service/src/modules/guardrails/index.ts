@@ -1,10 +1,10 @@
 // packages/service/src/modules/guardrails.ts
-import { defineModule, shortCircuit, type Processor, type RouterlyModule } from '../core/index.js'
-import { PROXY_PIPELINE } from '../core/tokens.js'
-import type { ProxyContext } from '../reverse-proxy/context.js'
-import { checkGuardrails, buildRequestInjection } from '../middleware/guardrails.js'
-import { appendTrace } from '../routing/traceStore.js'
-import { BudgetExceededError } from '../llm/executor.js'
+import { defineModule, shortCircuit, type Processor, type RouterlyModule } from '../../core/index.js'
+import { PROXY_PIPELINE } from '../../core/tokens.js'
+import type { ProxyContext } from '../../reverse-proxy/context.js'
+import { checkGuardrails, buildRequestInjection } from './guardrails.js'
+import { appendTrace } from '../../routing/traceStore.js'
+import { BudgetExceededError } from '../../llm/executor.js'
 import {
   buildContentFilterBlock,
   writeOpenAIStreamingBlock,
@@ -12,7 +12,7 @@ import {
   conversationText,
   assembledResponseText,
   wrapWithResponseGuardrail,
-} from '../reverse-proxy/helpers.js'
+} from '../../reverse-proxy/helpers.js'
 
 const request: Processor<ProxyContext> = {
   id: 'guardrail.request',

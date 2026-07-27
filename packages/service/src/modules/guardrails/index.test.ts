@@ -1,17 +1,17 @@
 // packages/service/src/modules/guardrails.test.ts
 import { describe, it, expect, vi } from 'vitest'
-import { ServiceContainer, EventBus, ProcessorRegistry } from '../core/index.js'
-import { PROXY_PIPELINE } from '../core/tokens.js'
-import type { ProxyContext } from '../reverse-proxy/context.js'
-import { BudgetExceededError } from '../llm/executor.js'
+import { ServiceContainer, EventBus, ProcessorRegistry } from '../../core/index.js'
+import { PROXY_PIPELINE } from '../../core/tokens.js'
+import type { ProxyContext } from '../../reverse-proxy/context.js'
+import { BudgetExceededError } from '../../llm/executor.js'
 
 const checkGuardrailsMock = vi.fn()
-vi.mock('../middleware/guardrails.js', () => ({
+vi.mock('./guardrails.js', () => ({
   checkGuardrails: (...args: unknown[]) => checkGuardrailsMock(...args),
   buildRequestInjection: () => null,
 }))
 
-const { guardrailsModule } = await import('./guardrails.js')
+const { guardrailsModule } = await import('./index.js')
 
 function harness() {
   const container = new ServiceContainer()
