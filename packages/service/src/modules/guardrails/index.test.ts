@@ -2,8 +2,8 @@
 import { describe, it, expect, vi } from 'vitest'
 import { ServiceContainer, EventBus, ProcessorRegistry } from '../../core/index.js'
 import { PROXY_PIPELINE } from '../../core/tokens.js'
-import type { ProxyContext } from '../../reverse-proxy/context.js'
-import { BudgetExceededError } from '../../llm/executor.js'
+import type { ProxyContext } from '../reverse-proxy/context.js'
+import { BudgetExceededError } from '../reverse-proxy/execute.js'
 
 const checkGuardrailsMock = vi.fn()
 vi.mock('./guardrails.js', () => ({

@@ -1,8 +1,8 @@
 import type { ModelConfig, ProjectConfig } from '@routerly/shared';
 import { readConfig } from '../../config/loader.js';
-import { llmChat, BudgetExceededError } from '../../../llm/executor.js';
+import { llmChat, BudgetExceededError } from '../../reverse-proxy/execute.js';
 import { getRoutingHistory } from '../routingMemoryStore.js';
-import type { LLMCallContext } from '../../../llm/executor.js';
+import type { LLMCallContext } from '../../reverse-proxy/execute.js';
 import { getLimitUsageSnapshot } from '../../budget/budget.js';
 import type { LimitSnapshot } from '../../budget/budget.js';
 import type { PolicyFn } from './types.js';

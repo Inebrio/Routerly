@@ -11,8 +11,8 @@ import type { ProjectConfig, ProjectToken } from '@routerly/shared';
 import type { FastifyBaseLogger } from 'fastify';
 import { classifyIntent } from '../routing/intent/classifier.js';
 import { getEmbeddingProvider } from '../embeddings/dispatch.js';
-import { llmChat, checkBudget, BudgetExceededError } from '../../llm/executor.js';
-import type { LLMCallContext } from '../../llm/executor.js';
+import { llmChat, checkBudget, BudgetExceededError } from '../reverse-proxy/execute.js';
+import type { LLMCallContext } from '../reverse-proxy/execute.js';
 import { readConfig } from '../config/loader.js';
 import { trackUsage } from '../usage/tracker.js';
 

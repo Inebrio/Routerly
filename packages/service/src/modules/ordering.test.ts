@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { ServiceContainer, EventBus, ProcessorRegistry } from '../core/index.js'
 import { CONFIG_STORE, PROXY_PIPELINE } from '../core/tokens.js'
-import type { ProxyContext } from '../reverse-proxy/context.js'
+import type { ProxyContext } from './reverse-proxy/context.js'
 import { readConfig, writeConfig, appendUsageRecord } from '../modules/config/loader.js'
 import { coreModules } from './index.js'
 

@@ -19,7 +19,7 @@ import { buildKernel } from './core/lifecycle/bootstrap.js';
 import { configModule } from './modules/config/index.js';
 import { providerModule } from './modules/provider/index.js';
 import { catalogModule } from './modules/catalog/index.js';
-import { reverseProxyModule } from './reverse-proxy/index.js';
+import { reverseProxyModule } from './modules/reverse-proxy/index.js';
 import { coreModules } from './modules/index.js';
 import { CONTRIB_MODULES } from './core/contrib.js';
 import type { Kernel } from './core/index.js';
