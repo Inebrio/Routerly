@@ -20,6 +20,7 @@ import { configModule } from './modules/config/index.js';
 import { providerModule } from './modules/provider/index.js';
 import { reverseProxyModule } from './reverse-proxy/index.js';
 import { coreModules } from './modules/index.js';
+import { CONTRIB_MODULES } from './core/contrib.js';
 import type { Kernel } from './core/index.js';
 
 // The modular kernel (0.4.0) is decorated onto the Fastify instance so later
@@ -60,6 +61,7 @@ export async function buildServer() {
     providerModule,     // Plan 3  (manifest id 'provider')
     reverseProxyModule, // Plan 4  (owns PROXY_PIPELINE, transport-only, dark)
     ...coreModules,     // Plan 5  (concern processors)
+    ...CONTRIB_MODULES, // Plan 6  (inert extension point, empty this phase)
   ]);
   fastify.decorate('kernel', kernel);
   fastify.addHook('onClose', async () => {
