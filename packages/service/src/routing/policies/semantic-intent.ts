@@ -1,6 +1,6 @@
 import type { SemanticIntentConfig } from '@routerly/shared';
 import { classifyIntent } from '../intent/classifier.js';
-import { trackUsage } from '../../cost/tracker.js';
+import { trackUsage } from '../../modules/usage/tracker.js';
 import { readConfig } from '../../modules/config/loader.js';
 import { catalogFetcher } from '../../modules/catalog/fetcher.js';
 import type { PolicyFn } from './types.js';

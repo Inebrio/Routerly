@@ -1,7 +1,7 @@
 import type { ChatCompletionRequest, ModelConfig, ProjectConfig, ProjectToken, RoutingCandidate } from '@routerly/shared';
 import { readConfig } from '../modules/config/loader.js';
-import { isAllowed, getViolatedLimits } from '../cost/budget.js';
-import type { LimitSnapshot } from '../cost/budget.js';
+import { isAllowed, getViolatedLimits } from '../modules/budget/budget.js';
+import type { LimitSnapshot } from '../modules/budget/budget.js';
 import type { CandidateModel } from './policies/types.js';
 import { contextPolicy } from './policies/context.js';
 import { cheapestPolicy } from './policies/cheapest.js';

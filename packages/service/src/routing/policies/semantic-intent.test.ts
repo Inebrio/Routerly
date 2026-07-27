@@ -18,7 +18,7 @@ vi.mock('../../modules/embeddings/dispatch.js', () => ({
   getEmbeddingProvider: vi.fn(() => mockProvider),
 }));
 
-vi.mock('../../cost/tracker.js', () => ({
+vi.mock('../../modules/usage/tracker.js', () => ({
   trackUsage: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -78,7 +78,7 @@ const baseConfig: SemanticIntentConfig = {
   },
 };
 
-import { trackUsage } from '../../cost/tracker.js';
+import { trackUsage } from '../../modules/usage/tracker.js';
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 

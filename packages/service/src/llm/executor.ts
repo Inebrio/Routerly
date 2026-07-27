@@ -25,8 +25,8 @@ import type {
   MessagesResponse,
 } from '@routerly/shared';
 import { getProviderAdapter } from '../modules/provider/registry.js';
-import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../cost/budget.js';
-import { trackUsage } from '../cost/tracker.js';
+import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../modules/budget/budget.js';
+import { trackUsage } from '../modules/usage/tracker.js';
 import { calculateCost } from '../lib/cost.js';
 import { emitEvent } from '../notifications/emitter.js';
 import type { TraceEntry, TracePanel } from '../routing/traceStore.js';
