@@ -44,7 +44,7 @@ vi.mock('fastify', () => ({
 vi.mock('@fastify/cors', () => ({ default: vi.fn() }));
 vi.mock('@fastify/static', () => ({ default: vi.fn() }));
 vi.mock('./modules/auth/auth.js', () => ({ default: vi.fn() }));
-vi.mock('./routes/api.js', () => ({ apiRoutes: vi.fn() }));
+vi.mock('./modules/api/api.js', () => ({ apiRoutes: vi.fn() }));
 vi.mock('./modules/api-reverse-proxy/openai.js', () => ({ openaiRoutes: vi.fn() }));
 vi.mock('./modules/api-reverse-proxy/anthropic.js', () => ({ anthropicRoutes: vi.fn() }));
 vi.mock('./modules/config/migrate.js', () => ({ migrateProjectConfigs: vi.fn(async () => 0) }));

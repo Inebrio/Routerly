@@ -16,7 +16,7 @@ vi.mock('./modules/auth/jwt.js', () => ({
 vi.mock('./modules/auth/auth.js', () => ({ default: vi.fn(async () => {}) }))
 vi.mock('./modules/api-reverse-proxy/openai.js', () => ({ openaiRoutes: vi.fn(async () => {}) }))
 vi.mock('./modules/api-reverse-proxy/anthropic.js', () => ({ anthropicRoutes: vi.fn(async () => {}) }))
-vi.mock('./routes/api.js', () => ({ apiRoutes: vi.fn(async () => {}) }))
+vi.mock('./modules/api/api.js', () => ({ apiRoutes: vi.fn(async () => {}) }))
 vi.mock('./telemetry.js', () => ({ pingTelemetry: vi.fn().mockResolvedValue(true) }))
 vi.mock('./modules/notifications/emitter.js', () => ({ emitEvent: vi.fn(async () => {}) }))
 vi.mock('./update-checker.js', () => ({
