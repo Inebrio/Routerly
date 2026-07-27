@@ -46,6 +46,16 @@ export const AUDIT = token<{
   logAudit: typeof import('../modules/audit/logger.js').logAudit;
 }>('audit.registry');
 
+export const AUTH = token<{
+  signToken: typeof import('../modules/auth/jwt.js').signToken;
+  verifyToken: typeof import('../modules/auth/jwt.js').verifyToken;
+  createSessionToken: typeof import('../modules/auth/jwt.js').createSessionToken;
+  generateRawToken: typeof import('../modules/auth/jwt.js').generateRawToken;
+  extractProjectToken: typeof import('../modules/auth/auth.js').extractProjectToken;
+  resolveProjectByToken: typeof import('../modules/auth/auth.js').resolveProjectByToken;
+  getEffectiveRoles: typeof import('../modules/auth/roles.js').getEffectiveRoles;
+}>('auth.registry');
+
 export const ROUTER = token<{
   routeRequest(
     request: ChatCompletionRequest,
