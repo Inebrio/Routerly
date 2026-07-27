@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { ProcessorRegistry, type Processor } from './processors.js'
 import { shortCircuit } from './result.js'
+import { MissingDependencyError } from './errors.js'
 
 interface Ctx {
   trail: string[]
@@ -71,5 +72,32 @@ describe('ProcessorRegistry', () => {
     const ctx: Ctx = { trail: [] }
     await reg.runPhase('p', ctx)
     expect(ctx.trail).toEqual(['a', 'b'])
+  })
+
+  it('overrides a specific processor by phase+id, wrapping its run', async () => {
+    const reg = new ProcessorRegistry<{ trail: string[] }>()
+    reg.contribute({
+      id: 'a',
+      phase: 'p',
+      run: (c) => {
+        c.trail.push('a')
+      },
+    })
+    reg.override('p', 'a', (prev) => ({
+      ...prev,
+      run: async (c) => {
+        c.trail.push('before-a')
+        await prev.run(c)
+        c.trail.push('after-a')
+      },
+    }))
+    const ctx = { trail: [] as string[] }
+    await reg.runPhase('p', ctx)
+    expect(ctx.trail).toEqual(['before-a', 'a', 'after-a'])
+  })
+
+  it('throws MissingDependencyError overriding an id not contributed to that phase', () => {
+    const reg = new ProcessorRegistry<{ trail: string[] }>()
+    expect(() => reg.override('p', 'missing', (prev) => prev)).toThrow(MissingDependencyError)
   })
 })
