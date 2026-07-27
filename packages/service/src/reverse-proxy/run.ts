@@ -24,7 +24,10 @@ export const PROXY_PHASES = [
 /**
  * Walk the phases in order. A normal result (json / stream / passthrough) does
  * NOT stop the walk, egress (a later phase) still writes it and finalize still
- * records usage. Only a terminal `kind:'block'` short-circuits the middle phases;
+ * records usage. A terminal `kind:'block'` short-circuits every phase BETWEEN
+ * where it was set and egress (no further routing/upstream/postprocess work),
+ * but `egress` itself must still run: block producers never write to the reply
+ * themselves, they rely on egress's block branch to send the status/body.
  * `finalize` always runs so usage.finalize can record a guardrail-blocked request
  * (roadmap: "shortCircuit or ctx.result with kind:'block' ends the pipeline early").
  * Intra-phase shortCircuit is caught by the kernel's runPhase (Plan 1).
@@ -34,7 +37,7 @@ export async function runProxy(
   ctx: ProxyContext,
 ): Promise<void> {
   for (const phase of PROXY_PHASES) {
-    if (ctx.result?.kind === 'block' && phase !== 'finalize') continue
+    if (ctx.result?.kind === 'block' && phase !== 'finalize' && phase !== 'egress') continue
     await pipeline.runPhase(phase, ctx)
   }
 }
