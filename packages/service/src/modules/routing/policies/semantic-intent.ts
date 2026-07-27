@@ -1,8 +1,8 @@
 import type { SemanticIntentConfig } from '@routerly/shared';
 import { classifyIntent } from '../intent/classifier.js';
-import { trackUsage } from '../../modules/usage/tracker.js';
-import { readConfig } from '../../modules/config/loader.js';
-import { catalogFetcher } from '../../modules/catalog/fetcher.js';
+import { trackUsage } from '../../usage/tracker.js';
+import { readConfig } from '../../config/loader.js';
+import { catalogFetcher } from '../../catalog/fetcher.js';
 import type { PolicyFn } from './types.js';
 
 /** Lookup input cost (per 1M tokens) for an embedding model from the live catalog. */

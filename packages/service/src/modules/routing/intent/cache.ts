@@ -1,5 +1,5 @@
 import type { IntentDefinition } from '@routerly/shared';
-import type { EmbeddingProvider } from '../../modules/embeddings/types.js';
+import type { EmbeddingProvider } from '../../embeddings/types.js';
 import { meanVector } from './similarity.js';
 
 interface CacheEntry {

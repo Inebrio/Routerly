@@ -1,20 +1,20 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
-vi.mock('../../modules/config/loader.js', () => ({ readConfig: vi.fn() }))
-vi.mock('../../llm/executor.js', () => ({
+vi.mock('../../config/loader.js', () => ({ readConfig: vi.fn() }))
+vi.mock('../../../llm/executor.js', () => ({
   llmChat: vi.fn(),
   BudgetExceededError: class BudgetExceededError extends Error {
     constructor(msg = 'budget') { super(msg); this.name = 'BudgetExceededError' }
   },
 }))
 vi.mock('../routingMemoryStore.js', () => ({ getRoutingHistory: vi.fn() }))
-vi.mock('../../modules/budget/budget.js', () => ({ getLimitUsageSnapshot: vi.fn() }))
+vi.mock('../../budget/budget.js', () => ({ getLimitUsageSnapshot: vi.fn() }))
 
 import { llmPolicy } from './llm.js'
-import { readConfig } from '../../modules/config/loader.js'
-import { llmChat, BudgetExceededError } from '../../llm/executor.js'
+import { readConfig } from '../../config/loader.js'
+import { llmChat, BudgetExceededError } from '../../../llm/executor.js'
 import { getRoutingHistory } from '../routingMemoryStore.js'
-import { getLimitUsageSnapshot } from '../../modules/budget/budget.js'
+import { getLimitUsageSnapshot } from '../../budget/budget.js'
 import type { PolicyInput } from './types.js'
 import type { ModelConfig, ProjectConfig } from '@routerly/shared'
 

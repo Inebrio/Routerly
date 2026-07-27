@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { getIntentCentroid, clearIntentCache } from './cache.js'
 import type { IntentDefinition } from '@routerly/shared'
-import type { EmbeddingProvider } from '../../modules/embeddings/types.js'
+import type { EmbeddingProvider } from '../../embeddings/types.js'
 
 afterEach(() => { clearIntentCache() })
 
