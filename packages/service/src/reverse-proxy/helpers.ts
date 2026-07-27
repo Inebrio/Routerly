@@ -51,6 +51,39 @@ export function buildContentFilterBlock(ctx: ProxyContext): ProxyResult {
   }
 }
 
+/**
+ * Streaming request-block wire form (routes/openai.ts L178-197, moved verbatim).
+ * buildContentFilterBlock is JSON-only; a hard-blocked streaming request needs a
+ * hijack + SSE content_filter chunk + [DONE] instead. Leaves ProxyResult.body
+ * undefined so egress treats it as already-written (ProxyResult.kind 'block' doc:
+ * "if body is omitted the block already wrote its own bytes").
+ */
+export function writeOpenAIStreamingBlock(ctx: ProxyContext): void {
+  const reply = ctx.reply
+  reply.hijack()
+  const origin = ctx.req.headers.origin as string | undefined
+  if (origin) {
+    reply.raw.setHeader('Access-Control-Allow-Origin', origin)
+    reply.raw.setHeader('Access-Control-Allow-Credentials', 'true')
+    if (ctx.traceEnabled) reply.raw.setHeader('Access-Control-Expose-Headers', 'x-routerly-trace-id')
+  }
+  reply.raw.setHeader('Content-Type', 'text/event-stream')
+  reply.raw.setHeader('Cache-Control', 'no-cache')
+  reply.raw.setHeader('Connection', 'keep-alive')
+  if (ctx.traceEnabled) reply.raw.setHeader('x-routerly-trace-id', ctx.traceId)
+  reply.raw.flushHeaders()
+  const body = ctx.request
+  const chunk = JSON.stringify({
+    id: `chatcmpl-${ctx.traceId}`, object: 'chat.completion.chunk',
+    created: Math.floor(Date.now() / 1000), model: body.model ?? '',
+    choices: [{ index: 0, delta: {}, finish_reason: 'content_filter' }],
+  })
+  reply.raw.write(`data: ${chunk}\n\n`)
+  reply.raw.write('data: [DONE]\n\n')
+  reply.raw.end()
+  ctx.result = { kind: 'block' }
+}
+
 /** Last user message text, the guardrail "request" primary text (openai.ts L151-152). */
 export function primaryText(request: Pick<ChatCompletionRequest, 'messages'>): string {
   const msgs = request.messages ?? []
