@@ -42,6 +42,10 @@ export const EMBEDDINGS = token<{
   ): EmbeddingProvider;
 }>('embeddings.registry');
 
+export const AUDIT = token<{
+  logAudit: typeof import('../modules/audit/logger.js').logAudit;
+}>('audit.registry');
+
 export const ROUTER = token<{
   routeRequest(
     request: ChatCompletionRequest,
