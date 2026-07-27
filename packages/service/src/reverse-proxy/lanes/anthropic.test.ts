@@ -13,6 +13,25 @@ describe('anthropic transport lane', () => {
     for (const p of anthropicTransportProcessors) expect(p.id.startsWith('anthropic:')).toBe(true)
   })
 
+  it('egress sends a block result without the trace header, even when trace is opted in', async () => {
+    const sent: unknown[] = []
+    let sentStatus: number | undefined
+    const headers: Record<string, string> = {}
+    const reply: any = {
+      send: (b: unknown) => sent.push(b),
+      header: (k: string, v: string) => { headers[k] = v },
+      status: (c: number) => { sentStatus = c; return reply },
+    }
+    const ctx = {
+      protocol: 'anthropic', reply, traceEnabled: true, traceId: 't1',
+      result: { kind: 'block', status: 503, body: { type: 'error', error: { type: 'overloaded_error', message: 'All candidate models are budget-exhausted or unavailable.' } } },
+    } as unknown as ProxyContext
+    await anthropicEgress.run(ctx)
+    expect(sentStatus).toBe(503)
+    expect(sent).toEqual([{ type: 'error', error: { type: 'overloaded_error', message: 'All candidate models are budget-exhausted or unavailable.' } }])
+    expect(headers['x-routerly-trace-id']).toBeUndefined()
+  })
+
   it('egress streaming sets raw SSE headers and never hijacks (asymmetry vs OpenAI)', async () => {
     const rawHeaders: Record<string, string> = {}
     const written: string[] = []

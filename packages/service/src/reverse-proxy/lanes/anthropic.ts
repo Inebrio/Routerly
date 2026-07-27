@@ -212,7 +212,12 @@ export const anthropicEgress: Processor<ProxyContext> = {
 
     if (result.kind === 'block') {
       if (result.body === undefined) return
-      if (traceOptIn) reply.header('x-routerly-trace-id', ctx.traceId)
+      // No trace header here: the only block producer in this file (anthropic:attempt's 503)
+      // does not set it in the live route today. A future block-producing processor (Plan 5
+      // guardrail/budget) that needs the header must call
+      // reply.header('x-routerly-trace-id', ctx.traceId) itself before assigning ctx.result,
+      // same as routes/anthropic.ts does at its guardrail/refusal block sites, and the
+      // identical fix already applied to openai.ts's egress.
       reply.status(result.status ?? 200).send(result.body)
       return
     }
