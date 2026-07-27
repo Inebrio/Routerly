@@ -1,5 +1,5 @@
 // packages/service/src/core/tokens.ts
-import { token, type ProcessorRegistry } from './index.js';
+import { token, type ProcessorRegistry, type AlterableRegistry, type RouteContribution } from './index.js';
 import type { ProviderAdapter } from '../modules/provider/types.js';
 import type { ProviderCatalog, RepoStatus } from '../modules/catalog/fetcher.js';
 import type { EmbeddingProvider, EmbeddingProviderType } from '../modules/embeddings/dispatch.js';
@@ -100,3 +100,5 @@ export const API_REVERSE_PROXY = token<{
   anthropicRoutes: typeof import('../modules/api-reverse-proxy/anthropic.js').anthropicRoutes;
   passthroughHandler: typeof import('../modules/api-reverse-proxy/passthrough.js').passthroughHandler;
 }>('api-reverse-proxy.registry');
+
+export const API_ROUTES = token<AlterableRegistry<RouteContribution>>('api.routes');
