@@ -1,0 +1,33 @@
+import { describe, it, expect } from 'vitest'
+import { ServiceContainer, EventBus } from '../core/index.js'
+import { PROXY_PIPELINE } from '../core/tokens.js'
+import { reverseProxyModule } from './module.js'
+import { getProxyPipeline } from './run.js'
+import { openaiTransportProcessors } from './lanes/openai.js'
+import { anthropicTransportProcessors } from './lanes/anthropic.js'
+
+describe('reverse-proxy module', () => {
+  it('has the frozen manifest', () => {
+    expect(reverseProxyModule.manifest.id).toBe('reverse-proxy')
+    expect(reverseProxyModule.manifest.version).toBe('0.4.0')
+    expect(reverseProxyModule.manifest.dependsOn).toEqual({ config: '^0.4.0', provider: '^0.4.0' })
+  })
+
+  it('registers PROXY_PIPELINE with only the transport processors, and publishes it via setProxyPipeline', async () => {
+    const container = new ServiceContainer()
+    const events = new EventBus()
+    await reverseProxyModule.register({ container, events })
+
+    expect(container.has(PROXY_PIPELINE)).toBe(true)
+    const pipeline = container.resolve(PROXY_PIPELINE)
+    // getProxyPipeline() (read by the lanes at request time) must resolve to the
+    // exact same registry instance bound in the container.
+    expect(getProxyPipeline() as unknown).toBe(pipeline)
+
+    // Only the transport processors from both lanes are contributed, nothing else.
+    const typed = pipeline as unknown as { orderedFor(phase: string): { id: string }[] }
+    for (const p of [...openaiTransportProcessors, ...anthropicTransportProcessors]) {
+      expect(typed.orderedFor(p.phase).some((q) => q.id === p.id)).toBe(true)
+    }
+  })
+})
