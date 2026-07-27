@@ -27,6 +27,7 @@ import type {
 import { getProviderAdapter } from '../providers/index.js';
 import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../cost/budget.js';
 import { trackUsage } from '../cost/tracker.js';
+import { calculateCost } from '../cost/calculator.js';
 import { emitEvent } from '../notifications/emitter.js';
 import type { TraceEntry, TracePanel } from '../routing/traceStore.js';
 
@@ -243,11 +244,13 @@ export async function llmChat(
     const tokensPerSec = latencyMs > 0 ? Math.round((inputTokens + outputTokens) / (latencyMs / 1000)) : 0;
 
     // Calculate costs
-    const plainInput = inputTokens - cachedTokens;
+    const cacheCreationTokens = (response.usage as any)?.prompt_tokens_details?.cache_creation_tokens ?? 0;
+    const plainInput = inputTokens - cachedTokens - cacheCreationTokens;
+    // ponytail: input/output splits below are display-only for the trace panel; the
+    // authoritative total is calculateCost (single cost implementation, cache-creation aware).
     const inputCostUsd = (plainInput / 1_000_000) * model.cost.inputPerMillion;
-    const cachedCostUsd = (cachedTokens / 1_000_000) * (model.cost.cachePerMillion ?? model.cost.inputPerMillion);
     const outputCostUsd = (outputTokens / 1_000_000) * model.cost.outputPerMillion;
-    const totalCostUsd = inputCostUsd + cachedCostUsd + outputCostUsd;
+    const totalCostUsd = calculateCost(inputTokens, outputTokens, model, cachedTokens, cacheCreationTokens);
 
     emit?.({
       panel: res,
@@ -271,8 +274,8 @@ export async function llmChat(
       },
     });
 
-    const cachedInputTokens = response.usage?.prompt_tokens_details?.cached_tokens ?? 0;
-    const cacheCreationInputTokens = (response.usage as any)?.prompt_tokens_details?.cache_creation_tokens ?? 0;
+    const cachedInputTokens = cachedTokens;
+    const cacheCreationInputTokens = cacheCreationTokens;
     await trackUsage({
       projectId,
       model,
@@ -499,11 +502,10 @@ export async function llmStream(
         const tokensPerSec = latencyMs > 0 ? Math.round((inputTokens + outputTokens) / (latencyMs / 1000)) : 0;
 
         // Calculate costs
-        const plainInput = inputTokens - cachedInputTokens;
+        const plainInput = inputTokens - cachedInputTokens - cacheCreationInputTokens;
         const inputCostUsd = (plainInput / 1_000_000) * model.cost.inputPerMillion;
-        const cachedCostUsd = (cachedInputTokens / 1_000_000) * (model.cost.cachePerMillion ?? model.cost.inputPerMillion);
         const outputCostUsd = (outputTokens / 1_000_000) * model.cost.outputPerMillion;
-        const totalCostUsd = inputCostUsd + cachedCostUsd + outputCostUsd;
+        const totalCostUsd = calculateCost(inputTokens, outputTokens, model, cachedInputTokens, cacheCreationInputTokens);
 
         emit?.({
           panel: res,
@@ -589,11 +591,10 @@ export async function llmMessages(
     const cacheCreationInputTokens = response.usage.cache_creation_input_tokens ?? 0;
     const tokensPerSec = latencyMs > 0 ? Math.round((inputTokens + outputTokens) / (latencyMs / 1000)) : 0;
 
-    const plainInput = inputTokens - cachedInputTokens;
+    const plainInput = inputTokens - cachedInputTokens - cacheCreationInputTokens;
     const inputCostUsd = (plainInput / 1_000_000) * model.cost.inputPerMillion;
-    const cachedCostUsd = (cachedInputTokens / 1_000_000) * (model.cost.cachePerMillion ?? model.cost.inputPerMillion);
     const outputCostUsd = (outputTokens / 1_000_000) * model.cost.outputPerMillion;
-    const totalCostUsd = inputCostUsd + cachedCostUsd + outputCostUsd;
+    const totalCostUsd = calculateCost(inputTokens, outputTokens, model, cachedInputTokens, cacheCreationInputTokens);
 
     emit?.({
       panel: res,
