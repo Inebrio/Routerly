@@ -3,7 +3,7 @@ import { token, type ProcessorRegistry } from './index.js';
 import type { ProviderAdapter } from '../modules/provider/types.js';
 import type { ProviderCatalog, RepoStatus } from '../modules/catalog/fetcher.js';
 import type { EmbeddingProvider, EmbeddingProviderType } from '../modules/embeddings/dispatch.js';
-import type { RouteResult } from '../routing/router.js';
+import type { RouteResult } from '../modules/routing/router.js';
 import type {
   ModelConfig,
   ProjectConfig,

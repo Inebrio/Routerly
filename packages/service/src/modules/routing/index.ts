@@ -1,10 +1,10 @@
-import { defineModule, type Processor, type RouterlyModule } from '../core/index.js'
-import { ROUTER, PROXY_PIPELINE } from '../core/tokens.js'
-import type { ProxyContext } from '../reverse-proxy/context.js'
-import { routeRequest } from '../routing/router.js'
-import { addRoutingDecision } from '../routing/routingMemoryStore.js'
-import { appendTrace } from '../routing/traceStore.js'
-import type { TraceEntry } from '../routing/traceStore.js'
+import { defineModule, type Processor, type RouterlyModule } from '../../core/index.js'
+import { ROUTER, PROXY_PIPELINE } from '../../core/tokens.js'
+import type { ProxyContext } from '../../reverse-proxy/context.js'
+import { routeRequest } from './router.js'
+import { addRoutingDecision } from './routingMemoryStore.js'
+import { appendTrace } from '../../routing/traceStore.js'
+import type { TraceEntry } from '../../routing/traceStore.js'
 
 const prepare: Processor<ProxyContext> = {
   id: 'routing.prepare',

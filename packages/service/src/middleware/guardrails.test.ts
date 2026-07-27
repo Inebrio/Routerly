@@ -11,14 +11,14 @@ vi.mock('../llm/executor.js', () => ({
   },
 }));
 vi.mock('../modules/usage/tracker.js', () => ({ trackUsage: vi.fn(() => Promise.resolve()) }));
-vi.mock('../routing/intent/classifier.js', () => ({ classifyIntent: vi.fn() }));
+vi.mock('../modules/routing/intent/classifier.js', () => ({ classifyIntent: vi.fn() }));
 vi.mock('../modules/embeddings/dispatch.js', () => ({ getEmbeddingProvider: vi.fn() }));
 
 import { checkGuardrails, buildRequestInjection, type GuardrailProjectCtx } from './guardrails.js';
 import { readConfig } from '../modules/config/loader.js';
 import { llmChat, checkBudget, BudgetExceededError } from '../llm/executor.js';
 import { trackUsage } from '../modules/usage/tracker.js';
-import { classifyIntent } from '../routing/intent/classifier.js';
+import { classifyIntent } from '../modules/routing/intent/classifier.js';
 import type { GuardrailConfig, GuardrailRule } from '@routerly/shared';
 
 const mockReadConfig = vi.mocked(readConfig);
