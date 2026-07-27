@@ -15,13 +15,7 @@ import { migrateProjectConfigs } from './modules/config/migrate.js';
 import { pingTelemetry } from './telemetry.js';
 import { updateChecker } from './update-checker.js';
 import { startIntegrationRunner } from './modules/observability/runner.js';
-import { buildKernel } from './core/lifecycle/bootstrap.js';
-import { configModule } from './modules/config/index.js';
-import { providerModule } from './modules/provider/index.js';
-import { catalogModule } from './modules/catalog/index.js';
-import { reverseProxyModule } from './modules/reverse-proxy/index.js';
-import { coreModules } from './modules/index.js';
-import { CONTRIB_MODULES } from './core/contrib.js';
+import { bootstrap } from './bootstrap/index.js';
 import type { Kernel } from './core/index.js';
 
 // The modular kernel (0.4.0) is decorated onto the Fastify instance so later
@@ -58,14 +52,7 @@ export async function buildServer() {
   // initConfigDirs() already ran in startServer() before buildServer(); none
   // of the three modules does IO at register time, so this is order-safe.
   // Additive only, no existing registration is touched.
-  const kernel = await buildKernel([
-    configModule,       // Plan 2
-    providerModule,     // Plan 3  (manifest id 'provider')
-    catalogModule,      // Step 5 (manifest id 'catalog')
-    reverseProxyModule, // Plan 4  (owns PROXY_PIPELINE, transport-only, dark)
-    ...coreModules,     // Plan 5  (concern processors)
-    ...CONTRIB_MODULES, // Plan 6  (inert extension point, empty this phase)
-  ]);
+  const kernel = await bootstrap();
   fastify.decorate('kernel', kernel);
   fastify.addHook('onClose', async () => {
     await kernel.stop();
