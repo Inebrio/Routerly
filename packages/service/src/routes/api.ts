@@ -17,7 +17,7 @@ import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
 import { getTrace } from '../routing/traceStore.js';
-import { getProviderAdapter } from '../providers/index.js';
+import { getProviderAdapter } from '../modules/provider/registry.js';
 import { sendTestNotification } from '../notifications/sender.js';
 import { emitEvent } from '../notifications/emitter.js';
 import { ALL_PERMISSIONS, BUILT_IN_ROLES, getEffectiveRoles } from '../auth/roles.js';

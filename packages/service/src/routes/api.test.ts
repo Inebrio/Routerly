@@ -14,7 +14,7 @@ vi.mock('../notifications/sender.js', () => ({ sendTestNotification: vi.fn() }))
 vi.mock('../notifications/emitter.js', () => ({ emitEvent: vi.fn() }))
 vi.mock('../routing/traceStore.js', () => ({ getTrace: vi.fn() }))
 const mockChatCompletion = vi.fn()
-vi.mock('../providers/index.js', () => ({
+vi.mock('../modules/provider/registry.js', () => ({
   getProviderAdapter: vi.fn(() => ({ chatCompletion: mockChatCompletion })),
 }))
 vi.mock('../update-checker.js', () => ({

@@ -1,6 +1,6 @@
 // packages/service/src/core/tokens.ts
 import { token, type ProcessorRegistry } from './index.js';
-import type { ProviderAdapter } from '../providers/types.js';
+import type { ProviderAdapter } from '../modules/provider/types.js';
 import type { RouteResult } from '../routing/router.js';
 import type {
   ModelConfig,

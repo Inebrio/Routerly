@@ -24,7 +24,7 @@ import type {
   MessagesRequest,
   MessagesResponse,
 } from '@routerly/shared';
-import { getProviderAdapter } from '../providers/index.js';
+import { getProviderAdapter } from '../modules/provider/registry.js';
 import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../cost/budget.js';
 import { trackUsage } from '../cost/tracker.js';
 import { calculateCost } from '../lib/cost.js';

@@ -3,7 +3,7 @@ import type { ModelConfig } from '@routerly/shared';
 import { ServiceContainer, EventBus } from '../../core/index.js';
 import { providerModule } from './index.js';
 import { PROVIDER_REGISTRY } from '../../core/tokens.js';
-import { getProviderAdapter } from '../../providers/index.js';
+import { getProviderAdapter } from './registry.js';
 
 // Minimal ModelConfig views: getProviderAdapter only reads `provider` and `id`.
 // Casting keeps the test focused on registry behavior, not model shape.
