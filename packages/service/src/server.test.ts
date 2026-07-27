@@ -5,6 +5,7 @@ vi.mock('./config/loader.js', () => ({
   readConfig: vi.fn(),
   writeConfig: vi.fn(),
   pruneOrphanUsage: vi.fn(async () => 0),
+  appendUsageRecord: vi.fn(),
 }))
 vi.mock('./plugins/jwt.js', () => ({
   loadSecret: vi.fn(),

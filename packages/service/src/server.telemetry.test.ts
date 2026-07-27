@@ -25,6 +25,7 @@ vi.mock('./config/loader.js', () => ({
   readConfig: mockReadConfig,
   writeConfig: mockWriteConfig,
   pruneOrphanUsage: vi.fn(async () => 0),
+  appendUsageRecord: vi.fn(),
 }));
 vi.mock('./plugins/jwt.js', () => ({ loadSecret: mockLoadSecret }));
 vi.mock('./update-checker.js', () => ({ updateChecker: { start: vi.fn() } }));
@@ -36,6 +37,8 @@ vi.mock('fastify', () => ({
     listen: vi.fn().mockResolvedValue(undefined),
     log: { warn: vi.fn(), error: vi.fn() },
     setNotFoundHandler: vi.fn(),
+    decorate: vi.fn(),
+    addHook: vi.fn(),
   })),
 }));
 vi.mock('@fastify/cors', () => ({ default: vi.fn() }));
