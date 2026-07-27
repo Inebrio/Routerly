@@ -7,7 +7,7 @@ const _dir = dirname(fileURLToPath(import.meta.url));
 // Never let a missing/malformed package.json crash the service at startup.
 let pkgVersion = 'unknown';
 try {
-  const raw = JSON.parse(readFileSync(join(_dir, '../package.json'), 'utf-8')) as { version?: string };
+  const raw = JSON.parse(readFileSync(join(_dir, '../../../package.json'), 'utf-8')) as { version?: string };
   if (raw.version) pkgVersion = raw.version;
 } catch { /* fallback to 'unknown' */ }
 

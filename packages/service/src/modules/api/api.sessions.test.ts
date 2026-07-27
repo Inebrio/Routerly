@@ -12,10 +12,10 @@ vi.mock('../auth/jwt.js', () => ({
 }))
 vi.mock('../notifications/sender.js', () => ({ sendTestNotification: vi.fn() }))
 vi.mock('../logging/traceStore.js', () => ({ getTrace: vi.fn() }))
-vi.mock('../../update-checker.js', () => ({
+vi.mock('../update-checker/update-checker.js', () => ({
   updateChecker: { getLastResult: vi.fn(() => null), check: vi.fn(), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))
-vi.mock('../../telemetry.js', () => ({ pingTelemetry: vi.fn() }))
+vi.mock('../telemetry/telemetry.js', () => ({ pingTelemetry: vi.fn() }))
 vi.mock('bcrypt', () => ({
   default: { hash: vi.fn(async (p: string) => `hashed:${p}`), compare: vi.fn() },
 }))

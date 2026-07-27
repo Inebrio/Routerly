@@ -17,16 +17,16 @@ vi.mock('./modules/auth/auth.js', () => ({ default: vi.fn(async () => {}) }))
 vi.mock('./modules/api-reverse-proxy/openai.js', () => ({ openaiRoutes: vi.fn(async () => {}) }))
 vi.mock('./modules/api-reverse-proxy/anthropic.js', () => ({ anthropicRoutes: vi.fn(async () => {}) }))
 vi.mock('./modules/api/api.js', () => ({ apiRoutes: vi.fn(async () => {}) }))
-vi.mock('./telemetry.js', () => ({ pingTelemetry: vi.fn().mockResolvedValue(true) }))
+vi.mock('./modules/telemetry/telemetry.js', () => ({ pingTelemetry: vi.fn().mockResolvedValue(true) }))
 vi.mock('./modules/notifications/emitter.js', () => ({ emitEvent: vi.fn(async () => {}) }))
-vi.mock('./update-checker.js', () => ({
+vi.mock('./modules/update-checker/update-checker.js', () => ({
   updateChecker: { start: vi.fn(), check: vi.fn(), getLastResult: vi.fn(() => null), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))
 vi.mock('./modules/config/migrate.js', () => ({ migrateProjectConfigs: vi.fn(async () => 0) }))
 
 import { buildServer, startServer } from './server.js'
 import { readConfig, writeConfig } from './modules/config/loader.js'
-import { pingTelemetry } from './telemetry.js'
+import { pingTelemetry } from './modules/telemetry/telemetry.js'
 
 const mockReadConfig = vi.mocked(readConfig)
 const mockWriteConfig = vi.mocked(writeConfig)
