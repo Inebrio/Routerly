@@ -10,8 +10,8 @@ vi.mock('../modules/auth/jwt.js', () => ({
   verifyToken: vi.fn(),
   generateRawToken: vi.fn(() => 'raw-refresh-token-xxxx'),
 }))
-vi.mock('../notifications/sender.js', () => ({ sendTestNotification: vi.fn() }))
-vi.mock('../notifications/emitter.js', () => ({ emitEvent: vi.fn() }))
+vi.mock('../modules/notifications/sender.js', () => ({ sendTestNotification: vi.fn() }))
+vi.mock('../modules/notifications/emitter.js', () => ({ emitEvent: vi.fn() }))
 vi.mock('../modules/logging/traceStore.js', () => ({ getTrace: vi.fn() }))
 const mockChatCompletion = vi.fn()
 vi.mock('../modules/provider/registry.js', () => ({
@@ -50,7 +50,7 @@ vi.mock('../modules/catalog/fetcher.js', () => ({
 import { apiRoutes } from './api.js'
 import { readConfig, writeConfig } from '../modules/config/loader.js'
 import { createSessionToken, verifyToken } from '../modules/auth/jwt.js'
-import { sendTestNotification } from '../notifications/sender.js'
+import { sendTestNotification } from '../modules/notifications/sender.js'
 import { getTrace } from '../modules/logging/traceStore.js'
 import bcrypt from 'bcrypt'
 import { resolveCodexToken } from './openaiOAuthForward.js'

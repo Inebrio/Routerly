@@ -27,7 +27,7 @@ vi.mock('./modules/config/loader.js', () => ({
   pruneOrphanUsage: vi.fn(async () => 0),
   appendUsageRecord: vi.fn(),
 }));
-vi.mock('./plugins/jwt.js', () => ({ loadSecret: mockLoadSecret }));
+vi.mock('./modules/auth/jwt.js', () => ({ loadSecret: mockLoadSecret }));
 vi.mock('./update-checker.js', () => ({ updateChecker: { start: vi.fn() } }));
 
 vi.mock('fastify', () => ({
@@ -43,7 +43,7 @@ vi.mock('fastify', () => ({
 }));
 vi.mock('@fastify/cors', () => ({ default: vi.fn() }));
 vi.mock('@fastify/static', () => ({ default: vi.fn() }));
-vi.mock('./plugins/auth.js', () => ({ default: vi.fn() }));
+vi.mock('./modules/auth/auth.js', () => ({ default: vi.fn() }));
 vi.mock('./routes/api.js', () => ({ apiRoutes: vi.fn() }));
 vi.mock('./routes/openai.js', () => ({ openaiRoutes: vi.fn() }));
 vi.mock('./routes/anthropic.js', () => ({ anthropicRoutes: vi.fn() }));

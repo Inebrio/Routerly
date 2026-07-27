@@ -28,7 +28,7 @@ import { getProviderAdapter } from '../modules/provider/registry.js';
 import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../modules/budget/budget.js';
 import { trackUsage } from '../modules/usage/tracker.js';
 import { calculateCost } from '../lib/cost.js';
-import { emitEvent } from '../notifications/emitter.js';
+import { emitEvent } from '../modules/notifications/emitter.js';
 import type { TraceEntry, TracePanel } from '../modules/logging/traceStore.js';
 
 // ─── Tipi ────────────────────────────────────────────────────────────────────

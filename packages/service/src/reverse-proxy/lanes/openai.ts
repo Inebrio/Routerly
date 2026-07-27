@@ -9,7 +9,7 @@ import { appendTrace } from '../../modules/logging/traceStore.js'
 import type { TraceEntry } from '../../modules/logging/traceStore.js'
 import { llmChat, llmStream, BudgetExceededError } from '../../llm/executor.js'
 import type { LLMCallContext } from '../../llm/executor.js'
-import { emitEvent } from '../../notifications/emitter.js'
+import { emitEvent } from '../../modules/notifications/emitter.js'
 import { forwardOpenAIOAuthSSE } from '../../routes/openaiOAuthForward.js'
 
 /** Build the initial ProxyContext for an OpenAI request. protocol.decode is identity: request === original. */
