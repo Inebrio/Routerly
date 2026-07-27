@@ -205,7 +205,7 @@ export const anthropicEgress: Processor<ProxyContext> = {
 
     if (result.kind === 'json') {
       if (traceOptIn) reply.header('x-routerly-trace-id', ctx.traceId)
-      if (result.status) reply.code(result.status)
+      if (result.status) reply.status(result.status)
       reply.send(result.body)
       return
     }
