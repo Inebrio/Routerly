@@ -15,6 +15,18 @@ import { migrateProjectConfigs } from './config/migrate.js';
 import { pingTelemetry } from './telemetry.js';
 import { updateChecker } from './update-checker.js';
 import { startIntegrationRunner } from './integrations/runner.js';
+import { buildKernel } from './core/bootstrap.js';
+import { configModule } from './modules/config/index.js';
+import type { Kernel } from './core/index.js';
+
+// The modular kernel (0.4.0) is decorated onto the Fastify instance so later
+// refactory plans can reach its container/events. Routes still call
+// config/loader.ts directly; nothing depends on this decoration yet.
+declare module 'fastify' {
+  interface FastifyInstance {
+    kernel: Kernel;
+  }
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const { version: pkgVersion } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8')) as { version: string };
@@ -31,6 +43,18 @@ export async function buildServer() {
     },
     disableRequestLogging: true,
     bodyLimit: 256 * 1024 * 1024, // 256 MB — support large files, vision, and 2M-token contexts
+  });
+
+  // ─── Modular kernel (0.4.0) ───────────────────────────────────────────────
+  // Boots alongside Fastify; registers the config module so config/loader.ts is
+  // reachable via CONFIG_STORE for later plans. loadSecret()/initConfigDirs()
+  // already ran in startServer() before buildServer(); the config module does no
+  // IO at register time, so this is order-safe. Additive only, no existing
+  // registration is touched.
+  const kernel = await buildKernel([configModule]);
+  fastify.decorate('kernel', kernel);
+  fastify.addHook('onClose', async () => {
+    await kernel.stop();
   });
 
   // ─── Plugins ─────────────────────────────────────────────────────────────────
