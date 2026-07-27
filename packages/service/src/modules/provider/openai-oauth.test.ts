@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { OpenAIOAuthAdapter } from './openai-oauth.js';
 import { OpenAIAdapter } from './openai.js';
-import { getProviderAdapter } from './index.js';
+import { getProviderAdapter } from './registry.js';
 import type { ChatCompletionRequest, ModelConfig } from '@routerly/shared';
 
 const create = vi.hoisted(() => vi.fn());
