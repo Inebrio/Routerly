@@ -1,4 +1,4 @@
-import { readConfig } from '../config/loader.js';
+import { readConfig } from '../modules/config/loader.js';
 import { getMetricsSnapshot } from './metrics-snapshot.js';
 import { pushOtel } from './otel.js';
 import { pushDatadog } from './datadog.js';

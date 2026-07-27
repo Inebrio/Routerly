@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import Fastify from 'fastify'
 
-vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn() }))
+vi.mock('../modules/config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn() }))
 vi.mock('node:child_process', () => ({
   spawn: vi.fn(() => ({ unref: vi.fn() })),
 }))
@@ -48,7 +48,7 @@ vi.mock('../catalog/fetcher.js', () => ({
 }))
 
 import { apiRoutes } from './api.js'
-import { readConfig, writeConfig } from '../config/loader.js'
+import { readConfig, writeConfig } from '../modules/config/loader.js'
 import { createSessionToken, verifyToken } from '../plugins/jwt.js'
 import { sendTestNotification } from '../notifications/sender.js'
 import { getTrace } from '../routing/traceStore.js'

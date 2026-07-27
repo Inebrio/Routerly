@@ -6,7 +6,7 @@ const { mockReadConfig, mockGetLimitUsageSnapshot } = vi.hoisted(() => ({
   mockGetLimitUsageSnapshot: vi.fn(),
 }));
 
-vi.mock('../config/loader.js', () => ({ readConfig: mockReadConfig }));
+vi.mock('../modules/config/loader.js', () => ({ readConfig: mockReadConfig }));
 vi.mock('../cost/budget.js', () => ({ getLimitUsageSnapshot: mockGetLimitUsageSnapshot }));
 
 import { getMetricsSnapshot, projectBudgetRatio } from './metrics-snapshot.js';

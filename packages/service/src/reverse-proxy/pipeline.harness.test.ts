@@ -4,7 +4,7 @@ import { ProcessorRegistry, type Processor } from '../core/index.js'
 import { runProxy, setProxyPipeline } from './run.js'
 import { openaiEgress, openaiAttempt } from './lanes/openai.js'
 import type { ProxyContext } from './context.js'
-import { writeConfig } from '../config/loader.js'
+import { writeConfig } from '../modules/config/loader.js'
 
 // A fake upstream that stands in for openai:upstream, so the harness never hits a
 // real provider. It sets a json result for the first candidate.

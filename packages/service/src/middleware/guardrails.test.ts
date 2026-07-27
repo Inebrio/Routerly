@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
-vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), appendUsageRecord: vi.fn() }));
+vi.mock('../modules/config/loader.js', () => ({ readConfig: vi.fn(), appendUsageRecord: vi.fn() }));
 vi.mock('../llm/executor.js', () => ({
   llmChat: vi.fn(),
   checkBudget: vi.fn(() => Promise.resolve()),
@@ -15,7 +15,7 @@ vi.mock('../routing/intent/classifier.js', () => ({ classifyIntent: vi.fn() }));
 vi.mock('../embeddings/index.js', () => ({ getEmbeddingProvider: vi.fn() }));
 
 import { checkGuardrails, buildRequestInjection, type GuardrailProjectCtx } from './guardrails.js';
-import { readConfig } from '../config/loader.js';
+import { readConfig } from '../modules/config/loader.js';
 import { llmChat, checkBudget, BudgetExceededError } from '../llm/executor.js';
 import { trackUsage } from '../cost/tracker.js';
 import { classifyIntent } from '../routing/intent/classifier.js';

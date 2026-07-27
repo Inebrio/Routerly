@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
-vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }))
+vi.mock('../modules/config/loader.js', () => ({ readConfig: vi.fn() }))
 
 import { isAllowed, getViolatedLimits, getLimitUsageSnapshot, isAllowedForRoutingModel } from './budget.js'
-import { readConfig } from '../config/loader.js'
+import { readConfig } from '../modules/config/loader.js'
 import type { ModelConfig, ProjectConfig, Settings, UsageRecord } from '@routerly/shared'
 
 const mockReadConfig = vi.mocked(readConfig)

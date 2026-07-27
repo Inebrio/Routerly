@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { readConfig, writeConfig } from '../config/loader.js';
-import type { AuditEntry } from '../config/loader.js';
+import { readConfig, writeConfig } from '../modules/config/loader.js';
+import type { AuditEntry } from '../modules/config/loader.js';
 
 export type { AuditEntry };
 

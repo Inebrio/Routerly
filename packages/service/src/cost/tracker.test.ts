@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
-vi.mock('../config/loader.js', () => ({ appendUsageRecord: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('../modules/config/loader.js', () => ({ appendUsageRecord: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('../routing/traceStore.js', () => ({ getTrace: vi.fn() }))
 vi.mock('uuid', () => ({ v4: vi.fn(() => 'test-uuid') }))
 
 import { trackUsage } from './tracker.js'
-import { appendUsageRecord } from '../config/loader.js'
+import { appendUsageRecord } from '../modules/config/loader.js'
 import { getTrace } from '../routing/traceStore.js'
 
 const mockAppendUsageRecord = vi.mocked(appendUsageRecord)

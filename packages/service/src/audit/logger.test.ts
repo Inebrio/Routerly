@@ -5,7 +5,7 @@ const { mockReadConfig, mockWriteConfig } = vi.hoisted(() => ({
   mockWriteConfig: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../config/loader.js', () => ({
+vi.mock('../modules/config/loader.js', () => ({
   readConfig: mockReadConfig,
   writeConfig: mockWriteConfig,
 }));

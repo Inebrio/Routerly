@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
-vi.mock('./config/loader.js', () => ({
+vi.mock('./modules/config/loader.js', () => ({
   initConfigDirs: vi.fn(),
   readConfig: vi.fn(),
   writeConfig: vi.fn(),
@@ -22,10 +22,10 @@ vi.mock('./notifications/emitter.js', () => ({ emitEvent: vi.fn(async () => {}) 
 vi.mock('./update-checker.js', () => ({
   updateChecker: { start: vi.fn(), check: vi.fn(), getLastResult: vi.fn(() => null), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))
-vi.mock('./config/migrate.js', () => ({ migrateProjectConfigs: vi.fn(async () => 0) }))
+vi.mock('./modules/config/migrate.js', () => ({ migrateProjectConfigs: vi.fn(async () => 0) }))
 
 import { buildServer, startServer } from './server.js'
-import { readConfig, writeConfig } from './config/loader.js'
+import { readConfig, writeConfig } from './modules/config/loader.js'
 import { pingTelemetry } from './telemetry.js'
 
 const mockReadConfig = vi.mocked(readConfig)
@@ -142,7 +142,7 @@ describe('startServer', () => {
   })
 
   it('logs migrated count when migrateProjectConfigs returns > 0', async () => {
-    const { migrateProjectConfigs } = await import('./config/migrate.js')
+    const { migrateProjectConfigs } = await import('./modules/config/migrate.js')
     vi.mocked(migrateProjectConfigs).mockResolvedValueOnce(3)
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     mockReadConfig.mockResolvedValue({ logLevel: 'silent', dashboardEnabled: false, port: 3094, host: '127.0.0.1', telemetry: { enabled: false } } as any)
@@ -154,7 +154,7 @@ describe('startServer', () => {
   })
 
   it('prunes orphan usage records on startup and logs when any removed (BUG-5)', async () => {
-    const { pruneOrphanUsage } = await import('./config/loader.js')
+    const { pruneOrphanUsage } = await import('./modules/config/loader.js')
     vi.mocked(pruneOrphanUsage).mockResolvedValueOnce(18)
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     mockReadConfig.mockResolvedValue({ logLevel: 'silent', dashboardEnabled: false, port: 3095, host: '127.0.0.1', telemetry: { enabled: false } } as any)

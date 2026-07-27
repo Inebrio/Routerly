@@ -13,7 +13,7 @@ import { classifyIntent } from '../routing/intent/classifier.js';
 import { getEmbeddingProvider } from '../embeddings/index.js';
 import { llmChat, checkBudget, BudgetExceededError } from '../llm/executor.js';
 import type { LLMCallContext } from '../llm/executor.js';
-import { readConfig } from '../config/loader.js';
+import { readConfig } from '../modules/config/loader.js';
 import { trackUsage } from '../cost/tracker.js';
 
 /**

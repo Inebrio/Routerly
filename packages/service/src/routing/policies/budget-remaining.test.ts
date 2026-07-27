@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
-vi.mock('../../config/loader.js', () => ({ readConfig: vi.fn() }))
+vi.mock('../../modules/config/loader.js', () => ({ readConfig: vi.fn() }))
 vi.mock('../../cost/budget.js', () => ({ getLimitUsageSnapshot: vi.fn() }))
 
 import { budgetRemainingPolicy } from './budget-remaining.js'
-import { readConfig } from '../../config/loader.js'
+import { readConfig } from '../../modules/config/loader.js'
 import { getLimitUsageSnapshot } from '../../cost/budget.js'
 import type { PolicyInput } from './types.js'
 import type { ModelConfig } from '@routerly/shared'

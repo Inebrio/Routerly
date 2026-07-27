@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import type { ChatCompletionRequest, ModelObject } from '@routerly/shared';
-import { readConfig } from '../config/loader.js';
+import { readConfig } from '../modules/config/loader.js';
 import { buildOpenAIContext, runProxy, getProxyPipeline } from '../reverse-proxy/index.js';
 
 export const openaiRoutes: FastifyPluginAsync = async (fastify) => {

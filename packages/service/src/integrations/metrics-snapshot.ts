@@ -1,5 +1,5 @@
 import type { ModelConfig, ProjectConfig, UsageRecord } from '@routerly/shared';
-import { readConfig } from '../config/loader.js';
+import { readConfig } from '../modules/config/loader.js';
 import { getLimitUsageSnapshot } from '../cost/budget.js';
 
 // ─── Prometheus text-format helpers ──────────────────────────────────────────

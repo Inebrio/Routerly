@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
-vi.mock('../../config/loader.js', () => ({
+vi.mock('../../modules/config/loader.js', () => ({
   readConfig: vi.fn(),
 }))
 
 import { rateLimitPolicy } from './rate-limit.js'
-import { readConfig } from '../../config/loader.js'
+import { readConfig } from '../../modules/config/loader.js'
 import type { PolicyInput } from './types.js'
 import type { ModelConfig, UsageRecord } from '@routerly/shared'
 
