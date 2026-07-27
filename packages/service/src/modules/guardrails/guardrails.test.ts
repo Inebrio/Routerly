@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
-vi.mock('../modules/config/loader.js', () => ({ readConfig: vi.fn(), appendUsageRecord: vi.fn() }));
-vi.mock('../llm/executor.js', () => ({
+vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), appendUsageRecord: vi.fn() }));
+vi.mock('../../llm/executor.js', () => ({
   llmChat: vi.fn(),
   checkBudget: vi.fn(() => Promise.resolve()),
   BudgetExceededError: class BudgetExceededError extends Error {
@@ -10,15 +10,15 @@ vi.mock('../llm/executor.js', () => ({
     constructor(modelId: string) { super('budget_exceeded'); this.modelId = modelId; }
   },
 }));
-vi.mock('../modules/usage/tracker.js', () => ({ trackUsage: vi.fn(() => Promise.resolve()) }));
-vi.mock('../modules/routing/intent/classifier.js', () => ({ classifyIntent: vi.fn() }));
-vi.mock('../modules/embeddings/dispatch.js', () => ({ getEmbeddingProvider: vi.fn() }));
+vi.mock('../usage/tracker.js', () => ({ trackUsage: vi.fn(() => Promise.resolve()) }));
+vi.mock('../routing/intent/classifier.js', () => ({ classifyIntent: vi.fn() }));
+vi.mock('../embeddings/dispatch.js', () => ({ getEmbeddingProvider: vi.fn() }));
 
 import { checkGuardrails, buildRequestInjection, type GuardrailProjectCtx } from './guardrails.js';
-import { readConfig } from '../modules/config/loader.js';
-import { llmChat, checkBudget, BudgetExceededError } from '../llm/executor.js';
-import { trackUsage } from '../modules/usage/tracker.js';
-import { classifyIntent } from '../modules/routing/intent/classifier.js';
+import { readConfig } from '../config/loader.js';
+import { llmChat, checkBudget, BudgetExceededError } from '../../llm/executor.js';
+import { trackUsage } from '../usage/tracker.js';
+import { classifyIntent } from '../routing/intent/classifier.js';
 import type { GuardrailConfig, GuardrailRule } from '@routerly/shared';
 
 const mockReadConfig = vi.mocked(readConfig);
