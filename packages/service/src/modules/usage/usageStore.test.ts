@@ -6,12 +6,12 @@ const fixture = [
   { projectId: 'p1', modelId: 'm2', outcome: 'blocked', timestamp: '2026-07-26T01:00:00.000Z' },
 ] as unknown as UsageRecord[]
 
-vi.mock('../modules/config/loader.js', () => ({ readConfig: vi.fn(async () => fixture) }))
+vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(async () => fixture) }))
 
 describe('readUsageRecords', () => {
   it('returns exactly the records readConfig("usage") returns', async () => {
     const { readUsageRecords } = await import('./usageStore.js')
-    const { readConfig } = await import('../modules/config/loader.js')
+    const { readConfig } = await import('../config/loader.js')
     const direct = (await readConfig('usage')) as UsageRecord[]
     const viaHelper = await readUsageRecords()
     expect(viaHelper).toEqual(direct)

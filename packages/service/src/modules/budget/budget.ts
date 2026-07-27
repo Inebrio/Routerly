@@ -1,5 +1,5 @@
 import type { Limit, LimitPeriod, LimitsMode, RollingUnit, ModelConfig, ProjectConfig, ProjectToken, UsageRecord } from '@routerly/shared';
-import { readUsageRecords } from './usageStore.js';
+import { readUsageRecords } from '../usage/usageStore.js';
 
 // ─── Window helpers ────────────────────────────────────────────────────────────
 
