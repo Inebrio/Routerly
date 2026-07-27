@@ -14,9 +14,9 @@ import type {
 // so Plans 3-6 import stable token keys. Types are imported, never redefined.
 
 export const CONFIG_STORE = token<{
-  readConfig: typeof import('../config/loader.js').readConfig;
-  writeConfig: typeof import('../config/loader.js').writeConfig;
-  appendUsageRecord: typeof import('../config/loader.js').appendUsageRecord;
+  readConfig: typeof import('../modules/config/loader.js').readConfig;
+  writeConfig: typeof import('../modules/config/loader.js').writeConfig;
+  appendUsageRecord: typeof import('../modules/config/loader.js').appendUsageRecord;
 }>('config.store');
 
 export const PROVIDER_REGISTRY = token<{

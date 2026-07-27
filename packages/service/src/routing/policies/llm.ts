@@ -1,5 +1,5 @@
 import type { ModelConfig, ProjectConfig } from '@routerly/shared';
-import { readConfig } from '../../config/loader.js';
+import { readConfig } from '../../modules/config/loader.js';
 import { llmChat, BudgetExceededError } from '../../llm/executor.js';
 import { getRoutingHistory } from '../routingMemoryStore.js';
 import type { LLMCallContext } from '../../llm/executor.js';

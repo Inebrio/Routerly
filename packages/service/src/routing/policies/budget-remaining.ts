@@ -1,6 +1,6 @@
 import type { PolicyFn } from './types.js';
 import { getLimitUsageSnapshot } from '../../cost/budget.js';
-import { readConfig } from '../../config/loader.js';
+import { readConfig } from '../../modules/config/loader.js';
 
 /**
  * Policy: budget-remaining

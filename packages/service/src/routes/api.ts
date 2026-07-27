@@ -7,7 +7,7 @@ import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
 import { pingTelemetry } from '../telemetry.js';
-import { readConfig, writeConfig } from '../config/loader.js';
+import { readConfig, writeConfig } from '../modules/config/loader.js';
 import { CONFIG_PATHS } from '../lib/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';

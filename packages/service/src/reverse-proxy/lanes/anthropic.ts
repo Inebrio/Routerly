@@ -6,7 +6,7 @@ import type {
 import type { Processor } from '../../core/index.js'
 import type { ProxyContext } from '../context.js'
 import { getProxyPipeline } from '../run.js'
-import { readConfig } from '../../config/loader.js'
+import { readConfig } from '../../modules/config/loader.js'
 import { appendTrace } from '../../routing/traceStore.js'
 import type { TraceEntry } from '../../routing/traceStore.js'
 import { llmChat, llmStream, BudgetExceededError } from '../../llm/executor.js'

@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import Fastify from 'fastify';
 
-vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }));
+vi.mock('../modules/config/loader.js', () => ({ readConfig: vi.fn() }));
 vi.mock('../cost/budget.js', () => ({ getLimitUsageSnapshot: vi.fn() }));
 
 import { metricsRoutes } from './metrics.js';
-import { readConfig } from '../config/loader.js';
+import { readConfig } from '../modules/config/loader.js';
 import { getLimitUsageSnapshot } from '../cost/budget.js';
 
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>);

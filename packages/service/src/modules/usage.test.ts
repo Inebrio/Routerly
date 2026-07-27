@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { ServiceContainer, EventBus, ProcessorRegistry } from '../core/index.js'
 import { USAGE_TRACKER, CONFIG_STORE, PROXY_PIPELINE } from '../core/tokens.js'
 import type { ProxyContext } from '../reverse-proxy/context.js'
-import { readConfig, writeConfig, appendUsageRecord } from '../config/loader.js'
+import { readConfig, writeConfig, appendUsageRecord } from '../modules/config/loader.js'
 import { trackUsage } from '../cost/tracker.js'
 import { usageModule } from './usage.js'
 

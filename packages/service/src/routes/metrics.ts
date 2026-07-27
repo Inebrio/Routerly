@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from 'fastify';
-import { readConfig } from '../config/loader.js';
+import { readConfig } from '../modules/config/loader.js';
 import type { PrometheusIntegration } from '@routerly/shared';
 import {
   aggregate,

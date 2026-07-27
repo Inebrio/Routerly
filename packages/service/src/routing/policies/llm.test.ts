@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
-vi.mock('../../config/loader.js', () => ({ readConfig: vi.fn() }))
+vi.mock('../../modules/config/loader.js', () => ({ readConfig: vi.fn() }))
 vi.mock('../../llm/executor.js', () => ({
   llmChat: vi.fn(),
   BudgetExceededError: class BudgetExceededError extends Error {
@@ -11,7 +11,7 @@ vi.mock('../routingMemoryStore.js', () => ({ getRoutingHistory: vi.fn() }))
 vi.mock('../../cost/budget.js', () => ({ getLimitUsageSnapshot: vi.fn() }))
 
 import { llmPolicy } from './llm.js'
-import { readConfig } from '../../config/loader.js'
+import { readConfig } from '../../modules/config/loader.js'
 import { llmChat, BudgetExceededError } from '../../llm/executor.js'
 import { getRoutingHistory } from '../routingMemoryStore.js'
 import { getLimitUsageSnapshot } from '../../cost/budget.js'

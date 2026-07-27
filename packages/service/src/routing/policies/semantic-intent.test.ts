@@ -32,7 +32,7 @@ vi.mock('../../catalog/fetcher.js', () => ({
 const mockReadConfig = vi.fn().mockResolvedValue([
   { id: 'text-embedding-3-small', apiKey: 'sk-test', endpoint: 'https://api.openai.com/v1' },
 ]);
-vi.mock('../../config/loader.js', () => ({
+vi.mock('../../modules/config/loader.js', () => ({
   readConfig: (...args: any[]) => mockReadConfig(...args),
 }));
 

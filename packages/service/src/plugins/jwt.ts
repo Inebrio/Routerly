@@ -1,5 +1,5 @@
 import { randomBytes, createHmac } from 'node:crypto';
-import { getOrCreateSecret } from '../config/loader.js';
+import { getOrCreateSecret } from '../modules/config/loader.js';
 
 let _secret: string | undefined;
 

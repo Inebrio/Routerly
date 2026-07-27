@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import Fastify from 'fastify'
 
-vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn() }))
+vi.mock('../modules/config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn() }))
 vi.mock('node:child_process', () => ({
   spawn: vi.fn(() => ({ unref: vi.fn() })),
 }))
@@ -22,7 +22,7 @@ vi.mock('bcrypt', () => ({
 vi.mock('uuid', () => ({ v4: vi.fn(() => 'test-uuid-1234') }))
 
 import { apiRoutes } from './api.js'
-import { readConfig } from '../config/loader.js'
+import { readConfig } from '../modules/config/loader.js'
 import { verifyToken } from '../plugins/jwt.js'
 
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
