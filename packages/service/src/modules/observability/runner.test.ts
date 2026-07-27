@@ -13,7 +13,7 @@ const { mockReadConfig, mockSnapshot, mockOtel, mockDatadog, mockGrafana, mockIn
     mockWebhook: vi.fn(),
   }));
 
-vi.mock('../modules/config/loader.js', () => ({ readConfig: mockReadConfig }));
+vi.mock('../../modules/config/loader.js', () => ({ readConfig: mockReadConfig }));
 vi.mock('./metrics-snapshot.js', () => ({ getMetricsSnapshot: mockSnapshot }));
 vi.mock('./otel.js', () => ({ pushOtel: mockOtel }));
 vi.mock('./datadog.js', () => ({ pushDatadog: mockDatadog }));
