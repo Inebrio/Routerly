@@ -29,7 +29,7 @@ import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../m
 import { trackUsage } from '../modules/usage/tracker.js';
 import { calculateCost } from '../lib/cost.js';
 import { emitEvent } from '../notifications/emitter.js';
-import type { TraceEntry, TracePanel } from '../routing/traceStore.js';
+import type { TraceEntry, TracePanel } from '../modules/logging/traceStore.js';
 
 // ─── Tipi ────────────────────────────────────────────────────────────────────
 

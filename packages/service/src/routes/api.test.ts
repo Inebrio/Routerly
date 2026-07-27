@@ -12,7 +12,7 @@ vi.mock('../plugins/jwt.js', () => ({
 }))
 vi.mock('../notifications/sender.js', () => ({ sendTestNotification: vi.fn() }))
 vi.mock('../notifications/emitter.js', () => ({ emitEvent: vi.fn() }))
-vi.mock('../routing/traceStore.js', () => ({ getTrace: vi.fn() }))
+vi.mock('../modules/logging/traceStore.js', () => ({ getTrace: vi.fn() }))
 const mockChatCompletion = vi.fn()
 vi.mock('../modules/provider/registry.js', () => ({
   getProviderAdapter: vi.fn(() => ({ chatCompletion: mockChatCompletion })),
@@ -51,7 +51,7 @@ import { apiRoutes } from './api.js'
 import { readConfig, writeConfig } from '../modules/config/loader.js'
 import { createSessionToken, verifyToken } from '../plugins/jwt.js'
 import { sendTestNotification } from '../notifications/sender.js'
-import { getTrace } from '../routing/traceStore.js'
+import { getTrace } from '../modules/logging/traceStore.js'
 import bcrypt from 'bcrypt'
 import { resolveCodexToken } from './openaiOAuthForward.js'
 import { verifyTotp, generateTotpSecret, generateBackupCodes, hashBackupCode } from '../auth/totp.js'

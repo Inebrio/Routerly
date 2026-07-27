@@ -3,7 +3,7 @@ import { defineModule, shortCircuit, type Processor, type RouterlyModule } from 
 import { PROXY_PIPELINE } from '../../core/tokens.js'
 import type { ProxyContext } from '../../reverse-proxy/context.js'
 import { checkGuardrails, buildRequestInjection } from './guardrails.js'
-import { appendTrace } from '../../routing/traceStore.js'
+import { appendTrace } from '../logging/traceStore.js'
 import { BudgetExceededError } from '../../llm/executor.js'
 import {
   buildContentFilterBlock,
