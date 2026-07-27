@@ -11,7 +11,7 @@ vi.mock('../notifications/emitter.js', () => ({ emitEvent: vi.fn().mockResolvedV
 
 import { llmChat } from './executor.js'
 import { getProviderAdapter } from '../providers/index.js'
-import { calculateCost } from '../cost/calculator.js'
+import { calculateCost } from '../lib/cost.js'
 
 const mockGetProvider = vi.mocked(getProviderAdapter)
 

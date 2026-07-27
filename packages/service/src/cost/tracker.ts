@@ -1,6 +1,6 @@
 import type { UsageRecord, CallType } from '@routerly/shared';
 import { appendUsageRecord } from '../config/loader.js';
-import { calculateCost } from './calculator.js';
+import { calculateCost } from '../lib/cost.js';
 import { getTrace } from '../routing/traceStore.js';
 import type { ModelConfig } from '@routerly/shared';
 import { v4 as uuidv4 } from 'uuid';

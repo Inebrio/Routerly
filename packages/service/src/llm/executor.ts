@@ -27,7 +27,7 @@ import type {
 import { getProviderAdapter } from '../providers/index.js';
 import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../cost/budget.js';
 import { trackUsage } from '../cost/tracker.js';
-import { calculateCost } from '../cost/calculator.js';
+import { calculateCost } from '../lib/cost.js';
 import { emitEvent } from '../notifications/emitter.js';
 import type { TraceEntry, TracePanel } from '../routing/traceStore.js';
 
