@@ -33,7 +33,7 @@ vi.mock('../auth/totp.js', () => ({
   generateBackupCodes: vi.fn(() => ({ plain: ['CODE1', 'CODE2'], hashed: ['hash1', 'hash2'] })),
   hashBackupCode: vi.fn((code: string) => `hashed_${code}`),
 }))
-vi.mock('../catalog/fetcher.js', () => ({
+vi.mock('../modules/catalog/fetcher.js', () => ({
   catalogFetcher: {
     get: vi.fn().mockResolvedValue({
       openai:    { endpoint: 'https://api.openai.com/v1',    models: [{ id: 'gpt-4o',     input: 5,    output: 15,   contextWindow: 128000 }, { id: 'gpt-4o-mini', input: 0.15, output: 0.6, contextWindow: 128000 }] },
@@ -55,7 +55,7 @@ import { getTrace } from '../routing/traceStore.js'
 import bcrypt from 'bcrypt'
 import { resolveCodexToken } from './openaiOAuthForward.js'
 import { verifyTotp, generateTotpSecret, generateBackupCodes, hashBackupCode } from '../auth/totp.js'
-import { catalogFetcher } from '../catalog/fetcher.js'
+import { catalogFetcher } from '../modules/catalog/fetcher.js'
 
 const mockCatalogFetcher = vi.mocked(catalogFetcher)
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
