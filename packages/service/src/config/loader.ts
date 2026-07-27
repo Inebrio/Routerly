@@ -3,7 +3,7 @@ import { dirname } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import lockfile from 'proper-lockfile';
 import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Settings, UsageRecord, NotificationInboxItem } from '@routerly/shared';
-import { CONFIG_PATHS } from './paths.js';
+import { CONFIG_PATHS } from '../lib/paths.js';
 
 /** Mirrors audit/logger.ts AuditEntry — defined here to avoid circular import */
 export interface AuditEntry {

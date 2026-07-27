@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
 import { pingTelemetry } from '../telemetry.js';
 import { readConfig, writeConfig } from '../config/loader.js';
-import { CONFIG_PATHS } from '../config/paths.js';
+import { CONFIG_PATHS } from '../lib/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
 import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, UsageByModelEntry, ChannelProvider, ProviderRepo } from '@routerly/shared';
