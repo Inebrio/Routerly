@@ -2,10 +2,10 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import Fastify from 'fastify'
 import type { ProjectConfig } from '@routerly/shared'
 
-vi.mock('../modules/config/loader.js', () => ({ readConfig: vi.fn() }))
+vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }))
 
 import { openaiRoutes } from './openai.js'
-import { readConfig } from '../modules/config/loader.js'
+import { readConfig } from '../config/loader.js'
 
 const mockReadConfig = vi.mocked(readConfig)
 

@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import type { MessagesRequest } from '@routerly/shared';
-import { buildAnthropicContext, runProxy, getProxyPipeline } from '../modules/reverse-proxy/index.js';
+import { buildAnthropicContext, runProxy, getProxyPipeline } from '../reverse-proxy/index.js';
 
 export const anthropicRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/messages ────────────────────────────────────────────────────────

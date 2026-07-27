@@ -1,8 +1,8 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Readable } from 'node:stream';
 import type { ModelConfig, ProjectConfig } from '@routerly/shared';
-import { readConfig } from '../modules/config/loader.js';
-import { resolveProjectByToken, extractProjectToken } from '../modules/auth/auth.js';
+import { readConfig } from '../config/loader.js';
+import { resolveProjectByToken, extractProjectToken } from '../auth/auth.js';
 
 /**
  * Transparent pass-through proxy.
