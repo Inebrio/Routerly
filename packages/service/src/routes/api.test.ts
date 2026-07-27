@@ -21,7 +21,7 @@ vi.mock('../update-checker.js', () => ({
   updateChecker: { getLastResult: vi.fn(() => null), check: vi.fn(), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))
 vi.mock('../telemetry.js', () => ({ pingTelemetry: vi.fn() }))
-vi.mock('../audit/logger.js', () => ({ logAudit: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('../modules/audit/logger.js', () => ({ logAudit: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('bcrypt', () => ({
   default: { hash: vi.fn(async (p: string) => `hashed:${p}`), compare: vi.fn() },
 }))
