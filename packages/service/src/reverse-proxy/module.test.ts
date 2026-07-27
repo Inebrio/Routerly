@@ -26,8 +26,12 @@ describe('reverse-proxy module', () => {
 
     // Only the transport processors from both lanes are contributed, nothing else.
     const typed = pipeline as unknown as { orderedFor(phase: string): { id: string }[] }
-    for (const p of [...openaiTransportProcessors, ...anthropicTransportProcessors]) {
+    const expected = [...openaiTransportProcessors, ...anthropicTransportProcessors]
+    for (const p of expected) {
       expect(typed.orderedFor(p.phase).some((q) => q.id === p.id)).toBe(true)
     }
+    const touchedPhases = new Set(expected.map((p) => p.phase))
+    const totalContributed = [...touchedPhases].reduce((n, phase) => n + typed.orderedFor(phase).length, 0)
+    expect(totalContributed).toBe(expected.length)
   })
 })
