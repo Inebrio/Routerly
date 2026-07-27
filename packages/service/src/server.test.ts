@@ -7,18 +7,18 @@ vi.mock('./modules/config/loader.js', () => ({
   pruneOrphanUsage: vi.fn(async () => 0),
   appendUsageRecord: vi.fn(),
 }))
-vi.mock('./plugins/jwt.js', () => ({
+vi.mock('./modules/auth/jwt.js', () => ({
   loadSecret: vi.fn(),
   createSessionToken: vi.fn(() => 'token'),
   verifyToken: vi.fn(() => null),
   generateRawToken: vi.fn(() => 'raw'),
 }))
-vi.mock('./plugins/auth.js', () => ({ default: vi.fn(async () => {}) }))
+vi.mock('./modules/auth/auth.js', () => ({ default: vi.fn(async () => {}) }))
 vi.mock('./routes/openai.js', () => ({ openaiRoutes: vi.fn(async () => {}) }))
 vi.mock('./routes/anthropic.js', () => ({ anthropicRoutes: vi.fn(async () => {}) }))
 vi.mock('./routes/api.js', () => ({ apiRoutes: vi.fn(async () => {}) }))
 vi.mock('./telemetry.js', () => ({ pingTelemetry: vi.fn().mockResolvedValue(true) }))
-vi.mock('./notifications/emitter.js', () => ({ emitEvent: vi.fn(async () => {}) }))
+vi.mock('./modules/notifications/emitter.js', () => ({ emitEvent: vi.fn(async () => {}) }))
 vi.mock('./update-checker.js', () => ({
   updateChecker: { start: vi.fn(), check: vi.fn(), getLastResult: vi.fn(() => null), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))

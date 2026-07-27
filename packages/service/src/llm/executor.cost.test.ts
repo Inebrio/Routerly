@@ -7,7 +7,7 @@ vi.mock('../modules/budget/budget.js', () => ({
   getLimitUsageSnapshot: vi.fn().mockResolvedValue([]),
 }))
 vi.mock('../modules/usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
-vi.mock('../notifications/emitter.js', () => ({ emitEvent: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('../modules/notifications/emitter.js', () => ({ emitEvent: vi.fn().mockResolvedValue(undefined) }))
 
 import { llmChat } from './executor.js'
 import { getProviderAdapter } from '../modules/provider/registry.js'
