@@ -1798,7 +1798,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /api/test/openai-oauth ─────────────────────────────────────────────
   fastify.post<{ Body: { authFilePath?: string } }>('/api/test/openai-oauth', async (req, reply) => {
     if (!requirePerm(req, 'model:read', reply)) return;
-    const { resolveCodexToken } = await import('../../routes/openaiOAuthForward.js');
+    const { resolveCodexToken } = await import('../reverse-proxy/lanes/openaiOAuthForward.js');
     const authFilePath = req.body?.authFilePath || '~/.codex/auth.json';
     try {
       const { accessToken, accountId } = await resolveCodexToken(authFilePath, req.log);

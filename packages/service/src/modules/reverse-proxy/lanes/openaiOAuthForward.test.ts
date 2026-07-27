@@ -2,8 +2,8 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import type { ModelConfig } from '@routerly/shared'
 import { buildOpenAIOAuthHeaders, forwardOpenAIOAuthSSE, resolveCodexToken } from './openaiOAuthForward.js'
 
-vi.mock('../modules/usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
-import { trackUsage } from '../modules/usage/tracker.js'
+vi.mock('../../usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
+import { trackUsage } from '../../usage/tracker.js'
 const mockTrackUsage = vi.mocked(trackUsage)
 
 afterEach(() => {
