@@ -9,12 +9,12 @@ import type {
 } from '@routerly/shared';
 import type { ProjectConfig, ProjectToken } from '@routerly/shared';
 import type { FastifyBaseLogger } from 'fastify';
-import { classifyIntent } from '../modules/routing/intent/classifier.js';
-import { getEmbeddingProvider } from '../modules/embeddings/dispatch.js';
-import { llmChat, checkBudget, BudgetExceededError } from '../llm/executor.js';
-import type { LLMCallContext } from '../llm/executor.js';
-import { readConfig } from '../modules/config/loader.js';
-import { trackUsage } from '../modules/usage/tracker.js';
+import { classifyIntent } from '../routing/intent/classifier.js';
+import { getEmbeddingProvider } from '../embeddings/dispatch.js';
+import { llmChat, checkBudget, BudgetExceededError } from '../../llm/executor.js';
+import type { LLMCallContext } from '../../llm/executor.js';
+import { readConfig } from '../config/loader.js';
+import { trackUsage } from '../usage/tracker.js';
 
 /**
  * Real project context for guardrail judge calls (#77, BUG-4).
