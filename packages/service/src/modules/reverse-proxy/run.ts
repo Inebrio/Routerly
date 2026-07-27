@@ -1,4 +1,4 @@
-import type { ProcessorRegistry } from '../core/index.js'
+import type { ProcessorRegistry } from '../../core/index.js'
 import type { ProxyContext } from './context.js'
 
 /**

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ProcessorRegistry } from '../core/index.js'
+import { ProcessorRegistry } from '../../core/index.js'
 import { openaiTransportProcessors } from './lanes/openai.js'
 import { anthropicTransportProcessors } from './lanes/anthropic.js'
 import { PROXY_PHASES } from './run.js'

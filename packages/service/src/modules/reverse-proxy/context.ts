@@ -7,8 +7,8 @@ import type {
   RoutingCandidate,
   UsageInfo,
 } from '@routerly/shared'
-import type { EffectivePii } from '../modules/pii/piiScrubber.js'
-import type { TraceEntry } from '../modules/logging/traceStore.js'
+import type { EffectivePii } from '../pii/piiScrubber.js'
+import type { TraceEntry } from '../logging/traceStore.js'
 
 export interface ProxyResult {
   kind: 'stream' | 'json' | 'block' | 'passthrough'

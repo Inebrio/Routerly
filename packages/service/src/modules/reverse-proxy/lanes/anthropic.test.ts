@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ProcessorRegistry } from '../../core/index.js'
+import { ProcessorRegistry } from '../../../core/index.js'
 import { anthropicTransportProcessors, anthropicEgress } from './anthropic.js'
 import type { ProxyContext } from '../context.js'
 

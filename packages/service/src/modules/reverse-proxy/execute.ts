@@ -24,12 +24,12 @@ import type {
   MessagesRequest,
   MessagesResponse,
 } from '@routerly/shared';
-import { getProviderAdapter } from '../modules/provider/registry.js';
-import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../modules/budget/budget.js';
-import { trackUsage } from '../modules/usage/tracker.js';
-import { calculateCost } from '../lib/cost.js';
-import { emitEvent } from '../modules/notifications/emitter.js';
-import type { TraceEntry, TracePanel } from '../modules/logging/traceStore.js';
+import { getProviderAdapter } from '../provider/registry.js';
+import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../budget/budget.js';
+import { trackUsage } from '../usage/tracker.js';
+import { calculateCost } from '../../lib/cost.js';
+import { emitEvent } from '../notifications/emitter.js';
+import type { TraceEntry, TracePanel } from '../logging/traceStore.js';
 
 // ─── Tipi ────────────────────────────────────────────────────────────────────
 
