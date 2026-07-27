@@ -2,17 +2,17 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import Fastify from 'fastify'
 import type { ProjectConfig, ModelConfig } from '@routerly/shared'
 
-vi.mock('../modules/config/loader.js', () => ({ readConfig: vi.fn() }))
-vi.mock('../modules/auth/auth.js', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../modules/auth/auth.js')>()
+vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }))
+vi.mock('../auth/auth.js', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../auth/auth.js')>()
   return {
     ...original,
     resolveProjectByToken: vi.fn(),
   }
 })
 
-import { readConfig } from '../modules/config/loader.js'
-import { resolveProjectByToken } from '../modules/auth/auth.js'
+import { readConfig } from '../config/loader.js'
+import { resolveProjectByToken } from '../auth/auth.js'
 import {
   pickUpstreamModel,
   buildUpstreamUrl,
