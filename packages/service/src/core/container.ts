@@ -19,6 +19,14 @@ export class ServiceContainer {
     this.services.set(t.key, value)
   }
 
+  override<T>(t: Token<T>, decorate: (previous: T) => T): void {
+    if (!this.services.has(t.key)) {
+      throw new MissingDependencyError(`cannot override unregistered service: ${t.key}`)
+    }
+    const previous = this.services.get(t.key) as T
+    this.services.set(t.key, decorate(previous))
+  }
+
   has(t: Token<unknown>): boolean {
     return this.services.has(t.key)
   }

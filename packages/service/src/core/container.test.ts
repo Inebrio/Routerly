@@ -27,4 +27,27 @@ describe('ServiceContainer', () => {
     c.register(CLOCK, { now: () => 1 })
     expect(() => c.register(CLOCK, { now: () => 2 })).toThrow(KernelError)
   })
+
+  it('overrides a registered service by decorating the previous value', () => {
+    const clock = token<{ now(): number }>('clock')
+    const c = new ServiceContainer()
+    c.register(clock, { now: () => 1 })
+    c.override(clock, (prev) => ({ now: () => prev.now() + 10 }))
+    expect(c.resolve(clock).now()).toBe(11)
+  })
+
+  it('composes multiple overrides in registration order', () => {
+    const clock = token<{ now(): number }>('clock')
+    const c = new ServiceContainer()
+    c.register(clock, { now: () => 1 })
+    c.override(clock, (prev) => ({ now: () => prev.now() + 1 }))
+    c.override(clock, (prev) => ({ now: () => prev.now() * 10 }))
+    expect(c.resolve(clock).now()).toBe(20)
+  })
+
+  it('throws MissingDependencyError when overriding an unregistered token', () => {
+    const clock = token<{ now(): number }>('clock')
+    const c = new ServiceContainer()
+    expect(() => c.override(clock, (prev) => prev)).toThrow(MissingDependencyError)
+  })
 })
