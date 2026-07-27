@@ -1,39 +1,39 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import Fastify from 'fastify'
 
-vi.mock('../modules/config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn() }))
+vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn() }))
 vi.mock('node:child_process', () => ({
   spawn: vi.fn(() => ({ unref: vi.fn() })),
 }))
-vi.mock('../modules/auth/jwt.js', () => ({
+vi.mock('../auth/jwt.js', () => ({
   createSessionToken: vi.fn(() => 'test-jwt'),
   verifyToken: vi.fn(),
   generateRawToken: vi.fn(() => 'raw-refresh-token-xxxx'),
 }))
-vi.mock('../modules/notifications/sender.js', () => ({ sendTestNotification: vi.fn() }))
-vi.mock('../modules/notifications/emitter.js', () => ({ emitEvent: vi.fn() }))
-vi.mock('../modules/logging/traceStore.js', () => ({ getTrace: vi.fn() }))
+vi.mock('../notifications/sender.js', () => ({ sendTestNotification: vi.fn() }))
+vi.mock('../notifications/emitter.js', () => ({ emitEvent: vi.fn() }))
+vi.mock('../logging/traceStore.js', () => ({ getTrace: vi.fn() }))
 const mockChatCompletion = vi.fn()
-vi.mock('../modules/provider/registry.js', () => ({
+vi.mock('../provider/registry.js', () => ({
   getProviderAdapter: vi.fn(() => ({ chatCompletion: mockChatCompletion })),
 }))
-vi.mock('../update-checker.js', () => ({
+vi.mock('../../update-checker.js', () => ({
   updateChecker: { getLastResult: vi.fn(() => null), check: vi.fn(), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))
-vi.mock('../telemetry.js', () => ({ pingTelemetry: vi.fn() }))
-vi.mock('../modules/audit/logger.js', () => ({ logAudit: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('../../telemetry.js', () => ({ pingTelemetry: vi.fn() }))
+vi.mock('../audit/logger.js', () => ({ logAudit: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('bcrypt', () => ({
   default: { hash: vi.fn(async (p: string) => `hashed:${p}`), compare: vi.fn() },
 }))
 vi.mock('uuid', () => ({ v4: vi.fn(() => 'test-uuid-1234') }))
-vi.mock('./openaiOAuthForward.js', () => ({ resolveCodexToken: vi.fn(), forwardOpenAIOAuthSSE: vi.fn() }))
-vi.mock('../modules/auth/totp.js', () => ({
+vi.mock('../../routes/openaiOAuthForward.js', () => ({ resolveCodexToken: vi.fn(), forwardOpenAIOAuthSSE: vi.fn() }))
+vi.mock('../auth/totp.js', () => ({
   verifyTotp: vi.fn(() => true),
   generateTotpSecret: vi.fn(() => 'MOCK_SECRET_BASE32'),
   generateBackupCodes: vi.fn(() => ({ plain: ['CODE1', 'CODE2'], hashed: ['hash1', 'hash2'] })),
   hashBackupCode: vi.fn((code: string) => `hashed_${code}`),
 }))
-vi.mock('../modules/catalog/fetcher.js', () => ({
+vi.mock('../catalog/fetcher.js', () => ({
   catalogFetcher: {
     get: vi.fn().mockResolvedValue({
       openai:    { endpoint: 'https://api.openai.com/v1',    models: [{ id: 'gpt-4o',     input: 5,    output: 15,   contextWindow: 128000 }, { id: 'gpt-4o-mini', input: 0.15, output: 0.6, contextWindow: 128000 }] },
@@ -48,14 +48,14 @@ vi.mock('../modules/catalog/fetcher.js', () => ({
 }))
 
 import { apiRoutes } from './api.js'
-import { readConfig, writeConfig } from '../modules/config/loader.js'
-import { createSessionToken, verifyToken } from '../modules/auth/jwt.js'
-import { sendTestNotification } from '../modules/notifications/sender.js'
-import { getTrace } from '../modules/logging/traceStore.js'
+import { readConfig, writeConfig } from '../config/loader.js'
+import { createSessionToken, verifyToken } from '../auth/jwt.js'
+import { sendTestNotification } from '../notifications/sender.js'
+import { getTrace } from '../logging/traceStore.js'
 import bcrypt from 'bcrypt'
-import { resolveCodexToken } from './openaiOAuthForward.js'
-import { verifyTotp, generateTotpSecret, generateBackupCodes, hashBackupCode } from '../modules/auth/totp.js'
-import { catalogFetcher } from '../modules/catalog/fetcher.js'
+import { resolveCodexToken } from '../../routes/openaiOAuthForward.js'
+import { verifyTotp, generateTotpSecret, generateBackupCodes, hashBackupCode } from '../auth/totp.js'
+import { catalogFetcher } from '../catalog/fetcher.js'
 
 const mockCatalogFetcher = vi.mocked(catalogFetcher)
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
@@ -1656,7 +1656,7 @@ describe('PUT /api/settings', () => {
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
-    const { updateChecker } = await import('../update-checker.js')
+    const { updateChecker } = await import('../../update-checker.js')
     const app = await buildApp()
     const res = await app.inject({
       method: 'PUT', url: '/api/settings',
@@ -2497,7 +2497,7 @@ describe('DELETE /api/projects/:id/members/:userId', () => {
 describe('GET /api/system/releases', () => {
   it('returns available releases', async () => {
     setupAdminAuth()
-    const { updateChecker } = await import('../update-checker.js')
+    const { updateChecker } = await import('../../update-checker.js')
     vi.mocked(updateChecker.getAvailableReleases).mockResolvedValue([{ version: '0.3.0', tag: 'v0.3.0', channel: 'latest', publishedAt: '' }] as any)
 
     const app = await buildApp()
@@ -2510,7 +2510,7 @@ describe('GET /api/system/releases', () => {
 describe('GET /api/system/update-check', () => {
   it('triggers update check and returns result', async () => {
     setupAdminAuth()
-    const { updateChecker } = await import('../update-checker.js')
+    const { updateChecker } = await import('../../update-checker.js')
     vi.mocked(updateChecker.check).mockResolvedValue({ hasUpdate: false, currentVersion: '0.2.0' } as any)
 
     const app = await buildApp()
@@ -5753,7 +5753,7 @@ describe('GET /api/usage — custom period without to (line 752 FALSE branch)', 
 describe('PUT /api/settings — telemetry re-enabled when already enabled (line 910 FALSE branch)', () => {
   it('does NOT call pingTelemetry when telemetry was already enabled', async () => {
     setupAdminAuth()
-    const { pingTelemetry } = await import('../telemetry.js')
+    const { pingTelemetry } = await import('../../telemetry.js')
     const mockPing = vi.mocked(pingTelemetry)
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]

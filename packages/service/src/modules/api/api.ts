@@ -6,26 +6,26 @@ import { networkInterfaces } from 'node:os';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
-import { pingTelemetry } from '../telemetry.js';
-import { readConfig, writeConfig } from '../modules/config/loader.js';
-import { CONFIG_PATHS } from '../lib/paths.js';
-import { createSessionToken, verifyToken, generateRawToken } from '../modules/auth/jwt.js';
-import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../modules/auth/totp.js';
+import { pingTelemetry } from '../../telemetry.js';
+import { readConfig, writeConfig } from '../config/loader.js';
+import { CONFIG_PATHS } from '../../lib/paths.js';
+import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
+import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
 import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, UsageByModelEntry, ChannelProvider, ProviderRepo } from '@routerly/shared';
 import { CHANNEL_SECRET_FIELDS } from '@routerly/shared';
-import { catalogFetcher } from '../modules/catalog/fetcher.js';
-import { syncModelsFromCatalog } from '../modules/catalog/sync.js';
+import { catalogFetcher } from '../catalog/fetcher.js';
+import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
-import { getTrace } from '../modules/logging/traceStore.js';
-import { getProviderAdapter } from '../modules/provider/registry.js';
-import { sendTestNotification } from '../modules/notifications/sender.js';
-import { emitEvent } from '../modules/notifications/emitter.js';
-import { ALL_PERMISSIONS, BUILT_IN_ROLES, getEffectiveRoles } from '../modules/auth/roles.js';
-import { updateChecker } from '../update-checker.js';
-import { logAudit } from '../modules/audit/logger.js';
-import type { AuditEntry } from '../modules/audit/logger.js';
+import { getTrace } from '../logging/traceStore.js';
+import { getProviderAdapter } from '../provider/registry.js';
+import { sendTestNotification } from '../notifications/sender.js';
+import { emitEvent } from '../notifications/emitter.js';
+import { ALL_PERMISSIONS, BUILT_IN_ROLES, getEffectiveRoles } from '../auth/roles.js';
+import { updateChecker } from '../../update-checker.js';
+import { logAudit } from '../audit/logger.js';
+import type { AuditEntry } from '../audit/logger.js';
 
-const { version: pkgVersion } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf-8')) as { version: string };
+const { version: pkgVersion } = JSON.parse(readFileSync(new URL('../../../package.json', import.meta.url), 'utf-8')) as { version: string };
 
 const GITHUB_OWNER = 'Inebrio';
 const GITHUB_REPO  = 'Routerly';
@@ -1798,7 +1798,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /api/test/openai-oauth ─────────────────────────────────────────────
   fastify.post<{ Body: { authFilePath?: string } }>('/api/test/openai-oauth', async (req, reply) => {
     if (!requirePerm(req, 'model:read', reply)) return;
-    const { resolveCodexToken } = await import('./openaiOAuthForward.js');
+    const { resolveCodexToken } = await import('../../routes/openaiOAuthForward.js');
     const authFilePath = req.body?.authFilePath || '~/.codex/auth.json';
     try {
       const { accessToken, accountId } = await resolveCodexToken(authFilePath, req.log);

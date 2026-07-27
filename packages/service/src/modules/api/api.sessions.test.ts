@@ -1,29 +1,29 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import Fastify from 'fastify'
 
-vi.mock('../modules/config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn() }))
+vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn() }))
 vi.mock('node:child_process', () => ({
   spawn: vi.fn(() => ({ unref: vi.fn() })),
 }))
-vi.mock('../modules/auth/jwt.js', () => ({
+vi.mock('../auth/jwt.js', () => ({
   createSessionToken: vi.fn(() => 'test-jwt'),
   verifyToken: vi.fn(),
   generateRawToken: vi.fn(() => 'raw-refresh-token-xxxx'),
 }))
-vi.mock('../modules/notifications/sender.js', () => ({ sendTestNotification: vi.fn() }))
-vi.mock('../modules/logging/traceStore.js', () => ({ getTrace: vi.fn() }))
-vi.mock('../update-checker.js', () => ({
+vi.mock('../notifications/sender.js', () => ({ sendTestNotification: vi.fn() }))
+vi.mock('../logging/traceStore.js', () => ({ getTrace: vi.fn() }))
+vi.mock('../../update-checker.js', () => ({
   updateChecker: { getLastResult: vi.fn(() => null), check: vi.fn(), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))
-vi.mock('../telemetry.js', () => ({ pingTelemetry: vi.fn() }))
+vi.mock('../../telemetry.js', () => ({ pingTelemetry: vi.fn() }))
 vi.mock('bcrypt', () => ({
   default: { hash: vi.fn(async (p: string) => `hashed:${p}`), compare: vi.fn() },
 }))
 vi.mock('uuid', () => ({ v4: vi.fn(() => 'test-uuid-1234') }))
 
 import { apiRoutes } from './api.js'
-import { readConfig } from '../modules/config/loader.js'
-import { verifyToken } from '../modules/auth/jwt.js'
+import { readConfig } from '../config/loader.js'
+import { verifyToken } from '../auth/jwt.js'
 
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
 const mockVerifyToken = vi.mocked(verifyToken)
