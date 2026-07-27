@@ -1,4 +1,4 @@
-import { routingModule } from './routing.js'
+import { routingModule } from './routing/index.js'
 import { budgetModule } from './budget/index.js'
 import { usageModule } from './usage/index.js'
 import { guardrailsModule } from './guardrails.js'
