@@ -18,6 +18,7 @@ import { startIntegrationRunner } from './integrations/runner.js';
 import { buildKernel } from './core/lifecycle/bootstrap.js';
 import { configModule } from './modules/config/index.js';
 import { providerModule } from './modules/provider/index.js';
+import { catalogModule } from './modules/catalog/index.js';
 import { reverseProxyModule } from './reverse-proxy/index.js';
 import { coreModules } from './modules/index.js';
 import { CONTRIB_MODULES } from './core/contrib.js';
@@ -50,15 +51,17 @@ export async function buildServer() {
   });
 
   // ─── Modular kernel (0.4.0) ───────────────────────────────────────────────
-  // Boots alongside Fastify; registers the config and provider modules so
-  // modules/config/loader.ts and modules/provider/registry.ts are reachable via CONFIG_STORE and
-  // PROVIDER_REGISTRY for later plans. loadSecret()/initConfigDirs() already
-  // ran in startServer() before buildServer(); neither module does IO at
-  // register time, so this is order-safe. Additive only, no existing
-  // registration is touched.
+  // Boots alongside Fastify; registers the config, provider, and catalog modules
+  // so modules/config/loader.ts, modules/provider/registry.ts, and
+  // modules/catalog/fetcher.ts+sync.ts are reachable via CONFIG_STORE,
+  // PROVIDER_REGISTRY, and CATALOG for later plans. loadSecret()/
+  // initConfigDirs() already ran in startServer() before buildServer(); none
+  // of the three modules does IO at register time, so this is order-safe.
+  // Additive only, no existing registration is touched.
   const kernel = await buildKernel([
     configModule,       // Plan 2
     providerModule,     // Plan 3  (manifest id 'provider')
+    catalogModule,      // Step 5 (manifest id 'catalog')
     reverseProxyModule, // Plan 4  (owns PROXY_PIPELINE, transport-only, dark)
     ...coreModules,     // Plan 5  (concern processors)
     ...CONTRIB_MODULES, // Plan 6  (inert extension point, empty this phase)

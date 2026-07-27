@@ -13,8 +13,8 @@ import { createSessionToken, verifyToken, generateRawToken } from '../plugins/jw
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
 import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, UsageByModelEntry, ChannelProvider, ProviderRepo } from '@routerly/shared';
 import { CHANNEL_SECRET_FIELDS } from '@routerly/shared';
-import { catalogFetcher } from '../catalog/fetcher.js';
-import { syncModelsFromCatalog } from '../catalog/sync.js';
+import { catalogFetcher } from '../modules/catalog/fetcher.js';
+import { syncModelsFromCatalog } from '../modules/catalog/sync.js';
 import { z } from 'zod';
 import { getTrace } from '../routing/traceStore.js';
 import { getProviderAdapter } from '../modules/provider/registry.js';

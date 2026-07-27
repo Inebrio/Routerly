@@ -24,7 +24,7 @@ vi.mock('../../cost/tracker.js', () => ({
 
 // Default: empty catalog → getEmbeddingInputCost returns 0 for any provider/model
 const mockCatalogGet = vi.fn().mockResolvedValue({});
-vi.mock('../../catalog/fetcher.js', () => ({
+vi.mock('../../modules/catalog/fetcher.js', () => ({
   catalogFetcher: { get: (...args: any[]) => mockCatalogGet(...args) },
 }));
 
