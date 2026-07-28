@@ -451,6 +451,12 @@ export interface RoleConfig {
   permissions: Permission[];
 }
 
+export interface ModuleRecord {
+  id: string;
+  enabled: boolean;
+  config?: unknown;
+}
+
 export type Permission =
   | 'project:read'
   | 'project:write'
