@@ -26,6 +26,7 @@ import { updateChecker } from '../update-checker/update-checker.js';
 import { logAudit } from '../audit/logger.js';
 import type { AuditEntry } from '../audit/logger.js';
 import { ALL_MODULES } from '../index.js';
+import { connectionsRoutes } from './connections.js';
 import {
   isModuleEnabled,
   isAlwaysOn,
@@ -235,6 +236,8 @@ const piiConfigSchema = z.object({
 
 export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.decorateRequest('dashUser', null);
+
+  await fastify.register(connectionsRoutes);
 
   // Initialize catalog fetcher with configured repos on startup
   readConfig('settings').then((s: Settings) => {
