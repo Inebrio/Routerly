@@ -2024,6 +2024,7 @@ const TABS = [
   { path: 'notifications', label: 'Notifications' },
   { path: 'integrations',  label: 'Integrations' },
   { path: 'catalog',       label: 'Provider Catalog' },
+  { path: 'modules',       label: 'Modules' },
   { path: 'users',         label: 'Users' },
   { path: 'roles',         label: 'Roles' },
   { path: 'audit',         label: 'Audit Log' },
