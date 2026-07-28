@@ -21,6 +21,8 @@ const PERM_LABELS: Record<Permission, string> = {
   'audit:read':         'Audit Log – Read',
   'modules:read':       'Modules – Read',
   'modules:manage':     'Modules – Manage',
+  'connections:read':   'Connections – Read',
+  'connections:manage': 'Connections – Manage',
 };
 
 interface RoleFormState {

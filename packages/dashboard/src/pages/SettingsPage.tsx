@@ -311,6 +311,8 @@ const PERM_LABELS_LOCAL: Record<Permission, string> = {
   'audit:read':         'Audit Log – Read',
   'modules:read':       'Modules – Read',
   'modules:manage':     'Modules – Manage',
+  'connections:read':   'Connections – Read',
+  'connections:manage': 'Connections – Manage',
 };
 
 /* v8 ignore next */

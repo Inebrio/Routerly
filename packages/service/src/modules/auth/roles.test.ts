@@ -19,4 +19,9 @@ describe('roles', () => {
     expect(all.filter(r => r.id === 'admin')).toHaveLength(1);
     expect(all.find(r => r.id === 'admin')!.name).toBe('Admin');
   });
+
+  it('admin includes connections permissions', () => {
+    expect(ALL_PERMISSIONS).toContain('connections:read');
+    expect(ALL_PERMISSIONS).toContain('connections:manage');
+  });
 });

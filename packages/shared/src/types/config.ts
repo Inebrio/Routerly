@@ -497,7 +497,9 @@ export type Permission =
   | 'role:write'
   | 'modules:read'
   | 'modules:manage'
-  | 'audit:read';
+  | 'audit:read'
+  | 'connections:read'
+  | 'connections:manage';
 
 // ─── Integration types ────────────────────────────────────────────────────────
 
