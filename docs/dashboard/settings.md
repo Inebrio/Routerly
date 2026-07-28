@@ -198,7 +198,7 @@ The list displays all available modules in a table with the following columns:
 
 - **Module** — module identifier
 - **Version** — semantic version
-- **Depends on** — comma-separated list of module IDs this module requires; `—` if no dependencies
+- **Depends on** — comma-separated list of module IDs this module requires; `-` if no dependencies
 - **State** — `Enabled` or `Disabled`
 - **Action** — `Enable` / `Disable` button (grayed out and labeled "Locked" for always-on core modules)
 
@@ -249,7 +249,7 @@ Resolve dependency conflicts by enabling the required module(s) first, or by dis
 
 ### Access Control
 
-Requires `modules:manage` permission (only the `admin` role has this by default). Users without this permission cannot see the Modules tab.
+Viewing the list requires `modules:read` (held by `viewer`, `operator`, and `admin` by default). Enabling/disabling requires `modules:manage` (`admin` only by default). The tab itself is always visible; a user lacking `modules:read` sees the load-failure error state instead of the module list.
 
 ---
 

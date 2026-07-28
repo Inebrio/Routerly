@@ -103,8 +103,8 @@ List all available modules with their enabled state, version, and dependencies.
 **Example output:**
 ```
 ID             Version   Enabled   Always-on   Depends on
-guardrails     0.4.0     yes       no          —
-pii            0.4.0     no        no          —
+guardrails     0.4.0     yes       no          -
+pii            0.4.0     no        no          -
 reverse-proxy  0.4.0     yes       yes         provider, routing
 ```
 
@@ -141,9 +141,10 @@ Restart the Routerly service for this to take effect (e.g. `docker restart <cont
 ```
 
 **Error cases:**
-- Module is always-on (cannot be enabled/disabled): `Error: Module "reverse-proxy" is always-on and cannot be disabled`
 - Module is unknown: `Error: Unknown module "unknown-module"`
 - Module has unmet dependencies: `Error: Cannot enable "guardrails": depends on disabled provider`
+
+(Enabling an already-enabled or always-on module is a no-op, not an error.)
 
 Exit code: `0` on success, `1` on error.
 
