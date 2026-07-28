@@ -103,6 +103,27 @@ describe('anthropic transport lane', () => {
       await anthropicInject.run(ctx)
       expect((ctx.original as any).system).toBe('Follow the guardrail.')
     })
+
+    it('sets ctx.requestInjectionApplied after merging', async () => {
+      const ctx = {
+        protocol: 'anthropic',
+        requestInjection: 'Follow the guardrail.',
+        original: {},
+      } as unknown as ProxyContext
+      await anthropicInject.run(ctx)
+      expect(ctx.requestInjectionApplied).toBe(true)
+    })
+
+    it('is a no-op when requestInjectionApplied is already true (re-run on a fallback candidate)', async () => {
+      const ctx = {
+        protocol: 'anthropic',
+        requestInjection: 'Follow the guardrail.',
+        requestInjectionApplied: true,
+        original: { system: 'Base prompt.' },
+      } as unknown as ProxyContext
+      await anthropicInject.run(ctx)
+      expect((ctx.original as any).system).toBe('Base prompt.')
+    })
   })
 
   it('is a no-op when protocol is not anthropic', async () => {
@@ -669,5 +690,26 @@ describe('anthropic:attempt', () => {
     await anthropicAttempt.run(ctx)
     expect(ctx.result).toEqual({ kind: 'block', status: 402, body: { type: 'error', error: { type: 'invalid_request_error', message: 'budget' } } })
     expect(upstreamRun).not.toHaveBeenCalled()
+  })
+
+  it('applies requestInjection exactly once across a failed-then-succeeded fallback (regression, upstream.prepare re-runs per candidate)', async () => {
+    const models: ModelConfig[] = [
+      { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
+      { id: 'model-b', name: 'model-b', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
+    ]
+    await writeConfig('models', models)
+    const reg = new ProcessorRegistry<ProxyContext>()
+    reg.contribute(anthropicInject)
+    reg.contribute(fakeUpstream(['model-a']))
+    setProxyPipeline(reg)
+    const ctx = {
+      protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+      requestInjection: 'Follow the guardrail.',
+      original: { system: 'Base prompt.' },
+      candidates: [{ model: 'model-a', weight: 2 }, { model: 'model-b', weight: 1 }],
+    } as unknown as ProxyContext
+    await anthropicAttempt.run(ctx)
+    expect(ctx.result).toEqual({ kind: 'json', body: { type: 'message', model: 'model-b' } })
+    expect((ctx.original as any).system).toBe('Base prompt.\n\nFollow the guardrail.')
   })
 })
