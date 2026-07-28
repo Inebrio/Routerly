@@ -10556,3 +10556,69 @@ describe('guardrailRuleSchema superRefine — uncovered validation branches', ()
     expect(msgs).toMatch(/modelId/i)
   })
 })
+
+// ─── /api/modules ───────────────────────────────────────────────────────────
+describe('modules endpoints', () => {
+  it('GET /api/modules lists modules with 200 for a reader', async () => {
+    setupAdminAuth()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/modules', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as Array<{ id: string; alwaysOn: boolean; enabled: boolean }>
+    const config = body.find((m) => m.id === 'config')
+    expect(config?.alwaysOn).toBe(true)
+    expect(config?.enabled).toBe(true)
+  })
+
+  it('GET /api/modules is 403 without permission', async () => {
+    vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'no-perms-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ id: 'no-perms-id', email: 'noperms@example.com', passwordHash: 'hashed', roleId: 'no-perms', projectIds: [] }]
+      if (t === 'roles') return [{ id: 'no-perms', name: 'No Perms', permissions: [] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/modules', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('POST /api/modules/:id/disable disables a feature module (200, restartRequired)', async () => {
+    setupAdminAuth()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/disable', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ id: 'guardrails', enabled: false, restartRequired: true })
+  })
+
+  it('POST /api/modules/:id/disable is 409 for an always-on module', async () => {
+    setupAdminAuth()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/modules/config/disable', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(409)
+  })
+
+  it('POST /api/modules/:id/enable is 403 without modules:manage', async () => {
+    vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'no-perms-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ id: 'no-perms-id', email: 'noperms@example.com', passwordHash: 'hashed', roleId: 'no-perms', projectIds: [] }]
+      if (t === 'roles') return [{ id: 'no-perms', name: 'No Perms', permissions: [] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/enable', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('POST /api/modules/:id/enable is 409 for an unknown module', async () => {
+    setupAdminAuth()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/modules/does-not-exist/enable', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(409)
+  })
+})

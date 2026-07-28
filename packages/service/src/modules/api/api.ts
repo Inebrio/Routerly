@@ -24,6 +24,14 @@ import { ALL_PERMISSIONS, BUILT_IN_ROLES, getEffectiveRoles } from '../auth/role
 import { updateChecker } from '../update-checker/update-checker.js';
 import { logAudit } from '../audit/logger.js';
 import type { AuditEntry } from '../audit/logger.js';
+import { ALL_MODULES } from '../index.js';
+import {
+  isModuleEnabled,
+  isAlwaysOn,
+  canEnable,
+  canDisable,
+  setModuleEnabled,
+} from '../../core/modules/registry.js';
 
 const { version: pkgVersion } = JSON.parse(readFileSync(new URL('../../../package.json', import.meta.url), 'utf-8')) as { version: string };
 
@@ -472,6 +480,45 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
     const allRoles = getEffectiveRoles(customRoles);
     req.dashUser = { id: userId, email: user.email, roleId: user.roleId, permissions: resolvePermissions(user.roleId, allRoles) };
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // MODULES
+  // ══════════════════════════════════════════════════════════════════════════════
+
+  fastify.get('/api/modules', async (req, reply) => {
+    if (!requirePerm(req, 'modules:read', reply)) return;
+    const records = await readConfig('modules');
+    const list = ALL_MODULES.map((m) => ({
+      id: m.manifest.id,
+      version: m.manifest.version,
+      enabled: isModuleEnabled(records, m.manifest.id),
+      alwaysOn: isAlwaysOn(m.manifest.id),
+      dependsOn: Object.keys(m.manifest.dependsOn ?? {}),
+    }));
+    return reply.send(list);
+  });
+
+  fastify.post<{ Params: { id: string } }>('/api/modules/:id/enable', async (req, reply) => {
+    if (!requirePerm(req, 'modules:manage', reply)) return;
+    const manifests = ALL_MODULES.map((m) => m.manifest);
+    const records = await readConfig('modules');
+    const check = canEnable(req.params.id, records, manifests);
+    if (!check.ok) return reply.status(409).send({ error: check.error });
+    await writeConfig('modules', setModuleEnabled(records, req.params.id, true));
+    audit(req, 'modules:enable', 'success', { id: req.params.id });
+    return reply.send({ id: req.params.id, enabled: true, restartRequired: true });
+  });
+
+  fastify.post<{ Params: { id: string } }>('/api/modules/:id/disable', async (req, reply) => {
+    if (!requirePerm(req, 'modules:manage', reply)) return;
+    const manifests = ALL_MODULES.map((m) => m.manifest);
+    const records = await readConfig('modules');
+    const check = canDisable(req.params.id, records, manifests);
+    if (!check.ok) return reply.status(409).send({ error: check.error });
+    await writeConfig('modules', setModuleEnabled(records, req.params.id, false));
+    audit(req, 'modules:disable', 'success', { id: req.params.id });
+    return reply.send({ id: req.params.id, enabled: false, restartRequired: true });
   });
 
   // ══════════════════════════════════════════════════════════════════════════════
