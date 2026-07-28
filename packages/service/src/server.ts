@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 import authPlugin from './modules/auth/auth.js';
 import { loadSecret } from './modules/auth/jwt.js';
+import { loadCredentialKey } from './lib/crypto-cred.js';
 import { openaiRoutes } from './modules/api-reverse-proxy/openai.js';
 import { anthropicRoutes } from './modules/api-reverse-proxy/anthropic.js';
 import { apiRoutes } from './modules/api/api.js';
@@ -117,6 +118,7 @@ export async function buildServer() {
 export async function startServer() {
   await initConfigDirs();
   await loadSecret();
+  await loadCredentialKey();
   const orphansRemoved = await pruneOrphanUsage();
   if (orphansRemoved > 0) {
     // eslint-disable-next-line no-console

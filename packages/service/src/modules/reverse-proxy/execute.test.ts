@@ -5,6 +5,9 @@ vi.mock('../budget/budget.js', () => ({ isAllowed: vi.fn(), isAllowedForRoutingM
 vi.mock('../usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('../notifications/emitter.js', () => ({ emitEvent: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }))
+vi.mock('../provider/descriptor.js', () => ({ getProviderDescriptor: vi.fn() }))
+vi.mock('../provider/anthropic-oauth.js', () => ({ resolveAnthropicOAuthCredential: vi.fn() }))
+vi.mock('../provider/openai-oauth.js', () => ({ resolveOpenAIOAuthCredential: vi.fn() }))
 
 import { llmChat, llmStream, llmMessages, loadEffectiveModel, BudgetExceededError } from './execute.js'
 import { getProviderAdapter } from '../provider/registry.js'
@@ -12,6 +15,9 @@ import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../b
 import { trackUsage } from '../usage/tracker.js'
 import { emitEvent } from '../notifications/emitter.js'
 import { readConfig } from '../config/loader.js'
+import { getProviderDescriptor } from '../provider/descriptor.js'
+import { resolveAnthropicOAuthCredential } from '../provider/anthropic-oauth.js'
+import { resolveOpenAIOAuthCredential } from '../provider/openai-oauth.js'
 
 const mockGetProvider = vi.mocked(getProviderAdapter)
 const mockIsAllowed = vi.mocked(isAllowed)
@@ -20,6 +26,9 @@ const mockTrackUsage = vi.mocked(trackUsage)
 const mockGetLimitUsage = vi.mocked(getLimitUsageSnapshot)
 const mockEmitEvent = vi.mocked(emitEvent)
 const mockReadConfig = vi.mocked(readConfig)
+const mockGetProviderDescriptor = vi.mocked(getProviderDescriptor)
+const mockResolveAnthropicOAuth = vi.mocked(resolveAnthropicOAuthCredential)
+const mockResolveOpenAIOAuth = vi.mocked(resolveOpenAIOAuthCredential)
 
 afterEach(() => vi.clearAllMocks())
 
@@ -1505,5 +1514,66 @@ describe('loadEffectiveModel', () => {
     const result = await loadEffectiveModel('inst-dangling')
     expect(result?.id).toBe('inst-dangling')
     expect((result as any)?.name).toBe('inst-dangling')
+  })
+
+  it('resolves a live token for anthropic-oauth connections via resolveAnthropicOAuthCredential', async () => {
+    const instance = {
+      id: 'inst-a', connectionId: 'conn-a', upstreamModelId: 'claude-3-opus',
+      cost: { inputPerMillion: 1, outputPerMillion: 2 }, contextWindow: 200000,
+    }
+    const connection = {
+      id: 'conn-a', providerId: 'anthropic-oauth', endpoint: 'https://api.anthropic.com',
+      credentials: { oauthEnc: 'enc-token', refreshEnc: 'enc-refresh', expiresAt: Date.now() + 3600_000 },
+      enabled: true, label: 'anthropic-oauth-conn',
+    }
+    mockReadConfig.mockImplementationOnce(async () => [instance] as any) // 'instances'
+    mockReadConfig.mockImplementationOnce(async () => [connection] as any) // 'connections'
+    mockGetProviderDescriptor.mockReturnValueOnce({ supportLevel: 'oauth' } as any)
+    mockResolveAnthropicOAuth.mockResolvedValueOnce('live-anthropic-token')
+
+    const result = await loadEffectiveModel('inst-a')
+    expect(mockResolveAnthropicOAuth).toHaveBeenCalledWith(connection)
+    expect(mockResolveOpenAIOAuth).not.toHaveBeenCalled()
+    expect((result as any)?.apiKey).toBe('live-anthropic-token')
+  })
+
+  it('resolves a live token for openai-oauth connections via resolveOpenAIOAuthCredential', async () => {
+    const instance = {
+      id: 'inst-o', connectionId: 'conn-o', upstreamModelId: 'gpt-4o',
+      cost: { inputPerMillion: 1, outputPerMillion: 2 }, contextWindow: 128000,
+    }
+    const connection = {
+      id: 'conn-o', providerId: 'openai-oauth', endpoint: 'https://api.openai.com/v1',
+      credentials: { oauthEnc: 'enc-token', refreshEnc: 'enc-refresh', expiresAt: Date.now() + 3600_000 },
+      enabled: true, label: 'openai-oauth-conn',
+    }
+    mockReadConfig.mockImplementationOnce(async () => [instance] as any) // 'instances'
+    mockReadConfig.mockImplementationOnce(async () => [connection] as any) // 'connections'
+    mockGetProviderDescriptor.mockReturnValueOnce({ supportLevel: 'oauth' } as any)
+    mockResolveOpenAIOAuth.mockResolvedValueOnce('live-openai-token')
+
+    const result = await loadEffectiveModel('inst-o')
+    expect(mockResolveOpenAIOAuth).toHaveBeenCalledWith(connection)
+    expect(mockResolveAnthropicOAuth).not.toHaveBeenCalled()
+    expect((result as any)?.apiKey).toBe('live-openai-token')
+  })
+
+  it('does not invoke oauth resolvers for non-oauth connections', async () => {
+    const instance = {
+      id: 'inst-1', connectionId: 'conn-1', upstreamModelId: 'gpt-4o',
+      cost: { inputPerMillion: 1, outputPerMillion: 2 }, contextWindow: 128000,
+    }
+    const connection = {
+      id: 'conn-1', providerId: 'openai', endpoint: 'https://api.openai.com/v1',
+      credentials: { apiKey: 'sk-conn-key' }, enabled: true, label: 'test-conn',
+    }
+    mockReadConfig.mockImplementationOnce(async () => [instance] as any) // 'instances'
+    mockReadConfig.mockImplementationOnce(async () => [connection] as any) // 'connections'
+    mockGetProviderDescriptor.mockReturnValueOnce({ supportLevel: 'native' } as any)
+
+    const result = await loadEffectiveModel('inst-1')
+    expect(mockResolveAnthropicOAuth).not.toHaveBeenCalled()
+    expect(mockResolveOpenAIOAuth).not.toHaveBeenCalled()
+    expect((result as any)?.apiKey).toBe('sk-conn-key')
   })
 })

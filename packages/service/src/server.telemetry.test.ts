@@ -10,13 +10,15 @@ const { version: CURRENT_VERSION } = JSON.parse(
 
 // ── Hoist mock factories before any import ───────────────────────────────────
 
-const { mockPing, mockReadConfig, mockWriteConfig, mockInitConfigDirs, mockLoadSecret } =
+const { mockPing, mockReadConfig, mockWriteConfig, mockInitConfigDirs, mockLoadSecret, mockGetOrCreateSecret, mockLoadCredentialKey } =
   vi.hoisted(() => ({
     mockPing: vi.fn().mockResolvedValue(true),
     mockReadConfig: vi.fn(),
     mockWriteConfig: vi.fn().mockResolvedValue(undefined),
     mockInitConfigDirs: vi.fn().mockResolvedValue(undefined),
     mockLoadSecret: vi.fn().mockResolvedValue(undefined),
+    mockGetOrCreateSecret: vi.fn(),
+    mockLoadCredentialKey: vi.fn().mockResolvedValue(undefined),
   }));
 
 vi.mock('./modules/telemetry/telemetry.js', () => ({ pingTelemetry: mockPing }));
@@ -26,8 +28,10 @@ vi.mock('./modules/config/loader.js', () => ({
   writeConfig: mockWriteConfig,
   pruneOrphanUsage: vi.fn(async () => 0),
   appendUsageRecord: vi.fn(),
+  getOrCreateSecret: mockGetOrCreateSecret,
 }));
 vi.mock('./modules/auth/jwt.js', () => ({ loadSecret: mockLoadSecret }));
+vi.mock('./lib/crypto-cred.js', () => ({ loadCredentialKey: mockLoadCredentialKey }));
 vi.mock('./modules/update-checker/update-checker.js', () => ({ updateChecker: { start: vi.fn() } }));
 
 vi.mock('fastify', () => ({
