@@ -12,8 +12,9 @@ function combined(): ProcessorRegistry<ProxyContext> {
 }
 
 describe('combined transport pipeline', () => {
-  it('both lanes share upstream.execute / routing.execute / egress', () => {
+  it('both lanes share upstream.prepare / upstream.execute / routing.execute / egress', () => {
     const reg = combined()
+    expect(reg.orderedFor('upstream.prepare').map((p) => p.id)).toEqual(expect.arrayContaining(['openai:inject', 'anthropic:inject']))
     expect(reg.orderedFor('upstream.execute').map((p) => p.id)).toEqual(expect.arrayContaining(['openai:upstream', 'anthropic:upstream']))
     expect(reg.orderedFor('routing.execute').map((p) => p.id)).toEqual(expect.arrayContaining(['openai:attempt', 'anthropic:attempt']))
     expect(reg.orderedFor('egress').map((p) => p.id)).toEqual(expect.arrayContaining(['openai:egress', 'anthropic:egress']))
@@ -21,7 +22,7 @@ describe('combined transport pipeline', () => {
 
   it('transport owns NO other phase (ingress/preprocess/routing.prepare/postprocess/finalize are Plan 5)', () => {
     const reg = combined()
-    for (const phase of ['ingress', 'protocol.decode', 'request.preprocess', 'routing.prepare', 'upstream.prepare', 'response.postprocess', 'protocol.encode', 'finalize']) {
+    for (const phase of ['ingress', 'protocol.decode', 'request.preprocess', 'routing.prepare', 'response.postprocess', 'protocol.encode', 'finalize']) {
       expect(reg.orderedFor(phase)).toEqual([])
     }
   })

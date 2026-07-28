@@ -35,6 +35,30 @@ export function buildOpenAIContext(req: FastifyRequest, reply: FastifyReply): Pr
   }
 }
 
+// ─── upstream.prepare: merge guardrail request-injection (steering text) into the outgoing
+// system message, reproducing the pre-refactor merge from routes/openai.ts verbatim ───
+export const openaiInject: Processor<ProxyContext> = {
+  id: 'openai:inject',
+  phase: 'upstream.prepare',
+  async run(ctx) {
+    if (ctx.protocol !== 'openai') return
+    if (ctx.result) return
+    const injection = ctx.requestInjection
+    if (!injection) return
+    const body = ctx.request as { messages?: Array<{ role?: string; content?: unknown }> }
+    const messages = body.messages
+    if (!Array.isArray(messages)) return
+    const sys = messages.find((m) => m?.role === 'system')
+    if (sys) {
+      if (typeof sys.content === 'string') sys.content = `${sys.content}\n\n${injection}`
+      else if (Array.isArray(sys.content)) sys.content.push({ type: 'text', text: injection })
+      else sys.content = injection
+    } else {
+      messages.unshift({ role: 'system', content: injection })
+    }
+  },
+}
+
 // ─── upstream.execute: the provider call ONLY (mirrors the stream/non-stream provider-call
 // blocks in routes/openai.ts; no fixed line numbers here, that file is being replaced by this
 // pipeline and its lines keep moving) ───
@@ -248,4 +272,4 @@ export const openaiEgress: Processor<ProxyContext> = {
   },
 }
 
-export const openaiTransportProcessors: Processor<ProxyContext>[] = [openaiUpstream, openaiAttempt, openaiEgress]
+export const openaiTransportProcessors: Processor<ProxyContext>[] = [openaiInject, openaiUpstream, openaiAttempt, openaiEgress]
