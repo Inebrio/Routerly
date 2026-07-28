@@ -32,11 +32,20 @@ const mockReadConfig = vi.mocked(readConfig)
 const mockWriteConfig = vi.mocked(writeConfig)
 const mockPingTelemetry = vi.mocked(pingTelemetry)
 
+// bootstrap() now reads the 'modules' config key too (module enable/disable
+// registry) — keyed mock keeps that read returning [] (no disabled modules)
+// while callers still control the 'settings' shape they care about.
+function mockSettings(settings: unknown): void {
+  mockReadConfig.mockImplementation(async (key: string) =>
+    (key === 'settings' ? settings : []) as any,
+  )
+}
+
 afterEach(() => vi.clearAllMocks())
 
 describe('buildServer', () => {
   it('builds a Fastify instance with dashboard disabled', async () => {
-    mockReadConfig.mockResolvedValue({ logLevel: 'silent', dashboardEnabled: false } as any)
+    mockSettings({ logLevel: 'silent', dashboardEnabled: false } as any)
 
     const server = await buildServer()
     const res = await server.inject({ method: 'GET', url: '/health' })
@@ -47,7 +56,7 @@ describe('buildServer', () => {
   })
 
   it('redirects GET / to /dashboard/', async () => {
-    mockReadConfig.mockResolvedValue({ logLevel: 'silent', dashboardEnabled: false } as any)
+    mockSettings({ logLevel: 'silent', dashboardEnabled: false } as any)
 
     const server = await buildServer()
     const res = await server.inject({ method: 'GET', url: '/' })
@@ -58,7 +67,7 @@ describe('buildServer', () => {
   })
 
   it('builds with dashboardEnabled:true (dashboard dist not found — catches error gracefully)', async () => {
-    mockReadConfig.mockResolvedValue({ logLevel: 'silent', dashboardEnabled: true } as any)
+    mockSettings({ logLevel: 'silent', dashboardEnabled: true } as any)
 
     const server = await buildServer()
     await server.close()
@@ -67,10 +76,7 @@ describe('buildServer', () => {
   // Regression (U6): metricsRoutes must be wired into the real server factory.
   // The isolated metrics.test.ts mounts the plugin directly and so missed this gap.
   it('serves GET /metrics (200, text/plain) — Prometheus endpoint is registered', async () => {
-    mockReadConfig.mockImplementation(async (key: string) => {
-      if (key === 'settings') return { logLevel: 'silent', dashboardEnabled: false } as any
-      return [] as any // usage / projects / models
-    })
+    mockSettings({ logLevel: 'silent', dashboardEnabled: false } as any)
 
     const server = await buildServer()
     const res = await server.inject({ method: 'GET', url: '/metrics' })
@@ -89,7 +95,7 @@ describe('startServer', () => {
       port: 3099, host: '127.0.0.1',
       telemetry: { enabled: true, installId: 'install-abc' },
     }
-    mockReadConfig.mockResolvedValue(settings)
+    mockSettings(settings)
     mockWriteConfig.mockResolvedValue(undefined)
 
     await startServer()
@@ -104,7 +110,7 @@ describe('startServer', () => {
       port: 3098, host: '127.0.0.1',
       telemetry: { enabled: true, installId: 'install-xyz', lastPingedVersion: '0.0.0' },
     }
-    mockReadConfig.mockResolvedValue(settings)
+    mockSettings(settings)
     mockWriteConfig.mockResolvedValue(undefined)
 
     await startServer()
@@ -120,7 +126,7 @@ describe('startServer', () => {
       port: 3097, host: '127.0.0.1',
       telemetry: { enabled: true, installId: 'install-1', lastPingedVersion: pkgVersion },
     }
-    mockReadConfig.mockResolvedValue(settings)
+    mockSettings(settings)
     mockWriteConfig.mockResolvedValue(undefined)
 
     await startServer()
@@ -134,7 +140,7 @@ describe('startServer', () => {
       port: 3096, host: '127.0.0.1',
       telemetry: { enabled: false },
     }
-    mockReadConfig.mockResolvedValue(settings)
+    mockSettings(settings)
 
     await startServer()
 
@@ -145,7 +151,7 @@ describe('startServer', () => {
     const { migrateProjectConfigs } = await import('./modules/config/migrate.js')
     vi.mocked(migrateProjectConfigs).mockResolvedValueOnce(3)
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    mockReadConfig.mockResolvedValue({ logLevel: 'silent', dashboardEnabled: false, port: 3094, host: '127.0.0.1', telemetry: { enabled: false } } as any)
+    mockSettings({ logLevel: 'silent', dashboardEnabled: false, port: 3094, host: '127.0.0.1', telemetry: { enabled: false } } as any)
 
     await startServer()
 
@@ -157,7 +163,7 @@ describe('startServer', () => {
     const { pruneOrphanUsage } = await import('./modules/config/loader.js')
     vi.mocked(pruneOrphanUsage).mockResolvedValueOnce(18)
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    mockReadConfig.mockResolvedValue({ logLevel: 'silent', dashboardEnabled: false, port: 3095, host: '127.0.0.1', telemetry: { enabled: false } } as any)
+    mockSettings({ logLevel: 'silent', dashboardEnabled: false, port: 3095, host: '127.0.0.1', telemetry: { enabled: false } } as any)
 
     await startServer()
 

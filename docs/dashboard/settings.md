@@ -188,6 +188,71 @@ Click the **Refresh** button in the top right to invalidate the 6-hour in-memory
 
 ---
 
+## Modules Tab {#modules-tab}
+
+Manage optional service modules. Routerly's core infrastructure (routing, reverse proxy, provider adapters) cannot be disabled, but optional modules like `guardrails` and `pii` can be toggled on or off to reduce memory overhead or disable unused features entirely at boot.
+
+### Module List
+
+The list displays all available modules in a table with the following columns:
+
+- **Module** — module identifier
+- **Version** — semantic version
+- **Depends on** — comma-separated list of module IDs this module requires; `—` if no dependencies
+- **State** — `Enabled` or `Disabled`
+- **Action** — `Enable` / `Disable` button (grayed out and labeled "Locked" for always-on core modules)
+
+### Enabling and Disabling Modules
+
+Click the **Enable** or **Disable** button to toggle a module. The button becomes disabled while the request is in flight (`...`).
+
+After a successful toggle, a yellow alert banner appears at the top:
+
+```
+Module changes require a service restart to take effect. Restart the Routerly service
+(for Docker: docker restart <container>; otherwise stop and re-run the service process).
+```
+
+**Core modules** (always-on) show a "Locked" label instead of an action button. They cannot be disabled.
+
+### Supported Modules
+
+| Module | ID | Always-on | Purpose |
+|--------|-----|-----------|---------|
+| Reverse Proxy | `reverse-proxy` | yes | Core request routing engine |
+| Provider | `provider` | yes | Model provider adapters |
+| Routing | `routing` | yes | Routing policy evaluation |
+| Config | `config` | yes | Configuration management |
+| Catalog | `catalog` | yes | Provider and model catalog |
+| Guardrails | `guardrails` | no | Content security rules (regex, semantic, topic, moderation, PII scrubbing) |
+
+### Dependency Handling
+
+A module cannot be disabled if other enabled modules depend on it. For example, disabling the `provider` module fails with the error:
+
+```
+Cannot disable "provider": required by reverse-proxy, routing
+```
+
+Similarly, enabling a module fails if its dependencies are disabled:
+
+```
+Cannot enable "guardrails": depends on disabled provider
+```
+
+Resolve dependency conflicts by enabling the required module(s) first, or by disabling the dependent module(s).
+
+### Error States
+
+- **Load failure** — if the module list fails to load, a red error message appears: `Failed to load modules: <error message>`
+- **Toggle failure** — if an enable/disable request fails (e.g. permission denied, dependency conflict), an error message appears below the table and the module state is reloaded to reflect the actual state on the server
+
+### Access Control
+
+Requires `modules:manage` permission (only the `admin` role has this by default). Users without this permission cannot see the Modules tab.
+
+---
+
 ## Integrations Tab {#integrations-tab}
 
 Export Routerly metrics to external monitoring and observability systems. Integrations push metrics every 60 seconds to your chosen platform.

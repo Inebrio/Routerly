@@ -67,11 +67,20 @@ function makeSettings(telemetry?: { enabled: boolean; installId: string; lastPin
 
 afterEach(() => vi.clearAllMocks());
 
+// bootstrap() also reads the 'modules' config key (module enable/disable
+// registry) — keyed mock keeps that read returning [] (no disabled modules)
+// while callers still control the 'settings' shape they care about.
+function mockSettings(settings: ReturnType<typeof makeSettings>): void {
+  mockReadConfig.mockImplementation(async (key: string) =>
+    (key === 'settings' ? settings : []) as unknown,
+  );
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('startServer() startup telemetry', () => {
   it('does not ping when telemetry is absent (user not yet asked)', async () => {
-    mockReadConfig.mockResolvedValue(makeSettings());
+    mockSettings(makeSettings());
 
     await startServer();
 
@@ -80,7 +89,7 @@ describe('startServer() startup telemetry', () => {
   });
 
   it('does not ping when telemetry is disabled', async () => {
-    mockReadConfig.mockResolvedValue(makeSettings({ enabled: false, installId: 'id-1' }));
+    mockSettings(makeSettings({ enabled: false, installId: 'id-1' }));
 
     await startServer();
 
@@ -89,7 +98,7 @@ describe('startServer() startup telemetry', () => {
   });
 
   it('fires "install" when lastPingedVersion is absent', async () => {
-    mockReadConfig.mockResolvedValue(makeSettings({ enabled: true, installId: 'uuid-abc' }));
+    mockSettings(makeSettings({ enabled: true, installId: 'uuid-abc' }));
 
     await startServer();
 
@@ -103,7 +112,7 @@ describe('startServer() startup telemetry', () => {
   });
 
   it('fires "upgrade" when lastPingedVersion differs from current version', async () => {
-    mockReadConfig.mockResolvedValue(
+    mockSettings(
       makeSettings({ enabled: true, installId: 'uuid-def', lastPingedVersion: '0.0.1' }),
     );
 
@@ -119,7 +128,7 @@ describe('startServer() startup telemetry', () => {
   });
 
   it('does not ping when lastPingedVersion already matches current version', async () => {
-    mockReadConfig.mockResolvedValue(
+    mockSettings(
       makeSettings({ enabled: true, installId: 'uuid-ghi', lastPingedVersion: CURRENT_VERSION }),
     );
 
@@ -131,7 +140,7 @@ describe('startServer() startup telemetry', () => {
 
   it('does not update lastPingedVersion when ping fails', async () => {
     mockPing.mockResolvedValueOnce(false);
-    mockReadConfig.mockResolvedValue(makeSettings({ enabled: true, installId: 'uuid-fail' }));
+    mockSettings(makeSettings({ enabled: true, installId: 'uuid-fail' }));
 
     await startServer();
 
