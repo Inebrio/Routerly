@@ -100,6 +100,69 @@ describe('POST /api/connections', () => {
     expect(body.credentials).toBeUndefined()
     expect(JSON.stringify(body)).not.toContain('sk-secret')
   })
+
+  // ─── Step 8.1 — module gating ──────────────────────────────────────────────
+
+  it('blocks oauth connections when provider-oauth module disabled', async () => {
+    const app = await buildApp()
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [testUser]
+      if (type === 'roles') return [{ id: 'test-role', name: 'Test', permissions: ['connections:manage'] }]
+      if (type === 'connections') return []
+      if (type === 'modules') return [{ id: 'provider-oauth', enabled: false }]
+      return []
+    })
+    mockVerifyToken.mockReturnValue({ sub: 'test-user-id' } as any)
+    const res = await app.inject({
+      method: 'POST', url: '/api/connections', headers: { authorization: 'Bearer valid-jwt-token' },
+      payload: { providerId: 'anthropic-oauth', label: 'x', credentials: {}, enabled: true },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+    const body = JSON.parse(res.body)
+    expect(body.error).toBe('module_disabled')
+  })
+
+  it('blocks web connections when provider-web module disabled', async () => {
+    const app = await buildApp()
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [testUser]
+      if (type === 'roles') return [{ id: 'test-role', name: 'Test', permissions: ['connections:manage'] }]
+      if (type === 'connections') return []
+      if (type === 'modules') return [{ id: 'provider-web', enabled: false }]
+      return []
+    })
+    mockVerifyToken.mockReturnValue({ sub: 'test-user-id' } as any)
+    const res = await app.inject({
+      method: 'POST', url: '/api/connections', headers: { authorization: 'Bearer valid-jwt-token' },
+      payload: { providerId: 'anthropic-web', label: 'x', credentials: {}, enabled: true },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('allows oauth connections when provider-oauth module has no record (defaults enabled)', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/connections', headers: auth('connections:manage'),
+      payload: { providerId: 'anthropic-oauth', label: 'x', credentials: {}, enabled: true },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('allows api-key providers without reading the modules config at all', async () => {
+    const app = await buildApp()
+    const headers = auth('connections:manage')
+    mockReadConfig.mockClear()
+    const res = await app.inject({
+      method: 'POST', url: '/api/connections', headers,
+      payload: { providerId: 'openai', label: 'x', credentials: {}, enabled: true },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(mockReadConfig).not.toHaveBeenCalledWith('modules')
+  })
 })
 
 // ─── GET /api/providers/descriptors ─────────────────────────────────────────
@@ -204,6 +267,66 @@ describe('PATCH /api/connections/:id', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(400)
+  })
+
+  // ─── Step 8.1 — module gating (PATCH resolves providerId from stored record) ─
+
+  it('blocks patching an existing oauth connection when provider-oauth module disabled, even without providerId in the body', async () => {
+    const app = await buildApp()
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [testUser]
+      if (type === 'roles') return [{ id: 'test-role', name: 'Test', permissions: ['connections:manage'] }]
+      if (type === 'connections') return [{ id: 'c1', providerId: 'anthropic-oauth', label: 'Old', credentials: {}, enabled: true }]
+      if (type === 'modules') return [{ id: 'provider-oauth', enabled: false }]
+      return []
+    })
+    mockVerifyToken.mockReturnValue({ sub: 'test-user-id' } as any)
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/connections/c1', headers: { authorization: 'Bearer valid-jwt-token' },
+      payload: { enabled: true },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+    const body = JSON.parse(res.body)
+    expect(body.error).toBe('module_disabled')
+  })
+
+  it('gates on the new providerId when a PATCH re-points a connection to an oauth provider', async () => {
+    const app = await buildApp()
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [testUser]
+      if (type === 'roles') return [{ id: 'test-role', name: 'Test', permissions: ['connections:manage'] }]
+      if (type === 'connections') return [{ id: 'c1', providerId: 'openai', label: 'Old', credentials: {}, enabled: true }]
+      if (type === 'modules') return [{ id: 'provider-oauth', enabled: false }]
+      return []
+    })
+    mockVerifyToken.mockReturnValue({ sub: 'test-user-id' } as any)
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/connections/c1', headers: { authorization: 'Bearer valid-jwt-token' },
+      payload: { providerId: 'anthropic-oauth' },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('allows patching a non-gated field on an existing oauth connection when provider-oauth module is enabled', async () => {
+    const app = await buildApp()
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [testUser]
+      if (type === 'roles') return [{ id: 'test-role', name: 'Test', permissions: ['connections:manage'] }]
+      if (type === 'connections') return [{ id: 'c1', providerId: 'anthropic-oauth', label: 'Old', credentials: {}, enabled: true }]
+      if (type === 'modules') return [{ id: 'provider-oauth', enabled: true }]
+      return []
+    })
+    mockVerifyToken.mockReturnValue({ sub: 'test-user-id' } as any)
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/connections/c1', headers: { authorization: 'Bearer valid-jwt-token' },
+      payload: { label: 'New' },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.label).toBe('New')
   })
 })
 
