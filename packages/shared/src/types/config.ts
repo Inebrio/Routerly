@@ -4,6 +4,25 @@ export type Provider = 'openai' | 'anthropic' | 'anthropic-oauth' | 'openai-oaut
 
 export type ProviderId = string;
 
+export interface ProviderConnection {
+  id: string;
+  providerId: ProviderId;
+  label: string;
+  credentials: Record<string, unknown>;
+  endpoint?: string;
+  enabled: boolean;
+}
+
+export interface ModelInstance {
+  id: string;
+  connectionId: string;
+  upstreamModelId: string;
+  cost: TokenCost;
+  contextWindow: number;
+  limits?: Limit[];
+  capabilities?: ModelCapabilities;
+}
+
 export interface PricingTier {
   /** What dimension is being measured, e.g. "context_tokens" */
   metric: string;
