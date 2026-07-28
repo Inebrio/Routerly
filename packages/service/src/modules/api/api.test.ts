@@ -10614,6 +10614,49 @@ describe('modules endpoints', () => {
     expect(res.statusCode).toBe(403)
   })
 
+  // Permission separation: modules:read must not imply modules:manage. The
+  // built-in 'viewer' role has modules:read only (see auth/roles.ts) — proves
+  // GET is allowed while enable/disable are specifically gated on a
+  // different permission, not just "any permission granted".
+  it('GET /api/modules is 200 for a modules:read-only role (viewer)', async () => {
+    vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', projectIds: [] }]
+      if (t === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/modules', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('POST /api/modules/:id/enable is 403 for a modules:read-only role (viewer)', async () => {
+    vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', projectIds: [] }]
+      if (t === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/enable', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('POST /api/modules/:id/disable is 403 for a modules:read-only role (viewer)', async () => {
+    vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', projectIds: [] }]
+      if (t === 'roles') return []
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/disable', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
   it('POST /api/modules/:id/enable is 409 for an unknown module', async () => {
     setupAdminAuth()
     const app = await buildApp()

@@ -1,6 +1,24 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { ALL_MODULES } from '../modules/index.js'
 import { filterEnabledModules } from '../core/modules/registry.js'
+
+// bootstrap() reads the 'modules' config key to gate the static module list —
+// mock the same seam server.test.ts uses so bootstrap() runs for real against
+// a controlled disabled-module record.
+vi.mock('../modules/config/loader.js', () => ({
+  initConfigDirs: vi.fn(),
+  readConfig: vi.fn(),
+  writeConfig: vi.fn(),
+  pruneOrphanUsage: vi.fn(async () => 0),
+  appendUsageRecord: vi.fn(),
+}))
+
+import { bootstrap } from './index.js'
+import { readConfig } from '../modules/config/loader.js'
+
+const mockReadConfig = vi.mocked(readConfig)
+
+afterEach(() => vi.clearAllMocks())
 
 describe('bootstrap gating', () => {
   it('exposes the full static module list including infra + core', () => {
@@ -24,5 +42,28 @@ describe('bootstrap gating', () => {
       (m) => m.manifest.id,
     )
     expect(kept).toContain('config')
+  })
+
+  // End-to-end: the plan's core guarantee is that a disabled module is never
+  // registered in the DI container, not merely filtered from a list. Runs the
+  // real bootstrap() (real filterEnabledModules + real buildKernel + real
+  // ALL_MODULES, only readConfig('modules') mocked) and inspects the actually
+  // started kernel's startedOrder — the module's real register()/start() run
+  // for every other module, so this also proves the disabled module leaves no
+  // dangling MissingDependencyError (nothing in ALL_MODULES depends on
+  // guardrails per its manifest.dependsOn).
+  it('bootstrap() never registers a disabled module in the started kernel', async () => {
+    mockReadConfig.mockImplementation(async (key: string) =>
+      (key === 'modules' ? [{ id: 'guardrails', enabled: false }] : []) as any,
+    )
+
+    const kernel = await bootstrap()
+    try {
+      expect(kernel.startedOrder).not.toContain('guardrails')
+      expect(kernel.startedOrder).toContain('reverse-proxy')
+      expect(kernel.startedOrder).toContain('routing')
+    } finally {
+      await kernel.stop()
+    }
   })
 })
