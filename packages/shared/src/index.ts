@@ -16,6 +16,7 @@ export type {
   BudgetThresholds,
   ModelCapabilities,
   ModelConfig,
+  EffectiveModel,
   ProjectModelRef,
   ProjectConfig,
   PlaygroundPreset,

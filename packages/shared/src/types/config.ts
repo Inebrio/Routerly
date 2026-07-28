@@ -178,6 +178,9 @@ export interface ModelConfig {
   catalogDefaults?: CatalogDefaults;
 }
 
+/** Effective model computed from ModelInstance + ProviderConnection */
+export type EffectiveModel = ModelConfig;
+
 export interface ProjectModelRef {
   modelId: string;
   prompt?: string;
