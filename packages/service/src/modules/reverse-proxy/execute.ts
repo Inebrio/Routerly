@@ -17,6 +17,7 @@ import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
   ModelConfig,
+  EffectiveModel,
   ProjectConfig,
   ProjectToken,
   StreamChunk,
@@ -29,6 +30,8 @@ import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../b
 import { trackUsage } from '../usage/tracker.js';
 import { calculateCost } from '../../lib/cost.js';
 import { emitEvent } from '../notifications/emitter.js';
+import { readConfig } from '../config/loader.js';
+import { resolveEffectiveModel } from '../provider/resolve.js';
 import type { TraceEntry, TracePanel } from '../logging/traceStore.js';
 
 // ─── Tipi ────────────────────────────────────────────────────────────────────
@@ -106,6 +109,26 @@ function handleProviderResult(modelId: string, provider: string, success: boolea
       emitEvent('provider.degraded', 'warning', { modelId, provider, consecutiveErrors: n, projectId }, log ? { log } : {}).catch(() => {});
     }
   }
+}
+
+/**
+ * Risolve un id di modello (ModelInstance o legacy models.json) nell'EffectiveModel
+ * pronto per l'adapter. Preferisce instance + connection; se l'instance non esiste
+ * (o la sua connection è dangling) ripiega sulla entry legacy in models.json, per
+ * garantire che nessuna rotta esistente si rompa durante la migrazione.
+ */
+export async function loadEffectiveModel(id: string): Promise<EffectiveModel | undefined> {
+  // ponytail: `?? []` guards against a bare `vi.fn()` test double resolving to
+  // `undefined` — readConfig() itself always resolves to an array in production.
+  const instances = (await readConfig('instances')) ?? [];
+  const instance = instances.find((i) => i.id === id);
+  if (instance) {
+    const connections = (await readConfig('connections')) ?? [];
+    const connection = connections.find((c) => c.id === instance.connectionId);
+    if (connection) return resolveEffectiveModel(instance, connection);
+  }
+  const models = (await readConfig('models')) ?? [];
+  return models.find((m) => m.id === id);
 }
 
 // ─── Helpers interni ─────────────────────────────────────────────────────────
@@ -204,6 +227,8 @@ export async function llmChat(
 ): Promise<ChatCompletionResponse> {
   const { projectId, callType, traceId, emit, log } = ctx;
   const { req, res } = getPanels(callType);
+
+  model = (await loadEffectiveModel(model.id)) ?? model;
 
   await checkBudget(model, ctx);
 
@@ -359,6 +384,8 @@ export async function llmStream(
 ): Promise<StreamResult> {
   const { projectId, callType, traceId, emit, log } = ctx;
   const { req, res } = getPanels(callType);
+
+  model = (await loadEffectiveModel(model.id)) ?? model;
 
   await checkBudget(model, ctx);
 
@@ -559,6 +586,8 @@ export async function llmMessages(
 ): Promise<MessagesResponse> {
   const { projectId, callType, traceId, emit, log } = ctx;
   const { req, res } = getPanels(callType);
+
+  model = (await loadEffectiveModel(model.id)) ?? model;
 
   await checkBudget(model, ctx);
 

@@ -4,12 +4,14 @@ vi.mock('../provider/registry.js', () => ({ getProviderAdapter: vi.fn() }))
 vi.mock('../budget/budget.js', () => ({ isAllowed: vi.fn(), isAllowedForRoutingModel: vi.fn(), getLimitUsageSnapshot: vi.fn().mockResolvedValue([]) }))
 vi.mock('../usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('../notifications/emitter.js', () => ({ emitEvent: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }))
 
-import { llmChat, llmStream, llmMessages, BudgetExceededError } from './execute.js'
+import { llmChat, llmStream, llmMessages, loadEffectiveModel, BudgetExceededError } from './execute.js'
 import { getProviderAdapter } from '../provider/registry.js'
 import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../budget/budget.js'
 import { trackUsage } from '../usage/tracker.js'
 import { emitEvent } from '../notifications/emitter.js'
+import { readConfig } from '../config/loader.js'
 
 const mockGetProvider = vi.mocked(getProviderAdapter)
 const mockIsAllowed = vi.mocked(isAllowed)
@@ -17,6 +19,7 @@ const mockIsAllowedForRouting = vi.mocked(isAllowedForRoutingModel)
 const mockTrackUsage = vi.mocked(trackUsage)
 const mockGetLimitUsage = vi.mocked(getLimitUsageSnapshot)
 const mockEmitEvent = vi.mocked(emitEvent)
+const mockReadConfig = vi.mocked(readConfig)
 
 afterEach(() => vi.clearAllMocks())
 
@@ -238,6 +241,25 @@ describe('llmChat', () => {
 
     await llmChat({ messages: [] } as any, makeModel(), makeCtx())
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ cachedInputTokens: 40, cacheCreationInputTokens: 10 }))
+  })
+
+  it('dispatches with resolved EffectiveModel when instance exists', async () => {
+    const instance = {
+      id: 'inst-2', connectionId: 'conn-2', upstreamModelId: 'gpt-4o-mini',
+      cost: { inputPerMillion: 1, outputPerMillion: 2 }, contextWindow: 128000,
+    }
+    const connection = {
+      id: 'conn-2', providerId: 'openai', endpoint: 'https://api.openai.com/v1',
+      credentials: { apiKey: 'sk-instance-key' }, enabled: true, label: 'test-conn',
+    }
+    mockReadConfig.mockImplementationOnce(async () => [instance] as any) // 'instances'
+    mockReadConfig.mockImplementationOnce(async () => [connection] as any) // 'connections'
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+
+    const ctx = makeCtx({ project: makeProject('inst-2') })
+    await llmChat({ messages: [] } as any, makeModel('inst-2'), ctx)
+    expect(mockGetProvider).toHaveBeenCalledWith(expect.objectContaining({ apiKey: 'sk-instance-key' }))
   })
 })
 
@@ -1424,5 +1446,64 @@ describe('checkBudget — threshold .catch coverage (line 181 .catch)', () => {
     await expect(llmChat({ messages: [] } as any, model, ctx)).resolves.toBeDefined()
     await new Promise(r => setTimeout(r, 0)) // let .then fire
     mockEmitEvent.mockResolvedValue(undefined)
+  })
+})
+
+// ─── loadEffectiveModel ────────────────────────────────────────────────────────
+
+describe('loadEffectiveModel', () => {
+  it('resolves via instance + connection when both are found', async () => {
+    const instance = {
+      id: 'inst-1', connectionId: 'conn-1', upstreamModelId: 'gpt-4o',
+      cost: { inputPerMillion: 1, outputPerMillion: 2 }, contextWindow: 128000,
+    }
+    const connection = {
+      id: 'conn-1', providerId: 'openai', endpoint: 'https://api.openai.com/v1',
+      credentials: { apiKey: 'sk-conn-key' }, enabled: true, label: 'test-conn',
+    }
+    mockReadConfig.mockImplementationOnce(async () => [instance] as any) // 'instances'
+    mockReadConfig.mockImplementationOnce(async () => [connection] as any) // 'connections'
+
+    const result = await loadEffectiveModel('inst-1')
+    expect(result?.id).toBe('inst-1')
+    expect((result as any)?.apiKey).toBe('sk-conn-key')
+  })
+
+  it('falls back to the legacy models.json entry when no instance matches', async () => {
+    const legacyModel = {
+      id: 'legacy-m1', name: 'legacy-m1', provider: 'openai', endpoint: 'https://api.openai.com/v1',
+      cost: { inputPerMillion: 5, outputPerMillion: 15 },
+    }
+    mockReadConfig.mockImplementationOnce(async () => [] as any) // 'instances' — no match
+    mockReadConfig.mockImplementationOnce(async () => [legacyModel] as any) // 'models'
+
+    const result = await loadEffectiveModel('legacy-m1')
+    expect(result?.id).toBe('legacy-m1')
+  })
+
+  it('returns undefined when the id exists neither as an instance nor legacy model', async () => {
+    mockReadConfig.mockImplementationOnce(async () => [] as any) // 'instances'
+    mockReadConfig.mockImplementationOnce(async () => [] as any) // 'models'
+
+    const result = await loadEffectiveModel('nowhere')
+    expect(result).toBeUndefined()
+  })
+
+  it('falls back to legacy when the instance is found but its connection is dangling', async () => {
+    const instance = {
+      id: 'inst-dangling', connectionId: 'conn-missing', upstreamModelId: 'gpt-4o',
+      cost: { inputPerMillion: 1, outputPerMillion: 2 }, contextWindow: 128000,
+    }
+    const legacyModel = {
+      id: 'inst-dangling', name: 'inst-dangling', provider: 'openai', endpoint: 'https://api.openai.com/v1',
+      cost: { inputPerMillion: 5, outputPerMillion: 15 },
+    }
+    mockReadConfig.mockImplementationOnce(async () => [instance] as any) // 'instances'
+    mockReadConfig.mockImplementationOnce(async () => [] as any) // 'connections' — dangling
+    mockReadConfig.mockImplementationOnce(async () => [legacyModel] as any) // 'models'
+
+    const result = await loadEffectiveModel('inst-dangling')
+    expect(result?.id).toBe('inst-dangling')
+    expect((result as any)?.name).toBe('inst-dangling')
   })
 })

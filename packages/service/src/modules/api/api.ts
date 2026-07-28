@@ -18,6 +18,7 @@ import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
 import { getTrace } from '../logging/traceStore.js';
 import { getProviderAdapter } from '../provider/registry.js';
+import { loadEffectiveModel } from '../reverse-proxy/execute.js';
 import { sendTestNotification } from '../notifications/sender.js';
 import { emitEvent } from '../notifications/emitter.js';
 import { ALL_PERMISSIONS, BUILT_IN_ROLES, getEffectiveRoles } from '../auth/roles.js';
@@ -715,8 +716,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.post<{ Params: { id: string } }>('/api/models/:id/test', async (req, reply) => {
     if (!requirePerm(req, 'model:read', reply)) return;
-    const models = await readConfig('models');
-    const model = models.find((m: { id: string }) => m.id === req.params.id);
+    const model = await loadEffectiveModel(req.params.id);
     if (!model) return reply.status(404).send({ error: 'Not found' });
     const t0 = Date.now();
     try {
