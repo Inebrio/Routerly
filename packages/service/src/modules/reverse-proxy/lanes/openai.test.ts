@@ -1,16 +1,64 @@
 import { describe, it, expect } from 'vitest'
 import { ProcessorRegistry } from '../../../core/index.js'
-import { openaiTransportProcessors, openaiEgress } from './openai.js'
+import { openaiTransportProcessors, openaiEgress, openaiInject } from './openai.js'
 import type { ProxyContext } from '../context.js'
 
 describe('openai transport lane', () => {
-  it('contributes upstream.execute + routing.execute + egress, all lane-prefixed', () => {
+  it('contributes upstream.prepare + upstream.execute + routing.execute + egress, all lane-prefixed', () => {
     const reg = new ProcessorRegistry<ProxyContext>()
     for (const p of openaiTransportProcessors) reg.contribute(p)
+    expect(reg.orderedFor('upstream.prepare').map((p) => p.id)).toEqual(['openai:inject'])
     expect(reg.orderedFor('upstream.execute').map((p) => p.id)).toEqual(['openai:upstream'])
     expect(reg.orderedFor('routing.execute').map((p) => p.id)).toEqual(['openai:attempt'])
     expect(reg.orderedFor('egress').map((p) => p.id)).toEqual(['openai:egress'])
     for (const p of openaiTransportProcessors) expect(p.id.startsWith('openai:')).toBe(true)
+  })
+
+  describe('openai:inject', () => {
+    it('appends the injection to an existing string system message', async () => {
+      const ctx = {
+        protocol: 'openai',
+        requestInjection: 'Follow the guardrail.',
+        request: { messages: [{ role: 'system', content: 'Base prompt.' }] },
+      } as unknown as ProxyContext
+      await openaiInject.run(ctx)
+      expect((ctx.request as any).messages[0].content).toBe('Base prompt.\n\nFollow the guardrail.')
+    })
+
+    it('unshifts a new system message when none exists', async () => {
+      const ctx = {
+        protocol: 'openai',
+        requestInjection: 'Follow the guardrail.',
+        request: { messages: [{ role: 'user', content: 'Hi' }] },
+      } as unknown as ProxyContext
+      await openaiInject.run(ctx)
+      const messages = (ctx.request as any).messages
+      expect(messages[0]).toEqual({ role: 'system', content: 'Follow the guardrail.' })
+      expect(messages[1]).toEqual({ role: 'user', content: 'Hi' })
+    })
+
+    it('pushes a text block when the system message content is an array of blocks', async () => {
+      const ctx = {
+        protocol: 'openai',
+        requestInjection: 'Follow the guardrail.',
+        request: { messages: [{ role: 'system', content: [{ type: 'text', text: 'Base.' }] }] },
+      } as unknown as ProxyContext
+      await openaiInject.run(ctx)
+      expect((ctx.request as any).messages[0].content).toEqual([
+        { type: 'text', text: 'Base.' },
+        { type: 'text', text: 'Follow the guardrail.' },
+      ])
+    })
+
+    it('is a no-op when ctx.requestInjection is unset', async () => {
+      const messages = [{ role: 'user', content: 'Hi' }]
+      const ctx = {
+        protocol: 'openai',
+        request: { messages },
+      } as unknown as ProxyContext
+      await openaiInject.run(ctx)
+      expect((ctx.request as any).messages).toEqual([{ role: 'user', content: 'Hi' }])
+    })
   })
 
   it('egress writes a json result via reply.send and honors trace opt-in', async () => {

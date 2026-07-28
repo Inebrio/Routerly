@@ -86,6 +86,23 @@ export function buildAnthropicContext(req: FastifyRequest, reply: FastifyReply):
   }
 }
 
+// ─── upstream.prepare: merge guardrail request-injection (steering text) into the outgoing
+// system field, reproducing the pre-refactor merge from routes/anthropic.ts verbatim ───
+export const anthropicInject: Processor<ProxyContext> = {
+  id: 'anthropic:inject',
+  phase: 'upstream.prepare',
+  async run(ctx) {
+    if (ctx.protocol !== 'anthropic') return
+    if (ctx.result) return
+    const injection = ctx.requestInjection
+    if (!injection) return
+    const body = ctx.original as MessagesRequest
+    if (typeof body.system === 'string' && body.system.trim()) body.system = `${body.system}\n\n${injection}`
+    else if (Array.isArray(body.system)) body.system.push({ type: 'text', text: injection })
+    else body.system = injection
+  },
+}
+
 // ─── upstream.execute: passthrough forward OR toChat+llmChat/llmStream (anthropic.ts L220-286) ──
 export const anthropicUpstream: Processor<ProxyContext> = {
   id: 'anthropic:upstream',
@@ -238,4 +255,4 @@ export const anthropicEgress: Processor<ProxyContext> = {
   },
 }
 
-export const anthropicTransportProcessors: Processor<ProxyContext>[] = [anthropicUpstream, anthropicAttempt, anthropicEgress]
+export const anthropicTransportProcessors: Processor<ProxyContext>[] = [anthropicInject, anthropicUpstream, anthropicAttempt, anthropicEgress]
