@@ -13,10 +13,18 @@ vi.mock('../modules/config/loader.js', () => ({
   appendUsageRecord: vi.fn(),
 }))
 
+// bootstrap() also runs the one-shot models->connections migration; mock it
+// so the real implementation (which calls the real loader) never runs.
+vi.mock('../modules/config/migrate-connections.js', () => ({
+  migrateModelsToConnections: vi.fn().mockResolvedValue({ connections: 0, instances: 0 }),
+}))
+
 import { bootstrap } from './index.js'
 import { readConfig } from '../modules/config/loader.js'
+import { migrateModelsToConnections } from '../modules/config/migrate-connections.js'
 
 const mockReadConfig = vi.mocked(readConfig)
+const mockMigrate = vi.mocked(migrateModelsToConnections)
 
 afterEach(() => vi.clearAllMocks())
 
@@ -62,6 +70,17 @@ describe('bootstrap gating', () => {
       expect(kernel.startedOrder).not.toContain('guardrails')
       expect(kernel.startedOrder).toContain('reverse-proxy')
       expect(kernel.startedOrder).toContain('routing')
+    } finally {
+      await kernel.stop()
+    }
+  })
+
+  it('bootstrap() runs the models->connections migration exactly once', async () => {
+    mockReadConfig.mockImplementation(async () => [] as any)
+
+    const kernel = await bootstrap()
+    try {
+      expect(mockMigrate).toHaveBeenCalledTimes(1)
     } finally {
       await kernel.stop()
     }
