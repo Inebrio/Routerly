@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getModules, enableModule, disableModule } from '../api';
-import type { ModuleInfo } from '../api';
+import type { ModuleInfo, ModuleToggleResult } from '../api';
 
 export function SettingsModulesTab() {
   const [modules, setModules] = useState<ModuleInfo[] | null>(null);
@@ -23,7 +23,12 @@ export function SettingsModulesTab() {
     setBusy(m.id);
     setError(null);
     try {
-      const res = m.enabled ? await disableModule(m.id) : await enableModule(m.id);
+      let res: ModuleToggleResult;
+      if (m.enabled) {
+        res = await disableModule(m.id);
+      } else {
+        res = await enableModule(m.id);
+      }
       if (res.restartRequired) setRestartRequired(true);
       await load();
     } catch (err) {

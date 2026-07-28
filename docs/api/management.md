@@ -865,6 +865,124 @@ PUT /api/settings
 
 ---
 
+## Modules
+
+Manage optional service modules. Core modules (`config`, `provider`, `catalog`, `reverse-proxy`, `routing`) are always-on and cannot be disabled. Optional modules (e.g. `guardrails`, `pii`) can be toggled on or off; disabling a module removes its features entirely at boot (no hot-swap). Changes require a service restart.
+
+### List Modules
+
+```
+GET /api/modules
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `modules:read`)
+
+**Response `200`:**
+```json
+[
+  {
+    "id": "guardrails",
+    "version": "0.4.0",
+    "enabled": true,
+    "alwaysOn": false,
+    "dependsOn": []
+  },
+  {
+    "id": "reverse-proxy",
+    "version": "0.4.0",
+    "enabled": true,
+    "alwaysOn": true,
+    "dependsOn": { "provider": true, "routing": true }
+  }
+]
+```
+
+**Response fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Module identifier |
+| `version` | string | Module semantic version |
+| `enabled` | boolean | Whether the module is currently active. When a module is disabled, its routes, tools, and features are not loaded at boot; disabling requires a service restart to take effect |
+| `alwaysOn` | boolean | Whether this is a core module that cannot be disabled |
+| `dependsOn` | object | Map of module IDs this module depends on; empty object if no dependencies |
+
+**Errors**: `403` insufficient permissions
+
+### Enable Module
+
+```
+POST /api/modules/:id/enable
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `modules:manage`)
+
+Enables a module. Returns `409` if the module is always-on, unknown, or has unmet dependencies.
+
+**Response `200`:**
+```json
+{
+  "id": "guardrails",
+  "enabled": true,
+  "restartRequired": true
+}
+```
+
+**Response `409` (always-on):**
+```json
+{ "error": "Module \"reverse-proxy\" is always-on and cannot be disabled" }
+```
+
+**Response `409` (unknown module):**
+```json
+{ "error": "Unknown module \"unknown-module\"" }
+```
+
+**Response `409` (unmet dependencies):**
+```json
+{ "error": "Cannot enable \"guardrails\": depends on disabled provider" }
+```
+
+**Errors**: `403` insufficient permissions · `409` module cannot be enabled
+
+### Disable Module
+
+```
+POST /api/modules/:id/disable
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `modules:manage`)
+
+Disables a module. Returns `409` if the module is always-on, unknown, or required by another enabled module.
+
+**Response `200`:**
+```json
+{
+  "id": "guardrails",
+  "enabled": false,
+  "restartRequired": true
+}
+```
+
+**Response `409` (always-on):**
+```json
+{ "error": "Module \"reverse-proxy\" is always-on and cannot be disabled" }
+```
+
+**Response `409` (unknown module):**
+```json
+{ "error": "Unknown module \"unknown-module\"" }
+```
+
+**Response `409` (required by dependents):**
+```json
+{ "error": "Cannot disable \"provider\": required by reverse-proxy, routing" }
+```
+
+**Errors**: `403` insufficient permissions · `409` module cannot be disabled
+
+---
+
 ## Catalog
 
 Manage provider and model catalog repositories and cache.

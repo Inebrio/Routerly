@@ -1333,3 +1333,37 @@ describe('getAuditLog', () => {
     expect(url).toMatch(/\/audit$/);
   });
 });
+
+// ── Modules ───────────────────────────────────────────────────────────────────
+
+describe('getModules', () => {
+  it('GET /modules', async () => {
+    const { getModules } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, []));
+    await getModules();
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
+    expect(url).toMatch(/\/modules$/);
+  });
+});
+
+describe('enableModule', () => {
+  it('POST /modules/:id/enable with encodeURIComponent', async () => {
+    const { enableModule } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'g 1', enabled: true, restartRequired: true }));
+    await enableModule('g 1');
+    const [url, init] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]! as [string, RequestInit];
+    expect(url).toContain(`${encodeURIComponent('g 1')}/enable`);
+    expect(init.method).toBe('POST');
+  });
+});
+
+describe('disableModule', () => {
+  it('POST /modules/:id/disable with encodeURIComponent', async () => {
+    const { disableModule } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'g 1', enabled: false, restartRequired: true }));
+    await disableModule('g 1');
+    const [url, init] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]! as [string, RequestInit];
+    expect(url).toContain(`${encodeURIComponent('g 1')}/disable`);
+    expect(init.method).toBe('POST');
+  });
+});

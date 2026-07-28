@@ -51,4 +51,55 @@ describe('SettingsModulesTab', () => {
     render(<SettingsModulesTab />);
     await waitFor(() => expect(screen.getByText(/boom/)).toBeInTheDocument());
   });
+
+  it('shows the empty state when no modules are registered', async () => {
+    getModules.mockResolvedValue([]);
+    render(<SettingsModulesTab />);
+    await waitFor(() => expect(screen.getByText('No modules registered.')).toBeInTheDocument());
+  });
+
+  it('enables a disabled module and shows the restart banner', async () => {
+    getModules
+      .mockResolvedValueOnce([
+        { id: 'guardrails', version: '0.4.0', enabled: false, alwaysOn: false, dependsOn: [] },
+      ])
+      .mockResolvedValueOnce([
+        { id: 'guardrails', version: '0.4.0', enabled: true, alwaysOn: false, dependsOn: [] },
+      ]);
+    enableModule.mockResolvedValue({ id: 'guardrails', enabled: true, restartRequired: true });
+    render(<SettingsModulesTab />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Enable' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Enable' }));
+    await waitFor(() => expect(enableModule).toHaveBeenCalledWith('guardrails'));
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+  });
+
+  it('does not show the restart banner when restartRequired is false', async () => {
+    getModules
+      .mockResolvedValueOnce([
+        { id: 'guardrails', version: '0.4.0', enabled: true, alwaysOn: false, dependsOn: [] },
+      ])
+      .mockResolvedValueOnce([
+        { id: 'guardrails', version: '0.4.0', enabled: false, alwaysOn: false, dependsOn: [] },
+      ]);
+    disableModule.mockResolvedValue({ id: 'guardrails', enabled: false, restartRequired: false });
+    render(<SettingsModulesTab />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Disable' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Disable' }));
+    await waitFor(() => expect(disableModule).toHaveBeenCalledWith('guardrails'));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Enable' })).toBeInTheDocument());
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('shows an error and clears busy state when toggling fails', async () => {
+    getModules.mockResolvedValue([
+      { id: 'guardrails', version: '0.4.0', enabled: true, alwaysOn: false, dependsOn: [] },
+    ]);
+    disableModule.mockRejectedValue(new Error('cannot disable'));
+    render(<SettingsModulesTab />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Disable' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Disable' }));
+    await waitFor(() => expect(screen.getByText('cannot disable')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Disable' })).not.toBeDisabled();
+  });
 });

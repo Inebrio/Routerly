@@ -10621,4 +10621,13 @@ describe('modules endpoints', () => {
     await app.close()
     expect(res.statusCode).toBe(409)
   })
+
+  it('POST /api/modules/:id/enable enables a feature module (200, restartRequired)', async () => {
+    setupAdminAuth()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/enable', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ id: 'guardrails', enabled: true, restartRequired: true })
+  })
 })
