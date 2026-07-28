@@ -6,6 +6,7 @@ vi.mock('./modules/config/loader.js', () => ({
   writeConfig: vi.fn(),
   pruneOrphanUsage: vi.fn(async () => 0),
   appendUsageRecord: vi.fn(),
+  getOrCreateSecret: vi.fn(),
 }))
 vi.mock('./modules/auth/jwt.js', () => ({
   loadSecret: vi.fn(),
@@ -13,6 +14,7 @@ vi.mock('./modules/auth/jwt.js', () => ({
   verifyToken: vi.fn(() => null),
   generateRawToken: vi.fn(() => 'raw'),
 }))
+vi.mock('./lib/crypto-cred.js', () => ({ loadCredentialKey: vi.fn() }))
 vi.mock('./modules/auth/auth.js', () => ({ default: vi.fn(async () => {}) }))
 vi.mock('./modules/api-reverse-proxy/openai.js', () => ({ openaiRoutes: vi.fn(async () => {}) }))
 vi.mock('./modules/api-reverse-proxy/anthropic.js', () => ({ anthropicRoutes: vi.fn(async () => {}) }))

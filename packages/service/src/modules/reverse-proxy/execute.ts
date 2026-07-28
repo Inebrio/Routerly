@@ -32,6 +32,9 @@ import { calculateCost } from '../../lib/cost.js';
 import { emitEvent } from '../notifications/emitter.js';
 import { readConfig } from '../config/loader.js';
 import { resolveEffectiveModel } from '../provider/resolve.js';
+import { getProviderDescriptor } from '../provider/descriptor.js';
+import { resolveAnthropicOAuthCredential } from '../provider/anthropic-oauth.js';
+import { resolveOpenAIOAuthCredential } from '../provider/openai-oauth.js';
 import type { TraceEntry, TracePanel } from '../logging/traceStore.js';
 
 // ─── Tipi ────────────────────────────────────────────────────────────────────
@@ -125,7 +128,19 @@ export async function loadEffectiveModel(id: string): Promise<EffectiveModel | u
   if (instance) {
     const connections = (await readConfig('connections')) ?? [];
     const connection = connections.find((c) => c.id === instance.connectionId);
-    if (connection) return resolveEffectiveModel(instance, connection);
+    if (connection) {
+      const supportLevel = getProviderDescriptor(connection.providerId)?.supportLevel;
+      if (supportLevel === 'oauth') {
+        const liveToken = connection.providerId === 'anthropic-oauth'
+          ? await resolveAnthropicOAuthCredential(connection)
+          : await resolveOpenAIOAuthCredential(connection);
+        return resolveEffectiveModel(instance, {
+          ...connection,
+          credentials: { ...connection.credentials, apiKey: liveToken },
+        });
+      }
+      return resolveEffectiveModel(instance, connection);
+    }
   }
   const models = (await readConfig('models')) ?? [];
   return models.find((m) => m.id === id);
