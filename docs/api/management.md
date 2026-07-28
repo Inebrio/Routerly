@@ -892,7 +892,7 @@ GET /api/modules
     "version": "0.4.0",
     "enabled": true,
     "alwaysOn": true,
-    "dependsOn": { "provider": true, "routing": true }
+    "dependsOn": ["provider", "routing"]
   }
 ]
 ```
@@ -905,7 +905,7 @@ GET /api/modules
 | `version` | string | Module semantic version |
 | `enabled` | boolean | Whether the module is currently active. When a module is disabled, its routes, tools, and features are not loaded at boot; disabling requires a service restart to take effect |
 | `alwaysOn` | boolean | Whether this is a core module that cannot be disabled |
-| `dependsOn` | object | Map of module IDs this module depends on; empty object if no dependencies |
+| `dependsOn` | array | List of module IDs this module depends on; empty array if no dependencies |
 
 **Errors**: `403` insufficient permissions
 
@@ -917,7 +917,7 @@ POST /api/modules/:id/enable
 
 **Auth**: `Authorization: Bearer <jwt>` (requires `modules:manage`)
 
-Enables a module. Returns `409` if the module is always-on, unknown, or has unmet dependencies.
+Enables a module. Returns `409` if the module is unknown or has unmet dependencies. Always-on modules are already enabled by definition and can be targeted here without error (no-op, returns `200`).
 
 **Response `200`:**
 ```json
@@ -926,11 +926,6 @@ Enables a module. Returns `409` if the module is always-on, unknown, or has unme
   "enabled": true,
   "restartRequired": true
 }
-```
-
-**Response `409` (always-on):**
-```json
-{ "error": "Module \"reverse-proxy\" is always-on and cannot be disabled" }
 ```
 
 **Response `409` (unknown module):**
