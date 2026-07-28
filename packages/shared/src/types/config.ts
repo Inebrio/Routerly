@@ -471,6 +471,8 @@ export type Permission =
   | 'token:read'
   | 'token:write'
   | 'role:write'
+  | 'modules:read'
+  | 'modules:manage'
   | 'audit:read';
 
 // ─── Integration types ────────────────────────────────────────────────────────

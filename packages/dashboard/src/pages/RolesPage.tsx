@@ -19,6 +19,8 @@ const PERM_LABELS: Record<Permission, string> = {
   'token:write':        'Tokens – Write',
   'role:write':         'Roles – Write',
   'audit:read':         'Audit Log – Read',
+  'modules:read':       'Modules – Read',
+  'modules:manage':     'Modules – Manage',
 };
 
 interface RoleFormState {
