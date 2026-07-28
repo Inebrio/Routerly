@@ -10193,6 +10193,26 @@ describe('POST /api/models/:id/test', () => {
     expect(typeof res.json().latencyMs).toBe('number')
   })
 
+  it('resolves through loadEffectiveModel (instance + connection) when id is an instance id', async () => {
+    setupAdminAuth()
+    const instance = { id: 'inst-test-1', connectionId: 'conn-test-1', upstreamModelId: 'gpt-4o-mini', cost: { inputPerMillion: 1, outputPerMillion: 2 }, contextWindow: 128000 }
+    const connection = { id: 'conn-test-1', providerId: 'openai', endpoint: 'https://api.openai.com/v1', credentials: { apiKey: 'sk-inst-key' } }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [instance]
+      if (t === 'connections') return [connection]
+      return []
+    })
+    mockChatCompletion.mockResolvedValue({ choices: [{ message: { content: 'pong' } }] })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/inst-test-1/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().ok).toBe(true)
+  })
+
   it('returns ok:false with error when adapter throws', async () => {
     setupAdminAuth()
     const model = { id: 'openai/gpt-4o', provider: 'openai', apiKey: 'sk-x', cost: { inputPerMillion: 5, outputPerMillion: 15 } }
