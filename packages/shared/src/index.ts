@@ -38,6 +38,7 @@ export type {
   IntentClassification,
   UserConfig,
   RoleConfig,
+  ModuleRecord,
   Permission,
   Settings,
   ProviderRepo,
