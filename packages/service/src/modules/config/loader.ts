@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile, rename, unlink, chmod } from 'node:fs/promi
 import { dirname } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import lockfile from 'proper-lockfile';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Settings, UsageRecord, NotificationInboxItem } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Settings, UsageRecord, NotificationInboxItem, ModuleRecord } from '@routerly/shared';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 
 /** Mirrors audit/logger.ts AuditEntry — defined here to avoid circular import */
@@ -33,6 +33,7 @@ const DEFAULTS: Record<string, unknown> = {
   projects: [] as ProjectConfig[],
   users: [] as UserConfig[],
   roles: [] as RoleConfig[],
+  modules: [] as ModuleRecord[],
   usage: [] as UsageRecord[],
   notifications: [] as NotificationInboxItem[],
   audit: [] as AuditEntry[],
@@ -46,6 +47,7 @@ type StoredTypeMap = {
   projects: ProjectConfig[];
   users: UserConfig[];
   roles: RoleConfig[];
+  modules: ModuleRecord[];
   usage: UsageRecord[];
   notifications: NotificationInboxItem[];
   audit: AuditEntry[];
