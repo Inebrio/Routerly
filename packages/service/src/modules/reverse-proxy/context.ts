@@ -57,6 +57,7 @@ export interface ProxyContext {
   piiInput?: EffectivePii
   piiOutput?: EffectivePii
   requestInjection?: string | null
+  requestInjectionApplied?: boolean // one-shot guard: upstream.prepare re-runs per fallback candidate; merge must apply only once
 
   // outcome
   result?: ProxyResult

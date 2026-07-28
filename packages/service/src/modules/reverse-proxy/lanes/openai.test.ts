@@ -117,6 +117,37 @@ describe('openai transport lane', () => {
       await openaiInject.run(ctx)
       expect((ctx.request as any).messages[0].content).toBe('Follow the guardrail.')
     })
+
+    it('overwrites an empty-string system message content instead of appending a leading blank line', async () => {
+      const ctx = {
+        protocol: 'openai',
+        requestInjection: 'Follow the guardrail.',
+        request: { messages: [{ role: 'system', content: '' }] },
+      } as unknown as ProxyContext
+      await openaiInject.run(ctx)
+      expect((ctx.request as any).messages[0].content).toBe('Follow the guardrail.')
+    })
+
+    it('sets ctx.requestInjectionApplied after merging', async () => {
+      const ctx = {
+        protocol: 'openai',
+        requestInjection: 'Follow the guardrail.',
+        request: { messages: [{ role: 'user', content: 'Hi' }] },
+      } as unknown as ProxyContext
+      await openaiInject.run(ctx)
+      expect(ctx.requestInjectionApplied).toBe(true)
+    })
+
+    it('is a no-op when requestInjectionApplied is already true (re-run on a fallback candidate)', async () => {
+      const ctx = {
+        protocol: 'openai',
+        requestInjection: 'Follow the guardrail.',
+        requestInjectionApplied: true,
+        request: { messages: [{ role: 'system', content: 'Base prompt.' }] },
+      } as unknown as ProxyContext
+      await openaiInject.run(ctx)
+      expect((ctx.request as any).messages[0].content).toBe('Base prompt.')
+    })
   })
 
   it('egress writes a json result via reply.send and honors trace opt-in', async () => {
@@ -741,5 +772,27 @@ describe('openai:attempt', () => {
     } as unknown as ProxyContext
     await openaiAttempt.run(ctx)
     expect(ctx.result).toEqual({ kind: 'json', body: { object: 'chat.completion', model: 'model-c' } })
+  })
+
+  it('applies requestInjection exactly once across a failed-then-succeeded fallback (regression, upstream.prepare re-runs per candidate)', async () => {
+    const models: ModelConfig[] = [
+      { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
+      { id: 'model-b', name: 'model-b', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
+    ]
+    await writeConfig('models', models)
+    const reg = new ProcessorRegistry<ProxyContext>()
+    reg.contribute(openaiInject)
+    reg.contribute(fakeUpstream(['model-a']))
+    setProxyPipeline(reg)
+    const ctx = {
+      protocol: 'openai', stream: false, log: makeLog(),
+      project: { id: 'p1' }, traceId: 't1',
+      requestInjection: 'Follow the guardrail.',
+      request: { model: 'm', messages: [{ role: 'system', content: 'Base prompt.' }] },
+      candidates: [{ model: 'model-a', weight: 2 }, { model: 'model-b', weight: 1 }],
+    } as unknown as ProxyContext
+    await openaiAttempt.run(ctx)
+    expect(ctx.result).toEqual({ kind: 'json', body: { object: 'chat.completion', model: 'model-b' } })
+    expect((ctx.request as any).messages[0].content).toBe('Base prompt.\n\nFollow the guardrail.')
   })
 })

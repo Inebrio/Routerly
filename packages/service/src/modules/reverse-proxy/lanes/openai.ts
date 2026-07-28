@@ -43,6 +43,7 @@ export const openaiInject: Processor<ProxyContext> = {
   async run(ctx) {
     if (ctx.protocol !== 'openai') return
     if (ctx.result) return
+    if (ctx.requestInjectionApplied) return // one-shot: don't re-merge on fallback candidate retries
     const injection = ctx.requestInjection
     if (!injection) return
     const body = ctx.request as { messages?: Array<{ role?: string; content?: unknown }> }
@@ -50,12 +51,13 @@ export const openaiInject: Processor<ProxyContext> = {
     if (!Array.isArray(messages)) return
     const sys = messages.find((m) => m?.role === 'system')
     if (sys) {
-      if (typeof sys.content === 'string') sys.content = `${sys.content}\n\n${injection}`
+      if (typeof sys.content === 'string' && sys.content.trim()) sys.content = `${sys.content}\n\n${injection}`
       else if (Array.isArray(sys.content)) sys.content.push({ type: 'text', text: injection })
       else sys.content = injection
     } else {
       messages.unshift({ role: 'system', content: injection })
     }
+    ctx.requestInjectionApplied = true
   },
 }
 

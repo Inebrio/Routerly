@@ -94,12 +94,14 @@ export const anthropicInject: Processor<ProxyContext> = {
   async run(ctx) {
     if (ctx.protocol !== 'anthropic') return
     if (ctx.result) return
+    if (ctx.requestInjectionApplied) return // one-shot: don't re-merge on fallback candidate retries
     const injection = ctx.requestInjection
     if (!injection) return
     const body = ctx.original as MessagesRequest
     if (typeof body.system === 'string' && body.system.trim()) body.system = `${body.system}\n\n${injection}`
     else if (Array.isArray(body.system)) body.system.push({ type: 'text', text: injection })
     else body.system = injection
+    ctx.requestInjectionApplied = true
   },
 }
 
