@@ -440,6 +440,27 @@ export const updateRole = (id: string, data: { name?: string; permissions?: Perm
 export const deleteRole = (id: string) =>
   request<void>(`/roles/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
+// ── Modules ───────────────────────────────────────────────────────────────
+export interface ModuleInfo {
+  id: string;
+  version: string;
+  enabled: boolean;
+  alwaysOn: boolean;
+  dependsOn: string[];
+}
+
+export interface ModuleToggleResult {
+  id: string;
+  enabled: boolean;
+  restartRequired: boolean;
+}
+
+export const getModules = () => request<ModuleInfo[]>('/modules');
+export const enableModule = (id: string) =>
+  request<ModuleToggleResult>(`/modules/${encodeURIComponent(id)}/enable`, { method: 'POST' });
+export const disableModule = (id: string) =>
+  request<ModuleToggleResult>(`/modules/${encodeURIComponent(id)}/disable`, { method: 'POST' });
+
 // ── Usage Stats ───────────────────────────────────────────────────────────
 export interface TraceEntry {
   panel: string;
