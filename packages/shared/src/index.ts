@@ -2,6 +2,8 @@
 export type {
   Provider,
   ProviderId,
+  ProviderConnection,
+  ModelInstance,
   PricingTier,
   TokenCost,
   CatalogField,
