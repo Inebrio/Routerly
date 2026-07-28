@@ -80,6 +80,7 @@ CLAUDE.local.md
 # ===========================
 CLAUDE.local.md
 .ai/
+docs/superpowers/
 .worktrees/
 .claude/settings.local.json
 .claude/worktrees/
