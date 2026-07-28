@@ -1,6 +1,7 @@
 // Types
 export type {
   Provider,
+  ProviderId,
   PricingTier,
   TokenCost,
   CatalogField,
