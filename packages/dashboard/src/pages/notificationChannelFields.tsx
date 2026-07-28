@@ -80,6 +80,8 @@ const PERM_LABELS_LOCAL: Record<Permission, string> = {
   'token:write':        'Tokens – Write',
   'role:write':         'Roles – Write',
   'audit:read':         'Audit Log – Read',
+  'modules:read':       'Modules – Read',
+  'modules:manage':     'Modules – Manage',
 };
 /* v8 ignore next */
 export const PERM_OPTIONS = ALL_PERMISSIONS.map(p => ({ value: p, label: PERM_LABELS_LOCAL[p] ?? p }));

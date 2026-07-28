@@ -14,12 +14,13 @@ export const ALL_PERMISSIONS: Permission[] = [
   'token:read', 'token:write',
   'role:write',
   'audit:read',
+  'modules:read', 'modules:manage',
 ];
 
 export const BUILT_IN_ROLES: RoleConfig[] = [
   { id: 'admin',    name: 'Admin',    permissions: ALL_PERMISSIONS },
-  { id: 'viewer',   name: 'Viewer',   permissions: ['project:read', 'model:read', 'report:read', 'settings:read', 'token:read', 'audit:read'] },
-  { id: 'operator', name: 'Operator', permissions: ['project:read', 'project:write', 'model:read', 'model:write', 'report:read', 'user:read', 'settings:read', 'token:read', 'token:write', 'notification:write'] },
+  { id: 'viewer',   name: 'Viewer',   permissions: ['project:read', 'model:read', 'report:read', 'settings:read', 'token:read', 'audit:read', 'modules:read'] },
+  { id: 'operator', name: 'Operator', permissions: ['project:read', 'project:write', 'model:read', 'model:write', 'report:read', 'user:read', 'settings:read', 'token:read', 'token:write', 'notification:write', 'modules:read'] },
 ];
 
 /** Merge built-in roles with custom roles (custom cannot shadow built-in IDs). */
