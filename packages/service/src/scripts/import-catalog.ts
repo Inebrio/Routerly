@@ -13,25 +13,15 @@
  *   npm run import:catalog --workspace=packages/service -- --connection <id> [--provider <id>]
  */
 import { readFileSync } from 'node:fs';
-import type { ModelInstance, ModelCapabilities, ProviderId, TokenCost } from '@routerly/shared';
-import { catalogFetcher } from '../modules/catalog/fetcher.js';
+import type { ModelInstance, ProviderId, TokenCost } from '@routerly/shared';
+import { catalogFetcher, type ProviderCatalog } from '../modules/catalog/fetcher.js';
 import { readConfig, writeConfig } from '../modules/config/loader.js';
 
 const { version: pkgVersion } = JSON.parse(
   readFileSync(new URL('../../package.json', import.meta.url), 'utf-8'),
 ) as { version: string };
 
-interface CatalogEntry {
-  id: string;
-  input: number;
-  output: number;
-  cache?: number;
-  cacheWrite?: number;
-  contextWindow?: number;
-  deprecated?: boolean;
-  capabilities?: ModelCapabilities;
-  pricingTiers?: Array<{ metric: string; above: number; input: number; output: number; cache?: number }>;
-}
+type CatalogEntry = ProviderCatalog[string]['models'][number];
 
 function mapCost(entry: CatalogEntry): TokenCost {
   return {
@@ -56,25 +46,30 @@ export async function importCatalog(opts: {
   connectionId: string;
   routerlyVersion?: string;
 }): Promise<{ upserted: number }> {
-  const [catalog, instances] = await Promise.all([
+  const [catalog, instances, connections] = await Promise.all([
     catalogFetcher.get(opts.routerlyVersion ?? pkgVersion),
     readConfig('instances'),
+    readConfig('connections'),
   ]);
 
-  let provider = opts.provider;
-  if (!provider) {
-    const connections = await readConfig('connections');
-    const connection = connections.find(c => c.id === opts.connectionId);
-    if (!connection) throw new Error(`Connection not found: ${opts.connectionId}`);
-    provider = connection.providerId;
+  // Always resolve the connection, even when opts.provider is given — a connection's
+  // credentials/endpoint are provider-specific, so a mismatched opts.provider must fail
+  // loudly here rather than silently bind wrong-provider catalog entries to it.
+  const connection = connections.find(c => c.id === opts.connectionId);
+  if (!connection) throw new Error(`Connection not found: ${opts.connectionId}`);
+  if (opts.provider !== undefined && opts.provider !== connection.providerId) {
+    throw new Error(
+      `Provider mismatch: connection '${opts.connectionId}' is bound to provider '${connection.providerId}', not '${opts.provider}'`,
+    );
   }
+  const provider = connection.providerId;
 
   const providerEntry = catalog[provider];
   if (!providerEntry) return { upserted: 0 };
 
   let upserted = 0;
 
-  for (const entry of providerEntry.models as CatalogEntry[]) {
+  for (const entry of providerEntry.models) {
     if (entry.deprecated === true) continue;
 
     const id = `${opts.connectionId}__${entry.id}`;

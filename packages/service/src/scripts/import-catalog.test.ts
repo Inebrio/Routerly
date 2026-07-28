@@ -157,6 +157,27 @@ describe('importCatalog', () => {
     await expect(importCatalog({ connectionId: 'missing' })).rejects.toThrow('Connection not found: missing');
   });
 
+  it('throws when connectionId does not resolve to a known connection even if provider is given', async () => {
+    mockReadConfig.mockImplementation((key: string) => {
+      if (key === 'instances') return Promise.resolve([] as never);
+      if (key === 'connections') return Promise.resolve([] as never);
+      throw new Error(`unexpected readConfig(${key})`);
+    });
+    await expect(importCatalog({ provider: 'openai', connectionId: 'missing' })).rejects.toThrow('Connection not found: missing');
+  });
+
+  it('throws when the explicit provider disagrees with the resolved connection providerId', async () => {
+    mockReadConfig.mockImplementation((key: string) => {
+      if (key === 'instances') return Promise.resolve([] as never);
+      if (key === 'connections') return Promise.resolve([connection({ providerId: 'anthropic' })] as never);
+      throw new Error(`unexpected readConfig(${key})`);
+    });
+    await expect(importCatalog({ provider: 'openai', connectionId: 'c1' })).rejects.toThrow(
+      "Provider mismatch: connection 'c1' is bound to provider 'anthropic', not 'openai'",
+    );
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
   it('returns upserted: 0 when the provider is absent from the catalog', async () => {
     mockGet.mockResolvedValue({});
     const result = await importCatalog({ provider: 'openai', connectionId: 'c1' });
