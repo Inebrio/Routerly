@@ -2,6 +2,8 @@
 
 export type Provider = 'openai' | 'anthropic' | 'anthropic-oauth' | 'openai-oauth' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom' | 'openai-web' | 'anthropic-web' | 'deepseek' | 'groq' | 'together' | 'perplexity' | 'azure-openai' | 'bedrock' | 'vertex';
 
+export type ProviderId = string;
+
 export interface PricingTier {
   /** What dimension is being measured, e.g. "context_tokens" */
   metric: string;
