@@ -49,6 +49,7 @@ export interface ResilienceSnapshot {
 /** Tracks circuit-breaker / cooldown / lockout state across provider, connection, and model levels. */
 export interface ResilienceStore {
   record(key: ResilienceKey, fault: ResilienceFault): void;
+  recordSuccess(key: ResilienceKey): void; // closes a half-open probe; no-op otherwise
   snapshot(): ResilienceSnapshot;
   isAvailable(key: ResilienceKey): boolean;
   tryProbe(key: ResilienceKey): boolean; // atomic compare-and-set: exactly one half-open probe
