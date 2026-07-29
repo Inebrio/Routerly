@@ -139,7 +139,7 @@ describe('InMemoryResilienceStore', () => {
     expect(entry?.lastFault).toBe('invalid-request');
   });
 
-  it('invalid-request does not close an in-flight half-open probe either', () => {
+  it('invalid-request never touches half-open state (record() alone cannot close a probe)', () => {
     const s = new InMemoryResilienceStore();
     const k = { level: 'provider', id: 'openai' } as const;
     for (let i = 0; i < 5; i++) s.record(k, { category: 'server' });
@@ -149,28 +149,54 @@ describe('InMemoryResilienceStore', () => {
     expect(s.snapshot().entries[0]?.state).toBe('half-open');
   });
 
-  it('closes half-open -> closed when a non-hard fault is recorded post-probe (only signal record() can carry)', () => {
+  it('a non-hard record() (rate-limit) during a half-open probe applies its cooldown but does NOT close the breaker', () => {
     const s = new InMemoryResilienceStore();
     const k = { level: 'provider', id: 'openai' } as const;
     for (let i = 0; i < 5; i++) s.record(k, { category: 'server' });
     vi.advanceTimersByTime(60_000);
     expect(s.tryProbe(k)).toBe(true); // half-open, probe granted
-    expect(s.isAvailable(k)).toBe(false); // only the granted probe may pass, not general traffic
 
-    s.record(k, { category: 'rate-limit' }); // not evidence the provider itself is down
+    s.record(k, { category: 'rate-limit' }); // still a failure from the caller's perspective
 
     const entry = s.snapshot().entries[0];
-    expect(entry?.state).toBe('closed'); // circuit breaker itself is fully reset
+    expect(entry?.state).toBe('half-open'); // record() alone never resolves the probe
+    expect(entry?.cooldownUntil).toBeDefined(); // the rate-limit branch still does its own job
+    expect(s.isAvailable(k)).toBe(false);
+  });
+
+  it('recordSuccess closes a half-open provider entry: state -> closed, failureCount -> 0, isAvailable -> true', () => {
+    const s = new InMemoryResilienceStore();
+    const k = { level: 'provider', id: 'openai' } as const;
+    for (let i = 0; i < 5; i++) s.record(k, { category: 'server' });
+    vi.advanceTimersByTime(60_000);
+    expect(s.tryProbe(k)).toBe(true); // half-open, probe granted
+
+    s.recordSuccess(k);
+
+    const entry = s.snapshot().entries[0];
+    expect(entry?.state).toBe('closed');
     expect(entry?.failureCount).toBe(0);
     expect(entry?.openedAt).toBeUndefined();
-    // the rate-limit fault still applies its own cooldown independent of the breaker reset
-    expect(s.isAvailable(k)).toBe(false);
-    vi.advanceTimersByTime(30_000); // DEFAULT_COOLDOWN_MS
     expect(s.isAvailable(k)).toBe(true);
 
-    // a fresh probe is grantable again since the breaker fully reset
-    // (tryProbe on a closed key is a no-op true, not a second probe token)
+    // a fresh probe cycle is available again since the breaker fully reset
     expect(s.tryProbe(k)).toBe(true);
+  });
+
+  it('recordSuccess is a no-op on a closed entry', () => {
+    const s = new InMemoryResilienceStore();
+    const k = { level: 'provider', id: 'openai' } as const;
+    s.record(k, { category: 'server' }); // 1 fault, stays closed
+    s.recordSuccess(k);
+    const entry = s.snapshot().entries[0];
+    expect(entry?.state).toBe('closed');
+    expect(entry?.failureCount).toBe(1); // untouched, not reset
+  });
+
+  it('recordSuccess is a no-op on a nonexistent key', () => {
+    const s = new InMemoryResilienceStore();
+    expect(() => s.recordSuccess({ level: 'provider', id: 'never-seen' })).not.toThrow();
+    expect(s.snapshot().entries).toHaveLength(0);
   });
 
   it('reopens immediately when a hard fault arrives during the half-open probe', () => {

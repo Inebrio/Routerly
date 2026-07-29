@@ -31,10 +31,10 @@ function toPublicEntry(entry: InternalEntry): ResilienceEntry {
     state: entry.state,
     failureCount: entry.failureCount,
   };
-  if (entry.lastFault) out.lastFault = entry.lastFault;
-  if (entry.openedAt) out.openedAt = entry.openedAt;
-  if (entry.cooldownUntil) out.cooldownUntil = entry.cooldownUntil;
-  if (entry.lockoutUntil) out.lockoutUntil = entry.lockoutUntil;
+  if (entry.lastFault !== undefined) out.lastFault = entry.lastFault;
+  if (entry.openedAt !== undefined) out.openedAt = entry.openedAt;
+  if (entry.cooldownUntil !== undefined) out.cooldownUntil = entry.cooldownUntil;
+  if (entry.lockoutUntil !== undefined) out.lockoutUntil = entry.lockoutUntil;
   return out;
 }
 
@@ -80,15 +80,23 @@ export class InMemoryResilienceStore implements ResilienceStore {
       case 'rate-limit':
       case 'quota':
         this.recordCooldown(entry, fault);
-        this.resolveHalfOpenAsRecovered(entry);
         return;
 
       case 'model-not-found':
       case 'content-safety':
         this.recordLockout(entry);
-        this.resolveHalfOpenAsRecovered(entry);
         return;
     }
+  }
+
+  recordSuccess(key: ResilienceKey): void {
+    const entry = this.entries.get(mapKey(key));
+    if (!entry || entry.state !== 'half-open') return;
+    entry.state = 'closed';
+    entry.failureCount = 0;
+    entry.faultTimestamps = [];
+    delete entry.openedAt;
+    entry.probeInFlight = false;
   }
 
   private recordHardFault(entry: InternalEntry): void {
@@ -125,20 +133,6 @@ export class InMemoryResilienceStore implements ResilienceStore {
     entry.lockoutUntil = Date.now() + MODEL_LOCKOUT_MS;
   }
 
-  /**
-   * A record() call that isn't itself a hard fault for this key, arriving while the circuit is
-   * half-open, is the only recovery signal this interface can carry (there is no separate
-   * "success" method) — treat it as proof the provider answered and close the breaker.
-   */
-  private resolveHalfOpenAsRecovered(entry: InternalEntry): void {
-    if (entry.state !== 'half-open') return;
-    entry.state = 'closed';
-    entry.failureCount = 0;
-    entry.faultTimestamps = [];
-    delete entry.openedAt;
-    entry.probeInFlight = false;
-  }
-
   isAvailable(key: ResilienceKey): boolean {
     const entry = this.entries.get(mapKey(key));
     if (!entry) return true;
@@ -166,8 +160,9 @@ export class InMemoryResilienceStore implements ResilienceStore {
     }
 
     // `probeInFlight` is set true at the moment state becomes 'half-open' (above) and only
-    // cleared by record() closing or reopening the breaker, which also moves state away from
-    // 'half-open' — so reaching this branch always means a probe is already out.
+    // cleared by recordSuccess() closing the breaker or a hard fault reopening it, both of
+    // which also move state away from 'half-open' — so reaching this branch always means a
+    // probe is already out.
     if (entry.state === 'half-open') return false; // atomic compare-and-set: single probe already out
 
     return true; // closed: nothing to probe, already available
