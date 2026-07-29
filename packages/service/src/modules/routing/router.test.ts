@@ -20,6 +20,7 @@ import { cheapestPolicy } from './policies/cheapest.js'
 import { capabilityPolicy } from './policies/capability.js'
 import { llmPolicy } from './policies/llm.js'
 import { fairnessPolicy } from './policies/fairness.js'
+import { InMemoryResilienceStore } from '../resilience/store.js'
 import type { ModelConfig, ProjectConfig } from '@routerly/shared'
 
 const mockReadConfig = vi.mocked(readConfig)
@@ -32,9 +33,9 @@ const mockFairnessPolicy = vi.mocked(fairnessPolicy)
 
 afterEach(() => { vi.clearAllMocks() })
 
-function makeModel(id: string): ModelConfig {
+function makeModel(id: string, provider: ModelConfig['provider'] = 'openai'): ModelConfig {
   return {
-    id, name: id, provider: 'openai', endpoint: 'https://api.openai.com/v1',
+    id, name: id, provider, endpoint: `https://api.${provider}.com/v1`,
     cost: { inputPerMillion: 1, outputPerMillion: 3 },
   }
 }
@@ -779,5 +780,102 @@ describe('routeRequest', () => {
     // abstained should be emitted
     const abstainEmit = emit.mock.calls.find((c: any) => c[0].message === 'router:abstained')
     expect(abstainEmit).toBeDefined()
+  })
+
+  describe('resilience pre-filter', () => {
+    it('never returns a candidate whose provider circuit is open while another candidate is available', async () => {
+      mockReadConfig.mockResolvedValue([makeModel('m1', 'openai'), makeModel('m2', 'anthropic')])
+      mockIsAllowed.mockResolvedValue(true)
+
+      const store = new InMemoryResilienceStore()
+      for (let i = 0; i < 5; i++) store.record({ level: 'provider', id: 'openai' }, { category: 'server' })
+
+      const project = makeProject(['m1', 'm2'])
+      const result = await routeRequest(request, project, undefined, undefined, undefined, undefined, undefined, store)
+
+      expect(result.models.map(m => m.model)).not.toContain('m1')
+      expect(result.models.map(m => m.model)).toContain('m2')
+    })
+
+    it('records the resilience exclusion in the trace (both via emit and the returned trace array)', async () => {
+      mockReadConfig.mockResolvedValue([makeModel('m1', 'openai'), makeModel('m2', 'anthropic')])
+      mockIsAllowed.mockResolvedValue(true)
+
+      const store = new InMemoryResilienceStore()
+      for (let i = 0; i < 5; i++) store.record({ level: 'provider', id: 'openai' }, { category: 'server' })
+
+      const emit = vi.fn()
+      const project = makeProject(['m1', 'm2'])
+      const result = await routeRequest(request, project, undefined, emit, undefined, undefined, undefined, store)
+
+      const emittedEntry = emit.mock.calls.map((c: any) => c[0]).find((e: any) => e.message === 'resilience:excluded')
+      expect(emittedEntry).toBeDefined()
+      expect(emittedEntry.details.excluded).toEqual([
+        { modelId: 'm1', level: 'provider', until: expect.any(Number) },
+      ])
+
+      const tracedEntry = result.trace.find(e => e.message === 'resilience:excluded')
+      expect(tracedEntry).toBeDefined()
+    })
+
+    it('does not filter or emit a resilience trace entry when no store is passed (backward compatible)', async () => {
+      mockReadConfig.mockResolvedValue([makeModel('m1', 'openai'), makeModel('m2', 'anthropic')])
+      mockIsAllowed.mockResolvedValue(true)
+
+      const emit = vi.fn()
+      const project = makeProject(['m1', 'm2'])
+      const result = await routeRequest(request, project, undefined, emit)
+
+      expect(result.models.map(m => m.model)).toContain('m1')
+      expect(emit.mock.calls.map((c: any) => c[0].message)).not.toContain('resilience:excluded')
+    })
+
+    it('falls back to the single least-bad candidate instead of throwing when the store excludes every candidate', async () => {
+      mockReadConfig.mockResolvedValue([makeModel('m1', 'openai'), makeModel('m2', 'anthropic')])
+      mockIsAllowed.mockResolvedValue(true)
+
+      const store = new InMemoryResilienceStore()
+      for (let i = 0; i < 5; i++) store.record({ level: 'provider', id: 'openai' }, { category: 'server' })
+      for (let i = 0; i < 5; i++) store.record({ level: 'provider', id: 'anthropic' }, { category: 'server' })
+
+      const project = makeProject(['m1', 'm2'])
+      const result = await routeRequest(request, project, undefined, undefined, undefined, undefined, undefined, store)
+
+      expect(result.models).toHaveLength(1)
+    })
+
+    it('passes candidates through unchanged when a store is provided but nothing is excluded', async () => {
+      mockReadConfig.mockResolvedValue([makeModel('m1', 'openai'), makeModel('m2', 'anthropic')])
+      mockIsAllowed.mockResolvedValue(true)
+      mockCheapestPolicy.mockResolvedValue({
+        routing: [{ model: 'm1', point: 0.8 }, { model: 'm2', point: 0.4 }],
+      })
+
+      const store = new InMemoryResilienceStore() // no faults recorded — everything available
+      const emit = vi.fn()
+      const project = makeProject(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+      const result = await routeRequest(request, project, undefined, emit, undefined, undefined, undefined, store)
+
+      expect(result.models.map(m => m.model).sort()).toEqual(['m1', 'm2'])
+      expect(emit.mock.calls.map((c: any) => c[0].message)).not.toContain('resilience:excluded')
+    })
+
+    it('includes the resilience trace entry in the full policy-scoring path (not just the single-candidate bypass)', async () => {
+      mockReadConfig.mockResolvedValue([makeModel('m1', 'openai'), makeModel('m2', 'anthropic'), makeModel('m3', 'anthropic')])
+      mockIsAllowed.mockResolvedValue(true)
+      mockCheapestPolicy.mockResolvedValue({
+        routing: [{ model: 'm2', point: 0.8 }, { model: 'm3', point: 0.4 }],
+      })
+
+      const store = new InMemoryResilienceStore()
+      for (let i = 0; i < 5; i++) store.record({ level: 'provider', id: 'openai' }, { category: 'server' })
+
+      const project = makeProject(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: true }])
+      const result = await routeRequest(request, project, undefined, undefined, undefined, undefined, undefined, store)
+
+      // m1 excluded by resilience, m2/m3 remain → full policy-scoring path (2+ candidates), not the bypass.
+      expect(result.models.map(m => m.model).sort()).toEqual(['m2', 'm3'])
+      expect(result.trace.find(e => e.message === 'resilience:excluded')).toBeDefined()
+    })
   })
 })

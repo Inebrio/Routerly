@@ -1,7 +1,8 @@
-import type { ChatCompletionRequest, ModelConfig, ProjectConfig, ProjectToken, RoutingCandidate } from '@routerly/shared';
+import type { ChatCompletionRequest, ModelConfig, ProjectConfig, ProjectToken, ResilienceStore, RoutingCandidate } from '@routerly/shared';
 import { readConfig } from '../config/loader.js';
 import { isAllowed, getViolatedLimits } from '../budget/budget.js';
 import type { LimitSnapshot } from '../budget/budget.js';
+import { filterAvailable } from '../resilience/filter.js';
 import type { CandidateModel } from './policies/types.js';
 import { contextPolicy } from './policies/context.js';
 import { cheapestPolicy } from './policies/cheapest.js';
@@ -54,6 +55,7 @@ export async function routeRequest(
   token?: ProjectToken,
   traceId?: string,
   conversationId?: string,
+  store?: ResilienceStore,
 ): Promise<RouteResult> {
   const enabledPolicies = (project.policies ?? []).filter(p => p.enabled);
 
@@ -73,7 +75,7 @@ export async function routeRequest(
   // Carica i ModelConfig completi per i modelli associati al progetto
   const allModels: ModelConfig[] = await readConfig('models');
   const missingModelIds: string[] = [];
-  const candidates: CandidateModel[] = project.models
+  let candidates: CandidateModel[] = project.models
     .map(ref => {
       const model = allModels.find(m => m.id === ref.modelId);
       if (!model) {
@@ -93,6 +95,20 @@ export async function routeRequest(
 
   if (candidates.length === 0) {
     throw new Error(`no_models_available: project has no resolvable models (referenced: [${project.models.map(m => m.modelId).join(', ')}])`);
+  }
+
+  // ── Pre-filtro resilienza ────────────────────────────────────────────────
+  // Esclude i candidati il cui circuito provider/connection/model è aperto,
+  // in cooldown o in lockout, prima ancora del controllo limiti. store è
+  // opzionale (container-resolved un livello sopra): se assente, nessun filtro.
+  let resilienceTraceEntry: TraceEntry | undefined;
+  if (store) {
+    const { available, excluded } = filterAvailable(candidates, store);
+    candidates = available;
+    if (excluded.length > 0) {
+      resilienceTraceEntry = te('router-request', 'resilience:excluded', { excluded });
+      emit?.(resilienceTraceEntry);
+    }
   }
 
   // ── Pre-filtro limiti ────────────────────────────────────────────────────
@@ -173,7 +189,10 @@ export async function routeRequest(
       note: 'single_candidate_bypass',
     });
     emit?.(bypassEntry);
-    return { models: [singleResult], trace: [intakeEntry, bypassEntry] };
+    return {
+      models: [singleResult],
+      trace: [...(resilienceTraceEntry ? [resilienceTraceEntry] : []), intakeEntry, bypassEntry],
+    };
   }
 
   // ── Emit policy config subito dopo ───────────────────────────────────────
@@ -375,6 +394,7 @@ export async function routeRequest(
   emit?.(resultEntry);
 
   const trace: TraceEntry[] = [
+    ...(resilienceTraceEntry ? [resilienceTraceEntry] : []),
     intakeEntry,
     policiesEntry,
     ...successfulResults.map(r =>

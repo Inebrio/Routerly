@@ -1,29 +1,36 @@
+import type { ResilienceStore } from '@routerly/shared'
 import { defineModule, type Processor, type RouterlyModule } from '../../core/index.js'
-import { ROUTER, PROXY_PIPELINE } from '../../core/tokens.js'
+import { ROUTER, PROXY_PIPELINE, RESILIENCE_STORE } from '../../core/tokens.js'
 import type { ProxyContext } from '../reverse-proxy/context.js'
 import { routeRequest } from './router.js'
 import { addRoutingDecision } from './routingMemoryStore.js'
 import { appendTrace } from '../logging/traceStore.js'
 import type { TraceEntry } from '../logging/traceStore.js'
 
-const prepare: Processor<ProxyContext> = {
-  id: 'routing.prepare',
-  phase: 'routing.prepare',
-  async run(ctx) {
-    if (ctx.result) return
-    const emit = (entry: TraceEntry): void => appendTrace(ctx.traceId, [entry])
-    const { models, trace } = await routeRequest(
-      ctx.request,
-      ctx.project,
-      ctx.log,
-      emit,
-      ctx.token,
-      ctx.traceId,
-      ctx.conversationId,
-    )
-    ctx.candidates = models
-    ctx.routeTrace = trace
-  },
+// Store resolution is optional-safe: if the resilience module isn't registered in a given
+// kernel/test composition, resilienceStore is undefined and routeRequest skips the filter
+// entirely, unchanged from before this wiring.
+function makePrepare(resilienceStore: ResilienceStore | undefined): Processor<ProxyContext> {
+  return {
+    id: 'routing.prepare',
+    phase: 'routing.prepare',
+    async run(ctx) {
+      if (ctx.result) return
+      const emit = (entry: TraceEntry): void => appendTrace(ctx.traceId, [entry])
+      const { models, trace } = await routeRequest(
+        ctx.request,
+        ctx.project,
+        ctx.log,
+        emit,
+        ctx.token,
+        ctx.traceId,
+        ctx.conversationId,
+        resilienceStore,
+      )
+      ctx.candidates = models
+      ctx.routeTrace = trace
+    },
+  }
 }
 
 const memory: Processor<ProxyContext> = {
@@ -48,8 +55,9 @@ export const routingModule: RouterlyModule = defineModule({
   manifest: { id: 'routing', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0' } },
   register({ container }) {
     container.register(ROUTER, { routeRequest })
+    const resilienceStore = container.tryResolve(RESILIENCE_STORE)
     const pipeline = container.resolve(PROXY_PIPELINE)
-    pipeline.contribute(prepare)
+    pipeline.contribute(makePrepare(resilienceStore))
     pipeline.contribute(memory)
   },
 })
