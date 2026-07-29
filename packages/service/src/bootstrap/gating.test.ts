@@ -77,6 +77,27 @@ describe('bootstrap gating', () => {
     }
   })
 
+  // Regression for a real production bug: routingModule.register() resolves
+  // RESILIENCE_STORE via container.tryResolve() to wire the resilience pre-filter.
+  // That only works if resilience has actually registered first. Nothing but an
+  // explicit dependsOn edge guarantees that (array order in coreModules is not
+  // topologicalSort's tie-break rule the way it looks). Asserts the real,
+  // fully-wired kernel's startedOrder — not a hand-built container — so this
+  // fails the same way production did if the edge is ever removed.
+  it('registers resilience before routing so the resilience pre-filter store is resolvable', async () => {
+    mockReadConfig.mockImplementation(async () => [] as any)
+
+    const kernel = await bootstrap()
+    try {
+      const order = kernel.startedOrder
+      expect(order.indexOf('resilience')).toBeGreaterThanOrEqual(0)
+      expect(order.indexOf('routing')).toBeGreaterThanOrEqual(0)
+      expect(order.indexOf('resilience')).toBeLessThan(order.indexOf('routing'))
+    } finally {
+      await kernel.stop()
+    }
+  })
+
   it('bootstrap() runs the models->connections migration exactly once', async () => {
     mockReadConfig.mockImplementation(async () => [] as any)
 
