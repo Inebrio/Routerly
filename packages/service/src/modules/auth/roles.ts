@@ -16,6 +16,7 @@ export const ALL_PERMISSIONS: Permission[] = [
   'audit:read',
   'modules:read', 'modules:manage',
   'connections:read', 'connections:manage',
+  'resilience:read', 'resilience:manage',
 ];
 
 export const BUILT_IN_ROLES: RoleConfig[] = [

@@ -24,4 +24,9 @@ describe('roles', () => {
     expect(ALL_PERMISSIONS).toContain('connections:read');
     expect(ALL_PERMISSIONS).toContain('connections:manage');
   });
+
+  it('admin includes resilience permissions', () => {
+    expect(ALL_PERMISSIONS).toContain('resilience:read');
+    expect(ALL_PERMISSIONS).toContain('resilience:manage');
+  });
 });

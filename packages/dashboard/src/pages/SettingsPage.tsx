@@ -313,6 +313,8 @@ const PERM_LABELS_LOCAL: Record<Permission, string> = {
   'modules:manage':     'Modules – Manage',
   'connections:read':   'Connections – Read',
   'connections:manage': 'Connections – Manage',
+  'resilience:read':    'Resilience – Read',
+  'resilience:manage':  'Resilience – Manage',
 };
 
 /* v8 ignore next */

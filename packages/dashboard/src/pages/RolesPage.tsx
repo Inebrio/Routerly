@@ -23,6 +23,8 @@ const PERM_LABELS: Record<Permission, string> = {
   'modules:manage':     'Modules – Manage',
   'connections:read':   'Connections – Read',
   'connections:manage': 'Connections – Manage',
+  'resilience:read':    'Resilience – Read',
+  'resilience:manage':  'Resilience – Manage',
 };
 
 interface RoleFormState {
