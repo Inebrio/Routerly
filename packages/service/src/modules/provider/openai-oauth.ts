@@ -51,13 +51,18 @@ export async function refreshOpenAIOAuthToken(refreshToken: string): Promise<Ope
 
 /**
  * Decrypts the stored access token for an openai-oauth connection, refreshing it (and
- * persisting the refreshed credential) if it's within 5 minutes of expiry.
+ * persisting the refreshed credential) if it's within 5 minutes of expiry. Unknown expiry
+ * (`expiresAt <= 0`, e.g. an undecodable JWT) is treated as "don't force a refresh", mirroring
+ * the `exp > 0` guard in openaiOAuthForward.ts's resolveCodexToken.
  */
 export async function resolveOpenAIOAuthCredential(connection: ProviderConnection): Promise<string> {
-  const creds = connection.credentials as { oauthEnc: string; refreshEnc: string; expiresAt: number };
+  const creds = connection.credentials as { oauthEnc?: string; refreshEnc?: string; expiresAt?: number };
+  if (!creds.oauthEnc || !creds.refreshEnc || typeof creds.expiresAt !== 'number') {
+    throw new Error('oauth connection missing encrypted credentials');
+  }
   const accessToken = decryptCredential(creds.oauthEnc);
 
-  if (Date.now() < creds.expiresAt - REFRESH_BUFFER_MS) {
+  if (creds.expiresAt <= 0 || Date.now() < creds.expiresAt - REFRESH_BUFFER_MS) {
     return accessToken;
   }
 

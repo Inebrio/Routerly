@@ -60,19 +60,27 @@ export async function refreshAnthropicOAuthToken(refreshToken: string): Promise<
   const data = (await res.json()) as Record<string, unknown>;
   const accessToken = data['access_token'] as string;
   const newRefreshToken = (data['refresh_token'] as string | undefined) ?? refreshToken;
-  const expiresIn = (data['expires_in'] as number | undefined) ?? 0;
-  return { accessToken, refreshToken: newRefreshToken, expiresAt: Date.now() + expiresIn * 1000 };
+  // expires_in missing → unknown expiry, sentinel 0 (not Date.now(): that would read as
+  // "already expired" on the very next check and force-refresh every request).
+  const expiresInRaw = data['expires_in'] as number | undefined;
+  const expiresAt = typeof expiresInRaw === 'number' ? Date.now() + expiresInRaw * 1000 : 0;
+  return { accessToken, refreshToken: newRefreshToken, expiresAt };
 }
 
 /**
  * Decrypts the stored access token for an anthropic-oauth connection, refreshing it (and
- * persisting the refreshed credential) if it's within 5 minutes of expiry.
+ * persisting the refreshed credential) if it's within 5 minutes of expiry. Unknown expiry
+ * (`expiresAt <= 0`) is treated as "don't force a refresh", mirroring the `exp > 0` guard in
+ * openaiOAuthForward.ts's resolveCodexToken.
  */
 export async function resolveAnthropicOAuthCredential(connection: ProviderConnection): Promise<string> {
-  const creds = connection.credentials as { oauthEnc: string; refreshEnc: string; expiresAt: number };
+  const creds = connection.credentials as { oauthEnc?: string; refreshEnc?: string; expiresAt?: number };
+  if (!creds.oauthEnc || !creds.refreshEnc || typeof creds.expiresAt !== 'number') {
+    throw new Error('oauth connection missing encrypted credentials');
+  }
   const accessToken = decryptCredential(creds.oauthEnc);
 
-  if (Date.now() < creds.expiresAt - REFRESH_BUFFER_MS) {
+  if (creds.expiresAt <= 0 || Date.now() < creds.expiresAt - REFRESH_BUFFER_MS) {
     return accessToken;
   }
 

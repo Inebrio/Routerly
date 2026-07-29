@@ -211,6 +211,30 @@ describe('resolveOpenAIOAuthCredential', () => {
     expect(token).toBe(newJwt);
     expect(mockWriteConfig).not.toHaveBeenCalled();
   });
+
+  it('does not force a refresh when expiresAt is the unknown-expiry sentinel (0)', async () => {
+    const connection = makeConnection({
+      credentials: {
+        oauthEnc: encryptCredential('live-access-token'),
+        refreshEnc: encryptCredential('refresh-token'),
+        expiresAt: 0,
+      },
+    });
+    const fetchMock = vi.fn();
+    global.fetch = fetchMock as any;
+
+    const token = await resolveOpenAIOAuthCredential(connection);
+    expect(token).toBe('live-access-token');
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('throws a clear error when oauthEnc/refreshEnc/expiresAt are missing from credentials', async () => {
+    const connection = makeConnection({ credentials: {} });
+    await expect(resolveOpenAIOAuthCredential(connection)).rejects.toThrow(
+      'oauth connection missing encrypted credentials',
+    );
+  });
 });
 
 describe('refreshOpenAIOAuthToken', () => {
