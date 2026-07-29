@@ -118,7 +118,15 @@ export type {
 
 export type { RoutingCandidate, RoutingResponse } from './types/routing.js';
 
-export type { ResilienceLevel, ResilienceState, ResilienceFault, ResilienceKey } from './types/resilience.js';
+export type {
+  ResilienceLevel,
+  ResilienceState,
+  ResilienceFault,
+  ResilienceKey,
+  ResilienceEntry,
+  ResilienceSnapshot,
+  ResilienceStore,
+} from './types/resilience.js';
 
 // Notification event taxonomy (runtime value + derived type)
 export { NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS } from './types/config.js';
