@@ -7,6 +7,7 @@ import { logAudit } from '../audit/logger.js';
 import type { AuditEntry } from '../audit/logger.js';
 import { isKnownProvider, providerDescriptorRegistry, getProviderDescriptor } from '../provider/descriptor.js';
 import { isModuleEnabled } from '../../core/modules/registry.js';
+import { encryptCredential } from '../../lib/crypto-cred.js';
 
 // ── Route-local auth helpers (mirrors api.ts; no shared route-helper module exists) ──
 
@@ -52,6 +53,40 @@ async function checkProviderModuleGate(providerId: string, reply: FastifyReply):
     message: `Provider connections requiring the '${supportLevel}' module cannot be created or updated while '${moduleId}' is disabled.`,
   });
   return false;
+}
+
+/**
+ * Encrypts plaintext oauth/web credential fields before persistence, per provider
+ * supportLevel. `native`/`compatible` providers (e.g. plaintext `apiKey`) pass through
+ * untouched — that plaintext-at-rest behavior is intentional (see Task 13 self-review).
+ *
+ * - oauth: `oauthPlain` -> `oauthEnc` (required to populate), `refreshPlain` -> `refreshEnc`
+ *   (optional). `expiresAt` and any other field pass through untouched.
+ * - web: `cookiePlain` -> `cookieEnc`, `cfClearancePlain` -> `cfClearanceEnc` (optional).
+ *
+ * Only fields actually present in `credentials` are transformed — safe to call on a
+ * partial PATCH body.
+ */
+function encryptConnectionCredentials(
+  providerId: string,
+  credentials: Record<string, unknown>,
+): Record<string, unknown> {
+  const supportLevel = getProviderDescriptor(providerId)?.supportLevel;
+  if (supportLevel !== 'oauth' && supportLevel !== 'web') return credentials;
+
+  const result: Record<string, unknown> = { ...credentials };
+  const plainToEnc: Array<[string, string]> = supportLevel === 'oauth'
+    ? [['oauthPlain', 'oauthEnc'], ['refreshPlain', 'refreshEnc']]
+    : [['cookiePlain', 'cookieEnc'], ['cfClearancePlain', 'cfClearanceEnc']];
+
+  for (const [plainKey, encKey] of plainToEnc) {
+    const plain = result[plainKey];
+    if (typeof plain === 'string') {
+      result[encKey] = encryptCredential(plain);
+      delete result[plainKey];
+    }
+  }
+  return result;
 }
 
 // ── Zod schemas ────────────────────────────────────────────────────────────────
@@ -138,6 +173,7 @@ export const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
 
     const connections = await readConfig('connections');
     const connection = { id: uuidv4(), ...parsed.data } as ProviderConnection;
+    connection.credentials = encryptConnectionCredentials(connection.providerId, connection.credentials);
     connections.push(connection);
     await writeConfig('connections', connections);
     audit(req, 'connection:create', 'success', { id: connection.id });
@@ -156,7 +192,11 @@ export const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
     const effectiveProviderId = parsed.data.providerId ?? connections[index]!.providerId;
     if (!(await checkProviderModuleGate(effectiveProviderId, reply))) return;
 
-    const updated = { ...connections[index]!, ...parsed.data } as ProviderConnection;
+    const patchData = { ...parsed.data };
+    if (patchData.credentials) {
+      patchData.credentials = encryptConnectionCredentials(effectiveProviderId, patchData.credentials);
+    }
+    const updated = { ...connections[index]!, ...patchData } as ProviderConnection;
     connections[index] = updated;
     await writeConfig('connections', connections);
     audit(req, 'connection:update', 'success', { id: req.params.id });
