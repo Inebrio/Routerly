@@ -3,9 +3,13 @@ import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
   ModelConfig,
+  ProviderConnection,
   StreamChunk,
 } from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
+import { decryptCredential } from '../../lib/crypto-cred.js';
+import { readConfig } from '../config/loader.js';
+import { isModuleEnabled } from '../../core/modules/registry.js';
 
 /**
  * Unofficial adapter for ChatGPT web (chatgpt.com).
@@ -407,4 +411,31 @@ export class OpenAIWebAdapter implements ProviderAdapter {
       choices: [{ index: 0, delta: {}, finish_reason: 'stop' }],
     };
   }
+}
+
+// ─── Web credential resolution (encrypted-at-rest, module-gated) ───────────
+
+export interface OpenAIWebCredentials {
+  accessToken: string;
+  cfClearance?: string;
+}
+
+/**
+ * Decrypts the stored access token (and, if present, the cf_clearance cookie) for an
+ * openai-web connection, refusing to run unless the 'provider-web' module is enabled.
+ * There is no refresh flow: these are browser session cookies, not OAuth tokens — an
+ * expired cookie surfaces as the provider's own HTTP error on the next request.
+ */
+export async function resolveOpenAIWebCredential(connection: ProviderConnection): Promise<OpenAIWebCredentials> {
+  const records = await readConfig('modules');
+  if (!isModuleEnabled(records, 'provider-web')) {
+    throw new Error("openai-web: 'provider-web' module is disabled");
+  }
+  const creds = connection.credentials as { cookieEnc?: string; cfClearanceEnc?: string };
+  if (!creds.cookieEnc) {
+    throw new Error('openai-web: connection missing encrypted access token');
+  }
+  const accessToken = decryptCredential(creds.cookieEnc);
+  const cfClearance = creds.cfClearanceEnc ? decryptCredential(creds.cfClearanceEnc) : undefined;
+  return cfClearance ? { accessToken, cfClearance } : { accessToken };
 }

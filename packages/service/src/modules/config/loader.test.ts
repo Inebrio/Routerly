@@ -14,6 +14,7 @@ vi.mock('../../lib/paths.js', () => ({
     projects: '/test/config/projects.json',
     users: '/test/config/users.json',
     roles: '/test/config/roles.json',
+    modules: '/test/config/modules.json',
     usage: '/test/data/usage.json',
     secret: '/test/config/secret',
   },
@@ -104,6 +105,17 @@ describe('readConfig', () => {
   it('rethrows non-ENOENT errors', async () => {
     mockReadFile.mockRejectedValue(new Error('permission denied'))
     await expect(readConfig('models')).rejects.toThrow('permission denied')
+  })
+
+  it('seeds modules default with provider-web disabled (off by default) on first run', async () => {
+    const err = Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
+    mockReadFile.mockRejectedValueOnce(err)
+    const releaseFn = vi.fn().mockResolvedValue(undefined)
+    mockLock.mockResolvedValue(releaseFn)
+    mockReadFile.mockRejectedValueOnce(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }))
+
+    const result = await readConfig('modules')
+    expect(result).toEqual([{ id: 'provider-web', enabled: false }])
   })
 
   it('returns default settings when settings file missing', async () => {

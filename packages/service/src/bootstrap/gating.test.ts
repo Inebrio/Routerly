@@ -35,6 +35,8 @@ describe('bootstrap gating', () => {
     expect(ids).toContain('reverse-proxy')
     expect(ids).toContain('guardrails')
     expect(ids).toContain('cache')
+    expect(ids).toContain('provider-oauth')
+    expect(ids).toContain('provider-web')
   })
 
   it('a disabled feature module is filtered out of the kernel list', () => {

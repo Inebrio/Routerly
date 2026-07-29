@@ -10,7 +10,7 @@ import { piiModule } from './pii/index.js'
 import { loggingModule } from './logging/index.js'
 import { cacheModule } from './cache.js'
 import { CONTRIB_MODULES } from '../core/contrib.js'
-import type { RouterlyModule } from '../core/index.js'
+import { defineModule, type RouterlyModule } from '../core/index.js'
 
 export const coreModules = [
   routingModule,
@@ -21,6 +21,25 @@ export const coreModules = [
   loggingModule,
   cacheModule,
 ]
+
+// ponytail: provider-oauth/provider-web are pure feature-gate slots (no register()
+// lifecycle of their own — see anthropic-oauth.ts/openai-oauth.ts/anthropic-web.ts/
+// openai-web.ts, which check isModuleEnabled directly). Declaring them here is what
+// makes the existing generic /api/modules + dashboard Modules page + CLI `modules`
+// command list and toggle them — no bespoke UI needed for this capability gate.
+export const providerOAuthModule: RouterlyModule = defineModule({
+  manifest: { id: 'provider-oauth', version: '0.4.0', dependsOn: { provider: '^0.4.0' } },
+  register() {
+    // intentionally empty
+  },
+})
+
+export const providerWebModule: RouterlyModule = defineModule({
+  manifest: { id: 'provider-web', version: '0.4.0', dependsOn: { provider: '^0.4.0' } },
+  register() {
+    // intentionally empty
+  },
+})
 
 /**
  * The full static module set the kernel can run. bootstrap() gates this list
@@ -33,6 +52,8 @@ export const ALL_MODULES: RouterlyModule[] = [
   providerModule,
   catalogModule,
   reverseProxyModule,
+  providerOAuthModule,
+  providerWebModule,
   ...coreModules,
   ...CONTRIB_MODULES,
 ]

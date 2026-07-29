@@ -1,6 +1,18 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { AnthropicWebAdapter } from './anthropic-web.js';
-import type { ChatCompletionRequest, ModelConfig } from '@routerly/shared';
+import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
+
+vi.mock('../config/loader.js', () => ({
+  readConfig: vi.fn(),
+  writeConfig: vi.fn(),
+  getOrCreateSecret: vi.fn(),
+}));
+
+import { AnthropicWebAdapter, resolveAnthropicWebCredential } from './anthropic-web.js';
+import type { ChatCompletionRequest, ModelConfig, ProviderConnection } from '@routerly/shared';
+import { readConfig, getOrCreateSecret } from '../config/loader.js';
+import { loadCredentialKey, encryptCredential } from '../../lib/crypto-cred.js';
+
+const mockReadConfig = vi.mocked(readConfig);
+const mockGetOrCreateSecret = vi.mocked(getOrCreateSecret);
 
 function makeModel(overrides: Partial<ModelConfig> = {}): ModelConfig {
   return {
@@ -707,5 +719,52 @@ describe('AnthropicWebAdapter — .catch(() => "") coverage for text() rejection
       adapter.chatCompletion(makeRequest(), makeModel()),
     ).rejects.toThrow('anthropic-web: failed to create conversation');
     vi.unstubAllGlobals();
+  });
+});
+
+// ─── resolveAnthropicWebCredential ──────────────────────────────────────────
+
+beforeAll(async () => {
+  mockGetOrCreateSecret.mockResolvedValue('b'.repeat(64)); // valid 32-byte hex secret
+  await loadCredentialKey();
+});
+
+function makeConnection(overrides: Partial<ProviderConnection> = {}): ProviderConnection {
+  return {
+    id: 'conn-anthropic-web-1',
+    providerId: 'anthropic-web',
+    label: 'Anthropic Web',
+    endpoint: 'https://claude.ai',
+    enabled: true,
+    credentials: { cookieEnc: encryptCredential('sk-ant-sid01-live-session') },
+    ...overrides,
+  };
+}
+
+describe('resolveAnthropicWebCredential', () => {
+  it('refuses to run when the provider-web module is disabled', async () => {
+    mockReadConfig.mockResolvedValueOnce([{ id: 'provider-web', enabled: false }] as any);
+    await expect(resolveAnthropicWebCredential(makeConnection())).rejects.toThrow(
+      "'provider-web' module is disabled",
+    );
+  });
+
+  it('decrypts the stored session cookie when the module is enabled', async () => {
+    mockReadConfig.mockResolvedValueOnce([{ id: 'provider-web', enabled: true }] as any);
+    const token = await resolveAnthropicWebCredential(makeConnection());
+    expect(token).toBe('sk-ant-sid01-live-session');
+  });
+
+  it('defaults to enabled when no module record exists', async () => {
+    mockReadConfig.mockResolvedValueOnce([] as any);
+    const token = await resolveAnthropicWebCredential(makeConnection());
+    expect(token).toBe('sk-ant-sid01-live-session');
+  });
+
+  it('throws a clear error when cookieEnc is missing from credentials', async () => {
+    mockReadConfig.mockResolvedValueOnce([{ id: 'provider-web', enabled: true }] as any);
+    await expect(
+      resolveAnthropicWebCredential(makeConnection({ credentials: {} })),
+    ).rejects.toThrow('connection missing encrypted session cookie');
   });
 });

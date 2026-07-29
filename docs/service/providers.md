@@ -20,6 +20,8 @@ Adapters are selected automatically based on the `provider` field in a model's c
 | `gemini` | `GeminiAdapter` | OpenAI-compatible endpoint | Uses OpenAI SDK pointed at Google's OpenAI-compatible base URL |
 | `ollama` | `OllamaAdapter` | OpenAI-compatible endpoint | Uses OpenAI SDK pointed at local Ollama host |
 | `custom` | `CustomAdapter` | OpenAI-compatible endpoint | Any endpoint that speaks `/v1/chat/completions` |
+| `anthropic-web` | `AnthropicWebAdapter` | Unofficial, session cookie | Gated by `provider-web` module (off by default) — see [below](#web-session-adapters-anthropic-web-openai-web) |
+| `openai-web` | `OpenAIWebAdapter` | Unofficial, session cookie | Gated by `provider-web` module (off by default) — see [below](#web-session-adapters-anthropic-web-openai-web) |
 
 ---
 
@@ -153,6 +155,34 @@ These providers use the OpenAI-compatible protocol. Register them using the `cus
   "apiKey": "<encrypted>"
 }
 ```
+
+---
+
+## Web Session Adapters (`anthropic-web`, `openai-web`)
+
+> **⚠️ Unofficial, off by default, use at your own risk.** These adapters authenticate with a **browser session cookie** instead of an official API key, replaying the same internal endpoints the provider's own web/chat interface uses. This is not an officially supported integration path. It relies on undocumented behaviour that can change or break at any time, and using it **may violate the provider's Terms of Service**. Evaluate that risk yourself before enabling this feature.
+
+Both adapters are gated by the `provider-web` module, which is **disabled by default**. A connection with `providerId: "anthropic-web"` or `providerId: "openai-web"` refuses to run — at connection-creation time and at request time — until an administrator explicitly enables `provider-web`:
+
+```bash
+routerly modules enable provider-web
+```
+
+or from the dashboard: **Settings → Modules → provider-web → Enable**. The equivalent management API is `POST /api/modules/provider-web/enable` (see [API — Management](../api/management#modules)).
+
+**Credentials** — instead of an API key, the connection's encrypted credentials hold the session cookie value copied from a logged-in browser session:
+
+| Provider ID | Field | Where to find it |
+|-------------|-------|-------------------|
+| `anthropic-web` | `cookieEnc` | The `sessionKey` cookie (DevTools → Application → Cookies) |
+| `openai-web` | `cookieEnc` | The session's bearer access token |
+| `openai-web` | `cfClearanceEnc` (optional) | The `cf_clearance` cookie, if Cloudflare challenges the session |
+
+Credentials are encrypted at rest (`encryptCredential`/`decryptCredential`, AES-256-GCM) and decrypted only in memory, immediately before a request is built.
+
+**No refresh flow** — unlike the OAuth adapters (`anthropic-oauth`, `openai-oauth`), there is no token endpoint to refresh against. A browser session cookie simply expires; when it does, the provider's own authentication error is returned to the caller unmodified.
+
+**Wire-format transparency** — once the session cookie is resolved, request and response bodies are built and parsed exactly as before; only the credential lookup is affected.
 
 ---
 
