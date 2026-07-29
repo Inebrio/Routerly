@@ -20,7 +20,10 @@ Examples:
       try {
         const connections = await api<ProviderConnection[]>('GET', '/api/connections');
         if (opts.json) {
-          console.log(JSON.stringify(connections, null, 2));
+          // ponytail: server already redacts credentials, but strip client-side too so
+          // "credentials never printed" is a CLI-level guarantee, not just server trust.
+          const safe = connections.map(({ credentials: _credentials, ...rest }) => rest);
+          console.log(JSON.stringify(safe, null, 2));
           return;
         }
         if (connections.length === 0) {
