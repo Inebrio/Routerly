@@ -2,6 +2,7 @@ import type { ProviderConnection } from '@routerly/shared';
 import { OpenAIAdapter } from './openai.js';
 import { decryptCredential, encryptCredential } from '../../lib/crypto-cred.js';
 import { readConfig, writeConfig } from '../config/loader.js';
+import { isModuleEnabled } from '../../core/modules/registry.js';
 
 export class OpenAIOAuthAdapter extends OpenAIAdapter {}
 
@@ -50,12 +51,17 @@ export async function refreshOpenAIOAuthToken(refreshToken: string): Promise<Ope
 }
 
 /**
- * Decrypts the stored access token for an openai-oauth connection, refreshing it (and
- * persisting the refreshed credential) if it's within 5 minutes of expiry. Unknown expiry
- * (`expiresAt <= 0`, e.g. an undecodable JWT) is treated as "don't force a refresh", mirroring
- * the `exp > 0` guard in openaiOAuthForward.ts's resolveCodexToken.
+ * Decrypts the stored access token for an openai-oauth connection, refusing to run unless
+ * the 'provider-oauth' module is enabled, and refreshing it (and persisting the refreshed
+ * credential) if it's within 5 minutes of expiry. Unknown expiry (`expiresAt <= 0`, e.g. an
+ * undecodable JWT) is treated as "don't force a refresh", mirroring the `exp > 0` guard in
+ * openaiOAuthForward.ts's resolveCodexToken.
  */
 export async function resolveOpenAIOAuthCredential(connection: ProviderConnection): Promise<string> {
+  const records = await readConfig('modules');
+  if (!isModuleEnabled(records, 'provider-oauth')) {
+    throw new Error("openai-oauth: 'provider-oauth' module is disabled");
+  }
   const creds = connection.credentials as { oauthEnc?: string; refreshEnc?: string; expiresAt?: number };
   if (!creds.oauthEnc || !creds.refreshEnc || typeof creds.expiresAt !== 'number') {
     throw new Error('oauth connection missing encrypted credentials');

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeAll, beforeEach } from 'vitest'
 
 const { mockCreate } = vi.hoisted(() => ({ mockCreate: vi.fn() }))
 vi.mock('@anthropic-ai/sdk', () => ({
@@ -117,6 +117,15 @@ beforeAll(async () => {
   await loadCredentialKey()
 })
 
+// Default readConfig behaviour for resolveAnthropicOAuthCredential: 'provider-oauth' module
+// enabled, no connections on file. Individual tests override via mockImplementation.
+beforeEach(() => {
+  mockReadConfig.mockImplementation(async (type: string) => {
+    if (type === 'modules') return [{ id: 'provider-oauth', enabled: true }]
+    return []
+  })
+})
+
 function makeConnection(overrides: Partial<ProviderConnection> = {}): ProviderConnection {
   return {
     id: 'conn-anthropic-1',
@@ -149,7 +158,11 @@ describe('resolveAnthropicOAuthCredential', () => {
         expiresAt: Date.now() - 1000,
       },
     })
-    mockReadConfig.mockResolvedValueOnce([connection] as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'modules') return [{ id: 'provider-oauth', enabled: true }]
+      if (type === 'connections') return [connection]
+      return []
+    })
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ access_token: 'new-access-token', refresh_token: 'new-refresh-token', expires_in: 3600 }),
@@ -173,7 +186,11 @@ describe('resolveAnthropicOAuthCredential', () => {
         expiresAt: Date.now() - 1000,
       },
     })
-    mockReadConfig.mockResolvedValueOnce([] as any) // connection no longer present
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'modules') return [{ id: 'provider-oauth', enabled: true }]
+      if (type === 'connections') return [] // connection no longer present
+      return []
+    })
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ access_token: 'new-access-token', refresh_token: 'new-refresh-token', expires_in: 3600 }),
@@ -192,7 +209,11 @@ describe('resolveAnthropicOAuthCredential', () => {
         expiresAt: Date.now() - 1000,
       },
     })
-    mockReadConfig.mockResolvedValueOnce(undefined as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'modules') return [{ id: 'provider-oauth', enabled: true }]
+      if (type === 'connections') return undefined as any
+      return []
+    })
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ access_token: 'new-access-token', refresh_token: 'new-refresh-token', expires_in: 3600 }),
@@ -224,6 +245,17 @@ describe('resolveAnthropicOAuthCredential', () => {
     const connection = makeConnection({ credentials: {} })
     await expect(resolveAnthropicOAuthCredential(connection)).rejects.toThrow(
       'oauth connection missing encrypted credentials',
+    )
+  })
+
+  it('refuses to run when the provider-oauth module is disabled', async () => {
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'modules') return [{ id: 'provider-oauth', enabled: false }]
+      return []
+    })
+    const connection = makeConnection()
+    await expect(resolveAnthropicOAuthCredential(connection)).rejects.toThrow(
+      "'provider-oauth' module is disabled",
     )
   })
 })

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeAll, beforeEach } from 'vitest';
 import {
   OpenAIOAuthAdapter,
   resolveOpenAIOAuthCredential,
@@ -117,6 +117,15 @@ beforeAll(async () => {
   await loadCredentialKey();
 });
 
+// Default readConfig behaviour for resolveOpenAIOAuthCredential: 'provider-oauth' module
+// enabled, no connections on file. Individual tests override via mockImplementation.
+beforeEach(() => {
+  mockReadConfig.mockImplementation(async (type: string) => {
+    if (type === 'modules') return [{ id: 'provider-oauth', enabled: true }];
+    return [];
+  });
+});
+
 function makeJwt(expSeconds: number): string {
   const header = Buffer.from(JSON.stringify({ alg: 'none' })).toString('base64url');
   const payload = Buffer.from(JSON.stringify({ exp: expSeconds })).toString('base64url');
@@ -155,7 +164,11 @@ describe('resolveOpenAIOAuthCredential', () => {
         expiresAt: Date.now() - 1000,
       },
     });
-    mockReadConfig.mockResolvedValueOnce([connection] as any);
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'modules') return [{ id: 'provider-oauth', enabled: true }];
+      if (type === 'connections') return [connection];
+      return [];
+    });
     const newJwt = makeJwt(Math.floor(Date.now() / 1000) + 3600);
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -180,7 +193,11 @@ describe('resolveOpenAIOAuthCredential', () => {
         expiresAt: Date.now() - 1000,
       },
     });
-    mockReadConfig.mockResolvedValueOnce([] as any);
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'modules') return [{ id: 'provider-oauth', enabled: true }];
+      if (type === 'connections') return []; // connection no longer present
+      return [];
+    });
     const newJwt = makeJwt(Math.floor(Date.now() / 1000) + 3600);
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -200,7 +217,11 @@ describe('resolveOpenAIOAuthCredential', () => {
         expiresAt: Date.now() - 1000,
       },
     });
-    mockReadConfig.mockResolvedValueOnce(undefined as any);
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'modules') return [{ id: 'provider-oauth', enabled: true }];
+      if (type === 'connections') return undefined as any;
+      return [];
+    });
     const newJwt = makeJwt(Math.floor(Date.now() / 1000) + 3600);
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -233,6 +254,17 @@ describe('resolveOpenAIOAuthCredential', () => {
     const connection = makeConnection({ credentials: {} });
     await expect(resolveOpenAIOAuthCredential(connection)).rejects.toThrow(
       'oauth connection missing encrypted credentials',
+    );
+  });
+
+  it('refuses to run when the provider-oauth module is disabled', async () => {
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'modules') return [{ id: 'provider-oauth', enabled: false }];
+      return [];
+    });
+    const connection = makeConnection();
+    await expect(resolveOpenAIOAuthCredential(connection)).rejects.toThrow(
+      "'provider-oauth' module is disabled",
     );
   });
 });
