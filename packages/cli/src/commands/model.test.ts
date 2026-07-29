@@ -128,6 +128,38 @@ describe('routerly model list', () => {
     const { err } = await run('list');
     expect(err.join(' ')).toContain('network error');
   });
+
+  it('shows the owning connection id when the model has a matching instance', async () => {
+    mockApi.mockImplementation((method: string, path: string) => {
+      if (path === '/api/models') return Promise.resolve([baseModel]);
+      if (path === '/api/instances') return Promise.resolve([{ id: 'gpt-4o', connectionId: 'conn-123', upstreamModelId: 'gpt-4o', cost: baseModel.cost, contextWindow: 128000 }]);
+      return Promise.reject(new Error(`unexpected path ${path}`));
+    });
+    const { out } = await run('list');
+    expect(mockApi).toHaveBeenCalledWith('GET', '/api/instances');
+    expect(out.join('\n')).toContain('conn-123');
+  });
+
+  it('shows a blank connection column when the model has no matching instance', async () => {
+    mockApi.mockImplementation((method: string, path: string) => {
+      if (path === '/api/models') return Promise.resolve([baseModel]);
+      if (path === '/api/instances') return Promise.resolve([]);
+      return Promise.reject(new Error(`unexpected path ${path}`));
+    });
+    const { out } = await run('list');
+    expect(out.join('\n')).toContain('Connection ID');
+  });
+
+  it('degrades gracefully when /api/instances is forbidden (no connections:read)', async () => {
+    mockApi.mockImplementation((method: string, path: string) => {
+      if (path === '/api/models') return Promise.resolve([baseModel]);
+      if (path === '/api/instances') return Promise.reject(new ApiError(403, 'Forbidden'));
+      return Promise.reject(new Error(`unexpected path ${path}`));
+    });
+    const { out, err } = await run('list');
+    expect(out.join('\n')).toContain('gpt-4o');
+    expect(err.join(' ')).toBe('');
+  });
 });
 
 // ── model show ────────────────────────────────────────────────────────────────

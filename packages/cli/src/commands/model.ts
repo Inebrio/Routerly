@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import type { ModelConfig, TokenCost, Limit, PricingTier, CatalogField } from '@routerly/shared';
+import type { ModelConfig, TokenCost, Limit, PricingTier, CatalogField, ModelInstance } from '@routerly/shared';
 
 // ─── Interactive wizard helpers ───────────────────────────────────────────────
 
@@ -145,8 +145,18 @@ Examples:
           console.log(chalk.yellow('No models registered yet. Use `routerly model add` to add one.'));
           return;
         }
+        // GET /api/models only ever returns legacy standalone models (no connectionId field).
+        // Models migrated to the connection/instance system keep the same id as their
+        // ModelInstance, so the owning connection is resolved by matching instance.id === model.id.
+        // Best-effort: a caller without connections:read still sees the table, just without this column.
+        let connectionByModelId = new Map<string, string>();
+        try {
+          const instances = await api<ModelInstance[]>('GET', '/api/instances');
+          connectionByModelId = new Map(instances.map(i => [i.id, i.connectionId]));
+        } catch { /* no connections:read permission or endpoint unavailable — column stays blank */ }
+
         const table = new Table({
-          head: ['ID', 'Provider', 'Endpoint', 'Input $/1M', 'Output $/1M', 'Catalog'].map(h => chalk.cyan(h)),
+          head: ['ID', 'Provider', 'Endpoint', 'Input $/1M', 'Output $/1M', 'Catalog', 'Connection ID'].map(h => chalk.cyan(h)),
         });
         for (const m of models) {
           const overridden = m.fieldOverrides ? Object.values(m.fieldOverrides).some(Boolean) : false;
@@ -155,7 +165,8 @@ Examples:
             : m.catalogDefaults
               ? chalk.green('catalog')
               : '';
-          table.push([m.id, m.provider, m.endpoint, `$${m.cost.inputPerMillion}`, `$${m.cost.outputPerMillion}`, catalogLabel]);
+          const connectionId = connectionByModelId.get(m.id) ?? chalk.gray('-');
+          table.push([m.id, m.provider, m.endpoint, `$${m.cost.inputPerMillion}`, `$${m.cost.outputPerMillion}`, catalogLabel, connectionId]);
         }
         console.log(table.toString());
       } catch (err) {
