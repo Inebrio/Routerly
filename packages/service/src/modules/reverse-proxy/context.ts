@@ -9,6 +9,7 @@ import type {
 } from '@routerly/shared'
 import type { EffectivePii } from '../pii/piiScrubber.js'
 import type { TraceEntry } from '../logging/traceStore.js'
+import type { UpstreamResponse } from '../resilience/classifier.js'
 
 export interface ProxyResult {
   kind: 'stream' | 'json' | 'block' | 'passthrough'
@@ -52,6 +53,12 @@ export interface ProxyContext {
   candidates?: RoutingCandidate[]
   routeTrace?: TraceEntry[]
   attempt?: { model: ModelConfig; candidate: RoutingCandidate }
+  // Task 7 (resilience): the upstream.execute processor stashes a failed candidate's raw error
+  // here (never for BudgetExceededError — that's a local skip, not an upstream fault) so the
+  // routing.execute attempt loop can classify + record it at the connection-level resilience key
+  // without re-catching the same error a second time. Cleared by the attempt loop after use.
+  attemptError?: unknown
+  attemptResponse?: UpstreamResponse
 
   // middleware state (built in request.preprocess by Plan 5)
   piiInput?: EffectivePii

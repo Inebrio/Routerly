@@ -7,10 +7,13 @@ import { getProxyPipeline } from '../run.js'
 import { readConfig } from '../../config/loader.js'
 import { appendTrace } from '../../logging/traceStore.js'
 import type { TraceEntry } from '../../logging/traceStore.js'
-import { llmChat, llmStream, BudgetExceededError } from '../execute.js'
+import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
 import { emitEvent } from '../../notifications/emitter.js'
 import { forwardOpenAIOAuthSSE } from './openaiOAuthForward.js'
+import { getResilienceStore } from '../../resilience/index.js'
+import { resilienceKeys } from '../../resilience/keys.js'
+import { classifyUpstreamError } from '../../resilience/classifier.js'
 
 /** Build the initial ProxyContext for an OpenAI request. protocol.decode is identity: request === original. */
 export function buildOpenAIContext(req: FastifyRequest, reply: FastifyReply): ProxyContext {
@@ -132,6 +135,10 @@ export const openaiUpstream: Processor<ProxyContext> = {
       } catch (err: unknown) {
         if (!(err instanceof BudgetExceededError)) {
           log.warn({ err, modelId: model.id }, 'Stream failed before first chunk, trying next candidate')
+          // Task 7: stash for the routing.execute attempt loop to classify + record at the
+          // connection-level resilience key (never for BudgetExceededError, a local skip).
+          ctx.attemptError = err
+          ctx.attemptResponse = upstreamResponseFromError(err)
         }
         // leave ctx.result unset -> openai:attempt advances to the next candidate
       }
@@ -153,6 +160,8 @@ export const openaiUpstream: Processor<ProxyContext> = {
     } catch (err: unknown) {
       if (!(err instanceof BudgetExceededError)) {
         log.warn({ err, modelId: model.id }, 'Model failed, trying next candidate')
+        ctx.attemptError = err
+        ctx.attemptResponse = upstreamResponseFromError(err)
       }
       // leave ctx.result unset -> openai:attempt advances
     }
@@ -190,6 +199,18 @@ export const openaiAttempt: Processor<ProxyContext> = {
           void emitEvent('routing.fallback_used', 'info', { projectId: project.id, primaryModelId, fallbackModelId: model.id, traceId: ctx.traceId }, { projectId: project.id, log })
         }
         return
+      }
+      // Task 7: openai:upstream stashed the raw failure (if any, i.e. not a budget skip) on
+      // ctx.attemptError/attemptResponse -> classify and record it at the connection-level
+      // resilience key, then clear so it never leaks to the next candidate's iteration.
+      if (ctx.attemptError !== undefined) {
+        // openai:upstream normally already derives attemptResponse via upstreamResponseFromError;
+        // re-derive here too as a defensive fallback so the fault is still classified correctly
+        // even if the failing processor only stashed the raw error.
+        const attemptResponse = ctx.attemptResponse ?? upstreamResponseFromError(ctx.attemptError)
+        getResilienceStore()?.record(resilienceKeys(model).connection, classifyUpstreamError(ctx.attemptError, attemptResponse))
+        ctx.attemptError = undefined
+        ctx.attemptResponse = undefined
       }
       if (model.id === primaryModelId) primaryFailed = true
     }

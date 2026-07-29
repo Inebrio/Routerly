@@ -9,9 +9,12 @@ import { getProxyPipeline } from '../run.js'
 import { readConfig } from '../../config/loader.js'
 import { appendTrace } from '../../logging/traceStore.js'
 import type { TraceEntry } from '../../logging/traceStore.js'
-import { llmChat, llmStream, BudgetExceededError } from '../execute.js'
+import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
 import { forwardAnthropicOAuth, forwardAnthropicApiKey } from './oauthForward.js'
+import { getResilienceStore } from '../../resilience/index.js'
+import { resilienceKeys } from '../../resilience/keys.js'
+import { classifyUpstreamError } from '../../resilience/classifier.js'
 
 // ─── protocol translation (anthropic.ts L42-89, moved verbatim) ──────────────────
 /** Convert a MessagesRequest to an OpenAI-compat ChatCompletionRequest for non-Anthropic providers. */
@@ -165,6 +168,10 @@ export const anthropicUpstream: Processor<ProxyContext> = {
       } catch (err) {
         if (!(err instanceof BudgetExceededError)) {
           log.warn({ err, modelId: model.id }, 'Anthropic messages stream failed, trying next candidate')
+          // Task 7: stash for the routing.execute attempt loop to classify + record at the
+          // connection-level resilience key (never for BudgetExceededError, a local skip).
+          ctx.attemptError = err
+          ctx.attemptResponse = upstreamResponseFromError(err)
         }
         // leave ctx.result unset -> anthropic:attempt advances
       }
@@ -177,6 +184,8 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     } catch (err: unknown) {
       if (!(err instanceof BudgetExceededError)) {
         log.warn({ err, modelId: model.id }, 'Anthropic messages call failed, trying next candidate')
+        ctx.attemptError = err
+        ctx.attemptResponse = upstreamResponseFromError(err)
       }
       // leave ctx.result unset -> anthropic:attempt advances
     }
@@ -202,6 +211,15 @@ export const anthropicAttempt: Processor<ProxyContext> = {
       if (ctx.result) return
       await pipeline.runPhase('upstream.execute', ctx)
       if (ctx.result) return
+      // Task 7: anthropic:upstream normally already derives attemptResponse via
+      // upstreamResponseFromError; re-derive here too as a defensive fallback so the fault is
+      // still classified correctly even if the failing processor only stashed the raw error.
+      if (ctx.attemptError !== undefined) {
+        const attemptResponse = ctx.attemptResponse ?? upstreamResponseFromError(ctx.attemptError)
+        getResilienceStore()?.record(resilienceKeys(model).connection, classifyUpstreamError(ctx.attemptError, attemptResponse))
+        ctx.attemptError = undefined
+        ctx.attemptResponse = undefined
+      }
     }
 
     // Exhausted, no events on the Anthropic lane (decision #8).
