@@ -840,3 +840,57 @@ export const getAuditLog = (params?: { userId?: string; action?: string; result?
   return request<AuditPage>(`/audit${q.size ? '?' + q : ''}`);
 };
 
+// ── Provider connections & model instances ───────────────────────────────────
+
+export interface ProviderDescriptor {
+  id: string;
+  label: string;
+  protocol: 'openai' | 'anthropic' | 'gemini' | 'custom';
+  supportLevel: 'native' | 'compatible' | 'oauth' | 'web';
+  nativeCapabilities: ModelCapabilities;
+}
+
+export const getProviderDescriptors = () => request<ProviderDescriptor[]>('/providers/descriptors');
+
+/** Connection as returned by the API — credentials are always redacted server-side. */
+export interface Connection {
+  id: string;
+  providerId: string;
+  label: string;
+  credentials: undefined;
+  endpoint?: string;
+  enabled: boolean;
+}
+
+export const getConnections = () => request<Connection[]>('/connections');
+export const createConnection = (data: {
+  providerId: string; label: string; credentials: Record<string, string>;
+  endpoint?: string; enabled: boolean;
+}) => request<Connection>('/connections', { method: 'POST', body: JSON.stringify(data) });
+export const updateConnection = (id: string, data: Partial<{
+  providerId: string; label: string; credentials: Record<string, string>;
+  endpoint?: string; enabled: boolean;
+}>) => request<Connection>(`/connections/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
+export const deleteConnection = (id: string) => request<void>(`/connections/${encodeURIComponent(id)}`, { method: 'DELETE' });
+
+export interface Instance {
+  id: string;
+  connectionId: string;
+  upstreamModelId: string;
+  cost: { inputPerMillion: number; outputPerMillion: number; cachePerMillion?: number; cacheWritePerMillion?: number; pricingTiers?: PricingTier[] };
+  contextWindow: number;
+  limits?: Limit[];
+  capabilities?: ModelCapabilities;
+}
+
+export const getInstances = () => request<Instance[]>('/instances');
+export const createInstance = (data: {
+  connectionId: string; upstreamModelId: string; cost: Instance['cost']; contextWindow: number;
+  limits?: Limit[]; capabilities?: ModelCapabilities;
+}) => request<Instance>('/instances', { method: 'POST', body: JSON.stringify(data) });
+export const updateInstance = (id: string, data: Partial<{
+  connectionId: string; upstreamModelId: string; cost: Instance['cost']; contextWindow: number;
+  limits?: Limit[]; capabilities?: ModelCapabilities;
+}>) => request<Instance>(`/instances/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
+export const deleteInstance = (id: string) => request<void>(`/instances/${encodeURIComponent(id)}`, { method: 'DELETE' });
+

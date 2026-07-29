@@ -36,8 +36,10 @@ import { UserEditPage } from './pages/UserEditPage';
 import { HelpPage } from './pages/HelpPage';
 import { ModelDiscoveryPage } from './pages/ModelDiscoveryPage';
 import { AuditPage } from './pages/AuditPage';
+import { ConnectionsPage } from './pages/ConnectionsPage';
+import { ModelInstancesPage } from './pages/ModelInstancesPage';
 
-import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Plug } from 'lucide-react';
 import { Logo } from './components/Logo';
 import { ProfileNotificationBadge } from './components/NotificationBell';
 
@@ -86,7 +88,7 @@ function ThemeCycleButton() {
 }
 
 function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
-  const { user, logout } = useAuth();
+  const { user, logout, can } = useAuth();
   const navigate = useNavigate();
   const profileRowRef = useRef<HTMLDivElement>(null);
 
@@ -95,6 +97,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
   const navItems = [
     { to: '/dashboard/overview', icon: <LayoutDashboard size={17} />, label: 'Overview' },
     { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
+    ...(can('connections:read') ? [{ to: '/dashboard/connections', icon: <Plug size={17} />, label: 'Connections' }] : []),
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
     { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Playground' },
@@ -360,6 +363,8 @@ const router = createBrowserRouter([
           { path: 'models/discover', element: <ModelDiscoveryPage /> },
           { path: 'models/new', element: <ModelFormPage /> },
           { path: 'models/:id', element: <ModelFormPage /> },
+          { path: 'connections', element: <ConnectionsPage /> },
+          { path: 'connections/:connectionId/instances', element: <ModelInstancesPage /> },
           { path: 'projects', element: <ProjectsPage /> },
           {
             path: 'projects/new',
