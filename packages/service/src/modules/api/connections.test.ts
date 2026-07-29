@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeEach, beforeAll } from 'vitest'
 import Fastify from 'fastify'
 
-vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn() }))
+vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn(), getOrCreateSecret: vi.fn() }))
 vi.mock('../auth/jwt.js', () => ({
   createSessionToken: vi.fn(() => 'test-jwt'),
   verifyToken: vi.fn(),
@@ -17,12 +17,20 @@ vi.mock('bcrypt', () => ({
 }))
 
 import { apiRoutes } from './api.js'
-import { readConfig, writeConfig } from '../config/loader.js'
+import { readConfig, writeConfig, getOrCreateSecret } from '../config/loader.js'
 import { verifyToken } from '../auth/jwt.js'
+import { loadCredentialKey, encryptCredential, decryptCredential } from '../../lib/crypto-cred.js'
+import { resolveAnthropicOAuthCredential } from '../provider/anthropic-oauth.js'
 
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
-vi.mocked(writeConfig as (key: string, value: any) => Promise<void>)
+const mockWriteConfig = vi.mocked(writeConfig as (key: string, value: any) => Promise<void>)
 const mockVerifyToken = vi.mocked(verifyToken)
+const mockGetOrCreateSecret = vi.mocked(getOrCreateSecret)
+
+beforeAll(async () => {
+  mockGetOrCreateSecret.mockResolvedValue('d'.repeat(64)) // valid 32-byte hex secret
+  await loadCredentialKey()
+})
 
 afterEach(() => vi.clearAllMocks())
 
@@ -162,6 +170,90 @@ describe('POST /api/connections', () => {
     await app.close()
     expect(res.statusCode).toBe(200)
     expect(mockReadConfig).not.toHaveBeenCalledWith('modules')
+  })
+
+  // ─── Fix 1 — encrypt-on-persist for oauth/web connection credentials ───────
+
+  it('encrypts oauthPlain/refreshPlain into oauthEnc/refreshEnc for an oauth-supportLevel provider', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/connections', headers: auth('connections:manage'),
+      payload: {
+        providerId: 'anthropic-oauth', label: 'OAuth Conn',
+        credentials: { oauthPlain: 'live-access-token', refreshPlain: 'refresh-token' },
+        enabled: true,
+      },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.credentials).toBeUndefined()
+    expect(JSON.stringify(body)).not.toContain('live-access-token')
+    expect(JSON.stringify(body)).not.toContain('refresh-token')
+
+    const written = mockWriteConfig.mock.calls[0]?.[1] as any[]
+    const persisted = written[0]
+    expect(persisted.credentials.oauthPlain).toBeUndefined()
+    expect(persisted.credentials.refreshPlain).toBeUndefined()
+    expect(decryptCredential(persisted.credentials.oauthEnc)).toBe('live-access-token')
+    expect(decryptCredential(persisted.credentials.refreshEnc)).toBe('refresh-token')
+  })
+
+  it('encrypts cookiePlain/cfClearancePlain into cookieEnc/cfClearanceEnc for a web-supportLevel provider', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/connections', headers: auth('connections:manage'),
+      payload: {
+        providerId: 'openai-web', label: 'Web Conn',
+        credentials: { cookiePlain: 'session-cookie-value', cfClearancePlain: 'cf-clearance-value' },
+        enabled: true,
+      },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+
+    const written = mockWriteConfig.mock.calls[0]?.[1] as any[]
+    const persisted = written[0]
+    expect(persisted.credentials.cookiePlain).toBeUndefined()
+    expect(persisted.credentials.cfClearancePlain).toBeUndefined()
+    expect(decryptCredential(persisted.credentials.cookieEnc)).toBe('session-cookie-value')
+    expect(decryptCredential(persisted.credentials.cfClearanceEnc)).toBe('cf-clearance-value')
+  })
+
+  it('leaves a native/compatible provider credential (plaintext apiKey) byte-identical, no accidental encryption (control)', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/connections', headers: auth('connections:manage'),
+      payload: { providerId: 'openai', label: 'Native Conn', credentials: { apiKey: 'sk-plaintext-abc' }, enabled: true },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+
+    const written = mockWriteConfig.mock.calls[0]?.[1] as any[]
+    const persisted = written[0]
+    expect(persisted.credentials).toEqual({ apiKey: 'sk-plaintext-abc' })
+  })
+
+  it('round-trips: a connection created via POST with oauthPlain is readable by resolveAnthropicOAuthCredential', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/connections', headers: auth('connections:manage'),
+      payload: {
+        providerId: 'anthropic-oauth', label: 'OAuth Conn',
+        credentials: { oauthPlain: 'roundtrip-token', refreshPlain: 'roundtrip-refresh' },
+        enabled: true,
+      },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+
+    const written = mockWriteConfig.mock.calls[0]?.[1] as any[]
+    const persisted = written[0]
+    // resolveAnthropicOAuthCredential requires a numeric expiresAt; the route doesn't set one
+    // (it's plaintext, not part of the oauthPlain/refreshPlain convention) — simulate it here.
+    const connection = { ...persisted, credentials: { ...persisted.credentials, expiresAt: Date.now() + 3600_000 } }
+    const token = await resolveAnthropicOAuthCredential(connection)
+    expect(token).toBe('roundtrip-token')
   })
 })
 
@@ -327,6 +419,65 @@ describe('PATCH /api/connections/:id', () => {
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
     expect(body.label).toBe('New')
+  })
+
+  // ─── Fix 1 — encrypt-on-persist for oauth/web connection credentials ───────
+
+  it('encrypts only the plaintext fields present in a PATCH credentials body (whole credentials object is replaced, matching existing PATCH semantics)', async () => {
+    const app = await buildApp()
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [testUser]
+      if (type === 'roles') return [{ id: 'test-role', name: 'Test', permissions: ['connections:manage'] }]
+      if (type === 'connections') return [{
+        id: 'c1', providerId: 'anthropic-oauth', label: 'Old',
+        credentials: { oauthEnc: encryptCredential('original-token'), refreshEnc: encryptCredential('original-refresh'), expiresAt: Date.now() + 3600_000 },
+        enabled: true,
+      }]
+      if (type === 'modules') return [{ id: 'provider-oauth', enabled: true }]
+      return []
+    })
+    mockVerifyToken.mockReturnValue({ sub: 'test-user-id' } as any)
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/connections/c1', headers: { authorization: 'Bearer valid-jwt-token' },
+      payload: { credentials: { oauthPlain: 'rotated-token' } },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+
+    const written = mockWriteConfig.mock.calls[0]?.[1] as any[]
+    const persisted = written.find((c: any) => c.id === 'c1')
+    expect(decryptCredential(persisted.credentials.oauthEnc)).toBe('rotated-token')
+    expect(persisted.credentials.oauthPlain).toBeUndefined()
+    // credentials is replaced wholesale by PATCH (existing route semantics, unchanged by Fix 1):
+    // refreshPlain wasn't resent, so no refreshEnc is produced.
+    expect(persisted.credentials.refreshEnc).toBeUndefined()
+  })
+
+  it('leaves stored credentials fully unchanged when the PATCH body has no credentials key', async () => {
+    const app = await buildApp()
+    const storedCreds = {
+      oauthEnc: encryptCredential('unchanged-token'),
+      refreshEnc: encryptCredential('unchanged-refresh'),
+      expiresAt: Date.now() + 3600_000,
+    }
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [testUser]
+      if (type === 'roles') return [{ id: 'test-role', name: 'Test', permissions: ['connections:manage'] }]
+      if (type === 'connections') return [{ id: 'c1', providerId: 'anthropic-oauth', label: 'Old', credentials: storedCreds, enabled: true }]
+      if (type === 'modules') return [{ id: 'provider-oauth', enabled: true }]
+      return []
+    })
+    mockVerifyToken.mockReturnValue({ sub: 'test-user-id' } as any)
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/connections/c1', headers: { authorization: 'Bearer valid-jwt-token' },
+      payload: { label: 'New label only' },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+
+    const written = mockWriteConfig.mock.calls[0]?.[1] as any[]
+    const persisted = written.find((c: any) => c.id === 'c1')
+    expect(persisted.credentials).toEqual(storedCreds)
   })
 })
 
