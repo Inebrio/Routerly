@@ -176,6 +176,73 @@ Exit code: `0` on success, `1` on error.
 
 ---
 
+## `routerly connections`
+
+Manage provider connections — credentials (API key, endpoint) shared by one or more model instances. Requires `connections:read` (list) / `connections:manage` (add, remove).
+
+### `routerly connections list`
+
+```
+routerly connections list [--json]
+```
+
+List all configured provider connections.
+
+**Table columns:**
+- **ID** — connection identifier
+- **Provider** — provider ID (e.g. `openai`, `anthropic`, `ollama`)
+- **Label** — display label
+- **Endpoint** — custom endpoint, or `-` if using the provider default
+- **Enabled** — `yes` / `no`
+
+Credentials are never printed, in the table or in `--json` output.
+
+```bash
+routerly connections list
+routerly connections list --json
+```
+
+### `routerly connections add`
+
+```
+routerly connections add --provider-id <id> --label <label> [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--provider-id <id>` | Provider ID (e.g. `openai`, `anthropic`, `ollama`) — required |
+| `--label <label>` | Display label for this connection — required |
+| `--endpoint <url>` | Custom API endpoint (uses provider default if omitted) |
+| `--api-key <key>` | API key credential (stored plaintext; file permissions protect it) |
+| `--credentials-json <json>` | Full credentials object as JSON (advanced; merges over `--api-key` on conflict) |
+| `--enabled` / `--no-enabled` | Enable immediately (default: `true`) |
+
+```bash
+routerly connections add --provider-id openai --label "Main OpenAI" --api-key sk-...
+routerly connections add --provider-id ollama --label "Local Ollama" --endpoint http://localhost:11434/v1
+routerly connections add --provider-id anthropic --label "Anthropic" \
+  --credentials-json '{"apiKey":"sk-ant-..."}'
+```
+
+### `routerly connections remove`
+
+```
+routerly connections remove <id>
+```
+
+Remove a provider connection by ID.
+
+```bash
+routerly connections remove c1
+```
+
+**Error cases:**
+- Connection not found: `Error: Connection "<id>" not found.`
+
+Exit code: `0` on success, `1` on error.
+
+---
+
 ## `routerly auth`
 
 ### `routerly auth login`
@@ -262,6 +329,7 @@ routerly model list [--json]
 - **Provider** — provider name
 - **Endpoint** — base URL (custom endpoint or provider default)
 - **Catalog** — tracking status: `(catalog)` (auto-synced), `(partial override)` (some fields locked), or empty (no catalog entry)
+- **Connection ID** — ID of the `routerly connections` entry backing this model, or `-` if the model has no matching connection (not yet migrated, or the caller lacks `connections:read`)
 
 ---
 

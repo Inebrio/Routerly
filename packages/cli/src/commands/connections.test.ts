@@ -35,6 +35,17 @@ describe('connections list', () => {
     expect(console.log).toHaveBeenCalledWith(expect.stringContaining('"c1"'));
   });
 
+  it('strips a credentials field from --json output even if the server sent one', async () => {
+    mockApi.mockResolvedValueOnce([
+      { id: 'c1', providerId: 'openai', label: 'Main', enabled: true, credentials: { apiKey: 'sk-leaked-secret' } },
+    ]);
+    const cmd = makeConnectionsCommand();
+    await cmd.parseAsync(['node', 'routerly', 'list', '--json']);
+    const printed = vi.mocked(console.log).mock.calls.map(c => c.join(' ')).join('\n');
+    expect(printed).not.toContain('credentials');
+    expect(printed).not.toContain('sk-leaked-secret');
+  });
+
   it('prints table with connections (no --json)', async () => {
     mockApi.mockResolvedValueOnce([
       { id: 'c1', providerId: 'openai', label: 'Main', endpoint: 'https://api.openai.com/v1', enabled: true },
