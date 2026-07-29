@@ -202,6 +202,30 @@ describe('resolveAnthropicOAuthCredential', () => {
     expect(token).toBe('new-access-token')
     expect(mockWriteConfig).not.toHaveBeenCalled()
   })
+
+  it('does not force a refresh when expiresAt is the unknown-expiry sentinel (0)', async () => {
+    const connection = makeConnection({
+      credentials: {
+        oauthEnc: encryptCredential('live-access-token'),
+        refreshEnc: encryptCredential('refresh-token'),
+        expiresAt: 0,
+      },
+    })
+    const fetchMock = vi.fn()
+    global.fetch = fetchMock as any
+
+    const token = await resolveAnthropicOAuthCredential(connection)
+    expect(token).toBe('live-access-token')
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
+  it('throws a clear error when oauthEnc/refreshEnc/expiresAt are missing from credentials', async () => {
+    const connection = makeConnection({ credentials: {} })
+    await expect(resolveAnthropicOAuthCredential(connection)).rejects.toThrow(
+      'oauth connection missing encrypted credentials',
+    )
+  })
 })
 
 describe('refreshAnthropicOAuthToken', () => {
@@ -259,16 +283,14 @@ describe('refreshAnthropicOAuthToken', () => {
     expect(result.refreshToken).toBe('kept-refresh-token')
   })
 
-  it('defaults expiresAt to now when the response omits expires_in', async () => {
-    const before = Date.now()
+  it('defaults expiresAt to the unknown-expiry sentinel (0) when the response omits expires_in', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ access_token: 'a5', refresh_token: 'r5' }),
     }) as any
 
     const result = await refreshAnthropicOAuthToken('old-refresh')
-    expect(result.expiresAt).toBeGreaterThanOrEqual(before)
-    expect(result.expiresAt).toBeLessThan(before + 1000)
+    expect(result.expiresAt).toBe(0)
   })
 
   it('throws when both endpoints fail', async () => {
