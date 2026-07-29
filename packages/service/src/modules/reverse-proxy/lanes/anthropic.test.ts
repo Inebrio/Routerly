@@ -18,8 +18,9 @@ import { llmChat, llmStream, BudgetExceededError } from '../execute.js'
 import { forwardAnthropicOAuth, forwardAnthropicApiKey } from './oauthForward.js'
 import { setProxyPipeline } from '../run.js'
 import { writeConfig } from '../../config/loader.js'
+import { setResilienceStore } from '../../resilience/index.js'
 import type { ProxyContext } from '../context.js'
-import type { ModelConfig } from '@routerly/shared'
+import type { ModelConfig, ResilienceFault, ResilienceKey, ResilienceStore } from '@routerly/shared'
 
 const mockLlmChat = vi.mocked(llmChat)
 const mockLlmStream = vi.mocked(llmStream)
@@ -30,6 +31,20 @@ afterEach(() => vi.clearAllMocks())
 
 function makeLog() {
   return { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+}
+
+function makeFakeStore() {
+  const records: Array<{ key: ResilienceKey; fault: ResilienceFault }> = []
+  const store: ResilienceStore & { records: typeof records } = {
+    records,
+    record(key, fault) { records.push({ key, fault }) },
+    recordSuccess() {},
+    isAvailable() { return true },
+    tryProbe() { return true },
+    snapshot() { return { entries: [], generatedAt: Date.now() } },
+    reset() {},
+  }
+  return store
 }
 
 describe('anthropic transport lane', () => {
@@ -582,6 +597,44 @@ describe('anthropic:upstream', () => {
     expect(log.warn).not.toHaveBeenCalled()
     expect(ctx.result).toBeUndefined()
   })
+
+  it('non-stream failure stashes ctx.attemptError/attemptResponse for the resilience attempt loop (Task 7)', async () => {
+    const sdkErr = Object.assign(new Error('rate limited'), { status: 429, headers: { 'retry-after': '5' } })
+    mockLlmChat.mockRejectedValueOnce(sdkErr)
+    const ctx = {
+      protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+      attempt: { model, candidate },
+      original: { model: 'claude-3-5', stream: false, max_tokens: 100, messages: [] },
+    } as unknown as ProxyContext
+    await anthropicUpstream.run(ctx)
+    expect(ctx.attemptError).toBe(sdkErr)
+    expect(ctx.attemptResponse).toEqual({ status: 429, headers: { 'retry-after': '5' } })
+  })
+
+  it('stream failure stashes ctx.attemptError/attemptResponse for the resilience attempt loop (Task 7)', async () => {
+    const err = new Error('boom')
+    mockLlmStream.mockRejectedValueOnce(err)
+    const ctx = {
+      protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+      attempt: { model, candidate },
+      original: { model: 'claude-3-5', stream: true, max_tokens: 100, messages: [] },
+    } as unknown as ProxyContext
+    await anthropicUpstream.run(ctx)
+    expect(ctx.attemptError).toBe(err)
+    expect(ctx.attemptResponse).toBeUndefined()
+  })
+
+  it('BudgetExceededError does NOT stash ctx.attemptError (a local skip, not an upstream fault)', async () => {
+    mockLlmChat.mockRejectedValueOnce(new BudgetExceededError('model-a'))
+    const ctx = {
+      protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+      attempt: { model, candidate },
+      original: { model: 'claude-3-5', stream: false, max_tokens: 100, messages: [] },
+    } as unknown as ProxyContext
+    await anthropicUpstream.run(ctx)
+    expect(ctx.attemptError).toBeUndefined()
+    expect(ctx.attemptResponse).toBeUndefined()
+  })
 })
 
 describe('anthropic:attempt', () => {
@@ -711,5 +764,70 @@ describe('anthropic:attempt', () => {
     await anthropicAttempt.run(ctx)
     expect(ctx.result).toEqual({ kind: 'json', body: { type: 'message', model: 'model-b' } })
     expect((ctx.original as any).system).toBe('Base prompt.\n\nFollow the guardrail.')
+  })
+
+  describe('resilience: connection-level store.record on a failed candidate', () => {
+    afterEach(() => setResilienceStore(undefined as unknown as ResilienceStore))
+
+    const fakeUpstreamWithAttemptError = (failFor: string[] = [], err: unknown = new Error('boom')) => ({
+      id: 'anthropic:upstream', phase: 'upstream.execute',
+      run(ctx: ProxyContext) {
+        if (ctx.protocol !== 'anthropic' || ctx.result) return
+        const modelId = ctx.attempt!.model.id
+        if (failFor.includes(modelId)) {
+          ctx.attemptError = err
+          ctx.attemptResponse = (err as { status?: number; headers?: Record<string, string> }).status
+            ? { status: (err as { status: number }).status, headers: (err as { headers?: Record<string, string> }).headers }
+            : undefined
+          return
+        }
+        ctx.result = { kind: 'json', body: { type: 'message', model: modelId } }
+      },
+    })
+
+    it('records the classified fault at the connection key for a failed candidate, then advances immediately to the next one', async () => {
+      const models: ModelConfig[] = [
+        { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
+        { id: 'model-b', name: 'model-b', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
+      ]
+      await writeConfig('models', models)
+      const store = makeFakeStore()
+      setResilienceStore(store)
+      const err = Object.assign(new Error('rate limited'), { status: 429, headers: { 'retry-after': '5' } })
+      const reg = new ProcessorRegistry<ProxyContext>()
+      reg.contribute(fakeUpstreamWithAttemptError(['model-a'], err))
+      setProxyPipeline(reg)
+      const ctx = {
+        protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+        candidates: [{ model: 'model-a', weight: 2 }, { model: 'model-b', weight: 1 }],
+      } as unknown as ProxyContext
+      const t0 = Date.now()
+      await anthropicAttempt.run(ctx)
+      expect(Date.now() - t0).toBeLessThan(200)
+      expect(ctx.result).toEqual({ kind: 'json', body: { type: 'message', model: 'model-b' } })
+      expect(store.records).toHaveLength(1)
+      expect(store.records[0]!.key).toEqual({ level: 'connection', id: 'openai' })
+      expect(store.records[0]!.fault).toMatchObject({ category: 'rate-limit', retryAfterMs: 5000 })
+    })
+
+    it('does not call store.record when the failure was a budget skip (no ctx.attemptError)', async () => {
+      const models: ModelConfig[] = [
+        { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
+        { id: 'model-b', name: 'model-b', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
+      ]
+      await writeConfig('models', models)
+      const store = makeFakeStore()
+      setResilienceStore(store)
+      const reg = new ProcessorRegistry<ProxyContext>()
+      reg.contribute(fakeUpstream(['model-a']))
+      setProxyPipeline(reg)
+      const ctx = {
+        protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+        candidates: [{ model: 'model-a', weight: 2 }, { model: 'model-b', weight: 1 }],
+      } as unknown as ProxyContext
+      await anthropicAttempt.run(ctx)
+      expect(ctx.result).toEqual({ kind: 'json', body: { type: 'message', model: 'model-b' } })
+      expect(store.records).toHaveLength(0)
+    })
   })
 })

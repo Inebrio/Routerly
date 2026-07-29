@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
+import type { ResilienceFault, ResilienceKey, ResilienceStore } from '@routerly/shared'
 
 vi.mock('../provider/registry.js', () => ({ getProviderAdapter: vi.fn() }))
 vi.mock('../budget/budget.js', () => ({ isAllowed: vi.fn(), isAllowedForRoutingModel: vi.fn(), getLimitUsageSnapshot: vi.fn().mockResolvedValue([]) }))
@@ -12,6 +13,7 @@ vi.mock('../provider/anthropic-web.js', () => ({ resolveAnthropicWebCredential: 
 vi.mock('../provider/openai-web.js', () => ({ resolveOpenAIWebCredential: vi.fn() }))
 
 import { llmChat, llmStream, llmMessages, loadEffectiveModel, BudgetExceededError } from './execute.js'
+import { setResilienceStore } from '../resilience/index.js'
 import { getProviderAdapter } from '../provider/registry.js'
 import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../budget/budget.js'
 import { trackUsage } from '../usage/tracker.js'
@@ -1641,5 +1643,161 @@ describe('loadEffectiveModel', () => {
     expect(mockResolveAnthropicOAuth).not.toHaveBeenCalled()
     expect(mockResolveOpenAIOAuth).not.toHaveBeenCalled()
     expect((result as any)?.apiKey).toBe('sk-conn-key')
+  })
+})
+
+// ─── Task 7: resilience store integration (handleProviderResult / recordSuccess) ─────────────
+// A fake ResilienceStore, injected via setResilienceStore — deliberately NOT InMemoryResilienceStore,
+// so "provider.degraded" is asserted against the store's real availability transition (tuned to
+// open at exactly 3 record() calls here) rather than coupling this test to Task 3's own thresholds.
+function makeFakeStore(openAfter = 3) {
+  const mapKey = (k: ResilienceKey) => `${k.level}:${k.id}`
+  const counts = new Map<string, number>()
+  const open = new Set<string>()
+  const records: Array<{ key: ResilienceKey; fault: ResilienceFault }> = []
+  const recordSuccessCalls: ResilienceKey[] = []
+  const store: ResilienceStore & { records: typeof records; recordSuccessCalls: typeof recordSuccessCalls } = {
+    records,
+    recordSuccessCalls,
+    record(key, fault) {
+      records.push({ key, fault })
+      const mk = mapKey(key)
+      const n = (counts.get(mk) ?? 0) + 1
+      counts.set(mk, n)
+      if (n >= openAfter) open.add(mk)
+    },
+    recordSuccess(key) {
+      recordSuccessCalls.push(key)
+      open.delete(mapKey(key))
+      counts.set(mapKey(key), 0)
+    },
+    isAvailable(key) {
+      return !open.has(mapKey(key))
+    },
+    tryProbe() { return true },
+    snapshot() { return { entries: [], generatedAt: Date.now() } },
+    reset() { counts.clear(); open.clear() },
+  }
+  return store
+}
+
+describe('handleProviderResult — resilience store integration (Task 7)', () => {
+  afterEach(() => {
+    setResilienceStore(undefined as unknown as ResilienceStore)
+  })
+
+  it('on 3 consecutive failures, still emits provider.degraded with the same payload shape, driven by the store transitioning the provider key to unavailable — and the store received the classified fault', async () => {
+    const store = makeFakeStore(3)
+    setResilienceStore(store)
+    const model = makeModel('resilience-degrade')
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockRejectedValue(new Error('500 boom')) } as any)
+    for (let i = 0; i < 3; i++) {
+      await expect(llmChat({ messages: [] } as any, model, makeCtx())).rejects.toThrow('500 boom')
+    }
+    expect(store.records).toHaveLength(3)
+    expect(store.records[0]!.key).toEqual({ level: 'provider', id: 'openai' })
+    expect(store.records[0]!.fault).toEqual({ category: 'server' })
+    expect(mockEmitEvent).toHaveBeenCalledWith(
+      'provider.degraded', 'warning',
+      { modelId: 'resilience-degrade', provider: 'openai', consecutiveErrors: 3, projectId: 'proj-1' },
+      {},
+    )
+  })
+
+  it('on the next success after degraded, emits provider.recovered with the same payload shape, and calls store.recordSuccess for the provider key', async () => {
+    const store = makeFakeStore(3)
+    setResilienceStore(store)
+    const model = makeModel('resilience-recover')
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockRejectedValue(new Error('500 boom')) } as any)
+    for (let i = 0; i < 3; i++) {
+      await expect(llmChat({ messages: [] } as any, model, makeCtx())).rejects.toThrow('500 boom')
+    }
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    await llmChat({ messages: [] } as any, model, makeCtx())
+    expect(store.recordSuccessCalls).toContainEqual({ level: 'provider', id: 'openai' })
+    expect(mockEmitEvent).toHaveBeenCalledWith(
+      'provider.recovered', 'info',
+      { modelId: 'resilience-recover', provider: 'openai', projectId: 'proj-1' },
+      {},
+    )
+  })
+
+  it('without an injected store, falls back to the legacy 3-consecutive-failure heuristic unchanged (pre-existing test contract)', async () => {
+    const model = makeModel('resilience-no-store')
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockRejectedValue(new Error('boom')) } as any)
+    for (let i = 0; i < 2; i++) {
+      await expect(llmChat({ messages: [] } as any, model, makeCtx())).rejects.toThrow('boom')
+    }
+    expect(mockEmitEvent).not.toHaveBeenCalledWith('provider.degraded', expect.anything(), expect.anything(), expect.anything())
+    await expect(llmChat({ messages: [] } as any, model, makeCtx())).rejects.toThrow('boom')
+    expect(mockEmitEvent).toHaveBeenCalledWith(
+      'provider.degraded', 'warning',
+      { modelId: 'resilience-no-store', provider: 'openai', consecutiveErrors: 3, projectId: 'proj-1' },
+      {},
+    )
+  })
+
+  it('llmChat failure records a classified fault built from an SDK-shaped error (status/headers/error body)', async () => {
+    const store = makeFakeStore(99)
+    setResilienceStore(store)
+    const model = makeModel('resilience-sdk-shape')
+    mockIsAllowed.mockResolvedValue(true)
+    const sdkErr = Object.assign(new Error('rate limited'), { status: 429, headers: { 'retry-after': '30' }, error: { type: 'rate_limit_error' } })
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockRejectedValue(sdkErr) } as any)
+    await expect(llmChat({ messages: [] } as any, model, makeCtx())).rejects.toThrow('rate limited')
+    expect(store.records).toHaveLength(1)
+    expect(store.records[0]!.fault).toMatchObject({ category: 'rate-limit', retryAfterMs: 30000 })
+  })
+
+  it('llmStream pre-first-chunk failure records a classified fault at the provider key', async () => {
+    const store = makeFakeStore(99)
+    setResilienceStore(store)
+    const model = makeModel('resilience-stream-fail')
+    mockIsAllowed.mockResolvedValue(true)
+    async function* failFirst() { throw new Error('connect fail') }
+    mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(failFirst()) } as any)
+    await expect(llmStream({ messages: [] } as any, model, makeCtx())).rejects.toThrow('connect fail')
+    expect(store.records).toHaveLength(1)
+    expect(store.records[0]!.key).toEqual({ level: 'provider', id: 'openai' })
+  })
+
+  it('llmStream mid-stream failure records a classified fault at the provider key', async () => {
+    const store = makeFakeStore(99)
+    setResilienceStore(store)
+    const model = makeModel('resilience-stream-mid-fail')
+    mockIsAllowed.mockResolvedValue(true)
+    async function* failMid() {
+      yield { choices: [{ delta: { content: 'a' } }] }
+      throw new Error('mid fail')
+    }
+    mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(failMid()) } as any)
+    const result = await llmStream({ messages: [] } as any, model, makeCtx())
+    await expect(async () => { for await (const _ of result.chunks) {} }).rejects.toThrow('mid fail')
+    expect(store.records).toHaveLength(1)
+    expect(store.records[0]!.key).toEqual({ level: 'provider', id: 'openai' })
+  })
+
+  it('llmStream success path also calls resilienceStore.recordSuccess for the provider key', async () => {
+    const store = makeFakeStore()
+    setResilienceStore(store)
+    const model = makeModel('resilience-stream-success')
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(makeStream({ choices: [{ delta: { content: 'ok' } }] })) } as any)
+    const result = await llmStream({ messages: [] } as any, model, makeCtx())
+    for await (const _ of result.chunks) { /* drain */ }
+    expect(store.recordSuccessCalls).toContainEqual({ level: 'provider', id: 'openai' })
+  })
+
+  it('llmMessages success path also calls resilienceStore.recordSuccess for the provider key', async () => {
+    const store = makeFakeStore()
+    setResilienceStore(store)
+    const model = makeModel('resilience-messages-success')
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ messages: vi.fn().mockResolvedValue(makeMessagesResponse()) } as any)
+    await llmMessages({ messages: [] } as any, model, makeCtx())
+    expect(store.recordSuccessCalls).toContainEqual({ level: 'provider', id: 'openai' })
   })
 })

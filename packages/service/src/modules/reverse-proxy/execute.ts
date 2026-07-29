@@ -24,6 +24,7 @@ import type {
   CallType,
   MessagesRequest,
   MessagesResponse,
+  ResilienceFault,
 } from '@routerly/shared';
 import { getProviderAdapter } from '../provider/registry.js';
 import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../budget/budget.js';
@@ -38,6 +39,9 @@ import { resolveOpenAIOAuthCredential } from '../provider/openai-oauth.js';
 import { resolveAnthropicWebCredential } from '../provider/anthropic-web.js';
 import { resolveOpenAIWebCredential } from '../provider/openai-web.js';
 import type { TraceEntry, TracePanel } from '../logging/traceStore.js';
+import { getResilienceStore } from '../resilience/index.js';
+import { resilienceKeys } from '../resilience/keys.js';
+import { classifyUpstreamError, type UpstreamResponse } from '../resilience/classifier.js';
 
 // ─── Tipi ────────────────────────────────────────────────────────────────────
 
@@ -100,19 +104,53 @@ function isRateLimitError(err: unknown): boolean {
   return /429|rate.?limit|too many/i.test(err instanceof Error ? err.message : String(err));
 }
 
-function handleProviderResult(modelId: string, provider: string, success: boolean, projectId: string, log: Logger | undefined): void {
+/**
+ * Extracts an UpstreamResponse-shaped view (status/headers/body) from a thrown provider SDK
+ * error, for accurate resilience-fault classification. Both the OpenAI and Anthropic Node SDKs
+ * throw an `APIError` exposing `.status`/`.headers`/`.error` (parsed JSON body) — this reads that
+ * shared convention without importing either SDK's error class. Adapters may also throw a plain
+ * Error with no such shape (network failure, timeout), in which case this returns undefined and
+ * classifyUpstreamError falls back to Error-message sniffing.
+ */
+export function upstreamResponseFromError(err: unknown): UpstreamResponse | undefined {
+  if (!err || typeof err !== 'object') return undefined;
+  const e = err as { status?: unknown; headers?: unknown; error?: unknown };
+  if (typeof e.status !== 'number') return undefined;
+  const headers = e.headers && typeof e.headers === 'object' ? (e.headers as Record<string, string>) : undefined;
+  return { status: e.status, ...(headers ? { headers } : {}), ...(e.error !== undefined ? { body: e.error } : {}) };
+}
+
+// ponytail: providerFailCounts/providerDegraded are now a thin event-dedup shim over the
+// resilience store — the store (when wired) is the source of truth for availability, this Map/Set
+// pair only prevents re-emitting provider.degraded/provider.recovered every single call while the
+// store stays in the same state. Delete them once every provider.degraded/.recovered consumer
+// reads the resilience snapshot directly instead of these notification events.
+function handleProviderResult(model: ModelConfig, success: boolean, fault: ResilienceFault | undefined, projectId: string, log: Logger | undefined): void {
+  const modelId = model.id;
+  const provider = model.provider;
+  const store = getResilienceStore();
+  const providerKey = resilienceKeys(model).provider;
+
   if (success) {
+    store?.recordSuccess(providerKey);
     providerFailCounts.set(modelId, 0);
     if (providerDegraded.delete(modelId)) {
       emitEvent('provider.recovered', 'info', { modelId, provider, projectId }, log ? { log } : {}).catch(() => {});
     }
-  } else {
-    const n = (providerFailCounts.get(modelId) ?? 0) + 1;
-    providerFailCounts.set(modelId, n);
-    if (n >= 3 && !providerDegraded.has(modelId)) {
-      providerDegraded.add(modelId);
-      emitEvent('provider.degraded', 'warning', { modelId, provider, consecutiveErrors: n, projectId }, log ? { log } : {}).catch(() => {});
-    }
+    return;
+  }
+
+  if (fault) store?.record(providerKey, fault);
+  const n = (providerFailCounts.get(modelId) ?? 0) + 1;
+  providerFailCounts.set(modelId, n);
+  // Drive "degraded" off the store's real availability when a store is wired (production);
+  // fall back to the legacy 3-consecutive-failure heuristic when no store is present (keeps
+  // every pre-existing test that builds an LLMCallContext directly, without bootstrapping the
+  // resilience module, passing unmodified — see resilience/index.ts's getResilienceStore()).
+  const isOpen = store ? !store.isAvailable(providerKey) : n >= 3;
+  if (isOpen && !providerDegraded.has(modelId)) {
+    providerDegraded.add(modelId);
+    emitEvent('provider.degraded', 'warning', { modelId, provider, consecutiveErrors: n, projectId }, log ? { log } : {}).catch(() => {});
   }
 }
 
@@ -351,7 +389,7 @@ export async function llmChat(
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
     }).catch(() => {});
 
-    handleProviderResult(model.id, model.provider, true, projectId, log);
+    handleProviderResult(model, true, undefined, projectId, log);
     return response;
   } catch (err: unknown) {
     const latencyMs = Date.now() - t0;
@@ -362,7 +400,7 @@ export async function llmChat(
 
     const provEvt = isRateLimitError(err) ? 'provider.rate_limited' : 'provider.error';
     emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, projectId, error: msg }, log ? { log } : {}).catch(() => {});
-    handleProviderResult(model.id, model.provider, false, projectId, log);
+    handleProviderResult(model, false, classifyUpstreamError(err, upstreamResponseFromError(err)), projectId, log);
 
     await trackUsage({
       projectId,
@@ -469,7 +507,7 @@ export async function llmStream(
     emit?.({ panel: res, message: 'model:error', details: { modelId: model.id, error: msg, latencyMs } });
     const provEvt = isRateLimitError(err) ? 'provider.rate_limited' : 'provider.error';
     emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, projectId, error: msg }, log ? { log } : {}).catch(() => {});
-    handleProviderResult(model.id, model.provider, false, projectId, log);
+    handleProviderResult(model, false, classifyUpstreamError(err, upstreamResponseFromError(err)), projectId, log);
     await trackUsage({
       projectId, model, inputTokens: 0, outputTokens: 0, latencyMs,
       outcome: isTtftTimeout ? 'timeout' : 'error',
@@ -552,7 +590,7 @@ export async function llmStream(
       });
       const provEvt = isRateLimitError(err) ? 'provider.rate_limited' : 'provider.error';
       emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, projectId, error: errorMessage }, log ? { log } : {}).catch(() => {});
-      handleProviderResult(model.id, model.provider, false, projectId, log);
+      handleProviderResult(model, false, classifyUpstreamError(err, upstreamResponseFromError(err)), projectId, log);
       throw err;
     } finally {
       const latencyMs = Date.now() - t0;
@@ -585,7 +623,7 @@ export async function llmStream(
           },
         });
       }
-      if (outcome === 'success') handleProviderResult(model.id, model.provider, true, projectId, log);
+      if (outcome === 'success') handleProviderResult(model, true, undefined, projectId, log);
       await trackUsage({
         projectId, model, inputTokens, outputTokens, latencyMs, ttftMs,        ...(cachedInputTokens > 0 ? { cachedInputTokens } : {}),        outcome,
         ...(errorMessage !== undefined ? { errorMessage } : {}),
@@ -693,6 +731,13 @@ export async function llmMessages(
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
     }).catch(() => {});
+
+    // llmMessages never called handleProviderResult before Task 7 (no provider.degraded/.recovered
+    // events on this path) — only wiring the success-side recordSuccess here (required so a
+    // half-open breaker tripped by llmChat/llmStream failures can still close on an Anthropic
+    // messages-API success against the same provider); a messages-API failure does NOT record a
+    // fault, matching the pre-existing behavior of this function (out of Task 7's stated scope).
+    getResilienceStore()?.recordSuccess(resilienceKeys(model).provider);
 
     return response;
   } catch (err: unknown) {

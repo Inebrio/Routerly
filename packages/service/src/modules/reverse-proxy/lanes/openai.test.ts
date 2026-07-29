@@ -17,8 +17,9 @@ import { emitEvent } from '../../notifications/emitter.js'
 import { forwardOpenAIOAuthSSE } from './openaiOAuthForward.js'
 import { setProxyPipeline } from '../run.js'
 import { writeConfig } from '../../config/loader.js'
+import { setResilienceStore } from '../../resilience/index.js'
 import type { ProxyContext } from '../context.js'
-import type { ModelConfig } from '@routerly/shared'
+import type { ModelConfig, ResilienceFault, ResilienceKey, ResilienceStore } from '@routerly/shared'
 
 const mockLlmChat = vi.mocked(llmChat)
 const mockLlmStream = vi.mocked(llmStream)
@@ -29,6 +30,20 @@ afterEach(() => vi.clearAllMocks())
 
 function makeLog() {
   return { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+}
+
+function makeFakeStore() {
+  const records: Array<{ key: ResilienceKey; fault: ResilienceFault }> = []
+  const store: ResilienceStore & { records: typeof records } = {
+    records,
+    record(key, fault) { records.push({ key, fault }) },
+    recordSuccess() {},
+    isAvailable() { return true },
+    tryProbe() { return true },
+    snapshot() { return { entries: [], generatedAt: Date.now() } },
+    reset() {},
+  }
+  return store
 }
 
 describe('openai transport lane', () => {
@@ -576,6 +591,49 @@ describe('openai:upstream', () => {
     expect(log.warn).not.toHaveBeenCalled()
     expect(ctx.result).toBeUndefined()
   })
+
+  it('non-stream failure stashes ctx.attemptError/attemptResponse for the resilience attempt loop (Task 7)', async () => {
+    const sdkErr = Object.assign(new Error('rate limited'), { status: 429, headers: { 'retry-after': '5' } })
+    mockLlmChat.mockRejectedValueOnce(sdkErr)
+    const log = makeLog()
+    const ctx = {
+      protocol: 'openai', stream: false,
+      attempt: { model, candidate },
+      request: { model: 'model-a', messages: [] }, log,
+      project: { id: 'p1' }, traceId: 't1',
+    } as unknown as ProxyContext
+    await openaiUpstream.run(ctx)
+    expect(ctx.attemptError).toBe(sdkErr)
+    expect(ctx.attemptResponse).toEqual({ status: 429, headers: { 'retry-after': '5' } })
+  })
+
+  it('stream failure stashes ctx.attemptError/attemptResponse for the resilience attempt loop (Task 7)', async () => {
+    const err = new Error('boom')
+    mockLlmStream.mockRejectedValueOnce(err)
+    const log = makeLog()
+    const ctx = {
+      protocol: 'openai', stream: true,
+      attempt: { model, candidate },
+      request: { model: 'model-a', messages: [] }, log,
+      project: { id: 'p1' }, traceId: 't1',
+    } as unknown as ProxyContext
+    await openaiUpstream.run(ctx)
+    expect(ctx.attemptError).toBe(err)
+    expect(ctx.attemptResponse).toBeUndefined()
+  })
+
+  it('BudgetExceededError does NOT stash ctx.attemptError (a local skip, not an upstream fault)', async () => {
+    mockLlmChat.mockRejectedValueOnce(new BudgetExceededError('model-a'))
+    const ctx = {
+      protocol: 'openai', stream: false,
+      attempt: { model, candidate },
+      request: { model: 'model-a', messages: [] }, log: makeLog(),
+      project: { id: 'p1' }, traceId: 't1',
+    } as unknown as ProxyContext
+    await openaiUpstream.run(ctx)
+    expect(ctx.attemptError).toBeUndefined()
+    expect(ctx.attemptResponse).toBeUndefined()
+  })
 })
 
 describe('openai:attempt', () => {
@@ -794,5 +852,69 @@ describe('openai:attempt', () => {
     await openaiAttempt.run(ctx)
     expect(ctx.result).toEqual({ kind: 'json', body: { object: 'chat.completion', model: 'model-b' } })
     expect((ctx.request as any).messages[0].content).toBe('Base prompt.\n\nFollow the guardrail.')
+  })
+
+  // ── Task 7: connection-level resilience recording (no in-loop sleep, immediate advance) ──
+  describe('resilience: connection-level store.record on a failed candidate', () => {
+    afterEach(() => {
+      setResilienceStore(undefined as unknown as ResilienceStore)
+    })
+
+    const fakeUpstreamWithAttemptError = (failFor: string[], err: unknown) => ({
+      id: 'openai:upstream', phase: 'upstream.execute',
+      run(ctx: ProxyContext) {
+        if (ctx.protocol !== 'openai' || ctx.result) return
+        const modelId = ctx.attempt!.model.id
+        if (failFor.includes(modelId)) { ctx.attemptError = err; ctx.attemptResponse = undefined; return }
+        ctx.result = { kind: 'json', body: { object: 'chat.completion', model: modelId } }
+      },
+    })
+
+    it('records the classified fault at the connection key for a failed candidate, then advances immediately to the next one', async () => {
+      const models: ModelConfig[] = [
+        { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
+        { id: 'model-b', name: 'model-b', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
+      ]
+      await writeConfig('models', models)
+      const store = makeFakeStore()
+      setResilienceStore(store)
+      const failErr = Object.assign(new Error('rate limited'), { status: 429, headers: { 'retry-after': '5' } })
+      const reg = new ProcessorRegistry<ProxyContext>()
+      reg.contribute(fakeUpstreamWithAttemptError(['model-a'], failErr))
+      setProxyPipeline(reg)
+      const t0 = Date.now()
+      const ctx = {
+        protocol: 'openai', stream: false, log: makeLog(),
+        project: { id: 'p1' }, traceId: 't1',
+        request: { model: 'm', messages: [] },
+        candidates: [{ model: 'model-a', weight: 2 }, { model: 'model-b', weight: 1 }],
+      } as unknown as ProxyContext
+      await openaiAttempt.run(ctx)
+      expect(Date.now() - t0).toBeLessThan(200) // no in-loop sleep between candidates
+      expect(ctx.result).toEqual({ kind: 'json', body: { object: 'chat.completion', model: 'model-b' } })
+      expect(store.records).toHaveLength(1)
+      expect(store.records[0]!.key).toEqual({ level: 'connection', id: 'openai' })
+      expect(store.records[0]!.fault).toMatchObject({ category: 'rate-limit', retryAfterMs: 5000 })
+    })
+
+    it('does not call store.record when the failure was a budget skip (no ctx.attemptError)', async () => {
+      const models: ModelConfig[] = [
+        { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
+      ]
+      await writeConfig('models', models)
+      const store = makeFakeStore()
+      setResilienceStore(store)
+      const reg = new ProcessorRegistry<ProxyContext>()
+      reg.contribute(fakeUpstream(['model-a'])) // the plain stub: leaves ctx.attemptError unset
+      setProxyPipeline(reg)
+      const ctx = {
+        protocol: 'openai', stream: false, log: makeLog(),
+        project: { id: 'p1' }, traceId: 't1',
+        request: { model: 'm', messages: [] },
+        candidates: [{ model: 'model-a', weight: 1 }],
+      } as unknown as ProxyContext
+      await openaiAttempt.run(ctx)
+      expect(store.records).toHaveLength(0)
+    })
   })
 })
