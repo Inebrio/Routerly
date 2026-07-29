@@ -1,6 +1,18 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { OpenAIWebAdapter } from './openai-web.js';
-import type { ChatCompletionRequest, ModelConfig } from '@routerly/shared';
+import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
+
+vi.mock('../config/loader.js', () => ({
+  readConfig: vi.fn(),
+  writeConfig: vi.fn(),
+  getOrCreateSecret: vi.fn(),
+}));
+
+import { OpenAIWebAdapter, resolveOpenAIWebCredential } from './openai-web.js';
+import type { ChatCompletionRequest, ModelConfig, ProviderConnection } from '@routerly/shared';
+import { readConfig, getOrCreateSecret } from '../config/loader.js';
+import { loadCredentialKey, encryptCredential } from '../../lib/crypto-cred.js';
+
+const mockReadConfig = vi.mocked(readConfig);
+const mockGetOrCreateSecret = vi.mocked(getOrCreateSecret);
 
 function makeModel(overrides: Partial<ModelConfig> = {}): ModelConfig {
   return {
@@ -1098,5 +1110,64 @@ describe('OpenAIWebAdapter: response.text() rejects — catch(() => \'\') callba
     // Should not throw — sentinel failure is graceful, returns {}
     const result = await adapter.chatCompletion(makeRequest(), makeModel());
     expect(result.object).toBe('chat.completion');
+  });
+});
+
+// ─── resolveOpenAIWebCredential ─────────────────────────────────────────────
+
+beforeAll(async () => {
+  mockGetOrCreateSecret.mockResolvedValue('c'.repeat(64)); // valid 32-byte hex secret
+  await loadCredentialKey();
+});
+
+function makeConnection(overrides: Partial<ProviderConnection> = {}): ProviderConnection {
+  return {
+    id: 'conn-openai-web-1',
+    providerId: 'openai-web',
+    label: 'OpenAI Web',
+    endpoint: 'https://chatgpt.com',
+    enabled: true,
+    credentials: { cookieEnc: encryptCredential('live-access-token') },
+    ...overrides,
+  };
+}
+
+describe('resolveOpenAIWebCredential', () => {
+  it('refuses to run when the provider-web module is disabled', async () => {
+    mockReadConfig.mockResolvedValueOnce([{ id: 'provider-web', enabled: false }] as any);
+    await expect(resolveOpenAIWebCredential(makeConnection())).rejects.toThrow(
+      "'provider-web' module is disabled",
+    );
+  });
+
+  it('decrypts the stored access token when the module is enabled, without cfClearance when absent', async () => {
+    mockReadConfig.mockResolvedValueOnce([{ id: 'provider-web', enabled: true }] as any);
+    const creds = await resolveOpenAIWebCredential(makeConnection());
+    expect(creds).toEqual({ accessToken: 'live-access-token' });
+  });
+
+  it('also decrypts cfClearanceEnc when present', async () => {
+    mockReadConfig.mockResolvedValueOnce([{ id: 'provider-web', enabled: true }] as any);
+    const connection = makeConnection({
+      credentials: {
+        cookieEnc: encryptCredential('live-access-token'),
+        cfClearanceEnc: encryptCredential('cf-clearance-value'),
+      },
+    });
+    const creds = await resolveOpenAIWebCredential(connection);
+    expect(creds).toEqual({ accessToken: 'live-access-token', cfClearance: 'cf-clearance-value' });
+  });
+
+  it('defaults to enabled when no module record exists', async () => {
+    mockReadConfig.mockResolvedValueOnce([] as any);
+    const creds = await resolveOpenAIWebCredential(makeConnection());
+    expect(creds.accessToken).toBe('live-access-token');
+  });
+
+  it('throws a clear error when cookieEnc is missing from credentials', async () => {
+    mockReadConfig.mockResolvedValueOnce([{ id: 'provider-web', enabled: true }] as any);
+    await expect(
+      resolveOpenAIWebCredential(makeConnection({ credentials: {} })),
+    ).rejects.toThrow('connection missing encrypted access token');
   });
 });

@@ -35,6 +35,8 @@ import { resolveEffectiveModel } from '../provider/resolve.js';
 import { getProviderDescriptor } from '../provider/descriptor.js';
 import { resolveAnthropicOAuthCredential } from '../provider/anthropic-oauth.js';
 import { resolveOpenAIOAuthCredential } from '../provider/openai-oauth.js';
+import { resolveAnthropicWebCredential } from '../provider/anthropic-web.js';
+import { resolveOpenAIWebCredential } from '../provider/openai-web.js';
 import type { TraceEntry, TracePanel } from '../logging/traceStore.js';
 
 // ─── Tipi ────────────────────────────────────────────────────────────────────
@@ -137,6 +139,20 @@ export async function loadEffectiveModel(id: string): Promise<EffectiveModel | u
         return resolveEffectiveModel(instance, {
           ...connection,
           credentials: { ...connection.credentials, apiKey: liveToken },
+        });
+      }
+      if (supportLevel === 'web') {
+        if (connection.providerId === 'anthropic-web') {
+          const sessionKey = await resolveAnthropicWebCredential(connection);
+          return resolveEffectiveModel(instance, {
+            ...connection,
+            credentials: { ...connection.credentials, apiKey: sessionKey },
+          });
+        }
+        const { accessToken, cfClearance } = await resolveOpenAIWebCredential(connection);
+        return resolveEffectiveModel(instance, {
+          ...connection,
+          credentials: { ...connection.credentials, apiKey: accessToken, ...(cfClearance ? { cfClearance } : {}) },
         });
       }
       return resolveEffectiveModel(instance, connection);

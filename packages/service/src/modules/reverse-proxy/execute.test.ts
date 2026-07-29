@@ -8,6 +8,8 @@ vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }))
 vi.mock('../provider/descriptor.js', () => ({ getProviderDescriptor: vi.fn() }))
 vi.mock('../provider/anthropic-oauth.js', () => ({ resolveAnthropicOAuthCredential: vi.fn() }))
 vi.mock('../provider/openai-oauth.js', () => ({ resolveOpenAIOAuthCredential: vi.fn() }))
+vi.mock('../provider/anthropic-web.js', () => ({ resolveAnthropicWebCredential: vi.fn() }))
+vi.mock('../provider/openai-web.js', () => ({ resolveOpenAIWebCredential: vi.fn() }))
 
 import { llmChat, llmStream, llmMessages, loadEffectiveModel, BudgetExceededError } from './execute.js'
 import { getProviderAdapter } from '../provider/registry.js'
@@ -18,6 +20,8 @@ import { readConfig } from '../config/loader.js'
 import { getProviderDescriptor } from '../provider/descriptor.js'
 import { resolveAnthropicOAuthCredential } from '../provider/anthropic-oauth.js'
 import { resolveOpenAIOAuthCredential } from '../provider/openai-oauth.js'
+import { resolveAnthropicWebCredential } from '../provider/anthropic-web.js'
+import { resolveOpenAIWebCredential } from '../provider/openai-web.js'
 
 const mockGetProvider = vi.mocked(getProviderAdapter)
 const mockIsAllowed = vi.mocked(isAllowed)
@@ -29,6 +33,8 @@ const mockReadConfig = vi.mocked(readConfig)
 const mockGetProviderDescriptor = vi.mocked(getProviderDescriptor)
 const mockResolveAnthropicOAuth = vi.mocked(resolveAnthropicOAuthCredential)
 const mockResolveOpenAIOAuth = vi.mocked(resolveOpenAIOAuthCredential)
+const mockResolveAnthropicWeb = vi.mocked(resolveAnthropicWebCredential)
+const mockResolveOpenAIWeb = vi.mocked(resolveOpenAIWebCredential)
 
 afterEach(() => vi.clearAllMocks())
 
@@ -1556,6 +1562,66 @@ describe('loadEffectiveModel', () => {
     expect(mockResolveOpenAIOAuth).toHaveBeenCalledWith(connection)
     expect(mockResolveAnthropicOAuth).not.toHaveBeenCalled()
     expect((result as any)?.apiKey).toBe('live-openai-token')
+  })
+
+  it('resolves a live session cookie for anthropic-web connections via resolveAnthropicWebCredential', async () => {
+    const instance = {
+      id: 'inst-aw', connectionId: 'conn-aw', upstreamModelId: 'claude-sonnet-4-6',
+      cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 200000,
+    }
+    const connection = {
+      id: 'conn-aw', providerId: 'anthropic-web', endpoint: 'https://claude.ai',
+      credentials: { cookieEnc: 'enc-cookie' }, enabled: true, label: 'anthropic-web-conn',
+    }
+    mockReadConfig.mockImplementationOnce(async () => [instance] as any) // 'instances'
+    mockReadConfig.mockImplementationOnce(async () => [connection] as any) // 'connections'
+    mockGetProviderDescriptor.mockReturnValueOnce({ supportLevel: 'web' } as any)
+    mockResolveAnthropicWeb.mockResolvedValueOnce('live-session-key')
+
+    const result = await loadEffectiveModel('inst-aw')
+    expect(mockResolveAnthropicWeb).toHaveBeenCalledWith(connection)
+    expect(mockResolveOpenAIWeb).not.toHaveBeenCalled()
+    expect((result as any)?.apiKey).toBe('live-session-key')
+  })
+
+  it('resolves a live access token (+ cfClearance) for openai-web connections via resolveOpenAIWebCredential', async () => {
+    const instance = {
+      id: 'inst-ow', connectionId: 'conn-ow', upstreamModelId: 'gpt-4o',
+      cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 128000,
+    }
+    const connection = {
+      id: 'conn-ow', providerId: 'openai-web', endpoint: 'https://chatgpt.com',
+      credentials: { cookieEnc: 'enc-cookie', cfClearanceEnc: 'enc-cf' }, enabled: true, label: 'openai-web-conn',
+    }
+    mockReadConfig.mockImplementationOnce(async () => [instance] as any) // 'instances'
+    mockReadConfig.mockImplementationOnce(async () => [connection] as any) // 'connections'
+    mockGetProviderDescriptor.mockReturnValueOnce({ supportLevel: 'web' } as any)
+    mockResolveOpenAIWeb.mockResolvedValueOnce({ accessToken: 'live-access-token', cfClearance: 'live-cf' })
+
+    const result = await loadEffectiveModel('inst-ow')
+    expect(mockResolveOpenAIWeb).toHaveBeenCalledWith(connection)
+    expect(mockResolveAnthropicWeb).not.toHaveBeenCalled()
+    expect((result as any)?.apiKey).toBe('live-access-token')
+    expect((result as any)?.cfClearance).toBe('live-cf')
+  })
+
+  it('resolves without cfClearance for openai-web connections when the credential omits it', async () => {
+    const instance = {
+      id: 'inst-ow2', connectionId: 'conn-ow2', upstreamModelId: 'gpt-4o',
+      cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 128000,
+    }
+    const connection = {
+      id: 'conn-ow2', providerId: 'openai-web', endpoint: 'https://chatgpt.com',
+      credentials: { cookieEnc: 'enc-cookie' }, enabled: true, label: 'openai-web-conn-2',
+    }
+    mockReadConfig.mockImplementationOnce(async () => [instance] as any) // 'instances'
+    mockReadConfig.mockImplementationOnce(async () => [connection] as any) // 'connections'
+    mockGetProviderDescriptor.mockReturnValueOnce({ supportLevel: 'web' } as any)
+    mockResolveOpenAIWeb.mockResolvedValueOnce({ accessToken: 'live-access-token' })
+
+    const result = await loadEffectiveModel('inst-ow2')
+    expect((result as any)?.apiKey).toBe('live-access-token')
+    expect((result as any)?.cfClearance).toBeUndefined()
   })
 
   it('does not invoke oauth resolvers for non-oauth connections', async () => {

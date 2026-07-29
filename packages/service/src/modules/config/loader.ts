@@ -33,7 +33,10 @@ const DEFAULTS: Record<string, unknown> = {
   projects: [] as ProjectConfig[],
   users: [] as UserConfig[],
   roles: [] as RoleConfig[],
-  modules: [] as ModuleRecord[],
+  // 'provider-web' defaults DISABLED (unofficial, ToS-risk web-cookie adapters) —
+  // 'provider-oauth' has no record here and defaults enabled via isModuleEnabled's
+  // "no record = enabled" fallback.
+  modules: [{ id: 'provider-web', enabled: false } satisfies ModuleRecord] as ModuleRecord[],
   connections: [] as ProviderConnection[],
   instances: [] as ModelInstance[],
   usage: [] as UsageRecord[],
