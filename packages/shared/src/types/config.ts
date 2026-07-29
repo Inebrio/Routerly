@@ -499,7 +499,9 @@ export type Permission =
   | 'modules:manage'
   | 'audit:read'
   | 'connections:read'
-  | 'connections:manage';
+  | 'connections:manage'
+  | 'resilience:read'
+  | 'resilience:manage';
 
 // ─── Integration types ────────────────────────────────────────────────────────
 

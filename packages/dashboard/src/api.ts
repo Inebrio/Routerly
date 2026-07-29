@@ -423,6 +423,7 @@ export const ALL_PERMISSIONS = [
   'audit:read',
   'modules:read', 'modules:manage',
   'connections:read', 'connections:manage',
+  'resilience:read', 'resilience:manage',
 ] as const;
 export type Permission = typeof ALL_PERMISSIONS[number];
 
