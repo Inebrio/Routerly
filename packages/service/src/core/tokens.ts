@@ -12,6 +12,7 @@ import type {
   ProviderRepo,
   UpdateInfo,
   AvailableReleases,
+  ResilienceStore,
 } from '@routerly/shared';
 
 // Each token wraps existing functions/types. Modules register these; processors
@@ -92,6 +93,8 @@ export const BUDGET = token<{
   getViolatedLimits: typeof import('../modules/budget/budget.js').getViolatedLimits;
   getLimitUsageSnapshot: typeof import('../modules/budget/budget.js').getLimitUsageSnapshot;
 }>('cost.budget');
+
+export const RESILIENCE_STORE = token<ResilienceStore>('resilience.store');
 
 // ProxyContext is defined in Plan 4 (reverse-proxy/context.ts). Until then the
 // pipeline registry is parameterized over `unknown`; Plan 4 narrows the generic
