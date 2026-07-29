@@ -19,6 +19,7 @@ import { makeAuditCommand } from './commands/audit.js';
 import { makeIntegrationsCommand } from './commands/integrations.js';
 import { makeCatalogCommand } from './commands/catalog.js';
 import { makeModulesCommand } from './commands/modules.js';
+import { makeConnectionsCommand } from './commands/connections.js';
 
 const program = new Command();
 
@@ -45,5 +46,6 @@ program.addCommand(makeAuditCommand());
 program.addCommand(makeIntegrationsCommand());
 program.addCommand(makeCatalogCommand());
 program.addCommand(makeModulesCommand());
+program.addCommand(makeConnectionsCommand());
 
 program.parse(process.argv);
