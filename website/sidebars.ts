@@ -43,6 +43,7 @@ const sidebars: SidebarsConfig = {
         'dashboard/setup',
         'dashboard/overview',
         'dashboard/models',
+        'dashboard/connections',
         'dashboard/projects',
         'dashboard/usage',
         'dashboard/users-and-roles',

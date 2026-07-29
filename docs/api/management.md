@@ -190,6 +190,250 @@ POST /api/models/:id/apikey
 
 ---
 
+## Provider Descriptors
+
+### List Provider Descriptors
+
+```
+GET /api/providers/descriptors
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:read`)
+
+Returns the static registry of provider types Routerly knows how to connect to
+(distinct from the model **catalog** — see [Catalog](#catalog)). Used by the
+dashboard to populate the provider dropdown when creating a connection.
+
+**Response `200`:**
+```json
+[
+  {
+    "id": "openai",
+    "label": "OpenAI",
+    "protocol": "openai",
+    "supportLevel": "native",
+    "nativeCapabilities": { "vision": true, "functionCalling": true, "json": true }
+  },
+  {
+    "id": "anthropic-oauth",
+    "label": "Anthropic (OAuth)",
+    "protocol": "anthropic",
+    "supportLevel": "oauth",
+    "nativeCapabilities": { "thinking": true, "vision": true, "functionCalling": true, "json": true }
+  }
+]
+```
+
+**Fields:**
+- `id` — provider identifier, used as `providerId` on a connection
+- `protocol` — wire protocol the connection speaks: `openai`, `anthropic`, `gemini`, or `custom`
+- `supportLevel` — how credentials are supplied: `native` (plain API key), `compatible` (OpenAI-compatible custom endpoint, plain API key), `oauth` (OAuth access/refresh token pair, encrypted at rest), `web` (browser session cookie, encrypted at rest)
+- `nativeCapabilities` — capability flags (`thinking`, `vision`, `functionCalling`, `json`, `embedding`) the provider natively supports, used as defaults for model instances
+
+**Errors**: `403` insufficient permissions
+
+---
+
+## Connections
+
+A connection stores credentials for one account with one provider (see
+`providerId`, from [Provider Descriptors](#provider-descriptors)). A connection
+does not expose any models by itself — create [Model Instances](#model-instances)
+on top of it to make models routable.
+
+### List Connections
+
+```
+GET /api/connections
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:read`)
+
+**Response `200`:** array of connections with `credentials` always `undefined` (never returned by any connections endpoint, on any provider `supportLevel`).
+```json
+[
+  { "id": "conn-uuid", "providerId": "openai", "label": "Main OpenAI", "enabled": true }
+]
+```
+
+**Errors**: `403` insufficient permissions
+
+### Create Connection
+
+```
+POST /api/connections
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:manage`)
+
+```json
+{
+  "providerId": "openai",
+  "label": "Main OpenAI",
+  "credentials": { "apiKey": "sk-..." },
+  "endpoint": "https://api.openai.com/v1",
+  "enabled": true
+}
+```
+
+**Fields:**
+- `providerId` — must match a known provider id from [Provider Descriptors](#provider-descriptors) (required)
+- `label` — friendly name (required)
+- `credentials` — arbitrary key-value object; shape depends on `supportLevel` (required, may be `{}`). See **Credential encryption** below
+- `endpoint` — override base URL, e.g. for `custom`/Azure-style deployments (optional)
+- `enabled` — whether the connection is usable by routing (required)
+
+**Credential encryption (oauth/web providers):**
+
+For providers with `supportLevel: "oauth"` or `"web"`, plaintext credential
+fields are encrypted server-side before being written to disk, and the
+plaintext keys are stripped from the stored config. The API never returns
+`credentials` on any response, on any provider.
+
+| `supportLevel` | Plaintext input field | Stored (encrypted) field | Required |
+|---|---|---|---|
+| `oauth` | `oauthPlain` | `oauthEnc` | yes |
+| `oauth` | `refreshPlain` | `refreshEnc` | no |
+| `web` | `cookiePlain` | `cookieEnc` | yes |
+| `web` | `cfClearancePlain` | `cfClearanceEnc` | no (openai-web only) |
+
+Any other field on `credentials` (e.g. `expiresAt` for oauth providers) passes
+through untouched. For `native`/`compatible` providers (e.g. plain `apiKey`),
+`credentials` passes through entirely untouched — plaintext-at-rest is
+intentional for those providers.
+
+**Response `200`:** the created connection, `credentials` omitted (see List Connections above).
+
+**Errors**: `400` invalid body / unknown `providerId` · `403` insufficient permissions or `module_disabled` (oauth/web connection while the corresponding `provider-oauth`/`provider-web` module is disabled)
+
+### Update Connection
+
+```
+PATCH /api/connections/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:manage`)
+
+**Request body** (all fields optional, same shape as create):
+```json
+{ "label": "Renamed", "credentials": { "oauthPlain": "new-access-token" } }
+```
+
+When `credentials` is present in the body, it **replaces** the stored
+credentials object wholesale (not a deep merge) — resend every field you want
+to keep, following the same `oauthPlain`/`refreshPlain`/`cookiePlain`/`cfClearancePlain`
+convention as create. Only the fields present in the submitted `credentials`
+object are encrypted; omitted plaintext fields simply don't produce an
+encrypted counterpart.
+
+**Response `200`:** the updated connection, `credentials` omitted.
+
+**Errors**: `400` invalid body · `404` connection not found · `403` insufficient permissions or `module_disabled`
+
+### Delete Connection
+
+```
+DELETE /api/connections/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:manage`)
+
+**Response**: `204 No Content`
+
+**Errors**: `404` connection not found · `403` insufficient permissions
+
+---
+
+## Model Instances
+
+A model instance exposes one upstream model on top of an existing
+[connection](#connections), with its own pricing, context window, limits, and
+capability overrides. This is what shows up as a routable model.
+
+### List Instances
+
+```
+GET /api/instances
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:read`)
+
+**Response `200`:** array of instances.
+```json
+[
+  {
+    "id": "inst-uuid",
+    "connectionId": "conn-uuid",
+    "upstreamModelId": "gpt-5-mini",
+    "cost": { "inputPerMillion": 0.25, "outputPerMillion": 2.0 },
+    "contextWindow": 128000,
+    "limits": [],
+    "capabilities": { "functionCalling": true, "json": true }
+  }
+]
+```
+
+**Errors**: `403` insufficient permissions
+
+### Create Instance
+
+```
+POST /api/instances
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:manage`)
+
+```json
+{
+  "connectionId": "conn-uuid",
+  "upstreamModelId": "gpt-5-mini",
+  "cost": { "inputPerMillion": 0.25, "outputPerMillion": 2.0 },
+  "contextWindow": 128000,
+  "limits": [],
+  "capabilities": { "functionCalling": true, "json": true }
+}
+```
+
+**Fields:**
+- `connectionId` — id of an existing connection (required)
+- `upstreamModelId` — the provider's model id, e.g. `gpt-5-mini` (required)
+- `cost` — `{ inputPerMillion, outputPerMillion, cachePerMillion?, cacheWritePerMillion?, pricingTiers? }` (required)
+- `contextWindow` — token limit (required)
+- `limits` — array of usage limit objects, same shape as [project token limits](#create-token) (optional)
+- `capabilities` — `{ thinking?, vision?, functionCalling?, json?, embedding? }`, overrides the connection provider's `nativeCapabilities` (optional)
+
+**Response `200`:** the created instance.
+
+**Errors**: `400` invalid body · `403` insufficient permissions
+
+### Update Instance
+
+```
+PATCH /api/instances/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:manage`)
+
+**Request body** (all fields optional, same shape as create).
+
+**Response `200`:** the updated instance.
+
+**Errors**: `400` invalid body · `404` instance not found · `403` insufficient permissions
+
+### Delete Instance
+
+```
+DELETE /api/instances/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:manage`)
+
+**Response**: `204 No Content`
+
+**Errors**: `404` instance not found · `403` insufficient permissions
+
+---
+
 ## Projects
 
 ### List Projects
