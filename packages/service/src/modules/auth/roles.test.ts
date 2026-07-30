@@ -29,4 +29,21 @@ describe('roles', () => {
     expect(ALL_PERMISSIONS).toContain('resilience:read');
     expect(ALL_PERMISSIONS).toContain('resilience:manage');
   });
+
+  it('admin includes optimizers permissions', () => {
+    expect(ALL_PERMISSIONS).toContain('optimizers:read');
+    expect(ALL_PERMISSIONS).toContain('optimizers:manage');
+  });
+
+  it('viewer can read optimizers but not manage them', () => {
+    const viewer = BUILT_IN_ROLES.find(r => r.id === 'viewer')!;
+    expect(viewer.permissions).toContain('optimizers:read');
+    expect(viewer.permissions).not.toContain('optimizers:manage');
+  });
+
+  it('operator can read and manage optimizers', () => {
+    const operator = BUILT_IN_ROLES.find(r => r.id === 'operator')!;
+    expect(operator.permissions).toContain('optimizers:read');
+    expect(operator.permissions).toContain('optimizers:manage');
+  });
 });
