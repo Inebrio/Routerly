@@ -37,8 +37,8 @@ For each incoming request the engine performs the following steps:
 
 Prompt/context optimizers (see [Concepts: Optimizers](../concepts/optimizers.md))
 run earlier in request handling, in the `request.preprocess` pipeline phase,
-before this lifecycle resolves a candidate model. `ctx.attempt` — which
-carries the resolved model's `contextWindow` — is only populated once step 1
+before this lifecycle resolves a candidate model. `ctx.attempt`, which
+carries the resolved model's `contextWindow`, is only populated once step 1
 above has selected a candidate, i.e. after the optimizer pipeline has
 already run.
 

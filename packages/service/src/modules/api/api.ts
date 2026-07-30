@@ -241,9 +241,9 @@ const piiConfigSchema = z.object({
 const optimizerIdEnum = z.enum(['session-dedup', 'ccr', 'rtk', 'headroom', 'relevance', 'caveman', 'llmlingua-2']);
 
 // threshold's natural range depends on the optimizer: ccr (turn count) and
-// headroom (token budget) are unbounded positive numbers; relevance,
-// caveman and llmlingua-2 use a 0-1 ratio.
-const RATIO_THRESHOLD_IDS = new Set(['relevance', 'caveman', 'llmlingua-2']);
+// headroom (token budget) are unbounded positive numbers; relevance and
+// llmlingua-2 use a 0-1 ratio.
+const RATIO_THRESHOLD_IDS = new Set(['relevance', 'llmlingua-2']);
 
 const optimizerStepSchema = z.object({
   id: optimizerIdEnum,

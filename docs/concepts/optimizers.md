@@ -7,7 +7,7 @@ sidebar_position: 8
 
 Optimizers reduce the token footprint of a request's message array before it
 is forwarded to a provider. They run per-project, in a configurable pipeline,
-and are **off by default** — a project must explicitly enable each optimizer
+and are **off by default**. A project must explicitly enable each optimizer
 id it wants.
 
 Routerly ships 7 built-in optimizers. Each declares a **class** that
@@ -15,7 +15,7 @@ determines how strictly its output is checked before being accepted:
 
 | Class | Meaning |
 |-------|---------|
-| `lossless` | No information is discarded — messages are only deduplicated or trimmed to a fixed budget. Own `validate()` backstop only (skips the safety gate below). |
+| `lossless` | No information is discarded, messages are only deduplicated or trimmed to a fixed budget. Own `validate()` backstop only (skips the safety gate below). |
 | `recoverable` | Content is condensed or compacted but a pre-optimize snapshot is kept; a failed `validate()` rolls back to the original. |
 | `lossy` | Content is deliberately dropped or compressed. In addition to `validate()`, every `lossy` result is checked by the shared **safety gate** before being accepted. |
 
@@ -28,12 +28,12 @@ determines how strictly its output is checked before being accepted:
 `id: session-dedup`, class `lossless`.
 
 Exact-match deduplication: when the same message (by full structural
-equality — role, content, tool-call fields) repeats 3 or more times in a
+equality, role, content, tool-call fields) repeats 3 or more times in a
 conversation, the middle repeats are dropped and the first and last
 occurrence are kept. Messages are never partially edited.
 
 This is exact-match only. Near-duplicate or semantically-similar messages
-are not touched — that is the `relevance` optimizer's job.
+are not touched. That is the `relevance` optimizer's job.
 
 ### ccr (Conversation Context Reduction)
 
@@ -42,7 +42,7 @@ are not touched — that is the `relevance` optimizer's job.
 Keeps the leading system prefix and the last N turns (default 6, via the
 step's `threshold`). Older turns are condensed into a single compact text
 block (per-message text clipped to ~200 characters) and merged into the
-first kept message — no LLM summarizer call is made. A tool-use /
+first kept message. No LLM summarizer call is made. A tool-use /
 tool-result pair is never split across the window cut.
 
 ### rtk (Redundant Token Killer)
@@ -61,7 +61,7 @@ merges messages, and never touches non-text content parts (images,
 
 Trims the oldest whole turns until the request fits inside the target
 model's context window minus a reserved completion headroom (default 1024
-tokens, via the step's `threshold`). No re-summarization — that is `ccr`'s
+tokens, via the step's `threshold`). No re-summarization, that is `ccr`'s
 job.
 
 :::caution Known limitation: permanent no-op on live requests today
@@ -73,7 +73,7 @@ Engine](../service/routing-engine.md#optimizers-and-context-window-fit)).
 As a result, `headroom`'s `supports()` check never sees a context window on
 a real request today, and the optimizer is a **permanent no-op in
 production**, even though its trim logic is correct and fully covered in
-isolation by its own tests. This is not a bug in `headroom` itself — it is
+isolation by its own tests. This is not a bug in `headroom` itself, it is
 the current pipeline phase ordering. Fixing it (re-checking
 attempt-dependent optimizers once a candidate is resolved) is a documented
 follow-up, not yet scheduled.
@@ -85,7 +85,7 @@ follow-up, not yet scheduled.
 
 Scores each older turn's lexical overlap (Jaccard similarity of lowercase
 word sets) against the newest turn and drops whole turns scoring below the
-step's `threshold`. Unlike `ccr`/`headroom`, there is no default threshold —
+step's `threshold`. Unlike `ccr`/`headroom`, there is no default threshold,
 `relevance` stays inert until a project explicitly sets one. The newest
 turn is never scored and always kept.
 
@@ -125,7 +125,7 @@ Off by default in two independent ways:
 - The model checkpoint is never auto-downloaded. It requires explicit
   operator opt-in (`downloadModel(true)`) and lands at a fixed path,
   `<ROUTERLY_HOME>/models/llmlingua-2/model.onnx`. With no checkpoint on
-  disk — the default state — the optimizer still self-registers into the
+  disk (the default state), the optimizer still self-registers into the
   catalog (so `GET /api/optimizers` lists it) but `supports()` always
   returns `false`, so it is a permanent no-op until an operator opts in.
 
@@ -139,7 +139,7 @@ resulting compression ratio and output quality are **not representative of
 genuine LLMLingua-2 output**. Do not present this optimizer as
 production-quality prompt compression until a real tokenizer (e.g. via
 `@huggingface/transformers`) replaces the placeholder. It is off by default
-today (see above), so there is no live-traffic risk yet — but this caveat
+today (see above), so there is no live-traffic risk yet, but this caveat
 must travel with any future decision to make it easier to enable.
 :::
 
@@ -151,7 +151,7 @@ Every `lossy`-class optimizer's result is additionally checked by a shared
 floor-ratio **safety gate** (`gate.ts`) before being accepted: if the
 optimized output shrank the token estimate below a floor ratio of the
 original (default `0.2`), or shrank it to zero, the result is rejected and
-rolled back — the request continues with the pre-optimizer content
+rolled back. The request continues with the pre-optimizer content
 untouched. `lossless` optimizers skip the safety gate (they have no lossy
 budget to police) but still carry their own `validate()` backstop.
 `recoverable` optimizers restore a stashed pre-optimize snapshot on any
@@ -159,13 +159,13 @@ budget to police) but still carry their own `validate()` backstop.
 
 Every optimizer call (`optimize`) is wrapped in a try/catch with snapshot
 rollback in `core.ts`: an optimizer that throws can never break or alter a
-request — the pre-optimize snapshot is restored in place and the pipeline
+request. The pre-optimize snapshot is restored in place and the pipeline
 continues to the next step. This is the fail-open guarantee, covered end to
 end by `core.test.ts`.
 
 ## Default State
 
-All 7 optimizers ship **disabled** — a new project's `optimizers.steps` is
+All 7 optimizers ship **disabled**. A new project's `optimizers.steps` is
 empty. A project must explicitly enable each optimizer id it wants, in the
 order it wants them applied, via its `optimizers.steps` config (see [API:
 Optimizers](../api/management.md#optimizers), [CLI: `routerly
@@ -179,35 +179,35 @@ before it can ever activate, even when enabled in a project's config.
 A step's `threshold` means different things depending on the optimizer, and
 the management API validates it accordingly:
 
-- `relevance`, `caveman`, `llmlingua-2`: a `0`–`1` ratio (similarity cutoff
-  or keep-ratio).
+- `relevance`, `llmlingua-2`: a `0`–`1` ratio (similarity cutoff or
+  keep-ratio).
 - `ccr`: a turn count (default `6` if unset).
 - `headroom`: a reserved token budget (default `1024` if unset).
-- `session-dedup`, `rtk`: threshold is not used.
+- `session-dedup`, `rtk`, `caveman`: threshold is not used.
 
-`ccr` and `headroom` accept any positive number; the other optimizers are
-capped at `1`. Leave threshold unset on any step to use its built-in
-default.
+`ccr` and `headroom` accept any positive number; `relevance` and
+`llmlingua-2` are capped at `1`. Leave threshold unset on any step to use
+its built-in default.
 
 ## Wire-Format Transparency
 
 Optimizers run in the `request.preprocess` pipeline phase and mutate only
-`ctx.request`'s fields **in place** (e.g. `ctx.request.messages = ...`) —
+`ctx.request`'s fields **in place** (e.g. `ctx.request.messages = ...`),
 the same pattern used by guardrail steering injection. `ctx.request` is
 never reassigned wholesale. No custom headers are added, removed, or
 renamed; no non-standard response fields are introduced. The response path
-is entirely untouched by optimizers — the client always receives the
+is entirely untouched by optimizers, the client always receives the
 provider's response verbatim.
 
 Because `ctx.request` and `ctx.original` are the same object for both
-protocol lanes (`request: body, original: body` at context construction —
+protocol lanes (`request: body, original: body` at context construction,
 see `packages/service/src/modules/reverse-proxy/lanes/openai.ts` and
 `anthropic.ts`), an in-place mutation of `ctx.request.messages` is visible
 through `ctx.original` as well. The Anthropic lane's upstream-forwarding
 code reads `ctx.original` to build the outgoing payload (both for verbatim
 passthrough and for the `toChat()` conversion used by non-Anthropic
 providers), so **Anthropic-protocol requests benefit from optimizer
-mutations exactly like OpenAI-protocol requests** — this was verified
+mutations exactly like OpenAI-protocol requests**. This was verified
 against the reverse-proxy Anthropic lane's context-construction and
 upstream-execute code, not assumed.
 
@@ -220,7 +220,7 @@ approximation of relative reduction, not a provider-exact token count.
 
 ## Related
 
-- [Service: Routing Engine — Optimizers and Context Window Fit](../service/routing-engine.md#optimizers-and-context-window-fit)
+- [Service: Routing Engine, Optimizers and Context Window Fit](../service/routing-engine.md#optimizers-and-context-window-fit)
 - [API: Optimizers](../api/management.md#optimizers)
 - [CLI: `routerly optimizers`](../cli/commands.md#routerly-optimizers)
-- [Dashboard: Projects — Optimizer Tab](../dashboard/projects.md#optimizer-tab)
+- [Dashboard: Projects, Optimizer Tab](../dashboard/projects.md#optimizer-tab)

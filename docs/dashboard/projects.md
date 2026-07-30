@@ -72,7 +72,7 @@ See [Concepts: Routing](../concepts/routing.md) for each policy's behaviour and 
 
 ## Optimizer Tab
 
-Configure this project's prompt/context optimizer pipeline — a per-project,
+Configure this project's prompt/context optimizer pipeline: a per-project,
 ordered list of optimizers that reduce a request's token footprint before it
 is forwarded to a provider.
 
@@ -85,16 +85,17 @@ is forwarded to a provider.
 All 7 installed optimizers are listed, one per row, in pipeline execution
 order:
 
-- **Checkbox** — enable/disable this optimizer for the project
-- **Name and description** — the optimizer's display name, its class
+- **Checkbox**: enable/disable this optimizer for the project
+- **Name and description**: the optimizer's display name, its class
   (`Lossless.` / `Recoverable.` / `Lossy.`), and a one-line summary of its
   behavior
-- **Threshold** — optional numeric field, meaning depends on the optimizer
-  (a `0`-`1` ratio for `relevance`/`caveman`/`llmlingua-2`, a turn count for
-  `ccr`, a token budget for `headroom`); left empty to use the optimizer's
-  built-in default (where one exists) or leave it inert (`relevance` has no
-  default and stays inert until a threshold is set)
-- **Drag handle** — drag rows to reorder; the pipeline runs top to bottom
+- **Threshold**: optional numeric field, meaning depends on the optimizer
+  (a `0`-`1` ratio for `relevance`/`llmlingua-2`, a turn count for `ccr`, a
+  token budget for `headroom`; unused for `session-dedup`/`rtk`/`caveman`);
+  left empty to use the optimizer's built-in default (where one exists) or
+  leave it inert (`relevance` has no default and stays inert until a
+  threshold is set)
+- **Drag handle**: drag rows to reorder; the pipeline runs top to bottom
 
 Rows for optimizers not yet configured on the project appear disabled at the
 end of the list; enabling one and saving adds it to `optimizers.steps`.
@@ -108,14 +109,14 @@ optimizer's threshold accepts.
 
 Click **Save Optimizers** to persist the enabled/disabled state, order, and
 thresholds. A row that is disabled and has no threshold set is not
-persisted to `optimizers.steps` — only enabled rows, or disabled rows with a
+persisted to `optimizers.steps`. Only enabled rows, or disabled rows with a
 threshold, are written.
 
 ### Preview Panel
 
 Below the pipeline editor, **Preview token savings** lets you paste a sample
 user message and click **Run Preview** to dry-run the current (unsaved) UI
-state of the pipeline against it — no upstream call is made and nothing is
+state of the pipeline against it. No upstream call is made and nothing is
 saved. The result shows tokens before, tokens after, tokens saved, and a
 per-step before/after breakdown, matching `POST /api/optimizers/preview`
 (see [API: Optimizers](../api/management.md#optimizers)).
