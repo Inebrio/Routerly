@@ -46,3 +46,19 @@ export class OptimizerRegistry {
     return [...this.byId.values()]
   }
 }
+
+// The Fastify route layer (api.ts) is not a DI consumer, so it cannot resolve the
+// OPTIMIZER_REGISTRY token from the container. optimizer-core publishes the registry
+// here at register time; the management routes read it back. Mirrors reverse-proxy/
+// run.ts's setProxyPipeline/getProxyPipeline. Unlike getProxyPipeline, this does NOT
+// throw when unset: api.test.ts mounts apiRoutes on a bare Fastify without bootstrapping
+// the optimizer modules, and those routes must degrade to an empty registry, not crash.
+let current: OptimizerRegistry | undefined
+
+export function setOptimizerRegistry(registry: OptimizerRegistry): void {
+  current = registry
+}
+
+export function getOptimizerRegistry(): OptimizerRegistry | undefined {
+  return current
+}
