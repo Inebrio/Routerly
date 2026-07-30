@@ -3,57 +3,15 @@ import { OPTIMIZER_REGISTRY } from '../../../core/tokens.js'
 import type { Message, OptimizerResult } from '@routerly/shared'
 import type { ProxyContext } from '../../reverse-proxy/context.js'
 import type { Optimizer } from '../registry.js'
-import { estimateTokens, messageText, readMessages, writeMessages } from '../messages.js'
+import { messageText, readMessages, segment, tokensOf, writeMessages } from '../messages.js'
 
 // ponytail: window-keep reduction, no LLM summarizer call; add a summarizer model only if window-keep loses needed context.
 
 // keep last 6 turns by default
 const DEFAULT_WINDOW = 6
 
-/**
- * True for an Anthropic-shape tool-result message: a `user` message whose content
- * array carries a `tool_result` block. Duck-typed on purpose — the narrow
- * `AnthropicContentBlock` TS union doesn't declare `tool_result`, but real parsed
- * request bodies carry it regardless of the type. OpenAI never produces this shape
- * (its tool results are `role:'tool'`), so the check is a safe no-op on that lane.
- */
-function isToolResultUser(m: Message): boolean {
-  return (
-    m.role === 'user' &&
-    Array.isArray(m.content) &&
-    m.content.some((p) => (p as { type?: unknown } | null)?.type === 'tool_result')
-  )
-}
-
-/**
- * Split a conversation into its leading system prefix and its turns.
- *
- * A turn begins at each `user` message and runs up to (but not including) the
- * next `user` message. Two shapes are bound to the PRECEDING turn so a tool
- * round-trip is never split across the window cut:
- *  - OpenAI: `role:'tool'` responses (not `role:'user'`, so already never open a turn).
- *  - Anthropic: a `role:'user'` message carrying a `tool_result` block answers the
- *    preceding `assistant` `tool_use` message; it must stay with it, so it does NOT
- *    open a new turn.
- */
-function segment(messages: Message[]): { system: Message[]; turns: Message[][] } {
-  let i = 0
-  while (i < messages.length && messages[i]!.role === 'system') i++
-  const system = messages.slice(0, i)
-
-  const turns: Message[][] = []
-  let current: Message[] = []
-  for (const m of messages.slice(i)) {
-    if (m.role === 'user' && current.length > 0 && !isToolResultUser(m)) {
-      turns.push(current)
-      current = []
-    }
-    current.push(m)
-  }
-  if (current.length > 0) turns.push(current)
-
-  return { system, turns }
-}
+// segment()/isToolResultUser()'s turn-boundary + tool_use/tool_result atomicity
+// logic now lives in ../messages.js, shared with the headroom optimizer.
 
 /** N (turns to keep) for this context, from the step's threshold or the default. */
 function windowOf(ctx: ProxyContext): number {
@@ -109,10 +67,6 @@ function withCondensed(system: Message[], text: string, kept: Message[]): Messag
 function isMergeOf(current: Message, original: Message): boolean {
   const ct = messageText(current.content)
   return ct.includes(CONDENSE_HEADER) && ct.endsWith(messageText(original.content))
-}
-
-function tokensOf(messages: Message[]): number {
-  return messages.reduce((sum, m) => sum + estimateTokens(messageText(m.content)), 0)
 }
 
 interface Plan {
