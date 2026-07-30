@@ -28,6 +28,9 @@ This mints a project token (or reuses one you pass with `--token`), backs
 up your existing `~/.codex/config.toml`, and adds the block below. Any
 other provider or setting already in the file is left untouched.
 
+Minting a new token requires `project:write` permission on the target
+project (use `--token <existing-token>` to skip this).
+
 ## Manual configuration
 
 Open `~/.codex/config.toml` and add:

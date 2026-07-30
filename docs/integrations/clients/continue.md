@@ -33,6 +33,9 @@ This mints a project token (or reuses one you pass with `--token`), backs
 up your existing `~/.continue/config.yaml`, and appends a model entry to the
 `models:` array. Any other entry already in the file is left untouched.
 
+Minting a new token requires `project:write` permission on the target
+project (use `--token <existing-token>` to skip this).
+
 ## Manual configuration
 
 Open `~/.continue/config.yaml` and add an entry to `models:`:

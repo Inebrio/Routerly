@@ -29,6 +29,9 @@ up your existing `~/.config/opencode/opencode.json`, and merges in a
 `provider.routerly` entry. Any other provider already in the file is left
 untouched.
 
+Minting a new token requires `project:write` permission on the target
+project (use `--token <existing-token>` to skip this).
+
 ## Manual configuration
 
 Open `~/.config/opencode/opencode.json` and merge in:

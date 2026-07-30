@@ -1411,9 +1411,11 @@ Routerly server. They edit the config file of a client tool installed
 locally. See [Integrations: Auto-configure](../integrations/overview.md#auto-configure)
 for one manual reference page per client.
 
-These commands require a logged-in session (`routerly auth login`) but no
-specific permission: any authenticated account can run them, the same as
-`routerly status`.
+These commands require a logged-in session (`routerly auth login`). No
+specific permission is required for `list`, `inspect`, `doctor`, `undo`,
+`launch`, or `configure --token <token>` (reusing an existing token skips
+minting). Minting a new token via `configure` (the default, when `--token`
+is omitted) requires `project:write` permission on the target project.
 
 ### `routerly clients list`
 
