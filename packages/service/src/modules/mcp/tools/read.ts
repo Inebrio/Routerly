@@ -17,7 +17,7 @@ import type { McpToolEntry } from '../registry.js'
 /**
  * list_models: enumerate the models configured on this gateway for MCP clients.
  * Read scope, global (models are gateway-wide, not project-owned) so authCtx is
- * unused. The output whitelists only id/provider/enabled/contextWindow — a
+ * unused. The output whitelists only id/provider/contextWindow, a
  * strictly safer stance than api.ts's `apiKey: undefined, cfClearance: undefined`
  * blacklist, since a fresh object cannot carry any provider credential fields.
  * // ponytail: gated on CATALOG (the models feature's DI token); the handler
