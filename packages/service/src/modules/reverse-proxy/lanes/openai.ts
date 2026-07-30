@@ -138,7 +138,8 @@ export const openaiUpstream: Processor<ProxyContext> = {
           // Task 7: stash for the routing.execute attempt loop to classify + record at the
           // connection-level resilience key (never for BudgetExceededError, a local skip).
           ctx.attemptError = err
-          ctx.attemptResponse = upstreamResponseFromError(err)
+          const attemptResponse = upstreamResponseFromError(err)
+          if (attemptResponse !== undefined) ctx.attemptResponse = attemptResponse
         }
         // leave ctx.result unset -> openai:attempt advances to the next candidate
       }
@@ -161,7 +162,8 @@ export const openaiUpstream: Processor<ProxyContext> = {
       if (!(err instanceof BudgetExceededError)) {
         log.warn({ err, modelId: model.id }, 'Model failed, trying next candidate')
         ctx.attemptError = err
-        ctx.attemptResponse = upstreamResponseFromError(err)
+        const attemptResponse = upstreamResponseFromError(err)
+        if (attemptResponse !== undefined) ctx.attemptResponse = attemptResponse
       }
       // leave ctx.result unset -> openai:attempt advances
     }
@@ -210,7 +212,7 @@ export const openaiAttempt: Processor<ProxyContext> = {
         const attemptResponse = ctx.attemptResponse ?? upstreamResponseFromError(ctx.attemptError)
         getResilienceStore()?.record(resilienceKeys(model).connection, classifyUpstreamError(ctx.attemptError, attemptResponse))
         ctx.attemptError = undefined
-        ctx.attemptResponse = undefined
+        delete ctx.attemptResponse
       }
       if (model.id === primaryModelId) primaryFailed = true
     }

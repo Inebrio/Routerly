@@ -865,7 +865,7 @@ describe('openai:attempt', () => {
       run(ctx: ProxyContext) {
         if (ctx.protocol !== 'openai' || ctx.result) return
         const modelId = ctx.attempt!.model.id
-        if (failFor.includes(modelId)) { ctx.attemptError = err; ctx.attemptResponse = undefined; return }
+        if (failFor.includes(modelId)) { ctx.attemptError = err; delete ctx.attemptResponse; return }
         ctx.result = { kind: 'json', body: { object: 'chat.completion', model: modelId } }
       },
     })

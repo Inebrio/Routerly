@@ -776,9 +776,11 @@ describe('anthropic:attempt', () => {
         const modelId = ctx.attempt!.model.id
         if (failFor.includes(modelId)) {
           ctx.attemptError = err
-          ctx.attemptResponse = (err as { status?: number; headers?: Record<string, string> }).status
-            ? { status: (err as { status: number }).status, headers: (err as { headers?: Record<string, string> }).headers }
-            : undefined
+          const status = (err as { status?: number }).status
+          if (status) {
+            const headers = (err as { headers?: Record<string, string> }).headers
+            ctx.attemptResponse = { status, ...(headers ? { headers } : {}) }
+          }
           return
         }
         ctx.result = { kind: 'json', body: { type: 'message', model: modelId } }
