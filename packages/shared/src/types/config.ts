@@ -186,6 +186,12 @@ export type EffectiveModel = ModelConfig;
 export interface ProjectModelRef {
   modelId: string;
   prompt?: string;
+  /**
+   * Whether this model ref is active for the project. Persisted, but not yet
+   * consumed by the routing engine (a later plan will wire routing to honor it);
+   * toggled today via the MCP `toggle_model` write tool.
+   */
+  enabled?: boolean;
   /** How these limits interact with the global model limits */
   limitsMode?: LimitsMode;
   /** Per-project usage limit overrides (take priority over global) */
