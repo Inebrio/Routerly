@@ -1,6 +1,8 @@
 import { defineModule, type RouterlyModule } from '../../core/index.js'
 import { MCP_TOOLS } from '../../core/tokens.js'
+import { resolveProjectByToken } from '../auth/auth.js'
 import { createMcpToolRegistry, type McpToolEntry } from './registry.js'
+import { startStdioServer } from './stdio.js'
 import {
   listModelsTool,
   getModelInstanceTool,
@@ -36,7 +38,7 @@ export const mcpModule: RouterlyModule = defineModule({
   register({ container }) {
     container.register(MCP_TOOLS, createMcpToolRegistry())
   },
-  start({ container }) {
+  async start({ container }) {
     const registry = container.resolve(MCP_TOOLS)
     for (const tool of BUILT_IN_TOOLS) {
       // ponytail: DI-token presence IS the enable proxy; replace with Plan 0
@@ -44,6 +46,13 @@ export const mcpModule: RouterlyModule = defineModule({
       if (container.has(tool.requires)) {
         registry.contribute({ id: tool.name, value: tool })
       }
+    }
+
+    // Opt-in local stdio transport. Off by default so normal HTTP boot never
+    // attaches stdin listeners. connect() resolves once the transport starts,
+    // not when the session ends, so this await does not block boot.
+    if (process.env['ROUTERLY_MCP_STDIO'] === '1') {
+      await startStdioServer(registry, container, resolveProjectByToken)
     }
   },
 })
