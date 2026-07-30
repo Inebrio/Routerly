@@ -9,6 +9,7 @@ import { loadSecret } from './modules/auth/jwt.js';
 import { loadCredentialKey } from './lib/crypto-cred.js';
 import { openaiRoutes } from './modules/api-reverse-proxy/openai.js';
 import { anthropicRoutes } from './modules/api-reverse-proxy/anthropic.js';
+import { mcpHttpRoutes } from './modules/mcp/http.js';
 import { apiRoutes } from './modules/api/api.js';
 import { metricsRoutes } from './modules/observability/metrics.js';
 import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage } from './modules/config/loader.js';
@@ -97,6 +98,9 @@ export async function buildServer() {
   // ─── LLM Proxy routes ────────────────────────────────────────────────────
   await fastify.register(openaiRoutes);
   await fastify.register(anthropicRoutes);
+
+  // ─── MCP Streamable HTTP endpoint (self-authenticating, in auth skip list) ──
+  await fastify.register(mcpHttpRoutes);
 
   // ─── Root redirect ────────────────────────────────────────────────────────
   fastify.get('/', async (_req, reply) => {

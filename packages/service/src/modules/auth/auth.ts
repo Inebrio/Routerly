@@ -59,7 +59,9 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('preHandler', async (request: FastifyRequest, reply) => {
     // Skip auth for non-LLM-proxy routes (health check, dashboard UI, dashboard API)
     const url = request.url;
-    if (url === '/' || url === '/health' || url === '/metrics' || url.startsWith('/dashboard') || url.startsWith('/api/')) return;
+    // /mcp is self-authenticating (see modules/mcp/http.ts): it resolves the
+    // project token and enforces the mcp scope itself, so skip the proxy auth here.
+    if (url === '/' || url === '/health' || url === '/metrics' || url.startsWith('/dashboard') || url.startsWith('/api/') || url.startsWith('/mcp')) return;
 
     const incomingToken = extractProjectToken(request.headers);
     if (!incomingToken) {
