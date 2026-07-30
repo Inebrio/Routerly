@@ -97,7 +97,7 @@ describe('ClientsPage', () => {
     mockGetClients.mockResolvedValue(makeClients());
     renderPage();
     await waitFor(() => expect(screen.getByText('Cline')).toBeTruthy());
-    expect(screen.getByText(/no file to edit/i)).toBeTruthy();
+    expect(screen.getByText('Configure via VS Code Settings (Cline panel), no file.')).toBeTruthy();
   });
 
   it('copy button copies the snippet to the clipboard', async () => {
