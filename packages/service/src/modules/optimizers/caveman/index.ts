@@ -154,7 +154,7 @@ function messagePreserved(before: Message, after: Message): boolean {
 /** Pre-optimize message array per context, read back by recover/validate. */
 const originals = new WeakMap<ProxyContext, Message[]>()
 
-export const cavemanOptimizer: Optimizer = {
+export const cavemanOptimizer = {
   id: 'caveman',
   klass: 'lossy',
 
@@ -198,12 +198,12 @@ export const cavemanOptimizer: Optimizer = {
   // failed lossy safety gate. ctx.request has already been restored to the
   // pre-optimize snapshot by then; this re-writes the stash in place as a
   // defensive backstop. Safe no-op when nothing was stashed.
-  recover(ctx) {
+  recover(ctx, _result: OptimizerResult) {
     const original = originals.get(ctx)
     if (!original) return
     writeMessages(ctx.request, original)
   },
-}
+} satisfies Optimizer
 
 /**
  * optimizer-caveman module. Resolves the registry created by optimizer-core and

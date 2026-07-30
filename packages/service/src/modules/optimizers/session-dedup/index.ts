@@ -49,7 +49,7 @@ function tokensOf(messages: Message[]): number {
 /** Pre-optimize unique-key set per context, read back by validate. */
 const originalKeys = new WeakMap<ProxyContext, Set<string>>()
 
-export const sessionDedupOptimizer: Optimizer = {
+export const sessionDedupOptimizer = {
   id: 'session-dedup',
   klass: 'lossless',
 
@@ -84,7 +84,7 @@ export const sessionDedupOptimizer: Optimizer = {
     for (const key of before) if (!after.has(key)) return false
     return true
   },
-}
+} satisfies Optimizer
 
 /**
  * optimizer-session-dedup module. Resolves the registry created by

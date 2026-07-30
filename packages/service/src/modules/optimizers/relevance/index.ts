@@ -64,7 +64,7 @@ function plan(messages: Message[], threshold: number): Plan {
 /** Pre-optimize message array per context, read back by recover/validate. */
 const originals = new WeakMap<ProxyContext, Message[]>()
 
-export const relevanceOptimizer: Optimizer = {
+export const relevanceOptimizer = {
   id: 'relevance',
   klass: 'lossy',
 
@@ -118,12 +118,12 @@ export const relevanceOptimizer: Optimizer = {
   // safety gate rejects the result OR validate() returns false. ctx.request
   // has already been restored to the pre-optimize snapshot by then; this is a
   // defensive re-write in place. Safe no-op when nothing was stashed.
-  recover(ctx) {
+  recover(ctx, _result: OptimizerResult) {
     const original = originals.get(ctx)
     if (!original) return
     writeMessages(ctx.request, original)
   },
-}
+} satisfies Optimizer
 
 /**
  * optimizer-relevance module. Resolves the registry created by optimizer-core
