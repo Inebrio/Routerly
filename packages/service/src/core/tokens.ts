@@ -4,6 +4,7 @@ import type { ProviderAdapter } from '../modules/provider/types.js';
 import type { ProviderCatalog, RepoStatus } from '../modules/catalog/fetcher.js';
 import type { EmbeddingProvider, EmbeddingProviderType } from '../modules/embeddings/dispatch.js';
 import type { RouteResult } from '../modules/routing/router.js';
+import type { OptimizerRegistry } from '../modules/optimizers/registry.js';
 import type {
   ModelConfig,
   ProjectConfig,
@@ -100,6 +101,10 @@ export const RESILIENCE_STORE = token<ResilienceStore>('resilience.store');
 // pipeline registry is parameterized over `unknown`; Plan 4 narrows the generic
 // to ProxyContext. The token key 'proxy.pipeline' is frozen now.
 export const PROXY_PIPELINE = token<ProcessorRegistry<unknown>>('proxy.pipeline');
+
+// Optimizer registry (Plan 4). optimizer-core creates and binds it on register;
+// the optimizer.apply processor and later optimizer submodules resolve it.
+export const OPTIMIZER_REGISTRY = token<OptimizerRegistry>('optimizer.registry');
 
 export const API_REVERSE_PROXY = token<{
   openaiRoutes: typeof import('../modules/api-reverse-proxy/openai.js').openaiRoutes;
