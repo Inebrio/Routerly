@@ -1,4 +1,5 @@
 import { optimizerCoreModule } from './core.js'
+import { sessionDedupModule } from './session-dedup/index.js'
 import type { RouterlyModule } from '../../core/index.js'
 
 /**
@@ -7,4 +8,4 @@ import type { RouterlyModule } from '../../core/index.js'
  * optimizer submodules (built in later tasks) are appended here and self-register
  * into OPTIMIZER_REGISTRY on their own register().
  */
-export const optimizerModules: RouterlyModule[] = [optimizerCoreModule]
+export const optimizerModules: RouterlyModule[] = [optimizerCoreModule, sessionDedupModule]
