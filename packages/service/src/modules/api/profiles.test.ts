@@ -17,6 +17,7 @@ import { apiRoutes } from './api.js'
 import { readConfig, writeConfig } from '../config/loader.js'
 import { verifyToken } from '../auth/jwt.js'
 import { scoreCandidates } from '../routing/router.js'
+import { nextCursor } from '../routing/routingMemoryStore.js'
 
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
 const mockWriteConfig = vi.mocked(writeConfig as (key: string, value: any) => Promise<void>)
@@ -221,7 +222,7 @@ describe('PUT /api/projects/:id/profile', () => {
 
   it('allows with project:write and assigns a profileId', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profile', headers: authWith('project:write', { projects: [project] }), payload: { profileId: 'u1' } })
+    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profile', headers: authWith('project:write', { projects: [project], profiles: [userProfile] }), payload: { profileId: 'u1' } })
     await app.close()
     expect(res.statusCode).toBe(200)
     expect(JSON.parse(res.body).profileId).toBe('u1')
@@ -244,7 +245,7 @@ describe('PUT /api/projects/:id/profile', () => {
 
   it('returns 404 for an unknown project', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'PUT', url: '/api/projects/ghost/profile', headers: authWith('project:write', { projects: [project] }), payload: { profileId: 'u1' } })
+    const res = await app.inject({ method: 'PUT', url: '/api/projects/ghost/profile', headers: authWith('project:write', { projects: [project], profiles: [userProfile] }), payload: { profileId: 'u1' } })
     await app.close()
     expect(res.statusCode).toBe(404)
   })
@@ -256,10 +257,27 @@ describe('PUT /api/projects/:id/profile', () => {
     expect(res.statusCode).toBe(400)
   })
 
+  it('returns 404 profile_not_found for a profileId that matches no built-in or user profile, and does not persist it', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profile', headers: authWith('project:write', { projects: [project], profiles: [userProfile] }), payload: { profileId: 'nonexistent-profile-id' } })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+    expect(JSON.parse(res.body).error).toBe('profile_not_found')
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
+  it('assigns a real built-in profileId', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profile', headers: authWith('project:write', { projects: [project] }), payload: { profileId: 'balanced' } })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).profileId).toBe('balanced')
+  })
+
   it('strips raw token hashes from the response when the project has tokens', async () => {
     const projectWithTokens = { ...project, tokens: [{ id: 't1', name: 'Default', token: 'sha256-secret-hash', createdAt: '2024-01-01' }] }
     const app = await buildApp()
-    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profile', headers: authWith('project:write', { projects: [projectWithTokens] }), payload: { profileId: 'u1' } })
+    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profile', headers: authWith('project:write', { projects: [projectWithTokens], profiles: [userProfile] }), payload: { profileId: 'u1' } })
     await app.close()
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
@@ -384,5 +402,42 @@ describe('POST /api/routing/simulate', () => {
     const body = JSON.parse(res.body)
     expect(body.picked).toBe('only-model')
     expect(body.ranked).toEqual([{ model: 'only-model', score: 1 }])
+  })
+
+  it('reorders ranked to match the selector output order (picked is always ranked[0])', async () => {
+    mockScoreCandidates.mockResolvedValueOnce({
+      scored: [
+        { model: 'expensive-but-high-score', score: 0.9, cost: 10 },
+        { model: 'cheap-but-low-score', score: 0.2, cost: 1 },
+      ],
+      allAbstained: false, successfulResults: [], scoringIds: new Set(), policyExcludes: new Set(), excludeReasons: new Map(), trace: [],
+    } as any)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/routing/simulate', headers: authWith('profiles:read', { projects: [project] }),
+      payload: { request, projectId: 'p1', selector: 'cheapest', policies: [{ type: 'cheapest', enabled: true }] },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    // the cheapest selector picks the cheaper model even though it has the lower score
+    expect(body.picked).toBe('cheap-but-low-score')
+    expect(body.ranked[0].model).toBe(body.picked)
+    expect(body.ranked.map((c: any) => c.model)).toEqual(['cheap-but-low-score', 'expensive-but-high-score'])
+  })
+
+  it('does not advance the live round-robin cursor for the project (namespaced simulate key)', async () => {
+    const rrProject = { id: 'p-rr-cursor-test', name: 'RR', tokens: [], members: [], models: [], policies: [] }
+    mockScoreCandidates.mockResolvedValue({
+      scored: [{ model: 'm1', score: 0.9, cost: 1 }, { model: 'm2', score: 0.8, cost: 2 }],
+      allAbstained: false, successfulResults: [], scoringIds: new Set(['m1', 'm2']), policyExcludes: new Set(), excludeReasons: new Map(), trace: [],
+    } as any)
+    const app = await buildApp()
+    await app.inject({ method: 'POST', url: '/api/routing/simulate', headers: authWith('profiles:read', { projects: [rrProject] }), payload: { request, projectId: rrProject.id, selector: 'round-robin' } })
+    await app.inject({ method: 'POST', url: '/api/routing/simulate', headers: authWith('profiles:read', { projects: [rrProject] }), payload: { request, projectId: rrProject.id, selector: 'round-robin' } })
+    await app.close()
+    // the live (unprefixed) cursor for this project must be untouched by the two simulate calls above:
+    // its very first real call still starts at cursor 0.
+    expect(nextCursor(rrProject.id, 2)).toBe(0)
   })
 })
