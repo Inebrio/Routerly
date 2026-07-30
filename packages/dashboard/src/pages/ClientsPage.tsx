@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Copy, Check, ExternalLink, Terminal } from 'lucide-react';
 import { getClients } from '../api';
-import type { ClientListItem, SupportState } from '../api';
+import type { ApiError, ClientListItem, SupportState } from '../api';
 
 const DOCS_BASE = 'https://doc.routerly.ai/next/';
 const PLACEHOLDER_TOKEN = '<YOUR_ROUTERLY_TOKEN>';
@@ -26,7 +26,12 @@ export function useClientsEnabled(): boolean | null {
     let cancelled = false;
     getClients()
       .then(() => { if (!cancelled) setEnabled(true); })
-      .catch(() => { if (!cancelled) setEnabled(false); });
+      .catch((err: ApiError) => {
+        // Only a confirmed 404 (module disabled) hides the nav link; any other
+        // error (network, 500, timeout) leaves `enabled` unresolved (null)
+        // rather than looking identical to "genuinely disabled".
+        if (!cancelled && err.status === 404) setEnabled(false);
+      });
     return () => { cancelled = true; };
   }, []);
   return enabled;
@@ -34,7 +39,7 @@ export function useClientsEnabled(): boolean | null {
 
 /**
  * Lightweight dashboard-side snippet builder (placeholder token, not a real
- * one — the dashboard never has a project's raw token). Mirrors the shape of
+ * one, the dashboard never has a project's raw token). Mirrors the shape of
  * @routerly/shared's buildSnippet() closely enough to be useful; not byte-
  * identical, that function is for CLI/service internal use with a real token.
  */
@@ -77,7 +82,7 @@ function buildDashboardSnippet(client: ClientListItem): string {
 }
 
 /** Copy-to-clipboard with the execCommand textarea fallback for non-secure
- * contexts (HTTP, self-hosted via bare LAN IP) — same logic as
+ * contexts (HTTP, self-hosted via bare LAN IP), same logic as
  * ProjectTokenCreatePage's copyToClipboard(). */
 async function copyText(text: string, onDone: () => void, onError: (msg: string) => void) {
   try {
@@ -123,7 +128,7 @@ function ClientCard({ client }: { client: ClientListItem }) {
       </div>
       <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 12px' }}>
         {client.configKind === 'ui'
-          ? `Configure via ${client.configPathHint}, no file to edit.`
+          ? `Configure via ${client.configPathHint}.`
           : `Config file: ${client.configPathHint}`}
       </p>
       {client.configKind !== 'ui' && (
