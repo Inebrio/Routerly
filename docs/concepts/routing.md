@@ -127,6 +127,64 @@ Embeddings for intent examples are computed once and cached in memory for 1 hour
 
 ---
 
+## Routing Profiles
+
+A **routing profile** bundles the policy layer described above with two
+further settings into one reusable, named unit:
+
+- a **selector**: how the final model is picked among the ranked candidates
+- a **fallback strategy**: what happens when the picked model fails
+
+A project either keeps its own inline policies (configured on its
+[Routing tab](../dashboard/projects.md#routing-tab)), or is assigned a shared
+profile instead. See [Dashboard: Routing Profiles](../dashboard/routing-profiles.md)
+and [API: Routing Profiles](../api/management.md#routing-profiles) for how to
+manage and assign profiles.
+
+### Built-in Profiles
+
+Routerly ships 5 built-in profiles, read-only and always available. Each can
+be cloned into an editable, user-owned copy.
+
+| Profile | Policies | Selector | Fallback | Optimizes for |
+|---------|----------|----------|----------|----------------|
+| **Balanced** | health, performance, cheapest, capability | argmax | next-best | A general-purpose mix of speed, cost, and reliability |
+| **Cheap** | cheapest, budget-remaining, health | cheapest | next-best | Lowest cost per request |
+| **Fast** | performance, health | lowest-latency | retry-after-cooldown | Lowest response time |
+| **Coding** | capability, model-preference, performance, health | argmax | next-best | Capable, developer-preferred models for code tasks |
+| **Offline** | health, cheapest | round-robin | abort | Local/offline providers, spreading load evenly with no retries |
+
+### Selectors
+
+The selector picks one model from the candidates the policy layer scored (and
+did not filter out):
+
+| Selector | Behaviour |
+|----------|-----------|
+| `argmax` | Picks the highest-scored candidate. Ties within a small tolerance are broken by weighted-random among the tied group. |
+| `weighted-random` | Picks one candidate at random, with probability proportional to its score. |
+| `round-robin` | Cycles through candidates in a deterministic order, one per request, evenly distributing load regardless of score. |
+| `cheapest` | Picks the lowest-cost candidate; ties break by higher score. |
+| `lowest-latency` | Picks the candidate with the lowest recent observed latency; candidates with no latency data sort last. |
+
+### Fallback Strategies
+
+| Strategy | Behaviour |
+|----------|-----------|
+| `next-best` | On failure, try the next-highest-ranked remaining candidate. |
+| `retry-after-cooldown` | On failure, retry the same model after a cooldown period instead of moving to the next candidate. |
+| `abort` | On failure, stop immediately with no retry. |
+
+:::caution Not yet wired into live retries
+The fallback strategy is a field stored on the profile and selectable from
+the dashboard and API, but it does not yet change what actually happens when
+a request fails at runtime: the reverse-proxy retry loop does not read it
+yet. Treat it as configuration staged for a future release, not a currently
+active behaviour.
+:::
+
+---
+
 ## Configuring Routing
 
 ### Dashboard (recommended)

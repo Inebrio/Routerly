@@ -35,6 +35,25 @@ Shows and lets you edit:
 
 Configure which models this project can use and how to select between them.
 
+![Project Routing tab showing the Routing Profile combobox set to Custom, with the inline policy editor active below it](../assets/screenshot-project-routing-profile.png)
+
+### Routing Profile
+
+At the top of the tab, the **Routing Profile** dropdown assigns a shared
+[routing profile](./routing-profiles.md) to this project instead of
+maintaining inline policies here. Options are `Custom (this project's own
+policies)`, followed by the built-in profiles, followed by any custom
+profiles.
+
+Selecting a profile **saves immediately** on change, independently from
+the **Save Routing Configuration** button below, which only persists this
+project's own inline policies and target models. While a profile is assigned,
+the inline **Routing Policies** editor is disabled (dimmed, non-interactive):
+the project's routing now comes from the profile's policies, selector, and
+fallback strategy instead. Switching the dropdown back to **Custom**
+re-enables the inline editor and reverts routing to this project's own
+policies.
+
 ### Adding Models
 
 Use the **+ Add Model** button to pick from registered models. Models appear in a numbered list — their order determines the default routing priority (position 0 is highest).

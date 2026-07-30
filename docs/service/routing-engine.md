@@ -275,6 +275,73 @@ Suggested order: `health` → `context` → `capability` → `budget-remaining` 
 
 ---
 
+## Routing Profiles
+
+A **routing profile** (`RoutingProfile`) packages a policy list, a
+**selector**, and a **fallback strategy** into one reusable, versioned unit,
+stored via [`GET/POST/PATCH/DELETE /api/routing/profiles`](../api/management.md#routing-profiles).
+A project resolves its effective profile at request time: if the project has
+a `profileId` set, that profile's policies/selector/fallback are used instead
+of the project's own inline policy list; otherwise the project's own inline
+policies run through the default selector/fallback behaviour described above
+(argmax-equivalent, no live fallback wiring, see the caution below).
+
+### Built-in Profiles
+
+5 built-ins ship as code constants (never persisted, never mutable):
+`balanced`, `cheap`, `fast`, `coding`, `offline`. Cloning a built-in (`POST
+/api/routing/profiles/clone`) writes a new, editable copy to `profiles.json`
+with `builtin: false` and `version: 1`; every subsequent `PATCH` bumps
+`version` by 1. See [Concepts: Routing: Routing Profiles](../concepts/routing.md#routing-profiles)
+for what each built-in optimizes for.
+
+### Selectors
+
+After the policy layer scores and filters candidates (steps 3-5 above), the
+profile's **selector** picks the final model from the ranked list:
+
+| Selector | Behaviour |
+|----------|-----------|
+| `argmax` | Highest score wins; near-ties (within a small tolerance) resolve by weighted-random among the tied group. |
+| `weighted-random` | One candidate is picked at random with probability proportional to its score. |
+| `round-robin` | Deterministic rotation through candidates, keyed by project id, ignoring score. |
+| `cheapest` | Lowest `cost` wins; undefined cost sorts last; ties break by score. |
+| `lowest-latency` | Lowest recently-observed latency wins; unknown latency sorts last. |
+
+Implemented in `packages/service/src/modules/routing/selectors/index.ts`
+(`SELECTOR_MAP`).
+
+### Fallback Strategies
+
+| Strategy | Behaviour |
+|----------|-----------|
+| `next-best` | Try the next-highest-ranked remaining candidate. |
+| `retry-after-cooldown` | Put the failed model on a cooldown and retry it later rather than moving on immediately. |
+| `abort` | Stop with no retry. |
+
+Implemented in `packages/service/src/modules/routing/fallback/index.ts`
+(`FALLBACK_MAP`).
+
+:::caution Not yet wired into the retry loop
+`fallbackStrategy` is stored on the profile, returned by every profile
+endpoint, and editable from the dashboard, but the reverse-proxy's retry loop
+(step 7 above) does not currently read it: retries still follow the
+positional-scoring fallback order described in step 7, regardless of the
+resolved profile's `fallbackStrategy`. This is confirmed scope for a future
+change, not a bug in the current profile CRUD/simulate endpoints.
+:::
+
+### Simulating a Profile
+
+`POST /api/routing/simulate` runs the same scoring and selection logic
+described above (steps 1-6) against a chosen project and request body, with
+an optional profile/policy/selector/fallback override, and returns the
+picked model, the full ranked list, and the trace, **without calling any
+upstream provider or writing a usage record.** See
+[API: Simulate Routing](../api/management.md#simulate-routing).
+
+---
+
 ## Policy Ordering and Weights
 
 Policies are applied in the order configured in the project. Their positional weight (`total − index`) means policies near the top of the list have more influence on the final score. Reorder policies via the dashboard (**Projects → your project → Routing**) or the CLI.
