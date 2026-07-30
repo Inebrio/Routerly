@@ -1118,6 +1118,110 @@ Exit code: `0` on success, `1` on error (both subcommands).
 
 ---
 
+## `routerly profiles`
+
+Manage routing profiles - reusable routing policy/selector/fallback-strategy bundles that projects can adopt in place of ad hoc `project routing` configuration.
+
+### `routerly profiles list`
+
+```
+routerly profiles list [--json]
+```
+
+List all routing profiles (built-in presets and user-cloned profiles).
+
+**Table columns:**
+- **ID** - profile identifier
+- **Label** - display label
+- **Builtin** - `yes` / `no`
+- **Selector** - `argmax` / `weighted-random` / `round-robin` / `cheapest` / `lowest-latency`
+- **Version** - profile version, bumped on each update
+
+```bash
+routerly profiles list
+routerly profiles list --json
+```
+
+Requires `profiles:read` permission.
+
+### `routerly profiles show`
+
+```
+routerly profiles show <id> [--json]
+```
+
+Show full details of one routing profile. There is no single-item GET endpoint for profiles; `show` fetches the full list and filters client-side by ID.
+
+Prints key/value fields (`id`, `label`, `builtin`, `selector`, `fallbackStrategy`, `version`, and `baseId` if the profile was cloned from a preset), followed by a `Policies:` section listing each policy's type and enabled state.
+
+```bash
+routerly profiles show balanced
+routerly profiles show balanced --json
+```
+
+**Error cases:**
+- Unknown ID: `Profile "<id>" not found. Run \`routerly profiles list\` to see available profiles.`
+
+Requires `profiles:read` permission.
+
+### `routerly profiles clone`
+
+```
+routerly profiles clone <baseId> --label <label> [--json]
+```
+
+Clone a built-in or existing profile into a new, editable user profile.
+
+| Option | Description |
+|--------|-------------|
+| `--label <label>` | Label for the new profile - required |
+| `--json` | Output the created profile as raw JSON |
+
+```bash
+routerly profiles clone balanced --label "My Custom Profile"
+```
+
+**Output on success:**
+```
+✓ Cloned profile "balanced" -> user-1
+```
+
+Requires `profiles:manage` permission.
+
+### `routerly profiles set`
+
+```
+routerly profiles set <project> [profileId] --none [--json]
+```
+
+Assign or clear the routing profile for a project. Provide `profileId` to assign it, or `--none` to clear the assignment. If both are given, `--none` wins.
+
+| Option | Description |
+|--------|-------------|
+| `--none` | Clear the profile assignment |
+| `--json` | Output the updated (sanitized) project as raw JSON |
+
+```bash
+routerly profiles set my-api balanced
+routerly profiles set my-api --none
+```
+
+**Output on success:**
+```
+✓ Profile set to "balanced" on project "my-api"
+```
+(or `✓ Profile cleared on project "my-api"` with `--none`)
+
+**Error cases:**
+- Neither `profileId` nor `--none` given: `Error: provide a profileId or --none.`
+- Project not found: `Project "<name>" not found. Run \`routerly project list\` to see available projects.`
+
+Requires `project:write` permission.
+
+Exit code: `0` on success, `1` on error (all subcommands).
+
+---
+
 ## `routerly report`
 
 ### `routerly report usage`

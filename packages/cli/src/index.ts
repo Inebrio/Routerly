@@ -21,6 +21,7 @@ import { makeCatalogCommand } from './commands/catalog.js';
 import { makeModulesCommand } from './commands/modules.js';
 import { makeConnectionsCommand } from './commands/connections.js';
 import { makeResilienceCommand } from './commands/resilience.js';
+import { makeProfilesCommand } from './commands/profiles.js';
 
 const program = new Command();
 
@@ -49,5 +50,6 @@ program.addCommand(makeCatalogCommand());
 program.addCommand(makeModulesCommand());
 program.addCommand(makeConnectionsCommand());
 program.addCommand(makeResilienceCommand());
+program.addCommand(makeProfilesCommand());
 
 program.parse(process.argv);
