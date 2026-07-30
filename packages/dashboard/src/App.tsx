@@ -95,7 +95,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
   const { user, logout, can } = useAuth();
   const navigate = useNavigate();
   const profileRowRef = useRef<HTMLDivElement>(null);
-  // Clients has no permission gate (session-only) — visibility instead depends on
+  // Clients has no permission gate (session-only); visibility instead depends on
   // whether the module is enabled, only known after this async check resolves.
   const clientsEnabled = useClientsEnabled();
 

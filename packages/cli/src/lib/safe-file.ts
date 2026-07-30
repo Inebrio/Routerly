@@ -60,7 +60,7 @@ export async function backupFile(
 
   // Read the source file. Only a genuine "missing file" (ENOENT) means
   // existedBefore=false; any other error (EACCES, EIO, ...) must fail loudly
-  // rather than be mislabeled as "didn't exist" — otherwise a later rollback
+  // rather than be mislabeled as "didn't exist", otherwise a later rollback
   // would unlink a real file that was never actually backed up.
   let existedBefore = false;
   let checksum = '';
