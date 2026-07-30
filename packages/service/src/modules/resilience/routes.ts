@@ -30,7 +30,10 @@ function requirePerm(req: FastifyRequest, perm: Permission, reply: FastifyReply)
 const resetBodySchema = z.object({
   level: z.enum(['provider', 'connection', 'model']).optional(),
   id: z.string().optional(),
-});
+}).refine(
+  (body) => (body.level === undefined) === (body.id === undefined),
+  { message: 'level and id must both be provided together, or both omitted' },
+);
 
 /** GET /api/resilience — contributed to API_ROUTES by resilienceModule.register() (index.ts). */
 export async function getResilienceHandler(request: unknown, reply: unknown): Promise<unknown> {

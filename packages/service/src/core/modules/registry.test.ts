@@ -25,6 +25,7 @@ describe('registry', () => {
     expect(isAlwaysOn('reverse-proxy')).toBe(true)
     expect(isAlwaysOn('guardrails')).toBe(false)
     expect(ALWAYS_ON_MODULE_IDS).toContain('routing')
+    expect(ALWAYS_ON_MODULE_IDS).toContain('api')
   })
 
   it('enables modules by default when no record exists', () => {

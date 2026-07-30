@@ -1,4 +1,4 @@
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest, RouteHandlerMethod } from 'fastify';
 import { createHash, createHmac, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
@@ -246,7 +246,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // `fastify.kernel` (e.g. connections.test.ts) must keep working with zero contributed routes.
   const contributedRoutes = fastify.kernel?.container.tryResolve(API_ROUTES);
   for (const route of contributedRoutes?.ordered() ?? []) {
-    fastify.route({ method: route.method, url: route.url, handler: route.handler as never });
+    // RouteContribution['handler'] is typed with `unknown` params/return for module-boundary
+    // decoupling (contributors don't import fastify types); Fastify's real handler signature is
+    // structurally narrower, so a cast is required here.
+    fastify.route({ method: route.method, url: route.url, handler: route.handler as RouteHandlerMethod });
   }
 
   // Initialize catalog fetcher with configured repos on startup

@@ -21,7 +21,8 @@ import type { Kernel } from './core/index.js';
 
 // The modular kernel (0.4.0) is decorated onto the Fastify instance so later
 // refactory plans can reach its container/events. Routes still call
-// config/loader.ts directly; nothing depends on this decoration yet.
+// config/loader.ts directly, but apiRoutes (modules/api/api.ts) reads
+// fastify.kernel to mount route contributions from API_ROUTES.
 declare module 'fastify' {
   interface FastifyInstance {
     kernel: Kernel;
