@@ -25,8 +25,8 @@ const OPTIMIZER_LABELS: Record<OptimizerId, string> = {
 const OPTIMIZER_DESCRIPTIONS: Record<OptimizerId, string> = {
   'session-dedup': 'Lossless. Drops exact-duplicate repeated messages within a conversation, keeping the first and last of any run.',
   ccr: 'Recoverable. Keeps the system prefix and the most recent turns; older turns are condensed into a single compact block. Threshold sets how many recent turns to keep.',
-  rtk: 'Lossless. Collapses redundant whitespace and strips repeated boilerplate blocks from message text.',
-  headroom: 'Recoverable. Drops the oldest turns until the request fits the model context window with the reserved headroom. Threshold sets the reserved token budget.',
+  rtk: 'Recoverable. Collapses redundant whitespace and strips repeated boilerplate blocks from message text.',
+  headroom: 'Lossless. Drops the oldest turns until the request fits the model context window with the reserved headroom. Threshold sets the reserved token budget.',
   relevance: 'Lossy. Drops older turns whose lexical overlap with the newest turn falls below the threshold. Requires a threshold to activate.',
   caveman: 'Lossy. Strips filler/function words from message text while preserving code, URLs and numbers.',
   'llmlingua-2': 'Lossy. ONNX-backed prompt compression. Off unless the optional runtime and model are installed.',
