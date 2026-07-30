@@ -62,16 +62,30 @@ describe('buildSnippet', () => {
     expect(snippet).not.toContain('ANTHROPIC_API_KEY');
   });
 
-  it('for openai client embeds base URL verbatim (no /v1 auto-append) and token', () => {
+  it('for opencode produces the real config shape: provider.routerly.options.{baseURL,apiKey}, /v1 appended, and no fabricated top-level shape', () => {
     const openCodeMeta = CLIENT_REGISTRY.find((c) => c.id === 'opencode')!;
+    expect(openCodeMeta.configKind).toBe('json');
+    expect(openCodeMeta.configPathHint).toBe('~/.config/opencode/opencode.json');
+
     const baseUrl = 'https://routerly.example.com';
     const token = 'sk-test-token-456';
 
     const snippet = buildSnippet(openCodeMeta, baseUrl, token);
-    expect(snippet).toContain(baseUrl);
-    expect(snippet).toContain(token);
-    // Verify /v1 is NOT auto-appended to the base URL in the snippet
-    expect(snippet).not.toContain(baseUrl + '/v1');
+    const parsed = JSON.parse(snippet);
+
+    expect(parsed.$schema).toBe('https://opencode.ai/config.json');
+    expect(parsed.provider.routerly.npm).toBe('@ai-sdk/openai-compatible');
+    expect(parsed.provider.routerly.name).toBe('Routerly');
+    expect(parsed.provider.routerly.options.baseURL).toBe(`${baseUrl}/v1`);
+    expect(parsed.provider.routerly.options.apiKey).toBe(token);
+    expect(parsed.provider.routerly.models).toHaveProperty('auto');
+
+    // Regression guards: the old fabricated generic {opencode:{baseUrl,apiKey}}
+    // shape (and any env-var-reference apiKey) must never come back.
+    expect(parsed).not.toHaveProperty('opencode');
+    expect(parsed.provider.routerly).not.toHaveProperty('baseUrl');
+    expect(parsed.provider).not.toHaveProperty('opencode');
+    expect(snippet).not.toContain('{env:');
   });
 
   it('for codex produces the real config.toml shape: model_provider selector, [model_providers.routerly] table, /v1 base_url, and literal bearer token', () => {

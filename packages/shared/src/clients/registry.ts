@@ -33,11 +33,11 @@ export const CLIENT_REGISTRY: readonly ClientMeta[] = [
   {
     id: 'opencode',
     label: 'OpenCode',
-    supportState: 'documented',
+    supportState: 'auto-configurable',
     wireFormat: 'openai',
     docSlug: 'integrations/clients/opencode',
-    configKind: 'yaml',
-    configPathHint: '~/.opencode/config.yaml',
+    configKind: 'json',
+    configPathHint: '~/.config/opencode/opencode.json',
   },
   {
     id: 'continue',
@@ -104,11 +104,30 @@ function buildJsonSnippet(meta: ClientMeta, baseUrl: string, token: string): str
       2
     );
   }
+  // OpenCode is currently the only fully-implemented openai/json registry
+  // entry. Shape mirrors packages/cli/src/clients/opencode.ts (the actual
+  // file writer): OpenCode's custom-provider config format —
+  // `provider.routerly.{npm,name,options:{baseURL,apiKey},models}` — with
+  // baseURL = Routerly's `<serverUrl>/v1` endpoint and the literal token.
+  // The provider id is `routerly`, not `meta.id`, to avoid conflicting with
+  // OpenCode's built-in providers (same choice codex.ts makes for its
+  // `[model_providers.routerly]` table).
+  const resolvedBaseUrl = `${baseUrl.replace(/\/$/, '')}/v1`;
   return JSON.stringify(
     {
-      [meta.id]: {
-        baseUrl,
-        apiKey: token,
+      $schema: 'https://opencode.ai/config.json',
+      provider: {
+        routerly: {
+          npm: '@ai-sdk/openai-compatible',
+          name: 'Routerly',
+          options: {
+            baseURL: resolvedBaseUrl,
+            apiKey: token,
+          },
+          models: {
+            auto: { name: 'Routerly (auto-routed)' },
+          },
+        },
       },
     },
     null,
