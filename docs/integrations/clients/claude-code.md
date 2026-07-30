@@ -9,7 +9,7 @@ sidebar_label: Claude Code
 official CLI coding agent. It speaks the Anthropic Messages wire format and
 reads its provider settings from a JSON config file.
 
-**Support state:** `auto-configurable` — `routerly clients configure` writes
+**Support state:** `auto-configurable`. `routerly clients configure` writes
 this file for you.
 **Config file:** `~/.claude/settings.json` (JSON)
 **Wire format:** Anthropic
@@ -26,7 +26,7 @@ routerly clients configure claude-code --project <your-project>
 
 This mints a project token (or reuses one you pass with `--token`), backs
 up your existing `~/.claude/settings.json`, and merges in the `env` block
-below — every other key already in the file is left untouched.
+below, every other key already in the file is left untouched.
 
 ## Manual configuration
 
@@ -41,7 +41,7 @@ Open `~/.claude/settings.json` and merge in:
 }
 ```
 
-`ANTHROPIC_BASE_URL` has no `/v1` suffix — Claude Code talks to the root of
+`ANTHROPIC_BASE_URL` has no `/v1` suffix. Claude Code talks to the root of
 the Anthropic-compatible endpoint. Replace `http://localhost:3000` with your
 Routerly instance's URL and `sk-rt-YOUR_PROJECT_TOKEN` with a project token
 (create one on the [Projects](../../dashboard/projects.md) page, or let

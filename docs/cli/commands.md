@@ -1407,12 +1407,12 @@ Exit code: `0` on success, `1` on error (all subcommands).
 Configure local AI coding clients (Claude Code, Codex, OpenCode, Continue,
 Cline) to use Routerly. Unlike the rest of the CLI, these commands write
 files on **this machine** (your workstation running the CLI), not on the
-Routerly server — they edit the config file of a client tool installed
+Routerly server. They edit the config file of a client tool installed
 locally. See [Integrations: Auto-configure](../integrations/overview.md#auto-configure)
 for one manual reference page per client.
 
 These commands require a logged-in session (`routerly auth login`) but no
-specific permission — any authenticated account can run them, the same as
+specific permission: any authenticated account can run them, the same as
 `routerly status`.
 
 ### `routerly clients list`
@@ -1424,9 +1424,9 @@ routerly clients list [--json]
 List every supported client with its support level.
 
 **Table columns:**
-- **ID** — client identifier, used by `inspect`/`configure`/`launch`
-- **Label** — display name
-- **Support** — `auto-configurable` (green, `configure` writes the file for
+- **ID**: client identifier, used by `inspect`/`configure`/`launch`
+- **Label**: display name
+- **Support**: `auto-configurable` (green, `configure` writes the file for
   you), `launchable` (green), `documented` (gray, manual-only, no file this
   CLI can safely write), `partial`/`stale` (yellow)
 
@@ -1494,14 +1494,14 @@ before/after plan, then applies it.
 | Option | Description |
 |--------|-------------|
 | `--project <id>` | Project name or ID to mint/use a token for (prompts with a picker if omitted) |
-| `--token <token>` | Use this token instead of minting a new one — skips the consent prompt |
+| `--token <token>` | Use this token instead of minting a new one, skips the consent prompt |
 | `--yes` | Skip the consent prompt without supplying `--token` (a new token is still minted) |
 | `--json` | Output `{ plan, applied, validated }` as JSON instead of the human-readable plan |
 
 **Mint vs. `--token`:** by default `configure` mints a brand-new project
 token via `POST /api/projects/:id/tokens` and asks for confirmation first
 (`Mint a new Routerly token for project "…" to configure …?`). Pass an
-existing token with `--token` to reuse it instead — no new token is created
+existing token with `--token` to reuse it instead. No new token is created
 and no prompt is shown. `--yes` skips the confirmation prompt but still
 mints a new token; use `--token` if you don't want a new token minted at all.
 
@@ -1539,13 +1539,13 @@ Plan for OpenCode (/Users/you/.config/opencode/opencode.json):
 
 **Backup guarantee:** before writing, `configure` always backs up the
 existing file (or records that it did not exist) under
-`~/.routerly/cli/client-backups/<backupId>/` — `manifest.json` (backup ID,
+`~/.routerly/cli/client-backups/<backupId>/`: `manifest.json` (backup ID,
 client ID, original path, SHA-256 checksum of the original content,
 whether the file existed before, mode `0o600`) plus the original file's
 bytes (mode `0o600`), in a directory (mode `0o700`), fsync'd to disk before
 the write proceeds. `ROUTERLY_HOME` defaults to `~/.routerly` (overridable
 via the `ROUTERLY_HOME` env var). Every successful `configure` prints its
-`Backup ID` — save it if you want to `undo` later.
+`Backup ID`. Save it if you want to `undo` later.
 
 **Cline** (`documented`, not auto-configurable) always errors instead of
 writing a file:
@@ -1609,7 +1609,7 @@ routerly clients undo bogus-id-1234
 ```
 Backup "bogus-id-1234" not found. Backup IDs are printed by `routerly clients configure`.
 ```
-Exit code `1`. An unknown backup ID is rejected before any file I/O — the
+Exit code `1`. An unknown backup ID is rejected before any file I/O: the
 backup manifest is looked up first.
 
 ### `routerly clients launch`
@@ -1627,7 +1627,7 @@ routerly clients launch cline
 ```
 Cline does not support launching from Routerly.
 ```
-Exit code `1` — Cline has no standalone CLI binary. Clients without a
+Exit code `1`. Cline has no standalone CLI binary. Clients without a
 `launch` step behave the same way; the error names the client.
 
 Exit code: `0` on success, `1` on error (all subcommands).

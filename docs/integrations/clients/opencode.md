@@ -9,7 +9,7 @@ sidebar_label: OpenCode
 agent. It speaks the OpenAI wire format and reads its provider settings from
 a JSON config file.
 
-**Support state:** `auto-configurable` — `routerly clients configure` writes
+**Support state:** `auto-configurable`. `routerly clients configure` writes
 this file for you.
 **Config file:** `~/.config/opencode/opencode.json` (JSON)
 **Wire format:** OpenAI
@@ -26,7 +26,7 @@ routerly clients configure opencode --project <your-project>
 
 This mints a project token (or reuses one you pass with `--token`), backs
 up your existing `~/.config/opencode/opencode.json`, and merges in a
-`provider.routerly` entry — any other provider already in the file is left
+`provider.routerly` entry. Any other provider already in the file is left
 untouched.
 
 ## Manual configuration
@@ -54,7 +54,7 @@ Open `~/.config/opencode/opencode.json` and merge in:
 
 `baseURL` includes the `/v1` suffix. The provider ID is `routerly` (not
 `opencode`) so it doesn't collide with OpenCode's built-in providers. The
-single model entry `routerly/ada` is the auto-routing sentinel — selecting
+single model entry `routerly/ada` is the auto-routing sentinel: selecting
 it in OpenCode lets Routerly pick the actual upstream model per request.
 Replace `http://localhost:3000/v1` with your Routerly instance's URL and
 `sk-rt-YOUR_PROJECT_TOKEN` with a project token (create one on the

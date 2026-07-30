@@ -7,7 +7,7 @@ sidebar_label: Cline
 
 :::tip
 Cline has no config file to auto-apply, but the `routerly clients` CLI can
-still detect it. See [Cline — auto-configure](./clients/cline) for why
+still detect it. See [Cline: auto-configure](./clients/cline) for why
 `routerly clients configure cline` errors out and points back here.
 :::
 
