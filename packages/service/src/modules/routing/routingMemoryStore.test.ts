@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { addRoutingDecision, getRoutingHistory } from './routingMemoryStore.js'
+import { addRoutingDecision, getRoutingHistory, nextCursor } from './routingMemoryStore.js'
 
 describe('routingMemoryStore', () => {
   it('returns empty array when no decisions exist', () => {
@@ -66,5 +66,39 @@ describe('routingMemoryStore', () => {
     expect(getRoutingHistory('proj-stale', 'conv-new', 5)).toHaveLength(1)
 
     vi.restoreAllMocks()
+  })
+
+  it('nextCursor returns 0, 1, 2, 0, 1... for successive calls with same key and modulo=3', () => {
+    const results = []
+    for (let i = 0; i < 5; i++) {
+      results.push(nextCursor('rr-key-1', 3))
+    }
+    expect(results).toEqual([0, 1, 2, 0, 1])
+  })
+
+  it('nextCursor maintains independent counters for different keys', () => {
+    const keyA1 = nextCursor('keyA', 2)
+    const keyB1 = nextCursor('keyB', 2)
+    const keyA2 = nextCursor('keyA', 2)
+    const keyB2 = nextCursor('keyB', 2)
+    expect(keyA1).toBe(0)
+    expect(keyB1).toBe(0)
+    expect(keyA2).toBe(1)
+    expect(keyB2).toBe(1)
+  })
+
+  it('nextCursor with modulo <= 0 always returns 0 and does not advance counter', () => {
+    expect(nextCursor('zero-mod-key', 0)).toBe(0)
+    expect(nextCursor('zero-mod-key', 0)).toBe(0)
+    expect(nextCursor('neg-mod-key', -5)).toBe(0)
+    expect(nextCursor('neg-mod-key', -5)).toBe(0)
+  })
+
+  it('nextCursor wraps correctly for various modulo values', () => {
+    const results = []
+    for (let i = 0; i < 6; i++) {
+      results.push(nextCursor('wrap-test', 4))
+    }
+    expect(results).toEqual([0, 1, 2, 3, 0, 1])
   })
 })
