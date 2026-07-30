@@ -137,4 +137,24 @@ describe('POST /api/resilience/reset', () => {
     await app.close()
     expect(res.statusCode).toBe(400)
   })
+
+  it('rejects a partial body with only level (no id)', async () => {
+    const { app } = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/resilience/reset', headers: auth('resilience:manage'),
+      payload: { level: 'provider' },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('rejects a partial body with only id (no level)', async () => {
+    const { app } = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/resilience/reset', headers: auth('resilience:manage'),
+      payload: { id: 'openai' },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
 })
