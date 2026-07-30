@@ -7,7 +7,7 @@ sidebar_label: Continue.dev
 
 :::tip
 Want Routerly to write `~/.continue/config.yaml` for you instead of copying
-the snippet below by hand? See [Continue —
+the snippet below by hand? See [Continue:
 auto-configure](./clients/continue) for the `routerly clients configure
 continue` CLI flow.
 :::

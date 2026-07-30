@@ -45,11 +45,11 @@ copy-paste view of the same snippets.
 
 | Client | Description |
 |--------|-------------|
-| [Claude Code](./clients/claude-code) | Anthropic's official CLI coding agent — auto-configurable |
-| [Codex](./clients/codex) | OpenAI's CLI coding agent — auto-configurable |
-| [OpenCode](./clients/opencode) | Open-source terminal coding agent — auto-configurable |
-| [Continue.dev](./clients/continue) | `routerly clients configure continue` — auto-configurable |
-| [Cline](./clients/cline) | VS Code Settings UI, manual only — no config file to auto-apply |
+| [Claude Code](./clients/claude-code) | Anthropic's official CLI coding agent, auto-configurable |
+| [Codex](./clients/codex) | OpenAI's CLI coding agent, auto-configurable |
+| [OpenCode](./clients/opencode) | Open-source terminal coding agent, auto-configurable |
+| [Continue.dev](./clients/continue) | `routerly clients configure continue`, auto-configurable |
+| [Cline](./clients/cline) | VS Code Settings UI, manual only, no config file to auto-apply |
 
 ---
 

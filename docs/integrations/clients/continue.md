@@ -3,7 +3,7 @@ title: Continue (auto-configure)
 sidebar_label: Continue (auto-configure)
 ---
 
-# Continue — auto-configure
+# Continue: auto-configure
 
 This page documents the `routerly clients configure continue` auto-apply
 flow. For a general, manually-written walkthrough of pointing Continue at
@@ -14,7 +14,7 @@ Routerly (including an Anthropic-mode example), see
 VS Code and JetBrains. It speaks the OpenAI wire format and reads its
 provider settings from a YAML config file.
 
-**Support state:** `auto-configurable` — `routerly clients configure` writes
+**Support state:** `auto-configurable`. `routerly clients configure` writes
 this file for you.
 **Config file:** `~/.continue/config.yaml` (YAML)
 **Wire format:** OpenAI
@@ -31,7 +31,7 @@ routerly clients configure continue --project <your-project>
 
 This mints a project token (or reuses one you pass with `--token`), backs
 up your existing `~/.continue/config.yaml`, and appends a model entry to the
-`models:` array — any other entry already in the file is left untouched.
+`models:` array. Any other entry already in the file is left untouched.
 
 ## Manual configuration
 
@@ -51,7 +51,7 @@ models:
 ```
 
 `apiBase` includes the `/v1` suffix. `model: routerly/ada` is the
-auto-routing sentinel — selecting it in Continue lets Routerly pick the
+auto-routing sentinel: selecting it in Continue lets Routerly pick the
 actual upstream model per request. Replace `http://localhost:3000/v1` with
 your Routerly instance's URL and `sk-rt-YOUR_PROJECT_TOKEN` with a project
 token (create one on the [Projects](../../dashboard/projects.md) page, or

@@ -9,7 +9,7 @@ sidebar_label: Codex
 It speaks the OpenAI wire format and reads its provider settings from a TOML
 config file.
 
-**Support state:** `auto-configurable` — `routerly clients configure` writes
+**Support state:** `auto-configurable`. `routerly clients configure` writes
 this file for you.
 **Config file:** `~/.codex/config.toml` (TOML)
 **Wire format:** OpenAI
@@ -25,7 +25,7 @@ routerly clients configure codex --project <your-project>
 ```
 
 This mints a project token (or reuses one you pass with `--token`), backs
-up your existing `~/.codex/config.toml`, and adds the block below — any
+up your existing `~/.codex/config.toml`, and adds the block below. Any
 other provider or setting already in the file is left untouched.
 
 ## Manual configuration

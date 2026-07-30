@@ -3,7 +3,7 @@ title: Cline (auto-configure)
 sidebar_label: Cline (auto-configure)
 ---
 
-# Cline — auto-configure
+# Cline: auto-configure
 
 This page documents Cline's support state under the `routerly clients`
 CLI. For a general, manually-written walkthrough of pointing Cline at
@@ -12,7 +12,7 @@ Routerly, see [Integrations: Cline](../cline.md).
 [Cline](https://github.com/cline/cline) is an autonomous coding agent that
 runs inside VS Code. It speaks the OpenAI (or Anthropic) wire format.
 
-**Support state:** `documented` — manual configuration only. Cline has **no
+**Support state:** `documented`. Manual configuration only. Cline has **no
 config file**; it stores its provider settings inside VS Code's own
 extension state, reachable only through the extension's Settings UI. There
 is nothing on disk this CLI can safely back up, edit, and restore, so Cline
@@ -34,7 +34,7 @@ routerly clients configure cline --project <your-project>
 Error: Cline is not auto-configurable: it is configured through the extension's settings UI (gear icon panel: Base URL / API Key / Model ID), not a standalone file this CLI can safely edit. See docs: integrations/clients/cline
 ```
 
-`routerly clients inspect cline` still works — it best-effort detects
+`routerly clients inspect cline` still works: it best-effort detects
 whether the Cline VS Code extension is installed, but cannot report whether
 it is currently pointed at Routerly (there's no file to read).
 
