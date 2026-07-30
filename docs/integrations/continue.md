@@ -17,36 +17,34 @@ Install the [Continue extension](https://marketplace.visualstudio.com/items?item
 
 ## Configure
 
-Open `~/.continue/config.json` and add Routerly as a model provider:
+Open `~/.continue/config.yaml` and add Routerly as a model provider (Continue's older `config.json` format is deprecated):
 
-```json
-{
-  "models": [
-    {
-      "title": "Routerly",
-      "provider": "openai",
-      "model": "gpt-5-mini",
-      "apiBase": "http://localhost:3000/v1",
-      "apiKey": "sk-rt-YOUR_PROJECT_TOKEN"
-    }
-  ]
-}
+```yaml
+name: Routerly
+version: 0.0.1
+schema: v1
+
+models:
+  - name: Routerly
+    provider: openai
+    model: gpt-5-mini
+    apiBase: http://localhost:3000/v1
+    apiKey: sk-rt-YOUR_PROJECT_TOKEN
 ```
 
 To use the Anthropic Messages API instead:
 
-```json
-{
-  "models": [
-    {
-      "title": "Routerly (Anthropic)",
-      "provider": "anthropic",
-      "model": "claude-haiku-4-5",
-      "apiBase": "http://localhost:3000",
-      "apiKey": "sk-rt-YOUR_PROJECT_TOKEN"
-    }
-  ]
-}
+```yaml
+name: Routerly
+version: 0.0.1
+schema: v1
+
+models:
+  - name: Routerly (Anthropic)
+    provider: anthropic
+    model: claude-haiku-4-5
+    apiBase: http://localhost:3000
+    apiKey: sk-rt-YOUR_PROJECT_TOKEN
 ```
 
 Save the file — Continue reloads configuration automatically.
