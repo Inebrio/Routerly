@@ -434,6 +434,181 @@ DELETE /api/instances/:id
 
 ---
 
+## Routing Profiles
+
+A routing profile bundles a policy list, a selector, and a fallback strategy
+into one reusable, named unit. Profiles ship as 5 read-only built-ins
+(`balanced`, `cheap`, `fast`, `coding`, `offline`) and can be cloned into
+user-owned, editable copies. A project either keeps its own inline policies or
+is assigned a shared profile via [Assign Project Profile](#assign-project-profile).
+See [Concepts: Routing: Routing Profiles](../concepts/routing.md#routing-profiles)
+for the selector and fallback strategy reference.
+
+### List Profiles
+
+```
+GET /api/routing/profiles
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `profiles:read`)
+
+Returns all 5 built-ins followed by any user-cloned profiles.
+
+**Response `200`:**
+```json
+[
+  {
+    "id": "balanced",
+    "version": 1,
+    "label": "Balanced",
+    "policies": [
+      { "type": "health", "enabled": true },
+      { "type": "performance", "enabled": true },
+      { "type": "cheapest", "enabled": true },
+      { "type": "capability", "enabled": true }
+    ],
+    "selector": "argmax",
+    "fallbackStrategy": "next-best",
+    "builtin": true
+  }
+]
+```
+
+**Errors**: `403` insufficient permissions
+
+### Clone Profile
+
+```
+POST /api/routing/profiles/clone
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `profiles:manage`)
+
+```json
+{ "baseId": "balanced", "label": "My Balanced Profile" }
+```
+
+**Fields:**
+- `baseId`: id of the profile to clone (built-in or user-owned) (required)
+- `label`: display name for the new profile (required, non-empty)
+
+**Response `200`:** the created profile (`builtin: false`, `version: 1`,
+`baseId` set to the source profile's id).
+
+**Errors**: `400` invalid body or unknown `baseId` · `403` insufficient permissions
+
+### Update Profile
+
+```
+PATCH /api/routing/profiles/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `profiles:manage`)
+
+**Request body** (all fields optional, at least one required):
+```json
+{
+  "label": "Renamed Profile",
+  "policies": [{ "type": "cheapest", "enabled": true }],
+  "selector": "cheapest",
+  "fallbackStrategy": "abort"
+}
+```
+
+Only user-cloned profiles can be updated. Every successful update bumps the
+profile's `version` field by 1.
+
+**Response `200`:** the updated profile.
+
+**Errors**: `400` invalid body · `404` profile not found · `409`
+`immutable_builtin_profile` (target id matches a built-in) · `403`
+insufficient permissions
+
+### Delete Profile
+
+```
+DELETE /api/routing/profiles/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `profiles:manage`)
+
+**Response**: `204 No Content`
+
+**Errors**: `404` profile not found · `409` `immutable_builtin_profile`
+(target id matches a built-in) · `409` `profile_in_use` (a project's
+`profileId` still references it, unassign it first) · `403` insufficient
+permissions
+
+### Assign Project Profile
+
+```
+PUT /api/projects/:id/profile
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `project:write`)
+
+```json
+{ "profileId": "balanced" }
+```
+
+**Fields:**
+- `profileId`: id of an existing profile (built-in or user-owned), or `null`
+  to clear the assignment and fall back to the project's own inline policies
+  (required, `string | null`)
+
+**Response `200`:** the updated project (same shape as
+[Get Project](#get-project), `tokens` present with `token` values stripped).
+
+**Errors**: `400` invalid body · `404` project or `profile_not_found` ·
+`403` insufficient permissions
+
+### Simulate Routing
+
+```
+POST /api/routing/simulate
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `profiles:read`)
+
+Dry-run preview of which model a request would pick. **No upstream call is
+made and no usage record is written.**
+
+```json
+{
+  "projectId": "proj-uuid",
+  "profileId": "balanced",
+  "request": { "model": "auto", "messages": [{ "role": "user", "content": "Hello" }] }
+}
+```
+
+**Fields:**
+- `projectId`: project to simulate against (required)
+- `request`: the request body to score, same shape as an [LLM Proxy](./llm-proxy.md) request (required)
+- `profileId`: override the project's resolved profile for this simulation only (optional; omit to use the project's assigned profile, or its own inline policies if unassigned)
+- `policies`, `selector`, `fallbackStrategy`: further override individual fields of the resolved profile for this simulation only (optional)
+
+**Response `200`:**
+```json
+{
+  "picked": "openai/gpt-5-mini",
+  "ranked": [
+    { "model": "openai/gpt-5-mini", "score": 0.91, "cost": 0.0002 },
+    { "model": "anthropic/claude-haiku-4-5", "score": 0.78, "cost": 0.0004 }
+  ],
+  "trace": []
+}
+```
+
+**Response fields:**
+- `picked`: the model the configured selector would choose (`null` if no candidates)
+- `ranked`: every scored candidate, ordered by the selector's output
+- `trace`: routing trace entries, same shape as [Get Routing Trace](#get-routing-trace)
+
+**Errors**: `400` invalid body or a scoring error (e.g. bad `request`) ·
+`404` project not found · `403` insufficient permissions
+
+---
+
 ## Projects
 
 ### List Projects
