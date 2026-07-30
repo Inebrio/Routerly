@@ -202,6 +202,22 @@ export interface RoutingPolicy {
   config?: any;
 }
 
+export type SelectorType = 'argmax' | 'weighted-random' | 'round-robin' | 'cheapest' | 'lowest-latency';
+
+export type FallbackStrategyType = 'next-best' | 'retry-after-cooldown' | 'abort';
+
+export interface RoutingProfile {
+  id: string;
+  version: number;
+  label: string;
+  policies: RoutingPolicy[];
+  selector: SelectorType;
+  fallbackStrategy: FallbackStrategyType;
+  builtin: boolean;
+  /** For user overlays: the built-in preset id this profile was cloned from. */
+  baseId?: string;
+}
+
 /** One intent definition: example utterances and the models to consider for this intent. */
 export interface IntentDefinition {
   /** Representative utterances used to compute the intent embedding (centroid). */
@@ -451,6 +467,8 @@ export interface ProjectConfig {
   notifications?: { channels: string[] };
   /** Named saved prompts for the playground (#99) */
   playgroundPresets?: PlaygroundPreset[];
+  /** Active routing profile ID for this project */
+  profileId?: string;
 }
 
 export interface UserConfig {
@@ -501,7 +519,9 @@ export type Permission =
   | 'connections:read'
   | 'connections:manage'
   | 'resilience:read'
-  | 'resilience:manage';
+  | 'resilience:manage'
+  | 'profiles:read'
+  | 'profiles:manage';
 
 // ─── Integration types ────────────────────────────────────────────────────────
 

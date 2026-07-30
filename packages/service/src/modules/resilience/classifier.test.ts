@@ -46,6 +46,12 @@ describe('classifyUpstreamError', () => {
     expect(fault.retryAfterMs).toBeLessThanOrEqual(20000);
   });
 
+  it('ignores a malformed retry-after header (neither seconds nor a valid HTTP-date)', () => {
+    const fault = classifyUpstreamError(null, { status: 429, headers: { 'retry-after': 'not-a-valid-value' } });
+    expect(fault).toMatchObject({ category: 'rate-limit' });
+    expect(fault.retryAfterMs).toBeUndefined();
+  });
+
   it('classifies Anthropic 429 rate_limit_error as rate-limit', () => {
     expect(
       classifyUpstreamError(null, {
@@ -83,6 +89,25 @@ describe('classifyUpstreamError', () => {
     expect(
       classifyUpstreamError(null, { status: 402, body: { type: 'error', error: { type: 'billing_error', message: 'payment required' } } }),
     ).toEqual({ category: 'quota' });
+  });
+
+  it('classifies Anthropic 402 billing_error with retry-after into retryAfterMs + resetAt', () => {
+    const fault = classifyUpstreamError(null, {
+      status: 402,
+      headers: { 'retry-after': '60' },
+      body: { type: 'error', error: { type: 'billing_error', message: 'payment required' } },
+    });
+    expect(fault.category).toBe('quota');
+    expect(fault.retryAfterMs).toBe(60000);
+    expect(fault.resetAt).toBeGreaterThan(Date.now());
+  });
+
+  it('ignores a malformed retry-after-ms header and falls back to retry-after', () => {
+    const fault = classifyUpstreamError(null, {
+      status: 429,
+      headers: { 'retry-after-ms': 'not-a-number', 'retry-after': '30' },
+    });
+    expect(fault).toMatchObject({ category: 'rate-limit', retryAfterMs: 30000 });
   });
 
   // ── timeout ──────────────────────────────────────────────────────────────
@@ -133,6 +158,19 @@ describe('classifyUpstreamError', () => {
 
   it('falls back to rate-limit via message regex when no response is present', () => {
     expect(classifyUpstreamError(new Error('429 Too Many Requests'))).toEqual({ category: 'rate-limit' });
+  });
+
+  it('falls back to server for a non-Error thrown value (e.g. a plain string)', () => {
+    expect(classifyUpstreamError('a raw string rejection, not an Error instance')).toEqual({ category: 'server' });
+  });
+
+  it('falls back to server for a thrown value that is neither an Error nor a string (e.g. null)', () => {
+    expect(classifyUpstreamError(null)).toEqual({ category: 'server' });
+  });
+
+  it('reads .code off an Error instance for the timeout regex (Node system-error shape)', () => {
+    const err = Object.assign(new Error('connect failed'), { code: 'ETIMEDOUT' });
+    expect(classifyUpstreamError(err)).toEqual({ category: 'timeout' });
   });
 
   // ── invalid-request ──────────────────────────────────────────────────────
