@@ -427,6 +427,8 @@ export interface ProjectToken {
   models?: TokenModelRef[];
   /** Optional labels/tags to identify this token's usage */
   labels?: string[];
+  /** Access scopes granted to this token (e.g. 'mcp', 'mcp:write' for the MCP surface) */
+  scopes?: string[];
   /** Arbitrary key-value metadata attached to this token, forwarded to usage records */
   tags?: Record<string, string>;
 }
@@ -527,7 +529,9 @@ export type Permission =
   | 'profiles:read'
   | 'profiles:manage'
   | 'optimizers:read'
-  | 'optimizers:manage';
+  | 'optimizers:manage'
+  | 'mcp:read'
+  | 'mcp:manage';
 
 // ─── Integration types ────────────────────────────────────────────────────────
 

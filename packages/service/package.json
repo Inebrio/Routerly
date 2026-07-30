@@ -17,6 +17,7 @@
     "@anthropic-ai/sdk": "^0.39.0",
     "@fastify/cors": "^11.2.0",
     "@fastify/static": "^9.0.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@routerly/shared": "*",
     "@types/bcrypt": "^6.0.0",
     "@types/semver": "^7.7.1",

@@ -121,6 +121,8 @@ export type {
 
 export type { RoutingCandidate, RoutingResponse } from './types/routing.js';
 
+export type { McpTool, McpToolResult, McpAuthContext } from './types/mcp.js';
+
 export type {
   OptimizerClass,
   OptimizerId,
