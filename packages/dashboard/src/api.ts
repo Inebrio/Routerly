@@ -354,6 +354,8 @@ export interface Project {
   id: string; name: string; routingModelId?: string;
   autoRouting?: boolean;
   fallbackRoutingModelIds?: string[];
+  /** Assigned routing profile id, or absent/empty for this project's own inline policies. */
+  profileId?: string;
   policies?: RoutingPolicy[];
   models: { modelId: string; prompt?: string }[];
   tokens?: ProjectToken[];
@@ -424,6 +426,7 @@ export const ALL_PERMISSIONS = [
   'modules:read', 'modules:manage',
   'connections:read', 'connections:manage',
   'resilience:read', 'resilience:manage',
+  'profiles:read', 'profiles:manage',
 ] as const;
 export type Permission = typeof ALL_PERMISSIONS[number];
 
@@ -902,4 +905,29 @@ export type { ResilienceSnapshot, ResilienceEntry, ResilienceLevel, ResilienceSt
 export const getResilience = () => request<ResilienceSnapshot>('/resilience');
 export const resetResilience = (body?: { level: ResilienceLevel; id: string }) =>
   request<{ ok: true }>('/resilience/reset', { method: 'POST', body: JSON.stringify(body ?? {}) });
+
+// ── Routing Profiles ──────────────────────────────────────────────────────
+import type { SelectorType, FallbackStrategyType } from '@routerly/shared';
+export type { SelectorType, FallbackStrategyType } from '@routerly/shared';
+
+export interface RoutingProfile {
+  id: string; version: number; label: string; policies: RoutingPolicy[];
+  selector: SelectorType; fallbackStrategy: FallbackStrategyType; builtin: boolean; baseId?: string;
+}
+
+export const getProfiles = () => request<RoutingProfile[]>('/routing/profiles');
+export const cloneProfile = (baseId: string, label: string) =>
+  request<RoutingProfile>('/routing/profiles/clone', { method: 'POST', body: JSON.stringify({ baseId, label }) });
+export const updateProfile = (id: string, data: Partial<{
+  label: string; policies: RoutingPolicy[]; selector: SelectorType; fallbackStrategy: FallbackStrategyType;
+}>) => request<RoutingProfile>(`/routing/profiles/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
+export const deleteProfile = (id: string) => request<void>(`/routing/profiles/${encodeURIComponent(id)}`, { method: 'DELETE' });
+export const assignProjectProfile = (projectId: string, profileId: string | null) =>
+  request<Project>(`/projects/${encodeURIComponent(projectId)}/profile`, { method: 'PUT', body: JSON.stringify({ profileId }) });
+export const simulateRouting = (data: {
+  profileId?: string; policies?: RoutingPolicy[]; selector?: SelectorType; fallbackStrategy?: FallbackStrategyType;
+  request: unknown; projectId: string;
+}) => request<{ picked: string; ranked: { model: string; score: number; cost?: number }[]; trace: unknown[] }>(
+  '/routing/simulate', { method: 'POST', body: JSON.stringify(data) },
+);
 

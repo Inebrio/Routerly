@@ -7,6 +7,8 @@ import { ProjectRoutingTab } from './ProjectRoutingTab';
 vi.mock('../../api', () => ({
   getModels: vi.fn(),
   updateProject: vi.fn(),
+  getProfiles: vi.fn(),
+  assignProjectProfile: vi.fn(),
 }));
 
 // ponytail: useBlocker requires a data router; mock the hook so MemoryRouter works
@@ -47,9 +49,11 @@ vi.mock('../../components/SearchableSelect', () => ({
   ),
 }));
 
-import { getModels, updateProject } from '../../api';
+import { getModels, updateProject, getProfiles, assignProjectProfile } from '../../api';
 const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
 const mockUpdateProject = vi.mocked(updateProject as (...args: unknown[]) => Promise<unknown>);
+const mockGetProfiles = vi.mocked(getProfiles as () => Promise<unknown>);
+const mockAssignProfile = vi.mocked(assignProjectProfile as (...args: unknown[]) => Promise<unknown>);
 
 function makeModel(overrides: Record<string, unknown> = {}) {
   return {
@@ -138,9 +142,16 @@ function renderTab(project: Record<string, unknown> = mockProject) {
   );
 }
 
+const sampleProfiles = [
+  { id: 'builtin-balanced', version: 1, label: 'Balanced', policies: [], selector: 'argmax', fallbackStrategy: 'next-best', builtin: true },
+  { id: 'user-custom', version: 2, label: 'My Profile', policies: [], selector: 'cheapest', fallbackStrategy: 'abort', builtin: false },
+];
+
 beforeEach(() => {
   mockGetModels.mockResolvedValue([chatModel, chatModel2, embeddingModel]);
   mockUpdateProject.mockResolvedValue({ ...mockProject });
+  mockGetProfiles.mockResolvedValue(sampleProfiles);
+  mockAssignProfile.mockResolvedValue({ ...mockProject, profileId: 'builtin-balanced' });
 });
 
 afterEach(() => vi.clearAllMocks());
@@ -2284,5 +2295,74 @@ describe('ProjectRoutingTab — singular hidden example count', () => {
     await userEvent.click(header);
     // With PAGE=5 and 6 examples, hidden=1 → "1 more example" (no 's')
     await waitFor(() => screen.getByText('+ 1 more example'));
+  });
+});
+
+// ── Routing Profile assignment control ────────────────────────────────────────
+
+function getProfileSelect() {
+  return screen.getByLabelText('Routing Profile') as HTMLSelectElement;
+}
+
+describe('ProjectRoutingTab — routing profile assignment', () => {
+  it('renders the profile select with Custom + built-in + user options', async () => {
+    renderTab();
+    const sel = await waitFor(getProfileSelect);
+    const opts = Array.from(sel.options).map(o => o.textContent);
+    expect(opts).toContain("Custom (this project's own policies)");
+    expect(opts).toContain('Balanced (built-in)');
+    expect(opts).toContain('My Profile');
+  });
+
+  it('selecting a profile calls assignProjectProfile with its id', async () => {
+    renderTab();
+    const sel = await waitFor(getProfileSelect);
+    await userEvent.selectOptions(sel, 'builtin-balanced');
+    await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', 'builtin-balanced'));
+  });
+
+  it('selecting Custom calls assignProjectProfile with null', async () => {
+    renderTab({ ...mockProject, profileId: 'builtin-balanced' });
+    const sel = await waitFor(getProfileSelect);
+    await userEvent.selectOptions(sel, '');
+    await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', null));
+  });
+
+  it('shows the disabled-editor note and dims the policy editor when a profile is assigned', async () => {
+    renderTab({ ...mockProject, profileId: 'builtin-balanced' });
+    await waitFor(() => screen.getByText(/uses the "Balanced" profile/));
+    const grid = document.querySelector('[style*="pointer-events: none"]') as HTMLElement;
+    expect(grid).not.toBeNull();
+  });
+
+  it('no note and editor enabled when no profile assigned', async () => {
+    renderTab();
+    await waitFor(getProfileSelect);
+    expect(screen.queryByText(/Switch to Custom above/)).toBeNull();
+    expect(document.querySelector('[style*="pointer-events: none"]')).toBeNull();
+  });
+
+  it('shows an error when assignment fails', async () => {
+    mockAssignProfile.mockRejectedValueOnce(new Error('assign failed'));
+    renderTab();
+    const sel = await waitFor(getProfileSelect);
+    await userEvent.selectOptions(sel, 'user-custom');
+    await waitFor(() => expect(screen.queryByText('assign failed')).not.toBeNull());
+  });
+
+  it('shows a fallback message when assignment fails with a non-Error', async () => {
+    mockAssignProfile.mockRejectedValueOnce('oops');
+    renderTab();
+    const sel = await waitFor(getProfileSelect);
+    await userEvent.selectOptions(sel, 'user-custom');
+    await waitFor(() => expect(screen.queryByText('Failed to assign routing profile')).not.toBeNull());
+  });
+
+  it('tolerates a failed profiles fetch', async () => {
+    mockGetProfiles.mockRejectedValueOnce(new Error('boom'));
+    renderTab();
+    const sel = await waitFor(getProfileSelect);
+    // Only the Custom option is present when profiles fail to load
+    expect(Array.from(sel.options).map(o => o.value)).toEqual(['']);
   });
 });

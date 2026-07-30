@@ -26,6 +26,8 @@ export type {
   TokenModelRef,
   RoutingPolicy,
   RoutingPolicyType,
+  SelectorType,
+  FallbackStrategyType,
   IntentDefinition,
   SemanticIntentConfig,
   IntentClassification,

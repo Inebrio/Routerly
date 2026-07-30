@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Trash2, GripVertical, X, Check } from 'lucide-react';
-import { updateProject, getModels, type Model, type Project, type RoutingPolicy } from '../../api';
+import { updateProject, getModels, getProfiles, assignProjectProfile, type Model, type Project, type RoutingPolicy, type RoutingProfile } from '../../api';
 import { useProject } from './ProjectLayout';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
@@ -55,6 +55,7 @@ export function ProjectRoutingTab() {
 
   const [policies, setPolicies] = useState<PolicyItem[]>([]);
   const [targetModels, setTargetModels] = useState<TargetModel[]>([]);
+  const [profiles, setProfiles] = useState<RoutingProfile[]>([]);
 
   // Advanced section open state per policy index
   const [advancedOpen, setAdvancedOpen] = useState<Set<number>>(new Set());
@@ -82,7 +83,20 @@ export function ProjectRoutingTab() {
     getModels()
       .then(m => setAvailableModels(m))
       .finally(() => setLoading(false));
+    getProfiles().then(setProfiles).catch(() => setProfiles([]));
   }, []);
+
+  async function onAssignProfile(profileId: string) {
+    /* v8 ignore next */
+    if (!project) return;
+    setErr('');
+    try {
+      const updated = await assignProjectProfile(project.id, profileId === '' ? null : profileId);
+      setProject(updated);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Failed to assign routing profile');
+    }
+  }
 
   useEffect(() => {
     /* v8 ignore next */
@@ -426,6 +440,12 @@ export function ProjectRoutingTab() {
     ? (semanticIntentPolicy!.config?.intents ?? {}) as Record<string, { examples: string[]; candidate_models: string[] }>
     : {};
 
+  const assignedProfileId = project?.profileId ?? '';
+  const assignedProfile = profiles.find(p => p.id === assignedProfileId);
+  /* v8 ignore next */
+  const profileLabel = assignedProfile?.label ?? assignedProfileId;
+  const profileAssigned = assignedProfileId !== '';
+
   if (loading) return (
     <div style={{ maxWidth: 768, animation: 'fade-in 0.2s ease' }} className="loading-center">
       <div className="spinner" />
@@ -437,7 +457,36 @@ export function ProjectRoutingTab() {
       <form onSubmit={handleSubmit} style={{ maxWidth: 800 }}>
         {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 24 }}>
+        <div className="form-group">
+          <label className="form-label" htmlFor="routing-profile-select">Routing Profile</label>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
+            Assign a shared routing profile, or keep this project's own inline policies.
+          </p>
+          <select
+            id="routing-profile-select"
+            className="form-input"
+            style={{ maxWidth: 420 }}
+            value={assignedProfileId}
+            onChange={e => void onAssignProfile(e.target.value)}
+          >
+            <option value="">Custom (this project's own policies)</option>
+            {profiles.filter(p => p.builtin).map(p => (
+              <option key={p.id} value={p.id}>{p.label} (built-in)</option>
+            ))}
+            {profiles.filter(p => !p.builtin).map(p => (
+              <option key={p.id} value={p.id}>{p.label}</option>
+            ))}
+          </select>
+          {profileAssigned && (
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.45 }}>
+              This project uses the "{profileLabel}" profile. Switch to Custom above to edit policies inline, or edit the profile on the Profiles page.
+            </p>
+          )}
+        </div>
+
+        <div style={{ margin: '24px 0', borderTop: '1px solid var(--border)' }} />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 24, ...(profileAssigned ? { pointerEvents: 'none', opacity: 0.5 } : {}) }}>
           <div className="form-group">
             <label className="form-label">Routing Policies</label>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
