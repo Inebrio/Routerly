@@ -42,16 +42,16 @@ export const CLIENT_REGISTRY: readonly ClientMeta[] = [
   {
     id: 'continue',
     label: 'Continue',
-    supportState: 'launchable',
+    supportState: 'auto-configurable',
     wireFormat: 'openai',
     docSlug: 'integrations/clients/continue',
-    configKind: 'json',
-    configPathHint: '~/.continue/config.json',
+    configKind: 'yaml',
+    configPathHint: '~/.continue/config.yaml',
   },
   {
     id: 'cline',
     label: 'Cline',
-    supportState: 'auto-configurable',
+    supportState: 'documented',
     wireFormat: 'openai',
     docSlug: 'integrations/clients/cline',
     configKind: 'json',
@@ -139,7 +139,26 @@ function buildYamlSnippet(meta: ClientMeta, baseUrl: string, token: string): str
   if (meta.wireFormat === 'anthropic') {
     return `claude_code:\n  baseUrl: ${baseUrl}\n  apiKey: ${token}`;
   }
-  return `${meta.id}:\n  baseUrl: ${baseUrl}\n  apiKey: ${token}`;
+  // Continue is currently the only openai/yaml registry entry. Shape mirrors
+  // packages/cli/src/clients/continue.ts (the actual file writer): Continue's
+  // required top-level `name`/`version`/`schema: v1` plus a `models` array
+  // with one OpenAI-compatible entry (`provider: openai`, `apiBase` =
+  // Routerly's `<serverUrl>/v1` endpoint, literal `apiKey`, and
+  // `model: routerly/ada`, the same auto-routing sentinel convention
+  // opencode.ts uses).
+  const resolvedBaseUrl = `${baseUrl.replace(/\/$/, '')}/v1`;
+  return [
+    'name: Routerly',
+    'version: 0.0.1',
+    'schema: v1',
+    '',
+    'models:',
+    '  - name: Routerly (auto-routed)',
+    '    provider: openai',
+    '    model: routerly/ada',
+    `    apiBase: ${resolvedBaseUrl}`,
+    `    apiKey: ${token}`,
+  ].join('\n');
 }
 
 function buildTomlSnippet(meta: ClientMeta, baseUrl: string, token: string): string {
