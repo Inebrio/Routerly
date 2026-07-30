@@ -9,7 +9,7 @@ import { resolveProfile, listProfiles, cloneProfile, bumpVersion, assertWritable
 import { getBuiltin } from '../routing/profiles/presets.js';
 import { scoreCandidates } from '../routing/router.js';
 import { SELECTOR_MAP } from '../routing/selectors/index.js';
-import type { SelectorContext } from '../routing/selectors/index.js';
+import type { ScoredCandidate, SelectorContext } from '../routing/selectors/index.js';
 
 // ── Route-local auth helpers (mirrors api.ts/connections.ts; no shared route-helper module exists) ──
 
@@ -174,6 +174,12 @@ export const profilesRoutes: FastifyPluginAsync = async (fastify) => {
     const projects = await readConfig('projects');
     const idx = projects.findIndex(p => p.id === req.params.id);
     if (idx === -1) return reply.status(404).send({ error: 'Not found' });
+    if (body.profileId !== null) {
+      const profiles = await listProfiles();
+      if (!profiles.some(p => p.id === body.profileId)) {
+        return reply.status(404).send({ error: 'profile_not_found' });
+      }
+    }
     // exactOptionalPropertyTypes: clear by omitting the key, never by setting it to undefined.
     const { profileId: _prev, ...rest } = projects[idx]!;
     projects[idx] = body.profileId !== null ? { ...rest, profileId: body.profileId } : rest;
@@ -226,11 +232,15 @@ export const profilesRoutes: FastifyPluginAsync = async (fastify) => {
       });
     }
 
-    const ctx: SelectorContext = { projectId: project.id, allAbstained: sc.allAbstained };
+    // Namespaced so round-robin's cursor (keyed by projectId in routingMemoryStore) never
+    // collides with the live cursor router.ts advances for real requests on this project.
+    const ctx: SelectorContext = { projectId: `simulate:${project.id}`, allAbstained: sc.allAbstained };
     const models = SELECTOR_MAP[profile.selector](sc.scored, ctx).models;
+    const scoredByModel = new Map(sc.scored.map(c => [c.model, c]));
+    const ranked = models.map(m => scoredByModel.get(m.model)).filter((c): c is ScoredCandidate => c !== undefined);
     return reply.send({
       picked: models[0]?.model ?? null,
-      ranked: sc.scored,
+      ranked,
       trace: sc.trace,
     });
   });
