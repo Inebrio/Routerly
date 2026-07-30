@@ -72,6 +72,8 @@ describe('mcp module', () => {
         'get_budget_status',
         'get_metrics_snapshot',
         'list_projects',
+        'create_project_token',
+        'toggle_model',
       ].sort(),
     )
   })
