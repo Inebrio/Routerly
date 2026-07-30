@@ -1402,6 +1402,238 @@ Exit code: `0` on success, `1` on error (all subcommands).
 
 ---
 
+## `routerly clients`
+
+Configure local AI coding clients (Claude Code, Codex, OpenCode, Continue,
+Cline) to use Routerly. Unlike the rest of the CLI, these commands write
+files on **this machine** (your workstation running the CLI), not on the
+Routerly server — they edit the config file of a client tool installed
+locally. See [Integrations: Auto-configure](../integrations/overview.md#auto-configure)
+for one manual reference page per client.
+
+These commands require a logged-in session (`routerly auth login`) but no
+specific permission — any authenticated account can run them, the same as
+`routerly status`.
+
+### `routerly clients list`
+
+```
+routerly clients list [--json]
+```
+
+List every supported client with its support level.
+
+**Table columns:**
+- **ID** — client identifier, used by `inspect`/`configure`/`launch`
+- **Label** — display name
+- **Support** — `auto-configurable` (green, `configure` writes the file for
+  you), `launchable` (green), `documented` (gray, manual-only, no file this
+  CLI can safely write), `partial`/`stale` (yellow)
+
+```bash
+routerly clients list
+```
+```
+┌─────────────┬─────────────┬───────────────────┐
+│ ID          │ Label       │ Support           │
+├─────────────┼─────────────┼───────────────────┤
+│ claude-code │ Claude Code │ auto-configurable │
+├─────────────┼─────────────┼───────────────────┤
+│ codex       │ Codex       │ auto-configurable │
+├─────────────┼─────────────┼───────────────────┤
+│ opencode    │ OpenCode    │ auto-configurable │
+├─────────────┼─────────────┼───────────────────┤
+│ continue    │ Continue    │ auto-configurable │
+├─────────────┼─────────────┼───────────────────┤
+│ cline       │ Cline       │ documented        │
+└─────────────┴─────────────┴───────────────────┘
+```
+
+### `routerly clients inspect`
+
+```
+routerly clients inspect <id> [--json]
+```
+
+Detect whether a client is installed on this machine and whether its config
+file already points at Routerly.
+
+```bash
+routerly clients inspect claude-code
+```
+```
+Claude Code
+  Support:    auto-configurable
+  Installed:  yes (2.1.209 (Claude Code))
+  Config:     /Users/you/.claude/settings.json
+  Configured: no
+```
+
+If the config file is already pointed at a different Routerly instance than
+the CLI's currently active account, `Base URL:` is printed with a `(stale)`
+suffix.
+
+**Error cases:**
+```bash
+routerly clients inspect not-a-real-client
+```
+```
+Unknown client "not-a-real-client". Run `routerly clients list` to see supported clients.
+```
+Exit code `1`, printed to stderr, before any file I/O.
+
+### `routerly clients configure`
+
+```
+routerly clients configure <id> [--project <id>] [--token <token>] [--yes] [--json]
+```
+
+Write Routerly connection settings into a client's own config file. Shows a
+before/after plan, then applies it.
+
+| Option | Description |
+|--------|-------------|
+| `--project <id>` | Project name or ID to mint/use a token for (prompts with a picker if omitted) |
+| `--token <token>` | Use this token instead of minting a new one — skips the consent prompt |
+| `--yes` | Skip the consent prompt without supplying `--token` (a new token is still minted) |
+| `--json` | Output `{ plan, applied, validated }` as JSON instead of the human-readable plan |
+
+**Mint vs. `--token`:** by default `configure` mints a brand-new project
+token via `POST /api/projects/:id/tokens` and asks for confirmation first
+(`Mint a new Routerly token for project "…" to configure …?`). Pass an
+existing token with `--token` to reuse it instead — no new token is created
+and no prompt is shown. `--yes` skips the confirmation prompt but still
+mints a new token; use `--token` if you don't want a new token minted at all.
+
+```bash
+routerly clients configure opencode --project Test --token sk-rt-YOUR_PROJECT_TOKEN
+```
+```
+Plan for OpenCode (/Users/you/.config/opencode/opencode.json):
+--- before ---
+(file does not exist)
+--- after ----
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "routerly": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Routerly",
+      "options": {
+        "baseURL": "http://localhost:3000/v1",
+        "apiKey": "sk-rt-YOUR_PROJECT_TOKEN"
+      },
+      "models": {
+        "routerly/ada": {
+          "name": "Routerly (auto-routed)"
+        }
+      }
+    }
+  }
+}
+
+✓ OpenCode configured (/Users/you/.config/opencode/opencode.json).
+  Backup ID: 3c2d1970-e4b6-4902-a798-84cdd86cb92d (undo with `routerly clients undo 3c2d1970-e4b6-4902-a798-84cdd86cb92d`)
+✓ Routerly service reachable at http://localhost:3000
+```
+
+**Backup guarantee:** before writing, `configure` always backs up the
+existing file (or records that it did not exist) under
+`~/.routerly/cli/client-backups/<backupId>/` — `manifest.json` (backup ID,
+client ID, original path, SHA-256 checksum of the original content,
+whether the file existed before, mode `0o600`) plus the original file's
+bytes (mode `0o600`), in a directory (mode `0o700`), fsync'd to disk before
+the write proceeds. `ROUTERLY_HOME` defaults to `~/.routerly` (overridable
+via the `ROUTERLY_HOME` env var). Every successful `configure` prints its
+`Backup ID` — save it if you want to `undo` later.
+
+**Cline** (`documented`, not auto-configurable) always errors instead of
+writing a file:
+```bash
+routerly clients configure cline --project Test --yes
+```
+```
+Error: Cline is not auto-configurable: it is configured through the extension's settings UI (gear icon panel: Base URL / API Key / Model ID), not a standalone file this CLI can safely edit. See docs: integrations/clients/cline
+```
+Exit code `1`. See [Integrations: Cline](../integrations/clients/cline.md)
+for the manual steps.
+
+### `routerly clients doctor`
+
+```
+routerly clients doctor
+```
+
+Checks Routerly service reachability (`GET /api/system/info`) and whether
+the client-configurator module is enabled on the server (`GET
+/api/clients`).
+
+```bash
+routerly clients doctor
+```
+```
+✓ Routerly service reachable (version 0.3.0).
+✓ Client configurator module enabled (5 client(s) registered).
+```
+
+If the module is disabled on the server, this is reported as informational,
+not a failure (exit code stays `0`):
+```
+  Client configurator module is disabled on the service.
+```
+Any other error (service unreachable, network failure) on either check sets
+exit code `1`.
+
+### `routerly clients undo`
+
+```
+routerly clients undo <backupId>
+```
+
+Restore a client config file to its exact state before a `configure` run,
+using the backup ID printed by that run. If the file did not exist before
+`configure` created it, `undo` deletes it. The restore is checksum-verified
+against the backup manifest before it is written back.
+
+```bash
+routerly clients undo 3c2d1970-e4b6-4902-a798-84cdd86cb92d
+```
+```
+✓ Restored /Users/you/.config/opencode/opencode.json (client: opencode).
+```
+
+**Error cases:**
+```bash
+routerly clients undo bogus-id-1234
+```
+```
+Backup "bogus-id-1234" not found. Backup IDs are printed by `routerly clients configure`.
+```
+Exit code `1`. An unknown backup ID is rejected before any file I/O — the
+backup manifest is looked up first.
+
+### `routerly clients launch`
+
+```
+routerly clients launch <id>
+```
+
+Launch an installed client binary, for clients whose integration supports
+it (spawns the process with inherited stdio).
+
+```bash
+routerly clients launch cline
+```
+```
+Cline does not support launching from Routerly.
+```
+Exit code `1` — Cline has no standalone CLI binary. Clients without a
+`launch` step behave the same way; the error names the client.
+
+Exit code: `0` on success, `1` on error (all subcommands).
+
+---
+
 ## `routerly report`
 
 ### `routerly report usage`

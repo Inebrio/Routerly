@@ -5,6 +5,12 @@ sidebar_label: Cline
 
 # Cline
 
+:::tip
+Cline has no config file to auto-apply, but the `routerly clients` CLI can
+still detect it. See [Cline — auto-configure](./clients/cline) for why
+`routerly clients configure cline` errors out and points back here.
+:::
+
 [Cline](https://github.com/cline/cline) is an autonomous coding agent that can read files, write code, run terminal commands, and browse the web. It runs inside VS Code and uses the OpenAI or Anthropic API for its reasoning model.
 
 ---

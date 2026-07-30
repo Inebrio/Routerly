@@ -52,6 +52,7 @@ const sidebars: SidebarsConfig = {
         'dashboard/users-and-roles',
         'dashboard/settings',
         'dashboard/playground',
+        'dashboard/clients',
         'dashboard/profile',
       ],
     },
@@ -102,6 +103,17 @@ const sidebars: SidebarsConfig = {
             'integrations/continue',
             'integrations/cline',
             'integrations/vscode',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Auto-configure',
+          items: [
+            'integrations/clients/claude-code',
+            'integrations/clients/codex',
+            'integrations/clients/opencode',
+            'integrations/clients/continue',
+            'integrations/clients/cline',
           ],
         },
         {

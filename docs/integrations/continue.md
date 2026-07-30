@@ -5,6 +5,13 @@ sidebar_label: Continue.dev
 
 # Continue.dev
 
+:::tip
+Want Routerly to write `~/.continue/config.yaml` for you instead of copying
+the snippet below by hand? See [Continue —
+auto-configure](./clients/continue) for the `routerly clients configure
+continue` CLI flow.
+:::
+
 [Continue](https://continue.dev) is an open-source AI coding assistant for VS Code and JetBrains. It supports any OpenAI-compatible backend and has first-class support for custom endpoints.
 
 ---
