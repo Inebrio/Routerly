@@ -122,6 +122,15 @@ export type {
 export type { RoutingCandidate, RoutingResponse } from './types/routing.js';
 
 export type {
+  OptimizerClass,
+  OptimizerId,
+  OptimizerEstimate,
+  OptimizerResult,
+  OptimizerStep,
+  OptimizerConfig,
+} from './types/optimizers.js';
+
+export type {
   ResilienceLevel,
   ResilienceState,
   ResilienceFault,

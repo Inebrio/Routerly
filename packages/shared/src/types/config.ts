@@ -1,5 +1,7 @@
 // ─── Config types ────────────────────────────────────────────────────────────
 
+import type { OptimizerConfig } from './optimizers.js';
+
 export type Provider = 'openai' | 'anthropic' | 'anthropic-oauth' | 'openai-oauth' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom' | 'openai-web' | 'anthropic-web' | 'deepseek' | 'groq' | 'together' | 'perplexity' | 'azure-openai' | 'bedrock' | 'vertex';
 
 export type ProviderId = string;
@@ -469,6 +471,8 @@ export interface ProjectConfig {
   playgroundPresets?: PlaygroundPreset[];
   /** Active routing profile ID for this project */
   profileId?: string;
+  /** Prompt/context optimizer pipeline. Presence activates the subsystem; step order = execution order */
+  optimizers?: OptimizerConfig;
 }
 
 export interface UserConfig {
