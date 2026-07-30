@@ -13,6 +13,7 @@ import { ProjectsPage } from './pages/ProjectsPage';
 import { ProjectLayout } from './pages/project/ProjectLayout';
 import { ProjectGeneralTab } from './pages/project/ProjectGeneralTab';
 import { ProjectRoutingTab } from './pages/project/ProjectRoutingTab';
+import { ProjectOptimizerTab } from './pages/project/ProjectOptimizerTab';
 import { ProjectTokenTab } from './pages/project/ProjectTokenTab';
 import { ProjectUsersTab } from './pages/project/ProjectUsersTab';
 import { ProjectLogsTab } from './pages/project/ProjectLogsTab';
@@ -400,6 +401,7 @@ const router = createBrowserRouter([
               { index: true, element: <ProjectGeneralTab /> },
               { path: 'general', element: <ProjectGeneralTab /> },
               { path: 'routing', element: <ProjectRoutingTab /> },
+              { path: 'optimizer', element: <ProjectOptimizerTab /> },
               { path: 'token', element: <ProjectTokenTab /> },
               { path: 'users', element: <ProjectUsersTab /> },
               { path: 'logs', element: <ProjectLogsTab /> },
