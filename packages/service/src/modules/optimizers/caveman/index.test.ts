@@ -1,0 +1,214 @@
+import { describe, it, expect, vi } from 'vitest'
+import { ServiceContainer, EventBus, ProcessorRegistry } from '../../../core/index.js'
+import { OPTIMIZER_REGISTRY, PROXY_PIPELINE } from '../../../core/tokens.js'
+import type { ChatCompletionRequest, Message } from '@routerly/shared'
+import type { ProxyContext } from '../../reverse-proxy/context.js'
+import { readMessages } from '../messages.js'
+import { passesSafetyGate } from '../gate.js'
+import { optimizerCoreModule } from '../core.js'
+import { cavemanModule, cavemanOptimizer } from './index.js'
+
+function ctxWith(messages: Message[]): ProxyContext {
+  const request = { model: 'gpt', messages } as ChatCompletionRequest
+  return {
+    protocol: 'openai',
+    req: { headers: {} } as any,
+    reply: {} as any,
+    log: { warn: vi.fn(), error: vi.fn() } as any,
+    project: { id: 'p1', optimizers: { steps: [{ id: 'caveman', enabled: true }] } } as any,
+    projectId: 'p1',
+    traceId: 't1',
+    traceEnabled: false,
+    traceSuppressed: false,
+    original: request,
+    request,
+    stream: false,
+    passthrough: false,
+  } as ProxyContext
+}
+
+function textOf(m: Message): string {
+  return typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
+}
+
+describe('caveman optimizer', () => {
+  it('is lossy with the caveman id', () => {
+    expect(cavemanOptimizer.id).toBe('caveman')
+    expect(cavemanOptimizer.klass).toBe('lossy')
+  })
+
+  it('drops filler/stopwords and function words while keeping content words', () => {
+    const ctx = ctxWith([{ role: 'user', content: 'Could you please just tell me about the database schema and the indexes' }])
+    expect(cavemanOptimizer.supports(ctx)).toBe(true)
+    const result = cavemanOptimizer.optimize(ctx)
+    expect(result.changed).toBe(true)
+    const out = textOf(readMessages(ctx.request)[0]!)
+    // stopwords/filler removed
+    for (const w of ['please', 'just', 'me', 'about', 'the', 'you']) {
+      expect(out.split(/\W+/)).not.toContain(w)
+    }
+    // content words kept
+    for (const w of ['tell', 'database', 'schema', 'indexes']) {
+      expect(out).toContain(w)
+    }
+    // compression actually happened
+    expect(result.estimatedTokensAfter).toBeLessThan(result.estimatedTokensBefore)
+    expect(cavemanOptimizer.validate(ctx, result)).toBe(true)
+    expect(ctx.request).toBe(ctx.original)
+  })
+
+  it('preserves a fenced code block byte-for-byte even when it contains filler words', () => {
+    const code = '```js\n// the of a is are\nconst x = the + of\n```'
+    const original = `Here is the code you asked for:\n\n${code}\n\nplease run it`
+    const ctx = ctxWith([{ role: 'user', content: original }])
+    const result = cavemanOptimizer.optimize(ctx)
+    const out = textOf(readMessages(ctx.request)[0]!)
+    // whole fenced block, including its filler-looking words, survives verbatim
+    expect(out).toContain(code)
+    // but prose around it was stripped ("please" gone)
+    expect(out).not.toContain('please')
+    expect(cavemanOptimizer.validate(ctx, result)).toBe(true)
+  })
+
+  it('preserves inline code spans verbatim', () => {
+    const ctx = ctxWith([{ role: 'user', content: 'call the function `the_of_a()` and it is done' }])
+    cavemanOptimizer.optimize(ctx)
+    const out = textOf(readMessages(ctx.request)[0]!)
+    expect(out).toContain('`the_of_a()`')
+    // separator not glued away
+    expect(out).toContain('call function `the_of_a()`')
+  })
+
+  it('preserves URLs verbatim', () => {
+    const url = 'https://example.com/the/of/a?x=the&y=of'
+    const ctx = ctxWith([{ role: 'user', content: `see the docs at ${url} for the details` }])
+    cavemanOptimizer.optimize(ctx)
+    const out = textOf(readMessages(ctx.request)[0]!)
+    expect(out).toContain(url)
+  })
+
+  it('preserves digit sequences byte-for-byte', () => {
+    const ctx = ctxWith([{ role: 'user', content: 'the order 42 has 007 items and the code is v2' }])
+    cavemanOptimizer.optimize(ctx)
+    const out = textOf(readMessages(ctx.request)[0]!)
+    expect(out).toContain('42')
+    expect(out).toContain('007')
+    expect(out).toContain('v2') // digit-adjacent token untouched
+  })
+
+  it('produces valid UTF-8 string content (no mojibake / no dropped multibyte)', () => {
+    const ctx = ctxWith([{ role: 'user', content: 'please tell me about the café and the naïve résumé 日本語' }])
+    cavemanOptimizer.optimize(ctx)
+    const out = readMessages(ctx.request)[0]!.content as string
+    expect(typeof out).toBe('string')
+    expect(out).toContain('café')
+    expect(out).toContain('naïve')
+    expect(out).toContain('résumé')
+    expect(out).toContain('日本語')
+  })
+
+  it('leaves non-text content parts byte-identical, strips only text parts', () => {
+    const image = { type: 'image_url', image_url: { url: 'https://img/x.png' } }
+    const msg = {
+      role: 'user',
+      content: [
+        { type: 'text', text: 'please describe the image for me' },
+        image,
+      ],
+    } as unknown as Message
+    const ctx = ctxWith([msg])
+    const result = cavemanOptimizer.optimize(ctx)
+    const out = readMessages(ctx.request)[0]! as any
+    expect(out.content[1]).toEqual(image) // untouched
+    expect(out.content[0].text).not.toContain('please')
+    expect(out.content[0].text).toContain('describe')
+    expect(out.content[0].text).toContain('image')
+    expect(cavemanOptimizer.validate(ctx, result)).toBe(true)
+  })
+
+  it('is a no-op when there is nothing to strip', () => {
+    const ctx = ctxWith([{ role: 'user', content: 'database schema indexes' }])
+    expect(cavemanOptimizer.supports(ctx)).toBe(false)
+    const before = readMessages(ctx.request).slice()
+    const result = cavemanOptimizer.optimize(ctx)
+    expect(result.changed).toBe(false)
+    expect(readMessages(ctx.request)).toEqual(before)
+  })
+
+  it('estimate previews the reduction without mutating', () => {
+    const original: Message[] = [{ role: 'user', content: 'please just tell me about the schema' }]
+    const ctx = ctxWith(original.map((m) => ({ ...m })))
+    const est = cavemanOptimizer.estimate(ctx)
+    expect(est.estimatedTokensAfter).toBeLessThan(est.estimatedTokensBefore)
+    expect(readMessages(ctx.request)).toEqual(original) // untouched
+  })
+
+  it('a too-aggressive strip (message is almost all stopwords) is rejected by the core safety gate', () => {
+    // Nearly every word is a stopword/filler -> after-ratio falls below the 0.2 floor.
+    const ctx = ctxWith([
+      { role: 'user', content: 'the of a is are and to in on at for with from by it was were be x' },
+    ])
+    const result = cavemanOptimizer.optimize(ctx)
+    expect(result.changed).toBe(true)
+    expect(passesSafetyGate(result)).toBe(false)
+  })
+
+  it('validate fails when a protected span was lost after optimize', () => {
+    const ctx = ctxWith([{ role: 'user', content: 'see https://example.com/keep for the details' }])
+    const result = cavemanOptimizer.optimize(ctx)
+    ctx.request.messages = [{ role: 'user', content: 'the details' }] // URL gone
+    expect(cavemanOptimizer.validate(ctx, result)).toBe(false)
+  })
+
+  it('validate fails when the message count changed after optimize', () => {
+    const ctx = ctxWith([
+      { role: 'user', content: 'please tell me about the schema' },
+      { role: 'assistant', content: 'the schema has tables' },
+    ])
+    const result = cavemanOptimizer.optimize(ctx)
+    ctx.request.messages = readMessages(ctx.request).slice(0, 1)
+    expect(cavemanOptimizer.validate(ctx, result)).toBe(false)
+  })
+
+  it('validate passes when there is no captured pre-optimize state', () => {
+    const ctx = ctxWith([{ role: 'user', content: 'please tell me about the schema' }])
+    expect(
+      cavemanOptimizer.validate(ctx, { changed: false, estimatedTokensBefore: 1, estimatedTokensAfter: 1 }),
+    ).toBe(true)
+  })
+
+  it('recover restores the original messages when explicitly invoked', () => {
+    const ctx = ctxWith([{ role: 'user', content: 'please just tell me about the schema' }])
+    const original = readMessages(ctx.request).slice()
+    cavemanOptimizer.optimize(ctx)
+    expect(textOf(readMessages(ctx.request)[0]!)).not.toEqual(textOf(original[0]!))
+    ctx.request.messages = [{ role: 'user', content: 'garbage' }]
+    cavemanOptimizer.recover!(ctx, { changed: true, estimatedTokensBefore: 0, estimatedTokensAfter: 0 })
+    expect(readMessages(ctx.request)).toEqual(original)
+    expect(ctx.request).toBe(ctx.original)
+  })
+
+  it('recover is a safe no-op when nothing was stashed', () => {
+    const ctx = ctxWith([{ role: 'user', content: 'please tell me about the schema' }])
+    const before = readMessages(ctx.request).slice()
+    expect(() =>
+      cavemanOptimizer.recover!(ctx, { changed: false, estimatedTokensBefore: 0, estimatedTokensAfter: 0 }),
+    ).not.toThrow()
+    expect(readMessages(ctx.request)).toEqual(before)
+  })
+
+  it('registers into OPTIMIZER_REGISTRY via its module', async () => {
+    const container = new ServiceContainer()
+    const events = new EventBus()
+    container.register(PROXY_PIPELINE, new ProcessorRegistry<ProxyContext>())
+    await optimizerCoreModule.register({ container, events })
+    await cavemanModule.register({ container, events })
+    const registry = container.resolve(OPTIMIZER_REGISTRY)
+    expect(registry.get('caveman')).toBe(cavemanOptimizer)
+  })
+
+  it('module manifest depends on optimizer-core', () => {
+    expect(cavemanModule.manifest.id).toBe('optimizer-caveman')
+    expect(cavemanModule.manifest.dependsOn).toEqual({ 'optimizer-core': '^0.4.0' })
+  })
+})
