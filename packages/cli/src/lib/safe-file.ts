@@ -1,9 +1,7 @@
-import { mkdir, readFile, writeFile, unlink, access, stat, rm, open, chmod } from 'node:fs/promises';
-import { fsync as fsSyncCallback, close as fsCloseCallback, rename as fsRenameCallback } from 'node:fs';
+import { mkdir, readFile, writeFile, unlink, stat, open, chmod, rename, readdir } from 'node:fs/promises';
 import { createHash, randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
-import { promisify } from 'node:util';
 
 // ─── ROUTERLY_HOME resolution (same pattern as store.ts) ─────────────────
 const HOME = process.env.ROUTERLY_HOME ?? join(homedir(), '.routerly');
@@ -26,9 +24,16 @@ const hashContent = (content: string): string => {
   return createHash('sha256').update(content).digest('hex');
 };
 
-const fsSync = promisify(fsSyncCallback);
-const fsClose = promisify(fsCloseCallback);
-const fsRename = promisify(fsRenameCallback);
+/** Write content to a file with a given mode, fsync-ing before close. */
+const writeSync = async (path: string, content: string, mode: number): Promise<void> => {
+  const fd = await open(path, 'w', mode);
+  try {
+    await fd.write(content);
+    await fd.sync();
+  } finally {
+    await fd.close();
+  }
+};
 
 // ─── API ──────────────────────────────────────────────────────────────────
 
@@ -37,7 +42,8 @@ const fsRename = promisify(fsRenameCallback);
  * Creates backup at ${ROUTERLY_HOME}/cli/client-backups/<backupId>/ with:
  * - original file (if existedBefore)
  * - manifest.json
- * Both files have mode 0o600.
+ * Both files have mode 0o600 and are fsync'd before the call returns.
+ * All I/O is UTF-8.
  */
 export async function backupFile(
   clientId: string,
@@ -52,25 +58,22 @@ export async function backupFile(
   // Ensure backup directory exists
   await mkdir(backupDir, { recursive: true, mode: 0o700 });
 
-  // Check if source file exists
+  // Read the source file. Only a genuine "missing file" (ENOENT) means
+  // existedBefore=false; any other error (EACCES, EIO, ...) must fail loudly
+  // rather than be mislabeled as "didn't exist" — otherwise a later rollback
+  // would unlink a real file that was never actually backed up.
   let existedBefore = false;
   let checksum = '';
-  let content = '';
-
   try {
-    content = await readFile(filePath, 'utf-8');
+    const content = await readFile(filePath, 'utf-8');
     existedBefore = true;
     checksum = hashContent(content);
-
-    // Write backup copy of the original file with mode 0o600
-    await writeFile(originalPath, content, { mode: 0o600 });
-  } catch {
-    // File doesn't exist; record existedBefore: false, no original file
-    existedBefore = false;
-    checksum = ''; // no content to hash
+    await writeSync(originalPath, content, 0o600);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+    // File truly doesn't exist; record existedBefore: false, no original file
   }
 
-  // Write manifest with mode 0o600
   const manifest: BackupManifest = {
     backupId: id,
     clientId,
@@ -80,114 +83,99 @@ export async function backupFile(
     createdAt: new Date().toISOString(),
   };
 
-  await writeFile(manifestPath, JSON.stringify(manifest, null, 2), {
-    mode: 0o600,
-  });
+  await writeSync(manifestPath, JSON.stringify(manifest, null, 2), 0o600);
 
   return manifest;
 }
 
 /**
  * Atomically write content to a file.
- * Writes to <file>.<pid>.tmp, fsync, rename.
- * Attempts to preserve existing file mode.
+ * Writes to <file>.<pid>.tmp, fsync, rename. Preserves the target's existing
+ * mode (falls back to 0o644 for a new file). Removes the tmp file on any
+ * failure. Content is written as UTF-8.
  */
 export async function atomicWrite(filePath: string, content: string): Promise<void> {
   const tempPath = `${filePath}.${process.pid}.tmp`;
 
-  // Get existing mode (if file exists) for later preservation
-  let originalMode: number | null = null;
+  // Preserve the target's existing mode, or use a sane default for a new file.
+  let mode = 0o644;
   try {
     const stats = await stat(filePath);
-    originalMode = stats.mode & parseInt('0o777', 8);
+    mode = stats.mode & 0o777;
   } catch {
-    // File doesn't exist yet
+    // File doesn't exist yet; keep the default mode.
   }
-
-  // Write to temp file (use default permissions)
-  await writeFile(tempPath, content, 'utf-8');
-
-  // Preserve original mode if it existed and is valid
-  // ponytail: mode preservation is best-effort; skip if chmod fails
-  if (originalMode !== null && originalMode !== 0) {
-    try {
-      await chmod(tempPath, originalMode);
-    } catch {
-      // Ignore chmod errors; file is still writable and usable
-    }
-  }
-
-  // Open for fsync to ensure data is on disk before rename
-  const fd = await open(tempPath, 'r');
 
   try {
-    // Sync to disk for atomicity guarantee
-    await fsSync(fd.fd);
-    await fd.close();
-  } catch (err) {
+    const fd = await open(tempPath, 'w', mode);
     try {
+      await fd.write(content);
+      // fsync before rename IS the atomicity guarantee.
+      await fd.sync();
+    } finally {
       await fd.close();
-    } catch {}
+    }
+    // chmod after write: open()'s mode is masked by umask, so set it explicitly.
+    await chmod(tempPath, mode);
+    await rename(tempPath, filePath);
+  } catch (err) {
+    // Best-effort cleanup of the orphaned tmp file; keep the original error.
+    await unlink(tempPath).catch(() => {});
     throw err;
   }
-
-  // Atomic rename
-  await fsRename(tempPath, filePath);
 }
 
 /**
- * Restore a file from backup.
- * If existedBefore was true, restore the backed-up bytes.
- * If existedBefore was false, delete the file (undo creation).
+ * Restore a file from backup (rollback / undo).
+ * If existedBefore was true, verify the backed-up bytes against the recorded
+ * SHA-256 checksum, then restore them. If existedBefore was false, delete the
+ * file (undo creation).
  */
 export async function restoreBackup(backupId: string): Promise<void> {
   const backupDir = join(BACKUPS_DIR, backupId);
   const manifestPath = join(backupDir, 'manifest.json');
   const originalPath = join(backupDir, 'original');
 
-  // Read the manifest to know what to do
-  const manifestContent = await readFile(manifestPath, 'utf-8');
-  const manifest: BackupManifest = JSON.parse(manifestContent);
+  const manifest: BackupManifest = JSON.parse(await readFile(manifestPath, 'utf-8'));
 
   if (manifest.existedBefore) {
-    // Restore the backed-up file
     const backupContent = await readFile(originalPath, 'utf-8');
+    // Verify integrity before restoring: a corrupted/tampered backup must not
+    // be silently written over the live file.
+    const actual = hashContent(backupContent);
+    if (actual !== manifest.checksum) {
+      throw new Error(
+        `Backup ${backupId} is corrupt: checksum mismatch (expected ${manifest.checksum}, got ${actual})`
+      );
+    }
     await atomicWrite(manifest.originalPath, backupContent);
   } else {
-    // File didn't exist before; delete it if it exists now
-    try {
-      await unlink(manifest.originalPath);
-    } catch {
-      // File may not exist; ignore
-    }
+    // File didn't exist before; delete it if a later write created it.
+    await unlink(manifest.originalPath).catch(() => {});
   }
 }
 
 /**
- * List all backups by reading all manifest.json files.
+ * List all backups by reading every manifest.json under the backups dir.
  */
 export async function listBackups(): Promise<BackupManifest[]> {
   const backups: BackupManifest[] = [];
 
+  let entries;
   try {
-    // Try to read the backups directory
-    const { readdir } = await import('node:fs/promises');
-    const entries = await readdir(BACKUPS_DIR, { withFileTypes: true });
-
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-
-      const manifestPath = join(BACKUPS_DIR, entry.name, 'manifest.json');
-      try {
-        const content = await readFile(manifestPath, 'utf-8');
-        const manifest: BackupManifest = JSON.parse(content);
-        backups.push(manifest);
-      } catch {
-        // Skip if manifest can't be read
-      }
-    }
+    entries = await readdir(BACKUPS_DIR, { withFileTypes: true });
   } catch {
-    // Backups dir doesn't exist yet
+    return backups; // Backups dir doesn't exist yet.
+  }
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const manifestPath = join(BACKUPS_DIR, entry.name, 'manifest.json');
+    try {
+      backups.push(JSON.parse(await readFile(manifestPath, 'utf-8')));
+    } catch {
+      // Skip if manifest can't be read/parsed.
+    }
   }
 
   return backups;
