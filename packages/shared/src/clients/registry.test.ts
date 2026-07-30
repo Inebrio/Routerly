@@ -78,7 +78,7 @@ describe('buildSnippet', () => {
     expect(parsed.provider.routerly.name).toBe('Routerly');
     expect(parsed.provider.routerly.options.baseURL).toBe(`${baseUrl}/v1`);
     expect(parsed.provider.routerly.options.apiKey).toBe(token);
-    expect(parsed.provider.routerly.models).toHaveProperty('auto');
+    expect(parsed.provider.routerly.models).toHaveProperty('routerly/ada');
 
     // Regression guards: the old fabricated generic {opencode:{baseUrl,apiKey}}
     // shape (and any env-var-reference apiKey) must never come back.

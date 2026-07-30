@@ -120,7 +120,7 @@ describe('plan + apply', () => {
     expect(parsed.provider.routerly.name).toBe('Routerly');
     expect(parsed.provider.routerly.options.baseURL).toBe('https://routerly.example.com/v1');
     expect(parsed.provider.routerly.options.apiKey).toBe('sk-rt-test');
-    expect(parsed.provider.routerly.models).toHaveProperty('auto');
+    expect(parsed.provider.routerly.models).toHaveProperty('routerly/ada');
     // apiKey must be a literal string, never an `{env:VAR}` reference: that
     // would require a manual export step, breaking the auto-configurable
     // promise.
