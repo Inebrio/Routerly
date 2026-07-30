@@ -27,8 +27,8 @@ export const CLIENT_REGISTRY: readonly ClientMeta[] = [
     supportState: 'documented',
     wireFormat: 'openai',
     docSlug: 'integrations/clients/codex',
-    configKind: 'json',
-    configPathHint: '~/.codex/config.json',
+    configKind: 'toml',
+    configPathHint: '~/.codex/config.toml',
   },
   {
     id: 'opencode',
@@ -127,5 +127,19 @@ function buildTomlSnippet(meta: ClientMeta, baseUrl: string, token: string): str
   if (meta.wireFormat === 'anthropic') {
     return `[claude_code]\nbaseUrl = "${baseUrl}"\napiKey = "${token}"`;
   }
-  return `[${meta.id}]\nbaseUrl = "${baseUrl}"\napiKey = "${token}"`;
+  // Codex is currently the only openai/toml registry entry. Shape mirrors
+  // packages/cli/src/clients/codex.ts (the actual file writer): top-level
+  // `model_provider` selector plus a `[model_providers.routerly]` table with
+  // `base_url` (Routerly's /v1 endpoint), `wire_api = "responses"`, and the
+  // literal bearer token in `experimental_bearer_token`.
+  const resolvedBaseUrl = `${baseUrl.replace(/\/$/, '')}/v1`;
+  return [
+    'model_provider = "routerly"',
+    '',
+    '[model_providers.routerly]',
+    'name = "Routerly"',
+    `base_url = "${resolvedBaseUrl}"`,
+    'wire_api = "responses"',
+    `experimental_bearer_token = "${token}"`,
+  ].join('\n');
 }

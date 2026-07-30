@@ -73,4 +73,32 @@ describe('buildSnippet', () => {
     // Verify /v1 is NOT auto-appended to the base URL in the snippet
     expect(snippet).not.toContain(baseUrl + '/v1');
   });
+
+  it('for codex produces the real config.toml shape: model_provider selector, [model_providers.routerly] table, /v1 base_url, and literal bearer token', () => {
+    const codexMeta = CLIENT_REGISTRY.find((c) => c.id === 'codex')!;
+    expect(codexMeta.configKind).toBe('toml');
+    expect(codexMeta.configPathHint).toBe('~/.codex/config.toml');
+
+    const baseUrl = 'https://routerly.example.com';
+    const token = 'sk-test-token-789';
+
+    const snippet = buildSnippet(codexMeta, baseUrl, token);
+    const lines = snippet.split('\n');
+
+    // Structural assertions, not just substring matches.
+    expect(lines).toContain('model_provider = "routerly"');
+    expect(lines).toContain('[model_providers.routerly]');
+    expect(lines).toContain('name = "Routerly"');
+    expect(lines).toContain(`base_url = "${baseUrl}/v1"`);
+    expect(lines).toContain('wire_api = "responses"');
+    expect(lines).toContain(`experimental_bearer_token = "${token}"`);
+
+    // Regression guards: the old fabricated generic [codex]\nbaseUrl=/apiKey=
+    // shape must never come back, and env_key (which would require a manual
+    // export step) must not silently replace the literal-token mechanism.
+    expect(snippet).not.toContain('[codex]');
+    expect(snippet).not.toContain('baseUrl =');
+    expect(snippet).not.toContain('apiKey =');
+    expect(snippet).not.toContain('env_key');
+  });
 });
