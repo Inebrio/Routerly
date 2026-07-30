@@ -1,7 +1,8 @@
 import type { ResilienceStore } from '@routerly/shared'
 import { defineModule, type RouterlyModule } from '../../core/index.js'
-import { RESILIENCE_STORE } from '../../core/tokens.js'
+import { RESILIENCE_STORE, API_ROUTES } from '../../core/tokens.js'
 import { InMemoryResilienceStore } from './store.js'
+import { getResilienceHandler, resetResilienceHandler } from './routes.js'
 
 export const resilienceModule: RouterlyModule = defineModule({
   manifest: { id: 'resilience', version: '0.4.0', dependsOn: { api: '^0.4.0' } },
@@ -9,6 +10,13 @@ export const resilienceModule: RouterlyModule = defineModule({
     const store = new InMemoryResilienceStore()
     container.register(RESILIENCE_STORE, store)
     setResilienceStore(store)
+
+    // container.resolve, not tryResolve: dependsOn: { api } above guarantees apiModule (which
+    // creates the registry) has already registered by the time this runs, so a missing
+    // registry here is a real bug worth throwing on.
+    const routes = container.resolve(API_ROUTES)
+    routes.contribute({ id: 'resilience.read', value: { method: 'GET', url: '/api/resilience', handler: getResilienceHandler } })
+    routes.contribute({ id: 'resilience.reset', value: { method: 'POST', url: '/api/resilience/reset', handler: resetResilienceHandler } })
   },
 })
 
