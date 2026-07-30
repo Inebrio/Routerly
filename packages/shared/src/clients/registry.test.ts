@@ -115,4 +115,41 @@ describe('buildSnippet', () => {
     expect(snippet).not.toContain('apiKey =');
     expect(snippet).not.toContain('env_key');
   });
+
+  it('for continue produces the real config.yaml shape: name/version/schema header, models array with provider/model/apiBase/apiKey', () => {
+    const continueMeta = CLIENT_REGISTRY.find((c) => c.id === 'continue')!;
+    expect(continueMeta.supportState).toBe('auto-configurable');
+    expect(continueMeta.configKind).toBe('yaml');
+    expect(continueMeta.configPathHint).toBe('~/.continue/config.yaml');
+
+    const baseUrl = 'https://routerly.example.com';
+    const token = 'sk-test-token-continue';
+
+    const snippet = buildSnippet(continueMeta, baseUrl, token);
+    const lines = snippet.split('\n');
+
+    // Structural assertions, not just substring matches.
+    expect(lines).toContain('name: Routerly');
+    expect(lines).toContain('version: 0.0.1');
+    expect(lines).toContain('schema: v1');
+    expect(lines).toContain('models:');
+    expect(lines).toContain('  - name: Routerly (auto-routed)');
+    expect(lines).toContain('    provider: openai');
+    expect(lines).toContain('    model: routerly/ada');
+    expect(lines).toContain(`    apiBase: ${baseUrl}/v1`);
+    expect(lines).toContain(`    apiKey: ${token}`);
+
+    // Regression guards: the old fabricated generic `continue:\n  baseUrl:
+    // ...\n  apiKey: ...` placeholder shape (from the pre-Task-8 generic
+    // buildYamlSnippet fallback) must never come back, and apiKey must be a
+    // literal, never an env-var reference.
+    expect(snippet).not.toContain('continue:\n  baseUrl:');
+    expect(snippet).not.toContain('  baseUrl: ');
+    expect(snippet).not.toContain('{env:');
+  });
+
+  it('cline has supportState documented, not a fabricated snippet target', () => {
+    const clineMeta = CLIENT_REGISTRY.find((c) => c.id === 'cline')!;
+    expect(clineMeta.supportState).toBe('documented');
+  });
 });
