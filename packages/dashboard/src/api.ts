@@ -364,6 +364,7 @@ export interface Project {
   timeoutMs?: number;
   guardrails?: GuardrailConfig;
   pii?: PiiConfig;
+  optimizers?: OptimizerConfig;
 }
 
 export const getProjects = () => request<Project[]>('/projects');
@@ -388,6 +389,7 @@ export const updateProject = (id: string, data: {
   timeoutMs?: number;
   guardrails?: GuardrailConfig | null;
   pii?: PiiConfig | null;
+  optimizers?: OptimizerConfig | null;
 }) => request<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteProject = (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' });
 export const createProjectToken = (id: string, labels?: string[], tags?: Record<string, string>) => request<{ token: string; tokenInfo: ProjectToken }>(`/projects/${id}/tokens`, { method: 'POST', body: JSON.stringify({ labels, ...(tags ? { tags } : {}) }) });
@@ -931,4 +933,28 @@ export const simulateRouting = (data: {
 }) => request<{ picked: string; ranked: { model: string; score: number; cost?: number }[]; trace: unknown[] }>(
   '/routing/simulate', { method: 'POST', body: JSON.stringify(data) },
 );
+
+// ── Optimizers ────────────────────────────────────────────────────────────
+import type { OptimizerConfig, OptimizerId, OptimizerStep } from '@routerly/shared';
+export type { OptimizerConfig, OptimizerId, OptimizerStep } from '@routerly/shared';
+
+export interface InstalledOptimizer {
+  id: OptimizerId;
+  klass: string;
+  installed: boolean;
+}
+
+export const getInstalledOptimizers = () => request<InstalledOptimizer[]>('/optimizers');
+
+export interface OptimizerPreviewResult {
+  estimatedTokensBefore: number;
+  estimatedTokensAfter: number;
+  perStep: { id: OptimizerId; before: number; after: number }[];
+}
+
+export const previewOptimizers = (body: {
+  projectId?: string;
+  sampleMessages: { role: string; content: string }[];
+  steps: OptimizerStep[];
+}) => request<OptimizerPreviewResult>('/optimizers/preview', { method: 'POST', body: JSON.stringify(body) });
 
