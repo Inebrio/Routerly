@@ -1030,6 +1030,94 @@ Requires `audit:read` permission.
 
 ---
 
+## `routerly resilience`
+
+View and manage circuit-breaker resilience state (per-provider, per-connection, and per-model fault tracking used to route around a degraded upstream).
+
+### `routerly resilience status`
+
+```
+routerly resilience status [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--json` | Output raw JSON |
+
+**Table columns:**
+- **Level** — `provider` / `connection` / `model`
+- **ID** — the provider, connection, or model ID this entry tracks
+- **State** — `closed` (green, healthy) / `open` (red, tripped) / `half-open` (yellow, probing recovery)
+- **Last Fault** — most recent failure category (e.g. `rate-limit`, `timeout`, `server`), or `-`
+- **Failures** — failure count contributing to the current state
+- **Opened At** — when the breaker left `closed`, or `-`
+- **Cooldown Until** — connection cooldown / rate-limit expiry, or `-`
+- **Lockout Until** — model-instance lockout expiry, or `-`
+
+If no entries have been recorded yet, prints `No resilience entries recorded yet.` instead of an empty table.
+
+Examples:
+
+```
+routerly resilience status
+routerly resilience status --json
+```
+
+**JSON output** (`--json`) is the raw `ResilienceSnapshot`:
+```json
+{
+  "entries": [
+    {
+      "key": { "level": "provider", "id": "openai" },
+      "state": "open",
+      "lastFault": "rate-limit",
+      "failureCount": 5,
+      "openedAt": 1700000000000,
+      "cooldownUntil": 1700000060000
+    }
+  ],
+  "generatedAt": 1700000100000
+}
+```
+
+Requires `resilience:read` permission.
+
+### `routerly resilience reset`
+
+```
+routerly resilience reset [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--level <level>` | Resilience level: `provider`, `connection`, or `model` (requires `--id`) |
+| `--id <id>` | ID within the given level (requires `--level`) |
+
+Resets circuit-breaker state back to `closed`. Omit both flags to reset every tracked entry; pass both together to reset a single key. Passing only one of `--level`/`--id` is rejected with an error (both-or-neither).
+
+Examples:
+
+```
+routerly resilience reset
+routerly resilience reset --level provider --id openai
+routerly resilience reset --level model --id gpt-4
+```
+
+**Output on success:**
+```
+✓ Reset resilience state for provider "openai".
+```
+(or `✓ Reset all resilience state.` when both flags are omitted)
+
+**Error cases:**
+- Only one of `--level`/`--id` provided: `API error 400: Invalid resilience reset body`
+
+Requires `resilience:manage` permission.
+
+Exit code: `0` on success, `1` on error (both subcommands).
+
+---
+
 ## `routerly report`
 
 ### `routerly report usage`

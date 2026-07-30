@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import type { ResilienceEntry, ResilienceSnapshot, ResilienceState } from '@routerly/shared';
+import type { ResilienceSnapshot, ResilienceState } from '@routerly/shared';
 
 const STATE_COLOR: Record<ResilienceState, (s: string) => string> = {
   closed:     chalk.green,
@@ -43,7 +43,7 @@ Examples:
           head: ['Level', 'ID', 'State', 'Last Fault', 'Failures', 'Opened At', 'Cooldown Until', 'Lockout Until']
             .map(h => chalk.cyan(h)),
         });
-        for (const e of snapshot.entries as ResilienceEntry[]) {
+        for (const e of snapshot.entries) {
           const colorFn = STATE_COLOR[e.state] ?? chalk.white;
           table.push([
             e.key.level,
