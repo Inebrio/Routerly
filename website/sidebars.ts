@@ -24,6 +24,8 @@ const sidebars: SidebarsConfig = {
         'concepts/routing',
         'concepts/budgets-and-limits',
         'concepts/notifications',
+        'concepts/security',
+        'concepts/optimizers',
       ],
     },
     {
@@ -45,6 +47,7 @@ const sidebars: SidebarsConfig = {
         'dashboard/models',
         'dashboard/connections',
         'dashboard/projects',
+        'dashboard/routing-profiles',
         'dashboard/usage',
         'dashboard/users-and-roles',
         'dashboard/settings',

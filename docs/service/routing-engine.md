@@ -33,6 +33,26 @@ For each incoming request the engine performs the following steps:
 
 7. **Fallback** — If the winning model returns a provider error or timeout, the engine retries with the next-highest scoring candidate. This continues until a model succeeds or the candidate set is exhausted (→ `503`).
 
+### Optimizers and Context Window Fit
+
+Prompt/context optimizers (see [Concepts: Optimizers](../concepts/optimizers.md))
+run earlier in request handling, in the `request.preprocess` pipeline phase,
+before this lifecycle resolves a candidate model. `ctx.attempt` — which
+carries the resolved model's `contextWindow` — is only populated once step 1
+above has selected a candidate, i.e. after the optimizer pipeline has
+already run.
+
+:::caution headroom is a permanent no-op on live requests today
+The `headroom` optimizer needs the target model's `contextWindow` to decide
+how many turns to trim, but reads it from `ctx.attempt`, which does not
+exist yet during `request.preprocess`. As a result `headroom` never sees a
+context window on a real request and never trims anything in production,
+even though its trim logic is correct and fully covered in isolation by its
+own tests. This is a pipeline-phase ordering gap, not a bug in `headroom`
+itself. Re-checking attempt-dependent optimizers once a candidate is
+resolved is a documented follow-up, not yet scheduled.
+:::
+
 ---
 
 ## Available Policies
