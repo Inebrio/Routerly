@@ -39,8 +39,9 @@ import { AuditPage } from './pages/AuditPage';
 import { ConnectionsPage } from './pages/ConnectionsPage';
 import { ModelInstancesPage } from './pages/ModelInstancesPage';
 import { ResiliencePage } from './pages/ResiliencePage';
+import { ProfilesPage } from './pages/ProfilesPage';
 
-import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Plug, ShieldAlert } from 'lucide-react';
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Plug, ShieldAlert, Route } from 'lucide-react';
 import { Logo } from './components/Logo';
 import { ProfileNotificationBadge } from './components/NotificationBell';
 
@@ -100,6 +101,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
     ...(can('connections:read') ? [{ to: '/dashboard/connections', icon: <Plug size={17} />, label: 'Connections' }] : []),
     ...(can('resilience:read') ? [{ to: '/dashboard/resilience', icon: <ShieldAlert size={17} />, label: 'Resilience' }] : []),
+    ...(can('profiles:read') ? [{ to: '/dashboard/routing-profiles', icon: <Route size={17} />, label: 'Routing Profiles' }] : []),
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
     { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Playground' },
@@ -368,6 +370,7 @@ const router = createBrowserRouter([
           { path: 'connections', element: <ConnectionsPage /> },
           { path: 'connections/:connectionId/instances', element: <ModelInstancesPage /> },
           { path: 'resilience', element: <ResiliencePage /> },
+          { path: 'routing-profiles', element: <ProfilesPage /> },
           { path: 'projects', element: <ProjectsPage /> },
           {
             path: 'projects/new',
