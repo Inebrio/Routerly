@@ -57,19 +57,21 @@ vi.mock('./api', () => ({
   getSystemInfo: vi.fn(),
   getSettings: vi.fn(),
   updateSettings: vi.fn(),
+  getClients: vi.fn(),
 }));
 
 // ── AuthContext mock ───────────────────────────────────────────────────────────
 vi.mock('./AuthContext', () => ({ useAuth: vi.fn() }));
 
 import App from './App';
-import { checkSetupStatus, getSystemInfo, getSettings, updateSettings } from './api';
+import { checkSetupStatus, getSystemInfo, getSettings, updateSettings, getClients } from './api';
 import { useAuth } from './AuthContext';
 
 const mockCheckSetup = vi.mocked(checkSetupStatus as () => Promise<unknown>);
 const mockGetSystemInfo = vi.mocked(getSystemInfo as () => Promise<unknown>);
 const mockGetSettings = vi.mocked(getSettings as () => Promise<unknown>);
 const mockUpdateSettings = vi.mocked(updateSettings as (...a: unknown[]) => Promise<unknown>);
+const mockGetClients = vi.mocked(getClients as () => Promise<unknown>);
 const mockUseAuth = vi.mocked(useAuth);
 
 const adminUser = { id: 'u1', email: 'admin@test.com', role: 'admin', totpEnabled: false };
@@ -84,6 +86,7 @@ beforeEach(() => {
   mockGetSystemInfo.mockResolvedValue({ isDocker: false });
   mockGetSettings.mockResolvedValue({ telemetry: true, requireMfa: false });
   mockUpdateSettings.mockResolvedValue(undefined);
+  mockGetClients.mockRejectedValue(Object.assign(new Error('Not found'), { status: 404 }));
   mockUseAuth.mockReturnValue({
     user: adminUser,
     isLoading: false,
