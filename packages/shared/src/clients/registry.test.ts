@@ -152,4 +152,24 @@ describe('buildSnippet', () => {
     const clineMeta = CLIENT_REGISTRY.find((c) => c.id === 'cline')!;
     expect(clineMeta.supportState).toBe('documented');
   });
+
+  it('cline has configKind "ui" and an honest configPathHint (no fabricated file path)', () => {
+    const clineMeta = CLIENT_REGISTRY.find((c) => c.id === 'cline')!;
+    expect(clineMeta.configKind).toBe('ui');
+    expect(clineMeta.configPathHint).toBe('VS Code Settings (Cline panel), no file');
+    expect(clineMeta.configPathHint).not.toContain('.cline');
+    expect(clineMeta.configPathHint).not.toContain('config.json');
+  });
+
+  it('for configKind "ui" returns a settings-UI pointer, not fabricated file content', () => {
+    const clineMeta = CLIENT_REGISTRY.find((c) => c.id === 'cline')!;
+
+    const snippet = buildSnippet(clineMeta, 'https://routerly.example.com', 'sk-test-token-cline');
+
+    expect(snippet).toContain('No config file');
+    expect(snippet).toContain(clineMeta.configPathHint);
+    // Regression guard: must never produce parseable file content for a
+    // client that has no config file.
+    expect(() => JSON.parse(snippet)).toThrow();
+  });
 });

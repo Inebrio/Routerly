@@ -7,7 +7,7 @@ export interface ClientMeta {
   supportState: SupportState;
   wireFormat: WireFormat;
   docSlug: string;
-  configKind: 'env' | 'toml' | 'json' | 'yaml';
+  configKind: 'env' | 'toml' | 'json' | 'yaml' | 'ui';
   configPathHint: string;
 }
 
@@ -54,8 +54,8 @@ export const CLIENT_REGISTRY: readonly ClientMeta[] = [
     supportState: 'documented',
     wireFormat: 'openai',
     docSlug: 'integrations/clients/cline',
-    configKind: 'json',
-    configPathHint: '~/.cline/config.json',
+    configKind: 'ui',
+    configPathHint: 'VS Code Settings (Cline panel), no file',
   },
 ];
 
@@ -76,6 +76,9 @@ export function buildSnippet(meta: ClientMeta, baseUrl: string, token: string): 
     }
     case 'toml': {
       return buildTomlSnippet(meta, baseUrl, token);
+    }
+    case 'ui': {
+      return buildUiSnippet(meta);
     }
     default: {
       const _exhaustive: never = meta.configKind;
@@ -159,6 +162,12 @@ function buildYamlSnippet(meta: ClientMeta, baseUrl: string, token: string): str
     `    apiBase: ${resolvedBaseUrl}`,
     `    apiKey: ${token}`,
   ].join('\n');
+}
+
+function buildUiSnippet(meta: ClientMeta): string {
+  // No config file to write. Point the user at the settings UI instead of
+  // fabricating file content that doesn't exist.
+  return `No config file. Configure via ${meta.configPathHint}. See docs.`;
 }
 
 function buildTomlSnippet(meta: ClientMeta, baseUrl: string, token: string): string {
