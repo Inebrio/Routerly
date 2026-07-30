@@ -40,15 +40,26 @@ describe('CLIENT_REGISTRY', () => {
 });
 
 describe('buildSnippet', () => {
-  it('for anthropic client embeds base URL and token and mentions ANTHROPIC_BASE_URL', () => {
+  it('for anthropic client produces settings.json with nested env, ANTHROPIC_BASE_URL/AUTH_TOKEN, and no fabricated keys', () => {
     const claudeCodeMeta = CLIENT_REGISTRY.find((c) => c.id === 'claude-code')!;
     const baseUrl = 'https://routerly.example.com';
     const token = 'sk-test-token-123';
 
     const snippet = buildSnippet(claudeCodeMeta, baseUrl, token);
-    expect(snippet).toContain(baseUrl);
-    expect(snippet).toContain(token);
-    expect(snippet).toContain('ANTHROPIC_BASE_URL');
+    const parsed = JSON.parse(snippet);
+
+    // Correct Claude Code settings.json shape: { env: { ANTHROPIC_BASE_URL, ANTHROPIC_AUTH_TOKEN } }
+    expect(parsed).toHaveProperty('env');
+    expect(parsed.env.ANTHROPIC_BASE_URL).toBe(baseUrl);
+    expect(parsed.env.ANTHROPIC_AUTH_TOKEN).toBe(token);
+
+    // Regression guards: the old fabricated shape and wrong auth var must never come back.
+    expect(parsed).not.toHaveProperty('claude_code');
+    expect(parsed.env).not.toHaveProperty('apiKey');
+    expect(parsed.env).not.toHaveProperty('baseUrl');
+    expect(parsed.env).not.toHaveProperty('ANTHROPIC_API_KEY');
+    expect(snippet).not.toContain('claude_code');
+    expect(snippet).not.toContain('ANTHROPIC_API_KEY');
   });
 
   it('for openai client embeds base URL verbatim (no /v1 auto-append) and token', () => {
