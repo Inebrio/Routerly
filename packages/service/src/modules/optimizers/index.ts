@@ -4,6 +4,7 @@ import { ccrModule } from './ccr/index.js'
 import { rtkModule } from './rtk/index.js'
 import { headroomModule } from './headroom/index.js'
 import { relevanceModule } from './relevance/index.js'
+import { cavemanModule } from './caveman/index.js'
 import type { RouterlyModule } from '../../core/index.js'
 
 /**
@@ -19,4 +20,5 @@ export const optimizerModules: RouterlyModule[] = [
   rtkModule,
   headroomModule,
   relevanceModule,
+  cavemanModule,
 ]
