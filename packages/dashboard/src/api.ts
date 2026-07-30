@@ -895,3 +895,11 @@ export const updateInstance = (id: string, data: Partial<{
 }>) => request<Instance>(`/instances/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
 export const deleteInstance = (id: string) => request<void>(`/instances/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
+// ── Resilience ───────────────────────────────────────────────────────────
+import type { ResilienceSnapshot, ResilienceLevel } from '@routerly/shared';
+export type { ResilienceSnapshot, ResilienceEntry, ResilienceLevel, ResilienceState, ResilienceKey } from '@routerly/shared';
+
+export const getResilience = () => request<ResilienceSnapshot>('/resilience');
+export const resetResilience = (body?: { level: ResilienceLevel; id: string }) =>
+  request<{ ok: true }>('/resilience/reset', { method: 'POST', body: JSON.stringify(body ?? {}) });
+
