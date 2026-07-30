@@ -434,10 +434,11 @@ describe('POST /api/routing/simulate', () => {
     } as any)
     const app = await buildApp()
     await app.inject({ method: 'POST', url: '/api/routing/simulate', headers: authWith('profiles:read', { projects: [rrProject] }), payload: { request, projectId: rrProject.id, selector: 'round-robin' } })
-    await app.inject({ method: 'POST', url: '/api/routing/simulate', headers: authWith('profiles:read', { projects: [rrProject] }), payload: { request, projectId: rrProject.id, selector: 'round-robin' } })
     await app.close()
-    // the live (unprefixed) cursor for this project must be untouched by the two simulate calls above:
-    // its very first real call still starts at cursor 0.
+    // the live (unprefixed) cursor for this project must be untouched by the simulate call above.
+    // a single simulate call is deliberate: with a leaked/unprefixed key, one call would advance
+    // the live cursor from 0 to 1, so its first real read would be 1 (mod 2) instead of 0 --
+    // a count divisible by the modulus (e.g. 2) would wrap back to 0 either way and prove nothing.
     expect(nextCursor(rrProject.id, 2)).toBe(0)
   })
 })

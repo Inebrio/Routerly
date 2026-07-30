@@ -489,7 +489,8 @@ POST /api/routing/profiles/clone
 ```
 
 **Fields:**
-- `baseId`: id of the profile to clone (built-in or user-owned) (required)
+- `baseId`: id of the built-in profile to clone (user-owned profiles cannot
+  be cloned) (required)
 - `label`: display name for the new profile (required, non-empty)
 
 **Response `200`:** the created profile (`builtin: false`, `version: 1`,
