@@ -105,6 +105,30 @@ describe('session-dedup optimizer', () => {
     expect(msgs.filter((m) => m.role === 'assistant')).toHaveLength(2)
   })
 
+  it('does NOT dedup distinct image-only messages that share an empty text portion', () => {
+    // text-only keys would flatten all three to '' and drop the middle image — data loss.
+    const ctx = ctxWith([
+      { role: 'user', content: [{ type: 'image_url', image_url: { url: 'https://x/a.png' } }] },
+      { role: 'user', content: [{ type: 'image_url', image_url: { url: 'https://x/b.png' } }] },
+      { role: 'user', content: [{ type: 'image_url', image_url: { url: 'https://x/c.png' } }] },
+    ])
+    const result = sessionDedupOptimizer.optimize(ctx)
+    expect(result.changed).toBe(false)
+    expect(readMessages(ctx.request)).toHaveLength(3)
+    expect(sessionDedupOptimizer.validate(ctx, result)).toBe(true)
+  })
+
+  it('does NOT dedup tool-call turns that share text but differ by tool_call_id', () => {
+    const ctx = ctxWith([
+      { role: 'tool', content: 'result', tool_call_id: 't1' },
+      { role: 'tool', content: 'result', tool_call_id: 't2' },
+      { role: 'tool', content: 'result', tool_call_id: 't3' },
+    ])
+    const result = sessionDedupOptimizer.optimize(ctx)
+    expect(result.changed).toBe(false)
+    expect(readMessages(ctx.request)).toHaveLength(3)
+  })
+
   it('validate rejects a result that lost unique content', () => {
     const ctx = ctxWith([
       { role: 'user', content: 'a' },
