@@ -2,18 +2,18 @@
  * Claude Code client integration.
  *
  * Research (verified against the live Claude Code docs on 2026-07-30, not
- * training memory — see task-5 brief for the fetch):
+ * training memory; see task-5 brief for the fetch):
  * - Global settings file: `~/.claude/settings.json` (JSON). Windows path
  *   (`%USERPROFILE%\.claude\settings.json`) is out of scope: no existing
  *   Windows-path handling elsewhere in this codebase to extend.
  * - Environment variable overrides live under an `"env"` object in that file:
  *   `{ "env": { "KEY": "value", ... } }`.
- * - Base URL override: `ANTHROPIC_BASE_URL` — root URL, no `/v1` suffix.
+ * - Base URL override: `ANTHROPIC_BASE_URL` (root URL, no `/v1` suffix).
  * - Auth: `ANTHROPIC_AUTH_TOKEN` (sends `Authorization: Bearer <token>`), not
  *   `ANTHROPIC_API_KEY` (sends `X-Api-Key`). Routerly's inbound auth
  *   (`packages/service/src/modules/api-reverse-proxy/anthropic.ts`,
  *   `extractProjectToken`) checks `Authorization: Bearer` first, and
- *   Routerly project tokens are bearer tokens — `ANTHROPIC_AUTH_TOKEN` is the
+ *   Routerly project tokens are bearer tokens, so `ANTHROPIC_AUTH_TOKEN` is the
  *   correct key, matching `docs/guides/claude-subscription.md`.
  */
 import { readFile, mkdir, access } from 'node:fs/promises';
