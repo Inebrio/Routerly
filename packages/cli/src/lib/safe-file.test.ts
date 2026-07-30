@@ -92,7 +92,7 @@ describe('backupFile', () => {
   });
 
   it('throws on a non-ENOENT read error instead of mislabeling existedBefore', async () => {
-    // A directory path yields EISDIR on readFile — a real error, NOT "missing".
+    // A directory path yields EISDIR on readFile, a real error, NOT "missing".
     // Mislabeling it existedBefore=false would let a later rollback delete it.
     const dirPath = join(HOME, 'a-directory');
     await mkdir(dirPath, { recursive: true });
