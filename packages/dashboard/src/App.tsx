@@ -41,8 +41,9 @@ import { ConnectionsPage } from './pages/ConnectionsPage';
 import { ModelInstancesPage } from './pages/ModelInstancesPage';
 import { ResiliencePage } from './pages/ResiliencePage';
 import { ProfilesPage } from './pages/ProfilesPage';
+import { ClientsPage, useClientsEnabled } from './pages/ClientsPage';
 
-import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Plug, ShieldAlert, Route } from 'lucide-react';
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Plug, ShieldAlert, Route, Terminal } from 'lucide-react';
 import { Logo } from './components/Logo';
 import { ProfileNotificationBadge } from './components/NotificationBell';
 
@@ -94,6 +95,9 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
   const { user, logout, can } = useAuth();
   const navigate = useNavigate();
   const profileRowRef = useRef<HTMLDivElement>(null);
+  // Clients has no permission gate (session-only) — visibility instead depends on
+  // whether the module is enabled, only known after this async check resolves.
+  const clientsEnabled = useClientsEnabled();
 
   function handleLogout() { logout(); navigate('/dashboard/login'); }
 
@@ -106,6 +110,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
     { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Playground' },
+    ...(clientsEnabled ? [{ to: '/dashboard/clients', icon: <Terminal size={17} />, label: 'Clients' }] : []),
   ];
 
   return (
@@ -372,6 +377,7 @@ const router = createBrowserRouter([
           { path: 'connections/:connectionId/instances', element: <ModelInstancesPage /> },
           { path: 'resilience', element: <ResiliencePage /> },
           { path: 'routing-profiles', element: <ProfilesPage /> },
+          { path: 'clients', element: <ClientsPage /> },
           { path: 'projects', element: <ProjectsPage /> },
           {
             path: 'projects/new',

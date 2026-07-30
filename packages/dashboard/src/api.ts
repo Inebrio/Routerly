@@ -94,12 +94,22 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return processResponse<T>(res, path);
 }
 
+/** Thrown by request()/processResponse() on any non-2xx response. `status` lets
+ * callers distinguish e.g. 404 (feature/module disabled) from other failures. */
+export type ApiError = Error & { status?: number };
+
+function httpError(message: string, status: number): ApiError {
+  const err: ApiError = new Error(message);
+  err.status = status;
+  return err;
+}
+
 async function processResponse<T>(res: Response, path: string): Promise<T> {
   if (res.status === 204) return undefined as T;
 
   const text = await res.text();
   if (!text) {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw httpError(`HTTP ${res.status}`, res.status);
     return undefined as T;
   }
 
@@ -111,7 +121,7 @@ async function processResponse<T>(res: Response, path: string): Promise<T> {
     throw new Error('Invalid JSON response from server');
   }
 
-  if (!res.ok) throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
+  if (!res.ok) throw httpError((data as { error?: string }).error ?? `HTTP ${res.status}`, res.status);
   return data as T;
 }
 
@@ -957,4 +967,23 @@ export const previewOptimizers = (body: {
   sampleMessages: { role: string; content: string }[];
   steps: OptimizerStep[];
 }) => request<OptimizerPreviewResult>('/optimizers/preview', { method: 'POST', body: JSON.stringify(body) });
+
+// ── Client configurator ──────────────────────────────────────────────────
+import type { ClientMeta } from '@routerly/shared';
+export type { ClientMeta, SupportState, WireFormat } from '@routerly/shared';
+
+export interface ClientListItem extends ClientMeta {
+  openaiBaseUrl: string;
+  anthropicBaseUrl: string;
+}
+
+export interface ClientsResponse {
+  enabled: boolean;
+  clients: ClientListItem[];
+  /** Non-loopback IPv4 addresses of the machine running the service. */
+  advertisedAddresses: string[];
+}
+
+/** 404s (as an ApiError with `status === 404`) when the client-configurator module is disabled. */
+export const getClients = () => request<ClientsResponse>('/clients');
 
