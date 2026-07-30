@@ -8,7 +8,7 @@ import type { EffectivePii } from '../pii/piiScrubber.js'
 import { checkGuardrails } from '../guardrails/guardrails.js'
 
 // ponytail: string|array content extraction, the exact inline helper from both routes.
-function messageText(content: unknown): string {
+export function messageText(content: unknown): string {
   if (typeof content === 'string') return content
   if (Array.isArray(content)) {
     return content
