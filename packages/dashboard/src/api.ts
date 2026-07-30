@@ -427,6 +427,7 @@ export const ALL_PERMISSIONS = [
   'connections:read', 'connections:manage',
   'resilience:read', 'resilience:manage',
   'profiles:read', 'profiles:manage',
+  'optimizers:read', 'optimizers:manage',
 ] as const;
 export type Permission = typeof ALL_PERMISSIONS[number];
 

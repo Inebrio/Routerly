@@ -11,7 +11,7 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, UsageByModelEntry, ChannelProvider, ProviderRepo } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, ChannelProvider, ProviderRepo } from '@routerly/shared';
 import { CHANNEL_SECRET_FIELDS } from '@routerly/shared';
 import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
@@ -29,6 +29,8 @@ import { ALL_MODULES } from '../index.js';
 import { API_ROUTES } from '../../core/tokens.js';
 import { connectionsRoutes } from './connections.js';
 import { profilesRoutes } from './profiles.js';
+import { getOptimizerRegistry } from '../optimizers/registry.js';
+import { runPreview } from '../optimizers/preview.js';
 import {
   isModuleEnabled,
   isAlwaysOn,
@@ -234,6 +236,33 @@ const piiPolicySchema = z.object({
 
 const piiConfigSchema = z.object({
   policies: z.array(piiPolicySchema),
+});
+
+const optimizerIdEnum = z.enum(['session-dedup', 'ccr', 'rtk', 'headroom', 'relevance', 'caveman', 'llmlingua-2']);
+
+const optimizerStepSchema = z.object({
+  id: optimizerIdEnum,
+  enabled: z.boolean(),
+  threshold: z.number().min(0).max(1).optional(),
+});
+
+// steps order = execution order; each optimizer id may appear at most once.
+const optimizerConfigSchema = z.object({
+  steps: z.array(optimizerStepSchema),
+}).superRefine((cfg, ctx) => {
+  const seen = new Set<string>();
+  cfg.steps.forEach((step, i) => {
+    if (seen.has(step.id)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `duplicate optimizer step: ${step.id}`, path: ['steps', i, 'id'] });
+    }
+    seen.add(step.id);
+  });
+});
+
+const previewBodySchema = z.object({
+  projectId: z.string().optional(),
+  sampleMessages: z.array(z.any()).min(1),
+  steps: z.array(optimizerStepSchema),
 });
 
 export const apiRoutes: FastifyPluginAsync = async (fastify) => {
@@ -852,9 +881,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       timeoutMs?: number;
       guardrails?: GuardrailConfig;
       pii?: PiiConfig;
+      optimizers?: OptimizerConfig | null;
     }
   }>('/api/projects', async (req, reply) => {
     if (!requirePerm(req, 'project:write', reply)) return;
+    // Setting the optimizers pipeline is a privileged sub-operation of project write.
+    if (req.body.optimizers != null && !requirePerm(req, 'optimizers:manage', reply)) return;
     const projects = await readConfig('projects');
     const trimmedName = req.body.name.trim();
     if (!trimmedName) return reply.status(400).send({ error: 'Project name cannot be empty' });
@@ -872,6 +904,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const parsed = piiConfigSchema.safeParse(req.body.pii);
       if (!parsed.success) return reply.status(400).send({ error: 'Invalid pii config', details: parsed.error.issues });
       pii = parsed.data as PiiConfig;
+    }
+    let optimizers: OptimizerConfig | undefined;
+    if (req.body.optimizers != null) {
+      const parsed = optimizerConfigSchema.safeParse(req.body.optimizers);
+      if (!parsed.success) return reply.status(400).send({ error: 'Invalid optimizers config', details: parsed.error.issues });
+      optimizers = parsed.data as OptimizerConfig;
     }
 
     const rawToken = `sk-rt-${randomBytes(32).toString('hex')}`;
@@ -898,6 +936,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       timeoutMs: req.body.timeoutMs ?? 5000,
       ...(guardrails ? { guardrails } : {}),
       ...(pii ? { pii } : {}),
+      ...(optimizers ? { optimizers } : {}),
     };
     projects.push(project);
     await writeConfig('projects', projects);
@@ -918,9 +957,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       timeoutMs?: number;
       guardrails?: GuardrailConfig | null;
       pii?: PiiConfig | null;
+      optimizers?: OptimizerConfig | null;
     };
   }>('/api/projects/:id', async (req, reply) => {
     if (!requirePerm(req, 'project:write', reply)) return;
+    // Changing the optimizers pipeline (set or clear) is a privileged sub-operation.
+    if (req.body.optimizers !== undefined && !requirePerm(req, 'optimizers:manage', reply)) return;
     const projects = await readConfig('projects');
     const index = projects.findIndex(p => p.id === req.params.id);
     if (index === -1) return reply.status(404).send({ error: 'Not found' });
@@ -950,8 +992,18 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     } else if (projects[index]!.pii) {
       piiUpdate = { pii: projects[index]!.pii };
     }
+    let optimizersUpdate: { optimizers?: OptimizerConfig } = {};
+    if (req.body.optimizers === null) {
+      optimizersUpdate = {};
+    } else if (req.body.optimizers !== undefined) {
+      const parsed = optimizerConfigSchema.safeParse(req.body.optimizers);
+      if (!parsed.success) return reply.status(400).send({ error: 'Invalid optimizers config', details: parsed.error.issues });
+      optimizersUpdate = { optimizers: parsed.data as OptimizerConfig };
+    } else if (projects[index]!.optimizers) {
+      optimizersUpdate = { optimizers: projects[index]!.optimizers };
+    }
 
-    const { guardrails: _g, pii: _p, notifications: _n, ...existing } = projects[index]!;
+    const { guardrails: _g, pii: _p, optimizers: _o, notifications: _n, ...existing } = projects[index]!;
     const updated: ProjectConfig = {
       ...existing,
       name: trimmedName,
@@ -966,6 +1018,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       timeoutMs: req.body.timeoutMs ?? existing.timeoutMs ?? 5000,
       ...guardrailsUpdate,
       ...piiUpdate,
+      ...optimizersUpdate,
     };
     projects[index] = updated;
     await writeConfig('projects', projects);
@@ -1014,6 +1067,40 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     void emitEvent('config.project_deleted', 'info', { projectId: req.params.id, name: deleted?.name }, { log: req.log });
     audit(req, 'project:delete', 'success', { id: req.params.id });
     return reply.status(204).send();
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // OPTIMIZERS
+  // ══════════════════════════════════════════════════════════════════════════════
+
+  // Read-only catalog of installed optimizers, resolved from the in-memory registry
+  // (empty when the optimizer modules are not bootstrapped, e.g. bare-fastify tests).
+  fastify.get('/api/optimizers', async (req, reply) => {
+    if (!requirePerm(req, 'optimizers:read', reply)) return;
+    const registry = getOptimizerRegistry();
+    const installed = (registry?.list() ?? []).map(o => ({ id: o.id, klass: o.klass, installed: true }));
+    return reply.send(installed);
+  });
+
+  // Dry-run: apply the given steps to sample messages and report token deltas.
+  // Pure — no upstream call, no config write.
+  fastify.post<{ Body: { projectId?: string; sampleMessages: Message[]; steps: { id: string; enabled: boolean; threshold?: number }[] } }>('/api/optimizers/preview', async (req, reply) => {
+    if (!requirePerm(req, 'optimizers:read', reply)) return;
+    const parsed = previewBodySchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Invalid preview request', details: parsed.error.issues });
+    let project: ProjectConfig | undefined;
+    if (parsed.data.projectId) {
+      const projects = await readConfig('projects');
+      project = projects.find(p => p.id === parsed.data.projectId);
+      if (!project) return reply.status(404).send({ error: 'Not found' });
+    }
+    const result = await runPreview({
+      registry: getOptimizerRegistry(),
+      sampleMessages: parsed.data.sampleMessages as Message[],
+      steps: parsed.data.steps as OptimizerConfig['steps'],
+      ...(project ? { project } : {}),
+    });
+    return reply.send(result);
   });
 
   const tagsSchema = z.record(z.string().max(128), z.string().max(512))

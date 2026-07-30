@@ -27,6 +27,8 @@ const PERM_LABELS: Record<Permission, string> = {
   'resilience:manage':  'Resilience – Manage',
   'profiles:read':      'Routing Profiles – Read',
   'profiles:manage':    'Routing Profiles – Manage',
+  'optimizers:read':    'Optimizers – Read',
+  'optimizers:manage':  'Optimizers – Manage',
 };
 
 interface RoleFormState {

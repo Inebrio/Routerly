@@ -56,6 +56,8 @@ import bcrypt from 'bcrypt'
 import { resolveCodexToken } from '../reverse-proxy/lanes/openaiOAuthForward.js'
 import { verifyTotp, generateTotpSecret, generateBackupCodes, hashBackupCode } from '../auth/totp.js'
 import { catalogFetcher } from '../catalog/fetcher.js'
+import { OptimizerRegistry, setOptimizerRegistry, type Optimizer } from '../optimizers/registry.js'
+import { readMessages, writeMessages, tokensOf } from '../optimizers/messages.js'
 
 const mockCatalogFetcher = vi.mocked(catalogFetcher)
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
@@ -10692,5 +10694,214 @@ describe('modules endpoints', () => {
     await app.close()
     expect(res.statusCode).toBe(200)
     expect(res.json()).toMatchObject({ id: 'guardrails', enabled: true, restartRequired: true })
+  })
+})
+
+// ─── Optimizers: project config CRUD + list + preview ────────────────────────────
+describe('Optimizers API', () => {
+  // A real registry with one fake lossless optimizer that drops the last message.
+  function fakeOptimizer(): Optimizer {
+    return {
+      id: 'session-dedup',
+      klass: 'lossless',
+      supports: (ctx) => readMessages(ctx.request).length > 1,
+      estimate: (ctx) => {
+        const before = tokensOf(readMessages(ctx.request))
+        return { estimatedTokensBefore: before, estimatedTokensAfter: before }
+      },
+      optimize: (ctx) => {
+        const msgs = readMessages(ctx.request)
+        const before = tokensOf(msgs)
+        const kept = msgs.slice(0, -1)
+        writeMessages(ctx.request, kept)
+        return { changed: true, estimatedTokensBefore: before, estimatedTokensAfter: tokensOf(kept) }
+      },
+      validate: () => true,
+    }
+  }
+  function installFakeRegistry() {
+    const r = new OptimizerRegistry()
+    r.register(fakeOptimizer())
+    setOptimizerRegistry(r)
+  }
+  const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+  const optimizersBody = { steps: [{ id: 'session-dedup', enabled: true }] }
+
+  function authAs(user: any, roles: any[] = []) {
+    mockVerifyToken.mockReturnValue({ sub: user.id } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [user]
+      if (t === 'roles') return roles
+      if (t === 'projects') return [project]
+      return []
+    })
+  }
+
+  it('PUT /api/projects/:id persists optimizers with optimizers:manage (200)', async () => {
+    authAs(adminUser)
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [], optimizers: optimizersBody }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect((res.json() as Record<string, unknown>)['optimizers']).toEqual(optimizersBody)
+    expect(mockWriteConfig).toHaveBeenCalledWith('projects', expect.arrayContaining([
+      expect.objectContaining({ id: 'p1', optimizers: optimizersBody }),
+    ]))
+  })
+
+  it('PUT /api/projects/:id clears optimizers when null (200)', async () => {
+    authAs(adminUser)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [{ ...project, optimizers: optimizersBody }]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [], optimizers: null }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect((res.json() as Record<string, unknown>)['optimizers']).toBeUndefined()
+  })
+
+  it('PUT /api/projects/:id returns 403 without optimizers:manage', async () => {
+    const pwRole = { id: 'pw', name: 'PW', permissions: ['project:write'] }
+    const pwUser = { id: 'pw-id', email: 'pw@x.com', passwordHash: '$2b$12$h', roleId: 'pw', projectIds: [] }
+    authAs(pwUser, [pwRole])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [], optimizers: optimizersBody }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('PUT /api/projects/:id returns 400 for a duplicate optimizer id', async () => {
+    authAs(adminUser)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [], optimizers: { steps: [
+        { id: 'ccr', enabled: true }, { id: 'ccr', enabled: false },
+      ] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('PUT /api/projects/:id returns 400 for an out-of-range threshold', async () => {
+    authAs(adminUser)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [], optimizers: { steps: [
+        { id: 'relevance', enabled: true, threshold: 1.5 },
+      ] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('POST /api/projects persists optimizers with optimizers:manage (201)', async () => {
+    authAs(adminUser)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return []
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/projects',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'New', models: [], optimizers: optimizersBody }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    expect((res.json() as Record<string, unknown>)['optimizers']).toEqual(optimizersBody)
+  })
+
+  it('GET /api/optimizers lists installed optimizers with optimizers:read (200)', async () => {
+    installFakeRegistry()
+    authAs(adminUser)
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/optimizers', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toEqual([{ id: 'session-dedup', klass: 'lossless', installed: true }])
+  })
+
+  it('GET /api/optimizers returns 403 without optimizers:read', async () => {
+    const roRole = { id: 'ro', name: 'RO', permissions: ['project:read'] }
+    const roUser = { id: 'ro-id', email: 'ro@x.com', passwordHash: '$2b$12$h', roleId: 'ro', projectIds: [] }
+    authAs(roUser, [roRole])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/optimizers', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('POST /api/optimizers/preview returns token deltas with optimizers:read (200)', async () => {
+    installFakeRegistry()
+    authAs(adminUser)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/optimizers/preview',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        sampleMessages: [
+          { role: 'user', content: 'first message here that is reasonably long' },
+          { role: 'assistant', content: 'a reply that will be dropped by the fake optimizer' },
+        ],
+        steps: [{ id: 'session-dedup', enabled: true }],
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { estimatedTokensBefore: number; estimatedTokensAfter: number; perStep: unknown[] }
+    expect(body.estimatedTokensAfter).toBeLessThan(body.estimatedTokensBefore)
+    expect(body.perStep).toHaveLength(1)
+  })
+
+  it('POST /api/optimizers/preview returns 400 for an empty sampleMessages', async () => {
+    installFakeRegistry()
+    authAs(adminUser)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/optimizers/preview',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ sampleMessages: [], steps: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('POST /api/optimizers/preview returns 403 without optimizers:read', async () => {
+    const roRole = { id: 'ro', name: 'RO', permissions: ['project:read'] }
+    const roUser = { id: 'ro-id', email: 'ro@x.com', passwordHash: '$2b$12$h', roleId: 'ro', projectIds: [] }
+    authAs(roUser, [roRole])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/optimizers/preview',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ sampleMessages: [{ role: 'user', content: 'x' }], steps: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
   })
 })

@@ -2,7 +2,7 @@ import { defineModule, type Processor, type RouterlyModule } from '../../core/in
 import { OPTIMIZER_REGISTRY, PROXY_PIPELINE } from '../../core/tokens.js'
 import type { ChatCompletionRequest, OptimizerResult } from '@routerly/shared'
 import type { ProxyContext } from '../reverse-proxy/context.js'
-import { OptimizerRegistry } from './registry.js'
+import { OptimizerRegistry, setOptimizerRegistry } from './registry.js'
 import { passesSafetyGate } from './gate.js'
 
 /**
@@ -13,7 +13,7 @@ import { passesSafetyGate } from './gate.js'
  * repoint only the `request` property and silently make optimizers OpenAI-only.
  * Every optimizer's `optimize`/`recover` must obey the same in-place rule.
  */
-function restoreInPlace(req: ChatCompletionRequest, snapshot: ChatCompletionRequest): void {
+export function restoreInPlace(req: ChatCompletionRequest, snapshot: ChatCompletionRequest): void {
   for (const key of Object.keys(req)) delete (req as Record<string, unknown>)[key]
   Object.assign(req, snapshot)
 }
@@ -78,6 +78,7 @@ export const optimizerCoreModule: RouterlyModule = defineModule({
   register({ container }) {
     const registry = new OptimizerRegistry()
     container.register(OPTIMIZER_REGISTRY, registry)
+    setOptimizerRegistry(registry)
     const pipeline = container.resolve(PROXY_PIPELINE)
     pipeline.contribute(applyProcessor(registry))
   },

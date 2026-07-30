@@ -317,6 +317,8 @@ const PERM_LABELS_LOCAL: Record<Permission, string> = {
   'resilience:manage':  'Resilience – Manage',
   'profiles:read':      'Routing Profiles – Read',
   'profiles:manage':    'Routing Profiles – Manage',
+  'optimizers:read':    'Optimizers – Read',
+  'optimizers:manage':  'Optimizers – Manage',
 };
 
 /* v8 ignore next */
