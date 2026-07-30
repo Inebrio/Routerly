@@ -12,7 +12,7 @@ import { CONFIG_PATHS } from '../../lib/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
 import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, ChannelProvider, ProviderRepo } from '@routerly/shared';
-import { CHANNEL_SECRET_FIELDS } from '@routerly/shared';
+import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY } from '@routerly/shared';
 import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
@@ -31,6 +31,7 @@ import { connectionsRoutes } from './connections.js';
 import { profilesRoutes } from './profiles.js';
 import { getOptimizerRegistry } from '../optimizers/registry.js';
 import { runPreview } from '../optimizers/preview.js';
+import { isClientConfiguratorEnabled } from '../clients/module.js';
 import {
   isModuleEnabled,
   isAlwaysOn,
@@ -1697,6 +1698,28 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       .filter((n): n is NonNullable<typeof n> => n !== undefined && n.family === 'IPv4' && !n.internal)
       .map(n => n.address);
     return reply.send({ ...settings, localAddresses });
+  });
+
+  // ─── GET /api/clients ──────────────────────────────────────────────────────
+  // Dashboard-only metadata endpoint for the client-configurator feature: the
+  // static CLIENT_REGISTRY (@routerly/shared) plus the per-request base URLs
+  // and advertised LAN addresses a client config snippet needs. Session-gated
+  // only (no Permission), same shape as the update-check guard above. 404s
+  // when the client-configurator module hasn't been bootstrapped.
+  fastify.get('/api/clients', async (req, reply) => {
+    if (!req.dashUser) return reply.status(401).send({ error: 'Unauthorized' });
+    if (!isClientConfiguratorEnabled()) return reply.status(404).send({ error: 'Not found' });
+    const base = `${req.protocol}://${req.headers.host}`;
+    const clients = CLIENT_REGISTRY.map(meta => ({
+      ...meta,
+      openaiBaseUrl: `${base}/v1`,
+      anthropicBaseUrl: base,
+    }));
+    const advertisedAddresses = Object.values(networkInterfaces())
+      .flat()
+      .filter((n): n is NonNullable<typeof n> => n !== undefined && n.family === 'IPv4' && !n.internal)
+      .map(n => n.address);
+    return reply.send({ enabled: true, clients, advertisedAddresses });
   });
 
   // ─── PUT /api/settings ─────────────────────────────────────────────────────

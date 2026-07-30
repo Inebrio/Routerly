@@ -58,6 +58,7 @@ import { verifyTotp, generateTotpSecret, generateBackupCodes, hashBackupCode } f
 import { catalogFetcher } from '../catalog/fetcher.js'
 import { OptimizerRegistry, setOptimizerRegistry, type Optimizer } from '../optimizers/registry.js'
 import { readMessages, writeMessages, tokensOf } from '../optimizers/messages.js'
+import { setClientConfiguratorEnabled } from '../clients/module.js'
 
 const mockCatalogFetcher = vi.mocked(catalogFetcher)
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
@@ -2519,6 +2520,66 @@ describe('GET /api/system/update-check', () => {
     const res = await app.inject({ method: 'GET', url: '/api/system/update-check', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(200)
+  })
+})
+
+describe('GET /api/clients', () => {
+  afterEach(() => {
+    setClientConfiguratorEnabled(false)
+  })
+
+  it('returns 404 when the client-configurator module is not registered', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/clients', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('returns 401 when not authenticated', async () => {
+    mockVerifyToken.mockReturnValue(null as any)
+    mockReadConfig.mockResolvedValue([] as any)
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/clients' })
+    await app.close()
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('returns 200 with 5 clients, each carrying openaiBaseUrl/anthropicBaseUrl', async () => {
+    setClientConfiguratorEnabled(true)
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return { logLevel: 'info' }
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/clients',
+      headers: { ...adminAuthHeaders(), host: 'localhost:3000' },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { enabled: boolean; clients: Array<Record<string, unknown>>; advertisedAddresses: string[] }
+    expect(body.enabled).toBe(true)
+    expect(body.clients).toHaveLength(5)
+    expect(Array.isArray(body.advertisedAddresses)).toBe(true)
+    for (const client of body.clients) {
+      expect(typeof client['openaiBaseUrl']).toBe('string')
+      expect(typeof client['anthropicBaseUrl']).toBe('string')
+      expect(client['openaiBaseUrl']).toBe('http://localhost:3000/v1')
+      expect(client['anthropicBaseUrl']).toBe('http://localhost:3000')
+    }
   })
 })
 
