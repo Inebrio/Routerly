@@ -678,7 +678,7 @@ written.**
   [`optimizers` project field](#optimizers-project-field) (required)
 - `projectId`: optional. When given, the preview runs "as" that project (its
   other config is read; nothing is written); `404` if unknown. The `steps`
-  in the request body still drive which optimizers run — the project's own
+  in the request body still drive which optimizers run. The project's own
   saved `optimizers.steps` are not substituted in
 
 **Response `200`:**
@@ -921,7 +921,7 @@ A project may carry an optional `optimizers` block, accepted by both
 follows the same undefined/null/object convention as `guardrails` and `pii`:
 omit it to leave the pipeline unchanged, send `null` to clear it, or send an
 object to validate and replace it. Setting or clearing it requires
-`optimizers:manage` **in addition to** `project:write` — a caller with
+`optimizers:manage` **in addition to** `project:write`. A caller with
 `project:write` but not `optimizers:manage` gets `403` on any request whose
 body includes a non-`undefined` `optimizers` field, even if every other
 field is otherwise valid.
@@ -940,21 +940,22 @@ field is otherwise valid.
 ```
 
 **Fields:**
-- `steps`: array of optimizer steps. Array order is execution order — steps
+- `steps`: array of optimizer steps. Array order is execution order, steps
   run top to bottom in the `request.preprocess` pipeline phase (required,
   may be empty)
 - Each step: `id` (one of `session-dedup`, `ccr`, `rtk`, `headroom`,
-  `relevance`, `caveman`, `llmlingua-2`; each id may appear at most once —
+  `relevance`, `caveman`, `llmlingua-2`; each id may appear at most once, and
   a duplicate id is rejected), `enabled: boolean`, `threshold?: number`
-  (optional; a positive number, capped at `1` for `relevance`, `caveman`
-  and `llmlingua-2`, unbounded for `ccr` and `headroom`)
+  (optional; a positive number, capped at `1` for `relevance` and
+  `llmlingua-2`, unbounded for `ccr` and `headroom`; unused for
+  `session-dedup`, `rtk` and `caveman`)
 
 See [Concepts: Optimizers](../concepts/optimizers.md) for what each id does
-and its class. See [Concepts: Optimizers — Threshold
+and its class. See [Concepts: Optimizers, Threshold
 Range](../concepts/optimizers.md#threshold-range) for what each id's
 threshold means (`ccr`: turn count, default 6; `headroom`: reserved token
-budget, default 1024; the rest: a `0`–`1` ratio). Leave threshold unset to
-use the built-in default.
+budget, default 1024; `relevance` and `llmlingua-2`: a `0`–`1` ratio; the
+rest unused). Leave threshold unset to use the built-in default.
 
 **Errors**: `400` invalid `optimizers` config (bad shape, out-of-range
 threshold, or duplicate step id) · `403` insufficient permissions

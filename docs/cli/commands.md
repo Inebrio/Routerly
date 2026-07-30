@@ -1296,7 +1296,7 @@ the current pipeline unchanged.
 |--------|-------------|
 | `--enable <id>` | Enable an optimizer step (repeatable) |
 | `--disable <id>` | Disable an optimizer step (repeatable) |
-| `--threshold <id=val>` | Set an optimizer step's threshold, `0`-`1` (repeatable) |
+| `--threshold <id=val>` | Set an optimizer step's threshold, range depends on the optimizer id (repeatable), see [Threshold Range](../concepts/optimizers.md#threshold-range) |
 | `--order <ids>` | Comma-separated optimizer ids controlling step order |
 | `--json` | Output the updated (sanitized) project as raw JSON |
 
@@ -1338,9 +1338,9 @@ routerly optimizers config Test --threshold relevance=1.5
 ```
 Error: Invalid optimizers config
 ```
-`relevance`, `caveman` and `llmlingua-2` thresholds are capped at `1` (a
+`relevance` and `llmlingua-2` thresholds are capped at `1` (a
 ratio); `ccr` and `headroom` accept any positive number (a turn count and a
-token budget respectively) — see [Concepts: Optimizers — Threshold
+token budget respectively). See [Concepts: Optimizers, Threshold
 Range](../concepts/optimizers.md#threshold-range).
 ```bash
 routerly optimizers config nonexistent-project-xyz --enable rtk
@@ -1363,7 +1363,7 @@ not modified.
 
 | Option | Description |
 |--------|-------------|
-| `--message <text>` | Sample user message (repeatable, required — at least one) |
+| `--message <text>` | Sample user message (repeatable, required, at least one) |
 | `--json` | Output the raw preview result as JSON |
 
 ```bash

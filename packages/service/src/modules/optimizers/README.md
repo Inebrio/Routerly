@@ -7,14 +7,14 @@ Runtime prompt/context optimizers registered into `OPTIMIZER_REGISTRY` (see
 ## session-dedup
 
 `session-dedup` (id `'session-dedup'`, klass `'lossless'`) is an exact-match
-deduplication pass. When the same message — by full structural equality
+deduplication pass. When the same message, by full structural equality
 (role, content, tool-call fields, matched via `JSON.stringify`, not a
-text-only comparison) — repeats 3 or more times in a row, the middle repeats
+text-only comparison), repeats 3 or more times in a row, the middle repeats
 are dropped and the first and last occurrence are kept. Structural, not
 textual, matching is deliberate: a text-only key would collapse messages that
 differ only in an image or tool-call payload, breaking wire-format
 transparency. Near-duplicate or semantically-similar (not exact) messages are
-untouched — that is `relevance`'s job.
+untouched. That is `relevance`'s job.
 
 ## ccr
 
@@ -48,11 +48,11 @@ optimizer registry.
 `headroom` (id `'headroom'`, klass `'lossless'`) trims the oldest whole turns
 until the request fits inside the target model's context window minus a
 reserved completion headroom (default 1024 tokens, via the step's
-`threshold`). It never re-summarizes dropped content — that is `ccr`'s job.
+`threshold`). It never re-summarizes dropped content, that is `ccr`'s job.
 
 Known limitation: `headroom` reads the target context window from
 `ctx.attempt?.model?.contextWindow`, which is only populated once the routing
-engine resolves a candidate model — a step that runs **after** the
+engine resolves a candidate model, a step that runs **after** the
 `request.preprocess` pipeline phase where all optimizers execute. On a real
 request `ctx.attempt` is not yet set, so `headroom`'s `supports()` check
 never sees a context window and the optimizer is a **permanent no-op in
@@ -68,7 +68,7 @@ for the full explanation and the pipeline-ordering fix this depends on.
 `relevance` (id `'relevance'`, klass `'lossy'`) scores each older turn's
 lexical overlap (Jaccard similarity of lowercase word sets) against the
 newest turn and drops whole turns scoring below the step's `threshold`.
-Unlike `ccr`/`headroom`, there is no built-in default threshold — `relevance`
+Unlike `ccr`/`headroom`, there is no built-in default threshold, `relevance`
 stays inert until a project explicitly sets one. The newest turn is never
 scored and is always kept. This is a lexical, not semantic, heuristic;
 embedding-based scoring is a possible future upgrade if lexical overlap
