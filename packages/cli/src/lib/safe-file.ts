@@ -91,14 +91,14 @@ export async function backupFile(
 /**
  * Atomically write content to a file.
  * Writes to <file>.<pid>.tmp, fsync, rename. Preserves the target's existing
- * mode (falls back to 0o644 for a new file). Removes the tmp file on any
- * failure. Content is written as UTF-8.
+ * mode (falls back to 0o600 for a new file, since callers write secrets).
+ * Removes the tmp file on any failure. Content is written as UTF-8.
  */
 export async function atomicWrite(filePath: string, content: string): Promise<void> {
   const tempPath = `${filePath}.${process.pid}.tmp`;
 
   // Preserve the target's existing mode, or use a sane default for a new file.
-  let mode = 0o644;
+  let mode = 0o600;
   try {
     const stats = await stat(filePath);
     mode = stats.mode & 0o777;
