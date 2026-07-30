@@ -83,7 +83,7 @@ Examples:
     .addHelpText('after', `
 Examples:
   routerly optimizers config my-api --enable ccr
-  routerly optimizers config my-api --enable ccr --threshold ccr=0.5
+  routerly optimizers config my-api --enable ccr --threshold ccr=8
   routerly optimizers config my-api --disable rtk --order ccr,headroom,rtk
 `)
     .action(async (nameOrId: string, opts: {

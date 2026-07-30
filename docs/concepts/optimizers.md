@@ -174,22 +174,20 @@ optimizers`](../cli/commands.md#routerly-optimizers), or the dashboard's
 additionally requires the separate model-download opt-in described above
 before it can ever activate, even when enabled in a project's config.
 
-## Threshold Range Constraint
+## Threshold Range
 
-The management API validates every step's `threshold` as a number in the
-`0`–`1` range (`z.number().min(0).max(1)`), shared across all 7 optimizer
-ids. This maps cleanly onto `relevance` (a similarity cutoff) and
-`llmlingua-2` (a keep-ratio), which are both naturally `0`–`1` values. It
-does **not** map onto `ccr` (a turn count, default `6`) or `headroom` (a
-reserved token budget, default `1024`), whose runtime code expects an
-integer/token count, not a `0`–`1` fraction. In practice this means a
-custom `ccr`/`headroom` threshold can currently only be set to a fractional
-value (e.g. `0.5`), which does not behave as "keep 0.5 turns" — it produces
-a degenerate condensation with little or no token reduction. Setting a
-realistic value (e.g. `ccr` threshold `6`) is rejected by the API with
-`400 Invalid optimizers config`. Until the shared schema is widened (or
-`ccr`/`headroom` get their own range), leave their threshold unset to use
-the built-in defaults.
+A step's `threshold` means different things depending on the optimizer, and
+the management API validates it accordingly:
+
+- `relevance`, `caveman`, `llmlingua-2`: a `0`–`1` ratio (similarity cutoff
+  or keep-ratio).
+- `ccr`: a turn count (default `6` if unset).
+- `headroom`: a reserved token budget (default `1024` if unset).
+- `session-dedup`, `rtk`: threshold is not used.
+
+`ccr` and `headroom` accept any positive number; the other optimizers are
+capped at `1`. Leave threshold unset on any step to use its built-in
+default.
 
 ## Wire-Format Transparency
 

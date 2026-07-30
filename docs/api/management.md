@@ -946,15 +946,15 @@ field is otherwise valid.
 - Each step: `id` (one of `session-dedup`, `ccr`, `rtk`, `headroom`,
   `relevance`, `caveman`, `llmlingua-2`; each id may appear at most once —
   a duplicate id is rejected), `enabled: boolean`, `threshold?: number`
-  (`0`–`1`, optional)
+  (optional; a positive number, capped at `1` for `relevance`, `caveman`
+  and `llmlingua-2`, unbounded for `ccr` and `headroom`)
 
 See [Concepts: Optimizers](../concepts/optimizers.md) for what each id does
-and its class. See [Concepts: Optimizers — Threshold Range
-Constraint](../concepts/optimizers.md#threshold-range-constraint) before
-setting a `ccr` or `headroom` threshold: the shared `0`–`1` schema range
-does not map onto their turn-count / token-budget semantics, so a realistic
-value (e.g. `ccr` threshold `6`) is rejected with `400`; leave it unset to
-use the built-in default (`ccr`: 6 turns, `headroom`: 1024 tokens).
+and its class. See [Concepts: Optimizers — Threshold
+Range](../concepts/optimizers.md#threshold-range) for what each id's
+threshold means (`ccr`: turn count, default 6; `headroom`: reserved token
+budget, default 1024; the rest: a `0`–`1` ratio). Leave threshold unset to
+use the built-in default.
 
 **Errors**: `400` invalid `optimizers` config (bad shape, out-of-range
 threshold, or duplicate step id) · `403` insufficient permissions
