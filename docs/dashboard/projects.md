@@ -15,7 +15,7 @@ The Projects page gives you an overview of all projects and provides access to e
 
 The list shows each project's name, slug, number of tokens, assigned models, and a summary of today's cost and call count.
 
-Click any project to open its detail view, which has seven tabs.
+Click any project to open its detail view, which has eight tabs.
 
 ---
 
@@ -67,6 +67,59 @@ Drag policies from the policy panel on the right into the active-policies list o
 Available policies: `cheapest`, `health`, `performance`, `capability`, `context`, `llm`, `rate-limit`, `fairness`, `budget-remaining`.
 
 See [Concepts: Routing](../concepts/routing.md) for each policy's behaviour and parameters.
+
+---
+
+## Optimizer Tab
+
+Configure this project's prompt/context optimizer pipeline — a per-project,
+ordered list of optimizers that reduce a request's token footprint before it
+is forwarded to a provider.
+
+![Project Optimizer tab showing the seven built-in optimizer rows, four enabled (Session Dedup, Caveman, Redundant Token Killer, Relevance Filter) with a Preview panel below](../assets/screenshot-project-optimizer-tab.png)
+
+**Required permission:** `optimizers:read` to view the tab; `optimizers:manage` to toggle, reorder, edit thresholds, or save.
+
+### Optimizer Rows
+
+All 7 installed optimizers are listed, one per row, in pipeline execution
+order:
+
+- **Checkbox** — enable/disable this optimizer for the project
+- **Name and description** — the optimizer's display name, its class
+  (`Lossless.` / `Recoverable.` / `Lossy.`), and a one-line summary of its
+  behavior
+- **Threshold** — optional numeric field (`0`-`1`); left as `auto` to use
+  the optimizer's built-in default (where one exists) or leave it inert
+  (`relevance` has no default and stays inert until a threshold is set)
+- **Drag handle** — drag rows to reorder; the pipeline runs top to bottom
+
+Rows for optimizers not yet configured on the project appear disabled at the
+end of the list; enabling one and saving adds it to `optimizers.steps`.
+
+See [Concepts: Optimizers](../concepts/optimizers.md) for what each
+optimizer does and known limitations. Note the `ccr` and `headroom` rows'
+threshold field shares the same `0`-`1` UI range as every other optimizer,
+even though their runtime semantics are a turn count / token budget, not a
+fraction — see [Concepts: Optimizers — Threshold Range
+Constraint](../concepts/optimizers.md#threshold-range-constraint) before
+setting a custom value for either.
+
+### Saving
+
+Click **Save Optimizers** to persist the enabled/disabled state, order, and
+thresholds. A row that is disabled and has no threshold set is not
+persisted to `optimizers.steps` — only enabled rows, or disabled rows with a
+threshold, are written.
+
+### Preview Panel
+
+Below the pipeline editor, **Preview token savings** lets you paste a sample
+user message and click **Run Preview** to dry-run the current (unsaved) UI
+state of the pipeline against it — no upstream call is made and nothing is
+saved. The result shows tokens before, tokens after, tokens saved, and a
+per-step before/after breakdown, matching `POST /api/optimizers/preview`
+(see [API: Optimizers](../api/management.md#optimizers)).
 
 ---
 

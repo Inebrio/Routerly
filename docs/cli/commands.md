@@ -1222,6 +1222,188 @@ Exit code: `0` on success, `1` on error (all subcommands).
 
 ---
 
+## `routerly optimizers`
+
+Manage the prompt/context optimizer catalog and a project's per-optimizer
+pipeline config. See [Concepts: Optimizers](../concepts/optimizers.md) for
+what each optimizer does and its class.
+
+### `routerly optimizers list`
+
+```
+routerly optimizers list [--json]
+```
+
+List the installed optimizer catalog (all 7 optimizer ids ship built-in;
+`installed` reflects whether the module registered itself, which is always
+`true` unless a module was intentionally removed from the build).
+
+**Table columns:**
+- **ID** - optimizer id
+- **Klass** - `lossless` / `recoverable` / `lossy`
+- **Installed** - `yes` / `no`
+
+```bash
+routerly optimizers list
+```
+```
+┌───────────────┬─────────────┬───────────┐
+│ ID            │ Klass       │ Installed │
+├───────────────┼─────────────┼───────────┤
+│ session-dedup │ lossless    │ yes       │
+├───────────────┼─────────────┼───────────┤
+│ ccr           │ recoverable │ yes       │
+├───────────────┼─────────────┼───────────┤
+│ rtk           │ recoverable │ yes       │
+├───────────────┼─────────────┼───────────┤
+│ headroom      │ lossless    │ yes       │
+├───────────────┼─────────────┼───────────┤
+│ relevance     │ lossy       │ yes       │
+├───────────────┼─────────────┼───────────┤
+│ caveman       │ lossy       │ yes       │
+├───────────────┼─────────────┼───────────┤
+│ llmlingua-2   │ lossy       │ yes       │
+└───────────────┴─────────────┴───────────┘
+```
+
+```bash
+routerly optimizers list --json
+```
+```json
+[
+  { "id": "session-dedup", "klass": "lossless", "installed": true },
+  { "id": "ccr", "klass": "recoverable", "installed": true },
+  { "id": "rtk", "klass": "recoverable", "installed": true },
+  { "id": "headroom", "klass": "lossless", "installed": true },
+  { "id": "relevance", "klass": "lossy", "installed": true },
+  { "id": "caveman", "klass": "lossy", "installed": true },
+  { "id": "llmlingua-2", "klass": "lossy", "installed": true }
+]
+```
+
+Requires `optimizers:read` permission.
+
+### `routerly optimizers config`
+
+```
+routerly optimizers config <project> [--enable id] [--disable id] [--threshold id=val] [--order ids] [--json]
+```
+
+Read-modify-write a project's `optimizers.steps`. Run with no flags to print
+the current pipeline unchanged.
+
+| Option | Description |
+|--------|-------------|
+| `--enable <id>` | Enable an optimizer step (repeatable) |
+| `--disable <id>` | Disable an optimizer step (repeatable) |
+| `--threshold <id=val>` | Set an optimizer step's threshold, `0`-`1` (repeatable) |
+| `--order <ids>` | Comma-separated optimizer ids controlling step order |
+| `--json` | Output the updated (sanitized) project as raw JSON |
+
+`--enable`/`--disable`/`--threshold` create the step if it is not already
+configured (new steps default to `enabled: false` unless `--enable` is also
+given for that id). `--order` stable-sorts existing steps to the given id
+order; ids not listed keep their relative order at the end.
+
+```bash
+routerly optimizers config Test --order session-dedup,caveman,rtk,relevance,ccr
+```
+```
+✓ Updated optimizer pipeline on project "Test"
+┌───┬───────────────┬─────────┬───────────┐
+│ # │ ID            │ Enabled │ Threshold │
+├───┼───────────────┼─────────┼───────────┤
+│ 1 │ session-dedup │ yes     │ -         │
+├───┼───────────────┼─────────┼───────────┤
+│ 2 │ caveman       │ yes     │ -         │
+├───┼───────────────┼─────────┼───────────┤
+│ 3 │ rtk           │ yes     │ -         │
+├───┼───────────────┼─────────┼───────────┤
+│ 4 │ relevance     │ yes     │ 0.3       │
+├───┼───────────────┼─────────┼───────────┤
+│ 5 │ ccr           │ no      │ 0.5       │
+└───┴───────────────┴─────────┴───────────┘
+```
+
+**Error cases:**
+```bash
+routerly optimizers config Test --threshold badformat
+```
+```
+Error: --threshold expects id=value, got "badformat".
+```
+```bash
+routerly optimizers config Test --threshold ccr=6
+```
+```
+Error: Invalid optimizers config
+```
+The API's shared threshold schema caps every id to `0`-`1`; `ccr` (turn
+count) and `headroom` (token budget) do not fit that range today, so a
+realistic non-fractional value is rejected — see [Concepts: Optimizers —
+Threshold Range
+Constraint](../concepts/optimizers.md#threshold-range-constraint). Leave the
+threshold unset to use the built-in default.
+```bash
+routerly optimizers config nonexistent-project-xyz --enable rtk
+```
+```
+Project "nonexistent-project-xyz" not found. Run `routerly project list` to see available projects.
+```
+
+Requires `optimizers:manage` permission.
+
+### `routerly optimizers preview`
+
+```
+routerly optimizers preview <project> --message <text> [--message <text> ...] [--json]
+```
+
+Dry-run the project's currently configured optimizer pipeline against a
+sample message list. No upstream call is made and the project's config is
+not modified.
+
+| Option | Description |
+|--------|-------------|
+| `--message <text>` | Sample user message (repeatable, required — at least one) |
+| `--json` | Output the raw preview result as JSON |
+
+```bash
+routerly optimizers preview Test \
+  --message "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. Please remember: the quick brown fox jumps over the lazy dog." \
+  --message "What is the capital of France?"
+```
+```
+Tokens before: 46
+Tokens after:  32
+Saved:         14
+
+┌───────────────┬────────┬───────┐
+│ ID            │ Before │ After │
+├───────────────┼────────┼───────┤
+│ ccr           │ 46     │ 46    │
+├───────────────┼────────┼───────┤
+│ session-dedup │ 46     │ 46    │
+├───────────────┼────────┼───────┤
+│ caveman       │ 46     │ 32    │
+├───────────────┼────────┼───────┤
+│ rtk           │ 32     │ 32    │
+├───────────────┼────────┼───────┤
+│ relevance     │ 32     │ 32    │
+└───────────────┴────────┴───────┘
+```
+
+The per-step table lists every configured step in pipeline order, including
+disabled ones (`before === after` for a disabled or no-op step). Token
+counts are the `chars / 4` approximation used by the live pipeline, not a
+provider-exact tokenizer.
+
+Requires `optimizers:read` permission.
+
+Exit code: `0` on success, `1` on error (all subcommands).
+
+---
+
 ## `routerly report`
 
 ### `routerly report usage`

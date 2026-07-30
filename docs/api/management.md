@@ -610,6 +610,100 @@ made and no usage record is written.**
 
 ---
 
+## Optimizers
+
+Prompt/context optimizers reduce a request's token footprint before it is
+forwarded to a provider. All 7 ship disabled by default; a project opts in
+per-optimizer via its [`optimizers` field](#optimizers-project-field). See
+[Concepts: Optimizers](../concepts/optimizers.md) for what each optimizer
+does, its class (`lossless` / `recoverable` / `lossy`), the safety gate, and
+known limitations (`headroom` is a permanent no-op on live requests today;
+`llmlingua-2` uses a placeholder tokenizer).
+
+### List Optimizers
+
+```
+GET /api/optimizers
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `optimizers:read`)
+
+Read-only catalog of the optimizers installed in the running service,
+resolved from the in-memory registry populated at module bootstrap.
+
+**Response `200`:**
+```json
+[
+  { "id": "session-dedup", "klass": "lossless", "installed": true },
+  { "id": "ccr", "klass": "recoverable", "installed": true },
+  { "id": "rtk", "klass": "recoverable", "installed": true },
+  { "id": "headroom", "klass": "lossless", "installed": true },
+  { "id": "relevance", "klass": "lossy", "installed": true },
+  { "id": "caveman", "klass": "lossy", "installed": true },
+  { "id": "llmlingua-2", "klass": "lossy", "installed": true }
+]
+```
+
+Returns `[]` if the optimizer modules were not bootstrapped.
+
+**Errors**: `403` insufficient permissions
+
+### Preview Optimizers
+
+```
+POST /api/optimizers/preview
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `optimizers:read`)
+
+Pure dry-run: applies the given steps to sample messages and reports the
+token delta per step. **No upstream call is made and no project config is
+written.**
+
+```json
+{
+  "projectId": "proj-uuid",
+  "sampleMessages": [{ "role": "user", "content": "Hello, please help me with this." }],
+  "steps": [
+    { "id": "caveman", "enabled": true },
+    { "id": "rtk", "enabled": true }
+  ]
+}
+```
+
+**Fields:**
+- `sampleMessages`: message array to run the pipeline over, same shape as an
+  [LLM Proxy](./llm-proxy.md) request's `messages` (required, min 1)
+- `steps`: the optimizer steps to dry-run, same shape as the
+  [`optimizers` project field](#optimizers-project-field) (required)
+- `projectId`: optional. When given, the preview runs "as" that project (its
+  other config is read; nothing is written); `404` if unknown. The `steps`
+  in the request body still drive which optimizers run — the project's own
+  saved `optimizers.steps` are not substituted in
+
+**Response `200`:**
+```json
+{
+  "estimatedTokensBefore": 55,
+  "estimatedTokensAfter": 30,
+  "perStep": [
+    { "id": "caveman", "before": 55, "after": 30 },
+    { "id": "rtk", "before": 30, "after": 30 }
+  ]
+}
+```
+
+A `lossy` step whose result would fail the safety gate is reported
+unchanged (`before === after`), mirroring what happens on a live request.
+Context-dependent optimizers (`headroom`) are inert in preview, matching
+their live no-op state (see [Concepts:
+Optimizers](../concepts/optimizers.md#headroom)).
+
+**Errors**: `400` invalid body · `404` `projectId` given but not found ·
+`403` insufficient permissions
+
+---
+
 ## Projects
 
 ### List Projects
@@ -819,6 +913,52 @@ triggers. It does **not** return HTTP 400. See [LLM Proxy: Guardrail block wire 
 A rule with `log: true` (and `block` unset) forwards the request to the model with no
 consumer-visible impact; the match is recorded on the usage record for audit purposes.
 `block` and `log` are independent, so a rule may do both: block the request and record the match.
+
+### Optimizers (project field) {#optimizers-project-field}
+
+A project may carry an optional `optimizers` block, accepted by both
+`POST /api/projects` and `PUT /api/projects/:slug`. On `PUT`, the field
+follows the same undefined/null/object convention as `guardrails` and `pii`:
+omit it to leave the pipeline unchanged, send `null` to clear it, or send an
+object to validate and replace it. Setting or clearing it requires
+`optimizers:manage` **in addition to** `project:write` — a caller with
+`project:write` but not `optimizers:manage` gets `403` on any request whose
+body includes a non-`undefined` `optimizers` field, even if every other
+field is otherwise valid.
+
+```json
+{
+  "optimizers": {
+    "steps": [
+      { "id": "session-dedup", "enabled": true },
+      { "id": "ccr", "enabled": true },
+      { "id": "caveman", "enabled": true },
+      { "id": "relevance", "enabled": true, "threshold": 0.3 }
+    ]
+  }
+}
+```
+
+**Fields:**
+- `steps`: array of optimizer steps. Array order is execution order — steps
+  run top to bottom in the `request.preprocess` pipeline phase (required,
+  may be empty)
+- Each step: `id` (one of `session-dedup`, `ccr`, `rtk`, `headroom`,
+  `relevance`, `caveman`, `llmlingua-2`; each id may appear at most once —
+  a duplicate id is rejected), `enabled: boolean`, `threshold?: number`
+  (`0`–`1`, optional)
+
+See [Concepts: Optimizers](../concepts/optimizers.md) for what each id does
+and its class. See [Concepts: Optimizers — Threshold Range
+Constraint](../concepts/optimizers.md#threshold-range-constraint) before
+setting a `ccr` or `headroom` threshold: the shared `0`–`1` schema range
+does not map onto their turn-count / token-budget semantics, so a realistic
+value (e.g. `ccr` threshold `6`) is rejected with `400`; leave it unset to
+use the built-in default (`ccr`: 6 turns, `headroom`: 1024 tokens).
+
+**Errors**: `400` invalid `optimizers` config (bad shape, out-of-range
+threshold, or duplicate step id) · `403` insufficient permissions
+(`optimizers:manage` required to set/clear)
 
 ### Delete Project
 
