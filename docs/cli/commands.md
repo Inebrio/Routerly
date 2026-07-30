@@ -1321,7 +1321,7 @@ routerly optimizers config Test --order session-dedup,caveman,rtk,relevance,ccr
 ├───┼───────────────┼─────────┼───────────┤
 │ 4 │ relevance     │ yes     │ 0.3       │
 ├───┼───────────────┼─────────┼───────────┤
-│ 5 │ ccr           │ no      │ 0.5       │
+│ 5 │ ccr           │ no      │ 8         │
 └───┴───────────────┴─────────┴───────────┘
 ```
 
@@ -1333,17 +1333,15 @@ routerly optimizers config Test --threshold badformat
 Error: --threshold expects id=value, got "badformat".
 ```
 ```bash
-routerly optimizers config Test --threshold ccr=6
+routerly optimizers config Test --threshold relevance=1.5
 ```
 ```
 Error: Invalid optimizers config
 ```
-The API's shared threshold schema caps every id to `0`-`1`; `ccr` (turn
-count) and `headroom` (token budget) do not fit that range today, so a
-realistic non-fractional value is rejected — see [Concepts: Optimizers —
-Threshold Range
-Constraint](../concepts/optimizers.md#threshold-range-constraint). Leave the
-threshold unset to use the built-in default.
+`relevance`, `caveman` and `llmlingua-2` thresholds are capped at `1` (a
+ratio); `ccr` and `headroom` accept any positive number (a turn count and a
+token budget respectively) — see [Concepts: Optimizers — Threshold
+Range](../concepts/optimizers.md#threshold-range).
 ```bash
 routerly optimizers config nonexistent-project-xyz --enable rtk
 ```

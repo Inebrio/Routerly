@@ -240,10 +240,19 @@ const piiConfigSchema = z.object({
 
 const optimizerIdEnum = z.enum(['session-dedup', 'ccr', 'rtk', 'headroom', 'relevance', 'caveman', 'llmlingua-2']);
 
+// threshold's natural range depends on the optimizer: ccr (turn count) and
+// headroom (token budget) are unbounded positive numbers; relevance,
+// caveman and llmlingua-2 use a 0-1 ratio.
+const RATIO_THRESHOLD_IDS = new Set(['relevance', 'caveman', 'llmlingua-2']);
+
 const optimizerStepSchema = z.object({
   id: optimizerIdEnum,
   enabled: z.boolean(),
-  threshold: z.number().min(0).max(1).optional(),
+  threshold: z.number().positive().optional(),
+}).superRefine((step, ctx) => {
+  if (step.threshold !== undefined && RATIO_THRESHOLD_IDS.has(step.id) && step.threshold > 1) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${step.id}: threshold must be between 0 and 1`, path: ['threshold'] });
+  }
 });
 
 // steps order = execution order; each optimizer id may appear at most once.

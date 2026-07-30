@@ -89,21 +89,20 @@ order:
 - **Name and description** — the optimizer's display name, its class
   (`Lossless.` / `Recoverable.` / `Lossy.`), and a one-line summary of its
   behavior
-- **Threshold** — optional numeric field (`0`-`1`); left as `auto` to use
-  the optimizer's built-in default (where one exists) or leave it inert
-  (`relevance` has no default and stays inert until a threshold is set)
+- **Threshold** — optional numeric field, meaning depends on the optimizer
+  (a `0`-`1` ratio for `relevance`/`caveman`/`llmlingua-2`, a turn count for
+  `ccr`, a token budget for `headroom`); left empty to use the optimizer's
+  built-in default (where one exists) or leave it inert (`relevance` has no
+  default and stays inert until a threshold is set)
 - **Drag handle** — drag rows to reorder; the pipeline runs top to bottom
 
 Rows for optimizers not yet configured on the project appear disabled at the
 end of the list; enabling one and saving adds it to `optimizers.steps`.
 
 See [Concepts: Optimizers](../concepts/optimizers.md) for what each
-optimizer does and known limitations. Note the `ccr` and `headroom` rows'
-threshold field shares the same `0`-`1` UI range as every other optimizer,
-even though their runtime semantics are a turn count / token budget, not a
-fraction — see [Concepts: Optimizers — Threshold Range
-Constraint](../concepts/optimizers.md#threshold-range-constraint) before
-setting a custom value for either.
+optimizer does, its class, and known limitations, including the
+[Threshold Range](../concepts/optimizers.md#threshold-range) each
+optimizer's threshold accepts.
 
 ### Saving
 

@@ -10816,6 +10816,22 @@ describe('Optimizers API', () => {
     expect(res.statusCode).toBe(400)
   })
 
+  it('PUT /api/projects/:id accepts ccr/headroom thresholds above 1 (their natural unit is turns/tokens, not a ratio)', async () => {
+    authAs(adminUser)
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [], optimizers: { steps: [
+        { id: 'ccr', enabled: true, threshold: 8 },
+        { id: 'headroom', enabled: true, threshold: 2048 },
+      ] } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+
   it('POST /api/projects persists optimizers with optimizers:manage (201)', async () => {
     authAs(adminUser)
     mockReadConfig.mockImplementation(async (t: string) => {

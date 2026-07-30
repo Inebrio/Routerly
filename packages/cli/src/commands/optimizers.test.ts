@@ -107,14 +107,14 @@ describe('optimizers config', () => {
   });
 
   it('enables a step and combines with a threshold in one PUT', async () => {
-    const updated = { ...baseProject, optimizers: { steps: [{ id: 'ccr', enabled: true, threshold: 0.5 }] } };
+    const updated = { ...baseProject, optimizers: { steps: [{ id: 'ccr', enabled: true, threshold: 8 }] } };
     mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(updated);
-    await makeCmd().parseAsync(['node', 'optimizers', 'config', 'my-api', '--enable', 'ccr', '--threshold', 'ccr=0.5']);
+    await makeCmd().parseAsync(['node', 'optimizers', 'config', 'my-api', '--enable', 'ccr', '--threshold', 'ccr=8']);
     expect(mockApi).toHaveBeenNthCalledWith(1, 'GET', '/api/projects');
     const putCall = mockApi.mock.calls[1]!;
     expect(putCall[0]).toBe('PUT');
     expect(putCall[1]).toBe('/api/projects/proj-1');
-    expect(putCall[2].optimizers).toEqual({ steps: [{ id: 'ccr', enabled: true, threshold: 0.5 }] });
+    expect(putCall[2].optimizers).toEqual({ steps: [{ id: 'ccr', enabled: true, threshold: 8 }] });
     expect(putCall[2].name).toBe('my-api');
     expect(putCall[2].models).toEqual([{ modelId: 'gpt-4o' }]);
   });
