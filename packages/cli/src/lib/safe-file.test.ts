@@ -90,6 +90,15 @@ describe('backupFile', () => {
     const backupPath = join(backupDir, 'original');
     await expect(access(backupPath)).rejects.toThrow();
   });
+
+  it('throws on a non-ENOENT read error instead of mislabeling existedBefore', async () => {
+    // A directory path yields EISDIR on readFile — a real error, NOT "missing".
+    // Mislabeling it existedBefore=false would let a later rollback delete it.
+    const dirPath = join(HOME, 'a-directory');
+    await mkdir(dirPath, { recursive: true });
+
+    await expect(backupFile('test-client-1', dirPath)).rejects.toThrow();
+  });
 });
 
 // ── atomicWrite ───────────────────────────────────────────────────────────
@@ -125,6 +134,21 @@ describe('atomicWrite', () => {
     const result = await readFile(testFile, 'utf-8');
     expect(result).toBe(content);
   });
+
+  it('preserves the existing file mode', async () => {
+    const testFile = join(HOME, 'mode-preserve.txt');
+
+    await mkdir(HOME, { recursive: true });
+    await writeFile(testFile, 'original', { mode: 0o600 });
+    // Force the mode in case umask altered writeFile's result.
+    const { chmod } = await import('node:fs/promises');
+    await chmod(testFile, 0o600);
+
+    await atomicWrite(testFile, 'replaced');
+
+    const stats = await stat(testFile);
+    expect(stats.mode & 0o777).toBe(0o600);
+  });
 });
 
 // ── restoreBackup ─────────────────────────────────────────────────────────
@@ -152,6 +176,20 @@ describe('restoreBackup', () => {
     // File should be back to original
     const restored = await readFile(testFile, 'utf-8');
     expect(restored).toBe(originalContent);
+  });
+
+  it('throws when the backed-up bytes fail the recorded checksum', async () => {
+    const testFile = join(HOME, 'corrupt.txt');
+    await mkdir(HOME, { recursive: true });
+    await writeFile(testFile, 'original', 'utf-8');
+
+    const manifest = await backupFile('test-client-1', testFile);
+
+    // Tamper with the stored backup copy so its checksum no longer matches.
+    const originalCopy = join(BACKUPS_DIR, manifest.backupId, 'original');
+    await writeFile(originalCopy, 'tampered', 'utf-8');
+
+    await expect(restoreBackup(manifest.backupId)).rejects.toThrow(/checksum mismatch/);
   });
 
   it('(d) deletes file if existedBefore was false', async () => {
