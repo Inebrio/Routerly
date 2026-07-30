@@ -58,10 +58,13 @@ describe('ccr optimizer', () => {
     expect(result.changed).toBe(true)
 
     const msgs = readMessages(ctx.request)
-    // system + 1 condensed + 6 kept turns (2 msgs each) = 14
-    expect(msgs).toHaveLength(1 + 1 + 6 * 2)
+    // system + 6 kept turns (2 msgs each); the condensed text is MERGED into the
+    // first kept user message (not a separate entry) = 13
+    expect(msgs).toHaveLength(1 + 6 * 2)
     expect(msgs[0]).toEqual({ role: 'system', content: 'You are a helpful agent.' })
-    // condensed context message references the dropped turns' text
+    // condensed context merged into the first kept user message; references dropped turns
+    expect(msgs[1]!.role).toBe('user')
+    expect(msgs[1]!.content).toContain('[Condensed earlier context]')
     expect(msgs[1]!.content).toContain('q1')
     expect(msgs[1]!.content).toContain('a4')
     // newest turn retained verbatim at the tail (long answer NOT clipped)
@@ -79,8 +82,8 @@ describe('ccr optimizer', () => {
     const result = ccrOptimizer.optimize(ctx)
     expect(result.changed).toBe(true)
     const msgs = readMessages(ctx.request)
-    // system + condensed + 6 kept turns
-    expect(msgs).toHaveLength(1 + 1 + 6 * 2)
+    // system + 6 kept turns (condensed merged into the first kept user message)
+    expect(msgs).toHaveLength(1 + 6 * 2)
     expect(msgs[msgs.length - 1]).toEqual({ role: 'assistant', content: 'a8' })
   })
 
@@ -103,15 +106,16 @@ describe('ccr optimizer', () => {
     const result = ccrOptimizer.optimize(ctx)
     expect(result.changed).toBe(true)
     const msgs = readMessages(ctx.request)
-    // condensed + 6 kept turns (no system)
-    expect(msgs).toHaveLength(1 + 6 * 2)
-    expect(msgs[0]!.role).toBe('user') // condensed message, not a system prefix
+    // 6 kept turns, no system; condensed merged into the first kept user message
+    expect(msgs).toHaveLength(6 * 2)
+    expect(msgs[0]!.role).toBe('user')
+    expect(msgs[0]!.content).toContain('[Condensed earlier context]')
     expect(ccrOptimizer.validate(ctx, result)).toBe(true)
   })
 
-  it('keeps a tool-call/tool-response group atomic within a turn', () => {
-    // Each "turn" starts at a user message; the assistant tool_calls turn and its
-    // tool responses stay in the same segment and are never split.
+  it('keeps an OpenAI tool-call/tool-response group atomic within a turn', () => {
+    // OpenAI tool results are role:'tool', which never open a turn; the whole
+    // round-trip stays in one segment and is never split.
     const msgs: Message[] = [
       { role: 'system', content: 'sys' },
       { role: 'user', content: 'u1' },
@@ -124,11 +128,11 @@ describe('ccr optimizer', () => {
       { role: 'tool', content: 'tool-out', tool_call_id: 'c1' },
       { role: 'assistant', content: 'a3' },
     ]
-    const ctx = ctxWith(msgs, 1) // keep only the newest turn (turn 3, the tool group)
+    const ctx = ctxWith(msgs, 2) // keep the last two turns; turn-3 group stays intact
     const result = ccrOptimizer.optimize(ctx)
     expect(result.changed).toBe(true)
     const out = readMessages(ctx.request)
-    // system + condensed + the whole turn-3 group (4 messages) intact
+    // the whole turn-3 group (4 messages) survives verbatim at the tail
     const tail = out.slice(out.length - 4)
     expect(tail).toEqual([
       { role: 'user', content: 'u3' },
@@ -137,6 +141,59 @@ describe('ccr optimizer', () => {
       { role: 'assistant', content: 'a3' },
     ])
     expect(ccrOptimizer.validate(ctx, result)).toBe(true)
+  })
+
+  it('keeps an Anthropic tool_use / tool_result pair on the same side of the window cut', () => {
+    // Anthropic tool results are role:'user' with a tool_result content block; they
+    // must NOT open a new turn, or the window cut could orphan the tool_result from
+    // its assistant tool_use (Anthropic then 400s on a tool_result with no tool_use).
+    const toolUse = {
+      role: 'assistant',
+      content: [{ type: 'tool_use', id: 'tu1', name: 'get', input: {} }],
+    } as unknown as Message
+    const toolResult = {
+      role: 'user',
+      content: [{ type: 'tool_result', tool_use_id: 'tu1', content: 'ok' }],
+    } as unknown as Message
+    const msgs: Message[] = [
+      { role: 'system', content: 'sys' },
+      { role: 'user', content: 'u1' },
+      { role: 'assistant', content: 'a1' },
+      { role: 'user', content: 'u2' },
+      { role: 'assistant', content: 'a2' },
+      // newest turn opens with an array-content user message (Anthropic shape)
+      { role: 'user', content: [{ type: 'text', text: 'u3' }] } as unknown as Message,
+      toolUse,
+      toolResult, // binds to the newest turn, does NOT open a new one
+      { role: 'assistant', content: 'a3' },
+    ]
+    const ctx = ctxWith(msgs, 1) // keep only the newest turn
+    const result = ccrOptimizer.optimize(ctx)
+    expect(result.changed).toBe(true)
+    const out = readMessages(ctx.request)
+    // both tool messages survive together; the pair is adjacent and intact
+    expect(out).toContainEqual(toolUse)
+    expect(out).toContainEqual(toolResult)
+    const iUse = out.findIndex((m) => m === toolUse)
+    expect(out[iUse + 1]).toBe(toolResult)
+    expect(ccrOptimizer.validate(ctx, result)).toBe(true)
+  })
+
+  it('never emits two consecutive same-role messages (condensed merged, not inserted)', () => {
+    const ctx = ctxWith(conversation(10, true, 400), 6)
+    ccrOptimizer.optimize(ctx)
+    const out = readMessages(ctx.request)
+    for (let i = 1; i < out.length; i++) {
+      expect(out[i]!.role).not.toBe(out[i - 1]!.role)
+    }
+    // condensed text lives inside the first kept user message, not a separate one
+    const firstUser = out.find((m) => m.role === 'user')!
+    expect(firstUser.content as string).toContain('[Condensed earlier context]')
+  })
+
+  it('treats a non-positive threshold as the default window', () => {
+    expect(ccrOptimizer.supports(ctxWith(conversation(6), 0))).toBe(false)
+    expect(ccrOptimizer.supports(ctxWith(conversation(7), 0))).toBe(true)
   })
 
   it('recover restores the original messages when explicitly invoked', () => {
