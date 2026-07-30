@@ -35,6 +35,24 @@ Native integrations for popular development environments.
 
 ---
 
+## Auto-configure
+
+Instead of copying a snippet by hand, the `routerly clients` CLI command
+group writes a client's config file for you (with an automatic backup and
+undo) or points you at the manual steps for clients with no config file.
+See the [dashboard Clients page](../dashboard/clients.md) for a read-only,
+copy-paste view of the same snippets.
+
+| Client | Description |
+|--------|-------------|
+| [Claude Code](./clients/claude-code) | Anthropic's official CLI coding agent — auto-configurable |
+| [Codex](./clients/codex) | OpenAI's CLI coding agent — auto-configurable |
+| [OpenCode](./clients/opencode) | Open-source terminal coding agent — auto-configurable |
+| [Continue.dev](./clients/continue) | `routerly clients configure continue` — auto-configurable |
+| [Cline](./clients/cline) | VS Code Settings UI, manual only — no config file to auto-apply |
+
+---
+
 ## Frameworks
 
 AI application frameworks that call the OpenAI or Anthropic API.
