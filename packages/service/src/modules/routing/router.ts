@@ -17,6 +17,9 @@ import { semanticIntentPolicy } from './policies/semantic-intent.js';
 import { modelPreferencePolicy } from './policies/model-preference.js';
 import type { PolicyFn } from './policies/types.js';
 import type { TraceEntry, TracePanel } from '../logging/traceStore.js';
+import { resolveProfile } from './profiles/store.js';
+import { SELECTOR_MAP } from './selectors/index.js';
+import type { ScoredCandidate, SelectorContext } from './selectors/index.js';
 
 function te(panel: TracePanel, message: string, details: Record<string, unknown>): TraceEntry {
   return { panel, message, details };
@@ -57,7 +60,8 @@ export async function routeRequest(
   conversationId?: string,
   store?: ResilienceStore,
 ): Promise<RouteResult> {
-  const enabledPolicies = (project.policies ?? []).filter(p => p.enabled);
+  const profile = await resolveProfile(project);
+  const enabledPolicies = profile.policies.filter(p => p.enabled);
 
   // Peso posizionale per rank: la policy in posizione 1 vale N volte,
   // l'ultima vale 1. Formula: weight = total - idx (rank decrescente).
@@ -213,6 +217,13 @@ export async function routeRequest(
   });
   emit?.(policiesEntry);
 
+  const profileEntry = te('router-request', 'router:profile', {
+    profileId: profile.id,
+    selector: profile.selector,
+    fallbackStrategy: profile.fallbackStrategy,
+  });
+  emit?.(profileEntry);
+
   // ── Esegue le policy in parallelo ─────────────────────────────────────────
   const policyResults = await Promise.all(
     policiesWithWeight.map(async ({ type, weight, config }) => {
@@ -323,22 +334,28 @@ export async function routeRequest(
   // time instead of always picking the first model in the project config.
   const allPoliciesAbstained = abstainedPolicies.length === successfulResults.length;
 
-  const finalCandidates: RoutingCandidate[] = scoringCandidates
-    .map(c => {
-      const totalScore = scoreAccumulator.get(c.model.id) ?? 0;
-      const totalWeight = weightAccumulator.get(c.model.id) ?? 0;
-      const score = totalWeight > 0 ? totalScore / totalWeight : (allPoliciesAbstained ? Math.random() : 0.5);
-      return {
-        model: c.model.id,
-        weight: +score.toFixed(4),
-        ...(c.prompt ? { prompt: c.prompt } : {}),
-      };
-    })
-    .sort((a, b) => b.weight - a.weight);
+  const scored: ScoredCandidate[] = scoringCandidates.map(c => {
+    const totalScore = scoreAccumulator.get(c.model.id) ?? 0;
+    const totalWeight = weightAccumulator.get(c.model.id) ?? 0;
+    const score = totalWeight > 0 ? totalScore / totalWeight : 0.5;
+    return {
+      model: c.model.id,
+      score: +score.toFixed(4),
+      cost: (c.model.cost.inputPerMillion + c.model.cost.outputPerMillion) / 2,
+      ...(c.prompt ? { prompt: c.prompt } : {}),
+    };
+  });
+
+  const selectorCtx: SelectorContext = {
+    projectId: project.id,
+    ...(conversationId !== undefined ? { conversationId } : {}),
+    allAbstained: allPoliciesAbstained,
+  };
+  const finalCandidates: RoutingCandidate[] = SELECTOR_MAP[profile.selector](scored, selectorCtx).models;
 
   const TIED_TOLERANCE = 0.0001;
-  const topScore = finalCandidates[0]?.weight ?? 0;
-  const tiedWinners = finalCandidates.filter(c => Math.abs(c.weight - topScore) < TIED_TOLERANCE);
+  const topScore = Math.max(0, ...scored.map(c => c.score));
+  const tiedWinners = scored.filter(c => Math.abs(c.score - topScore) < TIED_TOLERANCE);
   const hasTie = tiedWinners.length > 1;
 
   log?.info(
@@ -358,6 +375,9 @@ export async function routeRequest(
   );
 
   // ── Emit recap ────────────────────────────────────────────────────────────
+  // recap's final[].score is the 0..1 weighted-mean probability (pre-selector),
+  // not the selector's rank-based weight (that's resultEntry's `weight` field).
+  const scoredByModel = new Map(scored.map(s => [s.model, s.score]));
   const recapEntry = te('router-response', 'router:recap', {
     policies: successfulResults.map(r => {
       const scorable = r.routing.filter(e => scoringIds.has(e.model));
@@ -373,7 +393,7 @@ export async function routeRequest(
     final: finalCandidates.map((c, rank) => ({
       rank: rank + 1,
       model: c.model,
-      score: c.weight,
+      score: scoredByModel.get(c.model) ?? 0,
     })),
     ...(hasTie ? { tie: { count: tiedWinners.length, models: tiedWinners.map(c => c.model) } } : {}),
     ...(policyExcludes.size > 0 ? { excluded: Object.fromEntries(excludeReasons) } : {}),
@@ -397,6 +417,7 @@ export async function routeRequest(
     ...(resilienceTraceEntry ? [resilienceTraceEntry] : []),
     intakeEntry,
     policiesEntry,
+    profileEntry,
     ...successfulResults.map(r =>
       te('router-response', `policy:result:${r.type}`, {
         type: r.type,
