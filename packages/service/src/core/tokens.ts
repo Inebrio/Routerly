@@ -5,6 +5,7 @@ import type { ProviderCatalog, RepoStatus } from '../modules/catalog/fetcher.js'
 import type { EmbeddingProvider, EmbeddingProviderType } from '../modules/embeddings/dispatch.js';
 import type { RouteResult } from '../modules/routing/router.js';
 import type { OptimizerRegistry } from '../modules/optimizers/registry.js';
+import type { McpToolRegistry } from '../modules/mcp/registry.js';
 import type {
   ModelConfig,
   ProjectConfig,
@@ -105,6 +106,11 @@ export const PROXY_PIPELINE = token<ProcessorRegistry<unknown>>('proxy.pipeline'
 // Optimizer registry (Plan 4). optimizer-core creates and binds it on register;
 // the optimizer.apply processor and later optimizer submodules resolve it.
 export const OPTIMIZER_REGISTRY = token<OptimizerRegistry>('optimizer.registry');
+
+// MCP tool registry (Plan 6). The mcp module creates and binds it on register;
+// its start contributes each built-in tool whose required DI token is present,
+// and the MCP transports/routes resolve it. AlterableRegistry of McpToolEntry.
+export const MCP_TOOLS = token<McpToolRegistry>('mcp.tools');
 
 export const API_REVERSE_PROXY = token<{
   openaiRoutes: typeof import('../modules/api-reverse-proxy/openai.js').openaiRoutes;
