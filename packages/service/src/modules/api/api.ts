@@ -26,6 +26,7 @@ import { updateChecker } from '../update-checker/update-checker.js';
 import { logAudit } from '../audit/logger.js';
 import type { AuditEntry } from '../audit/logger.js';
 import { ALL_MODULES } from '../index.js';
+import { API_ROUTES } from '../../core/tokens.js';
 import { connectionsRoutes } from './connections.js';
 import {
   isModuleEnabled,
@@ -238,6 +239,15 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.decorateRequest('dashUser', null);
 
   await fastify.register(connectionsRoutes);
+
+  // Mount routes contributed via the API_ROUTES registry (e.g. resilience/routes.ts).
+  // tryResolve, not resolve: the registry is only present once apiModule has registered
+  // through the kernel — tests that mount apiRoutes on a bare Fastify() without decorating
+  // `fastify.kernel` (e.g. connections.test.ts) must keep working with zero contributed routes.
+  const contributedRoutes = fastify.kernel?.container.tryResolve(API_ROUTES);
+  for (const route of contributedRoutes?.ordered() ?? []) {
+    fastify.route({ method: route.method, url: route.url, handler: route.handler as never });
+  }
 
   // Initialize catalog fetcher with configured repos on startup
   readConfig('settings').then((s: Settings) => {

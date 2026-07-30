@@ -5,7 +5,9 @@ import type { ModuleRecord } from '@routerly/shared'
  * Modules that form the gateway core and cannot be disabled. Without any one
  * of these the proxy cannot serve a request, so the enable/disable layer never
  * exposes them. `routing` is included because the proxy has nothing to route to
- * without it, even though it lives in coreModules.
+ * without it, even though it lives in coreModules. `api` is included because
+ * server.ts registers apiRoutes unconditionally (dashboard REST API + auth) —
+ * it has no gate over its own primary artifact, so it must not be toggleable.
  */
 export const ALWAYS_ON_MODULE_IDS: readonly string[] = [
   'config',
@@ -13,6 +15,7 @@ export const ALWAYS_ON_MODULE_IDS: readonly string[] = [
   'catalog',
   'reverse-proxy',
   'routing',
+  'api',
 ]
 
 export function isAlwaysOn(id: string): boolean {

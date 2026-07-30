@@ -98,6 +98,25 @@ describe('bootstrap gating', () => {
     }
   })
 
+  // Regression for the same class of bug as above: resilienceModule.register() contributes
+  // its two management routes to the API_ROUTES registry via container.resolve() (not
+  // tryResolve — a missing registry at that point is a real bug worth throwing on). That only
+  // works if `api` (which creates the registry) has actually registered first. Asserts the
+  // real, fully-wired kernel's startedOrder.
+  it('registers api before resilience so the API_ROUTES registry is resolvable', async () => {
+    mockReadConfig.mockImplementation(async () => [] as any)
+
+    const kernel = await bootstrap()
+    try {
+      const order = kernel.startedOrder
+      expect(order.indexOf('api')).toBeGreaterThanOrEqual(0)
+      expect(order.indexOf('resilience')).toBeGreaterThanOrEqual(0)
+      expect(order.indexOf('api')).toBeLessThan(order.indexOf('resilience'))
+    } finally {
+      await kernel.stop()
+    }
+  })
+
   it('bootstrap() runs the models->connections migration exactly once', async () => {
     mockReadConfig.mockImplementation(async () => [] as any)
 

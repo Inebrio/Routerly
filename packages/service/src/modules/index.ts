@@ -2,6 +2,7 @@ import { configModule } from './config/index.js'
 import { providerModule } from './provider/index.js'
 import { catalogModule } from './catalog/index.js'
 import { reverseProxyModule } from './reverse-proxy/index.js'
+import { apiModule } from './api/index.js'
 import { routingModule } from './routing/index.js'
 import { budgetModule } from './budget/index.js'
 import { usageModule } from './usage/index.js'
@@ -13,7 +14,11 @@ import { resilienceModule } from './resilience/index.js'
 import { CONTRIB_MODULES } from '../core/contrib.js'
 import { defineModule, type RouterlyModule } from '../core/index.js'
 
+// Ordering here is cosmetic only — the kernel topologically sorts by each module's
+// manifest.dependsOn, not array position. resilienceModule declares dependsOn: { api }
+// so it always registers after apiModule regardless of where apiModule sits in this array.
 export const coreModules = [
+  apiModule,
   routingModule,
   budgetModule,
   usageModule,
