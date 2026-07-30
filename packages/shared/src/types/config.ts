@@ -521,7 +521,9 @@ export type Permission =
   | 'resilience:read'
   | 'resilience:manage'
   | 'profiles:read'
-  | 'profiles:manage';
+  | 'profiles:manage'
+  | 'optimizers:read'
+  | 'optimizers:manage';
 
 // ─── Integration types ────────────────────────────────────────────────────────
 
