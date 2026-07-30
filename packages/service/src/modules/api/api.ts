@@ -28,6 +28,7 @@ import type { AuditEntry } from '../audit/logger.js';
 import { ALL_MODULES } from '../index.js';
 import { API_ROUTES } from '../../core/tokens.js';
 import { connectionsRoutes } from './connections.js';
+import { profilesRoutes } from './profiles.js';
 import {
   isModuleEnabled,
   isAlwaysOn,
@@ -239,6 +240,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.decorateRequest('dashUser', null);
 
   await fastify.register(connectionsRoutes);
+  await fastify.register(profilesRoutes);
 
   // Mount routes contributed via the API_ROUTES registry (e.g. resilience/routes.ts).
   // tryResolve, not resolve: the registry is only present once apiModule has registered

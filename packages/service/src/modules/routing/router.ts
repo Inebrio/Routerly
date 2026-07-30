@@ -1,4 +1,4 @@
-import type { ChatCompletionRequest, ModelConfig, ProjectConfig, ProjectToken, ResilienceStore, RoutingCandidate } from '@routerly/shared';
+import type { ChatCompletionRequest, ModelConfig, ProjectConfig, ProjectToken, ResilienceStore, RoutingCandidate, RoutingProfile } from '@routerly/shared';
 import { readConfig } from '../config/loader.js';
 import { isAllowed, getViolatedLimits } from '../budget/budget.js';
 import type { LimitSnapshot } from '../budget/budget.js';
@@ -50,17 +50,35 @@ const POLICY_MAP: Record<string, PolicyFn> = {
   'model-preference': modelPreferencePolicy,
 };
 
-export async function routeRequest(
+/**
+ * Result of the pre-selector scoring pipeline, extracted from routeRequest so the
+ * simulate endpoint can reuse the exact same policy scoring without forwarding. When
+ * `bypass` is set, only one valid candidate existed and scoring never ran: the caller
+ * must return `bypass` verbatim (all other fields are placeholder empties in that case).
+ */
+export interface ScoringResult {
+  scored: ScoredCandidate[];
+  allAbstained: boolean;
+  successfulResults: { type: string; weight: number; routing: { model: string; point: number }[] }[];
+  scoringIds: Set<string>;
+  policyExcludes: Set<string>;
+  excludeReasons: Map<string, string[]>;
+  /** Prefix trace: resilience?, intake, policies, profile, per-policy results (matches routeRequest's returned trace before recap/result). */
+  trace: TraceEntry[];
+  bypass?: RouteResult;
+}
+
+export async function scoreCandidates(
   request: ChatCompletionRequest,
   project: ProjectConfig,
+  profile: RoutingProfile,
   log?: Logger,
   emit?: (entry: TraceEntry) => void,
   token?: ProjectToken,
   traceId?: string,
   conversationId?: string,
   store?: ResilienceStore,
-): Promise<RouteResult> {
-  const profile = await resolveProfile(project);
+): Promise<ScoringResult> {
   const enabledPolicies = profile.policies.filter(p => p.enabled);
 
   // Peso posizionale per rank: la policy in posizione 1 vale N volte,
@@ -193,9 +211,19 @@ export async function routeRequest(
       note: 'single_candidate_bypass',
     });
     emit?.(bypassEntry);
-    return {
+    const bypass: RouteResult = {
       models: [singleResult],
       trace: [...(resilienceTraceEntry ? [resilienceTraceEntry] : []), intakeEntry, bypassEntry],
+    };
+    return {
+      scored: [],
+      allAbstained: false,
+      successfulResults: [],
+      scoringIds: new Set(),
+      policyExcludes: new Set(),
+      excludeReasons: new Map(),
+      trace: bypass.trace,
+      bypass,
     };
   }
 
@@ -346,10 +374,56 @@ export async function routeRequest(
     };
   });
 
+  const trace: TraceEntry[] = [
+    ...(resilienceTraceEntry ? [resilienceTraceEntry] : []),
+    intakeEntry,
+    policiesEntry,
+    profileEntry,
+    ...successfulResults.map(r =>
+      te('router-response', `policy:result:${r.type}`, {
+        type: r.type,
+        weight: r.weight,
+        routing: r.routing
+          .filter(e => scoringIds.has(e.model))
+          .map(e => ({
+            model: e.model,
+            point: e.point,
+            contribution: +(e.point * r.weight).toFixed(4),
+          })),
+      })
+    ),
+  ];
+
+  return {
+    scored,
+    allAbstained: allPoliciesAbstained,
+    successfulResults,
+    scoringIds,
+    policyExcludes,
+    excludeReasons,
+    trace,
+  };
+}
+
+export async function routeRequest(
+  request: ChatCompletionRequest,
+  project: ProjectConfig,
+  log?: Logger,
+  emit?: (entry: TraceEntry) => void,
+  token?: ProjectToken,
+  traceId?: string,
+  conversationId?: string,
+  store?: ResilienceStore,
+): Promise<RouteResult> {
+  const profile = await resolveProfile(project);
+  const sc = await scoreCandidates(request, project, profile, log, emit, token, traceId, conversationId, store);
+  if (sc.bypass) return sc.bypass;
+  const { scored, allAbstained, successfulResults, scoringIds, policyExcludes, excludeReasons, trace: preTrace } = sc;
+
   const selectorCtx: SelectorContext = {
     projectId: project.id,
     ...(conversationId !== undefined ? { conversationId } : {}),
-    allAbstained: allPoliciesAbstained,
+    allAbstained,
   };
   const finalCandidates: RoutingCandidate[] = SELECTOR_MAP[profile.selector](scored, selectorCtx).models;
 
@@ -413,27 +487,7 @@ export async function routeRequest(
   });
   emit?.(resultEntry);
 
-  const trace: TraceEntry[] = [
-    ...(resilienceTraceEntry ? [resilienceTraceEntry] : []),
-    intakeEntry,
-    policiesEntry,
-    profileEntry,
-    ...successfulResults.map(r =>
-      te('router-response', `policy:result:${r.type}`, {
-        type: r.type,
-        weight: r.weight,
-        routing: r.routing
-          .filter(e => scoringIds.has(e.model))
-          .map(e => ({
-            model: e.model,
-            point: e.point,
-            contribution: +(e.point * r.weight).toFixed(4),
-          })),
-      })
-    ),
-    recapEntry,
-    resultEntry,
-  ];
+  const trace: TraceEntry[] = [...preTrace, recapEntry, resultEntry];
 
   return { models: finalCandidates, trace };
 }
