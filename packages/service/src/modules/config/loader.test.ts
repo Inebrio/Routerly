@@ -15,6 +15,7 @@ vi.mock('../../lib/paths.js', () => ({
     users: '/test/config/users.json',
     roles: '/test/config/roles.json',
     modules: '/test/config/modules.json',
+    profiles: '/test/config/profiles.json',
     usage: '/test/data/usage.json',
     secret: '/test/config/secret',
   },
@@ -127,6 +128,23 @@ describe('readConfig', () => {
 
     const result = await readConfig('settings')
     expect((result as any).port).toBe(3000)
+  })
+
+  it('returns empty profiles array on first run and round-trips through writeConfig', async () => {
+    const err = Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
+    mockReadFile.mockRejectedValueOnce(err)
+    const releaseFn = vi.fn().mockResolvedValue(undefined)
+    mockLock.mockResolvedValue(releaseFn)
+    mockReadFile.mockRejectedValueOnce(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }))
+
+    const result = await readConfig('profiles')
+    expect(Array.isArray(result)).toBe(true)
+    expect((result as any[]).length).toBe(0)
+
+    // Verify writeConfig was called with the profiles path
+    const writeCall = mockWriteFile.mock.calls.find(c => String(c[0]) === '/test/config/profiles.json')
+    expect(writeCall).toBeDefined()
+    expect(writeCall![1]).toBe(JSON.stringify([], null, 2))
   })
 })
 
