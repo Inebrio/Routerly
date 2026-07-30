@@ -16,9 +16,9 @@ export function isClientConfiguratorEnabled(): boolean {
 
 /**
  * Client-configurator module (Plan 5). Publishes no runtime behavior of its
- * own — the CLIENT_REGISTRY metadata (@routerly/shared) is static data, read
- * directly by the GET /api/clients route. register() only flips the
- * enabled marker so that route can 404 when this module isn't bootstrapped.
+ * own. The CLIENT_REGISTRY metadata (@routerly/shared) is static data, read
+ * directly by the GET /api/clients route. register() only flips the enabled
+ * marker so that route can 404 when this module isn't bootstrapped.
  */
 export const clientConfiguratorModule = defineModule({
   manifest: {

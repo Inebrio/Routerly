@@ -2581,6 +2581,35 @@ describe('GET /api/clients', () => {
       expect(client['anthropicBaseUrl']).toBe('http://localhost:3000')
     }
   })
+
+  it('honors x-forwarded-proto/host when present (behind a reverse proxy)', async () => {
+    setClientConfiguratorEnabled(true)
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/clients',
+      headers: {
+        ...adminAuthHeaders(),
+        host: 'internal:3000',
+        'x-forwarded-proto': 'https',
+        'x-forwarded-host': 'gateway.example.com',
+      },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { clients: Array<Record<string, unknown>> }
+    for (const client of body.clients) {
+      expect(client['openaiBaseUrl']).toBe('https://gateway.example.com/v1')
+      expect(client['anthropicBaseUrl']).toBe('https://gateway.example.com')
+    }
+  })
 })
 
 // ─── PUT /api/roles/:id ───────────────────────────────────────────────────────

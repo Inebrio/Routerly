@@ -1709,7 +1709,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/api/clients', async (req, reply) => {
     if (!req.dashUser) return reply.status(401).send({ error: 'Unauthorized' });
     if (!isClientConfiguratorEnabled()) return reply.status(404).send({ error: 'Not found' });
-    const base = `${req.protocol}://${req.headers.host}`;
+    // Honor x-forwarded-proto/host so the copy-paste base URLs stay correct behind a
+    // TLS-terminating reverse proxy (nginx/Caddy/Traefik), where req.protocol reports
+    // http. No trustProxy config change: this only sources the base URL, not client IPs.
+    const protocol = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim() || req.protocol;
+    const host = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0]?.trim() || req.headers.host;
+    const base = `${protocol}://${host}`;
     const clients = CLIENT_REGISTRY.map(meta => ({
       ...meta,
       openaiBaseUrl: `${base}/v1`,
