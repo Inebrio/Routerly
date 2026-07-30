@@ -135,6 +135,16 @@ describe('atomicWrite', () => {
     expect(result).toBe(content);
   });
 
+  it('defaults a new file to mode 0600, not umask-dependent 0644', async () => {
+    const testFile = join(HOME, 'new-file-mode.txt');
+
+    await mkdir(HOME, { recursive: true });
+    await atomicWrite(testFile, 'secret-bearing content');
+
+    const stats = await stat(testFile);
+    expect(stats.mode & 0o777).toBe(0o600);
+  });
+
   it('preserves the existing file mode', async () => {
     const testFile = join(HOME, 'mode-preserve.txt');
 
