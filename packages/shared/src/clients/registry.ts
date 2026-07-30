@@ -86,7 +86,7 @@ export function buildSnippet(meta: ClientMeta, baseUrl: string, token: string): 
 
 function buildEnvSnippet(meta: ClientMeta, baseUrl: string, token: string): string {
   if (meta.wireFormat === 'anthropic') {
-    return `ANTHROPIC_BASE_URL=${baseUrl}\nANTHROPIC_API_KEY=${token}`;
+    return `ANTHROPIC_BASE_URL=${baseUrl}\nANTHROPIC_AUTH_TOKEN=${token}`;
   }
   return `OPENAI_BASE_URL=${baseUrl}\nOPENAI_API_KEY=${token}`;
 }
@@ -95,10 +95,9 @@ function buildJsonSnippet(meta: ClientMeta, baseUrl: string, token: string): str
   if (meta.wireFormat === 'anthropic') {
     return JSON.stringify(
       {
-        _comment: 'Set ANTHROPIC_BASE_URL to configure Anthropic API endpoint',
-        claude_code: {
-          baseUrl,
-          apiKey: token,
+        env: {
+          ANTHROPIC_BASE_URL: baseUrl,
+          ANTHROPIC_AUTH_TOKEN: token,
         },
       },
       null,
