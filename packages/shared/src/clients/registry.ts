@@ -24,7 +24,7 @@ export const CLIENT_REGISTRY: readonly ClientMeta[] = [
   {
     id: 'codex',
     label: 'Codex',
-    supportState: 'documented',
+    supportState: 'auto-configurable',
     wireFormat: 'openai',
     docSlug: 'integrations/clients/codex',
     configKind: 'toml',
