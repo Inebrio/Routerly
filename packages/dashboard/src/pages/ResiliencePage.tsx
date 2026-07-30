@@ -167,6 +167,7 @@ export function ResiliencePage() {
                                 {until !== undefined
                                   ? formatCountdown(until, now)
                                   : entry.state === 'open' && entry.openedAt !== undefined
+                                    // elapsed time: formatCountdown is symmetric, target/now swapped intentionally
                                     ? `opened ${formatCountdown(now, entry.openedAt)} ago`
                                     : '—'}
                               </td>
