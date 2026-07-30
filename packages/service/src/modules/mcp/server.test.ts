@@ -134,4 +134,18 @@ describe('buildMcpServer tools/call', () => {
     expect(res.result.content[0].type).toBe('text')
     expect(res.result.content[0].text).toContain('Alpha')
   })
+
+  it('returns a JSON-RPC error (not a result) when the auth context is missing', async () => {
+    const { container, registry } = await fullRegistry()
+    const server = buildMcpServer(registry, container)
+    const { transport, sent } = makeFakeTransport()
+    await server.connect(transport)
+    // No authInfo on the second argument: toAuthContext must throw an McpError,
+    // which the SDK turns into a JSON-RPC error response, not a transport crash.
+    transport.onmessage({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} }, {})
+    const res = await waitForSend(sent)
+    expect(res.error).toBeDefined()
+    expect(res.result).toBeUndefined()
+    expect(res.error.message).toContain('Missing MCP auth context')
+  })
 })
