@@ -270,17 +270,17 @@ describe('routeRequest', () => {
     )
   })
 
-  it('uses random selection when all policies abstain (no active policy)', async () => {
+  it('uses argmax uniform-random pick when all policies abstain (no active policy)', async () => {
     mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
 
-    // Force deterministic random: m1 gets 0.9, m2 gets 0.3 → m1 wins
-    const spy = vi.spyOn(Math, 'random').mockReturnValueOnce(0.9).mockReturnValueOnce(0.3)
+    // argmaxSelector's allAbstained branch: idx = floor(rng() * n). rng=0.9, n=2 -> idx=1 -> m2 picked first.
+    const spy = vi.spyOn(Math, 'random').mockReturnValue(0.9)
     const project = makeProject(['m1', 'm2'], [])
     const result = await routeRequest(request, project)
 
     expect(result.models).toHaveLength(2)
-    expect(result.models[0]!.model).toBe('m1')
+    expect(result.models[0]!.model).toBe('m2')
 
     spy.mockRestore()
   })
@@ -501,12 +501,49 @@ describe('routeRequest', () => {
 
     const project = makeProject(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: true }])
     const result = await routeRequest(request, project)
-    // m1 should win; m3 missing from policy → gets 0.5 fallback (weight=0 → score=0.5)
+    // m1 (score 0.9) ranks first, m3 (missing → 0.5 fallback) ranks second, m2 (0.1) ranks last.
+    // Post-selector weight is rank-based (n - idx), not the raw score.
     expect(result.models).toHaveLength(3)
     expect(result.models[0]!.model).toBe('m1')
     const m3 = result.models.find(m => m.model === 'm3')
     expect(m3).toBeDefined()
-    expect(m3!.weight).toBe(0.5)
+    expect(m3!.weight).toBe(2)
+  })
+
+  it('router:recap final[].score stays 0..1 weighted-mean while router:result weight is rank-based', async () => {
+    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2'), makeModel('m3')])
+    mockIsAllowed.mockResolvedValue(true)
+    mockCheapestPolicy.mockResolvedValue({
+      routing: [
+        { model: 'm1', point: 0.9 },
+        { model: 'm2', point: 0.1 },
+      ],
+      // m3 not in routing → no accumulation → defaults to 0.5 fallback score
+    })
+
+    const emit = vi.fn()
+    const project = makeProject(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: true }])
+    await routeRequest(request, project, undefined, emit)
+
+    const recapCall = emit.mock.calls.find((c: any) => c[0].message === 'router:recap')
+    expect(recapCall).toBeDefined()
+    const recapFinal = recapCall![0].details.final as Array<{ model: string; score: number }>
+    // Every recap score must remain a 0..1 probability, never a rank integer (n, n-1, ...).
+    for (const entry of recapFinal) {
+      expect(entry.score).toBeGreaterThanOrEqual(0)
+      expect(entry.score).toBeLessThanOrEqual(1)
+    }
+    expect(recapFinal.find(e => e.model === 'm1')!.score).toBeCloseTo(0.9)
+    expect(recapFinal.find(e => e.model === 'm2')!.score).toBeCloseTo(0.1)
+    expect(recapFinal.find(e => e.model === 'm3')!.score).toBeCloseTo(0.5)
+
+    const resultCall = emit.mock.calls.filter((c: any) => c[0].message === 'router:result')
+    const finalResultCall = resultCall[resultCall.length - 1]
+    const resultFinal = finalResultCall![0].details.final as Array<{ model: string; weight: number }>
+    // In contrast, router:result's weight IS the selector's rank-based integer.
+    expect(resultFinal.find(e => e.model === 'm1')!.weight).toBe(3)
+    expect(resultFinal.find(e => e.model === 'm2')!.weight).toBe(1)
+    expect(resultFinal.find(e => e.model === 'm3')!.weight).toBe(2)
   })
 
   it('line 308: finalCandidates include prompt when candidate has prompt set', async () => {
@@ -876,6 +913,79 @@ describe('routeRequest', () => {
       // m1 excluded by resilience, m2/m3 remain → full policy-scoring path (2+ candidates), not the bypass.
       expect(result.models.map(m => m.model).sort()).toEqual(['m2', 'm3'])
       expect(result.trace.find(e => e.message === 'resilience:excluded')).toBeDefined()
+    })
+  })
+
+  describe('profile resolution + selector wiring', () => {
+    it('(a) differentiating policies: the model with the highest weighted-mean policy score still wins, weights are rank-based', async () => {
+      mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2'), makeModel('m3')])
+      mockIsAllowed.mockResolvedValue(true)
+      mockCheapestPolicy.mockResolvedValue({
+        routing: [
+          { model: 'm1', point: 0.9 },
+          { model: 'm2', point: 0.5 },
+          { model: 'm3', point: 0.1 },
+        ],
+      })
+
+      const project = makeProject(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: true }])
+      const result = await routeRequest(request, project)
+
+      // Default profile has no profileId set → ephemeral default (selector: 'argmax'), ordering by score desc.
+      expect(result.models.map(m => m.model)).toEqual(['m1', 'm2', 'm3'])
+      // Rank-based weight: winner N, runner-up N-1, ... for N=3 scoring candidates.
+      expect(result.models[0]!.weight).toBe(3)
+      expect(result.models[1]!.weight).toBe(2)
+      expect(result.models[2]!.weight).toBe(1)
+    })
+
+    it('(b) all-abstain: winner is picked by argmaxSelector\'s uniform-random branch, deterministic under a mocked Math.random', async () => {
+      mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2'), makeModel('m3')])
+      mockIsAllowed.mockResolvedValue(true)
+
+      // argmaxSelector's allAbstained branch: idx = floor(rng() * n). rng=0.5, n=3 -> idx=1 -> m2 picked first.
+      const spy = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+      const project = makeProject(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: false }])
+      const result = await routeRequest(request, project)
+      spy.mockRestore()
+
+      expect(result.models).toHaveLength(3)
+      expect(result.models[0]!.model).toBe('m2')
+    })
+
+    it('(c) single-candidate bypass short-circuits before any profile/selector trace is emitted', async () => {
+      mockReadConfig.mockResolvedValue([makeModel('m1')])
+      mockIsAllowed.mockResolvedValue(true)
+
+      const emit = vi.fn()
+      const project = makeProject(['m1'])
+      const result = await routeRequest(request, project, undefined, emit)
+
+      expect(result.models).toEqual([{ model: 'm1', weight: 1 }])
+      const messages = emit.mock.calls.map((c: any) => c[0].message)
+      expect(messages).not.toContain('router:profile')
+    })
+
+    it('emits router:profile trace entry with the resolved default profile id/selector/fallbackStrategy', async () => {
+      mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+      mockIsAllowed.mockResolvedValue(true)
+      mockCheapestPolicy.mockResolvedValue({
+        routing: [{ model: 'm1', point: 0.8 }, { model: 'm2', point: 0.4 }],
+      })
+
+      const emit = vi.fn()
+      const project = makeProject(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+      const result = await routeRequest(request, project, undefined, emit)
+
+      const profileCall = emit.mock.calls.find((c: any) => c[0].message === 'router:profile')
+      expect(profileCall).toBeDefined()
+      expect(profileCall![0].details).toEqual({
+        profileId: 'default',
+        selector: 'argmax',
+        fallbackStrategy: 'next-best',
+      })
+      // Also present in the returned trace array (not just via emit).
+      expect(result.trace.find(e => e.message === 'router:profile')).toBeDefined()
     })
   })
 })
