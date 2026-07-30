@@ -13,6 +13,7 @@ export const CONFIG_PATHS = {
   users: join(base, 'config', 'users.json'),
   roles: join(base, 'config', 'roles.json'),
   modules: join(base, 'config', 'modules.json'),
+  profiles: join(base, 'config', 'profiles.json'),
   connections: join(base, 'config', 'connections.json'),
   instances: join(base, 'config', 'instances.json'),
   usage: join(base, 'data', 'usage.json'),
