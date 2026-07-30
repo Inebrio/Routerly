@@ -11,6 +11,7 @@ import { piiModule } from './pii/index.js'
 import { loggingModule } from './logging/index.js'
 import { cacheModule } from './cache.js'
 import { resilienceModule } from './resilience/index.js'
+import { optimizerModules } from './optimizers/index.js'
 import { CONTRIB_MODULES } from '../core/contrib.js'
 import { defineModule, type RouterlyModule } from '../core/index.js'
 
@@ -62,5 +63,6 @@ export const ALL_MODULES: RouterlyModule[] = [
   providerOAuthModule,
   providerWebModule,
   ...coreModules,
+  ...optimizerModules,
   ...CONTRIB_MODULES,
 ]

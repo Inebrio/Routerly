@@ -18,6 +18,10 @@ describe('messages helpers', () => {
     expect(clone).toEqual(original)
   })
 
+  it('readMessages returns [] when a request carries no messages', () => {
+    expect(readMessages({ model: 'gpt' } as unknown as ChatCompletionRequest)).toEqual([])
+  })
+
   it('writeMessages mutates in place (same request object identity)', () => {
     const r = req([{ role: 'user', content: 'a' }])
     const next: Message[] = [{ role: 'user', content: 'b' }]
