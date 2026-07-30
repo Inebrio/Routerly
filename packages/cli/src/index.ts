@@ -22,6 +22,7 @@ import { makeModulesCommand } from './commands/modules.js';
 import { makeConnectionsCommand } from './commands/connections.js';
 import { makeResilienceCommand } from './commands/resilience.js';
 import { makeProfilesCommand } from './commands/profiles.js';
+import { makeOptimizersCommand } from './commands/optimizers.js';
 
 const program = new Command();
 
@@ -51,5 +52,6 @@ program.addCommand(makeModulesCommand());
 program.addCommand(makeConnectionsCommand());
 program.addCommand(makeResilienceCommand());
 program.addCommand(makeProfilesCommand());
+program.addCommand(makeOptimizersCommand());
 
 program.parse(process.argv);
