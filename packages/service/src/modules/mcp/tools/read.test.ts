@@ -42,7 +42,7 @@ describe('listModelsTool', () => {
     expect(listModelsTool.requires.key).toBe('catalog.registry')
   })
 
-  it('lists id/provider/enabled/contextWindow for each configured model', async () => {
+  it('lists id/provider/contextWindow for each configured model', async () => {
     mockReadConfig.mockResolvedValue([
       model(),
       model({
@@ -58,8 +58,8 @@ describe('listModelsTool', () => {
     expect(res.isError).toBeUndefined()
     const parsed = JSON.parse(res.content[0]!.text)
     expect(parsed).toEqual([
-      { id: 'openai/gpt-4o', provider: 'openai', enabled: true, contextWindow: 128000 },
-      { id: 'anthropic/claude', provider: 'anthropic', enabled: true, contextWindow: 200000 },
+      { id: 'openai/gpt-4o', provider: 'openai', contextWindow: 128000 },
+      { id: 'anthropic/claude', provider: 'anthropic', contextWindow: 200000 },
     ])
   })
 
