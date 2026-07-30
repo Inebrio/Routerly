@@ -29,7 +29,7 @@ function applyProcessor(registry: OptimizerRegistry): Processor<ProxyContext> {
     id: 'optimizer.apply',
     phase: 'request.preprocess',
     after: ['pii.input', 'guardrail.request'],
-    run(ctx) {
+    async run(ctx) {
       if (ctx.result) return
       const steps = ctx.project.optimizers?.steps
       if (!steps?.length) return
@@ -48,7 +48,7 @@ function applyProcessor(registry: OptimizerRegistry): Processor<ProxyContext> {
 
         let result: OptimizerResult
         try {
-          result = optimizer.optimize(ctx)
+          result = await optimizer.optimize(ctx)
         } catch (err) {
           ctx.log.warn?.({ err, optimizer: optimizer.id }, 'optimizer threw, rolling back (fail-open)')
           rollback()

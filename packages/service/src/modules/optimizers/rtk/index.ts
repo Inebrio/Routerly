@@ -131,7 +131,7 @@ function blocksSurvive(before: string, after: string): boolean {
 /** Pre-optimize message array per context, read back by recover/validate. */
 const originals = new WeakMap<ProxyContext, Message[]>()
 
-export const rtkOptimizer: Optimizer = {
+export const rtkOptimizer = {
   id: 'rtk',
   klass: 'recoverable',
 
@@ -193,12 +193,12 @@ export const rtkOptimizer: Optimizer = {
   // Core has already restored ctx.request to the pre-optimize snapshot before
   // this runs; re-write the stashed originals in place as a defensive
   // confirmation. Safe no-op when no stash exists.
-  recover(ctx) {
+  recover(ctx, _result: OptimizerResult) {
     const original = originals.get(ctx)
     if (!original) return
     writeMessages(ctx.request, original)
   },
-}
+} satisfies Optimizer
 
 /**
  * optimizer-rtk module. Resolves the registry created by optimizer-core and

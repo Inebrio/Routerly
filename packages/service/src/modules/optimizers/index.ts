@@ -5,6 +5,7 @@ import { rtkModule } from './rtk/index.js'
 import { headroomModule } from './headroom/index.js'
 import { relevanceModule } from './relevance/index.js'
 import { cavemanModule } from './caveman/index.js'
+import { llmlingua2Module } from './llmlingua2/index.js'
 import type { RouterlyModule } from '../../core/index.js'
 
 /**
@@ -21,4 +22,5 @@ export const optimizerModules: RouterlyModule[] = [
   headroomModule,
   relevanceModule,
   cavemanModule,
+  llmlingua2Module,
 ]

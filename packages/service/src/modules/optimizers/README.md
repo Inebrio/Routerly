@@ -44,3 +44,38 @@ third-party code, dataset, or wordlist was copied or adapted, and no license
 or provenance claim is made about any external project, product, or
 technique. The name `caveman` denotes only this optimizer's internal id
 within Routerly's optimizer registry.
+
+## llmlingua-2
+
+`llmlingua-2` (id `'llmlingua-2'`, klass `'lossy'`) is a token-level prompt
+compression pass backed by a real, named, third-party ONNX model. It scores
+each token of a message's own text with the model's keep/discard classification
+head and drops the lowest-scoring tokens down to a target keep-ratio (the step's
+`threshold`, default `0.5`). It never drops, reorders, or merges messages, and
+never touches non-text content parts (images, `tool_use`, `tool_result`) — only
+a message's text density changes. As a lossy optimizer its result is
+additionally checked by the shared floor-ratio safety gate (core.ts / gate.ts).
+
+Unlike `rtk` and `caveman`, this is NOT a clean-room implementation: it wraps a
+license-verified external model.
+
+Provenance and license (both MIT, confirmed from source):
+
+- Technique / reference code: `microsoft/LLMLingua`,
+  https://github.com/microsoft/LLMLingua — MIT license.
+- ONNX-usable model checkpoint:
+  `microsoft/llmlingua-2-xlm-roberta-large-meetingbank`,
+  https://huggingface.co/microsoft/llmlingua-2-xlm-roberta-large-meetingbank —
+  MIT license (confirmed on the model card).
+
+Model download is optional and gated — never auto-downloaded on install or at
+first request; it requires explicit operator opt-in (`downloadModel(true)`) and
+lands at a fixed on-disk path (`<ROUTERLY_HOME>/models/llmlingua-2/model.onnx`).
+With no checkpoint on disk and the optional dependency not installed — the
+default state — the optimizer still self-registers into the registry but
+`supports()` always returns false, so it is a permanent no-op.
+
+The `onnxruntime-node` package is declared in `packages/service/package.json`
+under `optionalDependencies` because native ONNX inference has no pure-JS
+equivalent of comparable quality; it is imported lazily inside a try/catch so
+its absence never crashes module load or the service.

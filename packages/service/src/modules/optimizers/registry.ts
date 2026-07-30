@@ -19,7 +19,10 @@ export interface Optimizer {
   klass: OptimizerClass
   supports(ctx: ProxyContext): boolean
   estimate(ctx: ProxyContext): OptimizerEstimate
-  optimize(ctx: ProxyContext): OptimizerResult
+  // May be async: ONNX-backed optimizers (llmlingua-2) run Promise-based
+  // inference. core.ts awaits the result; synchronous optimizers just return a
+  // plain OptimizerResult (await on a non-Promise resolves immediately).
+  optimize(ctx: ProxyContext): OptimizerResult | Promise<OptimizerResult>
   validate(ctx: ProxyContext, result: OptimizerResult): boolean
   recover?(ctx: ProxyContext, result: OptimizerResult): void
 }
