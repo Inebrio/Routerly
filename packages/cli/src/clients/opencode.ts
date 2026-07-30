@@ -1,8 +1,8 @@
 /**
  * OpenCode client integration.
  *
- * Research (verified against the live OpenCode docs on 2026-07-30 —
- * `opencode.ai/docs/config/` and `opencode.ai/docs/providers/` — not
+ * Research (verified against the live OpenCode docs on 2026-07-30,
+ * `opencode.ai/docs/config/` and `opencode.ai/docs/providers/`, not
  * training memory):
  * - Config file: `~/.config/opencode/opencode.json` (global). OpenCode also
  *   supports a per-project `opencode.json` and `OPENCODE_CONFIG`/
@@ -21,7 +21,7 @@
  *         "npm": "@ai-sdk/openai-compatible",
  *         "name": "Routerly",
  *         "options": { "baseURL": "<serverUrl>/v1", "apiKey": "<token>" },
- *         "models": { "auto": { "name": "Routerly (auto-routed)" } }
+ *         "models": { "routerly/ada": { "name": "Routerly (auto-routed)" } }
  *       }
  *     }
  *   }
@@ -32,17 +32,24 @@
  *   token value directly, same as the Claude Code and Codex integrations, to
  *   keep this client's `supportState: 'auto-configurable'` promise of a
  *   one-command setup with no manual env-var export step.
- * - Provider id: `"routerly"`, not `"openai"` — the docs don't explicitly
+ * - Provider id: `"routerly"`, not `"openai"`. The docs don't explicitly
  *   forbid reusing a built-in id but recommend a distinct one to avoid
  *   conflicting with OpenCode's built-in providers; this also avoids
  *   embedding any reserved competitor name/URL.
  * - `models` is a required object with at least one entry per the docs (no
- *   auto-discovery documented for custom providers). Routerly routes
- *   dynamically and clients pass whatever model name they choose, so this
- *   integration writes one placeholder entry keyed `"auto"` purely so
- *   OpenCode's model picker has something to show. The actual model string
+ *   auto-discovery documented for custom providers). This integration writes
+ *   one entry keyed `"routerly/ada"`, Routerly's reserved auto-routing
+ *   sentinel model id (see `VIRTUAL_MODEL` in
+ *   `packages/service/src/modules/routing/policies/model-preference.ts` and
+ *   the `adaPlaceholder` advertised by
+ *   `packages/service/src/modules/api-reverse-proxy/openai.ts`'s
+ *   `GET /v1/models`). Selecting it in OpenCode's model picker sends the
+ *   literal string `"routerly/ada"`, which the model-preference routing
+ *   policy recognizes and abstains on (scores every real candidate equally,
+ *   letting other policies route), instead of an arbitrary label scored as
+ *   a request for a nonexistent specific model. The actual model string
  *   OpenCode sends is forwarded verbatim by Routerly regardless of this
- *   label — this is a client-side label, not payload synthesis, so it does
+ *   label, this is a client-side label, not payload synthesis, so it does
  *   not violate wire-format transparency.
  */
 import { readFile, mkdir, access } from 'node:fs/promises';
@@ -185,7 +192,7 @@ async function plan(target: ConfigTarget): Promise<ConfigPlan> {
         apiKey: target.token,
       },
       models: {
-        auto: { name: 'Routerly (auto-routed)' },
+        'routerly/ada': { name: 'Routerly (auto-routed)' },
       },
     },
   };
