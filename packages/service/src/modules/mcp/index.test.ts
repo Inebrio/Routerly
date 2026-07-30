@@ -1,4 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+
+vi.mock('./stdio.js', () => ({ startStdioServer: vi.fn(async () => {}) }))
+
 import { ServiceContainer, EventBus, type Token } from '../../core/index.js'
 import {
   MCP_TOOLS,
@@ -10,6 +13,9 @@ import {
   CONFIG_STORE,
 } from '../../core/tokens.js'
 import { mcpModule } from './index.js'
+import { startStdioServer } from './stdio.js'
+
+const mockStartStdioServer = vi.mocked(startStdioServer)
 
 function runtime() {
   return { container: new ServiceContainer(), events: new EventBus() }
@@ -20,6 +26,11 @@ function runtime() {
 function present(rt: ReturnType<typeof runtime>, ...tokens: Token<unknown>[]) {
   for (const t of tokens) rt.container.register(t, {} as never)
 }
+
+afterEach(() => {
+  delete process.env['ROUTERLY_MCP_STDIO']
+  mockStartStdioServer.mockClear()
+})
 
 describe('mcp module', () => {
   it('has the frozen manifest', () => {
@@ -76,5 +87,20 @@ describe('mcp module', () => {
         'toggle_model',
       ].sort(),
     )
+  })
+
+  it('does not open the stdio transport when ROUTERLY_MCP_STDIO is unset', async () => {
+    const rt = runtime()
+    await mcpModule.register(rt)
+    await mcpModule.start?.(rt)
+    expect(mockStartStdioServer).not.toHaveBeenCalled()
+  })
+
+  it('opens the stdio transport when ROUTERLY_MCP_STDIO is 1', async () => {
+    process.env['ROUTERLY_MCP_STDIO'] = '1'
+    const rt = runtime()
+    await mcpModule.register(rt)
+    await mcpModule.start?.(rt)
+    expect(mockStartStdioServer).toHaveBeenCalledOnce()
   })
 })
