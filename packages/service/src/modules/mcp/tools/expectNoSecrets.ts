@@ -17,7 +17,7 @@ const FORBIDDEN_MARKERS = [
  * name nor any concrete secret value the test planted in its fixtures.
  * Reused by every tool test (Tasks 3, 4, 6) so the secret-leak contract is
  * checked identically everywhere.
- * // ponytail: plain throw instead of vitest's `expect` — this file lives in
+ * // ponytail: plain throw instead of vitest's `expect`, this file lives in
  * // the shipped source tree (not *.test.ts), and this repo has no build-time
  * // exclusion for test files (dist already ships *.test.js with vitest
  * // imports as inert dead code); avoiding the vitest import here removes the
