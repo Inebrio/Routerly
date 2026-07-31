@@ -17,7 +17,7 @@ import { semanticIntentPolicy } from './policies/semantic-intent.js';
 import { modelPreferencePolicy } from './policies/model-preference.js';
 import type { PolicyFn } from './policies/types.js';
 import type { TraceEntry, TracePanel } from '../logging/traceStore.js';
-import { resolveProfile } from './profiles/store.js';
+import { resolveRoutingProfile } from './profiles/store.js';
 import { SELECTOR_MAP } from './selectors/index.js';
 import type { ScoredCandidate, SelectorContext } from './selectors/index.js';
 
@@ -416,7 +416,7 @@ export async function routeRequest(
   conversationId?: string,
   store?: ResilienceStore,
 ): Promise<RouteResult> {
-  const profile = await resolveProfile(project);
+  const profile = await resolveRoutingProfile(project);
   const sc = await scoreCandidates(request, project, profile, log, emit, token, traceId, conversationId, store);
   if (sc.bypass) return sc.bypass;
   const { scored, allAbstained, successfulResults, scoringIds, policyExcludes, excludeReasons, trace: preTrace } = sc;

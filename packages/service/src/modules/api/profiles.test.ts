@@ -8,36 +8,20 @@ vi.mock('../auth/jwt.js', () => ({
   generateRawToken: vi.fn(() => 'raw-refresh-token-xxxx'),
 }))
 vi.mock('../audit/logger.js', () => ({ logAudit: vi.fn().mockResolvedValue(undefined) }))
-// scoreCandidates is the only runtime import profiles.ts pulls from router.js; mock it so the
-// simulate profile-resolution logic (the unit under test) is exercised without the real
-// budget/policy pipeline. resolveProfile/listProfiles/cloneProfile stay real (store.js/presets.js).
-vi.mock('../routing/router.js', () => ({ scoreCandidates: vi.fn() }))
 
 import { apiRoutes } from './api.js'
 import { readConfig, writeConfig } from '../config/loader.js'
 import { verifyToken } from '../auth/jwt.js'
-import { scoreCandidates } from '../routing/router.js'
-import { nextCursor } from '../routing/routingMemoryStore.js'
 
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
 const mockWriteConfig = vi.mocked(writeConfig as (key: string, value: any) => Promise<void>)
 const mockVerifyToken = vi.mocked(verifyToken)
-const mockScoreCandidates = vi.mocked(scoreCandidates)
 
 afterEach(() => vi.clearAllMocks())
 
 // Baseline so plugin registration never sees an un-mocked readConfig; per-test authWith replaces it.
 beforeEach(() => {
   mockReadConfig.mockImplementation(async () => [])
-  mockScoreCandidates.mockResolvedValue({
-    scored: [{ model: 'm1', score: 0.9, cost: 1 }],
-    allAbstained: false,
-    successfulResults: [],
-    scoringIds: new Set(['m1']),
-    policyExcludes: new Set(),
-    excludeReasons: new Map(),
-    trace: [{ panel: 'router-request', message: 'router:intake', details: {} }],
-  } as any)
 })
 
 async function buildApp() {
@@ -60,82 +44,114 @@ function authWith(perm: string, data: Record<string, any[]> = {}) {
   return { authorization: 'Bearer valid-jwt-token' }
 }
 
-const userProfile = { id: 'u1', version: 1, label: 'Mine', policies: [{ type: 'health', enabled: true }], selector: 'argmax', fallbackStrategy: 'next-best', builtin: false, baseId: 'balanced' }
+const userProfile = { id: 'u1', kind: 'routing', version: 1, label: 'Mine', policies: [{ type: 'health', enabled: true }], selector: 'argmax', fallbackStrategy: 'next-best', builtin: false, baseId: 'auto' }
+const optimizerProfile = { id: 'o1', kind: 'optimizer', version: 1, label: 'Mine', optimizers: { steps: [{ id: 'ccr', enabled: true }] }, builtin: false, baseId: 'optimizer-safe' }
+const securityProfile = { id: 's1', kind: 'security', version: 1, label: 'Mine', guardrails: { rules: [] }, pii: { policies: [] }, builtin: false, baseId: 'security-standard' }
 
-// ─── GET /api/routing/profiles ───────────────────────────────────────────────
+// ─── GET /api/profiles ───────────────────────────────────────────────────────
 
-describe('GET /api/routing/profiles', () => {
+describe('GET /api/profiles', () => {
   it('allows with profiles:read and returns built-ins + user overlays', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/api/routing/profiles', headers: authWith('profiles:read', { profiles: [userProfile] }) })
+    const res = await app.inject({ method: 'GET', url: '/api/profiles', headers: authWith('profiles:read', { profiles: [userProfile] }) })
     await app.close()
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
-    expect(Array.isArray(body)).toBe(true)
-    expect(body.some((p: any) => p.id === 'balanced' && p.builtin === true)).toBe(true)
+    expect(body.some((p: any) => p.id === 'auto' && p.builtin === true)).toBe(true)
+    expect(body.some((p: any) => p.id === 'optimizer-safe')).toBe(true)
+    expect(body.some((p: any) => p.id === 'security-standard')).toBe(true)
     expect(body.some((p: any) => p.id === 'u1')).toBe(true)
+  })
+
+  it('narrows to a single kind via ?kind=', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/profiles?kind=security', headers: authWith('profiles:read', { profiles: [userProfile, securityProfile] }) })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.every((p: any) => p.kind === 'security')).toBe(true)
+    expect(body.map((p: any) => p.id)).toContain('s1')
+  })
+
+  it('rejects an unknown kind', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/profiles?kind=nope', headers: authWith('profiles:read') })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(JSON.parse(res.body).error).toBe('invalid_kind')
   })
 
   it('forbids without profiles:read', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/api/routing/profiles', headers: authWith('model:read') })
+    const res = await app.inject({ method: 'GET', url: '/api/profiles', headers: authWith('model:read') })
     await app.close()
     expect(res.statusCode).toBe(403)
   })
 
-  it('blocks when routing-profiles module disabled', async () => {
+  it('blocks when the profiles module is disabled', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/api/routing/profiles', headers: authWith('profiles:read', { modules: [{ id: 'routing-profiles', enabled: false }] }) })
+    const res = await app.inject({ method: 'GET', url: '/api/profiles', headers: authWith('profiles:read', { modules: [{ id: 'profiles', enabled: false }] }) })
     await app.close()
     expect(res.statusCode).toBe(403)
     expect(JSON.parse(res.body).error).toBe('module_disabled')
   })
 })
 
-// ─── POST /api/routing/profiles/clone ────────────────────────────────────────
+// ─── POST /api/profiles/clone ────────────────────────────────────────────────
 
-describe('POST /api/routing/profiles/clone', () => {
+describe('POST /api/profiles/clone', () => {
   it('allows with profiles:manage and clones a built-in into a user overlay', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/routing/profiles/clone', headers: authWith('profiles:manage'), payload: { baseId: 'balanced', label: 'My Balanced' } })
+    const res = await app.inject({ method: 'POST', url: '/api/profiles/clone', headers: authWith('profiles:manage'), payload: { baseId: 'auto', label: 'My Auto' } })
     await app.close()
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
-    expect(body.baseId).toBe('balanced')
+    expect(body.baseId).toBe('auto')
+    expect(body.kind).toBe('routing')
     expect(body.builtin).toBe(false)
-    expect(body.label).toBe('My Balanced')
-    expect(mockWriteConfig).toHaveBeenCalledWith('profiles', expect.arrayContaining([expect.objectContaining({ label: 'My Balanced' })]))
+    expect(body.label).toBe('My Auto')
+    expect(mockWriteConfig).toHaveBeenCalledWith('profiles', expect.arrayContaining([expect.objectContaining({ label: 'My Auto' })]))
+  })
+
+  it('clones an optimizer preset, keeping its steps', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/profiles/clone', headers: authWith('profiles:manage'), payload: { baseId: 'optimizer-balanced', label: 'Mine' } })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.kind).toBe('optimizer')
+    expect(body.optimizers.steps.length).toBeGreaterThan(0)
   })
 
   it('forbids without profiles:manage', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/routing/profiles/clone', headers: authWith('profiles:read'), payload: { baseId: 'balanced', label: 'X' } })
+    const res = await app.inject({ method: 'POST', url: '/api/profiles/clone', headers: authWith('profiles:read'), payload: { baseId: 'auto', label: 'X' } })
     await app.close()
     expect(res.statusCode).toBe(403)
   })
 
-  it('returns 400 unknown_builtin_profile for an unknown baseId', async () => {
+  it('returns 400 unknown_base_profile for an unknown baseId', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/routing/profiles/clone', headers: authWith('profiles:manage'), payload: { baseId: 'nope', label: 'X' } })
+    const res = await app.inject({ method: 'POST', url: '/api/profiles/clone', headers: authWith('profiles:manage'), payload: { baseId: 'nope', label: 'X' } })
     await app.close()
     expect(res.statusCode).toBe(400)
-    expect(String(JSON.parse(res.body).error)).toContain('unknown_builtin_profile')
+    expect(String(JSON.parse(res.body).error)).toContain('unknown_base_profile')
   })
 
   it('rejects an empty label', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/routing/profiles/clone', headers: authWith('profiles:manage'), payload: { baseId: 'balanced', label: '  ' } })
+    const res = await app.inject({ method: 'POST', url: '/api/profiles/clone', headers: authWith('profiles:manage'), payload: { baseId: 'auto', label: '  ' } })
     await app.close()
     expect(res.statusCode).toBe(400)
   })
 })
 
-// ─── PATCH /api/routing/profiles/:id ─────────────────────────────────────────
+// ─── PATCH /api/profiles/:id ─────────────────────────────────────────────────
 
-describe('PATCH /api/routing/profiles/:id', () => {
+describe('PATCH /api/profiles/:id', () => {
   it('allows with profiles:manage, applies partial update and bumps version', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'PATCH', url: '/api/routing/profiles/u1', headers: authWith('profiles:manage', { profiles: [userProfile] }), payload: { label: 'Renamed' } })
+    const res = await app.inject({ method: 'PATCH', url: '/api/profiles/u1', headers: authWith('profiles:manage', { profiles: [userProfile] }), payload: { label: 'Renamed' } })
     await app.close()
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
@@ -143,16 +159,39 @@ describe('PATCH /api/routing/profiles/:id', () => {
     expect(body.version).toBe(2)
   })
 
+  it('updates an optimizer profile payload', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PATCH', url: '/api/profiles/o1', headers: authWith('profiles:manage', { profiles: [optimizerProfile] }), payload: { optimizers: { steps: [{ id: 'rtk', enabled: true }] } } })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).optimizers.steps).toEqual([{ id: 'rtk', enabled: true }])
+  })
+
+  it('updates a security profile payload', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PATCH', url: '/api/profiles/s1', headers: authWith('profiles:manage', { profiles: [securityProfile] }), payload: { pii: { policies: [{ target: 'both', entities: ['EMAIL'] }] } } })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).pii.policies).toHaveLength(1)
+  })
+
+  it('rejects a field that belongs to another kind', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PATCH', url: '/api/profiles/o1', headers: authWith('profiles:manage', { profiles: [optimizerProfile] }), payload: { selector: 'cheapest' } })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
   it('forbids without profiles:manage', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'PATCH', url: '/api/routing/profiles/u1', headers: authWith('profiles:read'), payload: { label: 'X' } })
+    const res = await app.inject({ method: 'PATCH', url: '/api/profiles/u1', headers: authWith('profiles:read'), payload: { label: 'X' } })
     await app.close()
     expect(res.statusCode).toBe(403)
   })
 
   it('returns 409 immutable_builtin_profile when targeting a built-in id', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'PATCH', url: '/api/routing/profiles/balanced', headers: authWith('profiles:manage', { profiles: [] }), payload: { label: 'X' } })
+    const res = await app.inject({ method: 'PATCH', url: '/api/profiles/auto', headers: authWith('profiles:manage', { profiles: [] }), payload: { label: 'X' } })
     await app.close()
     expect(res.statusCode).toBe(409)
     expect(JSON.parse(res.body).error).toBe('immutable_builtin_profile')
@@ -160,25 +199,25 @@ describe('PATCH /api/routing/profiles/:id', () => {
 
   it('returns 404 for an unknown non-built-in id', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'PATCH', url: '/api/routing/profiles/ghost', headers: authWith('profiles:manage', { profiles: [] }), payload: { label: 'X' } })
+    const res = await app.inject({ method: 'PATCH', url: '/api/profiles/ghost', headers: authWith('profiles:manage', { profiles: [] }), payload: { label: 'X' } })
     await app.close()
     expect(res.statusCode).toBe(404)
   })
 
-  it('rejects an all-undefined body', async () => {
+  it('rejects an empty body', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'PATCH', url: '/api/routing/profiles/u1', headers: authWith('profiles:manage', { profiles: [userProfile] }), payload: {} })
+    const res = await app.inject({ method: 'PATCH', url: '/api/profiles/u1', headers: authWith('profiles:manage', { profiles: [userProfile] }), payload: {} })
     await app.close()
     expect(res.statusCode).toBe(400)
   })
 })
 
-// ─── DELETE /api/routing/profiles/:id ────────────────────────────────────────
+// ─── DELETE /api/profiles/:id ────────────────────────────────────────────────
 
-describe('DELETE /api/routing/profiles/:id', () => {
+describe('DELETE /api/profiles/:id', () => {
   it('allows with profiles:manage and deletes a user profile', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/routing/profiles/u1', headers: authWith('profiles:manage', { profiles: [userProfile], projects: [] }) })
+    const res = await app.inject({ method: 'DELETE', url: '/api/profiles/u1', headers: authWith('profiles:manage', { profiles: [userProfile], projects: [] }) })
     await app.close()
     expect(res.statusCode).toBe(204)
     expect(mockWriteConfig).toHaveBeenCalledWith('profiles', [])
@@ -186,22 +225,27 @@ describe('DELETE /api/routing/profiles/:id', () => {
 
   it('forbids without profiles:manage', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/routing/profiles/u1', headers: authWith('profiles:read') })
+    const res = await app.inject({ method: 'DELETE', url: '/api/profiles/u1', headers: authWith('profiles:read') })
     await app.close()
     expect(res.statusCode).toBe(403)
   })
 
   it('returns 409 immutable_builtin_profile for a built-in id', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/routing/profiles/balanced', headers: authWith('profiles:manage', { profiles: [] }) })
+    const res = await app.inject({ method: 'DELETE', url: '/api/profiles/auto', headers: authWith('profiles:manage', { profiles: [] }) })
     await app.close()
     expect(res.statusCode).toBe(409)
     expect(JSON.parse(res.body).error).toBe('immutable_builtin_profile')
   })
 
-  it('returns 409 profile_in_use when a project references the profile', async () => {
+  it.each([
+    ['routingProfileId', 'u1'],
+    ['optimizerProfileId', 'u1'],
+    ['securityProfileId', 'u1'],
+    ['profileId', 'u1'],
+  ])('returns 409 profile_in_use when a project references it through %s', async (field, id) => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/routing/profiles/u1', headers: authWith('profiles:manage', { profiles: [userProfile], projects: [{ id: 'p1', profileId: 'u1' }] }) })
+    const res = await app.inject({ method: 'DELETE', url: `/api/profiles/${id}`, headers: authWith('profiles:manage', { profiles: [userProfile], projects: [{ id: 'p1', [field]: id }] }) })
     await app.close()
     expect(res.statusCode).toBe(409)
     expect(JSON.parse(res.body).error).toBe('profile_in_use')
@@ -209,28 +253,51 @@ describe('DELETE /api/routing/profiles/:id', () => {
 
   it('returns 404 for an unknown non-built-in id', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/routing/profiles/ghost', headers: authWith('profiles:manage', { profiles: [] }) })
+    const res = await app.inject({ method: 'DELETE', url: '/api/profiles/ghost', headers: authWith('profiles:manage', { profiles: [] }) })
     await app.close()
     expect(res.statusCode).toBe(404)
   })
 })
 
-// ─── PUT /api/projects/:id/profile ───────────────────────────────────────────
+// ─── PUT /api/projects/:id/profiles ──────────────────────────────────────────
 
-describe('PUT /api/projects/:id/profile', () => {
+describe('PUT /api/projects/:id/profiles', () => {
   const project = { id: 'p1', name: 'P1', tokens: [], members: [], models: [], policies: [] }
 
-  it('allows with project:write and assigns a profileId', async () => {
+  it('allows with project:write and assigns a routing profile', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profile', headers: authWith('project:write', { projects: [project], profiles: [userProfile] }), payload: { profileId: 'u1' } })
+    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profiles', headers: authWith('project:write', { projects: [project], profiles: [userProfile] }), payload: { routing: 'u1' } })
     await app.close()
     expect(res.statusCode).toBe(200)
-    expect(JSON.parse(res.body).profileId).toBe('u1')
+    expect(JSON.parse(res.body).routingProfileId).toBe('u1')
   })
 
-  it('clears the profileId when passed null', async () => {
+  it('assigns all three kinds in one call', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profile', headers: authWith('project:write', { projects: [{ ...project, profileId: 'u1' }] }), payload: { profileId: null } })
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1/profiles',
+      headers: authWith('project:write', { projects: [project], profiles: [userProfile, optimizerProfile, securityProfile] }),
+      payload: { routing: 'u1', optimizer: 'o1', security: 's1' },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body)).toMatchObject({ routingProfileId: 'u1', optimizerProfileId: 'o1', securityProfileId: 's1' })
+  })
+
+  it('clears one kind with null and leaves the others untouched', async () => {
+    const bound = { ...project, routingProfileId: 'u1', optimizerProfileId: 'o1' }
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profiles', headers: authWith('project:write', { projects: [bound] }), payload: { routing: null } })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.routingProfileId).toBeUndefined()
+    expect(body.optimizerProfileId).toBe('o1')
+  })
+
+  it('drops the legacy profileId on any assignment', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profiles', headers: authWith('project:write', { projects: [{ ...project, profileId: 'fast' }], profiles: [userProfile] }), payload: { routing: 'u1' } })
     await app.close()
     expect(res.statusCode).toBe(200)
     expect(JSON.parse(res.body).profileId).toBeUndefined()
@@ -238,207 +305,67 @@ describe('PUT /api/projects/:id/profile', () => {
 
   it('forbids without project:write', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profile', headers: authWith('project:read'), payload: { profileId: 'u1' } })
+    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profiles', headers: authWith('project:read'), payload: { routing: 'u1' } })
     await app.close()
     expect(res.statusCode).toBe(403)
   })
 
   it('returns 404 for an unknown project', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'PUT', url: '/api/projects/ghost/profile', headers: authWith('project:write', { projects: [project], profiles: [userProfile] }), payload: { profileId: 'u1' } })
+    const res = await app.inject({ method: 'PUT', url: '/api/projects/ghost/profiles', headers: authWith('project:write', { projects: [project], profiles: [userProfile] }), payload: { routing: 'u1' } })
     await app.close()
     expect(res.statusCode).toBe(404)
   })
 
-  it('rejects an invalid body (profileId neither string nor null)', async () => {
+  it('rejects an invalid body (id neither string nor null)', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profile', headers: authWith('project:write', { projects: [project] }), payload: { profileId: 123 } })
+    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profiles', headers: authWith('project:write', { projects: [project] }), payload: { routing: 123 } })
     await app.close()
     expect(res.statusCode).toBe(400)
   })
 
-  it('returns 404 profile_not_found for a profileId that matches no built-in or user profile, and does not persist it', async () => {
+  it('returns 404 profile_not_found for an id that matches nothing, and does not persist it', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profile', headers: authWith('project:write', { projects: [project], profiles: [userProfile] }), payload: { profileId: 'nonexistent-profile-id' } })
+    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profiles', headers: authWith('project:write', { projects: [project], profiles: [userProfile] }), payload: { routing: 'nonexistent-profile-id' } })
     await app.close()
     expect(res.statusCode).toBe(404)
-    expect(JSON.parse(res.body).error).toBe('profile_not_found')
+    expect(JSON.parse(res.body)).toMatchObject({ error: 'profile_not_found', kind: 'routing' })
     expect(mockWriteConfig).not.toHaveBeenCalled()
   })
 
-  it('assigns a real built-in profileId', async () => {
+  it('rejects an id belonging to another kind', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profile', headers: authWith('project:write', { projects: [project] }), payload: { profileId: 'balanced' } })
+    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profiles', headers: authWith('project:write', { projects: [project], profiles: [optimizerProfile] }), payload: { routing: 'o1' } })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+    expect(JSON.parse(res.body).error).toBe('profile_not_found')
+  })
+
+  it('assigns a real built-in id', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profiles', headers: authWith('project:write', { projects: [project] }), payload: { routing: 'cheap', optimizer: 'optimizer-safe' } })
     await app.close()
     expect(res.statusCode).toBe(200)
-    expect(JSON.parse(res.body).profileId).toBe('balanced')
+    expect(JSON.parse(res.body)).toMatchObject({ routingProfileId: 'cheap', optimizerProfileId: 'optimizer-safe' })
   })
 
   it('strips raw token hashes from the response when the project has tokens', async () => {
     const projectWithTokens = { ...project, tokens: [{ id: 't1', name: 'Default', token: 'sha256-secret-hash', createdAt: '2024-01-01' }] }
     const app = await buildApp()
-    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profile', headers: authWith('project:write', { projects: [projectWithTokens], profiles: [userProfile] }), payload: { profileId: 'u1' } })
+    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profiles', headers: authWith('project:write', { projects: [projectWithTokens], profiles: [userProfile] }), payload: { routing: 'u1' } })
     await app.close()
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
     expect(body.tokens).toHaveLength(1)
     expect(body.tokens[0].token).toBeUndefined()
-    expect(body.tokens[0].id).toBe('t1')
     expect(JSON.stringify(body)).not.toContain('sha256-secret-hash')
   })
-})
 
-// ─── POST /api/routing/simulate ──────────────────────────────────────────────
-
-describe('POST /api/routing/simulate', () => {
-  const project = { id: 'p1', name: 'P1', tokens: [], members: [], models: [], policies: [] }
-  const request = { model: 'auto', messages: [{ role: 'user', content: 'Hi' }] }
-
-  it('allows with profiles:read and returns picked/ranked/trace (project default profile branch)', async () => {
+  it('blocks when the profiles module is disabled', async () => {
     const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/routing/simulate', headers: authWith('profiles:read', { projects: [project] }), payload: { request, projectId: 'p1' } })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    const body = JSON.parse(res.body)
-    expect(body.picked).toBe('m1')
-    expect(body.ranked).toEqual([{ model: 'm1', score: 0.9, cost: 1 }])
-    expect(Array.isArray(body.trace)).toBe(true)
-    // no profileId, no overrides -> ephemeral 'default' profile derived from project policies
-    expect(mockScoreCandidates.mock.calls[0]![2]).toMatchObject({ id: 'default', selector: 'argmax' })
-  })
-
-  it('forbids without profiles:read', async () => {
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/routing/simulate', headers: authWith('model:read'), payload: { request, projectId: 'p1' } })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-  })
-
-  it('resolves an explicit built-in profileId (profileId branch)', async () => {
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/routing/simulate', headers: authWith('profiles:read', { projects: [project] }), payload: { request, projectId: 'p1', profileId: 'cheap' } })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    expect(mockScoreCandidates.mock.calls[0]![2]).toMatchObject({ id: 'cheap', selector: 'cheapest' })
-  })
-
-  it('applies inline policies/selector/fallbackStrategy overrides (ad-hoc branch)', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'POST', url: '/api/routing/simulate', headers: authWith('profiles:read', { projects: [project] }),
-      payload: { request, projectId: 'p1', selector: 'cheapest', fallbackStrategy: 'abort', policies: [{ type: 'cheapest', enabled: true }] },
-    })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    const profile = mockScoreCandidates.mock.calls[0]![2] as any
-    expect(profile.selector).toBe('cheapest')
-    expect(profile.fallbackStrategy).toBe('abort')
-    expect(profile.policies).toEqual([{ type: 'cheapest', enabled: true }])
-  })
-
-  it('rejects an invalid body (missing projectId)', async () => {
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/routing/simulate', headers: authWith('profiles:read', { projects: [project] }), payload: { request } })
-    await app.close()
-    expect(res.statusCode).toBe(400)
-  })
-
-  it('blocks when routing-profiles module disabled', async () => {
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/routing/simulate', headers: authWith('profiles:read', { projects: [project], modules: [{ id: 'routing-profiles', enabled: false }] }), payload: { request, projectId: 'p1' } })
+    const res = await app.inject({ method: 'PUT', url: '/api/projects/p1/profiles', headers: authWith('project:write', { projects: [project], modules: [{ id: 'profiles', enabled: false }] }), payload: { routing: 'auto' } })
     await app.close()
     expect(res.statusCode).toBe(403)
     expect(JSON.parse(res.body).error).toBe('module_disabled')
-  })
-
-  it('returns 404 when the project is not found', async () => {
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/routing/simulate', headers: authWith('profiles:read', { projects: [] }), payload: { request, projectId: 'ghost' } })
-    await app.close()
-    expect(res.statusCode).toBe(404)
-  })
-
-  it('returns 400 when scoring throws (e.g. no_models_available)', async () => {
-    mockScoreCandidates.mockRejectedValueOnce(new Error('no_models_available'))
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/routing/simulate', headers: authWith('profiles:read', { projects: [project] }), payload: { request, projectId: 'p1' } })
-    await app.close()
-    expect(res.statusCode).toBe(400)
-    expect(JSON.parse(res.body).error).toBe('no_models_available')
-  })
-
-  it('returns picked=null / ranked=[] when scoring yields no candidates', async () => {
-    mockScoreCandidates.mockResolvedValueOnce({
-      scored: [], allAbstained: true, successfulResults: [], scoringIds: new Set(), policyExcludes: new Set(), excludeReasons: new Map(), trace: [],
-    } as any)
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/routing/simulate', headers: authWith('profiles:read', { projects: [project] }), payload: { request, projectId: 'p1' } })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    const body = JSON.parse(res.body)
-    expect(body.picked).toBeNull()
-    expect(body.ranked).toEqual([])
-  })
-
-  it('stringifies a non-Error scoring rejection into the 400 body', async () => {
-    mockScoreCandidates.mockRejectedValueOnce('boom')
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/routing/simulate', headers: authWith('profiles:read', { projects: [project] }), payload: { request, projectId: 'p1' } })
-    await app.close()
-    expect(res.statusCode).toBe(400)
-    expect(JSON.parse(res.body).error).toBe('boom')
-  })
-
-  it('returns the single-candidate bypass result verbatim', async () => {
-    mockScoreCandidates.mockResolvedValueOnce({
-      scored: [], allAbstained: false, successfulResults: [], scoringIds: new Set(), policyExcludes: new Set(), excludeReasons: new Map(),
-      trace: [{ panel: 'router-response', message: 'router:result', details: {} }],
-      bypass: { models: [{ model: 'only-model', weight: 1 }], trace: [{ panel: 'router-response', message: 'router:result', details: { note: 'single_candidate_bypass' } }] },
-    } as any)
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/routing/simulate', headers: authWith('profiles:read', { projects: [project] }), payload: { request, projectId: 'p1' } })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    const body = JSON.parse(res.body)
-    expect(body.picked).toBe('only-model')
-    expect(body.ranked).toEqual([{ model: 'only-model', score: 1 }])
-  })
-
-  it('reorders ranked to match the selector output order (picked is always ranked[0])', async () => {
-    mockScoreCandidates.mockResolvedValueOnce({
-      scored: [
-        { model: 'expensive-but-high-score', score: 0.9, cost: 10 },
-        { model: 'cheap-but-low-score', score: 0.2, cost: 1 },
-      ],
-      allAbstained: false, successfulResults: [], scoringIds: new Set(), policyExcludes: new Set(), excludeReasons: new Map(), trace: [],
-    } as any)
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'POST', url: '/api/routing/simulate', headers: authWith('profiles:read', { projects: [project] }),
-      payload: { request, projectId: 'p1', selector: 'cheapest', policies: [{ type: 'cheapest', enabled: true }] },
-    })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    const body = JSON.parse(res.body)
-    // the cheapest selector picks the cheaper model even though it has the lower score
-    expect(body.picked).toBe('cheap-but-low-score')
-    expect(body.ranked[0].model).toBe(body.picked)
-    expect(body.ranked.map((c: any) => c.model)).toEqual(['cheap-but-low-score', 'expensive-but-high-score'])
-  })
-
-  it('does not advance the live round-robin cursor for the project (namespaced simulate key)', async () => {
-    const rrProject = { id: 'p-rr-cursor-test', name: 'RR', tokens: [], members: [], models: [], policies: [] }
-    mockScoreCandidates.mockResolvedValue({
-      scored: [{ model: 'm1', score: 0.9, cost: 1 }, { model: 'm2', score: 0.8, cost: 2 }],
-      allAbstained: false, successfulResults: [], scoringIds: new Set(['m1', 'm2']), policyExcludes: new Set(), excludeReasons: new Map(), trace: [],
-    } as any)
-    const app = await buildApp()
-    await app.inject({ method: 'POST', url: '/api/routing/simulate', headers: authWith('profiles:read', { projects: [rrProject] }), payload: { request, projectId: rrProject.id, selector: 'round-robin' } })
-    await app.close()
-    // the live (unprefixed) cursor for this project must be untouched by the simulate call above.
-    // a single simulate call is deliberate: with a leaked/unprefixed key, one call would advance
-    // the live cursor from 0 to 1, so its first real read would be 1 (mod 2) instead of 0 --
-    // a count divisible by the modulus (e.g. 2) would wrap back to 0 either way and prove nothing.
-    expect(nextCursor(rrProject.id, 2)).toBe(0)
   })
 })

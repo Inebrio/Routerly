@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
-import type { ProjectConfig, RoutingProfile } from '@routerly/shared'
+import type { OptimizerProfile, Profile, ProjectConfig, RoutingProfile, SecurityProfile } from '@routerly/shared'
 
-let profilesFixture: RoutingProfile[] = []
+let profilesFixture: Profile[] = []
 
 vi.mock('../../config/loader.js', () => ({
   readConfig: vi.fn(async (key: string) => {
@@ -21,200 +21,303 @@ function project(overrides: Partial<ProjectConfig> = {}): ProjectConfig {
   } as ProjectConfig
 }
 
-describe('resolveProfile', () => {
-  it('a project with policies and no profileId resolves to the default profile carrying those policies', async () => {
-    const { resolveProfile } = await import('./store.js')
+const routingOverlay: RoutingProfile = {
+  id: 'custom-1',
+  kind: 'routing',
+  version: 2,
+  label: 'Custom',
+  policies: [{ type: 'llm', enabled: true }],
+  selector: 'argmax',
+  fallbackStrategy: 'next-best',
+  builtin: false,
+  baseId: 'auto',
+}
+
+const optimizerOverlay: OptimizerProfile = {
+  id: 'opt-1',
+  kind: 'optimizer',
+  version: 1,
+  label: 'My optimizers',
+  optimizers: { steps: [{ id: 'ccr', enabled: true }] },
+  builtin: false,
+}
+
+const securityOverlay: SecurityProfile = {
+  id: 'sec-1',
+  kind: 'security',
+  version: 1,
+  label: 'My security',
+  guardrails: { rules: [] },
+  pii: { policies: [{ target: 'request', entities: ['EMAIL'] }] },
+  builtin: false,
+}
+
+describe('resolveRoutingProfile', () => {
+  it('a project with policies and no profile resolves to the custom profile carrying those policies', async () => {
+    const { resolveRoutingProfile } = await import('./store.js')
     const policies = [{ type: 'cheapest' as const, enabled: true }]
-    const resolved = await resolveProfile(project({ policies }))
-    expect(resolved.id).toBe('default')
+    const resolved = await resolveRoutingProfile(project({ policies }))
+    expect(resolved.id).toBe('custom')
     expect(resolved.builtin).toBe(false)
-    expect(resolved.baseId).toBe('balanced')
+    expect(resolved.baseId).toBe('auto')
     expect(resolved.policies).toEqual(policies)
   })
 
   it('is idempotent: resolving twice yields identical output', async () => {
-    const { resolveProfile } = await import('./store.js')
-    const policies = [{ type: 'health' as const, enabled: true }]
-    const p = project({ policies })
-    const first = await resolveProfile(p)
-    const second = await resolveProfile(p)
-    expect(first).toEqual(second)
+    const { resolveRoutingProfile } = await import('./store.js')
+    const p = project({ policies: [{ type: 'health' as const, enabled: true }] })
+    expect(await resolveRoutingProfile(p)).toEqual(await resolveRoutingProfile(p))
   })
 
-  it('a project with no policies and no profileId falls back to balanced policies', async () => {
-    const { resolveProfile } = await import('./store.js')
-    const resolved = await resolveProfile(project())
+  it('a project with no policies and no profile falls back to the auto preset policies', async () => {
+    const { resolveRoutingProfile } = await import('./store.js')
     const { getBuiltin } = await import('./presets.js')
-    expect(resolved.policies).toEqual(getBuiltin('balanced')!.policies)
+    const resolved = await resolveRoutingProfile(project())
+    expect(resolved.policies).toEqual((getBuiltin('auto') as RoutingProfile).policies)
   })
 
-  it('does not mutate the frozen builtin when deriving the default profile', async () => {
-    const { resolveProfile } = await import('./store.js')
+  it('does not mutate the frozen builtin when deriving the custom profile', async () => {
+    const { resolveRoutingProfile } = await import('./store.js')
     const { getBuiltin } = await import('./presets.js')
-    const balancedBefore = JSON.parse(JSON.stringify(getBuiltin('balanced')!.policies))
-    const resolved = await resolveProfile(project())
+    const before = structuredClone((getBuiltin('auto') as RoutingProfile).policies)
+    const resolved = await resolveRoutingProfile(project())
     resolved.policies.push({ type: 'fairness', enabled: true })
-    expect(getBuiltin('balanced')!.policies).toEqual(balancedBefore)
+    expect((getBuiltin('auto') as RoutingProfile).policies).toEqual(before)
   })
 
-  it('a profileId matching a user overlay returns that overlay, deep-cloned', async () => {
-    profilesFixture = [
-      {
-        id: 'custom-1',
-        version: 2,
-        label: 'Custom',
-        policies: [{ type: 'llm', enabled: true }],
-        selector: 'argmax',
-        fallbackStrategy: 'next-best',
-        builtin: false,
-        baseId: 'balanced',
-      },
-    ]
-    const { resolveProfile } = await import('./store.js')
-    const resolved = await resolveProfile(project({ profileId: 'custom-1' }))
+  it('routingProfileId matching a user overlay returns that overlay, deep-cloned', async () => {
+    profilesFixture = [routingOverlay]
+    const { resolveRoutingProfile } = await import('./store.js')
+    const resolved = await resolveRoutingProfile(project({ routingProfileId: 'custom-1' }))
     expect(resolved.id).toBe('custom-1')
     expect(resolved.version).toBe(2)
     resolved.policies.push({ type: 'health', enabled: true })
-    expect(profilesFixture[0]!.policies).toHaveLength(1)
+    expect((profilesFixture[0] as RoutingProfile).policies).toHaveLength(1)
     profilesFixture = []
   })
 
-  it('a profileId matching a builtin returns that builtin, deep-cloned', async () => {
-    const { resolveProfile } = await import('./store.js')
-    const resolved = await resolveProfile(project({ profileId: 'fast' }))
+  it('the legacy profileId is still honoured when routingProfileId is absent', async () => {
+    const { resolveRoutingProfile } = await import('./store.js')
+    const resolved = await resolveRoutingProfile(project({ profileId: 'fast' }))
     expect(resolved.id).toBe('fast')
     expect(resolved.builtin).toBe(true)
   })
 
-  it('a profileId matching neither a user overlay nor a builtin falls back to the default profile', async () => {
-    const { resolveProfile } = await import('./store.js')
-    const resolved = await resolveProfile(project({ profileId: 'ghost', policies: [{ type: 'llm', enabled: true }] }))
-    expect(resolved.id).toBe('default')
+  it('an id matching neither an overlay nor a builtin falls back to the custom profile', async () => {
+    const { resolveRoutingProfile } = await import('./store.js')
+    const resolved = await resolveRoutingProfile(
+      project({ routingProfileId: 'ghost', policies: [{ type: 'llm', enabled: true }] }),
+    )
+    expect(resolved.id).toBe('custom')
     expect(resolved.policies).toEqual([{ type: 'llm', enabled: true }])
+  })
+
+  it('ignores an id that resolves to a profile of another kind', async () => {
+    profilesFixture = [optimizerOverlay]
+    const { resolveRoutingProfile } = await import('./store.js')
+    const resolved = await resolveRoutingProfile(project({ routingProfileId: 'opt-1' }))
+    expect(resolved.id).toBe('custom')
+    profilesFixture = []
+  })
+})
+
+describe('resolveOptimizerProfile', () => {
+  it('returns undefined when the project has neither a profile nor inline optimizers', async () => {
+    const { resolveOptimizerProfile } = await import('./store.js')
+    expect(await resolveOptimizerProfile(project())).toBeUndefined()
+  })
+
+  it('wraps inline optimizers in the ephemeral custom profile', async () => {
+    const { resolveOptimizerProfile } = await import('./store.js')
+    const optimizers = { steps: [{ id: 'rtk' as const, enabled: true }] }
+    const resolved = await resolveOptimizerProfile(project({ optimizers }))
+    expect(resolved?.id).toBe('custom')
+    expect(resolved?.optimizers).toEqual(optimizers)
+  })
+
+  it('a bound profile wins over inline optimizers', async () => {
+    profilesFixture = [optimizerOverlay]
+    const { resolveOptimizerProfile } = await import('./store.js')
+    const resolved = await resolveOptimizerProfile(
+      project({ optimizerProfileId: 'opt-1', optimizers: { steps: [{ id: 'rtk', enabled: true }] } }),
+    )
+    expect(resolved?.id).toBe('opt-1')
+    expect(resolved?.optimizers.steps.map(s => s.id)).toEqual(['ccr'])
+    profilesFixture = []
+  })
+})
+
+describe('resolveSecurityProfile', () => {
+  it('returns undefined when the project has no guardrails and no pii config', async () => {
+    const { resolveSecurityProfile } = await import('./store.js')
+    expect(await resolveSecurityProfile(project())).toBeUndefined()
+  })
+
+  it('fills the missing half when only one of guardrails/pii is set inline', async () => {
+    const { resolveSecurityProfile } = await import('./store.js')
+    const resolved = await resolveSecurityProfile(project({ guardrails: { rules: [] } }))
+    expect(resolved?.id).toBe('custom')
+    expect(resolved?.pii).toEqual({ policies: [] })
+  })
+
+  it('a bound profile wins over inline config', async () => {
+    profilesFixture = [securityOverlay]
+    const { resolveSecurityProfile } = await import('./store.js')
+    const resolved = await resolveSecurityProfile(project({ securityProfileId: 'sec-1', pii: { policies: [] } }))
+    expect(resolved?.id).toBe('sec-1')
+    expect(resolved?.pii.policies).toHaveLength(1)
+    profilesFixture = []
+  })
+})
+
+describe('applyProfiles', () => {
+  it('returns the very same object when the project binds no profile', async () => {
+    const { applyProfiles } = await import('./store.js')
+    const p = project({ optimizers: { steps: [{ id: 'rtk', enabled: true }] } })
+    expect(await applyProfiles(p)).toBe(p)
+  })
+
+  it('replaces inline optimizer and security config with the bound profiles', async () => {
+    profilesFixture = [optimizerOverlay, securityOverlay]
+    const { applyProfiles } = await import('./store.js')
+    const applied = await applyProfiles(
+      project({
+        optimizerProfileId: 'opt-1',
+        securityProfileId: 'sec-1',
+        optimizers: { steps: [{ id: 'rtk', enabled: true }] },
+        pii: { policies: [] },
+      }),
+    )
+    expect(applied.optimizers?.steps.map(s => s.id)).toEqual(['ccr'])
+    expect(applied.pii?.policies).toHaveLength(1)
+    profilesFixture = []
+  })
+
+  it('leaves routing alone: the router resolves its own profile', async () => {
+    profilesFixture = [routingOverlay]
+    const { applyProfiles } = await import('./store.js')
+    const policies = [{ type: 'cheapest' as const, enabled: true }]
+    const applied = await applyProfiles(project({ routingProfileId: 'custom-1', policies }))
+    expect(applied.policies).toEqual(policies)
+    profilesFixture = []
   })
 })
 
 describe('cloneProfile', () => {
-  it('clones balanced into a distinct, non-builtin, version-1 user profile', async () => {
+  it('clones auto into a distinct, non-builtin, version-1 user profile', async () => {
     const { cloneProfile } = await import('./store.js')
-    const clone = cloneProfile('balanced', 'My Balanced')
+    const clone = await cloneProfile('auto', 'My Auto')
     expect(clone.builtin).toBe(false)
-    expect(clone.baseId).toBe('balanced')
-    expect(clone.id).not.toBe('balanced')
+    expect(clone.baseId).toBe('auto')
+    expect(clone.id).not.toBe('auto')
     expect(clone.version).toBe(1)
-    expect(clone.label).toBe('My Balanced')
+    expect(clone.label).toBe('My Auto')
+    expect(clone.kind).toBe('routing')
   })
 
-  it('deep-clones policies, mutation does not affect the builtin preset', async () => {
+  it('clones a preset of any kind, keeping its payload', async () => {
+    const { cloneProfile } = await import('./store.js')
+    const clone = await cloneProfile('optimizer-balanced', 'My Balanced')
+    expect(clone.kind).toBe('optimizer')
+    expect((clone as OptimizerProfile).optimizers.steps.length).toBeGreaterThan(0)
+  })
+
+  it('deep-clones the payload, mutation does not affect the builtin preset', async () => {
     const { cloneProfile } = await import('./store.js')
     const { getBuiltin } = await import('./presets.js')
-    const before = JSON.parse(JSON.stringify(getBuiltin('balanced')!.policies))
-    const clone = cloneProfile('balanced', 'Mutate me')
+    const before = structuredClone((getBuiltin('auto') as RoutingProfile).policies)
+    const clone = (await cloneProfile('auto', 'Mutate me')) as RoutingProfile
     clone.policies.push({ type: 'fairness', enabled: true })
     clone.policies[0]!.enabled = false
-    expect(getBuiltin('balanced')!.policies).toEqual(before)
+    expect((getBuiltin('auto') as RoutingProfile).policies).toEqual(before)
+  })
+
+  it('clones a user overlay too, not just presets', async () => {
+    profilesFixture = [routingOverlay]
+    const { cloneProfile } = await import('./store.js')
+    const clone = await cloneProfile('custom-1', 'Copy')
+    expect(clone.baseId).toBe('custom-1')
+    expect(clone.version).toBe(1)
+    profilesFixture = []
   })
 
   it('throws for an unknown baseId', async () => {
     const { cloneProfile } = await import('./store.js')
-    expect(() => cloneProfile('does-not-exist', 'x')).toThrow()
+    await expect(cloneProfile('does-not-exist', 'x')).rejects.toThrow('unknown_base_profile')
   })
 })
 
 describe('bumpVersion', () => {
   it('increments version without mutating the input', async () => {
     const { bumpVersion } = await import('./store.js')
-    const profile: RoutingProfile = {
-      id: 'x',
-      version: 1,
-      label: 'X',
-      policies: [],
-      selector: 'argmax',
-      fallbackStrategy: 'next-best',
-      builtin: false,
-    }
-    const bumped = bumpVersion(profile)
-    expect(bumped.version).toBe(2)
-    expect(profile.version).toBe(1)
+    const bumped = bumpVersion(routingOverlay)
+    expect(bumped.version).toBe(3)
+    expect(routingOverlay.version).toBe(2)
   })
 })
 
 describe('listProfiles', () => {
   it('returns builtins followed by user overlays', async () => {
-    profilesFixture = [
-      {
-        id: 'custom-2',
-        version: 1,
-        label: 'Overlay',
-        policies: [],
-        selector: 'argmax',
-        fallbackStrategy: 'next-best',
-        builtin: false,
-      },
-    ]
+    profilesFixture = [optimizerOverlay]
     const { listProfiles } = await import('./store.js')
     const { BUILTIN_PROFILES } = await import('./presets.js')
     const all = await listProfiles()
     expect(all).toHaveLength(BUILTIN_PROFILES.length + 1)
     expect(all.slice(0, BUILTIN_PROFILES.length).map(p => p.id)).toEqual(BUILTIN_PROFILES.map(p => p.id))
-    expect(all[all.length - 1]!.id).toBe('custom-2')
+    expect(all[all.length - 1]!.id).toBe('opt-1')
     profilesFixture = []
+  })
+
+  it('narrows to one kind, overlays included', async () => {
+    profilesFixture = [routingOverlay, optimizerOverlay]
+    const { listProfiles } = await import('./store.js')
+    const optimizers = await listProfiles('optimizer')
+    expect(optimizers.every(p => p.kind === 'optimizer')).toBe(true)
+    expect(optimizers.map(p => p.id)).toContain('opt-1')
+    expect(optimizers.map(p => p.id)).not.toContain('custom-1')
+    profilesFixture = []
+  })
+
+  it('never lists legacy presets', async () => {
+    const { listProfiles } = await import('./store.js')
+    expect((await listProfiles()).map(p => p.id)).not.toContain('balanced')
   })
 
   it('the returned builtin entries are mutable copies, not the frozen singletons', async () => {
     const { listProfiles } = await import('./store.js')
-    const all = await listProfiles()
-    const balanced = all.find(p => p.id === 'balanced')!
+    const auto = (await listProfiles()).find(p => p.id === 'auto') as RoutingProfile
     expect(() => {
-      balanced.label = 'Hacked'
+      auto.label = 'Hacked'
     }).not.toThrow()
-    expect(Object.isFrozen(balanced.policies)).toBe(false)
+    expect(Object.isFrozen(auto.policies)).toBe(false)
   })
 })
 
 describe('assertWritableProfile', () => {
   it('rejects a profile marked builtin', async () => {
     const { assertWritableProfile } = await import('./store.js')
-    expect(() =>
-      assertWritableProfile({
-        id: 'anything',
-        version: 1,
-        label: 'X',
-        policies: [],
-        selector: 'argmax',
-        fallbackStrategy: 'next-best',
-        builtin: true,
-      }),
-    ).toThrow('immutable_builtin_profile')
+    expect(() => assertWritableProfile({ ...routingOverlay, id: 'anything', builtin: true })).toThrow(
+      'immutable_builtin_profile',
+    )
   })
 
   it('rejects a same-id override of a builtin even when builtin is false', async () => {
     const { assertWritableProfile } = await import('./store.js')
-    expect(() =>
-      assertWritableProfile({
-        id: 'balanced',
-        version: 1,
-        label: 'Fake Balanced',
-        policies: [],
-        selector: 'argmax',
-        fallbackStrategy: 'next-best',
-        builtin: false,
-      }),
-    ).toThrow('immutable_builtin_profile')
+    expect(() => assertWritableProfile({ ...routingOverlay, id: 'auto' })).toThrow('immutable_builtin_profile')
+  })
+
+  it('rejects a same-id override of a legacy builtin', async () => {
+    const { assertWritableProfile } = await import('./store.js')
+    expect(() => assertWritableProfile({ ...routingOverlay, id: 'balanced' })).toThrow('immutable_builtin_profile')
+  })
+
+  it('rejects squatting on the ephemeral custom id', async () => {
+    const { assertWritableProfile } = await import('./store.js')
+    expect(() => assertWritableProfile({ ...routingOverlay, id: 'custom' })).toThrow('immutable_builtin_profile')
   })
 
   it('allows a genuine user profile', async () => {
     const { assertWritableProfile } = await import('./store.js')
-    expect(() =>
-      assertWritableProfile({
-        id: 'custom-3',
-        version: 1,
-        label: 'Custom',
-        policies: [],
-        selector: 'argmax',
-        fallbackStrategy: 'next-best',
-        builtin: false,
-      }),
-    ).not.toThrow()
+    expect(() => assertWritableProfile(routingOverlay)).not.toThrow()
   })
 })

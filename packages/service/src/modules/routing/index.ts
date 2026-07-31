@@ -3,6 +3,7 @@ import { defineModule, type Processor, type RouterlyModule } from '../../core/in
 import { ROUTER, PROXY_PIPELINE, RESILIENCE_STORE } from '../../core/tokens.js'
 import type { ProxyContext } from '../reverse-proxy/context.js'
 import { routeRequest } from './router.js'
+import { migrateProfiles } from './profiles/migrate.js'
 import { addRoutingDecision } from './routingMemoryStore.js'
 import { appendTrace } from '../logging/traceStore.js'
 import type { TraceEntry } from '../logging/traceStore.js'
@@ -53,6 +54,13 @@ const memory: Processor<ProxyContext> = {
 
 export const routingModule: RouterlyModule = defineModule({
   manifest: { id: 'routing', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0', resilience: '^0.4.0' } },
+  async migrate() {
+    const migrated = await migrateProfiles()
+    if (migrated > 0) {
+      // eslint-disable-next-line no-console
+      console.log(`[startup] migrated ${migrated} record(s) to the multi-kind profile shape`)
+    }
+  },
   register({ container }) {
     container.register(ROUTER, { routeRequest })
     const resilienceStore = container.tryResolve(RESILIENCE_STORE)
