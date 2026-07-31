@@ -115,7 +115,11 @@ Examples:
 
         const account = await requireAccount();
         const project = await resolveProject(opts.project);
-        const token = await acquireToken({ projectId: project.id, ...(opts.token ? { explicitToken: opts.token } : {}) });
+        const token = await acquireToken(
+          opts.token
+            ? { projectId: project.id, explicitToken: opts.token }
+            : { projectId: project.id, scopes: ['mcp', 'mcp:write'] },
+        );
 
         const res = await fetch(`${account.serverUrl.replace(/\/$/, '')}/mcp`, {
           method: 'POST',
@@ -176,7 +180,11 @@ Examples:
     .action(async (opts: { project?: string; token?: string }) => {
       try {
         const project = await resolveProject(opts.project);
-        const token = await acquireToken({ projectId: project.id, ...(opts.token ? { explicitToken: opts.token } : {}) });
+        const token = await acquireToken(
+          opts.token
+            ? { projectId: project.id, explicitToken: opts.token }
+            : { projectId: project.id, scopes: ['mcp', 'mcp:write'] },
+        );
 
         // Resolve the built service entry the same way a published dependency resolves.
         const require = createRequire(import.meta.url);
