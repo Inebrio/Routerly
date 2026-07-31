@@ -11,7 +11,9 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, ChannelProvider, ProviderRepo } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, ChannelProvider, ProviderRepo, ResilienceState } from '@routerly/shared';
+import { resilienceKeys } from '../resilience/keys.js';
+import { getResilienceStore } from '../resilience/index.js';
 import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY } from '@routerly/shared';
 import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
@@ -2018,6 +2020,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const fiveMinAgo = now - 300_000;
     const oneHourAgo = now - 3_600_000;
 
+    // Live breaker signal, orthogonal to the statistical `status` below. One snapshot for all models.
+    const snapshotEntries = getResilienceStore()?.snapshot().entries ?? [];
+    const breakerByKey = new Map(snapshotEntries.map(e => [`${e.key.level}:${e.key.id}`, e] as const));
+
     const providers = models.map(model => {
       const mine = records.filter(r => r.modelId === model.id);
       // Guardrail blocks aren't model errors — exclude them from health entirely (#77).
@@ -2041,6 +2047,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       else if (errorRate < 0.5) status = 'degraded';
       else status = 'unavailable';
 
+      const keys = resilienceKeys(model);
+      const circuitState: ResilienceState = breakerByKey.get(`${keys.provider.level}:${keys.provider.id}`)?.state ?? 'closed';
+      const cooldownUntil = breakerByKey.get(`${keys.connection.level}:${keys.connection.id}`)?.cooldownUntil ?? null;
+      const lockoutUntil = breakerByKey.get(`${keys.model.level}:${keys.model.id}`)?.lockoutUntil ?? null;
+
       return {
         modelId: model.id,
         name: model.name,
@@ -2050,8 +2061,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         p95LatencyMs,
         requestsLastHour,
         lastSuccessAt,
-        // ponytail: cooldown lives in in-memory router state, not persisted; wire later if surfaced
-        cooldownUntil: null as string | null,
+        circuitState,
+        cooldownUntil,
+        lockoutUntil,
       };
     });
 

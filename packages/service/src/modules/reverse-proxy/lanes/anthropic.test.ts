@@ -766,7 +766,9 @@ describe('anthropic:attempt', () => {
     expect((ctx.original as any).system).toBe('Base prompt.\n\nFollow the guardrail.')
   })
 
-  describe('resilience: connection-level store.record on a failed candidate', () => {
+  // T1: the attempt loop no longer records faults (double-record fix). The single authoritative
+  // recorder is handleProviderResult inside llmChat/llmStream; the loop only advances candidates.
+  describe('resilience: the attempt loop does not record faults itself', () => {
     afterEach(() => setResilienceStore(undefined as unknown as ResilienceStore))
 
     const fakeUpstreamWithAttemptError = (failFor: string[] = [], err: unknown = new Error('boom')) => ({
@@ -787,7 +789,7 @@ describe('anthropic:attempt', () => {
       },
     })
 
-    it('records the classified fault at the connection key for a failed candidate, then advances immediately to the next one', async () => {
+    it('does not record on a failed candidate (recording is done in handleProviderResult), advances immediately to the next one', async () => {
       const models: ModelConfig[] = [
         { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
         { id: 'model-b', name: 'model-b', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
@@ -807,9 +809,10 @@ describe('anthropic:attempt', () => {
       await anthropicAttempt.run(ctx)
       expect(Date.now() - t0).toBeLessThan(200)
       expect(ctx.result).toEqual({ kind: 'json', body: { type: 'message', model: 'model-b' } })
-      expect(store.records).toHaveLength(1)
-      expect(store.records[0]!.key).toEqual({ level: 'connection', id: 'openai' })
-      expect(store.records[0]!.fault).toMatchObject({ category: 'rate-limit', retryAfterMs: 5000 })
+      // The fake upstream bypasses llmChat/handleProviderResult, so nothing records here — proving
+      // the loop itself is not a recorder (the old double-record second site is gone).
+      expect(store.records).toHaveLength(0)
+      expect(ctx.attemptError).toBeUndefined()
     })
 
     it('does not call store.record when the failure was a budget skip (no ctx.attemptError)', async () => {

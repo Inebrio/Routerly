@@ -9,6 +9,14 @@ vi.mock('../api', () => ({
   deleteModel: vi.fn(),
   getProviderHealth: vi.fn(),
   testModel: vi.fn(),
+  resetResilience: vi.fn(),
+}));
+
+// ponytail: gate 'resilience:manage' on a mutable flag ('mock' prefix so vi.mock hoist allows it);
+// everything else the component asks `can()` about is granted.
+let mockCanManage = true;
+vi.mock('../AuthContext', () => ({
+  useAuth: () => ({ can: (p: string) => (p === 'resilience:manage' ? mockCanManage : true) }),
 }));
 
 // ponytail: stub ConfirmDialog so it renders inline without portal issues
@@ -24,12 +32,13 @@ vi.mock('../components/ConfirmDialog', () => ({
   ),
 }));
 
-import { getModels, deleteModel, getProviderHealth, testModel } from '../api';
+import { getModels, deleteModel, getProviderHealth, testModel, resetResilience } from '../api';
 
 const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
 const mockDeleteModel = vi.mocked(deleteModel as (id: string) => Promise<unknown>);
 const mockGetProviderHealth = vi.mocked(getProviderHealth as () => Promise<unknown>);
 const mockTestModel = vi.mocked(testModel as (id: string) => Promise<unknown>);
+const mockResetResilience = vi.mocked(resetResilience as (body?: unknown) => Promise<unknown>);
 
 function makeModel(overrides: Record<string, unknown> = {}) {
   return {
@@ -52,7 +61,9 @@ function makeHealthProvider(overrides: Record<string, unknown> = {}) {
     p95LatencyMs: 200,
     requestsLastHour: 50,
     lastSuccessAt: new Date(Date.now() - 60_000).toISOString(),
+    circuitState: 'closed' as const,
     cooldownUntil: null,
+    lockoutUntil: null,
     ...overrides,
   };
 }
@@ -332,7 +343,7 @@ describe('ModelsPage — health columns (merged table)', () => {
   });
 
   it('shows Cooldown badge when cooldownUntil is in the future', async () => {
-    const future = new Date(Date.now() + 60_000).toISOString();
+    const future = new Date(Date.now() + 60_000).getTime();
     mockGetModels.mockResolvedValue([makeModel()]);
     mockGetProviderHealth.mockResolvedValue({
       providers: [makeHealthProvider({ cooldownUntil: future, status: 'healthy' })],
@@ -717,8 +728,8 @@ describe('ModelsPage — health tab sort remaining keys', () => {
   });
 
   it('sorts by Cooldown column', async () => {
-    const future1 = new Date(Date.now() + 30_000).toISOString();
-    const future2 = new Date(Date.now() + 120_000).toISOString();
+    const future1 = new Date(Date.now() + 30_000).getTime();
+    const future2 = new Date(Date.now() + 120_000).getTime();
     mockGetModels.mockResolvedValue(twoHealthModels());
     mockGetProviderHealth.mockResolvedValue({
       providers: [
@@ -900,7 +911,7 @@ describe('ModelsPage — relativeTime formatting', () => {
   });
 
   it('shows cooldown timer in minutes when > 60s remaining', async () => {
-    const future = new Date(Date.now() + 90_000).toISOString(); // 90s in future → "2m"
+    const future = new Date(Date.now() + 90_000).getTime(); // 90s in future → "2m"
     mockGetModels.mockResolvedValue([makeModel()]);
     mockGetProviderHealth.mockResolvedValue({
       providers: [makeHealthProvider({ cooldownUntil: future, status: 'healthy' })],
@@ -908,10 +919,10 @@ describe('ModelsPage — relativeTime formatting', () => {
     renderPage();
     await waitFor(() => screen.getByText('gpt-4o'));
     await switchToHealthTab();
-    // cooldownTimer value appears in the last <td> of the row; verify it ends with 'm'
+    // Cooldown / lockout cell renders a live countdown "cooldown <m>m <s>s" (90s → "cooldown 1m 30s")
     await waitFor(() => {
       const tds = Array.from(document.querySelectorAll('tbody td'));
-      const cdCell = tds.find(td => /^\d+m$/.test(td.textContent?.trim() ?? ''));
+      const cdCell = tds.find(td => /cooldown \d+m/.test(td.textContent?.trim() ?? ''));
       expect(cdCell).toBeTruthy();
     });
   });
@@ -1020,7 +1031,7 @@ describe('ModelsPage — branch coverage', () => {
   });
 
   it('cooldownTimer: past cooldownUntil (ms<=0) returns null → no cooldown badge', async () => {
-    const past = new Date(Date.now() - 10_000).toISOString(); // already expired
+    const past = new Date(Date.now() - 10_000).getTime(); // already expired
     mockGetModels.mockResolvedValue([makeModel()]);
     mockGetProviderHealth.mockResolvedValue({
       providers: [makeHealthProvider({ cooldownUntil: past, status: 'healthy' })],
@@ -1133,9 +1144,9 @@ describe('ModelsPage — branch coverage', () => {
 
   it('health sort by Cooldown: ha.cooldownUntil truthy (non-null for all models)', async () => {
     // All 3 models have non-null cooldownUntil → ha.cooldownUntil truthy (branch 35,1) in comparisons.
-    const soon = new Date(Date.now() + 30_000).toISOString();
-    const mid = new Date(Date.now() + 90_000).toISOString();
-    const later = new Date(Date.now() + 180_000).toISOString();
+    const soon = new Date(Date.now() + 30_000).getTime();
+    const mid = new Date(Date.now() + 90_000).getTime();
+    const later = new Date(Date.now() + 180_000).getTime();
     mockGetModels.mockResolvedValue([
       makeModel({ id: 'model-a', provider: 'openai' }),
       makeModel({ id: 'model-b', provider: 'openai' }),
@@ -1163,7 +1174,7 @@ describe('ModelsPage — branch coverage', () => {
 
   it('health sort by Cooldown: ha.cooldownUntil null → 0 (branch 35 null path)', async () => {
     // model-a has null cooldownUntil → 0. model-b has future cooldownUntil.
-    const later = new Date(Date.now() + 60_000).toISOString();
+    const later = new Date(Date.now() + 60_000).getTime();
     mockGetModels.mockResolvedValue([
       makeModel({ id: 'model-a', provider: 'openai' }),
       makeModel({ id: 'model-b', provider: 'openai' }),

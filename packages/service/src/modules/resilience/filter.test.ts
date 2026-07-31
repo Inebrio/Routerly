@@ -88,6 +88,48 @@ describe('filterAvailable', () => {
     expect(result.excluded).toEqual([{ modelId: 'm2', level: 'provider', until: expect.any(Number) }]);
   });
 
+  it('does not spend the half-open probe when another key still blocks the same candidate', () => {
+    // Regression: provider circuit is open+eligible (probeable), but the SAME candidate's
+    // connection key is in cooldown (unavailable, not probeable). The old code short-circuited on
+    // the provider key, called tryProbe, flipped it to half-open, then excluded the candidate for
+    // the cooldown anyway — wedging the provider breaker half-open with no dispatch to close it.
+    const store = new InMemoryResilienceStore();
+    for (let i = 0; i < 5; i++) store.record({ level: 'provider', id: 'openai' }, { category: 'server' });
+    store.record({ level: 'connection', id: 'openai' }, { category: 'rate-limit', retryAfterMs: 120_000 });
+    vi.advanceTimersByTime(60_000); // provider circuit now eligible; connection still cooling down
+
+    const providerKey: ResilienceKey = { level: 'provider', id: 'openai' };
+    const probeSpy = vi.spyOn(store, 'tryProbe');
+
+    const a = candidate('m1', 'openai');
+    const b = candidate('m2', 'anthropic');
+    const result = filterAvailable([a, b], store);
+
+    // Candidate excluded this round, and the provider probe was NOT consumed.
+    expect(result.available).toEqual([b]);
+    expect(result.excluded.some(e => e.modelId === 'm1')).toBe(true);
+    expect(probeSpy).not.toHaveBeenCalledWith(providerKey);
+    // Provider entry is still 'open' (not wedged half-open) and remains probeable on a later call.
+    const providerEntry = store.snapshot().entries.find(e => e.key.level === 'provider' && e.key.id === 'openai');
+    expect(providerEntry?.state).toBe('open');
+    expect(store.isAvailable(providerKey)).toBe(false);
+    expect(store.tryProbe(providerKey)).toBe(true); // still grantable — probe was never burned
+  });
+
+  it('consumes the probe and returns the candidate when an open provider key is the only blocker', () => {
+    const store = new InMemoryResilienceStore();
+    for (let i = 0; i < 5; i++) store.record({ level: 'provider', id: 'openai' }, { category: 'server' });
+    vi.advanceTimersByTime(60_000); // eligible for half-open probe
+
+    const result = filterAvailable([candidate('m1', 'openai')], store);
+
+    expect(result.available).toEqual([candidate('m1', 'openai')]);
+    expect(result.excluded).toEqual([]);
+    // Probe consumed: breaker is now half-open with the probe in flight.
+    const providerEntry = store.snapshot().entries.find(e => e.key.level === 'provider' && e.key.id === 'openai');
+    expect(providerEntry?.state).toBe('half-open');
+  });
+
   it('never calls tryProbe on a key that is already available', () => {
     const store = new InMemoryResilienceStore();
     const spy = vi.spyOn(store, 'tryProbe');

@@ -50,22 +50,30 @@ export function filterAvailable(candidates: CandidateModel[], store: ResilienceS
 
   for (const candidate of candidates) {
     const keys = resilienceKeys(candidate.model);
-    // ponytail: first unavailable-and-unprobed key wins as "the" blocking reason for the trace —
-    // a candidate blocked by more than one key at once only reports one, which is enough to
-    // explain the exclusion and drive the fallback tie-break.
     const entries = Object.entries(keys) as [ResilienceLevel, ResilienceKey][];
-    const blocked = entries.find(([, key]) => {
-      if (store.isAvailable(key)) return false;
-      const entry = entryFor(store, key);
-      return !(isProbeable(entry) && store.tryProbe(key));
-    });
 
-    if (!blocked) {
+    // Pass 1 — read-only: collect every key currently blocking this candidate. `isAvailable` has
+    // no side effects, so this cannot spend a probe.
+    const blockers = entries.filter(([, key]) => !store.isAvailable(key));
+
+    if (blockers.length === 0) {
       available.push(candidate);
       continue;
     }
 
-    const [level, key] = blocked;
+    // Pass 2 — mutate LAST, and only when it decides the outcome. A candidate can recover via a
+    // half-open probe ONLY when a SINGLE breaker key blocks it and that key is probeable. If any
+    // other key also blocks (e.g. a connection cooldown alongside an open provider), the probe
+    // would be spent on a candidate that stays excluded — wedging the breaker half-open forever
+    // (no dispatch → no recordSuccess → never closes). So `tryProbe` runs only for the lone
+    // blocker. The first blocker is reported as "the" reason for the trace; a candidate blocked by
+    // more than one key at once still reports just one, enough to explain the exclusion.
+    const [level, key] = blockers[0]!;
+    if (blockers.length === 1 && isProbeable(entryFor(store, key)) && store.tryProbe(key)) {
+      available.push(candidate);
+      continue;
+    }
+
     const until = untilFor(entryFor(store, key));
     excluded.push({ modelId: candidate.model.id, level, ...(until !== undefined ? { until } : {}) });
     excludedCandidates.set(candidate.model.id, candidate);
