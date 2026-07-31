@@ -973,6 +973,32 @@ describe('GET /api/models', () => {
     await app.close()
     expect(res.statusCode).toBe(401)
   })
+
+  it('returns 200 for user with model:read', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'reader-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ id: 'reader-id', email: 'reader@example.com', passwordHash: 'hashed', roleId: 'reader', projectIds: [] }]
+      if (t === 'roles') return [{ id: 'reader', name: 'Reader', permissions: ['model:read'] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/models', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('returns 403 for user without model:read', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'noperm-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ id: 'noperm-id', email: 'noperm@example.com', passwordHash: 'hashed', roleId: 'noperm', projectIds: [] }]
+      if (t === 'roles') return [{ id: 'noperm', name: 'NoPerm', permissions: [] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/models', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
 })
 
 describe('POST /api/models', () => {
