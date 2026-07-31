@@ -10756,17 +10756,19 @@ describe('GET /api/notifications/inbox — invalid to date (line 1574 if branch=
 describe('POST /api/models/:id/test', () => {
   it('returns ok:true when adapter succeeds', async () => {
     setupAdminAuth()
-    const model = { id: 'openai/gpt-4o', provider: 'openai', apiKey: 'sk-x', cost: { inputPerMillion: 5, outputPerMillion: 15 } }
+    const instance = { id: 'inst-ok-1', connectionId: 'conn-ok-1', upstreamModelId: 'gpt-4o', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 128000 }
+    const connection = { id: 'conn-ok-1', providerId: 'openai', endpoint: 'https://api.openai.com/v1', credentials: { apiKey: 'sk-x' } }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return [model]
+      if (t === 'instances') return [instance]
+      if (t === 'connections') return [connection]
       return []
     })
     mockChatCompletion.mockResolvedValue({ choices: [{ message: { content: 'pong' } }] })
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/models/openai%2Fgpt-4o/test', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'POST', url: '/api/models/inst-ok-1/test', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(200)
     expect(res.json().ok).toBe(true)
@@ -10795,17 +10797,19 @@ describe('POST /api/models/:id/test', () => {
 
   it('returns ok:false with error when adapter throws', async () => {
     setupAdminAuth()
-    const model = { id: 'openai/gpt-4o', provider: 'openai', apiKey: 'sk-x', cost: { inputPerMillion: 5, outputPerMillion: 15 } }
+    const instance = { id: 'inst-err-1', connectionId: 'conn-err-1', upstreamModelId: 'gpt-4o', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 128000 }
+    const connection = { id: 'conn-err-1', providerId: 'openai', endpoint: 'https://api.openai.com/v1', credentials: { apiKey: 'sk-x' } }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return [model]
+      if (t === 'instances') return [instance]
+      if (t === 'connections') return [connection]
       return []
     })
     mockChatCompletion.mockRejectedValue(new Error('401 Unauthorized'))
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/models/openai%2Fgpt-4o/test', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'POST', url: '/api/models/inst-err-1/test', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(200)
     expect(res.json().ok).toBe(false)

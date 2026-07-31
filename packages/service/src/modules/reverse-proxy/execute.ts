@@ -161,10 +161,9 @@ function handleProviderResult(model: ModelConfig, success: boolean, fault: Resil
 }
 
 /**
- * Risolve un id di modello (ModelInstance o legacy models.json) nell'EffectiveModel
- * pronto per l'adapter. Preferisce instance + connection; se l'instance non esiste
- * (o la sua connection è dangling) ripiega sulla entry legacy in models.json, per
- * garantire che nessuna rotta esistente si rompa durante la migrazione.
+ * Risolve un id di modello (ModelInstance) nell'EffectiveModel pronto per l'adapter,
+ * via instance + connection. Ritorna undefined se l'instance non esiste o la sua
+ * connection è dangling.
  */
 export async function loadEffectiveModel(id: string): Promise<EffectiveModel | undefined> {
   // ponytail: `?? []` guards against a bare `vi.fn()` test double resolving to
@@ -202,8 +201,7 @@ export async function loadEffectiveModel(id: string): Promise<EffectiveModel | u
       return resolveEffectiveModel(instance, connection);
     }
   }
-  const models = (await readConfig('models')) ?? [];
-  return models.find((m) => m.id === id);
+  return undefined;
 }
 
 // ─── Helpers interni ─────────────────────────────────────────────────────────

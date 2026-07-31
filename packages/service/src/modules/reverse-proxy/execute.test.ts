@@ -1486,42 +1486,26 @@ describe('loadEffectiveModel', () => {
     expect((result as any)?.apiKey).toBe('sk-conn-key')
   })
 
-  it('falls back to the legacy models.json entry when no instance matches', async () => {
-    const legacyModel = {
-      id: 'legacy-m1', name: 'legacy-m1', provider: 'openai', endpoint: 'https://api.openai.com/v1',
-      cost: { inputPerMillion: 5, outputPerMillion: 15 },
-    }
+  it('returns undefined when no instance matches (no models.json fallback)', async () => {
     mockReadConfig.mockImplementationOnce(async () => [] as any) // 'instances' — no match
-    mockReadConfig.mockImplementationOnce(async () => [legacyModel] as any) // 'models'
-
-    const result = await loadEffectiveModel('legacy-m1')
-    expect(result?.id).toBe('legacy-m1')
-  })
-
-  it('returns undefined when the id exists neither as an instance nor legacy model', async () => {
-    mockReadConfig.mockImplementationOnce(async () => [] as any) // 'instances'
-    mockReadConfig.mockImplementationOnce(async () => [] as any) // 'models'
 
     const result = await loadEffectiveModel('nowhere')
     expect(result).toBeUndefined()
+    expect(mockReadConfig).toHaveBeenCalledTimes(1)
+    expect(mockReadConfig).not.toHaveBeenCalledWith('models')
   })
 
-  it('falls back to legacy when the instance is found but its connection is dangling', async () => {
+  it('returns undefined when the instance is found but its connection is dangling', async () => {
     const instance = {
       id: 'inst-dangling', connectionId: 'conn-missing', upstreamModelId: 'gpt-4o',
       cost: { inputPerMillion: 1, outputPerMillion: 2 }, contextWindow: 128000,
     }
-    const legacyModel = {
-      id: 'inst-dangling', name: 'inst-dangling', provider: 'openai', endpoint: 'https://api.openai.com/v1',
-      cost: { inputPerMillion: 5, outputPerMillion: 15 },
-    }
     mockReadConfig.mockImplementationOnce(async () => [instance] as any) // 'instances'
     mockReadConfig.mockImplementationOnce(async () => [] as any) // 'connections' — dangling
-    mockReadConfig.mockImplementationOnce(async () => [legacyModel] as any) // 'models'
 
     const result = await loadEffectiveModel('inst-dangling')
-    expect(result?.id).toBe('inst-dangling')
-    expect((result as any)?.name).toBe('inst-dangling')
+    expect(result).toBeUndefined()
+    expect(mockReadConfig).not.toHaveBeenCalledWith('models')
   })
 
   it('resolves a live token for anthropic-oauth connections via resolveAnthropicOAuthCredential', async () => {
