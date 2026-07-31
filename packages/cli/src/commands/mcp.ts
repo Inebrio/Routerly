@@ -23,7 +23,10 @@ interface RpcResult {
 
 interface RpcResponse {
   result?: RpcResult;
-  error?: { code?: number; message?: string };
+  // JSON-RPC protocol error is an object; the /mcp transport's HTTP auth errors
+  // (401/403) send `error` as a string plus a top-level `message`.
+  error?: { code?: number; message?: string } | string;
+  message?: string;
 }
 
 // ─── Helper: resolve a project for token minting ─────────────────────────────
@@ -131,8 +134,14 @@ Examples:
 
         const body = (await res.json()) as RpcResponse;
 
-        if (body.error) {
-          console.error(chalk.red(`Error: ${body.error.message ?? 'MCP protocol error'}`));
+        // HTTP-level failure (e.g. 403 no-mcp-scope): `error` is a string, the
+        // actionable text is the top-level `message`. JSON-RPC protocol error:
+        // `error` is an object carrying its own `message`. Surface whichever is present.
+        const rpcErrorMessage =
+          typeof body.error === 'object' && body.error ? body.error.message : undefined;
+        if (!res.ok || body.error) {
+          const msg = body.message ?? rpcErrorMessage ?? `MCP request failed (HTTP ${res.status})`;
+          console.error(chalk.red(`Error: ${msg}`));
           process.exit(1);
         }
         if (body.result?.isError) {
@@ -173,7 +182,7 @@ Examples:
         const require = createRequire(import.meta.url);
         const serviceEntry = require.resolve('@routerly/service');
 
-        // Diagnostics to stderr only, before the child attaches — stdout is the protocol stream.
+        // Diagnostics to stderr only, before the child attaches. stdout is the protocol stream.
         console.error(chalk.gray(`Starting MCP stdio server for project "${project.name}"...`));
 
         const { spawn } = await import('node:child_process');
@@ -183,7 +192,12 @@ Examples:
             env: { ...process.env, ROUTERLY_MCP_STDIO: '1', ROUTERLY_MCP_TOKEN: token },
           });
           child.on('error', reject);
-          child.on('exit', () => resolve());
+          child.on('exit', code => {
+            // Propagate the child's exit code so a failed start (e.g. token lacks
+            // the mcp scope, thrown in the service's stdio bootstrap) is not reported as success.
+            if (code && code !== 0) process.exitCode = code;
+            resolve();
+          });
         });
       } catch (err) {
         if (err instanceof ApiError) console.error(chalk.red(`Error: ${err.message}`));
