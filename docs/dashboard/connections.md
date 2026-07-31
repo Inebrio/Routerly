@@ -41,20 +41,20 @@ There is no inline row expander.
 
 1. Click **+ Add Connection**. This navigates to `/dashboard/connections/new`.
 2. Fill in the form:
-   - **Provider** — select from the dropdown, populated from `GET /api/providers/descriptors`
-   - **Label** — friendly name (e.g. "Primary OpenAI account")
-   - **Endpoint** (optional) — override base URL, for custom/self-hosted deployments
-   - **Enabled** — whether the connection is usable by routing
-   - **Credentials** — add one or more key/value rows. Field names are free-form text; the value input is masked (`type="password"`)
+   - **Provider** - select from the dropdown, populated from `GET /api/providers/descriptors`
+   - **Label** - friendly name (e.g. "Primary OpenAI account")
+   - **Endpoint** (optional) - override base URL, for custom/self-hosted deployments
+   - **Enabled** - whether the connection is usable by routing
+   - **Credentials** - add one or more key/value rows. Field names are free-form text; the value input is masked (`type="password"`)
 3. Click **Create**. You are returned to the Connections list.
 
-Credentials are never displayed once saved — the form only accepts new
+Credentials are never displayed once saved - the form only accepts new
 values, it never pre-fills or echoes existing ones.
 
 :::note oauth/web providers
 For providers whose type is OAuth- or web-session-based (e.g. `anthropic-oauth`,
 `openai-web`), enter the plaintext credential under the conventional field name
-the resolver expects — `oauthPlain` / `refreshPlain` for OAuth providers,
+the resolver expects - `oauthPlain` / `refreshPlain` for OAuth providers,
 `cookiePlain` / `cfClearancePlain` for web-session providers. Routerly
 encrypts these server-side on save and never returns them; see
 [Connections: Credential encryption](../api/management.md#connections) for
@@ -68,7 +68,7 @@ Click the **Edit** (pencil) icon on a row to navigate to
 `/dashboard/connections/:id/edit`, the same form used for creation, prefilled
 with the connection's current **Provider**, **Label**, **Endpoint**, and
 **Enabled** state. All fields are editable, including **Provider**.
-Credential rows start empty — leave them empty to keep the existing stored
+Credential rows start empty; leave them empty to keep the existing stored
 credentials unchanged, or add rows to replace them (replacing the whole
 credentials object, not a per-field merge).
 
@@ -83,7 +83,7 @@ settings. See [Models: Preconfigured vs. Custom connection](models.md#preconfigu
 ### Removing a Connection
 
 Click the **Remove** (trash) icon. You will be asked to confirm; the dialog
-warns that instances bound to the connection will stop working — the API does
+warns that instances bound to the connection will stop working - the API does
 not cascade-delete instances when a connection is deleted.
 
 ### Connections Created from the Model Form
