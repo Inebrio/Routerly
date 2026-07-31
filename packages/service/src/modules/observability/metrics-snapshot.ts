@@ -1,5 +1,6 @@
 import type { ModelConfig, ProjectConfig, UsageRecord } from '@routerly/shared';
 import { readConfig } from '../../modules/config/loader.js';
+import { listEffectiveModelsIncludingDisabled } from '../../modules/provider/list-effective.js';
 import { getLimitUsageSnapshot } from '../../modules/budget/budget.js';
 
 // ─── Prometheus text-format helpers ──────────────────────────────────────────
@@ -121,10 +122,11 @@ export async function getMetricsSnapshot(): Promise<{
   projects: ProjectConfig[];
   models: ModelConfig[];
 }> {
+  // observability: must still account for disabled-connection models
   const [usage, projects, models] = await Promise.all([
     readConfig('usage'),
     readConfig('projects'),
-    readConfig('models'),
+    listEffectiveModelsIncludingDisabled(),
   ]);
 
   const projectName = (id: string): string => projects.find((p) => p.id === id)?.name ?? id;

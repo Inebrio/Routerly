@@ -5,6 +5,13 @@ import { runProxy, setProxyPipeline } from './run.js'
 import { openaiEgress, openaiAttempt } from './lanes/openai.js'
 import type { ProxyContext } from './context.js'
 import { writeConfig } from '../config/loader.js'
+import { splitModelsIntoInstancesConnections } from '../../test-support/effective-models.js'
+
+async function seedModels(models: ModelConfig[]): Promise<void> {
+  const { instances, connections } = splitModelsIntoInstancesConnections(models)
+  await writeConfig('connections', connections)
+  await writeConfig('instances', instances)
+}
 
 // A fake upstream that stands in for openai:upstream, so the harness never hits a
 // real provider. It sets a json result for the first candidate.
@@ -18,7 +25,7 @@ const fakeUpstream: Processor<ProxyContext> = {
 
 describe('runProxy transport harness (dark pipeline, no live route)', () => {
   it('attempt -> upstream -> egress writes the json result', async () => {
-    // openai:attempt reads readConfig('models') for real (test-setup.ts isolates
+    // openai:attempt reads listEffectiveModels() for real (test-setup.ts isolates
     // ROUTERLY_HOME, so this never touches real config). Seed model-a so the fake
     // upstream fires a json result: run.ts's block-skip would short-circuit past
     // egress entirely on the 503-exhaustion path, so only the json outcome proves
@@ -29,7 +36,7 @@ describe('runProxy transport harness (dark pipeline, no live route)', () => {
         cost: { inputPerMillion: 0, outputPerMillion: 0 },
       },
     ]
-    await writeConfig('models', models)
+    await seedModels(models)
 
     const reg = new ProcessorRegistry<ProxyContext>()
     reg.contribute(openaiAttempt)

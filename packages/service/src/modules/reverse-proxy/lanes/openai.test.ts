@@ -17,9 +17,16 @@ import { emitEvent } from '../../notifications/emitter.js'
 import { forwardOpenAIOAuthSSE } from './openaiOAuthForward.js'
 import { setProxyPipeline } from '../run.js'
 import { writeConfig } from '../../config/loader.js'
+import { splitModelsIntoInstancesConnections } from '../../../test-support/effective-models.js'
 import { setResilienceStore } from '../../resilience/index.js'
 import type { ProxyContext } from '../context.js'
 import type { ModelConfig, ResilienceFault, ResilienceKey, ResilienceStore } from '@routerly/shared'
+
+async function seedModels(models: ModelConfig[]): Promise<void> {
+  const { instances, connections } = splitModelsIntoInstancesConnections(models)
+  await writeConfig('connections', connections)
+  await writeConfig('instances', instances)
+}
 
 const mockLlmChat = vi.mocked(llmChat)
 const mockLlmStream = vi.mocked(llmStream)
@@ -663,7 +670,7 @@ describe('openai:attempt', () => {
     const models: ModelConfig[] = [
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
     ]
-    await writeConfig('models', models)
+    await seedModels(models)
     const reg = new ProcessorRegistry<ProxyContext>()
     reg.contribute(fakeUpstream())
     setProxyPipeline(reg)
@@ -682,7 +689,7 @@ describe('openai:attempt', () => {
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
       { id: 'model-b', name: 'model-b', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
     ]
-    await writeConfig('models', models)
+    await seedModels(models)
     const reg = new ProcessorRegistry<ProxyContext>()
     reg.contribute(fakeUpstream(['model-a']))
     setProxyPipeline(reg)
@@ -705,7 +712,7 @@ describe('openai:attempt', () => {
     const models: ModelConfig[] = [
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
     ]
-    await writeConfig('models', models)
+    await seedModels(models)
     const reg = new ProcessorRegistry<ProxyContext>()
     reg.contribute(fakeUpstream(['model-a']))
     setProxyPipeline(reg)
@@ -731,7 +738,7 @@ describe('openai:attempt', () => {
     const models: ModelConfig[] = [
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
     ]
-    await writeConfig('models', models)
+    await seedModels(models)
     const reg = new ProcessorRegistry<ProxyContext>()
     reg.contribute(fakeUpstream(['model-a']))
     setProxyPipeline(reg)
@@ -752,7 +759,7 @@ describe('openai:attempt', () => {
   })
 
   it('defaults ctx.candidates to an empty list when unset, exhausting immediately', async () => {
-    await writeConfig('models', [])
+    await seedModels([])
     const reg = new ProcessorRegistry<ProxyContext>()
     reg.contribute(fakeUpstream())
     setProxyPipeline(reg)
@@ -769,7 +776,7 @@ describe('openai:attempt', () => {
     const models: ModelConfig[] = [
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
     ]
-    await writeConfig('models', models)
+    await seedModels(models)
     const reg = new ProcessorRegistry<ProxyContext>()
     reg.contribute(fakeUpstream(['model-a']))
     setProxyPipeline(reg)
@@ -791,7 +798,7 @@ describe('openai:attempt', () => {
     const models: ModelConfig[] = [
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
     ]
-    await writeConfig('models', models)
+    await seedModels(models)
     const upstreamRun = vi.fn()
     const budgetBlock = {
       id: 'budget:block', phase: 'upstream.prepare',
@@ -818,7 +825,7 @@ describe('openai:attempt', () => {
       { id: 'model-b', name: 'model-b', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
       { id: 'model-c', name: 'model-c', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
     ]
-    await writeConfig('models', models)
+    await seedModels(models)
     const reg = new ProcessorRegistry<ProxyContext>()
     reg.contribute(fakeUpstream(['model-a', 'model-b']))
     setProxyPipeline(reg)
@@ -837,7 +844,7 @@ describe('openai:attempt', () => {
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
       { id: 'model-b', name: 'model-b', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
     ]
-    await writeConfig('models', models)
+    await seedModels(models)
     const reg = new ProcessorRegistry<ProxyContext>()
     reg.contribute(openaiInject)
     reg.contribute(fakeUpstream(['model-a']))
@@ -876,7 +883,7 @@ describe('openai:attempt', () => {
         { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
         { id: 'model-b', name: 'model-b', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
       ]
-      await writeConfig('models', models)
+      await seedModels(models)
       const store = makeFakeStore()
       setResilienceStore(store)
       const failErr = Object.assign(new Error('rate limited'), { status: 429, headers: { 'retry-after': '5' } })
@@ -904,7 +911,7 @@ describe('openai:attempt', () => {
       const models: ModelConfig[] = [
         { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
       ]
-      await writeConfig('models', models)
+      await seedModels(models)
       const store = makeFakeStore()
       setResilienceStore(store)
       const reg = new ProcessorRegistry<ProxyContext>()

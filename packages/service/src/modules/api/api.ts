@@ -956,7 +956,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!requirePerm(req, 'model:read', reply)) return;
     const [catalog, configured] = await Promise.all([
       catalogFetcher.get(pkgVersion),
-      readConfig('models'),
+      // catalog cross-ref must still show disabled models as "configured"
+      listEffectiveModelsIncludingDisabled(),
     ]);
     // Configured IDs use "provider/modelId" format; strip prefix for catalog lookup
     const configuredIds = new Set(configured.map((m: { id: string }) =>
@@ -2165,7 +2166,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // Real-time per-model operational status computed from recent usage records.
   fastify.get('/api/health/providers', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
-    const [models, records] = await Promise.all([readConfig('models'), readConfig('usage')]);
+    // health/observability: must still account for disabled models
+    const [models, records] = await Promise.all([listEffectiveModelsIncludingDisabled(), readConfig('usage')]);
 
     const now = Date.now();
     const fiveMinAgo = now - 300_000;
@@ -2225,7 +2227,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // Ranks models by real-world cost-performance using local usage records only.
   fastify.get<{ Querystring: { period?: string; projectId?: string; from?: string; to?: string } }>('/api/leaderboard', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
-    const [models, records] = await Promise.all([readConfig('models'), readConfig('usage')]);
+    // health/observability: must still account for disabled models
+    const [models, records] = await Promise.all([listEffectiveModelsIncludingDisabled(), readConfig('usage')]);
     const { period = 'monthly', projectId, from, to } = req.query;
 
     const now = new Date();

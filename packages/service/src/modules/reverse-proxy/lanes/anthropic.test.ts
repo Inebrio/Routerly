@@ -18,9 +18,16 @@ import { llmChat, llmStream, BudgetExceededError } from '../execute.js'
 import { forwardAnthropicOAuth, forwardAnthropicApiKey } from './oauthForward.js'
 import { setProxyPipeline } from '../run.js'
 import { writeConfig } from '../../config/loader.js'
+import { splitModelsIntoInstancesConnections } from '../../../test-support/effective-models.js'
 import { setResilienceStore } from '../../resilience/index.js'
 import type { ProxyContext } from '../context.js'
 import type { ModelConfig, ResilienceFault, ResilienceKey, ResilienceStore } from '@routerly/shared'
+
+async function seedModels(models: ModelConfig[]): Promise<void> {
+  const { instances, connections } = splitModelsIntoInstancesConnections(models)
+  await writeConfig('connections', connections)
+  await writeConfig('instances', instances)
+}
 
 const mockLlmChat = vi.mocked(llmChat)
 const mockLlmStream = vi.mocked(llmStream)
@@ -664,7 +671,7 @@ describe('anthropic:attempt', () => {
     const models: ModelConfig[] = [
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
     ]
-    await writeConfig('models', models)
+    await seedModels(models)
     const reg = new ProcessorRegistry<ProxyContext>()
     reg.contribute(fakeUpstream())
     setProxyPipeline(reg)
@@ -681,7 +688,7 @@ describe('anthropic:attempt', () => {
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
       { id: 'model-b', name: 'model-b', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
     ]
-    await writeConfig('models', models)
+    await seedModels(models)
     const reg = new ProcessorRegistry<ProxyContext>()
     reg.contribute(fakeUpstream(['model-a']))
     setProxyPipeline(reg)
@@ -697,7 +704,7 @@ describe('anthropic:attempt', () => {
     const models: ModelConfig[] = [
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
     ]
-    await writeConfig('models', models)
+    await seedModels(models)
     const reg = new ProcessorRegistry<ProxyContext>()
     reg.contribute(fakeUpstream(['model-a']))
     setProxyPipeline(reg)
@@ -713,7 +720,7 @@ describe('anthropic:attempt', () => {
   })
 
   it('defaults ctx.candidates to an empty list when unset, exhausting immediately', async () => {
-    await writeConfig('models', [])
+    await seedModels([])
     const reg = new ProcessorRegistry<ProxyContext>()
     reg.contribute(fakeUpstream())
     setProxyPipeline(reg)
@@ -726,7 +733,7 @@ describe('anthropic:attempt', () => {
     const models: ModelConfig[] = [
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
     ]
-    await writeConfig('models', models)
+    await seedModels(models)
     const upstreamRun = vi.fn()
     const budgetBlock = {
       id: 'budget:block', phase: 'upstream.prepare',
@@ -750,7 +757,7 @@ describe('anthropic:attempt', () => {
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
       { id: 'model-b', name: 'model-b', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
     ]
-    await writeConfig('models', models)
+    await seedModels(models)
     const reg = new ProcessorRegistry<ProxyContext>()
     reg.contribute(anthropicInject)
     reg.contribute(fakeUpstream(['model-a']))
@@ -794,7 +801,7 @@ describe('anthropic:attempt', () => {
         { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
         { id: 'model-b', name: 'model-b', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
       ]
-      await writeConfig('models', models)
+      await seedModels(models)
       const store = makeFakeStore()
       setResilienceStore(store)
       const err = Object.assign(new Error('rate limited'), { status: 429, headers: { 'retry-after': '5' } })
@@ -820,7 +827,7 @@ describe('anthropic:attempt', () => {
         { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
         { id: 'model-b', name: 'model-b', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
       ]
-      await writeConfig('models', models)
+      await seedModels(models)
       const store = makeFakeStore()
       setResilienceStore(store)
       const reg = new ProcessorRegistry<ProxyContext>()

@@ -13,6 +13,7 @@ vi.mock('../auth/auth.js', async (importOriginal) => {
 
 import { readConfig } from '../config/loader.js'
 import { resolveProjectByToken } from '../auth/auth.js'
+import { splitModelsIntoInstancesConnections } from '../../test-support/effective-models.js'
 import {
   pickUpstreamModel,
   buildUpstreamUrl,
@@ -24,6 +25,15 @@ const mockReadConfig = vi.mocked(readConfig)
 const mockResolveToken = vi.mocked(resolveProjectByToken)
 
 afterEach(() => vi.clearAllMocks())
+
+function mockModels(models: ModelConfig[]) {
+  const { instances, connections } = splitModelsIntoInstancesConnections(models)
+  mockReadConfig.mockImplementation(async (key: string) => {
+    if (key === 'connections') return connections as any
+    if (key === 'instances') return instances as any
+    return [] as any
+  })
+}
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -242,7 +252,7 @@ describe('passthroughHandler', () => {
     )
     vi.stubGlobal('fetch', mockFetch)
 
-    mockReadConfig.mockResolvedValue([openaiModel])
+    mockModels([openaiModel])
     const app = await buildApp(testProject)
     const res = await app.inject({
       method: 'POST',
@@ -328,7 +338,7 @@ describe('passthroughHandler', () => {
     vi.stubGlobal('fetch', mockFetch)
 
     mockResolveToken.mockResolvedValue({ project: testProject, token: testProject.tokens[0]! })
-    mockReadConfig.mockResolvedValue([openaiModel])
+    mockModels([openaiModel])
 
     const app = await buildApp(null)
     const res = await app.inject({
@@ -351,7 +361,7 @@ describe('passthroughHandler', () => {
     vi.stubGlobal('fetch', mockFetch)
 
     mockResolveToken.mockResolvedValue({ project: testProject, token: testProject.tokens[0]! })
-    mockReadConfig.mockResolvedValue([openaiModel])
+    mockModels([openaiModel])
 
     const app = await buildApp(null)
     const res = await app.inject({
@@ -368,7 +378,7 @@ describe('passthroughHandler', () => {
 
   it('returns 502 no_upstream when project has no resolvable models', async () => {
     const emptyProject: ProjectConfig = { ...testProject, models: [] }
-    mockReadConfig.mockResolvedValue([openaiModel])
+    mockModels([openaiModel])
     const app = await buildApp(emptyProject)
     const res = await app.inject({ method: 'GET', url: '/v1/files' })
     await app.close()
@@ -381,7 +391,7 @@ describe('passthroughHandler', () => {
     const mockFetch = vi.fn().mockRejectedValue(new Error('ECONNREFUSED'))
     vi.stubGlobal('fetch', mockFetch)
 
-    mockReadConfig.mockResolvedValue([openaiModel])
+    mockModels([openaiModel])
     const app = await buildApp(testProject)
     const res = await app.inject({ method: 'GET', url: '/v1/files' })
     await app.close()
@@ -401,7 +411,7 @@ describe('passthroughHandler', () => {
     )
     vi.stubGlobal('fetch', mockFetch)
 
-    mockReadConfig.mockResolvedValue([openaiModel])
+    mockModels([openaiModel])
     const app = await buildApp(testProject)
     const res = await app.inject({ method: 'POST', url: '/v1/embeddings' })
     await app.close()
@@ -415,7 +425,7 @@ describe('passthroughHandler', () => {
     const mockFetch = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
     vi.stubGlobal('fetch', mockFetch)
 
-    mockReadConfig.mockResolvedValue([openaiModel])
+    mockModels([openaiModel])
     const app = await buildApp(testProject)
     const res = await app.inject({ method: 'POST', url: '/v1/embeddings' })
     await app.close()
@@ -427,7 +437,7 @@ describe('passthroughHandler', () => {
   it('returns 502 with generic message when fetch rejects with non-Error (line 178 false branch)', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue('socket hang up'))
 
-    mockReadConfig.mockResolvedValue([openaiModel])
+    mockModels([openaiModel])
     const app = await buildApp(testProject)
     const res = await app.inject({ method: 'GET', url: '/v1/files' })
     await app.close()
@@ -443,7 +453,7 @@ describe('passthroughHandler', () => {
     )
     vi.stubGlobal('fetch', mockFetch)
 
-    mockReadConfig.mockResolvedValue([openaiModel])
+    mockModels([openaiModel])
     const app = await buildApp(testProject)
     const res = await app.inject({
       method: 'POST', url: '/v1/embeddings',
@@ -464,7 +474,7 @@ describe('passthroughHandler', () => {
     )
     vi.stubGlobal('fetch', mockFetch)
 
-    mockReadConfig.mockResolvedValue([openaiModel])
+    mockModels([openaiModel])
     // parseBinary=true adds an octet-stream parser so request.body is a Buffer
     const app = await buildApp(testProject, true)
     const res = await app.inject({
@@ -492,7 +502,7 @@ describe('passthroughHandler', () => {
       ...testProject,
       models: [{ modelId: 'openai/gpt-4o' }, { modelId: 'anthropic/claude-3-5-sonnet' }],
     }
-    mockReadConfig.mockResolvedValue([openaiModel, anthropicModel])
+    mockModels([openaiModel, anthropicModel])
     const app = await buildApp(project)
     const res = await app.inject({
       method: 'POST',
@@ -540,7 +550,7 @@ describe('passthroughHandler', () => {
     )
     vi.stubGlobal('fetch', mockFetch)
 
-    mockReadConfig.mockResolvedValue([openaiModel])
+    mockModels([openaiModel])
     const app = await buildApp(testProject)
     const res = await app.inject({
       method: 'POST', url: '/v1/embeddings',

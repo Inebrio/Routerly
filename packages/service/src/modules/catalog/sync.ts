@@ -1,11 +1,13 @@
 import type { CatalogField, CatalogDefaults } from '@routerly/shared';
 import { catalogFetcher } from './fetcher.js';
-import { readConfig, writeConfig } from '../config/loader.js';
+import { writeConfig } from '../config/loader.js';
+import { listEffectiveModelsIncludingDisabled } from '../provider/list-effective.js';
 
 export async function syncModelsFromCatalog(pkgVersion: string): Promise<boolean> {
+  // catalog cross-ref: sync disabled-connection models too, in case they get re-enabled later
   const [catalog, models] = await Promise.all([
     catalogFetcher.get(pkgVersion),
-    readConfig('models'),
+    listEffectiveModelsIncludingDisabled(),
   ]);
 
   let changed = false;

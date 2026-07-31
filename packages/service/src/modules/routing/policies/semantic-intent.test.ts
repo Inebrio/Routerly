@@ -29,16 +29,39 @@ vi.mock('../../catalog/fetcher.js', () => ({
 }));
 
 // Default: return a model entry matching the baseConfig embedding_model.
-const mockReadConfig = vi.fn().mockResolvedValue([
-  { id: 'text-embedding-3-small', apiKey: 'sk-test', endpoint: 'https://api.openai.com/v1' },
-]);
+const mockReadConfig = vi.fn();
 vi.mock('../../config/loader.js', () => ({
   readConfig: (...args: any[]) => mockReadConfig(...args),
 }));
 
 import { semanticIntentPolicy } from './semantic-intent.js';
+import { splitModelsIntoInstancesConnections } from '../../../test-support/effective-models.js';
 import type { PolicyInput } from './types.js';
 import type { SemanticIntentConfig } from '@routerly/shared';
+
+/**
+ * listEffectiveModels() reads instances+connections, not 'models' directly (task A3).
+ * Test fixtures only carry {id, apiKey?, endpoint?}; fill in the ModelConfig fields the
+ * split helper requires with inert defaults.
+ */
+function mockModelsRegistry(entries: Array<{ id: string; apiKey?: string; endpoint?: string }>): void {
+  const { instances, connections } = splitModelsIntoInstancesConnections(
+    entries.map((e) => ({
+      ...e,
+      name: e.id,
+      provider: 'openai' as const,
+      cost: { inputPerMillion: 0, outputPerMillion: 0 },
+    })),
+  );
+  mockReadConfig.mockImplementation(async (key: string) => {
+    if (key === 'connections') return connections;
+    if (key === 'instances') return instances;
+    return [];
+  });
+}
+mockModelsRegistry([
+  { id: 'text-embedding-3-small', apiKey: 'sk-test', endpoint: 'https://api.openai.com/v1' },
+]);
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -87,7 +110,7 @@ describe('semanticIntentPolicy', () => {
     clearIntentCache();
     vi.clearAllMocks();
     // Restore default registry mock after clearAllMocks (clearAllMocks resets mockResolvedValue).
-    mockReadConfig.mockResolvedValue([
+    mockModelsRegistry([
       { id: 'text-embedding-3-small', apiKey: 'sk-test', endpoint: 'https://api.openai.com/v1' },
     ]);
     mockCatalogGet.mockResolvedValue({});
@@ -431,7 +454,7 @@ describe('semanticIntentPolicy', () => {
       inputTokens: 7,
     }));
     // Include the nonexistent-model in the registry so the policy proceeds past the lookup.
-    mockReadConfig.mockResolvedValue([
+    mockModelsRegistry([
       { id: 'nonexistent-model', apiKey: 'sk-x', endpoint: 'https://example.com/v1' },
     ]);
 
@@ -465,13 +488,13 @@ describe('semanticIntentPolicy — model registry credential injection', () => {
   beforeEach(() => {
     clearIntentCache();
     vi.clearAllMocks();
-    mockReadConfig.mockResolvedValue([defaultRegistryEntry]);
+    mockModelsRegistry([defaultRegistryEntry]);
     mockCatalogGet.mockResolvedValue({});
   });
 
   afterEach(() => {
     // Restore default so sibling describe blocks are not affected.
-    mockReadConfig.mockResolvedValue([defaultRegistryEntry]);
+    mockModelsRegistry([defaultRegistryEntry]);
     mockCatalogGet.mockResolvedValue({});
   });
 
@@ -493,7 +516,7 @@ describe('semanticIntentPolicy — model registry credential injection', () => {
   });
 
   it('passes all candidates through when embedding model is not in registry', async () => {
-    mockReadConfig.mockResolvedValue([]); // empty registry
+    mockModelsRegistry([]); // empty registry
 
     const log = { warn: vi.fn(), info: vi.fn() } as any;
     const result = await semanticIntentPolicy({
@@ -517,7 +540,7 @@ describe('semanticIntentPolicy — model registry credential injection', () => {
     // Covers the false branches on the ternaries at lines 96–97:
     //   ...(modelEntry.apiKey ? {...} : {}) → {} (no apiKey)
     //   ...(modelEntry.endpoint ? {...} : {}) → {} (no endpoint)
-    mockReadConfig.mockResolvedValue([{ id: 'text-embedding-3-small' }]);
+    mockModelsRegistry([{ id: 'text-embedding-3-small' }]);
 
     const vec = [0, 0, 0]; // → unknown → pass all through
     mockProvider.embed.mockResolvedValue({ embeddings: [vec], inputTokens: 0 });
@@ -539,7 +562,7 @@ describe('semanticIntentPolicy — line 113 err instanceof Error TRUE branch', (
   beforeEach(() => {
     clearIntentCache();
     vi.clearAllMocks();
-    mockReadConfig.mockResolvedValue([
+    mockModelsRegistry([
       { id: 'text-embedding-3-small', apiKey: 'sk-test', endpoint: 'https://api.openai.com/v1' },
     ]);
     mockCatalogGet.mockResolvedValue({});
@@ -571,7 +594,7 @@ describe('semanticIntentPolicy — line 15: getEmbeddingInputCost catch branch',
   beforeEach(() => {
     clearIntentCache();
     vi.clearAllMocks();
-    mockReadConfig.mockResolvedValue([
+    mockModelsRegistry([
       { id: 'text-embedding-3-small', apiKey: 'sk-test', endpoint: 'https://api.openai.com/v1' },
     ]);
   });

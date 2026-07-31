@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Readable } from 'node:stream';
 import type { ModelConfig, ProjectConfig } from '@routerly/shared';
-import { readConfig } from '../config/loader.js';
+import { listEffectiveModels } from '../provider/list-effective.js';
 import { resolveProjectByToken, extractProjectToken } from '../auth/auth.js';
 
 /**
@@ -146,7 +146,8 @@ export async function passthroughHandler(
     project = resolved.project;
   }
 
-  const allModels = await readConfig('models');
+  // execution: only route to models on enabled connections
+  const allModels = await listEffectiveModels();
   const model = pickUpstreamModel(project, allModels, request.body as IncomingBody);
   if (!model || !model.endpoint) {
     return reply.code(502).send({

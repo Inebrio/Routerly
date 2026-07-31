@@ -1,5 +1,5 @@
 import type { ChatCompletionRequest, ModelConfig, ProjectConfig, ProjectToken, ResilienceStore, RoutingCandidate, RoutingProfile } from '@routerly/shared';
-import { readConfig } from '../config/loader.js';
+import { listEffectiveModels } from '../provider/list-effective.js';
 import { isAllowed, getViolatedLimits } from '../budget/budget.js';
 import type { LimitSnapshot } from '../budget/budget.js';
 import { filterAvailable } from '../resilience/filter.js';
@@ -95,7 +95,8 @@ export async function scoreCandidates(
   }));
 
   // Carica i ModelConfig completi per i modelli associati al progetto
-  const allModels: ModelConfig[] = await readConfig('models');
+  // routing must only consider models on enabled connections
+  const allModels: ModelConfig[] = await listEffectiveModels();
   const missingModelIds: string[] = [];
   let candidates: CandidateModel[] = project.models
     .map(ref => {

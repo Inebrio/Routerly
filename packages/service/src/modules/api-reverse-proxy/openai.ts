@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import type { ChatCompletionRequest, ModelObject } from '@routerly/shared';
-import { readConfig } from '../config/loader.js';
+import { listEffectiveModels } from '../provider/list-effective.js';
 import { buildOpenAIContext, runProxy, getProxyPipeline } from '../reverse-proxy/index.js';
 
 export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
@@ -45,7 +45,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── GET /v1/models ───────────────────────────────────────────────────────────
   fastify.get('/v1/models', async (request, reply) => {
     const project = request.project;
-    const allModels = await readConfig('models');
+    // client-facing list: only models on enabled connections are routable
+    const allModels = await listEffectiveModels();
 
     const projectModels = project.models
       .map((ref) => allModels.find((m) => m.id === ref.modelId))
@@ -71,7 +72,8 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── GET /v1/models/:model ────────────────────────────────────────────────────
   fastify.get<{ Params: { model: string } }>('/v1/models/:model', async (request, reply) => {
     const project = request.project;
-    const allModels = await readConfig('models');
+    // client-facing list: only models on enabled connections are routable
+    const allModels = await listEffectiveModels();
 
     // Ensure the model is available to the project
     const isAvailable = project.models.some((ref) => ref.modelId === request.params.model);
