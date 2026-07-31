@@ -479,18 +479,21 @@ Examples:
 Examples:
   routerly project token create my-api
   routerly project token create my-api --labels dev,staging
+  routerly project token create my-api --scopes mcp,mcp:write
 `)
     .option('--labels <tags>', 'Comma-separated labels for this token')
+    .option('--scopes <list>', 'Comma-separated access scopes (e.g. mcp,mcp:write)')
     .option('--tag <kv>', 'Key=value tag metadata (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
-    .action(async (nameOrId: string, opts: { labels?: string; tag: string[] }) => {
+    .action(async (nameOrId: string, opts: { labels?: string; scopes?: string; tag: string[] }) => {
       try {
         const project = await resolveProject(nameOrId);
         const labels = opts.labels ? opts.labels.split(',').map(s => s.trim()).filter(Boolean) : undefined;
+        const scopes = opts.scopes ? opts.scopes.split(',').map(s => s.trim()).filter(Boolean) : undefined;
         const tags = parseTags(opts.tag);
         const res = await api<{ token: string; tokenInfo: { id: string; tokenSnippet: string; createdAt: string } }>(
           'POST',
           `/api/projects/${encodeURIComponent(project.id)}/tokens`,
-          { ...(labels ? { labels } : {}), ...(tags ? { tags } : {}) }
+          { ...(labels ? { labels } : {}), ...(scopes ? { scopes } : {}), ...(tags ? { tags } : {}) }
         );
         console.log(chalk.green(`✓ Token created for project "${project.name}".`));
         console.log(chalk.bold('\nToken (save this — shown only once):'));
@@ -498,6 +501,7 @@ Examples:
         console.log(chalk.gray(`  ID:      ${res.tokenInfo.id}`));
         console.log(chalk.gray(`  Snippet: ${res.tokenInfo.tokenSnippet}…`));
         if (labels?.length) console.log(chalk.gray(`  Labels:  ${labels.join(', ')}`));
+        if (scopes?.length) console.log(chalk.gray(`  Scopes:  ${scopes.join(', ')}`));
         if (tags) console.log(chalk.gray(`  Tags:    ${Object.entries(tags).map(([k, v]) => `${k}=${v}`).join(', ')}`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
@@ -521,6 +525,9 @@ Examples:
   # Update labels
   routerly project token edit my-api <token-id> --labels prod,v2
 
+  # Update access scopes
+  routerly project token edit my-api <token-id> --scopes mcp,mcp:write
+
   # Add a cost limit on a specific model
   routerly project token edit my-api <token-id> --add-limit "openai/gpt-5.2:cost:period:hourly:10"
 
@@ -531,10 +538,11 @@ Examples:
   routerly project token edit my-api <token-id> --remove-limit "openai/gpt-5.2:cost:period:hourly"
 `)
     .option('--labels <tags>', 'Comma-separated labels (replaces existing labels)')
+    .option('--scopes <list>', 'Comma-separated access scopes (replaces existing scopes)')
     .option('--tag <kv>', 'Key=value tag (repeatable; replaces all existing tags)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .option('--add-limit <spec>', 'Add a per-model limit (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .option('--remove-limit <spec>', 'Remove a limit: <model>:<metric>:<windowType> (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
-    .action(async (nameOrId: string, tokenId: string, opts: { labels?: string; tag: string[]; addLimit: string[]; removeLimit: string[] }) => {
+    .action(async (nameOrId: string, tokenId: string, opts: { labels?: string; scopes?: string; tag: string[]; addLimit: string[]; removeLimit: string[] }) => {
       try {
         const project = await resolveProject(nameOrId);
         const token = (project.tokens ?? []).find(t => t.id === tokenId);
@@ -570,10 +578,12 @@ Examples:
         models = models.filter(m => m.limits && m.limits.length > 0);
 
         const labels = opts.labels ? opts.labels.split(',').map(s => s.trim()).filter(Boolean) : token.labels;
+        const scopes = opts.scopes ? opts.scopes.split(',').map(s => s.trim()).filter(Boolean) : token.scopes;
         const tags = opts.tag.length ? parseTags(opts.tag) : token.tags;
         await api<void>('PUT', `/api/projects/${encodeURIComponent(project.id)}/tokens/${encodeURIComponent(tokenId)}`, {
           models,
           ...(labels !== undefined ? { labels } : {}),
+          ...(scopes !== undefined ? { scopes } : {}),
           ...(tags !== undefined ? { tags } : {}),
         });
         console.log(chalk.green(`✓ Token "${tokenId}" updated in project "${project.name}".`));

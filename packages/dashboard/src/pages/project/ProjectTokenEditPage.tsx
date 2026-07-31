@@ -152,6 +152,8 @@ export function ProjectTokenEditPage() {
   const [editModels, setEditModels] = useState<EditModel[]>([]);
   const [editLabels, setEditLabels] = useState<string[]>([]);
   const [editLabelInput, setEditLabelInput] = useState('');
+  const [editScopes, setEditScopes] = useState<string[]>([]);
+  const [editScopeInput, setEditScopeInput] = useState('');
   const [editTags, setEditTags] = useState<Record<string, string>>({});
   const [newTagKey, setNewTagKey] = useState('');
   const [newTagVal, setNewTagVal] = useState('');
@@ -159,6 +161,7 @@ export function ProjectTokenEditPage() {
   const tokens = project?.tokens || [];
   const editingToken = tokens.find(t => t.id === tokenId);
   const allLabels = Array.from(new Set(tokens.flatMap(t => t.labels || []))).sort();
+  const allScopes = Array.from(new Set(tokens.flatMap(t => t.scopes || []))).sort();
 
   // Initialize form state from existing token data
   useEffect(() => {
@@ -170,6 +173,7 @@ export function ProjectTokenEditPage() {
         }))
       );
       setEditLabels(editingToken.labels || []);
+      setEditScopes(editingToken.scopes || []);
       setEditTags(editingToken.tags || {});
     }
   }, [editingToken]);
@@ -184,7 +188,7 @@ export function ProjectTokenEditPage() {
         modelId: m.modelId,
         limits: limitRowsToLimits(m.limitRows),
       }));
-      const updated = await updateProjectToken(projectId, tokenId, cleanedModels, editLabels, editTags);
+      const updated = await updateProjectToken(projectId, tokenId, cleanedModels, editLabels, editTags, editScopes);
       setProject(p => p ? { ...p, tokens: p.tokens?.map(t => t.id === tokenId ? updated : t) || [] } : p);
       navigate(`/dashboard/projects/${projectId}/token`);
     } catch (e) { setErr(e instanceof Error ? e.message : 'Error saving token'); }
@@ -262,6 +266,16 @@ export function ProjectTokenEditPage() {
               Labels <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
             </label>
             <LabelInput labels={editLabels} setLabels={setEditLabels} input={editLabelInput} setInput={setEditLabelInput} allLabels={allLabels} />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              Scopes <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+            </label>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 8 }}>
+              Access scopes granted to this token (e.g. "mcp", "mcp:write" for the MCP surface).
+            </p>
+            <LabelInput labels={editScopes} setLabels={setEditScopes} input={editScopeInput} setInput={setEditScopeInput} allLabels={allScopes} />
           </div>
 
           <div className="form-group">

@@ -89,7 +89,7 @@ export function ProjectTokenTab() {
                     )}
                   </div>
 
-                  {(token.labels?.length || (token.tags && Object.keys(token.tags).length > 0)) && (
+                  {(token.labels?.length || token.scopes?.length || (token.tags && Object.keys(token.tags).length > 0)) && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                       {token.labels?.map(l => (
                         <span key={l} style={{
@@ -97,6 +97,15 @@ export function ProjectTokenTab() {
                           padding: '2px 10px', borderRadius: 12, fontSize: '0.75rem', color: 'var(--text-secondary)'
                         }}>
                           {l}
+                        </span>
+                      ))}
+                      {token.scopes?.map(s => (
+                        <span key={`scope-${s}`} style={{
+                          background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)',
+                          padding: '2px 10px', borderRadius: 12, fontSize: '0.75rem', color: 'var(--text-secondary)',
+                          fontFamily: 'monospace'
+                        }}>
+                          {s}
                         </span>
                       ))}
                       {token.tags && Object.entries(token.tags).map(([k, v]) => (

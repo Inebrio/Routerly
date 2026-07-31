@@ -1576,6 +1576,19 @@ describe('token create', () => {
     expect(postCall![2]).toMatchObject({ labels: ['dev', 'staging'] });
   });
 
+  it('creates token with scopes', async () => {
+    mockApi.mockResolvedValueOnce([baseProject])
+           .mockResolvedValueOnce({ token: 'sk-rt-scp', tokenInfo: { id: 'tok-s', tokenSnippet: 'scp', createdAt: '2024-01-01' } });
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'project', 'token', 'create', 'my-api', '--scopes', 'mcp,mcp:write']);
+    const out = lines.join('\n');
+    expect(out).toContain('mcp');
+    expect(out).toContain('mcp:write');
+    const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
+    expect(postCall![2]).toMatchObject({ scopes: ['mcp', 'mcp:write'] });
+  });
+
   it('creates token with tags', async () => {
     mockApi.mockResolvedValueOnce([baseProject])
            .mockResolvedValueOnce({ token: 'sk-rt-xyz', tokenInfo: { id: 'tok-3', tokenSnippet: 'xyz', createdAt: '2024-01-01' } });
@@ -1703,6 +1716,24 @@ describe('token edit', () => {
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { tags: Record<string, string> };
     expect(body.tags).toEqual({ env: 'prod' });
+  });
+
+  it('updates scopes', async () => {
+    const project = { ...baseProject, tokens: [tokenWithLimits] };
+    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--scopes', 'mcp,mcp:write']);
+    const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
+    const body = putCall![2] as { scopes: string[] };
+    expect(body.scopes).toEqual(['mcp', 'mcp:write']);
+  });
+
+  it('preserves existing scopes when --scopes omitted', async () => {
+    const project = { ...baseProject, tokens: [{ ...tokenWithLimits, scopes: ['mcp'] }] };
+    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--labels', 'prod']);
+    const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
+    const body = putCall![2] as { scopes: string[] };
+    expect(body.scopes).toEqual(['mcp']);
   });
 
   it('exits 1 when token not found', async () => {
