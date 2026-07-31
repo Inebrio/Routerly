@@ -160,6 +160,130 @@ describe('connections add', () => {
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('network failure'));
   });
+
+  it('builds the credentials object from cloud (bedrock) flags', async () => {
+    mockApi.mockResolvedValueOnce({ id: 'c5', providerId: 'bedrock', label: 'AWS', credentials: undefined, enabled: true });
+    const cmd = makeConnectionsCommand();
+    await cmd.parseAsync([
+      'node', 'routerly', 'add', '--provider-id', 'bedrock', '--label', 'AWS',
+      '--aws-region', 'us-east-1', '--aws-access-key-id', 'AKIA', '--aws-secret-access-key', 'secret',
+    ]);
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/connections', expect.objectContaining({
+      credentials: { awsRegion: 'us-east-1', awsAccessKeyId: 'AKIA', awsSecretAccessKey: 'secret' },
+    }));
+  });
+
+  it('only includes credential keys the user passed', async () => {
+    mockApi.mockResolvedValueOnce({ id: 'c6', providerId: 'azure', label: 'Az', credentials: undefined, enabled: true });
+    const cmd = makeConnectionsCommand();
+    await cmd.parseAsync([
+      'node', 'routerly', 'add', '--provider-id', 'azure', '--label', 'Az',
+      '--azure-resource-name', 'res', '--api-key', 'k',
+    ]);
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/connections', expect.objectContaining({
+      credentials: { apiKey: 'k', azureResourceName: 'res' },
+    }));
+  });
+});
+
+// ── edit ──────────────────────────────────────────────────────────────────────
+
+describe('connections edit', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  it('PATCHes only the fields passed (label only)', async () => {
+    mockApi.mockResolvedValueOnce({ id: 'c1', providerId: 'openai', label: 'New', enabled: true });
+    const cmd = makeConnectionsCommand();
+    await cmd.parseAsync(['node', 'routerly', 'edit', 'c1', '--label', 'New']);
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/connections/c1', { label: 'New' });
+    expect(console.log).toHaveBeenCalledWith(expect.stringContaining('updated'));
+  });
+
+  it('includes a credentials object only when a credential flag is passed', async () => {
+    mockApi.mockResolvedValueOnce({ id: 'c1', providerId: 'openai', label: 'M', enabled: true });
+    const cmd = makeConnectionsCommand();
+    await cmd.parseAsync(['node', 'routerly', 'edit', 'c1', '--api-key', 'sk-new', '--no-enabled']);
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/connections/c1', {
+      enabled: false,
+      credentials: { apiKey: 'sk-new' },
+    });
+  });
+
+  it('errors and exits 1 when nothing is passed', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    const cmd = makeConnectionsCommand();
+    await expect(cmd.parseAsync(['node', 'routerly', 'edit', 'c1'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('nothing to update'));
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('handles 404 like remove', async () => {
+    mockApi.mockRejectedValueOnce(new ApiError(404, 'Not found'));
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    const cmd = makeConnectionsCommand();
+    await expect(cmd.parseAsync(['node', 'routerly', 'edit', 'missing', '--label', 'X'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not found'));
+  });
+
+  it('--credentials-json invalid JSON exits 1', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    const cmd = makeConnectionsCommand();
+    await expect(cmd.parseAsync([
+      'node', 'routerly', 'edit', 'c1', '--credentials-json', '{bad',
+    ])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('--credentials-json'));
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+});
+
+// ── show ──────────────────────────────────────────────────────────────────────
+
+describe('connections show', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  it('prints a detail view and strips credentials (--json)', async () => {
+    mockApi.mockResolvedValueOnce([
+      { id: 'c1', providerId: 'openai', label: 'Main', enabled: true, credentials: { apiKey: 'sk-leaked-secret' } },
+    ]);
+    const cmd = makeConnectionsCommand();
+    await cmd.parseAsync(['node', 'routerly', 'show', 'c1', '--json']);
+    const printed = vi.mocked(console.log).mock.calls.map(c => c.join(' ')).join('\n');
+    expect(printed).toContain('"c1"');
+    expect(printed).not.toContain('credentials');
+    expect(printed).not.toContain('sk-leaked-secret');
+  });
+
+  it('prints a detail view without credentials (table)', async () => {
+    mockApi.mockResolvedValueOnce([
+      { id: 'c1', providerId: 'openai', label: 'Main', enabled: true, credentials: { apiKey: 'sk-leaked-secret' } },
+    ]);
+    const lines: string[] = [];
+    vi.mocked(console.log).mockImplementation((...a) => lines.push(a.join(' ')));
+    const cmd = makeConnectionsCommand();
+    await cmd.parseAsync(['node', 'routerly', 'show', 'c1']);
+    const out = lines.join('\n');
+    expect(out).toContain('c1');
+    expect(out).toContain('openai');
+    expect(out).not.toContain('sk-leaked-secret');
+  });
+
+  it('exits 1 when the connection is not found', async () => {
+    mockApi.mockResolvedValueOnce([{ id: 'c1', providerId: 'openai', label: 'Main', enabled: true }]);
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    const cmd = makeConnectionsCommand();
+    await expect(cmd.parseAsync(['node', 'routerly', 'show', 'missing'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not found'));
+  });
 });
 
 // ── remove ────────────────────────────────────────────────────────────────────

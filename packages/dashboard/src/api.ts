@@ -879,12 +879,16 @@ export interface ProviderDescriptor {
 
 export const getProviderDescriptors = () => request<ProviderDescriptor[]>('/providers/descriptors');
 
-/** Connection as returned by the API — credentials are always redacted server-side. */
+/**
+ * Connection as returned by the API. Secrets are redacted server-side; only non-secret
+ * cloud config fields (region, resource names, project id) are returned so the edit form
+ * can prefill them, exactly like the model detail form.
+ */
 export interface Connection {
   id: string;
   providerId: string;
   label: string;
-  credentials: undefined;
+  credentials?: Record<string, string>;
   endpoint?: string;
   enabled: boolean;
 }

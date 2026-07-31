@@ -23,7 +23,6 @@ import { getProviderAdapter } from '../provider/registry.js';
 import { loadEffectiveModel } from '../reverse-proxy/execute.js';
 import { listEffectiveModelsIncludingDisabled } from '../provider/list-effective.js';
 import { resolveEffectiveModel } from '../provider/resolve.js';
-import { getProviderDescriptor } from '../provider/descriptor.js';
 import { sendTestNotification } from '../notifications/sender.js';
 import { emitEvent } from '../notifications/emitter.js';
 import { ALL_PERMISSIONS, BUILT_IN_ROLES, getEffectiveRoles } from '../auth/roles.js';
@@ -32,7 +31,7 @@ import { logAudit } from '../audit/logger.js';
 import type { AuditEntry } from '../audit/logger.js';
 import { ALL_MODULES } from '../index.js';
 import { API_ROUTES } from '../../core/tokens.js';
-import { connectionsRoutes, encryptConnectionCredentials } from './connections.js';
+import { connectionsRoutes, buildConnectionCredentials } from './connections.js';
 import { profilesRoutes } from './profiles.js';
 import { mcpApiRoutes } from './mcp.js';
 import { getOptimizerRegistry } from '../optimizers/registry.js';
@@ -83,29 +82,6 @@ function redactModelSecrets(model: EffectiveModel): Record<string, unknown> {
   return out;
 }
 
-/**
- * Maps the model form's flat `apiKey`/`cfClearance` fields onto the connection credential
- * convention for the provider's supportLevel, then encrypts. Mirrors the field names the
- * runtime credential resolvers expect:
- * - web:   apiKey -> cookiePlain -> cookieEnc, cfClearance -> cfClearancePlain -> cfClearanceEnc
- * - oauth: apiKey -> oauthPlain -> oauthEnc (best-effort; a real oauth connection also needs
- *          refresh/expiry, which the model form can't supply)
- * - native/compatible/local: apiKey/cfClearance stay plaintext (matches the connections route)
- */
-function buildConnectionCredentials(provider: string, fields: { apiKey?: string; cfClearance?: string }): Record<string, unknown> {
-  const supportLevel = getProviderDescriptor(provider)?.supportLevel;
-  const plain: Record<string, unknown> = {};
-  if (supportLevel === 'web') {
-    if (fields.apiKey) plain.cookiePlain = fields.apiKey;
-    if (fields.cfClearance) plain.cfClearancePlain = fields.cfClearance;
-  } else if (supportLevel === 'oauth') {
-    if (fields.apiKey) plain.oauthPlain = fields.apiKey;
-  } else {
-    if (fields.apiKey) plain.apiKey = fields.apiKey;
-    if (fields.cfClearance) plain.cfClearance = fields.cfClearance;
-  }
-  return encryptConnectionCredentials(provider, plain);
-}
 
 /** 95th percentile of a numeric array (0 when empty). Nearest-rank method. */
 function p95(values: number[]): number {
@@ -650,6 +626,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     Body: {
       id: string; name?: string; provider: string; endpoint: string;
       apiKey?: string; cfClearance?: string; cloneFrom?: string; upstreamModelId?: string;
+      azureResourceName?: string; azureDeploymentId?: string; azureApiVersion?: string;
+      awsRegion?: string; awsAccessKeyId?: string; awsSecretAccessKey?: string; awsSessionToken?: string;
+      vertexProjectId?: string; vertexLocation?: string; vertexServiceAccountKey?: string;
       connectionId?: string;
       inputPerMillion: number; outputPerMillion: number;
       cachePerMillion?: number;
@@ -713,6 +692,16 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         credentials: buildConnectionCredentials(req.body.provider, {
           ...(apiKey ? { apiKey } : {}),
           ...(cfClearance ? { cfClearance } : {}),
+          azureResourceName: req.body.azureResourceName,
+          azureDeploymentId: req.body.azureDeploymentId,
+          azureApiVersion: req.body.azureApiVersion,
+          awsRegion: req.body.awsRegion,
+          awsAccessKeyId: req.body.awsAccessKeyId,
+          awsSecretAccessKey: req.body.awsSecretAccessKey,
+          awsSessionToken: req.body.awsSessionToken,
+          vertexProjectId: req.body.vertexProjectId,
+          vertexLocation: req.body.vertexLocation,
+          vertexServiceAccountKey: req.body.vertexServiceAccountKey,
         }),
         enabled: true,
       };
@@ -752,6 +741,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       id?: string;
       name?: string; provider: string; endpoint: string;
       apiKey?: string; cfClearance?: string; upstreamModelId?: string;
+      azureResourceName?: string; azureDeploymentId?: string; azureApiVersion?: string;
+      awsRegion?: string; awsAccessKeyId?: string; awsSecretAccessKey?: string; awsSessionToken?: string;
+      vertexProjectId?: string; vertexLocation?: string; vertexServiceAccountKey?: string;
       connectionId?: string;
       inputPerMillion: number; outputPerMillion: number;
       cachePerMillion?: number;
@@ -837,6 +829,16 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const credentialUpdates = buildConnectionCredentials(req.body.provider, {
         ...(req.body.apiKey ? { apiKey: req.body.apiKey } : {}),
         ...(req.body.cfClearance ? { cfClearance: req.body.cfClearance } : {}),
+        azureResourceName: req.body.azureResourceName,
+        azureDeploymentId: req.body.azureDeploymentId,
+        azureApiVersion: req.body.azureApiVersion,
+        awsRegion: req.body.awsRegion,
+        awsAccessKeyId: req.body.awsAccessKeyId,
+        awsSecretAccessKey: req.body.awsSecretAccessKey,
+        awsSessionToken: req.body.awsSessionToken,
+        vertexProjectId: req.body.vertexProjectId,
+        vertexLocation: req.body.vertexLocation,
+        vertexServiceAccountKey: req.body.vertexServiceAccountKey,
       });
       if (dedIdx === -1) {
         connections.push({

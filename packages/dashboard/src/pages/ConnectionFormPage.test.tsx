@@ -8,6 +8,7 @@ vi.mock('../api', () => ({
   createConnection: vi.fn(),
   updateConnection: vi.fn(),
   getProviderDescriptors: vi.fn(),
+  testOpenAIOAuth: vi.fn(),
 }));
 
 const mockNavigate = vi.fn();
@@ -68,20 +69,29 @@ describe('ConnectionFormPage — create mode', () => {
   it('renders an empty form', async () => {
     renderNew();
     await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
-    expect((screen.getByLabelText(/label/i) as HTMLInputElement).value).toBe('');
+    expect((screen.getByLabelText('Label') as HTMLInputElement).value).toBe('');
     expect(mockGetConnections).not.toHaveBeenCalled();
   });
 
-  it('creates a connection and navigates back to the list', async () => {
+  it('creates a connection, sending endpoint top-level and credentials from the fields', async () => {
     const user = userEvent.setup();
     renderNew();
     await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
 
-    await user.type(screen.getByLabelText(/label/i), 'My OpenAI');
+    await user.type(screen.getByLabelText('Label'), 'My OpenAI');
+    // Endpoint URL input (rendered by the shared credentials fields component; the only
+    // text input without an accessible name).
+    const labelInput = screen.getByLabelText('Label');
+    const endpointInput = screen.getAllByRole('textbox').find(t => t !== labelInput)!;
+    await user.type(endpointInput, 'https://api.openai.com/v1');
+    // API key credential input.
+    await user.type(screen.getByPlaceholderText('sk-…'), 'sk-secret');
     await user.click(screen.getByRole('button', { name: /^create$/i }));
 
     await waitFor(() => expect(mockCreateConnection).toHaveBeenCalledWith(expect.objectContaining({
       providerId: 'openai', label: 'My OpenAI', enabled: true,
+      endpoint: 'https://api.openai.com/v1',
+      credentials: { apiKey: 'sk-secret' },
     })));
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/dashboard/connections'));
   });
@@ -92,7 +102,9 @@ describe('ConnectionFormPage — create mode', () => {
     renderNew();
     await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
 
-    await user.type(screen.getByLabelText(/label/i), 'X');
+    await user.type(screen.getByLabelText('Label'), 'X');
+    const labelInput = screen.getByLabelText('Label');
+    await user.type(screen.getAllByRole('textbox').find(t => t !== labelInput)!, 'https://api.example.com/v1');
     await user.click(screen.getByRole('button', { name: /^create$/i }));
 
     await waitFor(() => expect(screen.queryByText('create failed')).not.toBeNull());
@@ -105,7 +117,9 @@ describe('ConnectionFormPage — create mode', () => {
     renderNew();
     await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
 
-    await user.type(screen.getByLabelText(/label/i), 'X');
+    await user.type(screen.getByLabelText('Label'), 'X');
+    const labelInput = screen.getByLabelText('Label');
+    await user.type(screen.getAllByRole('textbox').find(t => t !== labelInput)!, 'https://api.example.com/v1');
     await user.click(screen.getByRole('button', { name: /^create$/i }));
 
     await waitFor(() => expect(screen.queryByText('Failed to create connection')).not.toBeNull());
@@ -129,9 +143,10 @@ describe('ConnectionFormPage — edit mode', () => {
     renderEdit();
     await waitFor(() => expect(screen.queryByText('Edit Connection')).not.toBeNull());
 
-    expect((screen.getByLabelText(/label/i) as HTMLInputElement).value).toBe('My OpenAI');
-    expect((screen.getByLabelText(/endpoint/i) as HTMLInputElement).value).toBe('https://api.openai.com/v1');
-    expect(screen.queryByText(/leave empty to keep existing/i)).not.toBeNull();
+    expect((screen.getByLabelText('Label') as HTMLInputElement).value).toBe('My OpenAI');
+    expect(screen.getByDisplayValue('https://api.openai.com/v1')).not.toBeNull();
+    expect(screen.queryByText(/leave credential fields blank/i)).not.toBeNull();
+    expect((screen.getByPlaceholderText('Leave blank to keep existing key') as HTMLInputElement).value).toBe('');
   });
 
   it('updates the connection and navigates back to the list', async () => {
@@ -139,15 +154,31 @@ describe('ConnectionFormPage — edit mode', () => {
     renderEdit();
     await waitFor(() => expect(screen.queryByText('Edit Connection')).not.toBeNull());
 
-    const labelInput = screen.getByLabelText(/label/i);
+    const labelInput = screen.getByLabelText('Label');
     await user.clear(labelInput);
     await user.type(labelInput, 'Renamed');
     await user.click(screen.getByRole('button', { name: /^save$/i }));
 
     await waitFor(() => expect(mockUpdateConnection).toHaveBeenCalledWith('c1', expect.objectContaining({
-      label: 'Renamed',
+      label: 'Renamed', endpoint: 'https://api.openai.com/v1',
     })));
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/dashboard/connections'));
+  });
+
+  it('prefills non-secret cloud fields when editing a bedrock connection, secret left blank', async () => {
+    mockGetDescriptors.mockResolvedValue([makeDescriptor({ id: 'bedrock', label: 'AWS Bedrock', supportLevel: 'cloud' })]);
+    mockGetConnections.mockResolvedValue([makeConnection({
+      id: 'c1', providerId: 'bedrock', label: 'Bedrock',
+      credentials: { awsRegion: 'us-east-1', awsAccessKeyId: 'AKIA-x' }, endpoint: undefined,
+    })]);
+    renderEdit();
+    await waitFor(() => expect(screen.queryByText('Edit Connection')).not.toBeNull());
+
+    // Required non-secret fields prefilled so HTML5 validation passes on save.
+    expect(screen.getByDisplayValue('us-east-1')).not.toBeNull();
+    expect(screen.getByDisplayValue('AKIA-x')).not.toBeNull();
+    // Secret never returned by the server, stays blank.
+    expect((screen.getByPlaceholderText('Leave blank to keep existing') as HTMLInputElement).value).toBe('');
   });
 
   it('shows a not-found error when the connection does not exist', async () => {
@@ -175,6 +206,19 @@ describe('ConnectionFormPage — edit mode', () => {
     await user.click(screen.getByRole('button', { name: /^save$/i }));
 
     await waitFor(() => expect(mockUpdateConnection).toHaveBeenCalledWith('c1', expect.not.objectContaining({ credentials: expect.anything() })));
+  });
+
+  it('sends credentials on save when a credential field is filled', async () => {
+    const user = userEvent.setup();
+    renderEdit();
+    await waitFor(() => expect(screen.queryByText('Edit Connection')).not.toBeNull());
+
+    await user.type(screen.getByPlaceholderText('Leave blank to keep existing key'), 'sk-new');
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => expect(mockUpdateConnection).toHaveBeenCalledWith('c1', expect.objectContaining({
+      credentials: { apiKey: 'sk-new' },
+    })));
   });
 
   it('shows a fallback message when update fails with a non-Error value', async () => {

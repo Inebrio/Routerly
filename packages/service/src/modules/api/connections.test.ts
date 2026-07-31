@@ -17,6 +17,7 @@ vi.mock('bcrypt', () => ({
 }))
 
 import { apiRoutes } from './api.js'
+import { buildConnectionCredentials } from './connections.js'
 import { readConfig, writeConfig, getOrCreateSecret } from '../config/loader.js'
 import { verifyToken } from '../auth/jwt.js'
 import { loadCredentialKey, encryptCredential, decryptCredential } from '../../lib/crypto-cred.js'
@@ -255,6 +256,90 @@ describe('POST /api/connections', () => {
     const token = await resolveAnthropicOAuthCredential(connection)
     expect(token).toBe('roundtrip-token')
   })
+
+  // ─── cloud provider credential fields (unified via buildConnectionCredentials) ───
+
+  it('stores bedrock cloud credential fields as-is (plaintext at rest)', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/connections', headers: auth('connections:manage'),
+      payload: {
+        providerId: 'bedrock', label: 'Bedrock Conn',
+        credentials: {
+          awsRegion: 'us-east-1', awsAccessKeyId: 'AKIA-x',
+          awsSecretAccessKey: 'aws-secret', awsSessionToken: 'aws-session',
+        },
+        enabled: true,
+      },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    // Non-secret cloud fields are returned (so the edit form can prefill them); secrets are not.
+    expect(body.credentials).toEqual({ awsRegion: 'us-east-1', awsAccessKeyId: 'AKIA-x' })
+    expect(body.credentials.awsSecretAccessKey).toBeUndefined()
+    expect(body.credentials.awsSessionToken).toBeUndefined()
+
+    const persisted = (mockWriteConfig.mock.calls[0]?.[1] as any[])[0]
+    expect(persisted.credentials).toEqual({
+      awsRegion: 'us-east-1', awsAccessKeyId: 'AKIA-x',
+      awsSecretAccessKey: 'aws-secret', awsSessionToken: 'aws-session',
+    })
+  })
+})
+
+// ─── buildConnectionCredentials (single source of truth for both API paths) ──────
+
+describe('buildConnectionCredentials', () => {
+  it('passes bedrock cloud fields through untouched (plaintext at rest)', () => {
+    expect(buildConnectionCredentials('bedrock', {
+      awsRegion: 'us-east-1', awsAccessKeyId: 'AKIA-x',
+      awsSecretAccessKey: 'aws-secret', awsSessionToken: 'aws-session',
+    })).toEqual({
+      awsRegion: 'us-east-1', awsAccessKeyId: 'AKIA-x',
+      awsSecretAccessKey: 'aws-secret', awsSessionToken: 'aws-session',
+    })
+  })
+
+  it('passes azure cloud fields through untouched', () => {
+    expect(buildConnectionCredentials('azure-openai', {
+      azureResourceName: 'my-res', azureDeploymentId: 'dep-1', azureApiVersion: '2024-02-01',
+    })).toEqual({
+      azureResourceName: 'my-res', azureDeploymentId: 'dep-1', azureApiVersion: '2024-02-01',
+    })
+  })
+
+  it('passes vertex cloud fields through untouched', () => {
+    expect(buildConnectionCredentials('vertex', {
+      vertexProjectId: 'proj', vertexLocation: 'us-central1', vertexServiceAccountKey: '{"k":"v"}',
+    })).toEqual({
+      vertexProjectId: 'proj', vertexLocation: 'us-central1', vertexServiceAccountKey: '{"k":"v"}',
+    })
+  })
+
+  it('encrypts oauth apiKey into oauthEnc with no plaintext leak', () => {
+    const out = buildConnectionCredentials('anthropic-oauth', { apiKey: 'live-token' })
+    expect(out.oauthPlain).toBeUndefined()
+    expect(out.apiKey).toBeUndefined()
+    expect(decryptCredential(out.oauthEnc as string)).toBe('live-token')
+    expect(JSON.stringify(out)).not.toContain('live-token')
+  })
+
+  it('encrypts web apiKey into cookieEnc', () => {
+    const out = buildConnectionCredentials('openai-web', { apiKey: 'cookie-val' })
+    expect(out.cookiePlain).toBeUndefined()
+    expect(decryptCredential(out.cookieEnc as string)).toBe('cookie-val')
+  })
+
+  it('keeps a native apiKey as plaintext', () => {
+    expect(buildConnectionCredentials('openai', { apiKey: 'sk-x' })).toEqual({ apiKey: 'sk-x' })
+  })
+
+  it('omits empty/blank fields instead of storing them empty', () => {
+    expect(buildConnectionCredentials('bedrock', {
+      awsRegion: '', awsAccessKeyId: 'AKIA-x',
+    })).toEqual({ awsAccessKeyId: 'AKIA-x' })
+  })
 })
 
 // ─── GET /api/providers/descriptors ─────────────────────────────────────────
@@ -341,6 +426,44 @@ describe('PATCH /api/connections/:id', () => {
     expect(res.statusCode).toBe(403)
   })
 
+  it('leaves stored credentials untouched when the patch omits credentials', async () => {
+    const app = await buildApp()
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [testUser]
+      if (type === 'roles') return [{ id: 'test-role', name: 'Test', permissions: ['connections:manage'] }]
+      if (type === 'connections') return [{ id: 'c1', providerId: 'bedrock', label: 'Old', credentials: { awsRegion: 'us-east-1', awsAccessKeyId: 'AKIA-x' }, enabled: true }]
+      return []
+    })
+    mockVerifyToken.mockReturnValue({ sub: 'test-user-id' } as any)
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/connections/c1', headers: { authorization: 'Bearer valid-jwt-token' },
+      payload: { label: 'New' },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const persisted = (mockWriteConfig.mock.calls[0]?.[1] as any[])[0]
+    expect(persisted.credentials).toEqual({ awsRegion: 'us-east-1', awsAccessKeyId: 'AKIA-x' })
+  })
+
+  it('updates only the patched cloud field and preserves the rest', async () => {
+    const app = await buildApp()
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [testUser]
+      if (type === 'roles') return [{ id: 'test-role', name: 'Test', permissions: ['connections:manage'] }]
+      if (type === 'connections') return [{ id: 'c1', providerId: 'bedrock', label: 'Old', credentials: { awsRegion: 'us-east-1', awsAccessKeyId: 'AKIA-old' }, enabled: true }]
+      return []
+    })
+    mockVerifyToken.mockReturnValue({ sub: 'test-user-id' } as any)
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/connections/c1', headers: { authorization: 'Bearer valid-jwt-token' },
+      payload: { credentials: { awsAccessKeyId: 'AKIA-new' } },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const persisted = (mockWriteConfig.mock.calls[0]?.[1] as any[])[0]
+    expect(persisted.credentials).toEqual({ awsRegion: 'us-east-1', awsAccessKeyId: 'AKIA-new' })
+  })
+
   it('returns 404 for unknown id', async () => {
     const app = await buildApp()
     const res = await app.inject({
@@ -423,7 +546,7 @@ describe('PATCH /api/connections/:id', () => {
 
   // ─── Fix 1 — encrypt-on-persist for oauth/web connection credentials ───────
 
-  it('encrypts only the plaintext fields present in a PATCH credentials body (whole credentials object is replaced, matching existing PATCH semantics)', async () => {
+  it('encrypts the patched plaintext field and merges it onto the stored credentials (partial-preserving)', async () => {
     const app = await buildApp()
     mockReadConfig.mockImplementation(async (type: string) => {
       if (type === 'users') return [testUser]
@@ -448,9 +571,8 @@ describe('PATCH /api/connections/:id', () => {
     const persisted = written.find((c: any) => c.id === 'c1')
     expect(decryptCredential(persisted.credentials.oauthEnc)).toBe('rotated-token')
     expect(persisted.credentials.oauthPlain).toBeUndefined()
-    // credentials is replaced wholesale by PATCH (existing route semantics, unchanged by Fix 1):
-    // refreshPlain wasn't resent, so no refreshEnc is produced.
-    expect(persisted.credentials.refreshEnc).toBeUndefined()
+    // Partial-preserving PATCH: refreshEnc wasn't resent, so the stored one is kept (not clobbered).
+    expect(decryptCredential(persisted.credentials.refreshEnc)).toBe('original-refresh')
   })
 
   it('leaves stored credentials fully unchanged when the PATCH body has no credentials key', async () => {
