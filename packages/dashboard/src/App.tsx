@@ -103,8 +103,8 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
 
   const navItems = [
     { to: '/dashboard/overview', icon: <LayoutDashboard size={17} />, label: 'Overview' },
-    { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
     ...(can('connections:read') ? [{ to: '/dashboard/connections', icon: <Plug size={17} />, label: 'Connections' }] : []),
+    { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
     ...(can('profiles:read') ? [{ to: '/dashboard/routing-profiles', icon: <Route size={17} />, label: 'Routing Profiles' }] : []),
     ...(can('mcp:read') ? [{ to: '/dashboard/mcp', icon: <Wrench size={17} />, label: 'MCP Tools' }] : []),
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },

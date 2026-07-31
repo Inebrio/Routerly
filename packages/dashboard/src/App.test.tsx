@@ -271,6 +271,17 @@ describe('Sidebar', () => {
     expect(screen.getByText('Usage')).toBeTruthy();
   });
 
+  it('renders Connections before Models in nav order', async () => {
+    renderApp();
+    await waitFor(() => screen.getByText('Overview'));
+    const labels = Array.from(document.querySelectorAll('.sidebar-nav .nav-label')).map(el => el.textContent);
+    const connectionsIndex = labels.findIndex(l => l === 'Connections');
+    const modelsIndex = labels.findIndex(l => l === 'Models');
+    expect(connectionsIndex).toBeGreaterThanOrEqual(0);
+    expect(modelsIndex).toBeGreaterThanOrEqual(0);
+    expect(connectionsIndex).toBeLessThan(modelsIndex);
+  });
+
   it('toggles collapsed state on toggle button click', async () => {
     renderApp();
     await waitFor(() => screen.getByText('Overview'));
