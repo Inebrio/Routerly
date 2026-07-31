@@ -920,6 +920,53 @@ describe('GET /api/models', () => {
     expect(res.body).not.toContain('ENC-')
   })
 
+  it('does not leak aws/vertex cloud credentials for bedrock/vertex bound models', async () => {
+    setupAdminAuth()
+    const instances = [
+      { id: 'bedrock-model', connectionId: 'bedrock-conn', upstreamModelId: 'claude-3-sonnet', cost: { inputPerMillion: 3, outputPerMillion: 15 }, contextWindow: 200000 },
+      { id: 'vertex-model', connectionId: 'vertex-conn', upstreamModelId: 'gemini-1.5-pro', cost: { inputPerMillion: 3.5, outputPerMillion: 10.5 }, contextWindow: 1000000 },
+    ]
+    const connections = [
+      {
+        id: 'bedrock-conn', providerId: 'bedrock', label: 'Bedrock', enabled: true,
+        credentials: { awsAccessKeyId: 'AKIA-not-secret', awsSecretAccessKey: 'aws-secret-value', awsSessionToken: 'aws-session-value', awsRegion: 'us-east-1' },
+      },
+      {
+        id: 'vertex-conn', providerId: 'vertex', label: 'Vertex', enabled: true,
+        credentials: { vertexProjectId: 'my-project', vertexLocation: 'us-central1', vertexServiceAccountKey: '{"private_key":"vertex-secret-value"}' },
+      },
+    ]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return instances
+      if (t === 'connections') return connections
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/models', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    const bedrockModel = body.find((m: { id: string }) => m.id === 'bedrock-model')
+    const vertexModel = body.find((m: { id: string }) => m.id === 'vertex-model')
+    for (const secret of ['awsSecretAccessKey', 'awsSessionToken', 'vertexServiceAccountKey']) {
+      expect(bedrockModel[secret]).toBeUndefined()
+      expect(vertexModel[secret]).toBeUndefined()
+    }
+    // Non-secret connection fields (identifiers/region) still pass through — the dashboard
+    // model form needs them to pre-fill the edit view.
+    expect(bedrockModel.awsAccessKeyId).toBe('AKIA-not-secret')
+    expect(bedrockModel.awsRegion).toBe('us-east-1')
+    expect(vertexModel.vertexProjectId).toBe('my-project')
+    expect(vertexModel.vertexLocation).toBe('us-central1')
+    // The raw response text must not contain any secret value either.
+    expect(res.body).not.toContain('aws-secret-value')
+    expect(res.body).not.toContain('aws-session-value')
+    expect(res.body).not.toContain('vertex-secret-value')
+  })
+
   it('returns 401 when no auth header', async () => {
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/models' })

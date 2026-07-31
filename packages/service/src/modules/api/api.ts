@@ -59,16 +59,27 @@ function hashToken(t: string): string {
 const BCRYPT_ROUNDS = 12;
 
 /**
- * Secret credential fields that must never serialize into /api/models responses.
- * resolveEffectiveModel spreads connection.credentials verbatim (adapters need the
- * ciphertext at runtime), so the wire response has to strip both the plaintext model-form
- * fields and the encrypted-at-rest connection fields.
+ * Non-secret EffectiveModel/ModelConfig fields safe to serialize in /api/models responses.
+ * resolveEffectiveModel spreads connection.credentials verbatim into the model (adapters
+ * need the ciphertext/plaintext at runtime), so ANY credential field for ANY provider
+ * (current or future — aws/azure/vertex/oauth/web ciphertext, plaintext apiKey, etc.) could
+ * otherwise leak. Allowlisting is the only approach that can't silently regress when a new
+ * provider adds its own credential field name: anything not in this list is dropped.
  */
-const MODEL_SECRET_FIELDS = ['apiKey', 'cfClearance', 'oauthEnc', 'refreshEnc', 'cookieEnc', 'cfClearanceEnc', 'expiresAt'] as const;
+const MODEL_SAFE_FIELDS = [
+  'id', 'name', 'provider', 'connectionId', 'endpoint', 'upstreamModelId',
+  'cost', 'contextWindow', 'limits', 'globalThresholds', 'capabilities', 'timeout',
+  'fieldOverrides', 'catalogDefaults',
+  // Non-secret connection config fields (identifiers/region/resource names, not credentials)
+  'awsAccessKeyId', 'awsRegion', 'azureResourceName', 'azureDeploymentId', 'azureApiVersion',
+  'vertexProjectId', 'vertexLocation',
+] as const satisfies readonly (keyof EffectiveModel)[];
 
 function redactModelSecrets(model: EffectiveModel): Record<string, unknown> {
-  const out: Record<string, unknown> = { ...model };
-  for (const f of MODEL_SECRET_FIELDS) delete out[f];
+  const out: Record<string, unknown> = {};
+  for (const f of MODEL_SAFE_FIELDS) {
+    if (model[f] !== undefined) out[f] = model[f];
+  }
   return out;
 }
 
