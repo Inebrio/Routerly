@@ -160,26 +160,22 @@ describe('syncModelsFromCatalog', () => {
       expect(written().cost.cachePerMillion).toBe(99);
     });
 
-    // connections-cutover (A3): catalogDefaults has no home on ModelInstance (see A2),
-    // so it never survives the instances/connections round trip and is always undefined
-    // on the resolved effective model — sync now always reports changed=true, even when
-    // the live values already match the catalog. Flagged as a concern in task-A3-report.md.
-    it('marks changed even when cachePerMillion already matches catalog (catalogDefaults cannot round-trip through instances)', async () => {
+    it('does not mark changed when cachePerMillion already matches catalog', async () => {
       const catalogDefaults = { inputPerMillion: 5, outputPerMillion: 20, cachePerMillion: 1.25 };
       const m = makeModel({ cost: { inputPerMillion: 5, outputPerMillion: 20, cachePerMillion: 1.25 }, catalogDefaults });
       mockGet.mockResolvedValue(openaiCatalog([{ id: 'gpt-4', input: 5, output: 20, cache: 1.25 }]));
       mockModels([m]);
       const changed = await syncModelsFromCatalog('0.3.0');
-      expect(changed).toBe(true);
+      expect(changed).toBe(false);
     });
 
-    it('marks changed even when cacheWritePerMillion already matches catalog (catalogDefaults cannot round-trip through instances)', async () => {
+    it('does not mark changed when cacheWritePerMillion already matches catalog', async () => {
       const catalogDefaults = { inputPerMillion: 5, outputPerMillion: 20, cacheWritePerMillion: 3.75 };
       const m = makeModel({ cost: { inputPerMillion: 5, outputPerMillion: 20, cacheWritePerMillion: 3.75 }, catalogDefaults });
       mockGet.mockResolvedValue(openaiCatalog([{ id: 'gpt-4', input: 5, output: 20, cacheWrite: 3.75 }]));
       mockModels([m]);
       const changed = await syncModelsFromCatalog('0.3.0');
-      expect(changed).toBe(true);
+      expect(changed).toBe(false);
     });
 
     it('updates cacheWritePerMillion when present in catalog', async () => {
@@ -198,13 +194,13 @@ describe('syncModelsFromCatalog', () => {
       expect(written().contextWindow).toBe(128000);
     });
 
-    it('marks changed even when contextWindow already matches (catalogDefaults cannot round-trip through instances)', async () => {
+    it('does not mark changed when contextWindow already matches catalog', async () => {
       const catalogDefaults = { inputPerMillion: 5, outputPerMillion: 20, contextWindow: 128000 };
       const m = makeModel({ cost: { inputPerMillion: 5, outputPerMillion: 20 }, contextWindow: 128000, catalogDefaults });
       mockGet.mockResolvedValue(openaiCatalog([{ id: 'gpt-4', input: 5, output: 20, contextWindow: 128000 }]));
       mockModels([m]);
       const changed = await syncModelsFromCatalog('0.3.0');
-      expect(changed).toBe(true);
+      expect(changed).toBe(false);
     });
 
     it('updates capabilities when present in catalog', async () => {
@@ -248,62 +244,56 @@ describe('syncModelsFromCatalog', () => {
     });
   });
 
-  // connections-cutover (A3): fieldOverrides has no home on ModelInstance (see A2), so
-  // it never survives the instances/connections round trip — isOverridden() always sees
-  // `undefined` on the resolved effective model and every catalog-tracked field gets
-  // overwritten regardless of what the user pinned. This is a real regression surfaced
-  // by wiring the real instances/connections read path through here; flagged as a
-  // concern in task-A3-report.md, not fixed by this task (schema decision, not a read swap).
-  describe('field override respect (currently non-functional post-cutover, see comment above)', () => {
-    it('does NOT skip inputPerMillion when overridden (fieldOverrides lost)', async () => {
+  describe('field override respect', () => {
+    it('skips inputPerMillion when overridden (fieldOverrides-pinned value survives a sync tick)', async () => {
       const m = makeModel({ cost: { inputPerMillion: 99, outputPerMillion: 20 }, fieldOverrides: { inputPerMillion: true } });
       mockGet.mockResolvedValue(openaiCatalog([{ id: 'gpt-4', input: 5, output: 20 }]));
       mockModels([m]);
       await syncModelsFromCatalog('0.3.0');
-      expect(written().cost.inputPerMillion).toBe(5);
+      expect(written().cost.inputPerMillion).toBe(99);
     });
 
-    it('does NOT skip outputPerMillion when overridden (fieldOverrides lost)', async () => {
+    it('skips outputPerMillion when overridden', async () => {
       const m = makeModel({ cost: { inputPerMillion: 5, outputPerMillion: 99 }, fieldOverrides: { outputPerMillion: true } });
       mockGet.mockResolvedValue(openaiCatalog([{ id: 'gpt-4', input: 5, output: 20 }]));
       mockModels([m]);
       await syncModelsFromCatalog('0.3.0');
-      expect(written().cost.outputPerMillion).toBe(20);
+      expect(written().cost.outputPerMillion).toBe(99);
     });
 
-    it('does NOT skip cachePerMillion when overridden (fieldOverrides lost)', async () => {
+    it('skips cachePerMillion when overridden', async () => {
       const m = makeModel({ cost: { inputPerMillion: 5, outputPerMillion: 20, cachePerMillion: 99 }, fieldOverrides: { cachePerMillion: true } });
       mockGet.mockResolvedValue(openaiCatalog([{ id: 'gpt-4', input: 5, output: 20, cache: 1.25 }]));
       mockModels([m]);
       await syncModelsFromCatalog('0.3.0');
-      expect(written().cost.cachePerMillion).toBe(1.25);
+      expect(written().cost.cachePerMillion).toBe(99);
     });
 
-    it('does NOT skip cacheWritePerMillion when overridden (fieldOverrides lost)', async () => {
+    it('skips cacheWritePerMillion when overridden', async () => {
       const m = makeModel({ cost: { inputPerMillion: 5, outputPerMillion: 20, cacheWritePerMillion: 99 }, fieldOverrides: { cacheWritePerMillion: true } });
       mockGet.mockResolvedValue(openaiCatalog([{ id: 'gpt-4', input: 5, output: 20, cacheWrite: 3.75 }]));
       mockModels([m]);
       await syncModelsFromCatalog('0.3.0');
-      expect(written().cost.cacheWritePerMillion).toBe(3.75);
+      expect(written().cost.cacheWritePerMillion).toBe(99);
     });
 
-    it('does NOT skip contextWindow when overridden (fieldOverrides lost)', async () => {
+    it('skips contextWindow when overridden', async () => {
       const m = makeModel({ contextWindow: 99999, fieldOverrides: { contextWindow: true } });
       mockGet.mockResolvedValue(openaiCatalog([{ id: 'gpt-4', input: 5, output: 20, contextWindow: 128000 }]));
       mockModels([m]);
       await syncModelsFromCatalog('0.3.0');
-      expect(written().contextWindow).toBe(128000);
+      expect(written().contextWindow).toBe(99999);
     });
 
-    it('does NOT skip capabilities when overridden (fieldOverrides lost)', async () => {
+    it('skips capabilities when overridden', async () => {
       const m = makeModel({ capabilities: { vision: false }, fieldOverrides: { capabilities: true } });
       mockGet.mockResolvedValue(openaiCatalog([{ id: 'gpt-4', input: 5, output: 20, capabilities: { vision: true } }]));
       mockModels([m]);
       await syncModelsFromCatalog('0.3.0');
-      expect(written().capabilities).toEqual({ vision: true });
+      expect(written().capabilities).toEqual({ vision: false });
     });
 
-    it('does NOT skip pricingTiers when overridden (fieldOverrides lost)', async () => {
+    it('skips pricingTiers when overridden', async () => {
       const existing = [{ metric: 'output', above: 0, inputPerMillion: 99, outputPerMillion: 99 }];
       const m = makeModel({
         cost: { inputPerMillion: 5, outputPerMillion: 20, pricingTiers: existing },
@@ -315,37 +305,32 @@ describe('syncModelsFromCatalog', () => {
       }]));
       mockModels([m]);
       await syncModelsFromCatalog('0.3.0');
-      expect(written().cost.pricingTiers).toEqual([
-        { metric: 'output', above: 1000000, inputPerMillion: 3, outputPerMillion: 9 },
-      ]);
+      expect(written().cost.pricingTiers).toEqual(existing);
     });
   });
 
   describe('writeConfig behavior', () => {
-    it('calls writeConfig and returns true when a field changes', async () => {
+    it('calls writeConfig and returns true when a field changes, writing the result back to instances', async () => {
       const m = makeModel({ cost: { inputPerMillion: 30, outputPerMillion: 60 } });
       mockGet.mockResolvedValue(openaiCatalog([{ id: 'gpt-4', input: 5, output: 60 }]));
       mockModels([m]);
       const changed = await syncModelsFromCatalog('0.3.0');
       expect(changed).toBe(true);
       expect(mockWriteConfig).toHaveBeenCalledOnce();
-      expect(mockWriteConfig.mock.calls[0]?.[0]).toBe('models');
+      expect(mockWriteConfig.mock.calls[0]?.[0]).toBe('instances');
       expect(mockWriteConfig.mock.calls[0]?.[1]).toHaveLength(1);
       expect(written().id).toBe(m.id);
       expect(written().cost.inputPerMillion).toBe(5);
     });
 
-    // connections-cutover (A3): catalogDefaults cannot round-trip through ModelInstance
-    // (see comment on the "field updates" describe block above), so sync now always
-    // reports changed=true even when nothing has actually drifted from the catalog.
-    it('calls writeConfig and returns true even when nothing changes (catalogDefaults cannot round-trip through instances)', async () => {
+    it('does not call writeConfig and returns false when nothing changes', async () => {
       const catalogDefaults = { inputPerMillion: 5, outputPerMillion: 20 };
       const m = makeModel({ cost: { inputPerMillion: 5, outputPerMillion: 20 }, catalogDefaults });
       mockGet.mockResolvedValue(openaiCatalog([{ id: 'gpt-4', input: 5, output: 20 }]));
       mockModels([m]);
       const changed = await syncModelsFromCatalog('0.3.0');
-      expect(changed).toBe(true);
-      expect(mockWriteConfig).toHaveBeenCalledOnce();
+      expect(changed).toBe(false);
+      expect(mockWriteConfig).not.toHaveBeenCalled();
     });
 
     it('calls writeConfig once even with multiple changed models', async () => {
@@ -380,6 +365,24 @@ describe('syncModelsFromCatalog', () => {
       const changed = await syncModelsFromCatalog('0.3.0');
       expect(changed).toBe(true);
       expect(written().catalogDefaults).toEqual({ inputPerMillion: 5, outputPerMillion: 20 });
+    });
+
+    it('writes the updated cost back onto the ModelInstance record (readConfig(\'instances\') shape, not the dead models.json)', async () => {
+      const m = makeModel({ cost: { inputPerMillion: 30, outputPerMillion: 60 } });
+      mockGet.mockResolvedValue(openaiCatalog([{ id: 'gpt-4', input: 5, output: 60 }]));
+      mockModels([m]);
+      await syncModelsFromCatalog('0.3.0');
+
+      const [key, persisted] = mockWriteConfig.mock.calls[0]!;
+      expect(key).toBe('instances');
+      const instance = (persisted as any[])[0];
+      // ModelInstance shape: connectionId + upstreamModelId, not the flat ModelConfig/EffectiveModel
+      // fields (provider, endpoint, name) that only exist on the resolved effective model.
+      expect(instance.connectionId).toBeDefined();
+      expect(instance.upstreamModelId).toBe('gpt-4');
+      expect(instance.cost.inputPerMillion).toBe(5);
+      expect(instance.provider).toBeUndefined();
+      expect(instance.endpoint).toBeUndefined();
     });
   });
 });

@@ -29,5 +29,13 @@ export function resolveEffectiveModel(
     result.capabilities = instance.capabilities;
   }
 
+  if (instance.fieldOverrides !== undefined) {
+    result.fieldOverrides = instance.fieldOverrides;
+  }
+
+  if (instance.catalogDefaults !== undefined) {
+    result.catalogDefaults = instance.catalogDefaults;
+  }
+
   return result;
 }

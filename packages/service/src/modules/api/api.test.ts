@@ -954,6 +954,37 @@ describe('POST /api/models', () => {
     expect(res.statusCode).toBe(201)
   })
 
+  it('persists fieldOverrides and catalogDefaults from the request body onto the instance', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return []
+      if (t === 'connections') return []
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/models',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        id: 'overridden-model', name: 'Overridden', provider: 'openai',
+        endpoint: 'https://api.openai.com/v1',
+        inputPerMillion: 5, outputPerMillion: 15,
+        fieldOverrides: { inputPerMillion: true },
+        catalogDefaults: { inputPerMillion: 3, outputPerMillion: 10 },
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const instancesCall = mockWriteConfig.mock.calls.find((c) => c[0] === 'instances')
+    const saved = (instancesCall?.[1] as any[])?.find((i) => i.id === 'overridden-model')
+    expect(saved.fieldOverrides).toEqual({ inputPerMillion: true })
+    expect(saved.catalogDefaults).toEqual({ inputPerMillion: 3, outputPerMillion: 10 })
+  })
+
   it('returns 409 when model ID already exists', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -2246,6 +2277,38 @@ describe('PUT /api/models/:id', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(200)
+  })
+
+  it('preserves existing fieldOverrides/catalogDefaults when the body omits them', async () => {
+    setupAdminAuth()
+    const existingInstance = {
+      id: 'gpt4', connectionId: 'conn-for-gpt4', upstreamModelId: 'gpt4',
+      cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0,
+      fieldOverrides: { inputPerMillion: true },
+      catalogDefaults: { inputPerMillion: 3, outputPerMillion: 10 },
+    }
+    const existingConnection = { id: 'conn-for-gpt4', providerId: 'openai', label: 'GPT-4', credentials: {}, endpoint: 'https://api.openai.com/v1', enabled: true }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [existingInstance]
+      if (t === 'connections') return [existingConnection]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/models/gpt4',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ provider: 'openai', endpoint: 'https://api.openai.com/v1', inputPerMillion: 10, outputPerMillion: 30 }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const instancesCall = mockWriteConfig.mock.calls.find((c) => c[0] === 'instances')
+    const saved = (instancesCall?.[1] as any[])?.find((i) => i.id === 'gpt4')
+    expect(saved.fieldOverrides).toEqual({ inputPerMillion: true })
+    expect(saved.catalogDefaults).toEqual({ inputPerMillion: 3, outputPerMillion: 10 })
   })
 
   it('returns 404 for unknown model', async () => {

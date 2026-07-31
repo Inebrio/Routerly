@@ -56,6 +56,8 @@ function buildInstance(model: ModelConfig, connId: string): ModelInstance {
   };
   if (model.limits !== undefined) instance.limits = model.limits;
   if (model.capabilities !== undefined) instance.capabilities = model.capabilities;
+  if (model.fieldOverrides !== undefined) instance.fieldOverrides = model.fieldOverrides;
+  if (model.catalogDefaults !== undefined) instance.catalogDefaults = model.catalogDefaults;
   return instance;
 }
 

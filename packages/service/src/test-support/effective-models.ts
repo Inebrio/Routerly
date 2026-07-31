@@ -45,6 +45,8 @@ export function splitModelsIntoInstancesConnections(
       contextWindow: m.contextWindow ?? 0,
       ...(m.limits !== undefined ? { limits: m.limits } : {}),
       ...(m.capabilities !== undefined ? { capabilities: m.capabilities } : {}),
+      ...(m.fieldOverrides !== undefined ? { fieldOverrides: m.fieldOverrides } : {}),
+      ...(m.catalogDefaults !== undefined ? { catalogDefaults: m.catalogDefaults } : {}),
     });
   }
 

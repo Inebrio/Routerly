@@ -23,6 +23,10 @@ export interface ModelInstance {
   contextWindow: number;
   limits?: Limit[];
   capabilities?: ModelCapabilities;
+  /** Fields manually overridden by user; these won't auto-sync from catalog */
+  fieldOverrides?: Partial<Record<CatalogField, boolean>>;
+  /** Last known catalog values for catalog-trackable fields; used to show defaults in UI */
+  catalogDefaults?: CatalogDefaults;
 }
 
 export interface PricingTier {
