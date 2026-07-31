@@ -418,6 +418,9 @@ const router = createBrowserRouter([
           },
           { path: 'usage', element: <UsagePage /> },
           { path: 'health', element: <Navigate to="/dashboard/models?tab=health" replace /> },
+          // Instances were folded into the Models list; keep the old path landing there
+          // instead of the generic overview fallback (mirrors the 'health' redirect above).
+          { path: 'instances', element: <Navigate to="/dashboard/models" replace /> },
           { path: 'test', element: <TestPage /> },
           {
             path: 'settings',
