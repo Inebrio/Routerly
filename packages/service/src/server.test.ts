@@ -149,17 +149,9 @@ describe('startServer', () => {
     expect(mockPingTelemetry).not.toHaveBeenCalled()
   })
 
-  it('logs migrated count when migrateProjectConfigs returns > 0', async () => {
-    const { migrateProjectConfigs } = await import('./modules/config/migrate.js')
-    vi.mocked(migrateProjectConfigs).mockResolvedValueOnce(3)
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    mockSettings({ logLevel: 'silent', dashboardEnabled: false, port: 3094, host: '127.0.0.1', telemetry: { enabled: false } } as any)
-
-    await startServer()
-
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('migrated 3'))
-    logSpy.mockRestore()
-  })
+  // Config migrations moved out of startServer() into configModule.migrate(),
+  // which the kernel runs before any register(). Coverage lives in
+  // modules/config/index.test.ts and core/lifecycle/kernel.test.ts.
 
   it('prunes orphan usage records on startup and logs when any removed (BUG-5)', async () => {
     const { pruneOrphanUsage } = await import('./modules/config/loader.js')
