@@ -14,6 +14,8 @@ interface SearchableSelectProps {
   placeholder?: string;
   disabled?: boolean;
   style?: React.CSSProperties;
+  /** Accessible name for the combobox (item-6 replaced native <select>, which lost the <label> association). */
+  ariaLabel?: string;
 }
 
 export function SearchableSelect({
@@ -23,6 +25,7 @@ export function SearchableSelect({
   placeholder = 'Select...',
   disabled,
   style,
+  ariaLabel,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -52,7 +55,23 @@ export function SearchableSelect({
   return (
     <div ref={containerRef} style={{ position: 'relative', ...style }}>
       <div
+        role="combobox"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={ariaLabel}
+        aria-disabled={disabled || undefined}
+        tabIndex={disabled ? -1 : 0}
         onClick={() => { if (!disabled) { setOpen(v => !v); setQuery(''); } }}
+        onKeyDown={e => {
+          if (disabled) return;
+          if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            setOpen(true);
+            setQuery('');
+          } else if (e.key === 'Escape') {
+            setOpen(false);
+          }
+        }}
         style={{
           display: 'flex',
           alignItems: 'center',

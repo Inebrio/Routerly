@@ -523,22 +523,24 @@ function ProfileEditor({
             onChange={e => setForm(f => ({ ...f, label: e.target.value }))} />
         </div>
         <div className="form-group" style={{ flex: '1 1 200px', marginBottom: 0 }}>
-          <label className="form-label" htmlFor="edit-selector">Selector</label>
+          <label className="form-label">Selector</label>
           <SearchableSelect
             options={(Object.keys(SELECTOR_LABELS) as SelectorType[]).map(s => ({ value: s, label: SELECTOR_LABELS[s] }))}
             value={form.selector}
             disabled={readOnly}
             placeholder="Selector"
+            ariaLabel="Selector"
             onChange={v => setForm(f => ({ ...f, selector: v as SelectorType }))}
           />
         </div>
         <div className="form-group" style={{ flex: '1 1 200px', marginBottom: 0 }}>
-          <label className="form-label" htmlFor="edit-fallback">Fallback strategy</label>
+          <label className="form-label">Fallback strategy</label>
           <SearchableSelect
             options={(Object.keys(FALLBACK_LABELS) as FallbackStrategyType[]).map(s => ({ value: s, label: FALLBACK_LABELS[s] }))}
             value={form.fallbackStrategy}
             disabled={readOnly}
             placeholder="Fallback strategy"
+            ariaLabel="Fallback strategy"
             onChange={v => setForm(f => ({ ...f, fallbackStrategy: v as FallbackStrategyType }))}
           />
         </div>
