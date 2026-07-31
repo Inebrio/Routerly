@@ -371,8 +371,10 @@ export interface Project {
   id: string; name: string; routingModelId?: string;
   autoRouting?: boolean;
   fallbackRoutingModelIds?: string[];
-  /** Assigned routing profile id, or absent/empty for this project's own inline policies. */
-  profileId?: string;
+  /** Assigned profile id per kind, or absent for this project's own inline config. */
+  routingProfileId?: string;
+  optimizerProfileId?: string;
+  securityProfileId?: string;
   policies?: RoutingPolicy[];
   models: { modelId: string; prompt?: string }[];
   tokens?: ProjectToken[];
@@ -945,30 +947,43 @@ export type { ResilienceLevel, ResilienceState } from '@routerly/shared';
 export const resetResilience = (body?: { level: ResilienceLevel; id: string }) =>
   request<{ ok: true }>('/resilience/reset', { method: 'POST', body: JSON.stringify(body ?? {}) });
 
-// ── Routing Profiles ──────────────────────────────────────────────────────
-import type { SelectorType, FallbackStrategyType } from '@routerly/shared';
-export type { SelectorType, FallbackStrategyType } from '@routerly/shared';
+// ── Profiles (routing, optimizer, security) ───────────────────────────────
+import type {
+  SelectorType, FallbackStrategyType,
+  Profile, ProfileKind, RoutingProfile, OptimizerProfile, SecurityProfile,
+} from '@routerly/shared';
+export type {
+  SelectorType, FallbackStrategyType,
+  Profile, ProfileKind, RoutingProfile, OptimizerProfile, SecurityProfile,
+} from '@routerly/shared';
 
-export interface RoutingProfile {
-  id: string; version: number; label: string; policies: RoutingPolicy[];
-  selector: SelectorType; fallbackStrategy: FallbackStrategyType; builtin: boolean; baseId?: string;
-}
+/** Body of a create: kind and label are required, the rest defaults server-side. */
+export type CreateProfileBody =
+  | ({ kind: 'routing'; label: string } & Partial<Pick<RoutingProfile, 'policies' | 'selector' | 'fallbackStrategy'>>)
+  | ({ kind: 'optimizer'; label: string } & Partial<Pick<OptimizerProfile, 'optimizers'>>)
+  | ({ kind: 'security'; label: string } & Partial<Pick<SecurityProfile, 'guardrails' | 'pii'>>);
 
-export const getProfiles = () => request<RoutingProfile[]>('/routing/profiles');
+/** Patch body: only the fields of the profile's own kind are accepted server-side. */
+export type UpdateProfileBody = { label?: string } & Partial<
+  Pick<RoutingProfile, 'policies' | 'selector' | 'fallbackStrategy'> &
+  Pick<OptimizerProfile, 'optimizers'> &
+  Pick<SecurityProfile, 'guardrails' | 'pii'>
+>;
+
+export const getProfiles = (kind?: ProfileKind) =>
+  request<Profile[]>(`/profiles${kind ? `?kind=${encodeURIComponent(kind)}` : ''}`);
+export const createProfile = (data: CreateProfileBody) =>
+  request<Profile>('/profiles', { method: 'POST', body: JSON.stringify(data) });
 export const cloneProfile = (baseId: string, label: string) =>
-  request<RoutingProfile>('/routing/profiles/clone', { method: 'POST', body: JSON.stringify({ baseId, label }) });
-export const updateProfile = (id: string, data: Partial<{
-  label: string; policies: RoutingPolicy[]; selector: SelectorType; fallbackStrategy: FallbackStrategyType;
-}>) => request<RoutingProfile>(`/routing/profiles/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
-export const deleteProfile = (id: string) => request<void>(`/routing/profiles/${encodeURIComponent(id)}`, { method: 'DELETE' });
-export const assignProjectProfile = (projectId: string, profileId: string | null) =>
-  request<Project>(`/projects/${encodeURIComponent(projectId)}/profile`, { method: 'PUT', body: JSON.stringify({ profileId }) });
-export const simulateRouting = (data: {
-  profileId?: string; policies?: RoutingPolicy[]; selector?: SelectorType; fallbackStrategy?: FallbackStrategyType;
-  request: unknown; projectId: string;
-}) => request<{ picked: string; ranked: { model: string; score: number; cost?: number }[]; trace: unknown[] }>(
-  '/routing/simulate', { method: 'POST', body: JSON.stringify(data) },
-);
+  request<Profile>('/profiles/clone', { method: 'POST', body: JSON.stringify({ baseId, label }) });
+export const updateProfile = (id: string, data: UpdateProfileBody) =>
+  request<Profile>(`/profiles/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
+export const deleteProfile = (id: string) => request<void>(`/profiles/${encodeURIComponent(id)}`, { method: 'DELETE' });
+/** Assigns or clears (null) one or more kinds at once. Omitted kinds are left as they are. */
+export const assignProjectProfiles = (
+  projectId: string,
+  body: Partial<Record<ProfileKind, string | null>>,
+) => request<Project>(`/projects/${encodeURIComponent(projectId)}/profiles`, { method: 'PUT', body: JSON.stringify(body) });
 
 // ── Optimizers ────────────────────────────────────────────────────────────
 import type { OptimizerConfig, OptimizerId, OptimizerStep } from '@routerly/shared';
