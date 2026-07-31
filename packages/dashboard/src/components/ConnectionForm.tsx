@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus, Save, X } from 'lucide-react';
 import { type ProviderDescriptor } from '../api';
+import { SearchableSelect } from './SearchableSelect';
 
 export interface CredentialRow { key: string; value: string }
 
@@ -49,15 +50,12 @@ export function ConnectionForm({ form, onChange, onSave, onCancel, saving, provi
     <div className="card" style={{ padding: 20, marginBottom: 12, border: '1px solid var(--primary)', borderRadius: 8 }}>
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <div className="form-group" style={{ flex: '0 0 200px', marginBottom: 0 }}>
-          <label className="form-label" htmlFor="conn-provider">Provider</label>
-          <select
-            id="conn-provider"
-            className="form-input"
+          <label className="form-label">Provider</label>
+          <SearchableSelect
+            options={providers.map(p => ({ value: p.id, label: p.label }))}
             value={form.providerId}
-            onChange={e => onChange(f => ({ ...f, providerId: e.target.value }))}
-          >
-            {providers.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
-          </select>
+            onChange={v => onChange(f => ({ ...f, providerId: v }))}
+          />
         </div>
         <div className="form-group" style={{ flex: '1 1 180px', marginBottom: 0 }}>
           <label className="form-label" htmlFor="conn-label">Label</label>

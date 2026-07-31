@@ -4,6 +4,28 @@ import userEvent from '@testing-library/user-event';
 import { ConnectionForm, emptyForm, credentialsToRecord } from './ConnectionForm';
 import type { ProviderDescriptor } from '../api';
 
+vi.mock('./SearchableSelect', () => ({
+  SearchableSelect: ({
+    options, value, onChange, placeholder, disabled,
+  }: {
+    options: { value: string; label: string }[];
+    value: string;
+    onChange: (v: string) => void;
+    placeholder?: string;
+    disabled?: boolean;
+  }) => (
+    <select
+      data-testid={`searchable-${placeholder ?? 'select'}`}
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      disabled={disabled}
+    >
+      <option value="">—</option>
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  ),
+}));
+
 const providers: ProviderDescriptor[] = [
   { id: 'openai', label: 'OpenAI', protocol: 'openai', supportLevel: 'native', nativeCapabilities: {} as never },
   { id: 'anthropic', label: 'Anthropic', protocol: 'anthropic', supportLevel: 'native', nativeCapabilities: {} as never },
@@ -24,7 +46,7 @@ describe('ConnectionForm', () => {
       />
     );
 
-    const providerSelect = screen.getByLabelText('Provider') as HTMLSelectElement;
+    const providerSelect = screen.getByTestId('searchable-select') as HTMLSelectElement;
     expect(providerSelect).toBeTruthy();
     expect(screen.getByRole('option', { name: 'OpenAI' })).toBeTruthy();
     expect(screen.getByRole('option', { name: 'Anthropic' })).toBeTruthy();

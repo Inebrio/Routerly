@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { Plus, X, ChevronDown, EyeOff, Eye, ArrowLeft, Copy, Check, FlaskConical } from 'lucide-react';
 import { getModels, createModel, updateModel, testOpenAIOAuth, testModel, getProviders, getConnections, type Model, type ModelCapabilities, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit, type CatalogEntry, type ProviderCatalog, type Connection } from '../api';
+import { SearchableSelect } from '../components/SearchableSelect';
 
 type Provider = string;
 type ProviderModel = {
@@ -822,10 +823,11 @@ export function ModelFormPage() {
 
             <div className="form-group">
               <label className="form-label">Provider</label>
-              <select className="form-input" value={form.provider}
-                onChange={e => handleProviderChange(e.target.value as Provider)}>
-                {PROVIDERS.map(p => <option key={p} value={p}>{PROVIDER_LABELS[p] ?? p}</option>)}
-              </select>
+              <SearchableSelect
+                options={PROVIDERS.map(p => ({ value: p, label: PROVIDER_LABELS[p] ?? p }))}
+                value={form.provider}
+                onChange={v => handleProviderChange(v as Provider)}
+              />
             </div>
 
             {form.provider === 'custom' ? (
@@ -853,11 +855,11 @@ export function ModelFormPage() {
               <div className="form-group">
                 <label className="form-label">Model Preset</label>
                 {providerModels.length > 0 ? (
-                  <select className="form-input" value={isCustomModel ? '__custom__' : form.id}
-                    onChange={e => handleModelChange(e.target.value)}>
-                    {providerModels.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
-                    <option value="__custom__">— custom model name —</option>
-                  </select>
+                  <SearchableSelect
+                    options={[...providerModels.map(m => ({ value: m.id, label: m.id })), { value: '__custom__', label: '— custom model name —' }]}
+                    value={isCustomModel ? '__custom__' : form.id}
+                    onChange={handleModelChange}
+                  />
                 ) : null}
                 {(isCustomModel || providerModels.length === 0) && (
                   <input className="form-input" style={{ marginTop: providerModels.length > 0 ? 6 : 0 }}
@@ -891,13 +893,12 @@ export function ModelFormPage() {
               <div className="form-group">
                 <label className="form-label">Connection</label>
                 {connections.filter(c => c.providerId === form.provider).length > 0 ? (
-                  <select className="form-input" value={connectionId} required
-                    onChange={e => setConnectionId(e.target.value)}>
-                    <option value="" disabled>— select a connection —</option>
-                    {connections.filter(c => c.providerId === form.provider).map(c => (
-                      <option key={c.id} value={c.id}>{c.label}</option>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    options={connections.filter(c => c.providerId === form.provider).map(c => ({ value: c.id, label: c.label }))}
+                    value={connectionId}
+                    onChange={setConnectionId}
+                    placeholder="— select a connection —"
+                  />
                 ) : (
                   <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
                     No preconfigured connections for this provider. Switch to Custom, or create one on the Connections page.
