@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import { getUsers, updateUser, getRoles } from '../api';
 import type { User, Role } from '../api';
+import { SearchableSelect } from '../components/SearchableSelect';
 
 type EditForm = { email: string; roleId: string; newPassword: string };
 
@@ -82,12 +83,11 @@ export function UserEditPage() {
             </div>
             <div className="form-group">
               <label className="form-label">Role</label>
-              <select className="form-input" value={form.roleId}
-                onChange={e => setForm(f => ({ ...f, roleId: e.target.value }))}>
-                {roles.map(r => (
-                  <option key={r.id} value={r.id}>{r.name}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                options={roles.map(r => ({ value: r.id, label: r.name }))}
+                value={form.roleId}
+                onChange={v => setForm(f => ({ ...f, roleId: v }))}
+              />
             </div>
           </div>
 

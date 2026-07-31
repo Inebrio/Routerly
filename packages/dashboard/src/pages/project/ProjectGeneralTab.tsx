@@ -4,6 +4,7 @@ import { Copy, Check, ChevronDown, ArrowRight, Plug } from 'lucide-react';
 import { createProject, updateProject, getSettings } from '../../api';
 import { useProject } from './ProjectLayout';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
+import { SearchableSelect } from '../../components/SearchableSelect';
 
 export function ProjectGeneralTab() {
   const navigate = useNavigate();
@@ -189,16 +190,12 @@ export function ProjectGeneralTab() {
               Use a <Link to={`/dashboard/projects/${project.id}/tokens`} style={{ color: 'var(--color-primary, #6366f1)' }}>project token</Link> as the API key.
             </p>
             {endpointOptions.length > 1 && (
-              <select
-                className="form-input"
+              <SearchableSelect
                 value={selectedEndpoint}
-                onChange={e => setSelectedEndpoint(e.target.value)}
+                onChange={setSelectedEndpoint}
+                options={endpointOptions.map(opt => ({ value: opt, label: opt }))}
                 style={{ marginBottom: 8, fontSize: '0.82rem', fontFamily: 'monospace' }}
-              >
-                {endpointOptions.map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
+              />
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-input, var(--bg-tertiary, var(--bg-secondary)))', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 10px', fontFamily: 'monospace', fontSize: '0.82rem', color: 'var(--text-primary)', minWidth: 0 }}>

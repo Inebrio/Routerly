@@ -10,6 +10,25 @@ vi.mock('../api', () => ({
   reset2faForUser: vi.fn(),
 }));
 
+// ponytail: mock SearchableSelect as a plain <select> so selectOptions/getByRole('combobox') tests keep working
+vi.mock('../components/SearchableSelect', () => ({
+  SearchableSelect: ({
+    options,
+    value,
+    onChange,
+    disabled,
+  }: {
+    options: { value: string; label: string }[];
+    value: string;
+    onChange: (v: string) => void;
+    disabled?: boolean;
+  }) => (
+    <select value={value} disabled={disabled} onChange={e => onChange(e.target.value)}>
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  ),
+}));
+
 vi.mock('../components/ConfirmDialog', () => ({
   ConfirmDialog: ({ message, onConfirm, onCancel }: { message: string; onConfirm: () => void; onCancel: () => void }) => (
     <div data-testid="confirm-dialog">

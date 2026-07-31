@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { Bell, Users, FolderOpen } from 'lucide-react';
 import { CHANNEL_SECRET_FIELDS } from '@routerly/shared';
 import { MultiSelect } from '../components/MultiSelect';
+import { SearchableSelect } from '../components/SearchableSelect';
 import { ALL_PERMISSIONS, getProjects } from '../api';
 import type { Permission, Project } from '../api';
 import type { Role, User } from '../api';
@@ -533,10 +534,11 @@ export function ChannelEditFields({ form, onChange, isEdit }: EditFieldsProps) {
           <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12 }}>
             <div className="form-group">
               <label className="form-label">Method</label>
-              <select className="form-input" value={String(form['method'] ?? 'POST')} onChange={e => onChange('method', e.target.value)}>
-                <option value="POST">POST</option>
-                <option value="GET">GET</option>
-              </select>
+              <SearchableSelect
+                options={[{ value: 'POST', label: 'POST' }, { value: 'GET', label: 'GET' }]}
+                value={String(form['method'] ?? 'POST')}
+                onChange={v => onChange('method', v)}
+              />
             </div>
             <SecretEditInput label="Signing Secret" fieldKey="secret" form={form} onChange={onChange} isEdit={isEdit} placeholder="HMAC signing key" />
           </div>

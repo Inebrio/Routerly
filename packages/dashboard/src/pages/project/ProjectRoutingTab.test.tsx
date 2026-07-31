@@ -2301,7 +2301,7 @@ describe('ProjectRoutingTab — singular hidden example count', () => {
 // ── Routing Profile assignment control ────────────────────────────────────────
 
 function getProfileSelect() {
-  return screen.getByLabelText('Routing Profile') as HTMLSelectElement;
+  return screen.getByTestId('searchable-select') as HTMLSelectElement;
 }
 
 describe('ProjectRoutingTab — routing profile assignment', () => {
@@ -2363,6 +2363,7 @@ describe('ProjectRoutingTab — routing profile assignment', () => {
     renderTab();
     const sel = await waitFor(getProfileSelect);
     // Only the Custom option is present when profiles fail to load
-    expect(Array.from(sel.options).map(o => o.value)).toEqual(['']);
+    // (the mocked SearchableSelect also prepends its own empty placeholder option)
+    expect(Array.from(sel.options).map(o => o.value)).toEqual(['', '']);
   });
 });

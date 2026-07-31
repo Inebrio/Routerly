@@ -30,6 +30,28 @@ vi.mock('../api', () => ({
   ] as const,
 }));
 
+// ponytail: mock SearchableSelect as a plain <select>; aria-label mirrors placeholder so
+// getByLabelText keeps working now that SearchableSelect has no id/htmlFor association.
+vi.mock('../components/SearchableSelect', () => ({
+  SearchableSelect: ({
+    options,
+    value,
+    onChange,
+    disabled,
+    placeholder,
+  }: {
+    options: { value: string; label: string }[];
+    value: string;
+    onChange: (v: string) => void;
+    disabled?: boolean;
+    placeholder?: string;
+  }) => (
+    <select aria-label={placeholder} value={value} disabled={disabled} onChange={e => onChange(e.target.value)}>
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  ),
+}));
+
 // ponytail: mock MultiSelect with plain multi-select so options/onChange work
 vi.mock('../components/MultiSelect', () => ({
   MultiSelect: ({

@@ -5,6 +5,7 @@ import { updateProjectToken, getModels } from '../../api';
 import type { Model, Limit, LimitMetric, LimitPeriod, RollingUnit } from '../../api';
 import { useProject } from './ProjectLayout';
 import { LabelInput } from './ProjectTokenTab';
+import { SearchableSelect } from '../../components/SearchableSelect';
 
 // ── Limit helpers ─────────────────────────────────────────────────────────────
 type LimitRow = {
@@ -371,34 +372,34 @@ export function ProjectTokenEditPage() {
                                 {/* Metric */}
                                 <div className="form-group" style={{ margin: 0 }}>
                                   <label className="form-label" style={{ fontSize: '0.72rem' }}>Metric</label>
-                                  <select className="form-input" value={lim.metric}
-                                    onChange={e => upd({ metric: e.target.value as LimitMetric })}>
-                                    {LIMIT_METRIC_OPTIONS.map(o => {
-                                      const wouldDup = otherKeys.has(rowKey({ ...lim, metric: o.value as LimitMetric }));
-                                      return <option key={o.value} value={o.value} disabled={wouldDup}>{o.label}{wouldDup ? ' (used)' : ''}</option>;
-                                    })}
-                                  </select>
+                                  <SearchableSelect
+                                    value={lim.metric}
+                                    onChange={v => upd({ metric: v as LimitMetric })}
+                                    options={LIMIT_METRIC_OPTIONS
+                                      .filter(o => !otherKeys.has(rowKey({ ...lim, metric: o.value as LimitMetric })))
+                                      .map(o => ({ value: o.value, label: o.label }))}
+                                  />
                                 </div>
                                 {/* Window type */}
                                 <div className="form-group" style={{ margin: 0 }}>
                                   <label className="form-label" style={{ fontSize: '0.72rem' }}>Type</label>
-                                  <select className="form-input" value={lim.windowType}
-                                    onChange={e => upd({ windowType: e.target.value as 'period' | 'rolling' })}>
-                                    <option value="period">Period</option>
-                                    <option value="rolling">Rolling</option>
-                                  </select>
+                                  <SearchableSelect
+                                    value={lim.windowType}
+                                    onChange={v => upd({ windowType: v as 'period' | 'rolling' })}
+                                    options={[{ value: 'period', label: 'Period' }, { value: 'rolling', label: 'Rolling' }]}
+                                  />
                                 </div>
                                 {/* Period or rolling */}
                                 {lim.windowType === 'period' ? (
                                   <div className="form-group" style={{ margin: 0 }}>
                                     <label className="form-label" style={{ fontSize: '0.72rem' }}>Period</label>
-                                    <select className="form-input" value={lim.period}
-                                      onChange={e => upd({ period: e.target.value as LimitPeriod })}>
-                                      {PERIOD_OPTIONS.map(o => {
-                                        const wouldDup = otherKeys.has(rowKey({ ...lim, period: o.value as LimitPeriod }));
-                                        return <option key={o.value} value={o.value} disabled={wouldDup}>{o.label}{wouldDup ? ' (used)' : ''}</option>;
-                                      })}
-                                    </select>
+                                    <SearchableSelect
+                                      value={lim.period}
+                                      onChange={v => upd({ period: v as LimitPeriod })}
+                                      options={PERIOD_OPTIONS
+                                        .filter(o => !otherKeys.has(rowKey({ ...lim, period: o.value as LimitPeriod })))
+                                        .map(o => ({ value: o.value, label: o.label }))}
+                                    />
                                   </div>
                                 ) : (
                                   <div className="form-group" style={{ margin: 0 }}>
@@ -407,10 +408,12 @@ export function ProjectTokenEditPage() {
                                       <input className="form-input" type="number" min="1" step="1" value={lim.rollingAmount}
                                         onChange={e => upd({ rollingAmount: e.target.value })}
                                         style={{ width: 52 }} placeholder="24" />
-                                      <select className="form-input" value={lim.rollingUnit}
-                                        onChange={e => upd({ rollingUnit: e.target.value as RollingUnit })}>
-                                        {ROLLING_UNIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                                      </select>
+                                      <SearchableSelect
+                                        value={lim.rollingUnit}
+                                        onChange={v => upd({ rollingUnit: v as RollingUnit })}
+                                        options={ROLLING_UNIT_OPTIONS.map(o => ({ value: o.value, label: o.label }))}
+                                        style={{ flex: 1 }}
+                                      />
                                     </div>
                                   </div>
                                 )}

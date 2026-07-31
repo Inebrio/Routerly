@@ -9,6 +9,29 @@ vi.mock('../../api', () => ({
   getModels: vi.fn(),
 }));
 
+// ponytail: mock SearchableSelect as a plain <select> so existing selectOptions/querySelectorAll tests keep working
+vi.mock('../../components/SearchableSelect', () => ({
+  SearchableSelect: ({
+    options,
+    value,
+    onChange,
+    disabled,
+  }: {
+    options: { value: string; label: string }[];
+    value: string;
+    onChange: (v: string) => void;
+    disabled?: boolean;
+  }) => (
+    <select
+      value={value}
+      disabled={disabled}
+      onChange={e => onChange(e.target.value)}
+    >
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  ),
+}));
+
 import { updateProjectToken, getModels } from '../../api';
 const mockUpdateProjectToken = vi.mocked(updateProjectToken as (...a: unknown[]) => Promise<unknown>);
 const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
@@ -836,11 +859,11 @@ describe('ProjectTokenEditPage — updateLimitRow duplicate prevention', () => {
     renderPage(proj);
     await waitFor(() => screen.getAllByText('Metric').length >= 2);
     const selects = document.querySelectorAll('select');
-    // First metric select: change 'cost' → 'calls' (would duplicate calls/monthly)
+    // First metric select: 'calls' would duplicate the second row (calls/monthly), so the
+    // option is filtered out of the SearchableSelect's option list — duplicate blocked by omission.
     const firstMetricSelect = selects[0] as HTMLSelectElement;
-    await userEvent.selectOptions(firstMetricSelect, 'calls');
-    // The row should NOT have been updated (duplicate blocked)
-    // Just verify the page didn't crash
+    const values = Array.from(firstMetricSelect.options).map(o => o.value);
+    expect(values).not.toContain('calls');
     expect(screen.getAllByText('Metric').length).toBeGreaterThan(0);
   });
 });

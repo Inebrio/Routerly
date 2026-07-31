@@ -5,6 +5,7 @@ import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, ch
 import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, Permission, Integration, IntegrationType, ProviderRepo, RepoStatus } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MultiSelect } from '../components/MultiSelect';
+import { SearchableSelect } from '../components/SearchableSelect';
 import { NOTIFICATION_EVENTS } from '@routerly/shared';
 
 const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'error'];
@@ -198,14 +199,12 @@ export function SettingsGeneralTab() {
 
         <div className="form-group">
           <label className="form-label" htmlFor="s-loglevel">Log Level</label>
-          <select
-            id="s-loglevel"
-            className="form-input"
+          <SearchableSelect
+            options={LOG_LEVELS.map(l => ({ value: l, label: l }))}
             value={form.logLevel ?? 'info'}
-            onChange={e => field('logLevel', e.target.value as Settings['logLevel'])}
-          >
-            {LOG_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-          </select>
+            placeholder="Log Level"
+            onChange={v => field('logLevel', v as Settings['logLevel'])}
+          />
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
             Controls the verbosity of service logs.
           </p>
@@ -784,10 +783,11 @@ export function SettingsNotificationsTab() {
           <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12 }}>
             <div className="form-group">
               <label className="form-label">Method</label>
-              <select className="form-input" value={ch.method ?? 'POST'} onChange={e => uf(ch.id, 'method', e.target.value)}>
-                <option value="POST">POST</option>
-                <option value="GET">GET</option>
-              </select>
+              <SearchableSelect
+                options={[{ value: 'POST', label: 'POST' }, { value: 'GET', label: 'GET' }]}
+                value={ch.method ?? 'POST'}
+                onChange={v => uf(ch.id, 'method', v)}
+              />
             </div>
             <div className="form-group">
               <label className="form-label">Secret <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
@@ -1028,12 +1028,11 @@ function integrationFormFields(
             </div>
             <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label">Protocol</label>
-              <select className="form-input"
+              <SearchableSelect
+                options={[{ value: 'http', label: 'HTTP' }, { value: 'grpc', label: 'gRPC' }]}
                 value={(form.protocol as string) ?? 'http'}
-                onChange={e => onChange({ protocol: e.target.value })}>
-                <option value="http">HTTP</option>
-                <option value="grpc">gRPC</option>
-              </select>
+                onChange={v => onChange({ protocol: v })}
+              />
             </div>
           </div>
           <div className="form-group">
@@ -1062,15 +1061,17 @@ function integrationFormFields(
           </div>
           <div className="form-group">
             <label className="form-label">Site</label>
-            <select className="form-input"
+            <SearchableSelect
+              options={[
+                { value: 'datadoghq.com', label: 'datadoghq.com - US1' },
+                { value: 'us3.datadoghq.com', label: 'us3.datadoghq.com - US3' },
+                { value: 'us5.datadoghq.com', label: 'us5.datadoghq.com - US5' },
+                { value: 'datadoghq.eu', label: 'datadoghq.eu - EU' },
+                { value: 'ddog-gov.com', label: 'ddog-gov.com - US1-FED' },
+              ]}
               value={(form.site as string) ?? 'datadoghq.com'}
-              onChange={e => onChange({ site: e.target.value })}>
-              <option value="datadoghq.com">datadoghq.com — US1</option>
-              <option value="us3.datadoghq.com">us3.datadoghq.com — US3</option>
-              <option value="us5.datadoghq.com">us5.datadoghq.com — US5</option>
-              <option value="datadoghq.eu">datadoghq.eu — EU</option>
-              <option value="ddog-gov.com">ddog-gov.com — US1-FED</option>
-            </select>
+              onChange={v => onChange({ site: v })}
+            />
           </div>
         </>
       );
@@ -1789,8 +1790,7 @@ function ChannelSelector({
     }
   }
 
-  function handleSelectChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const v = e.target.value;
+  function handleSelectChange(v: string) {
     if (v === '__custom') { setShowCustom(true); return; }
     void save(v);
   }
@@ -1826,18 +1826,16 @@ function ChannelSelector({
             >← back</button>
           </>
         ) : (
-          <select
-            className="form-input"
-            style={{ fontSize: '0.83rem', padding: '3px 8px', margin: 0, width: 130 }}
+          <SearchableSelect
+            style={{ fontSize: '0.83rem', width: 130 }}
             value={isKnown ? current : '__custom'}
             onChange={handleSelectChange}
             disabled={saving}
-          >
-            {releases.channels.map(ch => (
-              <option key={ch} value={ch}>{CHANNEL_LABELS[ch] ?? ch}</option>
-            ))}
-            <option value="__custom">custom…</option>
-          </select>
+            options={[
+              ...releases.channels.map(ch => ({ value: ch, label: CHANNEL_LABELS[ch] ?? ch })),
+              { value: '__custom', label: 'custom...' },
+            ]}
+          />
         )}
       </div>
     </div>

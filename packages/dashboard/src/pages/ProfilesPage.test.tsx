@@ -247,8 +247,8 @@ describe('ProfilesPage — edit', () => {
     await userEvent.clear(labelInput);
     await userEvent.type(labelInput, 'Renamed');
 
-    await userEvent.selectOptions(screen.getByLabelText('Selector'), 'argmax');
-    await userEvent.selectOptions(screen.getByLabelText('Fallback strategy'), 'abort');
+    await userEvent.selectOptions(screen.getByTestId('searchable-Selector'), 'argmax');
+    await userEvent.selectOptions(screen.getByTestId('searchable-Fallback strategy'), 'abort');
 
     await userEvent.click(screen.getByRole('button', { name: /Save/ }));
     await waitFor(() => expect(mockUpdateProfile).toHaveBeenCalledWith('user-1', expect.objectContaining({

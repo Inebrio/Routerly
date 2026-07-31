@@ -9,6 +9,7 @@ import {
 import { getProjects, getPlaygroundPresets, createPlaygroundPreset, deletePlaygroundPreset, getTrace, type Project, type PlaygroundPreset, type TraceEntry } from '../api.js';
 import { TraceEntryRenderer } from '../components/TraceEntryRenderer.js';
 import { MessageStatsCard } from '../components/MessageStatsCard.js';
+import { SearchableSelect } from '../components/SearchableSelect.js';
 import { extractMessageStats } from '../utils/traceUtils.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -248,10 +249,13 @@ function ComparePanel({
               <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Model {label}:</span>
-                  <select className="form-input" style={{ flex: 1, padding: '4px 8px', fontSize: '0.78rem' }} value={model} onChange={e => setModel(e.target.value)}>
-                    <option value="">Select model...</option>
-                    {availableModels.map(m => <option key={m.modelId} value={m.modelId}>{m.modelId}</option>)}
-                  </select>
+                  <SearchableSelect
+                    options={[{ value: '', label: 'Select model...' }, ...availableModels.map(m => ({ value: m.modelId, label: m.modelId }))]}
+                    value={model}
+                    onChange={setModel}
+                    placeholder="Select model..."
+                    style={{ flex: 1, fontSize: '0.78rem' }}
+                  />
                 </div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   <ParamSlider label="Temp" value={params.temperature} min={0} max={2} step={0.1} onChange={v => setParams((p: PanelParams) => ({ ...p, temperature: v }))} />
@@ -928,11 +932,13 @@ export function TestPage() {
                 <div style={{ padding: '6px 16px 10px', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Model</label>
-                    <select className="form-input" style={{ padding: '4px 8px', fontSize: '0.78rem' }}
-                      value={selectedModelId} onChange={e => setSelectedModelId(e.target.value)}>
-                      <option value="">Auto (project default)</option>
-                      {availableModels.map(m => <option key={m.modelId} value={m.modelId}>{m.modelId}</option>)}
-                    </select>
+                    <SearchableSelect
+                      options={[{ value: '', label: 'Auto (project default)' }, ...availableModels.map(m => ({ value: m.modelId, label: m.modelId }))]}
+                      value={selectedModelId}
+                      onChange={setSelectedModelId}
+                      placeholder="Auto (project default)"
+                      style={{ fontSize: '0.78rem', minWidth: 180 }}
+                    />
                   </div>
                   <ParamSlider label="Temp" value={temperature} min={0} max={2} step={0.1} onChange={setTemperature} />
                   <ParamSlider label="Max tokens" value={maxTokens} min={64} max={8192} step={64} onChange={setMaxTokens} />
