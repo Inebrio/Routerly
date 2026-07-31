@@ -1,5 +1,5 @@
 {
-  "model": "sonnet",
+  "model": "opus",
   "autoMemoryEnabled": true,
   "alwaysThinkingEnabled": true,
   "env": {
