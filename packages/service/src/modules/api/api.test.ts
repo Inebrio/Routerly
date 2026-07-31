@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeEach, beforeAll } from 'vitest'
 import Fastify from 'fastify'
 import { setResilienceStore } from '../resilience/index.js'
 import { InMemoryResilienceStore } from '../resilience/store.js'
 import { resilienceKeys } from '../resilience/keys.js'
 
-vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn() }))
+vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn(), getOrCreateSecret: vi.fn() }))
 vi.mock('node:child_process', () => ({
   spawn: vi.fn(() => ({ unref: vi.fn() })),
 }))
@@ -51,7 +51,9 @@ vi.mock('../catalog/fetcher.js', () => ({
 }))
 
 import { apiRoutes } from './api.js'
-import { readConfig, writeConfig } from '../config/loader.js'
+import { readConfig, writeConfig, getOrCreateSecret } from '../config/loader.js'
+import { loadCredentialKey, decryptCredential } from '../../lib/crypto-cred.js'
+import { resolveOpenAIWebCredential } from '../provider/openai-web.js'
 import { createSessionToken, verifyToken } from '../auth/jwt.js'
 import { sendTestNotification } from '../notifications/sender.js'
 import { getTrace } from '../logging/traceStore.js'
@@ -75,6 +77,11 @@ const mockVerifyTotp = vi.mocked(verifyTotp)
 const mockGenerateTotpSecret = vi.mocked(generateTotpSecret)
 const mockGenerateBackupCodes = vi.mocked(generateBackupCodes)
 const mockHashBackupCode = vi.mocked(hashBackupCode)
+
+beforeAll(async () => {
+  vi.mocked(getOrCreateSecret).mockResolvedValue('d'.repeat(64)) // valid 32-byte hex secret
+  await loadCredentialKey()
+})
 
 afterEach(() => vi.clearAllMocks())
 
@@ -885,6 +892,33 @@ describe('GET /api/models', () => {
     expect(model.apiKey).toBeUndefined()
   })
 
+  it('does not leak encrypted connection credentials for oauth/web bound models', async () => {
+    setupAdminAuth()
+    const instances = [{ id: 'web-model', connectionId: 'web-conn', upstreamModelId: 'gpt-4o', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 8000 }]
+    const connections = [{
+      id: 'web-conn', providerId: 'openai-web', label: 'ChatGPT', endpoint: 'https://chatgpt.com', enabled: true,
+      credentials: { cookieEnc: 'ENC-cookie', cfClearanceEnc: 'ENC-cf', oauthEnc: 'ENC-oauth', refreshEnc: 'ENC-refresh', expiresAt: 12345 },
+    }]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return instances
+      if (t === 'connections') return connections
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/models', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const model = JSON.parse(res.body).find((m: { id: string }) => m.id === 'web-model')
+    for (const secret of ['apiKey', 'cfClearance', 'cookieEnc', 'cfClearanceEnc', 'oauthEnc', 'refreshEnc', 'expiresAt']) {
+      expect(model[secret]).toBeUndefined()
+    }
+    // The raw response text must not contain any ciphertext either.
+    expect(res.body).not.toContain('ENC-')
+  })
+
   it('returns 401 when no auth header', async () => {
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/models' })
@@ -991,6 +1025,31 @@ describe('POST /api/models', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(404)
+  })
+
+  it('with connectionId returns 400 when provider does not match the connection', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return []
+      if (t === 'connections') return [{ id: 'c-openai', providerId: 'openai', label: 'OpenAI', credentials: {}, enabled: true }]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/models',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        id: 'shared-3', provider: 'anthropic', endpoint: '', connectionId: 'c-openai',
+        inputPerMillion: 1, outputPerMillion: 2,
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(mockWriteConfig.mock.calls.some(c => c[0] === 'instances')).toBe(false)
   })
 
   it('with inline apiKey creates a dedicated connection and binds to it', async () => {
@@ -2231,7 +2290,65 @@ describe('PUT /api/models/:id', () => {
     expect(res.statusCode).toBe(200)
     const instancesCall = mockWriteConfig.mock.calls.find(c => c[0] === 'instances')
     expect(instancesCall?.[1].find((i: { id: string }) => i.id === 'gpt4')?.connectionId).toBe('c2')
+    // Orphan cleanup: the abandoned dedicated conn-for-gpt4 is removed; the shared target stays.
+    const connectionsCall = mockWriteConfig.mock.calls.find(c => c[0] === 'connections')
+    expect(connectionsCall?.[1].find((c: { id: string }) => c.id === 'conn-for-gpt4')).toBeUndefined()
+    expect(connectionsCall?.[1].find((c: { id: string }) => c.id === 'c2')).toBeTruthy()
+    // The shared target credentials were not copied onto anything.
+    expect(instancesCall?.[1].find((i: { id: string }) => i.id === 'gpt4')?.credentials).toBeUndefined()
+  })
+
+  it('keeps a real shared binding when a plain edit omits connectionId and inline credentials', async () => {
+    setupAdminAuth()
+    const existingInstance = { id: 'm1', connectionId: 'shared-1', upstreamModelId: 'm1', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 8000 }
+    const sharedConnection = { id: 'shared-1', providerId: 'openai', label: 'Shared', credentials: { apiKey: 'shared-key' }, endpoint: 'https://api.openai.com/v1', enabled: true }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [existingInstance]
+      if (t === 'connections') return [sharedConnection]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/models/m1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      // only cost changes — no connectionId, no apiKey/cfClearance
+      payload: JSON.stringify({ provider: 'openai', endpoint: 'https://api.openai.com/v1', inputPerMillion: 9, outputPerMillion: 27 }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const instancesCall = mockWriteConfig.mock.calls.find(c => c[0] === 'instances')
+    // Binding preserved — not silently detached to an empty conn-for-m1.
+    expect(instancesCall?.[1].find((i: { id: string }) => i.id === 'm1')?.connectionId).toBe('shared-1')
+    // The shared connection is left untouched (no dedicated connection created).
     expect(mockWriteConfig.mock.calls.some(c => c[0] === 'connections')).toBe(false)
+  })
+
+  it('returns 400 when connectionId provider does not match the model provider', async () => {
+    setupAdminAuth()
+    const existingInstance = { id: 'm1', connectionId: 'conn-for-m1', upstreamModelId: 'm1', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
+    const existingConnection = { id: 'conn-for-m1', providerId: 'openai', label: 'm1', credentials: {}, endpoint: 'https://api.openai.com/v1', enabled: true }
+    const anthropicConnection = { id: 'c-anthropic', providerId: 'anthropic', label: 'Anthropic', credentials: {}, enabled: true }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [existingInstance]
+      if (t === 'connections') return [existingConnection, anthropicConnection]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/models/m1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ provider: 'openai', endpoint: '', connectionId: 'c-anthropic', inputPerMillion: 5, outputPerMillion: 15 }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
   })
 })
 
@@ -4075,8 +4192,13 @@ describe('POST /api/models — optional fields', () => {
     expect(res.statusCode).toBe(201)
     const connectionsCall = mockWriteConfig.mock.calls.find(c => c[0] === 'connections')
     const conn = connectionsCall?.[1].find((c: { id: string }) => c.id === 'conn-for-cloned-model')
-    expect(conn.credentials.apiKey).toBe('src-key')
-    expect(conn.credentials.cfClearance).toBe('src-clearance')
+    // web provider: cloned credentials are stored under the connection convention (cookieEnc/
+    // cfClearanceEnc), not raw apiKey/cfClearance, and round-trip through the runtime resolver.
+    expect(conn.credentials.apiKey).toBeUndefined()
+    expect(conn.credentials.cfClearance).toBeUndefined()
+    const resolved = await resolveOpenAIWebCredential(conn)
+    expect(resolved.accessToken).toBe('src-key')
+    expect(resolved.cfClearance).toBe('src-clearance')
   })
 
   it('creates model with legacy daily/weekly/monthly budget fields', async () => {
