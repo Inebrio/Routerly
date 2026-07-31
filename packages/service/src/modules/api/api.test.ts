@@ -844,11 +844,13 @@ describe('GET /api/system/info', () => {
 describe('GET /api/models', () => {
   it('returns models without apiKey field', async () => {
     setupAdminAuth()
-    const models = [{ id: 'm1', name: 'GPT-4', provider: 'openai', apiKey: 'secret', cost: {} }]
+    const instances = [{ id: 'm1', connectionId: 'c1', upstreamModelId: 'gpt-4', cost: {}, contextWindow: 0 }]
+    const connections = [{ id: 'c1', providerId: 'openai', label: 'GPT-4', credentials: { apiKey: 'secret' }, enabled: true }]
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return models
+      if (t === 'instances') return instances
+      if (t === 'connections') return connections
       return []
     })
 
@@ -859,6 +861,28 @@ describe('GET /api/models', () => {
     const body = JSON.parse(res.body)
     expect(body[0].apiKey).toBeUndefined()
     expect(body[0].id).toBe('m1')
+  })
+
+  it('returns effective models resolved from instances+connections', async () => {
+    setupAdminAuth()
+    const instances = [{ id: 'gpt-4', connectionId: 'c1', upstreamModelId: 'gpt-4', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 8000 }]
+    const connections = [{ id: 'c1', providerId: 'openai', label: 'OpenAI', credentials: { apiKey: 'secret' }, endpoint: 'https://api.openai.com/v1', enabled: true }]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return instances
+      if (t === 'connections') return connections
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/models', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    const model = body.find((m: { id: string }) => m.id === 'gpt-4')
+    expect(model).toMatchObject({ provider: 'openai' })
+    expect(model.apiKey).toBeUndefined()
   })
 
   it('returns 401 when no auth header', async () => {
@@ -875,7 +899,8 @@ describe('POST /api/models', () => {
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return []
+      if (t === 'instances') return []
+      if (t === 'connections') return []
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -899,7 +924,7 @@ describe('POST /api/models', () => {
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return [{ id: 'existing-model' }]
+      if (t === 'instances') return [{ id: 'existing-model', connectionId: 'conn-for-existing-model', upstreamModelId: 'existing-model', cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 0 }]
       return []
     })
 
@@ -916,16 +941,117 @@ describe('POST /api/models', () => {
     await app.close()
     expect(res.statusCode).toBe(409)
   })
-})
 
-describe('DELETE /api/models/:id', () => {
-  it('deletes a model', async () => {
+  it('with connectionId binds without copying credentials', async () => {
     setupAdminAuth()
-    const models = [{ id: 'to-delete', provider: 'openai' }]
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return models
+      if (t === 'instances') return []
+      if (t === 'connections') return [{ id: 'c1', providerId: 'openai', label: 'OpenAI', credentials: { apiKey: 'secret' }, enabled: true }]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/models',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        id: 'shared-1', provider: 'openai', endpoint: '', connectionId: 'c1',
+        upstreamModelId: 'gpt-4o', inputPerMillion: 1, outputPerMillion: 2, contextWindow: 8000,
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const instancesCall = mockWriteConfig.mock.calls.find(c => c[0] === 'instances')
+    expect(instancesCall?.[1].find((i: { id: string }) => i.id === 'shared-1')?.connectionId).toBe('c1')
+    // No connection write — no credential copy
+    expect(mockWriteConfig.mock.calls.some(c => c[0] === 'connections')).toBe(false)
+  })
+
+  it('with connectionId returns 404 when the connection does not exist', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return []
+      if (t === 'connections') return []
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/models',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        id: 'shared-2', provider: 'openai', endpoint: '', connectionId: 'missing-conn',
+        inputPerMillion: 1, outputPerMillion: 2,
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('with inline apiKey creates a dedicated connection and binds to it', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return []
+      if (t === 'connections') return []
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/models',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        id: 'custom-1', provider: 'openai', endpoint: 'https://api.openai.com/v1', apiKey: 'sk-x',
+        inputPerMillion: 1, outputPerMillion: 2, contextWindow: 8000,
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const connectionsCall = mockWriteConfig.mock.calls.find(c => c[0] === 'connections')
+    const conn = connectionsCall?.[1].find((c: { id: string }) => c.id === 'conn-for-custom-1')
+    expect(conn).toBeTruthy()
+    const instancesCall = mockWriteConfig.mock.calls.find(c => c[0] === 'instances')
+    expect(instancesCall?.[1].find((i: { id: string }) => i.id === 'custom-1')?.connectionId).toBe('conn-for-custom-1')
+  })
+
+  it('without model:write returns 403', async () => {
+    const viewerUser = { id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', projectIds: [] }
+    vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [viewerUser]
+      if (t === 'roles') return []
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/models',
+      headers: { authorization: 'Bearer tok', 'content-type': 'application/json' },
+      payload: JSON.stringify({ id: 'z', provider: 'openai', endpoint: '', inputPerMillion: 0, outputPerMillion: 0 }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+describe('DELETE /api/models/:id', () => {
+  it('deletes a model and its dedicated connection', async () => {
+    setupAdminAuth()
+    const instances = [{ id: 'to-delete', connectionId: 'conn-for-to-delete', upstreamModelId: 'to-delete', cost: {}, contextWindow: 0 }]
+    const connections = [{ id: 'conn-for-to-delete', providerId: 'openai', label: 'to-delete', credentials: {}, enabled: true }]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return instances
+      if (t === 'connections') return connections
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -934,6 +1060,31 @@ describe('DELETE /api/models/:id', () => {
     const res = await app.inject({ method: 'DELETE', url: '/api/models/to-delete', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(204)
+    expect(mockWriteConfig).toHaveBeenCalledWith('instances', [])
+    expect(mockWriteConfig).toHaveBeenCalledWith('connections', [])
+  })
+
+  it('deletes a model but keeps a shared connection referenced by another instance', async () => {
+    setupAdminAuth()
+    const instances = [
+      { id: 'to-delete', connectionId: 'shared-conn', upstreamModelId: 'to-delete', cost: {}, contextWindow: 0 },
+      { id: 'other', connectionId: 'shared-conn', upstreamModelId: 'other', cost: {}, contextWindow: 0 },
+    ]
+    const connections = [{ id: 'shared-conn', providerId: 'openai', label: 'Shared', credentials: {}, enabled: true }]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return instances
+      if (t === 'connections') return connections
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/models/to-delete', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(204)
+    expect(mockWriteConfig.mock.calls.some(c => c[0] === 'connections')).toBe(false)
   })
 
   it('returns 404 for nonexistent model', async () => {
@@ -941,7 +1092,7 @@ describe('DELETE /api/models/:id', () => {
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return []
+      if (t === 'instances') return []
       return []
     })
 
@@ -2016,11 +2167,13 @@ describe('PUT /api/users/:id', () => {
 describe('PUT /api/models/:id', () => {
   it('updates model', async () => {
     setupAdminAuth()
-    const existingModel = { id: 'gpt4', name: 'GPT-4', provider: 'openai', endpoint: 'https://api.openai.com/v1', cost: { inputPerMillion: 5, outputPerMillion: 15 } }
+    const existingInstance = { id: 'gpt4', connectionId: 'conn-for-gpt4', upstreamModelId: 'gpt4', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
+    const existingConnection = { id: 'conn-for-gpt4', providerId: 'openai', label: 'GPT-4', credentials: {}, endpoint: 'https://api.openai.com/v1', enabled: true }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return [existingModel]
+      if (t === 'instances') return [existingInstance]
+      if (t === 'connections') return [existingConnection]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -2040,7 +2193,7 @@ describe('PUT /api/models/:id', () => {
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return []
+      if (t === 'instances') return []
       return []
     })
 
@@ -2053,6 +2206,33 @@ describe('PUT /api/models/:id', () => {
     await app.close()
     expect(res.statusCode).toBe(404)
   })
+
+  it('with connectionId rebinds without copying credentials', async () => {
+    setupAdminAuth()
+    const existingInstance = { id: 'gpt4', connectionId: 'conn-for-gpt4', upstreamModelId: 'gpt4', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
+    const existingConnection = { id: 'conn-for-gpt4', providerId: 'openai', label: 'GPT-4', credentials: { apiKey: 'old-key' }, endpoint: 'https://api.openai.com/v1', enabled: true }
+    const otherConnection = { id: 'c2', providerId: 'openai', label: 'Other', credentials: { apiKey: 'other-key' }, enabled: true }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [existingInstance]
+      if (t === 'connections') return [existingConnection, otherConnection]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/models/gpt4',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ provider: 'openai', endpoint: '', connectionId: 'c2', inputPerMillion: 10, outputPerMillion: 30 }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const instancesCall = mockWriteConfig.mock.calls.find(c => c[0] === 'instances')
+    expect(instancesCall?.[1].find((i: { id: string }) => i.id === 'gpt4')?.connectionId).toBe('c2')
+    expect(mockWriteConfig.mock.calls.some(c => c[0] === 'connections')).toBe(false)
+  })
 })
 
 // ─── GET /api/models/:id/apikey ───────────────────────────────────────────────
@@ -2060,11 +2240,13 @@ describe('PUT /api/models/:id', () => {
 describe('GET /api/models/:id/apikey', () => {
   it('returns apiKey', async () => {
     setupAdminAuth()
-    const model = { id: 'm1', provider: 'openai', apiKey: 'sk-secret', cost: { inputPerMillion: 5, outputPerMillion: 15 } }
+    const instance = { id: 'm1', connectionId: 'conn-for-m1', upstreamModelId: 'm1', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
+    const connection = { id: 'conn-for-m1', providerId: 'openai', label: 'm1', credentials: { apiKey: 'sk-secret' }, enabled: true }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return [model]
+      if (t === 'instances') return [instance]
+      if (t === 'connections') return [connection]
       return []
     })
 
@@ -2080,7 +2262,7 @@ describe('GET /api/models/:id/apikey', () => {
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return []
+      if (t === 'instances') return []
       return []
     })
 
@@ -3225,14 +3407,16 @@ describe('POST /api/projects/:id/members — additional branches', () => {
 })
 
 describe('PUT /api/models/:id — cascade rename (lines 349-370)', () => {
-  it('cascades model rename to project references', async () => {
+  it('cascades model rename to project references and renames the dedicated connection', async () => {
     setupAdminAuth()
-    const existingModel = { id: 'gpt4', name: 'GPT-4', provider: 'openai', endpoint: 'https://api.openai.com/v1', cost: { inputPerMillion: 5, outputPerMillion: 15 } }
+    const existingInstance = { id: 'gpt4', connectionId: 'conn-for-gpt4', upstreamModelId: 'gpt4', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
+    const existingConnection = { id: 'conn-for-gpt4', providerId: 'openai', label: 'GPT-4', credentials: {}, endpoint: 'https://api.openai.com/v1', enabled: true }
     const project = { id: 'p1', name: 'Test', tokens: [{ id: 't1', models: [{ modelId: 'gpt4' }] }], members: [], models: [{ modelId: 'gpt4' }] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return [existingModel]
+      if (t === 'instances') return [existingInstance]
+      if (t === 'connections') return [existingConnection]
       if (t === 'projects') return [project]
       return []
     })
@@ -3246,18 +3430,21 @@ describe('PUT /api/models/:id — cascade rename (lines 349-370)', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(200)
-    // writeConfig should be called twice: once for models, once for projects
-    expect(mockWriteConfig).toHaveBeenCalledTimes(2)
+    // writeConfig: connections (rename), instances, projects
+    const projectsCall = mockWriteConfig.mock.calls.find(c => c[0] === 'projects')
+    expect(projectsCall?.[1][0].models[0].modelId).toBe('gpt4-renamed')
+    const connectionsCall = mockWriteConfig.mock.calls.find(c => c[0] === 'connections')
+    expect(connectionsCall?.[1].find((c: { id: string }) => c.id === 'conn-for-gpt4-renamed')).toBeTruthy()
   })
 
   it('returns 409 when renaming to existing model ID', async () => {
     setupAdminAuth()
-    const model1 = { id: 'gpt4', name: 'GPT-4', provider: 'openai', endpoint: 'https://api.openai.com/v1', cost: { inputPerMillion: 5, outputPerMillion: 15 } }
-    const model2 = { id: 'gpt4-turbo', name: 'GPT-4 Turbo', provider: 'openai', endpoint: 'https://api.openai.com/v1', cost: { inputPerMillion: 5, outputPerMillion: 15 } }
+    const instance1 = { id: 'gpt4', connectionId: 'conn-for-gpt4', upstreamModelId: 'gpt4', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
+    const instance2 = { id: 'gpt4-turbo', connectionId: 'conn-for-gpt4-turbo', upstreamModelId: 'gpt4-turbo', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return [model1, model2]
+      if (t === 'instances') return [instance1, instance2]
       return []
     })
 
@@ -3826,7 +4013,8 @@ describe('POST /api/models — optional fields', () => {
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return []
+      if (t === 'instances') return []
+      if (t === 'connections') return []
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -3853,14 +4041,20 @@ describe('POST /api/models — optional fields', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(201)
+    const body = JSON.parse(res.body)
+    expect(body.apiKey).toBeUndefined()
+    expect(body.upstreamModelId).toBe('openai/gpt-4o')
   })
 
   it('creates model using cloneFrom for apiKey and cfClearance', async () => {
     setupAdminAuth()
+    const sourceInstance = { id: 'source-model', connectionId: 'conn-for-source-model', upstreamModelId: 'source-model', cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 0 }
+    const sourceConnection = { id: 'conn-for-source-model', providerId: 'openai-web', label: 'source-model', credentials: { apiKey: 'src-key', cfClearance: 'src-clearance' }, enabled: true }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return [{ id: 'source-model', apiKey: 'src-key', cfClearance: 'src-clearance', cost: { inputPerMillion: 0, outputPerMillion: 0 } }]
+      if (t === 'instances') return [sourceInstance]
+      if (t === 'connections') return [sourceConnection]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -3879,6 +4073,10 @@ describe('POST /api/models — optional fields', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(201)
+    const connectionsCall = mockWriteConfig.mock.calls.find(c => c[0] === 'connections')
+    const conn = connectionsCall?.[1].find((c: { id: string }) => c.id === 'conn-for-cloned-model')
+    expect(conn.credentials.apiKey).toBe('src-key')
+    expect(conn.credentials.cfClearance).toBe('src-clearance')
   })
 
   it('creates model with legacy daily/weekly/monthly budget fields', async () => {
@@ -3886,7 +4084,8 @@ describe('POST /api/models — optional fields', () => {
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return []
+      if (t === 'instances') return []
+      if (t === 'connections') return []
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -3913,20 +4112,26 @@ describe('POST /api/models — optional fields', () => {
 // ─── PUT /api/models/:id — optional fields coverage ───────────────────────────
 
 describe('PUT /api/models/:id — optional fields', () => {
-  it('updates model with apiKey, cfClearance, cachePerMillion, pricingTiers, contextWindow, upstreamModelId, capabilities, limits', async () => {
-    setupAdminAuth()
-    const existingModel = {
-      id: 'gpt4', name: 'GPT-4', provider: 'openai',
-      endpoint: 'https://api.openai.com/v1',
-      cost: { inputPerMillion: 5, outputPerMillion: 15 },
+  function seedGpt4(extraInstanceFields: Record<string, unknown> = {}) {
+    const existingInstance = {
+      id: 'gpt4', connectionId: 'conn-for-gpt4', upstreamModelId: 'gpt4',
+      cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0,
+      ...extraInstanceFields,
     }
+    const existingConnection = { id: 'conn-for-gpt4', providerId: 'openai', label: 'GPT-4', credentials: {}, endpoint: 'https://api.openai.com/v1', enabled: true }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return [existingModel]
+      if (t === 'instances') return [existingInstance]
+      if (t === 'connections') return [existingConnection]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
+  }
+
+  it('updates model with apiKey, cfClearance, cachePerMillion, pricingTiers, contextWindow, upstreamModelId, capabilities, limits', async () => {
+    setupAdminAuth()
+    seedGpt4()
 
     const app = await buildApp()
     const res = await app.inject({
@@ -3948,23 +4153,16 @@ describe('PUT /api/models/:id — optional fields', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.upstreamModelId).toBe('openai/gpt-4-turbo')
+    expect(body.contextWindow).toBe(32768)
+    const connectionsCall = mockWriteConfig.mock.calls.find(c => c[0] === 'connections')
+    expect(connectionsCall?.[1].find((c: { id: string }) => c.id === 'conn-for-gpt4')?.credentials.apiKey).toBe('new-key')
   })
 
   it('preserves existing contextWindow when body omits it', async () => {
     setupAdminAuth()
-    const existingModel = {
-      id: 'gpt4', name: 'GPT-4', provider: 'openai',
-      endpoint: 'https://api.openai.com/v1',
-      contextWindow: 128000,
-      cost: { inputPerMillion: 5, outputPerMillion: 15 },
-    }
-    mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [adminUser]
-      if (t === 'roles') return []
-      if (t === 'models') return [existingModel]
-      return []
-    })
-    mockWriteConfig.mockResolvedValue(undefined)
+    seedGpt4({ contextWindow: 128000 })
 
     const app = await buildApp()
     const res = await app.inject({
@@ -3985,19 +4183,7 @@ describe('PUT /api/models/:id — optional fields', () => {
 
   it('preserves existing upstreamModelId when body omits it', async () => {
     setupAdminAuth()
-    const existingModel = {
-      id: 'gpt4', name: 'GPT-4', provider: 'openai',
-      endpoint: 'https://api.openai.com/v1',
-      upstreamModelId: 'openai/gpt-4',
-      cost: { inputPerMillion: 5, outputPerMillion: 15 },
-    }
-    mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [adminUser]
-      if (t === 'roles') return []
-      if (t === 'models') return [existingModel]
-      return []
-    })
-    mockWriteConfig.mockResolvedValue(undefined)
+    seedGpt4({ upstreamModelId: 'openai/gpt-4' })
 
     const app = await buildApp()
     const res = await app.inject({
@@ -4018,18 +4204,7 @@ describe('PUT /api/models/:id — optional fields', () => {
 
   it('updates model with legacy budget fields', async () => {
     setupAdminAuth()
-    const existingModel = {
-      id: 'gpt4', name: 'GPT-4', provider: 'openai',
-      endpoint: 'https://api.openai.com/v1',
-      cost: { inputPerMillion: 5, outputPerMillion: 15 },
-    }
-    mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [adminUser]
-      if (t === 'roles') return []
-      if (t === 'models') return [existingModel]
-      return []
-    })
-    mockWriteConfig.mockResolvedValue(undefined)
+    seedGpt4()
 
     const app = await buildApp()
     const res = await app.inject({
@@ -4049,17 +4224,15 @@ describe('PUT /api/models/:id — optional fields', () => {
 
   it('cascade rename when NO project references the old model ID (projectsChanged stays false)', async () => {
     setupAdminAuth()
-    const existingModel = {
-      id: 'gpt4', name: 'GPT-4', provider: 'openai',
-      endpoint: 'https://api.openai.com/v1',
-      cost: { inputPerMillion: 5, outputPerMillion: 15 },
-    }
+    const existingInstance = { id: 'gpt4', connectionId: 'conn-for-gpt4', upstreamModelId: 'gpt4', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
+    const existingConnection = { id: 'conn-for-gpt4', providerId: 'openai', label: 'GPT-4', credentials: {}, endpoint: 'https://api.openai.com/v1', enabled: true }
     // project does NOT reference gpt4
     const project = { id: 'p1', name: 'Test', tokens: [{ id: 't1', models: [{ modelId: 'other-model' }] }], members: [], models: [{ modelId: 'other-model' }] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return [existingModel]
+      if (t === 'instances') return [existingInstance]
+      if (t === 'connections') return [existingConnection]
       if (t === 'projects') return [project]
       return []
     })
@@ -4078,8 +4251,8 @@ describe('PUT /api/models/:id — optional fields', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(200)
-    // writeConfig called once (models only, no projects update needed)
-    expect(mockWriteConfig).toHaveBeenCalledTimes(1)
+    // no project reference matched → no projects write
+    expect(mockWriteConfig.mock.calls.some(c => c[0] === 'projects')).toBe(false)
   })
 })
 
@@ -4764,7 +4937,8 @@ describe('POST /api/models — partial legacy budget', () => {
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return []
+      if (t === 'instances') return []
+      if (t === 'connections') return []
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -4788,7 +4962,8 @@ describe('POST /api/models — partial legacy budget', () => {
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return []
+      if (t === 'instances') return []
+      if (t === 'connections') return []
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -4813,14 +4988,13 @@ describe('POST /api/models — partial legacy budget', () => {
 describe('PUT /api/models/:id — partial legacy budget', () => {
   it('updates model with only weeklyBudget (covers dailyBudget/monthlyBudget FALSE branches)', async () => {
     setupAdminAuth()
-    const existingModel = {
-      id: 'gpt4', name: 'GPT-4', provider: 'openai', endpoint: 'https://api.openai.com/v1',
-      cost: { inputPerMillion: 5, outputPerMillion: 15 },
-    }
+    const existingInstance = { id: 'gpt4', connectionId: 'conn-for-gpt4', upstreamModelId: 'gpt4', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
+    const existingConnection = { id: 'conn-for-gpt4', providerId: 'openai', label: 'GPT-4', credentials: {}, endpoint: 'https://api.openai.com/v1', enabled: true }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return [existingModel]
+      if (t === 'instances') return [existingInstance]
+      if (t === 'connections') return [existingConnection]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -5268,11 +5442,14 @@ describe('GET /api/usage — routing and outcome combinations', () => {
 describe('POST /api/models — cloneFrom source without apiKey/cfClearance (lines 245, 250)', () => {
   it('uses cloneFrom source that has no apiKey or cfClearance', async () => {
     setupAdminAuth()
+    const sourceInstance = { id: 'bare-source', connectionId: 'conn-for-bare-source', upstreamModelId: 'bare-source', cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 0 }
+    // Source connection has NO apiKey or cfClearance → ?.apiKey is undefined → ?? undefined branch
+    const sourceConnection = { id: 'conn-for-bare-source', providerId: 'openai-web', label: 'bare-source', credentials: {}, enabled: true }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      // Source model has NO apiKey or cfClearance → ?.apiKey is undefined → ?? undefined branch
-      if (t === 'models') return [{ id: 'bare-source', cost: { inputPerMillion: 0, outputPerMillion: 0 } }]
+      if (t === 'instances') return [sourceInstance]
+      if (t === 'connections') return [sourceConnection]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -5297,11 +5474,13 @@ describe('POST /api/models — cloneFrom source without apiKey/cfClearance (line
 describe('GET /api/models/:id/apikey — model without apiKey (line 374)', () => {
   it('returns null when model has no apiKey', async () => {
     setupAdminAuth()
-    const modelNoKey = { id: 'm1', name: 'M1', provider: 'openai', endpoint: 'https://x', cost: { inputPerMillion: 1, outputPerMillion: 2 } }
+    const instance = { id: 'm1', connectionId: 'conn-for-m1', upstreamModelId: 'm1', cost: { inputPerMillion: 1, outputPerMillion: 2 }, contextWindow: 0 }
+    const connection = { id: 'conn-for-m1', providerId: 'openai', label: 'M1', credentials: {}, endpoint: 'https://x', enabled: true }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return [modelNoKey]
+      if (t === 'instances') return [instance]
+      if (t === 'connections') return [connection]
       return []
     })
 
@@ -5316,16 +5495,15 @@ describe('GET /api/models/:id/apikey — model without apiKey (line 374)', () =>
 describe('PUT /api/models/:id — cascade rename with undefined models/tokens (lines 346, 352, 353)', () => {
   it('handles project with undefined models and tokens during cascade rename', async () => {
     setupAdminAuth()
-    const existingModel = {
-      id: 'old', name: 'Old', provider: 'openai', endpoint: 'https://api.openai.com/v1',
-      cost: { inputPerMillion: 5, outputPerMillion: 15 },
-    }
+    const existingInstance = { id: 'old', connectionId: 'conn-for-old', upstreamModelId: 'old', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
+    const existingConnection = { id: 'conn-for-old', providerId: 'openai', label: 'Old', credentials: {}, endpoint: 'https://api.openai.com/v1', enabled: true }
     // Project with no models field and no tokens field (covers ?? [] branches)
     const project = { id: 'p1', name: 'Test', members: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return [existingModel]
+      if (t === 'instances') return [existingInstance]
+      if (t === 'connections') return [existingConnection]
       if (t === 'projects') return [project]
       return []
     })
@@ -5348,10 +5526,8 @@ describe('PUT /api/models/:id — cascade rename with undefined models/tokens (l
 
   it('handles token with undefined models during cascade rename (line 353)', async () => {
     setupAdminAuth()
-    const existingModel = {
-      id: 'old', name: 'Old', provider: 'openai', endpoint: 'https://api.openai.com/v1',
-      cost: { inputPerMillion: 5, outputPerMillion: 15 },
-    }
+    const existingInstance = { id: 'old', connectionId: 'conn-for-old', upstreamModelId: 'old', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
+    const existingConnection = { id: 'conn-for-old', providerId: 'openai', label: 'Old', credentials: {}, endpoint: 'https://api.openai.com/v1', enabled: true }
     // Token has no models field (covers token.models ?? [] branch)
     const project = {
       id: 'p1', name: 'Test', members: [],
@@ -5361,7 +5537,8 @@ describe('PUT /api/models/:id — cascade rename with undefined models/tokens (l
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return [existingModel]
+      if (t === 'instances') return [existingInstance]
+      if (t === 'connections') return [existingConnection]
       if (t === 'projects') return [project]
       return []
     })

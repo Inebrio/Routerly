@@ -67,7 +67,7 @@ async function checkProviderModuleGate(providerId: string, reply: FastifyReply):
  * Only fields actually present in `credentials` are transformed — safe to call on a
  * partial PATCH body.
  */
-function encryptConnectionCredentials(
+export function encryptConnectionCredentials(
   providerId: string,
   credentials: Record<string, unknown>,
 ): Record<string, unknown> {

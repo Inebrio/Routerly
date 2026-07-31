@@ -11,7 +11,7 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, ChannelProvider, ProviderRepo, ResilienceState } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance } from '@routerly/shared';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
 import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY } from '@routerly/shared';
@@ -21,6 +21,8 @@ import { z } from 'zod';
 import { getTrace } from '../logging/traceStore.js';
 import { getProviderAdapter } from '../provider/registry.js';
 import { loadEffectiveModel } from '../reverse-proxy/execute.js';
+import { listEffectiveModelsIncludingDisabled } from '../provider/list-effective.js';
+import { resolveEffectiveModel } from '../provider/resolve.js';
 import { sendTestNotification } from '../notifications/sender.js';
 import { emitEvent } from '../notifications/emitter.js';
 import { ALL_PERMISSIONS, BUILT_IN_ROLES, getEffectiveRoles } from '../auth/roles.js';
@@ -29,7 +31,7 @@ import { logAudit } from '../audit/logger.js';
 import type { AuditEntry } from '../audit/logger.js';
 import { ALL_MODULES } from '../index.js';
 import { API_ROUTES } from '../../core/tokens.js';
-import { connectionsRoutes } from './connections.js';
+import { connectionsRoutes, encryptConnectionCredentials } from './connections.js';
 import { profilesRoutes } from './profiles.js';
 import { mcpApiRoutes } from './mcp.js';
 import { getOptimizerRegistry } from '../optimizers/registry.js';
@@ -588,7 +590,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // ══════════════════════════════════════════════════════════════════════════════
 
   fastify.get('/api/models', async (_req, reply) => {
-    const models = await readConfig('models');
+    const models = await listEffectiveModelsIncludingDisabled();
     // Strip secrets before sending to client (use /api/models/:id/apikey to retrieve)
     return reply.send(models.map(m => ({ ...m, apiKey: undefined, cfClearance: undefined })));
   });
@@ -597,6 +599,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     Body: {
       id: string; name?: string; provider: string; endpoint: string;
       apiKey?: string; cfClearance?: string; cloneFrom?: string; upstreamModelId?: string;
+      connectionId?: string;
       inputPerMillion: number; outputPerMillion: number;
       cachePerMillion?: number;
       contextWindow?: number;
@@ -610,8 +613,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
   }>('/api/models', async (req, reply) => {
     if (!requirePerm(req, 'model:write', reply)) return;
-    const models = await readConfig('models');
-    if (models.find(m => m.id === req.body.id)) {
+    const instances = await readConfig('instances');
+    if (instances.find(i => i.id === req.body.id)) {
       return reply.status(409).send({ error: `Model "${req.body.id}" already exists` });
     }
 
@@ -626,38 +629,63 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ]
         : undefined;
 
-    const model: ModelConfig = {
+    const connections = await readConfig('connections');
+    let connectionId: string;
+
+    if (req.body.connectionId) {
+      // Bind to an existing connection — no credential copy.
+      if (!connections.find(c => c.id === req.body.connectionId)) {
+        return reply.status(404).send({ error: 'Not found' });
+      }
+      connectionId = req.body.connectionId;
+    } else {
+      // Custom-credentials branch ("esattamente come ora" UX): resolve apiKey/cfClearance
+      // (optionally from cloneFrom), encrypt, and persist as a dedicated single-model connection.
+      let apiKey = req.body.apiKey;
+      let cfClearance = req.body.cfClearance;
+      if (req.body.cloneFrom && (!apiKey || !cfClearance)) {
+        const cloneSource = (await listEffectiveModelsIncludingDisabled()).find(m => m.id === req.body.cloneFrom);
+        apiKey = apiKey || cloneSource?.apiKey;
+        cfClearance = cfClearance || cloneSource?.cfClearance;
+      }
+      connectionId = `conn-for-${req.body.id}`;
+      const connection: ProviderConnection = {
+        id: connectionId,
+        providerId: req.body.provider,
+        label: req.body.name ?? req.body.id,
+        endpoint: req.body.endpoint,
+        credentials: encryptConnectionCredentials(req.body.provider, {
+          ...(apiKey ? { apiKey } : {}),
+          ...(cfClearance ? { cfClearance } : {}),
+        }),
+        enabled: true,
+      };
+      connections.push(connection);
+      await writeConfig('connections', connections);
+    }
+
+    const instance: ModelInstance = {
       id: req.body.id,
-      name: req.body.name ?? req.body.id,
-      provider: req.body.provider as Provider,
-      endpoint: req.body.endpoint,
-      apiKey: req.body.apiKey
-        ? req.body.apiKey
-        : req.body.cloneFrom
-          ? (models.find(m => m.id === req.body.cloneFrom)?.apiKey ?? undefined)
-          : undefined,
-      cfClearance: req.body.cfClearance
-        ? req.body.cfClearance
-        : req.body.cloneFrom
-          ? (models.find(m => m.id === req.body.cloneFrom)?.cfClearance ?? undefined)
-          : undefined,
+      connectionId,
+      upstreamModelId: req.body.upstreamModelId ?? req.body.id,
       cost: {
         inputPerMillion: req.body.inputPerMillion,
         outputPerMillion: req.body.outputPerMillion,
         ...(req.body.cachePerMillion !== undefined ? { cachePerMillion: req.body.cachePerMillion } : {}),
         ...(req.body.pricingTiers?.length ? { pricingTiers: req.body.pricingTiers } : {}),
       },
+      contextWindow: req.body.contextWindow ?? 0,
       ...(resolvedLimits?.length ? { limits: resolvedLimits } : {}),
-      ...(req.body.contextWindow !== undefined ? { contextWindow: req.body.contextWindow } : {}),
-      ...(req.body.upstreamModelId ? { upstreamModelId: req.body.upstreamModelId } : {}),
       ...(req.body.capabilities ? { capabilities: req.body.capabilities } : {}),
-      ...(req.body.fieldOverrides ? { fieldOverrides: req.body.fieldOverrides } : {}),
     };
-    models.push(model);
-    await writeConfig('models', models);
-    void emitEvent('config.model_added', 'info', { modelId: model.id, provider: model.provider }, { log: req.log });
-    audit(req, 'model:create', 'success', { id: model.id });
-    return reply.status(201).send({ ...model, apiKey: undefined, cfClearance: undefined });
+    instances.push(instance);
+    await writeConfig('instances', instances);
+    void emitEvent('config.model_added', 'info', { modelId: instance.id, provider: req.body.provider }, { log: req.log });
+    audit(req, 'model:create', 'success', { id: instance.id });
+
+    const boundConnection = connections.find(c => c.id === connectionId)!;
+    const effective = resolveEffectiveModel(instance, boundConnection);
+    return reply.status(201).send({ ...effective, apiKey: undefined, cfClearance: undefined });
   });
 
   fastify.put<{
@@ -666,6 +694,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       id?: string;
       name?: string; provider: string; endpoint: string;
       apiKey?: string; cfClearance?: string; upstreamModelId?: string;
+      connectionId?: string;
       inputPerMillion: number; outputPerMillion: number;
       cachePerMillion?: number;
       contextWindow?: number;
@@ -679,16 +708,16 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
   }>('/api/models/:id', async (req, reply) => {
     if (!requirePerm(req, 'model:write', reply)) return;
-    const models = await readConfig('models');
-    const index = models.findIndex(m => m.id === req.params.id);
+    const instances = await readConfig('instances');
+    const index = instances.findIndex(i => i.id === req.params.id);
     if (index === -1) {
       return reply.status(404).send({ error: 'Not found' });
     }
-    const existing = models[index]!;
+    const existing = instances[index]!;
 
     // Handle ID change
     const newId = req.body.id || req.params.id;
-    if (newId !== req.params.id && models.find(m => m.id === newId)) {
+    if (newId !== req.params.id && instances.find(i => i.id === newId)) {
       return reply.status(409).send({ error: `Model "${newId}" already exists` });
     }
 
@@ -703,40 +732,85 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ]
         : undefined;
 
-    const { limits: _existingLimits, upstreamModelId: _existingUpstreamModelId, ...existingWithoutLimits } = existing;
-    const model: ModelConfig = {
-      ...existingWithoutLimits,
+    const connections = await readConfig('connections');
+    let connectionsChanged = false;
+
+    // If the id changed and the old dedicated connection is single-model, rename it in place so
+    // the credential-resolution step below finds it under the new id.
+    const oldDedicatedId = `conn-for-${req.params.id}`;
+    const newDedicatedId = `conn-for-${newId}`;
+    if (newId !== req.params.id && existing.connectionId === oldDedicatedId) {
+      const dedIdx = connections.findIndex(c => c.id === oldDedicatedId);
+      const refCount = instances.filter(i => i.connectionId === oldDedicatedId).length;
+      if (dedIdx !== -1 && refCount === 1) {
+        connections[dedIdx] = { ...connections[dedIdx]!, id: newDedicatedId };
+        connectionsChanged = true;
+      }
+    }
+
+    let connectionId: string;
+    if (req.body.connectionId) {
+      // Rebind to an existing connection — no credential copy.
+      if (!connections.find(c => c.id === req.body.connectionId)) {
+        return reply.status(404).send({ error: 'Not found' });
+      }
+      connectionId = req.body.connectionId;
+    } else {
+      // Custom-credentials branch: update (or create) the dedicated connection in place. Empty
+      // apiKey/cfClearance in the body keeps the currently stored value.
+      const dedIdx = connections.findIndex(c => c.id === newDedicatedId);
+      const credentialUpdates = encryptConnectionCredentials(req.body.provider, {
+        ...(req.body.apiKey ? { apiKey: req.body.apiKey } : {}),
+        ...(req.body.cfClearance ? { cfClearance: req.body.cfClearance } : {}),
+      });
+      if (dedIdx === -1) {
+        connections.push({
+          id: newDedicatedId,
+          providerId: req.body.provider,
+          label: req.body.name ?? newId,
+          endpoint: req.body.endpoint,
+          credentials: credentialUpdates,
+          enabled: true,
+        });
+      } else {
+        connections[dedIdx] = {
+          ...connections[dedIdx]!,
+          providerId: req.body.provider,
+          label: req.body.name ?? connections[dedIdx]!.label,
+          endpoint: req.body.endpoint,
+          credentials: { ...connections[dedIdx]!.credentials, ...credentialUpdates },
+        };
+      }
+      connectionsChanged = true;
+      connectionId = newDedicatedId;
+    }
+
+    if (connectionsChanged) {
+      await writeConfig('connections', connections);
+    }
+
+    const instance: ModelInstance = {
       id: newId,
-      name: req.body.name ?? existing.name,
-      provider: req.body.provider as Provider,
-      endpoint: req.body.endpoint,
-      apiKey: req.body.apiKey ? req.body.apiKey : existing.apiKey,
-      cfClearance: req.body.cfClearance ? req.body.cfClearance : existing.cfClearance,
+      connectionId,
+      // upstreamModelId is required on ModelInstance: an explicit body value always wins, otherwise
+      // the existing value is kept (unlike ModelConfig, it cannot be cleared to "derive from id").
+      upstreamModelId: req.body.upstreamModelId ? req.body.upstreamModelId : existing.upstreamModelId,
       cost: {
         inputPerMillion: req.body.inputPerMillion,
         outputPerMillion: req.body.outputPerMillion,
         ...(req.body.cachePerMillion !== undefined ? { cachePerMillion: req.body.cachePerMillion } : {}),
         ...(req.body.pricingTiers?.length ? { pricingTiers: req.body.pricingTiers } : {}),
       },
-      // clear legacy field when updating
-      globalThresholds: undefined,
-      ...(req.body.contextWindow !== undefined ? { contextWindow: req.body.contextWindow } : existing.contextWindow !== undefined ? { contextWindow: existing.contextWindow } : {}),
+      contextWindow: req.body.contextWindow !== undefined ? req.body.contextWindow : existing.contextWindow,
+      // limits: cleared when the body omits both limits[] and legacy budget fields (matches
+      // the original ModelConfig behavior, which discarded existing.limits unless re-supplied).
       ...(resolvedLimits?.length ? { limits: resolvedLimits } : {}),
-      // upstreamModelId: if explicitly provided keep it, if empty string clear it, if absent keep existing
-      ...(req.body.upstreamModelId
-        ? { upstreamModelId: req.body.upstreamModelId }
-        : req.body.upstreamModelId === undefined && _existingUpstreamModelId !== undefined
-          ? { upstreamModelId: _existingUpstreamModelId }
-          : {}),
-      // capabilities: if provided in body use it; if absent clear (unchecking the checkbox removes it)
-      ...(req.body.capabilities ? { capabilities: req.body.capabilities } : {}),
-      ...(req.body.fieldOverrides !== undefined
-        ? { fieldOverrides: req.body.fieldOverrides }
-        : existing.fieldOverrides !== undefined ? { fieldOverrides: existing.fieldOverrides } : {}),
-      ...(existing.catalogDefaults !== undefined ? { catalogDefaults: existing.catalogDefaults } : {}),
+      ...(req.body.capabilities
+        ? { capabilities: req.body.capabilities }
+        : existing.capabilities !== undefined ? { capabilities: existing.capabilities } : {}),
     };
-    models[index] = model;
-    await writeConfig('models', models);
+    instances[index] = instance;
+    await writeConfig('instances', instances);
 
     // If the model ID changed, cascade the rename to all project references
     if (newId !== req.params.id) {
@@ -764,12 +838,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     audit(req, 'model:update', 'success', { id: req.params.id });
-    return reply.send({ ...model, apiKey: undefined, cfClearance: undefined });
+    const boundConnection = connections.find(c => c.id === connectionId)!;
+    const effective = resolveEffectiveModel(instance, boundConnection);
+    return reply.send({ ...effective, apiKey: undefined, cfClearance: undefined });
   });
 
   fastify.get<{ Params: { id: string } }>('/api/models/:id/apikey', async (req, reply) => {
     if (!requirePerm(req, 'model:write', reply)) return;
-    const models = await readConfig('models');
+    const models = await listEffectiveModelsIncludingDisabled();
     const model = models.find(m => m.id === req.params.id);
     if (!model) return reply.status(404).send({ error: 'Not found' });
     return reply.send({ apiKey: model.apiKey ?? null });
@@ -791,10 +867,23 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.delete<{ Params: { id: string } }>('/api/models/:id', async (req, reply) => {
     if (!requirePerm(req, 'model:write', reply)) return;
-    const models = await readConfig('models');
-    const filtered = models.filter(m => m.id !== req.params.id);
-    if (filtered.length === models.length) return reply.status(404).send({ error: 'Not found' });
-    await writeConfig('models', filtered);
+    const instances = await readConfig('instances');
+    const target = instances.find(i => i.id === req.params.id);
+    if (!target) return reply.status(404).send({ error: 'Not found' });
+    const filtered = instances.filter(i => i.id !== req.params.id);
+    await writeConfig('instances', filtered);
+
+    // If the deleted instance owned its dedicated conn-for-<id> connection and no other
+    // instance references it, remove the connection too.
+    const dedicatedId = `conn-for-${req.params.id}`;
+    if (target.connectionId === dedicatedId && !filtered.some(i => i.connectionId === dedicatedId)) {
+      const connections = await readConfig('connections');
+      const filteredConnections = connections.filter(c => c.id !== dedicatedId);
+      if (filteredConnections.length !== connections.length) {
+        await writeConfig('connections', filteredConnections);
+      }
+    }
+
     void emitEvent('config.model_deleted', 'info', { modelId: req.params.id }, { log: req.log });
     audit(req, 'model:delete', 'success', { id: req.params.id });
     return reply.status(204).send();
