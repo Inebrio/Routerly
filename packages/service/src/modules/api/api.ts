@@ -11,7 +11,7 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel } from '@routerly/shared';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
 import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY } from '@routerly/shared';
@@ -23,6 +23,7 @@ import { getProviderAdapter } from '../provider/registry.js';
 import { loadEffectiveModel } from '../reverse-proxy/execute.js';
 import { listEffectiveModelsIncludingDisabled } from '../provider/list-effective.js';
 import { resolveEffectiveModel } from '../provider/resolve.js';
+import { getProviderDescriptor } from '../provider/descriptor.js';
 import { sendTestNotification } from '../notifications/sender.js';
 import { emitEvent } from '../notifications/emitter.js';
 import { ALL_PERMISSIONS, BUILT_IN_ROLES, getEffectiveRoles } from '../auth/roles.js';
@@ -56,6 +57,44 @@ function hashToken(t: string): string {
 }
 
 const BCRYPT_ROUNDS = 12;
+
+/**
+ * Secret credential fields that must never serialize into /api/models responses.
+ * resolveEffectiveModel spreads connection.credentials verbatim (adapters need the
+ * ciphertext at runtime), so the wire response has to strip both the plaintext model-form
+ * fields and the encrypted-at-rest connection fields.
+ */
+const MODEL_SECRET_FIELDS = ['apiKey', 'cfClearance', 'oauthEnc', 'refreshEnc', 'cookieEnc', 'cfClearanceEnc', 'expiresAt'] as const;
+
+function redactModelSecrets(model: EffectiveModel): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...model };
+  for (const f of MODEL_SECRET_FIELDS) delete out[f];
+  return out;
+}
+
+/**
+ * Maps the model form's flat `apiKey`/`cfClearance` fields onto the connection credential
+ * convention for the provider's supportLevel, then encrypts. Mirrors the field names the
+ * runtime credential resolvers expect:
+ * - web:   apiKey -> cookiePlain -> cookieEnc, cfClearance -> cfClearancePlain -> cfClearanceEnc
+ * - oauth: apiKey -> oauthPlain -> oauthEnc (best-effort; a real oauth connection also needs
+ *          refresh/expiry, which the model form can't supply)
+ * - native/compatible/local: apiKey/cfClearance stay plaintext (matches the connections route)
+ */
+function buildConnectionCredentials(provider: string, fields: { apiKey?: string; cfClearance?: string }): Record<string, unknown> {
+  const supportLevel = getProviderDescriptor(provider)?.supportLevel;
+  const plain: Record<string, unknown> = {};
+  if (supportLevel === 'web') {
+    if (fields.apiKey) plain.cookiePlain = fields.apiKey;
+    if (fields.cfClearance) plain.cfClearancePlain = fields.cfClearance;
+  } else if (supportLevel === 'oauth') {
+    if (fields.apiKey) plain.oauthPlain = fields.apiKey;
+  } else {
+    if (fields.apiKey) plain.apiKey = fields.apiKey;
+    if (fields.cfClearance) plain.cfClearance = fields.cfClearance;
+  }
+  return encryptConnectionCredentials(provider, plain);
+}
 
 /** 95th percentile of a numeric array (0 when empty). Nearest-rank method. */
 function p95(values: number[]): number {
@@ -592,7 +631,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/api/models', async (_req, reply) => {
     const models = await listEffectiveModelsIncludingDisabled();
     // Strip secrets before sending to client (use /api/models/:id/apikey to retrieve)
-    return reply.send(models.map(m => ({ ...m, apiKey: undefined, cfClearance: undefined })));
+    return reply.send(models.map(redactModelSecrets));
   });
 
   fastify.post<{
@@ -634,8 +673,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
     if (req.body.connectionId) {
       // Bind to an existing connection — no credential copy.
-      if (!connections.find(c => c.id === req.body.connectionId)) {
+      const target = connections.find(c => c.id === req.body.connectionId);
+      if (!target) {
         return reply.status(404).send({ error: 'Not found' });
+      }
+      if (target.providerId !== req.body.provider) {
+        return reply.status(400).send({ error: `Connection "${target.id}" provider "${target.providerId}" does not match model provider "${req.body.provider}"` });
       }
       connectionId = req.body.connectionId;
     } else {
@@ -654,7 +697,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         providerId: req.body.provider,
         label: req.body.name ?? req.body.id,
         endpoint: req.body.endpoint,
-        credentials: encryptConnectionCredentials(req.body.provider, {
+        credentials: buildConnectionCredentials(req.body.provider, {
           ...(apiKey ? { apiKey } : {}),
           ...(cfClearance ? { cfClearance } : {}),
         }),
@@ -685,7 +728,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
     const boundConnection = connections.find(c => c.id === connectionId)!;
     const effective = resolveEffectiveModel(instance, boundConnection);
-    return reply.status(201).send({ ...effective, apiKey: undefined, cfClearance: undefined });
+    return reply.status(201).send(redactModelSecrets(effective));
   });
 
   fastify.put<{
@@ -735,31 +778,47 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const connections = await readConfig('connections');
     let connectionsChanged = false;
 
-    // If the id changed and the old dedicated connection is single-model, rename it in place so
-    // the credential-resolution step below finds it under the new id.
     const oldDedicatedId = `conn-for-${req.params.id}`;
     const newDedicatedId = `conn-for-${newId}`;
-    if (newId !== req.params.id && existing.connectionId === oldDedicatedId) {
-      const dedIdx = connections.findIndex(c => c.id === oldDedicatedId);
-      const refCount = instances.filter(i => i.connectionId === oldDedicatedId).length;
-      if (dedIdx !== -1 && refCount === 1) {
-        connections[dedIdx] = { ...connections[dedIdx]!, id: newDedicatedId };
-        connectionsChanged = true;
-      }
-    }
+    // Was this instance bound to its own dedicated (single-model) connection?
+    const existingIsDedicated = existing.connectionId === oldDedicatedId;
+    const existingConnMissing = !existing.connectionId || !connections.find(c => c.id === existing.connectionId);
+    const bodyHasInlineCreds = Boolean(req.body.apiKey || req.body.cfClearance);
 
     let connectionId: string;
     if (req.body.connectionId) {
       // Rebind to an existing connection — no credential copy.
-      if (!connections.find(c => c.id === req.body.connectionId)) {
+      const target = connections.find(c => c.id === req.body.connectionId);
+      if (!target) {
         return reply.status(404).send({ error: 'Not found' });
       }
+      if (target.providerId !== req.body.provider) {
+        return reply.status(400).send({ error: `Connection "${target.id}" provider "${target.providerId}" does not match model provider "${req.body.provider}"` });
+      }
       connectionId = req.body.connectionId;
-    } else {
-      // Custom-credentials branch: update (or create) the dedicated connection in place. Empty
-      // apiKey/cfClearance in the body keeps the currently stored value.
+      // Orphan cleanup: leaving a dedicated connection that no other instance uses → drop it.
+      if (existingIsDedicated && existing.connectionId !== connectionId) {
+        const stillReferenced = instances.some((i, idx) => idx !== index && i.connectionId === existing.connectionId);
+        if (!stillReferenced) {
+          const di = connections.findIndex(c => c.id === existing.connectionId);
+          if (di !== -1) { connections.splice(di, 1); connectionsChanged = true; }
+        }
+      }
+    } else if (existingIsDedicated || existingConnMissing || bodyHasInlineCreds) {
+      // Dedicated-credentials branch: update (or create) this model's own connection. A plain edit
+      // of a shared-bound model (no connectionId, no inline creds) never reaches here, so shared
+      // bindings are preserved. Empty apiKey/cfClearance keeps the currently stored value.
+      // If the id changed and the dedicated connection is single-model, rename it in place first.
+      if (newId !== req.params.id && existingIsDedicated) {
+        const renIdx = connections.findIndex(c => c.id === oldDedicatedId);
+        const refCount = instances.filter(i => i.connectionId === oldDedicatedId).length;
+        if (renIdx !== -1 && refCount === 1) {
+          connections[renIdx] = { ...connections[renIdx]!, id: newDedicatedId };
+          connectionsChanged = true;
+        }
+      }
       const dedIdx = connections.findIndex(c => c.id === newDedicatedId);
-      const credentialUpdates = encryptConnectionCredentials(req.body.provider, {
+      const credentialUpdates = buildConnectionCredentials(req.body.provider, {
         ...(req.body.apiKey ? { apiKey: req.body.apiKey } : {}),
         ...(req.body.cfClearance ? { cfClearance: req.body.cfClearance } : {}),
       });
@@ -783,6 +842,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       }
       connectionsChanged = true;
       connectionId = newDedicatedId;
+    } else {
+      // Shared connection, plain edit: keep the existing binding untouched.
+      connectionId = existing.connectionId;
     }
 
     if (connectionsChanged) {
@@ -840,7 +902,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     audit(req, 'model:update', 'success', { id: req.params.id });
     const boundConnection = connections.find(c => c.id === connectionId)!;
     const effective = resolveEffectiveModel(instance, boundConnection);
-    return reply.send({ ...effective, apiKey: undefined, cfClearance: undefined });
+    return reply.send(redactModelSecrets(effective));
   });
 
   fastify.get<{ Params: { id: string } }>('/api/models/:id/apikey', async (req, reply) => {
