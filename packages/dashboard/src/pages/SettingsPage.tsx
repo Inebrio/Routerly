@@ -198,11 +198,12 @@ export function SettingsGeneralTab() {
         </div>
 
         <div className="form-group">
-          <label className="form-label" htmlFor="s-loglevel">Log Level</label>
+          <label className="form-label">Log Level</label>
           <SearchableSelect
             options={LOG_LEVELS.map(l => ({ value: l, label: l }))}
             value={form.logLevel ?? 'info'}
             placeholder="Log Level"
+            ariaLabel="Log Level"
             onChange={v => field('logLevel', v as Settings['logLevel'])}
           />
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>

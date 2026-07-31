@@ -458,12 +458,13 @@ export function ProjectRoutingTab() {
         {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
 
         <div className="form-group">
-          <label className="form-label" htmlFor="routing-profile-select">Routing Profile</label>
+          <label className="form-label">Routing Profile</label>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
             Assign a shared routing profile, or keep this project's own inline policies.
           </p>
           <SearchableSelect
             style={{ maxWidth: 420 }}
+            ariaLabel="Routing Profile"
             value={assignedProfileId}
             onChange={v => void onAssignProfile(v)}
             options={[
