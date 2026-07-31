@@ -1,7 +1,7 @@
 ---
 name: developer
 description: Implements code changes and writes the corresponding tests. One task at a time. Reads state at start, updates at end.
-model: sonnet
+model: opus
 tools: Read, Edit, Write, Bash, Glob, Grep, LS
 ---
 

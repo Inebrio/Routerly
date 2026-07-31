@@ -1,7 +1,7 @@
 ---
 name: checker
 description: Runs typecheck and targeted unit tests on touched packages. Reports pass/fail. Does NOT edit code.
-model: haiku
+model: sonnet
 tools: Read, Bash, Glob, Grep, LS
 ---
 

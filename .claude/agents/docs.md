@@ -1,7 +1,7 @@
 ---
 name: docs
 description: Updates documentation for all surfaces touched by the current task. Service + CLI + dashboard must all be documented if any is touched. Reads state to know what changed.
-model: haiku
+model: sonnet
 tools: Read, Edit, Write, Bash, Glob, Grep, LS, mcp__plugin_playwright_playwright__browser_navigate, mcp__plugin_playwright_playwright__browser_snapshot, mcp__plugin_playwright_playwright__browser_take_screenshot, mcp__plugin_playwright_playwright__browser_resize, mcp__plugin_playwright_playwright__browser_wait_for
 ---
 
