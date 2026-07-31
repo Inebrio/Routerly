@@ -11,6 +11,7 @@ vi.mock('../api', () => ({
   testOpenAIOAuth: vi.fn(),
   testModel: vi.fn(),
   getProviders: vi.fn(),
+  getConnections: vi.fn(),
 }));
 
 // navigate spy
@@ -20,13 +21,14 @@ vi.mock('react-router-dom', async (importActual) => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-import { getModels, getProviders, createModel, updateModel, testOpenAIOAuth, testModel } from '../api';
+import { getModels, getProviders, createModel, updateModel, testOpenAIOAuth, testModel, getConnections } from '../api';
 const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
 const mockGetProviders = vi.mocked(getProviders);
 const mockCreateModel = vi.mocked(createModel as (...a: unknown[]) => Promise<unknown>);
 const mockUpdateModel = vi.mocked(updateModel as (...a: unknown[]) => Promise<unknown>);
 const mockTestOpenAIOAuth = vi.mocked(testOpenAIOAuth as (...a: unknown[]) => Promise<unknown>);
 const mockTestModel = vi.mocked(testModel as (...a: unknown[]) => Promise<unknown>);
+const mockGetConnections = vi.mocked(getConnections as () => Promise<unknown>);
 
 function makeModel(overrides: Record<string, unknown> = {}) {
   return {
@@ -143,6 +145,7 @@ beforeEach(() => {
   mockNavigate.mockClear();
   mockCreateModel.mockResolvedValue({});
   mockUpdateModel.mockResolvedValue({});
+  mockGetConnections.mockResolvedValue([]);
 });
 
 afterEach(() => vi.clearAllMocks());
@@ -566,6 +569,116 @@ describe('ModelFormPage — provider change via select', () => {
       // ollama has no models, so only custom input is shown
       expect(screen.getByPlaceholderText('e.g. my-fine-tuned-model')).toBeTruthy();
     });
+  });
+});
+
+// ── Connection picker: Preconfigured / Custom ───────────────────────────────────
+
+const CONNECTIONS = [
+  { id: 'conn-openai-1', providerId: 'openai', label: 'OpenAI Prod', credentials: undefined, endpoint: 'https://api.openai.com/v1', enabled: true },
+  { id: 'conn-openai-2', providerId: 'openai', label: 'OpenAI Backup', credentials: undefined, endpoint: 'https://api.openai.com/v1', enabled: true },
+  { id: 'conn-anthropic-1', providerId: 'anthropic', label: 'Anthropic Main', credentials: undefined, endpoint: 'https://api.anthropic.com', enabled: true },
+];
+
+describe('ModelFormPage — connection picker', () => {
+  it('Preconfigured mode lists provider-matching connections and submits connectionId', async () => {
+    const user = userEvent.setup();
+    mockGetConnections.mockResolvedValue(CONNECTIONS);
+    renderPage('/dashboard/models/new');
+
+    await waitFor(() => {
+      const all = screen.getAllByRole('combobox') as HTMLSelectElement[];
+      expect(all[0]!.value).toBe('openai');
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Preconfigured' }));
+
+    await waitFor(() => expect(screen.getByText('OpenAI Prod')).toBeTruthy());
+    expect(screen.getByText('OpenAI Backup')).toBeTruthy();
+    // Anthropic connection is filtered out — provider is still openai
+    expect(screen.queryByText('Anthropic Main')).toBeNull();
+
+    const connSelect = screen.getByText('OpenAI Prod').closest('select') as HTMLSelectElement;
+    await user.selectOptions(connSelect, 'conn-openai-1');
+
+    await user.click(screen.getByRole('button', { name: /Create Model/ }));
+    await waitFor(() => expect(mockCreateModel).toHaveBeenCalled());
+    const payload = (mockCreateModel.mock.calls[0] as unknown[])[0] as Record<string, unknown>;
+    expect(payload.connectionId).toBe('conn-openai-1');
+    expect(payload.apiKey).toBeUndefined();
+    expect(payload.endpoint).toBeUndefined();
+  });
+
+  it('Custom mode submits apiKey+endpoint and omits connectionId', async () => {
+    const user = userEvent.setup();
+    mockGetConnections.mockResolvedValue(CONNECTIONS);
+    renderPage('/dashboard/models/new');
+
+    await waitFor(() => {
+      const all = screen.getAllByRole('combobox') as HTMLSelectElement[];
+      expect(all[0]!.value).toBe('openai');
+    });
+
+    // Custom is the default mode — no need to click the toggle.
+    const apiKeyInput = document.querySelector('input[name="apiKey"]') as HTMLInputElement;
+    await user.type(apiKeyInput, 'sk-test-123');
+
+    await user.click(screen.getByRole('button', { name: /Create Model/ }));
+    await waitFor(() => expect(mockCreateModel).toHaveBeenCalled());
+    const payload = (mockCreateModel.mock.calls[0] as unknown[])[0] as Record<string, unknown>;
+    expect(payload.apiKey).toBe('sk-test-123');
+    expect(typeof payload.endpoint).toBe('string');
+    expect((payload.endpoint as string).length).toBeGreaterThan(0);
+    expect(payload.connectionId).toBeUndefined();
+  });
+
+  it('switching provider refilters the preconfigured connection list', async () => {
+    const user = userEvent.setup();
+    mockGetConnections.mockResolvedValue(CONNECTIONS);
+    renderPage('/dashboard/models/new');
+
+    await waitFor(() => {
+      const all = screen.getAllByRole('combobox') as HTMLSelectElement[];
+      expect(all[0]!.value).toBe('openai');
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Preconfigured' }));
+    await waitFor(() => expect(screen.getByText('OpenAI Prod')).toBeTruthy());
+    expect(screen.queryByText('Anthropic Main')).toBeNull();
+
+    const providerSelect = screen.getAllByRole('combobox')[0] as HTMLSelectElement;
+    await user.selectOptions(providerSelect, 'anthropic');
+
+    await waitFor(() => expect(screen.getByText('Anthropic Main')).toBeTruthy());
+    expect(screen.queryByText('OpenAI Prod')).toBeNull();
+    expect(screen.queryByText('OpenAI Backup')).toBeNull();
+  });
+
+  it('edit path defaults to Preconfigured for a model on a shared connection', async () => {
+    const model = makeModel({ id: 'openai/gpt-5.2', connectionId: 'conn-openai-1' });
+    mockGetModels.mockResolvedValue([model]);
+    mockGetConnections.mockResolvedValue(CONNECTIONS);
+
+    renderPage('/dashboard/models/openai%2Fgpt-5.2');
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: /Edit Model/ })).toBeTruthy());
+
+    const preconfiguredBtn = await waitFor(() => screen.getByRole('button', { name: 'Preconfigured' }));
+    expect(preconfiguredBtn.className).toContain('active');
+    await waitFor(() => expect(screen.getByText('OpenAI Prod')).toBeTruthy());
+  });
+
+  it('edit path defaults to Custom for a model on its own dedicated connection', async () => {
+    const model = makeModel({ id: 'openai/gpt-5.2', connectionId: 'conn-for-openai/gpt-5.2' });
+    mockGetModels.mockResolvedValue([model]);
+    mockGetConnections.mockResolvedValue(CONNECTIONS);
+
+    renderPage('/dashboard/models/openai%2Fgpt-5.2');
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: /Edit Model/ })).toBeTruthy());
+
+    const customBtn = screen.getByRole('button', { name: 'Custom' });
+    expect(customBtn.className).toContain('active');
   });
 });
 
