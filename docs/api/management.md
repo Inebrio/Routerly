@@ -128,8 +128,7 @@ for the higher-level explanation.
 GET /api/models
 ```
 
-**Auth**: `Authorization: Bearer <jwt>` (any authenticated user; no
-model-specific permission is enforced on this endpoint)
+**Auth**: `Authorization: Bearer <jwt>` (requires `model:read`)
 
 **Response `200`:** array of models, including those on disabled connections.
 Each entry includes `connectionId`; secret fields (`apiKey`, `cfClearance`,

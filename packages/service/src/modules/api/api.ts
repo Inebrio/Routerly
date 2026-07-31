@@ -639,7 +639,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // MODELS
   // ══════════════════════════════════════════════════════════════════════════════
 
-  fastify.get('/api/models', async (_req, reply) => {
+  fastify.get('/api/models', async (req, reply) => {
+    if (!requirePerm(req, 'model:read', reply)) return;
     const models = await listEffectiveModelsIncludingDisabled();
     // Strip secrets before sending to client (use /api/models/:id/apikey to retrieve)
     return reply.send(models.map(redactModelSecrets));
