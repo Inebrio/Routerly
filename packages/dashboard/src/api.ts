@@ -197,6 +197,8 @@ export interface ModelCapabilities {
 
 export interface Model {
   id: string; name: string; provider: string; endpoint: string;
+  /** Present when the model is bound to a connection (shared or dedicated). */
+  connectionId?: string;
   upstreamModelId?: string;
   cost: { inputPerMillion: number; outputPerMillion: number; cachePerMillion?: number; cacheWritePerMillion?: number; pricingTiers?: PricingTier[] };
   contextWindow?: number;
@@ -259,7 +261,9 @@ export interface RepoStatus {
 }
 export const getCatalogStatus = () => request<RepoStatus[]>('/catalog/status');
 export const createModel = (data: {
-  id: string; name?: string; provider: string; endpoint: string; apiKey?: string; cfClearance?: string;
+  id: string; name?: string; provider: string; endpoint?: string; apiKey?: string; cfClearance?: string;
+  /** Bind to an existing (preconfigured) connection instead of submitting endpoint/apiKey. */
+  connectionId?: string;
   cloneFrom?: string; upstreamModelId?: string;
   inputPerMillion: number; outputPerMillion: number;
   cachePerMillion?: number;
@@ -272,7 +276,9 @@ export const createModel = (data: {
 }) => request<Model>('/models', { method: 'POST', body: JSON.stringify(data) });
 export const updateModel = (id: string, data: {
   id?: string;
-  name?: string; provider: string; endpoint: string; apiKey?: string; cfClearance?: string;
+  name?: string; provider: string; endpoint?: string; apiKey?: string; cfClearance?: string;
+  /** Bind to an existing (preconfigured) connection instead of submitting endpoint/apiKey. */
+  connectionId?: string;
   upstreamModelId?: string;
   inputPerMillion: number; outputPerMillion: number;
   cachePerMillion?: number;

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { Plus, X, ChevronDown, EyeOff, Eye, ArrowLeft, Copy, Check, FlaskConical } from 'lucide-react';
-import { getModels, createModel, updateModel, testOpenAIOAuth, testModel, getProviders, type Model, type ModelCapabilities, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit, type CatalogEntry, type ProviderCatalog } from '../api';
+import { getModels, createModel, updateModel, testOpenAIOAuth, testModel, getProviders, getConnections, type Model, type ModelCapabilities, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit, type CatalogEntry, type ProviderCatalog, type Connection } from '../api';
 
 type Provider = string;
 type ProviderModel = {
@@ -332,17 +332,22 @@ export function ModelFormPage() {
   const [isEmbeddingModel, setIsEmbeddingModel] = useState(false);
   const [fieldOverrides, setFieldOverrides] = useState<Record<string, boolean>>({});
   const [catalogDefaults, setCatalogDefaults] = useState<Model['catalogDefaults']>(undefined);
+  const [connections, setConnections] = useState<Connection[]>([]);
+  const [connMode, setConnMode] = useState<'preconfigured' | 'custom'>('custom');
+  const [connectionId, setConnectionId] = useState('');
 
   useEffect(() => {
     async function init() {
       try {
-        // Fetch catalog and models in parallel; use cat directly to avoid state timing issues
-        const [cat, allModels] = await Promise.all([
+        // Fetch catalog, models and connections in parallel; use locals directly to avoid state timing issues
+        const [cat, allModels, conns] = await Promise.all([
           getProviders().catch(() => ({} as ProviderCatalog)),
           getModels(),
+          getConnections().catch(() => [] as Connection[]),
         ]);
         setCatalog(cat);
         setModels(allModels);
+        setConnections(conns);
 
         const catProviders = Object.keys(cat);
         /* v8 ignore next */ const catEndpoints: Record<string, string> = Object.fromEntries(catProviders.map(p => [p, cat[p]?.endpoint ?? '']));
@@ -361,6 +366,9 @@ export function ModelFormPage() {
             editModel(source, catModels);
             // Clear the ID so the user must choose a new one
             setForm(f => ({ ...f, customId: '' }));
+            // Cloning always creates a new dedicated connection — never inherit a shared one.
+            setConnMode('custom');
+            setConnectionId('');
           } else {
             setErr('Source model not found');
           }
@@ -517,6 +525,8 @@ export function ModelFormPage() {
     /* v8 ignore next */
     setForm({ ...EMPTY_FORM, provider, endpoint: ENDPOINT_DEFAULTS[provider] ?? '', id: firstModel?.id ?? '' });
     setTierRows([]); setShowAdvanced(false);
+    // The preconfigured list is filtered by provider — the previous selection no longer applies.
+    setConnectionId('');
     if (firstModel) applyPreset(provider, firstModel.id);
   }
 
@@ -534,6 +544,18 @@ export function ModelFormPage() {
 
   function editModel(model: Model, pm: Record<string, ProviderModel[]> = PROVIDER_MODELS) {
     const provider = model.provider as Provider;
+
+    // A model on its own dedicated connection has connectionId === `conn-for-<its id>` (created
+    // by the backend for inline/Custom credentials). Any other connectionId means it's bound to
+    // a connection shared with other models — default the toggle to Preconfigured in that case.
+    const dedicatedConnId = `conn-for-${model.id}`;
+    if (model.connectionId && model.connectionId !== dedicatedConnId) {
+      setConnMode('preconfigured');
+      setConnectionId(model.connectionId);
+    } else {
+      setConnMode('custom');
+      setConnectionId('');
+    }
     /* v8 ignore next */
     const providerPresets = pm[provider] ?? [];
 
@@ -689,6 +711,7 @@ export function ModelFormPage() {
     const finalId = form.customId.trim() || generateId(idPrefix, form.id, models.filter(m => m.id !== editingModelId).map(m => m.id));
     if (!finalId) { setErr('Model ID required'); setSaving(false); return; }
     if (isCloning && models.some(m => m.id === finalId)) { setErr(`Model "${finalId}" already exists — set a different Custom ID`); setSaving(false); return; }
+    if (connMode === 'preconfigured' && !connectionId) { setErr('Select a connection'); setSaving(false); return; }
 
     const pricingTiersPayload: PricingTier[] = tierRows
       .filter(t => t.above && t.input && t.output)
@@ -704,10 +727,27 @@ export function ModelFormPage() {
       const payload = {
         id: finalId,
         provider: form.provider,
-        endpoint: form.endpoint,
-        ...(form.apiKey ? { apiKey: form.apiKey } : {}),
-        /* v8 ignore next */ ...(form.cfClearance ? { cfClearance: form.cfClearance } : {}),
-        ...(isCloning && cloneSourceId && !form.apiKey ? { cloneFrom: cloneSourceId } : {}),
+        ...(connMode === 'preconfigured'
+          ? { connectionId }
+          : {
+              endpoint: form.endpoint,
+              ...(form.apiKey ? { apiKey: form.apiKey } : {}),
+              /* v8 ignore next */ ...(form.cfClearance ? { cfClearance: form.cfClearance } : {}),
+              ...(isCloning && cloneSourceId && !form.apiKey ? { cloneFrom: cloneSourceId } : {}),
+              // Azure OpenAI
+              ...(form.azureResourceName ? { azureResourceName: form.azureResourceName } : {}),
+              ...(form.azureDeploymentId ? { azureDeploymentId: form.azureDeploymentId } : {}),
+              ...(form.azureApiVersion   ? { azureApiVersion: form.azureApiVersion }     : {}),
+              // AWS Bedrock
+              ...(form.awsRegion         ? { awsRegion: form.awsRegion }                 : {}),
+              ...(form.awsAccessKeyId    ? { awsAccessKeyId: form.awsAccessKeyId }       : {}),
+              ...(form.awsSecretAccessKey ? { awsSecretAccessKey: form.awsSecretAccessKey } : {}),
+              ...(form.awsSessionToken   ? { awsSessionToken: form.awsSessionToken }     : {}),
+              // Google Vertex AI
+              ...(form.vertexProjectId   ? { vertexProjectId: form.vertexProjectId }     : {}),
+              ...(form.vertexLocation    ? { vertexLocation: form.vertexLocation }       : {}),
+              ...(form.vertexServiceAccountKey ? { vertexServiceAccountKey: form.vertexServiceAccountKey } : {}),
+            }),
         // For custom provider, save the exact upstream model ID separately from the Routerly ID.
         ...(form.provider === 'custom' && form.id.trim() ? { upstreamModelId: form.id.trim() } : {}),
         inputPerMillion: parseFloat(form.inputPerMillion) || 0,
@@ -721,19 +761,6 @@ export function ModelFormPage() {
           .filter(l => l.value !== '' && !isNaN(parseFloat(l.value)))
           .map(rowToLimit),
         ...(isEmbeddingModel ? { capabilities: { embedding: true } } : {}),
-        // Azure OpenAI
-        ...(form.azureResourceName ? { azureResourceName: form.azureResourceName } : {}),
-        ...(form.azureDeploymentId ? { azureDeploymentId: form.azureDeploymentId } : {}),
-        ...(form.azureApiVersion   ? { azureApiVersion: form.azureApiVersion }     : {}),
-        // AWS Bedrock
-        ...(form.awsRegion         ? { awsRegion: form.awsRegion }                 : {}),
-        ...(form.awsAccessKeyId    ? { awsAccessKeyId: form.awsAccessKeyId }       : {}),
-        ...(form.awsSecretAccessKey ? { awsSecretAccessKey: form.awsSecretAccessKey } : {}),
-        ...(form.awsSessionToken   ? { awsSessionToken: form.awsSessionToken }     : {}),
-        // Google Vertex AI
-        ...(form.vertexProjectId   ? { vertexProjectId: form.vertexProjectId }     : {}),
-        ...(form.vertexLocation    ? { vertexLocation: form.vertexLocation }       : {}),
-        ...(form.vertexServiceAccountKey ? { vertexServiceAccountKey: form.vertexServiceAccountKey } : {}),
       };
 
       if (editingModelId) {
@@ -849,6 +876,39 @@ export function ModelFormPage() {
             <h3 className="section-title">Connection details</h3>
             <p className="section-desc">API endpoint and authentication credentials required to perform requests.</p>
 
+            <div style={{ marginBottom: 16, display: 'inline-flex', alignItems: 'center', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 3, gap: 2 }}>
+              <button type="button" className={`theme-btn${connMode === 'preconfigured' ? ' active' : ''}`}
+                onClick={() => setConnMode('preconfigured')}>
+                Preconfigured
+              </button>
+              <button type="button" className={`theme-btn${connMode === 'custom' ? ' active' : ''}`}
+                onClick={() => setConnMode('custom')}>
+                Custom
+              </button>
+            </div>
+
+            {connMode === 'preconfigured' ? (
+              <div className="form-group">
+                <label className="form-label">Connection</label>
+                {connections.filter(c => c.providerId === form.provider).length > 0 ? (
+                  <select className="form-input" value={connectionId} required
+                    onChange={e => setConnectionId(e.target.value)}>
+                    <option value="" disabled>— select a connection —</option>
+                    {connections.filter(c => c.providerId === form.provider).map(c => (
+                      <option key={c.id} value={c.id}>{c.label}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                    No preconfigured connections for this provider. Switch to Custom, or create one on the Connections page.
+                  </div>
+                )}
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                  Editing this connection later updates every model bound to it.
+                </div>
+              </div>
+            ) : (
+            <>
             {isWebProvider(form.provider) && (
               <div style={{
                 display: 'flex', gap: 10, padding: '12px 14px', marginBottom: 16,
@@ -1034,6 +1094,8 @@ export function ModelFormPage() {
                   </div>
                 </div>
               </>
+            )}
+            </>
             )}
 
           </div>
