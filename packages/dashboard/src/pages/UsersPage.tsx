@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Users, Pencil, ShieldOff } from 'lucide-react';
 import { getUsers, createUser, deleteUser, reset2faForUser, type User } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { SearchableSelect } from '../components/SearchableSelect';
 
 type AddForm = { email: string; password: string; roleId: string };
 
@@ -121,10 +122,11 @@ export function UsersPage() {
               </div>
               <div className="form-group">
                 <label className="form-label">Role</label>
-                <select className="form-input" value={addForm.roleId} onChange={e => setAddForm(f => ({ ...f, roleId: e.target.value }))}>
-                  <option value="admin">Admin</option>
-                  <option value="viewer">Viewer</option>
-                </select>
+                <SearchableSelect
+                  options={[{ value: 'admin', label: 'Admin' }, { value: 'viewer', label: 'Viewer' }]}
+                  value={addForm.roleId}
+                  onChange={v => setAddForm(f => ({ ...f, roleId: v }))}
+                />
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowAdd(false)}>Cancel</button>

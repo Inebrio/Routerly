@@ -524,17 +524,23 @@ function ProfileEditor({
         </div>
         <div className="form-group" style={{ flex: '1 1 200px', marginBottom: 0 }}>
           <label className="form-label" htmlFor="edit-selector">Selector</label>
-          <select id="edit-selector" className="form-input" value={form.selector} disabled={readOnly}
-            onChange={e => setForm(f => ({ ...f, selector: e.target.value as SelectorType }))}>
-            {(Object.keys(SELECTOR_LABELS) as SelectorType[]).map(s => <option key={s} value={s}>{SELECTOR_LABELS[s]}</option>)}
-          </select>
+          <SearchableSelect
+            options={(Object.keys(SELECTOR_LABELS) as SelectorType[]).map(s => ({ value: s, label: SELECTOR_LABELS[s] }))}
+            value={form.selector}
+            disabled={readOnly}
+            placeholder="Selector"
+            onChange={v => setForm(f => ({ ...f, selector: v as SelectorType }))}
+          />
         </div>
         <div className="form-group" style={{ flex: '1 1 200px', marginBottom: 0 }}>
           <label className="form-label" htmlFor="edit-fallback">Fallback strategy</label>
-          <select id="edit-fallback" className="form-input" value={form.fallbackStrategy} disabled={readOnly}
-            onChange={e => setForm(f => ({ ...f, fallbackStrategy: e.target.value as FallbackStrategyType }))}>
-            {(Object.keys(FALLBACK_LABELS) as FallbackStrategyType[]).map(s => <option key={s} value={s}>{FALLBACK_LABELS[s]}</option>)}
-          </select>
+          <SearchableSelect
+            options={(Object.keys(FALLBACK_LABELS) as FallbackStrategyType[]).map(s => ({ value: s, label: FALLBACK_LABELS[s] }))}
+            value={form.fallbackStrategy}
+            disabled={readOnly}
+            placeholder="Fallback strategy"
+            onChange={v => setForm(f => ({ ...f, fallbackStrategy: v as FallbackStrategyType }))}
+          />
         </div>
       </div>
 

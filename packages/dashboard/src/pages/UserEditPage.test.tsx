@@ -9,6 +9,25 @@ vi.mock('../api', () => ({
   getRoles: vi.fn(),
 }));
 
+// ponytail: mock SearchableSelect as a plain <select> so getByRole('combobox')/selectOptions tests keep working
+vi.mock('../components/SearchableSelect', () => ({
+  SearchableSelect: ({
+    options,
+    value,
+    onChange,
+    disabled,
+  }: {
+    options: { value: string; label: string }[];
+    value: string;
+    onChange: (v: string) => void;
+    disabled?: boolean;
+  }) => (
+    <select value={value} disabled={disabled} onChange={e => onChange(e.target.value)}>
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  ),
+}));
+
 const navigateFn = vi.fn();
 vi.mock('react-router-dom', async (importActual) => {
   const actual = await importActual<typeof import('react-router-dom')>();

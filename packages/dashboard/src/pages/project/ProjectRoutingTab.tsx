@@ -462,21 +462,16 @@ export function ProjectRoutingTab() {
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
             Assign a shared routing profile, or keep this project's own inline policies.
           </p>
-          <select
-            id="routing-profile-select"
-            className="form-input"
+          <SearchableSelect
             style={{ maxWidth: 420 }}
             value={assignedProfileId}
-            onChange={e => void onAssignProfile(e.target.value)}
-          >
-            <option value="">Custom (this project's own policies)</option>
-            {profiles.filter(p => p.builtin).map(p => (
-              <option key={p.id} value={p.id}>{p.label} (built-in)</option>
-            ))}
-            {profiles.filter(p => !p.builtin).map(p => (
-              <option key={p.id} value={p.id}>{p.label}</option>
-            ))}
-          </select>
+            onChange={v => void onAssignProfile(v)}
+            options={[
+              { value: '', label: "Custom (this project's own policies)" },
+              ...profiles.filter(p => p.builtin).map(p => ({ value: p.id, label: `${p.label} (built-in)` })),
+              ...profiles.filter(p => !p.builtin).map(p => ({ value: p.id, label: p.label })),
+            ]}
+          />
           {profileAssigned && (
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.45 }}>
               This project uses the "{profileLabel}" profile. Switch to Custom above to edit policies inline, or edit the profile on the Profiles page.

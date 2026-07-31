@@ -21,6 +21,25 @@ vi.mock('../api.js', () => ({
   getTrace: vi.fn(),
 }));
 
+// ponytail: mock SearchableSelect as a plain <select> so getByRole('combobox')/fireEvent.change tests keep working
+vi.mock('../components/SearchableSelect.js', () => ({
+  SearchableSelect: ({
+    options,
+    value,
+    onChange,
+    disabled,
+  }: {
+    options: { value: string; label: string }[];
+    value: string;
+    onChange: (v: string) => void;
+    disabled?: boolean;
+  }) => (
+    <select value={value} disabled={disabled} onChange={e => onChange(e.target.value)}>
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  ),
+}));
+
 vi.mock('../components/TraceEntryRenderer.js', () => ({
   TraceEntryRenderer: ({ entry }: { entry: { message: string } }) => (
     <div data-testid="trace-entry">{entry.message}</div>

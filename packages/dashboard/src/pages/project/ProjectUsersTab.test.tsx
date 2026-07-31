@@ -12,6 +12,30 @@ vi.mock('../../api', () => ({
   removeProjectMember: vi.fn(),
 }));
 
+// ponytail: mock SearchableSelect as a plain <select> so onChange fires on selectOptions
+vi.mock('../../components/SearchableSelect', () => ({
+  SearchableSelect: ({
+    options,
+    value,
+    onChange,
+    placeholder,
+  }: {
+    options: { value: string; label: string }[];
+    value: string;
+    onChange: (v: string) => void;
+    placeholder?: string;
+  }) => (
+    <select
+      data-testid={`searchable-${placeholder ?? 'select'}`}
+      value={value}
+      onChange={e => onChange(e.target.value)}
+    >
+      <option value="">—</option>
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  ),
+}));
+
 // ponytail: ConfirmDialog just renders confirm/cancel buttons
 vi.mock('../../components/ConfirmDialog', () => ({
   ConfirmDialog: ({ message, onConfirm, onCancel }: { message: string; onConfirm: () => void; onCancel: () => void }) => (
