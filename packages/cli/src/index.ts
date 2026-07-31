@@ -24,6 +24,7 @@ import { makeResilienceCommand } from './commands/resilience.js';
 import { makeProfilesCommand } from './commands/profiles.js';
 import { makeOptimizersCommand } from './commands/optimizers.js';
 import { makeClientsCommand } from './commands/clients.js';
+import { makeMcpCommand } from './commands/mcp.js';
 
 const program = new Command();
 
@@ -55,5 +56,6 @@ program.addCommand(makeResilienceCommand());
 program.addCommand(makeProfilesCommand());
 program.addCommand(makeOptimizersCommand());
 program.addCommand(makeClientsCommand());
+program.addCommand(makeMcpCommand());
 
 program.parse(process.argv);
