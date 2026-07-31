@@ -11,6 +11,9 @@ try {
   if (raw.version) pkgVersion = raw.version;
 } catch { /* fallback to 'unknown' */ }
 
+/** Service version read from package.json, shared so nothing hardcodes a stale literal. */
+export const SERVICE_VERSION = pkgVersion;
+
 export const TELEMETRY_ENDPOINT = 'https://telemetry.routerly.ai/ping';
 
 export type TelemetryEvent = 'install' | 'upgrade' | 'uninstall';
