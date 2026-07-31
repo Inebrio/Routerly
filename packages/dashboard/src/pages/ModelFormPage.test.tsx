@@ -2162,8 +2162,8 @@ describe('ModelFormPage — cfClearance field', () => {
       if (all[0]!.value !== 'openai-web') throw new Error('not yet');
     });
 
-    // cf_clearance mentioned in instructions
-    expect(screen.getByText(/cf_clearance/)).toBeTruthy();
+    // cf_clearance mentioned in instructions and rendered as its own field
+    expect(screen.getAllByText(/cf_clearance/).length).toBeGreaterThan(0);
 
     // Fill in token and submit
     const tokenInput = screen.getByPlaceholderText('eyJ…') as HTMLInputElement;

@@ -1186,6 +1186,40 @@ describe('POST /api/models', () => {
     expect(instancesCall?.[1].find((i: { id: string }) => i.id === 'custom-1')?.connectionId).toBe('conn-for-custom-1')
   })
 
+  it('custom branch persists bedrock cloud credential fields on the dedicated connection (regression)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return []
+      if (t === 'connections') return []
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/models',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        id: 'bedrock-1', provider: 'bedrock', endpoint: '',
+        awsRegion: 'us-east-1', awsAccessKeyId: 'AKIA-x',
+        awsSecretAccessKey: 'aws-secret', awsSessionToken: 'aws-session',
+        inputPerMillion: 1, outputPerMillion: 2, contextWindow: 8000,
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const connectionsCall = mockWriteConfig.mock.calls.find(c => c[0] === 'connections')
+    const conn = connectionsCall?.[1].find((c: { id: string }) => c.id === 'conn-for-bedrock-1')
+    expect(conn).toBeTruthy()
+    // Previously these were silently dropped by the model-path Body type.
+    expect(conn.credentials).toMatchObject({
+      awsRegion: 'us-east-1', awsAccessKeyId: 'AKIA-x',
+      awsSecretAccessKey: 'aws-secret', awsSessionToken: 'aws-session',
+    })
+  })
+
   it('without model:write returns 403', async () => {
     const viewerUser = { id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', projectIds: [] }
     vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
@@ -1942,7 +1976,9 @@ describe('PUT /api/settings', () => {
     await app.close()
     expect(res.statusCode).toBe(200)
     const written = mockWriteConfig.mock.calls[0]![1] as any
-    expect(written.telemetry.lastPingedVersion).toBe('0.3.0')
+    const { readFileSync } = await import('node:fs')
+    const { version: pkgVersion } = JSON.parse(readFileSync(new URL('../../../package.json', import.meta.url), 'utf-8')) as { version: string }
+    expect(written.telemetry.lastPingedVersion).toBe(pkgVersion)
   })
 
   it('disables telemetry when setting telemetry.enabled=false', async () => {
@@ -5473,7 +5509,9 @@ describe('PUT /api/settings — additional branches', () => {
     await app.close()
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
-    expect(body.telemetry.lastPingedVersion).toBe('0.3.0') // always set to current pkgVersion, not preserved from old config
+    const { readFileSync } = await import('node:fs')
+    const { version: pkgVersion } = JSON.parse(readFileSync(new URL('../../../package.json', import.meta.url), 'utf-8')) as { version: string }
+    expect(body.telemetry.lastPingedVersion).toBe(pkgVersion) // always set to current pkgVersion, not preserved from old config
   })
 
   it('disables telemetry when installId already exists (covers line 912 ?? branch)', async () => {

@@ -4,6 +4,57 @@ import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
 import type { ProviderConnection } from '@routerly/shared';
 
+// Canonical flat credential field set the server understands (all optional strings).
+// Keys are the camelCase Commander produces from the corresponding `--kebab` flags,
+// so building the credentials object is a straight copy of whichever flags were set.
+const CREDENTIAL_KEYS = [
+  'apiKey', 'cfClearance',
+  'azureResourceName', 'azureDeploymentId', 'azureApiVersion',
+  'awsRegion', 'awsAccessKeyId', 'awsSecretAccessKey', 'awsSessionToken',
+  'vertexProjectId', 'vertexLocation', 'vertexServiceAccountKey',
+] as const;
+
+type CredentialOpts = Partial<Record<(typeof CREDENTIAL_KEYS)[number], string>> & { credentialsJson?: string };
+
+/** True if the user passed at least one credential flag (including --credentials-json). */
+export function hasAnyCredentialFlag(opts: CredentialOpts): boolean {
+  return CREDENTIAL_KEYS.some(k => opts[k] !== undefined) || opts.credentialsJson !== undefined;
+}
+
+/**
+ * Build the flat credentials object from the flags the user actually passed.
+ * `--credentials-json` merges last (advanced escape hatch). Throws on invalid JSON.
+ */
+export function buildCredentialsFromOpts(opts: CredentialOpts): Record<string, unknown> {
+  const credentials: Record<string, unknown> = {};
+  for (const key of CREDENTIAL_KEYS) {
+    const v = opts[key];
+    if (v !== undefined) credentials[key] = v;
+  }
+  if (opts.credentialsJson) {
+    Object.assign(credentials, JSON.parse(opts.credentialsJson) as Record<string, unknown>);
+  }
+  return credentials;
+}
+
+/** Attach the provider-aware credential flags shared by `add` and `edit`. */
+function addCredentialOptions(c: Command): Command {
+  return c
+    .option('--api-key <key>', 'API key credential (stored plaintext; file permissions protect it)')
+    .option('--cf-clearance <value>', 'Cloudflare clearance token (web providers)')
+    .option('--aws-region <region>', 'AWS region (Bedrock)')
+    .option('--aws-access-key-id <id>', 'AWS access key ID (Bedrock)')
+    .option('--aws-secret-access-key <key>', 'AWS secret access key (Bedrock)')
+    .option('--aws-session-token <token>', 'AWS session token (Bedrock)')
+    .option('--azure-resource-name <name>', 'Azure resource name')
+    .option('--azure-deployment-id <id>', 'Azure deployment ID')
+    .option('--azure-api-version <version>', 'Azure API version')
+    .option('--vertex-project-id <id>', 'Vertex project ID')
+    .option('--vertex-location <location>', 'Vertex location')
+    .option('--vertex-service-account-key <json>', 'Vertex service account key (JSON)')
+    .option('--credentials-json <json>', 'Full credentials object as JSON (advanced; merged last)');
+}
+
 export function makeConnectionsCommand(): Command {
   const cmd = new Command('connections').description('Manage provider connections (credentials shared by one or more model instances)');
 
@@ -50,38 +101,37 @@ Examples:
     });
 
   // ── connections add ──
-  cmd.command('add')
-    .description('Add a provider connection')
-    .requiredOption('--provider-id <id>', 'Provider ID (e.g. openai, anthropic, ollama)')
-    .requiredOption('--label <label>', 'Display label for this connection')
-    .option('--endpoint <url>', 'Custom API endpoint (uses provider default if omitted)')
-    .option('--api-key <key>', 'API key credential (stored plaintext; file permissions protect it)')
-    .option('--credentials-json <json>', 'Full credentials object as JSON (advanced; overrides --api-key on conflict)')
+  addCredentialOptions(
+    cmd.command('add')
+      .description('Add a provider connection')
+      .requiredOption('--provider-id <id>', 'Provider ID (e.g. openai, anthropic, ollama, bedrock)')
+      .requiredOption('--label <label>', 'Display label for this connection')
+      .option('--endpoint <url>', 'Custom API endpoint (uses provider default if omitted)'),
+  )
     .option('--enabled', 'Enable immediately (default: true)')
     .option('--no-enabled', 'Add disabled')
     .addHelpText('after', `
 Examples:
   routerly connections add --provider-id openai --label "Main OpenAI" --api-key sk-...
   routerly connections add --provider-id ollama --label "Local Ollama" --endpoint http://localhost:11434/v1
+  routerly connections add --provider-id bedrock --label "AWS Bedrock" \\
+    --aws-region us-east-1 --aws-access-key-id AKIA... --aws-secret-access-key ...
   routerly connections add --provider-id anthropic --label "Anthropic" \\
     --credentials-json '{"apiKey":"sk-ant-..."}'
 `)
-    .action(async (opts: {
-      providerId: string; label: string; endpoint?: string;
-      apiKey?: string; credentialsJson?: string; enabled?: boolean;
+    .action(async (opts: CredentialOpts & {
+      providerId: string; label: string; endpoint?: string; enabled?: boolean;
     }) => {
       // ponytail: `--enabled`/`--no-enabled` both declared without a shared default leaves
       // opts.enabled undefined when neither flag is passed; the POST schema requires a boolean.
       const enabled = opts.enabled ?? true;
-      let credentials: Record<string, unknown> = {};
-      if (opts.apiKey) credentials['apiKey'] = opts.apiKey;
-      if (opts.credentialsJson) {
-        try {
-          credentials = { ...credentials, ...(JSON.parse(opts.credentialsJson) as Record<string, unknown>) };
-        } catch {
-          console.error(chalk.red('--credentials-json: invalid JSON'));
-          process.exit(1);
-        }
+      let credentials: Record<string, unknown>;
+      try {
+        credentials = buildCredentialsFromOpts(opts);
+      } catch {
+        console.error(chalk.red('--credentials-json: invalid JSON'));
+        process.exit(1);
+        return;
       }
 
       const body = {
@@ -98,6 +148,99 @@ Examples:
       } catch (err) {
         if (err instanceof ApiError) console.error(chalk.red(`API error ${err.status}: ${err.message}`));
         else console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  // ── connections edit ──
+  addCredentialOptions(
+    cmd.command('edit <id>')
+      .description('Edit a provider connection (only the fields you pass are changed)')
+      .option('--label <label>', 'Display label for this connection')
+      .option('--endpoint <url>', 'Custom API endpoint'),
+  )
+    .option('--enabled', 'Enable the connection')
+    .option('--no-enabled', 'Disable the connection')
+    .addHelpText('after', `
+Examples:
+  routerly connections edit c1 --label "Renamed"
+  routerly connections edit c1 --api-key sk-new
+  routerly connections edit c1 --no-enabled
+  routerly connections edit c1 --aws-region us-west-2 --aws-access-key-id AKIA...
+`)
+    .action(async (id: string, opts: CredentialOpts & {
+      label?: string; endpoint?: string; enabled?: boolean;
+    }) => {
+      const body: Record<string, unknown> = {};
+      if (opts.label !== undefined) body['label'] = opts.label;
+      if (opts.endpoint !== undefined) body['endpoint'] = opts.endpoint;
+      if (opts.enabled !== undefined) body['enabled'] = opts.enabled;
+      if (hasAnyCredentialFlag(opts)) {
+        try {
+          body['credentials'] = buildCredentialsFromOpts(opts);
+        } catch {
+          console.error(chalk.red('--credentials-json: invalid JSON'));
+          process.exit(1);
+          return;
+        }
+      }
+
+      if (Object.keys(body).length === 0) {
+        console.error(chalk.red('nothing to update; pass at least one field'));
+        process.exit(1);
+        return;
+      }
+
+      try {
+        await api<ProviderConnection>('PATCH', `/api/connections/${encodeURIComponent(id)}`, body);
+        console.log(chalk.green(`✓ Connection "${id}" updated.`));
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) {
+          console.error(chalk.red(`Connection "${id}" not found.`));
+        } else if (err instanceof ApiError) {
+          console.error(chalk.red(`API error ${err.status}: ${err.message}`));
+        } else {
+          console.error(chalk.red(`Error: ${(err as Error).message}`));
+        }
+        process.exit(1);
+      }
+    });
+
+  // ── connections show ──
+  cmd.command('show <id>')
+    .description('Show a provider connection (credentials never printed)')
+    .option('--json', 'Output as JSON')
+    .addHelpText('after', `
+Examples:
+  routerly connections show c1
+  routerly connections show c1 --json
+`)
+    .action(async (id: string, opts: { json?: boolean }) => {
+      try {
+        const connections = await api<ProviderConnection[]>('GET', '/api/connections');
+        const found = connections.find(c => c.id === id);
+        if (!found) {
+          console.error(chalk.red(`Connection "${id}" not found.`));
+          process.exit(1);
+          return;
+        }
+        // Strip credentials client-side so they are never printed, matching `list`.
+        const { credentials: _credentials, ...safe } = found;
+        if (opts.json) {
+          console.log(JSON.stringify(safe, null, 2));
+          return;
+        }
+        const table = new Table();
+        table.push(
+          { [chalk.cyan('ID')]: safe.id },
+          { [chalk.cyan('Provider')]: safe.providerId },
+          { [chalk.cyan('Label')]: safe.label },
+          { [chalk.cyan('Endpoint')]: safe.endpoint ?? chalk.gray('-') },
+          { [chalk.cyan('Enabled')]: safe.enabled ? chalk.green('yes') : chalk.gray('no') },
+        );
+        console.log(table.toString());
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
