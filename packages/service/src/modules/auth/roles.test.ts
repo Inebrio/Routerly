@@ -46,4 +46,23 @@ describe('roles', () => {
     expect(operator.permissions).toContain('optimizers:read');
     expect(operator.permissions).toContain('optimizers:manage');
   });
+
+  it('admin includes mcp permissions', () => {
+    expect(ALL_PERMISSIONS).toContain('mcp:read');
+    expect(ALL_PERMISSIONS).toContain('mcp:manage');
+  });
+
+  it('viewer can read the mcp tool registry', () => {
+    const viewer = BUILT_IN_ROLES.find(r => r.id === 'viewer')!;
+    expect(viewer.permissions).toContain('mcp:read');
+    // mcp:manage is reserved for a future enable/disable feature; no non-admin
+    // role gets it yet (no route enforces it).
+    expect(viewer.permissions).not.toContain('mcp:manage');
+  });
+
+  it('operator can read the mcp tool registry', () => {
+    const operator = BUILT_IN_ROLES.find(r => r.id === 'operator')!;
+    expect(operator.permissions).toContain('mcp:read');
+    expect(operator.permissions).not.toContain('mcp:manage');
+  });
 });
