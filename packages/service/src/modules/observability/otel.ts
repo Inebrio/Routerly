@@ -1,6 +1,7 @@
 import type { OtelIntegration } from '@routerly/shared';
 import type { getMetricsSnapshot } from './metrics-snapshot.js';
 import { percentile } from './metrics-snapshot.js';
+import { SERVICE_VERSION } from '../telemetry/telemetry.js';
 
 type Snapshot = Awaited<ReturnType<typeof getMetricsSnapshot>>;
 
@@ -74,7 +75,7 @@ export async function pushOtel(integration: OtelIntegration, snapshot: Snapshot)
     resourceMetrics: [{
       resource: { attributes: [{ key: 'service.name', value: { stringValue: 'routerly' } }] },
       scopeMetrics: [{
-        scope: { name: 'routerly', version: '0.3.0' },
+        scope: { name: 'routerly', version: SERVICE_VERSION },
         metrics,
       }],
     }],
