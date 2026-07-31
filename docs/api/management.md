@@ -114,11 +114,26 @@ PUT /api/me
 
 ## Models
 
+A model listed here (`ModelConfig`-shaped) is always backed by a
+[Model Instance](#model-instances) bound to a [Connection](#connections)
+under the hood; these endpoints are a convenience layer over that pair. Each
+model in the response carries a `connectionId` pointing at the connection it
+resolves against. See [Connections](#connections) and
+[Dashboard: Models: Preconfigured vs Custom Connection](../dashboard/models.md#preconfigured-vs-custom-connection)
+for the higher-level explanation.
+
 ### List Models
 
 ```
 GET /api/models
 ```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `model:read`)
+
+**Response `200`:** array of models, including those on disabled connections.
+Each entry includes `connectionId`; secret fields (`apiKey`, `cfClearance`,
+and the other provider-specific credential fields) are always redacted, use
+[Get Model API Key](#get-model-api-key) to read the plaintext key.
 
 ### Create Model
 
@@ -126,25 +141,31 @@ GET /api/models
 POST /api/models
 ```
 
+**Auth**: `Authorization: Bearer <jwt>` (requires `model:write`)
+
 ```json
 {
   "id": "gpt-5-mini",
   "provider": "openai",
   "apiKey": "sk-...",
-  "inputPrice": 0.25,
-  "outputPrice": 2.0,
+  "inputPerMillion": 0.25,
+  "outputPerMillion": 2.0,
   "contextWindow": 128000,
-  "capabilities": ["functionCalling", "json"],
-  "fieldOverrides": { "inputPrice": true }
+  "capabilities": { "functionCalling": true, "json": true },
+  "fieldOverrides": { "inputPerMillion": true }
 }
 ```
 
 **Request fields:**
-- `fieldOverrides` (optional) — object mapping field names to `true` to lock them against catalog sync. Supported fields: `inputPrice`, `outputPrice`, `cachePrice`, `cacheWritePrice`, `pricingTiers`, `contextWindow`, `capabilities`.
+- `connectionId` (optional): bind the model to an existing connection instead of supplying credentials inline. When present, `apiKey`/`endpoint`/`cfClearance` and the other credential fields are ignored; the connection's provider must match `provider` (`400` otherwise, `404` if `connectionId` does not exist).
+- When `connectionId` is **absent**, `apiKey`/`endpoint`/`cfClearance` (and any provider-specific credential fields) are used to create a dedicated, single-model connection with id `conn-for-<id>`, and the model binds to it. This is the same wire shape the endpoint accepted before the connections cutover, so existing integrations are unaffected.
+- `fieldOverrides` (optional): object mapping field names to `true` to lock them against catalog sync. Supported fields: `inputPerMillion`, `outputPerMillion`, `cachePerMillion`, `cacheWritePerMillion`, `pricingTiers`, `contextWindow`, `capabilities`.
 
-**Response includes:**
-- `catalogDefaults` (if model is in catalog) — last known catalog values for each tracked field
-- `fieldOverrides` (if any) — which fields are locked against auto-sync
+**Response `201`:** the created model (redacted), including `connectionId`.
+- `catalogDefaults` (if model is in catalog): last known catalog values for each tracked field
+- `fieldOverrides` (if any): which fields are locked against auto-sync
+
+**Errors**: `409` a model with this `id` already exists · `400` `connectionId` given but its provider does not match `provider` · `404` `connectionId` given but not found · `403` insufficient permissions
 
 ### Get Model
 
@@ -153,8 +174,9 @@ GET /api/models/:id
 ```
 
 **Response includes:**
-- `catalogDefaults` (if model is in catalog) — object with keys: `inputPrice`, `outputPrice`, `cachePrice`, `cacheWritePrice`, `pricingTiers`, `contextWindow`, `capabilities` (whichever were synced from the catalog)
-- `fieldOverrides` (if any) — object with field names as keys, all values set to `true`
+- `connectionId`: the connection this model currently resolves against
+- `catalogDefaults` (if model is in catalog): object with keys: `inputPerMillion`, `outputPerMillion`, `cachePerMillion`, `cacheWritePerMillion`, `pricingTiers`, `contextWindow`, `capabilities` (whichever were synced from the catalog)
+- `fieldOverrides` (if any): object with field names as keys, all values set to `true`
 
 ### Update Model
 
@@ -165,12 +187,17 @@ PUT /api/models/:id
 **Request body** (all fields optional):
 ```json
 {
-  "inputPrice": 0.5,
-  "fieldOverrides": { "inputPrice": true, "contextWindow": false }
+  "inputPerMillion": 0.5,
+  "fieldOverrides": { "inputPerMillion": true, "contextWindow": false }
 }
 ```
 
 Changing a field value automatically sets `fieldOverrides[fieldName] = true`. To unlock a field for auto-sync, send `"fieldOverrides[fieldName] = false"`. When all overrides are cleared, the `fieldOverrides` object is removed from the model config.
+
+**`connectionId` rebinding:**
+- Send `connectionId` to rebind the model to a different existing connection (same provider-match / `400`/`404` rules as create). If the model was previously on its own dedicated `conn-for-<id>` connection and no other model still references it, that dedicated connection is deleted as part of the rebind.
+- Omit `connectionId`: if the model is currently on a shared connection and the body carries no `apiKey`/`cfClearance`, the shared binding is left untouched (a plain field edit does not silently detach the model from its shared connection). If the model is on its own dedicated connection, or the body includes new credentials, the dedicated `conn-for-<id>` connection is created/updated from them (empty `apiKey`/`cfClearance` keeps the currently stored credentials).
+- Renaming a model's `id` (via body `id`) also renames its dedicated connection from `conn-for-<old-id>` to `conn-for-<new-id>` when that connection is still single-model.
 
 ### Delete Model
 
@@ -178,15 +205,29 @@ Changing a field value automatically sets `fieldOverrides[fieldName] = true`. To
 DELETE /api/models/:id
 ```
 
-### Rotate Model API Key
+If the model owned its dedicated `conn-for-<id>` connection and no other model instance references it, the connection is deleted along with the model.
+
+### Get Model API Key
 
 ```
-POST /api/models/:id/apikey
+GET /api/models/:id/apikey
 ```
 
+**Auth**: `Authorization: Bearer <jwt>` (requires `model:write`)
+
+Returns the plaintext credential of the connection the model is currently
+bound to. To rotate the key, use [Update Model](#update-model) (or, for a
+model on a preconfigured connection, [Update Connection](#update-connection))
+with a new `apiKey`.
+
+**Response `200`:**
 ```json
-{ "apiKey": "sk-NEW_KEY" }
+{ "apiKey": "sk-..." }
 ```
+
+`apiKey` is `null` for oauth/web-session providers (`anthropic-oauth`, `openai-web`, etc.), whose credentials are never returned in plaintext.
+
+**Errors**: `404` model not found · `403` insufficient permissions
 
 ---
 

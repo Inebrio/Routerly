@@ -36,14 +36,17 @@ of the list.
 
 ### Adding a Connection
 
-1. Click **+ Add Connection**
+Creating and editing a connection each live on their own dedicated page.
+There is no inline row expander.
+
+1. Click **+ Add Connection**. This navigates to `/dashboard/connections/new`.
 2. Fill in the form:
    - **Provider** — select from the dropdown, populated from `GET /api/providers/descriptors`
    - **Label** — friendly name (e.g. "Primary OpenAI account")
    - **Endpoint** (optional) — override base URL, for custom/self-hosted deployments
    - **Enabled** — whether the connection is usable by routing
    - **Credentials** — add one or more key/value rows. Field names are free-form text; the value input is masked (`type="password"`)
-3. Click **Create**
+3. Click **Create**. You are returned to the Connections list.
 
 Credentials are never displayed once saved — the form only accepts new
 values, it never pre-fills or echoes existing ones.
@@ -61,17 +64,37 @@ is stored as entered.
 
 ### Editing a Connection
 
-Click the **Edit** (pencil) icon on a row to open the same form inline below
-it. All fields are editable, including **Provider**. Credential rows start
-empty — leave them empty to keep the existing stored credentials unchanged,
-or add rows to replace them (replacing the whole credentials object, not a
-per-field merge).
+Click the **Edit** (pencil) icon on a row to navigate to
+`/dashboard/connections/:id/edit`, the same form used for creation, prefilled
+with the connection's current **Provider**, **Label**, **Endpoint**, and
+**Enabled** state. All fields are editable, including **Provider**.
+Credential rows start empty — leave them empty to keep the existing stored
+credentials unchanged, or add rows to replace them (replacing the whole
+credentials object, not a per-field merge).
+
+:::note Change one, change all
+Every model instance bound to a connection resolves its endpoint and
+credentials from that connection at request time. Editing a connection's
+endpoint or credentials here immediately changes routing for **every** model
+instance bound to it. There is no per-model override of connection-level
+settings. See [Models: Preconfigured vs. Custom connection](models.md#preconfigured-vs-custom-connection).
+:::
 
 ### Removing a Connection
 
 Click the **Remove** (trash) icon. You will be asked to confirm; the dialog
 warns that instances bound to the connection will stop working — the API does
 not cascade-delete instances when a connection is deleted.
+
+### Connections Created from the Model Form
+
+Registering or editing a model with **Custom** credentials (see
+[Models: Preconfigured vs. Custom connection](models.md#preconfigured-vs-custom-connection))
+does not bypass the connection layer. Routerly creates (or updates) a
+dedicated, single-model connection for it with id `conn-for-<model-id>`
+(labeled with the model's name), and it shows up here like any other
+connection. Deleting that model also removes its dedicated connection,
+provided no other instance references it.
 
 ---
 
