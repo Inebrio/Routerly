@@ -319,6 +319,8 @@ const PERM_LABELS_LOCAL: Record<Permission, string> = {
   'profiles:manage':    'Routing Profiles – Manage',
   'optimizers:read':    'Optimizers – Read',
   'optimizers:manage':  'Optimizers – Manage',
+  'mcp:read':           'MCP – Read',
+  'mcp:manage':         'MCP – Manage',
 };
 
 /* v8 ignore next */
