@@ -62,8 +62,12 @@ export async function resolveOpenAIOAuthCredential(connection: ProviderConnectio
   if (!isModuleEnabled(records, 'provider-oauth')) {
     throw new Error("openai-oauth: 'provider-oauth' module is disabled");
   }
-  const creds = connection.credentials as { oauthEnc?: string; refreshEnc?: string; expiresAt?: number };
+  const creds = connection.credentials as { oauthEnc?: string; refreshEnc?: string; expiresAt?: number; apiKey?: string };
   if (!creds.oauthEnc || !creds.refreshEnc || typeof creds.expiresAt !== 'number') {
+    // No refreshable oauth pair. Fall back to a static bearer stored in apiKey (legacy/migrated
+    // connections whose token predates the oauthEnc/refreshEnc mechanism); the adapter uses it
+    // as-is with no refresh. Only fail when there is no usable credential at all.
+    if (typeof creds.apiKey === 'string' && creds.apiKey) return creds.apiKey;
     throw new Error('oauth connection missing encrypted credentials');
   }
   const accessToken = decryptCredential(creds.oauthEnc);

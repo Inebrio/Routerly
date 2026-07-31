@@ -241,11 +241,22 @@ describe('resolveAnthropicOAuthCredential', () => {
     expect(mockWriteConfig).not.toHaveBeenCalled()
   })
 
-  it('throws a clear error when oauthEnc/refreshEnc/expiresAt are missing from credentials', async () => {
+  it('throws a clear error when no usable credential is present', async () => {
     const connection = makeConnection({ credentials: {} })
     await expect(resolveAnthropicOAuthCredential(connection)).rejects.toThrow(
       'oauth connection missing encrypted credentials',
     )
+  })
+
+  it('falls back to a static apiKey bearer when no refreshable oauth pair exists (legacy/migrated)', async () => {
+    const connection = makeConnection({ credentials: { apiKey: 'static-legacy-token' } })
+    const fetchMock = vi.fn()
+    global.fetch = fetchMock as any
+
+    const token = await resolveAnthropicOAuthCredential(connection)
+    expect(token).toBe('static-legacy-token')
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(mockWriteConfig).not.toHaveBeenCalled()
   })
 
   it('refuses to run when the provider-oauth module is disabled', async () => {

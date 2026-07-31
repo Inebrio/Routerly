@@ -15,7 +15,12 @@ import { createHash } from 'node:crypto';
 import type { ModelConfig, ProviderConnection, ModelInstance } from '@routerly/shared';
 import { readConfig, writeConfig } from './loader.js';
 
-/** Credential fields on ModelConfig, in the fixed order used by the fingerprint hash. */
+/**
+ * Credential fields on ModelConfig, in the fixed order used by the fingerprint hash.
+ * Deliberately excludes the oauth/web ciphertext fields (see COPY_FIELDS): those are
+ * volatile (re-encrypted on every token refresh) and would make the connection id
+ * unstable across refreshes.
+ */
 const CREDENTIAL_FIELDS = [
   'apiKey',
   'cfClearance',
@@ -31,6 +36,21 @@ const CREDENTIAL_FIELDS = [
   'vertexServiceAccountKey',
 ] as const;
 
+/**
+ * Fields copied verbatim into the connection's credentials. Superset of the fingerprint
+ * fields plus the oauth/web ciphertext a properly-seeded connection needs at runtime
+ * (adapters read these from connection.credentials). Dropping them here silently broke
+ * oauth/web/subscription routing on migration.
+ */
+const COPY_FIELDS = [
+  ...CREDENTIAL_FIELDS,
+  'oauthEnc',
+  'refreshEnc',
+  'cookieEnc',
+  'cfClearanceEnc',
+  'expiresAt',
+] as const;
+
 function connectionId(model: ModelConfig): string {
   const parts = [model.provider, model.endpoint, ...CREDENTIAL_FIELDS.map((f) => model[f] ?? '')];
   const hash = createHash('sha256').update(JSON.stringify(parts)).digest('hex');
@@ -39,8 +59,11 @@ function connectionId(model: ModelConfig): string {
 
 function buildCredentials(model: ModelConfig): Record<string, unknown> {
   const credentials: Record<string, unknown> = {};
-  for (const field of CREDENTIAL_FIELDS) {
-    if (model[field] !== undefined) credentials[field] = model[field];
+  // enc fields (oauthEnc/refreshEnc/cookieEnc/cfClearanceEnc/expiresAt) are not typed on
+  // ModelConfig; read through a record cast so legacy oauth/web credentials are carried over.
+  const record = model as unknown as Record<string, unknown>;
+  for (const field of COPY_FIELDS) {
+    if (record[field] !== undefined) credentials[field] = record[field];
   }
   return credentials;
 }
