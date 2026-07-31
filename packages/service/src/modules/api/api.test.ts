@@ -2333,6 +2333,30 @@ describe('POST /api/projects/:id/tokens', () => {
     await app.close()
     expect(res.statusCode).toBe(400)
   })
+
+  it('persists scopes when provided', async () => {
+    setupAdminAuth()
+    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    let written: any
+    mockWriteConfig.mockImplementation(async (_t: string, data: any) => { written = data })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/projects/p1/tokens',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ scopes: ['mcp', 'mcp:write'] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).tokenInfo.scopes).toEqual(['mcp', 'mcp:write'])
+    expect(written[0].tokens[0].scopes).toEqual(['mcp', 'mcp:write'])
+  })
 })
 
 describe('PUT /api/projects/:id/tokens/:tokenId', () => {
@@ -2376,6 +2400,52 @@ describe('PUT /api/projects/:id/tokens/:tokenId', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(404)
+  })
+
+  it('sets scopes when provided', async () => {
+    setupAdminAuth()
+    const token = { id: 'tok-1', token: 'sk-rt-xxx', tokenSnippet: 'sk-rt-xx', createdAt: new Date().toISOString(), models: [] }
+    const project = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1/tokens/tok-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ scopes: ['mcp'] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).scopes).toEqual(['mcp'])
+  })
+
+  it('leaves existing scopes untouched when scopes omitted', async () => {
+    setupAdminAuth()
+    const token = { id: 'tok-1', token: 'sk-rt-xxx', tokenSnippet: 'sk-rt-xx', createdAt: new Date().toISOString(), models: [], scopes: ['mcp', 'mcp:write'] }
+    const project = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return [project]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/projects/p1/tokens/tok-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ labels: ['prod'] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).scopes).toEqual(['mcp', 'mcp:write'])
   })
 })
 

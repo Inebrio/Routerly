@@ -1126,6 +1126,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   const createTokenBodySchema = z.object({
     labels: z.array(z.string()).optional(),
     tags: tagsSchema,
+    scopes: z.array(z.string()).optional(),
     expiresAt: z.string().datetime({ offset: true }).refine(
       v => new Date(v) > new Date(),
       { message: 'expiresAt must be in the future' }
@@ -1139,9 +1140,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     })).optional(),
     labels: z.array(z.string()).optional(),
     tags: tagsSchema,
+    scopes: z.array(z.string()).optional(),
   });
 
-  fastify.post<{ Params: { id: string }, Body: { labels?: string[]; tags?: Record<string, string>; expiresAt?: string } }>('/api/projects/:id/tokens', async (req, reply) => {
+  fastify.post<{ Params: { id: string }, Body: { labels?: string[]; tags?: Record<string, string>; scopes?: string[]; expiresAt?: string } }>('/api/projects/:id/tokens', async (req, reply) => {
     if (!requirePerm(req, 'project:write', reply)) return;
 
     const parsed = createTokenBodySchema.safeParse(req.body);
@@ -1160,6 +1162,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       createdAt: new Date().toISOString(),
       ...(parsed.data.labels ? { labels: parsed.data.labels } : {}),
       ...(parsed.data.tags ? { tags: parsed.data.tags } : {}),
+      ...(parsed.data.scopes ? { scopes: parsed.data.scopes } : {}),
       ...(parsed.data.expiresAt ? { expiresAt: parsed.data.expiresAt } : {}),
     };
 
@@ -1173,7 +1176,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send({ token: rawToken, tokenInfo: { ...newToken, token: undefined } });
   });
 
-  fastify.put<{ Params: { id: string, tokenId: string }; Body: { models?: TokenModelRef[], labels?: string[], tags?: Record<string, string> } }>('/api/projects/:id/tokens/:tokenId', async (req, reply) => {
+  fastify.put<{ Params: { id: string, tokenId: string }; Body: { models?: TokenModelRef[], labels?: string[], tags?: Record<string, string>, scopes?: string[] } }>('/api/projects/:id/tokens/:tokenId', async (req, reply) => {
     if (!requirePerm(req, 'project:write', reply)) return;
 
     const parsed = updateTokenBodySchema.safeParse(req.body);
@@ -1192,6 +1195,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (parsed.data.models !== undefined) token.models = parsed.data.models as TokenModelRef[];
     if (parsed.data.labels !== undefined) token.labels = parsed.data.labels;
     if (parsed.data.tags !== undefined) token.tags = parsed.data.tags;
+    if (parsed.data.scopes !== undefined) token.scopes = parsed.data.scopes;
     await writeConfig('projects', projects);
 
     return reply.send({ ...token, token: undefined });

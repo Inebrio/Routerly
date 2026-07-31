@@ -231,6 +231,24 @@ describe('ProjectTokenEditPage — save', () => {
       expect.any(Array),
       expect.any(Array),
       expect.any(Object),
+      expect.any(Array),
+    ));
+  });
+
+  it('initializes scopes from token and sends them on submit', async () => {
+    const scopedToken = { ...mockToken, scopes: ['mcp', 'mcp:write'] };
+    const scopedProject = { ...mockProject, tokens: [scopedToken] };
+    renderPage(scopedProject);
+    await waitFor(() => screen.getByRole('button', { name: 'Save Changes' }));
+    await waitFor(() => expect(screen.getByText('mcp:write')).toBeTruthy());
+    await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+    await waitFor(() => expect(mockUpdateProjectToken).toHaveBeenCalledWith(
+      'proj-1',
+      'tok-1',
+      expect.any(Array),
+      expect.any(Array),
+      expect.any(Object),
+      ['mcp', 'mcp:write'],
     ));
   });
 
