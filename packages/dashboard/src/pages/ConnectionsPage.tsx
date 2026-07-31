@@ -1,28 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Edit2, Boxes, Plug, ShieldOff } from 'lucide-react';
 import {
-  getConnections, createConnection, updateConnection, deleteConnection, getProviderDescriptors,
-  type Connection, type ProviderDescriptor,
+  getConnections, deleteConnection,
+  type Connection,
 } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { ConnectionForm, type ConnectionFormState, emptyForm, credentialsToRecord } from '../components/ConnectionForm';
 import { useAuth } from '../AuthContext';
 
 export function ConnectionsPage() {
   const { can } = useAuth();
   const canRead = can('connections:read');
   const canManage = can('connections:manage');
+  const navigate = useNavigate();
 
   const [connections, setConnections] = useState<Connection[]>([]);
-  const [providers, setProviders] = useState<ProviderDescriptor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState<ConnectionFormState>(emptyForm(''));
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<ConnectionFormState>(emptyForm(''));
-  const [saving, setSaving] = useState(false);
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   useEffect(() => { if (canRead) void load(); else setLoading(false); }, [canRead]);
@@ -31,65 +25,12 @@ export function ConnectionsPage() {
     setLoading(true);
     setError('');
     try {
-      const [conns, descriptors] = await Promise.all([getConnections(), getProviderDescriptors()]);
+      const conns = await getConnections();
       setConnections(conns);
-      setProviders(descriptors);
-      setCreateForm(emptyForm(descriptors[0]?.id ?? ''));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load connections');
     } finally {
       setLoading(false);
-    }
-  }
-
-  function startEdit(conn: Connection) {
-    setEditingId(conn.id);
-    setEditForm({ providerId: conn.providerId, label: conn.label, endpoint: conn.endpoint ?? '', enabled: conn.enabled, credentials: [] });
-    setShowCreate(false);
-  }
-
-  async function submitCreate() {
-    setSaving(true);
-    setError('');
-    try {
-      const created = await createConnection({
-        providerId: createForm.providerId,
-        label: createForm.label,
-        ...(createForm.endpoint ? { endpoint: createForm.endpoint } : {}),
-        enabled: createForm.enabled,
-        credentials: credentialsToRecord(createForm.credentials),
-      });
-      setConnections(cs => [...cs, created]);
-      setShowCreate(false);
-      setCreateForm(emptyForm(providers[0]?.id ?? ''));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create connection');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function submitEdit() {
-    /* v8 ignore next */
-    if (!editingId) return;
-    setSaving(true);
-    setError('');
-    try {
-      const patch: Parameters<typeof updateConnection>[1] = {
-        providerId: editForm.providerId,
-        label: editForm.label,
-        ...(editForm.endpoint ? { endpoint: editForm.endpoint } : {}),
-        enabled: editForm.enabled,
-      };
-      const credentials = credentialsToRecord(editForm.credentials);
-      if (Object.keys(credentials).length > 0) patch.credentials = credentials;
-      const updated = await updateConnection(editingId, patch);
-      setConnections(cs => cs.map(c => c.id === updated.id ? updated : c));
-      setEditingId(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to update connection');
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -140,24 +81,12 @@ export function ConnectionsPage() {
               <span className="toolbar-title">
                 {connections.length} connection{connections.length !== 1 ? 's' : ''}
               </span>
-              {canManage && !showCreate && (
-                <button className="btn btn-primary" onClick={() => { setShowCreate(true); setEditingId(null); }}>
+              {canManage && (
+                <button className="btn btn-primary" onClick={() => navigate('/dashboard/connections/new')}>
                   <Plus size={16} /> Add Connection
                 </button>
               )}
             </div>
-
-            {showCreate && (
-              <ConnectionForm
-                form={createForm}
-                onChange={setCreateForm}
-                onSave={submitCreate}
-                onCancel={() => { setShowCreate(false); setCreateForm(emptyForm(providers[0]?.id ?? '')); }}
-                saving={saving}
-                providers={providers}
-                isNew
-              />
-            )}
 
             {connections.length === 0 ? (
               <div className="empty-state"><Plug size={40} /><p>No connections yet. Add one to get started.</p></div>
@@ -175,47 +104,31 @@ export function ConnectionsPage() {
                   </thead>
                   <tbody>
                     {connections.map(conn => (
-                      <React.Fragment key={conn.id}>
-                        <tr>
-                          <td>{conn.label}</td>
-                          <td><span className={`badge badge-${conn.providerId}`}>{conn.providerId}</span></td>
-                          <td><span className="mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{conn.endpoint || '—'}</span></td>
-                          <td>
-                            <span style={{ fontSize: '0.8rem', color: conn.enabled ? 'var(--success)' : 'var(--text-muted)' }}>
-                              {conn.enabled ? 'Enabled' : 'Disabled'}
-                            </span>
-                          </td>
-                          <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                            <Link to={`/dashboard/connections/${encodeURIComponent(conn.id)}/instances`} className="btn-icon" title="Instances">
-                              <Boxes size={15} />
-                            </Link>
-                            {canManage && (
-                              <>
-                                <button className="btn-icon" onClick={() => startEdit(conn)} title="Edit">
-                                  <Edit2 size={15} />
-                                </button>
-                                <button className="btn-icon danger" onClick={() => handleDelete(conn)} title="Remove">
-                                  <Trash2 size={15} />
-                                </button>
-                              </>
-                            )}
-                          </td>
-                        </tr>
-                        {editingId === conn.id && (
-                          <tr>
-                            <td colSpan={5} style={{ padding: 0 }}>
-                              <ConnectionForm
-                                form={editForm}
-                                onChange={setEditForm}
-                                onSave={submitEdit}
-                                onCancel={() => setEditingId(null)}
-                                saving={saving}
-                                providers={providers}
-                              />
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
+                      <tr key={conn.id}>
+                        <td>{conn.label}</td>
+                        <td><span className={`badge badge-${conn.providerId}`}>{conn.providerId}</span></td>
+                        <td><span className="mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{conn.endpoint || '—'}</span></td>
+                        <td>
+                          <span style={{ fontSize: '0.8rem', color: conn.enabled ? 'var(--success)' : 'var(--text-muted)' }}>
+                            {conn.enabled ? 'Enabled' : 'Disabled'}
+                          </span>
+                        </td>
+                        <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                          <Link to={`/dashboard/connections/${encodeURIComponent(conn.id)}/instances`} className="btn-icon" title="Instances">
+                            <Boxes size={15} />
+                          </Link>
+                          {canManage && (
+                            <>
+                              <button className="btn-icon" onClick={() => navigate(`/dashboard/connections/${encodeURIComponent(conn.id)}/edit`)} title="Edit">
+                                <Edit2 size={15} />
+                              </button>
+                              <button className="btn-icon danger" onClick={() => handleDelete(conn)} title="Remove">
+                                <Trash2 size={15} />
+                              </button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
                     ))}
                   </tbody>
                 </table>

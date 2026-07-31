@@ -5,11 +5,14 @@ import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('../api', () => ({
   getConnections: vi.fn(),
-  createConnection: vi.fn(),
-  updateConnection: vi.fn(),
   deleteConnection: vi.fn(),
-  getProviderDescriptors: vi.fn(),
 }));
+
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async (importActual) => {
+  const actual = await importActual<typeof import('react-router-dom')>();
+  return { ...actual, useNavigate: () => mockNavigate };
+});
 
 vi.mock('../AuthContext', () => ({
   useAuth: vi.fn(),
@@ -26,14 +29,11 @@ vi.mock('../components/ConfirmDialog', () => ({
 }));
 
 import { ConnectionsPage } from './ConnectionsPage';
-import { getConnections, createConnection, updateConnection, deleteConnection, getProviderDescriptors } from '../api';
+import { getConnections, deleteConnection } from '../api';
 import { useAuth } from '../AuthContext';
 
 const mockGetConnections = vi.mocked(getConnections as () => Promise<unknown>);
-const mockCreateConnection = vi.mocked(createConnection as (...a: unknown[]) => Promise<unknown>);
-const mockUpdateConnection = vi.mocked(updateConnection as (...a: unknown[]) => Promise<unknown>);
 const mockDeleteConnection = vi.mocked(deleteConnection as (...a: unknown[]) => Promise<unknown>);
-const mockGetDescriptors = vi.mocked(getProviderDescriptors as () => Promise<unknown>);
 const mockUseAuth = vi.mocked(useAuth);
 
 function makeConnection(overrides: Record<string, unknown> = {}) {
@@ -41,10 +41,6 @@ function makeConnection(overrides: Record<string, unknown> = {}) {
     id: 'c1', providerId: 'openai', label: 'My OpenAI', credentials: undefined,
     endpoint: 'https://api.openai.com/v1', enabled: true, ...overrides,
   };
-}
-
-function makeDescriptor(overrides: Record<string, unknown> = {}) {
-  return { id: 'openai', label: 'OpenAI', protocol: 'openai', supportLevel: 'native', nativeCapabilities: {}, ...overrides };
 }
 
 function renderPage() {
@@ -57,9 +53,6 @@ function renderPage() {
 
 beforeEach(() => {
   mockGetConnections.mockResolvedValue([]);
-  mockGetDescriptors.mockResolvedValue([makeDescriptor()]);
-  mockCreateConnection.mockResolvedValue(makeConnection({ id: 'c-new' }));
-  mockUpdateConnection.mockResolvedValue(makeConnection({ label: 'Updated' }));
   mockDeleteConnection.mockResolvedValue(undefined);
   mockUseAuth.mockReturnValue({
     user: { id: 'u1', email: 'admin@test.com', role: 'admin' },
@@ -107,42 +100,34 @@ describe('ConnectionsPage — list', () => {
     renderPage();
     await waitFor(() => expect(screen.queryByText('boom')).not.toBeNull());
   });
+
+  it('shows a fallback message when loading fails with a non-Error value', async () => {
+    mockGetConnections.mockRejectedValue('oops');
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('Failed to load connections')).not.toBeNull());
+  });
 });
 
-describe('ConnectionsPage — add connection', () => {
-  it('creates a connection via the inline form', async () => {
+describe('ConnectionsPage — navigation to dedicated pages', () => {
+  it('navigates to the create page when clicking Add Connection', async () => {
     const user = userEvent.setup();
     renderPage();
     await waitFor(() => expect(screen.queryByText(/No connections yet/i)).not.toBeNull());
 
     await user.click(screen.getByRole('button', { name: /add connection/i }));
-    await user.type(screen.getByLabelText(/label/i), 'My OpenAI');
-    await user.click(screen.getByRole('button', { name: /^create$/i }));
 
-    await waitFor(() => expect(mockCreateConnection).toHaveBeenCalledWith(expect.objectContaining({
-      providerId: 'openai', label: 'My OpenAI', enabled: true,
-    })));
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/connections/new');
   });
 
-  it('creates a connection with a custom provider, endpoint and disabled flag', async () => {
+  it('navigates to the edit page when clicking the edit icon', async () => {
     const user = userEvent.setup();
-    mockGetDescriptors.mockResolvedValue([
-      makeDescriptor({ id: 'openai', label: 'OpenAI' }),
-      makeDescriptor({ id: 'anthropic', label: 'Anthropic' }),
-    ]);
+    mockGetConnections.mockResolvedValue([makeConnection()]);
     renderPage();
-    await waitFor(() => expect(screen.queryByText(/No connections yet/i)).not.toBeNull());
+    await waitFor(() => expect(screen.queryByText('My OpenAI')).not.toBeNull());
 
-    await user.click(screen.getByRole('button', { name: /add connection/i }));
-    await user.selectOptions(screen.getByLabelText(/provider/i), 'anthropic');
-    await user.type(screen.getByLabelText(/label/i), 'My Anthropic');
-    await user.type(screen.getByLabelText(/endpoint/i), 'https://api.anthropic.com');
-    await user.click(screen.getByLabelText(/enabled/i));
-    await user.click(screen.getByRole('button', { name: /^create$/i }));
+    await user.click(screen.getByTitle('Edit'));
 
-    await waitFor(() => expect(mockCreateConnection).toHaveBeenCalledWith(expect.objectContaining({
-      providerId: 'anthropic', label: 'My Anthropic', endpoint: 'https://api.anthropic.com', enabled: false,
-    })));
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/connections/c1/edit');
   });
 
   it('does not render the add button without connections:manage', async () => {
@@ -155,6 +140,22 @@ describe('ConnectionsPage — add connection', () => {
     renderPage();
     await waitFor(() => expect(screen.queryByText(/No connections yet/i)).not.toBeNull());
     expect(screen.queryByRole('button', { name: /add connection/i })).toBeNull();
+  });
+
+  it('hides edit/delete actions without connections:manage', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'u1', email: 'user@test.com', role: 'member' },
+      isLoading: false,
+      login: vi.fn(), loginDirect: vi.fn(), logout: vi.fn(), updateUser: vi.fn(),
+      can: vi.fn().mockImplementation((p: string) => p === 'connections:read'),
+    });
+    mockGetConnections.mockResolvedValue([makeConnection()]);
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('My OpenAI')).not.toBeNull());
+
+    expect(screen.queryByTitle('Edit')).toBeNull();
+    expect(screen.queryByTitle('Remove')).toBeNull();
+    expect(screen.getByTitle('Instances')).not.toBeNull();
   });
 });
 
@@ -197,174 +198,6 @@ describe('ConnectionsPage — remove connection', () => {
     await waitFor(() => expect(screen.queryByText('delete failed')).not.toBeNull());
   });
 
-  it('hides edit/delete/add actions without connections:manage', async () => {
-    mockUseAuth.mockReturnValue({
-      user: { id: 'u1', email: 'user@test.com', role: 'member' },
-      isLoading: false,
-      login: vi.fn(), loginDirect: vi.fn(), logout: vi.fn(), updateUser: vi.fn(),
-      can: vi.fn().mockImplementation((p: string) => p === 'connections:read'),
-    });
-    mockGetConnections.mockResolvedValue([makeConnection()]);
-    renderPage();
-    await waitFor(() => expect(screen.queryByText('My OpenAI')).not.toBeNull());
-
-    expect(screen.queryByTitle('Edit')).toBeNull();
-    expect(screen.queryByTitle('Remove')).toBeNull();
-    expect(screen.getByTitle('Instances')).not.toBeNull();
-  });
-});
-
-describe('ConnectionsPage — edit connection', () => {
-  it('edits a connection via the inline form, including a new credential field', async () => {
-    const user = userEvent.setup();
-    mockGetConnections.mockResolvedValue([makeConnection({ endpoint: undefined })]);
-    renderPage();
-    await waitFor(() => expect(screen.queryByText('My OpenAI')).not.toBeNull());
-
-    await user.click(screen.getByTitle('Edit'));
-    const labelInputs = screen.getAllByLabelText(/label/i);
-    await user.clear(labelInputs[labelInputs.length - 1]!);
-    await user.type(labelInputs[labelInputs.length - 1]!, 'Renamed');
-    await user.click(screen.getAllByRole('button', { name: /add credential field/i })[0]!);
-    await user.type(screen.getAllByPlaceholderText('e.g. apiKey')[0]!, 'apiKey');
-    await user.type(screen.getAllByPlaceholderText('value')[0]!, 'sk-test');
-    await user.click(screen.getByRole('button', { name: /^save$/i }));
-
-    await waitFor(() => expect(mockUpdateConnection).toHaveBeenCalledWith('c1', expect.objectContaining({
-      label: 'Renamed', credentials: { apiKey: 'sk-test' },
-    })));
-  });
-
-  it('cancels editing without saving', async () => {
-    const user = userEvent.setup();
-    mockGetConnections.mockResolvedValue([makeConnection()]);
-    renderPage();
-    await waitFor(() => expect(screen.queryByText('My OpenAI')).not.toBeNull());
-
-    await user.click(screen.getByTitle('Edit'));
-    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
-
-    expect(mockUpdateConnection).not.toHaveBeenCalled();
-    expect(screen.queryByRole('button', { name: /^save$/i })).toBeNull();
-  });
-
-  it('shows an error when update fails', async () => {
-    const user = userEvent.setup();
-    mockGetConnections.mockResolvedValue([makeConnection()]);
-    mockUpdateConnection.mockRejectedValue(new Error('update failed'));
-    renderPage();
-    await waitFor(() => expect(screen.queryByText('My OpenAI')).not.toBeNull());
-
-    await user.click(screen.getByTitle('Edit'));
-    await user.click(screen.getByRole('button', { name: /^save$/i }));
-
-    await waitFor(() => expect(screen.queryByText('update failed')).not.toBeNull());
-  });
-
-  it('removes a credential row before saving', async () => {
-    const user = userEvent.setup();
-    mockGetConnections.mockResolvedValue([makeConnection()]);
-    renderPage();
-    await waitFor(() => expect(screen.queryByText('My OpenAI')).not.toBeNull());
-
-    await user.click(screen.getByTitle('Edit'));
-    await user.click(screen.getByRole('button', { name: /add credential field/i }));
-    await user.click(screen.getByTitle('Remove field'));
-    await user.click(screen.getByRole('button', { name: /^save$/i }));
-
-    await waitFor(() => expect(mockUpdateConnection).toHaveBeenCalledWith('c1', expect.not.objectContaining({ credentials: expect.anything() })));
-  });
-});
-
-describe('ConnectionsPage — create errors and cancel', () => {
-  it('cancels the create form without calling the API', async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await waitFor(() => expect(screen.queryByText(/No connections yet/i)).not.toBeNull());
-
-    await user.click(screen.getByRole('button', { name: /add connection/i }));
-    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
-
-    expect(mockCreateConnection).not.toHaveBeenCalled();
-    expect(screen.queryByRole('button', { name: /^create$/i })).toBeNull();
-  });
-
-  it('shows an error when creation fails', async () => {
-    const user = userEvent.setup();
-    mockCreateConnection.mockRejectedValue(new Error('create failed'));
-    renderPage();
-    await waitFor(() => expect(screen.queryByText(/No connections yet/i)).not.toBeNull());
-
-    await user.click(screen.getByRole('button', { name: /add connection/i }));
-    await user.type(screen.getByLabelText(/label/i), 'X');
-    await user.click(screen.getByRole('button', { name: /^create$/i }));
-
-    await waitFor(() => expect(screen.queryByText('create failed')).not.toBeNull());
-  });
-});
-
-describe('ConnectionsPage — no providers configured', () => {
-  it('creates a connection when no provider descriptors exist', async () => {
-    const user = userEvent.setup();
-    mockGetDescriptors.mockResolvedValue([]);
-    renderPage();
-    await waitFor(() => expect(screen.queryByText(/No connections yet/i)).not.toBeNull());
-
-    await user.click(screen.getByRole('button', { name: /add connection/i }));
-    await user.type(screen.getByLabelText(/label/i), 'No Provider');
-    await user.click(screen.getByRole('button', { name: /^create$/i }));
-
-    await waitFor(() => expect(mockCreateConnection).toHaveBeenCalledWith(expect.objectContaining({
-      providerId: '', label: 'No Provider',
-    })));
-  });
-
-  it('cancels the create form when no providers are configured', async () => {
-    const user = userEvent.setup();
-    mockGetDescriptors.mockResolvedValue([]);
-    renderPage();
-    await waitFor(() => expect(screen.queryByText(/No connections yet/i)).not.toBeNull());
-
-    await user.click(screen.getByRole('button', { name: /add connection/i }));
-    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
-
-    expect(mockCreateConnection).not.toHaveBeenCalled();
-  });
-});
-
-describe('ConnectionsPage — non-Error rejections', () => {
-  it('shows a fallback message when loading fails with a non-Error value', async () => {
-    mockGetConnections.mockRejectedValue('oops');
-    renderPage();
-    await waitFor(() => expect(screen.queryByText('Failed to load connections')).not.toBeNull());
-  });
-
-  it('shows a fallback message when creation fails with a non-Error value', async () => {
-    const user = userEvent.setup();
-    mockCreateConnection.mockRejectedValue('oops');
-    renderPage();
-    await waitFor(() => expect(screen.queryByText(/No connections yet/i)).not.toBeNull());
-
-    await user.click(screen.getByRole('button', { name: /add connection/i }));
-    await user.type(screen.getByLabelText(/label/i), 'X');
-    await user.click(screen.getByRole('button', { name: /^create$/i }));
-
-    await waitFor(() => expect(screen.queryByText('Failed to create connection')).not.toBeNull());
-  });
-
-  it('shows a fallback message when update fails with a non-Error value', async () => {
-    const user = userEvent.setup();
-    mockGetConnections.mockResolvedValue([makeConnection()]);
-    mockUpdateConnection.mockRejectedValue('oops');
-    renderPage();
-    await waitFor(() => expect(screen.queryByText('My OpenAI')).not.toBeNull());
-
-    await user.click(screen.getByTitle('Edit'));
-    await user.click(screen.getByRole('button', { name: /^save$/i }));
-
-    await waitFor(() => expect(screen.queryByText('Failed to update connection')).not.toBeNull());
-  });
-
   it('shows a fallback message when deletion fails with a non-Error value', async () => {
     const user = userEvent.setup();
     mockGetConnections.mockResolvedValue([makeConnection()]);
@@ -377,49 +210,11 @@ describe('ConnectionsPage — non-Error rejections', () => {
 
     await waitFor(() => expect(screen.queryByText('Failed to delete connection')).not.toBeNull());
   });
-});
 
-describe('ConnectionsPage — credential rows and multi-connection edits', () => {
-  it('skips credential rows with an empty key', async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await waitFor(() => expect(screen.queryByText(/No connections yet/i)).not.toBeNull());
-
-    await user.click(screen.getByRole('button', { name: /add connection/i }));
-    await user.type(screen.getByLabelText(/label/i), 'X');
-    await user.click(screen.getByRole('button', { name: /add credential field/i }));
-    await user.type(screen.getByPlaceholderText('value'), 'orphan-value');
-    await user.click(screen.getByRole('button', { name: /^create$/i }));
-
-    await waitFor(() => expect(mockCreateConnection).toHaveBeenCalledWith(expect.objectContaining({ credentials: {} })));
-  });
-
-  it('edits one of multiple credential rows independently', async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await waitFor(() => expect(screen.queryByText(/No connections yet/i)).not.toBeNull());
-
-    await user.click(screen.getByRole('button', { name: /add connection/i }));
-    await user.click(screen.getByRole('button', { name: /add credential field/i }));
-    await user.click(screen.getByRole('button', { name: /add credential field/i }));
-    const keyInputs = screen.getAllByPlaceholderText('e.g. apiKey');
-    await user.type(keyInputs[1]!, 'second');
-
-    expect((keyInputs[0] as HTMLInputElement).value).toBe('');
-    expect((keyInputs[1] as HTMLInputElement).value).toBe('second');
-  });
-
-  it('updates only the matching connection when multiple exist, and shows a disabled connection', async () => {
-    const user = userEvent.setup();
+  it('shows a disabled connection status', async () => {
     mockGetConnections.mockResolvedValue([makeConnection(), makeConnection({ id: 'c2', label: 'Second', enabled: false })]);
     renderPage();
     await waitFor(() => expect(screen.queryByText('My OpenAI')).not.toBeNull());
     expect(screen.getByText('Disabled')).not.toBeNull();
-
-    await user.click(screen.getAllByTitle('Edit')[0]!);
-    await user.click(screen.getAllByRole('button', { name: /^save$/i })[0]!);
-
-    await waitFor(() => expect(mockUpdateConnection).toHaveBeenCalledWith('c1', expect.anything()));
-    await waitFor(() => expect(screen.getByText('Second')).not.toBeNull());
   });
 });
