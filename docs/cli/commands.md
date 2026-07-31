@@ -360,28 +360,49 @@ routerly model show gpt-5-mini --json
 ### `routerly model add`
 
 ```
-routerly model add [options]
+routerly model add --id <id> --provider <provider> [options]
 ```
 
 | Option | Description |
 |--------|-------------|
-| `--id <id>` | Model identifier (e.g. `gpt-5-mini`) |
-| `--provider <provider>` | Provider ID: `openai`, `anthropic`, `gemini`, `mistral`, `cohere`, `xai`, `ollama`, `custom` |
-| `--api-key <key>` | Provider API key |
-| `--base-url <url>` | Override provider endpoint |
-| `--input-price <price>` | Input price per 1M tokens (USD) |
-| `--output-price <price>` | Output price per 1M tokens (USD) |
-| `--context-window <n>` | Max context window tokens |
+| `--id <id>` | Model identifier (e.g. `gpt-5-mini`), required |
+| `--provider <provider>` | Provider: `openai`, `anthropic`, `anthropic-oauth`, `gemini`, `ollama`, `custom`, `azure-openai`, `bedrock`, `vertex`, required |
+| `--connection <id>` | Bind to an existing provider connection (see `routerly connections list`); omits inline credentials |
+| `--endpoint <url>` | Custom API endpoint (uses provider default if omitted) |
+| `--api-key <key>` | API key (stored plaintext; file permissions protect it) |
+| `--input-price <usd>` | Cost per 1M input tokens in USD |
+| `--output-price <usd>` | Cost per 1M output tokens in USD |
+| `--daily-budget <usd>` / `--monthly-budget <usd>` | Global spend limit shorthand for `--limits-json` |
+| `--limits-json <json>` | Limits array as JSON string |
+| `--pricing-tiers-json <json>` | Pricing tiers array as JSON string |
+| `--interactive` | Open interactive wizard for limits and pricing tiers |
 
-Calling without options launches an interactive wizard.
+Azure, AWS Bedrock, Google Vertex, and ChatGPT-web-session providers accept
+additional provider-specific flags (`--azure-resource`, `--aws-region`,
+`--vertex-project`, `--cf-clearance`, etc.); see `routerly model add --help`.
+
+**`--connection` vs. inline credentials:**
+- With `--connection <id>`: the model binds to that existing connection. No credential flags (`--api-key`, `--endpoint`, and the provider-specific credential flags) are sent; the connection already owns them. The connection's provider must match `--provider`.
+- Without `--connection`: `--endpoint`/`--api-key` (and provider-specific flags) are sent inline, same as before the connections cutover. The service creates a dedicated, single-model connection with id `conn-for-<id>` from them and binds the model to it.
+
+```bash
+# Inline credentials (creates a dedicated conn-for-gpt-4o connection)
+routerly model add --id gpt-4o --provider openai --api-key sk-...
+
+# Bind to a preconfigured connection instead
+routerly model add --id gpt-4o-mini --provider openai --connection conn-abc123
+```
 
 ### `routerly model edit`
 
 ```
-routerly model edit --id <id> [field options]
+routerly model edit <id> [field options]
 ```
 
-Same options as `add`. Only specified fields are updated.
+Same field options as `add`, except `--connection` (rebinding a model to a
+different preconfigured connection is not available from the CLI; use the
+dashboard model form, or the API's `PUT /api/models/:id` with a
+`connectionId` body field). Only specified fields are updated.
 
 ### `routerly model remove`
 
