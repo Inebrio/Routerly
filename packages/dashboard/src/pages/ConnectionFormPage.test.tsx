@@ -99,6 +99,19 @@ describe('ConnectionFormPage — create mode', () => {
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
+  it('shows a fallback message when creation fails with a non-Error value', async () => {
+    const user = userEvent.setup();
+    mockCreateConnection.mockRejectedValue('oops');
+    renderNew();
+    await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
+
+    await user.type(screen.getByLabelText(/label/i), 'X');
+    await user.click(screen.getByRole('button', { name: /^create$/i }));
+
+    await waitFor(() => expect(screen.queryByText('Failed to create connection')).not.toBeNull());
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
   it('navigates back to the list on cancel', async () => {
     const user = userEvent.setup();
     renderNew();
@@ -152,5 +165,26 @@ describe('ConnectionFormPage — edit mode', () => {
     await user.click(screen.getByRole('button', { name: /^save$/i }));
 
     await waitFor(() => expect(screen.queryByText('update failed')).not.toBeNull());
+  });
+
+  it('does not overwrite stored credentials when the credential fields are left blank on save', async () => {
+    const user = userEvent.setup();
+    renderEdit();
+    await waitFor(() => expect(screen.queryByText('Edit Connection')).not.toBeNull());
+
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => expect(mockUpdateConnection).toHaveBeenCalledWith('c1', expect.not.objectContaining({ credentials: expect.anything() })));
+  });
+
+  it('shows a fallback message when update fails with a non-Error value', async () => {
+    const user = userEvent.setup();
+    mockUpdateConnection.mockRejectedValue('oops');
+    renderEdit();
+    await waitFor(() => expect(screen.queryByText('Edit Connection')).not.toBeNull());
+
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => expect(screen.queryByText('Failed to update connection')).not.toBeNull());
   });
 });
