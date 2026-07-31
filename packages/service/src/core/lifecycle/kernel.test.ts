@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { Kernel } from './kernel.js'
 import { defineModule } from '../modules/index.js'
 import { ModuleGraphError, MissingDependencyError } from '../errors.js'
@@ -34,6 +34,54 @@ describe('Kernel', () => {
     await k.start()
     expect(k.startedOrder).toEqual(['a', 'b'])
     expect(log).toEqual(['register:a', 'register:b', 'start:a', 'start:b'])
+  })
+
+  it('runs every migrate() in dependency order, before any register()', async () => {
+    const log: string[] = []
+    const a = defineModule({
+      manifest: { id: 'a', version: '1.0.0' },
+      migrate() {
+        log.push('migrate:a')
+      },
+      register() {
+        log.push('register:a')
+      },
+    })
+    const b = defineModule({
+      manifest: { id: 'b', version: '1.0.0', dependsOn: { a: '^1.0.0' } },
+      migrate() {
+        log.push('migrate:b')
+      },
+      register() {
+        log.push('register:b')
+      },
+    })
+    const k = new Kernel([b, a])
+    await k.start()
+    expect(log).toEqual(['migrate:a', 'migrate:b', 'register:a', 'register:b'])
+  })
+
+  it('logs a failing migrate() and starts the kernel anyway', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const log: string[] = []
+    const boom = defineModule({
+      manifest: { id: 'boom', version: '1.0.0' },
+      migrate() {
+        throw new Error('migration exploded')
+      },
+      register() {
+        log.push('register:boom')
+      },
+    })
+    const k = new Kernel([boom])
+    await k.start()
+    expect(log).toEqual(['register:boom'])
+    expect(k.startedOrder).toEqual(['boom'])
+    expect(errSpy).toHaveBeenCalledWith(
+      expect.stringContaining('migration failed for module boom'),
+      expect.any(Error),
+    )
+    errSpy.mockRestore()
   })
 
   it('stops modules in reverse start order', async () => {

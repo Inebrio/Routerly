@@ -1,10 +1,27 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ServiceContainer, EventBus } from '../../core/index.js'
-import { configModule } from './index.js'
 import { CONFIG_STORE } from '../../core/tokens.js'
+
+vi.mock('./migrate.js', () => ({ migrateProjectConfigs: vi.fn(async () => 0) }))
+vi.mock('./migrate-connections.js', () => ({
+  migrateModelsToConnections: vi.fn(async () => ({ connections: 0, instances: 0 })),
+}))
+
+import { configModule } from './index.js'
 import { readConfig, writeConfig, appendUsageRecord } from './loader.js'
+import { migrateProjectConfigs } from './migrate.js'
+import { migrateModelsToConnections } from './migrate-connections.js'
+
+const mockMigrateProjects = vi.mocked(migrateProjectConfigs)
+const mockMigrateConnections = vi.mocked(migrateModelsToConnections)
 
 describe('config module', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockMigrateProjects.mockResolvedValue(0)
+    mockMigrateConnections.mockResolvedValue({ connections: 0, instances: 0 })
+  })
+
   it('registers CONFIG_STORE with the real loader functions', async () => {
     const container = new ServiceContainer()
     const events = new EventBus()
@@ -21,5 +38,33 @@ describe('config module', () => {
   it('has the frozen manifest identity', () => {
     expect(configModule.manifest.id).toBe('config')
     expect(configModule.manifest.version).toBe('0.4.0')
+  })
+
+  it('runs both config migrations', async () => {
+    await configModule.migrate?.()
+
+    expect(mockMigrateConnections).toHaveBeenCalledTimes(1)
+    expect(mockMigrateProjects).toHaveBeenCalledTimes(1)
+  })
+
+  it('logs the migrated project count when any project changed shape', async () => {
+    mockMigrateProjects.mockResolvedValueOnce(3)
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await configModule.migrate?.()
+
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('migrated 3'))
+    logSpy.mockRestore()
+  })
+
+  it('still migrates projects when the connections migration fails', async () => {
+    mockMigrateConnections.mockRejectedValueOnce(new Error('boom'))
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    await configModule.migrate?.()
+
+    expect(mockMigrateProjects).toHaveBeenCalledTimes(1)
+    expect(errSpy).toHaveBeenCalled()
+    errSpy.mockRestore()
   })
 })

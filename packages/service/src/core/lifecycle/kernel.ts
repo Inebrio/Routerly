@@ -50,6 +50,22 @@ export class Kernel {
       ordered.push(mod)
     }
 
+    // Migrations run first, in dependency order, so a module never reads config
+    // a module it depends on has not migrated yet. Best-effort by design: a
+    // failed migration is logged and startup continues, matching how the
+    // models.json -> connections migration behaved before it moved in here. A
+    // migration that hard-fails the boot would leave the gateway down for a
+    // data shape the running code can often still read.
+    for (const mod of ordered) {
+      if (!mod.migrate) continue
+      try {
+        await mod.migrate()
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error(`[kernel] migration failed for module ${mod.manifest.id}:`, err)
+      }
+    }
+
     for (const mod of ordered) {
       await mod.register({ container: this.container, events: this.events })
     }

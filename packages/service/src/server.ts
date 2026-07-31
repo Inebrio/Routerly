@@ -13,7 +13,6 @@ import { mcpHttpRoutes } from './modules/mcp/http.js';
 import { apiRoutes } from './modules/api/api.js';
 import { metricsRoutes } from './modules/observability/metrics.js';
 import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage } from './modules/config/loader.js';
-import { migrateProjectConfigs } from './modules/config/migrate.js';
 import { pingTelemetry } from './modules/telemetry/telemetry.js';
 import { updateChecker } from './modules/update-checker/update-checker.js';
 import { startIntegrationRunner } from './modules/observability/runner.js';
@@ -128,11 +127,6 @@ export async function startServer() {
   if (orphansRemoved > 0) {
     // eslint-disable-next-line no-console
     console.log(`[startup] pruned ${orphansRemoved} orphan usage record(s) (no matching project)`);
-  }
-  const migrated = await migrateProjectConfigs();
-  if (migrated > 0) {
-    // eslint-disable-next-line no-console
-    console.log(`[startup] migrated ${migrated} project(s) to new guardrails/PII config shape`);
   }
   const settings = await readConfig('settings');
 

@@ -23,6 +23,14 @@ export interface Runtime {
 
 export interface RouterlyModule {
   manifest: ModuleManifest
+  /**
+   * Brings persisted config owned by this module up to the shape the current
+   * version expects. Runs once at startup, before any register(), in
+   * topological order, so a module always migrates before its dependents read
+   * the data. Must be idempotent and shape-detecting: it is re-run on every
+   * boot and must be a no-op once the data is current.
+   */
+  migrate?(): void | Promise<void>
   register(registry: ModuleRegistry): void | Promise<void>
   start?(runtime: Runtime): void | Promise<void>
   stop?(): void | Promise<void>
