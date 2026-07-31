@@ -114,7 +114,7 @@ export function ConnectionsPage() {
                           </span>
                         </td>
                         <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                          <Link to={`/dashboard/connections/${encodeURIComponent(conn.id)}/instances`} className="btn-icon" title="Instances">
+                          <Link to={`/dashboard/models?connection=${encodeURIComponent(conn.id)}`} className="btn-icon" title="Models">
                             <Boxes size={15} />
                           </Link>
                           {canManage && (

@@ -248,6 +248,38 @@ describe('ModelFormPage — ?provider + ?modelId prefill', () => {
   });
 });
 
+// ── Prefill from Models page connection filter ─────────────────────────────────
+
+describe('ModelFormPage — ?connection prefill', () => {
+  it('preselects the connection and its provider when ?connection matches a loaded connection', async () => {
+    mockGetConnections.mockResolvedValue([
+      { id: 'conn-1', label: 'My Anthropic', providerId: 'anthropic', enabled: true, endpoint: '' },
+    ]);
+    renderPage('/dashboard/models/new?connection=conn-1');
+
+    await waitFor(() => {
+      const all = screen.getAllByRole('combobox') as HTMLSelectElement[];
+      expect(all[0]!.value).toBe('anthropic');
+    });
+
+    // "Preconfigured" toggle is active and the connection select carries the preselected id
+    expect(screen.getByText('Preconfigured').className).toContain('active');
+    const connSelect = screen.getByTestId('searchable-— select a connection —') as HTMLSelectElement;
+    expect(connSelect.value).toBe('conn-1');
+  });
+
+  it('unknown ?connection is ignored, falls back to openai default and Custom mode', async () => {
+    mockGetConnections.mockResolvedValue([]);
+    renderPage('/dashboard/models/new?connection=nope');
+
+    await waitFor(() => {
+      const all = screen.getAllByRole('combobox') as HTMLSelectElement[];
+      expect(all[0]!.value).toBe('openai');
+    });
+    expect(screen.getByText('Custom').className).toContain('active');
+  });
+});
+
 // ── Edit path ──────────────────────────────────────────────────────────────────
 
 describe('ModelFormPage — edit path', () => {

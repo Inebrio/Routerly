@@ -302,6 +302,7 @@ export function ModelFormPage() {
   const cloneSourceId = searchParams.get('clone') ? decodeURIComponent(searchParams.get('clone')!) : null;
   const prefillProvider = searchParams.get('provider');
   const prefillModelId = searchParams.get('modelId');
+  const prefillConnection = searchParams.get('connection');
   const isEditing = Boolean(id);
   const isCloning = Boolean(cloneSourceId);
   const editingModelId = isEditing ? decodeURIComponent(id!) : null;
@@ -376,9 +377,19 @@ export function ModelFormPage() {
         } else {
           // Initialize new — honour ?provider=&modelId= from discovery, fall back to openai default
           // ponytail: reuse handleProviderChange logic inline to avoid calling a function that also resets form state mid-init
+          const matchedConnection = prefillConnection ? conns.find(c => c.id === prefillConnection) : undefined;
           const provider: Provider = (prefillProvider && catProviders.includes(prefillProvider))
             ? prefillProvider
-            : 'openai';
+            : (matchedConnection && catProviders.includes(matchedConnection.providerId))
+              ? (matchedConnection.providerId as Provider)
+              : 'openai';
+
+          if (matchedConnection) {
+            // Preselect the connection filtered from the Models page so "Add model" for a
+            // specific connection lands the user directly on it instead of Custom.
+            setConnMode('preconfigured');
+            setConnectionId(matchedConnection.id);
+          }
 
           if (catalogEntry) {
             const isPreset = Boolean(catModels[provider]?.find(m => m.id === catalogEntry.id));
