@@ -166,6 +166,31 @@ Examples:
       }
     });
 
+  // ── profiles create ──────────────────────────────────────────────────────────
+  cmd.command('create')
+    .description('Create an empty profile of the given kind, to be filled in from the dashboard')
+    .requiredOption('--kind <kind>', `Profile kind: ${KINDS.join(', ')}`)
+    .requiredOption('--label <label>', 'Label for the new profile')
+    .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  routerly profiles create --kind routing --label "My Routing"
+  routerly profiles create --kind security --label "My Guardrails" --json
+`)
+    .action(async (opts: { kind: string; label: string; json?: boolean }) => {
+      try {
+        const kind = parseKind(opts.kind);
+        const profile = await api<Profile>('POST', '/api/profiles', { kind, label: opts.label });
+        if (opts.json) {
+          console.log(JSON.stringify(profile, null, 2));
+          return;
+        }
+        console.log(chalk.green(`✓ Created ${profile.kind} profile "${profile.label}" -> ${profile.id}`));
+      } catch (err) {
+        handleError(err);
+      }
+    });
+
   // ── profiles clone ───────────────────────────────────────────────────────────
   cmd.command('clone <baseId>')
     .description('Clone a profile of any kind into a new user profile')

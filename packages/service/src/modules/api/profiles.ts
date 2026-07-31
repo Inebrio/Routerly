@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { Permission, Profile, ProfileKind } from '@routerly/shared';
@@ -63,6 +64,38 @@ const cloneSchema = z.object({
   label: z.string().trim().min(1),
 });
 
+/**
+ * Create schemas, one per kind. Everything but the label is optional: the
+ * dashboard sends a full body, while a scripted client can post `{kind, label}`
+ * and get an empty profile it fills in with PATCH.
+ */
+const CREATE_SCHEMAS = {
+  routing: z.object({
+    kind: z.literal('routing'),
+    label: z.string().trim().min(1),
+    policies: z.array(routingPolicySchema).default([]),
+    selector: selectorTypeSchema.default('argmax'),
+    fallbackStrategy: fallbackStrategyTypeSchema.default('next-best'),
+  }),
+  optimizer: z.object({
+    kind: z.literal('optimizer'),
+    label: z.string().trim().min(1),
+    optimizers: optimizerConfigSchema.default({ steps: [] }),
+  }),
+  security: z.object({
+    kind: z.literal('security'),
+    label: z.string().trim().min(1),
+    guardrails: guardrailConfigSchema.default({ rules: [] }),
+    pii: piiConfigSchema.default({ policies: [] }),
+  }),
+} as const;
+
+const createSchema = z.discriminatedUnion('kind', [
+  CREATE_SCHEMAS.routing,
+  CREATE_SCHEMAS.optimizer,
+  CREATE_SCHEMAS.security,
+]);
+
 const labelField = { label: z.string().trim().min(1).optional() };
 
 /**
@@ -114,6 +147,20 @@ export const profilesRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(400).send({ error: 'invalid_kind' });
     }
     return reply.send(await listProfiles(kind as ProfileKind | undefined));
+  });
+
+  fastify.post<{ Body: unknown }>('/api/profiles', async (req, reply) => {
+    if (!requirePerm(req, 'profiles:manage', reply)) return;
+    if (!await checkProfilesModuleGate(reply)) return;
+    const parsed = createSchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
+
+    const profile = { ...parsed.data, id: randomUUID(), version: 1, builtin: false } as Profile;
+    const userProfiles = await readConfig('profiles');
+    userProfiles.push(profile);
+    await writeConfig('profiles', userProfiles);
+    audit(req, 'profile:create', 'success', { id: profile.id, kind: profile.kind });
+    return reply.status(201).send(profile);
   });
 
   fastify.post<{ Body: unknown }>('/api/profiles/clone', async (req, reply) => {
