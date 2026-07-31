@@ -1,17 +1,21 @@
 import { describe, it, expect } from 'vitest'
-import { BUILTIN_PROFILES, getBuiltin } from './presets.js'
+import type { RoutingProfile } from '@routerly/shared'
+import { BUILTIN_PROFILES, LEGACY_BUILTIN_PROFILES, DEFAULT_PROFILE_ID, getBuiltin, listBuiltins } from './presets.js'
 
-const EXPECTED_IDS = ['balanced', 'cheap', 'fast', 'coding', 'offline']
+const ROUTING_IDS = ['auto', 'cheap', 'fast', 'coding']
+const OPTIMIZER_IDS = ['optimizer-safe', 'optimizer-balanced', 'optimizer-aggressive']
+const SECURITY_IDS = ['security-standard', 'security-strict']
+const EXPECTED_IDS = [...ROUTING_IDS, ...OPTIMIZER_IDS, ...SECURITY_IDS]
+
+const routing = (id: string): RoutingProfile => getBuiltin(id) as RoutingProfile
 
 describe('getBuiltin', () => {
   it('returns a frozen object for a known id', () => {
-    const profile = getBuiltin('balanced')
-    expect(profile).toBeDefined()
-    expect(Object.isFrozen(profile)).toBe(true)
+    expect(Object.isFrozen(getBuiltin('auto'))).toBe(true)
   })
 
   it('mutating the returned profile throws under strict mode', () => {
-    const profile = getBuiltin('balanced')!
+    const profile = getBuiltin('auto')!
     expect(() => {
       profile.label = 'Hacked'
     }).toThrow()
@@ -28,11 +32,14 @@ describe('getBuiltin', () => {
     expect(profile!.builtin).toBe(true)
     expect(profile!.version).toBe(1)
   })
+
+  it.each(['balanced', 'offline'])('still resolves the retired preset %s', (id) => {
+    expect(getBuiltin(id)?.id).toBe(id)
+  })
 })
 
 describe('BUILTIN_PROFILES', () => {
-  it('contains all five presets with builtin === true', () => {
-    expect(BUILTIN_PROFILES).toHaveLength(5)
+  it('contains every current preset with builtin === true', () => {
     expect(BUILTIN_PROFILES.map(p => p.id).sort()).toEqual([...EXPECTED_IDS].sort())
     for (const profile of BUILTIN_PROFILES) {
       expect(profile.builtin).toBe(true)
@@ -44,8 +51,19 @@ describe('BUILTIN_PROFILES', () => {
     expect(Object.isFrozen(BUILTIN_PROFILES)).toBe(true)
   })
 
-  it('matches the specified selector/fallback/policy shape per preset', () => {
-    expect(getBuiltin('balanced')).toMatchObject({
+  it('excludes the retired presets', () => {
+    expect(BUILTIN_PROFILES.map(p => p.id)).not.toContain('balanced')
+    expect(BUILTIN_PROFILES.map(p => p.id)).not.toContain('offline')
+  })
+
+  it('has a default preset per kind, and each one exists', () => {
+    for (const [kind, id] of Object.entries(DEFAULT_PROFILE_ID)) {
+      expect(getBuiltin(id)?.kind).toBe(kind)
+    }
+  })
+
+  it('matches the specified selector/fallback/policy shape per routing preset', () => {
+    expect(routing('auto')).toMatchObject({
       policies: [
         { type: 'health', enabled: true },
         { type: 'performance', enabled: true },
@@ -56,7 +74,7 @@ describe('BUILTIN_PROFILES', () => {
       fallbackStrategy: 'next-best',
     })
 
-    expect(getBuiltin('cheap')).toMatchObject({
+    expect(routing('cheap')).toMatchObject({
       policies: [
         { type: 'cheapest', enabled: true },
         { type: 'budget-remaining', enabled: true },
@@ -66,7 +84,7 @@ describe('BUILTIN_PROFILES', () => {
       fallbackStrategy: 'next-best',
     })
 
-    expect(getBuiltin('fast')).toMatchObject({
+    expect(routing('fast')).toMatchObject({
       policies: [
         { type: 'performance', enabled: true },
         { type: 'health', enabled: true },
@@ -75,7 +93,7 @@ describe('BUILTIN_PROFILES', () => {
       fallbackStrategy: 'retry-after-cooldown',
     })
 
-    expect(getBuiltin('coding')).toMatchObject({
+    expect(routing('coding')).toMatchObject({
       policies: [
         { type: 'capability', enabled: true },
         { type: 'model-preference', enabled: true },
@@ -86,7 +104,7 @@ describe('BUILTIN_PROFILES', () => {
       fallbackStrategy: 'next-best',
     })
 
-    expect(getBuiltin('offline')).toMatchObject({
+    expect(routing('offline')).toMatchObject({
       policies: [
         { type: 'health', enabled: true },
         { type: 'cheapest', enabled: true },
@@ -94,5 +112,46 @@ describe('BUILTIN_PROFILES', () => {
       selector: 'round-robin',
       fallbackStrategy: 'abort',
     })
+  })
+
+  // The migration rewrites balanced -> auto without touching routing behaviour,
+  // which only holds while the two are identical apart from id and label.
+  it('auto is a drop-in replacement for the retired balanced preset', () => {
+    const { id: _bid, label: _blabel, ...balanced } = routing('balanced')
+    const { id: _aid, label: _alabel, ...auto } = routing('auto')
+    expect(auto).toEqual(balanced)
+  })
+
+  it('optimizer presets are cumulative from safe to aggressive', () => {
+    const steps = (id: string) =>
+      (listBuiltins('optimizer').find(p => p.id === id) as { optimizers: { steps: { id: string }[] } }).optimizers.steps.map(s => s.id)
+    const safe = steps('optimizer-safe')
+    const balanced = steps('optimizer-balanced')
+    const aggressive = steps('optimizer-aggressive')
+    expect(balanced.slice(0, safe.length)).toEqual(safe)
+    expect(aggressive.slice(0, balanced.length)).toEqual(balanced)
+  })
+
+  it('security presets name no judge model, which would be instance-specific', () => {
+    for (const profile of listBuiltins('security')) {
+      expect(JSON.stringify(profile)).not.toContain('modelId')
+    }
+  })
+})
+
+describe('listBuiltins', () => {
+  it.each([
+    ['routing', ROUTING_IDS],
+    ['optimizer', OPTIMIZER_IDS],
+    ['security', SECURITY_IDS],
+  ] as const)('returns only the %s presets', (kind, ids) => {
+    expect(listBuiltins(kind).map(p => p.id)).toEqual(ids)
+  })
+
+  it('never returns a retired preset', () => {
+    const listed = (['routing', 'optimizer', 'security'] as const).flatMap(k => listBuiltins(k).map(p => p.id))
+    for (const legacy of LEGACY_BUILTIN_PROFILES) {
+      expect(listed).not.toContain(legacy.id)
+    }
   })
 })

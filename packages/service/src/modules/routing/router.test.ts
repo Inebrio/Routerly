@@ -977,7 +977,7 @@ describe('routeRequest', () => {
       expect(messages).not.toContain('router:profile')
     })
 
-    it('emits router:profile trace entry with the resolved default profile id/selector/fallbackStrategy', async () => {
+    it('emits router:profile trace entry with the resolved custom profile id/selector/fallbackStrategy', async () => {
       mockModels([makeModel('m1'), makeModel('m2')])
       mockIsAllowed.mockResolvedValue(true)
       mockCheapestPolicy.mockResolvedValue({
@@ -991,7 +991,7 @@ describe('routeRequest', () => {
       const profileCall = emit.mock.calls.find((c: any) => c[0].message === 'router:profile')
       expect(profileCall).toBeDefined()
       expect(profileCall![0].details).toEqual({
-        profileId: 'default',
+        profileId: 'custom',
         selector: 'argmax',
         fallbackStrategy: 'next-best',
       })

@@ -218,17 +218,51 @@ export type SelectorType = 'argmax' | 'weighted-random' | 'round-robin' | 'cheap
 
 export type FallbackStrategyType = 'next-best' | 'retry-after-cooldown' | 'abort';
 
-export interface RoutingProfile {
+/**
+ * The three independent kinds of reusable project preset. A project picks a
+ * profile or goes custom for each kind separately: routing, optimizers and
+ * security are unrelated concerns and share nothing but the envelope.
+ */
+export type ProfileKind = 'routing' | 'optimizer' | 'security';
+
+/** Fields every profile carries regardless of kind. */
+export interface ProfileBase {
   id: string;
   version: number;
   label: string;
-  policies: RoutingPolicy[];
-  selector: SelectorType;
-  fallbackStrategy: FallbackStrategyType;
+  /** Built-ins ship with Routerly: immutable, not deletable, clone to customize. */
   builtin: boolean;
   /** For user overlays: the built-in preset id this profile was cloned from. */
   baseId?: string;
 }
+
+export interface RoutingProfile extends ProfileBase {
+  kind: 'routing';
+  policies: RoutingPolicy[];
+  selector: SelectorType;
+  fallbackStrategy: FallbackStrategyType;
+}
+
+export interface OptimizerProfile extends ProfileBase {
+  kind: 'optimizer';
+  optimizers: OptimizerConfig;
+}
+
+/**
+ * Guardrails and PII travel together: they are the two halves of what the
+ * dashboard already presents as a project's Security tab, and splitting them
+ * into two profile kinds would make the user pick twice for one decision.
+ */
+export interface SecurityProfile extends ProfileBase {
+  kind: 'security';
+  guardrails: GuardrailConfig;
+  pii: PiiConfig;
+}
+
+export type Profile = RoutingProfile | OptimizerProfile | SecurityProfile;
+
+/** Maps a ProfileKind to its concrete profile type. */
+export type ProfileOfKind<K extends ProfileKind> = Extract<Profile, { kind: K }>;
 
 /** One intent definition: example utterances and the models to consider for this intent. */
 export interface IntentDefinition {
@@ -481,7 +515,16 @@ export interface ProjectConfig {
   notifications?: { channels: string[] };
   /** Named saved prompts for the playground (#99) */
   playgroundPresets?: PlaygroundPreset[];
-  /** Active routing profile ID for this project */
+  /**
+   * Active routing profile id. Absent means custom: the project's own
+   * `policies` are used. Same contract for the two ids below.
+   */
+  routingProfileId?: string;
+  /** Active optimizer profile id. Absent means custom: the project's own `optimizers` are used. */
+  optimizerProfileId?: string;
+  /** Active security profile id. Absent means custom: the project's own `guardrails`/`pii` are used. */
+  securityProfileId?: string;
+  /** @deprecated renamed to routingProfileId; migrated at startup. */
   profileId?: string;
   /** Prompt/context optimizer pipeline. Presence activates the subsystem; step order = execution order */
   optimizers?: OptimizerConfig;

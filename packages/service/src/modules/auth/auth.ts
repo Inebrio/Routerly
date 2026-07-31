@@ -3,6 +3,7 @@ import { fastifyPlugin as fp } from 'fastify-plugin';
 import type { ProjectConfig, ProjectToken } from '@routerly/shared';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { emitEvent } from '../notifications/emitter.js';
+import { applyProfiles } from '../routing/profiles/store.js';
 
 // Augment FastifyRequest to carry the resolved project and token
 declare module 'fastify' {
@@ -91,7 +92,10 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
         writeConfig('projects', projects).catch(() => { /* non-fatal */ });
       }
 
-      request.project = project;
+      // Bound optimizer/security profiles are folded into the project once, here,
+      // so every downstream consumer keeps reading project.optimizers /
+      // .guardrails / .pii and needs no knowledge of profiles at all.
+      request.project = await applyProfiles(project);
       request.token = token;
       return;
     }
