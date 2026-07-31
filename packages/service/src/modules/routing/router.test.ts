@@ -21,9 +21,20 @@ import { capabilityPolicy } from './policies/capability.js'
 import { llmPolicy } from './policies/llm.js'
 import { fairnessPolicy } from './policies/fairness.js'
 import { InMemoryResilienceStore } from '../resilience/store.js'
+import { splitModelsIntoInstancesConnections } from '../../test-support/effective-models.js'
 import type { ModelConfig, ProjectConfig } from '@routerly/shared'
 
 const mockReadConfig = vi.mocked(readConfig)
+
+/** listEffectiveModels() reads instances+connections, not 'models' directly (task A3). */
+function mockModels(models: ModelConfig[]): void {
+  const { instances, connections } = splitModelsIntoInstancesConnections(models)
+  mockReadConfig.mockImplementation(async (key: string) => {
+    if (key === 'connections') return connections as never
+    if (key === 'instances') return instances as never
+    return [] as never
+  })
+}
 const mockIsAllowed = vi.mocked(isAllowed)
 const mockGetViolatedLimits = vi.mocked(getViolatedLimits)
 const mockCheapestPolicy = vi.mocked(cheapestPolicy)
@@ -52,24 +63,24 @@ const request: any = { model: 'auto', messages: [{ role: 'user', content: 'Hi' }
 
 describe('routeRequest', () => {
   it('throws when project has no models', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('gpt-4')])
+    mockModels([makeModel('gpt-4')])
     await expect(routeRequest(request, makeProject([]))).rejects.toThrow('no_models_available')
   })
 
   it('throws when referenced models not found in registry', async () => {
-    mockReadConfig.mockResolvedValue([]) // no models in registry
+    mockModels([]) // no models in registry
     await expect(routeRequest(request, makeProject(['nonexistent']))).rejects.toThrow('no_models_available')
   })
 
   it('throws when all models exceed budget limits', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(false)
     mockGetViolatedLimits.mockResolvedValue([])
     await expect(routeRequest(request, makeProject(['m1', 'm2']))).rejects.toThrow('all_models_limits_exceeded')
   })
 
   it('bypasses policies when only one valid model exists', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed
       .mockResolvedValueOnce(false) // m1 excluded by limits
       .mockResolvedValueOnce(true)  // m2 valid
@@ -82,7 +93,7 @@ describe('routeRequest', () => {
   })
 
   it('runs cheapest policy and returns scored candidates', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     mockCheapestPolicy.mockResolvedValue({
       routing: [
@@ -99,7 +110,7 @@ describe('routeRequest', () => {
   })
 
   it('excludes models hard-blocked by capability policy', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('no-vision'), makeModel('has-vision')])
+    mockModels([makeModel('no-vision'), makeModel('has-vision')])
     mockIsAllowed.mockResolvedValue(true)
     mockCapabilityPolicy.mockResolvedValue({
       routing: [{ model: 'has-vision', point: 1.0 }],
@@ -115,7 +126,7 @@ describe('routeRequest', () => {
   })
 
   it('throws when all candidates are excluded by policies', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     mockCapabilityPolicy.mockResolvedValue({
       routing: [],
@@ -127,7 +138,7 @@ describe('routeRequest', () => {
   })
 
   it('skips disabled policies', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
 
     const project = makeProject(['m1', 'm2'], [
@@ -139,7 +150,7 @@ describe('routeRequest', () => {
   })
 
   it('skips unknown policy types gracefully', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
 
     const project = makeProject(['m1', 'm2'], [
@@ -150,7 +161,7 @@ describe('routeRequest', () => {
   })
 
   it('calls emit with trace entries when provided', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     mockCheapestPolicy.mockResolvedValue({
       routing: [{ model: 'm1', point: 0.8 }, { model: 'm2', point: 0.4 }],
@@ -166,7 +177,7 @@ describe('routeRequest', () => {
   })
 
   it('logs warning when project references missing model IDs', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1')]) // m2 missing
+    mockModels([makeModel('m1')]) // m2 missing
     mockIsAllowed.mockResolvedValue(true)
 
     const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
@@ -179,7 +190,7 @@ describe('routeRequest', () => {
   })
 
   it('handles policy that throws (graceful degradation)', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     mockLlmPolicy.mockRejectedValue(new Error('routingModelId required'))
     mockCheapestPolicy.mockResolvedValue({
@@ -196,7 +207,7 @@ describe('routeRequest', () => {
   })
 
   it('assigns positional weights to policies (first policy has highest weight)', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('cheap'), makeModel('expensive')])
+    mockModels([makeModel('cheap'), makeModel('expensive')])
     mockIsAllowed.mockResolvedValue(true)
     mockCheapestPolicy.mockResolvedValue({
       routing: [{ model: 'cheap', point: 1.0 }, { model: 'expensive', point: 0.0 }],
@@ -215,7 +226,7 @@ describe('routeRequest', () => {
   })
 
   it('includes trace entries for each successful policy', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     mockCheapestPolicy.mockResolvedValue({
       routing: [{ model: 'm1', point: 0.8 }, { model: 'm2', point: 0.4 }],
@@ -228,7 +239,7 @@ describe('routeRequest', () => {
   })
 
   it('redacts sensitive keys in policy config (apiKey, secret, token, password)', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     mockCheapestPolicy.mockResolvedValue({
       routing: [{ model: 'm1', point: 0.8 }, { model: 'm2', point: 0.4 }],
@@ -255,7 +266,7 @@ describe('routeRequest', () => {
   })
 
   it('logs routing result when log is provided (covers log?.info path)', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     mockCheapestPolicy.mockResolvedValue({
       routing: [{ model: 'm1', point: 0.8 }, { model: 'm2', point: 0.2 }],
@@ -271,7 +282,7 @@ describe('routeRequest', () => {
   })
 
   it('uses argmax uniform-random pick when all policies abstain (no active policy)', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
 
     // argmaxSelector's allAbstained branch: idx = floor(rng() * n). rng=0.9, n=2 -> idx=1 -> m2 picked first.
@@ -286,7 +297,7 @@ describe('routeRequest', () => {
   })
 
   it('logs excluded models when some are blocked by policy and log is provided', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('no-vision'), makeModel('has-vision')])
+    mockModels([makeModel('no-vision'), makeModel('has-vision')])
     mockIsAllowed.mockResolvedValue(true)
     mockCapabilityPolicy.mockResolvedValue({
       routing: [{ model: 'has-vision', point: 1.0 }],
@@ -306,7 +317,7 @@ describe('routeRequest', () => {
 
   it('line 56: handles project with undefined policies field (uses ?? [])', async () => {
     // ProjectConfig.policies is undefined → falls back to []
-    mockReadConfig.mockResolvedValue([makeModel('m1')])
+    mockModels([makeModel('m1')])
     mockIsAllowed.mockResolvedValue(true)
 
     const project: ProjectConfig = {
@@ -321,7 +332,7 @@ describe('routeRequest', () => {
   })
 
   it('line 81: model ref with prompt and thresholds populates candidate correctly', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     mockCheapestPolicy.mockResolvedValue({
       routing: [{ model: 'm1', point: 0.9 }, { model: 'm2', point: 0.1 }],
@@ -342,7 +353,7 @@ describe('routeRequest', () => {
   })
 
   it('line 141: intake entry messageCount defaults to 0 when messages is undefined', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1')])
+    mockModels([makeModel('m1')])
     mockIsAllowed.mockResolvedValue(true)
 
     const requestNoMessages: any = { model: 'auto' } // no messages field
@@ -357,7 +368,7 @@ describe('routeRequest', () => {
   })
 
   it('line 168: single bypass includes prompt in result when candidate has prompt', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     // m1 excluded by limits, m2 allowed → single bypass with prompt
     mockIsAllowed
       .mockResolvedValueOnce(false) // m1 excluded
@@ -380,7 +391,7 @@ describe('routeRequest', () => {
   })
 
   it('line 204: passes token, traceId, conversationId to policy fn', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     mockCheapestPolicy.mockResolvedValue({
       routing: [{ model: 'm1', point: 0.8 }, { model: 'm2', point: 0.4 }],
@@ -406,7 +417,7 @@ describe('routeRequest', () => {
   })
 
   it('line 207: policy that throws a non-Error value uses String() fallback', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     // Throw a plain string (not an Error instance)
     mockCheapestPolicy.mockRejectedValue('plain string error')
@@ -425,7 +436,7 @@ describe('routeRequest', () => {
   })
 
   it('line 223-224: policy routing entry with NaN point is treated as 0.5 in emit', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     // Return NaN point for m1 and a normal point for m2 (so they differ, policy is not abstained)
     mockCheapestPolicy.mockResolvedValue({
@@ -451,7 +462,7 @@ describe('routeRequest', () => {
   })
 
   it('line 226: emit includes excludes array when policy returns excludes', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2'), makeModel('m3')])
+    mockModels([makeModel('m1'), makeModel('m2'), makeModel('m3')])
     mockIsAllowed.mockResolvedValue(true)
     mockCheapestPolicy.mockResolvedValue({
       routing: [{ model: 'm2', point: 0.8 }, { model: 'm3', point: 0.4 }],
@@ -471,7 +482,7 @@ describe('routeRequest', () => {
   })
 
   it('line 280: NaN point in scoring phase treated as 0.5 for min/max check', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     // m1 has NaN, m2 has 0.0 — after NaN→0.5 substitution, min=0 max=0.5 → not abstained
     mockCheapestPolicy.mockResolvedValue({
@@ -488,7 +499,7 @@ describe('routeRequest', () => {
   })
 
   it('line 289-291: scoring accumulator defaults to 0 for unseen model (no point for model)', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2'), makeModel('m3')])
+    mockModels([makeModel('m1'), makeModel('m2'), makeModel('m3')])
     mockIsAllowed.mockResolvedValue(true)
     // policy only returns scoring for m1 and m2; m3 is eligible but absent from routing array
     mockCheapestPolicy.mockResolvedValue({
@@ -511,7 +522,7 @@ describe('routeRequest', () => {
   })
 
   it('router:recap final[].score stays 0..1 weighted-mean while router:result weight is rank-based', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2'), makeModel('m3')])
+    mockModels([makeModel('m1'), makeModel('m2'), makeModel('m3')])
     mockIsAllowed.mockResolvedValue(true)
     mockCheapestPolicy.mockResolvedValue({
       routing: [
@@ -547,7 +558,7 @@ describe('routeRequest', () => {
   })
 
   it('line 308: finalCandidates include prompt when candidate has prompt set', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     mockCheapestPolicy.mockResolvedValue({
       routing: [{ model: 'm1', point: 0.9 }, { model: 'm2', point: 0.1 }],
@@ -569,7 +580,7 @@ describe('routeRequest', () => {
   })
 
   it('line 314/343/363: hasTie branch when two models score identically', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     // Both models get the same point → cheapest abstains → allPoliciesAbstained → random fallback.
     // Force Math.random to return identical values so the router still detects a tie.
@@ -607,7 +618,7 @@ describe('routeRequest', () => {
 
   it('line 343: recap winner is null when no scorable routing entries for a policy', async () => {
     // All policy routing entries are for excluded models → scorable set is empty
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2'), makeModel('m3')])
+    mockModels([makeModel('m1'), makeModel('m2'), makeModel('m3')])
     mockIsAllowed.mockResolvedValue(true)
     // cheapest excludes m1; its routing only covers m1 (not in scoringIds for recap)
     mockCheapestPolicy.mockResolvedValue({
@@ -636,7 +647,7 @@ describe('routeRequest', () => {
   })
 
   it('excludedByLimits >0: logs info and includes in intake trace details', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2'), makeModel('m3')])
+    mockModels([makeModel('m1'), makeModel('m2'), makeModel('m3')])
     mockIsAllowed
       .mockResolvedValueOnce(false)  // m1 excluded
       .mockResolvedValueOnce(true)   // m2 allowed
@@ -670,7 +681,7 @@ describe('routeRequest', () => {
   })
 
   it('policy error emit: emits policy:error:<type> entry when policy throws', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     mockCheapestPolicy.mockRejectedValue(new Error('policy crash'))
 
@@ -684,7 +695,7 @@ describe('routeRequest', () => {
   })
 
   it('abstained policies: emits router:abstained and logs when all policies return uniform scores', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     // Both candidates get identical score → policy abstains
     mockCheapestPolicy.mockResolvedValue({
@@ -710,7 +721,7 @@ describe('routeRequest', () => {
   })
 
   it('router:excludes emit: emitted and log.info called when policies exclude models', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2'), makeModel('m3')])
+    mockModels([makeModel('m1'), makeModel('m2'), makeModel('m3')])
     mockIsAllowed.mockResolvedValue(true)
     mockCheapestPolicy.mockResolvedValue({
       routing: [{ model: 'm2', point: 0.8 }, { model: 'm3', point: 0.4 }],
@@ -733,7 +744,7 @@ describe('routeRequest', () => {
   })
 
   it('long prompt is truncated in result entry (>120 chars)', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     mockCheapestPolicy.mockResolvedValue({
       routing: [{ model: 'm1', point: 0.9 }, { model: 'm2', point: 0.1 }],
@@ -763,7 +774,7 @@ describe('routeRequest', () => {
   })
 
   it('redactConfig handles null/primitive config values without crashing', async () => {
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     mockCheapestPolicy.mockResolvedValue({
       routing: [{ model: 'm1', point: 0.8 }, { model: 'm2', point: 0.4 }],
@@ -779,7 +790,7 @@ describe('routeRequest', () => {
 
   it('same model excluded by two policies → excludeReasons has(id) already (line 237 if branch=1)', async () => {
     // m1 excluded by both cheapest and capability → second exclusion hits line 237 false branch
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     mockCheapestPolicy.mockResolvedValue({ routing: [], excludes: ['m1'] })
     mockCapabilityPolicy.mockResolvedValue({ routing: [], excludes: ['m1'] })
@@ -798,7 +809,7 @@ describe('routeRequest', () => {
     // only (not m2). After exclusion, scoringCandidates = [m2].
     // eligible = routing entries filtered by scoringIds = [m2]. Since policy returned
     // routing only for m1 (now excluded), eligible.length === 0 → policy abstains.
-    mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+    mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
     mockCheapestPolicy.mockResolvedValue({
       routing: [{ model: 'm1', point: 0.9 }], // m1 will be excluded by policy
@@ -821,7 +832,7 @@ describe('routeRequest', () => {
 
   describe('resilience pre-filter', () => {
     it('never returns a candidate whose provider circuit is open while another candidate is available', async () => {
-      mockReadConfig.mockResolvedValue([makeModel('m1', 'openai'), makeModel('m2', 'anthropic')])
+      mockModels([makeModel('m1', 'openai'), makeModel('m2', 'anthropic')])
       mockIsAllowed.mockResolvedValue(true)
 
       const store = new InMemoryResilienceStore()
@@ -835,7 +846,7 @@ describe('routeRequest', () => {
     })
 
     it('records the resilience exclusion in the trace (both via emit and the returned trace array)', async () => {
-      mockReadConfig.mockResolvedValue([makeModel('m1', 'openai'), makeModel('m2', 'anthropic')])
+      mockModels([makeModel('m1', 'openai'), makeModel('m2', 'anthropic')])
       mockIsAllowed.mockResolvedValue(true)
 
       const store = new InMemoryResilienceStore()
@@ -856,7 +867,7 @@ describe('routeRequest', () => {
     })
 
     it('does not filter or emit a resilience trace entry when no store is passed (backward compatible)', async () => {
-      mockReadConfig.mockResolvedValue([makeModel('m1', 'openai'), makeModel('m2', 'anthropic')])
+      mockModels([makeModel('m1', 'openai'), makeModel('m2', 'anthropic')])
       mockIsAllowed.mockResolvedValue(true)
 
       const emit = vi.fn()
@@ -868,7 +879,7 @@ describe('routeRequest', () => {
     })
 
     it('falls back to the single least-bad candidate instead of throwing when the store excludes every candidate', async () => {
-      mockReadConfig.mockResolvedValue([makeModel('m1', 'openai'), makeModel('m2', 'anthropic')])
+      mockModels([makeModel('m1', 'openai'), makeModel('m2', 'anthropic')])
       mockIsAllowed.mockResolvedValue(true)
 
       const store = new InMemoryResilienceStore()
@@ -882,7 +893,7 @@ describe('routeRequest', () => {
     })
 
     it('passes candidates through unchanged when a store is provided but nothing is excluded', async () => {
-      mockReadConfig.mockResolvedValue([makeModel('m1', 'openai'), makeModel('m2', 'anthropic')])
+      mockModels([makeModel('m1', 'openai'), makeModel('m2', 'anthropic')])
       mockIsAllowed.mockResolvedValue(true)
       mockCheapestPolicy.mockResolvedValue({
         routing: [{ model: 'm1', point: 0.8 }, { model: 'm2', point: 0.4 }],
@@ -898,7 +909,7 @@ describe('routeRequest', () => {
     })
 
     it('includes the resilience trace entry in the full policy-scoring path (not just the single-candidate bypass)', async () => {
-      mockReadConfig.mockResolvedValue([makeModel('m1', 'openai'), makeModel('m2', 'anthropic'), makeModel('m3', 'anthropic')])
+      mockModels([makeModel('m1', 'openai'), makeModel('m2', 'anthropic'), makeModel('m3', 'anthropic')])
       mockIsAllowed.mockResolvedValue(true)
       mockCheapestPolicy.mockResolvedValue({
         routing: [{ model: 'm2', point: 0.8 }, { model: 'm3', point: 0.4 }],
@@ -918,7 +929,7 @@ describe('routeRequest', () => {
 
   describe('profile resolution + selector wiring', () => {
     it('(a) differentiating policies: the model with the highest weighted-mean policy score still wins, weights are rank-based', async () => {
-      mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2'), makeModel('m3')])
+      mockModels([makeModel('m1'), makeModel('m2'), makeModel('m3')])
       mockIsAllowed.mockResolvedValue(true)
       mockCheapestPolicy.mockResolvedValue({
         routing: [
@@ -940,7 +951,7 @@ describe('routeRequest', () => {
     })
 
     it('(b) all-abstain: winner is picked by argmaxSelector\'s uniform-random branch, deterministic under a mocked Math.random', async () => {
-      mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2'), makeModel('m3')])
+      mockModels([makeModel('m1'), makeModel('m2'), makeModel('m3')])
       mockIsAllowed.mockResolvedValue(true)
 
       // argmaxSelector's allAbstained branch: idx = floor(rng() * n). rng=0.5, n=3 -> idx=1 -> m2 picked first.
@@ -954,7 +965,7 @@ describe('routeRequest', () => {
     })
 
     it('(c) single-candidate bypass short-circuits before any profile/selector trace is emitted', async () => {
-      mockReadConfig.mockResolvedValue([makeModel('m1')])
+      mockModels([makeModel('m1')])
       mockIsAllowed.mockResolvedValue(true)
 
       const emit = vi.fn()
@@ -967,7 +978,7 @@ describe('routeRequest', () => {
     })
 
     it('emits router:profile trace entry with the resolved default profile id/selector/fallbackStrategy', async () => {
-      mockReadConfig.mockResolvedValue([makeModel('m1'), makeModel('m2')])
+      mockModels([makeModel('m1'), makeModel('m2')])
       mockIsAllowed.mockResolvedValue(true)
       mockCheapestPolicy.mockResolvedValue({
         routing: [{ model: 'm1', point: 0.8 }, { model: 'm2', point: 0.4 }],

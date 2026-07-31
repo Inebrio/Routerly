@@ -1,7 +1,7 @@
 import type { SemanticIntentConfig } from '@routerly/shared';
 import { classifyIntent } from '../intent/classifier.js';
 import { trackUsage } from '../../usage/tracker.js';
-import { readConfig } from '../../config/loader.js';
+import { listEffectiveModels } from '../../provider/list-effective.js';
 import { catalogFetcher } from '../../catalog/fetcher.js';
 import type { PolicyFn } from './types.js';
 
@@ -89,7 +89,8 @@ export const semanticIntentPolicy: PolicyFn = async ({
   // Look them up from models.json so classifyIntent doesn't get a 401.
   let resolvedCfg: SemanticIntentConfig = cfg;
   {
-    const allModels = await readConfig('models');
+    // routing-adjacent: embedding model must be on an enabled connection
+    const allModels = await listEffectiveModels();
     const modelEntry = allModels.find((m: { id: string }) => m.id === cfg.embedding_model);
     if (!modelEntry) {
       log?.warn({ embeddingModel: cfg.embedding_model }, 'semantic-intent policy: embedding model not in registry, passing all candidates through');

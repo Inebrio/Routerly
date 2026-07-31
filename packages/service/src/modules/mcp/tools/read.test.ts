@@ -34,6 +34,7 @@ import {
   listProjectsTool,
 } from './read.js'
 import { expectNoSecrets } from './expectNoSecrets.js'
+import { splitModelsIntoInstancesConnections } from '../../../test-support/effective-models.js'
 
 const mockReadConfig = vi.mocked(readConfig)
 const mockRouteRequest = vi.mocked(routeRequest)
@@ -71,6 +72,15 @@ const authCtx = { project, token, scopes: ['mcp'] } as McpAuthContext
 // list_models is global (not project-scoped); the handler ignores authCtx.
 const emptyAuthCtx = {} as McpAuthContext
 
+function mockModels(models: ModelConfig[]) {
+  const { instances, connections } = splitModelsIntoInstancesConnections(models)
+  mockReadConfig.mockImplementation(async (key: string) => {
+    if (key === 'connections') return connections as never
+    if (key === 'instances') return instances as never
+    return [] as never
+  })
+}
+
 describe('listModelsTool', () => {
   beforeEach(() => {
     mockReadConfig.mockReset()
@@ -83,7 +93,7 @@ describe('listModelsTool', () => {
   })
 
   it('lists id/provider/contextWindow for each configured model', async () => {
-    mockReadConfig.mockResolvedValue([
+    mockModels([
       model(),
       model({
         id: 'anthropic/claude',
@@ -91,7 +101,7 @@ describe('listModelsTool', () => {
         contextWindow: 200000,
         apiKey: 'sk-ant-secret',
       }),
-    ] as never)
+    ])
 
     const res = await listModelsTool.handler({}, emptyAuthCtx)
 
@@ -104,7 +114,7 @@ describe('listModelsTool', () => {
   })
 
   it('never leaks provider secrets in the output text', async () => {
-    mockReadConfig.mockResolvedValue([model()] as never)
+    mockModels([model()])
 
     const res = await listModelsTool.handler({}, emptyAuthCtx)
 
@@ -122,7 +132,7 @@ describe('getModelInstanceTool', () => {
   })
 
   it('returns id/provider/contextWindow for the requested model, no secrets', async () => {
-    mockReadConfig.mockResolvedValue([model()] as never)
+    mockModels([model()])
 
     const res = await getModelInstanceTool.handler({ id: 'openai/gpt-4o' }, emptyAuthCtx)
 
@@ -136,7 +146,7 @@ describe('getModelInstanceTool', () => {
   })
 
   it('returns an isError result when the model is not found', async () => {
-    mockReadConfig.mockResolvedValue([model()] as never)
+    mockModels([model()])
 
     const res = await getModelInstanceTool.handler({ id: 'nope' }, emptyAuthCtx)
 
@@ -256,7 +266,7 @@ describe('budgetStatusTool', () => {
   })
 
   it('reports per-model limit snapshots for the project, no secrets', async () => {
-    mockReadConfig.mockResolvedValue([model()] as never)
+    mockModels([model()])
     mockGetLimitUsageSnapshot.mockResolvedValue([
       { metric: 'cost', window: 'daily', value: 10, current: 3, remaining: 7 },
     ] as never)

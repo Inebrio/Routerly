@@ -19,6 +19,7 @@ import { readConfig } from '../config/loader.js';
 import { llmChat, checkBudget, BudgetExceededError } from '../reverse-proxy/execute.js';
 import { trackUsage } from '../usage/tracker.js';
 import { classifyIntent } from '../routing/intent/classifier.js';
+import { splitModelsIntoInstancesConnections } from '../../test-support/effective-models.js';
 import type { GuardrailConfig, GuardrailRule } from '@routerly/shared';
 
 const mockReadConfig = vi.mocked(readConfig);
@@ -28,6 +29,15 @@ const mockTrackUsage = vi.mocked(trackUsage);
 const mockClassifyIntent = vi.mocked(classifyIntent);
 
 afterEach(() => vi.clearAllMocks());
+
+function mockModels(models: any[]) {
+  const { instances, connections } = splitModelsIntoInstancesConnections(models);
+  mockReadConfig.mockImplementation(async (key: string) => {
+    if (key === 'connections') return connections as any;
+    if (key === 'instances') return instances as any;
+    return [] as any;
+  });
+}
 
 const pctx: GuardrailProjectCtx = {
   projectId: 'proj-1',
@@ -144,7 +154,7 @@ function moderationRule(extra?: Partial<GuardrailRule>): GuardrailRule {
 
 describe('checkGuardrails — judge call usage attribution (BUG-4)', () => {
   it('topic judge runs llmChat against the real project (counted in usage)', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9}' } }] } as any);
 
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRule()]), pctx);
@@ -157,7 +167,7 @@ describe('checkGuardrails — judge call usage attribution (BUG-4)', () => {
   });
 
   it('moderation judge over score triggers', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9.5}' } }] } as any);
 
     const result = await checkGuardrails('request', 'bad', baseConfig([moderationRule({ block: true })]), pctx);
@@ -166,7 +176,7 @@ describe('checkGuardrails — judge call usage attribution (BUG-4)', () => {
   });
 
   it('over-limit judge call propagates BudgetExceededError (fails like over-limit completion)', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockRejectedValue(new BudgetExceededError(judgeModel.id));
 
     await expect(
@@ -175,7 +185,7 @@ describe('checkGuardrails — judge call usage attribution (BUG-4)', () => {
   });
 
   it('non-budget judge failure is swallowed (rule skipped)', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockRejectedValue(new Error('provider down'));
 
     const result = await checkGuardrails('request', 'hi', baseConfig([moderationRule()]), pctx);
@@ -183,7 +193,7 @@ describe('checkGuardrails — judge call usage attribution (BUG-4)', () => {
   });
 
   it('semantic embedding tokens are tracked against the real project', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockClassifyIntent.mockResolvedValue({
       classification: { topIntent: 'blocked', topScore: 0.9, secondIntent: null, secondScore: 0, margin: 0, status: 'confident' },
       inputTokens: 12,
@@ -202,7 +212,7 @@ describe('checkGuardrails — judge call usage attribution (BUG-4)', () => {
 
   it('trackUsage rejection is silently swallowed by .catch (line 159 catch callback)', async () => {
     // trackUsage rejects → .catch(() => {}) fires — covers the catch callback function
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockClassifyIntent.mockResolvedValue({
       classification: { topIntent: 'blocked', topScore: 0.9, secondIntent: null, secondScore: 0, margin: 0, status: 'confident' },
       inputTokens: 5,
@@ -226,7 +236,7 @@ describe('checkGuardrails — evaluation trace (#77 C1)', () => {
   });
 
   it('surfaces a skipped rule when the judge model is not found', async () => {
-    mockReadConfig.mockResolvedValue([] as any); // model lookup fails
+    mockModels([]); // model lookup fails
     const result = await checkGuardrails('request', 'hi', baseConfig([moderationRule()]), pctx);
     expect(result.triggered).toBeUndefined();
     expect(result.evaluated).toEqual([
@@ -235,7 +245,7 @@ describe('checkGuardrails — evaluation trace (#77 C1)', () => {
   });
 
   it('surfaces a skipped rule when the embedding call fails', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockClassifyIntent.mockRejectedValue(new Error('embed down'));
     const rule: GuardrailRule = { type: 'semantic', target: 'request', config: { embeddingModelId: judgeModel.id, examples: ['x'], threshold: 0.8 } } as any;
     const result = await checkGuardrails('request', 'x', baseConfig([rule]), pctx);
@@ -255,7 +265,7 @@ describe('checkGuardrails — semantic budget pre-gate (#77 C4)', () => {
   const semanticRule: GuardrailRule = { type: 'semantic', target: 'request', config: { embeddingModelId: judgeModel.id, examples: ['x'], threshold: 0.8 } } as any;
 
   it('throws BudgetExceededError BEFORE the embedding call when over budget', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockCheckBudget.mockRejectedValueOnce(new BudgetExceededError(judgeModel.id));
 
     await expect(
@@ -267,7 +277,7 @@ describe('checkGuardrails — semantic budget pre-gate (#77 C4)', () => {
   });
 
   it('runs the budget check before classifyIntent on the happy path', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     const order: string[] = [];
     mockCheckBudget.mockImplementationOnce(async () => { order.push('budget'); });
     mockClassifyIntent.mockImplementationOnce(async () => {
@@ -280,7 +290,7 @@ describe('checkGuardrails — semantic budget pre-gate (#77 C4)', () => {
   });
 
   it('semantic rule skipped (model-not-found) does not run the budget check', async () => {
-    mockReadConfig.mockResolvedValue([] as any);
+    mockModels([]);
     const result = await checkGuardrails('request', 'x', baseConfig([semanticRule]), pctx);
     expect(result.evaluated).toContainEqual({ rule: `semantic:${judgeModel.id}`, outcome: 'skipped', reason: 'model-not-found' });
     expect(mockCheckBudget).not.toHaveBeenCalled();
@@ -291,13 +301,13 @@ describe('checkGuardrails — semantic budget pre-gate (#77 C4)', () => {
 
 describe('checkGuardrails — rule evaluation branches', () => {
   it('topic rule skipped when model not found', async () => {
-    mockReadConfig.mockResolvedValue([] as any);
+    mockModels([]);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRule()]), pctx);
     expect(result.evaluated).toContainEqual({ rule: `topic:${judgeModel.id}`, outcome: 'skipped', reason: 'model-not-found' });
   });
 
   it('topic rule passes when on-topic', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9}' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRule()]), pctx);
     expect(result.triggered).toBeUndefined();
@@ -305,7 +315,7 @@ describe('checkGuardrails — rule evaluation branches', () => {
   });
 
   it('moderation rule passes when under threshold', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1}' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([moderationRule()]), pctx);
     expect(result.triggered).toBeUndefined();
@@ -313,14 +323,14 @@ describe('checkGuardrails — rule evaluation branches', () => {
   });
 
   it('topic judge failure (non-budget) is surfaced as skipped', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockRejectedValue(new Error('judge down'));
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRule()]), pctx);
     expect(result.evaluated).toContainEqual({ rule: `topic:${judgeModel.id}`, outcome: 'skipped', reason: 'judge-failed: judge down' });
   });
 
   it('topic rule triggers when off-topic (below threshold)', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1}' } }] } as any);
     const result = await checkGuardrails('request', 'off topic', baseConfig([topicRule({ block: true })]), pctx);
     expect(result.triggered).toBe('topic:score=0.10');
@@ -328,7 +338,7 @@ describe('checkGuardrails — rule evaluation branches', () => {
   });
 
   it('over-limit topic judge call propagates BudgetExceededError', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockRejectedValue(new BudgetExceededError(judgeModel.id));
     await expect(
       checkGuardrails('request', 'hi', baseConfig([topicRule()]), pctx),
@@ -412,7 +422,7 @@ describe('checkGuardrails — block/log decision logic', () => {
 
 describe('checkGuardrails — useJudgeResponse', () => {
   it('topic with useJudgeResponse: judgeMessage set on triggered eval and used as blockMessage', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1,"message":"Off topic: asks about cooking"}' } }] } as any);
     const rule = topicRule({ block: true, useJudgeResponse: true });
     const result = await checkGuardrails('request', 'how do I cook pasta?', baseConfig([rule]), pctx);
@@ -423,7 +433,7 @@ describe('checkGuardrails — useJudgeResponse', () => {
   });
 
   it('topic with useJudgeResponse: falls back to static blockMessage when judge returns no message', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1}' } }] } as any);
     const rule = topicRule({ block: true, useJudgeResponse: true, blockMessage: 'Static fallback' });
     const result = await checkGuardrails('request', 'off topic', baseConfig([rule]), pctx);
@@ -431,7 +441,7 @@ describe('checkGuardrails — useJudgeResponse', () => {
   });
 
   it('moderation with useJudgeResponse: uses judge explanation as blockMessage', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9,"message":"Harmful content detected"}' } }] } as any);
     const rule = moderationRule({ block: true, useJudgeResponse: true });
     const result = await checkGuardrails('request', 'bad text', baseConfig([rule]), pctx);
@@ -439,7 +449,7 @@ describe('checkGuardrails — useJudgeResponse', () => {
   });
 
   it('without useJudgeResponse: judge message field in JSON is ignored', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1,"message":"Should not be used"}' } }] } as any);
     const rule = topicRule({ block: true, blockMessage: 'Static only' });
     const result = await checkGuardrails('request', 'off topic', baseConfig([rule]), pctx);
@@ -450,7 +460,7 @@ describe('checkGuardrails — useJudgeResponse', () => {
 
 describe('checkGuardrails — judge rule threshold defaults', () => {
   it('topic rule uses default threshold 0.5 when not set', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     // score 4 → normalized 0.4 < default threshold 0.5 → triggers
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":4}' } }] } as any);
     const rule: GuardrailRule = { type: 'topic', target: 'request', config: { modelId: judgeModel.id, allowedTopics: 'support' }, block: true } as any; // no threshold
@@ -459,7 +469,7 @@ describe('checkGuardrails — judge rule threshold defaults', () => {
   });
 
   it('moderation rule uses default threshold 0.5 when not set', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     // score 6 → normalized 0.6 > default threshold 0.5 → triggers
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":6}' } }] } as any);
     const rule: GuardrailRule = { type: 'moderation', target: 'request', config: { modelId: judgeModel.id }, block: true } as any; // no threshold
@@ -468,7 +478,7 @@ describe('checkGuardrails — judge rule threshold defaults', () => {
   });
 
   it('moderation uses default prompt when no systemPrompt set', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1}' } }] } as any);
     const rule: GuardrailRule = { type: 'moderation', target: 'request', config: { modelId: judgeModel.id } } as any; // no systemPrompt
     await checkGuardrails('request', 'safe', baseConfig([rule]), pctx);
@@ -477,7 +487,7 @@ describe('checkGuardrails — judge rule threshold defaults', () => {
   });
 
   it('moderation judge failure (non-budget) is surfaced as skipped', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockRejectedValue(new Error('moderation judge down'));
     const rule: GuardrailRule = moderationRule();
     const result = await checkGuardrails('request', 'hi', baseConfig([rule]), pctx);
@@ -485,7 +495,7 @@ describe('checkGuardrails — judge rule threshold defaults', () => {
   });
 
   it('over-limit moderation judge call propagates BudgetExceededError', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockRejectedValue(new BudgetExceededError(judgeModel.id));
     const rule: GuardrailRule = moderationRule();
     await expect(
@@ -494,14 +504,14 @@ describe('checkGuardrails — judge rule threshold defaults', () => {
   });
 
   it('moderation rule skipped when model not found', async () => {
-    mockReadConfig.mockResolvedValue([] as any);
+    mockModels([]);
     const rule: GuardrailRule = moderationRule();
     const result = await checkGuardrails('request', 'hi', baseConfig([rule]), pctx);
     expect(result.evaluated).toContainEqual({ rule: `moderation:${judgeModel.id}`, outcome: 'skipped', reason: 'model-not-found' });
   });
 
   it('topic: non-numeric score defaults to 1 (passes) (line 191 false branch)', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     // Return non-numeric score → defaults to 1 → 1 >= threshold → passes (not triggered)
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":"high"}' } }] } as any);
     const rule: GuardrailRule = { type: 'topic', target: 'request', config: { modelId: judgeModel.id, allowedTopics: 'support', threshold: 0.5 } } as any;
@@ -510,7 +520,7 @@ describe('checkGuardrails — judge rule threshold defaults', () => {
   });
 
   it('moderation: non-numeric score defaults to 0 (passes) (line 233 false branch)', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     // Return non-numeric score → defaults to 0 → 0 <= threshold → passes
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":null}' } }] } as any);
     const rule: GuardrailRule = { type: 'moderation', target: 'request', config: { modelId: judgeModel.id, threshold: 0.5 } } as any;
@@ -521,7 +531,7 @@ describe('checkGuardrails — judge rule threshold defaults', () => {
 
 describe('checkGuardrails — topic/moderation non-string raw (lines 189, 231)', () => {
   it('topic: non-string content → rawStr="" → JSON.parse("") throws → score defaults to 1 → passes (line 189 false branch)', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     // content is null → typeof null !== 'string' → rawStr='' → JSON.parse('') throws → catch skips rule
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: null } }] } as any);
     const rule: GuardrailRule = { type: 'topic', target: 'request', config: { modelId: judgeModel.id, allowedTopics: 'support', threshold: 0.5 } } as any;
@@ -531,7 +541,7 @@ describe('checkGuardrails — topic/moderation non-string raw (lines 189, 231)',
   });
 
   it('moderation: non-string content → rawStr="" → JSON.parse throws → skipped (line 231 false branch)', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     // content is undefined/null → rawStr='' → JSON.parse('') throws → catch skips rule
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: undefined } }] } as any);
     const rule: GuardrailRule = { type: 'moderation', target: 'request', config: { modelId: judgeModel.id } } as any;
@@ -540,7 +550,7 @@ describe('checkGuardrails — topic/moderation non-string raw (lines 189, 231)',
   });
 
   it('moderation: custom systemPrompt is used when set (line 220 true branch)', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9}' } }] } as any);
     const rule: GuardrailRule = { type: 'moderation', target: 'request', config: { modelId: judgeModel.id, systemPrompt: 'Custom safety classifier.', threshold: 0.5 } } as any;
     await checkGuardrails('request', 'bad', baseConfig([rule]), pctx);
@@ -568,7 +578,7 @@ describe('checkGuardrails — unknown rule type (line 246 ?? branch)', () => {
 
 describe('checkGuardrails — pctx.token present (line 58 branch=0)', () => {
   it('passes token through to LLMCallContext when pctx.token is set', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     // Score 9 → normalized 0.9 >= threshold 0.5 → on-topic → not triggered
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9}' } }] } as any);
 
@@ -590,7 +600,7 @@ describe('checkGuardrails — pctx.token present (line 58 branch=0)', () => {
 
 describe('checkGuardrails — semantic topScore undefined (line 153 ?? 0)', () => {
   it('uses 0 when topScore is undefined (line 153 ?? 0 branch)', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     // topScore absent in classification → ?? 0 → reason: semantic:0%
     mockClassifyIntent.mockResolvedValue({
       classification: { topIntent: 'blocked', topScore: undefined, secondIntent: null, secondScore: 0, margin: 0, status: 'confident' },
@@ -609,7 +619,7 @@ describe('checkGuardrails — semantic rule edge cases', () => {
   const noSlashModel = { id: 'noprefix-emb', name: 'OAI Emb', provider: 'openai', endpoint: '', apiKey: '', cost: { inputPerMillion: 0, outputPerMillion: 0 } };
 
   it('uses ollama embedding type when model provider is ollama', async () => {
-    mockReadConfig.mockResolvedValue([ollamaModel] as any);
+    mockModels([ollamaModel]);
     mockClassifyIntent.mockResolvedValue({
       classification: { status: 'ambiguous', topIntent: 'other', topScore: 0.1, secondIntent: null, secondScore: 0, margin: 0 },
       inputTokens: 0,
@@ -625,7 +635,7 @@ describe('checkGuardrails — semantic rule edge cases', () => {
   });
 
   it('uses model id directly when it has no slash prefix', async () => {
-    mockReadConfig.mockResolvedValue([noSlashModel] as any);
+    mockModels([noSlashModel]);
     mockClassifyIntent.mockResolvedValue({
       classification: { status: 'ambiguous', topIntent: 'other', topScore: 0.1, secondIntent: null, secondScore: 0, margin: 0 },
       inputTokens: 0,
@@ -640,7 +650,7 @@ describe('checkGuardrails — semantic rule edge cases', () => {
   });
 
   it('does not track usage when inputTokens is 0', async () => {
-    mockReadConfig.mockResolvedValue([noSlashModel] as any);
+    mockModels([noSlashModel]);
     mockClassifyIntent.mockResolvedValue({
       classification: { status: 'ambiguous', topIntent: 'other', topScore: 0.1, secondIntent: null, secondScore: 0, margin: 0 },
       inputTokens: 0,
@@ -652,7 +662,7 @@ describe('checkGuardrails — semantic rule edge cases', () => {
   });
 
   it('skips endpoint spread when model has no endpoint', async () => {
-    mockReadConfig.mockResolvedValue([noSlashModel] as any);
+    mockModels([noSlashModel]);
     mockClassifyIntent.mockResolvedValue({
       classification: { status: 'ambiguous', topIntent: 'other', topScore: 0.1, secondIntent: null, secondScore: 0, margin: 0 },
       inputTokens: 0,
@@ -670,7 +680,7 @@ describe('checkGuardrails — semantic rule edge cases', () => {
 
 describe('checkGuardrails — log parameter passed through (line 62 branch=0)', () => {
   it('passes logger to LLM context when log is provided to checkGuardrails', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9}' } }] } as any);
 
     const fakeLog = { warn: vi.fn(), error: vi.fn(), info: vi.fn() } as any;
@@ -683,7 +693,7 @@ describe('checkGuardrails — log parameter passed through (line 62 branch=0)', 
   });
 
   it('log.warn is called when semantic model not found and log is provided', async () => {
-    mockReadConfig.mockResolvedValue([] as any);
+    mockModels([]);
     const fakeLog = { warn: vi.fn(), error: vi.fn(), info: vi.fn() } as any;
     const rule: GuardrailRule = { type: 'semantic', target: 'request', config: { embeddingModelId: 'missing-model', examples: ['x'] } } as any;
 
@@ -696,7 +706,7 @@ describe('checkGuardrails — log parameter passed through (line 62 branch=0)', 
 
 describe('checkGuardrails — non-Error thrown in catch (String(err) branch)', () => {
   it('topic: non-Error thrown → String(err) path, rule skipped', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     // Throw a plain string (not instanceof Error)
     mockLlmChat.mockRejectedValue('plain-string-failure');
 
@@ -708,7 +718,7 @@ describe('checkGuardrails — non-Error thrown in catch (String(err) branch)', (
   });
 
   it('moderation: non-Error thrown → String(err) path, rule skipped', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     // Throw a plain object (not instanceof Error)
     mockLlmChat.mockRejectedValue({ code: 'ETIMEDOUT' });
 
@@ -730,7 +740,7 @@ describe('parseJudgeJson — via topic rule', () => {
   }
 
   it('trailing comma: {"score":8,} is repaired and parsed', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":8,}' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRuleWithModel(judgeModel.id)]), pctx);
     // score 8 → normalized 0.8 >= threshold 0.5 → passes
@@ -739,7 +749,7 @@ describe('parseJudgeJson — via topic rule', () => {
   });
 
   it('code fence: ```json{"score":9,"message":"x"}``` is extracted and parsed', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '```json\n{"score":9,"message":"x"}\n```' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRuleWithModel(judgeModel.id)]), pctx);
     expect(result.triggered).toBeUndefined();
@@ -747,7 +757,7 @@ describe('parseJudgeJson — via topic rule', () => {
   });
 
   it('preamble text: "Sure! {"score":9,...}" is extracted and parsed', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: 'Sure! {"score":9,"message":"x"}' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRuleWithModel(judgeModel.id)]), pctx);
     expect(result.triggered).toBeUndefined();
@@ -755,7 +765,7 @@ describe('parseJudgeJson — via topic rule', () => {
   });
 
   it('brace inside message string: {"score":8,"message":"use {a} and {b}"} is parsed correctly', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     // score 8 → normalized 0.8 >= 0.5 → passes
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":8,"message":"use {a} and {b}"}' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRuleWithModel(judgeModel.id)]), pctx);
@@ -764,7 +774,7 @@ describe('parseJudgeJson — via topic rule', () => {
   });
 
   it('truncated JSON: {"score":8,"message":"because is repaired and score extracted', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     // truncated — repaired score 8 → normalized 0.8 >= 0.5 → passes
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":8,"message":"because' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRuleWithModel(judgeModel.id)]), pctx);
@@ -773,7 +783,7 @@ describe('parseJudgeJson — via topic rule', () => {
   });
 
   it('pure garbage: "not json" throws → rule skipped with judge-failed reason', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: 'not json at all' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRuleWithModel(judgeModel.id)]), pctx);
     expect(result.evaluated).toContainEqual(
@@ -783,7 +793,7 @@ describe('parseJudgeJson — via topic rule', () => {
 
   it('balanced braces but unrecoverable content: "preamble {notjson} text" → skipped', async () => {
     // Hits the repair path (line 78 break) — balanced {} found but cannot parse even after repair
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: 'preamble {notjson} more text' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRuleWithModel(judgeModel.id)]), pctx);
     expect(result.evaluated).toContainEqual(
@@ -793,7 +803,7 @@ describe('parseJudgeJson — via topic rule', () => {
 
   it('escaped backslash inside string: {"score":8,"message":"path\\\\file"} parses correctly', async () => {
     // Exercises the \\-skip branch in the char scanner (inStr + backslash)
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":8,"message":"path\\\\file"}' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRuleWithModel(judgeModel.id)]), pctx);
     expect(['passed', 'skipped']).toContain(result.evaluated[0]?.outcome);
@@ -801,7 +811,7 @@ describe('parseJudgeJson — via topic rule', () => {
 
   it('repair scanner escape in string: preamble {notjson,"k":"a\\"b"} forces repair inner backslash branch', async () => {
     // The repaired candidate has a \" inside a string, exercising the inS2 + c==='\\' branch
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     // A JSON object with trailing comma that needs repair, and contains an escaped quote
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: 'Sure! {"score":7,"msg":"a\\"b",}' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRuleWithModel(judgeModel.id)]), pctx);
@@ -811,7 +821,7 @@ describe('parseJudgeJson — via topic rule', () => {
 
   it('nested object in preamble: "x {"outer":{"inner":1}} y" exercises depth>1 branch (line 56)', async () => {
     // Scanner sees outer {, then inner { (depth > 0 branch), inner }, outer } → direct parse succeeds
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: 'x {"score":{"val":0.9}} y' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRuleWithModel(judgeModel.id)]), pctx);
     // parsed.score is not a number → defaults to 1 → passes
@@ -820,7 +830,7 @@ describe('parseJudgeJson — via topic rule', () => {
 
   it('} before any { exercises start===-1 guard (line 59 false branch)', async () => {
     // Leading } when depth goes negative; start stays -1 so the guard prevents bad slice
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '} not json' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRuleWithModel(judgeModel.id)]), pctx);
     // No balanced object found → throw → skipped
@@ -834,7 +844,7 @@ const fallbackModel = { id: 'openai/gpt-3.5-turbo', name: 'Fallback', provider: 
 
 describe('fallback models — topic', () => {
   it('primary model-not-found + fallback present → fallback runs and passes', async () => {
-    mockReadConfig.mockResolvedValue([fallbackModel] as any); // primary not in list
+    mockModels([fallbackModel]); // primary not in list
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9}' } }] } as any);
     const rule: GuardrailRule = { type: 'topic', target: 'request', config: { modelId: judgeModel.id, fallbackModelIds: [fallbackModel.id], allowedTopics: 'support', threshold: 0.5 }, block: true } as any;
     const result = await checkGuardrails('request', 'hi', baseConfig([rule]), pctx);
@@ -845,7 +855,7 @@ describe('fallback models — topic', () => {
   });
 
   it('primary model-not-found + fallback present → fallback triggers', async () => {
-    mockReadConfig.mockResolvedValue([fallbackModel] as any);
+    mockModels([fallbackModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1}' } }] } as any);
     const rule: GuardrailRule = { type: 'topic', target: 'request', config: { modelId: judgeModel.id, fallbackModelIds: [fallbackModel.id], allowedTopics: 'support', threshold: 0.5 }, block: true } as any;
     const result = await checkGuardrails('request', 'off topic', baseConfig([rule]), pctx);
@@ -854,7 +864,7 @@ describe('fallback models — topic', () => {
   });
 
   it('primary llmChat rejects → fallback llmChat succeeds → passes', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel, fallbackModel] as any);
+    mockModels([judgeModel, fallbackModel]);
     mockLlmChat
       .mockRejectedValueOnce(new Error('primary down'))
       .mockResolvedValueOnce({ choices: [{ message: { content: '{"score":9}' } }] } as any);
@@ -865,7 +875,7 @@ describe('fallback models — topic', () => {
   });
 
   it('all candidates error → skipped judge-failed', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel, fallbackModel] as any);
+    mockModels([judgeModel, fallbackModel]);
     mockLlmChat.mockRejectedValue(new Error('all down'));
     const rule: GuardrailRule = { type: 'topic', target: 'request', config: { modelId: judgeModel.id, fallbackModelIds: [fallbackModel.id], allowedTopics: 'support', threshold: 0.5 } } as any;
     const result = await checkGuardrails('request', 'hi', baseConfig([rule]), pctx);
@@ -876,7 +886,7 @@ describe('fallback models — topic', () => {
   });
 
   it('BudgetExceededError on primary → throws immediately, fallback NOT attempted', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel, fallbackModel] as any);
+    mockModels([judgeModel, fallbackModel]);
     mockLlmChat.mockRejectedValueOnce(new BudgetExceededError(judgeModel.id));
     const rule: GuardrailRule = { type: 'topic', target: 'request', config: { modelId: judgeModel.id, fallbackModelIds: [fallbackModel.id], allowedTopics: 'support', threshold: 0.5 } } as any;
     await expect(
@@ -888,7 +898,7 @@ describe('fallback models — topic', () => {
 
 describe('fallback models — moderation', () => {
   it('primary model-not-found + fallback present → fallback runs and passes', async () => {
-    mockReadConfig.mockResolvedValue([fallbackModel] as any);
+    mockModels([fallbackModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1}' } }] } as any);
     const rule: GuardrailRule = { type: 'moderation', target: 'request', config: { modelId: judgeModel.id, fallbackModelIds: [fallbackModel.id], threshold: 0.5 } } as any;
     const result = await checkGuardrails('request', 'hi', baseConfig([rule]), pctx);
@@ -898,7 +908,7 @@ describe('fallback models — moderation', () => {
   });
 
   it('primary model-not-found + fallback present → fallback triggers', async () => {
-    mockReadConfig.mockResolvedValue([fallbackModel] as any);
+    mockModels([fallbackModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9}' } }] } as any);
     const rule: GuardrailRule = { type: 'moderation', target: 'request', config: { modelId: judgeModel.id, fallbackModelIds: [fallbackModel.id], threshold: 0.5 }, block: true } as any;
     const result = await checkGuardrails('request', 'bad text', baseConfig([rule]), pctx);
@@ -907,7 +917,7 @@ describe('fallback models — moderation', () => {
   });
 
   it('primary llmChat rejects → fallback llmChat succeeds → passes', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel, fallbackModel] as any);
+    mockModels([judgeModel, fallbackModel]);
     mockLlmChat
       .mockRejectedValueOnce(new Error('primary mod down'))
       .mockResolvedValueOnce({ choices: [{ message: { content: '{"score":1}' } }] } as any);
@@ -918,7 +928,7 @@ describe('fallback models — moderation', () => {
   });
 
   it('all candidates error → skipped judge-failed', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel, fallbackModel] as any);
+    mockModels([judgeModel, fallbackModel]);
     mockLlmChat.mockRejectedValue(new Error('all mod down'));
     const rule: GuardrailRule = { type: 'moderation', target: 'request', config: { modelId: judgeModel.id, fallbackModelIds: [fallbackModel.id], threshold: 0.5 } } as any;
     const result = await checkGuardrails('request', 'hi', baseConfig([rule]), pctx);
@@ -929,7 +939,7 @@ describe('fallback models — moderation', () => {
   });
 
   it('BudgetExceededError on primary → throws immediately, fallback NOT attempted', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel, fallbackModel] as any);
+    mockModels([judgeModel, fallbackModel]);
     mockLlmChat.mockRejectedValueOnce(new BudgetExceededError(judgeModel.id));
     const rule: GuardrailRule = { type: 'moderation', target: 'request', config: { modelId: judgeModel.id, fallbackModelIds: [fallbackModel.id], threshold: 0.5 } } as any;
     await expect(
@@ -941,7 +951,7 @@ describe('fallback models — moderation', () => {
 
 describe('fallback models — semantic', () => {
   it('primary model-not-found + fallback present → fallback runs and passes', async () => {
-    mockReadConfig.mockResolvedValue([fallbackModel] as any);
+    mockModels([fallbackModel]);
     mockClassifyIntent.mockResolvedValue({
       classification: { status: 'ambiguous', topIntent: 'other', topScore: 0.1, secondIntent: null, secondScore: 0, margin: 0 },
       inputTokens: 0,
@@ -954,7 +964,7 @@ describe('fallback models — semantic', () => {
   });
 
   it('primary model-not-found, no fallback → skipped model-not-found', async () => {
-    mockReadConfig.mockResolvedValue([] as any);
+    mockModels([]);
     const rule: GuardrailRule = { type: 'semantic', target: 'request', config: { embeddingModelId: judgeModel.id, examples: ['x'] } } as any;
     const result = await checkGuardrails('request', 'hi', baseConfig([rule]), pctx);
     expect(result.evaluated).toContainEqual(
@@ -964,7 +974,7 @@ describe('fallback models — semantic', () => {
 
   it('BudgetExceededError thrown by classifyIntent → rethrows (line 227 true branch)', async () => {
     // classifyIntent throws BudgetExceededError inside the try → re-thrown, fallback NOT attempted
-    mockReadConfig.mockResolvedValue([judgeModel, fallbackModel] as any);
+    mockModels([judgeModel, fallbackModel]);
     mockClassifyIntent.mockRejectedValueOnce(new BudgetExceededError(judgeModel.id));
     const rule: GuardrailRule = { type: 'semantic', target: 'request', config: { embeddingModelId: judgeModel.id, fallbackModelIds: [fallbackModel.id], examples: ['x'], threshold: 0.8 } } as any;
     await expect(
@@ -974,7 +984,7 @@ describe('fallback models — semantic', () => {
   });
 
   it('all semantic candidates found but all error → skipped embedding-failed (line 236 Error branch)', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel, fallbackModel] as any);
+    mockModels([judgeModel, fallbackModel]);
     mockClassifyIntent.mockRejectedValue(new Error('embed network down'));
     const rule: GuardrailRule = { type: 'semantic', target: 'request', config: { embeddingModelId: judgeModel.id, fallbackModelIds: [fallbackModel.id], examples: ['x'], threshold: 0.8 } } as any;
     const result = await checkGuardrails('request', 'hi', baseConfig([rule]), pctx);
@@ -985,7 +995,7 @@ describe('fallback models — semantic', () => {
   });
 
   it('all semantic candidates error with non-Error → String(err) branch (line 236 false branch)', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockClassifyIntent.mockRejectedValue('plain string error');
     const rule: GuardrailRule = { type: 'semantic', target: 'request', config: { embeddingModelId: judgeModel.id, examples: ['x'], threshold: 0.8 } } as any;
     const result = await checkGuardrails('request', 'hi', baseConfig([rule]), pctx);
@@ -1013,7 +1023,7 @@ describe('checkGuardrails — target=both rule applies to both sides (line 393)'
 
 describe('checkGuardrails — judgeRaw on topic and moderation evals (#4)', () => {
   it('topic triggered: judgeRaw set on the triggered eval', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1}' } }] } as any);
     const rule = topicRule({ block: true });
     const result = await checkGuardrails('request', 'off topic', baseConfig([rule]), pctx);
@@ -1022,7 +1032,7 @@ describe('checkGuardrails — judgeRaw on topic and moderation evals (#4)', () =
   });
 
   it('topic passed: judgeRaw set on the passed eval', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9}' } }] } as any);
     const rule = topicRule();
     const result = await checkGuardrails('request', 'support question', baseConfig([rule]), pctx);
@@ -1031,7 +1041,7 @@ describe('checkGuardrails — judgeRaw on topic and moderation evals (#4)', () =
   });
 
   it('moderation triggered: judgeRaw set on the triggered eval', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9.5}' } }] } as any);
     const rule = moderationRule({ block: true });
     const result = await checkGuardrails('request', 'bad content', baseConfig([rule]), pctx);
@@ -1040,7 +1050,7 @@ describe('checkGuardrails — judgeRaw on topic and moderation evals (#4)', () =
   });
 
   it('moderation passed: judgeRaw set on the passed eval', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1}' } }] } as any);
     const rule = moderationRule();
     const result = await checkGuardrails('request', 'safe text', baseConfig([rule]), pctx);
@@ -1060,7 +1070,7 @@ describe('checkGuardrails — judgeRaw on topic and moderation evals (#4)', () =
 
 describe('checkGuardrails — context-aware judge message (#7)', () => {
   it('topic rule: with context, judge user message instructs full-context judging and includes the conversation', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9}' } }] } as any);
     const rule = topicRule();
     await checkGuardrails('request', 'latest message', baseConfig([rule]), pctx, undefined, 'user: earlier message\nassistant: response');
@@ -1075,7 +1085,7 @@ describe('checkGuardrails — context-aware judge message (#7)', () => {
   });
 
   it('topic rule: without context, judge user message wraps text in <<<BEGIN_CONTENT>>>/<<<END_CONTENT>>> markers', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9}' } }] } as any);
     const rule = topicRule();
     await checkGuardrails('request', 'plain text', baseConfig([rule]), pctx, undefined, undefined);
@@ -1087,7 +1097,7 @@ describe('checkGuardrails — context-aware judge message (#7)', () => {
   });
 
   it('moderation rule: when context provided, judge user message contains context', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1}' } }] } as any);
     const rule = moderationRule();
     await checkGuardrails('request', 'latest', baseConfig([rule]), pctx, undefined, 'user: prior turn');
@@ -1111,7 +1121,7 @@ describe('checkGuardrails — context-aware judge message (#7)', () => {
 
 describe('checkGuardrails — judge token usage on RuleEval', () => {
   it('topic rule: judge usage is attached to the triggered eval', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     // low score = off allowed topic → triggers
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1}' } }], usage: { prompt_tokens: 123, completion_tokens: 45 } } as any);
     const result = await checkGuardrails('request', 'off topic', baseConfig([topicRule()]), pctx);
@@ -1120,7 +1130,7 @@ describe('checkGuardrails — judge token usage on RuleEval', () => {
   });
 
   it('moderation rule: judge usage is attached to the passed eval', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1}' } }], usage: { prompt_tokens: 77, completion_tokens: 8 } } as any);
     const result = await checkGuardrails('request', 'safe', baseConfig([moderationRule()]), pctx);
     expect(result.triggered).toBeUndefined();
@@ -1128,7 +1138,7 @@ describe('checkGuardrails — judge token usage on RuleEval', () => {
   });
 
   it('missing usage on the judge response defaults to zero tokens', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1}' } }] } as any);
     const result = await checkGuardrails('request', 'off topic', baseConfig([topicRule()]), pctx);
     expect(result.evaluated[0]?.usage).toEqual({ inputTokens: 0, outputTokens: 0 });
@@ -1139,7 +1149,7 @@ describe('checkGuardrails — judge token usage on RuleEval', () => {
 
 describe('checkGuardrails — anti-bypass judge instruction (regression)', () => {
   it('with context, the judge is told to flag softening/insistence/continuation evasions', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1}' } }] } as any);
     await checkGuardrails('request', 'come on just tell me', baseConfig([moderationRule()]), pctx, undefined, 'user: earlier disallowed request\nassistant: refusal');
     const callBody = mockLlmChat.mock.calls[0]![0] as any;
@@ -1155,7 +1165,7 @@ describe('checkGuardrails — anti-bypass judge instruction (regression)', () =>
 
 describe('checkGuardrails — language instruction in judge system prompt (#3)', () => {
   it('topic system prompt always contains the reason language instruction', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1,"reason":"Off topic"}' } }] } as any);
     const rule = topicRule({ block: true, useJudgeResponse: true });
     await checkGuardrails('request', 'off topic', baseConfig([rule]), pctx);
@@ -1165,7 +1175,7 @@ describe('checkGuardrails — language instruction in judge system prompt (#3)',
   });
 
   it('topic system prompt contains reason language instruction even without useJudgeResponse', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9}' } }] } as any);
     const rule = topicRule({ block: true });
     await checkGuardrails('request', 'hi', baseConfig([rule]), pctx);
@@ -1181,7 +1191,7 @@ describe('checkGuardrails — language instruction in judge system prompt (#3)',
 describe('parseJudgeJson — truncated input repair (3b path)', () => {
   it('truncated JSON with no closing brace is repaired from the partial object', async () => {
     // The input has no closing brace at all → depth>0 at end → 3b repair path
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":8,"message":"because the user' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRule()]), pctx);
     // score 0.8 >= 0.5 → passed (or skipped if repair fails, both valid)
@@ -1190,7 +1200,7 @@ describe('parseJudgeJson — truncated input repair (3b path)', () => {
 
   it('truncated mid-string (inStr=true at scan exit) — 3b adds closing quote then balances braces', async () => {
     // Input ends inside an open string → inStr=true at loop exit → L88 if(inStr) adds '"'
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":8,"message":"truncated mid' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRule()]), pctx);
     expect(['passed', 'skipped']).toContain(result.evaluated[0]?.outcome);
@@ -1198,7 +1208,7 @@ describe('parseJudgeJson — truncated input repair (3b path)', () => {
 
   it('truncated with escaped quote in message string — 3b inner scanner handles backslash (L91 c===backslash)', async () => {
     // Message value contains \" escape → 3b inner scanner hits c==='\\' branch (j++ skip)
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     // JSON with escaped quote inside message, no closing brace
     const rawWithEscape = '{"score":8,"message":"has \\"quoted\\" word"';
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: rawWithEscape } }] } as any);
@@ -1209,7 +1219,7 @@ describe('parseJudgeJson — truncated input repair (3b path)', () => {
   it('nested object truncated before final brace — 3b inner scanner decrements d2 on inner } (L93 d2--)', async () => {
     // Input: {"score":8,"x":{"nested":1}  (outer } missing)
     // Outer scan exits with depth=1; 3b inner scanner sees nested {} → d2++ then d2-- branch fires
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     const nestedTruncated = '{"score":8,"x":{"nested":1}';
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: nestedTruncated } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRule()]), pctx);
@@ -1251,7 +1261,7 @@ describe('checkGuardrails — aggregate all blocking rules (Change 1)', () => {
   });
 
   it('blocking rule with useJudgeResponse + judgeMessage aggregated with static-message blocker', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1,"message":"Off topic judge reason"}' } }] } as any);
     const rules: GuardrailRule[] = [
       topicRule({ block: true, useJudgeResponse: true }),
@@ -1281,7 +1291,7 @@ describe('checkGuardrails — aggregate all blocking rules (Change 1)', () => {
 
 describe('checkGuardrails — judge prompt injection markers (Change 2)', () => {
   it('topic rule: system message contains the data-not-instructions sentinel', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9}' } }] } as any);
     await checkGuardrails('request', 'hello', baseConfig([topicRule()]), pctx);
     const callBody = mockLlmChat.mock.calls[0]![0] as any;
@@ -1292,7 +1302,7 @@ describe('checkGuardrails — judge prompt injection markers (Change 2)', () => 
   });
 
   it('topic rule without context: user message wraps text in <<<BEGIN_CONTENT>>>/<<<END_CONTENT>>>', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9}' } }] } as any);
     await checkGuardrails('request', 'user text here', baseConfig([topicRule()]), pctx);
     const callBody = mockLlmChat.mock.calls[0]![0] as any;
@@ -1304,7 +1314,7 @@ describe('checkGuardrails — judge prompt injection markers (Change 2)', () => 
   });
 
   it('topic rule with context: user message uses BEGIN_CONVERSATION/END_CONVERSATION and BEGIN_LATEST_MESSAGE/END_LATEST_MESSAGE', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9}' } }] } as any);
     await checkGuardrails('request', 'latest msg', baseConfig([topicRule()]), pctx, undefined, 'user: prior turn');
     const callBody = mockLlmChat.mock.calls[0]![0] as any;
@@ -1320,7 +1330,7 @@ describe('checkGuardrails — judge prompt injection markers (Change 2)', () => 
   });
 
   it('moderation rule: system message contains the data-not-instructions sentinel', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1}' } }] } as any);
     await checkGuardrails('request', 'hello', baseConfig([moderationRule()]), pctx);
     const callBody = mockLlmChat.mock.calls[0]![0] as any;
@@ -1330,7 +1340,7 @@ describe('checkGuardrails — judge prompt injection markers (Change 2)', () => 
   });
 
   it('moderation rule without context: user message wraps text in markers', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1}' } }] } as any);
     await checkGuardrails('request', 'some text', baseConfig([moderationRule()]), pctx);
     const callBody = mockLlmChat.mock.calls[0]![0] as any;
@@ -1341,7 +1351,7 @@ describe('checkGuardrails — judge prompt injection markers (Change 2)', () => 
   });
 
   it('moderation rule with context: user message uses conversation markers', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1}' } }] } as any);
     await checkGuardrails('request', 'latest', baseConfig([moderationRule()]), pctx, undefined, 'user: ctx');
     const callBody = mockLlmChat.mock.calls[0]![0] as any;
@@ -1353,7 +1363,7 @@ describe('checkGuardrails — judge prompt injection markers (Change 2)', () => 
   });
 
   it('moderation with custom systemPrompt: marker instruction inserted after custom prompt', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":1}' } }] } as any);
     const rule: GuardrailRule = { type: 'moderation', target: 'request', config: { modelId: judgeModel.id, systemPrompt: 'My custom classifier.', threshold: 0.5 } } as any;
     await checkGuardrails('request', 'test', baseConfig([rule]), pctx);
@@ -1368,28 +1378,28 @@ describe('checkGuardrails — judge prompt injection markers (Change 2)', () => 
 
 describe('normalizeJudgeScore — observable behavior via checkGuardrails', () => {
   it('score 10.00 → normalized 1.0 → topic passes (>=0.5)', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":10}' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRule()]), pctx);
     expect(result.triggered).toBeUndefined();
   });
 
   it('score 0.00 → normalized 0.0 → topic triggers (< 0.5)', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":0}' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRule({ block: true })]), pctx);
     expect(result.triggered).toBe('topic:score=0.00');
   });
 
   it('score >10 (e.g. 12) clamps to 1.0 → topic passes', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":12}' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRule()]), pctx);
     expect(result.triggered).toBeUndefined(); // clamped to 1.0 >= 0.5
   });
 
   it('score <0 clamps to 0.0 → topic triggers', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":-1}' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRule({ block: true })]), pctx);
     expect(result.triggered).toBe('topic:score=0.00');
@@ -1398,7 +1408,7 @@ describe('normalizeJudgeScore — observable behavior via checkGuardrails', () =
 
 describe('reason-first: parsed.reason preferred for judgeMessage', () => {
   it('moderation with useJudgeResponse: reason field sets judgeMessage', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"reason":"because X","score":8}' } }] } as any);
     const rule = moderationRule({ block: true, useJudgeResponse: true });
     const result = await checkGuardrails('request', 'bad', baseConfig([rule]), pctx);
@@ -1408,7 +1418,7 @@ describe('reason-first: parsed.reason preferred for judgeMessage', () => {
   });
 
   it('back-compat: judge returning only message field (no reason) still yields judgeMessage', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":8,"message":"Y"}' } }] } as any);
     const rule = moderationRule({ block: true, useJudgeResponse: true });
     const result = await checkGuardrails('request', 'bad', baseConfig([rule]), pctx);
@@ -1417,7 +1427,7 @@ describe('reason-first: parsed.reason preferred for judgeMessage', () => {
   });
 
   it('fail-open: unparseable judge output → topic passes (default score=10)', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: 'completely unparseable garbage []' } }] } as any);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRule()]), pctx);
     // parse throws → rule skipped (fail-open: no block)
@@ -1425,7 +1435,7 @@ describe('reason-first: parsed.reason preferred for judgeMessage', () => {
   });
 
   it('fail-open: unparseable judge output → moderation passes (default score=0)', async () => {
-    mockReadConfig.mockResolvedValue([judgeModel] as any);
+    mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: 'completely unparseable garbage []' } }] } as any);
     const result = await checkGuardrails('request', 'bad', baseConfig([moderationRule()]), pctx);
     expect(result.triggered).toBeUndefined();

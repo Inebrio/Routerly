@@ -64,6 +64,7 @@ import { catalogFetcher } from '../catalog/fetcher.js'
 import { OptimizerRegistry, setOptimizerRegistry, type Optimizer } from '../optimizers/registry.js'
 import { readMessages, writeMessages, tokensOf } from '../optimizers/messages.js'
 import { setClientConfiguratorEnabled } from '../clients/module.js'
+import { splitModelsIntoInstancesConnections } from '../../test-support/effective-models.js'
 
 const mockCatalogFetcher = vi.mocked(catalogFetcher)
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
@@ -6250,10 +6251,12 @@ describe('GET /api/health/providers', () => {
 
   function setupHealth(models: any[], usage: any[]) {
     mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    const { instances, connections } = splitModelsIntoInstancesConnections(models)
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return models
+      if (t === 'instances') return instances
+      if (t === 'connections') return connections
       if (t === 'usage') return usage
       return []
     })
@@ -7597,10 +7600,14 @@ describe('GET /api/models/catalog', () => {
 
   it('marks isConfigured=true for a configured model', async () => {
     setupAdminAuth()
+    const { instances, connections } = splitModelsIntoInstancesConnections([
+      { id: 'gpt-4o', name: 'gpt-4o', provider: 'openai', endpoint: 'https://api.openai.com/v1', cost: { inputPerMillion: 5, outputPerMillion: 15 } },
+    ])
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return [{ id: 'gpt-4o', provider: 'openai', endpoint: 'https://api.openai.com/v1', cost: { inputPerMillion: 5, outputPerMillion: 15 } }]
+      if (t === 'instances') return instances
+      if (t === 'connections') return connections
       return []
     })
 
@@ -8553,10 +8560,12 @@ describe('PATCH /api/projects/:id/guardrails — per-rule action field', () => {
 describe('GET /api/leaderboard', () => {
   function setupLb(models: any[], usage: any[]) {
     mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    const { instances, connections } = splitModelsIntoInstancesConnections(models)
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'models') return models
+      if (t === 'instances') return instances
+      if (t === 'connections') return connections
       if (t === 'usage') return usage
       return []
     })

@@ -10,6 +10,7 @@ vi.mock('../../modules/config/loader.js', () => ({ readConfig: mockReadConfig })
 vi.mock('../../modules/budget/budget.js', () => ({ getLimitUsageSnapshot: mockGetLimitUsageSnapshot }));
 
 import { getMetricsSnapshot, projectBudgetRatio } from './metrics-snapshot.js';
+import { splitModelsIntoInstancesConnections } from '../../test-support/effective-models.js';
 import type { ModelConfig, ProjectConfig } from '@routerly/shared';
 
 describe('getMetricsSnapshot', () => {
@@ -27,17 +28,20 @@ describe('getMetricsSnapshot', () => {
       },
     ];
     const projects = [{ id: 'proj1', name: 'My Project' }];
-    const models = [{ id: 'model1', provider: 'openai' }];
+    const models: ModelConfig[] = [{ id: 'model1', name: 'model1', provider: 'openai', cost: { inputPerMillion: 0, outputPerMillion: 0 } }];
+    const { instances, connections } = splitModelsIntoInstancesConnections(models);
 
     mockReadConfig
-      .mockResolvedValueOnce(usage)   // usage
-      .mockResolvedValueOnce(projects) // projects
-      .mockResolvedValueOnce(models);  // models
+      .mockResolvedValueOnce(usage)       // usage
+      .mockResolvedValueOnce(projects)    // projects
+      .mockResolvedValueOnce(connections) // connections (listEffectiveModelsIncludingDisabled)
+      .mockResolvedValueOnce(instances);  // instances
 
     const snap = await getMetricsSnapshot();
 
     expect(snap.projects).toEqual(projects);
-    expect(snap.models).toEqual(models);
+    expect(snap.models).toHaveLength(1);
+    expect(snap.models[0]).toMatchObject({ id: 'model1', provider: 'openai' });
     expect(snap.projectName('proj1')).toBe('My Project');
     expect(snap.projectName('unknown')).toBe('unknown');
     expect(snap.modelInfo('model1')).toEqual({ model: 'model1', provider: 'openai' });
@@ -64,7 +68,8 @@ describe('getMetricsSnapshot', () => {
     mockReadConfig
       .mockResolvedValueOnce(usage)
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([]);
+      .mockResolvedValueOnce([]) // connections
+      .mockResolvedValueOnce([]); // instances
 
     const snap = await getMetricsSnapshot();
     // cached token bump should add a 'cached' type entry

@@ -7,6 +7,7 @@ vi.mock('../budget/budget.js', () => ({ getLimitUsageSnapshot: vi.fn() }));
 import { metricsRoutes } from './metrics.js';
 import { readConfig } from '../config/loader.js';
 import { getLimitUsageSnapshot } from '../budget/budget.js';
+import { splitModelsIntoInstancesConnections } from '../../test-support/effective-models.js';
 
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>);
 const mockSnapshot = vi.mocked(getLimitUsageSnapshot as (...args: any[]) => Promise<any>);
@@ -30,7 +31,10 @@ const projects = [
 ];
 
 function setup(config: Record<string, any>): void {
-  mockReadConfig.mockImplementation(async (key: string) => config[key] ?? []);
+  const { models: modelsFixture, ...rest } = config;
+  const { instances, connections } = splitModelsIntoInstancesConnections(modelsFixture ?? []);
+  const full: Record<string, any> = { ...rest, connections, instances };
+  mockReadConfig.mockImplementation(async (key: string) => full[key] ?? []);
 }
 
 describe('GET /metrics', () => {

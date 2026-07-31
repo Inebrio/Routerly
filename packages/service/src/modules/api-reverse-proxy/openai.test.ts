@@ -6,10 +6,20 @@ vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }))
 
 import { openaiRoutes } from './openai.js'
 import { readConfig } from '../config/loader.js'
+import { splitModelsIntoInstancesConnections } from '../../test-support/effective-models.js'
 
 const mockReadConfig = vi.mocked(readConfig)
 
 afterEach(() => vi.clearAllMocks())
+
+function mockModels(models: any[]) {
+  const { instances, connections } = splitModelsIntoInstancesConnections(models)
+  mockReadConfig.mockImplementation(async (key: string) => {
+    if (key === 'connections') return connections as any
+    if (key === 'instances') return instances as any
+    return [] as any
+  })
+}
 
 const testModel: any = {
   id: 'openai/gpt-4o', name: 'GPT-4o', provider: 'openai',
@@ -42,7 +52,7 @@ async function buildApp(project = testProject) {
 // keep their route-level tests here.
 describe('GET /v1/models', () => {
   it('returns project model list with ada placeholder', async () => {
-    mockReadConfig.mockResolvedValue([testModel])
+    mockModels([testModel])
 
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/v1/models' })
@@ -58,7 +68,7 @@ describe('GET /v1/models', () => {
 
 describe('GET /v1/models/:model', () => {
   it('returns a specific model', async () => {
-    mockReadConfig.mockResolvedValue([testModel])
+    mockModels([testModel])
 
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/v1/models/openai%2Fgpt-4o' })
@@ -71,7 +81,7 @@ describe('GET /v1/models/:model', () => {
   })
 
   it('returns 404 for model not in project', async () => {
-    mockReadConfig.mockResolvedValue([testModel])
+    mockModels([testModel])
 
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/v1/models/not-in-project' })
@@ -82,7 +92,7 @@ describe('GET /v1/models/:model', () => {
 
   it('returns 404 when model is in project but not in allModels', async () => {
     const projectWithMissing: ProjectConfig = { ...testProject, models: [{ modelId: 'missing-model' }] }
-    mockReadConfig.mockResolvedValue([]) // no models in allModels
+    mockModels([]) // no models in allModels
 
     const app = await buildApp(projectWithMissing)
     const res = await app.inject({ method: 'GET', url: '/v1/models/missing-model' })

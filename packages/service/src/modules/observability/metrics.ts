@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { readConfig } from '../config/loader.js';
+import { listEffectiveModelsIncludingDisabled } from '../provider/list-effective.js';
 import type { PrometheusIntegration } from '@routerly/shared';
 import {
   aggregate,
@@ -42,10 +43,11 @@ export const metricsRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
 
+    // observability: must still account for disabled-connection models
     const [usage, projects, models] = await Promise.all([
       readConfig('usage'),
       readConfig('projects'),
-      readConfig('models'),
+      listEffectiveModelsIncludingDisabled(),
     ]);
 
     const projectName = (id: string): string => projects.find((p) => p.id === id)?.name ?? id;

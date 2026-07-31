@@ -7,7 +7,7 @@ import {
   OBSERVABILITY,
   CONFIG_STORE,
 } from '../../../core/tokens.js'
-import { readConfig } from '../../config/loader.js'
+import { listEffectiveModelsIncludingDisabled } from '../../provider/list-effective.js'
 import { routeRequest } from '../../routing/router.js'
 import { readUsageRecords } from '../../usage/usageStore.js'
 import { getLimitUsageSnapshot } from '../../budget/budget.js'
@@ -32,7 +32,8 @@ export const listModelsTool: McpToolEntry = {
   scope: 'read',
   requires: CATALOG,
   async handler() {
-    const models = await readConfig('models')
+    // read-only management listing: show disabled-connection models too
+    const models = await listEffectiveModelsIncludingDisabled()
     const list = models.map((m) => ({
       id: m.id,
       provider: m.provider,
@@ -63,7 +64,8 @@ export const getModelInstanceTool: McpToolEntry = {
   requires: CATALOG,
   async handler(input) {
     const { id } = (input ?? {}) as { id?: string }
-    const models = await readConfig('models')
+    // read-only management lookup: show disabled-connection models too
+    const models = await listEffectiveModelsIncludingDisabled()
     const m = models.find((x) => x.id === id)
     if (!m) {
       return {
@@ -165,7 +167,8 @@ export const budgetStatusTool: McpToolEntry = {
   scope: 'read',
   requires: BUDGET,
   async handler(_input, authCtx) {
-    const models = await readConfig('models')
+    // budget/usage reporting: still account for disabled-connection models
+    const models = await listEffectiveModelsIncludingDisabled()
     const perModel = await Promise.all(
       authCtx.project.models.map(async (ref) => {
         const model = models.find((m) => m.id === ref.modelId)

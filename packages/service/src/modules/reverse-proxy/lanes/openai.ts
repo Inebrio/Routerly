@@ -4,7 +4,7 @@ import type { ChatCompletionRequest } from '@routerly/shared'
 import type { Processor } from '../../../core/index.js'
 import type { ProxyContext } from '../context.js'
 import { getProxyPipeline } from '../run.js'
-import { readConfig } from '../../config/loader.js'
+import { listEffectiveModels } from '../../provider/list-effective.js'
 import { appendTrace } from '../../logging/traceStore.js'
 import type { TraceEntry } from '../../logging/traceStore.js'
 import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
@@ -178,7 +178,8 @@ export const openaiAttempt: Processor<ProxyContext> = {
     const pipeline = getProxyPipeline()
     const project = ctx.project
     const log = ctx.log
-    const allModels = await readConfig('models')
+    // execution: only route to models on enabled connections
+    const allModels = await listEffectiveModels()
     const sorted = [...(ctx.candidates ?? [])].sort((a, b) => b.weight - a.weight)
 
     let primaryModelId: string | undefined

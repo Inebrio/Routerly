@@ -1,5 +1,6 @@
 import type { ModelConfig, ProjectConfig } from '@routerly/shared';
 import { readConfig } from '../../config/loader.js';
+import { listEffectiveModels } from '../../provider/list-effective.js';
 import { llmChat, BudgetExceededError } from '../../reverse-proxy/execute.js';
 import { getRoutingHistory } from '../routingMemoryStore.js';
 import type { LLMCallContext } from '../../reverse-proxy/execute.js';
@@ -210,7 +211,8 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
     throw new Error('llm policy: routingModelId not configured');
   }
 
-  const allModels: ModelConfig[] = await readConfig('models');
+  // routing: only models on enabled connections may be selected
+  const allModels: ModelConfig[] = await listEffectiveModels();
   const allProjects: ProjectConfig[] = await readConfig('projects');
   const project = allProjects.find((p: ProjectConfig) => p.id === projectId)
     ?? { id: projectId ?? '', models: [], name: '', tokens: [], members: [] };
