@@ -131,9 +131,12 @@ Manage Bearer tokens for this project.
 
 1. Click **+ New Token**
 2. Enter a **Name** (e.g. `production`, `staging`, `ci`)
-3. Optionally add **Tags** — key-value metadata (e.g., `environment: production`, `team: backend`). Tags are included in every usage record created with this token, enabling filtering and analysis by custom dimensions.
-4. Optionally configure per-token limits (metric, limit value, window type, mode)
-5. Click **Create**
+3. Optionally add **Scopes**: access scopes for this token, e.g. `mcp` and
+   `mcp:write` to let the token call Routerly's [MCP server](../concepts/mcp.md).
+   Without the `mcp` scope, the token cannot reach `/mcp` at all.
+4. Optionally add **Tags** — key-value metadata (e.g., `environment: production`, `team: backend`). Tags are included in every usage record created with this token, enabling filtering and analysis by custom dimensions.
+5. Optionally configure per-token limits (metric, limit value, window type, mode)
+6. Click **Create**
 
 The token value (`sk-rt-…`) is shown **once**. Copy it immediately.
 
@@ -155,10 +158,11 @@ Click the **Re-generate** icon to invalidate the current token and issue a new o
 
 Click a token's **Name** to open the edit view. Here you can:
 
+- **Update Scopes**: add or remove access scopes without touching the token value itself.
 - **Update Tags** — add, remove, or modify key-value metadata. Changes apply immediately to all future usage records created with this token.
 - **Modify Limits** — add or remove spending limits without touching the token value itself.
 
-Any changes to tags or limits take effect immediately and do not invalidate the token.
+Any changes to scopes, tags, or limits take effect immediately and do not invalidate the token.
 
 ---
 

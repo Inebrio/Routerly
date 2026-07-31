@@ -986,6 +986,8 @@ POST /api/projects/:slug/tokens
 ```json
 {
   "name": "production",
+  "labels": ["prod"],
+  "scopes": ["mcp", "mcp:write"],
   "tags": {
     "environment": "prod",
     "team": "backend"
@@ -1003,10 +1005,14 @@ POST /api/projects/:slug/tokens
 
 **Fields:**
 - `name` — token name (required)
+- `labels`: array of free-text labels shown next to the token in the dashboard (optional)
+- `scopes`: access scopes granted to the token (optional). Required for the
+  [MCP server](#mcp-tools): `mcp` to reach `/mcp` at all, `mcp:write` for the
+  write tools. See [Concepts: MCP Server](../concepts/mcp.md#authentication-and-scopes)
 - `tags` — arbitrary key-value metadata attached to the token (optional). Tags are included in every usage record created with this token.
 - `limits` — array of per-token spending limits (optional)
 
-**Response includes the token value in plain text — returned once only.** The response also includes the `tags` object.
+**Response includes the token value in plain text — returned once only.** The response also includes the `labels`, `scopes`, and `tags` fields.
 
 ### Update Token
 
@@ -1016,6 +1022,7 @@ PUT /api/projects/:slug/tokens/:tokenId
 
 ```json
 {
+  "scopes": ["mcp"],
   "tags": {
     "environment": "staging"
   }
@@ -1023,7 +1030,11 @@ PUT /api/projects/:slug/tokens/:tokenId
 ```
 
 **Fields:**
+- `labels`: replace the token's labels (optional)
+- `scopes`: replace the token's access scopes (optional)
 - `tags` — replace the token's tags. Pass an empty object `{}` to clear all tags (optional).
+
+Any field omitted from the request body is left unchanged (partial update).
 
 ### Delete Token
 
@@ -2369,3 +2380,66 @@ POST /api/system/update
 ```
 
 Poll `GET /health` to detect when the service has restarted. The CLI command `routerly update run` does this automatically.
+
+---
+
+## MCP Tools
+
+Read-only dashboard view of the [MCP server](../concepts/mcp.md)'s tool
+registry: which tools are currently installed, their scope, and their
+description. This is distinct from the `/mcp` protocol surface itself (see
+[Service: MCP Server](../service/endpoints.md#mcp-server)), which is
+authenticated by project-token scopes, not a JWT. There is no mutation route
+here: `mcp:manage` is reserved for a future per-tool enable/disable feature
+and enforces nothing today.
+
+### List Tools
+
+```
+GET /api/mcp/tools
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `mcp:read`)
+
+**Query parameters:**
+- `scope`: filter to `read` or `write` (optional). Any other value returns `400`.
+
+**Response `200`:**
+```json
+[
+  {
+    "name": "list_models",
+    "scope": "read",
+    "description": "List the models configured on this Routerly gateway (id, provider, context window). No secrets are returned.",
+    "sourceModule": "catalog.registry",
+    "enabled": true
+  },
+  {
+    "name": "create_project_token",
+    "scope": "write",
+    "description": "Create a new API token for this project. Returns the token id, snippet, creation time, and scopes only; the raw token is never returned (retrieve it via the CLI or dashboard token flow). Requires the 'mcp:write' scope.",
+    "sourceModule": "config.store",
+    "enabled": true
+  }
+]
+```
+
+`sourceModule` is the internal DI token key of the module backing the tool
+(e.g. `catalog.registry`, `config.store`). A tool is only present in this
+list when its backing module is bootstrapped on this instance; a module
+that is not running removes its tools from the list entirely, they are
+never shown as `enabled: false`.
+
+**Errors**: `400` invalid `scope` value · `403` insufficient permissions
+
+### Get Tool
+
+```
+GET /api/mcp/tools/:name
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `mcp:read`)
+
+**Response `200`:** one tool, same shape as [List Tools](#list-tools).
+
+**Errors**: `404` `{ "error": "Not found" }` · `403` insufficient permissions

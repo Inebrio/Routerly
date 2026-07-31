@@ -549,11 +549,28 @@ Create a new project API token. The token value is shown **once only**.
 ```bash
 routerly project token create my-api
 routerly project token create my-api --tag environment=prod --tag team=backend
+routerly project token create my-api --scopes mcp,mcp:write
 ```
 
 | Option | Description |
 |--------|-------------|
+| `--labels <list>` | Comma-separated free-text labels shown next to the token in the dashboard |
+| `--scopes <list>` | Comma-separated access scopes (e.g. `mcp,mcp:write` for the [MCP server](../concepts/mcp.md)) |
 | `--tag <key=value>` | Attach key-value metadata to the token (repeatable). Tags are included in every usage record created with this token. |
+
+```bash
+routerly project token create Test --scopes mcp,mcp:write --labels mcp-docs
+```
+```
+✓ Token created for project "Test".
+
+Token (save this — shown only once):
+sk-rt-d551c6a3bc1c126f938839ec654806ebd0a86968824b81ccf81fb842ea82f54f
+  ID:      b75b0cf0-5ba9-4c42-af93-e92059180cae
+  Snippet: sk-rt-d551…
+  Labels:  mcp-docs
+  Scopes:  mcp, mcp:write
+```
 
 Optionally add spending limits inline:
 
@@ -575,6 +592,8 @@ routerly project token edit my-api abc123 --tag environment=staging --tag team=q
 
 | Option | Description |
 |--------|-------------|
+| `--labels <list>` | Replace all labels with this comma-separated list. Omit to keep existing labels unchanged. |
+| `--scopes <list>` | Replace all access scopes with this comma-separated list. Omit to keep existing scopes unchanged. |
 | `--tag <key=value>` | Replace all tags with these key-value pairs (repeatable). Omit to keep existing tags unchanged. |
 | `--add-limit <spec>` | Add a limit (repeatable) |
 | `--remove-limit <spec>` | Remove a limit matching model+metric+window (repeatable) |
@@ -1631,6 +1650,117 @@ Cline does not support launching from Routerly.
 ```
 Exit code `1`. Cline has no standalone CLI binary. Clients without a
 `launch` step behave the same way; the error names the client.
+
+Exit code: `0` on success, `1` on error (all subcommands).
+
+---
+
+## `routerly mcp`
+
+Inspect and exercise the [MCP server](../concepts/mcp.md): the tools
+Routerly exposes to MCP clients (Claude Code, Claude Desktop, and similar)
+over `/mcp`. The project token used by `test` and `serve` must carry the
+`mcp` scope (`mcp:write` for the 2 write tools); see
+[`routerly project token create`](#tokens--routerly-project-token) `--scopes`.
+
+### `routerly mcp tools`
+
+```
+routerly mcp tools [--json]
+```
+
+List the MCP tools currently exposed by the server (management surface,
+`GET /api/mcp/tools`, requires `mcp:read`). A tool is only listed when its
+backing module is bootstrapped on this instance.
+
+```bash
+routerly mcp tools
+```
+```
+┌──────────────────────┬───────┬──────────────────┬─────────┐
+│ Name                 │ Scope │ Module           │ Enabled │
+├──────────────────────┼───────┼──────────────────┼─────────┤
+│ list_models          │ read  │ catalog.registry │ yes     │
+├──────────────────────┼───────┼──────────────────┼─────────┤
+│ get_model            │ read  │ catalog.registry │ yes     │
+├──────────────────────┼───────┼──────────────────┼─────────┤
+│ route_preview        │ read  │ routing.router   │ yes     │
+├──────────────────────┼───────┼──────────────────┼─────────┤
+│ get_usage_summary    │ read  │ usage.tracker    │ yes     │
+├──────────────────────┼───────┼──────────────────┼─────────┤
+│ get_budget_status    │ read  │ cost.budget      │ yes     │
+├──────────────────────┼───────┼──────────────────┼─────────┤
+│ list_projects        │ read  │ config.store     │ yes     │
+├──────────────────────┼───────┼──────────────────┼─────────┤
+│ create_project_token │ write │ config.store     │ yes     │
+├──────────────────────┼───────┼──────────────────┼─────────┤
+│ toggle_model         │ write │ config.store     │ yes     │
+└──────────────────────┴───────┴──────────────────┴─────────┘
+```
+(`get_metrics_snapshot` is a ninth built-in tool, omitted here because the
+observability module was not bootstrapped on this instance: module-gated
+tools disappear from the list entirely rather than showing `enabled: no`.)
+
+Requires `mcp:read` permission.
+
+### `routerly mcp test`
+
+```
+routerly mcp test <tool> [--input <json>] [--project <id>] [--token <token>] [--json]
+```
+
+Invoke one tool over the live `/mcp` transport with a real project token,
+useful to verify a tool works before wiring an MCP client to it.
+
+| Option | Description |
+|--------|-------------|
+| `--input <json>` | Tool arguments as a JSON object (default `{}`) |
+| `--project <id>` | Project to mint a token for (defaults to the only project; required when more than one project exists) |
+| `--token <token>` | Use an explicit project token instead of minting one |
+| `--json` | Output the raw tool result as JSON |
+
+```bash
+routerly mcp test get_model --input '{"id":"openai/gpt-5.2"}' --project Test --token sk-rt-...
+```
+```
+{
+  "id": "openai/gpt-5.2",
+  "provider": "openai",
+  "contextWindow": 400000
+}
+```
+
+**Error cases:**
+- `--input` is not valid JSON: `Error: --input must be valid JSON.` (checked before any network call)
+- Token lacks the `mcp` scope: `Error: Project token lacks the 'mcp' scope required to use the MCP endpoint.`
+- Tool call fails (e.g. unknown id): the tool's `isError` message, printed to stderr
+
+### `routerly mcp serve`
+
+```
+routerly mcp serve [--project <id>] [--token <token>]
+```
+
+Run the MCP server over stdio for local clients (Claude Desktop and
+similar). Mints (or accepts) a project token, then spawns the Routerly
+service binary with `ROUTERLY_MCP_STDIO=1` and `ROUTERLY_MCP_TOKEN=<token>`
+set. See [Reference: Environment Variables](../reference/environment-variables.md#mcp-server-variables).
+This is the command a client's MCP config points its `command`/`args` at.
+
+| Option | Description |
+|--------|-------------|
+| `--project <id>` | Project to mint a token for (defaults to the only project) |
+| `--token <token>` | Use an explicit project token instead of minting one |
+
+```bash
+routerly mcp serve --project my-api
+```
+```
+Starting MCP stdio server for project "my-api"...
+```
+Diagnostics print to stderr only; stdout is reserved for the MCP protocol
+stream. The process stays attached until the client disconnects; the CLI
+propagates the child process's exit code.
 
 Exit code: `0` on success, `1` on error (all subcommands).
 
