@@ -279,6 +279,43 @@ describe('profiles show', () => {
   });
 });
 
+// ─── profiles create ───────────────────────────────────────────────────────
+
+describe('profiles create', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  it('creates an empty profile of the requested kind', async () => {
+    mockApi.mockResolvedValueOnce({ ...userProfile, label: 'From scratch' });
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'profiles', 'create', '--kind', 'routing', '--label', 'From scratch']);
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/profiles', { kind: 'routing', label: 'From scratch' });
+    expect(lines.join('\n')).toContain('Created routing profile "From scratch" -> user-1');
+  });
+
+  it('outputs valid JSON with --json', async () => {
+    mockApi.mockResolvedValueOnce(securityProfile);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'profiles', 'create', '--kind', 'security', '--label', 'Sec', '--json']);
+    expect(JSON.parse(lines.join('\n'))).toEqual(securityProfile);
+  });
+
+  it('rejects an unknown kind before calling the API', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync(['node', 'profiles', 'create', '--kind', 'nope', '--label', 'X'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('errors when --label is missing (Commander required option)', async () => {
+    await expect(makeCmd().parseAsync(['node', 'profiles', 'create', '--kind', 'routing'])).rejects.toThrow();
+  });
+});
+
 // ─── profiles clone ────────────────────────────────────────────────────────
 
 describe('profiles clone', () => {

@@ -97,6 +97,112 @@ describe('GET /api/profiles', () => {
   })
 })
 
+// ─── POST /api/profiles ──────────────────────────────────────────────────────
+
+describe('POST /api/profiles', () => {
+  it('creates a routing profile from a full body', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'),
+      payload: { kind: 'routing', label: 'From scratch', policies: [{ type: 'cheapest', enabled: true }], selector: 'cheapest', fallbackStrategy: 'abort' },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const body = JSON.parse(res.body)
+    expect(body.kind).toBe('routing')
+    expect(body.label).toBe('From scratch')
+    expect(body.selector).toBe('cheapest')
+    expect(body.builtin).toBe(false)
+    expect(body.version).toBe(1)
+    expect(body.id).toMatch(/^[0-9a-f-]{36}$/)
+    expect(body.baseId).toBeUndefined()
+    expect(mockWriteConfig).toHaveBeenCalledWith('profiles', [expect.objectContaining({ id: body.id })])
+  })
+
+  it('fills routing defaults when only kind and label are sent', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'), payload: { kind: 'routing', label: 'Empty' } })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const body = JSON.parse(res.body)
+    expect(body.policies).toEqual([])
+    expect(body.selector).toBe('argmax')
+    expect(body.fallbackStrategy).toBe('next-best')
+  })
+
+  it('creates an optimizer profile', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'),
+      payload: { kind: 'optimizer', label: 'Opt', optimizers: { steps: [{ id: 'session-dedup', enabled: true }] } },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const body = JSON.parse(res.body)
+    expect(body.kind).toBe('optimizer')
+    expect(body.optimizers.steps).toHaveLength(1)
+  })
+
+  it('creates a security profile with empty defaults', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'), payload: { kind: 'security', label: 'Sec' } })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const body = JSON.parse(res.body)
+    expect(body.guardrails).toEqual({ rules: [] })
+    expect(body.pii).toEqual({ policies: [] })
+  })
+
+  it('appends to the existing user profiles instead of replacing them', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage', { profiles: [userProfile] }), payload: { kind: 'routing', label: 'Second' } })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    expect(mockWriteConfig).toHaveBeenCalledWith('profiles', [
+      expect.objectContaining({ id: 'u1' }),
+      expect.objectContaining({ label: 'Second' }),
+    ])
+  })
+
+  it('rejects an unknown kind', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'), payload: { kind: 'nope', label: 'X' } })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
+  it('rejects an empty label', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'), payload: { kind: 'routing', label: '  ' } })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('rejects a field that belongs to another kind', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'), payload: { kind: 'security', label: 'X', selector: 'argmax' } })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    expect(JSON.parse(res.body).selector).toBeUndefined()
+  })
+
+  it('forbids without profiles:manage', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:read'), payload: { kind: 'routing', label: 'X' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('blocks when the profiles module is disabled', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage', { modules: [{ id: 'profiles', enabled: false }] }), payload: { kind: 'routing', label: 'X' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+    expect(JSON.parse(res.body).error).toBe('module_disabled')
+  })
+})
+
 // ─── POST /api/profiles/clone ────────────────────────────────────────────────
 
 describe('POST /api/profiles/clone', () => {
