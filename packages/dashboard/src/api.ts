@@ -440,6 +440,7 @@ export const ALL_PERMISSIONS = [
   'resilience:read', 'resilience:manage',
   'profiles:read', 'profiles:manage',
   'optimizers:read', 'optimizers:manage',
+  'mcp:read', 'mcp:manage',
 ] as const;
 export type Permission = typeof ALL_PERMISSIONS[number];
 
@@ -889,6 +890,19 @@ export const updateConnection = (id: string, data: Partial<{
   endpoint?: string; enabled: boolean;
 }>) => request<Connection>(`/connections/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
 export const deleteConnection = (id: string) => request<void>(`/connections/${encodeURIComponent(id)}`, { method: 'DELETE' });
+
+// ── MCP tool registry (read-only browser) ────────────────────────────────────
+
+export interface McpToolRow {
+  name: string;
+  scope: 'read' | 'write';
+  description: string;
+  sourceModule: string;
+  enabled: boolean;
+}
+
+export const getMcpTools = () => request<McpToolRow[]>('/mcp/tools');
+export const getMcpTool = (name: string) => request<McpToolRow>(`/mcp/tools/${encodeURIComponent(name)}`);
 
 export interface Instance {
   id: string;
