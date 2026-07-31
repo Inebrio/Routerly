@@ -132,6 +132,8 @@ describe('mcp test', () => {
   it('mints a token and POSTs a tools/call JSON-RPC request, printing the result text', async () => {
     mockApi.mockResolvedValueOnce([project]); // resolveProject
     const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
       json: async () => ({ jsonrpc: '2.0', id: 1, result: { content: [{ type: 'text', text: 'gpt-4o\nclaude' }] } }),
     });
     vi.stubGlobal('fetch', fetchSpy);
@@ -153,6 +155,8 @@ describe('mcp test', () => {
   it('passes parsed --input as the tool arguments', async () => {
     mockApi.mockResolvedValueOnce([project]);
     const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
       json: async () => ({ result: { content: [{ type: 'text', text: 'ok' }] } }),
     });
     vi.stubGlobal('fetch', fetchSpy);
@@ -165,6 +169,8 @@ describe('mcp test', () => {
   it('uses an explicit --token instead of minting', async () => {
     mockApi.mockResolvedValueOnce([project]);
     const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
       json: async () => ({ result: { content: [{ type: 'text', text: 'ok' }] } }),
     });
     vi.stubGlobal('fetch', fetchSpy);
@@ -176,6 +182,8 @@ describe('mcp test', () => {
   it('result.isError -> stderr + exit 1', async () => {
     mockApi.mockResolvedValueOnce([project]);
     const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
       json: async () => ({ result: { isError: true, content: [{ type: 'text', text: 'requires mcp:write' }] } }),
     });
     vi.stubGlobal('fetch', fetchSpy);
@@ -188,9 +196,28 @@ describe('mcp test', () => {
     vi.unstubAllGlobals();
   });
 
+  it('HTTP 403 (string error + message) surfaces the actionable message', async () => {
+    mockApi.mockResolvedValueOnce([project]);
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: async () => ({ error: 'forbidden', message: "Project token lacks the 'mcp' scope required to use the MCP endpoint." }),
+    });
+    vi.stubGlobal('fetch', fetchSpy);
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(
+      makeCmd().parseAsync(['node', 'mcp', 'test', 'list_models', '--project', 'my-api']),
+    ).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining("lacks the 'mcp' scope"));
+    vi.unstubAllGlobals();
+  });
+
   it('JSON-RPC protocol error -> stderr + exit 1', async () => {
     mockApi.mockResolvedValueOnce([project]);
     const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
       json: async () => ({ error: { code: -32601, message: 'Method not found' } }),
     });
     vi.stubGlobal('fetch', fetchSpy);
@@ -206,7 +233,7 @@ describe('mcp test', () => {
   it('outputs the raw result with --json', async () => {
     mockApi.mockResolvedValueOnce([project]);
     const result = { content: [{ type: 'text', text: 'ok' }] };
-    const fetchSpy = vi.fn().mockResolvedValue({ json: async () => ({ result }) });
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ result }) });
     vi.stubGlobal('fetch', fetchSpy);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
@@ -247,6 +274,16 @@ describe('mcp serve', () => {
     expect(options.stdio).toBe('inherit');
     expect(options.env.ROUTERLY_MCP_STDIO).toBe('1');
     expect(options.env.ROUTERLY_MCP_TOKEN).toBe('sk-rt-minted');
+  });
+
+  it('propagates the child exit code so a failed start is not reported as success', async () => {
+    mockApi.mockResolvedValueOnce([project]);
+    const child = { on: vi.fn((event: string, cb: (code?: number) => void) => { if (event === 'exit') cb(1); }) };
+    mockSpawn.mockReturnValue(child);
+    process.exitCode = undefined;
+    await makeCmd().parseAsync(['node', 'mcp', 'serve', '--project', 'my-api']);
+    expect(process.exitCode).toBe(1);
+    process.exitCode = undefined;
   });
 
   it('exits 1 when the project is not found', async () => {
