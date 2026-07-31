@@ -55,7 +55,8 @@ export function pickUpstreamModel(
  * + `/v1/embeddings` → `https://api.openai.com/v1/embeddings`.
  */
 export function buildUpstreamUrl(model: ModelConfig, requestUrl: string): string {
-  return new URL(model.endpoint).origin + requestUrl;
+  // Callers must guard for a missing endpoint before invoking this (see pickUpstreamModel call sites).
+  return new URL(model.endpoint!).origin + requestUrl;
 }
 
 const HOP_BY_HOP_REQUEST = new Set([
