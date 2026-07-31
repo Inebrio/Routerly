@@ -13,8 +13,8 @@ export function resolveEffectiveModel(
     id: instance.id,
     name: instance.upstreamModelId,
     provider: connection.providerId as Provider,
-    endpoint: connection.endpoint ?? '',
-    // ponytail: endpoint defaults to empty string when undefined; per-provider descriptor defaults are a follow-up
+    connectionId: connection.id,
+    endpoint: connection.endpoint,
     ...((connection.credentials as Partial<EffectiveModel>) || {}),
     upstreamModelId: instance.upstreamModelId,
     cost: instance.cost,

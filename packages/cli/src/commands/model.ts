@@ -209,7 +209,7 @@ Examples:
 
       console.log(chalk.bold(`\nModel: ${m.id}`));
       console.log(line('Provider', m.provider));
-      console.log(line('Endpoint', m.endpoint));
+      console.log(line('Endpoint', m.endpoint ?? ''));
       if (m.contextWindow) console.log(line('Context window', `${m.contextWindow.toLocaleString()} tokens`));
       if (m.capabilities) {
         const caps = Object.entries(m.capabilities)

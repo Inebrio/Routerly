@@ -78,14 +78,15 @@ export async function migrateModelsToConnections(): Promise<{ connections: numbe
 
     if (!connectionIds.has(connId) && !seenNewConnectionIds.has(connId)) {
       seenNewConnectionIds.add(connId);
-      newConnections.push({
+      const conn: ProviderConnection = {
         id: connId,
         providerId: model.provider,
         label: `${model.provider} (migrated)`,
         credentials: buildCredentials(model),
-        endpoint: model.endpoint,
         enabled: true,
-      });
+      };
+      if (model.endpoint !== undefined) conn.endpoint = model.endpoint;
+      newConnections.push(conn);
     }
 
     if (!instanceIds.has(model.id)) {

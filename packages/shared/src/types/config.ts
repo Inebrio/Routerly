@@ -136,7 +136,7 @@ export interface ModelConfig {
   id: string;
   name: string;
   provider: Provider;
-  endpoint: string;
+  endpoint?: string | undefined;
   /** Provider API key (stored in plaintext; file permissions protect it) */
   apiKey?: string | undefined;
   /** cf_clearance cookie value for Cloudflare bypass (openai-web only) */
@@ -180,8 +180,8 @@ export interface ModelConfig {
   catalogDefaults?: CatalogDefaults;
 }
 
-/** Effective model computed from ModelInstance + ProviderConnection */
-export type EffectiveModel = ModelConfig;
+/** Effective model computed from ModelInstance + ProviderConnection. Carries connectionId so resilience keys can target the real connection. */
+export type EffectiveModel = ModelConfig & { connectionId: string };
 
 export interface ProjectModelRef {
   modelId: string;
