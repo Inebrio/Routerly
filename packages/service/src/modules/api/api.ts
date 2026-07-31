@@ -11,7 +11,7 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults } from '@routerly/shared';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
 import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY } from '@routerly/shared';
@@ -645,7 +645,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       pricingTiers?: PricingTier[];
       limits?: Limit[];
       capabilities?: ModelCapabilities;
-      fieldOverrides?: Partial<Record<string, boolean>>;
+      fieldOverrides?: Partial<Record<CatalogField, boolean>>;
+      catalogDefaults?: CatalogDefaults;
       /** @deprecated use limits */ dailyBudget?: number;
       /** @deprecated use limits */ weeklyBudget?: number;
       /** @deprecated use limits */ monthlyBudget?: number;
@@ -720,6 +721,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       contextWindow: req.body.contextWindow ?? 0,
       ...(resolvedLimits?.length ? { limits: resolvedLimits } : {}),
       ...(req.body.capabilities ? { capabilities: req.body.capabilities } : {}),
+      ...(req.body.fieldOverrides ? { fieldOverrides: req.body.fieldOverrides } : {}),
+      ...(req.body.catalogDefaults ? { catalogDefaults: req.body.catalogDefaults } : {}),
     };
     instances.push(instance);
     await writeConfig('instances', instances);
@@ -744,7 +747,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       pricingTiers?: PricingTier[];
       limits?: Limit[];
       capabilities?: ModelCapabilities;
-      fieldOverrides?: Partial<Record<string, boolean>>;
+      fieldOverrides?: Partial<Record<CatalogField, boolean>>;
+      catalogDefaults?: CatalogDefaults;
       /** @deprecated use limits */ dailyBudget?: number;
       /** @deprecated use limits */ weeklyBudget?: number;
       /** @deprecated use limits */ monthlyBudget?: number;
@@ -870,6 +874,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...(req.body.capabilities
         ? { capabilities: req.body.capabilities }
         : existing.capabilities !== undefined ? { capabilities: existing.capabilities } : {}),
+      ...(req.body.fieldOverrides
+        ? { fieldOverrides: req.body.fieldOverrides }
+        : existing.fieldOverrides !== undefined ? { fieldOverrides: existing.fieldOverrides } : {}),
+      ...(req.body.catalogDefaults
+        ? { catalogDefaults: req.body.catalogDefaults }
+        : existing.catalogDefaults !== undefined ? { catalogDefaults: existing.catalogDefaults } : {}),
     };
     instances[index] = instance;
     await writeConfig('instances', instances);

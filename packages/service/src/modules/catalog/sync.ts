@@ -1,6 +1,6 @@
 import type { CatalogField, CatalogDefaults } from '@routerly/shared';
 import { catalogFetcher } from './fetcher.js';
-import { writeConfig } from '../config/loader.js';
+import { readConfig, writeConfig } from '../config/loader.js';
 import { listEffectiveModelsIncludingDisabled } from '../provider/list-effective.js';
 
 export async function syncModelsFromCatalog(pkgVersion: string): Promise<boolean> {
@@ -11,6 +11,7 @@ export async function syncModelsFromCatalog(pkgVersion: string): Promise<boolean
   ]);
 
   let changed = false;
+  const changedIds = new Set<string>();
 
   for (const model of models) {
     const providerEntry = catalog[model.provider];
@@ -87,9 +88,27 @@ export async function syncModelsFromCatalog(pkgVersion: string): Promise<boolean
       modelChanged = true;
     }
 
-    if (modelChanged) changed = true;
+    if (modelChanged) {
+      changed = true;
+      changedIds.add(model.id);
+    }
   }
 
-  if (changed) await writeConfig('models', models);
+  if (changed) {
+    const instances = await readConfig('instances');
+    const byId = new Map(models.map(m => [m.id, m]));
+    const updatedInstances = instances.map(inst => {
+      if (!changedIds.has(inst.id)) return inst;
+      const m = byId.get(inst.id)!;
+      return {
+        ...inst,
+        cost: m.cost,
+        contextWindow: m.contextWindow ?? inst.contextWindow,
+        ...(m.capabilities !== undefined ? { capabilities: m.capabilities } : {}),
+        ...(m.catalogDefaults !== undefined ? { catalogDefaults: m.catalogDefaults } : {}),
+      };
+    });
+    await writeConfig('instances', updatedInstances);
+  }
   return changed;
 }
