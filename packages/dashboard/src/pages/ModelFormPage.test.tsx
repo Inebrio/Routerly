@@ -14,6 +14,28 @@ vi.mock('../api', () => ({
   getConnections: vi.fn(),
 }));
 
+vi.mock('../components/SearchableSelect', () => ({
+  SearchableSelect: ({
+    options, value, onChange, placeholder, disabled,
+  }: {
+    options: { value: string; label: string }[];
+    value: string;
+    onChange: (v: string) => void;
+    placeholder?: string;
+    disabled?: boolean;
+  }) => (
+    <select
+      data-testid={`searchable-${placeholder ?? 'select'}`}
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      disabled={disabled}
+    >
+      <option value="">—</option>
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  ),
+}));
+
 // navigate spy
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async (importActual) => {
