@@ -140,7 +140,7 @@ describe('mcp test', () => {
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'mcp', 'test', 'list_models', '--project', 'my-api']);
-    expect(mockAcquireToken).toHaveBeenCalledWith({ projectId: 'proj-1' });
+    expect(mockAcquireToken).toHaveBeenCalledWith({ projectId: 'proj-1', scopes: ['mcp', 'mcp:write'] });
     const [url, init] = fetchSpy.mock.calls[0]!;
     expect(url).toBe('http://localhost:3000/mcp');
     expect(init.headers.Authorization).toBe('Bearer sk-rt-minted');
@@ -267,7 +267,7 @@ describe('mcp serve', () => {
     const child = { on: vi.fn((event: string, cb: () => void) => { if (event === 'exit') cb(); }) };
     mockSpawn.mockReturnValue(child);
     await makeCmd().parseAsync(['node', 'mcp', 'serve', '--project', 'my-api']);
-    expect(mockAcquireToken).toHaveBeenCalledWith({ projectId: 'proj-1' });
+    expect(mockAcquireToken).toHaveBeenCalledWith({ projectId: 'proj-1', scopes: ['mcp', 'mcp:write'] });
     const [bin, args, options] = mockSpawn.mock.calls[0]!;
     expect(bin).toBe('node');
     expect(args).toEqual(['/fake/@routerly/service/dist/index.js']);

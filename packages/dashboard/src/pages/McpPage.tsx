@@ -122,7 +122,7 @@ function ConnectionInstructions() {
         }}>routerly mcp serve</pre>
         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 8, lineHeight: 1.5 }}>
           Internally this runs the service with <span className="mono">ROUTERLY_MCP_STDIO=1</span> and{' '}
-          <span className="mono">ROUTERLY_MCP_TOKEN=&lt;project token&gt;</span> — set those yourself only if you run the service directly instead of via the CLI.
+          <span className="mono">ROUTERLY_MCP_TOKEN=&lt;project token&gt;</span>. Set those yourself only if you run the service directly instead of via the CLI.
         </p>
       </div>
 
