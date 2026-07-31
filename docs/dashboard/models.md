@@ -123,9 +123,9 @@ credentials unchanged.
 
 Models linked to the catalog show status badges on editable fields:
 
-- **Auto** (green badge) — field is synced from the catalog; your edit will override it
-- **Override** (amber badge) — field is manually locked to your custom value; it will not auto-sync
-- No badge — model is not in the catalog (local Ollama, custom endpoint) or field is always manual (API key, enabled status)
+- **Auto** (green badge) -- field is synced from the catalog; your edit will override it
+- **Override** (amber badge) -- field is manually locked to your custom value; it will not auto-sync
+- No badge -- model is not in the catalog (local Ollama, custom endpoint) or field is always manual (API key, enabled status)
 
 **To override a catalog field:** edit it normally. The badge changes to "Override" and the field is locked. An edit indicator appears showing the catalog default value.
 
@@ -171,11 +171,11 @@ Click any column header to sort ascending; click again to reverse. All five colu
 
 **Filters (two rows):**
 
-- **Search** — filter by model ID or name substring
-- **Provider** — multi-select dropdown; leave empty to show all providers
-- **Context** — limit by context window size: All, &lt;32k, 32k–200k, 200k–1M, &gt;1M
-- **Price /1M** — filter by input price tier: All, Free, &lt;$1, $1–$5, &gt;$5
-- **Show** — All, Configured only (models already added to Routerly), Embedding only
+- **Search** -- filter by model ID or name substring
+- **Provider** -- multi-select dropdown; leave empty to show all providers
+- **Context** -- limit by context window size: All, &lt;32k, 32k–200k, 200k–1M, &gt;1M
+- **Price /1M** -- filter by input price tier: All, Free, &lt;$1, $1–$5, &gt;$5
+- **Show** -- All, Configured only (models already added to Routerly), Embedding only
 
 Click **Reset filters** to clear all filters at once.
 

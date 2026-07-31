@@ -36,8 +36,8 @@ POST /api/auth/login
 }
 ```
 
-- `token` — short-lived JWT (1 hour). Use as `Authorization: Bearer <token>` on all other endpoints.
-- `refreshToken` — opaque token used to obtain new access tokens without re-entering credentials. Store securely; see [POST /api/auth/refresh](#refresh). Rotates on every use.
+- `token` - short-lived JWT (1 hour). Use as `Authorization: Bearer <token>` on all other endpoints.
+- `refreshToken` - opaque token used to obtain new access tokens without re-entering credentials. Store securely; see [POST /api/auth/refresh](#refresh). Rotates on every use.
 
 ### Refresh
 
@@ -60,10 +60,10 @@ This endpoint is **public** (no `Authorization` header required).
 }
 ```
 
-Issues a new 1-hour access token **and a new refresh token** (rotation). The previous refresh token is immediately invalidated — replace it with the value returned in the response. Returns `401` if the token is invalid or has already been used/revoked.
+Issues a new 1-hour access token **and a new refresh token** (rotation). The previous refresh token is immediately invalidated - replace it with the value returned in the response. Returns `401` if the token is invalid or has already been used/revoked.
 
 :::note
-The CLI and dashboard perform this refresh automatically — the CLI tries silently when the token expires or is within 5 minutes of expiry; the dashboard retries on any `401` response. Both clients persist the new refresh token automatically.
+The CLI and dashboard perform this refresh automatically - the CLI tries silently when the token expires or is within 5 minutes of expiry; the dashboard retries on any `401` response. Both clients persist the new refresh token automatically.
 :::
 
 ---
@@ -128,7 +128,8 @@ for the higher-level explanation.
 GET /api/models
 ```
 
-**Auth**: `Authorization: Bearer <jwt>` (requires `model:read`)
+**Auth**: `Authorization: Bearer <jwt>` (any authenticated user; no
+model-specific permission is enforced on this endpoint)
 
 **Response `200`:** array of models, including those on disabled connections.
 Each entry includes `connectionId`; secret fields (`apiKey`, `cfClearance`,
@@ -242,7 +243,7 @@ GET /api/providers/descriptors
 **Auth**: `Authorization: Bearer <jwt>` (requires `connections:read`)
 
 Returns the static registry of provider types Routerly knows how to connect to
-(distinct from the model **catalog** — see [Catalog](#catalog)). Used by the
+(distinct from the model **catalog** - see [Catalog](#catalog)). Used by the
 dashboard to populate the provider dropdown when creating a connection.
 
 **Response `200`:**
@@ -266,10 +267,10 @@ dashboard to populate the provider dropdown when creating a connection.
 ```
 
 **Fields:**
-- `id` — provider identifier, used as `providerId` on a connection
-- `protocol` — wire protocol the connection speaks: `openai`, `anthropic`, `gemini`, or `custom`
-- `supportLevel` — how credentials are supplied: `native` (plain API key), `compatible` (OpenAI-compatible custom endpoint, plain API key), `oauth` (OAuth access/refresh token pair, encrypted at rest), `web` (browser session cookie, encrypted at rest)
-- `nativeCapabilities` — capability flags (`thinking`, `vision`, `functionCalling`, `json`, `embedding`) the provider natively supports, used as defaults for model instances
+- `id` - provider identifier, used as `providerId` on a connection
+- `protocol` - wire protocol the connection speaks: `openai`, `anthropic`, `gemini`, or `custom`
+- `supportLevel` - how credentials are supplied: `native` (plain API key), `compatible` (OpenAI-compatible custom endpoint, plain API key), `oauth` (OAuth access/refresh token pair, encrypted at rest), `web` (browser session cookie, encrypted at rest)
+- `nativeCapabilities` - capability flags (`thinking`, `vision`, `functionCalling`, `json`, `embedding`) the provider natively supports, used as defaults for model instances
 
 **Errors**: `403` insufficient permissions
 
@@ -279,7 +280,7 @@ dashboard to populate the provider dropdown when creating a connection.
 
 A connection stores credentials for one account with one provider (see
 `providerId`, from [Provider Descriptors](#provider-descriptors)). A connection
-does not expose any models by itself — create [Model Instances](#model-instances)
+does not expose any models by itself - create [Model Instances](#model-instances)
 on top of it to make models routable.
 
 ### List Connections
@@ -318,11 +319,11 @@ POST /api/connections
 ```
 
 **Fields:**
-- `providerId` — must match a known provider id from [Provider Descriptors](#provider-descriptors) (required)
-- `label` — friendly name (required)
-- `credentials` — arbitrary key-value object; shape depends on `supportLevel` (required, may be `{}`). See **Credential encryption** below
-- `endpoint` — override base URL, e.g. for `custom`/Azure-style deployments (optional)
-- `enabled` — whether the connection is usable by routing (required)
+- `providerId` - must match a known provider id from [Provider Descriptors](#provider-descriptors) (required)
+- `label` - friendly name (required)
+- `credentials` - arbitrary key-value object; shape depends on `supportLevel` (required, may be `{}`). See **Credential encryption** below
+- `endpoint` - override base URL, e.g. for `custom`/Azure-style deployments (optional)
+- `enabled` - whether the connection is usable by routing (required)
 
 **Credential encryption (oauth/web providers):**
 
@@ -340,7 +341,7 @@ plaintext keys are stripped from the stored config. The API never returns
 
 Any other field on `credentials` (e.g. `expiresAt` for oauth providers) passes
 through untouched. For `native`/`compatible` providers (e.g. plain `apiKey`),
-`credentials` passes through entirely untouched — plaintext-at-rest is
+`credentials` passes through entirely untouched - plaintext-at-rest is
 intentional for those providers.
 
 **Response `200`:** the created connection, `credentials` omitted (see List Connections above).
@@ -361,7 +362,7 @@ PATCH /api/connections/:id
 ```
 
 When `credentials` is present in the body, it **replaces** the stored
-credentials object wholesale (not a deep merge) — resend every field you want
+credentials object wholesale (not a deep merge) - resend every field you want
 to keep, following the same `oauthPlain`/`refreshPlain`/`cookiePlain`/`cfClearancePlain`
 convention as create. Only the fields present in the submitted `credentials`
 object are encrypted; omitted plaintext fields simply don't produce an
@@ -436,12 +437,12 @@ POST /api/instances
 ```
 
 **Fields:**
-- `connectionId` — id of an existing connection (required)
-- `upstreamModelId` — the provider's model id, e.g. `gpt-5-mini` (required)
-- `cost` — `{ inputPerMillion, outputPerMillion, cachePerMillion?, cacheWritePerMillion?, pricingTiers? }` (required)
-- `contextWindow` — token limit (required)
-- `limits` — array of usage limit objects, same shape as [project token limits](#create-token) (optional)
-- `capabilities` — `{ thinking?, vision?, functionCalling?, json?, embedding? }`, overrides the connection provider's `nativeCapabilities` (optional)
+- `connectionId` - id of an existing connection (required)
+- `upstreamModelId` - the provider's model id, e.g. `gpt-5-mini` (required)
+- `cost` - `{ inputPerMillion, outputPerMillion, cachePerMillion?, cacheWritePerMillion?, pricingTiers? }` (required)
+- `contextWindow` - token limit (required)
+- `limits` - array of usage limit objects, same shape as [project token limits](#create-token) (optional)
+- `capabilities` - `{ thinking?, vision?, functionCalling?, json?, embedding? }`, overrides the connection provider's `nativeCapabilities` (optional)
 
 **Response `200`:** the created instance.
 
@@ -936,7 +937,7 @@ entity types).
 Security rules that call a model (semantic embedding, topic judge, moderation
 judge) are tracked as separate usage records with `callType: "guardrail"`. These
 records are attributed to the same project and token as the originating request
-and are subject to the same budget limits — an over-budget judge call fails
+and are subject to the same budget limits - an over-budget judge call fails
 the same as an over-budget completion. The records appear in
 `GET /api/usage` alongside completion and routing records and are broken out in
 the usage summary (see [Query Usage Records](#query-usage-records)).
@@ -1045,15 +1046,15 @@ POST /api/projects/:slug/tokens
 ```
 
 **Fields:**
-- `name` — token name (required)
+- `name` - token name (required)
 - `labels`: array of free-text labels shown next to the token in the dashboard (optional)
 - `scopes`: access scopes granted to the token (optional). Required for the
   [MCP server](#mcp-tools): `mcp` to reach `/mcp` at all, `mcp:write` for the
   write tools. See [Concepts: MCP Server](../concepts/mcp.md#authentication-and-scopes)
-- `tags` — arbitrary key-value metadata attached to the token (optional). Tags are included in every usage record created with this token.
-- `limits` — array of per-token spending limits (optional)
+- `tags` - arbitrary key-value metadata attached to the token (optional). Tags are included in every usage record created with this token.
+- `limits` - array of per-token spending limits (optional)
 
-**Response includes the token value in plain text — returned once only.** The response also includes the `labels`, `scopes`, and `tags` fields.
+**Response includes the token value in plain text - returned once only.** The response also includes the `labels`, `scopes`, and `tags` fields.
 
 ### Update Token
 
@@ -1073,7 +1074,7 @@ PUT /api/projects/:slug/tokens/:tokenId
 **Fields:**
 - `labels`: replace the token's labels (optional)
 - `scopes`: replace the token's access scopes (optional)
-- `tags` — replace the token's tags. Pass an empty object `{}` to clear all tags (optional).
+- `tags` - replace the token's tags. Pass an empty object `{}` to clear all tags (optional).
 
 Any field omitted from the request body is left unchanged (partial update).
 
@@ -1339,7 +1340,7 @@ The `outcome` filter on `GET /api/usage` accepts `blocked` in addition to `succe
 Individual usage records for blocked requests carry `guardrailTriggered` (the rule identifier, e.g. `regex:pattern` or `injection:dan-mode`) and `blockedBy` (same value; present only when the outcome is `blocked`). Records where PII was redacted carry `piiRedacted` with an array of redacted entity types. Records where a guardrail triggered on the `flag` or `log` path carry `guardrailTriggered` but not `blockedBy`.
 
 :::note Wire format unchanged
-The block response sent to the API client is standard and unchanged: HTTP 200, empty content, `finish_reason: "content_filter"` (OpenAI) or `stop_reason: "refusal"` (Anthropic). Only observability around the block changed — the usage record is now written and the summary counts it separately.
+The block response sent to the API client is standard and unchanged: HTTP 200, empty content, `finish_reason: "content_filter"` (OpenAI) or `stop_reason: "refusal"` (Anthropic). Only observability around the block changed - the usage record is now written and the summary counts it separately.
 :::
 
 ### Get Routing Trace
@@ -1358,7 +1359,7 @@ Returns the routing trace (`{ trace: [...] }`). All trace entries are stored out
 | `pii:evaluated` | After every PII scrubbing pass, whether or not anything was redacted | `{ redacted: string[] }`. Entity types found (e.g. `["EMAIL"]`). Empty array on a clean pass. `panel` indicates `"request"` or `"response"`. |
 | `pii:scrubbed` | When at least one PII entity was detected and replaced | `{ entities: string[] }`. Entity types that were replaced. Also emitted alongside `pii:evaluated` on a hit. |
 
-Use the `x-routerly-trace-id` header from any LLM proxy response — present even on blocked responses — to look up its trace:
+Use the `x-routerly-trace-id` header from any LLM proxy response - present even on blocked responses - to look up its trace:
 
 ```bash
 curl -s http://localhost:3000/api/traces/$TRACE_ID \
@@ -1468,13 +1469,13 @@ PUT /api/settings
 ```
 
 **Fields:**
-- `port`, `logLevel`, `defaultTimeoutMs`, `publicUrl` — service configuration (optional)
-- `providerRepos` — array of provider repository objects (optional)
+- `port`, `logLevel`, `defaultTimeoutMs`, `publicUrl` - service configuration (optional)
+- `providerRepos` - array of provider repository objects (optional)
 
 **ProviderRepo object:**
-- `url` — repository endpoint (required)
-- `enabled` — whether the repo is active (optional, default `true`)
-- `channel` — named channel to prefer (optional, e.g. `stable`, `latest`)
+- `url` - repository endpoint (required)
+- `enabled` - whether the repo is active (optional, default `true`)
+- `channel` - named channel to prefer (optional, e.g. `stable`, `latest`)
 
 ---
 
@@ -1680,14 +1681,14 @@ Returns per-repository status information.
 ```
 
 **Fields:**
-- `url` — repository endpoint
-- `enabled` — whether this repo is active
-- `resolvedFile` — filename of the last successfully fetched catalog (null if never fetched)
-- `updatedAt` — timestamp from the catalog registry (null if never fetched)
-- `lastChecked` — when Routerly last attempted to fetch from this repo
-- `error` — error message if the last fetch failed (null on success)
-- `cachedAt` — when the current catalog was loaded into memory
-- `expiresAt` — when the 5-minute cache expires
+- `url` - repository endpoint
+- `enabled` - whether this repo is active
+- `resolvedFile` - filename of the last successfully fetched catalog (null if never fetched)
+- `updatedAt` - timestamp from the catalog registry (null if never fetched)
+- `lastChecked` - when Routerly last attempted to fetch from this repo
+- `error` - error message if the last fetch failed (null on success)
+- `cachedAt` - when the current catalog was loaded into memory
+- `expiresAt` - when the 5-minute cache expires
 
 **Errors**: `403` insufficient permissions
 
@@ -1706,7 +1707,7 @@ Invalidate the in-memory cache and fetch all enabled repositories immediately.
 { "ok": true, "message": "Catalog refreshed successfully" }
 ```
 
-**Response `200` (partial failure — some repos errored):**
+**Response `200` (partial failure - some repos errored):**
 ```json
 {
   "ok": false,
@@ -1763,7 +1764,7 @@ POST /api/notifications/channels
 | `provider` | string | yes | Channel type: `smtp`, `ses`, `sendgrid`, `azure`, `google`, `webhook`, `slack`, `teams`, `pagerduty`, `discord`, `dashboard` |
 | `name` | string | no | Friendly label shown in the UI |
 | `events` | string[] | no | Event patterns routed to this channel (empty = all). Supports exact names, `*`, and prefix globs like `budget.*` |
-| `targets` | object | no | `{ roles, permissions, users }` — who receives (empty = everyone). Controls inbox visibility for `dashboard` and recipient resolution for email channels; ignored for webhook/native channels |
+| `targets` | object | no | `{ roles, permissions, users }` - who receives (empty = everyone). Controls inbox visibility for `dashboard` and recipient resolution for email channels; ignored for webhook/native channels |
 
 Provider-specific fields (e.g. `host`, `apiKey`, `botToken`) pass through alongside these base fields.
 
@@ -2116,7 +2117,7 @@ POST /api/integrations
 
 **Auth**: `Authorization: Bearer <jwt>` (requires `settings:write`)
 
-**Request body** — per-type examples:
+**Request body** - per-type examples:
 
 **Prometheus** (pull, optional auth)
 ```json

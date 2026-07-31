@@ -22,12 +22,12 @@ routerly catalog repos list [--json]
 List all configured provider repositories with their status.
 
 **Columns:**
-- **#** — priority (1 = checked first)
-- **URL** — repository endpoint
-- **File** — name of the last successfully resolved catalog file
-- **Updated** — timestamp from the catalog (when the snapshot was created)
-- **Last Check** — when Routerly last fetched from this repo
-- **Status** — Active / Disabled / Error (with error details on hover or in JSON)
+- **#** - priority (1 = checked first)
+- **URL** - repository endpoint
+- **File** - name of the last successfully resolved catalog file
+- **Updated** - timestamp from the catalog (when the snapshot was created)
+- **Last Check** - when Routerly last fetched from this repo
+- **Status** - Active / Disabled / Error (with error details on hover or in JSON)
 
 The default repo (Inebrio) is always present. Additional repos are appended at lower priority.
 
@@ -94,11 +94,11 @@ routerly modules list [--json]
 List all available modules with their enabled state, version, and dependencies.
 
 **Table columns:**
-- **ID** — module identifier
-- **Version** — module semantic version
-- **Enabled** — `yes` / `no`
-- **Always-on** — `yes` / `no` (core modules cannot be disabled)
-- **Depends on** — comma-separated list of module IDs this module requires; empty if no dependencies
+- **ID** - module identifier
+- **Version** - module semantic version
+- **Enabled** - `yes` / `no`
+- **Always-on** - `yes` / `no` (core modules cannot be disabled)
+- **Depends on** - comma-separated list of module IDs this module requires; empty if no dependencies
 
 **Example output:**
 ```
@@ -178,7 +178,7 @@ Exit code: `0` on success, `1` on error.
 
 ## `routerly connections`
 
-Manage provider connections — credentials (API key, endpoint) shared by one or more model instances. Requires `connections:read` (list) / `connections:manage` (add, remove).
+Manage provider connections - credentials (API key, endpoint) shared by one or more model instances. Requires `connections:read` (list) / `connections:manage` (add, remove).
 
 ### `routerly connections list`
 
@@ -189,11 +189,11 @@ routerly connections list [--json]
 List all configured provider connections.
 
 **Table columns:**
-- **ID** — connection identifier
-- **Provider** — provider ID (e.g. `openai`, `anthropic`, `ollama`)
-- **Label** — display label
-- **Endpoint** — custom endpoint, or `-` if using the provider default
-- **Enabled** — `yes` / `no`
+- **ID** - connection identifier
+- **Provider** - provider ID (e.g. `openai`, `anthropic`, `ollama`)
+- **Label** - display label
+- **Endpoint** - custom endpoint, or `-` if using the provider default
+- **Enabled** - `yes` / `no`
 
 Credentials are never printed, in the table or in `--json` output.
 
@@ -210,8 +210,8 @@ routerly connections add --provider-id <id> --label <label> [options]
 
 | Option | Description |
 |--------|-------------|
-| `--provider-id <id>` | Provider ID (e.g. `openai`, `anthropic`, `ollama`) — required |
-| `--label <label>` | Display label for this connection — required |
+| `--provider-id <id>` | Provider ID (e.g. `openai`, `anthropic`, `ollama`) - required |
+| `--label <label>` | Display label for this connection - required |
 | `--endpoint <url>` | Custom API endpoint (uses provider default if omitted) |
 | `--api-key <key>` | API key credential (stored plaintext; file permissions protect it) |
 | `--credentials-json <json>` | Full credentials object as JSON (advanced; merges over `--api-key` on conflict) |
@@ -325,11 +325,11 @@ routerly model list [--json]
 ```
 
 **Columns:**
-- **ID** — model identifier
-- **Provider** — provider name
-- **Endpoint** — base URL (custom endpoint or provider default)
-- **Catalog** — tracking status: `(catalog)` (auto-synced), `(partial override)` (some fields locked), or empty (no catalog entry)
-- **Connection ID** — ID of the `routerly connections` entry backing this model, or `-` if the model has no matching connection (not yet migrated, or the caller lacks `connections:read`)
+- **ID** - model identifier
+- **Provider** - provider name
+- **Endpoint** - base URL (custom endpoint or provider default)
+- **Catalog** - tracking status: `(catalog)` (auto-synced), `(partial override)` (some fields locked), or empty (no catalog entry)
+- **Connection ID** - ID of the `routerly connections` entry backing this model, or `-` if the model has no matching connection (not yet migrated, or the caller lacks `connections:read`)
 
 ---
 
@@ -346,9 +346,9 @@ Display all details of a model, including pricing, context window, capabilities,
 - Pricing (input/output/cache rates, pricing tiers, context window)
 - Capabilities (vision, function calling, JSON mode, embeddings)
 - Catalog tracking section (only if the model is linked to a catalog entry):
-  - **Auto-synced fields** — fields currently tracking the catalog
-  - **Overridden fields** — locked fields with their catalog defaults shown
-  - **Last synced** — timestamp of the most recent auto-sync
+  - **Auto-synced fields** - fields currently tracking the catalog
+  - **Overridden fields** - locked fields with their catalog defaults shown
+  - **Last synced** - timestamp of the most recent auto-sync
 
 ```bash
 routerly model show gpt-5-mini
@@ -425,7 +425,7 @@ routerly model discover [options]
 
 Displays a table of known models with their context window, modalities, and pricing. Models already configured in your Routerly instance are marked with a `★`.
 
-Pricing is shown as the per-1,000-token rate. Models that carry a `local` flag in the catalog **or** that are zero-priced on both input and output are labelled `free/local` in green — this covers Ollama and other self-hosted models regardless of whether the catalog explicitly marks them as local.
+Pricing is shown as the per-1,000-token rate. Models that carry a `local` flag in the catalog **or** that are zero-priced on both input and output are labelled `free/local` in green - this covers Ollama and other self-hosted models regardless of whether the catalog explicitly marks them as local.
 
 If the server does not yet expose the model catalog (older versions), the command exits gracefully with a message instead of an error.
 
@@ -468,7 +468,7 @@ routerly project remove <project>
 
 ---
 
-### Routing — `routerly project routing`
+### Routing - `routerly project routing`
 
 #### `routerly project routing show <project>`
 
@@ -515,7 +515,7 @@ routerly project routing policy reorder my-api health,context,budget-remaining,l
 
 ---
 
-### Models — `routerly project model`
+### Models - `routerly project model`
 
 #### `routerly project model list <project>`
 
@@ -547,7 +547,7 @@ routerly project model set-prompt my-api openai/gpt-5.2 --prompt ""  # clear
 
 ---
 
-### Tokens — `routerly project token`
+### Tokens - `routerly project token`
 
 #### `routerly project token list <project>`
 
@@ -558,10 +558,10 @@ routerly project token list my-api
 ```
 
 Output includes columns for:
-- **Name** — token name
-- **ID** — token identifier (first 8 characters)
-- **Created** — when the token was created
-- **Tags** — key-value metadata (comma-separated, or empty if no tags)
+- **Name** - token name
+- **ID** - token identifier (first 8 characters)
+- **Created** - when the token was created
+- **Tags** - key-value metadata (comma-separated, or empty if no tags)
 
 #### `routerly project token create <project>`
 
@@ -585,7 +585,7 @@ routerly project token create Test --scopes mcp,mcp:write --labels mcp-docs
 ```
 ✓ Token created for project "Test".
 
-Token (save this — shown only once):
+Token (save this - shown only once):
 sk-rt-d551c6a3bc1c126f938839ec654806ebd0a86968824b81ccf81fb842ea82f54f
   ID:      b75b0cf0-5ba9-4c42-af93-e92059180cae
   Snippet: sk-rt-d551…
@@ -600,8 +600,8 @@ Optionally add spending limits inline:
 | `--limit <spec>` | Limit spec: `<model>:<metric>:<windowType>:<period>:<value>` (repeatable) |
 
 Limit spec examples:
-- `openai/gpt-5.2:cost:period:monthly:10` — $10/month cap
-- `openai/gpt-5.2:calls:rolling:24:hours:500` — 500 calls per rolling 24 h
+- `openai/gpt-5.2:cost:period:monthly:10` - $10/month cap
+- `openai/gpt-5.2:calls:rolling:24:hours:500` - 500 calls per rolling 24 h
 
 #### `routerly project token edit <project> <token-id>`
 
@@ -625,7 +625,7 @@ Revoke and delete an API token.
 
 ---
 
-### Members — `routerly project member`
+### Members - `routerly project member`
 
 #### `routerly project member list <project>`
 
@@ -656,7 +656,7 @@ routerly project member remove my-api --email user@example.com
 
 ---
 
-### Guardrails — `routerly project guardrails`
+### Guardrails - `routerly project guardrails`
 
 Manage the content guardrail configuration for a project. Guardrails evaluate each request and/or response against an ordered list of rules; each enabled rule is evaluated and triggers its configured actions independently.
 
@@ -801,10 +801,10 @@ routerly integrations list [--json]
 Lists all configured integrations in a table with ID (truncated), Type, Enabled status, and Name/Endpoint.
 
 **Table columns:**
-- **ID** — integration UUID (first 8 chars)
-- **Type** — provider type (prometheus, otel, datadog, grafana, influxdb, webhook)
-- **Enabled** — yes/no status
-- **Name/Endpoint** — friendly name or primary identifier
+- **ID** - integration UUID (first 8 chars)
+- **Type** - provider type (prometheus, otel, datadog, grafana, influxdb, webhook)
+- **Enabled** - yes/no status
+- **Name/Endpoint** - friendly name or primary identifier
 
 **JSON output:**
 ```json
@@ -1085,14 +1085,14 @@ routerly resilience status [options]
 | `--json` | Output raw JSON |
 
 **Table columns:**
-- **Level** — `provider` / `connection` / `model`
-- **ID** — the provider, connection, or model ID this entry tracks
-- **State** — `closed` (green, healthy) / `open` (red, tripped) / `half-open` (yellow, probing recovery)
-- **Last Fault** — most recent failure category (e.g. `rate-limit`, `timeout`, `server`), or `-`
-- **Failures** — failure count contributing to the current state
-- **Opened At** — when the breaker left `closed`, or `-`
-- **Cooldown Until** — connection cooldown / rate-limit expiry, or `-`
-- **Lockout Until** — model-instance lockout expiry, or `-`
+- **Level** - `provider` / `connection` / `model`
+- **ID** - the provider, connection, or model ID this entry tracks
+- **State** - `closed` (green, healthy) / `open` (red, tripped) / `half-open` (yellow, probing recovery)
+- **Last Fault** - most recent failure category (e.g. `rate-limit`, `timeout`, `server`), or `-`
+- **Failures** - failure count contributing to the current state
+- **Opened At** - when the breaker left `closed`, or `-`
+- **Cooldown Until** - connection cooldown / rate-limit expiry, or `-`
+- **Lockout Until** - model-instance lockout expiry, or `-`
 
 If no entries have been recorded yet, prints `No resilience entries recorded yet.` instead of an empty table.
 
@@ -1682,7 +1682,7 @@ Inspect and exercise the [MCP server](../concepts/mcp.md): the tools
 Routerly exposes to MCP clients (Claude Code, Claude Desktop, and similar)
 over `/mcp`. The project token used by `test` and `serve` must carry the
 `mcp` scope (`mcp:write` for the 2 write tools); see
-[`routerly project token create`](#tokens--routerly-project-token) `--scopes`.
+[`routerly project token create`](#tokens---routerly-project-token) `--scopes`.
 
 ### `routerly mcp tools`
 
@@ -1810,7 +1810,7 @@ The footer line below the model table shows a summary and a **callType breakdown
 
 ```
 Total: $0.001234 USD (142 ok, 2 errors, 3 blocked)
-Breakdown — completion: 142 calls / $0.001200  |  routing: 8 calls / $0.000011  |  guardrail: 12 calls / $0.000023  |  blocked: 3 calls
+Breakdown - completion: 142 calls / $0.001200  |  routing: 8 calls / $0.000011  |  guardrail: 12 calls / $0.000023  |  blocked: 3 calls
 ```
 
 The summary suffix `, N blocked` appears when at least one request was blocked by a guardrail rule. Blocked requests contribute zero cost. The breakdown line includes a `blocked: N calls` entry for the same count.
@@ -1917,7 +1917,7 @@ Show or change the update channel.
 routerly update channel [name]
 ```
 
-With no argument, prints the current channel. With an argument, updates the channel immediately — the running service is notified without a restart.
+With no argument, prints the current channel. With an argument, updates the channel immediately - the running service is notified without a restart.
 
 Valid values:
 
@@ -1958,7 +1958,7 @@ routerly update run --yes    # non-interactive (for scripts)
 ```
 
 :::note Requirements
-Admin role required. Not available inside Docker containers — pull the new image and recreate the container instead. Not available on Windows — run the installer script manually.
+Admin role required. Not available inside Docker containers - pull the new image and recreate the container instead. Not available on Windows - run the installer script manually.
 :::
 
 ---
