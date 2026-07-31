@@ -854,8 +854,9 @@ describe('openai:attempt', () => {
     expect((ctx.request as any).messages[0].content).toBe('Base prompt.\n\nFollow the guardrail.')
   })
 
-  // ── Task 7: connection-level resilience recording (no in-loop sleep, immediate advance) ──
-  describe('resilience: connection-level store.record on a failed candidate', () => {
+  // ── T1: the attempt loop no longer records faults (double-record fix). The single authoritative
+  // recorder is handleProviderResult inside llmChat/llmStream; the loop only advances candidates. ──
+  describe('resilience: the attempt loop does not record faults itself', () => {
     afterEach(() => {
       setResilienceStore(undefined as unknown as ResilienceStore)
     })
@@ -870,7 +871,7 @@ describe('openai:attempt', () => {
       },
     })
 
-    it('records the classified fault at the connection key for a failed candidate, then advances immediately to the next one', async () => {
+    it('does not record on a failed candidate (recording is done in handleProviderResult), advances immediately to the next one', async () => {
       const models: ModelConfig[] = [
         { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
         { id: 'model-b', name: 'model-b', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
@@ -892,9 +893,11 @@ describe('openai:attempt', () => {
       await openaiAttempt.run(ctx)
       expect(Date.now() - t0).toBeLessThan(200) // no in-loop sleep between candidates
       expect(ctx.result).toEqual({ kind: 'json', body: { object: 'chat.completion', model: 'model-b' } })
-      expect(store.records).toHaveLength(1)
-      expect(store.records[0]!.key).toEqual({ level: 'connection', id: 'openai' })
-      expect(store.records[0]!.fault).toMatchObject({ category: 'rate-limit', retryAfterMs: 5000 })
+      // The fake upstream bypasses llmChat/handleProviderResult, so nothing records here — proving
+      // the loop itself is not a recorder (the old double-record second site is gone).
+      expect(store.records).toHaveLength(0)
+      // The stash is cleared so it never leaks to the next candidate.
+      expect(ctx.attemptError).toBeUndefined()
     })
 
     it('does not call store.record when the failure was a budget skip (no ctx.attemptError)', async () => {

@@ -39,12 +39,11 @@ import { ModelDiscoveryPage } from './pages/ModelDiscoveryPage';
 import { AuditPage } from './pages/AuditPage';
 import { ConnectionsPage } from './pages/ConnectionsPage';
 import { ModelInstancesPage } from './pages/ModelInstancesPage';
-import { ResiliencePage } from './pages/ResiliencePage';
 import { ProfilesPage } from './pages/ProfilesPage';
 import { McpPage } from './pages/McpPage';
 import { ClientsPage, useClientsEnabled } from './pages/ClientsPage';
 
-import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Plug, ShieldAlert, Route, Terminal, Wrench } from 'lucide-react';
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Plug, Route, Terminal, Wrench } from 'lucide-react';
 import { Logo } from './components/Logo';
 import { ProfileNotificationBadge } from './components/NotificationBell';
 
@@ -106,7 +105,6 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     { to: '/dashboard/overview', icon: <LayoutDashboard size={17} />, label: 'Overview' },
     { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
     ...(can('connections:read') ? [{ to: '/dashboard/connections', icon: <Plug size={17} />, label: 'Connections' }] : []),
-    ...(can('resilience:read') ? [{ to: '/dashboard/resilience', icon: <ShieldAlert size={17} />, label: 'Resilience' }] : []),
     ...(can('profiles:read') ? [{ to: '/dashboard/routing-profiles', icon: <Route size={17} />, label: 'Routing Profiles' }] : []),
     ...(can('mcp:read') ? [{ to: '/dashboard/mcp', icon: <Wrench size={17} />, label: 'MCP Tools' }] : []),
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
@@ -377,7 +375,6 @@ const router = createBrowserRouter([
           { path: 'models/:id', element: <ModelFormPage /> },
           { path: 'connections', element: <ConnectionsPage /> },
           { path: 'connections/:connectionId/instances', element: <ModelInstancesPage /> },
-          { path: 'resilience', element: <ResiliencePage /> },
           { path: 'routing-profiles', element: <ProfilesPage /> },
           { path: 'mcp', element: <McpPage /> },
           { path: 'clients', element: <ClientsPage /> },

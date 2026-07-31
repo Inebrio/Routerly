@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import Fastify from 'fastify'
+import { setResilienceStore } from '../resilience/index.js'
+import { InMemoryResilienceStore } from '../resilience/store.js'
+import { resilienceKeys } from '../resilience/keys.js'
 
 vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn() }))
 vi.mock('node:child_process', () => ({
@@ -6068,6 +6071,50 @@ describe('GET /api/health/providers', () => {
     await app.close()
     const { providers } = res.json()
     expect(providers[0].lastSuccessAt).toBe(old.timestamp)
+  })
+
+  it('reflects live breaker state (circuit/cooldown/lockout) from the resilience store', async () => {
+    const model = { id: 'gpt-4', name: 'GPT-4', provider: 'openai' }
+    const store = new InMemoryResilienceStore()
+    const keys = resilienceKeys(model as any)
+    // Provider circuit → open: 5 hard faults (auth) trips the breaker.
+    for (let i = 0; i < 5; i++) store.record(keys.provider, { category: 'auth' })
+    // Connection cooldown ← rate-limit.
+    store.record(keys.connection, { category: 'rate-limit' })
+    // Model lockout ← model-not-found.
+    store.record(keys.model, { category: 'model-not-found' })
+    setResilienceStore(store)
+
+    setupHealth([model], [rec('gpt-4', 'success', 100, 1000)])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/health/providers', headers: adminAuthHeaders() })
+    await app.close()
+    store.reset() // leave an empty store so sibling tests see no breaker data
+
+    expect(res.statusCode).toBe(200)
+    const { providers } = res.json()
+    expect(providers[0].circuitState).toBe('open')
+    expect(typeof providers[0].cooldownUntil).toBe('number')
+    expect(providers[0].cooldownUntil).toBeGreaterThan(Date.now())
+    expect(typeof providers[0].lockoutUntil).toBe('number')
+    expect(providers[0].lockoutUntil).toBeGreaterThan(Date.now())
+    // Statistical status stays orthogonal to the breaker: 1 success, 0% error → healthy.
+    expect(providers[0].status).toBe('healthy')
+  })
+
+  it('reports closed/null breaker fields for a model with no resilience entries', async () => {
+    const store = new InMemoryResilienceStore()
+    setResilienceStore(store)
+    setupHealth([{ id: 'gpt-4', name: 'GPT-4', provider: 'openai' }], [rec('gpt-4', 'success', 100, 1000)])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/health/providers', headers: adminAuthHeaders() })
+    await app.close()
+    store.reset()
+
+    const { providers } = res.json()
+    expect(providers[0].circuitState).toBe('closed')
+    expect(providers[0].cooldownUntil).toBeNull()
+    expect(providers[0].lockoutUntil).toBeNull()
   })
 
   it('returns 403 without report:read permission', async () => {

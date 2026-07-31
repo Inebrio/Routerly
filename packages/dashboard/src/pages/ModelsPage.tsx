@@ -1,11 +1,12 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope, FlaskConical } from 'lucide-react';
-import { getModels, deleteModel, testModel, getProviderHealth, type Model, type ProviderHealth } from '../api';
+import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope, FlaskConical, RotateCcw } from 'lucide-react';
+import { getModels, deleteModel, testModel, getProviderHealth, resetResilience, type Model, type ProviderHealth, type ResilienceState } from '../api';
+import { useAuth } from '../AuthContext';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
 type SortKey = 'id' | 'provider' | 'endpoint' | 'input' | 'output' | 'cache' | 'context';
-type HealthSortKey = 'id' | 'provider' | 'status' | 'errorRate' | 'p95Latency' | 'requests' | 'lastSuccess' | 'cooldown';
+type HealthSortKey = 'id' | 'provider' | 'status' | 'circuit' | 'errorRate' | 'p95Latency' | 'requests' | 'lastSuccess' | 'cooldown';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 20;
@@ -68,17 +69,63 @@ function relativeTime(iso: string | null): string {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-function cooldownTimer(iso: string | null): string | null {
-  if (!iso) return null;
-  const ms = new Date(iso).getTime() - Date.now();
+function cooldownTimer(until: number | null): string | null {
+  if (!until) return null;
+  const ms = until - Date.now();
   if (ms <= 0) return null;
   const s = Math.ceil(ms / 1000);
   return s < 60 ? `${s}s` : `${Math.ceil(s / 60)}m`;
 }
 
+// ── Circuit-breaker helpers (absorbed from the former ResiliencePage) ──────────
+// Reused badge classes and countdown so the circuit signal is visually identical
+// to what the standalone page rendered.
+const CIRCUIT_BADGE: Record<ResilienceState, string> = {
+  closed: 'badge-success',
+  'half-open': 'badge-warning',
+  open: 'badge-error',
+};
+
+// Human-friendly labels: circuit-breaker "closed = healthy / open = tripped" reads backwards to
+// most people, so surface plain-meaning words. Internal state values stay closed/half-open/open.
+const CIRCUIT_LABEL: Record<ResilienceState, string> = {
+  closed: 'OK',
+  'half-open': 'Recovering',
+  open: 'Tripped',
+};
+
+// Sort severity: lower = worse (mirrors STATUS_SEVERITY so `sb - sa` puts worst first on desc).
+const CIRCUIT_SEVERITY: Record<ResilienceState | 'nodata', number> = {
+  open: 0,
+  'half-open': 1,
+  closed: 2,
+  nodata: 999, // always last
+};
+
+function useNow(intervalMs = 1000): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]);
+  return now;
+}
+
+function formatCountdown(targetMs: number, now: number): string {
+  const remaining = targetMs - now;
+  if (remaining <= 0) return 'now';
+  const totalSec = Math.ceil(remaining / 1000);
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  return min > 0 ? `${min}m ${sec}s` : `${sec}s`;
+}
+
 // ── Models page ────────────────────────────────────────────────────────────────
 
 export function ModelsPage() {
+  const { can } = useAuth();
+  const canManage = can('resilience:manage');
+  const now = useNow();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') === 'health' ? 'health' : 'models';
   function setTab(t: 'models' | 'health') {
@@ -104,6 +151,10 @@ export function ModelsPage() {
   const [hSortDir, setHSortDir] = useState<SortDir>('asc');
   const [hPage, setHPage] = useState(1);
 
+  // Resilience reset state (health tab): busy key is a model id, 'all', or null
+  const [resetBusy, setResetBusy] = useState<string | null>(null);
+  const [resetError, setResetError] = useState('');
+
   // Load models once
   useEffect(() => { load(); }, []);
 
@@ -112,23 +163,72 @@ export function ModelsPage() {
     try { setModels(await getModels()); } finally { setLoading(false); }
   }
 
+  const fetchHealth = useCallback(async () => {
+    try {
+      const { providers } = await getProviderHealth();
+      if (!healthActive.current) return;
+      setHealthMap(new Map(providers.map(p => [p.modelId, p])));
+      setHealthUpdatedAt(new Date());
+    } catch {
+      // health is best-effort; model list still shows
+    }
+  }, []);
+
   // Load health + poll every 30s
   useEffect(() => {
     healthActive.current = true;
-    async function fetchHealth() {
-      try {
-        const { providers } = await getProviderHealth();
-        if (!healthActive.current) return;
-        setHealthMap(new Map(providers.map(p => [p.modelId, p])));
-        setHealthUpdatedAt(new Date());
-      } catch {
-        // health is best-effort; model list still shows
-      }
-    }
     fetchHealth();
     const id = setInterval(fetchHealth, HEALTH_REFRESH_MS);
     return () => { healthActive.current = false; clearInterval(id); };
-  }, []);
+  }, [fetchHealth]);
+
+  async function handleResetModel(m: Model) {
+    setResetBusy(m.id);
+    setResetError('');
+    try {
+      // A model row aggregates three breaker keys: provider circuit, connection
+      // cooldown, and model lockout. Reset ALL THREE so the row returns to
+      // closed/available — resetting only the model key would leave a
+      // provider-open circuit or connection cooldown still blocking the row.
+      await Promise.all([
+        resetResilience({ level: 'provider', id: m.provider }),
+        resetResilience({ level: 'connection', id: m.provider }),
+        resetResilience({ level: 'model', id: m.id }),
+      ]);
+      await fetchHealth();
+    } catch (e) {
+      setResetError(e instanceof Error ? e.message : 'Failed to reset circuit breaker');
+    } finally {
+      setResetBusy(null);
+    }
+  }
+
+  async function handleResetAll() {
+    setResetBusy('all');
+    setResetError('');
+    try {
+      await resetResilience();
+      await fetchHealth();
+    } catch (e) {
+      setResetError(e instanceof Error ? e.message : 'Failed to reset resilience state');
+    } finally {
+      setResetBusy(null);
+    }
+  }
+
+  function confirmResetModel(m: Model) {
+    setConfirmState({
+      message: `Reset the circuit breaker for model "${m.id}"?`,
+      onConfirm: () => { setConfirmState(null); void handleResetModel(m); },
+    });
+  }
+
+  function confirmResetAll() {
+    setConfirmState({
+      message: 'Reset all resilience state? This clears every circuit breaker, cooldown, and lockout.',
+      onConfirm: () => { setConfirmState(null); void handleResetAll(); },
+    });
+  }
 
   async function handleTest(id: string) {
     setTestResults(r => ({ ...r, [id]: 'loading' }));
@@ -209,6 +309,7 @@ export function ModelsPage() {
       case 'id':          cmp = a.id.localeCompare(b.id); break;
       case 'provider':    cmp = a.provider.localeCompare(b.provider); break;
       case 'status':      cmp = STATUS_SEVERITY[sb] - STATUS_SEVERITY[sa]; break;
+      case 'circuit':     cmp = CIRCUIT_SEVERITY[hb.circuitState] - CIRCUIT_SEVERITY[ha.circuitState]; break;
       case 'errorRate':   cmp = ha.errorRate - hb.errorRate; break;
       case 'p95Latency':  cmp = (ha.p95LatencyMs ?? Infinity) - (hb.p95LatencyMs ?? Infinity); break;
       case 'requests':    cmp = ha.requestsLastHour - hb.requestsLastHour; break;
@@ -403,21 +504,29 @@ export function ModelsPage() {
                     ? `${hFiltered.length} of ${models.length} model${models.length !== 1 ? 's' : ''}`
                     : `${models.length} model${models.length !== 1 ? 's' : ''}`}
                 </span>
-                <div style={{ position: 'relative' }}>
-                  <Search size={14} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
-                  <input
-                    value={hSearch}
-                    onChange={e => setHSearch(e.target.value)}
-                    placeholder="Filter models…"
-                    style={{ paddingLeft: 28, paddingRight: hSearch ? 28 : 10, height: 32, fontSize: '0.85rem', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', outline: 'none', width: 200 }}
-                  />
-                  {hSearch && (
-                    <button onClick={() => setHSearch('')} style={{ position: 'absolute', right: 7, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>
-                      <X size={13} />
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  {canManage && (
+                    <button className="btn btn-secondary" disabled={resetBusy !== null} onClick={confirmResetAll} title="Reset every circuit breaker, cooldown, and lockout">
+                      {resetBusy === 'all' ? <span className="spinner" /> : <><RotateCcw size={14} /> Reset all</>}
                     </button>
                   )}
+                  <div style={{ position: 'relative' }}>
+                    <Search size={14} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                    <input
+                      value={hSearch}
+                      onChange={e => setHSearch(e.target.value)}
+                      placeholder="Filter models…"
+                      style={{ paddingLeft: 28, paddingRight: hSearch ? 28 : 10, height: 32, fontSize: '0.85rem', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', outline: 'none', width: 200 }}
+                    />
+                    {hSearch && (
+                      <button onClick={() => setHSearch('')} style={{ position: 'absolute', right: 7, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>
+                        <X size={13} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
+              {resetError && <div className="form-error" style={{ marginBottom: 16 }}>{resetError}</div>}
               {hSorted.length === 0 ? (
                 <div className="empty-state"><Search size={40} /><p>No models match the filter.</p></div>
               ) : (
@@ -429,11 +538,13 @@ export function ModelsPage() {
                           {hTh('Model', 'id')}
                           {hTh('Provider', 'provider')}
                           {hTh('Status', 'status')}
+                          {hTh('Circuit', 'circuit')}
                           {hTh('Error rate (5m)', 'errorRate', 'right')}
                           {hTh('P95 latency (1h)', 'p95Latency', 'right')}
                           {hTh('Requests (1h)', 'requests', 'right')}
                           {hTh('Last success', 'lastSuccess', 'right')}
-                          {hTh('Cooldown', 'cooldown', 'right')}
+                          {hTh('Cooldown / lockout', 'cooldown', 'right')}
+                          <th></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -446,6 +557,11 @@ export function ModelsPage() {
                               <td><span className="mono">{m.id}</span></td>
                               <td><span className={`badge badge-${m.provider}`}>{m.provider}</span></td>
                               <td><StatusBadge status={status} /></td>
+                              <td>
+                                {h
+                                  ? <span className={`badge ${CIRCUIT_BADGE[h.circuitState]}`}>{CIRCUIT_LABEL[h.circuitState]}</span>
+                                  : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                              </td>
                               <td style={{ textAlign: 'right' }}>
                                 {h ? `${(h.errorRate * 100).toFixed(1)}%` : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                               </td>
@@ -459,7 +575,25 @@ export function ModelsPage() {
                                 {h ? relativeTime(h.lastSuccessAt) : '—'}
                               </td>
                               <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
-                                {h ? (cd ?? '—') : '—'}
+                                {(() => {
+                                  if (!h) return '—';
+                                  const parts: string[] = [];
+                                  if (h.cooldownUntil && h.cooldownUntil > now) parts.push(`cooldown ${formatCountdown(h.cooldownUntil, now)}`);
+                                  if (h.lockoutUntil && h.lockoutUntil > now) parts.push(`lockout ${formatCountdown(h.lockoutUntil, now)}`);
+                                  return parts.length ? parts.join(', ') : '—';
+                                })()}
+                              </td>
+                              <td style={{ textAlign: 'right' }}>
+                                {canManage && h && (
+                                  <button
+                                    className="btn-icon"
+                                    disabled={resetBusy !== null}
+                                    onClick={() => confirmResetModel(m)}
+                                    title="Reset circuit breaker"
+                                  >
+                                    {resetBusy === m.id ? <span className="spinner" /> : <RotateCcw size={15} />}
+                                  </button>
+                                )}
                               </td>
                             </tr>
                           );

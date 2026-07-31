@@ -553,7 +553,9 @@ export interface ProviderHealth {
   p95LatencyMs: number | null;
   requestsLastHour: number;
   lastSuccessAt: string | null;
-  cooldownUntil: string | null;
+  circuitState: ResilienceState;
+  cooldownUntil: number | null;
+  lockoutUntil: number | null;
 }
 
 export const getProviderHealth = () =>
@@ -927,10 +929,9 @@ export const updateInstance = (id: string, data: Partial<{
 export const deleteInstance = (id: string) => request<void>(`/instances/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
 // ── Resilience ───────────────────────────────────────────────────────────
-import type { ResilienceSnapshot, ResilienceLevel } from '@routerly/shared';
-export type { ResilienceSnapshot, ResilienceEntry, ResilienceLevel, ResilienceState, ResilienceKey } from '@routerly/shared';
+import type { ResilienceLevel, ResilienceState } from '@routerly/shared';
+export type { ResilienceLevel, ResilienceState } from '@routerly/shared';
 
-export const getResilience = () => request<ResilienceSnapshot>('/resilience');
 export const resetResilience = (body?: { level: ResilienceLevel; id: string }) =>
   request<{ ok: true }>('/resilience/reset', { method: 'POST', body: JSON.stringify(body ?? {}) });
 

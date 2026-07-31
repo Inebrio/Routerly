@@ -41,6 +41,7 @@ import { resolveOpenAIWebCredential } from '../provider/openai-web.js';
 import type { TraceEntry, TracePanel } from '../logging/traceStore.js';
 import { getResilienceStore } from '../resilience/index.js';
 import { resilienceKeys } from '../resilience/keys.js';
+import { recordFault } from '../resilience/record.js';
 import { classifyUpstreamError, type UpstreamResponse } from '../resilience/classifier.js';
 
 // ─── Tipi ────────────────────────────────────────────────────────────────────
@@ -140,7 +141,12 @@ function handleProviderResult(model: ModelConfig, success: boolean, fault: Resil
     return;
   }
 
-  if (fault) store?.record(providerKey, fault);
+  // Single authoritative fault recorder for every LLM path (SDK routing/guardrail + proxy lanes,
+  // which all route their upstream calls through llmChat/llmStream → here). recordFault maps the
+  // category to the correct level (provider/connection/model); the lane loop no longer records, so
+  // a given fault is recorded exactly once. The degraded/recovered events below still key off the
+  // PROVIDER breaker's availability — correct: a model-level lockout must not mark the provider down.
+  if (fault) recordFault(store, model, fault);
   const n = (providerFailCounts.get(modelId) ?? 0) + 1;
   providerFailCounts.set(modelId, n);
   // Drive "degraded" off the store's real availability when a store is wired (production);

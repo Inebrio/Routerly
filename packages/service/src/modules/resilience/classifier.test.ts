@@ -123,10 +123,18 @@ describe('classifyUpstreamError', () => {
     expect(classifyUpstreamError(new Error('The operation was aborted'))).toEqual({ category: 'timeout' });
   });
 
+  it('classifies the executor TTFT timeout message as timeout', () => {
+    expect(classifyUpstreamError(new Error('TTFT timeout after 1000ms'))).toEqual({ category: 'timeout' });
+  });
+
   it('classifies Anthropic 504 timeout_error as timeout', () => {
     expect(
       classifyUpstreamError(null, { status: 504, body: { type: 'error', error: { type: 'timeout_error', message: 'timed out' } } }),
     ).toEqual({ category: 'timeout' });
+  });
+
+  it('classifies a bare 408 request-timeout as timeout', () => {
+    expect(classifyUpstreamError(null, { status: 408 })).toEqual({ category: 'timeout' });
   });
 
   // ── server ───────────────────────────────────────────────────────────────

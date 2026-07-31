@@ -11,9 +11,6 @@ import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } fr
 import type { LLMCallContext } from '../execute.js'
 import { emitEvent } from '../../notifications/emitter.js'
 import { forwardOpenAIOAuthSSE } from './openaiOAuthForward.js'
-import { getResilienceStore } from '../../resilience/index.js'
-import { resilienceKeys } from '../../resilience/keys.js'
-import { classifyUpstreamError } from '../../resilience/classifier.js'
 
 /** Build the initial ProxyContext for an OpenAI request. protocol.decode is identity: request === original. */
 export function buildOpenAIContext(req: FastifyRequest, reply: FastifyReply): ProxyContext {
@@ -202,15 +199,10 @@ export const openaiAttempt: Processor<ProxyContext> = {
         }
         return
       }
-      // Task 7: openai:upstream stashed the raw failure (if any, i.e. not a budget skip) on
-      // ctx.attemptError/attemptResponse -> classify and record it at the connection-level
-      // resilience key, then clear so it never leaks to the next candidate's iteration.
+      // The fault (if any) was already recorded once by handleProviderResult inside
+      // llmChat/llmStream — the single authoritative recorder. The loop only advances to the next
+      // candidate here; clearing the stash keeps it from leaking into the next iteration.
       if (ctx.attemptError !== undefined) {
-        // openai:upstream normally already derives attemptResponse via upstreamResponseFromError;
-        // re-derive here too as a defensive fallback so the fault is still classified correctly
-        // even if the failing processor only stashed the raw error.
-        const attemptResponse = ctx.attemptResponse ?? upstreamResponseFromError(ctx.attemptError)
-        getResilienceStore()?.record(resilienceKeys(model).connection, classifyUpstreamError(ctx.attemptError, attemptResponse))
         ctx.attemptError = undefined
         delete ctx.attemptResponse
       }

@@ -12,9 +12,6 @@ import type { TraceEntry } from '../../logging/traceStore.js'
 import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
 import { forwardAnthropicOAuth, forwardAnthropicApiKey } from './oauthForward.js'
-import { getResilienceStore } from '../../resilience/index.js'
-import { resilienceKeys } from '../../resilience/keys.js'
-import { classifyUpstreamError } from '../../resilience/classifier.js'
 
 // ─── protocol translation (anthropic.ts L42-89, moved verbatim) ──────────────────
 /** Convert a MessagesRequest to an OpenAI-compat ChatCompletionRequest for non-Anthropic providers. */
@@ -213,12 +210,10 @@ export const anthropicAttempt: Processor<ProxyContext> = {
       if (ctx.result) return
       await pipeline.runPhase('upstream.execute', ctx)
       if (ctx.result) return
-      // Task 7: anthropic:upstream normally already derives attemptResponse via
-      // upstreamResponseFromError; re-derive here too as a defensive fallback so the fault is
-      // still classified correctly even if the failing processor only stashed the raw error.
+      // The fault (if any) was already recorded once by handleProviderResult inside
+      // llmChat/llmStream — the single authoritative recorder. The loop only advances to the next
+      // candidate here; clearing the stash keeps it from leaking into the next iteration.
       if (ctx.attemptError !== undefined) {
-        const attemptResponse = ctx.attemptResponse ?? upstreamResponseFromError(ctx.attemptError)
-        getResilienceStore()?.record(resilienceKeys(model).connection, classifyUpstreamError(ctx.attemptError, attemptResponse))
         ctx.attemptError = undefined
         delete ctx.attemptResponse
       }

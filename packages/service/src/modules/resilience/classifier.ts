@@ -6,7 +6,7 @@ export interface UpstreamResponse {
   body?: unknown;
 }
 
-const TIMEOUT_RE = /ETIMEDOUT|ECONNRESET|ETIMEOUT|abort/i;
+const TIMEOUT_RE = /ETIMEDOUT|ECONNRESET|abort|timeout/i;
 const RATE_LIMIT_RE = /429|rate.?limit|too many/i;
 const CONTENT_SAFETY_RE = /content_polic|content_filter/i;
 const QUOTA_RE = /quota|billing/i;
@@ -96,6 +96,7 @@ export function classifyUpstreamError(err: unknown, response?: UpstreamResponse)
         }
         return fault('rate-limit', retryAfterMs);
       }
+      case 408:
       case 504:
         return fault('timeout');
       case 529:
