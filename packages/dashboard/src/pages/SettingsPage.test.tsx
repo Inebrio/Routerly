@@ -176,16 +176,16 @@ describe('SettingsGeneralTab', () => {
 
   it('renders publicUrl input pre-filled from settings', async () => {
     renderGeneral();
-    await waitFor(() => expect(screen.queryByLabelText('Service Host')).not.toBeNull());
-    const input = screen.getByLabelText('Service Host') as HTMLInputElement;
+    await waitFor(() => expect(screen.queryByLabelText('Public URL')).not.toBeNull());
+    const input = screen.getByLabelText('Public URL') as HTMLInputElement;
     expect(input.value).toBe('http://localhost:3000');
   });
 
   it('publicUrl falls back to http://localhost:PORT when settings.publicUrl is empty', async () => {
     mockGetSettings.mockResolvedValue({ ...baseSettings, publicUrl: '' } as never);
     renderGeneral();
-    await waitFor(() => screen.getByLabelText('Service Host'));
-    const input = screen.getByLabelText('Service Host') as HTMLInputElement;
+    await waitFor(() => screen.getByLabelText('Public URL'));
+    const input = screen.getByLabelText('Public URL') as HTMLInputElement;
     expect(input.value).toBe('http://localhost:3000');
   });
 
@@ -2028,8 +2028,8 @@ describe('SettingsGeneralTab — publicUrl onChange', () => {
 
   it('typing in Service Host input updates publicUrl form field', async () => {
     renderGeneral();
-    await waitFor(() => screen.getByLabelText('Service Host'));
-    const input = screen.getByLabelText('Service Host') as HTMLInputElement;
+    await waitFor(() => screen.getByLabelText('Public URL'));
+    const input = screen.getByLabelText('Public URL') as HTMLInputElement;
     await userEvent.clear(input);
     await userEvent.type(input, 'http://192.168.1.10:3000');
     expect(input.value).toBe('http://192.168.1.10:3000');
@@ -3383,8 +3383,8 @@ describe('SettingsCatalogTab — refreshCatalog catch + persist branches', () =>
   it('SettingsGeneralTab: host !== 0.0.0.0 uses host in placeholder', async () => {
     mockGetSettings.mockResolvedValue({ ...baseSettings, host: '192.168.1.1' } as never);
     render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
-    await waitFor(() => screen.getByLabelText('Service Host'));
-    const input = screen.getByLabelText('Service Host') as HTMLInputElement;
+    await waitFor(() => screen.getByLabelText('Public URL'));
+    const input = screen.getByLabelText('Public URL') as HTMLInputElement;
     // placeholder uses host value (not '<your-ip>')
     expect(input.placeholder).toContain('192.168.1.1');
   });
@@ -3761,7 +3761,7 @@ describe('SettingsGeneralTab — null field fallback branches', () => {
   it('settings?.host ?? "" fallback when host is undefined', async () => {
     mockGetSettings.mockResolvedValue({ ...baseSettings, host: undefined } as never);
     render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
-    await waitFor(() => screen.getByLabelText('Service Host'));
+    await waitFor(() => screen.getByLabelText('Public URL'));
     // host is undefined → settings?.host ?? '' → '' (covers L147 ?? fallback)
     const hostInput = document.querySelector('input[disabled]') as HTMLInputElement | null;
     // The disabled host input should show empty string
@@ -3771,7 +3771,7 @@ describe('SettingsGeneralTab — null field fallback branches', () => {
   it('settings?.port ?? "" fallback when port is undefined', async () => {
     mockGetSettings.mockResolvedValue({ ...baseSettings, port: undefined } as never);
     render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
-    await waitFor(() => screen.getByLabelText('Service Host'));
+    await waitFor(() => screen.getByLabelText('Public URL'));
     // port is undefined → settings?.port ?? '' → '' (covers L151 ?? fallback)
     const disabledInputs = Array.from(document.querySelectorAll('input[disabled]')) as HTMLInputElement[];
     const portInput = disabledInputs.find(i => i.value === '');
@@ -3781,8 +3781,8 @@ describe('SettingsGeneralTab — null field fallback branches', () => {
   it('settings?.host undefined → placeholder uses localhost fallback (L163 false+nullish branch)', async () => {
     mockGetSettings.mockResolvedValue({ ...baseSettings, host: undefined } as never);
     render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
-    await waitFor(() => screen.getByLabelText('Service Host'));
-    const urlInput = screen.getByLabelText('Service Host') as HTMLInputElement;
+    await waitFor(() => screen.getByLabelText('Public URL'));
+    const urlInput = screen.getByLabelText('Public URL') as HTMLInputElement;
     // host is undefined → settings?.host ?? 'localhost' → 'localhost' (L164 ?? fallback)
     expect(urlInput.placeholder).toContain('localhost');
   });
@@ -3791,8 +3791,8 @@ describe('SettingsGeneralTab — null field fallback branches', () => {
     // publicUrl is '' (falsy) → s.publicUrl || `http://localhost:${s.port}` → uses localhost:port
     mockGetSettings.mockResolvedValue({ ...baseSettings, publicUrl: '' } as never);
     render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
-    await waitFor(() => screen.getByLabelText('Service Host'));
-    const urlInput = screen.getByLabelText('Service Host') as HTMLInputElement;
+    await waitFor(() => screen.getByLabelText('Public URL'));
+    const urlInput = screen.getByLabelText('Public URL') as HTMLInputElement;
     // form.publicUrl is set to 'http://localhost:3000' because '' is falsy
     expect(urlInput.value).toContain('localhost');
   });
@@ -4438,8 +4438,8 @@ describe('SettingsGeneralTab — host placeholder branch (L164)', () => {
     mockGetSettings.mockResolvedValue({ ...baseSettings, host: 'myserver.local', port: 3000 } as never);
     mockUpdateSettings.mockResolvedValue({} as never);
     render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
-    await waitFor(() => screen.getByLabelText('Service Host'));
-    const input = screen.getByLabelText('Service Host') as HTMLInputElement;
+    await waitFor(() => screen.getByLabelText('Public URL'));
+    const input = screen.getByLabelText('Public URL') as HTMLInputElement;
     // placeholder uses settings.host → 'http://myserver.local:3000'
     expect(input.placeholder).toContain('myserver.local');
   });

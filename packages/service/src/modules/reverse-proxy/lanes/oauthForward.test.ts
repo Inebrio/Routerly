@@ -174,8 +174,9 @@ describe('forwardAnthropicOAuth', () => {
     expect(init.headers['authorization']).toBe('Bearer sk-ant-oat-stored-token')
     expect(init.headers['x-api-key']).toBeUndefined()
     expect(init.headers['anthropic-beta']).toContain('oauth-2025-04-20')
-    // Faithful body: the Claude Code system block is preserved byte-equivalently.
-    expect(init.body).toBe(JSON.stringify(payload))
+    // Body forwarded verbatim except the `model` field, which is rewritten to
+    // the upstream model id (commit a076266) — system block etc. preserved.
+    expect(init.body).toBe(JSON.stringify({ ...payload, model: 'claude-max' }))
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ projectId: 'proj-1', outcome: 'success' }))
   })
 

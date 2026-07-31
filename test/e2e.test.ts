@@ -139,7 +139,7 @@ describe.skipIf(!TOKEN)('E2E · LLM Proxy', () => {
       const res = await post(
         '/v1/chat/completions',
         { model: 'auto', messages: [{ role: 'user', content: 'Ping.' }], max_tokens: 10, stream: true },
-        auth(TOKEN!),
+        { ...auth(TOKEN!), 'x-routerly-trace': '1' },
       )
       expect(res.status).toBe(200)
       expect(res.headers.get('content-type')).toContain('text/event-stream')

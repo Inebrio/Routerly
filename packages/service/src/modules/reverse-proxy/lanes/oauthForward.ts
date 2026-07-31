@@ -21,6 +21,30 @@ import { trackUsage } from '../../usage/tracker.js';
 const ANTHROPIC_OAUTH_BETA = 'oauth-2025-04-20';
 
 /**
+ * Serialize the outbound body, replacing the `model` field with the upstream
+ * model id (OAuth/API-key scopes don't always cover the client-supplied id).
+ * Everything else is forwarded verbatim.
+ *
+ * If the body is a string that is not valid JSON, there is no `model` field to
+ * rewrite — forward it byte-verbatim (wire-transparency contract). This is a
+ * deliberate pass-through, not a catch-all that hides serialization bugs.
+ */
+function rewriteBodyModel(rawBody: unknown, model: ModelConfig): string {
+  const stripped = model.id.split('/').slice(1).join('/');
+  const upstreamModel = model.upstreamModelId ?? (stripped || model.id);
+  if (typeof rawBody === 'string') {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      return rawBody; // not JSON, nothing to rewrite — pass through as-is
+    }
+    return JSON.stringify({ ...(parsed as Record<string, unknown>), model: upstreamModel });
+  }
+  return JSON.stringify({ ...(rawBody as Record<string, unknown>), model: upstreamModel });
+}
+
+/**
  * Request headers we never forward upstream: true hop-by-hop headers plus the
  * inbound tenant-auth headers (the Routerly project token), which we replace
  * with the stored OAuth credential.
@@ -91,12 +115,7 @@ export async function forwardAnthropicOAuth(
 
   let body: string | undefined;
   if (method !== 'GET' && method !== 'HEAD' && request.body != null) {
-    // Replace `model` with the upstream model ID (strip provider prefix).
-    // Everything else forwarded verbatim — preserves system blocks, tool-use, etc.
-    const stripped = model.id.split('/').slice(1).join('/');
-    const upstreamModel = model.upstreamModelId ?? (stripped || model.id);
-    const parsed = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
-    body = JSON.stringify({ ...parsed as Record<string, unknown>, model: upstreamModel });
+    body = rewriteBodyModel(request.body, model);
   }
 
   let upstream: Response;
@@ -180,10 +199,7 @@ export async function forwardAnthropicApiKey(
 
   let body: string | undefined;
   if (method !== 'GET' && method !== 'HEAD' && request.body != null) {
-    const stripped = model.id.split('/').slice(1).join('/');
-    const upstreamModel = model.upstreamModelId ?? (stripped || model.id);
-    const parsed = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
-    body = JSON.stringify({ ...parsed as Record<string, unknown>, model: upstreamModel });
+    body = rewriteBodyModel(request.body, model);
   }
 
   let upstream: Response;

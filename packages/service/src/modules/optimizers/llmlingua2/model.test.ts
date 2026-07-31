@@ -2,10 +2,42 @@ import { afterEach, describe, it, expect, vi } from 'vitest'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { MODEL_PATH, isModelAvailable, isRuntimeInstalled, loadRuntime, downloadModel } from './model.js'
 
-// onnxruntime-node is an OPTIONAL dependency and is NOT installed in the test
-// environment; the checkpoint file is absent too. That is the default state the
-// optimizer must survive: everything below asserts the no-model / no-runtime path.
+// onnxruntime-node is an OPTIONAL dependency. Whether it is physically installed
+// in node_modules depends on the platform (it is a native optionalDependency), so
+// the tests must NOT rely on ambient host state. We deterministically simulate the
+// "not installed" default state the optimizer must survive:
+//   - req.resolve('onnxruntime-node') -> throws  (mock node:module's createRequire)
+//   - import('onnxruntime-node')       -> rejects (mock the module itself)
+// so everything below asserts the no-model / no-runtime path hermetically.
 vi.mock('node:fs/promises', () => ({ mkdir: vi.fn(), writeFile: vi.fn() }))
+
+vi.mock('onnxruntime-node', () => {
+  throw new Error("Cannot find module 'onnxruntime-node'")
+})
+
+vi.mock('node:module', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:module')>()
+  return {
+    ...actual,
+    default: actual,
+    createRequire: (...args: Parameters<typeof actual.createRequire>) => {
+      const real = actual.createRequire(...args)
+      return new Proxy(real, {
+        get(target, prop, receiver) {
+          if (prop === 'resolve') {
+            return (id: string, ...rest: unknown[]) => {
+              if (id === 'onnxruntime-node') {
+                throw new Error("Cannot find module 'onnxruntime-node'")
+              }
+              return (target.resolve as (id: string, ...r: unknown[]) => string)(id, ...rest)
+            }
+          }
+          return Reflect.get(target, prop, receiver)
+        },
+      })
+    },
+  }
+})
 
 afterEach(() => {
   vi.unstubAllGlobals()

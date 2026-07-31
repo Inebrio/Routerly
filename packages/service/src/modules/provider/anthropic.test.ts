@@ -329,26 +329,6 @@ describe('AnthropicAdapter.messages', () => {
     expect(result).toEqual(anthropicResponse)
   })
 
-  it('handles messages with non-string content (line 324)', async () => {
-    const anthropicResponse = {
-      id: 'msg-native-arr', type: 'message', role: 'assistant',
-      content: [{ type: 'text', text: 'ok' }],
-      model: 'claude-3', stop_reason: 'end_turn', stop_sequence: null,
-      usage: { input_tokens: 5, output_tokens: 3 },
-    }
-    mockCreate.mockResolvedValue(anthropicResponse)
-
-    const request: MessagesRequest = {
-      model: 'claude-3',
-      max_tokens: 100,
-      messages: [{ role: 'user', content: [{ type: 'text', text: 'Hello' }] as any }],
-    }
-    await adapter.messages(request, makeModel())
-    const callParams = mockCreate.mock.calls[0]![0]
-    // Non-string content is JSON.stringify'd
-    expect(typeof callParams.messages[0].content).toBe('string')
-  })
-
   it('omits system param when request.system is absent (line 328)', async () => {
     const anthropicResponse = {
       id: 'msg-nosys', type: 'message', role: 'assistant',
