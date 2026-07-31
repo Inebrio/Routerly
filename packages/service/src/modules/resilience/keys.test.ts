@@ -104,4 +104,14 @@ describe('resilienceKeys', () => {
     expect(keys1.model.id).toBe('gpt-4-turbo');
     expect(keys2.model.id).toBe('gpt-3-5-turbo');
   });
+
+  it('keys the connection level on the real connectionId when present', () => {
+    const keys = resilienceKeys({ id: 'm', provider: 'openai', connectionId: 'c1' } as never);
+    expect(keys.connection).toEqual({ level: 'connection', id: 'c1' });
+  });
+
+  it('falls back to provider when connectionId is absent', () => {
+    const keys = resilienceKeys({ id: 'm', provider: 'openai' } as never);
+    expect(keys.connection).toEqual({ level: 'connection', id: 'openai' });
+  });
 });

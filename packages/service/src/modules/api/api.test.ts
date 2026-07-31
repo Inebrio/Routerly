@@ -6441,7 +6441,9 @@ describe('GET /api/health/providers', () => {
   it('reflects live breaker state (circuit/cooldown/lockout) from the resilience store', async () => {
     const model = { id: 'gpt-4', name: 'GPT-4', provider: 'openai' }
     const store = new InMemoryResilienceStore()
-    const keys = resilienceKeys(model as any)
+    // Matches the connectionId splitModelsIntoInstancesConnections derives below (`conn-${id}`),
+    // which is what /api/health/providers now resolves via the real EffectiveModel.
+    const keys = resilienceKeys({ ...model, connectionId: `conn-${model.id}` } as any)
     // Provider circuit → open: 5 hard faults (auth) trips the breaker.
     for (let i = 0; i < 5; i++) store.record(keys.provider, { category: 'auth' })
     // Connection cooldown ← rate-limit.

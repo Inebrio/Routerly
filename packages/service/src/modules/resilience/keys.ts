@@ -19,10 +19,9 @@ export function resilienceKeys(
       level: 'provider',
       id: model.provider,
     },
-    // G1: connection uses model.provider as placeholder until ProviderConnection.id is threaded through resolved-model type
     connection: {
       level: 'connection',
-      id: model.provider,
+      id: (model as { connectionId?: string }).connectionId ?? model.provider,
     },
     model: {
       level: 'model',
