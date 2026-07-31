@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope, FlaskConical, RotateCcw } from 'lucide-react';
-import { getModels, deleteModel, testModel, getProviderHealth, resetResilience, type Model, type ProviderHealth, type ResilienceState } from '../api';
+import { getModels, deleteModel, testModel, getProviderHealth, resetResilience, getConnections, type Model, type ProviderHealth, type ResilienceState, type Connection } from '../api';
 import { useAuth } from '../AuthContext';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { SearchableSelect } from '../components/SearchableSelect';
+import { useProviderLabels } from '../hooks/useProviderLabels';
 
 type SortKey = 'id' | 'provider' | 'endpoint' | 'input' | 'output' | 'cache' | 'context';
 type HealthSortKey = 'id' | 'provider' | 'status' | 'circuit' | 'errorRate' | 'p95Latency' | 'requests' | 'lastSuccess' | 'cooldown';
@@ -126,6 +128,7 @@ export function ModelsPage() {
   const { can } = useAuth();
   const canManage = can('resilience:manage');
   const now = useNow();
+  const providerLabel = useProviderLabels();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') === 'health' ? 'health' : 'models';
   function setTab(t: 'models' | 'health') {
@@ -133,11 +136,13 @@ export function ModelsPage() {
   }
 
   const [models, setModels] = useState<Model[]>([]);
+  const [connections, setConnections] = useState<Connection[]>([]);
   const [healthMap, setHealthMap] = useState<Map<string, ProviderHealth>>(new Map());
   const [loading, setLoading] = useState(true);
   const [healthUpdatedAt, setHealthUpdatedAt] = useState<Date | null>(null);
   const [search, setSearch] = useState('');
-  const [providerFilter, setProviderFilter] = useState('');
+  const [providerFilter, setProviderFilter] = useState(() => searchParams.get('provider') ?? '');
+  const [connectionFilter, setConnectionFilter] = useState(() => searchParams.get('connection') ?? '');
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [page, setPage] = useState(1);
@@ -161,6 +166,27 @@ export function ModelsPage() {
   async function load() {
     setLoading(true);
     try { setModels(await getModels()); } finally { setLoading(false); }
+  }
+
+  // Connections power the connection filter; best-effort like health.
+  useEffect(() => { getConnections().then(setConnections).catch(() => {}); }, []);
+
+  function updateProviderFilter(v: string) {
+    setProviderFilter(v);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (v) next.set('provider', v); else next.delete('provider');
+      return next;
+    }, { replace: true });
+  }
+
+  function updateConnectionFilter(v: string) {
+    setConnectionFilter(v);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (v) next.set('connection', v); else next.delete('connection');
+      return next;
+    }, { replace: true });
   }
 
   const fetchHealth = useCallback(async () => {
@@ -253,7 +279,7 @@ export function ModelsPage() {
   }
 
   // Reset page when filters change
-  useEffect(() => { setPage(1); }, [search, providerFilter]);
+  useEffect(() => { setPage(1); }, [search, providerFilter, connectionFilter]);
 
   const providerOptions = useMemo(
     () => Array.from(new Set(models.map(m => m.provider))).sort(),
@@ -264,10 +290,11 @@ export function ModelsPage() {
     const q = search.trim().toLowerCase();
     return models.filter(m => {
       if (providerFilter && m.provider !== providerFilter) return false;
+      if (connectionFilter && m.connectionId !== connectionFilter) return false;
       if (!q) return true;
       return m.id.toLowerCase().includes(q) || m.provider.toLowerCase().includes(q) || m.endpoint.toLowerCase().includes(q);
     });
-  }, [models, search, providerFilter]);
+  }, [models, search, providerFilter, connectionFilter]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -374,18 +401,20 @@ export function ModelsPage() {
                   : `${models.length} model${models.length !== 1 ? 's' : ''}`}
               </span>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <select
+                <SearchableSelect
+                  options={[{ value: '', label: 'All providers' }, ...providerOptions.map(p => ({ value: p, label: providerLabel(p) }))]}
                   value={providerFilter}
-                  onChange={e => setProviderFilter(e.target.value)}
-                  style={{
-                    height: 32, padding: '0 10px', fontSize: '0.85rem', borderRadius: 6,
-                    border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
-                    outline: 'none',
-                  }}
-                >
-                  <option value="">All providers</option>
-                  {providerOptions.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
+                  onChange={updateProviderFilter}
+                  placeholder="All providers"
+                  style={{ width: 160 }}
+                />
+                <SearchableSelect
+                  options={[{ value: '', label: 'All connections' }, ...connections.map(c => ({ value: c.id, label: c.label }))]}
+                  value={connectionFilter}
+                  onChange={updateConnectionFilter}
+                  placeholder="All connections"
+                  style={{ width: 180 }}
+                />
                 <div style={{ position: 'relative' }}>
                   <Search size={14} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
                   <input
@@ -403,7 +432,10 @@ export function ModelsPage() {
                 <Link to="/dashboard/models/discover" className="btn">
                   <Telescope size={16} /> Discover
                 </Link>
-                <Link to="/dashboard/models/new" className="btn btn-primary">
+                <Link
+                  to={connectionFilter ? `/dashboard/models/new?connection=${encodeURIComponent(connectionFilter)}` : '/dashboard/models/new'}
+                  className="btn btn-primary"
+                >
                   <Plus size={16} /> Add Model
                 </Link>
               </div>
@@ -434,7 +466,7 @@ export function ModelsPage() {
                       {paginated.map(m => (
                           <tr key={m.id}>
                             <td><span className="mono">{m.id}</span></td>
-                            <td><span className={`badge badge-${m.provider}`}>{m.provider}</span></td>
+                            <td><span className={`badge badge-${m.provider}`}>{providerLabel(m.provider)}</span></td>
                             <td><span className="mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{m.endpoint}</span></td>
                             <td>${m.cost.inputPerMillion}</td>
                             <td>${m.cost.outputPerMillion}</td>
@@ -555,7 +587,7 @@ export function ModelsPage() {
                           return (
                             <tr key={m.id}>
                               <td><span className="mono">{m.id}</span></td>
-                              <td><span className={`badge badge-${m.provider}`}>{m.provider}</span></td>
+                              <td><span className={`badge badge-${m.provider}`}>{providerLabel(m.provider)}</span></td>
                               <td><StatusBadge status={status} /></td>
                               <td>
                                 {h

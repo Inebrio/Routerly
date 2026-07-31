@@ -39,7 +39,6 @@ import { ModelDiscoveryPage } from './pages/ModelDiscoveryPage';
 import { AuditPage } from './pages/AuditPage';
 import { ConnectionsPage } from './pages/ConnectionsPage';
 import { ConnectionFormPage } from './pages/ConnectionFormPage';
-import { ModelInstancesPage } from './pages/ModelInstancesPage';
 import { ProfilesPage } from './pages/ProfilesPage';
 import { McpPage } from './pages/McpPage';
 import { ClientsPage, useClientsEnabled } from './pages/ClientsPage';
@@ -375,7 +374,6 @@ const router = createBrowserRouter([
           { path: 'models/new', element: <ModelFormPage /> },
           { path: 'models/:id', element: <ModelFormPage /> },
           { path: 'connections', element: <ConnectionsPage /> },
-          { path: 'connections/:connectionId/instances', element: <ModelInstancesPage /> },
           { path: 'connections/new', element: <ConnectionFormPage /> },
           { path: 'connections/:id/edit', element: <ConnectionFormPage /> },
           { path: 'routing-profiles', element: <ProfilesPage /> },

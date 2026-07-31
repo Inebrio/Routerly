@@ -10,6 +10,24 @@ vi.mock('../api', () => ({
   getProviderHealth: vi.fn(),
   testModel: vi.fn(),
   resetResilience: vi.fn(),
+  getConnections: vi.fn(),
+  getProviderDescriptors: vi.fn(),
+}));
+
+// ponytail: stub SearchableSelect as a plain <select> so userEvent.selectOptions keeps working
+vi.mock('../components/SearchableSelect', () => ({
+  SearchableSelect: ({
+    options, value, onChange, placeholder,
+  }: {
+    options: { value: string; label: string }[];
+    value: string;
+    onChange: (v: string) => void;
+    placeholder?: string;
+  }) => (
+    <select data-testid={`searchable-${placeholder ?? 'select'}`} value={value} onChange={e => onChange(e.target.value)}>
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  ),
 }));
 
 // ponytail: gate 'resilience:manage' on a mutable flag ('mock' prefix so vi.mock hoist allows it);
@@ -32,13 +50,15 @@ vi.mock('../components/ConfirmDialog', () => ({
   ),
 }));
 
-import { getModels, deleteModel, getProviderHealth, testModel, resetResilience } from '../api';
+import { getModels, deleteModel, getProviderHealth, testModel, resetResilience, getConnections, getProviderDescriptors } from '../api';
 
 const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
 const mockDeleteModel = vi.mocked(deleteModel as (id: string) => Promise<unknown>);
 const mockGetProviderHealth = vi.mocked(getProviderHealth as () => Promise<unknown>);
 const mockTestModel = vi.mocked(testModel as (id: string) => Promise<unknown>);
 const mockResetResilience = vi.mocked(resetResilience as (body?: unknown) => Promise<unknown>);
+const mockGetConnections = vi.mocked(getConnections as () => Promise<unknown>);
+const mockGetProviderDescriptors = vi.mocked(getProviderDescriptors as () => Promise<unknown>);
 
 function makeModel(overrides: Record<string, unknown> = {}) {
   return {
@@ -81,6 +101,8 @@ beforeEach(() => {
   mockDeleteModel.mockResolvedValue(undefined);
   mockGetProviderHealth.mockResolvedValue({ providers: [] });
   mockTestModel.mockResolvedValue({ ok: true, latencyMs: 120 });
+  mockGetConnections.mockResolvedValue([]);
+  mockGetProviderDescriptors.mockResolvedValue([]);
 });
 
 afterEach(() => vi.clearAllMocks());
@@ -132,7 +154,7 @@ describe('ModelsPage — models list', () => {
     ]);
     renderPage();
     await waitFor(() => screen.getByText('claude-3'));
-    const select = screen.getByRole('combobox');
+    const select = screen.getByTestId('searchable-All providers');
     await userEvent.selectOptions(select, 'anthropic');
     await waitFor(() => expect(screen.queryByText('gpt-4o')).toBeNull());
     expect(screen.getByText('claude-3')).toBeTruthy();
@@ -145,7 +167,7 @@ describe('ModelsPage — models list', () => {
     ]);
     renderPage();
     await waitFor(() => screen.getByText('claude-3'));
-    await userEvent.selectOptions(screen.getByRole('combobox'), 'openai');
+    await userEvent.selectOptions(screen.getByTestId('searchable-All providers'), 'openai');
     await waitFor(() => expect(screen.getByText(/1 of 2 model/)).toBeTruthy());
   });
 

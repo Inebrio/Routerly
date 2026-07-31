@@ -155,7 +155,7 @@ describe('ConnectionsPage — navigation to dedicated pages', () => {
 
     expect(screen.queryByTitle('Edit')).toBeNull();
     expect(screen.queryByTitle('Remove')).toBeNull();
-    expect(screen.getByTitle('Instances')).not.toBeNull();
+    expect(screen.getByTitle('Models')).not.toBeNull();
   });
 });
 

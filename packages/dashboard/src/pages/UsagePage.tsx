@@ -5,6 +5,7 @@ import { getUsage, getProjects, getModels, type UsageStats, type Project, type M
 import { MultiSelect } from '../components/MultiSelect';
 import { DateRangePicker, PRESETS, RECENT_PRESETS, type DateRange } from '../components/DateRangePicker';
 import { useFilterState } from '../hooks/useFilterState';
+import { useProviderLabels } from '../hooks/useProviderLabels';
 
 type ModelSortKey = 'rank' | 'model' | 'provider' | 'calls' | 'errors' | 'successRate'
   | 'avgLatency' | 'p95Latency' | 'inputTokens' | 'outputTokens' | 'costPer1k' | 'cost';
@@ -34,6 +35,7 @@ function fmtCost(n: number): string {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function UsagePage() {
+  const providerLabel = useProviderLabels();
   const [stats, setStats]               = useState<UsageStats | null>(null);
   const [projects, setProjects]         = useState<Project[]>([]);
   const [allModels, setAllModels]       = useState<Model[]>([]);
@@ -493,7 +495,7 @@ export function UsagePage() {
                                 : displayRank}
                             </td>
                             <td><span className="mono">{modelId}</span></td>
-                            <td style={{ color: 'var(--text-secondary)' }}>{provider}</td>
+                            <td style={{ color: 'var(--text-secondary)' }}>{providerLabel(provider)}</td>
                             <td style={{ textAlign: 'right' }}>{v.calls}</td>
                             <td style={{ textAlign: 'right', color: v.errors > 0 ? 'var(--danger)' : 'inherit' }}>{v.errors}</td>
                             <td style={{ textAlign: 'right' }}>{(successRate * 100).toFixed(1)}%</td>
