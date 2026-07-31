@@ -56,6 +56,22 @@ describe('migrateModelsToConnections', () => {
     expect(savedInstances).toHaveLength(2);
     expect(savedInstances[0].connectionId).toBe(savedConnections[0].id);
     expect(savedInstances[1].connectionId).toBe(savedConnections[0].id);
+    expect(savedConnections[0].label).toBe(savedConnections[0].providerId);
+  });
+
+  it('strips a legacy "(migrated)" suffix from existing connection labels', async () => {
+    mockReadConfig.mockImplementation(async (key: string) => {
+      if (key === 'models') return [] as any;
+      if (key === 'connections')
+        return [{ id: 'c1', providerId: 'openai', label: 'openai (migrated)', credentials: {}, enabled: true }] as any;
+      if (key === 'instances') return [] as any;
+      return [] as any;
+    });
+
+    await migrateModelsToConnections();
+
+    const savedConnections = mockWriteConfig.mock.calls.find((c) => c[0] === 'connections')?.[1] as any[];
+    expect(savedConnections[0].label).toBe('openai');
   });
 
   it('is idempotent', async () => {

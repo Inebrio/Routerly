@@ -91,6 +91,17 @@ export async function migrateModelsToConnections(): Promise<{ connections: numbe
     readConfig('instances'),
   ]);
 
+  // One-time cleanup: earlier migrations labelled connections "<provider> (migrated)".
+  // Strip the suffix in place so the dashboard shows a clean provider label.
+  const MIGRATED_SUFFIX = ' (migrated)';
+  let labelsChanged = false;
+  for (const c of existingConnections) {
+    if (c.label.endsWith(MIGRATED_SUFFIX)) {
+      c.label = c.label.slice(0, -MIGRATED_SUFFIX.length);
+      labelsChanged = true;
+    }
+  }
+
   const connectionIds = new Set(existingConnections.map((c) => c.id));
   const instanceIds = new Set(existingInstances.map((i) => i.id));
 
@@ -106,7 +117,7 @@ export async function migrateModelsToConnections(): Promise<{ connections: numbe
       const conn: ProviderConnection = {
         id: connId,
         providerId: model.provider,
-        label: `${model.provider} (migrated)`,
+        label: model.provider,
         credentials: buildCredentials(model),
         enabled: true,
       };
@@ -120,7 +131,7 @@ export async function migrateModelsToConnections(): Promise<{ connections: numbe
     }
   }
 
-  if (newConnections.length > 0) {
+  if (newConnections.length > 0 || labelsChanged) {
     await writeConfig('connections', [...existingConnections, ...newConnections]);
   }
   if (newInstances.length > 0) {
