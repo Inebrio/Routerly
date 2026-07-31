@@ -272,9 +272,13 @@ Examples:
 
   # Interactive wizard for limits and pricing tiers
   routerly model add --id gpt-4o --provider openai --api-key sk-... --interactive
+
+  # Bind to a preconfigured connection instead of inline credentials
+  routerly model add --id gpt-4o --provider openai --connection conn-abc123
 `)
     .requiredOption('--id <id>', 'Unique model ID (e.g. gpt-4o)')
     .requiredOption('--provider <provider>', 'Provider: openai | anthropic | anthropic-oauth | gemini | ollama | custom | azure-openai | bedrock | vertex')
+    .option('--connection <id>', 'Bind to an existing provider connection (see `routerly connections list`); omits inline credentials')
     .option('--endpoint <url>', 'Custom API endpoint (uses provider default if omitted)')
     .option('--api-key <key>', 'API key (stored plaintext; file permissions protect it)')
     .option('--input-price <usd>', 'Cost per 1M input tokens in USD')
@@ -299,7 +303,7 @@ Examples:
     // ChatGPT browser session
     .option('--cf-clearance <value>', 'cf_clearance cookie for Cloudflare bypass (openai-web provider)')
     .action(async (opts: {
-      id: string; provider: string; endpoint?: string; apiKey?: string;
+      id: string; provider: string; connection?: string; endpoint?: string; apiKey?: string;
       inputPrice?: string; outputPrice?: string; dailyBudget?: string; monthlyBudget?: string;
       limitsJson?: string; pricingTiersJson?: string; interactive?: boolean;
       azureResource?: string; azureDeployment?: string; azureApiVersion?: string;
@@ -348,9 +352,10 @@ Examples:
 
       if (pricingTiers?.length) cost.pricingTiers = pricingTiers;
 
-      // Read Vertex service account key file if provided
+      // Read Vertex service account key file if provided (irrelevant when binding to a
+      // preconfigured connection — that connection already carries its own credentials).
       let vertexServiceAccountKey: string | undefined;
-      if (opts.vertexSaKey) {
+      if (opts.vertexSaKey && !opts.connection) {
         const { readFile } = await import('node:fs/promises');
         try {
           vertexServiceAccountKey = await readFile(opts.vertexSaKey, 'utf-8');
@@ -364,24 +369,28 @@ Examples:
         id: opts.id,
         name: opts.id,
         provider: opts.provider,
-        endpoint: opts.endpoint ?? providerEndpoints[opts.provider] ?? '',
-        apiKey: opts.apiKey,
         cost,
         ...(limits?.length ? { limits } : {}),
-        // Azure OpenAI
-        ...(opts.azureResource    ? { azureResourceName: opts.azureResource }                     : {}),
-        ...(opts.azureDeployment  ? { azureDeploymentId: opts.azureDeployment }                   : {}),
-        ...(opts.azureApiVersion  ? { azureApiVersion: opts.azureApiVersion }                     : {}),
-        // AWS Bedrock
-        ...(opts.awsRegion        ? { awsRegion: opts.awsRegion }                                 : {}),
-        ...(opts.awsKeyId         ? { awsAccessKeyId: opts.awsKeyId }                             : {}),
-        ...(opts.awsSecret        ? { awsSecretAccessKey: opts.awsSecret }                        : {}),
-        // Google Vertex AI
-        ...(opts.vertexProject    ? { vertexProjectId: opts.vertexProject }                       : {}),
-        ...(opts.vertexLocation   ? { vertexLocation: opts.vertexLocation }                       : {}),
-        ...(vertexServiceAccountKey ? { vertexServiceAccountKey }                                 : {}),
-        // ChatGPT browser session
-        ...(opts.cfClearance      ? { cfClearance: opts.cfClearance }                             : {}),
+        ...(opts.connection
+          ? { connectionId: opts.connection }
+          : {
+            endpoint: opts.endpoint ?? providerEndpoints[opts.provider] ?? '',
+            apiKey: opts.apiKey,
+            // Azure OpenAI
+            ...(opts.azureResource    ? { azureResourceName: opts.azureResource }                     : {}),
+            ...(opts.azureDeployment  ? { azureDeploymentId: opts.azureDeployment }                   : {}),
+            ...(opts.azureApiVersion  ? { azureApiVersion: opts.azureApiVersion }                     : {}),
+            // AWS Bedrock
+            ...(opts.awsRegion        ? { awsRegion: opts.awsRegion }                                 : {}),
+            ...(opts.awsKeyId         ? { awsAccessKeyId: opts.awsKeyId }                             : {}),
+            ...(opts.awsSecret        ? { awsSecretAccessKey: opts.awsSecret }                        : {}),
+            // Google Vertex AI
+            ...(opts.vertexProject    ? { vertexProjectId: opts.vertexProject }                       : {}),
+            ...(opts.vertexLocation   ? { vertexLocation: opts.vertexLocation }                       : {}),
+            ...(vertexServiceAccountKey ? { vertexServiceAccountKey }                                 : {}),
+            // ChatGPT browser session
+            ...(opts.cfClearance      ? { cfClearance: opts.cfClearance }                             : {}),
+          }),
       };
 
       try {

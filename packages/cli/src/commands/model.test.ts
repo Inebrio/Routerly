@@ -471,6 +471,32 @@ describe('routerly model add', () => {
     expect(cost.pricingTiers).toBeUndefined();
   });
 
+  it('binds to an existing connection via --connection, sending no credentials', async () => {
+    mockApi.mockResolvedValue({});
+    await run('add', '--id', 'gpt-4o', '--provider', 'openai', '--connection', 'conn-abc123', '--api-key', 'sk-should-be-dropped');
+    const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
+    expect(body['connectionId']).toBe('conn-abc123');
+    expect(body).not.toHaveProperty('apiKey');
+    expect(body).not.toHaveProperty('endpoint');
+  });
+
+  it('creates a dedicated connection from inline --api-key when --connection is not given', async () => {
+    mockApi.mockResolvedValue({});
+    await run('add', '--id', 'gpt-4o', '--provider', 'openai', '--api-key', 'sk-test-key');
+    const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
+    expect(body).not.toHaveProperty('connectionId');
+    expect(body['apiKey']).toBe('sk-test-key');
+    expect(body['endpoint']).toBe('https://api.openai.com/v1');
+  });
+
+  it('skips reading the vertex SA key file when --connection is given', async () => {
+    mockApi.mockResolvedValue({});
+    await run('add', '--id', 'v', '--provider', 'vertex', '--connection', 'conn-vertex', '--vertex-sa-key', '/nonexistent/path.json');
+    const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
+    expect(body['connectionId']).toBe('conn-vertex');
+    expect(body).not.toHaveProperty('vertexServiceAccountKey');
+  });
+
   it('reads SA key file content when vertex-sa-key is a real file', async () => {
     const { writeFile, unlink, mkdtemp } = await import('node:fs/promises');
     const { join } = await import('node:path');
