@@ -26,6 +26,7 @@ const sidebars: SidebarsConfig = {
         'concepts/notifications',
         'concepts/security',
         'concepts/optimizers',
+        'concepts/mcp',
       ],
     },
     {
@@ -48,6 +49,7 @@ const sidebars: SidebarsConfig = {
         'dashboard/connections',
         'dashboard/projects',
         'dashboard/routing-profiles',
+        'dashboard/mcp',
         'dashboard/usage',
         'dashboard/users-and-roles',
         'dashboard/settings',

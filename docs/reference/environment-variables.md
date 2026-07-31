@@ -18,6 +18,18 @@ Environment variables override corresponding settings from `settings.json` and a
 | `ROUTERLY_LOG_LEVEL` | `info` | Log verbosity. Overrides `logLevel` in settings. Values: `error`, `warn`, `info`, `debug` |
 | `NODE_ENV` | `development` | Set to `production` for production deployments (affects error verbosity and logging format) |
 
+## MCP Server Variables
+
+These variables start the [MCP server](../concepts/mcp.md)'s stdio transport.
+`routerly mcp serve` sets both of them automatically when it spawns the
+service binary. Set them yourself only if you are connecting a real MCP
+client directly to the service binary instead of via the CLI wrapper.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ROUTERLY_MCP_STDIO` | unset | Set to `1` to start the stdio MCP transport on boot instead of (or in addition to) the normal HTTP server. |
+| `ROUTERLY_MCP_TOKEN` | unset | Project token (`sk-rt-…`) used as the stdio session's identity. Required when `ROUTERLY_MCP_STDIO=1`; must carry the `mcp` scope. The service throws at startup if it is missing, invalid, expired, or under-scoped. |
+
 ## Installer Variables
 
 These variables are only used during the install/update process (`install.sh`, `install.ps1`, `install.mjs`) and have no effect at runtime.
