@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -7,6 +8,8 @@ import { ProjectSecurityTab } from './ProjectSecurityTab';
 vi.mock('../../api', () => ({
   getModels: vi.fn(),
   updateProject: vi.fn(),
+  getProfiles: vi.fn(),
+  assignProjectProfiles: vi.fn(),
 }));
 
 // ponytail: mock SearchableSelect as a plain <select> so onChange fires on selectOptions
@@ -16,14 +19,17 @@ vi.mock('../../components/SearchableSelect', () => ({
     value,
     onChange,
     placeholder,
+    ariaLabel,
   }: {
     options: { value: string; label: string }[];
     value: string;
     onChange: (v: string) => void;
     placeholder?: string;
+    ariaLabel?: string;
   }) => (
     <select
       data-testid={`searchable-${placeholder ?? 'select'}`}
+      aria-label={ariaLabel ?? placeholder ?? 'select'}
       value={value}
       onChange={e => onChange(e.target.value)}
     >
@@ -60,9 +66,32 @@ vi.mock('../../components/MultiSelect', () => ({
   ),
 }));
 
-import { getModels, updateProject } from '../../api';
+import { getModels, updateProject, getProfiles, assignProjectProfiles } from '../../api';
 const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
 const mockUpdateProject = vi.mocked(updateProject as (...args: unknown[]) => Promise<unknown>);
+const mockGetProfiles = vi.mocked(getProfiles as (...args: unknown[]) => Promise<unknown>);
+const mockAssignProfile = vi.mocked(assignProjectProfiles as (...args: unknown[]) => Promise<unknown>);
+
+const sampleProfiles = [
+  {
+    id: 'security-standard',
+    kind: 'security',
+    version: 1,
+    label: 'Standard',
+    builtin: true,
+    guardrails: { rules: [{ type: 'regex', target: 'request', block: true, config: { patterns: ['secret'] } }] },
+    pii: { policies: [{ enabled: true, target: 'request', entities: ['EMAIL'] }] },
+  },
+  {
+    id: 'custom-sec',
+    kind: 'security',
+    version: 1,
+    label: 'My Security',
+    builtin: false,
+    guardrails: { rules: [] },
+    pii: { policies: [] },
+  },
+];
 
 function makeModel(overrides: Record<string, unknown> = {}) {
   return {
@@ -121,6 +150,8 @@ function renderTab(project: Record<string, unknown> = mockProject) {
 
 beforeEach(() => {
   mockGetModels.mockResolvedValue([chatModel, embeddingModel]);
+  mockGetProfiles.mockResolvedValue(sampleProfiles);
+  mockAssignProfile.mockResolvedValue({ ...mockProject });
   mockUpdateProject.mockResolvedValue({ ...mockProject, guardrails: { rules: [] }, pii: { policies: [] } });
 });
 
@@ -2139,5 +2170,122 @@ describe('ProjectSecurityTab — PII outputBufferSize onChange', () => {
     input.dispatchEvent(new Event('change', { bubbles: true }));
     // No error thrown; input reacted to change
     expect(input).toBeTruthy();
+  });
+});
+
+// ── Profile assignment ───────────────────────────────────────────────────────
+
+const assignedProject = { ...mockProject, securityProfileId: 'security-standard' };
+
+/** Like renderTab, but keeps the project in state so setProject re-renders the tab. */
+function renderStatefulTab(initial: Record<string, unknown>) {
+  function LayoutWrapper() {
+    const [project, setProject] = React.useState(initial);
+    return <Outlet context={{ project, setProject }} />;
+  }
+  return render(
+    <MemoryRouter initialEntries={['/dashboard/projects/proj-1/security']}>
+      <Routes>
+        <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
+          <Route path="security" element={<ProjectSecurityTab />} />
+        </Route>
+      </Routes>
+    </MemoryRouter>
+  );
+}
+
+describe('ProjectSecurityTab — security profile assignment', () => {
+  it('starts in custom mode: rules editor and save button visible', async () => {
+    renderTab();
+    await waitFor(() => expect(screen.getByText('Content Guardrails')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /save security settings/i })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Security Profile')).not.toBeInTheDocument();
+  });
+
+  it('switching to Profile assigns the first built-in profile', async () => {
+    const user = userEvent.setup();
+    renderTab();
+    await waitFor(() => expect(screen.getByText('Content Guardrails')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: 'Profile' }));
+    await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { security: 'security-standard' }));
+  });
+
+  it('falls back to the first user profile when no built-in exists', async () => {
+    const user = userEvent.setup();
+    mockGetProfiles.mockResolvedValue([sampleProfiles[1]]);
+    renderTab();
+    await waitFor(() => expect(screen.getByText('Content Guardrails')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: 'Profile' }));
+    await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { security: 'custom-sec' }));
+  });
+
+  it('reports an error when no security profile exists', async () => {
+    const user = userEvent.setup();
+    mockGetProfiles.mockResolvedValue([]);
+    renderTab();
+    await waitFor(() => expect(screen.getByText('Content Guardrails')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: 'Profile' }));
+    await waitFor(() => expect(screen.getByText(/No security profile available/)).toBeInTheDocument());
+    expect(mockAssignProfile).not.toHaveBeenCalled();
+  });
+
+  it('while assigned, hides the editor and lists the profile rules and PII policies', async () => {
+    renderTab(assignedProject);
+    await waitFor(() => expect(screen.getByLabelText('Security Profile')).toBeInTheDocument());
+    expect(screen.queryByText('Content Guardrails')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /save security settings/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/Regex \(request\), blocking/)).toBeInTheDocument();
+    expect(screen.getByText(/PII redaction \(request\)/)).toBeInTheDocument();
+  });
+
+  it('lists built-in and user profiles in the select', async () => {
+    renderTab(assignedProject);
+    const select = await screen.findByLabelText('Security Profile');
+    const values = Array.from(select.querySelectorAll('option')).map(o => o.textContent);
+    expect(values).toContain('Standard (built-in)');
+    expect(values).toContain('My Security');
+  });
+
+  it('selecting another profile reassigns it', async () => {
+    const user = userEvent.setup();
+    renderTab(assignedProject);
+    const select = await screen.findByLabelText('Security Profile');
+    await user.selectOptions(select, 'custom-sec');
+    await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { security: 'custom-sec' }));
+  });
+
+  it('switching to Custom clears the profile and prefills its rules', async () => {
+    const user = userEvent.setup();
+    mockAssignProfile.mockResolvedValue({ ...mockProject });
+    renderStatefulTab(assignedProject);
+    await waitFor(() => expect(screen.getByLabelText('Security Profile')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: 'Custom' }));
+    await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { security: null }));
+    // The profile's regex rule is now this project's own editable rule.
+    await waitFor(() => expect(screen.getByDisplayValue('secret')).toBeInTheDocument());
+  });
+
+  it('clicking the already active mode does nothing', async () => {
+    const user = userEvent.setup();
+    renderTab();
+    await waitFor(() => expect(screen.getByText('Content Guardrails')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: 'Custom' }));
+    expect(mockAssignProfile).not.toHaveBeenCalled();
+  });
+
+  it('surfaces assignment errors', async () => {
+    const user = userEvent.setup();
+    mockAssignProfile.mockRejectedValue(new Error('assign boom'));
+    renderTab();
+    await waitFor(() => expect(screen.getByText('Content Guardrails')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: 'Profile' }));
+    await waitFor(() => expect(screen.getByText('assign boom')).toBeInTheDocument());
+  });
+
+  it('a failed profiles fetch leaves the profile list empty', async () => {
+    mockGetProfiles.mockRejectedValue(new Error('nope'));
+    renderTab(assignedProject);
+    const select = await screen.findByLabelText('Security Profile');
+    expect(Array.from(select.querySelectorAll('option')).map(o => (o as HTMLOptionElement).value)).toEqual(['']);
   });
 });

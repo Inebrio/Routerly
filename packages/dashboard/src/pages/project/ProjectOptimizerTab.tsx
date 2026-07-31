@@ -1,38 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { GripVertical, Check, ShieldOff } from 'lucide-react';
+import { Check, ShieldOff } from 'lucide-react';
 import {
   updateProject,
   getInstalledOptimizers,
+  getProfiles,
+  assignProjectProfiles,
   previewOptimizers,
   type InstalledOptimizer,
-  type OptimizerId,
-  type OptimizerStep,
+  type OptimizerProfile,
   type OptimizerPreviewResult,
 } from '../../api';
 import { useProject } from './ProjectLayout';
 import { useAuth } from '../../AuthContext';
-
-const OPTIMIZER_LABELS: Record<OptimizerId, string> = {
-  'session-dedup': 'Session Dedup',
-  ccr: 'Conversation Context Reduction',
-  rtk: 'Redundant Token Killer',
-  headroom: 'Context Headroom',
-  relevance: 'Relevance Filter',
-  caveman: 'Caveman',
-  'llmlingua-2': 'LLMLingua-2',
-};
-
-const OPTIMIZER_DESCRIPTIONS: Record<OptimizerId, string> = {
-  'session-dedup': 'Lossless. Drops exact-duplicate repeated messages within a conversation, keeping the first and last of any run.',
-  ccr: 'Recoverable. Keeps the system prefix and the most recent turns; older turns are condensed into a single compact block. Threshold sets how many recent turns to keep.',
-  rtk: 'Recoverable. Collapses redundant whitespace and strips repeated boilerplate blocks from message text.',
-  headroom: 'Lossless. Drops the oldest turns until the request fits the model context window with the reserved headroom. Threshold sets the reserved token budget.',
-  relevance: 'Lossy. Drops older turns whose lexical overlap with the newest turn falls below the threshold. Requires a threshold to activate.',
-  caveman: 'Lossy. Strips filler/function words from message text while preserving code, URLs and numbers.',
-  'llmlingua-2': 'Lossy. ONNX-backed prompt compression. Off unless the optional runtime and model are installed.',
-};
-
-type Row = { id: OptimizerId; enabled: boolean; threshold?: number };
+import { SearchableSelect } from '../../components/SearchableSelect';
+import {
+  OptimizerStepsEditor,
+  OPTIMIZER_LABELS,
+  buildOptimizerSteps,
+  mergeOptimizerRows,
+  type OptimizerRow,
+} from '../../components/OptimizerStepsEditor';
 
 export function ProjectOptimizerTab() {
   const { project, setProject } = useProject();
@@ -41,12 +28,12 @@ export function ProjectOptimizerTab() {
   const canManage = can('optimizers:manage');
 
   const [installed, setInstalled] = useState<InstalledOptimizer[]>([]);
-  const [rows, setRows] = useState<Row[]>([]);
+  const [rows, setRows] = useState<OptimizerRow[]>([]);
+  const [profiles, setProfiles] = useState<OptimizerProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [err, setErr] = useState('');
-  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
 
   // Preview panel state
   const [sample, setSample] = useState('');
@@ -54,12 +41,19 @@ export function ProjectOptimizerTab() {
   const [previewErr, setPreviewErr] = useState('');
   const [preview, setPreview] = useState<OptimizerPreviewResult | null>(null);
 
+  // Steps to install on the next project refresh, used when switching from a
+  // profile to custom so the profile steps become the editable starting point.
+  const pendingRows = React.useRef<OptimizerRow[] | null>(null);
+
   useEffect(() => {
     if (!canRead) { setLoading(false); return; }
     getInstalledOptimizers()
       .then(setInstalled)
       .catch(() => setInstalled([]))
       .finally(() => setLoading(false));
+    getProfiles('optimizer')
+      .then(list => setProfiles(list.filter((p): p is OptimizerProfile => p.kind === 'optimizer')))
+      .catch(() => setProfiles([]));
   }, [canRead]);
 
   // Merge the project's configured steps (in order) with any installed
@@ -67,59 +61,24 @@ export function ProjectOptimizerTab() {
   useEffect(() => {
     /* v8 ignore next */
     if (!project) return;
-    const configured = project.optimizers?.steps ?? [];
-    const configuredIds = new Set(configured.map(s => s.id));
-    const extra: Row[] = installed
-      .filter(o => !configuredIds.has(o.id))
-      .map(o => ({ id: o.id, enabled: false }));
-    setRows([...configured.map(s => ({ id: s.id, enabled: s.enabled, ...(s.threshold != null ? { threshold: s.threshold } : {}) })), ...extra]);
+    if (pendingRows.current) {
+      setRows(pendingRows.current);
+      pendingRows.current = null;
+      return;
+    }
+    setRows(mergeOptimizerRows(project.optimizers?.steps ?? [], installed));
   }, [project, installed]);
 
-  function buildSteps(): OptimizerStep[] {
-    return rows
-      .filter(r => r.enabled || r.threshold != null)
-      .map(r => ({ id: r.id, enabled: r.enabled, ...(r.threshold != null ? { threshold: r.threshold } : {}) }));
-  }
-
-  function toggle(idx: number) {
-    setRows(prev => prev.map((r, i) => i === idx ? { ...r, enabled: !r.enabled } : r));
-  }
-
-  function setThreshold(idx: number, value: string) {
-    setRows(prev => prev.map((r, i) => {
-      if (i !== idx) return r;
-      if (value === '') { const { threshold, ...rest } = r; return rest; }
-      return { ...r, threshold: Number(value) };
-    }));
-  }
-
-  // Native HTML5 drag reorder (same pattern as ProjectRoutingTab policies).
-  function onDragStart(e: React.DragEvent, idx: number) {
-    setDraggedIdx(idx);
-    e.dataTransfer.effectAllowed = 'move';
-    /* v8 ignore next 3 */
-    setTimeout(() => {
-      const el = document.getElementById(`optimizer-row-${idx}`);
-      if (el) el.style.opacity = '0.4';
-    }, 0);
-  }
-  function onDragEnter(e: React.DragEvent, targetIdx: number) {
-    e.preventDefault();
-    if (draggedIdx === null || draggedIdx === targetIdx) return;
-    setRows(prev => {
-      const copy = [...prev];
-      const dragged = copy[draggedIdx]!;
-      copy.splice(draggedIdx, 1);
-      copy.splice(targetIdx, 0, dragged);
-      return copy;
-    });
-    setDraggedIdx(targetIdx);
-  }
-  function onDragEnd(_e: React.DragEvent, idx: number) {
-    setDraggedIdx(null);
-    const el = document.getElementById(`optimizer-row-${idx}`);
+  async function onAssignProfile(profileId: string) {
     /* v8 ignore next */
-    if (el) el.style.opacity = '1';
+    if (!project) return;
+    setErr('');
+    try {
+      const updated = await assignProjectProfiles(project.id, { optimizer: profileId === '' ? null : profileId });
+      setProject(updated);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Failed to assign optimizer profile');
+    }
   }
 
   async function doSave() {
@@ -131,7 +90,7 @@ export function ProjectOptimizerTab() {
       const payload: Parameters<typeof updateProject>[1] = {
         name: project.name,
         models: project.models,
-        optimizers: { steps: buildSteps() },
+        optimizers: { steps: buildOptimizerSteps(rows) },
       };
       const updated = await updateProject(project.id, payload);
       setProject(updated);
@@ -159,7 +118,7 @@ export function ProjectOptimizerTab() {
       const result = await previewOptimizers({
         projectId: project.id,
         sampleMessages: [{ role: 'user', content: sample }],
-        steps: buildSteps(),
+        steps: buildOptimizerSteps(rows),
       });
       setPreview(result);
     } catch (e) {
@@ -186,6 +145,26 @@ export function ProjectOptimizerTab() {
 
   const savedDelta = preview ? preview.estimatedTokensBefore - preview.estimatedTokensAfter : 0;
 
+  const assignedProfileId = project?.optimizerProfileId ?? '';
+  const profileAssigned = assignedProfileId !== '';
+  const defaultProfileId = profiles.find(p => p.builtin)?.id ?? profiles[0]?.id ?? '';
+  const assignedProfile = profiles.find(p => p.id === assignedProfileId);
+
+  async function onSelectMode(next: 'profile' | 'custom') {
+    if ((next === 'profile') === profileAssigned) return;
+    if (next === 'profile') {
+      if (!defaultProfileId) {
+        setErr('No optimizer profile available. Create one from the Profiles page.');
+        return;
+      }
+      await onAssignProfile(defaultProfileId);
+      return;
+    }
+    // Leaving a profile: its steps become the editable starting point.
+    if (assignedProfile) pendingRows.current = mergeOptimizerRows(assignedProfile.optimizers.steps, installed);
+    await onAssignProfile('');
+  }
+
   return (
     <form onSubmit={handleSubmit} style={{ maxWidth: 800 }}>
       {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
@@ -194,70 +173,67 @@ export function ProjectOptimizerTab() {
         <label className="form-label">Optimizers</label>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
           Optimizers reduce prompt tokens before requests reach the provider. They run in order from top to bottom.
-          Drag to reorder, toggle to enable. Some optimizers use a threshold to control how aggressively they trim.
+          Use a shared optimizer profile, or define this project's own pipeline.
         </p>
 
-        {rows.length === 0 ? (
-          <div className="empty-state">
-            <p>No optimizers installed.</p>
+        {canManage && (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            <button
+              type="button"
+              className={`btn btn-sm ${profileAssigned ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => void onSelectMode('profile')}
+            >
+              Profile
+            </button>
+            <button
+              type="button"
+              className={`btn btn-sm ${profileAssigned ? 'btn-secondary' : 'btn-primary'}`}
+              onClick={() => void onSelectMode('custom')}
+            >
+              Custom
+            </button>
           </div>
+        )}
+
+        {profileAssigned ? (
+          <>
+            <SearchableSelect
+              style={{ maxWidth: 420 }}
+              ariaLabel="Optimizer Profile"
+              value={assignedProfileId}
+              onChange={v => void onAssignProfile(v)}
+              disabled={!canManage}
+              options={[
+                ...profiles.filter(p => p.builtin).map(p => ({ value: p.id, label: `${p.label} (built-in)` })),
+                ...profiles.filter(p => !p.builtin).map(p => ({ value: p.id, label: p.label })),
+              ]}
+            />
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.45 }}>
+              Steps come from the profile and follow its changes. Edit them on the Profiles page, or switch to Custom to start from a copy of them.
+            </p>
+            {assignedProfile && assignedProfile.optimizers.steps.length > 0 && (
+              <ul style={{ margin: '12px 0 0', paddingLeft: 18, fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                {assignedProfile.optimizers.steps.map(s => (
+                  <li key={s.id}>
+                    {OPTIMIZER_LABELS[s.id] ?? s.id}
+                    {s.enabled ? '' : ' (disabled)'}
+                    {s.threshold != null ? `, threshold ${s.threshold}` : ''}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, ...(canManage ? {} : { pointerEvents: 'none', opacity: 0.6 }) }}>
-            {rows.map((row, idx) => (
-              <div
-                key={row.id}
-                id={`optimizer-row-${idx}`}
-                draggable={canManage}
-                onDragStart={(e) => onDragStart(e, idx)}
-                onDragEnter={(e) => onDragEnter(e, idx)}
-                onDragEnd={(e) => onDragEnd(e, idx)}
-                /* v8 ignore next */
-                onDragOver={(e) => e.preventDefault()}
-                style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 12,
-                  background: 'var(--surface-active)', padding: '12px',
-                  borderRadius: 8, border: '1px solid var(--border)',
-                  cursor: canManage ? 'grab' : 'default', transition: 'opacity 0.2s',
-                }}
-              >
-                <div style={{ color: 'var(--text-muted)', paddingTop: 2 }}><GripVertical size={16} /></div>
-                <label style={{ display: 'flex', alignItems: 'center', paddingTop: 1, cursor: canManage ? 'pointer' : 'default' }}>
-                  <input
-                    type="checkbox"
-                    checked={row.enabled}
-                    disabled={!canManage}
-                    onChange={() => toggle(idx)}
-                    style={{ width: 15, height: 15, accentColor: 'var(--primary)', cursor: canManage ? 'pointer' : 'default' }}
-                  />
-                </label>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{OPTIMIZER_LABELS[row.id]}</div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.45 }}>
-                    {OPTIMIZER_DESCRIPTIONS[row.id]}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                  <label style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Threshold</label>
-                  <input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    className="form-input"
-                    placeholder="auto"
-                    disabled={!canManage}
-                    style={{ width: 72, padding: '4px 8px', fontSize: '0.8rem' }}
-                    value={row.threshold ?? ''}
-                    onChange={e => setThreshold(idx, e.target.value)}
-                    onMouseDown={e => e.stopPropagation()}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+          <>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
+              Drag to reorder, toggle to enable. Some optimizers use a threshold to control how aggressively they trim.
+            </p>
+            <OptimizerStepsEditor rows={rows} setRows={setRows} disabled={!canManage} />
+          </>
         )}
       </div>
 
-      {canManage && rows.length > 0 && (
+      {canManage && !profileAssigned && rows.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
           <button type="button" className="btn btn-primary" disabled={saving} onClick={() => void doSave()}>
             {saving ? 'Saving...' : 'Save Optimizers'}
