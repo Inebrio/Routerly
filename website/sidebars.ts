@@ -53,7 +53,7 @@ const sidebars: SidebarsConfig = {
         'dashboard/users-and-roles',
         'dashboard/settings',
         'dashboard/playground',
-        'dashboard/clients',
+        'dashboard/connect',
         'dashboard/profile',
       ],
     },
@@ -109,13 +109,17 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: 'category',
-          label: 'Auto-configure',
+          label: 'Connect a client',
           items: [
             'integrations/clients/claude-code',
+            'integrations/clients/claude-desktop',
             'integrations/clients/codex',
             'integrations/clients/opencode',
             'integrations/clients/continue',
             'integrations/clients/cline',
+            'integrations/clients/zed',
+            'integrations/generic-openai',
+            'integrations/generic-anthropic',
           ],
         },
         {

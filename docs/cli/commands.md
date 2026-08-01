@@ -1538,12 +1538,14 @@ Exit code: `0` on success, `1` on error (all subcommands).
 
 ## `routerly clients`
 
-Configure local AI coding clients (Claude Code, Codex, OpenCode, Continue,
-Cline) to use Routerly. Unlike the rest of the CLI, these commands write
-files on **this machine** (your workstation running the CLI), not on the
-Routerly server. They edit the config file of a client tool installed
-locally. See [Integrations: Auto-configure](../integrations/overview.md#auto-configure)
-for one manual reference page per client.
+Connect local AI clients to Routerly. Unlike the rest of the CLI, these
+commands write files on **this machine** (your workstation running the CLI),
+not on the Routerly server: they edit the config file of a client tool
+installed locally. Clients that Routerly cannot safely write for get their
+manual steps printed instead. See [Integrations: Connect a
+client](../integrations/overview.md#connect-a-client) for one reference page
+per client, and [Dashboard: Connect](../dashboard/connect.md) for the same
+steps in the browser.
 
 These commands require a logged-in session (`routerly auth login`). No
 specific permission is required for `list`, `inspect`, `doctor`, `undo`,
@@ -1557,7 +1559,7 @@ is omitted) requires `project:write` permission on the target project.
 routerly clients list [--json]
 ```
 
-List every supported client with its support level.
+List every supported client with its support level and connect modes.
 
 **Table columns:**
 - **ID**: client identifier, used by `inspect`/`configure`/`launch`
@@ -1565,24 +1567,51 @@ List every supported client with its support level.
 - **Support**: `auto-configurable` (green, `configure` writes the file for
   you), `launchable` (green), `documented` (gray, manual-only, no file this
   CLI can safely write), `partial`/`stale` (yellow)
+- **Modes**: `llm` (the client's model traffic goes through Routerly),
+  `mcp` (the client loads Routerly as an MCP server), or both
 
 ```bash
 routerly clients list
 ```
 ```
-┌─────────────┬─────────────┬───────────────────┐
-│ ID          │ Label       │ Support           │
-├─────────────┼─────────────┼───────────────────┤
-│ claude-code │ Claude Code │ auto-configurable │
-├─────────────┼─────────────┼───────────────────┤
-│ codex       │ Codex       │ auto-configurable │
-├─────────────┼─────────────┼───────────────────┤
-│ opencode    │ OpenCode    │ auto-configurable │
-├─────────────┼─────────────┼───────────────────┤
-│ continue    │ Continue    │ auto-configurable │
-├─────────────┼─────────────┼───────────────────┤
-│ cline       │ Cline       │ documented        │
-└─────────────┴─────────────┴───────────────────┘
+┌───────────────────┬───────────────────────┬───────────────────┬──────────┐
+│ ID                │ Label                 │ Support           │ Modes    │
+├───────────────────┼───────────────────────┼───────────────────┼──────────┤
+│ claude-code       │ Claude Code           │ auto-configurable │ llm, mcp │
+├───────────────────┼───────────────────────┼───────────────────┼──────────┤
+│ claude-desktop    │ Claude Desktop        │ documented        │ mcp      │
+├───────────────────┼───────────────────────┼───────────────────┼──────────┤
+│ codex             │ Codex                 │ auto-configurable │ llm, mcp │
+├───────────────────┼───────────────────────┼───────────────────┼──────────┤
+│ opencode          │ OpenCode              │ auto-configurable │ llm, mcp │
+├───────────────────┼───────────────────────┼───────────────────┼──────────┤
+│ openclaw          │ OpenClaw              │ documented        │ llm, mcp │
+├───────────────────┼───────────────────────┼───────────────────┼──────────┤
+│ continue          │ Continue              │ auto-configurable │ llm      │
+├───────────────────┼───────────────────────┼───────────────────┼──────────┤
+│ cursor            │ Cursor                │ documented        │ llm      │
+├───────────────────┼───────────────────────┼───────────────────┼──────────┤
+│ cline             │ Cline                 │ documented        │ llm      │
+├───────────────────┼───────────────────────┼───────────────────┼──────────┤
+│ zed               │ Zed                   │ documented        │ llm      │
+├───────────────────┼───────────────────────┼───────────────────┼──────────┤
+│ generic-openai    │ Any OpenAI SDK app    │ documented        │ llm      │
+├───────────────────┼───────────────────────┼───────────────────┼──────────┤
+│ generic-anthropic │ Any Anthropic SDK app │ documented        │ llm      │
+└───────────────────┴───────────────────────┴───────────────────┴──────────┘
+```
+
+With `--json`, each entry carries `id`, `label`, `supportState` and `modes`:
+
+```json
+[
+  {
+    "id": "claude-code",
+    "label": "Claude Code",
+    "supportState": "auto-configurable",
+    "modes": ["llm", "mcp"]
+  }
+]
 ```
 
 ### `routerly clients inspect`
@@ -1683,16 +1712,58 @@ the write proceeds. `ROUTERLY_HOME` defaults to `~/.routerly` (overridable
 via the `ROUTERLY_HOME` env var). Every successful `configure` prints its
 `Backup ID`. Save it if you want to `undo` later.
 
-**Cline** (`documented`, not auto-configurable) always errors instead of
-writing a file:
+**Clients configured by hand** (`documented`) never have their file touched.
+`configure` prints the steps, with a real token, and exits `0`:
+
 ```bash
-routerly clients configure cline --project Test --yes
+routerly clients configure cline --project Test --token sk-rt-YOUR_PROJECT_TOKEN
 ```
 ```
-Error: Cline is not auto-configurable: it is configured through the extension's settings UI (gear icon panel: Base URL / API Key / Model ID), not a standalone file this CLI can safely edit. See docs: integrations/clients/cline
+Cline: is configured by hand
+
+Cline panel > settings (gear icon):
+1. API Provider: OpenAI Compatible.
+2. Base URL: http://localhost:3000/v1
+3. API Key: sk-rt-YOUR_PROJECT_TOKEN
+4. Model ID: routerly/ada, or any model registered in your project.
+
+Docs: https://doc.routerly.ai/next/integrations/clients/cline
 ```
-Exit code `1`. See [Integrations: Cline](../integrations/clients/cline.md)
-for the manual steps.
+
+Clients with a config file print the path plus the block to paste (Zed,
+`~/.config/zed/settings.json`); clients configured through environment
+variables print the variables (`generic-openai`, `generic-anthropic`).
+
+**MCP-only clients** print the `mcpServers` block and the command that mints
+the token. No project token is involved, so `--project` is not needed:
+
+```bash
+routerly clients configure claude-desktop
+```
+```
+Claude Desktop: connects over MCP only
+  Config file: ~/Library/Application Support/Claude/claude_desktop_config.json
+
+{
+  "mcpServers": {
+    "routerly": {
+      "command": "routerly",
+      "args": [
+        "mcp",
+        "serve"
+      ],
+      "env": {
+        "ROUTERLY_MCP_TOKEN": "<YOUR_MCP_TOKEN>"
+      }
+    }
+  }
+}
+
+Docs: https://doc.routerly.ai/next/integrations/clients/claude-desktop
+Create the token with `routerly mcp token create --label claude-desktop`.
+```
+
+See [`routerly mcp`](#routerly-mcp) for the token commands.
 
 ### `routerly clients doctor`
 
