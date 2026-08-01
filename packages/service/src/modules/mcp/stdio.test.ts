@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import type { ProjectConfig, ProjectToken } from '@routerly/shared'
+import type { McpAuthContext } from '@routerly/shared'
 
 vi.mock('../config/loader.js', () => ({
   readConfig: vi.fn(),
@@ -18,14 +18,9 @@ import {
   OBSERVABILITY,
   CONFIG_STORE,
 } from '../../core/tokens.js'
+import { mcpAuthContext } from '../../test-support/mcp-auth.js'
 import { mcpModule } from './index.js'
 import { startStdioServer } from './stdio.js'
-
-const PROJECT: ProjectConfig = {
-  id: 'proj-1',
-  name: 'Alpha',
-  models: [{ modelId: 'openai/gpt-4o' }],
-} as ProjectConfig
 
 /** Populate a container with every service token, then build the full registry. */
 async function fullRegistry() {
@@ -39,13 +34,13 @@ async function fullRegistry() {
   return { container: rt.container, registry: rt.container.resolve(MCP_TOOLS) }
 }
 
-/** A resolveAuth double that returns a token with the given scopes/expiry. */
-function fakeResolveAuth(token: ProjectToken) {
-  return async () => ({ project: PROJECT, token })
+/** A resolveAuth double returning a fixed context, like buildAuthContext would. */
+function fakeResolveAuth(context: McpAuthContext) {
+  return async () => ({ context })
 }
 
 beforeEach(() => {
-  process.env['ROUTERLY_MCP_TOKEN'] = 'sk-rt-stdio-token'
+  process.env['ROUTERLY_MCP_TOKEN'] = 'sk-rt-mcp-stdio-token'
 })
 
 afterEach(() => {
@@ -57,8 +52,7 @@ describe('startStdioServer', () => {
     const { container, registry } = await fullRegistry()
     const [clientSide, serverSide] = InMemoryTransport.createLinkedPair()
 
-    const token = { id: 'tok-1', token: 'sk-rt-stdio-token', scopes: ['mcp'] } as ProjectToken
-    await startStdioServer(registry, container, fakeResolveAuth(token), serverSide)
+    await startStdioServer(registry, container, fakeResolveAuth(mcpAuthContext()), serverSide)
 
     const client = new Client({ name: 'test', version: '0.0.0' })
     await client.connect(clientSide)
@@ -74,44 +68,42 @@ describe('startStdioServer', () => {
     await client.close()
   })
 
+  it('exposes only the tools the token owner has permission for', async () => {
+    const { container, registry } = await fullRegistry()
+    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair()
+
+    await startStdioServer(
+      registry,
+      container,
+      fakeResolveAuth(mcpAuthContext({ permissions: ['model:read'] })),
+      serverSide,
+    )
+
+    const client = new Client({ name: 'test', version: '0.0.0' })
+    await client.connect(clientSide)
+
+    const names = (await client.listTools()).tools.map((t) => t.name)
+    expect(names).toEqual(['list_models', 'get_model'])
+
+    await client.close()
+  })
+
   it('throws when ROUTERLY_MCP_TOKEN is unset', async () => {
     delete process.env['ROUTERLY_MCP_TOKEN']
     const { container, registry } = await fullRegistry()
     const [, serverSide] = InMemoryTransport.createLinkedPair()
-    const token = { id: 'tok-1', token: 'x', scopes: ['mcp'] } as ProjectToken
+
     await expect(
-      startStdioServer(registry, container, fakeResolveAuth(token), serverSide),
+      startStdioServer(registry, container, fakeResolveAuth(mcpAuthContext()), serverSide),
     ).rejects.toThrow(/ROUTERLY_MCP_TOKEN is required/)
   })
 
-  it('throws when the resolved token lacks the mcp scope', async () => {
+  it('throws with the resolver message when the token is rejected', async () => {
     const { container, registry } = await fullRegistry()
     const [, serverSide] = InMemoryTransport.createLinkedPair()
-    const token = { id: 'tok-1', token: 'sk-rt-stdio-token', scopes: [] } as unknown as ProjectToken
-    await expect(
-      startStdioServer(registry, container, fakeResolveAuth(token), serverSide),
-    ).rejects.toThrow(/mcp/)
-  })
 
-  it('throws when the token is not found', async () => {
-    const { container, registry } = await fullRegistry()
-    const [, serverSide] = InMemoryTransport.createLinkedPair()
     await expect(
-      startStdioServer(registry, container, async () => null, serverSide),
-    ).rejects.toThrow(/Invalid ROUTERLY_MCP_TOKEN/)
-  })
-
-  it('throws when the token is expired', async () => {
-    const { container, registry } = await fullRegistry()
-    const [, serverSide] = InMemoryTransport.createLinkedPair()
-    const token = {
-      id: 'tok-1',
-      token: 'sk-rt-stdio-token',
-      scopes: ['mcp'],
-      expiresAt: '2000-01-01T00:00:00.000Z',
-    } as ProjectToken
-    await expect(
-      startStdioServer(registry, container, fakeResolveAuth(token), serverSide),
-    ).rejects.toThrow(/expired/)
+      startStdioServer(registry, container, async () => ({ error: 'MCP token expired.' }), serverSide),
+    ).rejects.toThrow(/MCP token expired/)
   })
 })

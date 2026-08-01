@@ -19,13 +19,12 @@ export const ALL_PERMISSIONS: Permission[] = [
   'resilience:read', 'resilience:manage',
   'profiles:read', 'profiles:manage',
   'optimizers:read', 'optimizers:manage',
-  'mcp:read', 'mcp:manage',
 ];
 
 export const BUILT_IN_ROLES: RoleConfig[] = [
   { id: 'admin',    name: 'Admin',    permissions: ALL_PERMISSIONS },
-  { id: 'viewer',   name: 'Viewer',   permissions: ['project:read', 'model:read', 'report:read', 'settings:read', 'token:read', 'audit:read', 'modules:read', 'connections:read', 'profiles:read', 'optimizers:read', 'mcp:read'] },
-  { id: 'operator', name: 'Operator', permissions: ['project:read', 'project:write', 'model:read', 'model:write', 'report:read', 'user:read', 'settings:read', 'token:read', 'token:write', 'notification:write', 'modules:read', 'connections:read', 'connections:manage', 'profiles:read', 'profiles:manage', 'optimizers:read', 'optimizers:manage', 'mcp:read'] },
+  { id: 'viewer',   name: 'Viewer',   permissions: ['project:read', 'model:read', 'report:read', 'settings:read', 'token:read', 'audit:read', 'modules:read', 'connections:read', 'profiles:read', 'optimizers:read'] },
+  { id: 'operator', name: 'Operator', permissions: ['project:read', 'project:write', 'model:read', 'model:write', 'report:read', 'user:read', 'settings:read', 'token:read', 'token:write', 'notification:write', 'modules:read', 'connections:read', 'connections:manage', 'profiles:read', 'profiles:manage', 'optimizers:read', 'optimizers:manage'] },
 ];
 
 /** Merge built-in roles with custom roles (custom cannot shadow built-in IDs). */

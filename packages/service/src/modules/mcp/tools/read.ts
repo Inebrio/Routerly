@@ -13,13 +13,14 @@ import { readUsageRecords } from '../../usage/usageStore.js'
 import { getLimitUsageSnapshot } from '../../budget/budget.js'
 import { getMetricsSnapshot, percentile } from '../../observability/metrics-snapshot.js'
 import type { McpToolEntry } from '../registry.js'
+import { errorResult, jsonResult, resolveProject, PROJECT_ID_PROPERTY } from './context.js'
 
 /**
  * list_models: enumerate the models configured on this gateway for MCP clients.
- * Read scope, global (models are gateway-wide, not project-owned) so authCtx is
- * unused. The output whitelists only id/provider/contextWindow, a
- * strictly safer stance than api.ts's `apiKey: undefined, cfClearance: undefined`
- * blacklist, since a fresh object cannot carry any provider credential fields.
+ * Gateway-wide (models are not project-owned), so no project resolution. The
+ * output whitelists only id/provider/contextWindow, a strictly safer stance than
+ * api.ts's `apiKey: undefined, cfClearance: undefined` blacklist, since a fresh
+ * object cannot carry any provider credential fields.
  * // ponytail: gated on CATALOG (the models feature's DI token); the handler
  * // reads config directly like api.ts rather than resolving a DI token, as the
  * // McpTool.handler signature carries no container.
@@ -30,25 +31,21 @@ export const listModelsTool: McpToolEntry = {
     'List the models configured on this Routerly gateway (id, provider, context window). No secrets are returned.',
   inputSchema: { type: 'object', properties: {}, additionalProperties: false },
   scope: 'read',
+  permission: 'model:read',
   requires: CATALOG,
   async handler() {
     // read-only management listing: show disabled-connection models too
     const models = await listEffectiveModelsIncludingDisabled()
-    const list = models.map((m) => ({
-      id: m.id,
-      provider: m.provider,
-      contextWindow: m.contextWindow,
-    }))
-    return { content: [{ type: 'text', text: JSON.stringify(list, null, 2) }] }
+    return jsonResult(
+      models.map((m) => ({ id: m.id, provider: m.provider, contextWindow: m.contextWindow })),
+    )
   },
 }
 
 /**
  * get_model: return one model's public config (same whitelist as list_models).
- * Read scope, global (gateway-wide), so authCtx is unused. Not-found is reported
- * as an isError McpToolResult, not a thrown exception, keeping the tool contract.
- * // ponytail: same CATALOG gate + direct readConfig as list_models; no DI
- * // container at handler-call time (McpTool.handler carries none).
+ * Gateway-wide. Not-found is reported as an isError McpToolResult, not a thrown
+ * exception, keeping the tool contract.
  */
 export const getModelInstanceTool: McpToolEntry = {
   name: 'get_model',
@@ -61,144 +58,163 @@ export const getModelInstanceTool: McpToolEntry = {
     additionalProperties: false,
   },
   scope: 'read',
+  permission: 'model:read',
   requires: CATALOG,
   async handler(input) {
     const { id } = (input ?? {}) as { id?: string }
     // read-only management lookup: show disabled-connection models too
     const models = await listEffectiveModelsIncludingDisabled()
     const m = models.find((x) => x.id === id)
-    if (!m) {
-      return {
-        content: [{ type: 'text', text: `Model not found: ${String(id)}` }],
-        isError: true,
-      }
-    }
-    const out = { id: m.id, provider: m.provider, contextWindow: m.contextWindow }
-    return { content: [{ type: 'text', text: JSON.stringify(out, null, 2) }] }
+    if (!m) return errorResult(`Model not found: ${String(id)}`)
+    return jsonResult({ id: m.id, provider: m.provider, contextWindow: m.contextWindow })
   },
 }
 
 /**
- * route_preview: run the router's scoring pipeline for the auth project and return
- * the ordered candidate models (id + weight) plus the reasoning trace, without
- * forwarding anything upstream. routeRequest only scores and orders candidates; it
- * makes no provider call. The trace is already secret-free (router redacts
- * key/secret/token/password from policy config) and candidates carry only ids/weights.
+ * route_preview: run the router's scoring pipeline for one accessible project and
+ * return the ordered candidate models (id + weight) plus the reasoning trace,
+ * without forwarding anything upstream. routeRequest only scores and orders
+ * candidates; it makes no provider call. The trace is already secret-free (router
+ * redacts key/secret/token/password from policy config) and candidates carry only
+ * ids/weights.
  */
 export const routePreviewTool: McpToolEntry = {
   name: 'route_preview',
   description:
-    'Preview which model(s) this project would route a request to (ordered candidates + reasoning trace). Does not call any provider. No secrets are returned.',
+    'Preview which model(s) a project would route a request to (ordered candidates + reasoning trace). Does not call any provider. No secrets are returned.',
   inputSchema: {
     type: 'object',
     properties: {
+      ...PROJECT_ID_PROPERTY,
       model: { type: 'string' },
       messages: { type: 'array', items: { type: 'object' } },
     },
     additionalProperties: false,
   },
   scope: 'read',
+  permission: 'project:read',
   requires: ROUTER,
   async handler(input, authCtx) {
-    const inp = (input ?? {}) as { model?: string; messages?: ChatCompletionRequest['messages'] }
-    const request: ChatCompletionRequest = {
-      model: inp.model ?? '',
-      messages: inp.messages ?? [],
+    const inp = (input ?? {}) as {
+      projectId?: string
+      model?: string
+      messages?: ChatCompletionRequest['messages']
     }
-    const result = await routeRequest(
-      request,
-      authCtx.project,
-      undefined,
-      undefined,
-      authCtx.token,
-    )
-    const out = { models: result.models, trace: result.trace }
-    return { content: [{ type: 'text', text: JSON.stringify(out, null, 2) }] }
+    const resolved = resolveProject(authCtx, inp.projectId)
+    if ('error' in resolved) return resolved.error
+
+    const request: ChatCompletionRequest = { model: inp.model ?? '', messages: inp.messages ?? [] }
+    const result = await routeRequest(request, resolved.project)
+    return jsonResult({ models: result.models, trace: result.trace })
   },
 }
 
 /**
- * get_usage_summary: aggregate call count / cost / tokens for the AUTH project over a
- * trailing window (default 24h). Reads usage directly via readUsageRecords because the
- * USAGE_TRACKER token exposes only trackUsage, not read access (documented spec gap).
- * Filtered to authCtx.project.id, never other projects' records.
+ * get_usage_summary: aggregate call count / cost / tokens for one accessible
+ * project over a trailing window (default 24h). Reads usage directly via
+ * readUsageRecords because the USAGE_TRACKER token exposes only trackUsage, not
+ * read access (documented spec gap). Filtered to the resolved project, never to
+ * projects the token owner cannot reach.
  */
 export const usageSummaryTool: McpToolEntry = {
   name: 'get_usage_summary',
   description:
-    "Summarize this project's usage over a trailing window (default 24 hours): call count, cost (USD), input/output tokens. Scoped to the calling project only.",
+    "Summarize a project's usage over a trailing window (default 24 hours): call count, cost (USD), input/output tokens.",
   inputSchema: {
     type: 'object',
-    properties: { windowHours: { type: 'number' } },
+    properties: { ...PROJECT_ID_PROPERTY, windowHours: { type: 'number' } },
     additionalProperties: false,
   },
   scope: 'read',
+  permission: 'report:read',
   requires: USAGE_TRACKER,
   async handler(input, authCtx) {
-    const { windowHours = 24 } = (input ?? {}) as { windowHours?: number }
+    const { projectId, windowHours = 24 } = (input ?? {}) as {
+      projectId?: string
+      windowHours?: number
+    }
+    const resolved = resolveProject(authCtx, projectId)
+    if ('error' in resolved) return resolved.error
+
     const since = Date.now() - windowHours * 3_600_000
     const records = await readUsageRecords()
     const scoped = records.filter(
-      (r) => r.projectId === authCtx.project.id && new Date(r.timestamp).getTime() >= since,
+      (r) => r.projectId === resolved.project.id && new Date(r.timestamp).getTime() >= since,
     )
-    const out = {
-      projectId: authCtx.project.id,
+    return jsonResult({
+      projectId: resolved.project.id,
       windowHours,
       count: scoped.length,
       cost: +scoped.reduce((s, r) => s + r.cost, 0).toFixed(6),
       inputTokens: scoped.reduce((s, r) => s + r.inputTokens, 0),
       outputTokens: scoped.reduce((s, r) => s + r.outputTokens, 0),
-    }
-    return { content: [{ type: 'text', text: JSON.stringify(out, null, 2) }] }
+    })
   },
 }
 
 /**
- * get_budget_status: per-model limit-usage snapshots for the AUTH project. Calls
- * getLimitUsageSnapshot once per project model, resolving each ModelConfig from the
- * catalog by id. The snapshot already scopes to project/token internally and echoes
- * only limit metrics/windows/values, never provider keys.
+ * get_budget_status: per-model limit-usage snapshots for one accessible project.
+ * Calls getLimitUsageSnapshot once per project model, resolving each ModelConfig
+ * from the catalog by id. The snapshot echoes only limit metrics/windows/values,
+ * never provider keys.
  */
 export const budgetStatusTool: McpToolEntry = {
   name: 'get_budget_status',
   description:
-    "Report current budget/limit usage for each of this project's models (metric, window, limit, current, remaining). Scoped to the calling project only. No secrets are returned.",
-  inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    "Report current budget/limit usage for each of a project's models (metric, window, limit, current, remaining). No secrets are returned.",
+  inputSchema: {
+    type: 'object',
+    properties: { ...PROJECT_ID_PROPERTY },
+    additionalProperties: false,
+  },
   scope: 'read',
+  permission: 'report:read',
   requires: BUDGET,
-  async handler(_input, authCtx) {
+  async handler(input, authCtx) {
+    const { projectId } = (input ?? {}) as { projectId?: string }
+    const resolved = resolveProject(authCtx, projectId)
+    if ('error' in resolved) return resolved.error
+
     // budget/usage reporting: still account for disabled-connection models
     const models = await listEffectiveModelsIncludingDisabled()
     const perModel = await Promise.all(
-      authCtx.project.models.map(async (ref) => {
+      resolved.project.models.map(async (ref) => {
         const model = models.find((m) => m.id === ref.modelId)
         if (!model) return null
-        const limits = await getLimitUsageSnapshot(model, authCtx.project, authCtx.token)
+        const limits = await getLimitUsageSnapshot(model, resolved.project)
         return { modelId: ref.modelId, limits }
       }),
     )
-    const out = perModel.filter((x): x is NonNullable<typeof x> => x !== null)
-    return { content: [{ type: 'text', text: JSON.stringify(out, null, 2) }] }
+    return jsonResult(perModel.filter((x): x is NonNullable<typeof x> => x !== null))
   },
 }
 
 /**
- * get_metrics_snapshot: aggregate request/token/cost/latency metrics for the AUTH
- * project only. getMetricsSnapshot() is global (every project's name + every model),
- * so the raw snapshot would be a cross-project leak. Filter every aggregate to rows
- * labelled with this project's name and drop the projects list and model catalog,
- * consistent with the other project-scoped tools in this task.
+ * get_metrics_snapshot: aggregate request/token/cost/latency metrics for one
+ * accessible project. getMetricsSnapshot() is global (every project's name + every
+ * model), so the raw snapshot would be a cross-project leak. Filter every
+ * aggregate to rows labelled with the resolved project's name and drop the
+ * projects list and model catalog.
  */
 export const metricsSnapshotTool: McpToolEntry = {
   name: 'get_metrics_snapshot',
   description:
-    "Aggregate metrics for this project only (requests by status, tokens, cost, latency percentiles). Scoped to the calling project; other projects' data is never returned.",
-  inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    "Aggregate metrics for one project (requests by status, tokens, cost, latency percentiles). Other projects' data is never returned.",
+  inputSchema: {
+    type: 'object',
+    properties: { ...PROJECT_ID_PROPERTY },
+    additionalProperties: false,
+  },
   scope: 'read',
+  permission: 'report:read',
   requires: OBSERVABILITY,
-  async handler(_input, authCtx) {
+  async handler(input, authCtx) {
+    const { projectId } = (input ?? {}) as { projectId?: string }
+    const resolved = resolveProject(authCtx, projectId)
+    if ('error' in resolved) return resolved.error
+
     const snap = await getMetricsSnapshot()
-    const pname = authCtx.project.name
+    const pname = resolved.project.name
     const rows = (
       map: Map<string, { labels: Record<string, string>; value: number }>,
     ): Array<Record<string, unknown>> =>
@@ -219,38 +235,32 @@ export const metricsSnapshotTool: McpToolEntry = {
           p95: percentile(sorted, 95),
         }
       })
-    const out = {
-      project: { id: authCtx.project.id, name: pname },
+    return jsonResult({
+      project: { id: resolved.project.id, name: pname },
       requests: rows(snap.agg.requests),
       tokens: rows(snap.agg.tokens),
       cost: rows(snap.agg.cost),
       latency,
-    }
-    return { content: [{ type: 'text', text: JSON.stringify(out, null, 2) }] }
+    })
   },
 }
 
 /**
- * list_projects: return ONLY the auth project (id, name, model count). Derived
- * straight from authCtx.project so no other project can ever appear in the output.
- * // ponytail: leak-proof by construction, no readConfig('projects') scan needed;
- * // the CONFIG_STORE gate is the capability marker (Task 5 wires container.has).
+ * list_projects: return the projects this token's owner can reach (id, name,
+ * model count). Derived straight from authCtx.projects, so a project outside the
+ * owner's scope can never appear in the output.
  */
 export const listProjectsTool: McpToolEntry = {
   name: 'list_projects',
   description:
-    'List the project this token belongs to (id, name, model count). Only the calling project is returned.',
+    'List the projects this token can reach (id, name, model count). Projects outside the token owner\'s scope are never returned.',
   inputSchema: { type: 'object', properties: {}, additionalProperties: false },
   scope: 'read',
+  permission: 'project:read',
   requires: CONFIG_STORE,
   async handler(_input, authCtx) {
-    const out = [
-      {
-        id: authCtx.project.id,
-        name: authCtx.project.name,
-        modelCount: authCtx.project.models.length,
-      },
-    ]
-    return { content: [{ type: 'text', text: JSON.stringify(out, null, 2) }] }
+    return jsonResult(
+      authCtx.projects.map((p) => ({ id: p.id, name: p.name, modelCount: p.models.length })),
+    )
   },
 }

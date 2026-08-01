@@ -2,15 +2,16 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import type { Transport, TransportSendOptions } from '@modelcontextprotocol/sdk/shared/transport.js'
 import type { JSONRPCMessage, MessageExtraInfo } from '@modelcontextprotocol/sdk/types.js'
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js'
-import type { ProjectConfig, ProjectToken } from '@routerly/shared'
+import type { McpAuthContext } from '@routerly/shared'
 import type { ServiceContainer } from '../../core/index.js'
 import type { McpToolRegistry } from './registry.js'
 import { buildMcpServer } from './server.js'
+import { buildAuthContext } from './auth-context.js'
 
-/** Resolves a raw project-token string to its project + token, or null. */
+/** Resolves a raw MCP token to the context every tool runs with, or an error message. */
 type ResolveAuth = (
   token: string,
-) => Promise<{ project: ProjectConfig; token: ProjectToken } | null>
+) => Promise<{ context: McpAuthContext } | { error: string }>
 
 /**
  * Transport wrapper that re-injects a fixed, pre-resolved `AuthInfo` on every
@@ -55,23 +56,27 @@ class FixedAuthTransport implements Transport {
 
 /**
  * Start the local stdio MCP server. Opt-in local tooling gated by
- * `ROUTERLY_MCP_STDIO=1` (see index.ts). Identity comes from the
- * `ROUTERLY_MCP_TOKEN` project token; the same scope/expiry rules the HTTP
- * transport enforces per-request (auth.ts authPlugin mirror) apply here once, at
- * startup. A missing, invalid, expired or under-scoped token makes this mode
+ * `ROUTERLY_MCP_STDIO=1` (see index.ts). Identity comes from the personal
+ * `ROUTERLY_MCP_TOKEN`, resolved through the same `buildAuthContext` the HTTP
+ * transport uses per-request; here it runs once, at startup, because the process
+ * serves exactly one user. A missing, invalid or expired token makes this mode
  * pointless, so it fails loudly (throws) rather than starting a dead server.
+ *
+ * The resulting context is fixed for the process lifetime: permissions are read
+ * at startup, so a role change requires a restart. That matches the single-user,
+ * short-lived nature of a stdio session.
  *
  * `server.connect(transport)` resolves once `transport.start()` resolves (for
  * stdio: immediately, after attaching stdin listeners), NOT when the session
  * closes, so awaiting this does not block module boot.
  *
- * `baseTransport` is injectable for tests (an `InMemoryTransport`); the 3-arg
- * call site in index.ts uses the default `StdioServerTransport`.
+ * `resolveAuth` and `baseTransport` are injectable for tests (an
+ * `InMemoryTransport`); the 2-arg call site in index.ts uses the defaults.
  */
 export async function startStdioServer(
   registry: McpToolRegistry,
   container: ServiceContainer,
-  resolveAuth: ResolveAuth,
+  resolveAuth: ResolveAuth = buildAuthContext,
   baseTransport: Transport = new StdioServerTransport(),
 ): Promise<void> {
   const rawToken = process.env['ROUTERLY_MCP_TOKEN']
@@ -80,25 +85,15 @@ export async function startStdioServer(
   }
 
   const resolved = await resolveAuth(rawToken)
-  if (!resolved) {
-    throw new Error('Invalid ROUTERLY_MCP_TOKEN')
-  }
-
-  const { project, token } = resolved
-  if (token.expiresAt && new Date(token.expiresAt) < new Date()) {
-    throw new Error('ROUTERLY_MCP_TOKEN has expired')
-  }
-
-  const scopes = token.scopes ?? []
-  if (!scopes.includes('mcp')) {
-    throw new Error("ROUTERLY_MCP_TOKEN lacks the required 'mcp' scope")
+  if ('error' in resolved) {
+    throw new Error(`ROUTERLY_MCP_TOKEN rejected: ${resolved.error}`)
   }
 
   const authInfo: AuthInfo = {
     token: rawToken,
-    clientId: project.id,
-    scopes,
-    extra: { project, projectToken: token },
+    clientId: resolved.context.user.id,
+    scopes: resolved.context.permissions,
+    extra: { mcpContext: resolved.context },
   }
 
   const server = buildMcpServer(registry, container)

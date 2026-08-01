@@ -1,27 +1,34 @@
 import { describe, it, expect } from 'vitest';
-import type { Permission, ProjectToken } from './config.js';
+import type { McpToken, UserConfig } from './config.js';
 
-// Type-level: the two new MCP permissions are assignable to Permission.
-const mcpRead: Permission = 'mcp:read';
-const mcpManage: Permission = 'mcp:manage';
-
-// Type-level + runtime: ProjectToken accepts a scopes array.
-const token: ProjectToken = {
+const mcpToken: McpToken = {
   id: 't1',
-  token: 'sk-rt-secret',
-  createdAt: '2026-07-28T00:00:00.000Z',
-  scopes: ['mcp'],
+  name: 'laptop',
+  tokenHash: 'b'.repeat(64),
+  tokenSnippet: 'sk-rt-mcp-abc',
+  createdAt: '2026-08-01T00:00:00.000Z',
 };
 
-describe('MCP permissions', () => {
-  it('exposes mcp:read and mcp:manage as valid permissions', () => {
-    const perms: Permission[] = [mcpRead, mcpManage];
-    expect(perms).toEqual(['mcp:read', 'mcp:manage']);
+const user: UserConfig = {
+  id: 'u1',
+  email: 'dev@routerly.ai',
+  passwordHash: '$2b$12$hash',
+  roleId: 'admin',
+  projectIds: [],
+  mcpTokens: [mcpToken],
+};
+
+describe('McpToken', () => {
+  it('stores a hash and a snippet, never the raw token', () => {
+    expect(Object.keys(mcpToken)).not.toContain('token');
+    expect(mcpToken.tokenHash).toHaveLength(64);
+    expect(mcpToken.tokenSnippet.startsWith('sk-rt-mcp-')).toBe(true);
   });
 });
 
-describe('ProjectToken.scopes', () => {
-  it('accepts an mcp scope array', () => {
-    expect(token.scopes).toEqual(['mcp']);
+describe('UserConfig.mcpTokens', () => {
+  it('holds the user-owned MCP tokens', () => {
+    expect(user.mcpTokens).toHaveLength(1);
+    expect(user.mcpTokens?.[0]?.name).toBe('laptop');
   });
 });

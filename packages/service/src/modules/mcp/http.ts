@@ -1,17 +1,18 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js'
-import { extractProjectToken, resolveProjectByToken } from '../auth/auth.js'
+import { extractProjectToken } from '../auth/auth.js'
 import { MCP_TOOLS } from '../../core/tokens.js'
 import { buildMcpServer } from './server.js'
+import { buildAuthContext } from './auth-context.js'
 
 /**
  * MCP Streamable HTTP entrypoint at POST /mcp.
  *
  * This route is self-authenticating (authPlugin's preHandler skips /mcp): it
- * resolves the project token itself, rejects on missing token (401), expired
- * token (401) or a token that lacks the 'mcp' scope (403), then hands off to the
- * SDK's StreamableHTTPServerTransport. It attaches an `AuthInfo` to the raw Node
+ * resolves the caller's personal MCP token itself, rejects on missing token
+ * (401) or expired/unknown token (401), then hands off to the SDK's
+ * StreamableHTTPServerTransport. It attaches an `AuthInfo` to the raw Node
  * request as `req.auth` before the handoff, the shape buildMcpServer's handlers
  * read via `extra.authInfo` (see server.ts toAuthContext). Transport and Server
  * are built fresh per request: stateless mode (no sessionIdGenerator) has no
@@ -24,26 +25,13 @@ export const mcpHttpRoutes: FastifyPluginAsync = async (fastify) => {
     if (!incomingToken) {
       return reply.status(401).send({
         error: 'unauthorized',
-        message: 'Missing or invalid Authorization header. Expected: Bearer <project-token>',
+        message: 'Missing or invalid Authorization header. Expected: Bearer <mcp-token>',
       })
     }
 
-    const resolved = await resolveProjectByToken(incomingToken)
-    if (!resolved) {
-      return reply.status(401).send({ error: 'unauthorized', message: 'Invalid project token.' })
-    }
-
-    const { project, token } = resolved
-    if (token.expiresAt && new Date(token.expiresAt) < new Date()) {
-      return reply.status(401).send({ error: 'Token expired' })
-    }
-
-    const scopes = token.scopes ?? []
-    if (!scopes.includes('mcp')) {
-      return reply.status(403).send({
-        error: 'forbidden',
-        message: "Project token lacks the 'mcp' scope required to use the MCP endpoint.",
-      })
+    const resolved = await buildAuthContext(incomingToken)
+    if ('error' in resolved) {
+      return reply.status(401).send({ error: 'unauthorized', message: resolved.error })
     }
 
     const container = fastify.kernel.container
@@ -59,9 +47,9 @@ export const mcpHttpRoutes: FastifyPluginAsync = async (fastify) => {
 
     const auth: AuthInfo = {
       token: incomingToken,
-      clientId: project.id,
-      scopes,
-      extra: { project, projectToken: token },
+      clientId: resolved.context.user.id,
+      scopes: resolved.context.permissions,
+      extra: { mcpContext: resolved.context },
     }
     ;(request.raw as typeof request.raw & { auth?: AuthInfo }).auth = auth
 

@@ -8,6 +8,7 @@ function entry(overrides: Partial<McpToolEntry> = {}): McpToolEntry {
     description: 'health probe',
     inputSchema: { type: 'object', properties: {} },
     scope: 'read',
+    permission: 'model:read',
     requires: token<unknown>('test.dep'),
     async handler() {
       return { content: [{ type: 'text', text: 'pong' }] }

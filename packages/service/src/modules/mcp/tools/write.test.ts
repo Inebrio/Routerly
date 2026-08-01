@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { McpAuthContext, ProjectConfig, ProjectToken } from '@routerly/shared'
+import type { McpAuthContext, ProjectConfig } from '@routerly/shared'
 
 vi.mock('../../config/loader.js', () => ({
   readConfig: vi.fn(),
@@ -7,8 +7,9 @@ vi.mock('../../config/loader.js', () => ({
 }))
 
 import { readConfig, writeConfig } from '../../config/loader.js'
-import { assertWriteScope, createProjectTokenTool, toggleModelTool } from './write.js'
+import { createProjectTokenTool, toggleModelTool } from './write.js'
 import { expectNoSecrets } from './expectNoSecrets.js'
+import { mcpAuthContext } from '../../../test-support/mcp-auth.js'
 
 const mockReadConfig = vi.mocked(readConfig)
 const mockWriteConfig = vi.mocked(writeConfig)
@@ -24,10 +25,9 @@ function makeProject(overrides: Partial<ProjectConfig> = {}): ProjectConfig {
   } as ProjectConfig
 }
 
-const token = { id: 'tok-1', token: SECRET_KEY } as unknown as ProjectToken
-
-function authCtx(scopes: string[], project = makeProject()): McpAuthContext {
-  return { project, token, scopes } as McpAuthContext
+/** Auth context reaching exactly the given project, so projectId stays optional. */
+function authCtx(project = makeProject()): McpAuthContext {
+  return mcpAuthContext({ projects: [project] })
 }
 
 beforeEach(() => {
@@ -36,56 +36,25 @@ beforeEach(() => {
   mockWriteConfig.mockResolvedValue(undefined as never)
 })
 
-describe('assertWriteScope', () => {
-  it('throws when the mcp:write scope is absent', () => {
-    expect(() => assertWriteScope(authCtx([]))).toThrow('mcp:write')
-    expect(() => assertWriteScope(authCtx(['mcp']))).toThrow('mcp:write')
-  })
-
-  it('does not throw when the mcp:write scope is present', () => {
-    expect(() => assertWriteScope(authCtx(['mcp', 'mcp:write']))).not.toThrow()
-  })
-})
-
-describe('write tools without mcp:write scope', () => {
-  it('createProjectTokenTool rejects and performs no write', async () => {
-    await expect(
-      createProjectTokenTool.handler({ scopes: ['mcp'] }, authCtx(['mcp'])),
-    ).rejects.toThrow('mcp:write')
-    expect(mockWriteConfig).not.toHaveBeenCalled()
-    expect(mockReadConfig).not.toHaveBeenCalled()
-  })
-
-  it('toggleModelTool rejects and performs no write', async () => {
-    await expect(
-      toggleModelTool.handler({ modelId: 'openai/gpt-4o' }, authCtx(['mcp'])),
-    ).rejects.toThrow('mcp:write')
-    expect(mockWriteConfig).not.toHaveBeenCalled()
-    expect(mockReadConfig).not.toHaveBeenCalled()
-  })
-})
-
 describe('createProjectTokenTool', () => {
-  it('is a write-scoped tool gated on the config-store DI token', () => {
+  it('is a write-scoped tool gated on token:write and the config-store DI token', () => {
     expect(createProjectTokenTool.name).toBe('create_project_token')
     expect(createProjectTokenTool.scope).toBe('write')
+    expect(createProjectTokenTool.permission).toBe('token:write')
     expect(createProjectTokenTool.requires.key).toBe('config.store')
   })
 
-  it('persists a new plaintext token onto the auth project and returns no raw token', async () => {
+  it('persists a new plaintext token onto the resolved project and returns no raw token', async () => {
     const project = makeProject({ tokens: [] })
     mockReadConfig.mockResolvedValue([project, makeProject({ id: 'proj-2', name: 'Beta' })] as never)
 
-    const res = await createProjectTokenTool.handler(
-      { scopes: ['mcp', 'mcp:write'] },
-      authCtx(['mcp:write'], project),
-    )
+    const res = await createProjectTokenTool.handler({ scopes: ['chat'] }, authCtx(project))
 
     expect(res.isError).toBeUndefined()
     const parsed = JSON.parse(res.content[0]!.text)
     // Exactly the four allowed keys, no raw token.
     expect(Object.keys(parsed).sort()).toEqual(['createdAt', 'id', 'scopes', 'tokenSnippet'])
-    expect(parsed.scopes).toEqual(['mcp', 'mcp:write'])
+    expect(parsed.scopes).toEqual(['chat'])
     expect(parsed.tokenSnippet).toMatch(/^sk-rt-/)
 
     // The raw token was persisted (plaintext, by design) but never surfaced.
@@ -94,7 +63,7 @@ describe('createProjectTokenTool', () => {
     const writtenProjects = written[1] as ProjectConfig[]
     const persisted = writtenProjects[0]!.tokens![0]!
     expect(persisted.token).toMatch(/^sk-rt-[0-9a-f]{64}$/)
-    expect(persisted.scopes).toEqual(['mcp', 'mcp:write'])
+    expect(persisted.scopes).toEqual(['chat'])
     // proj-2 is untouched.
     expect(writtenProjects[1]!.tokens).toBeUndefined()
 
@@ -107,7 +76,7 @@ describe('createProjectTokenTool', () => {
     const project = makeProject()
     mockReadConfig.mockResolvedValue([project] as never)
 
-    const res = await createProjectTokenTool.handler({}, authCtx(['mcp:write'], project))
+    const res = await createProjectTokenTool.handler({}, authCtx(project))
 
     const parsed = JSON.parse(res.content[0]!.text)
     expect(parsed.scopes).toEqual([])
@@ -116,10 +85,36 @@ describe('createProjectTokenTool', () => {
     expectNoSecrets(res.content[0]!.text, [persisted.token])
   })
 
-  it('returns isError when the auth project is missing from config', async () => {
+  it('mints on the project named by projectId when several are accessible', async () => {
+    const alpha = makeProject()
+    const beta = makeProject({ id: 'proj-2', name: 'Beta' })
+    mockReadConfig.mockResolvedValue([alpha, beta] as never)
+
+    const res = await createProjectTokenTool.handler(
+      { projectId: 'Beta' },
+      mcpAuthContext({ projects: [alpha, beta] }),
+    )
+
+    expect(res.isError).toBeUndefined()
+    const writtenProjects = mockWriteConfig.mock.calls[0]![1] as ProjectConfig[]
+    expect(writtenProjects[1]!.tokens).toHaveLength(1)
+    expect(writtenProjects[0]!.tokens).toBeUndefined()
+  })
+
+  it('refuses a project the token owner cannot reach, and writes nothing', async () => {
+    mockReadConfig.mockResolvedValue([makeProject(), makeProject({ id: 'proj-2', name: 'Beta' })] as never)
+
+    const res = await createProjectTokenTool.handler({ projectId: 'proj-2' }, authCtx())
+
+    expect(res.isError).toBe(true)
+    expect(res.content[0]!.text).toContain('not accessible')
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
+  it('returns isError when the resolved project is missing from config', async () => {
     mockReadConfig.mockResolvedValue([makeProject({ id: 'other' })] as never)
 
-    const res = await createProjectTokenTool.handler({}, authCtx(['mcp:write']))
+    const res = await createProjectTokenTool.handler({}, authCtx())
 
     expect(res.isError).toBe(true)
     expect(mockWriteConfig).not.toHaveBeenCalled()
@@ -127,9 +122,10 @@ describe('createProjectTokenTool', () => {
 })
 
 describe('toggleModelTool', () => {
-  it('is a write-scoped tool gated on the config-store DI token', () => {
+  it('is a write-scoped tool gated on project:write and the config-store DI token', () => {
     expect(toggleModelTool.name).toBe('toggle_model')
     expect(toggleModelTool.scope).toBe('write')
+    expect(toggleModelTool.permission).toBe('project:write')
     expect(toggleModelTool.requires.key).toBe('config.store')
   })
 
@@ -137,10 +133,7 @@ describe('toggleModelTool', () => {
     const project = makeProject({ models: [{ modelId: 'openai/gpt-4o' }] })
     mockReadConfig.mockResolvedValue([project] as never)
 
-    const res = await toggleModelTool.handler(
-      { modelId: 'openai/gpt-4o' },
-      authCtx(['mcp:write'], project),
-    )
+    const res = await toggleModelTool.handler({ modelId: 'openai/gpt-4o' }, authCtx(project))
 
     expect(JSON.parse(res.content[0]!.text)).toEqual({ modelId: 'openai/gpt-4o', enabled: false })
     const written = mockWriteConfig.mock.calls[0]!
@@ -152,10 +145,7 @@ describe('toggleModelTool', () => {
     const project = makeProject({ models: [{ modelId: 'openai/gpt-4o', enabled: false }] })
     mockReadConfig.mockResolvedValue([project] as never)
 
-    const res = await toggleModelTool.handler(
-      { modelId: 'openai/gpt-4o' },
-      authCtx(['mcp:write'], project),
-    )
+    const res = await toggleModelTool.handler({ modelId: 'openai/gpt-4o' }, authCtx(project))
 
     expect(JSON.parse(res.content[0]!.text)).toEqual({ modelId: 'openai/gpt-4o', enabled: true })
     expect((mockWriteConfig.mock.calls[0]![1] as ProjectConfig[])[0]!.models[0]!.enabled).toBe(true)
@@ -165,13 +155,21 @@ describe('toggleModelTool', () => {
     const project = makeProject({ models: [{ modelId: 'openai/gpt-4o' }] })
     mockReadConfig.mockResolvedValue([project] as never)
 
-    const res = await toggleModelTool.handler(
-      { modelId: 'nope' },
-      authCtx(['mcp:write'], project),
-    )
+    const res = await toggleModelTool.handler({ modelId: 'nope' }, authCtx(project))
 
     expect(res.isError).toBe(true)
     expect(res.content[0]!.text).toContain('nope')
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
+  it('returns isError and performs no write when no project is accessible', async () => {
+    const res = await toggleModelTool.handler(
+      { modelId: 'openai/gpt-4o' },
+      mcpAuthContext({ projects: [] }),
+    )
+
+    expect(res.isError).toBe(true)
+    expect(res.content[0]!.text).toContain('no project')
     expect(mockWriteConfig).not.toHaveBeenCalled()
   })
 })
