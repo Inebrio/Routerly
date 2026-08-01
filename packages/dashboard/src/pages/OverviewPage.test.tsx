@@ -46,7 +46,7 @@ vi.mock('../ThemeContext.js', () => ({
   get useTheme() { return mockUseTheme; },
 }));
 
-import { OverviewPage } from './OverviewPage';
+import { OverviewPage, compactCost } from './OverviewPage';
 import { getUsage, getModels, getProjects, getClients } from '../api';
 
 const mockGetUsage    = vi.mocked(getUsage as (...a: unknown[]) => Promise<unknown>);
@@ -513,5 +513,25 @@ describe('OverviewPage — stat card links', () => {
       Models: '/dashboard/models',
       Projects: '/dashboard/projects',
     });
+  });
+});
+
+// ── Cost axis ticks ───────────────────────────────────────────────────────────
+
+describe('compactCost', () => {
+  it('keeps sub-cent ticks distinct instead of collapsing them to $0.000', () => {
+    expect([0.0015, 0.003, 0.0045, 0.006].map(compactCost))
+      .toEqual(['$0.0015', '$0.0030', '$0.0045', '$0.0060']);
+  });
+
+  it('formats zero, cents and thousands compactly', () => {
+    expect(compactCost(0)).toBe('$0');
+    expect(compactCost(0.5)).toBe('$0.50');
+    expect(compactCost(12.5)).toBe('$12.50');
+    expect(compactCost(2400)).toBe('$2.4k');
+  });
+
+  it('caps the decimals so a tick still fits the axis gutter', () => {
+    expect(compactCost(0.00000001)).toBe('$0.000000');
   });
 });

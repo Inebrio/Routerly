@@ -23,8 +23,17 @@ type SavingsMetric = 'cost' | 'tokens' | 'speed';
 
 const SAVINGS_METRIC_LABEL: Record<SavingsMetric, string> = { cost: 'Cost', tokens: 'Tokens', speed: 'Speed' };
 
-/** Axis ticks: a chart axis has no room for the eight decimals `formatCost` gives sub-cent values. */
-const compactCost = (v: number): string => `$${v.toFixed(v < 1 ? 3 : 2)}`;
+/**
+ * Axis ticks: a chart axis has no room for the eight decimals `formatCost` gives sub-cent
+ * values, and a fixed three decimals collapses a whole sub-cent axis into repeated "$0.000".
+ * Scale the decimals to the tick instead, so every tick stays distinct and inside the gutter.
+ */
+export const compactCost = (v: number): string => {
+  if (!v) return '$0';
+  const abs = Math.abs(v);
+  if (abs >= 1000) return `$${(v / 1000).toFixed(1)}k`;
+  return `$${v.toFixed(Math.min(6, Math.max(2, 1 - Math.floor(Math.log10(abs)))))}`;
+};
 
 const compactTokens = (v: number): string =>
   v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(Math.round(v));
@@ -231,6 +240,7 @@ export function OverviewPage() {
               xKey="date"
               series={[{ key: 'cost', label: 'Cost', color: seriesColor(0) }]}
               formatValue={formatCost}
+              formatAxis={compactCost}
             />
           </div>
         )}
@@ -259,7 +269,7 @@ export function OverviewPage() {
               <ResponsiveContainer key={period} width="100%" height={Math.max(barData.length * 36, 120)}>
                 <BarChart data={barData} layout="vertical" margin={{ left: 8, right: 32 }}>
                   <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" {...axisProps(chartTheme)} tickFormatter={v => formatCost(Number(v))} />
+                  <XAxis type="number" {...axisProps(chartTheme)} tickFormatter={v => compactCost(Number(v))} />
                   <YAxis type="category" dataKey="name" {...axisProps(chartTheme)} width={110} />
                   <Tooltip
                     cursor={{ fill: chartTheme.cursor, fillOpacity: 0.12 }}
