@@ -4737,9 +4737,13 @@ describe('SettingsAboutTab — unknown channel label (L1806) + non-Error rejecti
     render(<MemoryRouter><SettingsAboutTab /></MemoryRouter>);
     await waitFor(() => screen.getByText('Channel'));
     // Select renders with 'stable' (CHANNEL_LABELS['stable']='current') and 'nightly' (no label → 'nightly')
-    const sel = Array.from(document.querySelectorAll('select option')) as HTMLOptionElement[];
-    const nightlyOpt = sel.find(o => o.value === 'nightly');
-    expect(nightlyOpt).toBeTruthy();
+    // The channel list arrives from getAvailableReleases(), so wait for it to replace FALLBACK_RELEASES.
+    const nightlyOpt = await waitFor(() => {
+      const sel = Array.from(document.querySelectorAll('select option')) as HTMLOptionElement[];
+      const opt = sel.find(o => o.value === 'nightly');
+      expect(opt).toBeTruthy();
+      return opt;
+    });
     // Text content is 'nightly' (fallback from ?? ch)
     expect(nightlyOpt?.textContent).toBe('nightly');
   });

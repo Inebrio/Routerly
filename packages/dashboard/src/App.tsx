@@ -40,6 +40,7 @@ import { AuditPage } from './pages/AuditPage';
 import { ConnectionsPage } from './pages/ConnectionsPage';
 import { ConnectionFormPage } from './pages/ConnectionFormPage';
 import { ProfilesPage } from './pages/ProfilesPage';
+import { ProfileFormPage } from './pages/ProfileFormPage';
 import { McpPage } from './pages/McpPage';
 import { ClientsPage, useClientsEnabled } from './pages/ClientsPage';
 
@@ -105,7 +106,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     { to: '/dashboard/overview', icon: <LayoutDashboard size={17} />, label: 'Overview' },
     ...(can('connections:read') ? [{ to: '/dashboard/connections', icon: <Plug size={17} />, label: 'Connections' }] : []),
     { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
-    ...(can('profiles:read') ? [{ to: '/dashboard/routing-profiles', icon: <Route size={17} />, label: 'Routing Profiles' }] : []),
+    ...(can('profiles:read') ? [{ to: '/dashboard/profiles', icon: <Route size={17} />, label: 'Profiles' }] : []),
     ...(can('mcp:read') ? [{ to: '/dashboard/mcp', icon: <Wrench size={17} />, label: 'MCP Tools' }] : []),
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
@@ -376,7 +377,9 @@ const router = createBrowserRouter([
           { path: 'connections', element: <ConnectionsPage /> },
           { path: 'connections/new', element: <ConnectionFormPage /> },
           { path: 'connections/:id/edit', element: <ConnectionFormPage /> },
-          { path: 'routing-profiles', element: <ProfilesPage /> },
+          { path: 'profiles', element: <ProfilesPage /> },
+          { path: 'profiles/new', element: <ProfileFormPage /> },
+          { path: 'profiles/:id', element: <ProfileFormPage /> },
           { path: 'mcp', element: <McpPage /> },
           { path: 'clients', element: <ClientsPage /> },
           { path: 'projects', element: <ProjectsPage /> },
