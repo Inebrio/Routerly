@@ -1022,7 +1022,7 @@ export const assignProjectProfiles = (
 ) => request<Project>(`/projects/${encodeURIComponent(projectId)}/profiles`, { method: 'PUT', body: JSON.stringify(body) });
 
 // ── Optimizers ────────────────────────────────────────────────────────────
-import type { OptimizerConfig, OptimizerId, OptimizerStep } from '@routerly/shared';
+import type { Message, OptimizerConfig, OptimizerId, OptimizerStep } from '@routerly/shared';
 export type { OptimizerConfig, OptimizerId, OptimizerStep } from '@routerly/shared';
 
 export interface InstalledOptimizer {
@@ -1033,17 +1033,41 @@ export interface InstalledOptimizer {
 
 export const getInstalledOptimizers = () => request<InstalledOptimizer[]>('/optimizers');
 
+export interface OptimizerPreviewStep {
+  id: OptimizerId;
+  before: number;
+  after: number;
+  /** The prompt as this step left it, so consecutive steps can be diffed. */
+  messages: Message[];
+  /** The step changed the prompt and the change was rejected and rolled back. */
+  rolledBack?: boolean;
+}
+
 export interface OptimizerPreviewResult {
   estimatedTokensBefore: number;
   estimatedTokensAfter: number;
-  perStep: { id: OptimizerId; before: number; after: number }[];
+  perStep: OptimizerPreviewStep[];
+  /** The prompt the whole pipeline would forward. */
+  messages: Message[];
 }
 
 export const previewOptimizers = (body: {
   projectId?: string;
-  sampleMessages: { role: string; content: string }[];
+  sampleMessages: Message[];
   steps: OptimizerStep[];
 }) => request<OptimizerPreviewResult>('/optimizers/preview', { method: 'POST', body: JSON.stringify(body) });
+
+/** A real prompt this project sent, kept in memory by the service. */
+export interface TrafficSample {
+  capturedAt: string;
+  messages: Message[];
+  estimatedTokens: number;
+  truncated?: boolean;
+}
+
+/** Recent prompts of a project, newest first. Empty until traffic arrives. */
+export const getOptimizerSamples = (projectId: string) =>
+  request<TrafficSample[]>(`/projects/${encodeURIComponent(projectId)}/optimizers/samples`);
 
 // ── Client configurator ──────────────────────────────────────────────────
 import type { ClientMeta } from '@routerly/shared';

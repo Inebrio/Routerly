@@ -11,6 +11,7 @@ vi.mock('../../api', () => ({
   previewOptimizers: vi.fn(),
   getProfiles: vi.fn(),
   assignProjectProfiles: vi.fn(),
+  getOptimizerSamples: vi.fn(),
 }));
 
 vi.mock('../../AuthContext', () => ({
@@ -39,7 +40,7 @@ vi.mock('../../components/SearchableSelect', () => ({
   ),
 }));
 
-import { updateProject, getInstalledOptimizers, previewOptimizers, getProfiles, assignProjectProfiles } from '../../api';
+import { updateProject, getInstalledOptimizers, previewOptimizers, getProfiles, assignProjectProfiles, getOptimizerSamples } from '../../api';
 import { useAuth } from '../../AuthContext';
 
 const mockUpdateProject = vi.mocked(updateProject as (...a: unknown[]) => Promise<unknown>);
@@ -47,6 +48,7 @@ const mockGetInstalled = vi.mocked(getInstalledOptimizers as () => Promise<unkno
 const mockPreview = vi.mocked(previewOptimizers as (...a: unknown[]) => Promise<unknown>);
 const mockGetProfiles = vi.mocked(getProfiles as (...a: unknown[]) => Promise<unknown>);
 const mockAssignProfile = vi.mocked(assignProjectProfiles as (...a: unknown[]) => Promise<unknown>);
+const mockGetSamples = vi.mocked(getOptimizerSamples as (...a: unknown[]) => Promise<unknown>);
 const mockUseAuth = vi.mocked(useAuth);
 
 const sampleProfiles = [
@@ -109,10 +111,12 @@ beforeEach(() => {
   mockGetProfiles.mockResolvedValue(sampleProfiles);
   mockAssignProfile.mockResolvedValue({ ...mockProject });
   mockUpdateProject.mockResolvedValue({ ...mockProject });
+  mockGetSamples.mockResolvedValue([]);
   mockPreview.mockResolvedValue({
     estimatedTokensBefore: 100,
     estimatedTokensAfter: 60,
-    perStep: [{ id: 'ccr', before: 100, after: 60 }],
+    perStep: [{ id: 'ccr', before: 100, after: 60, messages: [{ role: 'user', content: 'hello' }] }],
+    messages: [{ role: 'user', content: 'hello' }],
   });
   setAuth(['optimizers:read', 'optimizers:manage']);
 });
@@ -158,7 +162,7 @@ describe('ProjectOptimizerTab', () => {
   it('preview panel renders the returned before/after deltas', async () => {
     const user = userEvent.setup();
     renderTab();
-    await waitFor(() => expect(screen.getByLabelText(/preview token savings/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText('Sample prompt')).toBeInTheDocument());
     await user.type(screen.getByPlaceholderText(/sample user message/i), 'hello world');
     await user.click(screen.getByRole('button', { name: /run preview/i }));
     await waitFor(() => expect(mockPreview).toHaveBeenCalled());
@@ -194,7 +198,7 @@ describe('ProjectOptimizerTab', () => {
     const user = userEvent.setup();
     mockPreview.mockRejectedValue(new Error('boom'));
     renderTab();
-    await waitFor(() => expect(screen.getByLabelText(/preview token savings/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText('Sample prompt')).toBeInTheDocument());
     await user.type(screen.getByPlaceholderText(/sample user message/i), 'hi');
     await user.click(screen.getByRole('button', { name: /run preview/i }));
     await waitFor(() => expect(screen.getByText('boom')).toBeInTheDocument());
@@ -330,5 +334,103 @@ describe('ProjectOptimizerTab — optimizer profile assignment', () => {
     renderTab(assignedProject);
     const select = await screen.findByLabelText('Optimizer Profile');
     expect(Array.from(select.querySelectorAll('option')).map(o => (o as HTMLOptionElement).value)).toEqual(['']);
+  });
+});
+
+// ── Replay of captured prompts and per-step diff (T63) ───────────────────────
+
+const capturedSamples = [
+  {
+    capturedAt: new Date(Date.now() - 5 * 60_000).toISOString(),
+    messages: [{ role: 'user', content: 'summarize the quarterly report' }],
+    estimatedTokens: 812,
+  },
+  {
+    capturedAt: new Date(Date.now() - 2 * 3_600_000).toISOString(),
+    messages: [{ role: 'system', content: 'be brief' }, { role: 'user', content: 'and then?' }],
+    estimatedTokens: 40,
+    truncated: true,
+  },
+];
+
+describe('ProjectOptimizerTab — replay and diff', () => {
+  it('explains the picker is empty until traffic arrives', async () => {
+    renderTab();
+    await waitFor(() => expect(screen.getByLabelText('Prompt to preview')).toBeInTheDocument());
+    expect(screen.getByText(/no recent prompts captured yet/i)).toBeInTheDocument();
+    expect(screen.getByLabelText('Sample prompt')).toBeInTheDocument();
+  });
+
+  it('lists the captured prompts with their size', async () => {
+    mockGetSamples.mockResolvedValue(capturedSamples);
+    renderTab();
+    const select = await screen.findByLabelText('Prompt to preview');
+    await waitFor(() => expect(select.querySelectorAll('option')).toHaveLength(4)); // placeholder + 'type below' + 2
+    expect(screen.getByText(/5m ago · 812 tokens · 1 message$/)).toBeInTheDocument();
+    expect(screen.getByText(/2h ago · 40 tokens · 2 messages$/)).toBeInTheDocument();
+  });
+
+  it('replays a captured prompt instead of the textarea', async () => {
+    const user = userEvent.setup();
+    mockGetSamples.mockResolvedValue(capturedSamples);
+    renderTab();
+    await user.selectOptions(await screen.findByLabelText('Prompt to preview'), '1');
+    // The textarea gives way to a read-only excerpt of the captured prompt.
+    expect(screen.queryByLabelText('Sample prompt')).not.toBeInTheDocument();
+    expect(screen.getByText(/system: be brief/)).toBeInTheDocument();
+    expect(screen.getByText(/\(excerpt\)/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /run preview/i }));
+    await waitFor(() => expect(mockPreview).toHaveBeenCalled());
+    const [body] = mockPreview.mock.calls[0] as [{ sampleMessages: unknown[] }];
+    expect(body.sampleMessages).toEqual(capturedSamples[1]!.messages);
+  });
+
+  it('shows what a step removed when its row is expanded', async () => {
+    const user = userEvent.setup();
+    mockPreview.mockResolvedValue({
+      estimatedTokensBefore: 10,
+      estimatedTokensAfter: 6,
+      perStep: [{ id: 'ccr', before: 10, after: 6, messages: [{ role: 'user', content: 'keep this' }] }],
+      messages: [{ role: 'user', content: 'keep this' }],
+    });
+    renderTab();
+    await user.type(await screen.findByLabelText('Sample prompt'), 'keep this drop that');
+    await user.click(screen.getByRole('button', { name: /run preview/i }));
+
+    const row = await screen.findByRole('button', { name: /conversation context reduction/i });
+    expect(row).toHaveAttribute('aria-expanded', 'false');
+    await user.click(row);
+    expect(row).toHaveAttribute('aria-expanded', 'true');
+    // The words the step dropped are rendered as a removal.
+    const removed = Array.from(document.querySelectorAll('pre span'))
+      .filter(s => (s as HTMLElement).style.textDecoration === 'line-through')
+      .map(s => s.textContent)
+      .join('');
+    expect(removed).toContain('drop that');
+    await user.click(row);
+    expect(row).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('flags a step whose change was rolled back', async () => {
+    const user = userEvent.setup();
+    mockPreview.mockResolvedValue({
+      estimatedTokensBefore: 10,
+      estimatedTokensAfter: 10,
+      perStep: [{ id: 'ccr', before: 10, after: 10, messages: [{ role: 'user', content: 'untouched' }], rolledBack: true }],
+      messages: [{ role: 'user', content: 'untouched' }],
+    });
+    renderTab();
+    await user.type(await screen.findByLabelText('Sample prompt'), 'untouched');
+    await user.click(screen.getByRole('button', { name: /run preview/i }));
+    await waitFor(() => expect(screen.getByText(/rolled back: the change was rejected as unsafe/i)).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: /conversation context reduction/i }));
+    expect(screen.getByText(/rolled back, so the prompt reached the next step untouched/i)).toBeInTheDocument();
+  });
+
+  it('survives a failed samples fetch', async () => {
+    mockGetSamples.mockRejectedValue(new Error('nope'));
+    renderTab();
+    await waitFor(() => expect(screen.getByText(/no recent prompts captured yet/i)).toBeInTheDocument());
   });
 });

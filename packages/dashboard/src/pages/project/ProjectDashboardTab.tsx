@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Activity, Clock, Coins, PiggyBank } from 'lucide-react';
+import { optimizerLabel } from '@routerly/shared';
 import { getUsage, type UsageStats } from '../../api';
 import { DateRangePicker, RECENT_PRESETS, type DateRange } from '../../components/DateRangePicker';
 import { useFilterState } from '../../hooks/useFilterState';
@@ -200,6 +201,46 @@ export function ProjectDashboardTab() {
             Costs are the observed tokens repriced at each target's rates. Times are estimated from
             each target's own throughput in this period, so a target with no traffic has no estimate.
           </p>
+
+          {/* What the optimizers actually removed (T63) */}
+          {savings && savings.optimizers.length > 0 && (
+            <>
+              <h3 className="section-title">What the optimizers removed</h3>
+              <div className="table-wrap" style={{ marginBottom: 8 }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Optimizer</th>
+                      <th style={{ textAlign: 'right' }}>Calls changed</th>
+                      <th style={{ textAlign: 'right' }}>Tokens saved</th>
+                      <th style={{ textAlign: 'right' }}>Cost saved</th>
+                      <th style={{ textAlign: 'right' }}>Rolled back</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {savings.optimizers.map(o => (
+                      <tr key={o.id}>
+                        <td>{optimizerLabel(o.id)}</td>
+                        <td style={{ textAlign: 'right' }}>{o.calls.toLocaleString()}</td>
+                        <td style={{ textAlign: 'right' }}>{o.tokensSaved.toLocaleString()}</td>
+                        <td style={{ textAlign: 'right', color: o.costSaved > 0 ? 'var(--success)' : 'var(--text-muted)' }}>
+                          {usd(o.costSaved)}
+                        </td>
+                        <td style={{ textAlign: 'right', color: o.rolledBack > 0 ? 'var(--warning)' : 'var(--text-muted)' }}>
+                          {o.rolledBack > 0 ? o.rolledBack.toLocaleString() : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 24px' }}>
+                Measured on the calls themselves, priced at the model that served each one. A rolled-back
+                run means the step's output was rejected as unsafe and the prompt was restored: it saved
+                nothing, and a high count means the threshold is too aggressive.
+              </p>
+            </>
+          )}
 
           {/* Where the traffic went */}
           <h3 className="section-title">Where the traffic went</h3>

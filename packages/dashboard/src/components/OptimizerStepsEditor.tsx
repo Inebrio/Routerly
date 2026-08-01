@@ -1,25 +1,13 @@
 import React, { useState } from 'react';
 import { GripVertical } from 'lucide-react';
+import { OPTIMIZER_CATALOG, type OptimizerClass } from '@routerly/shared';
 import type { InstalledOptimizer, OptimizerId, OptimizerStep } from '../api';
 
-export const OPTIMIZER_LABELS: Record<OptimizerId, string> = {
-  'session-dedup': 'Session Dedup',
-  ccr: 'Conversation Context Reduction',
-  rtk: 'Redundant Token Killer',
-  headroom: 'Context Headroom',
-  relevance: 'Relevance Filter',
-  caveman: 'Caveman',
-  'llmlingua-2': 'LLMLingua-2',
-};
-
-export const OPTIMIZER_DESCRIPTIONS: Record<OptimizerId, string> = {
-  'session-dedup': 'Lossless. Drops exact-duplicate repeated messages within a conversation, keeping the first and last of any run.',
-  ccr: 'Recoverable. Keeps the system prefix and the most recent turns; older turns are condensed into a single compact block. Threshold sets how many recent turns to keep.',
-  rtk: 'Recoverable. Collapses redundant whitespace and strips repeated boilerplate blocks from message text.',
-  headroom: 'Lossless. Drops the oldest turns until the request fits the model context window with the reserved headroom. Threshold sets the reserved token budget.',
-  relevance: 'Lossy. Drops older turns whose lexical overlap with the newest turn falls below the threshold. Requires a threshold to activate.',
-  caveman: 'Lossy. Strips filler/function words from message text while preserving code, URLs and numbers.',
-  'llmlingua-2': 'Lossy. ONNX-backed prompt compression. Off unless the optional runtime and model are installed.',
+/** Reversibility, said in one word next to the optimizer's name. */
+const KLASS_COLOR: Record<OptimizerClass, string> = {
+  lossless: 'var(--success)',
+  recoverable: 'var(--primary)',
+  lossy: 'var(--warning)',
 };
 
 export type OptimizerRow = { id: OptimizerId; enabled: boolean; threshold?: number };
@@ -108,7 +96,10 @@ export function OptimizerStepsEditor({ rows, setRows, disabled = false }: Optimi
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, ...(editable ? {} : { pointerEvents: 'none', opacity: 0.6 }) }}>
-      {rows.map((row, idx) => (
+      {rows.map((row, idx) => {
+        const meta = OPTIMIZER_CATALOG[row.id];
+        const spec = meta?.threshold;
+        return (
         <div
           key={row.id}
           id={`optimizer-row-${idx}`}
@@ -136,28 +127,56 @@ export function OptimizerStepsEditor({ rows, setRows, disabled = false }: Optimi
             />
           </label>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{OPTIMIZER_LABELS[row.id]}</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{meta?.label ?? row.id}</span>
+              {meta && (
+                <span style={{
+                  fontSize: '0.62rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em',
+                  color: KLASS_COLOR[meta.klass],
+                }}>
+                  {meta.klass}
+                </span>
+              )}
+            </div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.45 }}>
-              {OPTIMIZER_DESCRIPTIONS[row.id]}
+              {meta?.description}
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            <label style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Threshold</label>
-            <input
-              type="number"
-              min={0}
-              step={0.01}
-              className="form-input"
-              placeholder="auto"
-              disabled={!editable}
-              style={{ width: 72, padding: '4px 8px', fontSize: '0.8rem' }}
-              value={row.threshold ?? ''}
-              onChange={e => setThreshold(idx, e.target.value)}
-              onMouseDown={e => e.stopPropagation()}
-            />
-          </div>
+          {spec && (
+            <div style={{ flexShrink: 0, width: 172, textAlign: 'right' }}>
+              <label
+                htmlFor={`optimizer-threshold-${row.id}`}
+                style={{ display: 'block', fontSize: '0.68rem', color: 'var(--text-secondary)', marginBottom: 4 }}
+              >
+                {spec.label}
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
+                <input
+                  id={`optimizer-threshold-${row.id}`}
+                  type="number"
+                  min={spec.min}
+                  max={spec.max}
+                  step={spec.step}
+                  className="form-input"
+                  placeholder={spec.default != null ? String(spec.default) : 'required'}
+                  disabled={!editable}
+                  style={{ width: 96, padding: '4px 8px', fontSize: '0.8rem', textAlign: 'right' }}
+                  value={row.threshold ?? ''}
+                  onChange={e => setThreshold(idx, e.target.value)}
+                  onMouseDown={e => e.stopPropagation()}
+                />
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', minWidth: 42, textAlign: 'left' }}>
+                  {spec.unit}
+                </span>
+              </div>
+              <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.4, textAlign: 'left' }}>
+                {spec.help}
+              </div>
+            </div>
+          )}
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -1,21 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { Check, ShieldOff } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, ShieldOff } from 'lucide-react';
+import type { Message } from '@routerly/shared';
+import { optimizerLabel } from '@routerly/shared';
 import {
   updateProject,
   getInstalledOptimizers,
   getProfiles,
   assignProjectProfiles,
   previewOptimizers,
+  getOptimizerSamples,
   type InstalledOptimizer,
   type OptimizerProfile,
   type OptimizerPreviewResult,
+  type TrafficSample,
 } from '../../api';
 import { useProject } from './ProjectLayout';
 import { useAuth } from '../../AuthContext';
 import { SearchableSelect } from '../../components/SearchableSelect';
+import { timeAgo } from '../../components/NotificationBell';
+import { TextDiff, promptText } from '../../components/TextDiff';
 import {
   OptimizerStepsEditor,
-  OPTIMIZER_LABELS,
   buildOptimizerSteps,
   mergeOptimizerRows,
   type OptimizerRow,
@@ -40,6 +45,12 @@ export function ProjectOptimizerTab() {
   const [previewing, setPreviewing] = useState(false);
   const [previewErr, setPreviewErr] = useState('');
   const [preview, setPreview] = useState<OptimizerPreviewResult | null>(null);
+  // Real prompts this project sent, offered as an alternative to typing one.
+  const [samples, setSamples] = useState<TrafficSample[]>([]);
+  const [pickedSample, setPickedSample] = useState('');
+  // The prompt the last preview actually ran on, so step 1 has something to diff against.
+  const [previewInput, setPreviewInput] = useState<Message[]>([]);
+  const [openStep, setOpenStep] = useState<number | null>(null);
 
   // Steps to install on the next project refresh, used when switching from a
   // profile to custom so the profile steps become the editable starting point.
@@ -55,6 +66,11 @@ export function ProjectOptimizerTab() {
       .then(list => setProfiles(list.filter((p): p is OptimizerProfile => p.kind === 'optimizer')))
       .catch(() => setProfiles([]));
   }, [canRead]);
+
+  useEffect(() => {
+    if (!canRead || !project) return;
+    getOptimizerSamples(project.id).then(setSamples).catch(() => setSamples([]));
+  }, [canRead, project?.id]);
 
   // Merge the project's configured steps (in order) with any installed
   // optimizer not yet configured (appended, disabled).
@@ -108,18 +124,26 @@ export function ProjectOptimizerTab() {
     void doSave();
   }
 
+  // A prompt captured from real traffic, when one is picked; otherwise the text typed below.
+  const chosenSample = pickedSample === '' ? undefined : samples[Number(pickedSample)];
+  const previewMessages: Message[] = chosenSample
+    ? chosenSample.messages
+    : [{ role: 'user', content: sample }];
+
   async function runPreview() {
     /* v8 ignore next */
     if (!project) return;
     setPreviewErr('');
     setPreview(null);
+    setOpenStep(null);
     setPreviewing(true);
     try {
       const result = await previewOptimizers({
         projectId: project.id,
-        sampleMessages: [{ role: 'user', content: sample }],
+        sampleMessages: previewMessages,
         steps: buildOptimizerSteps(rows),
       });
+      setPreviewInput(previewMessages);
       setPreview(result);
     } catch (e) {
       setPreviewErr(e instanceof Error ? e.message : 'Error running preview');
@@ -215,7 +239,7 @@ export function ProjectOptimizerTab() {
               <ul style={{ margin: '12px 0 0', paddingLeft: 18, fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                 {assignedProfile.optimizers.steps.map(s => (
                   <li key={s.id}>
-                    {OPTIMIZER_LABELS[s.id] ?? s.id}
+                    {optimizerLabel(s.id)}
                     {s.enabled ? '' : ' (disabled)'}
                     {s.threshold != null ? `, threshold ${s.threshold}` : ''}
                   </li>
@@ -250,24 +274,64 @@ export function ProjectOptimizerTab() {
 
       {/* Preview token savings */}
       <div className="form-group">
-        <label className="form-label" htmlFor="optimizer-sample">Preview token savings</label>
+        <span className="form-label">Preview token savings</span>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
-          Run the current (unsaved) pipeline over a sample user message to estimate token deltas per step.
+          Run the current (unsaved) pipeline over a prompt to see what each step removes and what it costs.
+          Replay one of this project's own recent prompts, or type one.
         </p>
-        <textarea
-          id="optimizer-sample"
-          className="form-input"
-          rows={4}
-          placeholder="Paste a sample user message..."
-          value={sample}
-          onChange={e => setSample(e.target.value)}
-          style={{ width: '100%', resize: 'vertical', fontSize: '0.85rem', fontFamily: 'inherit', lineHeight: 1.5, boxSizing: 'border-box' }}
-        />
+
+        <div style={{ marginBottom: 12 }}>
+          <span className="form-label" style={{ fontSize: '0.75rem' }}>Prompt</span>
+          <SearchableSelect
+            style={{ maxWidth: 420 }}
+            ariaLabel="Prompt to preview"
+            value={pickedSample}
+            onChange={v => { setPickedSample(v); setPreview(null); }}
+            options={[
+              { value: '', label: 'Type a prompt below' },
+              ...samples.map((s, i) => ({
+                value: String(i),
+                label: `${timeAgo(s.capturedAt)} · ${s.estimatedTokens.toLocaleString()} tokens · ${s.messages.length} message${s.messages.length === 1 ? '' : 's'}`,
+              })),
+            ]}
+          />
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.45 }}>
+            {samples.length === 0
+              ? 'No recent prompts captured yet. The service keeps the last few prompts of each project in memory, after PII scrubbing and until it restarts.'
+              : 'Captured after PII scrubbing, kept in memory only. Long prompts are stored as an excerpt.'}
+          </p>
+        </div>
+
+        {chosenSample ? (
+          <div style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 12, background: 'var(--surface-active)' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 8 }}>
+              Replaying {chosenSample.messages.length} message{chosenSample.messages.length === 1 ? '' : 's'} from {timeAgo(chosenSample.capturedAt)}
+              {chosenSample.truncated ? ' (excerpt)' : ''}
+            </div>
+            <pre style={{
+              margin: 0, maxHeight: 200, overflow: 'auto', fontSize: '0.76rem', lineHeight: 1.6,
+              whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: 'var(--text-secondary)',
+            }}>
+              {promptText(chosenSample.messages)}
+            </pre>
+          </div>
+        ) : (
+          <textarea
+            id="optimizer-sample"
+            aria-label="Sample prompt"
+            className="form-input"
+            rows={4}
+            placeholder="Paste a sample user message..."
+            value={sample}
+            onChange={e => setSample(e.target.value)}
+            style={{ width: '100%', resize: 'vertical', fontSize: '0.85rem', fontFamily: 'inherit', lineHeight: 1.5, boxSizing: 'border-box' }}
+          />
+        )}
         <div style={{ marginTop: 10 }}>
           <button
             type="button"
             className="btn btn-secondary"
-            disabled={previewing || sample.trim() === ''}
+            disabled={previewing || (!chosenSample && sample.trim() === '')}
             onClick={() => void runPreview()}
           >
             {previewing ? 'Running...' : 'Run Preview'}
@@ -305,14 +369,51 @@ export function ProjectOptimizerTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {preview.perStep.map((s, i) => (
-                    <tr key={`${s.id}-${i}`} style={{ borderTop: '1px solid var(--border)' }}>
-                      <td style={{ padding: '8px 16px' }}>{OPTIMIZER_LABELS[s.id] ?? s.id}</td>
-                      <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'monospace' }}>{s.before}</td>
-                      <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'monospace' }}>{s.after}</td>
-                      <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'monospace', color: s.before - s.after > 0 ? 'var(--success, #22c55e)' : 'var(--text-muted)' }}>{s.before - s.after}</td>
-                    </tr>
-                  ))}
+                  {preview.perStep.map((s, i) => {
+                    const open = openStep === i;
+                    const previous = i === 0 ? previewInput : preview.perStep[i - 1]!.messages;
+                    return (
+                      <React.Fragment key={`${s.id}-${i}`}>
+                        <tr style={{ borderTop: '1px solid var(--border)' }}>
+                          <td style={{ padding: '8px 16px' }}>
+                            <button
+                              type="button"
+                              onClick={() => setOpenStep(open ? null : i)}
+                              aria-expanded={open}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none',
+                                padding: 0, font: 'inherit', color: 'inherit', cursor: 'pointer', textAlign: 'left',
+                              }}
+                            >
+                              {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                              {optimizerLabel(s.id)}
+                            </button>
+                            {s.rolledBack && (
+                              <div style={{ fontSize: '0.68rem', color: 'var(--warning)', marginTop: 2, paddingLeft: 20 }}>
+                                rolled back: the change was rejected as unsafe
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'monospace' }}>{s.before}</td>
+                          <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'monospace' }}>{s.after}</td>
+                          <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'monospace', color: s.before - s.after > 0 ? 'var(--success)' : 'var(--text-muted)' }}>{s.before - s.after}</td>
+                        </tr>
+                        {open && (
+                          <tr>
+                            <td colSpan={4} style={{ padding: '0 16px 12px' }}>
+                              <TextDiff
+                                before={promptText(previous)}
+                                after={promptText(s.messages)}
+                                emptyLabel={s.rolledBack
+                                  ? 'The change this step produced was rolled back, so the prompt reached the next step untouched.'
+                                  : 'This step left the prompt unchanged.'}
+                              />
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
