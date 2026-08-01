@@ -6,8 +6,10 @@ import { requireAccount } from '../store.js';
 import { INTEGRATIONS, acquireToken } from '../clients/index.js';
 import type { ClientIntegration } from '../clients/index.js';
 import { restoreBackup, listBackups } from '../lib/safe-file.js';
-import { CLIENT_REGISTRY } from '@routerly/shared';
-import type { ProjectConfig, SupportState } from '@routerly/shared';
+import { CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from '@routerly/shared';
+import type { ClientMeta, ProjectConfig, SupportState } from '@routerly/shared';
+
+const MCP_TOKEN_PLACEHOLDER = '<YOUR_MCP_TOKEN>';
 
 function colorSupportState(state: SupportState): string {
   switch (state) {
@@ -57,8 +59,29 @@ async function resolveProjectForConfigure(explicit: string | undefined): Promise
   return projects.find(p => p.id === projectId)!;
 }
 
+/** Registry order, so every surface lists the clients the same way. */
+function listIntegrations(): ClientIntegration[] {
+  return CLIENT_REGISTRY.map(meta => INTEGRATIONS[meta.id]).filter((i): i is ClientIntegration => i !== undefined);
+}
+
+function isAutoConfigurable(integration: ClientIntegration): boolean {
+  return integration.supportState === 'auto-configurable' || integration.supportState === 'launchable';
+}
+
+/** Prints the manual steps for a client this CLI cannot write a config for. */
+function printManualSteps(meta: ClientMeta, steps: string, header: string): void {
+  console.log(chalk.bold(`\n${meta.label}: ${header}`));
+  if (meta.configKind !== 'ui' && meta.configKind !== 'env') {
+    console.log(chalk.gray(`  Config file: ${meta.configPathHint}`));
+  }
+  console.log('');
+  console.log(steps);
+  console.log('');
+  console.log(chalk.gray(`Docs: https://doc.routerly.ai/next/${meta.docSlug}`));
+}
+
 export function makeClientsCommand(): Command {
-  const cmd = new Command('clients').description('Configure local AI coding clients (Claude Code, Codex, OpenCode, Continue, Cline) to use Routerly');
+  const cmd = new Command('clients').description('Configure local AI coding clients (Claude Code, Claude Desktop, Codex, OpenCode, OpenClaw, Continue, Cursor, Cline, Zed) to use Routerly');
 
   // ── clients list ─────────────────────────────────────────────────────────────
   cmd.command('list')
@@ -70,18 +93,19 @@ Examples:
   routerly clients list --json
 `)
     .action(async (opts: { json?: boolean }) => {
-      const integrations = Object.values(INTEGRATIONS);
+      const integrations = listIntegrations();
+      const modesOf = (id: string) => CLIENT_REGISTRY.find(c => c.id === id)?.modes ?? [];
       if (opts.json) {
         console.log(JSON.stringify(
-          integrations.map(i => ({ id: i.id, label: i.label, supportState: i.supportState })),
+          integrations.map(i => ({ id: i.id, label: i.label, supportState: i.supportState, modes: modesOf(i.id) })),
           null,
           2
         ));
         return;
       }
-      const table = new Table({ head: ['ID', 'Label', 'Support'].map(h => chalk.cyan(h)) });
+      const table = new Table({ head: ['ID', 'Label', 'Support', 'Modes'].map(h => chalk.cyan(h)) });
       for (const i of integrations) {
-        table.push([i.id, i.label, colorSupportState(i.supportState)]);
+        table.push([i.id, i.label, colorSupportState(i.supportState), modesOf(i.id).join(', ')]);
       }
       console.log(table.toString());
     });
@@ -137,11 +161,26 @@ Examples:
   routerly clients configure claude-code --project my-api
   routerly clients configure codex --project my-api --token sk-rt-...
   routerly clients configure opencode --project my-api --yes
+  routerly clients configure zed --project my-api --yes      # prints manual steps
+  routerly clients configure claude-desktop                  # prints the MCP wiring
 `)
     .action(async (id: string, opts: { project?: string; token?: string; yes?: boolean; json?: boolean }) => {
       const integration = resolveIntegration(id);
       const meta = CLIENT_REGISTRY.find(c => c.id === id)!;
       try {
+        // MCP-only client: no chat traffic to route, so no project token to
+        // mint. Print the MCP wiring with a placeholder instead.
+        if (!meta.modes.includes('llm')) {
+          const steps = buildMcpSnippet(meta, (await requireAccount()).serverUrl, MCP_TOKEN_PLACEHOLDER);
+          if (opts.json) {
+            console.log(JSON.stringify({ id: meta.id, label: meta.label, manual: true, mode: 'mcp', steps }, null, 2));
+            return;
+          }
+          printManualSteps(meta, steps, 'connects over MCP only');
+          console.log(chalk.gray(`Create the token with \`routerly mcp token create --label ${meta.id}\`.`));
+          return;
+        }
+
         const project = await resolveProjectForConfigure(opts.project);
         const account = await requireAccount();
 
@@ -160,6 +199,19 @@ Examples:
         }
 
         const token = await acquireToken({ projectId: project.id, ...(opts.token ? { explicitToken: opts.token } : {}) });
+
+        // Documented client: no file this CLI can back up, write and roll
+        // back. The token is still minted, the user needs it for the steps.
+        if (!isAutoConfigurable(integration)) {
+          const steps = buildSnippet(meta, account.serverUrl, token);
+          if (opts.json) {
+            console.log(JSON.stringify({ id: meta.id, label: meta.label, manual: true, mode: 'llm', steps }, null, 2));
+            return;
+          }
+          printManualSteps(meta, steps, 'is configured by hand');
+          return;
+        }
+
         const target = { baseUrl: account.serverUrl, token, wireFormat: meta.wireFormat };
         const plan = await integration.plan(target);
 
