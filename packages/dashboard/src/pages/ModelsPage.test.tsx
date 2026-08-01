@@ -33,8 +33,15 @@ vi.mock('../components/SearchableSelect', () => ({
 // ponytail: gate 'resilience:manage' on a mutable flag ('mock' prefix so vi.mock hoist allows it);
 // everything else the component asks `can()` about is granted.
 let mockCanManage = true;
+let mockCanWriteModels = true;
 vi.mock('../AuthContext', () => ({
-  useAuth: () => ({ can: (p: string) => (p === 'resilience:manage' ? mockCanManage : true) }),
+  useAuth: () => ({
+    can: (p: string) => {
+      if (p === 'resilience:manage') return mockCanManage;
+      if (p === 'model:write') return mockCanWriteModels;
+      return true;
+    },
+  }),
 }));
 
 // ponytail: stub ConfirmDialog so it renders inline without portal issues
@@ -1247,5 +1254,23 @@ describe('ModelsPage — branch coverage', () => {
     // Switch back to health tab: hPage(2) > hTotalPages(1) → resets
     await switchToHealthTab();
     await waitFor(() => expect(screen.queryByText(/Page 2 of/)).toBeNull());
+  });
+});
+
+// ── Permissions ───────────────────────────────────────────────────────────────
+
+describe('ModelsPage — permissions', () => {
+  it('hides create, discover and row write actions without model:write', async () => {
+    mockCanWriteModels = false;
+    mockGetModels.mockResolvedValue([makeModel()]);
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    expect(screen.queryByRole('link', { name: /Add Model/i })).toBeNull();
+    expect(screen.queryByRole('link', { name: /Discover/i })).toBeNull();
+    expect(screen.queryByTitle('Remove')).toBeNull();
+    expect(screen.queryByTitle('Clone')).toBeNull();
+    expect(screen.queryByTitle('Edit')).toBeNull();
+    expect(screen.getByTitle('Test')).toBeTruthy();
+    mockCanWriteModels = true;
   });
 });

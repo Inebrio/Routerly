@@ -3,6 +3,13 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
+let mockCan = true;
+
+// ponytail: pages gate write affordances on can(); default the mock to a full-permission user
+vi.mock('../AuthContext', () => ({
+  useAuth: () => ({ can: () => mockCan }),
+}));
+
 vi.mock('../api', () => ({
   getProjects: vi.fn(),
   deleteProject: vi.fn(),
@@ -50,6 +57,7 @@ function renderPage() {
 }
 
 beforeEach(() => {
+  mockCan = true;
   mockGetProjects.mockResolvedValue([]);
   mockDeleteProject.mockResolvedValue(undefined);
 });
@@ -223,5 +231,19 @@ describe('ProjectsPage — delete flow', () => {
     await waitFor(() => screen.getByTestId('confirm-dialog'));
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
     await waitFor(() => expect(screen.queryByText('Error deleting project')).not.toBeNull());
+  });
+});
+
+// ── Permissions ───────────────────────────────────────────────────────────────
+
+describe('ProjectsPage — permissions', () => {
+  it('hides create and delete affordances without project:write', async () => {
+    mockCan = false;
+    mockGetProjects.mockResolvedValue([makeProject()]);
+    renderPage();
+    await waitFor(() => screen.getByText('My Project'));
+    expect(screen.queryByRole('button', { name: /New Project/i })).toBeNull();
+    expect(screen.queryByTitle('Delete project')).toBeNull();
+    expect(screen.getByTitle('Edit project')).toBeTruthy();
   });
 });

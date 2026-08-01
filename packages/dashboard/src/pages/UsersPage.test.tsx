@@ -3,6 +3,13 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
+let mockCan = true;
+
+// ponytail: pages gate write affordances on can(); default the mock to a full-permission user
+vi.mock('../AuthContext', () => ({
+  useAuth: () => ({ can: () => mockCan }),
+}));
+
 vi.mock('../api', () => ({
   getUsers: vi.fn(),
   createUser: vi.fn(),
@@ -73,6 +80,7 @@ function renderPage() {
 }
 
 beforeEach(() => {
+  mockCan = true;
   mockGetUsers.mockResolvedValue([]);
   mockCreateUser.mockResolvedValue(makeUser());
   mockDeleteUser.mockResolvedValue(undefined);
@@ -377,5 +385,23 @@ describe('UsersPage — reset 2FA', () => {
     await waitFor(() => expect(mockReset2fa).toHaveBeenCalledWith('u1'));
     // u1 no longer shows Reset 2FA; u2 still does
     await waitFor(() => expect(screen.queryAllByTitle('Reset 2FA')).toHaveLength(1));
+  });
+});
+
+// ── Permissions ───────────────────────────────────────────────────────────────
+
+describe('UsersPage — permissions', () => {
+  it('shows a permission notice and skips the fetch without user:read', async () => {
+    mockCan = false;
+    renderPage();
+    await waitFor(() => screen.getByText(/don't have permission to view users/i));
+    expect(mockGetUsers).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: /Add User/i })).toBeNull();
+  });
+
+  it('surfaces a load failure instead of rendering an empty list', async () => {
+    mockGetUsers.mockRejectedValue(new Error('Forbidden'));
+    renderPage();
+    await waitFor(() => screen.getByText('Forbidden'));
   });
 });
