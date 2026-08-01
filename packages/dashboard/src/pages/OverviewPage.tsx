@@ -1,16 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   BarChart, Bar, Cell,
 } from 'recharts';
 import { Link } from 'react-router-dom';
 import { Activity, ArrowRight, DollarSign, XCircle, Boxes, FolderOpen, Terminal, TrendingUp } from 'lucide-react';
 import { CLIENT_REGISTRY } from '@routerly/shared';
 import { getUsage, getModels, getProjects, type UsageStats } from '../api.js';
-import { useTheme } from '../ThemeContext.js';
 import { useClientsEnabled } from './ConnectPage.js';
-
-const PALETTE = ['#3d75f5', '#10b981', '#f59e0b', '#ec4899', '#3b82f6', '#8b5cf6', '#06b6d4', '#f97316'];
+import { ChartTooltip, TimeSeriesChart, axisProps, seriesColor, useChartTheme } from '../components/charts.js';
+import { formatCost } from '../utils/traceUtils.js';
 
 const PERIOD_LABEL: Record<string, string> = {
   daily: 'Cost per Hour (USD)',
@@ -25,10 +24,7 @@ export function OverviewPage() {
   const [period, setPeriod] = useState('monthly');
   const [modelCount, setModelCount] = useState(0);
   const [projectCount, setProjectCount] = useState(0);
-  const { theme } = useTheme();
-
-  const isDark = theme === 'dark' || (theme === 'auto' && !window.matchMedia('(prefers-color-scheme: light)').matches);
-  const tickColor = isDark ? '#94a3b8' : '#475569';
+  const chartTheme = useChartTheme();
 
   useEffect(() => {
     getUsage(period).then(setStats).catch(() => setStatsError(true));
@@ -118,13 +114,6 @@ export function OverviewPage() {
     return <div className="loading-center"><div className="spinner" /></div>;
   }
 
-  const tooltipStyle = {
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    fontSize: 12,
-  };
-
   return (
     <>
       <div className="page-header">
@@ -188,21 +177,13 @@ export function OverviewPage() {
         {timelineData.length > 0 && (
           <div className="chart-card">
             <h3>{PERIOD_LABEL[period]}</h3>
-            <ResponsiveContainer key={period} width="100%" height={200}>
-              <AreaChart data={timelineData}>
-                <defs>
-                  <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#5A90F8" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#5A90F8" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="date" tick={{ fill: tickColor, fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: tickColor, fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
-                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: tickColor }}
-                  formatter={(v) => [`$${(v as number).toFixed(8)}`, 'Cost']} />
-                <Area type="monotone" dataKey="cost" stroke="#5A90F8" fill="url(#grad)" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
+            <TimeSeriesChart
+              key={period}
+              data={timelineData}
+              xKey="date"
+              series={[{ key: 'cost', label: 'Cost', color: seriesColor(0) }]}
+              formatValue={formatCost}
+            />
           </div>
         )}
 
@@ -217,14 +198,22 @@ export function OverviewPage() {
             ) : (
               <ResponsiveContainer key={period} width="100%" height={Math.max(barData.length * 36, 120)}>
                 <BarChart data={barData} layout="vertical" margin={{ left: 8, right: 32 }}>
-                  <XAxis type="number" tick={{ fill: tickColor, fontSize: 11 }} axisLine={false} tickLine={false}
-                    tickFormatter={v => `$${(v as number).toFixed(4)}`} />
-                  <YAxis type="category" dataKey="name" tick={{ fill: tickColor, fontSize: 11 }} axisLine={false}
-                    tickLine={false} width={110} />
-                  <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: tickColor }}
-                    formatter={(v, _, p) => [`$${(v as number).toFixed(8)}`, p.payload.fullName]} />
+                  <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" {...axisProps(chartTheme)} tickFormatter={v => formatCost(Number(v))} />
+                  <YAxis type="category" dataKey="name" {...axisProps(chartTheme)} width={110} />
+                  <Tooltip
+                    cursor={{ fill: chartTheme.cursor, fillOpacity: 0.12 }}
+                    content={
+                      <ChartTooltip
+                        formatValue={v => formatCost(v)}
+                        formatName={e => String(e.payload?.fullName ?? e.name ?? '')}
+                        // The row already carries the full model id; the axis label would repeat it.
+                        formatLabel={() => ''}
+                      />
+                    }
+                  />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                    {barData.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]!} />)}
+                    {barData.map((_, i) => <Cell key={i} fill={seriesColor(i)} />)}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
