@@ -11,9 +11,9 @@ The Projects page gives you an overview of all projects and provides access to e
 
 ## Projects List
 
-![Projects list showing project names, slugs, token count, and daily cost summary](../assets/screenshot-projects.png)
+![Projects list showing project names, token count, routing policies and assigned models](../assets/screenshot-projects.png)
 
-The list shows each project's name, slug, number of tokens, assigned models, and a summary of today's cost and call count.
+The list has four columns: name, number of tokens, active routing policies, and assigned target models.
 
 Click any project to open its detail view, which has nine tabs.
 
@@ -241,23 +241,11 @@ Available roles: `viewer`, `editor`, `admin` (or any custom role defined in [Use
 
 ---
 
-## Notifications Tab
+## Notification Routing
 
-Select which notification channels receive events from this project.
+A project has no notifications tab. The scope lives on the channel: open **Settings → Notifications**, edit a channel, and pick the projects it covers in its **Projects** field. An empty field means every project.
 
-**Required permission:** `notification:write` to edit.
-
-### Channel Selection
-
-If **no channels are selected**, all global channels receive events from this project (default behavior).
-
-If **one or more channels are selected**, only those channels receive events from this project. Events are still recorded in the in-app inbox regardless of channel selection.
-
-This provides project-level routing: a single project can funnel its alerts to a dedicated channel (e.g. a project-specific Slack channel or email list) while other projects use the global routing rules.
-
-### Saving Changes
-
-After selecting or deselecting channels, click **Save Changes** to apply. A checkmark appears briefly to confirm the save.
+Events are recorded in the in-app inbox regardless of channel scope, so narrowing a channel never hides an event from the [Inbox](./profile.md).
 
 ---
 
