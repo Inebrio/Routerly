@@ -69,7 +69,7 @@ describe('runPreview', () => {
 
     expect(res.estimatedTokensBefore).toBe(totalBefore)
     expect(res.estimatedTokensAfter).toBeLessThan(totalBefore)
-    expect(res.perStep).toEqual([
+    expect(res.perStep).toMatchObject([
       { id: 'session-dedup', before: totalBefore, after: res.estimatedTokensAfter },
     ])
   })
@@ -86,7 +86,7 @@ describe('runPreview', () => {
 
     // Gate rejects the over-compression → rolled back → no net change.
     expect(res.estimatedTokensAfter).toBe(totalBefore)
-    expect(res.perStep).toEqual([{ id: 'caveman', before: totalBefore, after: totalBefore }])
+    expect(res.perStep).toMatchObject([{ id: 'caveman', before: totalBefore, after: totalBefore, rolledBack: true }])
   })
 
   it('chains steps: a rolled-back lossy step leaves the prior lossless reduction intact', async () => {
@@ -105,7 +105,7 @@ describe('runPreview', () => {
     const afterDrop = res.perStep[0]!.after
     expect(afterDrop).toBeLessThan(totalBefore)
     // caveman rolled back → its before/after both equal the post-drop total.
-    expect(res.perStep[1]).toEqual({ id: 'caveman', before: afterDrop, after: afterDrop })
+    expect(res.perStep[1]).toMatchObject({ id: 'caveman', before: afterDrop, after: afterDrop, rolledBack: true })
     expect(res.estimatedTokensAfter).toBe(afterDrop)
   })
 
@@ -120,7 +120,7 @@ describe('runPreview', () => {
     })
 
     expect(res.estimatedTokensAfter).toBe(totalBefore)
-    expect(res.perStep).toEqual([{ id: 'session-dedup', before: totalBefore, after: totalBefore }])
+    expect(res.perStep).toMatchObject([{ id: 'session-dedup', before: totalBefore, after: totalBefore }])
   })
 
   it('treats an unknown / unregistered optimizer id as a no-op', async () => {
@@ -147,7 +147,38 @@ describe('runPreview', () => {
 
     expect(res.estimatedTokensBefore).toBe(totalBefore)
     expect(res.estimatedTokensAfter).toBe(totalBefore)
-    expect(res.perStep).toEqual([{ id: 'session-dedup', before: totalBefore, after: totalBefore }])
+    expect(res.perStep).toMatchObject([{ id: 'session-dedup', before: totalBefore, after: totalBefore }])
+  })
+
+  it('returns the prompt each step left behind, so a caller can diff consecutive states', async () => {
+    const registry = makeRegistry(dropLast, nuke)
+
+    const res = await runPreview({
+      registry,
+      sampleMessages: sample,
+      steps: [
+        { id: 'session-dedup', enabled: true },
+        { id: 'caveman', enabled: true },
+      ],
+    })
+
+    // dropLast removed the newest message; the rolled-back caveman left that state alone.
+    expect(res.perStep[0]!.messages).toEqual(sample.slice(0, -1))
+    expect(res.perStep[1]!.messages).toEqual(sample.slice(0, -1))
+    expect(res.messages).toEqual(sample.slice(0, -1))
+  })
+
+  it('reports the untouched prompt on a step that had nothing to do', async () => {
+    const registry = makeRegistry(dropLast)
+
+    const res = await runPreview({
+      registry,
+      sampleMessages: sample,
+      steps: [{ id: 'session-dedup', enabled: false }],
+    })
+
+    expect(res.perStep[0]!.messages).toEqual(sample)
+    expect(res.perStep[0]!.rolledBack).toBeUndefined()
   })
 
   it('does not mutate the caller sampleMessages array', async () => {

@@ -17,6 +17,19 @@ export interface PreviewStepResult {
   id: OptimizerId
   before: number
   after: number
+  /**
+   * The prompt as this step left it. Always present, including when the step
+   * changed nothing, so a caller can diff consecutive states without tracking
+   * which step was the last one to touch the prompt (T63).
+   */
+  messages: Message[]
+  /**
+   * Set when the step produced a change that was then rejected — by the lossy
+   * safety gate or by its own `validate` — and rolled back. `before === after`
+   * on its own cannot tell that apart from a step that simply had nothing to do,
+   * and the difference is exactly what a threshold needs tuning for.
+   */
+  rolledBack?: boolean
 }
 
 /** Result of a dry-run optimizer preview over sample messages. */
@@ -24,6 +37,8 @@ export interface PreviewResult {
   estimatedTokensBefore: number
   estimatedTokensAfter: number
   perStep: PreviewStepResult[]
+  /** The prompt the whole pipeline would forward. Diff it against the sample to see the net effect. */
+  messages: Message[]
 }
 
 export interface PreviewInput {
@@ -97,6 +112,7 @@ export async function runPreview(input: PreviewInput): Promise<PreviewResult> {
   for (const step of steps) {
     const before = tokensOf(req.messages ?? [])
     let after = before
+    let rolledBack = false
 
     const optimizer = step.enabled ? registry?.get(step.id) : undefined
     if (optimizer && optimizer.supports(ctx)) {
@@ -114,18 +130,26 @@ export async function runPreview(input: PreviewInput): Promise<PreviewResult> {
         if (rejected) {
           restoreInPlace(req, snapshot)
           optimizer.recover?.(ctx, result)
+          rolledBack = result.changed
         } else {
           after = tokensOf(req.messages ?? [])
         }
       }
     }
 
-    perStep.push({ id: step.id, before, after })
+    perStep.push({
+      id: step.id,
+      before,
+      after,
+      messages: structuredClone(req.messages ?? []),
+      ...(rolledBack ? { rolledBack: true } : {}),
+    })
   }
 
   return {
     estimatedTokensBefore,
     estimatedTokensAfter: tokensOf(req.messages ?? []),
     perStep,
+    messages: structuredClone(req.messages ?? []),
   }
 }

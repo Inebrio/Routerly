@@ -38,6 +38,7 @@ import { mcpApiRoutes } from './mcp.js';
 import { getOptimizerRegistry } from '../optimizers/registry.js';
 import { guardrailConfigSchema, piiConfigSchema, optimizerConfigSchema, optimizerStepSchema } from './schemas.js';
 import { runPreview } from '../optimizers/preview.js';
+import { listSamples } from '../optimizers/samples.js';
 import { computeSavings } from '../usage/savings.js';
 import { isClientConfiguratorEnabled } from '../clients/module.js';
 import {
@@ -1216,6 +1217,16 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const registry = getOptimizerRegistry();
     const installed = (registry?.list() ?? []).map(o => ({ id: o.id, klass: o.klass, installed: true }));
     return reply.send(installed);
+  });
+
+  // Recent real prompts for a project, from the in-memory ring the optimizer
+  // pipeline fills (T63). Nothing here is persisted: an empty list is the normal
+  // answer after a restart, or for a project no request has reached yet.
+  fastify.get<{ Params: { id: string } }>('/api/projects/:id/optimizers/samples', async (req, reply) => {
+    if (!requirePerm(req, 'optimizers:read', reply)) return;
+    const projects = await readConfig('projects');
+    if (!projects.some(p => p.id === req.params.id)) return reply.status(404).send({ error: 'Not found' });
+    return reply.send(listSamples(req.params.id));
   });
 
   // Dry-run: apply the given steps to sample messages and report token deltas.
