@@ -147,6 +147,27 @@ describe('trackUsage', () => {
     expect(record.callType).toBe('completion')
   })
 
+  it('uses chat as default requestType', async () => {
+    mockGetTrace.mockReturnValue(null)
+    await trackUsage({
+      projectId: 'p', model: makeModel() as any,
+      inputTokens: 10, outputTokens: 5, latencyMs: 100, outcome: 'success',
+    })
+    const record = mockAppendUsageRecord.mock.calls[0]![0]
+    expect(record.requestType).toBe('chat')
+  })
+
+  it('keeps an explicit requestType', async () => {
+    mockGetTrace.mockReturnValue(null)
+    await trackUsage({
+      projectId: 'p', model: makeModel() as any,
+      inputTokens: 10, outputTokens: 0, latencyMs: 100, outcome: 'success',
+      requestType: 'embedding',
+    })
+    const record = mockAppendUsageRecord.mock.calls[0]![0]
+    expect(record.requestType).toBe('embedding')
+  })
+
   it('omits tokensPerSec when latencyMs is 0 (line 61 false branch)', async () => {
     mockGetTrace.mockReturnValue(null)
     await trackUsage({

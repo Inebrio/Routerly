@@ -83,6 +83,19 @@ describe('report usage', () => {
     expect(out.join('\n')).toContain('guardrail');
   });
 
+  it('appends --type filter as requestType', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    await run('usage', '--type', 'rerank');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('requestType=rerank'));
+  });
+
+  it('rejects an unknown --type before calling the API', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    const { err } = await run('usage', '--type', 'garbage');
+    expect(err.join('\n')).toContain("unknown type 'garbage'");
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
   it('prints "no records" when totalCalls is 0', async () => {
     mockApi.mockResolvedValue({ ...usageFixture, summary: { ...usageFixture.summary, totalCalls: 0 } });
     const { out } = await run('usage');
@@ -240,6 +253,32 @@ describe('report calls', () => {
     mockApi.mockRejectedValue(new Error('fail'));
     const { err } = await run('calls');
     expect(err.join('\n')).toContain('fail');
+  });
+
+  it('appends --type filter as requestType', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    await run('calls', '--type', 'embedding');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('requestType=embedding'));
+  });
+
+  it('rejects an unknown --type before calling the API', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    const { err } = await run('calls', '--type', 'garbage');
+    expect(err.join('\n')).toContain("unknown type 'garbage'");
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('prints the request type column, defaulting legacy records to Chat', async () => {
+    mockApi.mockResolvedValue({
+      ...usageFixture,
+      records: [
+        { ...usageFixture.records[0], requestType: 'image' },
+        usageFixture.records[1], // legacy: no requestType
+      ],
+    });
+    const { out } = await run('calls');
+    expect(out.join('\n')).toMatch(/Image/);
+    expect(out.join('\n')).toMatch(/Chat/);
   });
 });
 

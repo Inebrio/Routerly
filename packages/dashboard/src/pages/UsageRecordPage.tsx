@@ -1,6 +1,7 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react'; // useState still used for record/projects/loading state
 import { ArrowLeft } from 'lucide-react';
+import { requestTypeLabel } from '@routerly/shared';
 import { getProjects, getUsageRecord, type Project, type UsageRecord, type TraceEntry } from '../api';
 import { TraceEntryRenderer } from '../components/TraceEntryRenderer';
 
@@ -168,6 +169,8 @@ export function UsageRecordPage() {
                   </span>
                 }
               />
+              {/* Records written before requestType existed were all chat calls. */}
+              <Field label="Request Type" value={requestTypeLabel(record.requestType ?? 'chat')} />
             </div>
           </div>
 

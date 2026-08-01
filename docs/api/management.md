@@ -1299,10 +1299,13 @@ Query parameters:
 | `projectIds` | string | Comma-separated project IDs to filter by |
 | `model` | string | Filter by model ID |
 | `modelIds` | string | Comma-separated model IDs to filter by |
-| `callType` | string | `completion`, `routing`, or `guardrail`. `completion` also matches legacy records with no `callType` field |
+| `callType` | string | Who made the call: `completion` (the client), `routing`, or `guardrail`. `completion` also matches legacy records with no `callType` field |
+| `requestType` | string | What was asked for, from the endpoint the client hit: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio`. `chat` also matches records written before 0.4.0, which had no `requestType` field |
 | `outcome` | string | `success`, `error`, `budget_exceeded`, `timeout`, `blocked`. `error` matches records that are neither `success` nor `blocked` |
 | `limit` | number | Max records to return (default: 100) |
 | `offset` | number | Pagination offset |
+
+`callType` and `requestType` are two different questions about the same record. A semantic-intent embedding fired by the router is `callType: "routing"`, `requestType: "embedding"`; a plain chat request from a client is `callType: "completion"`, `requestType: "chat"`. Calls the gateway forwards through the pass-through proxy (embeddings, images, audio) are recorded with their `requestType` and zero tokens, since their body is streamed to the client rather than parsed.
 
 All filters are applied server-side. `projectIds` and `modelIds` accept comma-separated values for multi-value filtering; they combine with (AND) the single-value `project` and `model` parameters when both are provided, narrowing the result to records that match every active filter.
 

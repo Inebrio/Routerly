@@ -876,6 +876,7 @@ describe('getUsage', () => {
       projectIds: ['p1', 'p2'],
       modelIds: ['m1'],
       callType: 'completion',
+      requestType: 'embedding',
       outcome: 'success',
     });
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
@@ -888,15 +889,17 @@ describe('getUsage', () => {
     expect(url).toContain('projectIds=p1%2Cp2');
     expect(url).toContain('modelIds=m1');
     expect(url).toContain('callType=completion');
+    expect(url).toContain('requestType=embedding');
     expect(url).toContain('outcome=success');
   });
 
-  it('skips callType=all and outcome=all', async () => {
+  it('skips callType=all, requestType=all and outcome=all', async () => {
     const { getUsage } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { summary: {}, byModel: {}, timeline: [], records: [] }));
-    await getUsage('daily', undefined, undefined, undefined, undefined, undefined, { callType: 'all', outcome: 'all' });
+    await getUsage('daily', undefined, undefined, undefined, undefined, undefined, { callType: 'all', requestType: 'all', outcome: 'all' });
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).not.toContain('callType');
+    expect(url).not.toContain('requestType');
     expect(url).not.toContain('outcome');
   });
 

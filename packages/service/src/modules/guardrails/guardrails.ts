@@ -265,6 +265,7 @@ async function checkRule(
             latencyMs: 0,
             outcome: 'success',
             callType: 'guardrail',
+            requestType: 'embedding',
           }).catch(() => {}); // ponytail: fire-and-forget error suppressor
         }
         if (classification.status === 'confident' && classification.topIntent === 'blocked') {
