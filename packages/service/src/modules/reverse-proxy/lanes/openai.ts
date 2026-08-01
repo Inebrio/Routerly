@@ -91,6 +91,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
       ...(ctx.piiRedacted ? { piiRedacted: ctx.piiRedacted } : {}),
       ...(ctx.optimizerStats ? { optimizerStats: ctx.optimizerStats } : {}),
+      ...(ctx.req?.experiment ? { experiment: ctx.req.experiment } : {}),
       ...(ctx.conversationId ? { sessionId: ctx.conversationId } : {}),
       ...(ctx.token?.tags ? { tags: ctx.token.tags } : {}),
     }

@@ -14,6 +14,7 @@ import { resilienceModule } from './resilience/index.js'
 import { optimizerModules } from './optimizers/index.js'
 import { clientConfiguratorModule } from './clients/module.js'
 import { mcpModule } from './mcp/index.js'
+import { experimentsModule } from './experiments/index.js'
 import { CONTRIB_MODULES } from '../core/contrib.js'
 import { defineModule, type RouterlyModule } from '../core/index.js'
 
@@ -31,6 +32,7 @@ export const coreModules = [
   cacheModule,
   resilienceModule,
   mcpModule,
+  experimentsModule,
 ]
 
 // ponytail: provider-oauth/provider-web are pure feature-gate slots (no register()

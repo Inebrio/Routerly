@@ -36,6 +36,9 @@ export interface TrackUsageParams {
   piiRedacted?: string[];
   /** What each optimizer step removed from this prompt, changed steps only (T63) */
   optimizerStats?: OptimizerCallStat[];
+  /** Experiment that routed this call, and the variant it drew (T71) */
+  experimentId?: string;
+  experimentVariantId?: string;
 }
 
 /**
@@ -89,6 +92,8 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     ...(params.blockedBy ? { blockedBy: params.blockedBy } : {}),
     ...(params.piiRedacted && params.piiRedacted.length > 0 ? { piiRedacted: params.piiRedacted } : {}),
     ...(params.optimizerStats && params.optimizerStats.length > 0 ? { optimizers: params.optimizerStats } : {}),
+    ...(params.experimentId ? { experimentId: params.experimentId } : {}),
+    ...(params.experimentVariantId ? { experimentVariantId: params.experimentVariantId } : {}),
   };
 
   await appendUsageRecord(record);

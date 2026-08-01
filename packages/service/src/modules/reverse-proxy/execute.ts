@@ -78,6 +78,8 @@ export interface LLMCallContext {
   piiRedacted?: string[];
   /** What each optimizer step removed from this prompt (T63) */
   optimizerStats?: OptimizerCallStat[];
+  /** Experiment that routed this call, and the variant it drew (T71) */
+  experiment?: { id: string; variantId: string };
 }
 
 /**
@@ -396,6 +398,7 @@ export async function llmChat(
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
       ...(ctx.optimizerStats ? { optimizerStats: ctx.optimizerStats } : {}),
+      ...(ctx.experiment ? { experimentId: ctx.experiment.id, experimentVariantId: ctx.experiment.variantId } : {}),
     }).catch(() => {});
 
     handleProviderResult(model, true, undefined, projectId, log);
@@ -427,6 +430,7 @@ export async function llmChat(
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
       ...(ctx.optimizerStats ? { optimizerStats: ctx.optimizerStats } : {}),
+      ...(ctx.experiment ? { experimentId: ctx.experiment.id, experimentVariantId: ctx.experiment.variantId } : {}),
     }).catch(() => {});
 
     throw err;
@@ -742,6 +746,7 @@ export async function llmMessages(
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
       ...(ctx.optimizerStats ? { optimizerStats: ctx.optimizerStats } : {}),
+      ...(ctx.experiment ? { experimentId: ctx.experiment.id, experimentVariantId: ctx.experiment.variantId } : {}),
     }).catch(() => {});
 
     // llmMessages never called handleProviderResult before Task 7 (no provider.degraded/.recovered
@@ -773,6 +778,7 @@ export async function llmMessages(
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
       ...(ctx.optimizerStats ? { optimizerStats: ctx.optimizerStats } : {}),
+      ...(ctx.experiment ? { experimentId: ctx.experiment.id, experimentVariantId: ctx.experiment.variantId } : {}),
     }).catch(() => {});
     throw err;
   }
