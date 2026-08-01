@@ -121,7 +121,7 @@ export function ProjectTokenCreatePage() {
                 Scopes <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
               </label>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 8 }}>
-                Access scopes granted to this token (e.g. "mcp", "mcp:write" for the MCP surface).
+                Free-form scopes attached to this token (e.g. "batch", "internal"), stored with the token for your own bookkeeping.
               </p>
               <LabelInput labels={createScopes} setLabels={setCreateScopes} input={createScopeInput} setInput={setCreateScopeInput} allLabels={allScopes} />
             </div>

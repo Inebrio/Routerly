@@ -6,6 +6,7 @@ import { updateMe, setup2fa, confirm2fa, disable2fa, regenerateBackupCodes, getN
 import { useAuth } from '../AuthContext';
 import { severityIcon, timeAgo } from '../components/NotificationBell';
 import { useFilterState } from '../hooks/useFilterState';
+import { ProfileMcpTab } from './ProfileMcpTab';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
 
 // ─── Notifications tab ────────────────────────────────────────────────────────
@@ -894,6 +895,7 @@ function ProfileSecurityTab() {
 const TABS = [
   { id: 'profile', label: 'Profile', to: '/dashboard/profile' },
   { id: 'notifications', label: 'Notifications', to: '/dashboard/profile/notifications' },
+  { id: 'mcp', label: 'MCP', to: '/dashboard/profile/mcp' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -957,7 +959,9 @@ export function ProfilePage({ initialTab = 'profile' }: { initialTab?: TabId }) 
       </div>
 
       <div className="page-body" style={{ paddingTop: 32 }}>
-        {activeTab === 'notifications' ? <ProfileNotificationsTab /> : <ProfileSecurityTab />}
+        {activeTab === 'notifications' && <ProfileNotificationsTab />}
+        {activeTab === 'mcp' && <ProfileMcpTab />}
+        {activeTab === 'profile' && <ProfileSecurityTab />}
       </div>
     </>
   );
