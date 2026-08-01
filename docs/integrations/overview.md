@@ -35,21 +35,30 @@ Native integrations for popular development environments.
 
 ---
 
-## Auto-configure
+## Connect a client
 
-Instead of copying a snippet by hand, the `routerly clients` CLI command
-group writes a client's config file for you (with an automatic backup and
-undo) or points you at the manual steps for clients with no config file.
-See the [dashboard Clients page](../dashboard/clients.md) for a read-only,
-copy-paste view of the same snippets.
+Routerly keeps a registry of the AI clients it knows how to talk to. For
+each one the `routerly clients` CLI command group either writes the config
+file for you (with an automatic backup and undo) or prints the manual steps.
+The dashboard shows the same steps, read-only, under
+[Connect](../dashboard/connect.md).
 
-| Client | Description |
-|--------|-------------|
-| [Claude Code](./clients/claude-code) | Anthropic's official CLI coding agent, auto-configurable |
-| [Codex](./clients/codex) | OpenAI's CLI coding agent, auto-configurable |
-| [OpenCode](./clients/opencode) | Open-source terminal coding agent, auto-configurable |
-| [Continue.dev](./clients/continue) | Open-source AI code assistant, auto-configurable |
-| [Cline](./clients/cline) | VS Code Settings UI, manual only, no config file to auto-apply |
+**Modes**: `llm` means the client sends its model traffic through Routerly,
+`mcp` means it loads Routerly as an MCP server and gets its tools.
+
+| Client | Setup | Modes |
+|--------|-------|-------|
+| [Claude Code](./clients/claude-code) | CLI writes the config | llm + mcp |
+| [Codex](./clients/codex) | CLI writes the config | llm + mcp |
+| [OpenCode](./clients/opencode) | CLI writes the config | llm + mcp |
+| [Continue.dev](./clients/continue) | CLI writes the config | llm |
+| [Claude Desktop](./clients/claude-desktop) | Manual, MCP only | mcp |
+| [OpenClaw](./openclaw) | Manual | llm + mcp |
+| [Cline](./clients/cline) | Manual, VS Code Settings UI | llm |
+| [Cursor](./cursor) | Manual, in-app Settings | llm |
+| [Zed](./clients/zed) | Manual, `settings.json` | llm |
+| [Any OpenAI SDK app](./generic-openai) | Manual, environment variables | llm |
+| [Any Anthropic SDK app](./generic-anthropic) | Manual, environment variables | llm |
 
 ---
 
