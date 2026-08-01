@@ -169,7 +169,7 @@ export type { NotificationCategory, NotificationEventMeta } from './types/notifi
 
 // Usage request types: what a call asked for, derived from its path (T60)
 export { REQUEST_TYPES, requestTypeFromPath, requestTypeLabel } from './types/usage.js';
-export type { RequestType } from './types/usage.js';
+export type { RequestType, SavingsBaseline, SavingsSummary } from './types/usage.js';
 
 // Static configuration data
 import providersConf from './conf/providers.json' with { type: 'json' };

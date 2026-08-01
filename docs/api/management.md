@@ -1304,6 +1304,7 @@ Query parameters:
 | `outcome` | string | `success`, `error`, `budget_exceeded`, `timeout`, `blocked`. `error` matches records that are neither `success` nor `blocked` |
 | `limit` | number | Max records to return (default: 100) |
 | `offset` | number | Pagination offset |
+| `savings` | string | `1` adds the [savings block](#savings-block) to the response. Off by default: the computation is only paid for by the callers that show it |
 
 `callType` and `requestType` are two different questions about the same record. A semantic-intent embedding fired by the router is `callType: "routing"`, `requestType: "embedding"`; a plain chat request from a client is `callType: "completion"`, `requestType: "chat"`. Calls the gateway forwards through the pass-through proxy (embeddings, images, audio) are recorded with their `requestType` and zero tokens, since their body is streamed to the client rather than parsed.
 
@@ -1364,6 +1365,64 @@ Each `byModel` entry includes:
 Guardrail judge call records appear in the `records` array with `callType: "guardrail"`. Blocked request records appear with `outcome: "blocked"` and `callType: "guardrail"`. The `errorCalls` counter excludes blocked requests -- a block is a normal guardrail outcome, not a model error.
 
 The `outcome` filter on `GET /api/usage` accepts `blocked` in addition to `success`, `error`, and `budget_exceeded`.
+
+### Savings block
+
+Add `savings=1` to `GET /api/usage` to get a `savings` object alongside the rest of the response. It answers two questions over the same filtered records: what the routed traffic actually cost and took, and what it would have cost and taken had every client call gone to one fixed model instead.
+
+```json
+{
+  "savings": {
+    "comparedCalls": 180,
+    "comparedCost": 0.12,
+    "comparedLatencyMs": 148000,
+    "comparedInputTokens": 420000,
+    "comparedOutputTokens": 96000,
+    "cache": { "inputTokens": 180000, "cost": 0.0162 },
+    "baselines": [
+      {
+        "modelId": "openai/gpt-5-mini",
+        "cost": 0.14,
+        "costDelta": 0.02,
+        "costDeltaPercent": 14.28,
+        "latencyMs": 132000,
+        "latencyDeltaMs": -16000,
+        "latencySamples": 120
+      }
+    ]
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `comparedCalls` | Client calls the counterfactual covers: successful, carrying tokens, priced against a known model |
+| `comparedCost` | What those calls actually cost, in USD |
+| `comparedLatencyMs` | What those calls actually took, in milliseconds, summed |
+| `comparedInputTokens` / `comparedOutputTokens` | Token totals of the compared calls |
+| `cache.inputTokens` | Input tokens served from prompt cache instead of being charged at full input price |
+| `cache.cost` | USD those cached tokens saved against the same model's full input price |
+| `baselines` | One counterfactual per baseline model, cheapest first |
+
+Each baseline entry:
+
+| Field | Description |
+|-------|-------------|
+| `modelId` | The baseline model |
+| `cost` | The compared calls repriced at this model's rates, in USD |
+| `costDelta` | `comparedCost - cost`. Positive means routing came out cheaper than this baseline |
+| `costDeltaPercent` | `costDelta` as a percentage of the baseline cost |
+| `latencyMs` | Estimated total time, from this model's own median milliseconds per output token over the same window. Absent when the model produced no output token in the window |
+| `latencyDeltaMs` | `comparedLatencyMs - latencyMs`. Positive means routing came out faster. Absent together with `latencyMs` |
+| `latencySamples` | Calls of this model in the window backing the time estimate. `0` means there is no estimate, only the cost figure |
+
+Baselines are the enabled target models of every project present in the filtered result, so a query scoped with `projectId` counterfactuals exactly that project's targets, and an unscoped query counterfactuals every target model in use.
+
+Routing and guardrail calls are excluded from the comparison: they are the gateway's own overhead, not the client's workload, and the `summary` object already reports them. Pass-through records carry no tokens and are excluded for the same reason.
+
+:::note Repricing is an estimate, not a replay
+The cost figure is exact arithmetic on the observed token counts, but a different model tokenizes the same text slightly differently and may answer at a different length. Read a baseline as "the same conversation, priced elsewhere". Measuring the real difference needs a live comparison on production traffic.
+:::
 
 ### Get a Single Usage Record
 

@@ -51,3 +51,53 @@ const REQUEST_TYPE_LABELS: Record<RequestType, string> = {
 export function requestTypeLabel(type: RequestType): string {
   return REQUEST_TYPE_LABELS[type];
 }
+
+/**
+ * Counterfactual for one baseline model (T61): what the compared traffic would
+ * have cost, and how long it would have taken, had every client call gone to
+ * this model instead of the one routing picked.
+ */
+export interface SavingsBaseline {
+  modelId: string;
+  /** The compared calls repriced at this model's rates, in USD. */
+  cost: number;
+  /** `comparedCost - cost`. Positive means routing came out cheaper than this baseline. */
+  costDelta: number;
+  /** `costDelta` as a percentage of this baseline's cost. `0` when the baseline costs nothing. */
+  costDeltaPercent: number;
+  /**
+   * Estimated total latency in ms, from this model's own throughput over the
+   * same window. Absent when the model produced no output token in the window:
+   * there is nothing to estimate from.
+   */
+  latencyMs?: number;
+  /** `comparedLatencyMs - latencyMs`. Positive means routing came out faster. Absent with `latencyMs`. */
+  latencyDeltaMs?: number;
+  /** Calls of this model in the window that back the latency estimate. */
+  latencySamples: number;
+}
+
+/**
+ * Savings layer over a filtered set of usage records (T61). Shared by the
+ * project dashboard, the CLI report and the overview: it is computed once,
+ * server side, from whatever record set the usage filters produced.
+ */
+export interface SavingsSummary {
+  /** Client calls the counterfactual covers: successful, with tokens, priced against a known model. */
+  comparedCalls: number;
+  /** What those calls actually cost, in USD. */
+  comparedCost: number;
+  /** What those calls actually took, in ms, summed. */
+  comparedLatencyMs: number;
+  comparedInputTokens: number;
+  comparedOutputTokens: number;
+  /** Prompt-cache savings already realised on the compared calls. */
+  cache: {
+    /** Input tokens served from cache instead of being charged at full input price. */
+    inputTokens: number;
+    /** USD those cached tokens saved against the same model's full input price. */
+    cost: number;
+  };
+  /** One entry per baseline model, cheapest first. */
+  baselines: SavingsBaseline[];
+}

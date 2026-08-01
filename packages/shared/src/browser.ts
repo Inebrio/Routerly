@@ -23,7 +23,7 @@ export type { NotificationCategory, NotificationEventMeta } from './types/notifi
 
 // Usage request types (T60) — plain data plus pure functions
 export { REQUEST_TYPES, requestTypeFromPath, requestTypeLabel } from './types/usage.js';
-export type { RequestType } from './types/usage.js';
+export type { RequestType, SavingsBaseline, SavingsSummary } from './types/usage.js';
 
 // Client registry: plain data plus pure string builders, no Node.js APIs.
 export { CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from './clients/index.js';
