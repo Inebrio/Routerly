@@ -160,7 +160,7 @@ export type { SupportState, WireFormat, ConnectMode, ClientMeta } from './client
 export { CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from './clients/index.js';
 
 // Notification event taxonomy (runtime value + derived type)
-export { NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, DEFAULT_PROJECT_TIMEOUT_MS } from './types/config.js';
+export { NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, DEFAULT_PROJECT_TIMEOUT_MS, isCompletionCall } from './types/config.js';
 export type { NotificationEvent } from './types/config.js';
 
 // Readable catalog for those events: title, category, cause line (T51)
@@ -196,6 +196,9 @@ export type {
   ExperimentStickyKey,
   ExperimentVariant,
   ExperimentJudge,
+  ExperimentJudgeTally,
+  ExperimentVariantMetrics,
+  ExperimentMetrics,
 } from './types/experiments.js';
 
 // Static configuration data

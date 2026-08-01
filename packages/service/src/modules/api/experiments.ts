@@ -7,6 +7,7 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { logAudit } from '../audit/logger.js';
 import type { AuditEntry } from '../audit/logger.js';
 import { isModuleEnabled } from '../../core/modules/registry.js';
+import { computeExperimentMetrics } from '../experiments/metrics.js';
 
 // ── Route-local auth helpers (mirrors api.ts/profiles.ts; no shared route-helper module exists) ──
 
@@ -117,6 +118,17 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
     const found = (await readConfig('experiments')).find(e => e.id === req.params.id);
     if (!found) return reply.status(404).send({ error: 'Not found' });
     return reply.send(mask(found));
+  });
+
+  // Read straight off the usage log: the experiment stamps its id on every record
+  // it routes (T71), so the comparison needs no store of its own.
+  fastify.get<{ Params: { id: string } }>('/api/experiments/:id/metrics', async (req, reply) => {
+    if (!requirePerm(req, 'experiments:read', reply)) return;
+    if (!await checkModuleGate(reply)) return;
+    const found = (await readConfig('experiments')).find(e => e.id === req.params.id);
+    if (!found) return reply.status(404).send({ error: 'Not found' });
+    const [records, projects] = await Promise.all([readConfig('usage'), readConfig('projects')]);
+    return reply.send(computeExperimentMetrics(found, records, projects));
   });
 
   fastify.post<{ Body: unknown }>('/api/experiments', async (req, reply) => {

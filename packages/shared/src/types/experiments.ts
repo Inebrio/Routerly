@@ -103,6 +103,20 @@ export interface ExperimentJudge {
 /** Calls per variant below which the dashboard calls the sample insufficient. */
 export const DEFAULT_MIN_SAMPLES_PER_VARIANT = 30;
 
+/**
+ * Running total of the judge's verdicts on one variant. Kept as a tally rather
+ * than one row per judged call: the average is all the comparison needs, and a
+ * tally cannot grow without bound.
+ */
+export interface ExperimentJudgeTally {
+  /** Answers scored so far. */
+  count: number;
+  /** Sum of the scores, each `0`–`10`. Divide by `count` for the average. */
+  totalScore: number;
+  /** When the last verdict landed. */
+  lastAt: string; // ISO 8601
+}
+
 export interface ExperimentConfig {
   id: string;
   name: string;
@@ -121,6 +135,8 @@ export interface ExperimentConfig {
   tokens: ProjectToken[];
   /** Quality scoring, off when absent. */
   judge?: ExperimentJudge;
+  /** Judge verdicts accumulated per variant id. Absent until the judge scores its first answer. */
+  judgeScores?: Record<string, ExperimentJudgeTally>;
   /** Overrides DEFAULT_MIN_SAMPLES_PER_VARIANT for this experiment. */
   minSamplesPerVariant?: number;
   createdAt: string; // ISO 8601
@@ -146,4 +162,43 @@ export function variantShares(variants: ExperimentVariant[]): number[] {
   const total = weights.reduce((s, w) => s + w, 0);
   if (total <= 0) return variants.map(() => 1 / variants.length);
   return weights.map(w => w / total);
+}
+
+/** What one arm of the experiment cost, how fast it was, and how good it looked. */
+export interface ExperimentVariantMetrics {
+  variantId: string;
+  projectId: string;
+  /** The variant's display name, or the project's when the variant has none. */
+  name?: string;
+  calls: number;
+  errors: number;
+  /** `errors / calls`, `0` when the variant never ran. */
+  errorRate: number;
+  /** USD across every call of this variant. */
+  cost: number;
+  avgCostPerCall: number;
+  inputTokens: number;
+  outputTokens: number;
+  avgLatencyMs: number;
+  /** 95th percentile latency: what the slow calls actually cost the user. */
+  p95LatencyMs: number;
+  /** Average time to first token, over the streamed calls only. Absent when none streamed. */
+  avgTtftMs?: number;
+  /** Answers the judge scored. `0` when the judge is off. */
+  judgedCalls: number;
+  /** Mean judge score, `0`–`10`. Absent until the judge scores an answer. */
+  avgScore?: number;
+  /** `calls >= minSamplesPerVariant`: below it, the numbers are noise. */
+  enoughSamples: boolean;
+}
+
+/** The whole comparison, one entry per variant, plus whether it can be read yet. */
+export interface ExperimentMetrics {
+  experimentId: string;
+  status: ExperimentStatus;
+  minSamplesPerVariant: number;
+  totalCalls: number;
+  variants: ExperimentVariantMetrics[];
+  /** Every variant reached `minSamplesPerVariant`. Until then the comparison is premature. */
+  ready: boolean;
 }

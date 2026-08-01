@@ -6,6 +6,7 @@ import type {
   SavingsSummary,
   UsageRecord,
 } from '@routerly/shared';
+import { isCompletionCall } from '@routerly/shared';
 import { calculateCost } from '../../lib/cost.js';
 
 /** Median of a list. Returns 0 on an empty list, which every caller treats as "no estimate". */
@@ -20,14 +21,14 @@ const round = (n: number): number => Math.round(n * 1_000_000_000) / 1_000_000_0
 
 /**
  * A record enters the counterfactual only if repricing it means something:
- * a successful client call that actually moved tokens. Routing and guardrail
- * calls are Routerly's own overhead, not the client's workload, and the
+ * a successful client call that actually moved tokens. Routing, guardrail and
+ * judge calls are Routerly's own overhead, not the client's workload, and the
  * zero-token records the pass-through lane writes (T60) carry no tokens to
  * reprice at all.
  */
 function isCompared(r: UsageRecord): boolean {
   if (r.outcome !== 'success') return false;
-  if (r.callType === 'routing' || r.callType === 'guardrail') return false;
+  if (!isCompletionCall(r.callType)) return false;
   return r.inputTokens + r.outputTokens > 0;
 }
 

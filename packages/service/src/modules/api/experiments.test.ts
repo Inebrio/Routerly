@@ -111,6 +111,57 @@ describe('GET /api/experiments/:id', () => {
   })
 })
 
+describe('GET /api/experiments/:id/metrics', () => {
+  const usage = [
+    { id: 'u1', timestamp: '2026-08-01T10:00:00.000Z', projectId: 'proj-a', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.01, latencyMs: 100, outcome: 'success', experimentId: 'exp-1', experimentVariantId: 'v-a' },
+    { id: 'u2', timestamp: '2026-08-01T10:00:01.000Z', projectId: 'proj-b', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.002, latencyMs: 300, outcome: 'error', experimentId: 'exp-1', experimentVariantId: 'v-b' },
+    { id: 'u3', timestamp: '2026-08-01T10:00:02.000Z', projectId: 'proj-a', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 9, latencyMs: 100, outcome: 'success' },
+  ]
+
+  it('reports one row per variant off the usage log', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET', url: '/api/experiments/exp-1/metrics',
+      headers: authWith('experiments:read', { experiments: [experiment({ status: 'running' })], usage, projects }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.experimentId).toBe('exp-1')
+    expect(body.totalCalls).toBe(2)
+    expect(body.minSamplesPerVariant).toBe(30)
+    expect(body.ready).toBe(false)
+    expect(body.variants).toHaveLength(2)
+    expect(body.variants[0]).toMatchObject({ variantId: 'v-a', name: 'A', calls: 1, errors: 0, cost: 0.01 })
+    expect(body.variants[1]).toMatchObject({ variantId: 'v-b', name: 'B', calls: 1, errors: 1, errorRate: 1 })
+  })
+
+  it('404s on an unknown id', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/experiments/nope/metrics', headers: authWith('experiments:read', { experiments: [experiment()] }) })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('forbids without experiments:read', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/experiments/exp-1/metrics', headers: authWith('report:read', { experiments: [experiment()] }) })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('403s when the experiments module is disabled', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET', url: '/api/experiments/exp-1/metrics',
+      headers: authWith('experiments:read', { experiments: [experiment()], modules: [{ id: 'experiments', enabled: false }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+    expect(JSON.parse(res.body).error).toBe('module_disabled')
+  })
+})
+
 describe('POST /api/experiments', () => {
   it('creates a draft with its own token, returned once', async () => {
     const app = await buildApp()

@@ -499,7 +499,7 @@ export interface TraceEntry {
 export interface UsageRecord {
   id: string; timestamp: string; projectId: string; modelId: string;
   inputTokens: number; outputTokens: number; cachedInputTokens?: number; cost: number; latencyMs: number; ttftMs?: number; tokensPerSec?: number; outcome: string;
-  callType?: 'routing' | 'completion' | 'guardrail';
+  callType?: 'routing' | 'completion' | 'guardrail' | 'judge';
   requestType?: RequestType;
   errorMessage?: string;
   trace?: TraceEntry[];
