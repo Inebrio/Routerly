@@ -1,6 +1,6 @@
 // ─── Config types ────────────────────────────────────────────────────────────
 
-import type { OptimizerConfig } from './optimizers.js';
+import type { OptimizerCallStat, OptimizerConfig } from './optimizers.js';
 import type { RequestType } from './usage.js';
 
 export type Provider = 'openai' | 'anthropic' | 'anthropic-oauth' | 'openai-oauth' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom' | 'openai-web' | 'anthropic-web' | 'deepseek' | 'groq' | 'together' | 'perplexity' | 'azure-openai' | 'bedrock' | 'vertex';
@@ -1046,6 +1046,11 @@ export interface UsageRecord {
   blockedBy?: string;
   /** PII entity types redacted from this request before forwarding (#76) */
   piiRedacted?: string[];
+  /**
+   * What each optimizer step did to this request (T63). Only steps that changed
+   * the prompt are listed, so the field is absent on the vast majority of records.
+   */
+  optimizers?: OptimizerCallStat[];
 }
 
 /** Per-model aggregate row in the GET /api/usage response (`byModel`). */

@@ -138,7 +138,13 @@ export type {
   OptimizerResult,
   OptimizerStep,
   OptimizerConfig,
+  OptimizerCallStat,
+  OptimizerThresholdSpec,
+  OptimizerMeta,
 } from './types/optimizers.js';
+
+// Readable catalog for the built-in optimizers: label, class, threshold spec (T63)
+export { OPTIMIZER_CATALOG, optimizerLabel, optimizerThreshold } from './types/optimizers.js';
 
 export type {
   ResilienceLevel,
@@ -169,7 +175,7 @@ export type { NotificationCategory, NotificationEventMeta } from './types/notifi
 
 // Usage request types: what a call asked for, derived from its path (T60)
 export { REQUEST_TYPES, requestTypeFromPath, requestTypeLabel } from './types/usage.js';
-export type { RequestType, SavingsBaseline, SavingsSummary } from './types/usage.js';
+export type { RequestType, SavingsBaseline, SavingsOptimizerEntry, SavingsSummary } from './types/usage.js';
 
 // Static configuration data
 import providersConf from './conf/providers.json' with { type: 'json' };

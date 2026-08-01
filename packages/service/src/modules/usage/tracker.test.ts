@@ -219,4 +219,26 @@ describe('trackUsage', () => {
     expect(record.blockedBy).toBe('regex:bad')
     expect(record.piiRedacted).toEqual(['NAME'])
   })
+
+  it('writes optimizer stats under `optimizers` (T63)', async () => {
+    mockGetTrace.mockReturnValue(null)
+    await trackUsage({
+      projectId: 'p', model: makeModel() as any,
+      inputTokens: 10, outputTokens: 5, latencyMs: 100, outcome: 'success',
+      optimizerStats: [{ id: 'ccr', tokensBefore: 100, tokensAfter: 60 }],
+    })
+    const record = mockAppendUsageRecord.mock.calls[0]![0]
+    expect(record.optimizers).toEqual([{ id: 'ccr', tokensBefore: 100, tokensAfter: 60 }])
+  })
+
+  it('omits `optimizers` when no step changed the prompt', async () => {
+    mockGetTrace.mockReturnValue(null)
+    await trackUsage({
+      projectId: 'p', model: makeModel() as any,
+      inputTokens: 10, outputTokens: 5, latencyMs: 100, outcome: 'success',
+      optimizerStats: [],
+    })
+    const record = mockAppendUsageRecord.mock.calls[0]![0]
+    expect(record).not.toHaveProperty('optimizers')
+  })
 })

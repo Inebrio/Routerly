@@ -23,7 +23,20 @@ export type { NotificationCategory, NotificationEventMeta } from './types/notifi
 
 // Usage request types (T60) — plain data plus pure functions
 export { REQUEST_TYPES, requestTypeFromPath, requestTypeLabel } from './types/usage.js';
-export type { RequestType, SavingsBaseline, SavingsSummary } from './types/usage.js';
+export type { RequestType, SavingsBaseline, SavingsOptimizerEntry, SavingsSummary } from './types/usage.js';
+
+// Optimizer catalog (T63) — plain data plus pure functions
+export { OPTIMIZER_CATALOG, optimizerLabel, optimizerThreshold } from './types/optimizers.js';
+export type {
+  OptimizerClass,
+  OptimizerId,
+  OptimizerResult,
+  OptimizerStep,
+  OptimizerConfig,
+  OptimizerCallStat,
+  OptimizerThresholdSpec,
+  OptimizerMeta,
+} from './types/optimizers.js';
 
 // Client registry: plain data plus pure string builders, no Node.js APIs.
 export { CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from './clients/index.js';
