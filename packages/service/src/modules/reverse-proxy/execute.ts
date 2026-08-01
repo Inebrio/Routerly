@@ -493,6 +493,7 @@ export async function llmStream(
   // Se fallisce qui il chiamante può tentare il candidato successivo.
   let firstChunk: IteratorResult<StreamChunk>;
   try {
+    // timeoutMs 0 means "no TTFT timeout" and falls through to the untimed await.
     if (ttftTimeoutMs) {
       let timer: ReturnType<typeof setTimeout>;
       const timeoutPromise = new Promise<never>((_, reject) => {

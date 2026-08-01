@@ -14,7 +14,7 @@ import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } f
 import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults } from '@routerly/shared';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
-import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY } from '@routerly/shared';
+import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_PROJECT_TIMEOUT_MS } from '@routerly/shared';
 import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
@@ -205,6 +205,13 @@ function audit(req: FastifyRequest, action: string, result: AuditEntry['result']
     result,
     ...(details !== undefined ? { details } : {}),
   });
+}
+
+/** TTFT timeout accepts any non-negative integer; 0 disables the timeout entirely. */
+function rejectInvalidTimeout(timeoutMs: number | undefined, reply: FastifyReply): boolean {
+  if (timeoutMs === undefined || (Number.isInteger(timeoutMs) && timeoutMs >= 0)) return false;
+  reply.status(400).send({ error: 'timeoutMs must be a non-negative integer in milliseconds (0 disables the timeout)' });
+  return true;
 }
 
 function requirePerm(req: FastifyRequest, perm: Permission, reply: FastifyReply): boolean {
@@ -1004,6 +1011,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!requirePerm(req, 'project:write', reply)) return;
     // Setting the optimizers pipeline is a privileged sub-operation of project write.
     if (req.body.optimizers != null && !requirePerm(req, 'optimizers:manage', reply)) return;
+    if (rejectInvalidTimeout(req.body.timeoutMs, reply)) return;
     const projects = await readConfig('projects');
     const trimmedName = req.body.name.trim();
     if (!trimmedName) return reply.status(400).send({ error: 'Project name cannot be empty' });
@@ -1050,7 +1058,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         modelId: m.modelId,
         ...(m.prompt ? { prompt: m.prompt } : {}),
       })),
-      timeoutMs: req.body.timeoutMs ?? 5000,
+      timeoutMs: req.body.timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS,
       ...(guardrails ? { guardrails } : {}),
       ...(pii ? { pii } : {}),
       ...(optimizers ? { optimizers } : {}),
@@ -1080,6 +1088,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!requirePerm(req, 'project:write', reply)) return;
     // Changing the optimizers pipeline (set or clear) is a privileged sub-operation.
     if (req.body.optimizers !== undefined && !requirePerm(req, 'optimizers:manage', reply)) return;
+    if (rejectInvalidTimeout(req.body.timeoutMs, reply)) return;
     const projects = await readConfig('projects');
     const index = projects.findIndex(p => p.id === req.params.id);
     if (index === -1) return reply.status(404).send({ error: 'Not found' });
@@ -1132,7 +1141,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         modelId: m.modelId,
         ...(m.prompt ? { prompt: m.prompt } : {}),
       })),
-      timeoutMs: req.body.timeoutMs ?? existing.timeoutMs ?? 5000,
+        timeoutMs: req.body.timeoutMs ?? existing.timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS,
       ...guardrailsUpdate,
       ...piiUpdate,
       ...optimizersUpdate,

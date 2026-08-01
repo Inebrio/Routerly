@@ -236,14 +236,26 @@ describe('ProjectGeneralTab — Advanced settings toggle', () => {
     });
   });
 
-  it('timeoutMs defaults to 5000 when not set on project', async () => {
+  it('timeoutMs falls back to the shared default when not set on project', async () => {
     const proj = { ...mockProject, timeoutMs: undefined };
     renderTab(proj as never);
     await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
     await userEvent.click(screen.getByRole('button', { name: /Advanced settings/i }));
     await waitFor(() => {
       const inputs = document.querySelectorAll('input[type="number"]') as NodeListOf<HTMLInputElement>;
-      expect(inputs[0]?.value).toBe('5000');
+      expect(inputs[0]?.value).toBe('2000');
+    });
+  });
+
+  it('accepts timeoutMs 0 (no timeout) as a valid value', async () => {
+    const proj = { ...mockProject, timeoutMs: 0 };
+    renderTab(proj as never);
+    await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Advanced settings/i }));
+    await waitFor(() => {
+      const input = document.querySelectorAll('input[type="number"]')[0] as HTMLInputElement;
+      expect(input.value).toBe('0');
+      expect(input.min).toBe('0');
     });
   });
 

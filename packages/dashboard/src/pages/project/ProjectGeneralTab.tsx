@@ -5,6 +5,7 @@ import { createProject, updateProject, getSettings } from '../../api';
 import { useProject } from './ProjectLayout';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
 import { SearchableSelect } from '../../components/SearchableSelect';
+import { DEFAULT_PROJECT_TIMEOUT_MS } from '@routerly/shared';
 
 export function ProjectGeneralTab() {
   const navigate = useNavigate();
@@ -46,21 +47,21 @@ export function ProjectGeneralTab() {
 
   const [form, setForm] = useState({
     name: '',
-    timeoutMs: '5000',
+    timeoutMs: String(DEFAULT_PROJECT_TIMEOUT_MS),
   });
 
   useEffect(() => {
     if (project) {
       setForm({
         name: project.name,
-        timeoutMs: String(project.timeoutMs ?? 5000),
+        timeoutMs: String(project.timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS),
       });
     }
   }, [project]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isDirty = isEdit
     ? form.name !== (/* v8 ignore next */ project?.name ?? '') ||
-      form.timeoutMs !== String(/* v8 ignore next */ project?.timeoutMs ?? 5000)
+      form.timeoutMs !== String(/* v8 ignore next */ project?.timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS)
     : form.name !== '';
 
   // Once the token is revealed the form is "done" — don't block navigation anymore.
@@ -242,15 +243,15 @@ export function ProjectGeneralTab() {
               <div className="form-group">
                 <label className="form-label">TTFT Timeout (ms)</label>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
-                  If a model does not send the first response byte within this time, Routerly aborts it and tries the next candidate. Does not limit total response duration.
+                  If a model does not send the first response byte within this time, Routerly aborts it and tries the next candidate. Does not limit total response duration. Set it to 0 to wait as long as the provider takes.
                 </p>
                 <input
                   className="form-input"
                   type="number"
                   value={form.timeoutMs}
                   onChange={e => setForm(f => ({ ...f, timeoutMs: e.target.value }))}
-                  min={1000}
-                  max={50000}
+                  min={0}
+                  step={100}
                 />
               </div>
 

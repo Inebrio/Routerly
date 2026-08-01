@@ -384,6 +384,28 @@ describe('llmStream', () => {
     expect(emitted.some(e => e.message === 'model:thinking')).toBe(true)
   })
 
+  it('project timeoutMs 0 disables the TTFT timeout', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({
+      streamCompletion: vi.fn().mockReturnValue({
+        [Symbol.asyncIterator]: () => ({
+          // Slower than any timeout the old minimum allowed; with 0 there is no timer at all.
+          next: vi.fn()
+            .mockImplementationOnce(() => new Promise(r => setTimeout(() => r({ value: { choices: [{ delta: { content: 'hi' } }] }, done: false }), 30)))
+            .mockResolvedValue({ value: undefined as any, done: true }),
+        }),
+      }),
+    } as any)
+
+    const ctx = makeCtx({ project: { ...makeProject(), timeoutMs: 0 } })
+    const result = await llmStream({ messages: [] } as any, makeModel(), ctx)
+    const collected: any[] = []
+    for await (const c of result.chunks) collected.push(c)
+
+    expect(typeof result.ttftMs).toBe('number')
+    expect(collected).toHaveLength(1)
+  })
+
   it('records timeout outcome when TTFT exceeds project timeoutMs', async () => {
     mockIsAllowed.mockResolvedValue(true)
     let resolveNever: () => void
