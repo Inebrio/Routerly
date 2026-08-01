@@ -580,17 +580,17 @@ Create a new project API token. The token value is shown **once only**.
 ```bash
 routerly project token create my-api
 routerly project token create my-api --tag environment=prod --tag team=backend
-routerly project token create my-api --scopes mcp,mcp:write
+routerly project token create my-api --scopes batch,internal
 ```
 
 | Option | Description |
 |--------|-------------|
 | `--labels <list>` | Comma-separated free-text labels shown next to the token in the dashboard |
-| `--scopes <list>` | Comma-separated access scopes (e.g. `mcp,mcp:write` for the [MCP server](../concepts/mcp.md)) |
+| `--scopes <list>` | Comma-separated free-form scopes (e.g. `batch,internal`), stored with the token for your own bookkeeping |
 | `--tag <key=value>` | Attach key-value metadata to the token (repeatable). Tags are included in every usage record created with this token. |
 
 ```bash
-routerly project token create Test --scopes mcp,mcp:write --labels mcp-docs
+routerly project token create Test --scopes batch,internal --labels nightly
 ```
 ```
 ✓ Token created for project "Test".
@@ -599,8 +599,8 @@ Token (save this - shown only once):
 sk-rt-d551c6a3bc1c126f938839ec654806ebd0a86968824b81ccf81fb842ea82f54f
   ID:      b75b0cf0-5ba9-4c42-af93-e92059180cae
   Snippet: sk-rt-d551…
-  Labels:  mcp-docs
-  Scopes:  mcp, mcp:write
+  Labels:  nightly
+  Scopes:  batch, internal
 ```
 
 Optionally add spending limits inline:
@@ -1772,11 +1772,22 @@ Exit code: `0` on success, `1` on error (all subcommands).
 
 ## `routerly mcp`
 
-Inspect and exercise the [MCP server](../concepts/mcp.md): the tools
-Routerly exposes to MCP clients (Claude Code, Claude Desktop, and similar)
-over `/mcp`. The project token used by `test` and `serve` must carry the
-`mcp` scope (`mcp:write` for the 2 write tools); see
-[`routerly project token create`](#tokens---routerly-project-token) `--scopes`.
+Inspect and exercise the [MCP server](../concepts/mcp.md): the tools Routerly
+exposes to MCP clients (Claude Code, Claude Desktop, Codex, OpenCode,
+OpenClaw, and similar) over `/mcp`, plus the personal tokens those clients
+authenticate with.
+
+MCP is per-user: a token acts as its owner and exposes exactly the tools that
+owner's role permits. `test` and `serve` need one, and resolve it in this
+order:
+
+1. `--token <token>`
+2. the `ROUTERLY_MCP_TOKEN` environment variable
+3. a token named `routerly-cli`, revoked and re-minted on each run
+
+The third path exists because stored tokens are hashed and cannot be read
+back: the CLI can only use a token it has just created. Pass `--token` or
+export `ROUTERLY_MCP_TOKEN` to keep a long-lived token of your own instead.
 
 ### `routerly mcp tools`
 
@@ -1784,58 +1795,57 @@ over `/mcp`. The project token used by `test` and `serve` must carry the
 routerly mcp tools [--json]
 ```
 
-List the MCP tools currently exposed by the server (management surface,
-`GET /api/mcp/tools`, requires `mcp:read`). A tool is only listed when its
-backing module is bootstrapped on this instance.
+List the MCP tools your permissions expose (`GET /api/me/mcp-tools`). A tool
+is listed only when your role holds the permission gating it and its backing
+module is bootstrapped on this instance.
 
 ```bash
 routerly mcp tools
 ```
 ```
-┌──────────────────────┬───────┬──────────────────┬─────────┐
-│ Name                 │ Scope │ Module           │ Enabled │
-├──────────────────────┼───────┼──────────────────┼─────────┤
-│ list_models          │ read  │ catalog.registry │ yes     │
-├──────────────────────┼───────┼──────────────────┼─────────┤
-│ get_model            │ read  │ catalog.registry │ yes     │
-├──────────────────────┼───────┼──────────────────┼─────────┤
-│ route_preview        │ read  │ routing.router   │ yes     │
-├──────────────────────┼───────┼──────────────────┼─────────┤
-│ get_usage_summary    │ read  │ usage.tracker    │ yes     │
-├──────────────────────┼───────┼──────────────────┼─────────┤
-│ get_budget_status    │ read  │ cost.budget      │ yes     │
-├──────────────────────┼───────┼──────────────────┼─────────┤
-│ list_projects        │ read  │ config.store     │ yes     │
-├──────────────────────┼───────┼──────────────────┼─────────┤
-│ create_project_token │ write │ config.store     │ yes     │
-├──────────────────────┼───────┼──────────────────┼─────────┤
-│ toggle_model         │ write │ config.store     │ yes     │
-└──────────────────────┴───────┴──────────────────┴─────────┘
+┌──────────────────────┬───────┬───────────────────────┬───────────────┐
+│ Name                 │ Scope │ Module                │ Permission    │
+├──────────────────────┼───────┼───────────────────────┼───────────────┤
+│ list_models          │ read  │ catalog.registry      │ model:read    │
+├──────────────────────┼───────┼───────────────────────┼───────────────┤
+│ get_model            │ read  │ catalog.registry      │ model:read    │
+├──────────────────────┼───────┼───────────────────────┼───────────────┤
+│ route_preview        │ read  │ routing.router        │ project:read  │
+├──────────────────────┼───────┼───────────────────────┼───────────────┤
+│ get_usage_summary    │ read  │ usage.tracker         │ report:read   │
+├──────────────────────┼───────┼───────────────────────┼───────────────┤
+│ get_budget_status    │ read  │ cost.budget           │ report:read   │
+├──────────────────────┼───────┼───────────────────────┼───────────────┤
+│ get_metrics_snapshot │ read  │ observability.registry│ report:read   │
+├──────────────────────┼───────┼───────────────────────┼───────────────┤
+│ list_projects        │ read  │ config.store          │ project:read  │
+├──────────────────────┼───────┼───────────────────────┼───────────────┤
+│ create_project_token │ write │ config.store          │ token:write   │
+├──────────────────────┼───────┼───────────────────────┼───────────────┤
+│ toggle_model         │ write │ config.store          │ project:write │
+└──────────────────────┴───────┴───────────────────────┴───────────────┘
 ```
-(`get_metrics_snapshot` is a ninth built-in tool, omitted here because the
-observability module was not bootstrapped on this instance: module-gated
-tools disappear from the list entirely rather than showing `enabled: no`.)
 
-Requires `mcp:read` permission.
+A role holding none of these permissions gets
+`No MCP tool is available to your role.`
 
 ### `routerly mcp test`
 
 ```
-routerly mcp test <tool> [--input <json>] [--project <id>] [--token <token>] [--json]
+routerly mcp test <tool> [--input <json>] [--token <token>] [--json]
 ```
 
-Invoke one tool over the live `/mcp` transport with a real project token,
-useful to verify a tool works before wiring an MCP client to it.
+Invoke one tool over the live `/mcp` transport with a real MCP token, useful
+to verify a tool works before wiring a client to it.
 
 | Option | Description |
 |--------|-------------|
 | `--input <json>` | Tool arguments as a JSON object (default `{}`) |
-| `--project <id>` | Project to mint a token for (defaults to the only project; required when more than one project exists) |
-| `--token <token>` | Use an explicit project token instead of minting one |
+| `--token <token>` | Use an explicit MCP token instead of the CLI one |
 | `--json` | Output the raw tool result as JSON |
 
 ```bash
-routerly mcp test get_model --input '{"id":"openai/gpt-5.2"}' --project Test --token sk-rt-...
+routerly mcp test get_model --input '{"id":"openai/gpt-5.2"}'
 ```
 ```
 {
@@ -1846,36 +1856,113 @@ routerly mcp test get_model --input '{"id":"openai/gpt-5.2"}' --project Test --t
 ```
 
 **Error cases:**
-- `--input` is not valid JSON: `Error: --input must be valid JSON.` (checked before any network call)
-- Token lacks the `mcp` scope: `Error: Project token lacks the 'mcp' scope required to use the MCP endpoint.`
+- `--input` is not valid JSON: `Error: --input must be valid JSON.` (checked before any network call or token minting)
+- Token unknown or revoked: `Error: Invalid MCP token.`
+- Token past its expiry: `Error: MCP token expired.`
+- Role lacks the tool's permission: `Error: Permission denied: <permission> is required to call <tool>.`
 - Tool call fails (e.g. unknown id): the tool's `isError` message, printed to stderr
 
 ### `routerly mcp serve`
 
 ```
-routerly mcp serve [--project <id>] [--token <token>]
+routerly mcp serve [--token <token>]
 ```
 
-Run the MCP server over stdio for local clients (Claude Desktop and
-similar). Mints (or accepts) a project token, then spawns the Routerly
-service binary with `ROUTERLY_MCP_STDIO=1` and `ROUTERLY_MCP_TOKEN=<token>`
-set. See [Reference: Environment Variables](../reference/environment-variables.md#mcp-server-variables).
+Run the MCP server over stdio for local clients (Claude Desktop and similar).
+Resolves an MCP token, then spawns the Routerly service binary with
+`ROUTERLY_MCP_STDIO=1` and `ROUTERLY_MCP_TOKEN=<token>` set. See
+[Reference: Environment Variables](../reference/environment-variables.md#mcp-server-variables).
 This is the command a client's MCP config points its `command`/`args` at.
 
 | Option | Description |
 |--------|-------------|
-| `--project <id>` | Project to mint a token for (defaults to the only project) |
-| `--token <token>` | Use an explicit project token instead of minting one |
+| `--token <token>` | Use an explicit MCP token instead of the CLI one |
 
 ```bash
-routerly mcp serve --project my-api
+routerly mcp serve
 ```
 ```
-Starting MCP stdio server for project "my-api"...
+Starting MCP stdio server...
 ```
+
+With `--token` or `ROUTERLY_MCP_TOKEN` set, no CLI login is needed: a desktop
+client can spawn this command with the token in its own environment. Without
+either, the CLI mints its token through the API and therefore needs an active
+account.
+
 Diagnostics print to stderr only; stdout is reserved for the MCP protocol
 stream. The process stays attached until the client disconnects; the CLI
 propagates the child process's exit code.
+
+### `routerly mcp token`
+
+Manage your personal MCP tokens. Same tokens as the dashboard's
+[Profile: MCP tab](../dashboard/profile.md#mcp-tab); they are yours only, no
+permission beyond being logged in is required.
+
+#### `routerly mcp token list`
+
+```
+routerly mcp token list [--json]
+```
+
+```bash
+routerly mcp token list
+```
+```
+┌──────────────────────────────────────┬─────────────┬─────────────────┬──────────────────┬──────────────────┬────────────┐
+│ ID                                   │ Name        │ Snippet         │ Created          │ Last used        │ Expires    │
+├──────────────────────────────────────┼─────────────┼─────────────────┼──────────────────┼──────────────────┼────────────┤
+│ 2f1c0b8a-...                         │ laptop      │ sk-rt-mcp-8f3c…  │ 01/07/2026 09:12 │ 31/07/2026 18:40 │ —          │
+└──────────────────────────────────────┴─────────────┴─────────────────┴──────────────────┴──────────────────┴────────────┘
+```
+
+Only the snippet is stored in clear, so this command can never print a usable
+token. With no tokens yet: `No MCP tokens yet. Create one: routerly mcp token create <name>`.
+
+#### `routerly mcp token create`
+
+```
+routerly mcp token create <name> [--expires <date>] [--json]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--expires <date>` | Expiry date, e.g. `2027-01-01`. Omit for a token that never expires |
+| `--json` | Output the created token as raw JSON |
+
+```bash
+routerly mcp token create laptop
+```
+```
+✓ MCP token "laptop" created.
+
+Token (save it now, it is shown only once):
+sk-rt-mcp-8f3c1d...
+  ID:      2f1c0b8a-...
+```
+
+The raw value is returned exactly once, here. Routerly stores only its
+SHA-256 hash.
+
+**Error cases:**
+- `--expires` is not a parseable date: `Error: --expires must be a valid date, e.g. 2027-01-01.` (checked before the API call)
+- The name is already used by one of your tokens: `Error: An MCP token named "<name>" already exists`
+
+#### `routerly mcp token remove`
+
+```
+routerly mcp token remove <token-id>
+```
+
+```bash
+routerly mcp token remove 2f1c0b8a-...
+```
+```
+✓ MCP token revoked. Clients using it stop working immediately.
+```
+
+Unknown id: `MCP token "<id>" not found.`
 
 Exit code: `0` on success, `1` on error (all subcommands).
 

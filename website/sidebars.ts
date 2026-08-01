@@ -49,7 +49,6 @@ const sidebars: SidebarsConfig = {
         'dashboard/connections',
         'dashboard/projects',
         'dashboard/profiles',
-        'dashboard/mcp',
         'dashboard/usage',
         'dashboard/users-and-roles',
         'dashboard/settings',
@@ -81,6 +80,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'guides/self-hosting',
         'guides/claude-subscription',
+        'guides/mcp-clients',
       ],
     },
     {

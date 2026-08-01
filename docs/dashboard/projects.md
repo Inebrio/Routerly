@@ -144,9 +144,10 @@ Manage Bearer tokens for this project.
 
 1. Click **+ New Token**
 2. Enter a **Name** (e.g. `production`, `staging`, `ci`)
-3. Optionally add **Scopes**: access scopes for this token, e.g. `mcp` and
-   `mcp:write` to let the token call Routerly's [MCP server](../concepts/mcp.md).
-   Without the `mcp` scope, the token cannot reach `/mcp` at all.
+3. Optionally add **Scopes**: free-form scopes (e.g. `batch`, `internal`)
+   stored with the token for your own bookkeeping. Routerly does not
+   interpret them. The [MCP server](../concepts/mcp.md) uses personal MCP
+   tokens, not these scopes.
 4. Optionally add **Tags** — key-value metadata (e.g., `environment: production`, `team: backend`). Tags are included in every usage record created with this token, enabling filtering and analysis by custom dimensions.
 5. Optionally configure per-token limits (metric, limit value, window type, mode)
 6. Click **Create**

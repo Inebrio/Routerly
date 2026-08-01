@@ -1053,7 +1053,7 @@ POST /api/projects/:slug/tokens
 {
   "name": "production",
   "labels": ["prod"],
-  "scopes": ["mcp", "mcp:write"],
+  "scopes": ["batch", "internal"],
   "tags": {
     "environment": "prod",
     "team": "backend"
@@ -1072,9 +1072,10 @@ POST /api/projects/:slug/tokens
 **Fields:**
 - `name` - token name (required)
 - `labels`: array of free-text labels shown next to the token in the dashboard (optional)
-- `scopes`: access scopes granted to the token (optional). Required for the
-  [MCP server](#mcp-tools): `mcp` to reach `/mcp` at all, `mcp:write` for the
-  write tools. See [Concepts: MCP Server](../concepts/mcp.md#authentication-and-scopes)
+- `scopes`: free-form scopes stored with the token (optional). Routerly does
+  not interpret them; they are yours for bookkeeping. The MCP server is
+  authenticated by [personal MCP tokens](#personal-mcp-surface), not by these
+  scopes
 - `tags` - arbitrary key-value metadata attached to the token (optional). Tags are included in every usage record created with this token.
 - `limits` - array of per-token spending limits (optional)
 
@@ -1088,7 +1089,7 @@ PUT /api/projects/:slug/tokens/:tokenId
 
 ```json
 {
-  "scopes": ["mcp"],
+  "scopes": ["batch"],
   "tags": {
     "environment": "staging"
   }
@@ -2453,26 +2454,25 @@ Poll `GET /health` to detect when the service has restarted. The CLI command `ro
 
 ---
 
-## MCP Tools
+## Personal MCP Surface
 
-Read-only dashboard view of the [MCP server](../concepts/mcp.md)'s tool
-registry: which tools are currently installed, their scope, and their
-description. This is distinct from the `/mcp` protocol surface itself (see
+Every user manages their own [MCP](../concepts/mcp.md) tokens and sees the
+tools those tokens expose. These routes live under `/api/me`: they act on the
+caller and require no permission beyond a valid dashboard session. This is
+distinct from the `/mcp` protocol surface itself (see
 [Service: MCP Server](../service/endpoints.md#mcp-server)), which is
-authenticated by project-token scopes, not a JWT. There is no mutation route
-here: `mcp:manage` is reserved for a future per-tool enable/disable feature
-and enforces nothing today.
+authenticated by an MCP token rather than a JWT.
 
-### List Tools
+### List My Tools
 
 ```
-GET /api/mcp/tools
+GET /api/me/mcp-tools
 ```
 
-**Auth**: `Authorization: Bearer <jwt>` (requires `mcp:read`)
+**Auth**: `Authorization: Bearer <jwt>`
 
-**Query parameters:**
-- `scope`: filter to `read` or `write` (optional). Any other value returns `400`.
+Returns the tools the caller's own MCP tokens expose: the registry filtered by
+the caller's permissions. A tool the caller cannot call is never listed.
 
 **Response `200`:**
 ```json
@@ -2482,34 +2482,94 @@ GET /api/mcp/tools
     "scope": "read",
     "description": "List the models configured on this Routerly gateway (id, provider, context window). No secrets are returned.",
     "sourceModule": "catalog.registry",
-    "enabled": true
+    "permission": "model:read"
   },
   {
-    "name": "create_project_token",
+    "name": "toggle_model",
     "scope": "write",
-    "description": "Create a new API token for this project. Returns the token id, snippet, creation time, and scopes only; the raw token is never returned (retrieve it via the CLI or dashboard token flow). Requires the 'mcp:write' scope.",
+    "description": "Enable or disable one of a project's model refs (flips its `enabled` flag). The flag is persisted but not yet honored by the routing engine. Requires the 'project:write' permission.",
     "sourceModule": "config.store",
-    "enabled": true
+    "permission": "project:write"
   }
 ]
 ```
 
 `sourceModule` is the internal DI token key of the module backing the tool
-(e.g. `catalog.registry`, `config.store`). A tool is only present in this
-list when its backing module is bootstrapped on this instance; a module
-that is not running removes its tools from the list entirely, they are
-never shown as `enabled: false`.
+(e.g. `catalog.registry`, `config.store`). A tool is only present when its
+backing module is bootstrapped on this instance; a module that is not running
+removes its tools from the list entirely.
 
-**Errors**: `400` invalid `scope` value · `403` insufficient permissions
-
-### Get Tool
+### List My Tokens
 
 ```
-GET /api/mcp/tools/:name
+GET /api/me/mcp-tokens
 ```
 
-**Auth**: `Authorization: Bearer <jwt>` (requires `mcp:read`)
+**Auth**: `Authorization: Bearer <jwt>`
 
-**Response `200`:** one tool, same shape as [List Tools](#list-tools).
+**Response `200`:**
+```json
+[
+  {
+    "id": "2f1c0b8a-6d4e-4a2f-9f10-0b3f1c8e77aa",
+    "name": "laptop",
+    "tokenSnippet": "sk-rt-mcp-8f3c",
+    "createdAt": "2026-07-01T09:12:00.000Z",
+    "lastUsedAt": "2026-07-31T18:40:12.000Z",
+    "expiresAt": "2027-01-01T00:00:00.000Z"
+  }
+]
+```
 
-**Errors**: `404` `{ "error": "Not found" }` · `403` insufficient permissions
+The stored SHA-256 hash never leaves the service: `tokenSnippet` is the
+display identity. `lastUsedAt` and `expiresAt` are absent when unset.
+
+### Create My Token
+
+```
+POST /api/me/mcp-tokens
+```
+
+**Auth**: `Authorization: Bearer <jwt>`
+
+```json
+{
+  "name": "laptop",
+  "expiresAt": "2027-01-01T00:00:00.000Z"
+}
+```
+
+**Fields:**
+- `name` - 1 to 60 characters, unique among the caller's tokens (required)
+- `expiresAt` - ISO 8601 instant (optional). Omit for a token that never expires
+
+**Response `201`:** the token record plus `token`, the raw value. **This is
+the only time it is returned**; only its hash is stored.
+
+```json
+{
+  "id": "2f1c0b8a-6d4e-4a2f-9f10-0b3f1c8e77aa",
+  "name": "laptop",
+  "tokenSnippet": "sk-rt-mcp-8f3c",
+  "createdAt": "2026-07-01T09:12:00.000Z",
+  "expiresAt": "2027-01-01T00:00:00.000Z",
+  "token": "sk-rt-mcp-8f3c1d…"
+}
+```
+
+**Errors**: `400` invalid body · `409` `An MCP token named "<name>" already exists`
+
+### Revoke My Token
+
+```
+DELETE /api/me/mcp-tokens/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>`
+
+**Response `204`**, no body. Revocation is immediate: a client using that
+token fails its next call. Only the caller's own tokens are visible here, so
+another user's id is reported as not found.
+
+**Errors**: `404` `{ "error": "Token not found" }`
+

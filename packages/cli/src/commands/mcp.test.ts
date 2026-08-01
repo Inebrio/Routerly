@@ -324,6 +324,9 @@ describe('mcp serve', () => {
     await makeCmd().parseAsync(['node', 'mcp', 'serve', '--token', 'sk-rt-mcp-explicit']);
     expect(mockSpawn.mock.calls[0]![2].env.ROUTERLY_MCP_TOKEN).toBe('sk-rt-mcp-explicit');
     expect(mockApi).not.toHaveBeenCalled();
+    // A desktop client spawns this with no CLI login of its own.
+    const { requireAccount } = await import('../store.js');
+    expect(vi.mocked(requireAccount)).not.toHaveBeenCalled();
   });
 
   it('propagates the child exit code so a failed start is not reported as success', async () => {

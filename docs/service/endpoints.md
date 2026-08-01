@@ -12,7 +12,7 @@ The service exposes five groups of HTTP endpoints on the same port (default: `30
 | [LLM Proxy](#llm-proxy) | `/v1/*` | Bearer project token (`sk-rt-…`) | Forward requests to LLM providers |
 | [Pass-Through Proxy](#pass-through-proxy) | any other path | Bearer project token (`sk-rt-…`) | Transparently forward any unhandled provider endpoint |
 | [Management API](#management-api) | `/api/*` | Bearer JWT (dashboard session) | Configure models, projects, users |
-| [MCP Server](#mcp-server) | `/mcp` | Bearer project token (`sk-rt-…`, `mcp` scope) | Model Context Protocol tools for MCP clients |
+| [MCP Server](#mcp-server) | `/mcp` | Bearer personal MCP token (`sk-rt-mcp-…`) | Model Context Protocol tools for MCP clients |
 | [Dashboard](#dashboard) | `/dashboard/*` | Browser session (cookie) | Serve the React web UI |
 | [Health](#health-check) | `/health` | None | Liveness probe |
 
@@ -195,7 +195,10 @@ Full endpoint catalogue: [API — Management](../api/management).
 | `DELETE` | `/api/spend-groups/:id` | Delete a spend group |
 | `GET` | `/api/notifications/inbox` | List the current user's in-app notifications |
 | `POST` | `/api/notifications/inbox/read` | Mark notifications as read (`ids[]` or `all`) |
-| `GET` | `/api/mcp/tools` | List the MCP tool registry (dashboard-facing, JWT-gated) |
+| `GET` | `/api/me/mcp-tools` | List the MCP tools the caller's own tokens expose |
+| `GET` | `/api/me/mcp-tokens` | List the caller's personal MCP tokens |
+| `POST` | `/api/me/mcp-tokens` | Create a personal MCP token (raw value returned once) |
+| `DELETE` | `/api/me/mcp-tokens/:id` | Revoke a personal MCP token |
 
 ---
 
@@ -203,11 +206,12 @@ Full endpoint catalogue: [API — Management](../api/management).
 
 Routerly's `mcp` module exposes the gateway's own management API as tools to
 [Model Context Protocol](https://modelcontextprotocol.io/) clients (Claude
-Code, Claude Desktop, and similar). This is a distinct surface from the LLM
-Proxy: `/mcp` never forwards anything to an upstream provider, it only reads
-and writes Routerly's own configuration and usage data through a fixed set
-of built-in tools. See [Concepts: MCP Server](../concepts/mcp.md) for the
-full tool list and both transports.
+Code, Claude Desktop, Codex, OpenCode, OpenClaw, and similar). This is a
+distinct surface from the LLM Proxy: `/mcp` never forwards anything to an
+upstream provider, it only reads and writes Routerly's own configuration and
+usage data through a fixed set of built-in tools. See
+[Concepts: MCP Server](../concepts/mcp.md) for the full tool list and both
+transports.
 
 ### `POST /mcp`
 
@@ -215,12 +219,13 @@ Streamable HTTP transport, JSON-RPC 2.0. Self-authenticating: this route is
 excluded from the standard project-token auth guard and validates the token
 itself.
 
-**Authentication:** `Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN`, and the
-token must carry the `mcp` scope.
+**Authentication:** `Authorization: Bearer sk-rt-mcp-YOUR_MCP_TOKEN`, a
+personal MCP token. Project tokens (`sk-rt-…`) are rejected: the token
+identifies a **user**, and the call runs with that user's permissions.
 
 ```http
 POST /mcp
-Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN
+Authorization: Bearer sk-rt-mcp-YOUR_MCP_TOKEN
 Content-Type: application/json
 Accept: application/json, text/event-stream
 
@@ -239,9 +244,9 @@ Accept: application/json, text/event-stream
 }
 ```
 
-Write tools (`create_project_token`, `toggle_model`) are omitted from
-`tools/list` and rejected by `tools/call` unless the token additionally
-carries the `mcp:write` scope.
+`tools/list` returns only the tools the token owner's role permits, and
+`tools/call` re-checks the same permission, so an under-permissioned client
+can neither see nor reach a tool it cannot use.
 
 ### stdio transport
 
@@ -252,10 +257,11 @@ run:
 routerly mcp serve
 ```
 
-This is a thin wrapper: it mints (or accepts) a project token, then spawns
-the Routerly service binary with `ROUTERLY_MCP_STDIO=1` and
-`ROUTERLY_MCP_TOKEN=<token>` set, which starts only the stdio MCP server
-bound to that token's identity. See
+This is a thin wrapper: it resolves an MCP token, then spawns the Routerly
+service binary with `ROUTERLY_MCP_STDIO=1` and `ROUTERLY_MCP_TOKEN=<token>`
+set, which starts only the stdio MCP server bound to that token owner's
+identity. The identity is resolved once at startup, so a role change reaches
+a running session only after a restart. See
 [Reference: Environment Variables](../reference/environment-variables.md#mcp-server-variables)
 if you are connecting a real MCP client directly to the service binary
 instead of via the CLI.
@@ -264,12 +270,13 @@ instead of via the CLI.
 
 | Code | Cause |
 |------|-------|
-| `401` | Missing project token, unknown token, or expired token |
-| `403` | Token is valid but lacks the `mcp` scope |
+| `401` | Missing `Authorization` header |
+| `401` | Unknown or revoked token, or a project token used in place of an MCP token |
+| `401` | Token past its `expiresAt` |
 
-A `tools/call` on a write tool without the `mcp:write` scope does not fail
-at the HTTP level (still `200`); the JSON-RPC result carries
-`isError: true` with an explanatory message.
+A `tools/call` the caller lacks the permission for does not fail at the HTTP
+level (still `200`); the JSON-RPC result carries `isError: true` with an
+explanatory message.
 
 ---
 
@@ -328,4 +335,4 @@ x-routerly-trace-id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
 - [API — LLM Proxy](../api/llm-proxy) — full request/response schemas
 - [API — Management](../api/management) — full management endpoint catalogue
 - [Service — Routing Engine](./routing-engine) — how the model is selected for each request
-- [Concepts: MCP Server](../concepts/mcp): MCP tools, transports, and scopes
+- [Concepts: MCP Server](../concepts/mcp): MCP tools, transports, and personal tokens

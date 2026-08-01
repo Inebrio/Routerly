@@ -5,7 +5,7 @@ sidebar_position: 10
 
 # Dashboard: Profile
 
-The Profile page lets each logged-in user manage their own account settings and view their personal notification inbox. Access it by clicking your email address in the sidebar (bottom-left of the screen).
+The Profile page lets each logged-in user manage their own account settings, their personal notification inbox, and the MCP tokens that let an AI client act on their behalf. Access it by clicking your email address in the sidebar (bottom-left of the screen).
 
 ![My Profile page showing Profile and Notifications tabs](../assets/screenshot-profile.png)
 
@@ -90,6 +90,62 @@ Items are marked as read when you click them in the detail drawer. Use the bulk 
 ### Dismissing Notifications
 
 Use the **Delete** button in the detail drawer or the bulk action bar **Delete** option (API: `POST /api/notifications/inbox/delete`, CLI: `routerly notification delete`). Dismissal is **per-user only** - other users' copies of the same notification remain in their inboxes unless they also dismiss it. There is no global delete: an item dismissed by one user is never removed from anyone else's inbox.
+
+---
+
+## MCP Tab {#mcp-tab}
+
+The MCP tab is where you manage your own [MCP](../concepts/mcp.md) tokens and
+see what an MCP client connected with them would be able to do. It is
+reachable directly at `/dashboard/profile/mcp`.
+
+An MCP token acts as you: it grants exactly the permissions of your role, and
+nothing another user does affects it. Every user has this tab, with no extra
+permission needed.
+
+### MCP Tokens
+
+The list shows one card per token, with its name, the visible prefix of the
+value (`sk-rt-mcp-…`, the rest is never stored in clear), and **Created**,
+**Last used**, and **Expires** (`Never` when the token has no expiry or has
+never been used).
+
+To create one:
+
+1. Click **+ New Token**
+2. Enter a **Name** (e.g. `laptop`, `desktop`, `ci`), unique among your tokens
+3. Optionally pick an **Expires on** date; leave it empty for a token that
+   never expires
+4. Click **Create token**
+
+The raw value appears once, in a highlighted box with a **Copy** button.
+Copy it before dismissing the box: Routerly stores only its SHA-256 hash and
+cannot show it again. Losing it means creating a new token.
+
+The trash icon revokes a token after a confirmation. Revocation is immediate:
+any client using that token stops working on its next call.
+
+### Tools Your Tokens Expose
+
+A table of every tool an MCP client of yours can call: **Name**, **Scope**
+(`read` or `write`), **Description**, **Source module**, and the
+**Permission** that gates it. The list is filtered by your role, so it is
+exactly what your tokens expose, not the gateway's full catalogue. A role
+without any of the tool permissions sees an empty state here.
+
+### Connect an MCP Client
+
+The last section gives the two ways to connect:
+
+- **stdio (local)**: run `routerly mcp serve`, which passes your token to the
+  service. Running the service binary directly instead means setting
+  `ROUTERLY_MCP_STDIO=1` and `ROUTERLY_MCP_TOKEN=<your MCP token>` yourself.
+- **HTTP (remote)**: JSON-RPC 2.0 over Streamable HTTP at this instance's
+  `/mcp` endpoint, authenticated with
+  `Authorization: Bearer <your MCP token>`.
+
+For the exact configuration each client expects, see
+[Guides: Connect an MCP client](../guides/mcp-clients.md).
 
 ---
 
