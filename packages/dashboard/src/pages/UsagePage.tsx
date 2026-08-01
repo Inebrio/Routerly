@@ -4,7 +4,7 @@ import { Star, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { REQUEST_TYPES, requestTypeLabel, type RequestType } from '@routerly/shared';
 import { getUsage, getProjects, getModels, type UsageStats, type Project, type Model } from '../api';
 import { MultiSelect } from '../components/MultiSelect';
-import { DateRangePicker, PRESETS, RECENT_PRESETS, type DateRange } from '../components/DateRangePicker';
+import { DateRangePicker, PRESETS, RECENT_PRESETS, parseStoredRange, type DateRange } from '../components/DateRangePicker';
 import { useFilterState } from '../hooks/useFilterState';
 import { useProviderLabels } from '../hooks/useProviderLabels';
 
@@ -44,7 +44,7 @@ export function UsagePage() {
   const [stats, setStats]               = useState<UsageStats | null>(null);
   const [projects, setProjects]         = useState<Project[]>([]);
   const [allModels, setAllModels]       = useState<Model[]>([]);
-  const [dateRange, setDateRange]       = useFilterState<DateRange>({ key: 'usage-filters-dateRange', defaultValue: { from: '', to: '', label: 'This month' } });
+  const [dateRange, setDateRange]       = useFilterState<DateRange>({ key: 'usage-filters-dateRange', defaultValue: { from: '', to: '', label: 'This month' }, deserialize: parseStoredRange });
   const [projectIds, setProjectIds]     = useFilterState<string[]>({ key: 'usage-filters-projectIds', defaultValue: [] });
   const [modelIds, setModelIds]         = useFilterState<string[]>({ key: 'usage-filters-modelIds', defaultValue: [] });
   const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing' | 'guardrail' | 'judge'>({ key: 'usage-filters-callType', defaultValue: 'all' });
@@ -91,11 +91,9 @@ export function UsagePage() {
     if (!dateRange.from && !dateRange.to) {
       const now = new Date();
       const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-      setDateRange({ from, to: today, label: 'Questo mese' });
+      setDateRange({ from, to: today, label: 'This month' });
     } else if (dateRange.to && dateRange.to.slice(0, 10) < today) {
-      // ponytail: 'This month' is a legacy EN label stored in older localStorage entries
-      const label = dateRange.label === 'This month' ? 'Questo mese' : dateRange.label;
-      const preset = PRESETS.find(p => p.label === label);
+      const preset = PRESETS.find(p => p.label === dateRange.label);
       if (preset) setDateRange(preset.range());
     }
   }, []);
