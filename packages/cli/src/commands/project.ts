@@ -498,10 +498,10 @@ Examples:
 Examples:
   routerly project token create my-api
   routerly project token create my-api --labels dev,staging
-  routerly project token create my-api --scopes mcp,mcp:write
+  routerly project token create my-api --scopes batch,internal
 `)
     .option('--labels <tags>', 'Comma-separated labels for this token')
-    .option('--scopes <list>', 'Comma-separated access scopes (e.g. mcp,mcp:write)')
+    .option('--scopes <list>', 'Comma-separated free-form scopes (e.g. batch,internal)')
     .option('--tag <kv>', 'Key=value tag metadata (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .action(async (nameOrId: string, opts: { labels?: string; scopes?: string; tag: string[] }) => {
       try {
@@ -545,7 +545,7 @@ Examples:
   routerly project token edit my-api <token-id> --labels prod,v2
 
   # Update access scopes
-  routerly project token edit my-api <token-id> --scopes mcp,mcp:write
+  routerly project token edit my-api <token-id> --scopes batch,internal
 
   # Add a cost limit on a specific model
   routerly project token edit my-api <token-id> --add-limit "openai/gpt-5.2:cost:period:hourly:10"

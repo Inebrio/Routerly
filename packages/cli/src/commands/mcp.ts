@@ -4,16 +4,19 @@ import Table from 'cli-table3';
 import { createRequire } from 'node:module';
 import { api, ApiError } from '../api.js';
 import { requireAccount } from '../store.js';
-import { acquireToken } from '../clients/index.js';
-import type { ProjectConfig } from '@routerly/shared';
+import type { McpToken } from '@routerly/shared';
 
-// Row shape returned by GET /api/mcp/tools (management surface, Task 10).
+/** A stored MCP token as the API returns it: everything but the hash. */
+type McpTokenRow = Omit<McpToken, 'tokenHash'>;
+
+// Row shape returned by GET /api/me/mcp-tools: the tools the caller's own
+// permissions expose, which is exactly what the caller's MCP tokens expose.
 interface ToolRow {
   name: string;
   description: string;
   scope: 'read' | 'write';
   sourceModule: string;
-  enabled: boolean;
+  permission: string;
 }
 
 interface RpcResult {
@@ -24,32 +27,43 @@ interface RpcResult {
 interface RpcResponse {
   result?: RpcResult;
   // JSON-RPC protocol error is an object; the /mcp transport's HTTP auth errors
-  // (401/403) send `error` as a string plus a top-level `message`.
+  // (401) send `error` as a string plus a top-level `message`.
   error?: { code?: number; message?: string } | string;
   message?: string;
 }
 
-// ─── Helper: resolve a project for token minting ─────────────────────────────
-// Non-interactive on purpose: `serve` streams the MCP protocol over stdout, so a
-// prompt would corrupt it. Explicit flag wins; otherwise use the sole project or
-// require the flag when there is ambiguity.
-async function resolveProject(explicit: string | undefined): Promise<ProjectConfig> {
-  const projects = await api<ProjectConfig[]>('GET', '/api/projects');
-  if (explicit) {
-    const project = projects.find(p => p.id === explicit || p.name === explicit);
-    if (!project) {
-      console.error(chalk.red(`Project "${explicit}" not found. Run \`routerly project list\` to see available projects.`));
-      process.exit(1);
-    }
-    return project;
-  }
-  if (projects.length === 0) {
-    console.error(chalk.red('No projects found. Create one first: routerly project create --name <name>'));
-    process.exit(1);
-  }
-  if (projects.length === 1) return projects[0]!;
-  console.error(chalk.red('Multiple projects found. Specify one with --project <name|id>.'));
+/** Name of the personal MCP token the CLI mints for its own use. */
+const CLI_TOKEN_NAME = 'routerly-cli';
+
+/**
+ * Resolves the MCP token to authenticate with: an explicit flag, the env var an
+ * MCP client would already have set, or the CLI's own token.
+ *
+ * Personal tokens are stored hashed, so the CLI cannot read its own token back:
+ * it revokes and re-mints it on every run that needs one. Pass --token (or set
+ * ROUTERLY_MCP_TOKEN) to keep a long-lived token of your own instead.
+ */
+async function acquireMcpToken(explicit?: string): Promise<string> {
+  if (explicit) return explicit;
+  const fromEnv = process.env['ROUTERLY_MCP_TOKEN'];
+  if (fromEnv) return fromEnv;
+
+  const existing = await api<McpTokenRow[]>('GET', '/api/me/mcp-tokens');
+  const prior = existing.find(t => t.name === CLI_TOKEN_NAME);
+  if (prior) await api<void>('DELETE', `/api/me/mcp-tokens/${encodeURIComponent(prior.id)}`);
+  const created = await api<McpTokenRow & { token: string }>('POST', '/api/me/mcp-tokens', { name: CLI_TOKEN_NAME });
+  return created.token;
+}
+
+/** Reports an error the way every other command does, then exits non-zero. */
+function fail(err: unknown): never {
+  if (err instanceof ApiError) console.error(chalk.red(`Error: ${err.message}`));
+  else console.error(chalk.red(String(err)));
   process.exit(1);
+}
+
+function fmtDate(iso?: string): string {
+  return iso ? new Date(iso).toLocaleString('it-IT') : chalk.gray('—');
 }
 
 export function makeMcpCommand(): Command {
@@ -57,7 +71,7 @@ export function makeMcpCommand(): Command {
 
   // ── mcp tools ──────────────────────────────────────────────────────────────
   cmd.command('tools')
-    .description('List the MCP tools exposed by the server')
+    .description('List the MCP tools your permissions expose')
     .option('--json', 'Output raw JSON')
     .addHelpText('after', `
 Examples:
@@ -66,45 +80,42 @@ Examples:
 `)
     .action(async (opts: { json?: boolean }) => {
       try {
-        const tools = await api<ToolRow[]>('GET', '/api/mcp/tools');
+        const tools = await api<ToolRow[]>('GET', '/api/me/mcp-tools');
         if (opts.json) {
           console.log(JSON.stringify(tools, null, 2));
           return;
         }
         if (tools.length === 0) {
-          console.log(chalk.yellow('No MCP tools found.'));
+          console.log(chalk.yellow('No MCP tool is available to your role.'));
           return;
         }
         const table = new Table({
-          head: ['Name', 'Scope', 'Module', 'Enabled'].map(h => chalk.cyan(h)),
+          head: ['Name', 'Scope', 'Module', 'Permission'].map(h => chalk.cyan(h)),
         });
         for (const t of tools) {
-          table.push([t.name, t.scope, t.sourceModule, t.enabled ? 'yes' : 'no']);
+          table.push([t.name, t.scope, t.sourceModule, t.permission]);
         }
         console.log(table.toString());
       } catch (err) {
-        if (err instanceof ApiError) console.error(chalk.red(`Error: ${err.message}`));
-        else console.error(chalk.red(String(err)));
-        process.exit(1);
+        fail(err);
       }
     });
 
   // ── mcp test <tool> ──────────────────────────────────────────────────────────
   cmd.command('test <tool>')
-    .description('Invoke an MCP tool over the live /mcp transport with a project token')
+    .description('Invoke an MCP tool over the live /mcp transport')
     .option('--input <json>', 'Tool arguments as a JSON object', '{}')
-    .option('--project <id>', 'Project name or ID to mint a token for (defaults to the only project)')
-    .option('--token <token>', 'Use an explicit project token instead of minting one')
+    .option('--token <token>', 'Use an explicit MCP token instead of the CLI one')
     .option('--json', 'Output raw JSON')
     .addHelpText('after', `
 Examples:
   routerly mcp test list_models
   routerly mcp test get_model --input '{"modelId":"gpt-4o"}'
-  routerly mcp test list_models --project my-api --token sk-rt-...
+  routerly mcp test list_models --token sk-rt-mcp-...
 `)
-    .action(async (tool: string, opts: { input?: string; project?: string; token?: string; json?: boolean }) => {
+    .action(async (tool: string, opts: { input?: string; token?: string; json?: boolean }) => {
       try {
-        // Validate --input BEFORE any network or token minting.
+        // Validate --input BEFORE any network call or token minting.
         let args: unknown;
         try {
           args = JSON.parse(opts.input ?? '{}');
@@ -114,12 +125,7 @@ Examples:
         }
 
         const account = await requireAccount();
-        const project = await resolveProject(opts.project);
-        const token = await acquireToken(
-          opts.token
-            ? { projectId: project.id, explicitToken: opts.token }
-            : { projectId: project.id, scopes: ['mcp', 'mcp:write'] },
-        );
+        const token = await acquireMcpToken(opts.token);
 
         const res = await fetch(`${account.serverUrl.replace(/\/$/, '')}/mcp`, {
           method: 'POST',
@@ -138,9 +144,9 @@ Examples:
 
         const body = (await res.json()) as RpcResponse;
 
-        // HTTP-level failure (e.g. 403 no-mcp-scope): `error` is a string, the
-        // actionable text is the top-level `message`. JSON-RPC protocol error:
-        // `error` is an object carrying its own `message`. Surface whichever is present.
+        // HTTP-level failure (e.g. 401 on an expired token): `error` is a string
+        // and the actionable text is the top-level `message`. JSON-RPC protocol
+        // error: `error` is an object carrying its own `message`. Surface either.
         const rpcErrorMessage =
           typeof body.error === 'object' && body.error ? body.error.message : undefined;
         if (!res.ok || body.error) {
@@ -160,38 +166,30 @@ Examples:
         }
         console.log(body.result?.content?.map(c => c.text).join('\n') ?? '');
       } catch (err) {
-        if (err instanceof ApiError) console.error(chalk.red(`Error: ${err.message}`));
-        else console.error(chalk.red(String(err)));
-        process.exit(1);
+        fail(err);
       }
     });
 
   // ── mcp serve ────────────────────────────────────────────────────────────────
   cmd.command('serve')
     .description('Run the MCP server over stdio for local clients (e.g. Claude Desktop)')
-    .option('--project <id>', 'Project name or ID to mint a token for (defaults to the only project)')
-    .option('--token <token>', 'Use an explicit project token instead of minting one')
+    .option('--token <token>', 'Use an explicit MCP token instead of the CLI one')
     .addHelpText('after', `
 Examples:
   routerly mcp serve
-  routerly mcp serve --project my-api
-  routerly mcp serve --project my-api --token sk-rt-...
+  routerly mcp serve --token sk-rt-mcp-...
 `)
-    .action(async (opts: { project?: string; token?: string }) => {
+    .action(async (opts: { token?: string }) => {
       try {
-        const project = await resolveProject(opts.project);
-        const token = await acquireToken(
-          opts.token
-            ? { projectId: project.id, explicitToken: opts.token }
-            : { projectId: project.id, scopes: ['mcp', 'mcp:write'] },
-        );
+        const account = await requireAccount();
+        const token = await acquireMcpToken(opts.token);
 
         // Resolve the built service entry the same way a published dependency resolves.
         const require = createRequire(import.meta.url);
         const serviceEntry = require.resolve('@routerly/service');
 
         // Diagnostics to stderr only, before the child attaches. stdout is the protocol stream.
-        console.error(chalk.gray(`Starting MCP stdio server for project "${project.name}"...`));
+        console.error(chalk.gray(`Starting MCP stdio server as "${account.alias}"...`));
 
         const { spawn } = await import('node:child_process');
         await new Promise<void>((resolve, reject) => {
@@ -201,16 +199,117 @@ Examples:
           });
           child.on('error', reject);
           child.on('exit', code => {
-            // Propagate the child's exit code so a failed start (e.g. token lacks
-            // the mcp scope, thrown in the service's stdio bootstrap) is not reported as success.
+            // Propagate the child's exit code so a failed start (e.g. a revoked
+            // token, thrown in the service's stdio bootstrap) is not reported as success.
             if (code && code !== 0) process.exitCode = code;
             resolve();
           });
         });
       } catch (err) {
-        if (err instanceof ApiError) console.error(chalk.red(`Error: ${err.message}`));
-        else console.error(chalk.red(String(err)));
-        process.exit(1);
+        fail(err);
+      }
+    });
+
+  cmd.addCommand(makeMcpTokenCommand());
+
+  return cmd;
+}
+
+// ─── Token subcommand group ───────────────────────────────────────────────────
+
+function makeMcpTokenCommand(): Command {
+  const cmd = new Command('token').description('Manage your personal MCP tokens');
+
+  cmd.command('list')
+    .description('List your MCP tokens')
+    .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  routerly mcp token list
+  routerly mcp token list --json
+`)
+    .action(async (opts: { json?: boolean }) => {
+      try {
+        const tokens = await api<McpTokenRow[]>('GET', '/api/me/mcp-tokens');
+        if (opts.json) {
+          console.log(JSON.stringify(tokens, null, 2));
+          return;
+        }
+        if (tokens.length === 0) {
+          console.log(chalk.yellow('No MCP tokens yet. Create one: routerly mcp token create <name>'));
+          return;
+        }
+        const table = new Table({
+          head: ['ID', 'Name', 'Snippet', 'Created', 'Last used', 'Expires'].map(h => chalk.cyan(h)),
+        });
+        for (const t of tokens) {
+          table.push([t.id, t.name, t.tokenSnippet + '…', fmtDate(t.createdAt), fmtDate(t.lastUsedAt), fmtDate(t.expiresAt)]);
+        }
+        console.log(table.toString());
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  cmd.command('create <name>')
+    .description('Create an MCP token (shown only once)')
+    .option('--expires <date>', 'Expiry date, e.g. 2027-01-01')
+    .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+An MCP token acts as you: it exposes exactly the tools your role permits.
+
+Examples:
+  routerly mcp token create laptop
+  routerly mcp token create ci --expires 2027-01-01
+  routerly mcp token create ci --json
+`)
+    .action(async (name: string, opts: { expires?: string; json?: boolean }) => {
+      try {
+        let expiresAt: string | undefined;
+        if (opts.expires) {
+          const parsed = new Date(opts.expires);
+          if (Number.isNaN(parsed.getTime())) {
+            console.error(chalk.red('Error: --expires must be a valid date, e.g. 2027-01-01.'));
+            process.exit(1);
+          }
+          expiresAt = parsed.toISOString();
+        }
+
+        const created = await api<McpTokenRow & { token: string }>('POST', '/api/me/mcp-tokens', {
+          name,
+          ...(expiresAt ? { expiresAt } : {}),
+        });
+
+        if (opts.json) {
+          console.log(JSON.stringify(created, null, 2));
+          return;
+        }
+        console.log(chalk.green(`✓ MCP token "${created.name}" created.`));
+        console.log(chalk.bold('\nToken (save it now, it is shown only once):'));
+        console.log(chalk.yellow(created.token));
+        console.log(chalk.gray(`  ID:      ${created.id}`));
+        if (created.expiresAt) console.log(chalk.gray(`  Expires: ${fmtDate(created.expiresAt)}`));
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  cmd.command('remove <token-id>')
+    .description('Revoke one of your MCP tokens')
+    .addHelpText('after', `
+Examples:
+  routerly mcp token remove <token-id>
+`)
+    .action(async (tokenId: string) => {
+      try {
+        await api<void>('DELETE', `/api/me/mcp-tokens/${encodeURIComponent(tokenId)}`);
+        console.log(chalk.green(`✓ MCP token revoked. Clients using it stop working immediately.`));
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) {
+          console.error(chalk.red(`MCP token "${tokenId}" not found.`));
+          process.exit(1);
+        }
+        fail(err);
       }
     });
 
