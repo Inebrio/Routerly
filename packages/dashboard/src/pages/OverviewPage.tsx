@@ -326,7 +326,7 @@ function SavingsCard({ data, baselineIds, baselineModelId, savings, metric, onMe
             {(savings?.comparedCalls ?? 0).toLocaleString()} client {savings?.comparedCalls === 1 ? 'call' : 'calls'}
             {baselineIds.length > 0 && (
               <>
-                {', against sending them all to each of the '}
+                {savings?.comparedCalls === 1 ? ', against sending it to each of the ' : ', against sending them all to each of the '}
                 <Link to="/dashboard/models" style={{ color: 'var(--accent)' }}>{baselineIds.length} paid models in play</Link>
               </>
             )}

@@ -137,18 +137,23 @@ describe('ProfileFormPage — create', () => {
     expect(screen.getByTestId('security-editor')).toBeInTheDocument();
   });
 
-  it('creates a routing profile with its selector and fallback', async () => {
+  it('creates a routing profile on the engine defaults, with no selector knobs on screen', async () => {
     const user = userEvent.setup();
     renderPage('/dashboard/profiles/new');
     await waitFor(() => expect(screen.getByTestId('routing-editor')).toBeInTheDocument());
+    expect(screen.queryByLabelText('Selector')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Fallback strategy')).not.toBeInTheDocument();
     await user.type(screen.getByLabelText('Label'), 'My Routing');
-    await user.selectOptions(screen.getByLabelText('Selector'), 'cheapest');
-    await user.selectOptions(screen.getByLabelText('Fallback strategy'), 'abort');
     await user.click(screen.getByRole('button', { name: /create profile/i }));
     await waitFor(() => expect(mockCreateProfile).toHaveBeenCalledWith({
-      kind: 'routing', label: 'My Routing', policies: [], selector: 'cheapest', fallbackStrategy: 'abort',
+      kind: 'routing', label: 'My Routing', policies: [], selector: 'argmax', fallbackStrategy: 'next-best',
     }));
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard/profiles');
+  });
+
+  it('opens on the kind the list was showing', async () => {
+    renderPage('/dashboard/profiles/new?kind=security');
+    await waitFor(() => expect(screen.getByTestId('security-editor')).toBeInTheDocument());
   });
 
   it('creates a security profile with its guardrails and PII payload', async () => {
@@ -193,7 +198,7 @@ describe('ProfileFormPage — clone', () => {
     renderPage('/dashboard/profiles/new?base=auto');
     await waitFor(() => expect(screen.getByLabelText('Label')).toHaveValue('Auto copy'));
     expect(screen.getByLabelText('Kind')).toBeDisabled();
-    expect(screen.getByLabelText('Selector')).toHaveValue('argmax');
+    expect(screen.getByTestId('routing-editor')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /create profile/i })).toBeInTheDocument();
   });
 

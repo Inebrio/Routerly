@@ -185,7 +185,7 @@ describe('profiles show', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('shows selector, fallback and policies for a routing profile', async () => {
+  it('shows the policies of a routing profile, without the engine knobs', async () => {
     mockApi.mockResolvedValueOnce([builtinProfile, userProfile]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
@@ -193,10 +193,10 @@ describe('profiles show', () => {
     const out = lines.join('\n');
     expect(out).toContain('Auto');
     expect(out).toContain('routing');
-    expect(out).toContain('argmax');
-    expect(out).toContain('next-best');
     expect(out).toContain('health (enabled)');
     expect(out).toContain('cheapest (disabled)');
+    expect(out).not.toContain('argmax');
+    expect(out).not.toContain('next-best');
   });
 
   it('shows the step pipeline for an optimizer profile', async () => {

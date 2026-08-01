@@ -172,6 +172,10 @@ did not filter out):
 | `cheapest` | Picks the lowest-cost candidate; ties break by higher score. |
 | `lowest-latency` | Picks the candidate with the lowest recent observed latency; candidates with no latency data sort last. |
 
+The selector is not editable from the dashboard or the CLI: a profile created
+there uses `argmax`. The built-in profiles keep the selectors listed above,
+and the [API](../api/management.md#profiles) accepts any of them.
+
 ### Fallback Strategies
 
 | Strategy | Behaviour |
@@ -181,11 +185,11 @@ did not filter out):
 | `abort` | On failure, stop immediately with no retry. |
 
 :::caution Not yet wired into live retries
-The fallback strategy is a field stored on the profile and selectable from
-the dashboard and API, but it does not yet change what actually happens when
-a request fails at runtime: the reverse-proxy retry loop does not read it
-yet. Treat it as configuration staged for a future release, not a currently
-active behaviour.
+The fallback strategy is a field stored on the profile and settable through
+the API, but it does not yet change what actually happens when a request
+fails at runtime: the reverse-proxy retry loop does not read it yet. Treat it
+as configuration staged for a future release, not a currently active
+behaviour. That is why neither the dashboard nor the CLI exposes it.
 :::
 
 ---

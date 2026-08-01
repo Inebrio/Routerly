@@ -28,25 +28,6 @@ vi.mock('../components/ConfirmDialog', () => ({
   ),
 }));
 
-// ponytail: mock SearchableSelect as a plain <select> so onChange fires on selectOptions
-vi.mock('../components/SearchableSelect', () => ({
-  SearchableSelect: ({
-    options,
-    value,
-    onChange,
-    ariaLabel,
-  }: {
-    options: { value: string; label: string }[];
-    value: string;
-    onChange: (v: string) => void;
-    ariaLabel?: string;
-  }) => (
-    <select aria-label={ariaLabel ?? 'select'} value={value} onChange={e => onChange(e.target.value)}>
-      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-    </select>
-  ),
-}));
-
 import { ProfilesPage, profileSummary } from './ProfilesPage';
 import { getProfiles, deleteProfile } from '../api';
 import { useAuth } from '../AuthContext';
@@ -91,59 +72,71 @@ afterEach(() => vi.clearAllMocks());
 
 describe('profileSummary', () => {
   it('summarizes each kind', () => {
-    expect(profileSummary(routingProfile as never)).toBe('1 policy, argmax');
+    expect(profileSummary(routingProfile as never)).toBe('1 policy enabled');
     expect(profileSummary(optimizerProfile as never)).toBe('1 step enabled');
     expect(profileSummary(securityProfile as never)).toBe('1 guardrail, 1 PII policy');
   });
 
   it('pluralizes empty configurations', () => {
-    expect(profileSummary({ ...routingProfile, policies: [] } as never)).toBe('0 policies, argmax');
+    expect(profileSummary({ ...routingProfile, policies: [] } as never)).toBe('0 policies enabled');
     expect(profileSummary({ ...optimizerProfile, optimizers: { steps: [] } } as never)).toBe('0 steps enabled');
     expect(profileSummary({ ...securityProfile, guardrails: {}, pii: {} } as never)).toBe('0 guardrails, 0 PII policies');
   });
 });
 
+/** Clicks the tab whose label starts with the given kind. */
+async function openTab(user: ReturnType<typeof userEvent.setup>, label: string) {
+  await user.click(screen.getByRole('button', { name: new RegExp(`^${label}`) }));
+}
+
 describe('ProfilesPage', () => {
-  it('lists every profile kind with its summary', async () => {
+  it('opens on the routing tab and shows only routing profiles', async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('Auto')).toBeInTheDocument());
-    expect(screen.getByText('Safe')).toBeInTheDocument();
-    expect(screen.getByText('My Security')).toBeInTheDocument();
-    expect(screen.getByText('1 policy, argmax')).toBeInTheDocument();
-    expect(screen.getByText('3 profiles')).toBeInTheDocument();
+    expect(screen.getByText('1 policy enabled')).toBeInTheDocument();
+    expect(screen.queryByText('Safe')).not.toBeInTheDocument();
+    expect(screen.queryByText('My Security')).not.toBeInTheDocument();
   });
 
-  it('filters by kind', async () => {
+  it('counts the profiles of each kind on its tab', async () => {
+    mockGetProfiles.mockResolvedValue([routingProfile, { ...routingProfile, id: 'auto2', label: 'Auto 2' }, securityProfile]);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Auto')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /^Routing/ }).textContent).toBe('Routing2');
+    expect(screen.getByRole('button', { name: /^Optimizer/ }).textContent).toBe('Optimizer0');
+    expect(screen.getByRole('button', { name: /^Security/ }).textContent).toBe('Security1');
+  });
+
+  it('switches kind from the tabs', async () => {
     const user = userEvent.setup();
     renderPage();
     await waitFor(() => expect(screen.getByText('Auto')).toBeInTheDocument());
-    await user.selectOptions(screen.getByLabelText('Kind'), 'security');
+    await openTab(user, 'Security');
     expect(screen.queryByText('Auto')).not.toBeInTheDocument();
     expect(screen.getByText('My Security')).toBeInTheDocument();
-    expect(screen.getByText('1 profile')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Security/ }).getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('shows an empty state when the filter matches nothing', async () => {
+  it('shows a kind-specific empty state when a tab has no profiles', async () => {
     mockGetProfiles.mockResolvedValue([securityProfile]);
-    const user = userEvent.setup();
     renderPage();
-    await waitFor(() => expect(screen.getByText('My Security')).toBeInTheDocument());
-    await user.selectOptions(screen.getByLabelText('Kind'), 'routing');
-    expect(screen.getByText('No profiles yet.')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('No routing profiles yet.')).toBeInTheDocument());
   });
 
-  it('navigates to the create page', async () => {
+  it('navigates to the create page for the open tab', async () => {
     const user = userEvent.setup();
     renderPage();
     await waitFor(() => expect(screen.getByText('Auto')).toBeInTheDocument());
+    await openTab(user, 'Security');
     await user.click(screen.getByRole('button', { name: /new profile/i }));
-    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/profiles/new');
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/profiles/new?kind=security');
   });
 
   it('navigates to the edit page', async () => {
     const user = userEvent.setup();
     renderPage();
-    await waitFor(() => expect(screen.getByText('My Security')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Auto')).toBeInTheDocument());
+    await openTab(user, 'Security');
     await user.click(screen.getByTitle('Edit'));
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard/profiles/my-sec');
   });
@@ -167,7 +160,8 @@ describe('ProfilesPage', () => {
   it('deletes a custom profile after confirmation', async () => {
     const user = userEvent.setup();
     renderPage();
-    await waitFor(() => expect(screen.getByText('My Security')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Auto')).toBeInTheDocument());
+    await openTab(user, 'Security');
     await user.click(screen.getByTitle('Delete'));
     expect(screen.getByTestId('confirm-dialog')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Confirm' }));
@@ -178,7 +172,8 @@ describe('ProfilesPage', () => {
   it('cancelling the confirmation keeps the profile', async () => {
     const user = userEvent.setup();
     renderPage();
-    await waitFor(() => expect(screen.getByText('My Security')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Auto')).toBeInTheDocument());
+    await openTab(user, 'Security');
     await user.click(screen.getByTitle('Delete'));
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByTestId('confirm-dialog')).not.toBeInTheDocument();
@@ -189,7 +184,8 @@ describe('ProfilesPage', () => {
     mockDeleteProfile.mockRejectedValue(new Error('delete boom'));
     const user = userEvent.setup();
     renderPage();
-    await waitFor(() => expect(screen.getByText('My Security')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Auto')).toBeInTheDocument());
+    await openTab(user, 'Security');
     await user.click(screen.getByTitle('Delete'));
     await user.click(screen.getByRole('button', { name: 'Confirm' }));
     await waitFor(() => expect(screen.getByText('delete boom')).toBeInTheDocument());
@@ -203,12 +199,15 @@ describe('ProfilesPage', () => {
 
   it('without profiles:manage the page is read-only', async () => {
     setAuth(['profiles:read']);
+    const user = userEvent.setup();
     renderPage();
-    await waitFor(() => expect(screen.getByText('My Security')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Auto')).toBeInTheDocument());
+    await openTab(user, 'Security');
+    expect(screen.getByText('My Security')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /new profile/i })).not.toBeInTheDocument();
     expect(screen.queryByTitle('Clone')).not.toBeInTheDocument();
     expect(screen.queryByTitle('Delete')).not.toBeInTheDocument();
-    expect(screen.getAllByTitle('View').length).toBe(3);
+    expect(screen.getAllByTitle('View').length).toBe(1);
   });
 
   it('without profiles:read shows the permission gate', async () => {
