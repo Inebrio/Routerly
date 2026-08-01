@@ -11,6 +11,11 @@ import type {
   RoleConfig,
 } from '@routerly/shared';
 
+/** Events sharing a trace ID collapse into one incident while it stays active (T50). */
+const INCIDENT_WINDOW_MS = 10 * 60 * 1000;
+
+const SEVERITY_RANK: Record<NotificationSeverity, number> = { info: 0, warning: 1, critical: 2 };
+
 // Canonical event taxonomy lives in @routerly/shared (single source of truth).
 export { NOTIFICATION_EVENTS } from '@routerly/shared';
 
@@ -127,8 +132,10 @@ export async function emitEvent(
     const matching = dashboardChannels.filter((c) => channelReceives(c, event));
     if (matching.length > 0) {
       const recipients = await resolveInboxRecipients(matching);
+      const traceId = typeof details['traceId'] === 'string' ? details['traceId'] : undefined;
       await appendToInbox({
         id: randomUUID(), event, severity, timestamp, details, readBy: [],
+        ...(traceId === undefined ? {} : { traceId }),
         ...(recipients === undefined ? {} : { recipients }),
       });
     }
@@ -225,10 +232,75 @@ async function resolveEmailRecipients(
   return emails.length > 0 ? emails : undefined;
 }
 
-/** Append one item to the inbox file, trimming to retention bounds (#91). */
+/**
+ * The open incident this item belongs to, if any (T50): the most recent item
+ * with the same trace ID, as long as it saw activity within the window. Older
+ * ones are closed, so a trace ID reused much later opens a new incident.
+ */
+function findOpenIncident(
+  items: NotificationInboxItem[],
+  traceId: string,
+  timestamp: string,
+): NotificationInboxItem | undefined {
+  const cutoff = Date.parse(timestamp) - INCIDENT_WINDOW_MS;
+  for (let i = items.length - 1; i >= 0; i--) {
+    const candidate = items[i]!;
+    if (candidate.traceId !== traceId) continue;
+    return Date.parse(candidate.timestamp) >= cutoff ? candidate : undefined;
+  }
+  return undefined;
+}
+
+/**
+ * Fold one event into an open incident (T50). The item keeps the identity of
+ * the worst event seen, ties going to the most recent one, so title and
+ * severity always describe the same event. The sequence carries the rest.
+ */
+function mergeIntoIncident(incident: NotificationInboxItem, item: NotificationInboxItem): void {
+  const sequence = incident.events ?? [{
+    event: incident.event,
+    severity: incident.severity,
+    timestamp: incident.timestamp,
+    details: incident.details,
+  }];
+  sequence.push({
+    event: item.event,
+    severity: item.severity,
+    timestamp: item.timestamp,
+    details: item.details,
+  });
+  incident.events = sequence;
+
+  if (SEVERITY_RANK[item.severity] >= SEVERITY_RANK[incident.severity]) {
+    incident.event = item.event;
+    incident.severity = item.severity;
+    incident.details = item.details;
+  }
+  // Latest activity keeps the incident at the top of the inbox, and a new event
+  // makes it unread again. A manual dismissal (deletedBy) is left alone: the
+  // user asked not to see this incident.
+  incident.timestamp = item.timestamp;
+  incident.readBy = [];
+
+  // Audience is the union, and "everyone" (undefined) wins over any list.
+  if (incident.recipients && item.recipients) {
+    incident.recipients = [...new Set([...incident.recipients, ...item.recipients])];
+  } else {
+    delete incident.recipients;
+  }
+}
+
+/**
+ * Append one item to the inbox file, trimming to retention bounds (#91).
+ * An item carrying a trace ID folds into that incident's item instead (T50).
+ */
 export async function appendToInbox(item: NotificationInboxItem): Promise<void> {
   const existing = await readConfig('notifications');
-  existing.push(item);
+  const incident = item.traceId
+    ? findOpenIncident(existing, item.traceId, item.timestamp)
+    : undefined;
+  if (incident) mergeIntoIncident(incident, item);
+  else existing.push(item);
   const cutoff = Date.now() - MAX_INBOX_AGE_MS;
   const trimmed = existing
     .filter((n) => Date.parse(n.timestamp) >= cutoff)

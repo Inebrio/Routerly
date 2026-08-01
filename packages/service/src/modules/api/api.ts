@@ -1957,9 +1957,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const sorted = [...mine].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
     // unreadCount reflects the user's whole inbox, independent of the active filters.
     const unreadCount = sorted.filter(n => !n.readBy.includes(userId)).length;
+    // eventCount > 1 marks a correlated incident (T50); the sequence itself is
+    // only sent by the detail route.
     const toDto = (n: typeof sorted[number]) => ({
       id: n.id, event: n.event, severity: n.severity, timestamp: n.timestamp,
       details: n.details, read: n.readBy.includes(userId),
+      ...(n.traceId ? { traceId: n.traceId } : {}),
+      eventCount: n.events?.length ?? 1,
     });
 
     // Apply filters (used by both the legacy limit slice and paginated views).
@@ -2012,6 +2016,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send({
       id: n.id, event: n.event, severity: n.severity, timestamp: n.timestamp,
       details: n.details, read: n.readBy.includes(userId),
+      ...(n.traceId ? { traceId: n.traceId } : {}),
+      eventCount: n.events?.length ?? 1,
+      ...(n.events ? { events: n.events } : {}),
     });
   });
 

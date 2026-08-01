@@ -59,6 +59,7 @@ export type {
   NotificationsConfig,
   NotificationSeverity,
   NotificationInboxItem,
+  NotificationIncidentEvent,
   EmailConfig,
   EmailProvider,
   SmtpEmailConfig,
