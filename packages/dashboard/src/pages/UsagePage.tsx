@@ -33,9 +33,27 @@ function fmtCost(n: number): string {
   return `$${n.toFixed(n < 1 ? 3 : 2)}`;
 }
 
+/**
+ * A single call costs a fraction of a cent, and eight fixed decimals turn the
+ * column into a wall of zeros. Three significant digits keep the number
+ * readable and still non-zero down to a millionth of a dollar.
+ */
+function fmtCallCost(n: number): string {
+  if (!n) return '$0';
+  if (n < 0.000001) return '<$0.000001';
+  return `$${Number(n.toPrecision(3))}`;
+}
+
 /** Who made the call: the client, or Routerly on its own behalf (routing, guardrail, experiment judge). */
 const CALLER_FILTER_LABELS = { all: 'All', completion: 'Completion', routing: 'Router', guardrail: 'Guardrail', judge: 'Judge' } as const;
 const CALLER_BADGE_LABELS = { completion: 'completion', routing: 'router', guardrail: 'guardrail', judge: 'judge' } as const;
+/** Only the calls Routerly makes on its own behalf are colour-coded: most rows
+ *  are completions, so badging those too would just tint the whole table. */
+const CALLER_COLORS: Record<string, string> = { routing: 'var(--accent)', guardrail: '#ef4444', judge: 'var(--warning)' };
+
+/** Numbers read as a column only when they are right-aligned and same-width. */
+const numTh: React.CSSProperties = { textAlign: 'right' };
+const numTd: React.CSSProperties = { textAlign: 'right', fontVariantNumeric: 'tabular-nums' };
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
@@ -523,7 +541,7 @@ export function UsagePage() {
                             <td style={{ textAlign: 'right' }} className="mono">
                               {totalTok > 0 ? fmtCost(costPer1k) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                             </td>
-                            <td style={{ textAlign: 'right' }} className="mono">${(v.cost ?? 0).toFixed(8)}</td>
+                            <td style={{ textAlign: 'right' }} className="mono">{fmtCallCost(v.cost ?? 0)}</td>
                           </tr>
                         );
                       })}
@@ -552,15 +570,17 @@ export function UsagePage() {
                   <table>
                     <thead>
                       <tr>
-                        <th>Time</th><th>Project</th><th>Model</th><th>Type</th><th>Caller</th><th>In</th><th>Out</th>
-                        <th>Cost</th><th>Latency</th><th>TTFT</th><th>Tok/s</th><th>Status</th>
+                        <th>Time</th><th>Project</th><th>Model</th><th>Type</th><th>Caller</th>
+                        <th style={numTh}>In</th><th style={numTh}>Out</th><th style={numTh}>Cost</th>
+                        <th style={numTh}>Latency</th><th style={numTh}>TTFT</th><th style={numTh}>Tok/s</th>
+                        <th>Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {displayRecords.map((r) => {
                         // Records written before callType existed were all completions.
                         const caller = r.callType ?? 'completion';
-                        const isRouting = caller === 'routing';
+                        const callerColor = CALLER_COLORS[caller];
                         const isNew = liveMode && newRowIds.has(r.id);
                         return (
                           <tr
@@ -568,9 +588,7 @@ export function UsagePage() {
                             className={isNew ? 'row-new' : undefined}
                             style={{
                               cursor: 'pointer',
-                              borderLeft: isRouting
-                                ? '3px solid var(--accent)'
-                                : '3px solid var(--primary)',
+                              borderLeft: `3px solid ${callerColor ?? 'transparent'}`,
                             }}
                             onClick={() => navigate(`/dashboard/usage/${r.id}`, { state: { record: r } })}
                           >
@@ -586,22 +604,28 @@ export function UsagePage() {
                               {requestTypeLabel(r.requestType ?? 'chat')}
                             </td>
                             <td>
-                              <span style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 4,
-                                fontSize: '0.72rem', fontWeight: 600, padding: '2px 7px',
-                                borderRadius: 99,
-                                background: isRouting ? 'rgba(99,102,241,0.12)' : 'rgba(59,130,246,0.12)',
-                                color: isRouting ? 'var(--accent)' : 'var(--primary)',
-                              }}>
-                                {CALLER_BADGE_LABELS[caller]}
-                              </span>
+                              {callerColor ? (
+                                <span style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                                  fontSize: '0.72rem', fontWeight: 600, padding: '2px 7px',
+                                  borderRadius: 99,
+                                  background: 'var(--bg-surface)',
+                                  color: callerColor,
+                                }}>
+                                  {CALLER_BADGE_LABELS[caller]}
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                                  {CALLER_BADGE_LABELS[caller]}
+                                </span>
+                              )}
                             </td>
-                            <td>{r.inputTokens}</td>
-                            <td>{r.outputTokens}</td>
-                            <td className="mono" style={{ fontSize: '0.78rem' }}>${(r.cost ?? 0).toFixed(8)}</td>
-                            <td style={{ color: 'var(--text-muted)' }}>{r.latencyMs}ms</td>
-                            <td style={{ color: 'var(--text-muted)' }}>{r.ttftMs != null ? `${r.ttftMs}ms` : '—'}</td>
-                            <td style={{ color: 'var(--text-muted)' }}>{r.tokensPerSec != null ? `${r.tokensPerSec}` : '—'}</td>
+                            <td style={numTd}>{r.inputTokens}</td>
+                            <td style={numTd}>{r.outputTokens}</td>
+                            <td className="mono" style={{ ...numTd, fontSize: '0.78rem' }}>{fmtCallCost(r.cost ?? 0)}</td>
+                            <td style={{ ...numTd, color: 'var(--text-muted)' }}>{r.latencyMs}ms</td>
+                            <td style={{ ...numTd, color: 'var(--text-muted)' }}>{r.ttftMs != null ? `${r.ttftMs}ms` : '—'}</td>
+                            <td style={{ ...numTd, color: 'var(--text-muted)' }}>{r.tokensPerSec != null ? `${r.tokensPerSec}` : '—'}</td>
                             <td>
                               <span className={`badge ${r.outcome === 'success' ? 'badge-success' : r.outcome === 'blocked' ? 'badge-warning' : 'badge-error'}`}>
                                 {r.outcome}

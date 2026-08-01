@@ -997,7 +997,9 @@ export interface TraceEntry {
 
 export type CallOutcome = 'success' | 'error' | 'budget_exceeded' | 'timeout' | 'blocked';
 
-export type CallType = 'routing' | 'completion' | 'guardrail' | 'judge';
+export const CALL_TYPES = ['routing', 'completion', 'guardrail', 'judge'] as const;
+
+export type CallType = (typeof CALL_TYPES)[number];
 
 /**
  * True for a call the client actually asked for. Routing, guardrail and judge
