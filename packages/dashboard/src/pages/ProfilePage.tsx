@@ -62,9 +62,12 @@ const EVENT_OPTIONS = [
 /** Where a detail value points, when it points anywhere. */
 function detailLink(key: string, value: unknown): string | null {
   if (typeof value !== 'string' || !value) return null;
-  if (key === 'projectId') return `/dashboard/projects/${value}`;
-  if (key === 'modelId') return `/dashboard/models/${value}`;
-  if (key === 'traceId') return `/dashboard/usage/${value}`;
+  const id = encodeURIComponent(value);
+  if (key === 'projectId') return `/dashboard/projects/${id}`;
+  // Model ids contain slashes and colons (openai/gpt-4o), hence the encoding.
+  // `primaryModelId` and `fallbackModelId` come from routing.fallback_used.
+  if (key === 'modelId' || key.endsWith('ModelId')) return `/dashboard/models/${id}`;
+  if (key === 'traceId') return `/dashboard/usage/${id}`;
   return null;
 }
 

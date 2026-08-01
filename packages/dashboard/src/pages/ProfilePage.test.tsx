@@ -1110,6 +1110,23 @@ describe('ProfileNotificationsTab — readable rows and links', () => {
     expect(screen.getByRole('link', { name: 't1' }).getAttribute('href')).toBe('/dashboard/usage/t1');
   });
 
+  it('links the primary and fallback model ids of a routing event', async () => {
+    mockGetInboxPage.mockResolvedValue(pageOf([
+      {
+        id: 'n1', event: 'routing.fallback_used', severity: 'info', timestamp: new Date().toISOString(), read: true,
+        details: { primaryModelId: 'ollama/qwen2.5:3b', fallbackModelId: 'anthropic/claude-sonnet-4-6' },
+      },
+    ]));
+    renderTab();
+    await waitFor(() => screen.getByText('Fallback model used'));
+    await userEvent.click(screen.getByText('Fallback model used'));
+    await waitFor(() => screen.getByRole('dialog', { name: /notification detail/i }));
+    expect(screen.getByRole('link', { name: 'ollama/qwen2.5:3b' }).getAttribute('href'))
+      .toBe('/dashboard/models/ollama%2Fqwen2.5%3A3b');
+    expect(screen.getByRole('link', { name: 'anthropic/claude-sonnet-4-6' }).getAttribute('href'))
+      .toBe('/dashboard/models/anthropic%2Fclaude-sonnet-4-6');
+  });
+
   it('lists the correlated events fetched with the detail', async () => {
     const ts = new Date().toISOString();
     mockGetInboxPage.mockResolvedValue(pageOf([

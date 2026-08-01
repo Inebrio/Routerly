@@ -2,7 +2,17 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import { CHANNEL_SECRET_FIELDS } from '@routerly/shared';
+import {
+  CHANNEL_SECRET_FIELDS, NOTIFICATION_CATEGORIES,
+  notificationCategory, notificationCause, notificationTitle,
+} from '@routerly/shared';
+
+interface IncidentEvent {
+  event: string;
+  severity: 'info' | 'warning' | 'critical';
+  timestamp: string;
+  details?: Record<string, unknown>;
+}
 
 interface Notification {
   id: string;
@@ -11,6 +21,9 @@ interface Notification {
   timestamp: string;
   details?: Record<string, unknown>;
   read?: boolean;
+  traceId?: string;
+  eventCount?: number;
+  events?: IncidentEvent[];
 }
 
 interface NotificationInboxResponse {
@@ -23,9 +36,12 @@ function severityColor(sev: Notification['severity']): string {
   return sev === 'critical' ? chalk.red(sev) : sev === 'warning' ? chalk.yellow(sev) : chalk.blue(sev);
 }
 
-function detailsSummary(details?: Record<string, unknown>): string {
-  if (!details || Object.keys(details).length === 0) return chalk.gray('—');
-  const s = JSON.stringify(details);
+/** Why the event fired, falling back to the raw details when the catalog has nothing to say. */
+function causeSummary(n: Pick<Notification, 'event' | 'details'>): string {
+  const cause = notificationCause(n.event, n.details ?? {});
+  if (cause) return cause.length > 60 ? cause.slice(0, 57) + '…' : cause;
+  if (!n.details || Object.keys(n.details).length === 0) return chalk.gray('—');
+  const s = JSON.stringify(n.details);
   return s.length > 60 ? s.slice(0, 57) + '…' : s;
 }
 
@@ -58,11 +74,23 @@ export function makeNotificationCommand(): Command {
   cmd.command('list')
     .description('List recent notifications')
     .option('--json', 'Output as JSON')
+    .option('--severity <level>', 'Only notifications of this severity (info, warning, critical)')
+    .option('--category <name>', `Only notifications of this category (${NOTIFICATION_CATEGORIES.join(', ')})`)
+    .option('--event <slug>', 'Only notifications whose event contains this text')
+    .option('--unread', 'Only unread notifications')
     .option('--from <date>', 'Only notifications on/after this date (YYYY-MM-DD or ISO)')
     .option('--to <date>', 'Only notifications on/before this date (YYYY-MM-DD or ISO)')
-    .action(async (opts: { json?: boolean; from?: string; to?: string }) => {
+    .action(async (opts: { json?: boolean; severity?: string; category?: string; event?: string; unread?: boolean; from?: string; to?: string }) => {
       try {
+        if (opts.category && !(NOTIFICATION_CATEGORIES as readonly string[]).includes(opts.category)) {
+          console.error(chalk.red(`Unknown category "${opts.category}". Valid categories: ${NOTIFICATION_CATEGORIES.join(', ')}.`));
+          process.exit(1);
+        }
         const q = new URLSearchParams({ limit: '50' });
+        if (opts.severity) q.set('severity', opts.severity);
+        if (opts.category) q.set('category', opts.category);
+        if (opts.event) q.set('event', opts.event);
+        if (opts.unread) q.set('unreadOnly', 'true');
         if (opts.from) q.set('from', opts.from);
         if (opts.to) q.set('to', opts.to);
         const data = await api<NotificationInboxResponse | Notification[]>('GET', `/api/notifications/inbox?${q.toString()}`);
@@ -79,16 +107,19 @@ export function makeNotificationCommand(): Command {
         }
 
         const table = new Table({
-          head: ['ID', 'Severity', 'Event', 'Timestamp', 'Details'].map(h => chalk.cyan(h)),
+          head: ['ID', 'Severity', 'Category', 'Notification', 'Timestamp', 'Cause'].map(h => chalk.cyan(h)),
         });
 
         for (const n of notifications) {
+          const count = n.eventCount ?? 1;
           table.push([
             n.id,
             severityColor(n.severity),
-            n.event,
+            notificationCategory(n.event),
+            // Human title first, technical slug underneath — same order as the dashboard.
+            `${notificationTitle(n.event)}${count > 1 ? chalk.gray(` (${count} events)`) : ''}\n${chalk.gray(n.event)}`,
             new Date(n.timestamp).toLocaleString(),
-            detailsSummary(n.details),
+            causeSummary(n),
           ]);
         }
         console.log(table.toString());
@@ -108,14 +139,19 @@ export function makeNotificationCommand(): Command {
           console.log(JSON.stringify(n, null, 2));
           return;
         }
+        const cause = notificationCause(n.event, n.details ?? {});
         const table = new Table();
         table.push(
           { ID: n.id },
+          { Notification: notificationTitle(n.event) },
           { Event: n.event },
+          { Category: notificationCategory(n.event) },
           { Severity: severityColor(n.severity) },
           { Status: n.read ? chalk.gray('read') : chalk.cyan('unread') },
           { Timestamp: new Date(n.timestamp).toLocaleString() },
         );
+        if (cause) table.push({ Cause: cause });
+        if (n.traceId) table.push({ Trace: n.traceId });
         console.log(table.toString());
         const entries = Object.entries(n.details ?? {});
         if (entries.length > 0) {
@@ -123,6 +159,20 @@ export function makeNotificationCommand(): Command {
           const dt = new Table({ head: ['Key', 'Value'].map(h => chalk.cyan(h)) });
           for (const [k, v] of entries) dt.push([k, typeof v === 'string' ? v : JSON.stringify(v)]);
           console.log(dt.toString());
+        }
+        // Correlated incident (T50): every event that shares the trace, oldest first.
+        if (n.events && n.events.length > 1) {
+          console.log(chalk.cyan('\nEvents in this incident:'));
+          const et = new Table({ head: ['Timestamp', 'Severity', 'Notification', 'Cause'].map(h => chalk.cyan(h)) });
+          for (const e of n.events) {
+            et.push([
+              new Date(e.timestamp).toLocaleString(),
+              severityColor(e.severity),
+              `${notificationTitle(e.event)}\n${chalk.gray(e.event)}`,
+              causeSummary(e),
+            ]);
+          }
+          console.log(et.toString());
         }
       } catch (err) {
         if (err instanceof ApiError && err.status === 404) {
@@ -160,9 +210,12 @@ export function makeNotificationCommand(): Command {
       }
     });
 
-  cmd.command('delete [ids...]')
-    .description('Delete one or more notifications from your inbox. Use --all to delete every notification.')
-    .option('--all', 'Delete all notifications in your inbox')
+  // `archive` is the name the dashboard uses: the item leaves your inbox only,
+  // everyone else still sees it.
+  cmd.command('archive [ids...]')
+    .alias('delete')
+    .description('Archive one or more notifications from your inbox. Use --all to archive every notification.')
+    .option('--all', 'Archive all notifications in your inbox')
     .option('--json', 'Output as JSON')
     .action(async (ids: string[], opts: { all?: boolean; json?: boolean }) => {
       try {
@@ -176,7 +229,7 @@ export function makeNotificationCommand(): Command {
           console.log(JSON.stringify(res, null, 2));
           return;
         }
-        console.log(chalk.green(`Deleted ${res.deleted} notification${res.deleted === 1 ? '' : 's'}.`));
+        console.log(chalk.green(`Archived ${res.deleted} notification${res.deleted === 1 ? '' : 's'}.`));
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
