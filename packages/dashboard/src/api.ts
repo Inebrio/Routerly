@@ -611,7 +611,6 @@ export interface Settings {
   port: number;
   host: string;
   dashboardEnabled: boolean;
-  defaultTimeoutMs: number;
   logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error';
   /** Public base URL of the service — used in "How to connect" when dashboard runs on a different host. */
   publicUrl?: string;
@@ -630,6 +629,8 @@ export interface Settings {
   providerRepos?: ProviderRepo[];
   /** Non-loopback IPv4 addresses of the machine running the service — injected at runtime, not persisted. */
   localAddresses?: string[];
+  /** URLs the service is actually reachable at, derived from the bind host — injected at runtime, not persisted. */
+  listeningAddresses?: string[];
 }
 
 export const getSettings = () => request<Settings>('/settings');

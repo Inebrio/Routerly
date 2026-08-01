@@ -673,8 +673,6 @@ export interface Settings {
   host: string;
   /** Whether to serve the dashboard at /dashboard */
   dashboardEnabled: boolean;
-  /** Default timeout per model attempt in ms */
-  defaultTimeoutMs: number;
   logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error';
   /**
    * Public base URL of the service (e.g. https://routerly.example.com).

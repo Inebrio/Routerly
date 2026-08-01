@@ -103,7 +103,7 @@ export function SettingsGeneralTab() {
     try {
       const s = await getSettings();
       setSettings(s);
-      setForm({ defaultTimeoutMs: s.defaultTimeoutMs, logLevel: s.logLevel, publicUrl: s.publicUrl || `http://localhost:${s.port}`, ...(s.requireMfa !== undefined ? { requireMfa: s.requireMfa } : {}), ...(s.notifications ? { notifications: s.notifications } : {}) });
+      setForm({ logLevel: s.logLevel, publicUrl: s.publicUrl || `http://localhost:${s.port}`, ...(s.requireMfa !== undefined ? { requireMfa: s.requireMfa } : {}), ...(s.notifications ? { notifications: s.notifications } : {}) });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load settings');
     } finally {
@@ -178,24 +178,6 @@ export function SettingsGeneralTab() {
         <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12 }}>
           Runtime Settings
         </h3>
-
-        <div className="form-group">
-          <label className="form-label" htmlFor="s-timeout">Default Request Timeout (ms)</label>
-          <input
-            id="s-timeout"
-            type="number"
-            className="form-input"
-            min={1000}
-            max={300000}
-            step={1000}
-            value={form.defaultTimeoutMs ?? ''}
-            onChange={e => field('defaultTimeoutMs', Number(e.target.value))}
-            required
-          />
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-            Maximum time to wait for a model response per attempt. Can be overridden per project.
-          </p>
-        </div>
 
         <div className="form-group">
           <label className="form-label">Log Level</label>

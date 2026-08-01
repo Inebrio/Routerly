@@ -56,6 +56,21 @@ function hashToken(t: string): string {
   return createHash('sha256').update(t).digest('hex');
 }
 
+/**
+ * URLs the service is actually reachable at, derived from the configured bind
+ * host. A wildcard bind expands to every IPv4 interface (loopback included);
+ * any other host is reachable at that address only, so advertising the LAN
+ * addresses there would be a lie.
+ */
+export function listeningAddresses(host: string, port: number): string[] {
+  if (host !== '0.0.0.0' && host !== '::' && host !== '') return [`http://${host}:${port}`];
+  const addresses = Object.values(networkInterfaces())
+    .flat()
+    .filter((n): n is NonNullable<typeof n> => n !== undefined && n.family === 'IPv4')
+    .map(n => n.address);
+  return [...new Set(['127.0.0.1', ...addresses])].map(a => `http://${a}:${port}`);
+}
+
 const BCRYPT_ROUNDS = 12;
 
 /**
@@ -1793,7 +1808,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       .flat()
       .filter((n): n is NonNullable<typeof n> => n !== undefined && n.family === 'IPv4' && !n.internal)
       .map(n => n.address);
-    return reply.send({ ...settings, localAddresses });
+    return reply.send({ ...settings, localAddresses, listeningAddresses: listeningAddresses(settings.host, settings.port) });
   });
 
   // ─── GET /api/clients ──────────────────────────────────────────────────────
@@ -1850,7 +1865,6 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
     const current = await readConfig('settings');
     const allowed: (keyof Settings)[] = [
-      'defaultTimeoutMs',
       'logLevel',
       'dashboardEnabled',
       'notifications',

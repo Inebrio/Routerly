@@ -2,7 +2,7 @@ import { defineModule } from '../../core/index.js'
 import { CONFIG_STORE } from '../../core/tokens.js'
 import { readConfig, writeConfig, appendUsageRecord } from './loader.js'
 import { migrateModelsToConnections } from './migrate-connections.js'
-import { migrateProjectConfigs } from './migrate.js'
+import { migrateProjectConfigs, migrateSettings } from './migrate.js'
 
 /**
  * Config module: owns the real config store implementation (loader.ts,
@@ -30,6 +30,11 @@ export const configModule = defineModule({
     if (migrated > 0) {
       // eslint-disable-next-line no-console
       console.log(`[startup] migrated ${migrated} project(s) to new guardrails/PII config shape`)
+    }
+    const dropped = await migrateSettings()
+    if (dropped.length > 0) {
+      // eslint-disable-next-line no-console
+      console.log(`[startup] dropped removed setting(s) from settings.json: ${dropped.join(', ')}`)
     }
   },
   register({ container }) {

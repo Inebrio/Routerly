@@ -50,7 +50,7 @@ vi.mock('../catalog/fetcher.js', () => ({
   },
 }))
 
-import { apiRoutes } from './api.js'
+import { apiRoutes, listeningAddresses } from './api.js'
 import { readConfig, writeConfig, getOrCreateSecret } from '../config/loader.js'
 import { loadCredentialKey, decryptCredential } from '../../lib/crypto-cred.js'
 import { resolveOpenAIWebCredential } from '../provider/openai-web.js'
@@ -1911,6 +1911,39 @@ describe('GET /api/settings', () => {
     const res = await app.inject({ method: 'GET', url: '/api/settings', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(200)
+  })
+
+  it('returns the addresses the service listens on', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return { host: '127.0.0.1', port: 3010, logLevel: 'info' }
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/settings', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.json().listeningAddresses).toEqual(['http://127.0.0.1:3010'])
+  })
+})
+
+describe('listeningAddresses', () => {
+  it('reports only the bound host when it is not a wildcard', () => {
+    expect(listeningAddresses('192.168.1.5', 3000)).toEqual(['http://192.168.1.5:3000'])
+  })
+
+  it('expands a wildcard bind to loopback plus every IPv4 interface', () => {
+    const addresses = listeningAddresses('0.0.0.0', 3000)
+    expect(addresses).toContain('http://127.0.0.1:3000')
+    expect(new Set(addresses).size).toBe(addresses.length)
+    expect(addresses.every(a => a.startsWith('http://') && a.endsWith(':3000'))).toBe(true)
+  })
+
+  it('treats an empty host and :: as wildcards', () => {
+    expect(listeningAddresses('', 80)).toContain('http://127.0.0.1:80')
+    expect(listeningAddresses('::', 80)).toContain('http://127.0.0.1:80')
   })
 })
 

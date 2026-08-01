@@ -132,7 +132,6 @@ const baseSettings = {
   port: 3000,
   host: '0.0.0.0',
   dashboardEnabled: true,
-  defaultTimeoutMs: 30000,
   logLevel: 'info' as const,
   publicUrl: 'http://localhost:3000',
   requireMfa: false,
@@ -211,13 +210,6 @@ describe('SettingsGeneralTab', () => {
     expect(input.value).toBe('http://localhost:3000');
   });
 
-  it('renders default timeout input pre-filled', async () => {
-    renderGeneral();
-    await waitFor(() => screen.getByLabelText('Default Request Timeout (ms)'));
-    const input = screen.getByLabelText('Default Request Timeout (ms)') as HTMLInputElement;
-    expect(input.value).toBe('30000');
-  });
-
   it('renders log level select pre-filled with info', async () => {
     renderGeneral();
     await waitFor(() => screen.getByLabelText('Log Level'));
@@ -252,22 +244,12 @@ describe('SettingsGeneralTab', () => {
     expect(cb.checked).toBe(true);
   });
 
-  it('changing timeout input updates form value', async () => {
-    renderGeneral();
-    await waitFor(() => screen.getByLabelText('Default Request Timeout (ms)'));
-    const input = screen.getByLabelText('Default Request Timeout (ms)') as HTMLInputElement;
-    await userEvent.clear(input);
-    await userEvent.type(input, '60000');
-    expect(input.value).toBe('60000');
-  });
-
   it('submitting form calls updateSettings with form fields', async () => {
     renderGeneral();
     await waitFor(() => screen.getByRole('button', { name: /Save Settings/i }));
     await userEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
     await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
     const call = mockUpdateSettings.mock.calls[0]![0] as Record<string, unknown>;
-    expect(call).toHaveProperty('defaultTimeoutMs');
     expect(call).toHaveProperty('logLevel');
   });
 
@@ -3411,15 +3393,6 @@ describe('SettingsCatalogTab — refreshCatalog catch + persist branches', () =>
     expect(input.placeholder).toContain('192.168.1.1');
   });
 
-  it('SettingsGeneralTab: form.defaultTimeoutMs undefined shows empty string in timeout field', async () => {
-    mockGetSettings.mockResolvedValue({ ...baseSettings, defaultTimeoutMs: undefined } as never);
-    render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
-    await waitFor(() => screen.getByLabelText('Default Request Timeout (ms)'));
-    const input = screen.getByLabelText('Default Request Timeout (ms)') as HTMLInputElement;
-    // form.defaultTimeoutMs ?? '' → '' branch
-    expect(input.value).toBe('');
-  });
-
   it('SettingsGeneralTab: form.logLevel undefined uses "info" fallback', async () => {
     mockGetSettings.mockResolvedValue({ ...baseSettings, logLevel: undefined } as never);
     render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
@@ -3821,12 +3794,8 @@ describe('SettingsGeneralTab — null field fallback branches', () => {
 
   it('settings null (resolve null) shows error (L135 guard)', async () => {
     // When settings resolves to null, setSettings(null) → !settings=true → error fallback
-    // But the component also accesses s.defaultTimeoutMs etc on line 105 before setting state
-    // So if getSettings resolves null, the component throws
-    // The error boundary doesn't exist here, so we need to catch the error state
-    // Actually the component uses setSettings(s) and then accesses s.defaultTimeoutMs — crash
-    // The correct way to reach line 135 is via a rejection + re-render... skip this unreachable path
-    // Instead verify the error div shown from rejection:
+    // The component reads fields off s before setting state, so a null resolve throws.
+    // The reachable path to the error div is a rejection:
     mockGetSettings.mockRejectedValue(new Error('Network error'));
     render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
     await waitFor(() => expect(screen.queryByText('Network error')).not.toBeNull());

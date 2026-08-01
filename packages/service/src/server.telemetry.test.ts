@@ -62,7 +62,6 @@ function makeSettings(telemetry?: { enabled: boolean; installId: string; lastPin
     port: 3000,
     host: '0.0.0.0',
     dashboardEnabled: false,
-    defaultTimeoutMs: 30000,
     logLevel: 'info' as const,
     channel: 'latest',
     ...(telemetry !== undefined ? { telemetry } : {}),
