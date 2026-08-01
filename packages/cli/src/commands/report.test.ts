@@ -432,6 +432,15 @@ const savingsFixture = {
   },
 };
 
+const seriesFixture = {
+  bucket: 'day',
+  baselineModelId: 'expensive',
+  points: [
+    { bucket: '2026-07-31', calls: 2, cost: 0.006, baselineCost: 0.06, inputTokens: 2000, outputTokens: 1000, cachedInputTokens: 0, latencyMs: 2000, baselineLatencyMs: 4000 },
+    { bucket: '2026-08-01', calls: 1, cost: 0.003, baselineCost: 0, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0, latencyMs: 1000, baselineLatencyMs: 0 },
+  ],
+};
+
 describe('report savings', () => {
   it('asks the service for the savings block', async () => {
     mockApi.mockResolvedValue(savingsFixture);
@@ -490,6 +499,38 @@ describe('report savings', () => {
     mockApi.mockResolvedValue(savingsFixture);
     const { out } = await run('savings', '--json');
     expect(JSON.parse(out.join('\n'))).toEqual(savingsFixture.savings);
+  });
+
+  it('asks for the series and breaks the saving down with --trend', async () => {
+    mockApi.mockResolvedValue({ ...savingsFixture, series: seriesFixture });
+    const { out } = await run('savings', '--trend');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('series=1'));
+    const text = out.join('\n');
+    expect(text).toContain('Per day');
+    expect(text).toContain('against expensive');
+    expect(text).toContain('2026-07-31');
+    expect(text).toContain('$0.054000'); // 0.06 baseline - 0.006 actual
+    expect(text).toContain('2,000 / 1,000');
+    expect(text).toContain('1,000'); // 2000 ms over 2 calls
+  });
+
+  it('leaves the series out unless --trend is asked for', async () => {
+    mockApi.mockResolvedValue({ ...savingsFixture, series: seriesFixture });
+    const { out } = await run('savings');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.not.stringContaining('series=1'));
+    expect(out.join('\n')).not.toContain('Per day');
+  });
+
+  it('says so when --trend has no bucket to show', async () => {
+    mockApi.mockResolvedValue({ ...savingsFixture, series: { bucket: 'day', points: [] } });
+    const { out } = await run('savings', '--trend');
+    expect(out.join('\n')).toContain('No traffic to break down');
+  });
+
+  it('adds the series next to the savings fields with --json --trend', async () => {
+    mockApi.mockResolvedValue({ ...savingsFixture, series: seriesFixture });
+    const { out } = await run('savings', '--json', '--trend');
+    expect(JSON.parse(out.join('\n'))).toEqual({ ...savingsFixture.savings, series: seriesFixture });
   });
 
   it('passes --project and --type through as filters', async () => {

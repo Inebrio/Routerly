@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { ModelConfig, UsageRecord } from '@routerly/shared'
-import { computeSavings } from './savings.js'
+import { computeSavings, computeSeries } from './savings.js'
 
 function model(id: string, inputPerMillion: number, outputPerMillion: number, cachePerMillion?: number): ModelConfig {
   return {
@@ -231,5 +231,87 @@ describe('computeSavings — optimizers', () => {
       ['cheap'],
     )
     expect(s.optimizers).toEqual([])
+  })
+})
+
+describe('computeSeries', () => {
+  const at = (timestamp: string, partial: Partial<UsageRecord> = {}) => record({ timestamp, cost: 0.003, ...partial })
+
+  const seriesOf = (records: UsageRecord[], bucket: 'hour' | 'day', baselines = ['cheap', 'expensive']) =>
+    computeSeries(records, MODELS, computeSavings(records, MODELS, baselines), bucket)
+
+  it('buckets by hour', () => {
+    const s = seriesOf([at('2026-08-01T10:15:00.000Z'), at('2026-08-01T10:47:00.000Z'), at('2026-08-01T11:02:00.000Z')], 'hour')
+    expect(s.bucket).toBe('hour')
+    expect(s.points.map(p => p.bucket)).toEqual(['2026-08-01T10', '2026-08-01T11'])
+    expect(s.points[0]!.calls).toBe(2)
+    expect(s.points[1]!.calls).toBe(1)
+  })
+
+  it('buckets by day', () => {
+    const s = seriesOf([at('2026-07-31T23:00:00.000Z'), at('2026-08-01T01:00:00.000Z')], 'day')
+    expect(s.points.map(p => p.bucket)).toEqual(['2026-07-31', '2026-08-01'])
+  })
+
+  it('sums cost and tokens inside a bucket', () => {
+    const s = seriesOf([at('2026-08-01T10:00:00.000Z'), at('2026-08-01T10:30:00.000Z', { cachedInputTokens: 400 })], 'hour')
+    expect(s.points[0]!.cost).toBe(0.006)
+    expect(s.points[0]!.inputTokens).toBe(2000)
+    expect(s.points[0]!.outputTokens).toBe(2000)
+    expect(s.points[0]!.cachedInputTokens).toBe(400)
+    expect(s.points[0]!.latencyMs).toBe(2000)
+  })
+
+  it('prices the counterfactual against the costliest baseline', () => {
+    const s = seriesOf([at('2026-08-01T10:00:00.000Z')], 'hour')
+    expect(s.baselineModelId).toBe('expensive')
+    // 1000 in + 1000 out at $10/$20 per 1M
+    expect(s.points[0]!.baselineCost).toBe(0.03)
+  })
+
+  it('estimates baseline latency from that baseline own throughput', () => {
+    const records = [
+      at('2026-08-01T10:00:00.000Z'),
+      at('2026-08-01T11:00:00.000Z', { modelId: 'expensive', cost: 0.03, latencyMs: 4000 }),
+    ]
+    const s = seriesOf(records, 'hour')
+    // expensive runs at 4 ms per output token, each bucket produced 1000 output tokens
+    expect(s.points.map(p => p.baselineLatencyMs)).toEqual([4000, 4000])
+  })
+
+  it('leaves the counterfactual empty when there is no baseline', () => {
+    const s = seriesOf([at('2026-08-01T10:00:00.000Z')], 'hour', [])
+    expect(s.baselineModelId).toBeUndefined()
+    expect(s.points[0]!.baselineCost).toBe(0)
+    expect(s.points[0]!.baselineLatencyMs).toBe(0)
+  })
+
+  it('counts only the records the savings summary compares', () => {
+    const s = seriesOf([
+      at('2026-08-01T10:00:00.000Z'),
+      at('2026-08-01T10:10:00.000Z', { outcome: 'error' }),
+      at('2026-08-01T10:20:00.000Z', { callType: 'routing' }),
+      at('2026-08-01T10:30:00.000Z', { inputTokens: 0, outputTokens: 0 }),
+    ], 'hour')
+    expect(s.points[0]!.calls).toBe(1)
+  })
+
+  it('leaves quiet buckets out instead of zero filling them', () => {
+    const s = seriesOf([at('2026-08-01T10:00:00.000Z'), at('2026-08-01T14:00:00.000Z')], 'hour')
+    expect(s.points).toHaveLength(2)
+  })
+
+  it('keeps the most recent 60 buckets, oldest first', () => {
+    const records = Array.from({ length: 70 }, (_, i) =>
+      at(`2026-08-01T${String(i % 24).padStart(2, '0')}:00:00.000Z`.replace('2026-08-01', `2026-06-${String((i % 28) + 1).padStart(2, '0')}`)))
+    const s = seriesOf(records, 'day')
+    expect(s.points.length).toBeLessThanOrEqual(60)
+    const buckets = s.points.map(p => p.bucket)
+    expect([...buckets].sort()).toEqual(buckets)
+  })
+
+  it('returns no point at all when nothing is comparable', () => {
+    const s = seriesOf([at('2026-08-01T10:00:00.000Z', { outcome: 'blocked' })], 'hour')
+    expect(s.points).toEqual([])
   })
 })

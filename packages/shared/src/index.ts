@@ -175,7 +175,9 @@ export type { NotificationCategory, NotificationEventMeta } from './types/notifi
 
 // Usage request types: what a call asked for, derived from its path (T60)
 export { REQUEST_TYPES, requestTypeFromPath, requestTypeLabel } from './types/usage.js';
-export type { RequestType, SavingsBaseline, SavingsOptimizerEntry, SavingsSummary } from './types/usage.js';
+export type {
+  RequestType, SavingsBaseline, SavingsOptimizerEntry, SavingsSummary, UsageSeries, UsageSeriesPoint,
+} from './types/usage.js';
 
 // Experiments: A/B tests that pick a whole project per request (T70)
 export {

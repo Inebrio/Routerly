@@ -98,6 +98,41 @@ export interface SavingsOptimizerEntry {
 }
 
 /**
+ * One bucket of the savings series (T81): the compared calls of one hour or one
+ * day, with what they cost and took and what the same calls would have cost and
+ * taken on the baseline model.
+ *
+ * Totals rather than averages: they are additive, so a consumer can re-bucket
+ * or average them without the service having to guess which it wanted.
+ */
+export interface UsageSeriesPoint {
+  /** `YYYY-MM-DD` for a day bucket, `YYYY-MM-DDTHH` for an hour bucket. */
+  bucket: string;
+  /** Compared client calls in the bucket: the same set the savings summary counts. */
+  calls: number;
+  /** USD those calls actually cost. */
+  cost: number;
+  /** The same calls repriced at the baseline model. `0` when there is no baseline. */
+  baselineCost: number;
+  inputTokens: number;
+  outputTokens: number;
+  cachedInputTokens: number;
+  /** Summed end-to-end latency of those calls, in ms. */
+  latencyMs: number;
+  /** Estimated summed latency on the baseline model. `0` when it has no throughput sample. */
+  baselineLatencyMs: number;
+}
+
+/** The savings series and what it is measured against (T81). */
+export interface UsageSeries {
+  bucket: 'hour' | 'day';
+  /** Model the `baseline*` fields are priced against: the costliest target of the traffic in the window. */
+  baselineModelId?: string;
+  /** Oldest first, capped at the most recent 60 buckets. */
+  points: UsageSeriesPoint[];
+}
+
+/**
  * Savings layer over a filtered set of usage records (T61). Shared by the
  * project dashboard, the CLI report and the overview: it is computed once,
  * server side, from whatever record set the usage filters produced.

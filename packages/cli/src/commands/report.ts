@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
-import { REQUEST_TYPES, optimizerLabel, requestTypeLabel, type RequestType, type SavingsSummary } from '@routerly/shared';
+import { REQUEST_TYPES, optimizerLabel, requestTypeLabel, type RequestType, type SavingsSummary, type UsageSeries } from '@routerly/shared';
 import { api } from '../api.js';
 
 interface UsageByModel {
@@ -41,6 +41,8 @@ interface UsageResponse {
   }>;
   /** Present only when the request asked for it with `savings=1` (T61). */
   savings?: SavingsSummary;
+  /** Present only when the request asked for it with `series=1` (T81). */
+  series?: UsageSeries;
 }
 
 /**
@@ -53,6 +55,41 @@ function parseRequestType(value: string): string {
     process.exit(1);
   }
   return value;
+}
+
+/**
+ * The saving broken down per bucket (T81), the table behind `--trend`.
+ *
+ * The counterfactual columns are priced against the costliest baseline, the
+ * worst case routing avoided, which is the same figure the dashboard shows.
+ */
+function printSavingsTrend(series: UsageSeries | undefined): void {
+  if (!series || series.points.length === 0) {
+    console.log(chalk.yellow('\nNo traffic to break down.'));
+    return;
+  }
+
+  console.log(chalk.bold(`\nPer ${series.bucket}`)
+    + (series.baselineModelId ? chalk.gray(`, against ${series.baselineModelId}`) : ''));
+  const table = new Table({
+    head: ['Bucket', 'Calls', 'Cost', 'Would cost', 'Saved', 'Tokens in/out', 'Avg ms', 'Would take'].map(h => chalk.cyan(h)),
+  });
+  for (const p of series.points) {
+    const saved = p.baselineCost - p.cost;
+    const perCall = (ms: number) => (p.calls > 0 ? `${Math.round(ms / p.calls).toLocaleString()}` : '-');
+    table.push([
+      p.bucket,
+      String(p.calls),
+      `$${p.cost.toFixed(6)}`,
+      p.baselineCost > 0 ? `$${p.baselineCost.toFixed(6)}` : chalk.gray('-'),
+      p.baselineCost === 0 ? chalk.gray('-')
+        : saved >= 0 ? chalk.green(`$${saved.toFixed(6)}`) : chalk.red(`-$${Math.abs(saved).toFixed(6)}`),
+      `${p.inputTokens.toLocaleString()} / ${p.outputTokens.toLocaleString()}`,
+      perCall(p.latencyMs),
+      p.baselineLatencyMs > 0 ? perCall(p.baselineLatencyMs) : chalk.gray('-'),
+    ]);
+  }
+  console.log(table.toString());
 }
 
 export function makeReportCommand(): Command {
@@ -304,23 +341,34 @@ Examples:
   # One project, all time
   routerly report savings --project my-api --period all
 
+  # Break the saving down over time
+  routerly report savings --trend
+
   # Pipe the raw savings block
   routerly report savings --json
 `)
     .option('--period <period>', 'Period: daily | weekly | monthly | all', 'monthly')
     .option('--project <id>', 'Filter by project ID')
     .option('--type <type>', `Filter by request type: ${REQUEST_TYPES.join(' | ')}`, parseRequestType)
+    .option('--trend', 'Break the saving down per hour (daily period) or per day')
     .option('--json', 'Output as JSON')
-    .action(async (opts: { period: string; project?: string; type?: string; json?: boolean }) => {
+    .action(async (opts: { period: string; project?: string; type?: string; trend?: boolean; json?: boolean }) => {
       try {
         const params = new URLSearchParams({ period: opts.period, savings: '1' });
+        if (opts.trend) params.set('series', '1');
         if (opts.project) params.set('projectId', opts.project);
         if (opts.type) params.set('requestType', opts.type);
 
         const data = await api<UsageResponse>('GET', `/api/usage?${params.toString()}`);
         const savings = data.savings;
 
-        if (opts.json) { console.log(JSON.stringify(savings ?? null, null, 2)); return; }
+        // `--trend` adds the series next to the savings fields rather than
+        // replacing them, so a script reading the block keeps working.
+        if (opts.json) {
+          const payload = opts.trend ? { ...savings, series: data.series ?? null } : savings ?? null;
+          console.log(JSON.stringify(payload, null, 2));
+          return;
+        }
 
         if (!savings || savings.comparedCalls === 0) {
           console.log(chalk.yellow(`No comparable calls for period: ${opts.period}`));
@@ -373,6 +421,8 @@ Examples:
           }
           console.log(table.toString());
         }
+
+        if (opts.trend) printSavingsTrend(data.series);
 
         console.log(chalk.gray('\nCosts are the observed tokens repriced, times are estimated from each model\'s own throughput in the period.'));
       } catch (err) {

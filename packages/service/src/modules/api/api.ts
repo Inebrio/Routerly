@@ -11,7 +11,7 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults } from '@routerly/shared';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
 import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_PROJECT_TIMEOUT_MS, isCompletionCall, notificationCategory } from '@routerly/shared';
@@ -40,7 +40,7 @@ import { getOptimizerRegistry } from '../optimizers/registry.js';
 import { guardrailConfigSchema, piiConfigSchema, optimizerConfigSchema, optimizerStepSchema } from './schemas.js';
 import { runPreview } from '../optimizers/preview.js';
 import { listSamples } from '../optimizers/samples.js';
-import { computeSavings } from '../usage/savings.js';
+import { computeSavings, computeSeries } from '../usage/savings.js';
 import { isClientConfiguratorEnabled } from '../clients/module.js';
 import {
   isModuleEnabled,
@@ -1585,7 +1585,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // USAGE STATS
   // ══════════════════════════════════════════════════════════════════════════════
 
-  fastify.get<{ Querystring: { period?: string; projectId?: string; projectIds?: string; modelIds?: string; callType?: string; requestType?: string; outcome?: string; from?: string; to?: string; page?: string; pageSize?: string; endUserId?: string; sessionId?: string; savings?: string; [key: string]: string | undefined } }>('/api/usage', async (req, reply) => {
+  fastify.get<{ Querystring: { period?: string; projectId?: string; projectIds?: string; modelIds?: string; callType?: string; requestType?: string; outcome?: string; from?: string; to?: string; page?: string; pageSize?: string; endUserId?: string; sessionId?: string; savings?: string; series?: string; [key: string]: string | undefined } }>('/api/usage', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
     const records = await readConfig('usage');
     const { period = 'monthly', projectId, projectIds, modelIds, callType, requestType, outcome, from, to, endUserId, sessionId } = req.query;
@@ -1707,7 +1707,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // Baselines are the target models of every project present in the result, so
     // a project-scoped query naturally counterfactuals that project's targets.
     let savings: SavingsSummary | undefined;
-    if (req.query.savings === '1') {
+    let series: UsageSeries | undefined;
+    if (req.query.savings === '1' || req.query.series === '1') {
       const [projects, allModels] = await Promise.all([readConfig('projects'), listEffectiveModelsIncludingDisabled()]);
       const projectIdsInResult = new Set(filtered.map(r => r.projectId));
       const baselineIds = [...new Set(
@@ -1715,7 +1716,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
           .filter(p => projectIdsInResult.has(p.id))
           .flatMap(p => (p.models ?? []).filter(m => m.enabled !== false).map(m => m.modelId)),
       )];
-      savings = computeSavings(filtered, allModels, baselineIds);
+      const computed = computeSavings(filtered, allModels, baselineIds);
+      if (req.query.savings === '1') savings = computed;
+      // The series buckets by hour on a single day and by day otherwise, the
+      // same cut as `timeline`, so the two charts line up (T81).
+      if (req.query.series === '1') {
+        series = computeSeries(filtered, allModels, computed, period === 'daily' ? 'hour' : 'day');
+      }
     }
 
     const totalCost = filtered.filter(r => r.outcome === 'success').reduce((s, r) => s + r.cost, 0);
@@ -1745,6 +1752,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       records: paged.map(({ trace: _trace, ...r }) => r),
       pagination: { page: safePage, pageSize, totalRecords, totalPages },
       ...(savings ? { savings } : {}),
+      ...(series ? { series } : {}),
     });
   });
 

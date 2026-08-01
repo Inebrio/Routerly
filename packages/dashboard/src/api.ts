@@ -508,8 +508,8 @@ export interface UsageRecord {
   piiRedacted?: string[];
 }
 
-import type { UsageByModelEntry, Integration, IntegrationType, ProviderRepo, RequestType, SavingsSummary } from '@routerly/shared';
-export type { UsageByModelEntry, Integration, IntegrationType, ProviderRepo, RequestType, SavingsSummary };
+import type { UsageByModelEntry, Integration, IntegrationType, ProviderRepo, RequestType, SavingsSummary, UsageSeries } from '@routerly/shared';
+export type { UsageByModelEntry, Integration, IntegrationType, ProviderRepo, RequestType, SavingsSummary, UsageSeries };
 
 export interface UsageStats {
   summary: {
@@ -525,6 +525,8 @@ export interface UsageStats {
   pagination?: { page: number; pageSize: number; totalRecords: number; totalPages: number };
   /** Only present when the call asked for it with `savings: true`. */
   savings?: SavingsSummary;
+  /** Only present when the call asked for it with `series: true`. */
+  series?: UsageSeries;
 }
 
 export interface GetUsageOptions {
@@ -541,6 +543,8 @@ export interface GetUsageOptions {
   outcome?: string;
   /** Ask the service for the counterfactual block. Costs a config read, so opt in. */
   savings?: boolean;
+  /** Ask the service for the savings series over time. Same cost as `savings`, so opt in. */
+  series?: boolean;
 }
 
 export const getUsage = (period = 'monthly', projectId?: string, from?: string, to?: string, page?: number, pageSize?: number, opts?: GetUsageOptions) => {
@@ -556,6 +560,7 @@ export const getUsage = (period = 'monthly', projectId?: string, from?: string, 
   if (opts?.requestType && opts.requestType !== 'all') params.set('requestType', opts.requestType);
   if (opts?.outcome  && opts.outcome  !== 'all') params.set('outcome',  opts.outcome);
   if (opts?.savings) params.set('savings', '1');
+  if (opts?.series) params.set('series', '1');
   return request<UsageStats>(`/usage?${params.toString()}`);
 };
 

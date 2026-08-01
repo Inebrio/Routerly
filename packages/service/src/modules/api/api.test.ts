@@ -1688,6 +1688,37 @@ describe('GET /api/usage', () => {
       await app.close()
       expect(res.statusCode).toBe(403)
     })
+
+    describe('series (T81)', () => {
+      it('is absent unless series=1 is asked for', async () => {
+        const b = await get('savings=1')
+        expect(b.series).toBeUndefined()
+      })
+
+      it('is served on its own, without the savings block', async () => {
+        const b = await get('series=1')
+        expect(b.savings).toBeUndefined()
+        expect(b.series.points).toHaveLength(1)
+        expect(b.series.points[0].calls).toBe(1) // the routing call stays out, as in the summary
+        expect(b.series.points[0].cost).toBe(0.003)
+      })
+
+      it('counterfactuals each bucket against the costliest baseline', async () => {
+        const b = await get('series=1')
+        expect(b.series.baselineModelId).toBe('expensive')
+        expect(b.series.points[0].baselineCost).toBe(0.03)
+      })
+
+      it('buckets by hour on a single day and by day over a longer period', async () => {
+        const daily = await get('series=1&period=daily')
+        expect(daily.series.bucket).toBe('hour')
+        expect(daily.series.points[0].bucket).toBe(now.slice(0, 13))
+
+        const monthly = await get('series=1&period=monthly')
+        expect(monthly.series.bucket).toBe('day')
+        expect(monthly.series.points[0].bucket).toBe(now.slice(0, 10))
+      })
+    })
   })
 
   describe('latency and TTFT distribution (T62)', () => {
