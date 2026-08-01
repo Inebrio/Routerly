@@ -2,6 +2,7 @@ import type { FastifyRequest, FastifyReply, FastifyBaseLogger } from 'fastify'
 import type {
   ChatCompletionRequest,
   ModelConfig,
+  OptimizerCallStat,
   ProjectConfig,
   ProjectToken,
   RoutingCandidate,
@@ -73,4 +74,5 @@ export interface ProxyContext {
   blockedBy?: string          // guardrail rule id that HARD-BLOCKED; consumed by usage.finalize (Plan 5)
   guardrailTriggered?: string // log-only guardrail rule id; threaded into LLMCallContext by upstream.execute; internal usage attribution only
   piiRedacted?: string[]      // input-scrub redaction list; threaded into LLMCallContext for usage attribution
+  optimizerStats?: OptimizerCallStat[] // what each optimizer step removed from this prompt; threaded into the usage record (T63)
 }

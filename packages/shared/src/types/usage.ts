@@ -6,6 +6,8 @@
  * so a usage record can be read without opening its trace.
  */
 
+import type { OptimizerId } from './optimizers.js';
+
 export const REQUEST_TYPES = ['chat', 'completion', 'embedding', 'rerank', 'image', 'audio'] as const;
 
 export type RequestType = (typeof REQUEST_TYPES)[number];
@@ -78,6 +80,24 @@ export interface SavingsBaseline {
 }
 
 /**
+ * Measured saving of one optimizer over the compared calls (T63). Unlike the
+ * baselines above this is not a counterfactual: the tokens were really removed
+ * before the request left the gateway, and the money is those tokens priced at
+ * the input rate of the model that actually served each call.
+ */
+export interface SavingsOptimizerEntry {
+  id: OptimizerId;
+  /** Calls where this optimizer ran and changed the prompt. */
+  calls: number;
+  /** Prompt tokens it removed, summed over those calls. */
+  tokensSaved: number;
+  /** USD those tokens would have cost at the serving model's input price. */
+  costSaved: number;
+  /** Calls where its output was rejected by the safety gate and rolled back. */
+  rolledBack: number;
+}
+
+/**
  * Savings layer over a filtered set of usage records (T61). Shared by the
  * project dashboard, the CLI report and the overview: it is computed once,
  * server side, from whatever record set the usage filters produced.
@@ -100,4 +120,10 @@ export interface SavingsSummary {
   };
   /** One entry per baseline model, cheapest first. */
   baselines: SavingsBaseline[];
+  /**
+   * One entry per optimizer that changed at least one compared call, most
+   * tokens saved first. Empty when no record in the window carries optimizer
+   * stats: records written before 0.4.0 never do (T63).
+   */
+  optimizers: SavingsOptimizerEntry[];
 }

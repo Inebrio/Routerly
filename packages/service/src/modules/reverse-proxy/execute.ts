@@ -24,6 +24,7 @@ import type {
   CallType,
   MessagesRequest,
   MessagesResponse,
+  OptimizerCallStat,
   ResilienceFault,
 } from '@routerly/shared';
 import { getProviderAdapter } from '../provider/registry.js';
@@ -75,6 +76,8 @@ export interface LLMCallContext {
   guardrailTriggered?: string;
   /** PII entity types redacted before forwarding (#76) */
   piiRedacted?: string[];
+  /** What each optimizer step removed from this prompt (T63) */
+  optimizerStats?: OptimizerCallStat[];
 }
 
 /**
@@ -392,6 +395,7 @@ export async function llmChat(
       ...(ctx.tags ? { tags: ctx.tags } : {}),
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
+      ...(ctx.optimizerStats ? { optimizerStats: ctx.optimizerStats } : {}),
     }).catch(() => {});
 
     handleProviderResult(model, true, undefined, projectId, log);
@@ -422,6 +426,7 @@ export async function llmChat(
       ...(ctx.tags ? { tags: ctx.tags } : {}),
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
+      ...(ctx.optimizerStats ? { optimizerStats: ctx.optimizerStats } : {}),
     }).catch(() => {});
 
     throw err;
@@ -736,6 +741,7 @@ export async function llmMessages(
       ...(ctx.tags ? { tags: ctx.tags } : {}),
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
+      ...(ctx.optimizerStats ? { optimizerStats: ctx.optimizerStats } : {}),
     }).catch(() => {});
 
     // llmMessages never called handleProviderResult before Task 7 (no provider.degraded/.recovered
@@ -766,6 +772,7 @@ export async function llmMessages(
       ...(ctx.tags ? { tags: ctx.tags } : {}),
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
+      ...(ctx.optimizerStats ? { optimizerStats: ctx.optimizerStats } : {}),
     }).catch(() => {});
     throw err;
   }

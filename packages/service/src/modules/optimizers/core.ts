@@ -1,6 +1,6 @@
 import { defineModule, type Processor, type RouterlyModule } from '../../core/index.js'
 import { OPTIMIZER_REGISTRY, PROXY_PIPELINE } from '../../core/tokens.js'
-import type { ChatCompletionRequest, OptimizerResult } from '@routerly/shared'
+import type { ChatCompletionRequest, OptimizerCallStat, OptimizerResult } from '@routerly/shared'
 import type { ProxyContext } from '../reverse-proxy/context.js'
 import { OptimizerRegistry, setOptimizerRegistry } from './registry.js'
 import { passesSafetyGate } from './gate.js'
@@ -23,6 +23,11 @@ export function restoreInPlace(req: ChatCompletionRequest, snapshot: ChatComplet
  * optimizers never alter text those stages depend on. Fail-open: a throw, a
  * failed safety gate (lossy only), or `validate === false` rolls the pre-optimize
  * snapshot back in place and continues to the next step; it never short-circuits.
+ *
+ * Steps that did something are recorded on `ctx.optimizerStats` so the saving can
+ * be attributed on the usage record (T63). A step that ran and left the prompt
+ * untouched is not recorded: it carries no information and every record it
+ * appeared on would grow usage.json for nothing.
  */
 function applyProcessor(registry: OptimizerRegistry): Processor<ProxyContext> {
   return {
@@ -34,6 +39,19 @@ function applyProcessor(registry: OptimizerRegistry): Processor<ProxyContext> {
       const steps = ctx.project.optimizers?.steps
       if (!steps?.length) return
 
+      const stats: OptimizerCallStat[] = []
+      const record = (result: OptimizerResult, id: OptimizerCallStat['id'], rolledBack: boolean): void => {
+        if (!result.changed) return
+        stats.push({
+          id,
+          tokensBefore: result.estimatedTokensBefore,
+          // A rolled-back step left the prompt as it found it, whatever its
+          // optimize() reported before the rollback.
+          tokensAfter: rolledBack ? result.estimatedTokensBefore : result.estimatedTokensAfter,
+          ...(rolledBack ? { rolledBack: true } : {}),
+        })
+      }
+
       for (const step of steps) {
         if (!step.enabled) continue
         const optimizer = registry.get(step.id)
@@ -44,6 +62,7 @@ function applyProcessor(registry: OptimizerRegistry): Processor<ProxyContext> {
         const rollback = (result?: OptimizerResult): void => {
           restoreInPlace(ctx.request, snapshot)
           if (result && optimizer.recover) optimizer.recover(ctx, result)
+          if (result) record(result, optimizer.id, true)
         }
 
         let result: OptimizerResult
@@ -63,7 +82,10 @@ function applyProcessor(registry: OptimizerRegistry): Processor<ProxyContext> {
           rollback(result)
           continue
         }
+        record(result, optimizer.id, false)
       }
+
+      if (stats.length > 0) ctx.optimizerStats = stats
     },
   }
 }

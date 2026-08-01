@@ -1,4 +1,11 @@
-import type { ModelConfig, SavingsBaseline, SavingsSummary, UsageRecord } from '@routerly/shared';
+import type {
+  ModelConfig,
+  OptimizerId,
+  SavingsBaseline,
+  SavingsOptimizerEntry,
+  SavingsSummary,
+  UsageRecord,
+} from '@routerly/shared';
 import { calculateCost } from '../../lib/cost.js';
 
 /** Median of a list. Returns 0 on an empty list, which every caller treats as "no estimate". */
@@ -22,6 +29,52 @@ function isCompared(r: UsageRecord): boolean {
   if (r.outcome !== 'success') return false;
   if (r.callType === 'routing' || r.callType === 'guardrail') return false;
   return r.inputTokens + r.outputTokens > 0;
+}
+
+/**
+ * Per-optimizer measured saving over the compared records (T63).
+ *
+ * Unlike the baselines this is not a counterfactual: the tokens listed here were
+ * really removed from the prompt before it left the gateway. They are priced at
+ * the input rate of the model that actually served the call, so an optimizer
+ * that fires mostly on expensive models shows a bigger money figure than one
+ * that fires as often on cheap ones.
+ *
+ * A step that was rolled back (safety gate or `validate` rejected it) saved
+ * nothing, so it only feeds `rolledBack`: the count is what tells an operator a
+ * threshold is set too aggressively.
+ */
+function computeOptimizerSavings(
+  compared: UsageRecord[],
+  byId: Map<string, ModelConfig>,
+): SavingsOptimizerEntry[] {
+  const entries = new Map<OptimizerId, SavingsOptimizerEntry>();
+  const entryFor = (id: OptimizerId): SavingsOptimizerEntry => {
+    const existing = entries.get(id);
+    if (existing) return existing;
+    const created: SavingsOptimizerEntry = { id, calls: 0, tokensSaved: 0, costSaved: 0, rolledBack: 0 };
+    entries.set(id, created);
+    return created;
+  };
+
+  for (const r of compared) {
+    const inputPerMillion = byId.get(r.modelId)?.cost.inputPerMillion ?? 0;
+    for (const stat of r.optimizers ?? []) {
+      const entry = entryFor(stat.id);
+      if (stat.rolledBack) {
+        entry.rolledBack += 1;
+        continue;
+      }
+      const saved = Math.max(0, stat.tokensBefore - stat.tokensAfter);
+      entry.calls += 1;
+      entry.tokensSaved += saved;
+      entry.costSaved += (saved / 1_000_000) * inputPerMillion;
+    }
+  }
+
+  return [...entries.values()]
+    .map(e => ({ ...e, costSaved: round(e.costSaved) }))
+    .sort((a, b) => b.tokensSaved - a.tokensSaved);
 }
 
 /**
@@ -116,5 +169,6 @@ export function computeSavings(
     comparedOutputTokens,
     cache: { inputTokens: cacheTokens, cost: round(cacheCost) },
     baselines,
+    optimizers: computeOptimizerSavings(compared, byId),
   };
 }

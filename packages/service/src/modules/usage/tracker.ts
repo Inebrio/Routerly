@@ -1,4 +1,4 @@
-import type { UsageRecord, CallType, RequestType } from '@routerly/shared';
+import type { UsageRecord, CallType, OptimizerCallStat, RequestType } from '@routerly/shared';
 import { appendUsageRecord } from '../config/loader.js';
 import { calculateCost } from '../../lib/cost.js';
 import { getTrace } from '../logging/traceStore.js';
@@ -34,6 +34,8 @@ export interface TrackUsageParams {
   blockedBy?: string;
   /** PII entity types redacted before forwarding (#76) */
   piiRedacted?: string[];
+  /** What each optimizer step removed from this prompt, changed steps only (T63) */
+  optimizerStats?: OptimizerCallStat[];
 }
 
 /**
@@ -86,6 +88,7 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     ...(params.guardrailTriggered ? { guardrailTriggered: params.guardrailTriggered } : {}),
     ...(params.blockedBy ? { blockedBy: params.blockedBy } : {}),
     ...(params.piiRedacted && params.piiRedacted.length > 0 ? { piiRedacted: params.piiRedacted } : {}),
+    ...(params.optimizerStats && params.optimizerStats.length > 0 ? { optimizers: params.optimizerStats } : {}),
   };
 
   await appendUsageRecord(record);

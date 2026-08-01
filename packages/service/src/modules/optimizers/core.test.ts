@@ -203,3 +203,62 @@ describe('optimizer-core module', () => {
     expect(optimize).not.toHaveBeenCalled()
   })
 })
+
+// ── Per-step stats for usage attribution (T63) ────────────────────────────────
+
+describe('optimizer.apply — optimizerStats', () => {
+  const shrink = (id: string, klass: OptimizerClass, before: number, after: number, over: Partial<Optimizer> = {}) =>
+    opt(id, klass, {
+      optimize: (ctx) => {
+        writeMessages(ctx.request, [{ role: 'user', content: 'shorter' }])
+        return { changed: true, estimatedTokensBefore: before, estimatedTokensAfter: after }
+      },
+      ...over,
+    })
+
+  it('records the token delta of every step that changed the prompt, in execution order', async () => {
+    const { proc } = await setup([shrink('ccr', 'recoverable', 100, 60), shrink('rtk', 'recoverable', 60, 55)])
+    const ctx = baseCtx({
+      project: { id: 'p1', optimizers: { steps: [{ id: 'ccr', enabled: true }, { id: 'rtk', enabled: true }] } } as any,
+    })
+    await proc.run(ctx)
+    expect(ctx.optimizerStats).toEqual([
+      { id: 'ccr', tokensBefore: 100, tokensAfter: 60 },
+      { id: 'rtk', tokensBefore: 60, tokensAfter: 55 },
+    ])
+  })
+
+  it('leaves the field unset when no step changed anything', async () => {
+    const inert = opt('session-dedup', 'lossless', {
+      optimize: () => ({ changed: false, estimatedTokensBefore: 100, estimatedTokensAfter: 100 }),
+    })
+    const { proc } = await setup([inert])
+    const ctx = baseCtx({ project: { id: 'p1', optimizers: { steps: [{ id: 'session-dedup', enabled: true }] } } as any })
+    await proc.run(ctx)
+    expect(ctx.optimizerStats).toBeUndefined()
+  })
+
+  it('marks a gate-rejected lossy step as rolled back, with no saving credited', async () => {
+    const { proc } = await setup([shrink('llmlingua-2', 'lossy', 100, 5)])
+    const ctx = baseCtx({ project: { id: 'p1', optimizers: { steps: [{ id: 'llmlingua-2', enabled: true }] } } as any })
+    await proc.run(ctx)
+    expect(ctx.optimizerStats).toEqual([
+      { id: 'llmlingua-2', tokensBefore: 100, tokensAfter: 100, rolledBack: true },
+    ])
+  })
+
+  it('marks a validate-rejected step as rolled back', async () => {
+    const { proc } = await setup([shrink('ccr', 'recoverable', 100, 60, { validate: () => false })])
+    const ctx = baseCtx({ project: { id: 'p1', optimizers: { steps: [{ id: 'ccr', enabled: true }] } } as any })
+    await proc.run(ctx)
+    expect(ctx.optimizerStats).toEqual([{ id: 'ccr', tokensBefore: 100, tokensAfter: 100, rolledBack: true }])
+  })
+
+  it('records nothing for a step that threw: there is no result to measure', async () => {
+    const boom = opt('ccr', 'recoverable', { optimize: () => { throw new Error('boom') } })
+    const { proc } = await setup([boom])
+    const ctx = baseCtx({ project: { id: 'p1', optimizers: { steps: [{ id: 'ccr', enabled: true }] } } as any })
+    await proc.run(ctx)
+    expect(ctx.optimizerStats).toBeUndefined()
+  })
+})

@@ -152,5 +152,84 @@ describe('computeSavings', () => {
     expect(s.baselines).toEqual([
       { modelId: 'cheap', cost: 0, costDelta: 0, costDeltaPercent: 0, latencySamples: 0 },
     ])
+    expect(s.optimizers).toEqual([])
+  })
+})
+
+// ── Per-optimizer measured savings (T63) ──────────────────────────────────────
+
+describe('computeSavings — optimizers', () => {
+  it('sums tokens removed by each optimizer and prices them on the serving model', () => {
+    const s = computeSavings(
+      [
+        record({ modelId: 'cheap', optimizers: [{ id: 'ccr', tokensBefore: 1000, tokensAfter: 400 }] }),
+        record({ modelId: 'expensive', optimizers: [{ id: 'ccr', tokensBefore: 500, tokensAfter: 100 }] }),
+      ],
+      MODELS,
+      ['cheap'],
+    )
+    const ccr = s.optimizers.find(o => o.id === 'ccr')!
+    expect(ccr.calls).toBe(2)
+    expect(ccr.tokensSaved).toBe(1000)
+    // 600 tokens at $1/1M + 400 tokens at $10/1M
+    expect(ccr.costSaved).toBe(0.0006 + 0.004)
+    expect(ccr.rolledBack).toBe(0)
+  })
+
+  it('keeps one entry per optimizer, most tokens saved first', () => {
+    const s = computeSavings(
+      [
+        record({
+          optimizers: [
+            { id: 'rtk', tokensBefore: 1000, tokensAfter: 950 },
+            { id: 'ccr', tokensBefore: 950, tokensAfter: 300 },
+          ],
+        }),
+      ],
+      MODELS,
+      ['cheap'],
+    )
+    expect(s.optimizers.map(o => o.id)).toEqual(['ccr', 'rtk'])
+    expect(s.optimizers.map(o => o.tokensSaved)).toEqual([650, 50])
+  })
+
+  it('counts a rolled-back step without crediting it any saving', () => {
+    const s = computeSavings(
+      [record({ optimizers: [{ id: 'caveman', tokensBefore: 1000, tokensAfter: 1000, rolledBack: true }] })],
+      MODELS,
+      ['cheap'],
+    )
+    expect(s.optimizers).toEqual([{ id: 'caveman', calls: 0, tokensSaved: 0, costSaved: 0, rolledBack: 1 }])
+  })
+
+  it('ignores a step that grew the prompt instead of shrinking it', () => {
+    const s = computeSavings(
+      [record({ optimizers: [{ id: 'ccr', tokensBefore: 100, tokensAfter: 140 }] })],
+      MODELS,
+      ['cheap'],
+    )
+    expect(s.optimizers[0]!.tokensSaved).toBe(0)
+    expect(s.optimizers[0]!.costSaved).toBe(0)
+  })
+
+  it('still counts tokens when the serving model no longer exists, at no cost', () => {
+    const s = computeSavings(
+      [record({ modelId: 'deleted', optimizers: [{ id: 'ccr', tokensBefore: 1000, tokensAfter: 400 }] })],
+      MODELS,
+      ['cheap'],
+    )
+    expect(s.optimizers).toEqual([{ id: 'ccr', calls: 1, tokensSaved: 600, costSaved: 0, rolledBack: 0 }])
+  })
+
+  it('leaves out records the counterfactual already excludes', () => {
+    const s = computeSavings(
+      [
+        record({ callType: 'routing', optimizers: [{ id: 'ccr', tokensBefore: 1000, tokensAfter: 400 }] }),
+        record({ outcome: 'error', optimizers: [{ id: 'ccr', tokensBefore: 1000, tokensAfter: 400 }] }),
+      ],
+      MODELS,
+      ['cheap'],
+    )
+    expect(s.optimizers).toEqual([])
   })
 })
