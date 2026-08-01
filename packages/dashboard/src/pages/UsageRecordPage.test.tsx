@@ -180,6 +180,18 @@ describe('UsageRecordPage — main display', () => {
     await waitFor(() => expect(screen.getByText('completion')).toBeTruthy());
   });
 
+  it('shows the request type', async () => {
+    mockGetRecord.mockResolvedValue(makeRecord({ requestType: 'audio' }));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Audio')).toBeTruthy());
+  });
+
+  it('defaults the request type to Chat when absent', async () => {
+    mockGetRecord.mockResolvedValue(makeRecord());
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Chat')).toBeTruthy());
+  });
+
   it('shows errorMessage box when present', async () => {
     mockGetRecord.mockResolvedValue(makeRecord({ errorMessage: 'upstream timeout' }));
     renderPage();

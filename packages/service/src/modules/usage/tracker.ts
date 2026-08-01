@@ -1,4 +1,4 @@
-import type { UsageRecord, CallType } from '@routerly/shared';
+import type { UsageRecord, CallType, RequestType } from '@routerly/shared';
 import { appendUsageRecord } from '../config/loader.js';
 import { calculateCost } from '../../lib/cost.js';
 import { getTrace } from '../logging/traceStore.js';
@@ -19,6 +19,8 @@ export interface TrackUsageParams {
   outcome: UsageRecord['outcome'];
   errorMessage?: string;
   callType?: CallType;
+  /** What the call asked for. Defaults to 'chat': everything routed through the executor is a chat-shaped call (T60) */
+  requestType?: RequestType;
   traceId?: string;
   /** End-user id from OpenAI `user` field (#96) */
   endUserId?: string;
@@ -71,6 +73,7 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     outcome: params.outcome,
     ...(params.errorMessage !== undefined ? { errorMessage: params.errorMessage } : {}),
     callType: params.callType ?? 'completion',
+    requestType: params.requestType ?? 'chat',
     ...(params.traceId ? { trace: getTrace(params.traceId) ?? [] } : {}),
     ...(params.traceId ? { traceId: params.traceId } : {}),
     costInput,

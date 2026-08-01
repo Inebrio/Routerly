@@ -3,6 +3,7 @@ import Fastify from 'fastify'
 import type { ProjectConfig, ModelConfig } from '@routerly/shared'
 
 vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }))
+vi.mock('../usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('../auth/auth.js', async (importOriginal) => {
   const original = await importOriginal<typeof import('../auth/auth.js')>()
   return {
@@ -13,6 +14,7 @@ vi.mock('../auth/auth.js', async (importOriginal) => {
 
 import { readConfig } from '../config/loader.js'
 import { resolveProjectByToken } from '../auth/auth.js'
+import { trackUsage } from '../usage/tracker.js'
 import { splitModelsIntoInstancesConnections } from '../../test-support/effective-models.js'
 import {
   pickUpstreamModel,
@@ -23,6 +25,7 @@ import {
 
 const mockReadConfig = vi.mocked(readConfig)
 const mockResolveToken = vi.mocked(resolveProjectByToken)
+const mockTrackUsage = vi.mocked(trackUsage)
 
 afterEach(() => vi.clearAllMocks())
 
@@ -565,5 +568,78 @@ describe('passthroughHandler', () => {
     expect(res.headers['x-custom']).toBe('keep-me')
     // hop-by-hop 'connection' is filtered — NOT equal to the upstream value
     expect(res.headers['connection']).not.toBe('upstream-keep-alive')
+  })
+})
+
+// ─── usage tracking (T60) ─────────────────────────────────────────────────────
+
+describe('passthroughHandler usage tracking', () => {
+  it('records a proxied embeddings call with requestType embedding', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }),
+    ))
+
+    mockModels([openaiModel])
+    const app = await buildApp(testProject)
+    await app.inject({
+      method: 'POST', url: '/v1/embeddings',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', input: 'hello' }),
+    })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(mockTrackUsage).toHaveBeenCalledOnce()
+    expect(mockTrackUsage.mock.calls[0]?.[0]).toMatchObject({
+      projectId: 'proj-1',
+      requestType: 'embedding',
+      outcome: 'success',
+      inputTokens: 0,
+      outputTokens: 0,
+    })
+  })
+
+  it('records an error outcome when the upstream status is >= 400', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 429 })))
+
+    mockModels([openaiModel])
+    const app = await buildApp(testProject)
+    await app.inject({ method: 'POST', url: '/v1/images/generations' })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(mockTrackUsage.mock.calls[0]?.[0]).toMatchObject({
+      requestType: 'image',
+      outcome: 'error',
+      errorMessage: 'upstream responded 429',
+    })
+  })
+
+  it('records an error outcome when fetch throws', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')))
+
+    mockModels([openaiModel])
+    const app = await buildApp(testProject)
+    await app.inject({ method: 'POST', url: '/v1/audio/speech' })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(mockTrackUsage.mock.calls[0]?.[0]).toMatchObject({
+      requestType: 'audio',
+      outcome: 'error',
+      errorMessage: 'ECONNREFUSED',
+    })
+  })
+
+  it('ignores paths that are not model API calls', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })))
+
+    mockModels([openaiModel])
+    const app = await buildApp(testProject)
+    await app.inject({ method: 'GET', url: '/v1/files' })
+    await app.close()
+    vi.unstubAllGlobals()
+
+    expect(mockTrackUsage).not.toHaveBeenCalled()
   })
 })

@@ -36,7 +36,8 @@ Guardrail judge calls are charged to the project like any other model call and a
 | **Period** | Preset time window (today, this month, etc.) or custom range |
 | **Project** | Filter to a specific project |
 | **Model** | Filter to specific model IDs |
-| **Type** | `All`, `Completion`, `Router`, or `Guardrail` -- filters by call sub-activity type |
+| **Caller** | `All`, `Completion`, `Router`, or `Guardrail` -- who made the call: the client, the router, or the guardrail pipeline |
+| **Type** | `All`, `Chat`, `Text Completion`, `Embedding`, `Rerank`, `Image`, or `Audio` -- what the call asked for, taken from the endpoint the client hit |
 | **Status** | `All`, `Success`, `Blocked`, or `Error` -- `Blocked` shows only guardrail-blocked requests |
 | **Session ID** | Filter to requests from a specific session (from the `x-routerly-conversation-id` header) |
 | **Tags** | Filter by token metadata (e.g., `environment: production`) |
@@ -84,7 +85,8 @@ The table lists individual requests with:
 | Timestamp | When the request arrived |
 | Project | The project the request belonged to |
 | Model | Provider model used |
-| Type | API type (`chat`, `responses`, `messages`) |
+| Type | What the call asked for: `Chat`, `Text Completion`, `Embedding`, `Rerank`, `Image`, `Audio` |
+| Caller | Who made the call: `completion` (the client) or `router` |
 | Status | Outcome |
 | Input Tokens | Input token count |
 | Output Tokens | Output token count |

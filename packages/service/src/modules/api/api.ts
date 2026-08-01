@@ -1563,10 +1563,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // USAGE STATS
   // ══════════════════════════════════════════════════════════════════════════════
 
-  fastify.get<{ Querystring: { period?: string; projectId?: string; projectIds?: string; modelIds?: string; callType?: string; outcome?: string; from?: string; to?: string; page?: string; pageSize?: string; endUserId?: string; sessionId?: string; [key: string]: string | undefined } }>('/api/usage', async (req, reply) => {
+  fastify.get<{ Querystring: { period?: string; projectId?: string; projectIds?: string; modelIds?: string; callType?: string; requestType?: string; outcome?: string; from?: string; to?: string; page?: string; pageSize?: string; endUserId?: string; sessionId?: string; [key: string]: string | undefined } }>('/api/usage', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
     const records = await readConfig('usage');
-    const { period = 'monthly', projectId, projectIds, modelIds, callType, outcome, from, to, endUserId, sessionId } = req.query;
+    const { period = 'monthly', projectId, projectIds, modelIds, callType, requestType, outcome, from, to, endUserId, sessionId } = req.query;
     const page = Math.max(1, parseInt(req.query.page ?? '1', 10) || 1);
     const pageSize = Math.min(200, Math.max(1, parseInt(req.query.pageSize ?? '100', 10) || 100));
     // Parse tag filters: ?tag[customer]=acme
@@ -1620,6 +1620,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       filtered = callType === 'completion'
         ? filtered.filter(r => r.callType !== 'routing' && r.callType !== 'guardrail')
         : filtered.filter(r => r.callType === callType);
+    }
+    if (requestType && requestType !== 'all') {
+      // 'chat' covers records written before requestType existed: everything the
+      // router tracked back then was a chat call (T60).
+      filtered = requestType === 'chat'
+        ? filtered.filter(r => (r.requestType ?? 'chat') === 'chat')
+        : filtered.filter(r => r.requestType === requestType);
     }
     if (outcome && outcome !== 'all') {
       // 'error' is any outcome that is neither success nor blocked.

@@ -1,6 +1,7 @@
 // ─── Config types ────────────────────────────────────────────────────────────
 
 import type { OptimizerConfig } from './optimizers.js';
+import type { RequestType } from './usage.js';
 
 export type Provider = 'openai' | 'anthropic' | 'anthropic-oauth' | 'openai-oauth' | 'gemini' | 'mistral' | 'cohere' | 'xai' | 'ollama' | 'custom' | 'openai-web' | 'anthropic-web' | 'deepseek' | 'groq' | 'together' | 'perplexity' | 'azure-openai' | 'bedrock' | 'vertex';
 
@@ -1019,6 +1020,8 @@ export interface UsageRecord {
   errorMessage?: string;
   /** Whether this call was made by the router (LLM decision) or by the user request */
   callType?: CallType;
+  /** What the call asked for, from the endpoint it hit: chat, embedding, image, … (T60). Absent on records written before 0.4.0 */
+  requestType?: RequestType;
   /** Full trace captured at tracking time (router + model call events) */
   trace?: TraceEntry[];
   /** Request trace ID (matches x-routerly-trace-id response header) */

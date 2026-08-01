@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { REQUEST_TYPES, requestTypeLabel, type RequestType } from '@routerly/shared';
 import { getUsage, getProjects, getModels, type UsageStats, type Project, type Model } from '../api';
 import { MultiSelect } from '../components/MultiSelect';
 import { DateRangePicker, PRESETS, RECENT_PRESETS, type DateRange } from '../components/DateRangePicker';
@@ -43,6 +44,7 @@ export function UsagePage() {
   const [projectIds, setProjectIds]     = useFilterState<string[]>({ key: 'usage-filters-projectIds', defaultValue: [] });
   const [modelIds, setModelIds]         = useFilterState<string[]>({ key: 'usage-filters-modelIds', defaultValue: [] });
   const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing' | 'guardrail'>({ key: 'usage-filters-callType', defaultValue: 'all' });
+  const [requestTypeFilter, setRequestTypeFilter] = useFilterState<'all' | RequestType>({ key: 'usage-filters-requestType', defaultValue: 'all' });
   const [outcomeFilter, setOutcomeFilter]   = useFilterState<'all' | 'success' | 'error' | 'blocked'>({ key: 'usage-filters-outcome', defaultValue: 'all' });
   const [loading, setLoading]           = useState(true);
   const [fetchError, setFetchError]     = useState<string | null>(null);
@@ -105,7 +107,7 @@ export function UsagePage() {
   useEffect(() => {
     latestTimestampRef.current = null;
     setNewRowIds(new Set());
-  }, [dateRange, page, pageSize, projectIds, modelIds, callTypeFilter, outcomeFilter]);
+  }, [dateRange, page, pageSize, projectIds, modelIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
 
   const fetchStats = useCallback(() => {
     const prevMax = latestTimestampRef.current;
@@ -122,6 +124,7 @@ export function UsagePage() {
       projectIds,
       modelIds,
       callType: callTypeFilter,
+      requestType: requestTypeFilter,
       outcome: outcomeFilter,
     })
       .then(data => {
@@ -144,7 +147,7 @@ export function UsagePage() {
         setFetchError(msg);
         console.error('Failed to load usage stats:', msg);
       });
-  }, [dateRange, page, pageSize, projectIds, modelIds, callTypeFilter, outcomeFilter]);
+  }, [dateRange, page, pageSize, projectIds, modelIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
 
   const handleRefreshNow = useCallback(() => {
     setRefreshing(true);
@@ -159,7 +162,7 @@ export function UsagePage() {
     return () => clearInterval(id);
   }, [fetchStats, pollInterval]);
 
-  useEffect(() => { setPage(1); }, [dateRange, projectIds, modelIds, callTypeFilter, outcomeFilter]);
+  useEffect(() => { setPage(1); }, [dateRange, projectIds, modelIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
 
   // ponytail: model options sourced from getModels() (stable, unfiltered) so
   // the dropdown does not shrink when a model filter is active
@@ -176,7 +179,7 @@ export function UsagePage() {
   // Server now filters; records are already consistent with active filters.
   const displayRecords = stats?.records ?? [];
 
-  const hasActiveFilters = projectIds.length > 0 || modelIds.length > 0 || callTypeFilter !== 'all' || outcomeFilter !== 'all';
+  const hasActiveFilters = projectIds.length > 0 || modelIds.length > 0 || callTypeFilter !== 'all' || requestTypeFilter !== 'all' || outcomeFilter !== 'all';
   const hasReset = hasActiveFilters;
 
   function handleModelSort(key: ModelSortKey) {
@@ -351,12 +354,24 @@ export function UsagePage() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-              <FilterLabel>Type</FilterLabel>
+              <FilterLabel>Caller</FilterLabel>
               <div style={{ display: 'flex', gap: 4 }}>
                 {(['all', 'completion', 'routing', 'guardrail'] as const).map(f => (
                   <button key={f} className={`btn btn-sm ${callTypeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setCallTypeFilter(f)}>
                     {f === 'all' ? 'All' : f === 'completion' ? 'Completion' : f === 'routing' ? 'Router' : 'Guardrail'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <FilterLabel>Type</FilterLabel>
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                {(['all', ...REQUEST_TYPES] as const).map(f => (
+                  <button key={f} className={`btn btn-sm ${requestTypeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setRequestTypeFilter(f)}>
+                    {f === 'all' ? 'All' : requestTypeLabel(f)}
                   </button>
                 ))}
               </div>
@@ -378,7 +393,7 @@ export function UsagePage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <FilterLabel>&nbsp;</FilterLabel>
                 <button className="btn btn-sm btn-secondary"
-                  onClick={() => { setProjectIds([]); setModelIds([]); setCallTypeFilter('all'); setOutcomeFilter('all'); }}>
+                  onClick={() => { setProjectIds([]); setModelIds([]); setCallTypeFilter('all'); setRequestTypeFilter('all'); setOutcomeFilter('all'); }}>
                   Reset filters
                 </button>
               </div>
@@ -535,7 +550,7 @@ export function UsagePage() {
                   <table>
                     <thead>
                       <tr>
-                        <th>Time</th><th>Project</th><th>Model</th><th>Type</th><th>In</th><th>Out</th>
+                        <th>Time</th><th>Project</th><th>Model</th><th>Type</th><th>Caller</th><th>In</th><th>Out</th>
                         <th>Cost</th><th>Latency</th><th>TTFT</th><th>Tok/s</th><th>Status</th>
                       </tr>
                     </thead>
@@ -562,6 +577,10 @@ export function UsagePage() {
                               {projects.find(p => p.id === r.projectId)?.name ?? <span className="mono" style={{ fontSize: '0.72rem' }}>{r.projectId}</span>}
                             </td>
                             <td><span className="mono" style={{ fontSize: '0.78rem' }}>{r.modelId}</span></td>
+                            <td style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                              {/* Records written before requestType existed were all chat calls. */}
+                              {requestTypeLabel(r.requestType ?? 'chat')}
+                            </td>
                             <td>
                               <span style={{
                                 display: 'inline-flex', alignItems: 'center', gap: 4,

@@ -528,6 +528,20 @@ describe('UsagePage — records table', () => {
     await waitFor(() => expect(screen.getByText('completion')).toBeTruthy());
   });
 
+  it('shows the request type of a record', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord({ requestType: 'embedding' })]));
+    renderPage();
+    await waitFor(() => screen.getAllByText('openai/gpt-4o'));
+    expect(screen.getAllByText('Embedding').some(el => el.tagName === 'TD')).toBe(true);
+  });
+
+  it('falls back to Chat for records written before requestType existed', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord()]));
+    renderPage();
+    await waitFor(() => screen.getAllByText('openai/gpt-4o'));
+    expect(screen.getAllByText('Chat').some(el => el.tagName === 'TD')).toBe(true);
+  });
+
   it('navigates to detail page on row click', async () => {
     vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord({ id: 'rec-nav' })]));
     renderPage();
@@ -667,6 +681,30 @@ describe('UsagePage — reset filters button', () => {
     const btn = await screen.findByRole('button', { name: 'Error' });
     await userEvent.click(btn);
     expect(btn.className).toContain('btn-primary');
+  });
+});
+
+// ── Request type filter (T60) ──────────────────────────────────────────────────
+
+describe('UsagePage — request type filter', () => {
+  it('sends the picked request type to the server', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    const btn = await screen.findByRole('button', { name: 'Embedding' });
+    await userEvent.click(btn);
+    expect(btn.className).toContain('btn-primary');
+    await waitFor(() => {
+      const calls = vi.mocked(getUsage).mock.calls;
+      expect(calls[calls.length - 1]?.[6]).toMatchObject({ requestType: 'embedding' });
+    });
+  });
+
+  it('reset clears the request type filter', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: 'Image' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Reset filters' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Image' }).className).not.toContain('btn-primary'));
   });
 });
 

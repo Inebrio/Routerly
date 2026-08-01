@@ -2053,6 +2053,7 @@ routerly report usage [options]
 |--------|-------------|
 | `--period <period>` | `daily`, `weekly`, `monthly` (default: `monthly`) |
 | `--project <slug>` | Filter to one project |
+| `--type <type>` | Filter by request type: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio` |
 | `--session-id <id>` | Filter by session ID |
 | `--end-user <id>` | Filter by end-user ID |
 | `--tag <key=value>` | Filter by tag |
@@ -2087,7 +2088,15 @@ routerly report calls [options]
 |--------|-------------|
 | `--limit <n>` | Number of records to return (default: 20) |
 | `--project <slug>` | Filter to one project |
-| `--json` | JSON output |
+| `--type <type>` | Filter by request type: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio` |
+
+The table has a **Type** column showing what each call asked for. Records written before 0.4.0 carry no request type and are shown as `Chat`, which is what the gateway tracked at the time.
+
+```
+routerly report calls --type embedding --limit 10
+```
+
+An unknown `--type` value exits 1 with the list of accepted types, rather than returning an empty report.
 
 ### `routerly report end-users`
 

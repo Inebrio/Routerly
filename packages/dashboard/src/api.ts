@@ -498,7 +498,8 @@ export interface TraceEntry {
 export interface UsageRecord {
   id: string; timestamp: string; projectId: string; modelId: string;
   inputTokens: number; outputTokens: number; cachedInputTokens?: number; cost: number; latencyMs: number; ttftMs?: number; tokensPerSec?: number; outcome: string;
-  callType?: 'routing' | 'completion';
+  callType?: 'routing' | 'completion' | 'guardrail';
+  requestType?: RequestType;
   errorMessage?: string;
   trace?: TraceEntry[];
   guardrailTriggered?: string;
@@ -506,8 +507,8 @@ export interface UsageRecord {
   piiRedacted?: string[];
 }
 
-import type { UsageByModelEntry, Integration, IntegrationType, ProviderRepo } from '@routerly/shared';
-export type { UsageByModelEntry, Integration, IntegrationType, ProviderRepo };
+import type { UsageByModelEntry, Integration, IntegrationType, ProviderRepo, RequestType } from '@routerly/shared';
+export type { UsageByModelEntry, Integration, IntegrationType, ProviderRepo, RequestType };
 
 export interface UsageStats {
   summary: { totalCost: number; totalCalls: number; successCalls: number; errorCalls: number; routingCalls: number; completionCalls: number; routingCost: number; completionCost: number; guardrailCalls?: number; guardrailCost?: number; blockedCalls?: number };
@@ -527,6 +528,7 @@ export interface GetUsageOptions {
   projectIds?: string[];
   modelIds?: string[];
   callType?: string;
+  requestType?: string;
   outcome?: string;
 }
 
@@ -540,6 +542,7 @@ export const getUsage = (period = 'monthly', projectId?: string, from?: string, 
   if (opts?.projectIds?.length) params.set('projectIds', opts.projectIds.join(','));
   if (opts?.modelIds?.length)   params.set('modelIds',   opts.modelIds.join(','));
   if (opts?.callType && opts.callType !== 'all') params.set('callType', opts.callType);
+  if (opts?.requestType && opts.requestType !== 'all') params.set('requestType', opts.requestType);
   if (opts?.outcome  && opts.outcome  !== 'all') params.set('outcome',  opts.outcome);
   return request<UsageStats>(`/usage?${params.toString()}`);
 };

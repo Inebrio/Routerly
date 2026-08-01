@@ -1,8 +1,10 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Readable } from 'node:stream';
 import type { ModelConfig, ProjectConfig } from '@routerly/shared';
+import { requestTypeFromPath } from '@routerly/shared';
 import { listEffectiveModels } from '../provider/list-effective.js';
 import { resolveProjectByToken, extractProjectToken } from '../auth/auth.js';
+import { trackUsage } from '../usage/tracker.js';
 
 /**
  * Transparent pass-through proxy.
@@ -100,6 +102,37 @@ const HOP_BY_HOP_RESPONSE = new Set([
   'connection',
 ]);
 
+/**
+ * Record a pass-through call in usage, so an embeddings or audio request shows
+ * up next to the chat traffic instead of vanishing (T60). Only model API paths
+ * are tracked: this handler also sees favicon probes and other noise.
+ *
+ * ponytail: tokens and cost stay 0, the upstream body is piped to the client
+ * and never parsed. Read the JSON `usage` block here if per-call cost for
+ * pass-through embeddings ever matters.
+ */
+function trackPassthroughCall(
+  projectId: string,
+  model: ModelConfig,
+  path: string,
+  latencyMs: number,
+  outcome: 'success' | 'error',
+  errorMessage?: string,
+): void {
+  const requestType = requestTypeFromPath(path);
+  if (!requestType) return;
+  void trackUsage({
+    projectId,
+    model,
+    inputTokens: 0,
+    outputTokens: 0,
+    latencyMs,
+    outcome,
+    requestType,
+    ...(errorMessage !== undefined ? { errorMessage } : {}),
+  }).catch(() => {}); // ponytail: usage tracking never blocks the proxied response
+}
+
 function isReservedPath(path: string): boolean {
   return (
     path === '/' ||
@@ -166,6 +199,7 @@ export async function passthroughHandler(
     else body = JSON.stringify(request.body);
   }
 
+  const startedAt = Date.now();
   let upstream: Response;
   try {
     upstream = await fetch(targetUrl, {
@@ -175,6 +209,8 @@ export async function passthroughHandler(
     } as RequestInit);
   } catch (err) {
     request.log.error({ err, url: targetUrl }, 'pass-through upstream error');
+    trackPassthroughCall(project.id, model, path, Date.now() - startedAt, 'error',
+      err instanceof Error ? err.message : 'upstream request failed');
     return reply.code(502).send({
       error: 'upstream_error',
       message: err instanceof Error ? err.message : 'upstream request failed',
@@ -196,6 +232,11 @@ export async function passthroughHandler(
     },
     'pass-through',
   );
+
+  // Latency is time to response headers: the body is streamed, not awaited.
+  trackPassthroughCall(project.id, model, path, Date.now() - startedAt,
+    upstream.status < 400 ? 'success' : 'error',
+    upstream.status < 400 ? undefined : `upstream responded ${upstream.status}`);
 
   reply.code(upstream.status);
   if (upstream.body) {

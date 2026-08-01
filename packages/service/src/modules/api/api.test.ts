@@ -1568,6 +1568,54 @@ describe('GET /api/usage', () => {
     expect(m1.success).toBe(0)
   })
 
+  describe('requestType filter (T60)', () => {
+    const now = new Date().toISOString()
+    const records = [
+      { id: 'legacy', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.10, outcome: 'success', latencyMs: 100 }, // written before requestType existed
+      { id: 'chat', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.10, outcome: 'success', latencyMs: 100, requestType: 'chat' },
+      { id: 'emb', timestamp: now, projectId: 'p1', modelId: 'm2', inputTokens: 8, outputTokens: 0, cost: 0.01, outcome: 'success', latencyMs: 50, requestType: 'embedding' },
+      { id: 'img', timestamp: now, projectId: 'p1', modelId: 'm2', inputTokens: 0, outputTokens: 0, cost: 0, outcome: 'error', latencyMs: 20, requestType: 'image' },
+    ]
+    const get = async (qs: string) => {
+      setupAdminAuth()
+      mockReadConfig.mockImplementation(async (t: string) => {
+        if (t === 'users') return [adminUser]
+        if (t === 'roles') return []
+        if (t === 'usage') return records
+        return []
+      })
+      const app = await buildApp()
+      const res = await app.inject({ method: 'GET', url: `/api/usage?${qs}`, headers: adminAuthHeaders() })
+      await app.close()
+      return JSON.parse(res.body)
+    }
+
+    it('requestType=chat matches legacy records with no requestType', async () => {
+      const b = await get('requestType=chat')
+      expect(b.records.map((r: any) => r.id).sort()).toEqual(['chat', 'legacy'])
+    })
+
+    it('requestType=embedding keeps only embedding calls', async () => {
+      const b = await get('requestType=embedding')
+      expect(b.records.map((r: any) => r.id)).toEqual(['emb'])
+    })
+
+    it('requestType=image keeps only image calls', async () => {
+      const b = await get('requestType=image')
+      expect(b.records.map((r: any) => r.id)).toEqual(['img'])
+    })
+
+    it('requestType=all is a no-op', async () => {
+      const b = await get('requestType=all')
+      expect(b.summary.totalCalls).toBe(4)
+    })
+
+    it('an unknown requestType returns 200 with no records', async () => {
+      const b = await get('requestType=garbage')
+      expect(b.summary.totalCalls).toBe(0)
+    })
+  })
+
   describe('dashboard filters (modelIds / callType / outcome / projectIds)', () => {
     const now = new Date().toISOString()
     const records = [

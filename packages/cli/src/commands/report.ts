@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
+import { REQUEST_TYPES, requestTypeLabel, type RequestType } from '@routerly/shared';
 import { api } from '../api.js';
 
 interface UsageByModel {
@@ -36,7 +37,20 @@ interface UsageResponse {
     latencyMs: number;
     outcome: string;
     callType?: string;
+    requestType?: string;
   }>;
+}
+
+/**
+ * Validate `--type` against the request types the service knows (T60). Rejecting
+ * here keeps a typo from silently returning an empty report.
+ */
+function parseRequestType(value: string): string {
+  if (!(REQUEST_TYPES as readonly string[]).includes(value)) {
+    console.error(chalk.red(`Error: unknown type '${value}'. Expected one of: ${REQUEST_TYPES.join(', ')}`));
+    process.exit(1);
+  }
+  return value;
 }
 
 export function makeReportCommand(): Command {
@@ -57,17 +71,22 @@ Examples:
 
   # All-time usage across all projects
   routerly report usage --period all
+
+  # Only embedding calls
+  routerly report usage --type embedding
 `)
     .option('--period <period>', 'Period: daily | weekly | monthly | all', 'monthly')
     .option('--project <id>', 'Filter by project ID')
+    .option('--type <type>', `Filter by request type: ${REQUEST_TYPES.join(' | ')}`, parseRequestType)
     .option('--session-id <id>', 'Filter by session ID')
     .option('--end-user <id>', 'Filter by end-user ID')
     .option('--tag <key=value>', 'Filter by tag (key=value)')
     .option('--json', 'Output as JSON')
-    .action(async (opts: { period: string; project?: string; sessionId?: string; endUser?: string; tag?: string; json?: boolean }) => {
+    .action(async (opts: { period: string; project?: string; type?: string; sessionId?: string; endUser?: string; tag?: string; json?: boolean }) => {
       try {
         const params = new URLSearchParams({ period: opts.period });
         if (opts.project) params.set('projectId', opts.project);
+        if (opts.type) params.set('requestType', opts.type);
         if (opts.sessionId) params.set('sessionId', opts.sessionId);
         if (opts.endUser) params.set('endUserId', opts.endUser);
         if (opts.tag) {
@@ -130,19 +149,24 @@ Examples:
 
   # Show the last 100 calls for a specific project
   routerly report calls --limit 100 --project my-api
+
+  # Only image generation calls
+  routerly report calls --type image
 `)
     .option('--limit <n>', 'Number of records to show', '20')
     .option('--project <id>', 'Filter by project ID')
-    .action(async (opts: { limit: string; project?: string }) => {
+    .option('--type <type>', `Filter by request type: ${REQUEST_TYPES.join(' | ')}`, parseRequestType)
+    .action(async (opts: { limit: string; project?: string; type?: string }) => {
       try {
         const params = new URLSearchParams({ period: 'all' });
         if (opts.project) params.set('projectId', opts.project);
+        if (opts.type) params.set('requestType', opts.type);
 
         const data = await api<UsageResponse>('GET', `/api/usage?${params.toString()}`);
         const limited = data.records.slice(0, parseInt(opts.limit, 10));
 
         const table = new Table({
-          head: ['Timestamp', 'Project', 'Model', 'In Tokens', 'Out Tokens', 'Cost', 'Latency', 'Outcome'].map(h => chalk.cyan(h)),
+          head: ['Timestamp', 'Project', 'Model', 'Type', 'In Tokens', 'Out Tokens', 'Cost', 'Latency', 'Outcome'].map(h => chalk.cyan(h)),
         });
 
         for (const r of limited) {
@@ -151,6 +175,8 @@ Examples:
             new Date(r.timestamp).toLocaleString(),
             r.projectId.slice(0, 8),
             r.modelId,
+            // Records written before requestType existed were all chat calls.
+            requestTypeLabel((r.requestType ?? 'chat') as RequestType),
             r.inputTokens,
             r.outputTokens,
             `$${r.cost.toFixed(6)}`,

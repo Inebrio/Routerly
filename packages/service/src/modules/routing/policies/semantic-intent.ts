@@ -129,6 +129,7 @@ export const semanticIntentPolicy: PolicyFn = async ({
         latencyMs,
         outcome: 'success',
         callType: 'routing',
+        requestType: 'embedding',
         ...(traceId !== undefined ? { traceId } : {}),
       }).catch(() => {});
     }
