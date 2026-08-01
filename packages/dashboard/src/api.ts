@@ -507,15 +507,23 @@ export interface UsageRecord {
   piiRedacted?: string[];
 }
 
-import type { UsageByModelEntry, Integration, IntegrationType, ProviderRepo, RequestType } from '@routerly/shared';
-export type { UsageByModelEntry, Integration, IntegrationType, ProviderRepo, RequestType };
+import type { UsageByModelEntry, Integration, IntegrationType, ProviderRepo, RequestType, SavingsSummary } from '@routerly/shared';
+export type { UsageByModelEntry, Integration, IntegrationType, ProviderRepo, RequestType, SavingsSummary };
 
 export interface UsageStats {
-  summary: { totalCost: number; totalCalls: number; successCalls: number; errorCalls: number; routingCalls: number; completionCalls: number; routingCost: number; completionCost: number; guardrailCalls?: number; guardrailCost?: number; blockedCalls?: number };
+  summary: {
+    totalCost: number; totalCalls: number; successCalls: number; errorCalls: number;
+    routingCalls: number; completionCalls: number; routingCost: number; completionCost: number;
+    guardrailCalls?: number; guardrailCost?: number; blockedCalls?: number;
+    latencyMedianMs?: number; latencyP95Ms?: number;
+    ttftMedianMs?: number; ttftP95Ms?: number; ttftSamples?: number;
+  };
   byModel: Record<string, UsageByModelEntry>;
   timeline: [string, number][];
   records: Array<UsageRecord>;
   pagination?: { page: number; pageSize: number; totalRecords: number; totalPages: number };
+  /** Only present when the call asked for it with `savings: true`. */
+  savings?: SavingsSummary;
 }
 
 export interface GetUsageOptions {
@@ -530,6 +538,8 @@ export interface GetUsageOptions {
   callType?: string;
   requestType?: string;
   outcome?: string;
+  /** Ask the service for the counterfactual block. Costs a config read, so opt in. */
+  savings?: boolean;
 }
 
 export const getUsage = (period = 'monthly', projectId?: string, from?: string, to?: string, page?: number, pageSize?: number, opts?: GetUsageOptions) => {
@@ -544,6 +554,7 @@ export const getUsage = (period = 'monthly', projectId?: string, from?: string, 
   if (opts?.callType && opts.callType !== 'all') params.set('callType', opts.callType);
   if (opts?.requestType && opts.requestType !== 'all') params.set('requestType', opts.requestType);
   if (opts?.outcome  && opts.outcome  !== 'all') params.set('outcome',  opts.outcome);
+  if (opts?.savings) params.set('savings', '1');
   return request<UsageStats>(`/usage?${params.toString()}`);
 };
 

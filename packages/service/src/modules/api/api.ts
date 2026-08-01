@@ -108,6 +108,14 @@ function p95(values: number[]): number {
   return sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1)]!;
 }
 
+/** Median of a numeric array (0 when empty). */
+function median(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[mid - 1]! + sorted[mid]!) / 2 : sorted[mid]!;
+}
+
 // ── Notification channel validation (U5) ──────────────────────────────────────
 const CHANNEL_PROVIDERS = [
   'smtp', 'ses', 'sendgrid', 'azure', 'google',
@@ -1674,6 +1682,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       timeline[key] = (timeline[key] ?? 0) + r.cost;
     }
 
+    // Latency and TTFT distribution over successful client calls. The average
+    // alone hides the tail, so the project dashboard reads median and p95 (T62).
+    // ttftMs is optional on the record, hence its own sample count.
+    const clientCalls = filtered.filter(r => r.outcome === 'success' && r.callType !== 'routing' && r.callType !== 'guardrail');
+    const latencySamples = clientCalls.map(r => r.latencyMs).filter((n): n is number => typeof n === 'number');
+    const ttftSamples = clientCalls.map(r => r.ttftMs).filter((n): n is number => typeof n === 'number');
+
     // Savings layer (T61) — opt-in: the usage page polls this route every 2s and
     // never shows savings, so only the pages that ask pay for the counterfactual.
     // Baselines are the target models of every project present in the result, so
@@ -1705,7 +1720,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const paged = sorted.slice(startIdx, startIdx + pageSize);
 
     return reply.send({
-      summary: { totalCost, totalCalls, successCalls, blockedCalls, errorCalls: totalCalls - successCalls - blockedCalls, routingCalls, completionCalls, guardrailCalls, routingCost, completionCost, guardrailCost },
+      summary: {
+        totalCost, totalCalls, successCalls, blockedCalls, errorCalls: totalCalls - successCalls - blockedCalls,
+        routingCalls, completionCalls, guardrailCalls, routingCost, completionCost, guardrailCost,
+        latencyMedianMs: median(latencySamples), latencyP95Ms: p95(latencySamples),
+        ttftMedianMs: median(ttftSamples), ttftP95Ms: p95(ttftSamples), ttftSamples: ttftSamples.length,
+      },
       byModel,
       timeline: Object.entries(timeline).sort(([a], [b]) => a.localeCompare(b)).slice(-30),
       // Strip trace from list response to keep payload small

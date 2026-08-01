@@ -15,7 +15,31 @@ The Projects page gives you an overview of all projects and provides access to e
 
 The list shows each project's name, slug, number of tokens, assigned models, and a summary of today's cost and call count.
 
-Click any project to open its detail view, which has eight tabs.
+Click any project to open its detail view, which has nine tabs.
+
+---
+
+## Dashboard Tab
+
+The landing page of a saved project: what the routing achieved over a period you pick with the date range selector at the top. A project that has never been called shows an empty state instead, and a project that has not been created yet has no Dashboard tab at all.
+
+| Card | Reading |
+|------|---------|
+| **Savings** | Money the routing avoided compared with sending every call to the project's most expensive target model |
+| **Cost** | What the traffic actually cost, and how many calls it took |
+| **Latency** | Median response time, with p95 underneath. Router and guardrail calls are excluded: they are gateway overhead, not client-visible time |
+| **Time to first token** | Median TTFT with p95. Reads `not measured on these calls` when no record in the window carried a TTFT |
+| **Reliability** | Share of successful calls, with error and blocked counts underneath |
+
+Below the cards: input, output and prompt-cached token totals with the money the cache saved.
+
+**If everything had gone to one model** is the counterfactual table, one row per enabled target model of the project. Costs are the observed tokens repriced at that model's rates, so they are exact arithmetic on what actually happened. Times are estimated from that model's own throughput in the same period, so a target with no traffic in the window shows `no sample` instead of a fabricated number.
+
+**Where the traffic went** breaks the period down per model: calls, share of traffic, cost, p95 latency and errors.
+
+:::note Repricing is not a replay
+A different model tokenizes the same text slightly differently and may answer at a different length. Read a row as "the same conversation, priced elsewhere", not as a guarantee.
+:::
 
 ---
 

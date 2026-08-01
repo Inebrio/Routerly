@@ -93,7 +93,8 @@ export function computeSavings(
       (sum, r) => sum + calculateCost(r.inputTokens, r.outputTokens, model, r.cachedInputTokens, r.cacheCreationInputTokens),
       0,
     ));
-    const costDelta = round(comparedCost - cost);
+    // Positive delta means the routed traffic came out cheaper than the baseline.
+    const costDelta = round(cost - comparedCost);
     const throughput = msPerOutputToken.get(modelId)!;
     const latencyMs = throughput.samples > 0 ? Math.round(throughput.value * comparedOutputTokens) : undefined;
     baselines.push({
@@ -101,7 +102,7 @@ export function computeSavings(
       cost,
       costDelta,
       costDeltaPercent: cost > 0 ? round((costDelta / cost) * 100) : 0,
-      ...(latencyMs !== undefined ? { latencyMs, latencyDeltaMs: comparedLatencyMs - latencyMs } : {}),
+      ...(latencyMs !== undefined ? { latencyMs, latencyDeltaMs: latencyMs - comparedLatencyMs } : {}),
       latencySamples: throughput.samples,
     });
   }

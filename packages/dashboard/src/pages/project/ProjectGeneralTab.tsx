@@ -173,7 +173,7 @@ export function ProjectGeneralTab() {
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 10px', lineHeight: 1.5 }}>
               Use this endpoint as <code style={{ fontSize: '0.75rem' }}>base_url</code> with the OpenAI SDK or Anthropic SDK —
               both use the same <code style={{ fontSize: '0.75rem' }}>/v1</code> prefix; the final path is appended automatically by the SDK.
-              Use a <Link to={`/dashboard/projects/${project.id}/tokens`} style={{ color: 'var(--color-primary, #6366f1)' }}>project token</Link> as the API key.
+              Use a <Link to={`/dashboard/projects/${project.id}/token`} style={{ color: 'var(--color-primary, #6366f1)' }}>project token</Link> as the API key.
             </p>
             {endpointOptions.length > 1 && (
               <SearchableSelect
