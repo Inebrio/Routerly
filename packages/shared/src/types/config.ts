@@ -486,6 +486,11 @@ export interface PlaygroundPreset {
 }
 
 
+/** Default TTFT timeout per model attempt (ms) for a new project. Low on purpose:
+ *  it is time-to-first-byte, not total duration, so a provider that has not started
+ *  answering within two seconds is better replaced by the next candidate. */
+export const DEFAULT_PROJECT_TIMEOUT_MS = 2000;
+
 export interface ProjectConfig {
   id: string;
   name: string;
@@ -505,7 +510,8 @@ export interface ProjectConfig {
   models: ProjectModelRef[];
   /** TTFT timeout per model attempt (ms). If the first response byte hasn't arrived
    *  within this time, the attempt is aborted and the next candidate is tried.
-   *  Does not limit total response duration. Default: 5000. */
+   *  Does not limit total response duration. `0` disables the timeout: the attempt
+   *  waits as long as the provider takes. Default: DEFAULT_PROJECT_TIMEOUT_MS. */
   timeoutMs?: number;
   /** Content guardrails: input blocklist + prompt-injection detection (#77) */
   guardrails?: GuardrailConfig;

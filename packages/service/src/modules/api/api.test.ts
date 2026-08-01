@@ -1347,6 +1347,60 @@ describe('POST /api/projects', () => {
     expect(body.token).toBeDefined()
   })
 
+  it('defaults timeoutMs to 2000 and accepts 0 as "no timeout"', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return []
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const defaulted = await app.inject({
+      method: 'POST', url: '/api/projects',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Defaulted', models: [] }),
+    })
+    const explicitZero = await app.inject({
+      method: 'POST', url: '/api/projects',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'No timeout', models: [], timeoutMs: 0 }),
+    })
+    await app.close()
+
+    expect(defaulted.json().timeoutMs).toBe(2000)
+    expect(explicitZero.json().timeoutMs).toBe(0)
+  })
+
+  it('returns 400 for a negative or fractional timeoutMs', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'projects') return []
+      return []
+    })
+
+    const app = await buildApp()
+    const negative = await app.inject({
+      method: 'POST', url: '/api/projects',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Bad', models: [], timeoutMs: -1 }),
+    })
+    const fractional = await app.inject({
+      method: 'POST', url: '/api/projects',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Bad', models: [], timeoutMs: 1.5 }),
+    })
+    await app.close()
+
+    expect(negative.statusCode).toBe(400)
+    expect(negative.json().error).toContain('non-negative integer')
+    expect(fractional.statusCode).toBe(400)
+  })
+
   it('returns 409 for duplicate project name', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {

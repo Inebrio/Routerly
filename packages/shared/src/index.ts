@@ -152,7 +152,7 @@ export type { SupportState, WireFormat, ClientMeta } from './clients/index.js';
 export { CLIENT_REGISTRY, buildSnippet } from './clients/index.js';
 
 // Notification event taxonomy (runtime value + derived type)
-export { NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS } from './types/config.js';
+export { NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, DEFAULT_PROJECT_TIMEOUT_MS } from './types/config.js';
 export type { NotificationEvent } from './types/config.js';
 
 // Static configuration data

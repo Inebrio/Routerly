@@ -2,7 +2,26 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
+import { DEFAULT_PROJECT_TIMEOUT_MS } from '@routerly/shared';
 import type { ProjectConfig, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiConfig, PiiPolicy } from '@routerly/shared';
+
+// ─── Helper: TTFT timeout display ────────────────────────────────────────────
+
+/** 0 means "wait as long as the provider takes", which reads better than "0s". */
+function formatTimeout(timeoutMs?: number): string {
+  if (timeoutMs === 0) return 'off';
+  return `${(timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS) / 1000}s`;
+}
+
+/** Parses --timeout, rejecting anything that is not a non-negative integer. */
+function parseTimeoutOption(raw: string): number {
+  const ms = Number(raw);
+  if (!Number.isInteger(ms) || ms < 0) {
+    console.error(chalk.red('--timeout must be a non-negative integer in milliseconds (0 disables the timeout).'));
+    process.exit(1);
+  }
+  return ms;
+}
 
 // ─── Helper: resolve project by name or ID ────────────────────────────────────
 
@@ -940,7 +959,7 @@ Examples:
             p.models.length,
             (p.tokens ?? []).length,
             (p.members ?? []).length,
-            `${(p.timeoutMs ?? 5000) / 1000}s`,
+            formatTimeout(p.timeoutMs),
           ]);
         }
         console.log(table.toString());
@@ -965,7 +984,7 @@ Examples:
 
         console.log(chalk.bold(`\n── ${project.name} ──────────────────────────────────`));
         console.log(chalk.gray(`  ID:      `) + project.id);
-        console.log(chalk.gray(`  Timeout: `) + `${(project.timeoutMs ?? 5000) / 1000}s`);
+        console.log(chalk.gray(`  Timeout: `) + formatTimeout(project.timeoutMs));
 
         // Routing
         console.log(chalk.bold('\n  Routing'));
@@ -1027,14 +1046,17 @@ Examples:
   # Minimal project
   routerly project create --name "My API"
 
-  # With a custom timeout
-  routerly project create --name "Production" --timeout 60000
+  # With a custom TTFT timeout
+  routerly project create --name "Production" --timeout 5000
+
+  # No TTFT timeout: wait as long as the provider takes
+  routerly project create --name "Batch jobs" --timeout 0
 
   # With auto-routing enabled and a routing model
   routerly project create --name "Smart API" --routing-model ollama/qwen3.5:9b --auto-routing
 `)
     .requiredOption('--name <name>', 'Project name')
-    .option('--timeout <ms>', 'TTFT timeout per model attempt in milliseconds (default: 5000). Aborts if first response byte not received in time.')
+    .option('--timeout <ms>', `TTFT timeout per model attempt in milliseconds (default: ${DEFAULT_PROJECT_TIMEOUT_MS}). Aborts if the first response byte does not arrive in time; 0 disables it.`)
     .option('--routing-model <id>', 'Model ID for routing decisions')
     .option('--auto-routing', 'Enable auto-routing (default: true)')
     .option('--no-auto-routing', 'Disable auto-routing')
@@ -1042,7 +1064,7 @@ Examples:
       try {
         const body: Record<string, unknown> = {
           name: opts.name,
-          timeoutMs: opts.timeout ? parseInt(opts.timeout) : 5000,
+          timeoutMs: opts.timeout !== undefined ? parseTimeoutOption(opts.timeout) : DEFAULT_PROJECT_TIMEOUT_MS,
           autoRouting: opts.autoRouting !== undefined ? opts.autoRouting : true,
           models: [],
         };
@@ -1077,12 +1099,13 @@ Examples:
     .addHelpText('after', `
 Examples:
   routerly project edit my-api --name "My Production API"
-  routerly project edit my-api --timeout 60000
+  routerly project edit my-api --timeout 5000
+  routerly project edit my-api --timeout 0
 `)
     .option('--name <name>', 'New project name')
-    .option('--timeout <ms>', 'New request timeout in milliseconds')
+    .option('--timeout <ms>', 'New TTFT timeout per model attempt in milliseconds (0 disables it)')
     .action(async (nameOrId: string, opts: { name?: string; timeout?: string }) => {
-      if (!opts.name && !opts.timeout) {
+      if (!opts.name && opts.timeout === undefined) {
         console.error(chalk.red('Provide at least --name or --timeout.'));
         process.exit(1);
       }
@@ -1090,7 +1113,7 @@ Examples:
         const project = await resolveProject(nameOrId);
         await api<void>('PUT', `/api/projects/${encodeURIComponent(project.id)}`, {
           name: opts.name ?? project.name,
-          timeoutMs: opts.timeout ? parseInt(opts.timeout) : project.timeoutMs,
+          timeoutMs: opts.timeout !== undefined ? parseTimeoutOption(opts.timeout) : project.timeoutMs,
           autoRouting: project.autoRouting,
           routingModelId: project.routingModelId,
           fallbackRoutingModelIds: project.fallbackRoutingModelIds,
