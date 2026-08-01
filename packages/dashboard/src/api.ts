@@ -1025,8 +1025,8 @@ import type { ClientMeta } from '@routerly/shared';
 export type { ClientMeta, SupportState, WireFormat } from '@routerly/shared';
 
 export interface ClientListItem extends ClientMeta {
-  openaiBaseUrl: string;
-  anthropicBaseUrl: string;
+  /** Gateway root as this request reached it; snippet builders append `/v1`. */
+  baseUrl: string;
 }
 
 export interface ClientsResponse {

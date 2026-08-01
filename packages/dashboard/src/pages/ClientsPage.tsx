@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Copy, Check, ExternalLink, Terminal } from 'lucide-react';
+import { buildSnippet } from '@routerly/shared';
 import { getClients } from '../api';
 import type { ApiError, ClientListItem, SupportState } from '../api';
 
@@ -37,50 +38,6 @@ export function useClientsEnabled(): boolean | null {
   return enabled;
 }
 
-/**
- * Lightweight dashboard-side snippet builder (placeholder token, not a real
- * one, the dashboard never has a project's raw token). Mirrors the shape of
- * @routerly/shared's buildSnippet() closely enough to be useful; not byte-
- * identical, that function is for CLI/service internal use with a real token.
- */
-function buildDashboardSnippet(client: ClientListItem): string {
-  const baseUrl = client.wireFormat === 'anthropic' ? client.anthropicBaseUrl : client.openaiBaseUrl;
-  switch (client.configKind) {
-    case 'env':
-      return client.wireFormat === 'anthropic'
-        ? `ANTHROPIC_BASE_URL=${baseUrl}\nANTHROPIC_AUTH_TOKEN=${PLACEHOLDER_TOKEN}`
-        : `OPENAI_BASE_URL=${baseUrl}\nOPENAI_API_KEY=${PLACEHOLDER_TOKEN}`;
-    case 'json':
-      return client.wireFormat === 'anthropic'
-        ? JSON.stringify({ env: { ANTHROPIC_BASE_URL: baseUrl, ANTHROPIC_AUTH_TOKEN: PLACEHOLDER_TOKEN } }, null, 2)
-        : JSON.stringify({ provider: { routerly: { options: { baseURL: baseUrl, apiKey: PLACEHOLDER_TOKEN } } } }, null, 2);
-    case 'yaml':
-      return [
-        'models:',
-        '  - name: Routerly (auto-routed)',
-        '    provider: openai',
-        '    model: routerly/ada',
-        `    apiBase: ${baseUrl}`,
-        `    apiKey: ${PLACEHOLDER_TOKEN}`,
-      ].join('\n');
-    case 'toml':
-      return [
-        'model_provider = "routerly"',
-        '',
-        '[model_providers.routerly]',
-        `base_url = "${baseUrl}"`,
-        'wire_api = "responses"',
-        `experimental_bearer_token = "${PLACEHOLDER_TOKEN}"`,
-      ].join('\n');
-    case 'ui':
-      return '';
-    default: {
-      const _exhaustive: never = client.configKind;
-      return _exhaustive;
-    }
-  }
-}
-
 /** Copy-to-clipboard with the execCommand textarea fallback for non-secure
  * contexts (HTTP, self-hosted via bare LAN IP), same logic as
  * ProjectTokenCreatePage's copyToClipboard(). */
@@ -108,7 +65,9 @@ async function copyText(text: string, onDone: () => void, onError: (msg: string)
 function ClientCard({ client }: { client: ClientListItem }) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState('');
-  const snippet = buildDashboardSnippet(client);
+  // Same builder the CLI and the docs use, with a placeholder in place of the
+  // token: the dashboard never holds a project's raw token.
+  const snippet = buildSnippet(client, client.baseUrl, PLACEHOLDER_TOKEN);
   const docsUrl = `${DOCS_BASE}${client.docSlug}`;
 
   function handleCopy() {
@@ -131,7 +90,7 @@ function ClientCard({ client }: { client: ClientListItem }) {
           ? `Configure via ${client.configPathHint}.`
           : `Config file: ${client.configPathHint}`}
       </p>
-      {client.configKind !== 'ui' && (
+      {snippet !== '' && (
         <>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <pre className="mono" style={{
