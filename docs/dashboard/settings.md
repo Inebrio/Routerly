@@ -17,23 +17,37 @@ Open Settings from the **Settings** item in the sidebar.
 
 ### Server Info
 
-Read-only block, one line per address the service is actually reachable at:
+Read-only block. It answers one question: where is this service reachable, and from where.
 
-```text
-Server listening at http://127.0.0.1:3000
-Server listening at http://192.168.1.116:3000
-```
+Under **Reachable at any of these addresses** (**Reachable at** when there is only one) each address is listed with a badge:
 
-The list is derived at runtime from the bind address: a wildcard bind (`0.0.0.0`) expands to every IPv4 interface, any other host resolves to that single address. Each line has a **Copy** button. Below the list, **Version** and **Uptime** report the running build.
+| Badge | Meaning |
+|-------|---------|
+| **This machine** | Loopback address (`127.0.0.1`, `::1`, `localhost`). Only clients running on the same machine can use it |
+| **Network** | Reachable from other machines that can route to this host |
+
+Each address has a **Copy** button that puts it on the clipboard.
+
+The list is derived at runtime from the bind address: a wildcard bind (`0.0.0.0`) expands to every IPv4 interface, any other host resolves to that single address.
+
+Below the list:
+
+| Row | Description |
+|-----|-------------|
+| **Host and port** | The bind address the service was started with |
+| **Version** | The running build |
+| **Uptime** | Time since the service started |
 
 Host and port come from the environment or the settings file and cannot be changed here; changing them requires a restart.
 
 ### Runtime Settings
 
+Everything in this block is editable and saved with **Save Settings**.
+
 | Field | Description |
 |-------|-------------|
-| **Public URL** | The externally accessible URL of this Routerly instance. Shown in project connection snippets |
 | **Log Level** | `trace` / `debug` / `info` / `warn` / `error` |
+| **Public URL** | The externally accessible URL of this Routerly instance. Shown in project connection snippets. Useful when the dashboard runs on a different machine or port than the service |
 
 **Anonymous metrics** is a separate self-saving toggle at the bottom of the tab.
 

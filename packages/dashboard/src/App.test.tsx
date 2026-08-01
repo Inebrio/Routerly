@@ -286,15 +286,18 @@ describe('Sidebar', () => {
     await waitFor(() => expect(screen.getByText('Experiments')).toBeTruthy());
   });
 
-  it('renders Connections before Models in nav order', async () => {
+  it('lists the nav flat, in setup then use then measure order', async () => {
+    // Both optional modules on, so the whole intended order is visible at once.
+    mockGetClients.mockResolvedValue([]);
+    mockGetExperiments.mockResolvedValue([]);
     renderApp();
-    await waitFor(() => screen.getByText('Overview'));
+    await waitFor(() => screen.getByText('Connect'));
+    await waitFor(() => screen.getByText('Experiments'));
     const labels = Array.from(document.querySelectorAll('.sidebar-nav .nav-label')).map(el => el.textContent);
-    const connectionsIndex = labels.findIndex(l => l === 'Connections');
-    const modelsIndex = labels.findIndex(l => l === 'Models');
-    expect(connectionsIndex).toBeGreaterThanOrEqual(0);
-    expect(modelsIndex).toBeGreaterThanOrEqual(0);
-    expect(connectionsIndex).toBeLessThan(modelsIndex);
+    expect(labels).toEqual([
+      'Overview', 'Connections', 'Models', 'Profiles', 'Projects',
+      'Connect', 'Playground', 'Experiments', 'Usage',
+    ]);
   });
 
   it('toggles collapsed state on toggle button click', async () => {
