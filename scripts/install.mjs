@@ -799,7 +799,6 @@ if (!fs.existsSync(settingsPath)) {
     port,
     host,
     dashboardEnabled: installDashboard,
-    defaultTimeoutMs: 30000,
     logLevel: 'info',
     publicUrl,
     channel: INSTALL_VERSION ? 'custom' : INSTALL_CHANNEL,

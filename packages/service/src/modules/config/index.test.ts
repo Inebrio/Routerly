@@ -2,24 +2,29 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ServiceContainer, EventBus } from '../../core/index.js'
 import { CONFIG_STORE } from '../../core/tokens.js'
 
-vi.mock('./migrate.js', () => ({ migrateProjectConfigs: vi.fn(async () => 0) }))
+vi.mock('./migrate.js', () => ({
+  migrateProjectConfigs: vi.fn(async () => 0),
+  migrateSettings: vi.fn(async () => [] as string[]),
+}))
 vi.mock('./migrate-connections.js', () => ({
   migrateModelsToConnections: vi.fn(async () => ({ connections: 0, instances: 0 })),
 }))
 
 import { configModule } from './index.js'
 import { readConfig, writeConfig, appendUsageRecord } from './loader.js'
-import { migrateProjectConfigs } from './migrate.js'
+import { migrateProjectConfigs, migrateSettings } from './migrate.js'
 import { migrateModelsToConnections } from './migrate-connections.js'
 
 const mockMigrateProjects = vi.mocked(migrateProjectConfigs)
 const mockMigrateConnections = vi.mocked(migrateModelsToConnections)
+const mockMigrateSettings = vi.mocked(migrateSettings)
 
 describe('config module', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockMigrateProjects.mockResolvedValue(0)
     mockMigrateConnections.mockResolvedValue({ connections: 0, instances: 0 })
+    mockMigrateSettings.mockResolvedValue([])
   })
 
   it('registers CONFIG_STORE with the real loader functions', async () => {
@@ -40,11 +45,22 @@ describe('config module', () => {
     expect(configModule.manifest.version).toBe('0.4.0')
   })
 
-  it('runs both config migrations', async () => {
+  it('runs every config migration', async () => {
     await configModule.migrate?.()
 
     expect(mockMigrateConnections).toHaveBeenCalledTimes(1)
     expect(mockMigrateProjects).toHaveBeenCalledTimes(1)
+    expect(mockMigrateSettings).toHaveBeenCalledTimes(1)
+  })
+
+  it('logs the settings keys dropped from settings.json', async () => {
+    mockMigrateSettings.mockResolvedValueOnce(['defaultTimeoutMs'])
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await configModule.migrate?.()
+
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('defaultTimeoutMs'))
+    logSpy.mockRestore()
   })
 
   it('logs the migrated project count when any project changed shape', async () => {

@@ -9,7 +9,7 @@
  *
  * Runs once per startup on every stored project. Idempotent.
  */
-import type { ProjectConfig, GuardrailConfig, PiiConfig, GuardrailRule, PiiPolicy } from '@routerly/shared';
+import type { ProjectConfig, GuardrailConfig, PiiConfig, GuardrailRule, PiiPolicy, Settings } from '@routerly/shared';
 import { readConfig, writeConfig } from './loader.js';
 
 // Legacy shapes (only what we need to detect/convert — not exported to callers)
@@ -117,6 +117,20 @@ function migratePolicy(raw: Record<string, unknown>): PiiPolicy {
   delete p['scrubInput'];
   delete p['scrubOutput'];
   return p as unknown as PiiPolicy;
+}
+
+/** Settings keys dropped from the Settings type. Stored files keep them forever
+ * otherwise: readConfig returns the file as-is and PUT /api/settings spreads the
+ * current object, so a removed key is never overwritten away. */
+const REMOVED_SETTINGS_KEYS = ['defaultTimeoutMs'];
+
+export async function migrateSettings(): Promise<string[]> {
+  const settings = await readConfig('settings') as unknown as Record<string, unknown>;
+  const stale = REMOVED_SETTINGS_KEYS.filter((key) => key in settings);
+  if (stale.length === 0) return [];
+  for (const key of stale) delete settings[key];
+  await writeConfig('settings', settings as unknown as Settings);
+  return stale;
 }
 
 export async function migrateProjectConfigs(): Promise<number> {

@@ -24,7 +24,6 @@ const DEFAULTS: Record<string, unknown> = {
     port: 3000,
     host: '0.0.0.0',
     dashboardEnabled: true,
-    defaultTimeoutMs: 30000,
     logLevel: 'info',
     publicUrl: 'http://localhost:3000',
     channel: 'latest',

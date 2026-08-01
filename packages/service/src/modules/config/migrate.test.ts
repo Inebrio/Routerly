@@ -5,7 +5,7 @@ vi.mock('./loader.js', () => ({
   writeConfig: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { migrateProjectConfigs } from './migrate.js';
+import { migrateProjectConfigs, migrateSettings } from './migrate.js';
 import { readConfig, writeConfig } from './loader.js';
 
 const mockReadConfig = vi.mocked(readConfig);
@@ -586,5 +586,27 @@ describe('migrateProjectConfigs — multi-project loop', () => {
     const saved = mockWriteConfig.mock.calls[0]![1] as any[];
     expect(saved).toHaveLength(1);
     expect(saved[0].id).toBe('p1');
+  });
+});
+
+// ─── migrateSettings ───────────────────────────────────────────────────────────
+
+describe('migrateSettings', () => {
+  it('drops a removed key and writes settings back', async () => {
+    mockReadConfig.mockResolvedValue({ port: 3000, host: '0.0.0.0', defaultTimeoutMs: 30000 } as any);
+
+    const dropped = await migrateSettings();
+
+    expect(dropped).toEqual(['defaultTimeoutMs']);
+    expect(mockWriteConfig).toHaveBeenCalledWith('settings', { port: 3000, host: '0.0.0.0' });
+  });
+
+  it('writeConfig is NOT called when no removed key is stored', async () => {
+    mockReadConfig.mockResolvedValue({ port: 3000, host: '0.0.0.0' } as any);
+
+    const dropped = await migrateSettings();
+
+    expect(dropped).toEqual([]);
+    expect(mockWriteConfig).not.toHaveBeenCalled();
   });
 });

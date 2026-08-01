@@ -31,7 +31,7 @@ Examples:
       try {
         const [info, settings, models, projects] = await Promise.all([
           api<SystemInfo>('GET', '/api/system/info').catch(() => null),
-          api<Settings>('GET', '/api/settings'),
+          api<Settings & { listeningAddresses?: string[] }>('GET', '/api/settings'),
           api<unknown[]>('GET', '/api/models'),
           api<unknown[]>('GET', '/api/projects'),
         ]);
@@ -46,9 +46,11 @@ Examples:
         console.log(`  ${chalk.cyan('Host:')}          ${settings.host}`);
         console.log(`  ${chalk.cyan('Dashboard:')}     ${settings.dashboardEnabled ? chalk.green('enabled') : chalk.gray('disabled')}`);
         console.log(`  ${chalk.cyan('Log level:')}     ${settings.logLevel}`);
-        console.log(`  ${chalk.cyan('Timeout:')}       ${settings.defaultTimeoutMs}ms`);
         console.log(`  ${chalk.cyan('Models:')}        ${models.length}`);
         console.log(`  ${chalk.cyan('Projects:')}      ${projects.length}`);
+        for (const address of settings.listeningAddresses ?? []) {
+          console.log(`  ${chalk.cyan('Listening at:')}  ${address}`);
+        }
         console.log();
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
@@ -69,10 +71,9 @@ Examples:
   # Bind to all network interfaces
   routerly service configure --host 0.0.0.0
 
-  # Production hardening: specific port, reduced logging, long timeout
+  # Production hardening: specific port, reduced logging
   routerly service configure \\
-    --port 443 --host 0.0.0.0 \\
-    --log-level warn --timeout 60000
+    --port 443 --host 0.0.0.0 --log-level warn
 
   # Enable Prometheus metrics endpoint
   routerly service configure --metrics true
@@ -87,24 +88,22 @@ Examples:
     .option('--host <host>', 'Host to bind to')
     .option('--dashboard <bool>', 'Enable/disable dashboard (true|false)')
     .option('--log-level <level>', 'Log level: trace|debug|info|warn|error')
-    .option('--timeout <ms>', 'Default per-model timeout in ms')
     .option('--metrics <bool>', 'Enable/disable Prometheus /metrics endpoint (true|false)')
     .option('--metrics-token <token>', 'Optional Bearer token to protect /metrics (empty string removes it)')
     .action(async (opts: {
       port?: string; host?: string; dashboard?: string;
-      logLevel?: string; timeout?: string; metrics?: string; metricsToken?: string;
+      logLevel?: string; metrics?: string; metricsToken?: string;
     }) => {
       const patch: Partial<Settings> = {};
       if (opts.port) patch.port = parseInt(opts.port, 10);
       if (opts.host) patch.host = opts.host;
       if (opts.dashboard !== undefined) patch.dashboardEnabled = opts.dashboard === 'true';
       if (opts.logLevel) patch.logLevel = opts.logLevel as Settings['logLevel'];
-      if (opts.timeout) patch.defaultTimeoutMs = parseInt(opts.timeout, 10);
       if (opts.metrics !== undefined) patch.metricsEnabled = opts.metrics === 'true';
       if (opts.metricsToken !== undefined) patch.prometheusAuthToken = opts.metricsToken || undefined;
 
       if (Object.keys(patch).length === 0) {
-        console.log(chalk.yellow('No settings provided. Use --port, --host, --dashboard, --log-level, --timeout, --metrics, or --metrics-token.'));
+        console.log(chalk.yellow('No settings provided. Use --port, --host, --dashboard, --log-level, --metrics, or --metrics-token.'));
         return;
       }
 
