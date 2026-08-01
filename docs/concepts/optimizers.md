@@ -226,7 +226,9 @@ that the optimizer is idle.
 
 Once the pipeline is running, the measured effect per optimizer (calls
 changed, tokens removed, cost avoided, rollbacks) is reported in the savings
-block of `GET /api/usage?savings=1` and in the project's Dashboard tab. Those
+block of `GET /api/usage?savings=1`, by [`routerly report
+savings`](../cli/commands.md#routerly-report-savings), and in the project's
+Dashboard tab. Those
 numbers are recorded per call as it is served, so they are measurements, not
 estimates like the model counterfactual next to them.
 

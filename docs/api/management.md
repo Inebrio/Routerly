@@ -1508,6 +1508,8 @@ Routing and guardrail calls are excluded from the comparison: they are the gatew
 The cost figure is exact arithmetic on the observed token counts, but a different model tokenizes the same text slightly differently and may answer at a different length. Read a baseline as "the same conversation, priced elsewhere". Measuring the real difference needs a live comparison on production traffic.
 :::
 
+The same block is rendered by [`routerly report savings`](../cli/commands.md#routerly-report-savings) and by the project's [Dashboard tab](../dashboard/projects.md#dashboard-tab).
+
 ### Get a Single Usage Record
 
 ```

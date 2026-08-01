@@ -2229,6 +2229,73 @@ routerly report calls --type embedding --limit 10
 
 An unknown `--type` value exits 1 with the list of accepted types, rather than returning an empty report.
 
+### `routerly report savings`
+
+What the routing, the prompt cache and the optimizers saved over a period.
+
+```
+routerly report savings [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--period <period>` | `daily`, `weekly`, `monthly`, `all` (default: `monthly`) |
+| `--project <id>` | Filter by project ID |
+| `--type <type>` | Filter by request type: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio` |
+| `--json` | Output the raw savings block |
+
+The command reads `GET /api/usage?savings=1` (see [API: Usage](../api/management.md#usage)) and needs the same `report:read` permission as the rest of `report`. The counterfactual is computed against the **enabled target models of every project present in the result**, so `--project` narrows both the traffic and the models it is compared against.
+
+```
+routerly report savings --project my-api --period weekly
+```
+
+```
+Savings Report — WEEKLY
+
+Compared calls: 187
+Actual cost:    $0.114500
+Tokens:         1,204,880 in / 96,410 out
+Prompt cache:   402,110 tokens served from cache, $0.030800 saved
+
+If everything had gone to one model
+┌─────────────────┬────────────┬────────────┬─────────┬────────────┬────────────┐
+│ Model           │ Would cost │ Saved      │ Saved % │ Would take │ Time saved │
+├─────────────────┼────────────┼────────────┼─────────┼────────────┼────────────┤
+│ gpt-4o          │ $0.412900  │ $0.298400  │ 72.3%   │ 18,420 ms  │ 6,180 ms   │
+├─────────────────┼────────────┼────────────┼─────────┼────────────┼────────────┤
+│ claude-sonnet-4 │ $0.238100  │ $0.123600  │ 51.9%   │ no sample  │ -          │
+├─────────────────┼────────────┼────────────┼─────────┼────────────┼────────────┤
+│ qwen3:4b        │ $0.061200  │ -$0.053300 │ -46.6%  │ 31,900 ms  │ -19,300 ms │
+└─────────────────┴────────────┴────────────┴─────────┴────────────┴────────────┘
+
+What the optimizers removed
+┌───────────────┬────────────────────────────────┬───────────────┬──────────────┬────────────┬─────────────┐
+│ ID            │ Name                           │ Calls changed │ Tokens saved │ Cost saved │ Rolled back │
+├───────────────┼────────────────────────────────┼───────────────┼──────────────┼────────────┼─────────────┤
+│ session-dedup │ Session Dedup                  │ 91            │ 18,442       │ $0.014120  │ 0           │
+├───────────────┼────────────────────────────────┼───────────────┼──────────────┼────────────┼─────────────┤
+│ ccr           │ Conversation Context Reduction │ 74            │ 126,905      │ $0.097180  │ 0           │
+├───────────────┼────────────────────────────────┼───────────────┼──────────────┼────────────┼─────────────┤
+│ caveman       │ Caveman                        │ 12            │ 3,318        │ $0.002540  │ 5           │
+└───────────────┴────────────────────────────────┴───────────────┴──────────────┴────────────┴─────────────┘
+
+Costs are the observed tokens repriced, times are estimated from each model's own throughput in the period.
+```
+
+Reading the two tables:
+
+- **If everything had gone to one model** is a counterfactual, one row per enabled target model. `Saved` is positive when the routing came out cheaper than sending everything to that model and negative (red) when it did not, which is the expected shape for a cheap local model. `Would take` reads `no sample` when that model produced no output tokens in the period, so there is no throughput to estimate from, and `Time saved` then shows `-`.
+- **What the optimizers removed** is measured on the calls as they were served, not repriced. It is printed only when at least one optimizer changed a call in the period, and stays empty for records written before 0.4.0, which carry no per-optimizer numbers. A non-zero `Rolled back` count is highlighted: those results were rejected by the safety gate, which means that optimizer's threshold is too aggressive for this traffic. Tune it with [`routerly optimizers config`](#routerly-optimizers-config).
+
+When nothing in the window can be compared, the command prints `No comparable calls for period: <period>` instead of a table of zeros. When the traffic belongs to projects with no enabled target model, the headline still prints and the counterfactual is replaced by `No target model to compare against.`
+
+`--json` prints the savings block on its own (`null` when the period is empty), which is the shape documented under [API: Usage](../api/management.md#usage):
+
+```bash
+routerly report savings --json | jq '.optimizers[] | select(.rolledBack > 0)'
+```
+
 ### `routerly report end-users`
 
 Lists end-users with their usage attributed to a project.
