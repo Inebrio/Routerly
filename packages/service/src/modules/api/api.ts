@@ -1835,11 +1835,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const protocol = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim() || req.protocol;
     const host = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0]?.trim() || req.headers.host;
     const base = `${protocol}://${host}`;
-    const clients = CLIENT_REGISTRY.map(meta => ({
-      ...meta,
-      openaiBaseUrl: `${base}/v1`,
-      anthropicBaseUrl: base,
-    }));
+    // One base URL per client: the gateway root. Every snippet builder in
+    // @routerly/shared derives the OpenAI `/v1` suffix itself, so the route
+    // does not need to pre-compute a per-wire-format variant.
+    const clients = CLIENT_REGISTRY.map(meta => ({ ...meta, baseUrl: base }));
     const advertisedAddresses = Object.values(networkInterfaces())
       .flat()
       .filter((n): n is NonNullable<typeof n> => n !== undefined && n.family === 'IPv4' && !n.internal)

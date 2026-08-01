@@ -1,2 +1,2 @@
-export type { SupportState, WireFormat, ClientMeta } from './registry.js';
-export { CLIENT_REGISTRY, buildSnippet } from './registry.js';
+export type { SupportState, WireFormat, ConnectMode, ClientMeta } from './registry.js';
+export { CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from './registry.js';

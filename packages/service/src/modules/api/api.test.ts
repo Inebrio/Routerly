@@ -64,6 +64,7 @@ import { catalogFetcher } from '../catalog/fetcher.js'
 import { OptimizerRegistry, setOptimizerRegistry, type Optimizer } from '../optimizers/registry.js'
 import { readMessages, writeMessages, tokensOf } from '../optimizers/messages.js'
 import { setClientConfiguratorEnabled } from '../clients/module.js'
+import { CLIENT_REGISTRY } from '@routerly/shared'
 import { splitModelsIntoInstancesConnections } from '../../test-support/effective-models.js'
 
 const mockCatalogFetcher = vi.mocked(catalogFetcher)
@@ -3184,7 +3185,7 @@ describe('GET /api/clients', () => {
     expect(res.statusCode).toBe(401)
   })
 
-  it('returns 200 with 5 clients, each carrying openaiBaseUrl/anthropicBaseUrl', async () => {
+  it('returns 200 with the whole registry, each entry carrying the gateway base URL', async () => {
     setClientConfiguratorEnabled(true)
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -3204,13 +3205,11 @@ describe('GET /api/clients', () => {
     expect(res.statusCode).toBe(200)
     const body = res.json() as { enabled: boolean; clients: Array<Record<string, unknown>>; advertisedAddresses: string[] }
     expect(body.enabled).toBe(true)
-    expect(body.clients).toHaveLength(5)
+    expect(body.clients).toHaveLength(CLIENT_REGISTRY.length)
     expect(Array.isArray(body.advertisedAddresses)).toBe(true)
     for (const client of body.clients) {
-      expect(typeof client['openaiBaseUrl']).toBe('string')
-      expect(typeof client['anthropicBaseUrl']).toBe('string')
-      expect(client['openaiBaseUrl']).toBe('http://localhost:3000/v1')
-      expect(client['anthropicBaseUrl']).toBe('http://localhost:3000')
+      expect(client['baseUrl']).toBe('http://localhost:3000')
+      expect(Array.isArray(client['modes'])).toBe(true)
     }
   })
 
@@ -3238,8 +3237,7 @@ describe('GET /api/clients', () => {
     expect(res.statusCode).toBe(200)
     const body = res.json() as { clients: Array<Record<string, unknown>> }
     for (const client of body.clients) {
-      expect(client['openaiBaseUrl']).toBe('https://gateway.example.com/v1')
-      expect(client['anthropicBaseUrl']).toBe('https://gateway.example.com')
+      expect(client['baseUrl']).toBe('https://gateway.example.com')
     }
   })
 })

@@ -31,8 +31,8 @@ function makeClients() {
         docSlug: 'integrations/clients/claude-code',
         configKind: 'json' as const,
         configPathHint: '~/.claude/settings.json',
-        openaiBaseUrl: 'http://localhost:3000/v1',
-        anthropicBaseUrl: 'http://localhost:3000',
+        modes: ['llm', 'mcp'] as const,
+        baseUrl: 'http://localhost:3000',
       },
       {
         id: 'codex',
@@ -42,8 +42,8 @@ function makeClients() {
         docSlug: 'integrations/clients/codex',
         configKind: 'toml' as const,
         configPathHint: '~/.codex/config.toml',
-        openaiBaseUrl: 'http://localhost:3000/v1',
-        anthropicBaseUrl: 'http://localhost:3000',
+        modes: ['llm', 'mcp'] as const,
+        baseUrl: 'http://localhost:3000',
       },
       {
         id: 'cline',
@@ -53,8 +53,8 @@ function makeClients() {
         docSlug: 'integrations/clients/cline',
         configKind: 'ui' as const,
         configPathHint: 'VS Code Settings (Cline panel), no file',
-        openaiBaseUrl: 'http://localhost:3000/v1',
-        anthropicBaseUrl: 'http://localhost:3000',
+        modes: ['llm'] as const,
+        baseUrl: 'http://localhost:3000',
       },
     ],
   };
@@ -93,11 +93,12 @@ describe('ClientsPage', () => {
     expect(placeholders.length).toBeGreaterThan(0);
   });
 
-  it('does not fabricate a snippet for a ui-only client (Cline)', async () => {
+  it('gives a ui-only client (Cline) manual steps instead of a config file', async () => {
     mockGetClients.mockResolvedValue(makeClients());
     renderPage();
     await waitFor(() => expect(screen.getByText('Cline')).toBeTruthy());
     expect(screen.getByText('Configure via VS Code Settings (Cline panel), no file.')).toBeTruthy();
+    expect(screen.getByText(/API Provider: OpenAI Compatible/)).toBeTruthy();
   });
 
   it('copy button copies the snippet to the clipboard', async () => {

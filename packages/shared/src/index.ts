@@ -149,8 +149,8 @@ export type {
   ResilienceStore,
 } from './types/resilience.js';
 
-export type { SupportState, WireFormat, ClientMeta } from './clients/index.js';
-export { CLIENT_REGISTRY, buildSnippet } from './clients/index.js';
+export type { SupportState, WireFormat, ConnectMode, ClientMeta } from './clients/index.js';
+export { CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from './clients/index.js';
 
 // Notification event taxonomy (runtime value + derived type)
 export { NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, DEFAULT_PROJECT_TIMEOUT_MS } from './types/config.js';
