@@ -219,10 +219,17 @@ describe('ExperimentConfigTab: edit', () => {
     const user = userEvent.setup();
     renderTab();
     await waitFor(() => expect(screen.getByLabelText('Name')).toHaveValue('Cheap vs premium'));
-    expect(screen.getByLabelText('Rotation')).toBeDisabled();
-    expect(screen.getByLabelText('Variant 1 project')).toBeDisabled();
+    // The frozen part reads as a summary: no disabled form controls left on screen.
+    expect(screen.queryByLabelText('Rotation')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Variant 1 project')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /add variant/i })).not.toBeInTheDocument();
     expect(screen.getByText(/This experiment is running/)).toBeInTheDocument();
+    expect(screen.getByText('How this test is running')).toBeInTheDocument();
+    expect(screen.getByText('Sticky per session')).toBeInTheDocument();
+    expect(screen.getByText('Variants (2)')).toBeInTheDocument();
+    // A variant with no label of its own is named after its project.
+    await waitFor(() => expect(screen.getByText('Cheap')).toBeInTheDocument());
+    expect(screen.getByText('Arm B')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /save changes/i }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalledWith('exp-1', {

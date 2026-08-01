@@ -100,7 +100,8 @@ describe('ExperimentTokenTab', () => {
     render(<ExperimentTokenTab />);
     await user.click(screen.getByRole('button', { name: /new token/i }));
     await waitFor(() => expect(screen.getByText('sk-rt-plaintext')).toBeInTheDocument());
-    await user.click(screen.getByRole('button', { name: /copy/i }));
+    // The first Copy belongs to the base URL block, the second to the revealed token.
+    await user.click(screen.getAllByRole('button', { name: /copy/i })[1]!);
     await waitFor(() => expect(mockCopy).toHaveBeenCalledWith('sk-rt-plaintext'));
     expect(await screen.findByText('Copied!')).toBeInTheDocument();
   });
@@ -111,7 +112,7 @@ describe('ExperimentTokenTab', () => {
     render(<ExperimentTokenTab />);
     await user.click(screen.getByRole('button', { name: /new token/i }));
     await waitFor(() => expect(screen.getByText('sk-rt-plaintext')).toBeInTheDocument());
-    await user.click(screen.getByRole('button', { name: /copy/i }));
+    await user.click(screen.getAllByRole('button', { name: /copy/i })[1]!);
     expect(await screen.findByText(/Copy failed/)).toBeInTheDocument();
   });
 
