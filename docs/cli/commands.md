@@ -447,18 +447,28 @@ Project commands are organised into sub-groups. The first argument is always a *
 routerly project list [--json]
 ```
 
-### `routerly project add`
+### `routerly project create`
 
 ```
-routerly project add [options]
+routerly project create [options]
 ```
 
 | Option | Description |
 |--------|-------------|
-| `--name <name>` | Project display name |
-| `--slug <slug>` | URL-safe identifier (must be unique) |
-| `--models <ids>` | Comma-separated list of model IDs to assign |
-| `--timeout <ms>` | Default request timeout in ms |
+| `--name <name>` | Project display name (required) |
+| `--timeout <ms>` | Time-to-first-token timeout per model attempt, in ms (default `2000`, `0` disables it) |
+| `--routing-model <id>` | Model ID used for routing decisions |
+
+### `routerly project edit`
+
+```
+routerly project edit <project> [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--name <name>` | New display name |
+| `--timeout <ms>` | New time-to-first-token timeout per model attempt, in ms (`0` disables it) |
 
 ### `routerly project remove`
 
@@ -1948,7 +1958,7 @@ Requires `report:read` permission.
 routerly service status [--json]
 ```
 
-Same as `routerly status`.
+Same as `routerly status`. The output ends with one `Listening at:` line per address the service is reachable at (every IPv4 interface when bound to `0.0.0.0`, the single bind address otherwise).
 
 ### `routerly service configure`
 
@@ -1962,8 +1972,12 @@ routerly service configure [options]
 | `--host <host>` | Bind address |
 | `--dashboard <bool>` | Enable/disable web dashboard |
 | `--log-level <level>` | `trace` / `debug` / `info` / `warn` / `error` |
-| `--timeout <ms>` | Global default request timeout |
+| `--metrics <bool>` | Enable/disable the Prometheus `/metrics` endpoint |
+| `--metrics-token <token>` | Bearer token protecting `/metrics` (empty string removes it) |
 | `--public-url <url>` | External URL of the service |
+| `--require-mfa <bool>` | Require two-factor authentication for all users |
+
+Per-request timeouts are configured per project with `routerly project edit --timeout <ms>`, not service-wide.
 
 ---
 

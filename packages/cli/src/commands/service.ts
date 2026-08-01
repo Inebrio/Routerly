@@ -83,6 +83,9 @@ Examples:
 
   # Remove the metrics token (open access)
   routerly service configure --metrics-token ""
+
+  # Publish the URL clients should use, and require 2FA for every user
+  routerly service configure --public-url https://routerly.example.com --require-mfa true
 `)
     .option('--port <port>', 'HTTP port to listen on')
     .option('--host <host>', 'Host to bind to')
@@ -90,9 +93,12 @@ Examples:
     .option('--log-level <level>', 'Log level: trace|debug|info|warn|error')
     .option('--metrics <bool>', 'Enable/disable Prometheus /metrics endpoint (true|false)')
     .option('--metrics-token <token>', 'Optional Bearer token to protect /metrics (empty string removes it)')
+    .option('--public-url <url>', 'External URL clients use to reach the service')
+    .option('--require-mfa <bool>', 'Require two-factor authentication for all users (true|false)')
     .action(async (opts: {
       port?: string; host?: string; dashboard?: string;
       logLevel?: string; metrics?: string; metricsToken?: string;
+      publicUrl?: string; requireMfa?: string;
     }) => {
       const patch: Partial<Settings> = {};
       if (opts.port) patch.port = parseInt(opts.port, 10);
@@ -101,9 +107,11 @@ Examples:
       if (opts.logLevel) patch.logLevel = opts.logLevel as Settings['logLevel'];
       if (opts.metrics !== undefined) patch.metricsEnabled = opts.metrics === 'true';
       if (opts.metricsToken !== undefined) patch.prometheusAuthToken = opts.metricsToken || undefined;
+      if (opts.publicUrl !== undefined) patch.publicUrl = opts.publicUrl;
+      if (opts.requireMfa !== undefined) patch.requireMfa = opts.requireMfa === 'true';
 
       if (Object.keys(patch).length === 0) {
-        console.log(chalk.yellow('No settings provided. Use --port, --host, --dashboard, --log-level, --metrics, or --metrics-token.'));
+        console.log(chalk.yellow('No settings provided. Use --port, --host, --dashboard, --log-level, --metrics, --metrics-token, --public-url, or --require-mfa.'));
         return;
       }
 

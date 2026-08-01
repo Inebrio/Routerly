@@ -26,8 +26,7 @@ import { UsagePage } from './pages/UsagePage';
 import { UsageRecordPage } from './pages/UsageRecordPage';
 import { TestPage } from './pages/TestPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { SettingsGeneralTab, SettingsAboutTab, SettingsIntegrationsTab, SettingsCatalogTab } from './pages/SettingsPage';
-import { SettingsModulesTab } from './pages/SettingsModulesTab';
+import { SettingsGeneralTab, SettingsSecurityTab, SettingsAboutTab, SettingsIntegrationsTab, SettingsCatalogTab } from './pages/SettingsPage';
 import { NotificationChannelListPage } from './pages/NotificationChannelListPage';
 import { NotificationChannelEditPage } from './pages/NotificationChannelEditPage';
 import { NotificationChannelCreatePage } from './pages/NotificationChannelCreatePage';
@@ -431,12 +430,12 @@ const router = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="general" replace /> },
               { path: 'general', element: <SettingsGeneralTab /> },
+              { path: 'security', element: <SettingsSecurityTab /> },
               { path: 'notifications', element: <NotificationChannelListPage /> },
               { path: 'notifications/new', element: <NotificationChannelCreatePage /> },
               { path: 'notifications/:id', element: <NotificationChannelEditPage /> },
               { path: 'integrations', element: <SettingsIntegrationsTab /> },
               { path: 'catalog', element: <SettingsCatalogTab /> },
-              { path: 'modules', element: <SettingsModulesTab /> },
               { path: 'users', element: <UsersPage /> },
               { path: 'users/:userId', element: <UserEditPage /> },
               { path: 'roles', element: <RolesPage /> },

@@ -73,7 +73,6 @@ Global service configuration.
   "port": 3000,
   "host": "0.0.0.0",
   "dashboardEnabled": true,
-  "defaultTimeoutMs": 30000,
   "logLevel": "info",
   "publicUrl": "http://localhost:3000",
   "channel": "stable",
@@ -90,7 +89,6 @@ Global service configuration.
 | `port` | `number` | `3000` | TCP port the service listens on |
 | `host` | `string` | `"0.0.0.0"` | Bind address. Use `127.0.0.1` behind a reverse proxy |
 | `dashboardEnabled` | `boolean` | `true` | Enable or disable the web dashboard |
-| `defaultTimeoutMs` | `number` | `30000` | Default provider request timeout in milliseconds |
 | `logLevel` | `string` | `"info"` | Log verbosity: `"error"`, `"warn"`, `"info"`, `"debug"` |
 | `publicUrl` | `string` | `"http://localhost:3000"` | Externally reachable URL, used for notification links |
 | `channel` | `string` | `"stable"` | Update channel: `"latest"`, `"stable"`, `"develop"`, or a version tag such as `"v0.2.0"`. Controls which GitHub Release the update checker compares against |
@@ -150,7 +148,7 @@ Array of project configurations including routing policies, budgets, tokens, and
     "id": "proj_abc123",
     "name": "My App",
     "slug": "my-app",
-    "defaultTimeoutMs": 30000,
+    "timeoutMs": 2000,
     "policies": ["random"],
     "models": ["gpt-5-mini", "claude-haiku-4-5"],
     "tokens": [
@@ -184,7 +182,7 @@ Array of project configurations including routing policies, budgets, tokens, and
 | `id` | `string` | Internal project ID (`proj_…`) |
 | `name` | `string` | Human-readable project name |
 | `slug` | `string` | URL-safe identifier, used in scoped proxy path `/projects/{slug}/v1/*` |
-| `defaultTimeoutMs` | `number` | Per-project request timeout override |
+| `timeoutMs` | `number` | Time-to-first-token timeout per model attempt, in milliseconds. Default `2000`; `0` disables it |
 | `policies` | `string[]` | Routing policies in priority order |
 | `models` | `string[]` | Model IDs assigned to the project |
 

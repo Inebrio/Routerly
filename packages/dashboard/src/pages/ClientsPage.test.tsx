@@ -146,7 +146,6 @@ describe('ClientsPage', () => {
     mockGetClients.mockRejectedValue(apiError('Not found', 404));
     renderPage();
     await waitFor(() => expect(screen.getByText(/not enabled/i)).toBeTruthy());
-    const link = screen.getByRole('link', { name: /modules/i });
-    expect(link.getAttribute('href')).toBe('/dashboard/settings/modules');
+    expect(screen.getByText('routerly modules enable clients')).toBeTruthy();
   });
 });

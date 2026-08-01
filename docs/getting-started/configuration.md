@@ -58,7 +58,6 @@ Open **Settings → General** in the dashboard. Changes take effect immediately 
 | `port` | `3000` | TCP port the service listens on |
 | `host` | `"0.0.0.0"` | Bind address (`"127.0.0.1"` for local-only) |
 | `dashboardEnabled` | `true` | Whether to serve the web dashboard |
-| `defaultTimeoutMs` | `30000` | Per-request timeout in milliseconds |
 | `logLevel` | `"info"` | Log verbosity: `trace` / `debug` / `info` / `warn` / `error` |
 | `publicUrl` | `"http://localhost:3000"` | External URL shown in the dashboard connection snippets |
 | `channel` | `"stable"` | Update channel: `"stable"`, `"latest"`, `"develop"`, or a version tag (e.g. `"v0.2.0"`). Editable from the dashboard or via `routerly update channel` |

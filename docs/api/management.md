@@ -788,7 +788,7 @@ POST /api/projects
 {
   "name": "My App",
   "slug": "my-app",
-  "defaultTimeoutMs": 30000,
+  "timeoutMs": 2000,
   "models": ["gpt-5-mini"]
 }
 ```
@@ -1454,9 +1454,12 @@ GET /api/settings
 ```json
 {
   "port": 3000,
+  "host": "0.0.0.0",
   "logLevel": "info",
-  "defaultTimeoutMs": 30000,
   "publicUrl": "https://routerly.example.com",
+  "requireMfa": false,
+  "listeningAddresses": ["http://127.0.0.1:3000", "http://192.168.1.116:3000"],
+  "localAddresses": ["192.168.1.116"],
   "providerRepos": [
     {
       "url": "https://raw.githubusercontent.com/Inebrio/Routerly-Providers/main/",
@@ -1466,6 +1469,8 @@ GET /api/settings
   ]
 }
 ```
+
+`listeningAddresses` and `localAddresses` are derived at runtime from the bind host and are not stored in `settings.json`: a wildcard bind expands to every IPv4 interface, any other host resolves to that single address. They are read-only and ignored on `PUT`.
 
 ### Update Settings
 
@@ -1477,7 +1482,6 @@ PUT /api/settings
 {
   "port": 3000,
   "logLevel": "info",
-  "defaultTimeoutMs": 30000,
   "publicUrl": "https://routerly.example.com",
   "providerRepos": [
     {
@@ -1493,7 +1497,7 @@ PUT /api/settings
 ```
 
 **Fields:**
-- `port`, `logLevel`, `defaultTimeoutMs`, `publicUrl` - service configuration (optional)
+- `port`, `logLevel`, `publicUrl`, `requireMfa` - service configuration (optional)
 - `providerRepos` - array of provider repository objects (optional)
 
 **ProviderRepo object:**

@@ -5,6 +5,7 @@ import { createProject, updateProject, getSettings } from '../../api';
 import { useProject } from './ProjectLayout';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
 import { SearchableSelect } from '../../components/SearchableSelect';
+import { writeToClipboard } from '../../utils/clipboard';
 import { DEFAULT_PROJECT_TIMEOUT_MS } from '@routerly/shared';
 
 export function ProjectGeneralTab() {
@@ -106,22 +107,6 @@ export function ProjectGeneralTab() {
     }
   }
 
-
-  function writeToClipboard(text: string): Promise<void> {
-    if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
-    // Fallback for non-secure contexts (HTTP, docker self-hosted via IP)
-    return new Promise((resolve, reject) => {
-      const el = document.createElement('textarea');
-      el.value = text;
-      el.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
-      document.body.appendChild(el);
-      el.focus();
-      el.select();
-      const ok = document.execCommand('copy');
-      document.body.removeChild(el);
-      ok ? resolve() : reject(new Error('execCommand failed'));
-    });
-  }
 
   async function copyToken(token: string) {
     try {
