@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
 vi.mock('./stdio.js', () => ({ startStdioServer: vi.fn(async () => {}) }))
+vi.mock('../config/loader.js', () => ({
+  readConfig: vi.fn(),
+  writeConfig: vi.fn(),
+}))
 
 import { ServiceContainer, EventBus, type Token } from '../../core/index.js'
 import {
@@ -12,10 +16,13 @@ import {
   OBSERVABILITY,
   CONFIG_STORE,
 } from '../../core/tokens.js'
+import { readConfig, writeConfig } from '../config/loader.js'
 import { mcpModule } from './index.js'
 import { startStdioServer } from './stdio.js'
 
 const mockStartStdioServer = vi.mocked(startStdioServer)
+const mockReadConfig = vi.mocked(readConfig)
+const mockWriteConfig = vi.mocked(writeConfig)
 
 function runtime() {
   return { container: new ServiceContainer(), events: new EventBus() }
@@ -30,6 +37,8 @@ function present(rt: ReturnType<typeof runtime>, ...tokens: Token<unknown>[]) {
 afterEach(() => {
   delete process.env['ROUTERLY_MCP_STDIO']
   mockStartStdioServer.mockClear()
+  mockReadConfig.mockReset()
+  mockWriteConfig.mockReset()
 })
 
 describe('mcp module', () => {
@@ -102,5 +111,33 @@ describe('mcp module', () => {
     await mcpModule.register(rt)
     await mcpModule.start?.(rt)
     expect(mockStartStdioServer).toHaveBeenCalledOnce()
+  })
+
+  it('migrate() strips the retired mcp permissions from stored custom roles', async () => {
+    mockReadConfig.mockResolvedValue([
+      { id: 'custom', name: 'Custom', permissions: ['project:read', 'mcp:read', 'mcp:manage'] },
+      { id: 'other', name: 'Other', permissions: ['report:read'] },
+    ] as never)
+    mockWriteConfig.mockResolvedValue(undefined as never)
+
+    await mcpModule.migrate?.()
+
+    expect(mockWriteConfig).toHaveBeenCalledOnce()
+    const [key, written] = mockWriteConfig.mock.calls[0]!
+    expect(key).toBe('roles')
+    expect(written).toEqual([
+      { id: 'custom', name: 'Custom', permissions: ['project:read'] },
+      { id: 'other', name: 'Other', permissions: ['report:read'] },
+    ])
+  })
+
+  it('migrate() writes nothing when no stored role carries them', async () => {
+    mockReadConfig.mockResolvedValue([
+      { id: 'custom', name: 'Custom', permissions: ['project:read'] },
+    ] as never)
+
+    await mcpModule.migrate?.()
+
+    expect(mockWriteConfig).not.toHaveBeenCalled()
   })
 })

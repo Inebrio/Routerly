@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { ModelConfig, McpAuthContext, ProjectConfig, ProjectToken } from '@routerly/shared'
+import type { ModelConfig, ProjectConfig } from '@routerly/shared'
 
 vi.mock('../../config/loader.js', () => ({
   readConfig: vi.fn(),
@@ -35,6 +35,7 @@ import {
 } from './read.js'
 import { expectNoSecrets } from './expectNoSecrets.js'
 import { splitModelsIntoInstancesConnections } from '../../../test-support/effective-models.js'
+import { mcpAuthContext, TEST_MCP_PROJECT } from '../../../test-support/mcp-auth.js'
 
 const mockReadConfig = vi.mocked(readConfig)
 const mockRouteRequest = vi.mocked(routeRequest)
@@ -59,18 +60,13 @@ function model(overrides: Partial<ModelConfig> = {}): ModelConfig {
   }
 }
 
-const project = {
-  id: 'proj-1',
-  name: 'Alpha',
-  models: [{ modelId: 'openai/gpt-4o' }],
-} as ProjectConfig
+const project = TEST_MCP_PROJECT
 
-const token = { id: 'tok-1', name: 'main' } as unknown as ProjectToken
+// Single accessible project: projectId stays optional on every project-scoped tool.
+const authCtx = mcpAuthContext()
 
-const authCtx = { project, token, scopes: ['mcp'] } as McpAuthContext
-
-// list_models is global (not project-scoped); the handler ignores authCtx.
-const emptyAuthCtx = {} as McpAuthContext
+// list_models is gateway-wide; the handler ignores authCtx entirely.
+const emptyAuthCtx = mcpAuthContext({ projects: [] })
 
 function mockModels(models: ModelConfig[]) {
   const { instances, connections } = splitModelsIntoInstancesConnections(models)
@@ -185,10 +181,41 @@ describe('routePreviewTool', () => {
       { model: 'anthropic/claude', weight: 1 },
     ])
     expect(parsed.trace[0].message).toBe('router:result')
-    // routeRequest is called with the auth project + token, minimal request.
+    // routeRequest is called with the resolved project, minimal request.
     const call = mockRouteRequest.mock.calls[0]!
     expect(call[1]).toBe(project)
-    expect(call[4]).toBe(token)
+  })
+
+  it('resolves an explicit projectId against the accessible projects only', async () => {
+    mockRouteRequest.mockResolvedValue({ models: [], trace: [] } as never)
+    const beta = { id: 'proj-2', name: 'Beta', models: [] } as unknown as ProjectConfig
+    const ctx = mcpAuthContext({ projects: [project, beta] })
+
+    const ok = await routePreviewTool.handler({ projectId: 'Beta' }, ctx)
+    expect(ok.isError).toBeUndefined()
+    expect(mockRouteRequest.mock.calls[0]![1]).toBe(beta)
+
+    const denied = await routePreviewTool.handler({ projectId: 'proj-9' }, ctx)
+    expect(denied.isError).toBe(true)
+    expect(denied.content[0]!.text).toContain('not accessible')
+  })
+
+  it('requires projectId when the token reaches several projects', async () => {
+    const ctx = mcpAuthContext({
+      projects: [project, { id: 'proj-2', name: 'Beta', models: [] } as unknown as ProjectConfig],
+    })
+
+    const res = await routePreviewTool.handler({}, ctx)
+
+    expect(res.isError).toBe(true)
+    expect(res.content[0]!.text).toContain('projectId is required')
+  })
+
+  it('reports no accessible project when the token reaches none', async () => {
+    const res = await routePreviewTool.handler({}, mcpAuthContext({ projects: [] }))
+
+    expect(res.isError).toBe(true)
+    expect(res.content[0]!.text).toContain('no project')
   })
 
   it('leaks no upstream key in candidates or trace', async () => {
@@ -279,7 +306,10 @@ describe('budgetStatusTool', () => {
         limits: [{ metric: 'cost', window: 'daily', value: 10, current: 3, remaining: 7 }],
       },
     ])
-    expect(mockGetLimitUsageSnapshot).toHaveBeenCalledWith(expect.objectContaining({ id: 'openai/gpt-4o' }), project, token)
+    expect(mockGetLimitUsageSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'openai/gpt-4o' }),
+      project,
+    )
     expectNoSecrets(res.content[0]!.text, [SECRET_KEY, SECRET_CF])
   })
 })
@@ -341,8 +371,9 @@ describe('listProjectsTool', () => {
     expect(listProjectsTool.requires.key).toBe('config.store')
   })
 
-  it('returns only the auth project, never a second project in config', async () => {
-    // A second project exists in config; it must never appear in the output.
+  it('returns every accessible project, never one outside the token scope', async () => {
+    // A second project exists in config; it is not in authCtx.projects, so it
+    // must never appear in the output.
     mockReadConfig.mockResolvedValue([
       project,
       { id: 'proj-2', name: 'Beta', models: [] },
@@ -355,5 +386,33 @@ describe('listProjectsTool', () => {
     expect(res.content[0]!.text).not.toContain('proj-2')
     expect(res.content[0]!.text).not.toContain('Beta')
     expectNoSecrets(res.content[0]!.text, [SECRET_KEY, SECRET_CF])
+  })
+
+  it('lists all projects the token owner can reach', async () => {
+    const ctx = mcpAuthContext({
+      projects: [
+        project,
+        { id: 'proj-2', name: 'Beta', models: [{ modelId: 'a' }, { modelId: 'b' }] } as unknown as ProjectConfig,
+      ],
+    })
+
+    const parsed = JSON.parse((await listProjectsTool.handler({}, ctx)).content[0]!.text)
+
+    expect(parsed).toEqual([
+      { id: 'proj-1', name: 'Alpha', modelCount: 1 },
+      { id: 'proj-2', name: 'Beta', modelCount: 2 },
+    ])
+  })
+})
+
+describe('tool permissions', () => {
+  it('gates every read tool on the matching dashboard permission', () => {
+    expect(listModelsTool.permission).toBe('model:read')
+    expect(getModelInstanceTool.permission).toBe('model:read')
+    expect(routePreviewTool.permission).toBe('project:read')
+    expect(listProjectsTool.permission).toBe('project:read')
+    expect(usageSummaryTool.permission).toBe('report:read')
+    expect(budgetStatusTool.permission).toBe('report:read')
+    expect(metricsSnapshotTool.permission).toBe('report:read')
   })
 })

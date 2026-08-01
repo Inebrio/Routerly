@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Fastify, { type FastifyInstance } from 'fastify'
-import type { ProjectConfig } from '@routerly/shared'
+import type { McpToken, ProjectConfig, UserConfig } from '@routerly/shared'
 
 vi.mock('../config/loader.js', () => ({
   readConfig: vi.fn(),
@@ -20,21 +20,55 @@ import {
 } from '../../core/tokens.js'
 import { mcpModule } from './index.js'
 import { mcpHttpRoutes } from './http.js'
+import { hashMcpToken } from './tokens.js'
 
 const mockReadConfig = vi.mocked(readConfig)
 const mockWriteConfig = vi.mocked(writeConfig)
 
-// One project, three tokens carrying different scope sets.
 const PROJECT = {
   id: 'proj-1',
   name: 'Alpha',
   models: [{ modelId: 'openai/gpt-4o' }],
-  tokens: [
-    { id: 'tok-read', token: 'sk-read', scopes: ['mcp'] },
-    { id: 'tok-write', token: 'sk-write', scopes: ['mcp', 'mcp:write'] },
-    { id: 'tok-noscope', token: 'sk-noscope', scopes: [] },
-  ],
 } as unknown as ProjectConfig
+
+const RAW_VIEWER = 'sk-rt-mcp-viewer-token'
+const RAW_ADMIN = 'sk-rt-mcp-admin-token'
+const RAW_EXPIRED = 'sk-rt-mcp-expired-token'
+
+function mcpToken(id: string, raw: string, expiresAt?: string): McpToken {
+  return {
+    id,
+    name: id,
+    tokenHash: hashMcpToken(raw),
+    tokenSnippet: raw.substring(0, 14),
+    createdAt: '2026-01-01T00:00:00.000Z',
+    ...(expiresAt ? { expiresAt } : {}),
+  }
+}
+
+// Two users on built-in roles: viewer holds read permissions only, admin holds
+// every permission. Auth is resolved for real, through the users config.
+const USERS = [
+  {
+    id: 'user-viewer',
+    email: 'viewer@routerly.ai',
+    passwordHash: 'x',
+    roleId: 'viewer',
+    projectIds: ['proj-1'],
+    mcpTokens: [
+      mcpToken('tok-viewer', RAW_VIEWER),
+      mcpToken('tok-expired', RAW_EXPIRED, '2000-01-01T00:00:00.000Z'),
+    ],
+  },
+  {
+    id: 'user-admin',
+    email: 'admin@routerly.ai',
+    passwordHash: 'x',
+    roleId: 'admin',
+    projectIds: ['proj-1'],
+    mcpTokens: [mcpToken('tok-admin', RAW_ADMIN)],
+  },
+] as unknown as UserConfig[]
 
 /** Build a container with every service token present, then the full registry. */
 async function buildContainer(): Promise<ServiceContainer> {
@@ -65,92 +99,90 @@ function rpc(method: string, params: unknown = {}) {
   return { jsonrpc: '2.0', id: 1, method, params }
 }
 
+async function post(token: string | null, body: object) {
+  const app = await buildApp()
+  const res = await app.inject({
+    method: 'POST',
+    url: '/mcp',
+    headers: { ...MCP_HEADERS, ...(token ? { authorization: `Bearer ${token}` } : {}) },
+    payload: body,
+  })
+  await app.close()
+  return res
+}
+
 beforeEach(() => {
   mockReadConfig.mockReset()
   mockWriteConfig.mockReset()
   mockWriteConfig.mockResolvedValue(undefined as never)
-  mockReadConfig.mockImplementation(async (key: string) =>
-    (key === 'projects' ? [PROJECT] : []) as never,
-  )
+  mockReadConfig.mockImplementation(async (key: string) => {
+    if (key === 'projects') return [PROJECT] as never
+    if (key === 'users') return USERS as never
+    return [] as never
+  })
 })
 
 describe('mcpHttpRoutes auth', () => {
   it('rejects a request with no token (401)', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'POST',
-      url: '/mcp',
-      headers: MCP_HEADERS,
-      payload: rpc('tools/list'),
-    })
-    await app.close()
+    const res = await post(null, rpc('tools/list'))
     expect(res.statusCode).toBe(401)
   })
 
-  it('rejects a valid token lacking the mcp scope (403)', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'POST',
-      url: '/mcp',
-      headers: { ...MCP_HEADERS, authorization: 'Bearer sk-noscope' },
-      payload: rpc('tools/list'),
-    })
-    await app.close()
-    expect(res.statusCode).toBe(403)
+  it('rejects an unknown token (401)', async () => {
+    const res = await post('sk-rt-mcp-nope', rpc('tools/list'))
+    expect(res.statusCode).toBe(401)
+    expect(JSON.parse(res.body).message).toContain('Invalid MCP token')
+  })
+
+  it('rejects a project token, which is not an MCP token (401)', async () => {
+    const res = await post('sk-rt-plain-project-token', rpc('tools/list'))
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('rejects an expired token (401)', async () => {
+    const res = await post(RAW_EXPIRED, rpc('tools/list'))
+    expect(res.statusCode).toBe(401)
+    expect(JSON.parse(res.body).message).toContain('expired')
   })
 })
 
 describe('mcpHttpRoutes JSON-RPC', () => {
-  it('lists tools for a token with the mcp scope (200)', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'POST',
-      url: '/mcp',
-      headers: { ...MCP_HEADERS, authorization: 'Bearer sk-read' },
-      payload: rpc('tools/list'),
-    })
-    await app.close()
+  it("lists only the tools the token owner's role permits (200)", async () => {
+    const res = await post(RAW_VIEWER, rpc('tools/list'))
     expect(res.statusCode).toBe(200)
-    const body = JSON.parse(res.body)
-    const names = body.result.tools.map((t: { name: string }) => t.name)
+    const names = JSON.parse(res.body).result.tools.map((t: { name: string }) => t.name)
     expect(names).toContain('list_models')
     expect(names).toContain('list_projects')
-    // Read-only scope must not see write tools.
+    // Viewer holds no project:write / token:write, so no write tool is listed.
     expect(names).not.toContain('create_project_token')
+    expect(names).not.toContain('toggle_model')
+  })
+
+  it('lists the write tools for an admin token (200)', async () => {
+    const res = await post(RAW_ADMIN, rpc('tools/list'))
+    const names = JSON.parse(res.body).result.tools.map((t: { name: string }) => t.name)
+    expect(names).toContain('create_project_token')
+    expect(names).toContain('toggle_model')
   })
 
   it('calls a read tool (list_models) (200)', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'POST',
-      url: '/mcp',
-      headers: { ...MCP_HEADERS, authorization: 'Bearer sk-read' },
-      payload: rpc('tools/call', { name: 'list_models', arguments: {} }),
-    })
-    await app.close()
+    const res = await post(RAW_VIEWER, rpc('tools/call', { name: 'list_models', arguments: {} }))
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
     expect(body.result.isError).toBeUndefined()
     expect(body.result.content[0].type).toBe('text')
   })
 
-  it('returns an isError body (not an HTTP error) for a write tool without mcp:write', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'POST',
-      url: '/mcp',
-      headers: { ...MCP_HEADERS, authorization: 'Bearer sk-read' },
-      payload: rpc('tools/call', {
-        name: 'toggle_model',
-        arguments: { modelId: 'openai/gpt-4o' },
-      }),
-    })
-    await app.close()
-    // HTTP call succeeds; the scope failure surfaces inside the JSON-RPC result.
+  it('returns an isError body (not an HTTP error) for a tool the role cannot use', async () => {
+    const res = await post(
+      RAW_VIEWER,
+      rpc('tools/call', { name: 'toggle_model', arguments: { modelId: 'openai/gpt-4o' } }),
+    )
+    // HTTP call succeeds; the permission failure surfaces inside the JSON-RPC result.
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
     expect(body.result.isError).toBe(true)
-    expect(body.result.content[0].text).toContain('mcp:write')
-    expect(mockWriteConfig).not.toHaveBeenCalled()
+    expect(body.result.content[0].text).toContain('project:write')
+    expect(mockWriteConfig).not.toHaveBeenCalledWith('projects', expect.anything())
   })
 })

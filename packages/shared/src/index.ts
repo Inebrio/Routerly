@@ -50,6 +50,7 @@ export type {
   SemanticIntentConfig,
   IntentClassification,
   UserConfig,
+  McpToken,
   RoleConfig,
   ModuleRecord,
   Permission,

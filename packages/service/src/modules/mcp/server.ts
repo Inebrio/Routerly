@@ -7,41 +7,34 @@ import {
   type CallToolResult,
 } from '@modelcontextprotocol/sdk/types.js'
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js'
-import type { McpAuthContext, McpToolResult, ProjectConfig, ProjectToken } from '@routerly/shared'
+import type { McpAuthContext, McpToolResult } from '@routerly/shared'
 import type { ServiceContainer } from '../../core/index.js'
 import type { McpToolRegistry } from './registry.js'
-import { assertWriteScope } from './tools/write.js'
 
 /**
- * Bridge the SDK's generic (OAuth-shaped) `AuthInfo` into our project-scoped
- * `McpAuthContext`. The transports (Task 8 HTTP, Task 9 stdio) own real auth: they
- * resolve the project token, then set the incoming request's `auth` field to
+ * Bridge the SDK's generic (OAuth-shaped) `AuthInfo` into our user-scoped
+ * `McpAuthContext`. The transports (HTTP, stdio) own real auth: they resolve the
+ * user's MCP token, then set the incoming request's `auth` field to
  *
  *   req.auth = {
- *     token: <raw project-token string>,
- *     clientId: project.id,
- *     scopes: token.scopes ?? [],
- *     extra: { project, projectToken: token },
+ *     token: <raw mcp-token string>,
+ *     clientId: user.id,
+ *     scopes: <the user's permissions>,
+ *     extra: { mcpContext: <McpAuthContext> },
  *   }
  *
  * before handing off to the transport. The SDK forwards that `AuthInfo` verbatim
- * to every request handler as `extra.authInfo`, so `authInfo.extra.project` /
- * `authInfo.extra.projectToken` arrive populated exactly as this function reads
- * them. `scopes` is taken from the SDK-standard `authInfo.scopes` (same array the
- * transport copied from `token.scopes`). This naming (`extra.project`,
- * `extra.projectToken`) is the contract Tasks 8/9 must follow.
+ * to every request handler as `extra.authInfo`, so `authInfo.extra.mcpContext`
+ * arrives populated exactly as this function reads it. `scopes` carries the same
+ * permission list, in the SDK-standard field, for transports and SDK middleware
+ * that inspect it.
  */
 function toAuthContext(authInfo: AuthInfo | undefined): McpAuthContext {
-  const project = authInfo?.extra?.project
-  const projectToken = authInfo?.extra?.projectToken
-  if (!project || !projectToken) {
+  const context = authInfo?.extra?.['mcpContext']
+  if (!context) {
     throw new McpError(ErrorCode.InvalidRequest, 'Missing MCP auth context')
   }
-  return {
-    project: project as ProjectConfig,
-    token: projectToken as ProjectToken,
-    scopes: authInfo!.scopes,
-  }
+  return context as McpAuthContext
 }
 
 /**
@@ -64,10 +57,9 @@ export function buildMcpServer(registry: McpToolRegistry, container: ServiceCont
 
   server.setRequestHandler(ListToolsRequestSchema, async (_request, extra) => {
     const authCtx = toAuthContext(extra.authInfo)
-    const canWrite = authCtx.scopes.includes('mcp:write')
     const tools = registry
       .ordered()
-      .filter((tool) => tool.scope === 'read' || canWrite)
+      .filter((tool) => authCtx.permissions.includes(tool.permission))
       .map((tool) => ({
         name: tool.name,
         description: tool.description,
@@ -84,14 +76,11 @@ export function buildMcpServer(registry: McpToolRegistry, container: ServiceCont
       return errorResult(`Unknown tool: ${name}`)
     }
 
-    if (tool.scope === 'write') {
-      try {
-        // Belt-and-suspenders: the tool handler also calls this, but enforcing it
-        // here guarantees no write handler runs when the scope is missing.
-        assertWriteScope(authCtx)
-      } catch (err) {
-        return errorResult(err instanceof Error ? err.message : String(err))
-      }
+    // A tool the caller cannot list is a tool the caller cannot call: the same
+    // permission gates both, so an under-permissioned client can never reach a
+    // handler by guessing the tool name.
+    if (!authCtx.permissions.includes(tool.permission)) {
+      return errorResult(`Permission denied: ${tool.permission} is required to call ${name}.`)
     }
 
     // McpToolResult ({ content, isError? }) is structurally a CallToolResult.

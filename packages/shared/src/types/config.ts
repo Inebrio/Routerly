@@ -471,7 +471,7 @@ export interface ProjectToken {
   models?: TokenModelRef[];
   /** Optional labels/tags to identify this token's usage */
   labels?: string[];
-  /** Access scopes granted to this token (e.g. 'mcp', 'mcp:write' for the MCP surface) */
+  /** Free-form access scopes/labels granted to this token */
   scopes?: string[];
   /** Arbitrary key-value metadata attached to this token, forwarded to usage records */
   tags?: Record<string, string>;
@@ -536,6 +536,27 @@ export interface ProjectConfig {
   optimizers?: OptimizerConfig;
 }
 
+/**
+ * A named MCP token owned by a user. Unlike ProjectToken (plaintext on disk,
+ * because the proxy must compare it against an incoming Authorization header of
+ * unknown project), an MCP token identifies a single user, so it is stored as a
+ * SHA-256 hash and the raw value is shown once, at creation.
+ */
+export interface McpToken {
+  id: string;
+  /** User-chosen label, unique per user. */
+  name: string;
+  /** SHA-256 hash of the raw token. */
+  tokenHash: string;
+  /** First 14 characters of the raw token, for display. */
+  tokenSnippet: string;
+  createdAt: string; // ISO 8601
+  /** ISO 8601 timestamp of last use on the MCP surface. */
+  lastUsedAt?: string;
+  /** ISO 8601 expiry timestamp; absent means never expires. */
+  expiresAt?: string;
+}
+
 export interface UserConfig {
   id: string;
   email: string;
@@ -543,6 +564,8 @@ export interface UserConfig {
   passwordHash: string;
   roleId: string;
   projectIds: string[];
+  /** MCP tokens minted by this user. Each grants exactly this user's permissions. */
+  mcpTokens?: McpToken[];
   /** SHA-256 hash of the CLI refresh token. Absent means no refresh token issued. */
   refreshTokenHash?: string;
   /** base32-encoded TOTP secret, present when 2FA is enrolled */
@@ -588,9 +611,7 @@ export type Permission =
   | 'profiles:read'
   | 'profiles:manage'
   | 'optimizers:read'
-  | 'optimizers:manage'
-  | 'mcp:read'
-  | 'mcp:manage';
+  | 'optimizers:manage';
 
 // ─── Integration types ────────────────────────────────────────────────────────
 
