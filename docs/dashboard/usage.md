@@ -13,17 +13,21 @@ The Usage page provides aggregate analytics, per-model performance breakdown, an
 
 The top row shows aggregated totals for the selected filter set:
 
-![Usage page showing summary cards, filters, per-model breakdown, and call log](../assets/screenshot-usage.png)
+![Usage page showing the filter bar, the summary cards, and the per-model breakdown](../assets/screenshot-usage.png)
 
 | Card | Description |
 |------|-------------|
 | **Total Cost** | USD cost of all successful calls in the period |
 | **Total Calls** | All usage records (completion + routing + guardrail + blocked) |
 | **Completion Calls** | Main model inference calls, with their total cost |
-| **Router Calls** | LLM routing policy calls (e.g. the `llm` routing policy), with cost |
+| **Router Calls** | Model calls the router makes to decide where to route: the `llm` policy's decision call and the `semantic-intent` policy's embedding call, with their cost |
 | **Guardrail Calls** | Model calls made by security rules (semantic, topic, moderation), with cost |
 | **Blocked Calls** | Requests blocked by a guardrail rule before reaching any model. Shown only when at least one blocked call exists in the period. |
 | **Errors** | Failed model calls -- blocked calls are counted separately and excluded from this number |
+
+The **Completion Calls** and **Router Calls** cards double as filters: clicking
+one sets the Caller filter to that kind and outlines the card, clicking it again
+clears the filter.
 
 Guardrail judge calls are charged to the project like any other model call and are subject to the project's budget limits. Blocked requests record zero cost and zero tokens.
 
@@ -36,7 +40,7 @@ Guardrail judge calls are charged to the project like any other model call and a
 | **Period** | Preset time window (today, this month, etc.) or custom range |
 | **Project** | Filter to a specific project |
 | **Model** | Filter to specific model IDs |
-| **Caller** | `All`, `Completion`, `Router`, or `Guardrail` -- who made the call: the client, the router, or the guardrail pipeline |
+| **Caller** | `All`, `Completion`, `Router`, `Guardrail`, or `Judge` -- who made the call: the client, the router, the guardrail pipeline, or an experiment judge |
 | **Type** | `All`, `Chat`, `Text Completion`, `Embedding`, `Rerank`, `Image`, or `Audio` -- what the call asked for, taken from the endpoint the client hit |
 | **Status** | `All`, `Success`, `Blocked`, or `Error` -- `Blocked` shows only guardrail-blocked requests |
 | **Session ID** | Filter to requests from a specific session (from the `x-routerly-conversation-id` header) |
@@ -56,6 +60,7 @@ Below the summary cards, a table ranks all models that received traffic in the s
 
 | Column | Description |
 |--------|-------------|
+| **Rank** | Position in the cost-performance ranking; a model with no ranking data shows a dash and always sorts last |
 | **Model** | Provider model identifier |
 | **Provider** | Provider name |
 | **Calls** | Total requests in the period |
@@ -65,10 +70,11 @@ Below the summary cards, a table ranks all models that received traffic in the s
 | **P95 Latency** | 95th-percentile response time |
 | **Input Tokens** | Total input tokens consumed |
 | **Output Tokens** | Total output tokens produced |
-| **Last Used** | Timestamp of the most recent call |
-| **Total Cost** | Total spend for this model in the period |
+| **Cost / 1K** | Average cost per 1,000 tokens |
+| **Cost (USD)** | Total spend for this model in the period |
 
-A star marks the model with the best cost-performance ratio based on your own traffic. The table respects all active filters.
+A star marks the model with the best cost-performance ratio based on your own
+traffic. Every column header sorts. The table respects all active filters.
 
 :::note Redirected from /dashboard/leaderboard
 The standalone Leaderboard page has been merged into this page. `/dashboard/leaderboard` redirects to `/dashboard/usage`.
@@ -78,20 +84,32 @@ The standalone Leaderboard page has been merged into this page. `/dashboard/lead
 
 ## Usage Table
 
-The table lists individual requests with:
+**Recent Calls** lists individual requests, newest first. The heading counts how
+many records the active filters kept out of the period's total.
 
 | Column | Description |
 |--------|-------------|
-| Timestamp | When the request arrived |
+| Time | When the request arrived |
 | Project | The project the request belonged to |
 | Model | Provider model used |
 | Type | What the call asked for: `Chat`, `Text Completion`, `Embedding`, `Rerank`, `Image`, `Audio` |
-| Caller | Who made the call: `completion` (the client) or `router` |
+| Caller | Who made the call: `completion` (the client), `router`, `guardrail`, or `judge` |
+| In / Out | Input and output token counts |
+| Cost | Estimated cost in USD, to three significant digits; anything below a millionth of a dollar shows as `<$0.000001` |
+| Latency | Total response time |
+| TTFT | Time to first token, for streamed responses |
+| Tok/s | Output tokens per second |
 | Status | Outcome |
-| Input Tokens | Input token count |
-| Output Tokens | Output token count |
-| Cost | Estimated cost in USD |
-| Latency | Time to first byte / total response time |
+
+Every numeric column is right-aligned and uses tabular figures, so the digits
+line up down the column.
+
+A call Routerly made on its own behalf (`router`, `guardrail`, `judge`) is
+marked twice: its Caller cell is a coloured badge, and the whole row carries a
+matching coloured bar on the left edge. Client completions, which are the bulk
+of the rows, stay unmarked.
+
+![Call log filtered to router calls, each row badged and bordered in the router colour](../assets/screenshot-usage-calls.png)
 
 The **Status** badge in the table uses colour coding:
 

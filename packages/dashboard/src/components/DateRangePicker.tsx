@@ -328,9 +328,9 @@ export function DateRangePicker({ value, onChange }: Props) {
               padding: '8px 6px', display: 'flex', flexDirection: 'column', gap: 1,
               overflowY: 'auto', maxHeight: 420,
             }}>
-              {/* Section: Recenti */}
+              {/* Section: rolling windows relative to now */}
               <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', padding: '6px 12px 2px' }}>
-                Recenti
+                Recent
               </div>
               {/* "From now" — freezes 'from' to the clicked instant, open-ended 'to' */}
               {(() => {
@@ -380,9 +380,9 @@ export function DateRangePicker({ value, onChange }: Props) {
               })}
               {/* Separator */}
               <div style={{ height: 1, background: 'var(--border)', margin: '6px 12px' }} />
-              {/* Section: Intervalli */}
+              {/* Section: calendar-aligned ranges */}
               <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', padding: '4px 12px 2px' }}>
-                Intervalli
+                Ranges
               </div>
               {PRESETS.map(p => {
                 const r = p.range();

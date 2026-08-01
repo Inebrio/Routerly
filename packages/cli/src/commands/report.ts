@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
-import { REQUEST_TYPES, optimizerLabel, requestTypeLabel, type RequestType, type SavingsSummary, type UsageSeries } from '@routerly/shared';
+import { CALL_TYPES, REQUEST_TYPES, optimizerLabel, requestTypeLabel, type RequestType, type SavingsSummary, type UsageSeries } from '@routerly/shared';
 import { api } from '../api.js';
 
 interface UsageByModel {
@@ -52,6 +52,19 @@ interface UsageResponse {
 function parseRequestType(value: string): string {
   if (!(REQUEST_TYPES as readonly string[]).includes(value)) {
     console.error(chalk.red(`Error: unknown type '${value}'. Expected one of: ${REQUEST_TYPES.join(', ')}`));
+    process.exit(1);
+  }
+  return value;
+}
+
+/**
+ * Validate `--caller`, the CLI side of the dashboard's Caller filter. The
+ * service treats `completion` as "everything a client asked for", legacy
+ * records without a `callType` included.
+ */
+function parseCallType(value: string): string {
+  if (!(CALL_TYPES as readonly string[]).includes(value)) {
+    console.error(chalk.red(`Error: unknown caller '${value}'. Expected one of: ${CALL_TYPES.join(', ')}`));
     process.exit(1);
   }
   return value;
@@ -150,19 +163,24 @@ Examples:
 
   # Only embedding calls
   routerly report usage --type embedding
+
+  # Only the calls the router made to decide where to route
+  routerly report usage --caller routing
 `)
     .option('--period <period>', 'Period: daily | weekly | monthly | all', 'monthly')
     .option('--project <id>', 'Filter by project ID')
     .option('--type <type>', `Filter by request type: ${REQUEST_TYPES.join(' | ')}`, parseRequestType)
+    .option('--caller <caller>', `Filter by who made the call: ${CALL_TYPES.join(' | ')}`, parseCallType)
     .option('--session-id <id>', 'Filter by session ID')
     .option('--end-user <id>', 'Filter by end-user ID')
     .option('--tag <key=value>', 'Filter by tag (key=value)')
     .option('--json', 'Output as JSON')
-    .action(async (opts: { period: string; project?: string; type?: string; sessionId?: string; endUser?: string; tag?: string; json?: boolean }) => {
+    .action(async (opts: { period: string; project?: string; type?: string; caller?: string; sessionId?: string; endUser?: string; tag?: string; json?: boolean }) => {
       try {
         const params = new URLSearchParams({ period: opts.period });
         if (opts.project) params.set('projectId', opts.project);
         if (opts.type) params.set('requestType', opts.type);
+        if (opts.caller) params.set('callType', opts.caller);
         if (opts.sessionId) params.set('sessionId', opts.sessionId);
         if (opts.endUser) params.set('endUserId', opts.endUser);
         if (opts.tag) {
@@ -228,21 +246,26 @@ Examples:
 
   # Only image generation calls
   routerly report calls --type image
+
+  # Only the calls a guardrail made
+  routerly report calls --caller guardrail
 `)
     .option('--limit <n>', 'Number of records to show', '20')
     .option('--project <id>', 'Filter by project ID')
     .option('--type <type>', `Filter by request type: ${REQUEST_TYPES.join(' | ')}`, parseRequestType)
-    .action(async (opts: { limit: string; project?: string; type?: string }) => {
+    .option('--caller <caller>', `Filter by who made the call: ${CALL_TYPES.join(' | ')}`, parseCallType)
+    .action(async (opts: { limit: string; project?: string; type?: string; caller?: string }) => {
       try {
         const params = new URLSearchParams({ period: 'all' });
         if (opts.project) params.set('projectId', opts.project);
         if (opts.type) params.set('requestType', opts.type);
+        if (opts.caller) params.set('callType', opts.caller);
 
         const data = await api<UsageResponse>('GET', `/api/usage?${params.toString()}`);
         const limited = data.records.slice(0, parseInt(opts.limit, 10));
 
         const table = new Table({
-          head: ['Timestamp', 'Project', 'Model', 'Type', 'In Tokens', 'Out Tokens', 'Cost', 'Latency', 'Outcome'].map(h => chalk.cyan(h)),
+          head: ['Timestamp', 'Project', 'Model', 'Type', 'Caller', 'In Tokens', 'Out Tokens', 'Cost', 'Latency', 'Outcome'].map(h => chalk.cyan(h)),
         });
 
         for (const r of limited) {
@@ -253,6 +276,8 @@ Examples:
             r.modelId,
             // Records written before requestType existed were all chat calls.
             requestTypeLabel((r.requestType ?? 'chat') as RequestType),
+            // Same for callType: back then everything tracked was a completion.
+            r.callType ?? 'completion',
             r.inputTokens,
             r.outputTokens,
             `$${r.cost.toFixed(6)}`,

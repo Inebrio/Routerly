@@ -96,6 +96,19 @@ describe('report usage', () => {
     expect(mockApi).not.toHaveBeenCalled();
   });
 
+  it('appends --caller filter as callType', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    await run('usage', '--caller', 'routing');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('callType=routing'));
+  });
+
+  it('rejects an unknown --caller before calling the API', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    const { err } = await run('usage', '--caller', 'garbage');
+    expect(err.join('\n')).toContain("unknown caller 'garbage'");
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
   it('prints "no records" when totalCalls is 0', async () => {
     mockApi.mockResolvedValue({ ...usageFixture, summary: { ...usageFixture.summary, totalCalls: 0 } });
     const { out } = await run('usage');
@@ -279,6 +292,32 @@ describe('report calls', () => {
     const { out } = await run('calls');
     expect(out.join('\n')).toMatch(/Image/);
     expect(out.join('\n')).toMatch(/Chat/);
+  });
+
+  it('appends --caller filter as callType', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    await run('calls', '--caller', 'guardrail');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('callType=guardrail'));
+  });
+
+  it('rejects an unknown --caller before calling the API', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    const { err } = await run('calls', '--caller', 'garbage');
+    expect(err.join('\n')).toContain("unknown caller 'garbage'");
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('prints the caller column, defaulting legacy records to completion', async () => {
+    mockApi.mockResolvedValue({
+      ...usageFixture,
+      records: [
+        { ...usageFixture.records[0], callType: 'routing' },
+        usageFixture.records[1], // legacy: no callType
+      ],
+    });
+    const { out } = await run('calls');
+    expect(out.join('\n')).toMatch(/routing/);
+    expect(out.join('\n')).toMatch(/completion/);
   });
 });
 

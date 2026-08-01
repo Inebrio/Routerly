@@ -1073,7 +1073,7 @@ describe('UsagePage — rank sort with one Infinity one finite', () => {
 // ── v.cost null in byModel ────────────────────────────────────────────────────
 
 describe('UsagePage — byModel cost null fallback', () => {
-  it('renders $0.00000000 for model with null cost in byModel', async () => {
+  it('renders $0 for model with null cost in byModel', async () => {
     vi.mocked(getUsage).mockResolvedValue({
       ...makeStats(),
       byModel: {
@@ -1083,8 +1083,8 @@ describe('UsagePage — byModel cost null fallback', () => {
     });
     renderPage();
     await waitFor(() => screen.getAllByText(/null-cost/).length > 0);
-    // v.cost ?? 0 → 0 → "$0.00000000"
-    expect(screen.getAllByText('$0.00000000').length).toBeGreaterThan(0);
+    // v.cost ?? 0 → 0 → "$0"
+    expect(screen.getAllByText('$0').length).toBeGreaterThan(0);
   });
 });
 
@@ -1104,7 +1104,8 @@ describe('UsagePage — fmtCost via per-model table', () => {
     });
     renderPage();
     await waitFor(() => screen.getAllByText(/free-model/).length > 0);
-    expect(screen.getByText('$0')).toBeTruthy();
+    // both the Cost/1K and the Cost (USD) cell collapse to "$0"
+    expect(screen.getAllByText('$0').length).toBeGreaterThan(0);
   });
 
   it('fmtCost: costPer1k between 0.01 and 1 uses 3 decimal places', async () => {
@@ -1296,7 +1297,7 @@ describe('UsagePage — stat card ternary fallbacks', () => {
 // ── record cost null fallback ─────────────────────────────────────────────────
 
 describe('UsagePage — record cost null fallback', () => {
-  it('null cost in record renders $0.00000000', async () => {
+  it('null cost in record renders $0', async () => {
     vi.mocked(getUsage).mockResolvedValue({
       summary: { totalCost: 0, totalCalls: 1, successCalls: 1, errorCalls: 0, routingCalls: 0, completionCalls: 1, routingCost: 0, completionCost: 0 },
       byModel: {},
@@ -1309,8 +1310,26 @@ describe('UsagePage — record cost null fallback', () => {
     } as never);
     renderPage();
     await waitFor(() => screen.getAllByText('openai/gpt-4o').length > 0);
-    // cost ?? 0 → 0.toFixed(8) → "$0.00000000"
-    expect(screen.getByText('$0.00000000')).toBeTruthy();
+    // cost ?? 0 → "$0"
+    expect(screen.getAllByText('$0').length).toBeGreaterThan(0);
+  });
+
+  it('per-call cost keeps 3 significant digits, sub-microdollar collapses to a threshold', async () => {
+    const rec = (id: string, cost: number) => ({
+      id, timestamp: new Date().toISOString(), projectId: 'p',
+      modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1,
+      cost, latencyMs: 100, outcome: 'success',
+    });
+    vi.mocked(getUsage).mockResolvedValue({
+      summary: { totalCost: 0, totalCalls: 2, successCalls: 2, errorCalls: 0, routingCalls: 0, completionCalls: 2, routingCost: 0, completionCost: 0 },
+      byModel: {},
+      timeline: [],
+      records: [rec('r-small', 0.00028812), rec('r-tiny', 0.0000004)],
+    } as never);
+    renderPage();
+    await waitFor(() => screen.getAllByText('openai/gpt-4o').length > 0);
+    expect(screen.getByText('$0.000288')).toBeTruthy();
+    expect(screen.getByText('<$0.000001')).toBeTruthy();
   });
 });
 
