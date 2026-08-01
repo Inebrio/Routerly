@@ -41,7 +41,8 @@ vi.mock('../components/NotificationBell', () => ({
 
 import {
   updateMe, setup2fa, confirm2fa, disable2fa,
-  regenerateBackupCodes, getNotificationInbox, getNotificationInboxPage, markNotificationsRead, markNotificationsUnread, deleteNotifications,
+  regenerateBackupCodes, getNotificationInbox, getNotificationInboxPage, getNotificationInboxItem,
+  markNotificationsRead, markNotificationsUnread, deleteNotifications,
 } from '../api';
 import { useAuth } from '../AuthContext';
 import QRCode from 'qrcode';
@@ -54,6 +55,7 @@ const mockDisable2fa = vi.mocked(disable2fa as (c: string) => Promise<unknown>);
 const mockRegenerateBackupCodes = vi.mocked(regenerateBackupCodes as (c: string) => Promise<unknown>);
 const mockGetInbox = vi.mocked(getNotificationInbox as (...a: unknown[]) => Promise<unknown>);
 const mockGetInboxPage = vi.mocked(getNotificationInboxPage as (...a: unknown[]) => Promise<unknown>);
+const mockGetInboxItem = vi.mocked(getNotificationInboxItem as (...a: unknown[]) => Promise<unknown>);
 const mockMarkRead = vi.mocked(markNotificationsRead as (...a: unknown[]) => Promise<unknown>);
 const mockMarkUnread = vi.mocked(markNotificationsUnread as (...a: unknown[]) => Promise<unknown>);
 const mockDelete = vi.mocked(deleteNotifications as (...a: unknown[]) => Promise<unknown>);
@@ -79,6 +81,8 @@ beforeEach(() => {
   localStorage.clear();
   mockGetInbox.mockResolvedValue({ items: [], unreadCount: 0, enabled: true });
   mockGetInboxPage.mockResolvedValue(emptyPage);
+  // The drawer refetches the item for its incident sequence; keep the row payload by default.
+  mockGetInboxItem.mockRejectedValue(new Error('not stubbed'));
   mockMarkRead.mockResolvedValue(undefined);
   mockDelete.mockResolvedValue({ deleted: 1 });
   mockUpdateMe.mockResolvedValue(undefined);
@@ -410,7 +414,7 @@ describe('ProfileNotificationsTab', () => {
     renderTab();
     await waitFor(() => screen.getByText('a'));
     await userEvent.click(screen.getByLabelText('Select a'));
-    await userEvent.click(screen.getByText(/Delete/));
+    await userEvent.click(screen.getByText(/Archive/));
     expect(mockDelete).toHaveBeenCalledWith({ ids: ['n1'] });
   });
 
@@ -458,7 +462,7 @@ describe('ProfileNotificationsTab', () => {
     await waitFor(() => screen.getByText('budget.exceeded'));
     await userEvent.click(screen.getByText('budget.exceeded'));
     await waitFor(() => screen.getByRole('dialog', { name: /notification detail/i }));
-    await userEvent.click(screen.getByText(/Delete/));
+    await userEvent.click(screen.getByText(/Archive/));
     expect(mockDelete).toHaveBeenCalledWith({ ids: ['n1'] });
   });
 
@@ -561,14 +565,25 @@ describe('ProfileNotificationsTab — filter interactions', () => {
     await waitFor(() => expect(mockGetInboxPage).toHaveBeenCalledTimes(2));
   });
 
-  it('typing in event filter input calls load with event param', async () => {
+  it('picking an event from the searchable select calls load with the slug', async () => {
     mockGetInboxPage.mockResolvedValue(emptyPage);
     renderTab();
     await waitFor(() => screen.getByText('No notifications found.'));
-    const input = screen.getByPlaceholderText('e.g. provider.error');
-    await userEvent.type(input, 'budget');
+    await userEvent.click(screen.getByRole('combobox', { name: 'Event' }));
+    await userEvent.click(screen.getByText('Budget exhausted (budget.exceeded)'));
     await waitFor(() => expect(mockGetInboxPage).toHaveBeenCalledWith(
-      expect.objectContaining({ event: 'budget' })
+      expect.objectContaining({ event: 'budget.exceeded' })
+    ));
+  });
+
+  it('picking a category calls load with the category param', async () => {
+    mockGetInboxPage.mockResolvedValue(emptyPage);
+    renderTab();
+    await waitFor(() => screen.getByText('No notifications found.'));
+    await userEvent.click(screen.getByRole('combobox', { name: 'Category' }));
+    await userEvent.click(screen.getByText('Provider'));
+    await waitFor(() => expect(mockGetInboxPage).toHaveBeenCalledWith(
+      expect.objectContaining({ category: 'provider' })
     ));
   });
 
@@ -826,7 +841,7 @@ describe('ProfileNotificationsTab — filter interactions', () => {
     await userEvent.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     await userEvent.click(screen.getByLabelText('Select b'));
-    await userEvent.click(screen.getByText(/^Delete$/));
+    await userEvent.click(screen.getByText(/^Archive$/));
     expect(mockDelete).toHaveBeenCalledWith({ ids: ['n2'] });
   });
 });
@@ -1028,5 +1043,91 @@ describe('ProfilePage — tab navigation', () => {
     // The MCP tab is always available: an MCP token grants its owner's own permissions.
     await waitFor(() => expect(screen.getByText('MCP Tokens')).toBeTruthy());
     expect(screen.getByRole('link', { name: 'MCP' })).toBeTruthy();
+  });
+});
+
+// ── Notifications tab — readable rows, links and incident sequence (T53) ──────
+
+describe('ProfileNotificationsTab — readable rows and links', () => {
+  function renderTab() {
+    return render(
+      <MemoryRouter>
+        <ProfileNotificationsTab />
+      </MemoryRouter>
+    );
+  }
+
+  function pageOf(items: InboxItemLike[]) {
+    return { items, unreadCount: items.filter(i => !i.read).length, pagination: { page: 1, pageSize: 20, totalRecords: items.length, totalPages: 1 }, enabled: true };
+  }
+
+  it('shows the human title with the slug underneath', async () => {
+    mockGetInboxPage.mockResolvedValue(pageOf([
+      { id: 'n1', event: 'provider.error', severity: 'critical', timestamp: new Date().toISOString(), read: false, details: {} },
+    ]));
+    renderTab();
+    await waitFor(() => expect(screen.getByText('Provider call failed')).toBeTruthy());
+    expect(screen.getByText('provider.error')).toBeTruthy();
+  });
+
+  it('shows the cause line built from the event details in the drawer', async () => {
+    mockGetInboxPage.mockResolvedValue(pageOf([
+      {
+        id: 'n1', event: 'provider.error', severity: 'critical', timestamp: new Date().toISOString(), read: true,
+        details: { model: 'gpt-4o', provider: 'openai', error: 'connect ETIMEDOUT' },
+      },
+    ]));
+    renderTab();
+    await waitFor(() => screen.getByText('Provider call failed'));
+    await userEvent.click(screen.getByText('Provider call failed'));
+    await waitFor(() => screen.getByRole('dialog', { name: /notification detail/i }));
+    expect(screen.getAllByText(/connect ETIMEDOUT/).length).toBeGreaterThan(0);
+  });
+
+  it('renders the event count badge for a correlated incident', async () => {
+    mockGetInboxPage.mockResolvedValue({
+      ...pageOf([{ id: 'n1', event: 'provider.error', severity: 'critical', timestamp: new Date().toISOString(), read: true, details: {} }]),
+      items: [{ id: 'n1', event: 'provider.error', severity: 'critical', timestamp: new Date().toISOString(), read: true, details: {}, eventCount: 3 }],
+    });
+    renderTab();
+    await waitFor(() => expect(screen.getByText('3 events')).toBeTruthy());
+  });
+
+  it('links project, model and trace ids from the detail drawer', async () => {
+    const ts = new Date().toISOString();
+    mockGetInboxPage.mockResolvedValue(pageOf([
+      {
+        id: 'n1', event: 'routing.fallback_used', severity: 'warning', timestamp: ts, read: true,
+        details: { projectId: 'p1', modelId: 'm1', traceId: 't1' },
+      },
+    ]));
+    renderTab();
+    await waitFor(() => screen.getByText('Fallback model used'));
+    await userEvent.click(screen.getByText('Fallback model used'));
+    await waitFor(() => screen.getByRole('dialog', { name: /notification detail/i }));
+    expect(screen.getByRole('link', { name: 'p1' }).getAttribute('href')).toBe('/dashboard/projects/p1');
+    expect(screen.getByRole('link', { name: 'm1' }).getAttribute('href')).toBe('/dashboard/models/m1');
+    expect(screen.getByRole('link', { name: 't1' }).getAttribute('href')).toBe('/dashboard/usage/t1');
+  });
+
+  it('lists the correlated events fetched with the detail', async () => {
+    const ts = new Date().toISOString();
+    mockGetInboxPage.mockResolvedValue(pageOf([
+      { id: 'n1', event: 'provider.error', severity: 'critical', timestamp: ts, read: true, details: { traceId: 't1' } },
+    ]));
+    mockGetInboxItem.mockResolvedValue({
+      id: 'n1', event: 'provider.error', severity: 'critical', timestamp: ts, read: true,
+      details: { traceId: 't1' }, traceId: 't1', eventCount: 2,
+      events: [
+        { event: 'provider.error', severity: 'critical', timestamp: ts, details: { provider: 'openai' } },
+        { event: 'routing.fallback_used', severity: 'warning', timestamp: ts, details: { primary: 'gpt-4o', fallback: 'claude' } },
+      ],
+    });
+    renderTab();
+    await waitFor(() => screen.getByText('Provider call failed'));
+    await userEvent.click(screen.getByText('Provider call failed'));
+    await waitFor(() => expect(screen.getByText('Events in this incident')).toBeTruthy());
+    expect(screen.getByText('Fallback model used')).toBeTruthy();
+    expect(mockGetInboxItem).toHaveBeenCalledWith('n1');
   });
 });

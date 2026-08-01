@@ -731,6 +731,9 @@ export const updateMe = (data: { currentPassword: string; newPassword: string })
   request<Me>('/me', { method: 'PUT', body: JSON.stringify(data) });
 
 // ── Notification inbox (#91) ───────────────────────────────────────────────
+import type { NotificationCategory, NotificationIncidentEvent } from '@routerly/shared';
+export type { NotificationCategory, NotificationIncidentEvent };
+
 export interface InboxItem {
   id: string;
   event: string;
@@ -738,6 +741,12 @@ export interface InboxItem {
   timestamp: string;
   details: Record<string, unknown>;
   read: boolean;
+  /** Set when the event belongs to a traced request (T50). */
+  traceId?: string;
+  /** How many events the incident folded together; 1 for a plain notification. */
+  eventCount?: number;
+  /** The folded sequence, sent by the detail route only. */
+  events?: NotificationIncidentEvent[];
 }
 
 export interface InboxPagination {
@@ -762,6 +771,7 @@ export const getNotificationInboxPage = (opts: {
   pageSize: number;
   severity?: 'info' | 'warning' | 'critical';
   event?: string;
+  category?: NotificationCategory;
   unreadOnly?: boolean;
   from?: string;
   to?: string;
@@ -771,6 +781,7 @@ export const getNotificationInboxPage = (opts: {
   q.set('pageSize', String(opts.pageSize));
   if (opts.severity) q.set('severity', opts.severity);
   if (opts.event) q.set('event', opts.event);
+  if (opts.category) q.set('category', opts.category);
   if (opts.unreadOnly) q.set('unreadOnly', 'true');
   if (opts.from) q.set('from', opts.from);
   if (opts.to) q.set('to', opts.to);

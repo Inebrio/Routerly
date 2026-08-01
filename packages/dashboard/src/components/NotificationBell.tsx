@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback, type CSSProperties } from 're
 import { createPortal } from 'react-dom';
 import { Bell, AlertTriangle, AlertCircle, Info, CheckCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { notificationTitle } from '@routerly/shared';
 import { getNotificationInbox, markNotificationsRead, type InboxItem } from '../api';
 
 const POLL_MS = 60_000;
@@ -125,7 +126,7 @@ export function NotificationDropdown({
             <span style={{ marginTop: 1 }}>{severityIcon(n.severity)}</span>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: 'block', fontSize: '0.78rem', fontWeight: n.read ? 400 : 600, color: 'var(--text-primary)' }}>
-                {n.event}
+                {notificationTitle(n.event)}
               </span>
               <span style={{ display: 'block', fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 2 }}>
                 {timeAgo(n.timestamp)}

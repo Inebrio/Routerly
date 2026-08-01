@@ -14,7 +14,7 @@ import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } f
 import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults } from '@routerly/shared';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
-import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_PROJECT_TIMEOUT_MS } from '@routerly/shared';
+import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_PROJECT_TIMEOUT_MS, notificationCategory } from '@routerly/shared';
 import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
@@ -1692,7 +1692,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── GET /api/usage/:id ────────────────────────────────────────────────────
   fastify.get<{ Params: { id: string } }>('/api/usage/:id', async (req, reply) => {    if (!requirePerm(req, 'report:read', reply)) return;    const records = await readConfig('usage');
-    const record = records.find(r => r.id === req.params.id);
+    // Also resolvable by trace id, so a notification carrying only `traceId` can
+    // link straight to the request that produced it (T53).
+    const record = records.find(r => r.id === req.params.id) ??
+      records.find(r => r.traceId === req.params.id);
     if (!record) return reply.status(404).send({ error: 'Record not found' });
     return reply.send(record);
   });
@@ -1939,7 +1942,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── GET /api/notifications/inbox ─────────────────────────────────────────
   // Per-user in-app notification inbox (#91). Available to any authenticated user.
-  fastify.get<{ Querystring: { limit?: string; unreadOnly?: string; page?: string; pageSize?: string; severity?: string; event?: string; from?: string; to?: string } }>('/api/notifications/inbox', async (req, reply) => {
+  fastify.get<{ Querystring: { limit?: string; unreadOnly?: string; page?: string; pageSize?: string; severity?: string; event?: string; category?: string; from?: string; to?: string } }>('/api/notifications/inbox', async (req, reply) => {
     const userId = req.dashUser!.id;
     const unreadOnly = req.query.unreadOnly === 'true';
     const [all, settings, scope] = await Promise.all([
@@ -1975,6 +1978,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (unreadOnly) filtered = filtered.filter(n => !n.readBy.includes(userId));
     if (severity && severity !== 'all') filtered = filtered.filter(n => n.severity === severity);
     if (eventQ) filtered = filtered.filter(n => n.event.toLowerCase().includes(eventQ));
+    // Category groups events by area (routing, provider, budget, config, security, system).
+    const category = req.query.category;
+    if (category && category !== 'all') filtered = filtered.filter(n => notificationCategory(n.event) === category);
     // Timestamp range filter. A date-only `from`/`to` (YYYY-MM-DD) spans the full day.
     const from = req.query.from?.trim();
     const to = req.query.to?.trim();
