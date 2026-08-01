@@ -1160,27 +1160,45 @@ Exit code: `0` on success, `1` on error (both subcommands).
 
 ## `routerly profiles`
 
-Manage routing profiles - reusable routing policy/selector/fallback-strategy bundles that projects can adopt in place of ad hoc `project routing` configuration.
+Manage profiles: reusable configuration bundles a project can adopt in place of its own inline setup. A profile has one `kind`:
+
+| Kind | What it bundles |
+|------|-----------------|
+| `routing` | policy list, selector, fallback strategy |
+| `optimizer` | the ordered optimizer pipeline |
+| `security` | guardrail rules and PII policies |
+
+A project binds at most one profile per kind, and the three are independent. See [Dashboard: Profiles](../dashboard/profiles.md) for the equivalent UI.
 
 ### `routerly profiles list`
 
 ```
-routerly profiles list [--json]
+routerly profiles list [--kind <kind>] [--json]
 ```
 
-List all routing profiles (built-in presets and user-cloned profiles).
+List all profiles (built-in presets and user profiles), optionally filtered by kind.
+
+| Option | Description |
+|--------|-------------|
+| `--kind <kind>` | Filter by `routing`, `optimizer` or `security` |
+| `--json` | Output the profile list as raw JSON |
 
 **Table columns:**
 - **ID** - profile identifier
+- **Kind** - `routing` / `optimizer` / `security`
 - **Label** - display label
 - **Builtin** - `yes` / `no`
-- **Selector** - `argmax` / `weighted-random` / `round-robin` / `cheapest` / `lowest-latency`
 - **Version** - profile version, bumped on each update
+- **Summary** - one-line, kind-specific description of the configuration
 
 ```bash
 routerly profiles list
+routerly profiles list --kind optimizer
 routerly profiles list --json
 ```
+
+**Error cases:**
+- Unknown kind: `Unknown kind "<value>". Expected one of: routing, optimizer, security.`
 
 Requires `profiles:read` permission.
 
@@ -1190,13 +1208,13 @@ Requires `profiles:read` permission.
 routerly profiles show <id> [--json]
 ```
 
-Show full details of one routing profile. There is no single-item GET endpoint for profiles; `show` fetches the full list and filters client-side by ID.
+Show full details of one profile. There is no single-item GET endpoint for profiles; `show` fetches the full list and filters client-side by ID.
 
-Prints key/value fields (`id`, `label`, `builtin`, `selector`, `fallbackStrategy`, `version`, and `baseId` if the profile was cloned from a preset), followed by a `Policies:` section listing each policy's type and enabled state.
+Prints the common fields (`id`, `kind`, `label`, `builtin`, `version`, and `baseId` if the profile was cloned), followed by a kind-specific block: policies for `routing`, the pipeline in execution order for `optimizer`, guardrail rules and PII policies for `security`.
 
 ```bash
-routerly profiles show balanced
-routerly profiles show balanced --json
+routerly profiles show auto
+routerly profiles show security-strict --json
 ```
 
 **Error cases:**
@@ -1204,13 +1222,39 @@ routerly profiles show balanced --json
 
 Requires `profiles:read` permission.
 
+### `routerly profiles create`
+
+```
+routerly profiles create --kind <kind> --label <label> [--json]
+```
+
+Create an empty profile of the given kind. The CLI has no editor for profile bodies: fill the new profile in from the dashboard, or use `clone` to start from a preset.
+
+| Option | Description |
+|--------|-------------|
+| `--kind <kind>` | `routing`, `optimizer` or `security` - required |
+| `--label <label>` | Label for the new profile - required |
+| `--json` | Output the created profile as raw JSON |
+
+```bash
+routerly profiles create --kind routing --label "My Routing"
+routerly profiles create --kind security --label "My Guardrails" --json
+```
+
+**Output on success:**
+```
+✓ Created routing profile "My Routing" -> 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31
+```
+
+Requires `profiles:manage` permission.
+
 ### `routerly profiles clone`
 
 ```
 routerly profiles clone <baseId> --label <label> [--json]
 ```
 
-Clone a built-in or existing profile into a new, editable user profile.
+Clone a built-in profile of any kind into a new, editable user profile. The clone keeps the base profile's kind and configuration.
 
 | Option | Description |
 |--------|-------------|
@@ -1218,45 +1262,85 @@ Clone a built-in or existing profile into a new, editable user profile.
 | `--json` | Output the created profile as raw JSON |
 
 ```bash
-routerly profiles clone balanced --label "My Custom Profile"
+routerly profiles clone auto --label "My Routing"
+routerly profiles clone optimizer-aggressive --label "My Optimizers"
 ```
 
 **Output on success:**
 ```
-✓ Cloned profile "balanced" -> user-1
+✓ Cloned routing profile "auto" -> 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31
 ```
+
+Requires `profiles:manage` permission.
+
+### `routerly profiles delete`
+
+```
+routerly profiles delete <id>
+```
+
+Delete a user profile. Built-in profiles cannot be deleted, and a profile still assigned to a project is refused.
+
+```bash
+routerly profiles delete 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31
+```
+
+**Output on success:**
+```
+✓ Profile "8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31" deleted
+```
+
+**Error cases:**
+- Profile assigned to a project: `Cannot delete "<id>": it is still assigned to a project.`
 
 Requires `profiles:manage` permission.
 
 ### `routerly profiles set`
 
 ```
-routerly profiles set <project> [profileId] --none [--json]
+routerly profiles set <project> <kind> [profileId] [--none] [--json]
 ```
 
-Assign or clear the routing profile for a project. Provide `profileId` to assign it, or `--none` to clear the assignment. If both are given, `--none` wins.
+Assign or clear the profile of one kind for a project. Provide `profileId` to assign it, or `--none` to clear the assignment and fall back to the project's own inline configuration for that kind. The other two kinds are left untouched.
 
 | Option | Description |
 |--------|-------------|
-| `--none` | Clear the profile assignment |
+| `--none` | Clear the assignment for this kind |
 | `--json` | Output the updated (sanitized) project as raw JSON |
 
 ```bash
-routerly profiles set my-api balanced
-routerly profiles set my-api --none
+routerly profiles set my-api routing auto
+routerly profiles set my-api optimizer optimizer-aggressive
+routerly profiles set my-api security --none
 ```
 
 **Output on success:**
 ```
-✓ Profile set to "balanced" on project "my-api"
+✓ routing profile set to "auto" on project "my-api"
 ```
-(or `✓ Profile cleared on project "my-api"` with `--none`)
+(or `✓ security profile cleared on project "my-api"` with `--none`)
 
 **Error cases:**
 - Neither `profileId` nor `--none` given: `Error: provide a profileId or --none.`
+- Unknown kind: `Unknown kind "<value>". Expected one of: routing, optimizer, security.`
 - Project not found: `Project "<name>" not found. Run \`routerly project list\` to see available projects.`
 
 Requires `project:write` permission.
+
+### `routerly profiles get`
+
+```
+routerly profiles get <project> [--json]
+```
+
+Show which profile each kind is bound to for a project. A kind with no profile assigned prints `custom`, meaning the project uses its own inline configuration. `--json` prints an object keyed by kind, with `null` for unassigned kinds.
+
+```bash
+routerly profiles get my-api
+routerly profiles get my-api --json
+```
+
+No extra permission beyond dashboard authentication: it reads the project list.
 
 Exit code: `0` on success, `1` on error (all subcommands).
 

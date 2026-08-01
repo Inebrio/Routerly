@@ -297,22 +297,26 @@ Suggested order: `health` → `context` → `capability` → `budget-remaining` 
 
 ## Routing Profiles
 
-A **routing profile** (`RoutingProfile`) packages a policy list, a
-**selector**, and a **fallback strategy** into one reusable, versioned unit,
-stored via [`GET/POST/PATCH/DELETE /api/routing/profiles`](../api/management.md#routing-profiles).
-A project resolves its effective profile at request time: if the project has
-a `profileId` set, that profile's policies/selector/fallback are used instead
-of the project's own inline policy list; otherwise the project's own inline
-policies run through the default selector/fallback behaviour described above
-(argmax-equivalent, no live fallback wiring, see the caution below).
+A **routing profile** (`RoutingProfile`, `kind: 'routing'`) packages a policy
+list, a **selector**, and a **fallback strategy** into one reusable, versioned
+unit, stored via [`GET/POST/PATCH/DELETE /api/profiles`](../api/management.md#profiles)
+alongside the optimizer and security profile kinds. A project resolves its
+effective routing profile at request time: if the project has a
+`routingProfileId` set, that profile's policies/selector/fallback are used
+instead of the project's own inline policy list; otherwise the project's own
+inline policies run through the default selector/fallback behaviour described
+above (argmax-equivalent, no live fallback wiring, see the caution below).
 
 ### Built-in Profiles
 
-5 built-ins ship as code constants (never persisted, never mutable):
-`balanced`, `cheap`, `fast`, `coding`, `offline`. Cloning a built-in (`POST
-/api/routing/profiles/clone`) writes a new, editable copy to `profiles.json`
-with `builtin: false` and `version: 1`; every subsequent `PATCH` bumps
-`version` by 1. See [Concepts: Routing: Routing Profiles](../concepts/routing.md#routing-profiles)
+4 routing built-ins ship as code constants (never persisted, never mutable):
+`auto`, `cheap`, `fast`, `coding`. Two retired presets, `balanced` and
+`offline`, still resolve for projects that reference them but are never listed;
+`balanced` is rewritten to `auto` by the routing module's config migration.
+Cloning a built-in (`POST /api/profiles/clone`) writes a new, editable copy to
+`profiles.json` with `builtin: false` and `version: 1`; every subsequent
+`PATCH` bumps `version` by 1. See
+[Concepts: Routing: Routing Profiles](../concepts/routing.md#routing-profiles)
 for what each built-in optimizes for.
 
 ### Selectors
@@ -348,17 +352,8 @@ endpoint, and editable from the dashboard, but the reverse-proxy's retry loop
 (step 7 above) does not currently read it: retries still follow the
 positional-scoring fallback order described in step 7, regardless of the
 resolved profile's `fallbackStrategy`. This is confirmed scope for a future
-change, not a bug in the current profile CRUD/simulate endpoints.
+change, not a bug in the current profile CRUD endpoints.
 :::
-
-### Simulating a Profile
-
-`POST /api/routing/simulate` runs the same scoring and selection logic
-described above (steps 1-6) against a chosen project and request body, with
-an optional profile/policy/selector/fallback override, and returns the
-picked model, the full ranked list, and the trace, **without calling any
-upstream provider or writing a usage record.** See
-[API: Simulate Routing](../api/management.md#simulate-routing).
 
 ---
 

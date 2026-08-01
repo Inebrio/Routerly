@@ -137,22 +137,27 @@ further settings into one reusable, named unit:
 
 A project either keeps its own inline policies (configured on its
 [Routing tab](../dashboard/projects.md#routing-tab)), or is assigned a shared
-profile instead. See [Dashboard: Routing Profiles](../dashboard/routing-profiles.md)
-and [API: Routing Profiles](../api/management.md#routing-profiles) for how to
-manage and assign profiles.
+profile instead. Routing is one of three profile kinds, alongside optimizer
+and security profiles; see [Dashboard: Profiles](../dashboard/profiles.md)
+and [API: Profiles](../api/management.md#profiles) for how to manage and
+assign them.
 
 ### Built-in Profiles
 
-Routerly ships 5 built-in profiles, read-only and always available. Each can
-be cloned into an editable, user-owned copy.
+Routerly ships 4 built-in routing profiles, read-only and always available.
+Each can be cloned into an editable, user-owned copy.
 
 | Profile | Policies | Selector | Fallback | Optimizes for |
 |---------|----------|----------|----------|----------------|
-| **Balanced** | health, performance, cheapest, capability | argmax | next-best | A general-purpose mix of speed, cost, and reliability |
+| **Auto** | health, performance, cheapest, capability | argmax | next-best | A general-purpose mix of speed, cost, and reliability |
 | **Cheap** | cheapest, budget-remaining, health | cheapest | next-best | Lowest cost per request |
 | **Fast** | performance, health | lowest-latency | retry-after-cooldown | Lowest response time |
 | **Coding** | capability, model-preference, performance, health | argmax | next-best | Capable, developer-preferred models for code tasks |
-| **Offline** | health, cheapest | round-robin | abort | Local/offline providers, spreading load evenly with no retries |
+
+Two earlier presets, `balanced` and `offline`, are no longer offered. Projects
+still pointing at `balanced` are migrated to the byte-identical `auto`;
+projects on `offline` keep resolving it unchanged, but it cannot be picked or
+cloned any more.
 
 ### Selectors
 
