@@ -19,7 +19,8 @@ const mockWriteConfig = vi.mocked(writeConfig);
 const mockListModels = vi.mocked(listEffectiveModels);
 const mockLlmChat = vi.mocked(llmChat);
 
-function experiment(over: Partial<ExperimentConfig> = {}): ExperimentConfig {
+/** `undefined` is allowed per field so a test can drop one from the fixture. */
+function experiment(over: { [K in keyof ExperimentConfig]?: ExperimentConfig[K] | undefined } = {}): ExperimentConfig {
   return {
     id: 'exp-1',
     name: 'Prompt A vs B',
@@ -30,7 +31,7 @@ function experiment(over: Partial<ExperimentConfig> = {}): ExperimentConfig {
     createdAt: '2026-08-01T00:00:00.000Z',
     judge: { enabled: true, modelId: 'judge-model', criteria: ['Is it correct?'], sampleRate: 1 },
     ...over,
-  };
+  } as ExperimentConfig;
 }
 
 function ctx(over: Record<string, unknown> = {}): ProxyContext {

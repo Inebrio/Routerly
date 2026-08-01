@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import type { ExperimentConfig, ProjectConfig, UsageRecord } from '@routerly/shared';
 import { computeExperimentMetrics } from './metrics.js';
 
-function experiment(over: Partial<ExperimentConfig> = {}): ExperimentConfig {
+/** `undefined` is allowed per field so a test can drop one from the fixture. */
+function experiment(over: { [K in keyof ExperimentConfig]?: ExperimentConfig[K] | undefined } = {}): ExperimentConfig {
   return {
     id: 'exp-1',
     name: 'Prompt A vs B',
@@ -15,11 +16,11 @@ function experiment(over: Partial<ExperimentConfig> = {}): ExperimentConfig {
     tokens: [],
     createdAt: '2026-08-01T00:00:00.000Z',
     ...over,
-  };
+  } as ExperimentConfig;
 }
 
 let seq = 0;
-function record(over: Partial<UsageRecord> = {}): UsageRecord {
+function record(over: { [K in keyof UsageRecord]?: UsageRecord[K] | undefined } = {}): UsageRecord {
   seq += 1;
   return {
     id: `u-${seq}`,
@@ -34,7 +35,7 @@ function record(over: Partial<UsageRecord> = {}): UsageRecord {
     experimentId: 'exp-1',
     experimentVariantId: 'v-a',
     ...over,
-  };
+  } as UsageRecord;
 }
 
 describe('computeExperimentMetrics', () => {

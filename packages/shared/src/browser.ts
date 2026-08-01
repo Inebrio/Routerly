@@ -31,6 +31,7 @@ export {
   EXPERIMENT_STATUSES,
   STICKY_KEYS,
   ROTATION_CATALOG,
+  STICKY_KEY_CATALOG,
   DEFAULT_MIN_SAMPLES_PER_VARIANT,
   rotationLabel,
   rotationDescription,

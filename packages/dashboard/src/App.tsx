@@ -43,8 +43,13 @@ import { ProfilesPage } from './pages/ProfilesPage';
 import { ProfileFormPage } from './pages/ProfileFormPage';
 import { ConnectPage, useClientsEnabled } from './pages/ConnectPage';
 import { ConnectClientPage } from './pages/ConnectClientPage';
+import { ExperimentsPage, useExperimentsEnabled } from './pages/ExperimentsPage';
+import { ExperimentLayout } from './pages/experiment/ExperimentLayout';
+import { ExperimentConfigTab } from './pages/experiment/ExperimentConfigTab';
+import { ExperimentMetricsTab } from './pages/experiment/ExperimentMetricsTab';
+import { ExperimentTokenTab } from './pages/experiment/ExperimentTokenTab';
 
-import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Plug, Route, Terminal } from 'lucide-react';
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Plug, Route, Terminal, Split } from 'lucide-react';
 import { Logo } from './components/Logo';
 import { ProfileNotificationBadge } from './components/NotificationBell';
 
@@ -99,6 +104,8 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
   // Clients has no permission gate (session-only); visibility instead depends on
   // whether the module is enabled, only known after this async check resolves.
   const clientsEnabled = useClientsEnabled();
+  // Same treatment for Experiments: the permission plus the module both have to be on.
+  const experimentsEnabled = useExperimentsEnabled();
 
   function handleLogout() { logout(); navigate('/dashboard/login'); }
 
@@ -108,6 +115,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
     ...(can('profiles:read') ? [{ to: '/dashboard/profiles', icon: <Route size={17} />, label: 'Profiles' }] : []),
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
+    ...(experimentsEnabled ? [{ to: '/dashboard/experiments', icon: <Split size={17} />, label: 'Experiments' }] : []),
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
     { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Playground' },
     ...(clientsEnabled ? [{ to: '/dashboard/connect', icon: <Terminal size={17} />, label: 'Connect' }] : []),
@@ -419,6 +427,24 @@ const router = createBrowserRouter([
               { path: 'logs', element: <ProjectLogsTab /> },
               { path: 'security', element: <ProjectSecurityTab /> },
               { path: 'end-users', element: <ProjectEndUsersTab /> },
+            ],
+          },
+          { path: 'experiments', element: <ExperimentsPage /> },
+          {
+            path: 'experiments/new',
+            element: <ExperimentLayout />,
+            children: [
+              { index: true, element: <ExperimentConfigTab /> },
+            ],
+          },
+          {
+            path: 'experiments/:id',
+            element: <ExperimentLayout />,
+            children: [
+              { index: true, element: <ExperimentConfigTab /> },
+              { path: 'config', element: <ExperimentConfigTab /> },
+              { path: 'metrics', element: <ExperimentMetricsTab /> },
+              { path: 'token', element: <ExperimentTokenTab /> },
             ],
           },
           { path: 'usage', element: <UsagePage /> },
