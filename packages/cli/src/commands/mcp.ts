@@ -181,7 +181,9 @@ Examples:
 `)
     .action(async (opts: { token?: string }) => {
       try {
-        const account = await requireAccount();
+        // No CLI login is needed when the token comes from --token or the env:
+        // a desktop client spawns this command with ROUTERLY_MCP_TOKEN set and
+        // never logs the CLI in. Minting one still requires an account.
         const token = await acquireMcpToken(opts.token);
 
         // Resolve the built service entry the same way a published dependency resolves.
@@ -189,7 +191,7 @@ Examples:
         const serviceEntry = require.resolve('@routerly/service');
 
         // Diagnostics to stderr only, before the child attaches. stdout is the protocol stream.
-        console.error(chalk.gray(`Starting MCP stdio server as "${account.alias}"...`));
+        console.error(chalk.gray('Starting MCP stdio server...'));
 
         const { spawn } = await import('node:child_process');
         await new Promise<void>((resolve, reject) => {

@@ -28,7 +28,7 @@ client directly to the service binary instead of via the CLI wrapper.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ROUTERLY_MCP_STDIO` | unset | Set to `1` to start the stdio MCP transport on boot instead of (or in addition to) the normal HTTP server. |
-| `ROUTERLY_MCP_TOKEN` | unset | Project token (`sk-rt-…`) used as the stdio session's identity. Required when `ROUTERLY_MCP_STDIO=1`; must carry the `mcp` scope. The service throws at startup if it is missing, invalid, expired, or under-scoped. |
+| `ROUTERLY_MCP_TOKEN` | unset | Personal MCP token (`sk-rt-mcp-…`) used as the stdio session's identity; the session runs with that user's permissions. Required when `ROUTERLY_MCP_STDIO=1`. The service throws at startup if it is missing, unknown, or expired. Read by `routerly mcp serve` too, which forwards it instead of minting its own token. |
 
 ## Installer Variables
 
