@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
-import { REQUEST_TYPES, requestTypeLabel, type RequestType } from '@routerly/shared';
+import { REQUEST_TYPES, optimizerLabel, requestTypeLabel, type RequestType, type SavingsSummary } from '@routerly/shared';
 import { api } from '../api.js';
 
 interface UsageByModel {
@@ -39,6 +39,8 @@ interface UsageResponse {
     callType?: string;
     requestType?: string;
   }>;
+  /** Present only when the request asked for it with `savings=1` (T61). */
+  savings?: SavingsSummary;
 }
 
 /**
@@ -285,6 +287,94 @@ Examples:
           ]);
         }
         console.log(table.toString());
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  // ── report savings ──
+  cmd.command('savings')
+    .description('Show what routing, the prompt cache and the optimizers saved')
+    .addHelpText('after', `
+Examples:
+  # This month's saving across every project
+  routerly report savings
+
+  # One project, all time
+  routerly report savings --project my-api --period all
+
+  # Pipe the raw savings block
+  routerly report savings --json
+`)
+    .option('--period <period>', 'Period: daily | weekly | monthly | all', 'monthly')
+    .option('--project <id>', 'Filter by project ID')
+    .option('--type <type>', `Filter by request type: ${REQUEST_TYPES.join(' | ')}`, parseRequestType)
+    .option('--json', 'Output as JSON')
+    .action(async (opts: { period: string; project?: string; type?: string; json?: boolean }) => {
+      try {
+        const params = new URLSearchParams({ period: opts.period, savings: '1' });
+        if (opts.project) params.set('projectId', opts.project);
+        if (opts.type) params.set('requestType', opts.type);
+
+        const data = await api<UsageResponse>('GET', `/api/usage?${params.toString()}`);
+        const savings = data.savings;
+
+        if (opts.json) { console.log(JSON.stringify(savings ?? null, null, 2)); return; }
+
+        if (!savings || savings.comparedCalls === 0) {
+          console.log(chalk.yellow(`No comparable calls for period: ${opts.period}`));
+          return;
+        }
+
+        console.log(chalk.bold(`\nSavings Report — ${opts.period.toUpperCase()}\n`));
+        console.log(chalk.gray('Compared calls: ') + savings.comparedCalls);
+        console.log(chalk.gray('Actual cost:    ') + `$${savings.comparedCost.toFixed(6)}`);
+        console.log(chalk.gray('Tokens:         ') +
+          `${savings.comparedInputTokens.toLocaleString()} in / ${savings.comparedOutputTokens.toLocaleString()} out`);
+        if (savings.cache.inputTokens > 0) {
+          console.log(chalk.gray('Prompt cache:   ') +
+            `${savings.cache.inputTokens.toLocaleString()} tokens served from cache, $${savings.cache.cost.toFixed(6)} saved`);
+        }
+
+        if (savings.baselines.length === 0) {
+          console.log(chalk.yellow('\nNo target model to compare against.'));
+        } else {
+          console.log(chalk.bold('\nIf everything had gone to one model'));
+          const table = new Table({
+            head: ['Model', 'Would cost', 'Saved', 'Saved %', 'Would take', 'Time saved'].map(h => chalk.cyan(h)),
+          });
+          for (const b of savings.baselines) {
+            const saved = b.costDelta >= 0 ? chalk.green(`$${b.costDelta.toFixed(6)}`) : chalk.red(`-$${Math.abs(b.costDelta).toFixed(6)}`);
+            // No output token from this model in the window means no throughput to estimate from.
+            const would = b.latencyMs === undefined ? chalk.gray('no sample') : `${Math.round(b.latencyMs).toLocaleString()} ms`;
+            const timeSaved = b.latencyDeltaMs === undefined
+              ? chalk.gray('-')
+              : `${Math.round(b.latencyDeltaMs).toLocaleString()} ms`;
+            table.push([b.modelId, `$${b.cost.toFixed(6)}`, saved, `${b.costDeltaPercent.toFixed(1)}%`, would, timeSaved]);
+          }
+          console.log(table.toString());
+        }
+
+        if (savings.optimizers.length > 0) {
+          console.log(chalk.bold('\nWhat the optimizers removed'));
+          const table = new Table({
+            head: ['ID', 'Name', 'Calls changed', 'Tokens saved', 'Cost saved', 'Rolled back'].map(h => chalk.cyan(h)),
+          });
+          for (const o of savings.optimizers) {
+            table.push([
+              o.id,
+              optimizerLabel(o.id),
+              String(o.calls),
+              o.tokensSaved.toLocaleString(),
+              `$${o.costSaved.toFixed(6)}`,
+              o.rolledBack > 0 ? chalk.yellow(String(o.rolledBack)) : '0',
+            ]);
+          }
+          console.log(table.toString());
+        }
+
+        console.log(chalk.gray('\nCosts are the observed tokens repriced, times are estimated from each model\'s own throughput in the period.'));
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
