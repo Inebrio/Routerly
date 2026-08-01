@@ -54,9 +54,9 @@ The dashboard shows the same steps, read-only, under
 | [Continue.dev](./clients/continue) | CLI writes the config | llm |
 | [Claude Desktop](./clients/claude-desktop) | Manual, MCP only | mcp |
 | [OpenClaw](./openclaw) | Manual | llm + mcp |
-| [Cline](./clients/cline) | Manual, VS Code Settings UI | llm |
-| [Cursor](./cursor) | Manual, in-app Settings | llm |
-| [Zed](./clients/zed) | Manual, `settings.json` | llm |
+| [Cline](./clients/cline) | Manual, VS Code Settings UI | llm + mcp |
+| [Cursor](./cursor) | Manual, in-app Settings | llm + mcp |
+| [Zed](./clients/zed) | Manual, `settings.json` | llm + mcp |
 | [Any OpenAI SDK app](./generic-openai) | Manual, environment variables | llm |
 | [Any Anthropic SDK app](./generic-anthropic) | Manual, environment variables | llm |
 

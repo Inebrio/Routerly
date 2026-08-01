@@ -177,7 +177,7 @@ Examples:
             return;
           }
           printManualSteps(meta, steps, 'connects over MCP only');
-          console.log(chalk.gray(`Create the token with \`routerly mcp token create --label ${meta.id}\`.`));
+          console.log(chalk.gray(`Create the token with \`routerly mcp token create ${meta.id}\`.`));
           return;
         }
 

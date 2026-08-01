@@ -1,23 +1,22 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ProfileMcpTab } from './ProfileMcpTab';
 
 vi.mock('../api', () => ({
   getMyMcpTokens: vi.fn(),
   getMyMcpTools: vi.fn(),
-  createMyMcpToken: vi.fn(),
   deleteMyMcpToken: vi.fn(),
 }));
 
 vi.mock('../utils/clipboard', () => ({ writeToClipboard: vi.fn() }));
 
-import { getMyMcpTokens, getMyMcpTools, createMyMcpToken, deleteMyMcpToken } from '../api';
+import { getMyMcpTokens, getMyMcpTools, deleteMyMcpToken } from '../api';
 import { writeToClipboard } from '../utils/clipboard';
 
 const mockGetTokens = vi.mocked(getMyMcpTokens as () => Promise<unknown>);
 const mockGetTools = vi.mocked(getMyMcpTools as () => Promise<unknown>);
-const mockCreate = vi.mocked(createMyMcpToken as (...a: unknown[]) => Promise<unknown>);
 const mockDelete = vi.mocked(deleteMyMcpToken as (id: string) => Promise<unknown>);
 const mockCopy = vi.mocked(writeToClipboard as (t: string) => Promise<void>);
 
@@ -46,8 +45,19 @@ beforeEach(() => {
 
 afterEach(() => vi.clearAllMocks());
 
+function renderAt() {
+  return render(
+    <MemoryRouter initialEntries={['/dashboard/profile/mcp']}>
+      <Routes>
+        <Route path="/dashboard/profile/mcp" element={<ProfileMcpTab />} />
+        <Route path="/dashboard/profile/mcp/new" element={<div>new token page</div>} />
+      </Routes>
+    </MemoryRouter>
+  );
+}
+
 async function renderTab() {
-  render(<ProfileMcpTab />);
+  renderAt();
   await waitFor(() => expect(screen.getByText('MCP Tokens')).toBeTruthy());
 }
 
@@ -73,100 +83,24 @@ describe('ProfileMcpTab', () => {
 
   it('reports a failed load', async () => {
     mockGetTokens.mockRejectedValue(new Error('network down'));
-    render(<ProfileMcpTab />);
+    renderAt();
 
     await waitFor(() => expect(screen.getByText('network down')).toBeTruthy());
   });
 
   it('falls back to a generic message when the load throws a non-Error', async () => {
     mockGetTokens.mockRejectedValue('boom');
-    render(<ProfileMcpTab />);
+    renderAt();
 
     await waitFor(() => expect(screen.getByText('Failed to load the MCP surface')).toBeTruthy());
   });
 
-  it('creates a token and reveals the raw value once', async () => {
-    mockCreate.mockResolvedValue({ ...TOKEN, id: 'tok-2', name: 'desktop', token: 'sk-rt-mcp-raw-value' });
+  it('sends creation to its own page', async () => {
     await renderTab();
 
     await userEvent.click(screen.getByRole('button', { name: /New Token/ }));
-    await userEvent.type(screen.getByLabelText('Name'), 'desktop');
-    await userEvent.click(screen.getByRole('button', { name: 'Create token' }));
 
-    await waitFor(() => expect(screen.getByText('sk-rt-mcp-raw-value')).toBeTruthy());
-    expect(mockCreate).toHaveBeenCalledWith({ name: 'desktop' });
-    // The new token joins the list, and the form closes.
-    expect(screen.getByText('desktop')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Create token' })).toBeNull();
-  });
-
-  it('sends the chosen expiry as an ISO instant', async () => {
-    mockCreate.mockResolvedValue({ ...TOKEN, id: 'tok-2', name: 'ci', token: 'sk-rt-mcp-raw' });
-    await renderTab();
-
-    await userEvent.click(screen.getByRole('button', { name: /New Token/ }));
-    await userEvent.type(screen.getByLabelText('Name'), 'ci');
-    await userEvent.type(screen.getByLabelText(/Expires on/), '2027-06-30');
-    await userEvent.click(screen.getByRole('button', { name: 'Create token' }));
-
-    await waitFor(() => expect(mockCreate).toHaveBeenCalledWith({
-      name: 'ci',
-      expiresAt: '2027-06-30T23:59:59.000Z',
-    }));
-  });
-
-  it('reports a rejected creation and keeps the form open', async () => {
-    mockCreate.mockRejectedValue(new Error('An MCP token named "laptop" already exists'));
-    await renderTab();
-
-    await userEvent.click(screen.getByRole('button', { name: /New Token/ }));
-    await userEvent.type(screen.getByLabelText('Name'), 'laptop');
-    await userEvent.click(screen.getByRole('button', { name: 'Create token' }));
-
-    await waitFor(() => expect(screen.getByText(/already exists/)).toBeTruthy());
-    expect(screen.getByRole('button', { name: 'Create token' })).toBeTruthy();
-  });
-
-  it('cancels the create form', async () => {
-    await renderTab();
-
-    await userEvent.click(screen.getByRole('button', { name: /New Token/ }));
-    await userEvent.type(screen.getByLabelText('Name'), 'scratch');
-    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-
-    expect(screen.queryByLabelText('Name')).toBeNull();
-    expect(mockCreate).not.toHaveBeenCalled();
-  });
-
-  it('copies the revealed token, then lets it be dismissed', async () => {
-    mockCreate.mockResolvedValue({ ...TOKEN, id: 'tok-2', name: 'desktop', token: 'sk-rt-mcp-raw-value' });
-    await renderTab();
-
-    await userEvent.click(screen.getByRole('button', { name: /New Token/ }));
-    await userEvent.type(screen.getByLabelText('Name'), 'desktop');
-    await userEvent.click(screen.getByRole('button', { name: 'Create token' }));
-    await waitFor(() => expect(screen.getByText('sk-rt-mcp-raw-value')).toBeTruthy());
-
-    await userEvent.click(screen.getByRole('button', { name: /Copy/ }));
-    await waitFor(() => expect(screen.getByRole('button', { name: /Copied!/ })).toBeTruthy());
-    expect(mockCopy).toHaveBeenCalledWith('sk-rt-mcp-raw-value');
-
-    await userEvent.click(screen.getByTitle('Dismiss'));
-    expect(screen.queryByText('sk-rt-mcp-raw-value')).toBeNull();
-  });
-
-  it('reports a failed copy', async () => {
-    mockCreate.mockResolvedValue({ ...TOKEN, id: 'tok-2', name: 'desktop', token: 'sk-rt-mcp-raw-value' });
-    mockCopy.mockRejectedValue(new Error('no clipboard'));
-    await renderTab();
-
-    await userEvent.click(screen.getByRole('button', { name: /New Token/ }));
-    await userEvent.type(screen.getByLabelText('Name'), 'desktop');
-    await userEvent.click(screen.getByRole('button', { name: 'Create token' }));
-    await waitFor(() => expect(screen.getByText('sk-rt-mcp-raw-value')).toBeTruthy());
-
-    await userEvent.click(screen.getByRole('button', { name: /Copy/ }));
-    await waitFor(() => expect(screen.getByText(/Copy failed/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('new token page')).toBeTruthy());
   });
 
   it('revokes a token after confirmation', async () => {
@@ -202,6 +136,16 @@ describe('ProfileMcpTab', () => {
     expect(screen.getByText('laptop')).toBeTruthy();
   });
 
+  it('falls back to a generic message when the revoke throws a non-Error', async () => {
+    mockDelete.mockRejectedValue('boom');
+    await renderTab();
+
+    await userEvent.click(screen.getByTitle('Revoke token'));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+
+    await waitFor(() => expect(screen.getByText('Failed to revoke the token')).toBeTruthy());
+  });
+
   it('shows "Never" for a token with no expiry and no use', async () => {
     mockGetTokens.mockResolvedValue([{ ...TOKEN, lastUsedAt: undefined, expiresAt: undefined }]);
     await renderTab();
@@ -209,9 +153,11 @@ describe('ProfileMcpTab', () => {
     expect(screen.getAllByText('Never')).toHaveLength(2);
   });
 
-  it('gives both transports of the connection instructions', async () => {
+  it('wires a client with the placeholder token, and documents both transports', async () => {
     await renderTab();
 
+    // The tab never holds a real token, so the guide ships the placeholder.
+    expect(screen.getByText(/Bearer <YOUR_MCP_TOKEN>/)).toBeTruthy();
     expect(screen.getByText('routerly mcp serve')).toBeTruthy();
     expect(screen.getByText(`${window.location.origin}/mcp`)).toBeTruthy();
     expect(screen.getByText(/ROUTERLY_MCP_TOKEN=<your MCP token>/)).toBeTruthy();

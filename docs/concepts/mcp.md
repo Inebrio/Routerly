@@ -7,8 +7,8 @@ sidebar_position: 9
 
 Routerly's `mcp` module exposes the gateway's own management API as tools to
 [Model Context Protocol](https://modelcontextprotocol.io/) clients: Claude
-Code, Claude Desktop, Codex, OpenCode, OpenClaw, and any other MCP-compatible
-client. It lets an agent inspect and, for a small write set, adjust Routerly
+Code, Claude Desktop, Codex, OpenCode, OpenClaw, Cursor, Cline, Zed, and any
+other MCP-compatible client. It lets an agent inspect and, for a small write set, adjust Routerly
 directly from the conversation, without a human going through the CLI or
 dashboard.
 
@@ -145,7 +145,7 @@ on that instance.
 
 ## Related
 
-- [Guides: Connect an MCP Client](../guides/mcp-clients.md): verified setup for Claude Code, Claude Desktop, Codex, OpenCode, and OpenClaw
+- [Guides: Connect an MCP Client](../guides/mcp-clients.md): verified setup for Claude Code, Claude Desktop, Codex, OpenCode, OpenClaw, Cursor, Cline, and Zed
 - [Dashboard: Profile: MCP tab](../dashboard/profile.md#mcp-tab): create, list, and revoke your tokens
 - [CLI: `routerly mcp`](../cli/commands.md#routerly-mcp): `tools`, `test`, `serve`, `token`
 - [Service: MCP Server](../service/endpoints.md#mcp-server): the `/mcp` HTTP endpoint reference

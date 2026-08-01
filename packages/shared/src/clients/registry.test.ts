@@ -179,7 +179,7 @@ describe('buildSnippet', () => {
 
 describe('buildMcpSnippet', () => {
   it('returns empty for clients without a verified MCP wiring', () => {
-    for (const id of ['continue', 'cursor', 'cline', 'zed', 'generic-openai', 'generic-anthropic']) {
+    for (const id of ['continue', 'generic-openai', 'generic-anthropic']) {
       expect(buildMcpSnippet(meta(id), BASE_URL, MCP_TOKEN)).toBe('');
     }
   });
@@ -217,5 +217,24 @@ describe('buildMcpSnippet', () => {
     expect(snippet).toContain('openclaw mcp add routerly');
     expect(snippet).toContain('--transport streamable-http');
     expect(snippet).toContain(`--url ${BASE_URL}/mcp`);
+  });
+
+  it('cursor: mcpServers entry with url and the Authorization header', () => {
+    const parsed = JSON.parse(buildMcpSnippet(meta('cursor'), BASE_URL, MCP_TOKEN));
+    expect(parsed.mcpServers.routerly.url).toBe(`${BASE_URL}/mcp`);
+    expect(parsed.mcpServers.routerly.headers.Authorization).toBe(`Bearer ${MCP_TOKEN}`);
+  });
+
+  it('cline: streamableHttp type, since a missing type means legacy sse', () => {
+    const parsed = JSON.parse(buildMcpSnippet(meta('cline'), BASE_URL, MCP_TOKEN));
+    expect(parsed.mcpServers.routerly.type).toBe('streamableHttp');
+    expect(parsed.mcpServers.routerly.url).toBe(`${BASE_URL}/mcp`);
+    expect(parsed.mcpServers.routerly.headers.Authorization).toBe(`Bearer ${MCP_TOKEN}`);
+  });
+
+  it('zed: context_servers entry with the Authorization header', () => {
+    const parsed = JSON.parse(buildMcpSnippet(meta('zed'), BASE_URL, MCP_TOKEN));
+    expect(parsed.context_servers.routerly.url).toBe(`${BASE_URL}/mcp`);
+    expect(parsed.context_servers.routerly.headers.Authorization).toBe(`Bearer ${MCP_TOKEN}`);
   });
 });

@@ -50,7 +50,7 @@ Selecting a tile opens that client's page.
 | **Header** | always | Support badge, wire format (`openai` or `anthropic`), connect modes, and a link to the client's full documentation page |
 | **Configure from the CLI** | the client is auto-configurable | The `routerly clients configure <id>` command to copy and run |
 | **Manual steps** | the client has a config file or environment setup | The config path and the exact block to paste |
-| **MCP server** | the client supports `mcp` | The `mcpServers` block plus the command that mints an MCP token |
+| **MCP server** | the client supports `mcp` | That client's own MCP configuration (`mcpServers`, `context_servers`, a TOML section, or a command) plus the command that mints an MCP token |
 
 Every code block has a Copy button.
 
