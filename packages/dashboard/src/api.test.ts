@@ -1143,9 +1143,10 @@ describe('getNotificationInboxPage', () => {
   it('includes all optional params when provided', async () => {
     const { getNotificationInboxPage } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { items: [], pagination: {}, unreadCount: 0, enabled: true }));
-    await getNotificationInboxPage({ page: 1, pageSize: 10, severity: 'critical', event: 'budget.exceeded', unreadOnly: true, from: '2024-01-01', to: '2024-01-31' });
+    await getNotificationInboxPage({ page: 1, pageSize: 10, severity: 'critical', event: 'budget.exceeded', category: 'budget', unreadOnly: true, from: '2024-01-01', to: '2024-01-31' });
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toContain('severity=critical');
+    expect(url).toContain('category=budget');
     expect(url).toContain('event=budget.exceeded');
     expect(url).toContain('unreadOnly=true');
     expect(url).toContain('from=2024-01-01');
@@ -1159,6 +1160,7 @@ describe('getNotificationInboxPage', () => {
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).not.toContain('severity');
     expect(url).not.toContain('event');
+    expect(url).not.toContain('category');
     expect(url).not.toContain('unreadOnly');
     expect(url).not.toContain('from');
     expect(url).not.toContain('to');

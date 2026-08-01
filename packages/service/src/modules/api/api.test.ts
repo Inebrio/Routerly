@@ -1738,6 +1738,23 @@ describe('GET /api/usage/:id', () => {
     expect(JSON.parse(res.body).id).toBe('r1')
   })
 
+  it('resolves a record by its trace id (T53)', async () => {
+    setupAdminAuth()
+    const record = { id: 'r1', traceId: 'trace-9', timestamp: new Date().toISOString(), projectId: 'p1', modelId: 'm1', cost: 0.01, outcome: 'success', callType: 'completion', inputTokens: 10, outputTokens: 5, latencyMs: 100 }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return [record]
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/usage/trace-9', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).id).toBe('r1')
+  })
+
   it('returns 404 for nonexistent record', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -6809,6 +6826,41 @@ describe('notification incidents', () => {
     const body = JSON.parse(res.body)
     expect(body.eventCount).toBe(1)
     expect(body.events).toBeUndefined()
+  })
+})
+
+// ─── Inbox category filter (T53) ─────────────────────────────────────────────
+describe('GET /api/notifications/inbox?category', () => {
+  function setup() {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'notifications') return [
+        { id: 'n1', event: 'provider.error', severity: 'critical', timestamp: '2026-01-03T00:00:00.000Z', details: {}, readBy: [] },
+        { id: 'n2', event: 'routing.fallback_used', severity: 'info', timestamp: '2026-01-02T00:00:00.000Z', details: {}, readBy: [] },
+        { id: 'n3', event: 'auth.login_failed', severity: 'warning', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [] },
+      ]
+      return []
+    })
+  }
+
+  it('keeps only the events of that category', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?page=1&pageSize=20&category=security', headers: adminAuthHeaders() })
+    await app.close()
+    const body = JSON.parse(res.body)
+    expect(body.items.map((n: { id: string }) => n.id)).toEqual(['n3'])
+    expect(body.unreadCount).toBe(3) // the badge still counts the whole inbox
+  })
+
+  it('category=all keeps everything', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox?page=1&pageSize=20&category=all', headers: adminAuthHeaders() })
+    await app.close()
+    expect(JSON.parse(res.body).items).toHaveLength(3)
   })
 })
 
