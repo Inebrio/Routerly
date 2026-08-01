@@ -1676,6 +1676,7 @@ Query parameters:
 | `limit` | number | Max records to return (default: 100) |
 | `offset` | number | Pagination offset |
 | `savings` | string | `1` adds the [savings block](#savings-block) to the response. Off by default: the computation is only paid for by the callers that show it |
+| `series` | string | `1` adds the [savings series](#savings-series) to the response. Same cost as `savings`, and equally off by default |
 
 `callType` and `requestType` are two different questions about the same record. A semantic-intent embedding fired by the router is `callType: "routing"`, `requestType: "embedding"`; a plain chat request from a client is `callType: "completion"`, `requestType: "chat"`. Calls the gateway forwards through the pass-through proxy (embeddings, images, audio) are recorded with their `requestType` and zero tokens, since their body is streamed to the client rather than parsed.
 
@@ -1825,6 +1826,54 @@ The cost figure is exact arithmetic on the observed token counts, but a differen
 :::
 
 The same block is rendered by [`routerly report savings`](../cli/commands.md#routerly-report-savings) and by the project's [Dashboard tab](../dashboard/projects.md#dashboard-tab).
+
+### Savings series
+
+Add `series=1` to `GET /api/usage` to get the same comparison spread over time. It covers the same records as the savings block, cut into buckets: one per hour when `period=daily`, one per day otherwise, the same granularity as `timeline`.
+
+```json
+{
+  "series": {
+    "bucket": "day",
+    "baselineModelId": "openai/gpt-5",
+    "points": [
+      {
+        "bucket": "2026-07-31",
+        "calls": 96,
+        "cost": 0.062,
+        "baselineCost": 0.184,
+        "inputTokens": 210000,
+        "outputTokens": 48000,
+        "cachedInputTokens": 90000,
+        "latencyMs": 74000,
+        "baselineLatencyMs": 96000
+      }
+    ]
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `bucket` | `hour` or `day`: the width of each point |
+| `baselineModelId` | Model the `baseline*` figures are priced against: the **costliest** target model of the traffic in the window, the worst case routing avoided. Absent when no target model applies |
+| `points` | Oldest first, capped at the most recent 60 buckets |
+
+Each point:
+
+| Field | Description |
+|-------|-------------|
+| `bucket` | `YYYY-MM-DD` for a day bucket, `YYYY-MM-DDTHH` (UTC) for an hour bucket |
+| `calls` | Compared client calls in the bucket, the same set the savings block counts |
+| `cost` | USD those calls actually cost |
+| `baselineCost` | The same calls repriced at `baselineModelId`. `0` when there is no baseline |
+| `inputTokens` / `outputTokens` / `cachedInputTokens` | Token totals of the bucket |
+| `latencyMs` | Summed end-to-end latency of those calls |
+| `baselineLatencyMs` | Estimated summed latency on the baseline, from its throughput over the whole window. `0` when it has no sample to estimate from |
+
+Every field is a total rather than an average, so a consumer can re-bucket or average them itself. Buckets with no compared call are left out rather than zero filled: a gap means there was no traffic, which a zero would misreport as free traffic.
+
+The series is rendered by the dashboard [Overview](../dashboard/overview.md#what-routing-saved) and by [`routerly report savings --trend`](../cli/commands.md#routerly-report-savings).
 
 ### Get a Single Usage Record
 

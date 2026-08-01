@@ -2710,6 +2710,7 @@ routerly report savings [options]
 | `--period <period>` | `daily`, `weekly`, `monthly`, `all` (default: `monthly`) |
 | `--project <id>` | Filter by project ID |
 | `--type <type>` | Filter by request type: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio` |
+| `--trend` | Add a per-bucket breakdown: one row per hour with `--period daily`, one per day otherwise |
 | `--json` | Output the raw savings block |
 
 The command reads `GET /api/usage?savings=1` (see [API: Usage](../api/management.md#usage)) and needs the same `report:read` permission as the rest of `report`. The counterfactual is computed against the **enabled target models of every project present in the result**, so `--project` narrows both the traffic and the models it is compared against.
@@ -2758,10 +2759,37 @@ Reading the two tables:
 
 When nothing in the window can be compared, the command prints `No comparable calls for period: <period>` instead of a table of zeros. When the traffic belongs to projects with no enabled target model, the headline still prints and the counterfactual is replaced by `No target model to compare against.`
 
+### Breaking the saving down over time
+
+`--trend` adds a table under the two above, showing how the gap between the routed traffic and the counterfactual moved over the period. It reads `GET /api/usage?series=1` (see [API: Savings series](../api/management.md#savings-series)).
+
+```
+routerly report savings --period weekly --trend
+```
+
+```
+Per day, against openai/gpt-4o
+┌────────────┬───────┬───────────┬────────────┬───────────┬─────────────────┬────────┬────────────┐
+│ Bucket     │ Calls │ Cost      │ Would cost │ Saved     │ Tokens in/out   │ Avg ms │ Would take │
+├────────────┼───────┼───────────┼────────────┼───────────┼─────────────────┼────────┼────────────┤
+│ 2026-07-27 │ 42    │ $0.024100 │ $0.092400  │ $0.068300 │ 260,410 / 21,880│ 1,204  │ 1,602      │
+├────────────┼───────┼───────────┼────────────┼───────────┼─────────────────┼────────┼────────────┤
+│ 2026-07-28 │ 61    │ $0.038200 │ $0.141900  │ $0.103700 │ 402,110 / 33,240│ 1,318  │ 1,744      │
+└────────────┴───────┴───────────┴────────────┴───────────┴─────────────────┴────────┴────────────┘
+```
+
+The counterfactual columns are priced against the costliest target model in the window, the worst case the routing avoided, which is the same figure the dashboard [Overview](../dashboard/overview.md#what-routing-saved) shows. `Avg ms` and `Would take` are per call, not totals. Buckets with no comparable call are left out rather than printed as zeros, and only the most recent 60 buckets are shown.
+
 `--json` prints the savings block on its own (`null` when the period is empty), which is the shape documented under [API: Usage](../api/management.md#usage):
 
 ```bash
 routerly report savings --json | jq '.optimizers[] | select(.rolledBack > 0)'
+```
+
+With `--trend`, the series is added next to the savings fields rather than replacing them, so a script reading the block keeps working:
+
+```bash
+routerly report savings --json --trend | jq '.series.points[] | {bucket, saved: (.baselineCost - .cost)}'
 ```
 
 ### `routerly report end-users`
