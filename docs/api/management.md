@@ -752,21 +752,76 @@ written.**
 {
   "estimatedTokensBefore": 55,
   "estimatedTokensAfter": 30,
+  "messages": [{ "role": "user", "content": "Hello, help me this." }],
   "perStep": [
-    { "id": "caveman", "before": 55, "after": 30 },
-    { "id": "rtk", "before": 30, "after": 30 }
+    {
+      "id": "caveman",
+      "before": 55,
+      "after": 30,
+      "messages": [{ "role": "user", "content": "Hello, help me this." }]
+    },
+    {
+      "id": "rtk",
+      "before": 30,
+      "after": 30,
+      "messages": [{ "role": "user", "content": "Hello, help me this." }]
+    }
   ]
 }
 ```
 
-A `lossy` step whose result would fail the safety gate is reported
-unchanged (`before === after`), mirroring what happens on a live request.
-Context-dependent optimizers (`headroom`) are inert in preview, matching
-their live no-op state (see [Concepts:
-Optimizers](../concepts/optimizers.md#headroom)).
+| Field | Description |
+|-------|-------------|
+| `estimatedTokensBefore` / `estimatedTokensAfter` | Token estimate of the whole prompt before the first step and after the last one |
+| `messages` | The prompt as the pipeline left it, ready to diff against `sampleMessages` |
+| `perStep[].before` / `perStep[].after` | Token estimate around that single step |
+| `perStep[].messages` | The prompt as that step left it. Always present, so step *n*'s diff anchors on step *n-1*'s output; unchanged when the step did nothing |
+| `perStep[].rolledBack` | `true` when the step produced a result the safety gate rejected, so its change was discarded. Absent otherwise |
+
+A `lossy` step whose result fails the safety gate reports `rolledBack: true`
+and is otherwise unchanged (`before === after`), mirroring what happens on a
+live request. `rolledBack` is what separates "was rejected" from "had nothing
+to do", which the token delta alone cannot say. Context-dependent optimizers
+(`headroom`) are inert in preview, matching their live no-op state (see
+[Concepts: Optimizers](../concepts/optimizers.md#headroom)).
 
 **Errors**: `400` invalid body · `404` `projectId` given but not found ·
 `403` insufficient permissions
+
+### Recent Traffic Samples
+
+```
+GET /api/projects/:id/optimizers/samples
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `optimizers:read`)
+
+The last few prompts the project actually sent, so a pipeline can be tuned
+against real traffic instead of a hand-typed sentence. Feed one straight back
+into [Preview Optimizers](#preview-optimizers) as `sampleMessages`.
+
+**Response `200`:**
+```json
+[
+  {
+    "capturedAt": "2026-08-01T10:00:00.000Z",
+    "estimatedTokens": 420,
+    "messages": [{ "role": "user", "content": "Summarize this thread" }],
+    "truncated": true
+  }
+]
+```
+
+Newest first, at most 5 per project. `truncated` is present when the sample
+was clipped to fit the buffer: at most 20 messages, each at most 1000
+characters.
+
+Samples are captured in the optimizer pipeline, which runs **after** PII
+scrubbing and guardrails, so a scrubbed prompt is stored scrubbed. They live
+in memory only, are never written to disk, and are lost on service restart.
+An empty array means the project has sent no traffic since the last restart.
+
+**Errors**: `404` project not found · `403` insufficient permissions
 
 ---
 
@@ -1397,6 +1452,10 @@ Add `savings=1` to `GET /api/usage` to get a `savings` object alongside the rest
         "latencyDeltaMs": -16000,
         "latencySamples": 120
       }
+    ],
+    "optimizers": [
+      { "id": "ccr", "calls": 84, "tokensSaved": 51200, "costSaved": 0.0128, "rolledBack": 0 },
+      { "id": "caveman", "calls": 12, "tokensSaved": 940, "costSaved": 0.0002, "rolledBack": 3 }
     ]
   }
 }
@@ -1411,6 +1470,23 @@ Add `savings=1` to `GET /api/usage` to get a `savings` object alongside the rest
 | `cache.inputTokens` | Input tokens served from prompt cache instead of being charged at full input price |
 | `cache.cost` | USD those cached tokens saved against the same model's full input price |
 | `baselines` | One counterfactual per baseline model, cheapest first |
+| `optimizers` | One entry per optimizer that changed at least one compared call, most tokens saved first |
+
+Each optimizer entry:
+
+| Field | Description |
+|-------|-------------|
+| `id` | The optimizer id |
+| `calls` | Compared calls where it ran and changed the prompt |
+| `tokensSaved` | Prompt tokens it removed, summed over those calls |
+| `costSaved` | USD those tokens would have cost at the serving model's input price |
+| `rolledBack` | Calls where its output was rejected by the safety gate and discarded |
+
+Unlike the baselines, these are measured, not counterfactual: the service
+records each optimizer's own before/after token estimate on the usage record
+as the request is served. The array is empty when no record in the window
+carries optimizer stats, which is the case for every record written before
+0.4.0.
 
 Each baseline entry:
 

@@ -179,15 +179,56 @@ before it can ever activate, even when enabled in a project's config.
 A step's `threshold` means different things depending on the optimizer, and
 the management API validates it accordingly:
 
-- `relevance`, `llmlingua-2`: a `0`–`1` ratio (similarity cutoff or
-  keep-ratio).
-- `ccr`: a turn count (default `6` if unset).
-- `headroom`: a reserved token budget (default `1024` if unset).
-- `session-dedup`, `rtk`, `caveman`: threshold is not used.
+| Optimizer | Threshold means | Range | Unset |
+|-----------|-----------------|-------|-------|
+| `ccr` | Recent turns kept verbatim | `1`–`50` turns | Defaults to `6` |
+| `headroom` | Tokens reserved for the answer | `0`–`32768` tokens | Defaults to `1024` |
+| `relevance` | Minimum lexical overlap with the newest turn | `0`–`1` ratio | Inert: no default |
+| `llmlingua-2` | Fraction of tokens kept | `0.05`–`0.95` ratio | Defaults to `0.5` |
+| `session-dedup`, `rtk`, `caveman` | Not used | — | — |
 
 `ccr` and `headroom` accept any positive number; `relevance` and
 `llmlingua-2` are capped at `1`. Leave threshold unset on any step to use
-its built-in default.
+its built-in default, except on `relevance`, which does nothing until a
+threshold is set.
+
+The ranges above are declared once, in the shared optimizer catalog
+(`packages/shared/src/types/optimizers.ts`), and read from there by the
+dashboard's threshold fields and by `routerly optimizers list`, so every
+surface states the same numbers. `catalog.test.ts` keeps the catalog honest
+against the optimizers themselves.
+
+## Tuning a Pipeline
+
+A pipeline is worth tuning against the traffic it will actually see. Three
+things exist for that, on every surface:
+
+**Replay a real prompt.** The service keeps the last 5 prompts per project in
+memory (at most 20 messages each, clipped at 1000 characters), captured in the
+optimizer pipeline, so after PII scrubbing and guardrails. They are never
+written to disk and are lost on restart. Read them with `GET
+/api/projects/:id/optimizers/samples`, `routerly optimizers samples`, or the
+picker above the dashboard's preview box, and run the pipeline over one
+instead of a hand-typed sentence. A short invented prompt under-reports what
+optimizers do, because it lacks the repetition and history they cut.
+
+**Read the per-step diff.** Preview reports the prompt as each step left it,
+so a step's change can be compared against the step before it. The dashboard
+renders that as a word-level diff per step; `routerly optimizers preview
+--json` returns the same messages for scripting.
+
+**Separate a no-op from a rollback.** A step whose `before` equals its
+`after` either had nothing to do or produced a result the safety gate
+rejected. Preview marks the second case explicitly (`rolledBack: true`), and
+the measured savings block counts rollbacks per optimizer over real traffic.
+Repeated rollbacks mean the threshold is too aggressive for this project, not
+that the optimizer is idle.
+
+Once the pipeline is running, the measured effect per optimizer (calls
+changed, tokens removed, cost avoided, rollbacks) is reported in the savings
+block of `GET /api/usage?savings=1` and in the project's Dashboard tab. Those
+numbers are recorded per call as it is served, so they are measurements, not
+estimates like the model counterfactual next to them.
 
 ## Wire-Format Transparency
 
@@ -221,6 +262,6 @@ approximation of relative reduction, not a provider-exact token count.
 ## Related
 
 - [Service: Routing Engine, Optimizers and Context Window Fit](../service/routing-engine.md#optimizers-and-context-window-fit)
-- [API: Optimizers](../api/management.md#optimizers)
+- [API: Optimizers](../api/management.md#optimizers), [Recent Traffic Samples](../api/management.md#recent-traffic-samples)
 - [CLI: `routerly optimizers`](../cli/commands.md#routerly-optimizers)
 - [Dashboard: Projects, Optimizer Tab](../dashboard/projects.md#optimizer-tab)
