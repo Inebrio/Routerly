@@ -402,3 +402,108 @@ describe('project-scoped channel filtering (lines 165-166)', () => {
     expect(mockDispatch).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('incident correlation by traceId (T50)', () => {
+  /**
+   * Dashboard channel that takes everything, with an inbox that survives across
+   * emits: the emitter reads back what it wrote, like the real config file.
+   */
+  function liveInbox(seed: any[] = [], channels?: any[]) {
+    let inbox = seed;
+    mockRead.mockImplementation(async (key: string) => {
+      if (key === 'settings') {
+        return { notifications: { channels: channels ?? [{ id: 'd', provider: 'dashboard' }] } };
+      }
+      if (key === 'notifications') return inbox;
+      if (key === 'users') return [{ id: 'u1', email: 'a@x', roleId: 'admin' }, { id: 'u2', email: 'b@x', roleId: 'viewer' }];
+      return [];
+    });
+    mockWrite.mockImplementation(async (key: string, value: any) => {
+      if (key === 'notifications') inbox = value;
+    });
+    return () => inbox;
+  }
+
+  it('folds two events with the same traceId into one item', async () => {
+    const inbox = liveInbox();
+    await emitEvent('routing.fallback_used', 'info', { traceId: 't1', fallbackModelId: 'm2' });
+    await emitEvent('provider.error', 'warning', { traceId: 't1', error: 'boom' });
+    expect(inbox()).toHaveLength(1);
+    expect(inbox()[0].traceId).toBe('t1');
+    expect(inbox()[0].events.map((e: any) => e.event)).toEqual(['routing.fallback_used', 'provider.error']);
+  });
+
+  it('the item takes the identity of the worst event of the incident', async () => {
+    const inbox = liveInbox();
+    await emitEvent('routing.fallback_used', 'info', { traceId: 't1' });
+    await emitEvent('routing.no_candidates', 'critical', { traceId: 't1', requestedModel: 'gpt-4o' });
+    await emitEvent('budget.reset', 'info', { traceId: 't1' });
+    const item = inbox()[0];
+    expect(item.event).toBe('routing.no_candidates');
+    expect(item.severity).toBe('critical');
+    expect(item.details.requestedModel).toBe('gpt-4o');
+    expect(item.events).toHaveLength(3);
+  });
+
+  it('a later event of equal severity takes over the identity', async () => {
+    const inbox = liveInbox();
+    await emitEvent('provider.error', 'warning', { traceId: 't1', error: 'first' });
+    await emitEvent('provider.rate_limited', 'warning', { traceId: 't1', error: 'second' });
+    expect(inbox()[0].event).toBe('provider.rate_limited');
+    expect(inbox()[0].details.error).toBe('second');
+  });
+
+  it('a new event makes the incident unread again but keeps a manual dismissal', async () => {
+    const inbox = liveInbox([{
+      id: 'n1', event: 'provider.error', severity: 'warning', traceId: 't1',
+      timestamp: new Date().toISOString(), details: {}, readBy: ['u1'], deletedBy: ['u2'],
+    }]);
+    await emitEvent('provider.rate_limited', 'warning', { traceId: 't1' });
+    expect(inbox()[0].readBy).toEqual([]);
+    expect(inbox()[0].deletedBy).toEqual(['u2']);
+  });
+
+  it('different traceIds stay separate items', async () => {
+    const inbox = liveInbox();
+    await emitEvent('provider.error', 'warning', { traceId: 't1' });
+    await emitEvent('provider.error', 'warning', { traceId: 't2' });
+    expect(inbox()).toHaveLength(2);
+  });
+
+  it('events without a traceId are never folded', async () => {
+    const inbox = liveInbox();
+    await emitEvent('config.model_added', 'info', { modelId: 'm1' });
+    await emitEvent('config.model_added', 'info', { modelId: 'm2' });
+    expect(inbox()).toHaveLength(2);
+    expect(inbox()[0].events).toBeUndefined();
+  });
+
+  it('a trace whose last event is older than the window opens a new incident', async () => {
+    const stale = new Date(Date.now() - 11 * 60 * 1000).toISOString();
+    const inbox = liveInbox([{
+      id: 'n1', event: 'provider.error', severity: 'warning', traceId: 't1',
+      timestamp: stale, details: {}, readBy: [],
+    }]);
+    await emitEvent('provider.error', 'warning', { traceId: 't1' });
+    expect(inbox()).toHaveLength(2);
+  });
+
+  it('audience is the union, and everyone wins over a list', async () => {
+    const inbox = liveInbox(
+      [{
+        id: 'n1', event: 'provider.error', severity: 'warning', traceId: 't1',
+        timestamp: new Date().toISOString(), details: {}, readBy: [], recipients: ['u1'],
+      }],
+      [{ id: 'd1', provider: 'dashboard', targets: { users: ['u2'] } }],
+    );
+    await emitEvent('provider.rate_limited', 'warning', { traceId: 't1' });
+    expect(inbox()[0].recipients.sort()).toEqual(['u1', 'u2']);
+
+    const everyone = liveInbox([{
+      id: 'n1', event: 'provider.error', severity: 'warning', traceId: 't2',
+      timestamp: new Date().toISOString(), details: {}, readBy: [], recipients: ['u1'],
+    }]);
+    await emitEvent('provider.rate_limited', 'warning', { traceId: 't2' });
+    expect(everyone()[0].recipients).toBeUndefined();
+  });
+});

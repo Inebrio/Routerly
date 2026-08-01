@@ -6752,6 +6752,66 @@ describe('GET /api/notifications/inbox', () => {
   })
 })
 
+// ─── Correlated incidents (T50) ──────────────────────────────────────────────
+describe('notification incidents', () => {
+  const events = [
+    { event: 'routing.fallback_used', severity: 'info',    timestamp: '2026-01-02T00:00:00.000Z', details: { traceId: 't1' } },
+    { event: 'provider.error',        severity: 'warning', timestamp: '2026-01-02T00:00:01.000Z', details: { traceId: 't1', error: 'boom' } },
+  ]
+  const incident = {
+    id: 'n1', event: 'provider.error', severity: 'warning', traceId: 't1',
+    timestamp: '2026-01-02T00:00:01.000Z', details: { traceId: 't1', error: 'boom' }, readBy: [], events,
+  }
+
+  function setup() {
+    mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [adminUser]
+      if (type === 'roles') return []
+      if (type === 'notifications') return [
+        { ...incident, readBy: [] },
+        { id: 'n2', event: 'config.model_added', severity: 'info', timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [] },
+      ]
+      return []
+    })
+  }
+
+  it('the list carries the trace id and the event count, not the sequence', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox', headers: adminAuthHeaders() })
+    await app.close()
+    const body = JSON.parse(res.body)
+    expect(body.items[0]).toMatchObject({ id: 'n1', traceId: 't1', eventCount: 2 })
+    expect(body.items[0].events).toBeUndefined()
+    expect(body.items[1]).toMatchObject({ id: 'n2', eventCount: 1 })
+    expect(body.items[1].traceId).toBeUndefined()
+  })
+
+  it('the detail carries the whole event sequence', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox/n1', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.traceId).toBe('t1')
+    expect(body.eventCount).toBe(2)
+    expect(body.events.map((e: { event: string }) => e.event))
+      .toEqual(['routing.fallback_used', 'provider.error'])
+  })
+
+  it('a single-event notification has no sequence', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox/n2', headers: adminAuthHeaders() })
+    await app.close()
+    const body = JSON.parse(res.body)
+    expect(body.eventCount).toBe(1)
+    expect(body.events).toBeUndefined()
+  })
+})
+
 // ─── Notification inbox pagination + filters (portal table) ──────────────────
 describe('GET /api/notifications/inbox pagination + filters', () => {
   const inbox = [

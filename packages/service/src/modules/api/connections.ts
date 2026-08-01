@@ -45,7 +45,10 @@ function redactConnection(connection: ProviderConnection): Omit<ProviderConnecti
     const v = connection.credentials?.[f];
     if (v !== undefined) safe[f] = v;
   }
-  return { ...connection, credentials: Object.keys(safe).length > 0 ? safe : undefined };
+  // With exactOptionalPropertyTypes an optional prop is cleared by dropping the
+  // key, not by assigning undefined. Same JSON either way.
+  const { credentials: _secret, ...rest } = connection;
+  return Object.keys(safe).length > 0 ? { ...rest, credentials: safe } : rest;
 }
 
 /**

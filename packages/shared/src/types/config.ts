@@ -928,6 +928,14 @@ export const NOTIFICATION_EVENTS = [
 /** One of the canonical {@link NOTIFICATION_EVENTS} names. */
 export type NotificationEvent = (typeof NOTIFICATION_EVENTS)[number];
 
+/** One event of a correlated incident, in the order it was emitted (T50). */
+export interface NotificationIncidentEvent {
+  event: string;
+  severity: NotificationSeverity;
+  timestamp: string; // ISO 8601
+  details: Record<string, unknown>;
+}
+
 /** A persisted in-app inbox notification (#91) */
 export interface NotificationInboxItem {
   id: string;
@@ -935,6 +943,17 @@ export interface NotificationInboxItem {
   severity: NotificationSeverity;
   timestamp: string; // ISO 8601
   details: Record<string, unknown>;
+  /**
+   * Trace ID shared by every event of the same incident. Events emitted with
+   * the same trace ID collapse into this single item instead of piling up.
+   */
+  traceId?: string;
+  /**
+   * The incident's full event sequence, oldest first. Present only once a
+   * second event correlates: a lone event keeps its data in the fields above.
+   * The top-level `event`/`severity`/`details` mirror the most severe entry.
+   */
+  events?: NotificationIncidentEvent[];
   /** User IDs that have marked this item as read */
   readBy: string[];
   /**

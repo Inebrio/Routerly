@@ -251,7 +251,7 @@ export async function checkBudget(model: ModelConfig, ctx: LLMCallContext): Prom
       ...(traceId !== undefined ? { traceId } : {}),
     }).catch(() => {});
     budgetExceededKeys.add(budgetKey);
-    emitEvent('budget.exceeded', 'critical', { projectId, modelId: model.id, reason }, { ...(ctx.log ? { log: ctx.log } : {}) }).catch(() => {});
+    emitEvent('budget.exceeded', 'critical', { projectId, modelId: model.id, reason, ...(traceId !== undefined ? { traceId } : {}) }, { ...(ctx.log ? { log: ctx.log } : {}) }).catch(() => {});
     throw new BudgetExceededError(model.id);
   }
 
@@ -261,7 +261,7 @@ export async function checkBudget(model: ModelConfig, ctx: LLMCallContext): Prom
     for (const k of thresholdFiredKeys) {
       if (k.startsWith(budgetKey + ':')) thresholdFiredKeys.delete(k);
     }
-    emitEvent('budget.reset', 'info', { projectId, modelId: model.id }, ctx.log ? { log: ctx.log } : {}).catch(() => {});
+    emitEvent('budget.reset', 'info', { projectId, modelId: model.id, ...(traceId !== undefined ? { traceId } : {}) }, ctx.log ? { log: ctx.log } : {}).catch(() => {});
   }
 
   // Check if usage is near threshold (≥80%) — only for user-facing completion calls
@@ -275,6 +275,7 @@ export async function checkBudget(model: ModelConfig, ctx: LLMCallContext): Prom
             emitEvent('budget.threshold_reached', 'warning', {
               projectId, modelId: model.id, metric: snap.metric, window: snap.window,
               current: snap.current, limit: snap.value, pct: Math.round(snap.current / snap.value * 100),
+              ...(traceId !== undefined ? { traceId } : {}),
             }, ctx.log ? { log: ctx.log } : {}).catch(() => {});
           }
         }
@@ -403,7 +404,7 @@ export async function llmChat(
     emit?.({ panel: res, message: 'model:error', details: { modelId: model.id, error: msg, latencyMs } });
 
     const provEvt = isRateLimitError(err) ? 'provider.rate_limited' : 'provider.error';
-    emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, projectId, error: msg }, log ? { log } : {}).catch(() => {});
+    emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, projectId, error: msg, ...(traceId !== undefined ? { traceId } : {}) }, log ? { log } : {}).catch(() => {});
     handleProviderResult(model, false, classifyUpstreamError(err, upstreamResponseFromError(err)), projectId, log);
 
     await trackUsage({
@@ -511,7 +512,7 @@ export async function llmStream(
     log?.warn({ err, modelId: model.id }, isTtftTimeout ? 'llm executor: TTFT timeout' : 'llm executor: stream failed before first chunk');
     emit?.({ panel: res, message: 'model:error', details: { modelId: model.id, error: msg, latencyMs } });
     const provEvt = isRateLimitError(err) ? 'provider.rate_limited' : 'provider.error';
-    emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, projectId, error: msg }, log ? { log } : {}).catch(() => {});
+    emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, projectId, error: msg, ...(traceId !== undefined ? { traceId } : {}) }, log ? { log } : {}).catch(() => {});
     handleProviderResult(model, false, classifyUpstreamError(err, upstreamResponseFromError(err)), projectId, log);
     await trackUsage({
       projectId, model, inputTokens: 0, outputTokens: 0, latencyMs,
@@ -594,7 +595,7 @@ export async function llmStream(
         details: { modelId: model.id, error: errorMessage, latencyMs: Date.now() - t0 },
       });
       const provEvt = isRateLimitError(err) ? 'provider.rate_limited' : 'provider.error';
-      emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, projectId, error: errorMessage }, log ? { log } : {}).catch(() => {});
+      emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, projectId, error: errorMessage, ...(traceId !== undefined ? { traceId } : {}) }, log ? { log } : {}).catch(() => {});
       handleProviderResult(model, false, classifyUpstreamError(err, upstreamResponseFromError(err)), projectId, log);
       throw err;
     } finally {
