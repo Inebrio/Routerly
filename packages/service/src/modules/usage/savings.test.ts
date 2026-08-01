@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { ModelConfig, UsageRecord } from '@routerly/shared'
-import { computeSavings, computeSeries } from './savings.js'
+import { computeSavings, computeSeries, tokenizerRatio } from './savings.js'
 
 function model(id: string, inputPerMillion: number, outputPerMillion: number, cachePerMillion?: number): ModelConfig {
   return {
@@ -150,13 +150,58 @@ describe('computeSavings', () => {
     expect(s.comparedCost).toBe(0)
     expect(s.cache).toEqual({ inputTokens: 0, cost: 0 })
     expect(s.baselines).toEqual([
-      { modelId: 'cheap', cost: 0, costDelta: 0, costDeltaPercent: 0, latencySamples: 0 },
+      { modelId: 'cheap', cost: 0, costDelta: 0, costDeltaPercent: 0, latencySamples: 0, tokensEstimated: 0, tokenDelta: 0 },
     ])
     expect(s.optimizers).toEqual([])
   })
 })
 
 // ── Per-optimizer measured savings (T63) ──────────────────────────────────────
+
+describe('tokenizerRatio', () => {
+  it('places each family against o200k, first match winning', () => {
+    expect(tokenizerRatio('anthropic/claude-sonnet-4-6')).toBe(1.15)
+    expect(tokenizerRatio('gemini/gemini-2.5-pro')).toBe(1.05)
+    expect(tokenizerRatio('ollama/qwen3:4b')).toBe(1.1)
+    expect(tokenizerRatio('openai/gpt-5.2')).toBe(1)
+    expect(tokenizerRatio('openai/text-embedding-3-small')).toBe(1.05)
+  })
+
+  it('falls back to the reference for a model it does not recognise', () => {
+    expect(tokenizerRatio('acme/whatever')).toBe(1)
+  })
+})
+
+describe('computeSavings — token counterfactual', () => {
+  const TOKENIZED = [model('openai/gpt-5', 1, 2), model('anthropic/claude-x', 10, 20)]
+
+  it('rescales the observed tokens by the ratio between the two tokenizers', () => {
+    const s = computeSavings(
+      [record({ modelId: 'openai/gpt-5', cost: 0.003 })],
+      TOKENIZED,
+      ['openai/gpt-5', 'anthropic/claude-x'],
+    )
+    const same = s.baselines.find(b => b.modelId === 'openai/gpt-5')!
+    const claude = s.baselines.find(b => b.modelId === 'anthropic/claude-x')!
+    // same family: nothing to rescale
+    expect(same.tokensEstimated).toBe(2000)
+    expect(same.tokenDelta).toBe(0)
+    // 2000 tokens at 1.15 tokens per o200k token
+    expect(claude.tokensEstimated).toBe(2300)
+    expect(claude.tokenDelta).toBe(300)
+  })
+
+  it('reads the ratio of the model that served each call, not one global family', () => {
+    const s = computeSavings(
+      [record({ modelId: 'anthropic/claude-x', cost: 0.03 })],
+      TOKENIZED,
+      ['openai/gpt-5'],
+    )
+    // the same conversation costs fewer tokens on o200k than it did on Claude
+    expect(s.baselines[0]!.tokensEstimated).toBe(Math.round(2000 / 1.15))
+    expect(s.baselines[0]!.tokenDelta).toBe(Math.round(2000 / 1.15) - 2000)
+  })
+})
 
 describe('computeSavings — optimizers', () => {
   it('sums tokens removed by each optimizer and prices them on the serving model', () => {
@@ -269,6 +314,20 @@ describe('computeSeries', () => {
     expect(s.points[0]!.baselineCost).toBe(0.03)
   })
 
+  it('prices every paid baseline, cheapest first', () => {
+    const s = seriesOf([at('2026-08-01T10:00:00.000Z')], 'hour')
+    expect(s.baselineModelIds).toEqual(['cheap', 'expensive'])
+    expect(s.points[0]!.baselineCosts).toEqual({ cheap: 0.003, expensive: 0.03 })
+  })
+
+  it('leaves a free baseline out of the per-model repricing', () => {
+    const models = [...MODELS, model('free', 0, 0)]
+    const records = [at('2026-08-01T10:00:00.000Z')]
+    const s = computeSeries(records, models, computeSavings(records, models, ['free', 'cheap']), 'hour')
+    expect(s.baselineModelIds).toEqual(['cheap'])
+    expect(s.points[0]!.baselineCosts).toEqual({ cheap: 0.003 })
+  })
+
   it('estimates baseline latency from that baseline own throughput', () => {
     const records = [
       at('2026-08-01T10:00:00.000Z'),
@@ -282,7 +341,9 @@ describe('computeSeries', () => {
   it('leaves the counterfactual empty when there is no baseline', () => {
     const s = seriesOf([at('2026-08-01T10:00:00.000Z')], 'hour', [])
     expect(s.baselineModelId).toBeUndefined()
+    expect(s.baselineModelIds).toEqual([])
     expect(s.points[0]!.baselineCost).toBe(0)
+    expect(s.points[0]!.baselineCosts).toEqual({})
     expect(s.points[0]!.baselineLatencyMs).toBe(0)
   })
 

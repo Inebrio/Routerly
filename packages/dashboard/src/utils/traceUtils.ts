@@ -128,8 +128,15 @@ export function extractMessageStats(traces: TraceEntry[]): MessageStats {
 
 export function formatDuration(ms: number | null): string {
   if (ms == null) return '—';
-  if (ms < 1000) return `${Math.round(ms)}ms`;
-  return `${(ms / 1000).toFixed(2)}s`;
+  // Saved time can be negative when routing picked the slower model, and it adds
+  // up over a whole window, so the thresholds read the magnitude, the sign goes
+  // back in front, and hours stay hours instead of five-digit seconds.
+  const sign = ms < 0 ? '-' : '';
+  const abs = Math.abs(ms);
+  if (abs < 1000) return `${sign}${Math.round(abs)}ms`;
+  if (abs < 60_000) return `${sign}${(abs / 1000).toFixed(2)}s`;
+  if (abs < 3_600_000) return `${sign}${(abs / 60_000).toFixed(1)}m`;
+  return `${sign}${(abs / 3_600_000).toFixed(1)}h`;
 }
 
 export function formatTokensPerSec(tps: number | null): string {
@@ -140,10 +147,14 @@ export function formatTokensPerSec(tps: number | null): string {
 export function formatCost(usd: number | null): string {
   if (usd == null) return '—';
   if (usd === 0) return '$0.000';
-  if (usd < 0.000001) return '<$0.000001';
-  if (usd < 0.01) return `$${usd.toFixed(8)}`;
-  if (usd < 1) return `$${usd.toFixed(4)}`;
-  return `$${usd.toFixed(2)}`;
+  // A saving can come out negative when routing picked the costlier model, so
+  // the thresholds read the magnitude and the sign is put back in front.
+  const sign = usd < 0 ? '-' : '';
+  const abs = Math.abs(usd);
+  if (abs < 0.000001) return `${sign}<$0.000001`;
+  if (abs < 0.01) return `${sign}$${abs.toFixed(8)}`;
+  if (abs < 1) return `${sign}$${abs.toFixed(4)}`;
+  return `${sign}$${abs.toFixed(2)}`;
 }
 
 export function formatTokens(count: number | null): string {

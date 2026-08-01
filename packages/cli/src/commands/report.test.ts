@@ -422,8 +422,8 @@ const savingsFixture = {
     comparedOutputTokens: 500,
     cache: { inputTokens: 400, cost: 0.0009 },
     baselines: [
-      { modelId: 'cheap', cost: 0.003, costDelta: 0, costDeltaPercent: 0, latencyMs: 8000, latencyDeltaMs: -1000, latencySamples: 8 },
-      { modelId: 'expensive', cost: 0.03, costDelta: 0.027, costDeltaPercent: 90, latencySamples: 0 },
+      { modelId: 'cheap', cost: 0.003, costDelta: 0, costDeltaPercent: 0, latencyMs: 8000, latencyDeltaMs: -1000, latencySamples: 8, tokensEstimated: 1500, tokenDelta: 0 },
+      { modelId: 'expensive', cost: 0.03, costDelta: 0.027, costDeltaPercent: 90, latencySamples: 0, tokensEstimated: 1725, tokenDelta: 225 },
     ],
     optimizers: [
       { id: 'ccr', calls: 7, tokensSaved: 4200, costSaved: 0.0126, rolledBack: 0 },
@@ -466,6 +466,32 @@ describe('report savings', () => {
     expect(text).toContain('90.0%');
     expect(text).toContain('no sample');
     expect(text).toContain('8,000 ms');
+  });
+
+  it('anchors the saving on the costliest baseline, the cheapest as context', async () => {
+    mockApi.mockResolvedValue(savingsFixture);
+    const { out } = await run('savings');
+    const text = out.join('\n');
+    expect(text).toContain('Cost saved:   $0.027000 (vs always expensive)');
+    expect(text).toContain('              $0.000000 (vs always cheap)');
+    // `expensive` never answered in the window, so the time line falls back to `cheap`
+    expect(text).toContain('Time saved:   -1,000 ms (vs always cheap)');
+    expect(text).toContain('Tokens saved: 4,330 cut by optimizers, measured');
+    expect(text).toContain('225 vs always expensive, estimated');
+  });
+
+  it('says so when no baseline answered in the window', async () => {
+    const baselines = savingsFixture.savings.baselines.map(({ latencyMs: _l, latencyDeltaMs: _d, ...b }) => b);
+    mockApi.mockResolvedValue({ ...savingsFixture, savings: { ...savingsFixture.savings, baselines } });
+    const { out } = await run('savings');
+    expect(out.join('\n')).toContain('no baseline answered in this window');
+  });
+
+  it('drops the summary when every baseline is free', async () => {
+    const baselines = savingsFixture.savings.baselines.map(b => ({ ...b, cost: 0 }));
+    mockApi.mockResolvedValue({ ...savingsFixture, savings: { ...savingsFixture.savings, baselines } });
+    const { out } = await run('savings');
+    expect(out.join('\n')).not.toContain('Cost saved:');
   });
 
   it('names each optimizer and counts its rollbacks', async () => {

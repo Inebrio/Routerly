@@ -180,6 +180,16 @@ describe('formatDuration', () => {
   it('rounds ms to integer', () => {
     expect(formatDuration(999)).toBe('999ms');
   });
+
+  it('formats a window total as minutes and hours', () => {
+    expect(formatDuration(90_000)).toBe('1.5m');
+    expect(formatDuration(71_419_770)).toBe('19.8h');
+  });
+
+  it('keeps the sign in front of the unit', () => {
+    expect(formatDuration(-450)).toBe('-450ms');
+    expect(formatDuration(-1_713_784)).toBe('-28.6m');
+  });
 });
 
 describe('formatTokensPerSec', () => {

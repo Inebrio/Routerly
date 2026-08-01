@@ -807,6 +807,23 @@ td .badge {
 
 .chart-legend-item { display: flex; align-items: center; gap: 6px; }
 
+/* Clickable legend entry: same look, plus the affordance and the off state. */
+.chart-legend-toggle {
+  background: none;
+  border: 0;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.chart-legend-toggle:hover { background: var(--bg-elevated); }
+
+.chart-legend-toggle.is-off { opacity: 0.4; text-decoration: line-through; }
+
 .chart-legend-swatch {
   width: 10px;
   height: 10px;

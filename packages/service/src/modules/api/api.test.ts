@@ -1633,13 +1633,13 @@ describe('GET /api/usage', () => {
       { id: 'u1', timestamp: now, projectId: 'p1', modelId: 'cheap', inputTokens: 1000, outputTokens: 1000, cost: 0.003, outcome: 'success', callType: 'completion', latencyMs: 1000 },
       { id: 'u2', timestamp: now, projectId: 'p1', modelId: 'cheap', inputTokens: 0, outputTokens: 0, cost: 0.5, outcome: 'success', callType: 'routing', latencyMs: 50 },
     ]
-    const get = async (qs: string) => {
+    const get = async (qs: string, over: { instances?: any[]; records?: any[] } = {}) => {
       setupAdminAuth()
       mockReadConfig.mockImplementation(async (t: string) => {
         if (t === 'users') return [adminUser]
         if (t === 'roles') return []
-        if (t === 'usage') return records
-        if (t === 'instances') return instances
+        if (t === 'usage') return over.records ?? records
+        if (t === 'instances') return over.instances ?? instances
         if (t === 'connections') return connections
         if (t === 'projects') return projects
         return []
@@ -1670,10 +1670,48 @@ describe('GET /api/usage', () => {
       expect(b.savings.baselines.some((x: any) => x.modelId === 'off')).toBe(false)
     })
 
+    it('leaves embedding models out of the baselines', async () => {
+      // An embedding model cannot answer a completion call, so pricing the
+      // traffic on it would only widen the range with a number nobody can act on.
+      const withEmbedding = [...instances, {
+        id: 'embed', connectionId: 'c1', upstreamModelId: 'embed',
+        cost: { inputPerMillion: 0.02, outputPerMillion: 0 }, contextWindow: 8000,
+        capabilities: { embedding: true },
+      }]
+      const b = await get('savings=1', {
+        instances: withEmbedding,
+        records: [...records, { id: 'u3', timestamp: now, projectId: 'p1', modelId: 'embed', inputTokens: 100, outputTokens: 0, cost: 0.000002, outcome: 'success', callType: 'completion', latencyMs: 40 }],
+      })
+      expect(b.savings.baselines.some((x: any) => x.modelId === 'embed')).toBe(false)
+    })
+
+    it('counterfactuals a model that served traffic even when no project targets it', async () => {
+      const b = await get('savings=1', {
+        records: [...records, { id: 'u3', timestamp: now, projectId: 'p1', modelId: 'expensive2', inputTokens: 100, outputTokens: 100, cost: 0.002, outcome: 'success', callType: 'completion', latencyMs: 900 }],
+        instances: [...instances, { id: 'expensive2', connectionId: 'c1', upstreamModelId: 'expensive2', cost: { inputPerMillion: 20, outputPerMillion: 40 }, contextWindow: 8000 }],
+      })
+      expect(b.savings.baselines.some((x: any) => x.modelId === 'expensive2')).toBe(true)
+    })
+
+    it('leaves a model that only served the gateway own calls out of the baselines', async () => {
+      const b = await get('savings=1', {
+        records: [...records, { id: 'u3', timestamp: now, projectId: 'p1', modelId: 'guard', inputTokens: 100, outputTokens: 10, cost: 0.001, outcome: 'success', callType: 'guardrail', latencyMs: 200 }],
+        instances: [...instances, { id: 'guard', connectionId: 'c1', upstreamModelId: 'guard', cost: { inputPerMillion: 5, outputPerMillion: 10 }, contextWindow: 8000 }],
+      })
+      expect(b.savings.baselines.some((x: any) => x.modelId === 'guard')).toBe(false)
+    })
+
     it('respects the active filters', async () => {
       const b = await get('savings=1&modelIds=expensive')
       expect(b.savings.comparedCalls).toBe(0)
-      expect(b.savings.baselines).toEqual([]) // no project left in the result, no baseline to compare
+      // The baselines are the models in play for the traffic in the window (T102),
+      // so a filter that empties the record set leaves nothing to compare against.
+      expect(b.savings.baselines).toEqual([])
+    })
+
+    it('scopes the baselines to the project when one is asked for', async () => {
+      const b = await get('savings=1&projectId=p1')
+      expect(b.savings.baselines.map((x: any) => x.modelId)).toEqual(['cheap', 'expensive'])
     })
 
     it('requires report:read like the rest of the route', async () => {

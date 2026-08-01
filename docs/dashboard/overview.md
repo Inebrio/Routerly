@@ -38,8 +38,11 @@ The top row shows aggregate numbers for the selected period:
 | **Errors** | Number of failed requests (provider errors, budget exceeded, and so on) | [Usage](usage.md) |
 | **Models** | Number of registered models | [Models](models.md) |
 | **Projects** | Number of projects | [Projects](projects.md) |
+| **Cost saved** | What routing saved over sending the same traffic to one model every time. Green when routing came out cheaper, red when it came out more expensive | — |
+| **Time saved** | The same comparison in wall time over the whole period | — |
+| **Tokens saved** | What the [optimizers](../concepts/optimizers.md) really removed, plus the tokenizer estimate as a second line | — |
 
-Every card is a link to the section that explains its number, so a figure that looks wrong is one click from the records behind it.
+Every card except the three saving ones is a link to the section that explains its number, so a figure that looks wrong is one click from the records behind it. The saving cards are explained by the card below them and appear only when there is something to compare against.
 
 ---
 
@@ -55,43 +58,47 @@ Below the summary cards, a strip shows aggregate token counts for the period:
 
 ---
 
-## Cost Over Time Chart
-
-An area chart shows cost over time for the selected period. The chart adapts its granularity to the selected window:
-
-- **Daily**: one point per hour of the current day
-- **Weekly / Monthly**: one point per day; days with no activity show zero (no interpolation)
-- **All**: one point per day across the full history
-
----
-
 ## What Routing Saved
 
-Under the cost chart, a card compares the traffic that actually happened with the same traffic sent to a single model: the **costliest** target model the projects in the window allow, which is the worst case the routing avoided. The model is named in the card header and links to [Models](models.md).
+A single card compares the traffic that actually happened with the same traffic sent to one model at a time. The header says how many client calls were compared, over how many baseline models, and links to [Models](models.md).
 
-Above the chart, a strip totals the period:
+### Which models it compares against
 
-| Figure | Description |
-|--------|-------------|
-| **Saved** | Baseline cost minus actual cost, and the same as a percentage. Red when the routing came out more expensive |
-| **Actual** | What the compared calls cost |
-| **Baseline** | What they would have cost on the baseline model |
-| **Time** | Measured total time against the estimated baseline total, shown only when the baseline has enough samples to estimate from |
+A baseline is a single-model policy the operator could really have run instead of routing, so the comparison only covers the paid models **in play** in the selected period:
+
+- every enabled target model of the projects that produced traffic in the period,
+- plus every model that actually served a client call in it.
+
+Free models are left out because they make the cost comparison meaningless, and embedding models are left out because they cannot answer a completion call. A model that only served the gateway's own routing or guardrail calls is not a baseline either.
+
+### The saving cards
+
+The three saving cards in the top row read this comparison. Each one is anchored on the **costliest model in play**, the worst case routing avoided, and names it: `vs always claude-opus-4-6`.
+
+| Card | Description |
+|------|-------------|
+| **Cost saved** | What routing saved against always using the anchor model. The second line repeats the comparison against the cheapest model in play, which is usually negative: sending everything to the cheapest model always costs less than routing, and costs quality, which is the trade-off routing exists to make |
+| **Time saved** | The same comparison in wall time over the whole period, from each model's own throughput in it. Models that never answered in the period carry no estimate, so this card falls back to the costliest one that did |
+| **Tokens saved** | Two different figures, kept apart: what the [optimizers](../concepts/optimizers.md) really removed, which is measured, and what a different tokenizer would have counted, which is an estimate |
+
+### The chart
 
 A segmented control switches what the chart plots:
 
-| Metric | Solid line | Dashed line |
-|--------|-----------|-------------|
-| **Cost** | USD actually spent per bucket | The same calls priced at the baseline model |
+| Metric | Solid line | Dashed lines |
+|--------|-----------|--------------|
+| **Cost** | USD actually spent per bucket | One line per model in play: the same calls priced there |
 | **Tokens** | Input tokens per bucket | Output tokens per bucket (both solid: tokens have no counterfactual) |
-| **Speed** | Measured milliseconds per call | Estimated milliseconds per call on the baseline |
+| **Speed** | Measured milliseconds per call | Estimated milliseconds per call on the costliest model |
 
-The dashed line is always the counterfactual: something that did not happen. Buckets with no comparable call are left out rather than drawn as zero, so a gap in the line means there was no traffic.
+The dashed lines are counterfactuals: something that did not happen. Buckets with no comparable call are left out rather than drawn as zero, so a gap in the line means there was no traffic.
+
+With more than a handful of models in play the chart would be unreadable, so it starts with only the two ends visible: the cheapest model and the costliest. **Click any legend entry to show or hide its line**, including the actual spend. Hidden entries stay in the legend, struck through. Changing the period recomputes which models are in play, and the two ends of the new set become the visible ones again.
 
 Only client calls count. Routing and guardrail calls are the gateway's own overhead and are excluded, as are calls that carry no tokens. The same numbers are available from [`routerly report savings --trend`](../cli/commands.md#routerly-report-savings) and from `GET /api/usage?series=1` ([API: Savings series](../api/management.md#savings-series)).
 
 :::note Repricing is an estimate, not a replay
-The cost figures are exact arithmetic on the observed token counts, but a different model tokenizes the same text slightly differently and may answer at a different length. Read the baseline as "the same conversation, priced elsewhere". Measuring the real difference needs a live comparison, which is what [Experiments](experiments.md) are for.
+The cost figures are exact arithmetic on the observed token counts, but a different model tokenizes the same text slightly differently and may answer at a different length. The token range is derived from a ratio per tokenizer family, not by re-tokenizing the prompts: Routerly does not retain them. Read the baseline as "the same conversation, priced elsewhere". Measuring the real difference needs a live comparison, which is what [Experiments](experiments.md) are for.
 :::
 
 ---
@@ -120,6 +127,6 @@ Rows are sorted by call count descending.
 ## Navigating to Details
 
 - Click any summary card to open the section that explains it: [Usage](usage.md), [Models](models.md) or [Projects](projects.md).
-- The baseline model named in **What Routing Saved** links to [Models](models.md), where its price and targets are configured.
+- The paid-model count in **What Routing Saved** links to [Models](models.md), where prices and targets are configured.
 - Use the **Usage** item in the sidebar for the full analytics page with filtering and drill-down by project, model, or date range.
 - Click a project name in the sidebar to go directly to that project's configuration.

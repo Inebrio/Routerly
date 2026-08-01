@@ -2713,7 +2713,7 @@ routerly report savings [options]
 | `--trend` | Add a per-bucket breakdown: one row per hour with `--period daily`, one per day otherwise |
 | `--json` | Output the raw savings block |
 
-The command reads `GET /api/usage?savings=1` (see [API: Usage](../api/management.md#usage)) and needs the same `report:read` permission as the rest of `report`. The counterfactual is computed against the **enabled target models of every project present in the result**, so `--project` narrows both the traffic and the models it is compared against.
+The command reads `GET /api/usage?savings=1` (see [API: Usage](../api/management.md#usage)) and needs the same `report:read` permission as the rest of `report`. With `--project`, the counterfactual is computed against that project's **enabled target models**, so the flag narrows both the traffic and the models it is compared against. Without it, the comparison covers the paid models **in play** in the period: the enabled target models of the projects that produced traffic, plus the models that actually served a client call. Embedding models are never baselines, since they cannot answer a completion call.
 
 ```
 routerly report savings --project my-api --period weekly
@@ -2728,15 +2728,20 @@ Tokens:         1,204,880 in / 96,410 out
 Prompt cache:   402,110 tokens served from cache, $0.030800 saved
 
 If everything had gone to one model
-┌─────────────────┬────────────┬────────────┬─────────┬────────────┬────────────┐
-│ Model           │ Would cost │ Saved      │ Saved % │ Would take │ Time saved │
-├─────────────────┼────────────┼────────────┼─────────┼────────────┼────────────┤
-│ gpt-4o          │ $0.412900  │ $0.298400  │ 72.3%   │ 18,420 ms  │ 6,180 ms   │
-├─────────────────┼────────────┼────────────┼─────────┼────────────┼────────────┤
-│ claude-sonnet-4 │ $0.238100  │ $0.123600  │ 51.9%   │ no sample  │ -          │
-├─────────────────┼────────────┼────────────┼─────────┼────────────┼────────────┤
-│ qwen3:4b        │ $0.061200  │ -$0.053300 │ -46.6%  │ 31,900 ms  │ -19,300 ms │
-└─────────────────┴────────────┴────────────┴─────────┴────────────┴────────────┘
+┌─────────────────┬────────────┬────────────┬─────────┬────────────┬────────────┬──────────────┐
+│ Model           │ Would cost │ Saved      │ Saved % │ Would take │ Time saved │ Tokens saved │
+├─────────────────┼────────────┼────────────┼─────────┼────────────┼────────────┼──────────────┤
+│ gpt-4o          │ $0.412900  │ $0.298400  │ 72.3%   │ 18,420 ms  │ 6,180 ms   │ 0            │
+├─────────────────┼────────────┼────────────┼─────────┼────────────┼────────────┼──────────────┤
+│ claude-sonnet-4 │ $0.238100  │ $0.123600  │ 51.9%   │ no sample  │ -          │ 195,193      │
+├─────────────────┼────────────┼────────────┼─────────┼────────────┼────────────┼──────────────┤
+│ qwen3:4b        │ $0.061200  │ -$0.053300 │ -46.6%  │ 31,900 ms  │ -19,300 ms │ 130,129      │
+└─────────────────┴────────────┴────────────┴─────────┴────────────┴────────────┴──────────────┘
+Cost saved:   $0.298400 (vs always openai/gpt-4o)
+              -$0.053300 (vs always ollama/qwen3:4b)
+Time saved:   6,180 ms (vs always openai/gpt-4o)
+Tokens saved: 148,665 cut by optimizers, measured
+              0 vs always openai/gpt-4o, estimated
 
 What the optimizers removed
 ┌───────────────┬────────────────────────────────┬───────────────┬──────────────┬────────────┬─────────────┐
@@ -2754,7 +2759,8 @@ Costs are the observed tokens repriced, times are estimated from each model's ow
 
 Reading the two tables:
 
-- **If everything had gone to one model** is a counterfactual, one row per enabled target model. `Saved` is positive when the routing came out cheaper than sending everything to that model and negative (red) when it did not, which is the expected shape for a cheap local model. `Would take` reads `no sample` when that model produced no output tokens in the period, so there is no throughput to estimate from, and `Time saved` then shows `-`.
+- **If everything had gone to one model** is a counterfactual, one row per enabled target model. `Saved` is positive when the routing came out cheaper than sending everything to that model and negative (red) when it did not, which is the expected shape for a cheap local model. `Would take` reads `no sample` when that model produced no output tokens in the period, so there is no throughput to estimate from, and `Time saved` then shows `-`. `Tokens saved` is an estimate from the ratio between tokenizer families, not a re-tokenization: Routerly does not retain prompts.
+- The lines under the table are the **summary**, the same figures the dashboard [Overview](../dashboard/overview.md#the-saving-cards) shows as cards. Each one is anchored on the costliest paid baseline, the worst case routing avoided, and names it. The second cost line repeats the comparison against the cheapest paid baseline, which is usually negative: sending everything to the cheapest model always costs less than routing, and costs quality. Free models are left out entirely: a saving measured against a local model that costs nothing says nothing about what routing avoided paying. Token savings are kept apart on purpose, what the optimizers really removed against what a different tokenizer would have counted.
 - **What the optimizers removed** is measured on the calls as they were served, not repriced. It is printed only when at least one optimizer changed a call in the period, and stays empty for records written before 0.4.0, which carry no per-optimizer numbers. A non-zero `Rolled back` count is highlighted: those results were rejected by the safety gate, which means that optimizer's threshold is too aggressive for this traffic. Tune it with [`routerly optimizers config`](#routerly-optimizers-config).
 
 When nothing in the window can be compared, the command prints `No comparable calls for period: <period>` instead of a table of zeros. When the traffic belongs to projects with no enabled target model, the headline still prints and the counterfactual is replaced by `No target model to compare against.`

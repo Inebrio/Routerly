@@ -58,6 +58,43 @@ function parseRequestType(value: string): string {
 }
 
 /**
+ * What routing saved (T102), the same three figures the Overview cards show,
+ * anchored the same way: the costliest paid baseline, the single-model policy
+ * routing replaces. The cheapest baseline follows as context, because "sending
+ * everything to the cheapest model would have cost less" is true of any router
+ * and reads as a verdict when it comes first.
+ *
+ * Free baselines are left out: "$0 saved against a local model" says nothing
+ * about what routing avoided paying.
+ */
+function printSavingsRange(savings: SavingsSummary): void {
+  const paid = [...savings.baselines.filter(b => b.cost > 0)].sort((a, b) => a.costDelta - b.costDelta);
+  if (paid.length === 0) return;
+
+  const anchor = paid[paid.length - 1]!;
+  const cheapest = paid[0]!;
+  // The anchor is picked on price, so it need not be one of the models that
+  // answered: the time line falls back to the costliest one that did.
+  const timed = paid.filter(b => b.latencyDeltaMs !== undefined);
+  const timeAnchor = timed[timed.length - 1];
+
+  console.log(chalk.gray('Cost saved:   ') + `$${anchor.costDelta.toFixed(6)}`
+    + chalk.gray(` (vs always ${anchor.modelId})`));
+  if (cheapest !== anchor) {
+    console.log(chalk.gray('              ') + `$${cheapest.costDelta.toFixed(6)}`
+      + chalk.gray(` (vs always ${cheapest.modelId})`));
+  }
+  console.log(chalk.gray('Time saved:   ') + (timeAnchor
+    ? `${Math.round(timeAnchor.latencyDeltaMs!).toLocaleString()} ms`
+      + chalk.gray(` (vs always ${timeAnchor.modelId})`)
+    : chalk.gray('no baseline answered in this window')));
+  console.log(chalk.gray('Tokens saved: ')
+    + `${savings.optimizers.reduce((sum, o) => sum + o.tokensSaved, 0).toLocaleString()} cut by optimizers, measured`);
+  console.log(chalk.gray('              ')
+    + `${anchor.tokenDelta.toLocaleString()} vs always ${anchor.modelId}, estimated`);
+}
+
+/**
  * The saving broken down per bucket (T81), the table behind `--trend`.
  *
  * The counterfactual columns are priced against the costliest baseline, the
@@ -390,7 +427,7 @@ Examples:
         } else {
           console.log(chalk.bold('\nIf everything had gone to one model'));
           const table = new Table({
-            head: ['Model', 'Would cost', 'Saved', 'Saved %', 'Would take', 'Time saved'].map(h => chalk.cyan(h)),
+            head: ['Model', 'Would cost', 'Saved', 'Saved %', 'Would take', 'Time saved', 'Tokens saved'].map(h => chalk.cyan(h)),
           });
           for (const b of savings.baselines) {
             const saved = b.costDelta >= 0 ? chalk.green(`$${b.costDelta.toFixed(6)}`) : chalk.red(`-$${Math.abs(b.costDelta).toFixed(6)}`);
@@ -399,9 +436,13 @@ Examples:
             const timeSaved = b.latencyDeltaMs === undefined
               ? chalk.gray('-')
               : `${Math.round(b.latencyDeltaMs).toLocaleString()} ms`;
-            table.push([b.modelId, `$${b.cost.toFixed(6)}`, saved, `${b.costDeltaPercent.toFixed(1)}%`, would, timeSaved]);
+            table.push([
+              b.modelId, `$${b.cost.toFixed(6)}`, saved, `${b.costDeltaPercent.toFixed(1)}%`, would, timeSaved,
+              b.tokenDelta.toLocaleString(),
+            ]);
           }
           console.log(table.toString());
+          printSavingsRange(savings);
         }
 
         if (savings.optimizers.length > 0) {
