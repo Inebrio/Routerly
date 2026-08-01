@@ -1,12 +1,15 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
-// ponytail: stub recharts — invoke formatters/tickFormatters so coverage doesn't drop
+// ponytail: stub recharts — invoke tickFormatters and render the tooltip content
+// so the formatters this page passes into the chart system stay covered.
 vi.mock('recharts', () => ({
   AreaChart: ({ children }: { children: React.ReactNode }) => <div data-testid="area-chart">{children}</div>,
   Area: () => null,
+  CartesianGrid: () => null,
   BarChart: ({ children }: { children: React.ReactNode }) => <div data-testid="bar-chart">{children}</div>,
   Bar: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Cell: () => null,
@@ -18,10 +21,14 @@ vi.mock('recharts', () => ({
     if (tickFormatter) tickFormatter(0.5);
     return null;
   },
-  Tooltip: ({ formatter }: { formatter?: (v: unknown, n: unknown, p: unknown) => unknown }) => {
-    if (formatter) formatter(0.123, '', { payload: { fullName: 'openai/gpt-4o' } });
-    return null;
-  },
+  Tooltip: ({ content }: { content?: React.ReactElement }) =>
+    content
+      ? React.cloneElement(content, {
+          active: true,
+          label: 'gpt-4o',
+          payload: [{ name: 'Cost', value: 0.123, color: '#3d75f5', dataKey: 'cost', payload: { fullName: 'openai/gpt-4o' } }],
+        } as never)
+      : null,
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
@@ -212,7 +219,8 @@ describe('OverviewPage — loaded state', () => {
     }));
     renderPage();
     await waitFor(() => expect(screen.queryByText('Calls by Model')).not.toBeNull());
-    expect(screen.queryByText('openai/gpt-4o')).not.toBeNull();
+    // The stubbed tooltip renders the same model id, hence the plural query.
+    expect(screen.queryAllByText('openai/gpt-4o').length).toBeGreaterThan(0);
     expect(screen.queryByText('50')).not.toBeNull();
   });
 
