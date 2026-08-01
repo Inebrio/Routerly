@@ -63,6 +63,7 @@ function makeStats(overrides: Record<string, unknown> = {}) {
         { modelId: 'cheap', cost: 0.003, costDelta: 0, costDeltaPercent: 0, latencyMs: 8000, latencyDeltaMs: -1000, latencySamples: 8 },
         { modelId: 'expensive', cost: 0.03, costDelta: 0.027, costDeltaPercent: 90, latencySamples: 0 },
       ],
+      optimizers: [],
     },
     ...overrides,
   };
@@ -173,5 +174,39 @@ describe('ProjectDashboardTab', () => {
     mockGetUsage.mockRejectedValue(new Error('forbidden'));
     renderTab();
     expect(await screen.findByText('forbidden')).toBeInTheDocument();
+  });
+});
+
+// ── Measured optimizer savings (T63) ─────────────────────────────────────────
+
+describe('ProjectDashboardTab — what the optimizers removed', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+  });
+
+  it('stays hidden when no optimizer touched a call in the window', async () => {
+    mockGetUsage.mockResolvedValue(makeStats());
+    renderTab();
+    await waitFor(() => expect(screen.getByText('Where the traffic went')).toBeInTheDocument());
+    expect(screen.queryByText('What the optimizers removed')).not.toBeInTheDocument();
+  });
+
+  it('lists each optimizer with its measured tokens, cost and rollbacks', async () => {
+    mockGetUsage.mockResolvedValue(makeStats({
+      savings: {
+        ...makeStats().savings,
+        optimizers: [
+          { id: 'ccr', calls: 7, tokensSaved: 4200, costSaved: 0.0126, rolledBack: 0 },
+          { id: 'caveman', calls: 2, tokensSaved: 130, costSaved: 0.0004, rolledBack: 3 },
+        ],
+      },
+    }));
+    renderTab();
+    await waitFor(() => expect(screen.getByText('What the optimizers removed')).toBeInTheDocument());
+    expect(screen.getByText('Conversation Context Reduction')).toBeInTheDocument();
+    expect(screen.getByText('4,200')).toBeInTheDocument();
+    expect(screen.getByText('Caveman')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
   });
 });
