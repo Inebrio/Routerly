@@ -19,14 +19,21 @@ Everything lives under the installing user's home directory.
 ~/.routerly/
 ├── app/               # Service binary (managed by installer)
 ├── config/
-│   ├── settings.json  # Global settings
-│   ├── models.json    # Registered LLM models
-│   ├── projects.json  # Projects, routing, budgets, tokens
-│   ├── users.json     # User accounts
-│   ├── roles.json     # Custom roles and permissions
-│   └── secret         # JWT signing key (mode 0600, keep safe)
+│   ├── settings.json     # Global settings
+│   ├── models.json       # Registered LLM models
+│   ├── projects.json     # Projects, routing, budgets, tokens
+│   ├── users.json        # User accounts
+│   ├── roles.json        # Custom roles and permissions
+│   ├── modules.json      # Which modules are enabled
+│   ├── profiles.json     # Routing profiles
+│   ├── connections.json  # Provider connections
+│   ├── instances.json    # Model instances
+│   ├── experiments.json  # A/B tests, their variants and tokens
+│   └── secret            # JWT signing key (mode 0600, keep safe)
 └── data/
-    └── usage.json     # Usage records
+    ├── usage.json        # Usage records
+    ├── notifications.json # Notification inbox
+    └── audit.json        # Audit log
 ```
 
 ### System scope
@@ -47,9 +54,16 @@ Service config and data move to a system-wide directory; the CLI auth tokens rem
 │   ├── projects.json
 │   ├── users.json
 │   ├── roles.json
+│   ├── modules.json
+│   ├── profiles.json
+│   ├── connections.json
+│   ├── instances.json
+│   ├── experiments.json
 │   └── secret              # JWT signing key (mode 0600)
 └── data/
-    └── usage.json
+    ├── usage.json
+    ├── notifications.json
+    └── audit.json
 ```
 
 ### CLI auth tokens (always per-user)

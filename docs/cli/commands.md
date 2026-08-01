@@ -1667,6 +1667,474 @@ Exit code: `0` on success, `1` on error (all subcommands).
 
 ---
 
+## `routerly experiments`
+
+Run A/B tests that route each call to one of several projects. A variant is
+an existing project taken whole, so two model sets, two routing profiles or
+two optimizer pipelines become directly comparable on cost, latency, errors
+and judge score. See [Concepts: Experiments](../concepts/experiments.md) for
+the lifecycle and how the numbers are computed, and
+[Dashboard: Experiments](../dashboard/experiments.md) for the same thing in
+the browser.
+
+| Rotation | Behaviour |
+|----------|-----------|
+| `sticky` | The same caller keeps the same variant for the whole conversation. Default |
+| `weighted` | Every request draws a variant independently, with the share each variant declares |
+| `round-robin` | Requests alternate between variants in order |
+
+Every subcommand answers the same way when the module is off:
+
+```
+The experiments module is disabled. Enable it with: routerly modules enable experiments
+```
+
+### `routerly experiments list`
+
+```
+routerly experiments list [--status <status>] [--json]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--status <status>` | Filter by status: `draft`, `running`, `closed` |
+| `--json` | Output raw JSON |
+
+**Table columns:**
+- **ID** - experiment id
+- **Name** - experiment name
+- **Status** - `draft` (amber), `running` (green), `closed` (grey)
+- **Rotation** - the rotation's display label
+- **Variants** - number of arms
+- **Created** - creation date
+
+```bash
+routerly experiments list
+```
+```
+┌──────────────────────────────────────┬──────────────────┬─────────┬────────────────────┬──────────┬────────────┐
+│ ID                                   │ Name             │ Status  │ Rotation           │ Variants │ Created    │
+├──────────────────────────────────────┼──────────────────┼─────────┼────────────────────┼──────────┼────────────┤
+│ 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31 │ Cheap vs premium │ running │ Sticky per session │ 2        │ 8/1/2026   │
+└──────────────────────────────────────┴──────────────────┴─────────┴────────────────────┴──────────┴────────────┘
+```
+
+```bash
+routerly experiments list --status draft
+```
+```
+No experiments found.
+```
+
+**Error cases:**
+```bash
+routerly experiments list --status paused
+```
+```
+Unknown --status "paused". Expected one of: draft, running, closed.
+```
+
+Requires `experiments:read` permission.
+
+### `routerly experiments show`
+
+```
+routerly experiments show <id> [--json]
+```
+
+Print one experiment with its variants and tokens. The variant table shows
+project **names**, the same values `--variant` takes; ids stay in `--json`.
+
+| Option | Description |
+|--------|-------------|
+| `--json` | Output raw JSON |
+
+**Variant columns:** ID (with `(winner)` on the declared winner), Label,
+Project (`<id> (deleted)` in red when the project is gone), Weight (`1` when
+unset).
+
+**Token columns:** ID, Token (first characters only), Created, Last used
+(`never` until the token serves a call).
+
+```bash
+routerly experiments show 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31
+```
+```
+id:          8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31
+name:        Cheap vs premium
+description: Is the cheap model good enough for support replies?
+status:      running
+rotation:    Sticky per session, on automatic
+created:     8/1/2026, 10:12:03 AM
+started:     8/1/2026, 10:19:41 AM
+judge:       gpt-4o, 20% of calls
+             - Answers the question asked
+             - No invented facts
+
+Variants:
+┌──────────────────────────────────────┬─────────┬─────────────┬────────┐
+│ ID                                   │ Label   │ Project     │ Weight │
+├──────────────────────────────────────┼─────────┼─────────────┼────────┤
+│ 4d3b2a10-8c7e-4f21-9b0d-1e2f3a4b5c6d │ Cheap   │ cheap-api   │ 1      │
+├──────────────────────────────────────┼─────────┼─────────────┼────────┤
+│ 6a1c9e07-5b3d-42f8-8e10-7c4d9f2b0a35 │ Premium │ premium-api │ 1      │
+└──────────────────────────────────────┴─────────┴─────────────┴────────┘
+
+Tokens:
+┌──────────────────────────────────────┬──────────────┬────────────────────────┬───────────┐
+│ ID                                   │ Token        │ Created                │ Last used │
+├──────────────────────────────────────┼──────────────┼────────────────────────┼───────────┤
+│ b7e5c3a1-9f2d-4e60-a8b3-0c1d2e3f4a5b │ sk-rt-2246a1 │ 8/1/2026, 10:12:03 AM  │ never     │
+└──────────────────────────────────────┴──────────────┴────────────────────────┴───────────┘
+```
+
+Requires `experiments:read` permission.
+
+### `routerly experiments create`
+
+```
+routerly experiments create --name <name> [--description <text>] [--rotation <rotation>]
+  [--sticky-key <key>] [--variant <spec>] [--judge-model <modelId>] [--criteria <text>]
+  [--sample-rate <percent>] [--min-samples <n>] [--json]
+```
+
+Create an experiment in `draft`, with its first token. Nothing is served
+until [`experiments start`](#routerly-experiments-start).
+
+| Option | Description |
+|--------|-------------|
+| `--name <name>` | Required |
+| `--description <text>` | What this test is trying to settle |
+| `--rotation <rotation>` | `sticky` (default), `weighted`, `round-robin` |
+| `--sticky-key <key>` | `auto` (default), `end-user`, `conversation`, `client`. Read only by `sticky` |
+| `--variant <spec>` | An arm of the test: `<project>[:label][=weight]`. Repeat for each variant |
+| `--judge-model <modelId>` | Score answers with this model |
+| `--criteria <text>` | One judge criterion. Repeat for each |
+| `--sample-rate <percent>` | Share of calls the judge scores, `0`-`100` (default `100`) |
+| `--min-samples <n>` | Calls per variant below which the comparison is not conclusive (default `30`) |
+| `--json` | Output raw JSON |
+
+One `--variant` carries a whole arm: `cheap-api` is the project alone,
+`cheap-api:Cheap` renames it in the tables, `cheap-api=80` gives it a weight.
+The project is taken by name or by id.
+
+`--help` lists every rotation and sticky key with its one-line meaning,
+generated from the same catalog the dashboard reads.
+
+```bash
+routerly experiments create --name "Cheap vs premium" \
+  --variant cheap-api --variant premium-api
+```
+```
+✓ Experiment "Cheap vs premium" created in draft -> 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31
+
+Token (shown once, point your client at it instead of a project token):
+sk-rt-2246a1f0c8b34d17a9e05c2b6f8d41e37a0b9c5d8e2f1a4b7c6d0e9f3a2b5c8
+
+Start it with: routerly experiments start 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31
+```
+
+```bash
+routerly experiments create --name "Split 80/20" --rotation weighted \
+  --variant cheap-api=80 --variant premium-api=20
+```
+
+```bash
+routerly experiments create --name "Prompt test" \
+  --variant a:Baseline --variant b:Rewritten \
+  --judge-model gpt-4o --criteria "Answers the question asked" --sample-rate 20
+```
+
+**Error cases:**
+```bash
+routerly experiments create --name Test --variant ":Label"
+```
+```
+Invalid --variant ":Label". Expected <project>[:label][=weight].
+```
+```bash
+routerly experiments create --name Test --variant "cheap-api=-1"
+```
+```
+Invalid weight in --variant "cheap-api=-1". Expected a number >= 0.
+```
+```bash
+routerly experiments create --name Test --variant nonexistent-project-xyz
+```
+```
+Project "nonexistent-project-xyz" not found. Run `routerly project list` to see available projects.
+```
+```bash
+routerly experiments create --name Test --criteria "Is correct"
+```
+```
+Error: --criteria and --sample-rate need --judge-model.
+```
+
+Requires `experiments:manage` permission.
+
+### `routerly experiments update`
+
+```
+routerly experiments update <id> [--name <name>] [--description <text>] [--rotation <rotation>]
+  [--sticky-key <key>] [--variant <spec>] [--judge-model <modelId>] [--criteria <text>]
+  [--sample-rate <percent>] [--no-judge] [--min-samples <n>] [--json]
+```
+
+Same flags as `create`, plus `--no-judge`. Only the fields actually passed
+are sent, so an update never rewrites what it was not asked to change.
+`--variant` and `--criteria` replace the whole list rather than appending to
+it.
+
+Once the experiment is running only `--name`, `--description` and
+`--min-samples` still change. Variants, rotation, sticky key and judge are
+frozen so the two arms stay comparable.
+
+```bash
+routerly experiments update 8f2c1d64 --name "Cheap vs premium, take 2"
+```
+```
+✓ Experiment "Cheap vs premium, take 2" updated
+```
+
+```bash
+routerly experiments update 8f2c1d64 --rotation weighted \
+  --variant cheap-api=70 --variant premium-api=30
+```
+
+```bash
+routerly experiments update 8f2c1d64 --no-judge
+```
+
+**Error cases:**
+```bash
+routerly experiments update 8f2c1d64
+```
+```
+Error: nothing to update. Pass at least one field.
+```
+```bash
+routerly experiments update 8f2c1d64 --rotation weighted
+```
+```
+This experiment is no longer a draft: only --name, --description and --min-samples can still change.
+```
+```bash
+routerly experiments update 8f2c1d64 --no-judge --judge-model gpt-4o
+```
+```
+Error: --no-judge and --judge-model cannot be used together.
+```
+```bash
+routerly experiments update 8f2c1d64 --no-judge
+```
+```
+This experiment has no judge to disable.
+```
+
+Requires `experiments:manage` permission.
+
+### `routerly experiments start`
+
+```
+routerly experiments start <id> [--json]
+```
+
+Move a draft to `running`. From here the experiment's tokens serve traffic
+and the design is frozen.
+
+```bash
+routerly experiments start 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31
+```
+```
+✓ Experiment "Cheap vs premium" is running
+```
+
+**Error cases:**
+```bash
+routerly experiments start 8f2c1d64
+```
+```
+An experiment needs at least two variants to compare. Add them with: routerly experiments update <id> --variant <project> --variant <project>
+```
+Starting also needs at least one token (`no_token`) and refuses an
+experiment that is not a draft (`experiment_not_draft`).
+
+Requires `experiments:manage` permission.
+
+### `routerly experiments close`
+
+```
+routerly experiments close <id> [--winner <variant>] [--json]
+```
+
+Stop the rotation and optionally record the winning variant. Closing stops
+the experiment's tokens, so move clients to the winning project's own token
+first.
+
+| Option | Description |
+|--------|-------------|
+| `--winner <variant>` | Variant to record as the winner, by id or by the label `show` prints |
+| `--json` | Output raw JSON |
+
+```bash
+routerly experiments close 8f2c1d64 --winner Premium
+```
+```
+✓ Experiment "Cheap vs premium" closed, winner: Premium
+```
+
+**Error cases:**
+```bash
+routerly experiments close 8f2c1d64 --winner Nora
+```
+```
+No variant "Nora" in this experiment. Run `routerly experiments show 8f2c1d64` for the variants.
+```
+Closing an experiment that is not running answers `experiment_not_running`.
+
+Requires `experiments:manage` permission.
+
+### `routerly experiments metrics`
+
+```
+routerly experiments metrics <id> [--days <n>] [--from <iso>] [--to <iso>] [--json]
+```
+
+Compare the variants on cost, latency, errors and judge score, over the
+window. With no window flags the whole history of the experiment is measured.
+
+| Option | Description |
+|--------|-------------|
+| `--days <n>` | Only the last N days, `1`-`3650` |
+| `--from <iso>` | Start of the window, ISO 8601 |
+| `--to <iso>` | End of the window, ISO 8601 |
+| `--json` | Output raw JSON |
+
+`--from` overrides the start `--days` computed, so the two are not meant to
+be combined.
+
+**Table columns:** Variant (with `(low sample)` below the minimum), Calls,
+Errors (count and rate), Cost, Cost / call, Avg latency, p95, Judge score
+(mean out of 10, with the judged-call count).
+
+```bash
+routerly experiments metrics 8f2c1d64 --days 7
+```
+```
+4 calls measured
+
+┌──────────────────────┬───────┬───────────┬──────────┬─────────────┬─────────────┬───────────┬───────────────┐
+│ Variant              │ Calls │    Errors │     Cost │ Cost / call │ Avg latency │       p95 │   Judge score │
+├──────────────────────┼───────┼───────────┼──────────┼─────────────┼─────────────┼───────────┼───────────────┤
+│ Cheap (low sample)   │     2 │ 1 (50.0%) │ $0.00012 │    $0.00006 │   114289 ms │ 114289 ms │             - │
+├──────────────────────┼───────┼───────────┼──────────┼─────────────┼─────────────┼───────────┼───────────────┤
+│ Premium (low sample) │     2 │         0 │ $0.00240 │    $0.00120 │      881 ms │    881 ms │ 8.5 / 10 (2)  │
+└──────────────────────┴───────┴───────────┴──────────┴─────────────┴─────────────┴───────────┴───────────────┘
+
+Not conclusive yet: every variant needs at least 30 calls in this window.
+```
+
+Only the client's own calls are counted. Router decision calls, guardrail
+passes and the judge's own verdicts are gateway overhead and stay out of the
+comparison.
+
+```bash
+routerly experiments metrics 8f2c1d64
+```
+```
+No calls in this window yet. Point a client at the experiment token to start the comparison.
+```
+
+**Error cases:**
+```bash
+routerly experiments metrics 8f2c1d64 --from yesterday
+```
+```
+Invalid --from "yesterday". Expected an ISO 8601 date, e.g. 2026-08-01T00:00:00Z.
+```
+
+Requires `experiments:read` permission.
+
+### `routerly experiments delete`
+
+```
+routerly experiments delete <id>
+```
+
+Delete an experiment. Its tokens stop working immediately, which is why a
+running experiment has to be closed first.
+
+```bash
+routerly experiments delete 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31
+```
+```
+✓ Experiment "8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31" deleted
+```
+
+**Error cases:**
+```bash
+routerly experiments delete 8f2c1d64
+```
+```
+Close it first: routerly experiments close 8f2c1d64
+```
+
+Requires `experiments:manage` permission.
+
+### `routerly experiments token`
+
+```
+routerly experiments token list <id> [--json]
+routerly experiments token create <id> [--json]
+routerly experiments token revoke <id> <tokenId>
+```
+
+The tokens clients call to reach the experiment. Same shape as a project
+token, `sk-rt-...`, and used the same way: same base URL, this value in
+place of a project token. Each request lands on one variant and is billed to
+that variant's project.
+
+```bash
+routerly experiments token list 8f2c1d64
+```
+```
+┌──────────────────────────────────────┬──────────────┬────────────────────────┬────────────────────────┐
+│ ID                                   │ Token        │ Created                │ Last used              │
+├──────────────────────────────────────┼──────────────┼────────────────────────┼────────────────────────┤
+│ b7e5c3a1-9f2d-4e60-a8b3-0c1d2e3f4a5b │ sk-rt-2246a1 │ 8/1/2026, 10:12:03 AM  │ 8/1/2026, 10:41:55 AM  │
+└──────────────────────────────────────┴──────────────┴────────────────────────┴────────────────────────┘
+```
+
+```bash
+routerly experiments token create 8f2c1d64
+```
+```
+✓ Token created. Copy it now, it will not be shown again:
+sk-rt-91b0d4e7c2a58f36b1d09e4c7a2f5b8d3e6c1a0f9b4d7e2c5a8f1b6d3e0c9a4
+```
+
+```bash
+routerly experiments token revoke 8f2c1d64 b7e5c3a1-9f2d-4e60-a8b3-0c1d2e3f4a5b
+```
+```
+✓ Token "b7e5c3a1-9f2d-4e60-a8b3-0c1d2e3f4a5b" revoked
+```
+
+An experiment with no tokens prints `No tokens on this experiment.`
+
+What a client gets back depends on the experiment's state: the provider's own
+response while it is running, `401 Token expired` past the token's expiry,
+`403 experiment_not_running` on a draft or closed test, and
+`503 experiment_misconfigured` when no variant points at an existing project.
+
+`token list` requires `experiments:read`; `create` and `revoke` require
+`experiments:manage`.
+
+Exit code: `0` on success, `1` on error (all subcommands).
+
+---
+
 ## `routerly clients`
 
 Connect local AI clients to Routerly. Unlike the rest of the CLI, these
