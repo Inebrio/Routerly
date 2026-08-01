@@ -669,7 +669,7 @@ PUT /api/projects/:id/profiles
 Kinds omitted from the body keep their current assignment.
 
 **Response `200`:** the updated project (same shape as
-[Get Project](#get-project), `tokens` present with `token` values stripped).
+[List Projects](#list-projects), `tokens` present with `token` values stripped).
 
 **Errors**: `400` invalid body · `404` project not found or
 `profile_not_found` (with the offending `kind`) · `403` insufficient permissions

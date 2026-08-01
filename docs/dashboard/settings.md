@@ -37,7 +37,7 @@ Host and port come from the environment or the settings file and cannot be chang
 
 **Anonymous metrics** is a separate self-saving toggle at the bottom of the tab.
 
-Per-request timeouts are configured per project (see [Projects](./projects#advanced-settings)), not globally.
+Per-request timeouts are configured per project (see [Projects](./projects.md#general-tab)), not globally.
 
 ---
 
