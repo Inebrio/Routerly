@@ -1374,45 +1374,135 @@ List the installed optimizer catalog (all 7 optimizer ids ship built-in;
 
 **Table columns:**
 - **ID** - optimizer id
+- **Name** - display name
 - **Klass** - `lossless` / `recoverable` / `lossy`
 - **Installed** - `yes` / `no`
+- **Threshold** - accepted range and unit, and the value used when the step
+  leaves it unset. `-` when the optimizer takes no threshold
 
 ```bash
 routerly optimizers list
 ```
 ```
-┌───────────────┬─────────────┬───────────┐
-│ ID            │ Klass       │ Installed │
-├───────────────┼─────────────┼───────────┤
-│ session-dedup │ lossless    │ yes       │
-├───────────────┼─────────────┼───────────┤
-│ ccr           │ recoverable │ yes       │
-├───────────────┼─────────────┼───────────┤
-│ rtk           │ recoverable │ yes       │
-├───────────────┼─────────────┼───────────┤
-│ headroom      │ lossless    │ yes       │
-├───────────────┼─────────────┼───────────┤
-│ relevance     │ lossy       │ yes       │
-├───────────────┼─────────────┼───────────┤
-│ caveman       │ lossy       │ yes       │
-├───────────────┼─────────────┼───────────┤
-│ llmlingua-2   │ lossy       │ yes       │
-└───────────────┴─────────────┴───────────┘
+┌───────────────┬────────────────────────────────┬─────────────┬───────────┬──────────────────────────────┐
+│ ID            │ Name                           │ Klass       │ Installed │ Threshold                    │
+├───────────────┼────────────────────────────────┼─────────────┼───────────┼──────────────────────────────┤
+│ session-dedup │ Session Dedup                  │ lossless    │ yes       │ -                            │
+├───────────────┼────────────────────────────────┼─────────────┼───────────┼──────────────────────────────┤
+│ ccr           │ Conversation Context Reduction │ recoverable │ yes       │ 1-50 turns, default 6        │
+├───────────────┼────────────────────────────────┼─────────────┼───────────┼──────────────────────────────┤
+│ rtk           │ Redundant Token Killer         │ recoverable │ yes       │ -                            │
+├───────────────┼────────────────────────────────┼─────────────┼───────────┼──────────────────────────────┤
+│ headroom      │ Context Headroom               │ lossless    │ yes       │ 0-32768 tokens, default 1024 │
+├───────────────┼────────────────────────────────┼─────────────┼───────────┼──────────────────────────────┤
+│ relevance     │ Relevance Filter               │ lossy       │ yes       │ 0-1 ratio, required          │
+├───────────────┼────────────────────────────────┼─────────────┼───────────┼──────────────────────────────┤
+│ caveman       │ Caveman                        │ lossy       │ yes       │ -                            │
+├───────────────┼────────────────────────────────┼─────────────┼───────────┼──────────────────────────────┤
+│ llmlingua-2   │ LLMLingua-2                    │ lossy       │ yes       │ 0.05-0.95 ratio, default 0.5 │
+└───────────────┴────────────────────────────────┴─────────────┴───────────┴──────────────────────────────┘
 ```
+
+`required` on `relevance` means it has no default and stays inert until a
+project sets one.
 
 ```bash
 routerly optimizers list --json
 ```
 ```json
 [
-  { "id": "session-dedup", "klass": "lossless", "installed": true },
-  { "id": "ccr", "klass": "recoverable", "installed": true },
-  { "id": "rtk", "klass": "recoverable", "installed": true },
-  { "id": "headroom", "klass": "lossless", "installed": true },
-  { "id": "relevance", "klass": "lossy", "installed": true },
-  { "id": "caveman", "klass": "lossy", "installed": true },
-  { "id": "llmlingua-2", "klass": "lossy", "installed": true }
+  {
+    "id": "session-dedup",
+    "klass": "lossless",
+    "installed": true,
+    "label": "Session Dedup",
+    "description": "Drops exact-duplicate repeated messages within a conversation, keeping the first and last of any run."
+  },
+  {
+    "id": "ccr",
+    "klass": "recoverable",
+    "installed": true,
+    "label": "Conversation Context Reduction",
+    "description": "Keeps the system prefix and the most recent turns; older turns are condensed into a single compact block.",
+    "threshold": {
+      "label": "Recent turns to keep",
+      "unit": "turns",
+      "min": 1,
+      "max": 50,
+      "step": 1,
+      "default": 6,
+      "help": "Fewer turns means a shorter prompt and less history for the model to work with."
+    }
+  }
 ]
+```
+
+The `label`, `description` and `threshold` fields come from the shared
+optimizer catalog, the same source the dashboard reads, so both surfaces
+describe an optimizer identically. `threshold` is absent for optimizers that
+take none.
+
+Requires `optimizers:read` permission.
+
+### `routerly optimizers samples`
+
+```
+routerly optimizers samples <project> [--show index] [--json]
+```
+
+List the prompts the service kept in memory for the project, newest first,
+so a pipeline can be tuned against real traffic. Replay one with
+[`optimizers preview --sample`](#routerly-optimizers-preview).
+
+| Option | Description |
+|--------|-------------|
+| `--show <index>` | Print one sample's messages in full (1-based, as numbered in the table) |
+| `--json` | Output raw JSON: the whole list, or the single sample with `--show` |
+
+```bash
+routerly optimizers samples Test
+```
+```
+┌───┬──────────────────────────┬────────┬──────────┬─────────┐
+│ # │ Captured                 │ Tokens │ Messages │ Excerpt │
+├───┼──────────────────────────┼────────┼──────────┼─────────┤
+│ 1 │ 2026-08-01T09:41:12.004Z │ 1180   │ 7        │ yes     │
+├───┼──────────────────────────┼────────┼──────────┼─────────┤
+│ 2 │ 2026-08-01T09:38:55.610Z │ 412    │ 3        │ no      │
+└───┴──────────────────────────┴────────┴──────────┴─────────┘
+```
+
+**Excerpt** is `yes` when the prompt was clipped to fit the buffer (at most
+20 messages, each at most 1000 characters).
+
+```bash
+routerly optimizers samples Test --show 2
+```
+```
+Captured 2026-08-01T09:38:55.610Z · 412 tokens
+
+system: You answer in one paragraph.
+
+user: Summarize the thread above.
+```
+
+```bash
+routerly optimizers samples Test
+```
+```
+No prompts captured yet. They appear once the project sends traffic.
+```
+
+At most 5 prompts are kept per project. They are captured after PII
+scrubbing, held in memory only, never written to disk, and lost when the
+service restarts.
+
+**Error cases:**
+```bash
+routerly optimizers samples Test --show 9
+```
+```
+Error: no sample 9. This project has 2.
 ```
 
 Requires `optimizers:read` permission.
@@ -1444,20 +1534,23 @@ routerly optimizers config Test --order session-dedup,caveman,rtk,relevance,ccr
 ```
 ```
 ✓ Updated optimizer pipeline on project "Test"
-┌───┬───────────────┬─────────┬───────────┐
-│ # │ ID            │ Enabled │ Threshold │
-├───┼───────────────┼─────────┼───────────┤
-│ 1 │ session-dedup │ yes     │ -         │
-├───┼───────────────┼─────────┼───────────┤
-│ 2 │ caveman       │ yes     │ -         │
-├───┼───────────────┼─────────┼───────────┤
-│ 3 │ rtk           │ yes     │ -         │
-├───┼───────────────┼─────────┼───────────┤
-│ 4 │ relevance     │ yes     │ 0.3       │
-├───┼───────────────┼─────────┼───────────┤
-│ 5 │ ccr           │ no      │ 8         │
-└───┴───────────────┴─────────┴───────────┘
+┌───┬───────────────┬────────────────────────────────┬─────────┬───────────┐
+│ # │ ID            │ Name                           │ Enabled │ Threshold │
+├───┼───────────────┼────────────────────────────────┼─────────┼───────────┤
+│ 1 │ session-dedup │ Session Dedup                  │ yes     │ -         │
+├───┼───────────────┼────────────────────────────────┼─────────┼───────────┤
+│ 2 │ caveman       │ Caveman                        │ yes     │ -         │
+├───┼───────────────┼────────────────────────────────┼─────────┼───────────┤
+│ 3 │ rtk           │ Redundant Token Killer         │ yes     │ -         │
+├───┼───────────────┼────────────────────────────────┼─────────┼───────────┤
+│ 4 │ relevance     │ Relevance Filter               │ yes     │ 0.3       │
+├───┼───────────────┼────────────────────────────────┼─────────┼───────────┤
+│ 5 │ ccr           │ Conversation Context Reduction │ no      │ 8         │
+└───┴───────────────┴────────────────────────────────┴─────────┴───────────┘
 ```
+
+A step that leaves its threshold unset shows the value it will run with,
+marked `(default)`; `-` means the optimizer takes no threshold at all.
 
 **Error cases:**
 ```bash
@@ -1488,7 +1581,7 @@ Requires `optimizers:manage` permission.
 ### `routerly optimizers preview`
 
 ```
-routerly optimizers preview <project> --message <text> [--message <text> ...] [--json]
+routerly optimizers preview <project> (--message <text> ... | --sample <index>) [--json]
 ```
 
 Dry-run the project's currently configured optimizer pipeline against a
@@ -1497,8 +1590,12 @@ not modified.
 
 | Option | Description |
 |--------|-------------|
-| `--message <text>` | Sample user message (repeatable, required, at least one) |
+| `--message <text>` | Sample user message (repeatable) |
+| `--sample <index>` | Replay a prompt from [`optimizers samples`](#routerly-optimizers-samples) instead, by its number in that table |
 | `--json` | Output the raw preview result as JSON |
+
+Exactly one prompt source is required: give `--message` at least once, or
+`--sample`, not both.
 
 ```bash
 routerly optimizers preview Test \
@@ -1510,25 +1607,59 @@ Tokens before: 46
 Tokens after:  32
 Saved:         14
 
-┌───────────────┬────────┬───────┐
-│ ID            │ Before │ After │
-├───────────────┼────────┼───────┤
-│ ccr           │ 46     │ 46    │
-├───────────────┼────────┼───────┤
-│ session-dedup │ 46     │ 46    │
-├───────────────┼────────┼───────┤
-│ caveman       │ 46     │ 32    │
-├───────────────┼────────┼───────┤
-│ rtk           │ 32     │ 32    │
-├───────────────┼────────┼───────┤
-│ relevance     │ 32     │ 32    │
-└───────────────┴────────┴───────┘
+┌───────────────┬────────────────────────────────┬────────┬───────┬───────┐
+│ ID            │ Name                           │ Before │ After │ Saved │
+├───────────────┼────────────────────────────────┼────────┼───────┼───────┤
+│ ccr           │ Conversation Context Reduction │ 46     │ 46    │ 0     │
+├───────────────┼────────────────────────────────┼────────┼───────┼───────┤
+│ session-dedup │ Session Dedup                  │ 46     │ 46    │ 0     │
+├───────────────┼────────────────────────────────┼────────┼───────┼───────┤
+│ caveman       │ Caveman                        │ 46     │ 32    │ 14    │
+├───────────────┼────────────────────────────────┼────────┼───────┼───────┤
+│ rtk           │ Redundant Token Killer         │ 32     │ 32    │ 0     │
+├───────────────┼────────────────────────────────┼────────┼───────┼───────┤
+│ relevance     │ Relevance Filter               │ 32     │ 32    │ 0     │
+└───────────────┴────────────────────────────────┴────────┴───────┴───────┘
+```
+
+Tune against real traffic by replaying a captured prompt instead:
+
+```bash
+routerly optimizers samples Test
+routerly optimizers preview Test --sample 1
 ```
 
 The per-step table lists every configured step in pipeline order, including
-disabled ones (`before === after` for a disabled or no-op step). Token
+disabled ones (`Saved: 0` for a disabled or no-op step). A step whose result
+was rejected by the safety gate reads `rolled back` instead of a number,
+followed by:
+
+```
+A rolled-back step produced a prompt the service judged unsafe, so its change was discarded.
+```
+
+That distinction matters when tuning: a `0` means the step had nothing to
+do, a rollback means it went too far and the threshold needs raising. Token
 counts are the `chars / 4` approximation used by the live pipeline, not a
 provider-exact tokenizer.
+
+With `--json`, each `perStep` entry also carries the prompt as that step left
+it, so a script can diff step against step (see [API: Preview
+Optimizers](../api/management.md#preview-optimizers)).
+
+**Error cases:**
+```bash
+routerly optimizers preview Test
+```
+```
+Error: provide at least one --message, or --sample <index>.
+```
+```bash
+routerly optimizers preview Test --sample 4
+```
+```
+Error: no sample 4. This project has 2.
+```
 
 Requires `optimizers:read` permission.
 

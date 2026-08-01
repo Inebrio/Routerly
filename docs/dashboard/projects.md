@@ -35,6 +35,8 @@ Below the cards: input, output and prompt-cached token totals with the money the
 
 **If everything had gone to one model** is the counterfactual table, one row per enabled target model of the project. Costs are the observed tokens repriced at that model's rates, so they are exact arithmetic on what actually happened. Times are estimated from that model's own throughput in the same period, so a target with no traffic in the window shows `no sample` instead of a fabricated number.
 
+**What the optimizers removed** appears once at least one optimizer changed a call in the period: one row per optimizer, with the calls it changed, the prompt tokens it removed, what those tokens would have cost, and how many of its results the safety gate rolled back. Unlike the counterfactual above it, these are measured on the calls as they were served, not repriced estimates. The section stays hidden when no optimizer ran, and on records written before 0.4.0, which never carry per-optimizer numbers. A high rollback count means that optimizer's threshold is set too aggressively for this project's traffic: tune it in the [Optimizer tab](#optimizer-tab).
+
 **Where the traffic went** breaks the period down per model: calls, share of traffic, cost, p95 latency and errors.
 
 :::note Repricing is not a replay
@@ -126,12 +128,16 @@ order:
 - **Name and description**: the optimizer's display name, its class
   (`Lossless.` / `Recoverable.` / `Lossy.`), and a one-line summary of its
   behavior
-- **Threshold**: optional numeric field, meaning depends on the optimizer
-  (a `0`-`1` ratio for `relevance`/`llmlingua-2`, a turn count for `ccr`, a
-  token budget for `headroom`; unused for `session-dedup`/`rtk`/`caveman`);
-  left empty to use the optimizer's built-in default (where one exists) or
-  leave it inert (`relevance` has no default and stays inert until a
-  threshold is set)
+- **Threshold**: shown only on the optimizers that take one, labelled with
+  what it actually controls (`Recent turns to keep` for `ccr`,
+  `Reserved completion budget` for `headroom`,
+  `Minimum overlap with the newest turn` for `relevance`,
+  `Fraction of tokens to keep` for `llmlingua-2`). The field carries the
+  accepted range, its unit next to the input, and a line saying which way to
+  move it. Left empty it uses the built-in default shown as the input's
+  placeholder; `relevance` has no default and its placeholder reads
+  `required`, since it stays inert until a threshold is set.
+  `session-dedup`, `rtk` and `caveman` have no threshold field at all
 - **Drag handle**: drag rows to reorder; the pipeline runs top to bottom
 
 Rows for optimizers not yet configured on the project appear disabled at the
@@ -151,12 +157,33 @@ threshold, are written.
 
 ### Preview Panel
 
-Below the pipeline editor, **Preview token savings** lets you paste a sample
-user message and click **Run Preview** to dry-run the current (unsaved) UI
-state of the pipeline against it. No upstream call is made and nothing is
-saved. The result shows tokens before, tokens after, tokens saved, and a
-per-step before/after breakdown, matching `POST /api/optimizers/preview`
-(see [API: Optimizers](../api/management.md#optimizers)).
+Below the pipeline editor, **Preview token savings** dry-runs the current
+(unsaved) UI state of the pipeline against one prompt. No upstream call is
+made and nothing is saved. It matches `POST /api/optimizers/preview` (see
+[API: Optimizers](../api/management.md#optimizers)).
+
+The dropdown above the input chooses what to run it against:
+
+- **Type a prompt below** (the default) keeps the free-text box, where you
+  paste a sample user message
+- Any other entry replays a prompt this project actually sent, labelled with
+  how long ago it was captured, its token estimate and its message count.
+  Picking one replaces the text box with the captured prompt, read-only
+
+Replaying real traffic is the point of the picker: a hand-typed sentence
+rarely resembles the long, repetitive conversations optimizers work on, so it
+under-reports what a pipeline would do in production. The service keeps the
+last 5 prompts per project, in memory only, captured after PII scrubbing and
+lost on restart. The dropdown shows only **Type a prompt below** when the
+project has sent no traffic since the last restart.
+
+Click **Run Preview** for tokens before, tokens after, tokens saved, and a
+per-step breakdown. Each step row expands to a word-level diff of what that
+step changed: removed words struck through in red, added words in green,
+compared against the previous step's output so the diff reads as a chain. A
+step whose result the safety gate rejected is labelled **rolled back: the
+change was rejected as unsafe** rather than shown as a no-op, which tells a
+zero saving apart from a threshold set too aggressively.
 
 ---
 
