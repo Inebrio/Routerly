@@ -7,11 +7,11 @@ export interface DateRange {
   label: string;
 }
 
-const MONTHS_IT = [
-  'gennaio','febbraio','marzo','aprile','maggio','giugno',
-  'luglio','agosto','settembre','ottobre','novembre','dicembre',
+const MONTHS = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December',
 ];
-const DAYS_IT = ['lun','mar','mer','gio','ven','sab','dom'];
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
 /** Returns a calendar grid array (Mon-based) for given year/month */
 function getCalendarDays(year: number, month: number): (Date | null)[] {
@@ -52,96 +52,120 @@ function parseTimeFromISO(iso: string, defaultTime: string): string {
 /** Recent time-window presets (minutes / hours) — always use ISO datetime strings */
 export const RECENT_PRESETS: { label: string; range: () => DateRange }[] = [
   {
-    label: 'Ultimo minuto',
-    range: () => ({ from: new Date(Date.now() - 1 * 60_000).toISOString(), to: new Date().toISOString(), label: 'Ultimo minuto' }),
+    label: 'Last minute',
+    range: () => ({ from: new Date(Date.now() - 1 * 60_000).toISOString(), to: new Date().toISOString(), label: 'Last minute' }),
   },
   {
-    label: 'Ultimi 3 minuti',
-    range: () => ({ from: new Date(Date.now() - 3 * 60_000).toISOString(), to: new Date().toISOString(), label: 'Ultimi 3 minuti' }),
+    label: 'Last 3 minutes',
+    range: () => ({ from: new Date(Date.now() - 3 * 60_000).toISOString(), to: new Date().toISOString(), label: 'Last 3 minutes' }),
   },
   {
-    label: 'Ultimi 5 minuti',
-    range: () => ({ from: new Date(Date.now() - 5 * 60_000).toISOString(), to: new Date().toISOString(), label: 'Ultimi 5 minuti' }),
+    label: 'Last 5 minutes',
+    range: () => ({ from: new Date(Date.now() - 5 * 60_000).toISOString(), to: new Date().toISOString(), label: 'Last 5 minutes' }),
   },
   {
-    label: 'Ultimi 10 minuti',
-    range: () => ({ from: new Date(Date.now() - 10 * 60_000).toISOString(), to: new Date().toISOString(), label: 'Ultimi 10 minuti' }),
+    label: 'Last 10 minutes',
+    range: () => ({ from: new Date(Date.now() - 10 * 60_000).toISOString(), to: new Date().toISOString(), label: 'Last 10 minutes' }),
   },
   {
-    label: 'Ultimi 15 minuti',
-    range: () => ({ from: new Date(Date.now() - 15 * 60_000).toISOString(), to: new Date().toISOString(), label: 'Ultimi 15 minuti' }),
+    label: 'Last 15 minutes',
+    range: () => ({ from: new Date(Date.now() - 15 * 60_000).toISOString(), to: new Date().toISOString(), label: 'Last 15 minutes' }),
   },
   {
-    label: 'Ultimi 30 minuti',
-    range: () => ({ from: new Date(Date.now() - 30 * 60_000).toISOString(), to: new Date().toISOString(), label: 'Ultimi 30 minuti' }),
+    label: 'Last 30 minutes',
+    range: () => ({ from: new Date(Date.now() - 30 * 60_000).toISOString(), to: new Date().toISOString(), label: 'Last 30 minutes' }),
   },
   {
-    label: 'Ultima ora',
-    range: () => ({ from: new Date(Date.now() - 60 * 60_000).toISOString(), to: new Date().toISOString(), label: 'Ultima ora' }),
+    label: 'Last hour',
+    range: () => ({ from: new Date(Date.now() - 60 * 60_000).toISOString(), to: new Date().toISOString(), label: 'Last hour' }),
   },
   {
-    label: 'Ultime 6 ore',
-    range: () => ({ from: new Date(Date.now() - 6 * 60 * 60_000).toISOString(), to: new Date().toISOString(), label: 'Ultime 6 ore' }),
+    label: 'Last 6 hours',
+    range: () => ({ from: new Date(Date.now() - 6 * 60 * 60_000).toISOString(), to: new Date().toISOString(), label: 'Last 6 hours' }),
   },
   {
-    label: 'Ultime 12 ore',
-    range: () => ({ from: new Date(Date.now() - 12 * 60 * 60_000).toISOString(), to: new Date().toISOString(), label: 'Ultime 12 ore' }),
+    label: 'Last 12 hours',
+    range: () => ({ from: new Date(Date.now() - 12 * 60 * 60_000).toISOString(), to: new Date().toISOString(), label: 'Last 12 hours' }),
   },
 ];
 
 /** Day-level presets — use YYYY-MM-DD format */
 export const PRESETS: { label: string; range: () => DateRange }[] = [
   {
-    label: 'Oggi',
-    range: () => { const t = fmt(new Date()); return { from: t, to: t, label: 'Oggi' }; },
+    label: 'Today',
+    range: () => { const t = fmt(new Date()); return { from: t, to: t, label: 'Today' }; },
   },
   {
-    label: 'Ieri',
-    range: () => { const y = fmt(addDays(new Date(), -1)); return { from: y, to: y, label: 'Ieri' }; },
+    label: 'Yesterday',
+    range: () => { const y = fmt(addDays(new Date(), -1)); return { from: y, to: y, label: 'Yesterday' }; },
   },
   {
-    label: 'Questa settimana',
-    range: () => ({ from: fmt(startOfWeek(new Date())), to: fmt(new Date()), label: 'Questa settimana' }),
+    label: 'This week',
+    range: () => ({ from: fmt(startOfWeek(new Date())), to: fmt(new Date()), label: 'This week' }),
   },
   {
-    label: 'Questo mese',
+    label: 'This month',
     range: () => {
       const now = new Date();
-      return { from: fmt(new Date(now.getFullYear(), now.getMonth(), 1)), to: fmt(now), label: 'Questo mese' };
+      return { from: fmt(new Date(now.getFullYear(), now.getMonth(), 1)), to: fmt(now), label: 'This month' };
     },
   },
   {
-    label: 'Questo trimestre',
+    label: 'This quarter',
     range: () => {
       const now = new Date();
       const q = Math.floor(now.getMonth() / 3);
-      return { from: fmt(new Date(now.getFullYear(), q * 3, 1)), to: fmt(now), label: 'Questo trimestre' };
+      return { from: fmt(new Date(now.getFullYear(), q * 3, 1)), to: fmt(now), label: 'This quarter' };
     },
   },
   {
-    label: "Quest'anno",
+    label: 'This year',
     range: () => {
       const now = new Date();
-      return { from: fmt(new Date(now.getFullYear(), 0, 1)), to: fmt(now), label: "Quest'anno" };
+      return { from: fmt(new Date(now.getFullYear(), 0, 1)), to: fmt(now), label: 'This year' };
     },
   },
   {
-    label: 'Ultimi 7 giorni',
-    range: () => ({ from: fmt(addDays(new Date(), -6)), to: fmt(new Date()), label: 'Ultimi 7 giorni' }),
+    label: 'Last 7 days',
+    range: () => ({ from: fmt(addDays(new Date(), -6)), to: fmt(new Date()), label: 'Last 7 days' }),
   },
   {
-    label: 'Ultimi 30 giorni',
-    range: () => ({ from: fmt(addDays(new Date(), -29)), to: fmt(new Date()), label: 'Ultimi 30 giorni' }),
+    label: 'Last 30 days',
+    range: () => ({ from: fmt(addDays(new Date(), -29)), to: fmt(new Date()), label: 'Last 30 days' }),
   },
   {
-    label: 'Ultimi 12 mesi',
-    range: () => ({ from: fmt(addDays(new Date(), -364)), to: fmt(new Date()), label: 'Ultimi 12 mesi' }),
+    label: 'Last 12 months',
+    range: () => ({ from: fmt(addDays(new Date(), -364)), to: fmt(new Date()), label: 'Last 12 months' }),
   },
   {
-    label: 'Tutto il tempo',
-    range: () => ({ from: '', to: '', label: 'Tutto il tempo' }),
+    label: 'All time',
+    range: () => ({ from: '', to: '', label: 'All time' }),
   },
 ];
+
+/** Preset labels shipped in Italian up to 0.3.x, still sitting in saved filter state */
+const LEGACY_LABELS: Record<string, string> = {
+  'Ultimo minuto': 'Last minute',   'Ultimi 3 minuti': 'Last 3 minutes',
+  'Ultimi 5 minuti': 'Last 5 minutes', 'Ultimi 10 minuti': 'Last 10 minutes',
+  'Ultimi 15 minuti': 'Last 15 minutes', 'Ultimi 30 minuti': 'Last 30 minutes',
+  'Ultima ora': 'Last hour',        'Ultime 6 ore': 'Last 6 hours',
+  'Ultime 12 ore': 'Last 12 hours', 'Oggi': 'Today',
+  'Ieri': 'Yesterday',              'Questa settimana': 'This week',
+  'Questo mese': 'This month',      'Questo trimestre': 'This quarter',
+  "Quest'anno": 'This year',        'Ultimi 7 giorni': 'Last 7 days',
+  'Ultimi 30 giorni': 'Last 30 days', 'Ultimi 12 mesi': 'Last 12 months',
+  'Tutto il tempo': 'All time',
+};
+
+/**
+ * Deserializer for persisted DateRange filter state: upgrades the labels older
+ * builds saved, so a stored preset keeps matching PRESETS after the rename.
+ */
+export function parseStoredRange(value: string): DateRange {
+  const range = JSON.parse(value) as DateRange;
+  const upgraded = LEGACY_LABELS[range.label];
+  return upgraded ? { ...range, label: upgraded } : range;
+}
 
 interface Props {
   value: DateRange;
@@ -154,7 +178,7 @@ export function DateRangePicker({ value, onChange }: Props) {
   const [viewYear,  setViewYear]  = useState(now.getFullYear());
   const [viewMonth, setViewMonth] = useState(now.getMonth());
 
-  // Pending selection (not yet confirmed by "Seleziona")
+  // Pending selection (not yet confirmed by "Apply")
   const [pendingFrom, setPendingFrom] = useState(value.from);
   const [pendingTo,   setPendingTo]   = useState(value.to);
   const [pickingEnd,  setPickingEnd]  = useState(false);
@@ -226,7 +250,7 @@ export function DateRangePicker({ value, onChange }: Props) {
     const isDefaultTimes = ft === '00:00:00' && tt === '23:59:59';
     let label: string;
     if (!fromDate) {
-      label = 'Tutto il tempo';
+      label = 'All time';
     } else if (fromDate === toDate && isDefaultTimes) {
       label = fromDate;
     } else if (fromDate === toDate) {
@@ -277,12 +301,12 @@ export function DateRangePicker({ value, onChange }: Props) {
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <Calendar size={13} />
-          {value.label || 'Seleziona periodo'}
+          {value.label || 'Select period'}
         </span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {(value.from || value.to) ? (
             <X size={12} style={{ opacity: 0.5 }}
-              onClick={e => { e.stopPropagation(); onChange({ from: '', to: '', label: 'Tutto il tempo' }); }} />
+              onClick={e => { e.stopPropagation(); onChange({ from: '', to: '', label: 'All time' }); }} />
           ) : null}
           <ChevronDown size={13} style={{ opacity: 0.5 }} />
         </span>
@@ -400,7 +424,7 @@ export function DateRangePicker({ value, onChange }: Props) {
                   <ChevronLeft size={16} />
                 </button>
                 <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  {MONTHS_IT[viewMonth]} {viewYear}
+                  {MONTHS[viewMonth]} {viewYear}
                 </span>
                 <button onClick={nextMonth}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', padding: '4px 6px', borderRadius: 6, display: 'flex' }}
@@ -413,7 +437,7 @@ export function DateRangePicker({ value, onChange }: Props) {
 
               {/* Weekday headers */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', textAlign: 'center', marginBottom: 4 }}>
-                {DAYS_IT.map(d => (
+                {DAYS.map(d => (
                   <div key={d} style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', padding: '2px 0' }}>
                     {d}
                   </div>
@@ -520,8 +544,8 @@ export function DateRangePicker({ value, onChange }: Props) {
 
           {/* Footer */}
           <div style={{ borderTop: '1px solid var(--border)', padding: '10px 16px', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-            <button className="btn btn-secondary btn-sm" onClick={handleCancel}>Annulla</button>
-            <button className="btn btn-primary btn-sm" onClick={handleConfirm}>Seleziona</button>
+            <button className="btn btn-secondary btn-sm" onClick={handleCancel}>Cancel</button>
+            <button className="btn btn-primary btn-sm" onClick={handleConfirm}>Apply</button>
           </div>
         </div>
       )}

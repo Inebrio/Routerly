@@ -19,6 +19,7 @@ vi.mock('../components/DateRangePicker', () => ({
       onChange={e => onChange({ from: '2024-01-01', to: '2024-01-31', label: e.target.value })}
     />
   ),
+  parseStoredRange: (v: string) => JSON.parse(v),
 }));
 
 import { AuditPage } from './AuditPage';

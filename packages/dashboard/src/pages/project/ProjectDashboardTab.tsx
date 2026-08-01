@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Activity, Clock, Coins, PiggyBank } from 'lucide-react';
 import { optimizerLabel } from '@routerly/shared';
 import { getUsage, type UsageStats } from '../../api';
-import { DateRangePicker, RECENT_PRESETS, type DateRange } from '../../components/DateRangePicker';
+import { DateRangePicker, RECENT_PRESETS, parseStoredRange, type DateRange } from '../../components/DateRangePicker';
 import { useFilterState } from '../../hooks/useFilterState';
 
 const ms = (n: number | undefined) => (n == null ? '—' : `${Math.round(n).toLocaleString()} ms`);
@@ -24,6 +24,7 @@ export function ProjectDashboardTab() {
   const [dateRange, setDateRange] = useFilterState<DateRange>({
     key: `project-${projectId}-dashboard-dateRange`,
     defaultValue: { from: '', to: '', label: 'This month' },
+    deserialize: parseStoredRange,
   });
 
   const fetchStats = useCallback(() => {

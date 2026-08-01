@@ -22,6 +22,7 @@ vi.mock('../../components/DateRangePicker', () => ({
   RECENT_PRESETS: [
     { label: 'Last 1h', range: () => ({ from: '2024-06-01T09:00:00Z', to: '2024-06-01T10:00:00Z', label: 'Last 1h' }) },
   ],
+  parseStoredRange: (v: string) => JSON.parse(v),
 }));
 
 import { getUsage } from '../../api';

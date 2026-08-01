@@ -16,6 +16,7 @@ vi.mock('../components/DateRangePicker', () => ({
   DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
   PRESETS: [],
   RECENT_PRESETS: [],
+  parseStoredRange: (v: string) => JSON.parse(v),
 }));
 vi.mock('../components/MultiSelect', () => ({
   MultiSelect: () => <div data-testid="multi-select" />,
@@ -1377,6 +1378,7 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
       DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
       PRESETS: [mockPreset],
       RECENT_PRESETS: [],
+      parseStoredRange: (v: string) => JSON.parse(v),
     }));
     vi.doMock('../api', () => ({
       getUsage: vi.fn().mockResolvedValue({
@@ -1420,6 +1422,7 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
       DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
       PRESETS: [mockPreset],
       RECENT_PRESETS: [],
+      parseStoredRange: (v: string) => JSON.parse(v),
     }));
     vi.doMock('../api', () => ({
       getUsage: vi.fn().mockResolvedValue({
@@ -1461,6 +1464,7 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
       DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
       PRESETS: [mockPreset],
       RECENT_PRESETS: [],
+      parseStoredRange: (v: string) => JSON.parse(v),
     }));
     vi.doMock('../api', () => ({
       getUsage: vi.fn().mockResolvedValue({
@@ -1494,16 +1498,17 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
     await wf(() => expect(s.getByTestId('date-picker')).toBeTruthy());
   });
 
-  it('stale range with label="This month" gets remapped to "Questo mese"', async () => {
+  it('stale range with label="This month" gets remapped to "This month"', async () => {
     const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
     const today = new Date().toISOString().slice(0, 10);
-    // PRESETS must contain 'Questo mese' for the remap to find it
-    const mockPreset = { label: 'Questo mese', range: () => ({ from: yesterday, to: today, label: 'Questo mese' }) };
+    // PRESETS must contain 'This month' for the remap to find it
+    const mockPreset = { label: 'This month', range: () => ({ from: yesterday, to: today, label: 'This month' }) };
 
     vi.doMock('../components/DateRangePicker', () => ({
       DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
       PRESETS: [mockPreset],
       RECENT_PRESETS: [],
+      parseStoredRange: (v: string) => JSON.parse(v),
     }));
     vi.doMock('../api', () => ({
       getUsage: vi.fn().mockResolvedValue({
@@ -1521,7 +1526,7 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
         useFilterState: ({ defaultValue }: { defaultValue: unknown }) => {
           callIndex++;
           if (callIndex === 1) {
-            // label 'This month' → code remaps to 'Questo mese' then finds the preset
+            // label 'This month' → code remaps to 'This month' then finds the preset
             return react.useState({ from: yesterday, to: yesterday, label: 'This month' });
           }
           return react.useState(defaultValue);
@@ -1546,6 +1551,7 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
       DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
       PRESETS: [],
       RECENT_PRESETS: [mockRecentPreset],
+      parseStoredRange: (v: string) => JSON.parse(v),
     }));
     const mockGetUsage = vi.fn().mockResolvedValue({
       summary: { totalCost: 0, totalCalls: 0, successCalls: 0, errorCalls: 0, routingCalls: 0, completionCalls: 0, routingCost: 0, completionCost: 0 },

@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getUsage, type UsageStats, type UsageRecord } from '../../api';
-import { DateRangePicker, RECENT_PRESETS, type DateRange } from '../../components/DateRangePicker';
+import { DateRangePicker, RECENT_PRESETS, parseStoredRange, type DateRange } from '../../components/DateRangePicker';
 import { MultiSelect } from '../../components/MultiSelect';
 import { useFilterState } from '../../hooks/useFilterState';
 
@@ -22,7 +22,7 @@ export function ProjectLogsTab() {
 
   const [stats, setStats]         = useState<UsageStats | null>(null);
   const [loading, setLoading]     = useState(true);
-  const [dateRange, setDateRange] = useFilterState<DateRange>({ key: `project-${projectId}-filters-dateRange`, defaultValue: { from: '', to: '', label: 'This month' } });
+  const [dateRange, setDateRange] = useFilterState<DateRange>({ key: `project-${projectId}-filters-dateRange`, defaultValue: { from: '', to: '', label: 'This month' }, deserialize: parseStoredRange });
   const [modelIds, setModelIds]   = useFilterState<string[]>({ key: `project-${projectId}-filters-modelIds`, defaultValue: [] });
   const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing'>({ key: `project-${projectId}-filters-callType`, defaultValue: 'all' });
   const [outcomeFilter, setOutcomeFilter]   = useFilterState<'all' | 'success' | 'error' | 'blocked'>({ key: `project-${projectId}-filters-outcome`, defaultValue: 'all' });

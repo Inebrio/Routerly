@@ -11,7 +11,7 @@ import { useAuth } from '../AuthContext';
 import { severityIcon, timeAgo } from '../components/NotificationBell';
 import { useFilterState } from '../hooks/useFilterState';
 import { ProfileMcpTab } from './ProfileMcpTab';
-import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
+import { DateRangePicker, parseStoredRange, type DateRange } from '../components/DateRangePicker';
 import { SearchableSelect } from '../components/SearchableSelect';
 
 // ─── Notifications tab ────────────────────────────────────────────────────────
@@ -259,7 +259,7 @@ export function ProfileNotificationsTab() {
   const [eventFilter, setEventFilter] = useFilterState<string>({ key: 'notif-filter-event', defaultValue: '' });
   const [category, setCategory] = useFilterState<string>({ key: 'notif-filter-category', defaultValue: 'all' });
   const [unreadOnly, setUnreadOnly] = useFilterState<boolean>({ key: 'notif-filter-unread', defaultValue: false });
-  const [dateRange, setDateRange] = useFilterState<DateRange>({ key: 'notif-filter-dateRange', defaultValue: { from: '', to: '', label: 'All time' } });
+  const [dateRange, setDateRange] = useFilterState<DateRange>({ key: 'notif-filter-dateRange', defaultValue: { from: '', to: '', label: 'All time' }, deserialize: parseStoredRange });
 
   const load = useCallback(async (p: number) => {
     setLoading(true);

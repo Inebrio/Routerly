@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { getAuditLog } from '../api';
 import type { AuditEntry } from '../api';
-import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
+import { DateRangePicker, parseStoredRange, type DateRange } from '../components/DateRangePicker';
 import { useFilterState } from '../hooks/useFilterState';
 
 const PAGE_SIZE = 50;
@@ -35,7 +35,7 @@ export function AuditPage() {
   const [emailFilter, setEmail]   = useFilterState<string>({ key: 'audit-filter-email', defaultValue: '' });
   const [actionFilter, setAction] = useFilterState<string>({ key: 'audit-filter-action', defaultValue: '' });
   const [resultFilter, setResult] = useFilterState<'all' | AuditEntry['result']>({ key: 'audit-filter-result', defaultValue: 'all' });
-  const [dateRange, setDateRange] = useFilterState<DateRange>({ key: 'audit-filter-dateRange', defaultValue: { from: '', to: '', label: 'All time' } });
+  const [dateRange, setDateRange] = useFilterState<DateRange>({ key: 'audit-filter-dateRange', defaultValue: { from: '', to: '', label: 'All time' }, deserialize: parseStoredRange });
 
   const load = useCallback(async (p: number) => {
     setLoading(true);
