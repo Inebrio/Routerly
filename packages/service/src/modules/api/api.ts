@@ -11,7 +11,7 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults } from '@routerly/shared';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
 import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_PROJECT_TIMEOUT_MS, notificationCategory } from '@routerly/shared';
@@ -38,6 +38,7 @@ import { mcpApiRoutes } from './mcp.js';
 import { getOptimizerRegistry } from '../optimizers/registry.js';
 import { guardrailConfigSchema, piiConfigSchema, optimizerConfigSchema, optimizerStepSchema } from './schemas.js';
 import { runPreview } from '../optimizers/preview.js';
+import { computeSavings } from '../usage/savings.js';
 import { isClientConfiguratorEnabled } from '../clients/module.js';
 import {
   isModuleEnabled,
@@ -1563,7 +1564,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // USAGE STATS
   // ══════════════════════════════════════════════════════════════════════════════
 
-  fastify.get<{ Querystring: { period?: string; projectId?: string; projectIds?: string; modelIds?: string; callType?: string; requestType?: string; outcome?: string; from?: string; to?: string; page?: string; pageSize?: string; endUserId?: string; sessionId?: string; [key: string]: string | undefined } }>('/api/usage', async (req, reply) => {
+  fastify.get<{ Querystring: { period?: string; projectId?: string; projectIds?: string; modelIds?: string; callType?: string; requestType?: string; outcome?: string; from?: string; to?: string; page?: string; pageSize?: string; endUserId?: string; sessionId?: string; savings?: string; [key: string]: string | undefined } }>('/api/usage', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
     const records = await readConfig('usage');
     const { period = 'monthly', projectId, projectIds, modelIds, callType, requestType, outcome, from, to, endUserId, sessionId } = req.query;
@@ -1673,6 +1674,22 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       timeline[key] = (timeline[key] ?? 0) + r.cost;
     }
 
+    // Savings layer (T61) — opt-in: the usage page polls this route every 2s and
+    // never shows savings, so only the pages that ask pay for the counterfactual.
+    // Baselines are the target models of every project present in the result, so
+    // a project-scoped query naturally counterfactuals that project's targets.
+    let savings: SavingsSummary | undefined;
+    if (req.query.savings === '1') {
+      const [projects, allModels] = await Promise.all([readConfig('projects'), listEffectiveModelsIncludingDisabled()]);
+      const projectIdsInResult = new Set(filtered.map(r => r.projectId));
+      const baselineIds = [...new Set(
+        projects
+          .filter(p => projectIdsInResult.has(p.id))
+          .flatMap(p => (p.models ?? []).filter(m => m.enabled !== false).map(m => m.modelId)),
+      )];
+      savings = computeSavings(filtered, allModels, baselineIds);
+    }
+
     const totalCost = filtered.filter(r => r.outcome === 'success').reduce((s, r) => s + r.cost, 0);
     const totalCalls = filtered.length;
     const successCalls = filtered.filter(r => r.outcome === 'success').length;
@@ -1694,6 +1711,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       // Strip trace from list response to keep payload small
       records: paged.map(({ trace: _trace, ...r }) => r),
       pagination: { page: safePage, pageSize, totalRecords, totalPages },
+      ...(savings ? { savings } : {}),
     });
   });
 

@@ -1616,6 +1616,79 @@ describe('GET /api/usage', () => {
     })
   })
 
+  describe('savings block (T61)', () => {
+    const now = new Date().toISOString()
+    // cheap: $1/$2 per 1M — expensive: $10/$20 per 1M
+    const instances = [
+      { id: 'cheap', connectionId: 'c1', upstreamModelId: 'cheap', cost: { inputPerMillion: 1, outputPerMillion: 2 }, contextWindow: 8000 },
+      { id: 'expensive', connectionId: 'c1', upstreamModelId: 'expensive', cost: { inputPerMillion: 10, outputPerMillion: 20 }, contextWindow: 8000 },
+    ]
+    const connections = [{ id: 'c1', providerId: 'openai', label: 'OpenAI', credentials: { apiKey: 'k' }, endpoint: 'https://api.openai.com/v1', enabled: true }]
+    const projects = [{
+      id: 'p1', name: 'P1', tokens: [], members: [],
+      models: [{ modelId: 'cheap' }, { modelId: 'expensive' }, { modelId: 'off', enabled: false }],
+    }]
+    const records = [
+      { id: 'u1', timestamp: now, projectId: 'p1', modelId: 'cheap', inputTokens: 1000, outputTokens: 1000, cost: 0.003, outcome: 'success', callType: 'completion', latencyMs: 1000 },
+      { id: 'u2', timestamp: now, projectId: 'p1', modelId: 'cheap', inputTokens: 0, outputTokens: 0, cost: 0.5, outcome: 'success', callType: 'routing', latencyMs: 50 },
+    ]
+    const get = async (qs: string) => {
+      setupAdminAuth()
+      mockReadConfig.mockImplementation(async (t: string) => {
+        if (t === 'users') return [adminUser]
+        if (t === 'roles') return []
+        if (t === 'usage') return records
+        if (t === 'instances') return instances
+        if (t === 'connections') return connections
+        if (t === 'projects') return projects
+        return []
+      })
+      const app = await buildApp()
+      const res = await app.inject({ method: 'GET', url: `/api/usage?${qs}`, headers: adminAuthHeaders() })
+      await app.close()
+      return JSON.parse(res.body)
+    }
+
+    it('is absent unless savings=1 is asked for', async () => {
+      const b = await get('')
+      expect(b.savings).toBeUndefined()
+    })
+
+    it('counterfactuals the target models of the projects in the result', async () => {
+      const b = await get('savings=1')
+      expect(b.savings.comparedCalls).toBe(1) // the routing call is Routerly overhead, not client workload
+      expect(b.savings.comparedCost).toBe(0.003)
+      expect(b.savings.baselines.map((x: any) => x.modelId)).toEqual(['cheap', 'expensive'])
+      const expensive = b.savings.baselines.find((x: any) => x.modelId === 'expensive')
+      expect(expensive.cost).toBe(0.03)
+      expect(expensive.costDelta).toBe(-0.027)
+    })
+
+    it('leaves disabled target models out of the baselines', async () => {
+      const b = await get('savings=1')
+      expect(b.savings.baselines.some((x: any) => x.modelId === 'off')).toBe(false)
+    })
+
+    it('respects the active filters', async () => {
+      const b = await get('savings=1&modelIds=expensive')
+      expect(b.savings.comparedCalls).toBe(0)
+      expect(b.savings.baselines).toEqual([]) // no project left in the result, no baseline to compare
+    })
+
+    it('requires report:read like the rest of the route', async () => {
+      mockVerifyToken.mockReturnValue({ sub: 'noperm-id' } as any)
+      mockReadConfig.mockImplementation(async (t: string) => {
+        if (t === 'users') return [{ id: 'noperm-id', email: 'noperm@example.com', passwordHash: 'hashed', roleId: 'noperm', projectIds: [] }]
+        if (t === 'roles') return [{ id: 'noperm', name: 'NoPerm', permissions: [] }]
+        return []
+      })
+      const app = await buildApp()
+      const res = await app.inject({ method: 'GET', url: '/api/usage?savings=1', headers: { authorization: 'Bearer tok' } })
+      await app.close()
+      expect(res.statusCode).toBe(403)
+    })
+  })
+
   describe('dashboard filters (modelIds / callType / outcome / projectIds)', () => {
     const now = new Date().toISOString()
     const records = [
