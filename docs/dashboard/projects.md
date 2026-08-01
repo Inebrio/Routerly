@@ -35,24 +35,25 @@ Shows and lets you edit:
 
 Configure which models this project can use and how to select between them.
 
-![Project Routing tab showing the Routing Profile combobox set to Custom, with the inline policy editor active below it](../assets/screenshot-project-routing-profile.png)
+![Project Routing tab with the Profile / Custom switch set to Custom, showing the inline policy editor and the target model list below it](../assets/screenshot-project-routing-profile.png)
 
 ### Routing Profile
 
-At the top of the tab, the **Routing Profile** dropdown assigns a shared
-[routing profile](./routing-profiles.md) to this project instead of
-maintaining inline policies here. Options are `Custom (this project's own
-policies)`, followed by the built-in profiles, followed by any custom
-profiles.
+At the top of the tab, a **Profile** / **Custom** switch decides where this
+project's routing comes from. Target models stay configurable in both modes.
 
-Selecting a profile **saves immediately** on change, independently from
-the **Save Routing Configuration** button below, which only persists this
-project's own inline policies and target models. While a profile is assigned,
-the inline **Routing Policies** editor is disabled (dimmed, non-interactive):
-the project's routing now comes from the profile's policies, selector, and
-fallback strategy instead. Switching the dropdown back to **Custom**
-re-enables the inline editor and reverts routing to this project's own
-policies.
+**Profile** assigns a shared [routing profile](./profiles.md). A dropdown
+lists the built-in profiles first (labelled `(built-in)`), then any custom
+ones; selecting one **saves immediately**, independently from the **Save
+Routing Configuration** button below. The inline policy editor is hidden:
+policies, selector and fallback strategy all come from the profile and follow
+its later edits, which are made on the [Profiles](./profiles.md) page.
+
+**Custom** clears the assignment and restores this project's own inline
+policies. Switching from Profile to Custom pre-loads the assigned profile's
+policies into the editor as a starting point; they are not persisted until
+**Save Routing Configuration** is clicked, so the copy can be edited or
+discarded first.
 
 ### Adding Models
 
@@ -79,6 +80,18 @@ is forwarded to a provider.
 ![Project Optimizer tab showing the seven built-in optimizer rows, four enabled (Session Dedup, Caveman, Redundant Token Killer, Relevance Filter) with a Preview panel below](../assets/screenshot-project-optimizer-tab.png)
 
 **Required permission:** `optimizers:read` to view the tab; `optimizers:manage` to toggle, reorder, edit thresholds, or save.
+
+### Optimizer Profile
+
+A **Profile** / **Custom** switch at the top of the tab decides where the
+pipeline comes from, exactly like the [Routing tab](#routing-profile). In
+**Profile** mode a dropdown assigns a shared
+[optimizer profile](./profiles.md); the assignment saves immediately and the
+pipeline editor is replaced by a read-only list of the profile's enabled
+steps. Switching to **Custom** clears the assignment and pre-loads those steps
+into the editor, unsaved, so they can be adjusted before **Save Optimizers**.
+
+The switch is only shown with `optimizers:manage`.
 
 ### Optimizer Rows
 
@@ -239,6 +252,16 @@ The table is empty when no requests have been made with a `body.user` value.
 Configure request filtering and data protection for this project.
 
 **Required permission:** `project:update`
+
+### Security Profile
+
+A **Profile** / **Custom** switch at the top of the tab decides where the
+guardrails and PII policies come from, exactly like the
+[Routing tab](#routing-profile). In **Profile** mode a dropdown assigns a
+shared [security profile](./profiles.md); the assignment saves immediately and
+the editors below are replaced by a read-only list of the profile's rules and
+PII policies. Switching to **Custom** clears the assignment and pre-loads that
+configuration into the editors, unsaved, so it can be adjusted before saving.
 
 ### Content Guardrails
 

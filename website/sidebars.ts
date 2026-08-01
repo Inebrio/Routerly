@@ -48,7 +48,7 @@ const sidebars: SidebarsConfig = {
         'dashboard/models',
         'dashboard/connections',
         'dashboard/projects',
-        'dashboard/routing-profiles',
+        'dashboard/profiles',
         'dashboard/mcp',
         'dashboard/usage',
         'dashboard/users-and-roles',

@@ -475,33 +475,53 @@ DELETE /api/instances/:id
 
 ---
 
-## Routing Profiles
+## Profiles
 
-A routing profile bundles a policy list, a selector, and a fallback strategy
-into one reusable, named unit. Profiles ship as 5 read-only built-ins
-(`balanced`, `cheap`, `fast`, `coding`, `offline`) and can be cloned into
-user-owned, editable copies. A project either keeps its own inline policies or
-is assigned a shared profile via [Assign Project Profile](#assign-project-profile).
+A profile bundles one area of a project's configuration into a reusable, named
+unit. Its `kind` decides which fields it carries:
+
+| `kind` | Fields |
+|--------|--------|
+| `routing` | `policies`, `selector`, `fallbackStrategy` |
+| `optimizer` | `optimizers` |
+| `security` | `guardrails`, `pii` |
+
+Every profile also has `id`, `kind`, `label`, `version`, `builtin` and, when it
+was produced by [Clone Profile](#clone-profile), `baseId`.
+
+Routerly ships read-only built-ins per kind (`auto`, `cheap`, `fast`, `coding`;
+`optimizer-safe`, `optimizer-balanced`, `optimizer-aggressive`;
+`security-standard`, `security-strict`). A project either keeps its own inline
+configuration for a kind or is assigned a profile of that kind via
+[Assign Project Profiles](#assign-project-profiles); the three kinds are
+assigned independently.
+
 See [Concepts: Routing: Routing Profiles](../concepts/routing.md#routing-profiles)
 for the selector and fallback strategy reference.
+
+All profile endpoints return `403 module_disabled` when the `profiles` module
+is disabled.
 
 ### List Profiles
 
 ```
-GET /api/routing/profiles
+GET /api/profiles
+GET /api/profiles?kind=routing
 ```
 
 **Auth**: `Authorization: Bearer <jwt>` (requires `profiles:read`)
 
-Returns all 5 built-ins followed by any user-cloned profiles.
+Returns the built-ins followed by any user-created profiles. `kind` filters the
+result to one kind; omit it to get all three.
 
 **Response `200`:**
 ```json
 [
   {
-    "id": "balanced",
+    "id": "auto",
+    "kind": "routing",
     "version": 1,
-    "label": "Balanced",
+    "label": "Auto",
     "policies": [
       { "type": "health", "enabled": true },
       { "type": "performance", "enabled": true },
@@ -511,43 +531,92 @@ Returns all 5 built-ins followed by any user-cloned profiles.
     "selector": "argmax",
     "fallbackStrategy": "next-best",
     "builtin": true
+  },
+  {
+    "id": "optimizer-safe",
+    "kind": "optimizer",
+    "version": 1,
+    "label": "Safe",
+    "optimizers": { "steps": [{ "id": "session-dedup", "enabled": true }] },
+    "builtin": true
+  },
+  {
+    "id": "security-standard",
+    "kind": "security",
+    "version": 1,
+    "label": "Standard",
+    "guardrails": { "detectInjection": true, "rules": [] },
+    "pii": { "policies": [{ "target": "request", "entities": ["EMAIL", "PHONE", "CREDIT_CARD", "SSN", "IBAN"] }] },
+    "builtin": true
   }
 ]
 ```
 
-**Errors**: `403` insufficient permissions
+**Errors**: `400` `invalid_kind` · `403` insufficient permissions
 
-### Clone Profile
+### Create Profile
 
 ```
-POST /api/routing/profiles/clone
+POST /api/profiles
 ```
 
 **Auth**: `Authorization: Bearer <jwt>` (requires `profiles:manage`)
 
 ```json
-{ "baseId": "balanced", "label": "My Balanced Profile" }
+{
+  "kind": "routing",
+  "label": "My Routing Profile",
+  "policies": [{ "type": "cheapest", "enabled": true }],
+  "selector": "cheapest",
+  "fallbackStrategy": "abort"
+}
 ```
 
 **Fields:**
-- `baseId`: id of the built-in profile to clone (user-owned profiles cannot
-  be cloned) (required)
+- `kind`: `routing` | `optimizer` | `security` (required, decides which other
+  fields are accepted)
+- `label`: display name (required, non-empty)
+- everything else is optional and defaults to an empty configuration, so
+  `{ "kind": "security", "label": "Empty" }` is a valid body that can be filled
+  in later with [Update Profile](#update-profile)
+
+**Response `201`:** the created profile (`builtin: false`, `version: 1`).
+
+**Errors**: `400` invalid body · `403` insufficient permissions
+
+### Clone Profile
+
+```
+POST /api/profiles/clone
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `profiles:manage`)
+
+```json
+{ "baseId": "auto", "label": "My Auto Profile" }
+```
+
+**Fields:**
+- `baseId`: id of the built-in profile to clone (user-owned profiles cannot be
+  cloned) (required)
 - `label`: display name for the new profile (required, non-empty)
 
-**Response `200`:** the created profile (`builtin: false`, `version: 1`,
-`baseId` set to the source profile's id).
+**Response `200`:** the created profile, same kind and configuration as the
+base (`builtin: false`, `version: 1`, `baseId` set to the source profile's id).
 
 **Errors**: `400` invalid body or unknown `baseId` · `403` insufficient permissions
 
 ### Update Profile
 
 ```
-PATCH /api/routing/profiles/:id
+PATCH /api/profiles/:id
 ```
 
 **Auth**: `Authorization: Bearer <jwt>` (requires `profiles:manage`)
 
-**Request body** (all fields optional, at least one required):
+**Request body**: any subset of the fields that belong to the target profile's
+kind, at least one required. `kind` itself cannot be changed.
+
 ```json
 {
   "label": "Renamed Profile",
@@ -557,19 +626,19 @@ PATCH /api/routing/profiles/:id
 }
 ```
 
-Only user-cloned profiles can be updated. Every successful update bumps the
+Only user-created profiles can be updated. Every successful update bumps the
 profile's `version` field by 1.
 
 **Response `200`:** the updated profile.
 
-**Errors**: `400` invalid body · `404` profile not found · `409`
-`immutable_builtin_profile` (target id matches a built-in) · `403`
-insufficient permissions
+**Errors**: `400` invalid body (including a field that does not belong to this
+profile's kind) · `404` profile not found · `409` `immutable_builtin_profile`
+(target id matches a built-in) · `403` insufficient permissions
 
 ### Delete Profile
 
 ```
-DELETE /api/routing/profiles/:id
+DELETE /api/profiles/:id
 ```
 
 **Auth**: `Authorization: Bearer <jwt>` (requires `profiles:manage`)
@@ -577,77 +646,33 @@ DELETE /api/routing/profiles/:id
 **Response**: `204 No Content`
 
 **Errors**: `404` profile not found · `409` `immutable_builtin_profile`
-(target id matches a built-in) · `409` `profile_in_use` (a project's
-`profileId` still references it, unassign it first) · `403` insufficient
-permissions
+(target id matches a built-in) · `409` `profile_in_use` (a project still
+references it, unassign it first) · `403` insufficient permissions
 
-### Assign Project Profile
+### Assign Project Profiles
 
 ```
-PUT /api/projects/:id/profile
+PUT /api/projects/:id/profiles
 ```
 
 **Auth**: `Authorization: Bearer <jwt>` (requires `project:write`)
 
 ```json
-{ "profileId": "balanced" }
+{ "routing": "auto", "optimizer": null }
 ```
 
-**Fields:**
-- `profileId`: id of an existing profile (built-in or user-owned), or `null`
-  to clear the assignment and fall back to the project's own inline policies
-  (required, `string | null`)
+**Fields** (at least one required, each `string | null`):
+- `routing`, `optimizer`, `security`: id of an existing profile of that kind,
+  or `null` to clear the assignment and fall back to the project's own inline
+  configuration for that kind
+
+Kinds omitted from the body keep their current assignment.
 
 **Response `200`:** the updated project (same shape as
 [Get Project](#get-project), `tokens` present with `token` values stripped).
 
-**Errors**: `400` invalid body · `404` project or `profile_not_found` ·
-`403` insufficient permissions
-
-### Simulate Routing
-
-```
-POST /api/routing/simulate
-```
-
-**Auth**: `Authorization: Bearer <jwt>` (requires `profiles:read`)
-
-Dry-run preview of which model a request would pick. **No upstream call is
-made and no usage record is written.**
-
-```json
-{
-  "projectId": "proj-uuid",
-  "profileId": "balanced",
-  "request": { "model": "auto", "messages": [{ "role": "user", "content": "Hello" }] }
-}
-```
-
-**Fields:**
-- `projectId`: project to simulate against (required)
-- `request`: the request body to score, same shape as an [LLM Proxy](./llm-proxy.md) request (required)
-- `profileId`: override the project's resolved profile for this simulation only (optional; omit to use the project's assigned profile, or its own inline policies if unassigned)
-- `policies`, `selector`, `fallbackStrategy`: further override individual fields of the resolved profile for this simulation only (optional)
-
-**Response `200`:**
-```json
-{
-  "picked": "openai/gpt-5-mini",
-  "ranked": [
-    { "model": "openai/gpt-5-mini", "score": 0.91, "cost": 0.0002 },
-    { "model": "anthropic/claude-haiku-4-5", "score": 0.78, "cost": 0.0004 }
-  ],
-  "trace": []
-}
-```
-
-**Response fields:**
-- `picked`: the model the configured selector would choose (`null` if no candidates)
-- `ranked`: every scored candidate, ordered by the selector's output
-- `trace`: routing trace entries, same shape as [Get Routing Trace](#get-routing-trace)
-
-**Errors**: `400` invalid body or a scoring error (e.g. bad `request`) ·
-`404` project not found · `403` insufficient permissions
+**Errors**: `400` invalid body · `404` project not found or
+`profile_not_found` (with the offending `kind`) · `403` insufficient permissions
 
 ---
 
