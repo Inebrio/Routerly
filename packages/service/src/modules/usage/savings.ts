@@ -35,6 +35,29 @@ function isCompared(r: UsageRecord): boolean {
 }
 
 /**
+ * How many tokens a tokenizer family spends on the same text, relative to
+ * o200k at 1 (T102). Claude's tokenizer splits a little finer, the
+ * SentencePiece families sit between the two, cl100k is slightly above o200k.
+ *
+ * Coarse on purpose: it exists so the savings layer can say "about this many
+ * more tokens elsewhere" without shipping four vocabularies, and every surface
+ * that shows the resulting figure labels it an estimate. First match wins, so
+ * the modern OpenAI models are listed before the catch-all OpenAI rule.
+ */
+const TOKENIZER_RATIO: Array<[RegExp, number]> = [
+  [/claude|anthropic/i, 1.15],
+  [/gemini|palm|google/i, 1.05],
+  [/qwen|llama|mistral|deepseek|phi|gemma|ollama/i, 1.1],
+  [/gpt-4o|gpt-4\.1|gpt-5|\/o[134]\b/i, 1],
+  [/gpt-|text-embedding|openai/i, 1.05],
+];
+
+/** Relative token cost of a model's tokenizer family. `1` when nothing matches. */
+export function tokenizerRatio(modelId: string): number {
+  return TOKENIZER_RATIO.find(([pattern]) => pattern.test(modelId))?.[1] ?? 1;
+}
+
+/**
  * Per-optimizer measured saving over the compared records (T63).
  *
  * Unlike the baselines this is not a counterfactual: the tokens listed here were
@@ -153,6 +176,13 @@ export function computeSavings(
     const costDelta = round(cost - comparedCost);
     const throughput = msPerOutputToken.get(modelId)!;
     const latencyMs = throughput.samples > 0 ? Math.round(throughput.value * comparedOutputTokens) : undefined;
+    // Token counterfactual (T102): the observed tokens rescaled by the ratio
+    // between this model's tokenizer family and the family that served the call.
+    const baselineRatio = tokenizerRatio(modelId);
+    const tokensEstimated = Math.round(compared.reduce(
+      (sum, r) => sum + (r.inputTokens + r.outputTokens) * (baselineRatio / tokenizerRatio(r.modelId)),
+      0,
+    ));
     baselines.push({
       modelId,
       cost,
@@ -160,6 +190,8 @@ export function computeSavings(
       costDeltaPercent: cost > 0 ? round((costDelta / cost) * 100) : 0,
       ...(latencyMs !== undefined ? { latencyMs, latencyDeltaMs: latencyMs - comparedLatencyMs } : {}),
       latencySamples: throughput.samples,
+      tokensEstimated,
+      tokenDelta: tokensEstimated - (comparedInputTokens + comparedOutputTokens),
     });
   }
   baselines.sort((a, b) => a.cost - b.cost);
@@ -185,11 +217,14 @@ const bucketKey = (timestamp: string, bucket: 'hour' | 'day'): string =>
  * arithmetic, cut into hour or day buckets so the overview can show whether the
  * gap between routed and baseline traffic is widening or closing.
  *
- * The counterfactual is priced against the *costliest* baseline, which is the
- * headline the project dashboard already shows: the worst case routing avoided.
- * Per-bucket baseline latency reuses that baseline's whole-window throughput
- * (`latencyMs / comparedOutputTokens`) rather than recomputing a median per
- * bucket, where a quiet hour would rest on one or two calls.
+ * Every paid baseline is priced, not only the costliest: the overview draws one
+ * line per model and lets the reader turn any of them off (T100). Free models
+ * are left out, a flat zero line says nothing. `baselineCost` stays the
+ * costliest of them, the headline the project dashboard and the CLI already read.
+ *
+ * Per-bucket baseline latency reuses the costliest baseline's whole-window
+ * throughput (`latencyMs / comparedOutputTokens`) rather than recomputing a
+ * median per bucket, where a quiet hour would rest on one or two calls.
  *
  * Buckets with no compared call are absent rather than zero-filled: a gap in the
  * line is honest about there being no traffic, a zero would read as free traffic.
@@ -207,13 +242,20 @@ export function computeSeries(
     ? worst.latencyMs / summary.comparedOutputTokens
     : 0;
 
+  // Cheapest first, same order as the summary, so a legend built from this list
+  // reads from the low end of the range to the high one.
+  const priced = summary.baselines
+    .filter(b => b.cost > 0)
+    .map(b => models.find(m => m.id === b.modelId))
+    .filter((m): m is ModelConfig => m !== undefined);
+
   const buckets = new Map<string, UsageSeriesPoint>();
   for (const r of records.filter(isCompared)) {
     const key = bucketKey(r.timestamp, bucket);
     let point = buckets.get(key);
     if (!point) {
       point = {
-        bucket: key, calls: 0, cost: 0, baselineCost: 0,
+        bucket: key, calls: 0, cost: 0, baselineCost: 0, baselineCosts: {},
         inputTokens: 0, outputTokens: 0, cachedInputTokens: 0,
         latencyMs: 0, baselineLatencyMs: 0,
       };
@@ -230,6 +272,11 @@ export function computeSeries(
         r.inputTokens, r.outputTokens, baselineModel, r.cachedInputTokens, r.cacheCreationInputTokens,
       );
     }
+    for (const model of priced) {
+      point.baselineCosts[model.id] = (point.baselineCosts[model.id] ?? 0) + calculateCost(
+        r.inputTokens, r.outputTokens, model, r.cachedInputTokens, r.cacheCreationInputTokens,
+      );
+    }
     point.baselineLatencyMs += msPerOutputToken * r.outputTokens;
   }
 
@@ -240,12 +287,14 @@ export function computeSeries(
       ...p,
       cost: round(p.cost),
       baselineCost: round(p.baselineCost),
+      baselineCosts: Object.fromEntries(Object.entries(p.baselineCosts).map(([id, c]) => [id, round(c)])),
       baselineLatencyMs: Math.round(p.baselineLatencyMs),
     }));
 
   return {
     bucket,
     ...(baselineModel ? { baselineModelId: baselineModel.id } : {}),
+    baselineModelIds: priced.map(m => m.id),
     points,
   };
 }

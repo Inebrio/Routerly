@@ -258,4 +258,43 @@ describe('TimeSeriesChart', () => {
     );
     expect(screen.getByTestId('x-axis').dataset.key).toBe('label');
   });
+
+  it('keeps a hidden series in the legend and out of the plot', () => {
+    render(
+      <TimeSeriesChart data={data} xKey="date" formatValue={String} onToggleSeries={vi.fn()} series={[
+        { key: 'cost', label: 'Cost', color: '#3d75f5' },
+        { key: 'baseline', label: 'Baseline', color: '#10b981', dashed: true, hidden: true },
+      ]} />,
+    );
+    const areas = screen.getAllByTestId('area');
+    expect(areas.map(a => a.dataset.key)).toEqual(['cost']);
+    const off = screen.getByRole('button', { name: 'Baseline' });
+    expect(off.className).toContain('is-off');
+    expect(off.getAttribute('aria-pressed')).toBe('false');
+    expect(off.getAttribute('title')).toBe('Show Baseline');
+  });
+
+  it('reports the clicked series key to onToggleSeries', () => {
+    const onToggleSeries = vi.fn();
+    render(
+      <TimeSeriesChart data={data} xKey="date" formatValue={String} onToggleSeries={onToggleSeries} series={[
+        { key: 'cost', label: 'Cost', color: '#3d75f5' },
+        { key: 'baseline', label: 'Baseline', color: '#10b981', dashed: true },
+      ]} />,
+    );
+    const on = screen.getByRole('button', { name: 'Baseline' });
+    expect(on.getAttribute('title')).toBe('Hide Baseline');
+    on.click();
+    expect(onToggleSeries).toHaveBeenCalledWith('baseline');
+  });
+
+  it('leaves the legend unclickable when nothing can be toggled', () => {
+    const { container } = render(
+      <TimeSeriesChart data={data} xKey="date" formatValue={String} series={[
+        { key: 'cost', label: 'Cost', color: '#3d75f5' },
+        { key: 'baseline', label: 'Baseline', color: '#10b981', dashed: true },
+      ]} />,
+    );
+    expect(container.querySelectorAll('button').length).toBe(0);
+  });
 });

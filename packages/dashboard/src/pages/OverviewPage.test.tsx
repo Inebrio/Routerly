@@ -269,7 +269,7 @@ describe('OverviewPage — period selector', () => {
     await waitFor(() => screen.queryByText('Daily'));
     await userEvent.click(screen.getByText('Daily'));
     await waitFor(() =>
-      expect(mockGetUsage).toHaveBeenCalledWith('daily', undefined, undefined, undefined, undefined, undefined, { series: true })
+      expect(mockGetUsage).toHaveBeenCalledWith('daily', undefined, undefined, undefined, undefined, undefined, { series: true, savings: true })
     );
   });
 
@@ -277,60 +277,20 @@ describe('OverviewPage — period selector', () => {
     renderPage();
     await waitFor(() => screen.queryByText('Weekly'));
     await userEvent.click(screen.getByText('Weekly'));
-    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith('weekly', undefined, undefined, undefined, undefined, undefined, { series: true }));
+    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith('weekly', undefined, undefined, undefined, undefined, undefined, { series: true, savings: true }));
   });
 
   it('clicking All calls getUsage with "all"', async () => {
     renderPage();
     await waitFor(() => screen.queryByText('All'));
     await userEvent.click(screen.getByText('All'));
-    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith('all', undefined, undefined, undefined, undefined, undefined, { series: true }));
+    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith('all', undefined, undefined, undefined, undefined, undefined, { series: true, savings: true }));
   });
 });
 
-// ── Timeline data derivation ───────────────────────────────────────────────────
+// ── Cost by model ──────────────────────────────────────────────────────────────
 
-describe('OverviewPage — timeline chart', () => {
-  it('renders area chart when timeline data is non-empty (monthly period)', async () => {
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-    mockGetUsage.mockResolvedValue(makeStats({
-      timeline: [[dateStr, 0.5]],
-    }));
-    renderPage();
-    await waitFor(() => expect(screen.queryByTestId('area-chart')).not.toBeNull());
-  });
-
-  it('renders area chart for weekly period', async () => {
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-    mockGetUsage.mockResolvedValue(makeStats({ timeline: [[dateStr, 0.1]] }));
-    renderPage();
-    await waitFor(() => screen.queryByText('Weekly'));
-    await userEvent.click(screen.getByText('Weekly'));
-    await waitFor(() => expect(screen.queryByTestId('area-chart')).not.toBeNull());
-  });
-
-  it('renders area chart for "all" period with timeline data', async () => {
-    mockGetUsage.mockResolvedValue(makeStats({
-      timeline: [['2024-01-01', 0.1], ['2024-01-02', 0.2]],
-    }));
-    renderPage();
-    await waitFor(() => screen.queryByText('All'));
-    await userEvent.click(screen.getByText('All'));
-    await waitFor(() => expect(screen.queryByTestId('area-chart')).not.toBeNull());
-  });
-
-  it('renders hourly area chart when timeline entries have datetime format', async () => {
-    mockGetUsage.mockResolvedValue(makeStats({
-      timeline: [['2024-01-15T10', 0.05]],
-    }));
-    renderPage();
-    await waitFor(() => screen.queryByText('Daily'));
-    await userEvent.click(screen.getByText('Daily'));
-    await waitFor(() => expect(screen.queryByTestId('area-chart')).not.toBeNull());
-  });
-
+describe('OverviewPage — cost by model', () => {
   it('renders bar chart for cost by model', async () => {
     mockGetUsage.mockResolvedValue(makeStats({
       byModel: {
@@ -391,29 +351,6 @@ describe('OverviewPage — dark theme', () => {
     await waitFor(() => expect(screen.queryByText('Overview')).not.toBeNull());
     mockUseTheme.mockReturnValue({ theme: 'light', setTheme: vi.fn() });
   });
-
-  it('weekly timeline with Sunday date uses correct offset (d===0 branch)', async () => {
-    // Force a Sunday so d===0 branch fires (start.setDate - 6)
-    const sunday = new Date('2024-01-07'); // Jan 7 2024 is a Sunday
-    const origDate = globalThis.Date;
-    const MockDate = class extends origDate {
-      constructor(...args: unknown[]) {
-        if (args.length === 0) super(sunday.getTime()); // new Date() → Sunday
-        // @ts-expect-error spread types
-        else super(...args);
-      }
-      static override now() { return sunday.getTime(); }
-    } as unknown as typeof Date;
-    globalThis.Date = MockDate;
-
-    mockGetUsage.mockResolvedValue(makeStats({ timeline: [['2024-01-01', 0.5]] }));
-    renderPage();
-    await waitFor(() => screen.queryByText('Weekly'));
-    await userEvent.click(screen.getByText('Weekly'));
-    await waitFor(() => expect(screen.queryByTestId('area-chart')).not.toBeNull());
-
-    globalThis.Date = origDate;
-  });
 });
 
 // ── Savings over time (T81) ───────────────────────────────────────────────────
@@ -421,17 +358,42 @@ describe('OverviewPage — dark theme', () => {
 const SERIES = {
   bucket: 'day' as const,
   baselineModelId: 'openai/gpt-4o',
+  // Cheapest first, same order the service ships (T100).
+  baselineModelIds: ['openai/gpt-4o-mini', 'anthropic/claude-sonnet-4', 'openai/gpt-4o'],
   points: [
-    { bucket: '2026-07-31', calls: 2, cost: 0.006, baselineCost: 0.06, inputTokens: 2000, outputTokens: 1000, cachedInputTokens: 0, latencyMs: 2000, baselineLatencyMs: 4000 },
-    { bucket: '2026-08-01', calls: 1, cost: 0.003, baselineCost: 0.03, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0, latencyMs: 1000, baselineLatencyMs: 2000 },
+    {
+      bucket: '2026-07-31', calls: 2, cost: 0.006, baselineCost: 0.06,
+      baselineCosts: { 'openai/gpt-4o-mini': 0.01, 'anthropic/claude-sonnet-4': 0.03, 'openai/gpt-4o': 0.06 },
+      inputTokens: 2000, outputTokens: 1000, cachedInputTokens: 0, latencyMs: 2000, baselineLatencyMs: 4000,
+    },
+    {
+      bucket: '2026-08-01', calls: 1, cost: 0.003, baselineCost: 0.03,
+      baselineCosts: { 'openai/gpt-4o-mini': 0.005, 'anthropic/claude-sonnet-4': 0.015, 'openai/gpt-4o': 0.03 },
+      inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0, latencyMs: 1000, baselineLatencyMs: 2000,
+    },
   ],
 };
 
+const SAVINGS = {
+  comparedCalls: 3,
+  comparedCost: 0.009,
+  comparedLatencyMs: 3000,
+  comparedInputTokens: 3000,
+  comparedOutputTokens: 1500,
+  cache: { inputTokens: 0, cost: 0 },
+  baselines: [
+    { modelId: 'openai/gpt-4o-mini', cost: 0.015, costDelta: 0.006, costDeltaPercent: 40, latencyMs: 4500, latencyDeltaMs: 1500, latencySamples: 3, tokensEstimated: 4500, tokenDelta: 0 },
+    { modelId: 'anthropic/claude-sonnet-4', cost: 0.045, costDelta: 0.036, costDeltaPercent: 80, latencyMs: 6000, latencyDeltaMs: 3000, latencySamples: 2, tokensEstimated: 5175, tokenDelta: 675 },
+    { modelId: 'openai/gpt-4o', cost: 0.09, costDelta: 0.081, costDeltaPercent: 90, latencyMs: 5000, latencyDeltaMs: 2000, latencySamples: 1, tokensEstimated: 4500, tokenDelta: 0 },
+  ],
+  optimizers: [{ id: 'rtk', calls: 3, tokensSaved: 1200, costSaved: 0.002, rolledBack: 0 }],
+};
+
 describe('OverviewPage — savings over time', () => {
-  it('asks the service for the series', async () => {
+  it('asks the service for the series and the totals', async () => {
     renderPage();
     await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith(
-      'monthly', undefined, undefined, undefined, undefined, undefined, { series: true },
+      'monthly', undefined, undefined, undefined, undefined, undefined, { series: true, savings: true },
     ));
   });
 
@@ -441,23 +403,101 @@ describe('OverviewPage — savings over time', () => {
     expect(screen.queryByText('What routing saved')).toBeNull();
   });
 
-  it('shows what the routed traffic saved against the baseline', async () => {
-    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES }));
+  it('says how many calls were compared and against how many models', async () => {
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
     renderPage();
     await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
-    expect(screen.getByText('openai/gpt-4o')).toBeTruthy();
     const card = screen.getByText('What routing saved').closest('.chart-card')!;
-    expect(card.textContent).toContain('$0.0810'); // 0.09 baseline - 0.009 actual
-    expect(card.textContent).toContain('(90.0%)');
     expect(card.textContent).toContain('3 client calls');
+    expect(screen.getByRole('link', { name: '3 paid models in play' }).getAttribute('href')).toBe('/dashboard/models');
+  });
+
+  it('draws one dashed line per paid baseline, all but the two ends hidden', async () => {
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    const state = (label: string) =>
+      screen.getByRole('button', { name: new RegExp(`^${label}$`) }).getAttribute('aria-pressed');
+    expect(state('gpt-4o-mini')).toBe('true');   // cheapest end
+    expect(state('gpt-4o')).toBe('true');        // costliest end
+    expect(state('claude-sonnet-4')).toBe('false'); // in between, one click away
+  });
+
+  it('recomputes which lines start visible when the period changes the baseline set', async () => {
+    // One paid model in the first window, three in the next one: the two ends
+    // of the new set stay visible and the one in between goes back to hidden.
+    mockGetUsage
+      .mockResolvedValueOnce(makeStats({ series: { ...SERIES, baselineModelIds: ['openai/gpt-4o'] }, savings: SAVINGS }))
+      .mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    await userEvent.click(screen.getByRole('button', { name: 'All' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: /^claude-sonnet-4$/ })).not.toBeNull());
+    expect(screen.getByRole('button', { name: /^claude-sonnet-4$/ }).getAttribute('aria-pressed')).toBe('false');
+    expect(screen.getByRole('button', { name: /^gpt-4o-mini$/ }).getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('toggles a baseline line from its legend entry', async () => {
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    const middle = screen.getByRole('button', { name: /^claude-sonnet-4$/ });
+    await userEvent.click(middle);
+    expect(middle.getAttribute('aria-pressed')).toBe('true');
+    await userEvent.click(middle);
+    expect(middle.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('anchors every saving card on the costliest baseline, the cheapest as context', async () => {
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('Cost saved')).not.toBeNull());
+    expect(screen.getByText('$0.0810')).toBeTruthy();
+    expect(screen.getAllByText('vs always gpt-4o').length).toBe(2); // cost and time
+    expect(screen.getByText('$0.00600000 vs always gpt-4o-mini')).toBeTruthy();
+    // Tokens: what the optimizers really cut, then the tokenizer estimate apart from it
+    expect(screen.getByText('1,200')).toBeTruthy();
+    expect(screen.getByText('cut by optimizers, measured')).toBeTruthy();
+    expect(screen.getByText('0 vs always gpt-4o, estimated')).toBeTruthy();
+    expect(screen.getByText('2.00s')).toBeTruthy();
+  });
+
+  it('falls back to the costliest baseline that answered for the time card', async () => {
+    const savings = {
+      ...SAVINGS,
+      baselines: SAVINGS.baselines.map(b => (b.modelId === 'openai/gpt-4o'
+        ? { modelId: b.modelId, cost: b.cost, costDelta: b.costDelta, costDeltaPercent: b.costDeltaPercent, latencySamples: 0, tokensEstimated: b.tokensEstimated, tokenDelta: b.tokenDelta }
+        : b)),
+    };
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('Time saved')).not.toBeNull());
+    expect(screen.getByText('3.00s')).toBeTruthy();
+    expect(screen.getByText('vs always claude-sonnet-4')).toBeTruthy();
+  });
+
+  it('says so when no baseline answered in the window', async () => {
+    const savings = { ...SAVINGS, baselines: SAVINGS.baselines.map(({ latencyMs: _l, latencyDeltaMs: _d, ...b }) => b) };
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('Time saved')).not.toBeNull());
+    expect(screen.getByText('no baseline answered in this window')).toBeTruthy();
+  });
+
+  it('drops the saving cards when no baseline costs anything', async () => {
+    const savings = { ...SAVINGS, baselines: SAVINGS.baselines.map(b => ({ ...b, cost: 0 })) };
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    expect(screen.queryByText('Cost saved')).toBeNull();
   });
 
   it('switches the chart between cost, tokens and speed', async () => {
-    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES }));
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
     renderPage();
     await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
-    // Cost: actual against the counterfactual
-    expect(screen.getByText('On gpt-4o')).toBeTruthy();
+    // Cost: actual against every paid baseline
+    expect(screen.getByRole('button', { name: /^gpt-4o$/ })).toBeTruthy();
 
     await userEvent.click(screen.getByRole('button', { name: 'Tokens' }));
     expect(screen.getByText('Input')).toBeTruthy();
@@ -467,18 +507,28 @@ describe('OverviewPage — savings over time', () => {
     expect(screen.getByText('On gpt-4o')).toBeTruthy();
   });
 
-  it('drops the counterfactual when no baseline model applies', async () => {
-    const { baselineModelId: _baseline, ...noBaseline } = SERIES;
+  it('drops the speed counterfactual when no baseline answered', async () => {
+    const savings = { ...SAVINGS, baselines: SAVINGS.baselines.map(({ latencyMs: _l, latencyDeltaMs: _d, ...b }) => b) };
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    await userEvent.click(screen.getByRole('button', { name: 'Speed' }));
+    expect(screen.queryByText('On gpt-4o')).toBeNull();
+  });
+
+  it('drops the cost counterfactual when no baseline model applies', async () => {
+    const noBaseline = { ...SERIES, baselineModelIds: [] };
     mockGetUsage.mockResolvedValue(makeStats({ series: noBaseline }));
     renderPage();
     await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
-    expect(screen.queryByText('On gpt-4o')).toBeNull();
-    expect(screen.queryByText('$0.0810')).toBeNull();
+    // A single series draws no legend at all, so nothing is left to toggle
+    expect(screen.queryByRole('button', { name: /gpt-4o/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: /paid models/ })).toBeNull();
   });
 
   it('labels hourly buckets by the hour and daily ones by the date', async () => {
     mockGetUsage.mockResolvedValue(makeStats({
-      series: { bucket: 'hour', points: [{ ...SERIES.points[0], bucket: '2026-08-01T09' }] },
+      series: { bucket: 'hour', baselineModelIds: [], points: [{ ...SERIES.points[0], bucket: '2026-08-01T09' }] },
     }));
     renderPage();
     await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
@@ -487,7 +537,7 @@ describe('OverviewPage — savings over time', () => {
   });
 
   it('labels daily buckets by the date', async () => {
-    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES }));
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
     renderPage();
     await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
     const chart = screen.getByText('What routing saved').closest('.chart-card')!.querySelector('[data-testid="area-chart"]');

@@ -77,6 +77,17 @@ export interface SavingsBaseline {
   latencyDeltaMs?: number;
   /** Calls of this model in the window that back the latency estimate. */
   latencySamples: number;
+  /**
+   * Input plus output tokens the same conversations are estimated to take on
+   * this model, from the ratio between its tokenizer family and the family of
+   * the model that actually served each call (T102).
+   *
+   * An estimate, not a measurement: prompts are not retained, so nothing is
+   * re-tokenised. Every surface that shows it must say so.
+   */
+  tokensEstimated: number;
+  /** `tokensEstimated - compared tokens`: tokens saved against this baseline. Positive means routing moved fewer. */
+  tokenDelta: number;
 }
 
 /**
@@ -112,8 +123,13 @@ export interface UsageSeriesPoint {
   calls: number;
   /** USD those calls actually cost. */
   cost: number;
-  /** The same calls repriced at the baseline model. `0` when there is no baseline. */
+  /** The same calls repriced at the costliest baseline model. `0` when there is no baseline. */
   baselineCost: number;
+  /**
+   * The same calls repriced at every paid baseline, keyed by model id (T100).
+   * Empty when no baseline costs anything. The costliest entry is `baselineCost`.
+   */
+  baselineCosts: Record<string, number>;
   inputTokens: number;
   outputTokens: number;
   cachedInputTokens: number;
@@ -126,8 +142,10 @@ export interface UsageSeriesPoint {
 /** The savings series and what it is measured against (T81). */
 export interface UsageSeries {
   bucket: 'hour' | 'day';
-  /** Model the `baseline*` fields are priced against: the costliest target of the traffic in the window. */
+  /** Model the `baselineCost` and `baselineLatencyMs` fields are priced against: the costliest baseline. */
   baselineModelId?: string;
+  /** Paid models `baselineCosts` is keyed by, cheapest first (T100). */
+  baselineModelIds: string[];
   /** Oldest first, capped at the most recent 60 buckets. */
   points: UsageSeriesPoint[];
 }

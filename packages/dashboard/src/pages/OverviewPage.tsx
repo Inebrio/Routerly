@@ -4,19 +4,15 @@ import {
   BarChart, Bar, Cell,
 } from 'recharts';
 import { Link } from 'react-router-dom';
-import { Activity, ArrowRight, DollarSign, XCircle, Boxes, FolderOpen, Terminal, TrendingUp } from 'lucide-react';
-import { CLIENT_REGISTRY } from '@routerly/shared';
+import { Activity, ArrowRight, DollarSign, XCircle, Boxes, FolderOpen, PiggyBank, Scissors, Terminal, Timer, TrendingUp } from 'lucide-react';
+import { CLIENT_REGISTRY, type SavingsSummary } from '@routerly/shared';
 import { getUsage, getModels, getProjects, type UsageStats } from '../api.js';
 import { useClientsEnabled } from './ConnectPage.js';
-import { ChartTooltip, TimeSeriesChart, axisProps, seriesColor, useChartTheme } from '../components/charts.js';
+import { ChartTooltip, TimeSeriesChart, axisProps, seriesColor, useChartTheme, type ChartSeries } from '../components/charts.js';
 import { formatCost, formatDuration, formatTokens } from '../utils/traceUtils.js';
 
-const PERIOD_LABEL: Record<string, string> = {
-  daily: 'Cost per Hour (USD)',
-  weekly: 'Cost per Week (USD)',
-  monthly: 'Daily Cost (USD)',
-  all: 'Cost over Time (USD)',
-};
+/** Model id without its provider prefix: what fits in a legend entry. */
+const shortModel = (id: string): string => id.split('/').pop() ?? id;
 
 /** What the savings chart is showing. */
 type SavingsMetric = 'cost' | 'tokens' | 'speed';
@@ -48,9 +44,9 @@ export function OverviewPage() {
   const chartTheme = useChartTheme();
 
   useEffect(() => {
-    // `series` carries the savings figures already bucketed, so the overview
-    // needs it alone: the totals it shows are sums of the same points (T81).
-    getUsage(period, undefined, undefined, undefined, undefined, undefined, { series: true })
+    // `series` carries the savings bucketed over time for the chart (T81),
+    // `savings` the whole-window totals per baseline the saving cards read (T102).
+    getUsage(period, undefined, undefined, undefined, undefined, undefined, { series: true, savings: true })
       .then(setStats).catch(() => setStatsError(true));
   }, [period]);
 
@@ -58,50 +54,6 @@ export function OverviewPage() {
     getModels().then(m => setModelCount(m.length)).catch(console.error);
     getProjects().then(p => setProjectCount(p.length)).catch(console.error);
   }, []);
-
-  const timelineData = useMemo(() => {
-    if (!stats) return [];
-    const isHourly = (stats.timeline[0]?.[0]?.length ?? 0) > 10;
-
-    if (isHourly) {
-      const costByHour = new Map<string, number>(stats.timeline.map(([d, c]) => [d, c]));
-      const now = new Date();
-      const dateStr = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
-      return Array.from({ length: 24 }, (_, h) => {
-        const key = `${dateStr}T${String(h).padStart(2, '0')}`;
-        return { date: `${String(h).padStart(2, '0')}:00`, cost: costByHour.get(key) ?? 0 };
-      });
-    }
-
-    // Use period boundaries so weekly ≠ monthly when data is sparse
-    const now = new Date();
-    let start: Date;
-    if (period === 'weekly') {
-      start = new Date(now);
-      const d = start.getDay();
-      start.setDate(start.getDate() - (d === 0 ? 6 : d - 1));
-      start.setHours(0, 0, 0, 0);
-    } else if (period === 'monthly') {
-      start = new Date(now.getFullYear(), now.getMonth(), 1);
-    } else if (period === 'all' && stats.timeline.length > 0) {
-      const firstKey = stats.timeline[0]![0]!;
-      const [fy, fm, fd] = firstKey.split('-').map(Number) as [number, number, number];
-      start = new Date(fy, fm - 1, fd);
-    } else {
-      return [];
-    }
-
-    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const costByDate = new Map<string, number>(stats.timeline.map(([d, c]) => [d, c]));
-    const result: { date: string; cost: number }[] = [];
-    const cur = new Date(start);
-    while (cur <= end) {
-      const key = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
-      result.push({ date: key.slice(5), cost: costByDate.get(key) ?? 0 });
-      cur.setDate(cur.getDate() + 1);
-    }
-    return result;
-  }, [stats, period]);
 
   const barData = useMemo(() => {
     if (!stats) return [];
@@ -116,36 +68,25 @@ export function OverviewPage() {
       });
   }, [stats]);
 
-  /** One point per bucket, with the derived per-call figures the Speed metric needs. */
+  /**
+   * One point per bucket, with the derived per-call figures the Speed metric
+   * needs. Every paid baseline gets its own `b<i>` key rather than its model id:
+   * recharts reads a dataKey containing a dot as a path, and model ids are full
+   * of dots.
+   */
   const savingsData = useMemo(() => {
     const series = stats?.series;
     if (!series) return [];
     return series.points.map(p => ({
       label: series.bucket === 'hour' ? `${p.bucket.slice(11)}:00` : p.bucket.slice(5),
       cost: p.cost,
-      baselineCost: p.baselineCost,
+      ...Object.fromEntries(series.baselineModelIds.map((id, i) => [`b${i}`, p.baselineCosts[id] ?? 0])),
       inputTokens: p.inputTokens,
       outputTokens: p.outputTokens,
       /* v8 ignore next 2 — a bucket exists only because it has calls */
       latencyPerCall: p.calls > 0 ? Math.round(p.latencyMs / p.calls) : 0,
       baselineLatencyPerCall: p.calls > 0 ? Math.round(p.baselineLatencyMs / p.calls) : 0,
     }));
-  }, [stats]);
-
-  const savingsTotals = useMemo(() => {
-    const points = stats?.series?.points ?? [];
-    const sum = (pick: (p: (typeof points)[number]) => number) => points.reduce((s, p) => s + pick(p), 0);
-    const cost = sum(p => p.cost);
-    const baselineCost = sum(p => p.baselineCost);
-    return {
-      calls: sum(p => p.calls),
-      cost,
-      baselineCost,
-      saved: baselineCost - cost,
-      savedPercent: baselineCost > 0 ? ((baselineCost - cost) / baselineCost) * 100 : 0,
-      latencyMs: sum(p => p.latencyMs),
-      baselineLatencyMs: sum(p => p.baselineLatencyMs),
-    };
   }, [stats]);
 
   const sortedModels = useMemo(() =>
@@ -213,6 +154,7 @@ export function OverviewPage() {
             value={modelCount} sub="registered" to="/dashboard/models" />
           <StatCard icon={<FolderOpen size={18} />} label="Projects" accentColor="#A78BFA"
             value={projectCount} sub="active" to="/dashboard/projects" />
+          {stats.savings && <SavingsStats savings={stats.savings} />}
         </div>
 
         {/* Token aggregate strip */}
@@ -230,27 +172,14 @@ export function OverviewPage() {
           </div>
         )}
 
-        {/* Cost timeline */}
-        {timelineData.length > 0 && (
-          <div className="chart-card">
-            <h3>{PERIOD_LABEL[period]}</h3>
-            <TimeSeriesChart
-              key={period}
-              data={timelineData}
-              xKey="date"
-              series={[{ key: 'cost', label: 'Cost', color: seriesColor(0) }]}
-              formatValue={formatCost}
-              formatAxis={compactCost}
-            />
-          </div>
-        )}
-
         {/* What routing saved, over time (T81) */}
         {savingsData.length > 0 && (
           <SavingsCard
+            key={period}
             data={savingsData}
-            totals={savingsTotals}
+            baselineIds={stats.series?.baselineModelIds ?? []}
             {...(stats.series?.baselineModelId ? { baselineModelId: stats.series.baselineModelId } : {})}
+            {...(stats.savings ? { savings: stats.savings } : {})}
             metric={savingsMetric}
             onMetric={setSavingsMetric}
             period={period}
@@ -334,19 +263,35 @@ export function OverviewPage() {
  * counterfactual at all: the same conversation is assumed to produce the same
  * tokens everywhere, so only the price of those tokens changes.
  */
-function SavingsCard({ data, totals, baselineModelId, metric, onMetric, period }: {
+function SavingsCard({ data, baselineIds, baselineModelId, savings, metric, onMetric, period }: {
   data: Array<Record<string, string | number>>;
-  totals: { calls: number; cost: number; baselineCost: number; saved: number; savedPercent: number; latencyMs: number; baselineLatencyMs: number };
+  /** Paid models the chart can price against, cheapest first. */
+  baselineIds: string[];
+  /** Costliest baseline: what the Speed counterfactual is estimated from. */
   baselineModelId?: string;
+  savings?: SavingsSummary;
   metric: SavingsMetric;
   onMetric: (m: SavingsMetric) => void;
   period: string;
 }) {
-  /* v8 ignore next */
-  const baselineName = baselineModelId?.split('/').pop() ?? baselineModelId;
-  const hasBaselineLatency = totals.baselineLatencyMs > 0;
+  // Cheapest and costliest are the two ends of the range, so those two start
+  // visible; every other paid model waits in the legend, one click away (T100).
+  // The default is derived at render, not seeded into state: the card mounts
+  // before the first fetch answers, when baselineIds is still empty, and a
+  // seeded set would keep that empty default forever and draw every line.
+  const [hidden, setHidden] = useState<Set<string> | null>(null);
+  const hiddenKeys = hidden ?? new Set(
+    baselineIds.flatMap((_, i) => (i === 0 || i === baselineIds.length - 1 ? [] : [`b${i}`])),
+  );
+  const toggle = (key: string) => setHidden(() => {
+    const next = new Set(hiddenKeys);
+    if (!next.delete(key)) next.add(key);
+    return next;
+  });
 
-  const series = metric === 'tokens'
+  const hasBaselineLatency = (savings?.baselines[savings.baselines.length - 1]?.latencyMs ?? 0) > 0;
+
+  const series: ChartSeries[] = (metric === 'tokens'
     ? [
       { key: 'inputTokens', label: 'Input', color: seriesColor(5) },
       { key: 'outputTokens', label: 'Output', color: seriesColor(1) },
@@ -354,12 +299,20 @@ function SavingsCard({ data, totals, baselineModelId, metric, onMetric, period }
     : metric === 'speed'
       ? [
         { key: 'latencyPerCall', label: 'Actual', color: seriesColor(0) },
-        ...(hasBaselineLatency ? [{ key: 'baselineLatencyPerCall', label: `On ${baselineName}`, color: seriesColor(2), dashed: true }] : []),
+        ...(hasBaselineLatency ? [{ key: 'baselineLatencyPerCall', label: `On ${shortModel(baselineModelId ?? '')}`, color: seriesColor(2), dashed: true }] : []),
       ]
       : [
         { key: 'cost', label: 'Actual', color: seriesColor(0) },
-        ...(baselineModelId ? [{ key: 'baselineCost', label: `On ${baselineName}`, color: seriesColor(2), dashed: true }] : []),
-      ];
+        ...baselineIds.map((id, i) => ({
+          key: `b${i}`,
+          label: shortModel(id),
+          color: seriesColor(i + 1),
+          dashed: true,
+        })),
+      ]
+  // Every legend entry toggles, not just the baselines: the legend renders a
+  // button for each series, and a button that does nothing is worse than none.
+  ).map(s => ({ ...s, hidden: hiddenKeys.has(s.key) }));
 
   const formatValue = metric === 'cost' ? formatCost : metric === 'tokens' ? formatTokens : formatDuration;
   const formatAxis = metric === 'cost' ? compactCost : metric === 'tokens' ? compactTokens : formatDuration;
@@ -370,11 +323,11 @@ function SavingsCard({ data, totals, baselineModelId, metric, onMetric, period }
         <div>
           <h3>What routing saved</h3>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-            {totals.calls.toLocaleString()} client {totals.calls === 1 ? 'call' : 'calls'}
-            {baselineModelId && (
+            {(savings?.comparedCalls ?? 0).toLocaleString()} client {savings?.comparedCalls === 1 ? 'call' : 'calls'}
+            {baselineIds.length > 0 && (
               <>
-                {', against sending them all to '}
-                <Link to="/dashboard/models" className="mono" style={{ color: 'var(--accent)' }}>{baselineModelId}</Link>
+                {', against sending them all to each of the '}
+                <Link to="/dashboard/models" style={{ color: 'var(--accent)' }}>{baselineIds.length} paid models in play</Link>
               </>
             )}
           </div>
@@ -393,39 +346,66 @@ function SavingsCard({ data, totals, baselineModelId, metric, onMetric, period }
         </div>
       </div>
 
-      {baselineModelId && (
-        <div style={{ marginBottom: 12, fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-          <span>
-            Saved{' '}
-            <strong style={{ color: totals.saved >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-              {formatCost(totals.saved)}
-            </strong>
-            {' '}({totals.savedPercent.toFixed(1)}%)
-          </span>
-          <span>·</span>
-          <span>Actual <strong style={{ color: 'var(--text-secondary)' }}>{formatCost(totals.cost)}</strong></span>
-          <span>·</span>
-          <span>Baseline <strong style={{ color: 'var(--text-secondary)' }}>{formatCost(totals.baselineCost)}</strong></span>
-          {hasBaselineLatency && (
-            <>
-              <span>·</span>
-              <span>
-                Time <strong style={{ color: 'var(--text-secondary)' }}>{formatDuration(totals.latencyMs)}</strong>
-                {' vs '}<strong style={{ color: 'var(--text-secondary)' }}>{formatDuration(totals.baselineLatencyMs)}</strong>
-              </span>
-            </>
-          )}
-        </div>
-      )}
-
       <TimeSeriesChart
         key={`${period}-${metric}`}
         data={data}
         series={series}
         formatValue={formatValue}
         formatAxis={formatAxis}
+        onToggleSeries={toggle}
       />
     </div>
+  );
+}
+
+/**
+ * What routing saved, as three more cards in the summary grid (T102).
+ *
+ * Every card is anchored on the same baseline: the costliest single model the
+ * traffic could have gone to, which is the policy routing replaces. A min-max
+ * range over every baseline was the first cut and it read as a verdict against
+ * routing: its low end is always "sending everything to the cheapest model would
+ * have cost less", true of any router and not what the card is asking. That end
+ * is still shown, as the second line, where it reads as context instead.
+ *
+ * Money is exact arithmetic. Time comes from each model's own throughput in the
+ * window, so a baseline that never answered carries none. Tokens are two things
+ * kept apart on purpose: what the optimizers really cut, which is measured, and
+ * what a different tokenizer would have counted, which is an estimate.
+ */
+function SavingsStats({ savings }: { savings: SavingsSummary }) {
+  const paid = [...savings.baselines.filter(b => b.cost > 0)].sort((a, b) => a.costDelta - b.costDelta);
+  if (paid.length === 0) return null;
+
+  const anchor = paid[paid.length - 1]!;
+  const cheapest = paid[0]!;
+  const anchorName = shortModel(anchor.modelId);
+  const optimizerTokens = savings.optimizers.reduce((sum, o) => sum + o.tokensSaved, 0);
+  // The anchor is picked on price, so it need not be one of the models that
+  // answered: the time card falls back to the costliest one that did.
+  const timed = paid.filter(b => b.latencyDeltaMs !== undefined);
+  const timeAnchor = timed[timed.length - 1];
+
+  return (
+    <>
+      <StatCard icon={<PiggyBank size={18} />} label="Cost saved" accentColor="#10B981"
+        valueColor={anchor.costDelta >= 0 ? '#10B981' : '#EF4444'}
+        value={formatCost(anchor.costDelta)}
+        sub={`vs always ${anchorName}`}
+        {...(cheapest !== anchor
+          ? { sub2: `${formatCost(cheapest.costDelta)} vs always ${shortModel(cheapest.modelId)}` }
+          : {})}
+      />
+      <StatCard icon={<Timer size={18} />} label="Time saved" accentColor="#F59E0B"
+        value={timeAnchor ? formatDuration(timeAnchor.latencyDeltaMs!) : '—'}
+        sub={timeAnchor ? `vs always ${shortModel(timeAnchor.modelId)}` : 'no baseline answered in this window'}
+      />
+      <StatCard icon={<Scissors size={18} />} label="Tokens saved" accentColor="#8B5CF6"
+        value={formatTokens(optimizerTokens)}
+        sub="cut by optimizers, measured"
+        sub2={`${formatTokens(anchor.tokenDelta)} vs always ${anchorName}, estimated`}
+      />
+    </>
   );
 }
 
@@ -455,11 +435,13 @@ function ConnectCard() {
   );
 }
 
-function StatCard({ icon, label, value, sub, accentColor, valueColor, to }: {
+function StatCard({ icon, label, value, sub, sub2, accentColor, valueColor, to }: {
   icon: React.ReactNode;
   label: string;
   value: React.ReactNode;
   sub: string;
+  /** Second line, for a card whose number needs a counterweight to be read right. */
+  sub2?: string;
   accentColor?: string;
   valueColor?: string;
   /** Section this number is explained in. The card becomes a link to it. */
@@ -475,6 +457,7 @@ function StatCard({ icon, label, value, sub, accentColor, valueColor, to }: {
       </div>
       <div className="stat-value" style={valueColor ? { color: valueColor } : undefined}>{value}</div>
       <div className="stat-sub">{sub}</div>
+      {sub2 && <div className="stat-sub">{sub2}</div>}
     </>
   );
 

@@ -1773,7 +1773,9 @@ Add `savings=1` to `GET /api/usage` to get a `savings` object alongside the rest
         "costDeltaPercent": 14.28,
         "latencyMs": 132000,
         "latencyDeltaMs": -16000,
-        "latencySamples": 120
+        "latencySamples": 120,
+        "tokensEstimated": 541800,
+        "tokenDelta": 25800
       }
     ],
     "optimizers": [
@@ -1822,8 +1824,14 @@ Each baseline entry:
 | `latencyMs` | Estimated total time, from this model's own median milliseconds per output token over the same window. Absent when the model produced no output token in the window |
 | `latencyDeltaMs` | `latencyMs - comparedLatencyMs`: time saved against this baseline. Negative means routing was slower. Absent together with `latencyMs` |
 | `latencySamples` | Calls of this model in the window backing the time estimate. `0` means there is no estimate, only the cost figure |
+| `tokensEstimated` | Input plus output tokens the same conversations are estimated to take on this model, from the ratio between its tokenizer family and the family of the model that served each call |
+| `tokenDelta` | `tokensEstimated - (comparedInputTokens + comparedOutputTokens)`: tokens saved against this baseline. Positive means routing moved fewer |
 
-Baselines are the enabled target models of every project present in the filtered result, so a query scoped with `projectId` counterfactuals exactly that project's targets, and an unscoped query counterfactuals every target model in use.
+Baselines depend on the scope of the query. A query scoped with `projectId` counterfactuals exactly that project's enabled target models. An unscoped query counterfactuals the paid models **in play** in the window: every enabled target model of the projects that produced a record in it, plus every model that served a client call in it. Free models are excluded because they make the cost comparison meaningless, and embedding models are excluded because they cannot answer a completion call. A model that only served routing or guardrail calls is not in play either. This is the set the dashboard [Overview](../dashboard/overview.md#what-routing-saved) compares against.
+
+:::note The token counterfactual is a ratio, not a re-tokenization
+`tokensEstimated` is derived from a fixed ratio per tokenizer family (o200k, cl100k, Claude, Llama). Routerly does not retain prompts, so nothing is re-tokenized. Every surface that shows this figure declares it as an estimate.
+:::
 
 Routing and guardrail calls are excluded from the comparison: they are the gateway's own overhead, not the client's workload, and the `summary` object already reports them. Pass-through records carry no tokens and are excluded for the same reason.
 
@@ -1842,12 +1850,14 @@ Add `series=1` to `GET /api/usage` to get the same comparison spread over time. 
   "series": {
     "bucket": "day",
     "baselineModelId": "openai/gpt-5",
+    "baselineModelIds": ["openai/gpt-5-mini", "openai/gpt-5"],
     "points": [
       {
         "bucket": "2026-07-31",
         "calls": 96,
         "cost": 0.062,
         "baselineCost": 0.184,
+        "baselineCosts": { "openai/gpt-5-mini": 0.071, "openai/gpt-5": 0.184 },
         "inputTokens": 210000,
         "outputTokens": 48000,
         "cachedInputTokens": 90000,
@@ -1862,7 +1872,8 @@ Add `series=1` to `GET /api/usage` to get the same comparison spread over time. 
 | Field | Description |
 |-------|-------------|
 | `bucket` | `hour` or `day`: the width of each point |
-| `baselineModelId` | Model the `baseline*` figures are priced against: the **costliest** target model of the traffic in the window, the worst case routing avoided. Absent when no target model applies |
+| `baselineModelId` | Model the `baselineCost` and `baselineLatencyMs` figures are priced against: the **costliest** baseline, the worst case routing avoided. Absent when no baseline costs anything |
+| `baselineModelIds` | Every paid baseline `baselineCosts` is keyed by, cheapest first. Empty when no baseline costs anything |
 | `points` | Oldest first, capped at the most recent 60 buckets |
 
 Each point:
@@ -1873,6 +1884,7 @@ Each point:
 | `calls` | Compared client calls in the bucket, the same set the savings block counts |
 | `cost` | USD those calls actually cost |
 | `baselineCost` | The same calls repriced at `baselineModelId`. `0` when there is no baseline |
+| `baselineCosts` | The same calls repriced at every paid baseline, keyed by model id. Empty when no baseline costs anything; the costliest entry equals `baselineCost` |
 | `inputTokens` / `outputTokens` / `cachedInputTokens` | Token totals of the bucket |
 | `latencyMs` | Summed end-to-end latency of those calls |
 | `baselineLatencyMs` | Estimated summed latency on the baseline, from its throughput over the whole window. `0` when it has no sample to estimate from |

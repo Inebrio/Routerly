@@ -122,6 +122,8 @@ export interface ChartSeries {
   color: string;
   /** Dashed and unfilled: for a counterfactual, something that did not happen. */
   dashed?: boolean;
+  /** Kept in the legend, left out of the plot. Only meaningful with `onToggleSeries`. */
+  hidden?: boolean;
 }
 
 export interface TimeSeriesChartProps {
@@ -136,6 +138,8 @@ export interface TimeSeriesChartProps {
   formatAxis?: (value: number) => string;
   /** Tooltip header. */
   formatLabel?: (label: string) => string;
+  /** Makes the legend clickable: called with the key of the entry that was clicked. */
+  onToggleSeries?: (key: string) => void;
 }
 
 /**
@@ -144,34 +148,53 @@ export interface TimeSeriesChartProps {
  * cursor and tooltip, which is exactly the drift this module exists to stop.
  */
 export function TimeSeriesChart({
-  data, series, xKey = 'label', height = 200, formatValue, formatAxis, formatLabel,
+  data, series, xKey = 'label', height = 200, formatValue, formatAxis, formatLabel, onToggleSeries,
 }: TimeSeriesChartProps) {
   const theme = useChartTheme();
   // Gradient ids are document-global: two charts on one page would otherwise
   // share the first one's fill.
   const uid = useId().replace(/:/g, '');
+  // A hidden series keeps its legend entry, dimmed: that entry is how it comes back.
+  const plotted = series.filter(s => !s.hidden);
 
   return (
     <>
       {series.length > 1 && (
         <div className="chart-legend">
-          {series.map(s => (
-            <span className="chart-legend-item" key={s.key}>
+          {series.map(s => {
+            const swatch = (
               <span
                 className="chart-legend-swatch"
                 style={s.dashed
                   ? { background: 'transparent', border: `1px dashed ${s.color}` }
                   : { background: s.color }}
               />
-              {s.label}
-            </span>
-          ))}
+            );
+            return onToggleSeries ? (
+              <button
+                type="button"
+                className={`chart-legend-item chart-legend-toggle${s.hidden ? ' is-off' : ''}`}
+                key={s.key}
+                onClick={() => onToggleSeries(s.key)}
+                aria-pressed={!s.hidden}
+                title={s.hidden ? `Show ${s.label}` : `Hide ${s.label}`}
+              >
+                {swatch}
+                {s.label}
+              </button>
+            ) : (
+              <span className="chart-legend-item" key={s.key}>
+                {swatch}
+                {s.label}
+              </span>
+            );
+          })}
         </div>
       )}
       <ResponsiveContainer width="100%" height={height}>
         <AreaChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
           <defs>
-            {series.map(s => (
+            {plotted.map(s => (
               <linearGradient key={s.key} id={`${uid}-${s.key}`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={s.color} stopOpacity={s.dashed ? 0.06 : 0.25} />
                 <stop offset="95%" stopColor={s.color} stopOpacity={0} />
@@ -191,7 +214,7 @@ export function TimeSeriesChart({
             cursor={{ stroke: theme.cursor, strokeWidth: 1 }}
             content={<ChartTooltip formatValue={formatValue} {...(formatLabel ? { formatLabel } : {})} />}
           />
-          {series.map(s => (
+          {plotted.map(s => (
             <Area
               key={s.key}
               type="monotone"

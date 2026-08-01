@@ -21,7 +21,7 @@ import { z } from 'zod';
 import { getTrace } from '../logging/traceStore.js';
 import { getProviderAdapter } from '../provider/registry.js';
 import { loadEffectiveModel } from '../reverse-proxy/execute.js';
-import { listEffectiveModelsIncludingDisabled } from '../provider/list-effective.js';
+import { listEffectiveModels, listEffectiveModelsIncludingDisabled } from '../provider/list-effective.js';
 import { resolveEffectiveModel } from '../provider/resolve.js';
 import { sendTestNotification } from '../notifications/sender.js';
 import { emitEvent } from '../notifications/emitter.js';
@@ -1704,18 +1704,39 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
     // Savings layer (T61) — opt-in: the usage page polls this route every 2s and
     // never shows savings, so only the pages that ask pay for the counterfactual.
-    // Baselines are the target models of every project present in the result, so
-    // a project-scoped query naturally counterfactuals that project's targets.
+    //
+    // The baselines are the single-model policies the operator could really have
+    // run instead of routing (T102): the target models of the projects that show
+    // up in the window, plus the models that actually served a call in it. Every
+    // paid model on the instance was the first cut and it read as noise: a range
+    // anchored on an embedding model or on a model nobody routes to says nothing
+    // about how routing is doing.
+    // ponytail: reprices each compared record once per baseline. Fine at a few
+    // dozen models; page the window if that ever bites.
     let savings: SavingsSummary | undefined;
     let series: UsageSeries | undefined;
     if (req.query.savings === '1' || req.query.series === '1') {
-      const [projects, allModels] = await Promise.all([readConfig('projects'), listEffectiveModelsIncludingDisabled()]);
+      // Pricing reads the full catalogue, disabled connections included: a record
+      // served by a model that has since been switched off still has to be priced.
+      // Baselines instead only offer models traffic could go to today.
+      const [projects, allModels, activeModels] = await Promise.all([
+        readConfig('projects'),
+        listEffectiveModelsIncludingDisabled(),
+        listEffectiveModels(),
+      ]);
       const projectIdsInResult = new Set(filtered.map(r => r.projectId));
-      const baselineIds = [...new Set(
-        projects
+      const inPlay = new Set([
+        ...projects
           .filter(p => projectIdsInResult.has(p.id))
           .flatMap(p => (p.models ?? []).filter(m => m.enabled !== false).map(m => m.modelId)),
-      )];
+        ...filtered.filter(r => isCompletionCall(r.callType)).map(r => r.modelId),
+      ]);
+      const baselineIds = activeModels
+        // An embedding model cannot answer a completion call, so repricing the
+        // routed traffic on one is meaningless: it never becomes a baseline.
+        .filter(m => inPlay.has(m.id) && m.capabilities?.embedding !== true)
+        .filter(m => m.cost.inputPerMillion > 0 || m.cost.outputPerMillion > 0)
+        .map(m => m.id);
       const computed = computeSavings(filtered, allModels, baselineIds);
       if (req.query.savings === '1') savings = computed;
       // The series buckets by hour on a single day and by day otherwise, the
