@@ -91,6 +91,8 @@ const PERM_LABELS_LOCAL: Record<Permission, string> = {
   'profiles:manage':    'Routing Profiles – Manage',
   'optimizers:read':    'Optimizers – Read',
   'optimizers:manage':  'Optimizers – Manage',
+  'experiments:read':   'Experiments – Read',
+  'experiments:manage': 'Experiments – Manage',
 };
 /* v8 ignore next */
 export const PERM_OPTIONS = ALL_PERMISSIONS.map(p => ({ value: p, label: PERM_LABELS_LOCAL[p] ?? p }));
