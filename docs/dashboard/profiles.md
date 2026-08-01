@@ -138,5 +138,5 @@ Delete can fail with:
 
 - [Concepts: Routing: Routing Profiles](../concepts/routing.md#routing-profiles): what a routing profile is, built-in presets, selectors, fallback strategies
 - [API: Profiles](../api/management.md#profiles): endpoint reference
-- [CLI: profiles](../cli/commands.md#profiles): the same operations from the terminal
+- [CLI: profiles](../cli/commands.md#routerly-profiles): the same operations from the terminal
 - [Dashboard: Projects](./projects.md#routing-tab): assigning profiles to a project
