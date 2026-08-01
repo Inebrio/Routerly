@@ -22,6 +22,10 @@ vi.mock('../api', () => ({
   markNotificationsRead: vi.fn(),
   markNotificationsUnread: vi.fn(),
   deleteNotifications: vi.fn(),
+  getMyMcpTokens: vi.fn().mockResolvedValue([]),
+  getMyMcpTools: vi.fn().mockResolvedValue([]),
+  createMyMcpToken: vi.fn(),
+  deleteMyMcpToken: vi.fn(),
 }));
 
 // ponytail: mock AuthContext — ProfileSecurityTab reads user + updateUser
@@ -82,7 +86,7 @@ beforeEach(() => {
 
 afterEach(() => vi.clearAllMocks());
 
-function renderProfile(tab: 'profile' | 'notifications' = 'profile') {
+function renderProfile(tab: 'profile' | 'notifications' | 'mcp' = 'profile') {
   return render(
     <MemoryRouter>
       <ProfilePage initialTab={tab} />
@@ -1016,5 +1020,13 @@ describe('ProfilePage — tab navigation', () => {
     // Security/profile tab renders instead of the notifications view.
     await waitFor(() => expect(screen.getAllByText('Change Password').length).toBeGreaterThan(0));
     expect(screen.queryByText('No notifications found.')).toBeNull();
+  });
+
+  it('renders the MCP tab when initialTab is mcp', async () => {
+    mockGetInbox.mockResolvedValue({ items: [], unreadCount: 0, enabled: false });
+    renderProfile('mcp');
+    // The MCP tab is always available: an MCP token grants its owner's own permissions.
+    await waitFor(() => expect(screen.getByText('MCP Tokens')).toBeTruthy());
+    expect(screen.getByRole('link', { name: 'MCP' })).toBeTruthy();
   });
 });

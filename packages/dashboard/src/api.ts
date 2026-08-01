@@ -449,7 +449,6 @@ export const ALL_PERMISSIONS = [
   'resilience:read', 'resilience:manage',
   'profiles:read', 'profiles:manage',
   'optimizers:read', 'optimizers:manage',
-  'mcp:read', 'mcp:manage',
 ] as const;
 export type Permission = typeof ALL_PERMISSIONS[number];
 
@@ -907,18 +906,29 @@ export const updateConnection = (id: string, data: Partial<{
 }>) => request<Connection>(`/connections/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
 export const deleteConnection = (id: string) => request<void>(`/connections/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
-// ── MCP tool registry (read-only browser) ────────────────────────────────────
+// ── Personal MCP surface (tools + tokens of the signed-in user) ──────────────
+
+import type { McpToken } from '@routerly/shared';
 
 export interface McpToolRow {
   name: string;
   scope: 'read' | 'write';
   description: string;
   sourceModule: string;
-  enabled: boolean;
+  /** Permission the caller must hold for this tool; always one the caller has. */
+  permission: Permission;
 }
 
-export const getMcpTools = () => request<McpToolRow[]>('/mcp/tools');
-export const getMcpTool = (name: string) => request<McpToolRow>(`/mcp/tools/${encodeURIComponent(name)}`);
+/** A stored MCP token as the API returns it: everything but the hash. */
+export type McpTokenRow = Omit<McpToken, 'tokenHash'>;
+
+export const getMyMcpTools = () => request<McpToolRow[]>('/me/mcp-tools');
+export const getMyMcpTokens = () => request<McpTokenRow[]>('/me/mcp-tokens');
+/** The raw `token` is returned once, here, and never again. */
+export const createMyMcpToken = (body: { name: string; expiresAt?: string }) =>
+  request<McpTokenRow & { token: string }>('/me/mcp-tokens', { method: 'POST', body: JSON.stringify(body) });
+export const deleteMyMcpToken = (id: string) =>
+  request<void>(`/me/mcp-tokens/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
 export interface Instance {
   id: string;
