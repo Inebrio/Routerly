@@ -89,6 +89,12 @@ function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: 
 
 // ── General tab ───────────────────────────────────────────────────────────────
 
+/** Which addresses only work on this machine, so the list says it instead of implying it. */
+function addressScope(address: string): string {
+  return /\/\/(127\.|\[?::1\]?|localhost)/.test(address) ? 'This machine' : 'Network';
+}
+
+
 export function SettingsGeneralTab() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [info, setInfo] = useState<SystemInfo | null>(null);
@@ -158,13 +164,23 @@ export function SettingsGeneralTab() {
     <form onSubmit={handleSubmit} style={{ maxWidth: 560 }}>
 
       <div style={{ marginBottom: 28 }}>
-        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12 }}>
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>
           Server Info
         </h3>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 14px', lineHeight: 1.5 }}>
+          Read-only. Host and port come from the environment or the settings file, not from here.
+        </p>
+
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
+          {listenAddresses.length === 1 ? 'Reachable at' : 'Reachable at any of these addresses'}
+        </div>
         {listenAddresses.map(address => (
           <div key={address} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-            <div style={{ flex: 1, background: 'var(--bg-input, var(--bg-tertiary, var(--bg-secondary)))', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 10px', fontFamily: 'monospace', fontSize: '0.82rem', color: 'var(--text-primary)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              Server listening at {address}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, background: 'var(--bg-input, var(--bg-tertiary, var(--bg-secondary)))', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 10px', minWidth: 0 }}>
+              <span style={{ flex: 1, fontFamily: 'monospace', fontSize: '0.82rem', color: 'var(--text-primary)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {address}
+              </span>
+              <span className="badge badge-neutral" style={{ flexShrink: 0 }}>{addressScope(address)}</span>
             </div>
             <button
               type="button"
@@ -178,30 +194,11 @@ export function SettingsGeneralTab() {
             </button>
           </div>
         ))}
-        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 8 }}>
-          Detected at runtime from the bind address. Host and port are configured via environment variables or the settings file and cannot be changed here.
-        </p>
-        {info && (
-          <div style={{ marginTop: 14 }}>
-            <InfoRow label="Version" value={info.version} mono />
-            <InfoRow label="Uptime" value={formatUptime(info.uptimeSeconds)} />
-          </div>
-        )}
-        <div className="form-group" style={{ marginTop: 14 }}>
-          <label className="form-label" htmlFor="s-publicurl">Public URL</label>
-          <input
-            id="s-publicurl"
-            className="form-input"
-            type="url"
-            placeholder={`http://${settings?.host === '0.0.0.0' ? '<your-ip>' : (settings?.host ?? 'localhost')}:${settings?.port ?? 3000}`}
-            value={form.publicUrl ?? ''}
-            onChange={e => field('publicUrl', e.target.value)}
-          />
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-            Base URL at which the service is reachable from external clients (e.g. <code>http://192.168.1.10:3000</code>).
-            Used in the <strong>How to connect</strong> section of each project.
-            Useful when the dashboard runs on a different machine or port than the service.
-          </p>
+
+        <div style={{ marginTop: 14 }}>
+          <InfoRow label="Host and port" value={`${settings.host}:${settings.port}`} mono />
+          {info && <InfoRow label="Version" value={info.version} mono />}
+          {info && <InfoRow label="Uptime" value={formatUptime(info.uptimeSeconds)} />}
         </div>
       </div>
 
@@ -221,6 +218,23 @@ export function SettingsGeneralTab() {
           />
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
             Controls the verbosity of service logs.
+          </p>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label" htmlFor="s-publicurl">Public URL</label>
+          <input
+            id="s-publicurl"
+            className="form-input"
+            type="url"
+            placeholder={`http://${settings?.host === '0.0.0.0' ? '<your-ip>' : (settings?.host ?? 'localhost')}:${settings?.port ?? 3000}`}
+            value={form.publicUrl ?? ''}
+            onChange={e => field('publicUrl', e.target.value)}
+          />
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+            Base URL at which the service is reachable from external clients (e.g. <code>http://192.168.1.10:3000</code>).
+            Used in the <strong>How to connect</strong> section of each project.
+            Useful when the dashboard runs on a different machine or port than the service.
           </p>
         </div>
 

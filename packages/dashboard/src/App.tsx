@@ -110,16 +110,19 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
 
   function handleLogout() { logout(); navigate('/dashboard/login'); }
 
+  // One flat list, ordered the way the product is used: what you set up
+  // (Connections to Projects), then how you use it (Connect, Playground), then
+  // what it tells you back (Experiments, Usage).
   const navItems = [
     { to: '/dashboard/overview', icon: <LayoutDashboard size={17} />, label: 'Overview' },
     ...(can('connections:read') ? [{ to: '/dashboard/connections', icon: <Plug size={17} />, label: 'Connections' }] : []),
     { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
     ...(can('profiles:read') ? [{ to: '/dashboard/profiles', icon: <Route size={17} />, label: 'Profiles' }] : []),
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
+    ...(clientsEnabled ? [{ to: '/dashboard/connect', icon: <Terminal size={17} />, label: 'Connect' }] : []),
+    { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Playground' },
     ...(experimentsEnabled ? [{ to: '/dashboard/experiments', icon: <Split size={17} />, label: 'Experiments' }] : []),
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
-    { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Playground' },
-    ...(clientsEnabled ? [{ to: '/dashboard/connect', icon: <Terminal size={17} />, label: 'Connect' }] : []),
   ];
 
   return (

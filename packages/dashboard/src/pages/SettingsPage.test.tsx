@@ -187,18 +187,32 @@ describe('SettingsGeneralTab', () => {
     await waitFor(() => expect(screen.queryByText('Failed to load settings')).not.toBeNull());
   });
 
-  it('renders one read-only line per listening address', async () => {
+  it('renders one read-only line per listening address, saying which reach the network', async () => {
     mockGetSettings.mockResolvedValue({ ...baseSettings, listeningAddresses: ['http://127.0.0.1:3000', 'http://192.168.1.10:3000'] } as never);
     renderGeneral();
-    await waitFor(() => screen.getByText('Server listening at http://127.0.0.1:3000'));
-    expect(screen.queryByText('Server listening at http://192.168.1.10:3000')).not.toBeNull();
+    await waitFor(() => screen.getByText('http://127.0.0.1:3000'));
+    // The same address appears in the Public URL help text, so identify this one by its own copy button.
+    expect(screen.getByLabelText('Copy http://192.168.1.10:3000')).toBeInTheDocument();
+    expect(screen.getByText('Reachable at any of these addresses')).toBeInTheDocument();
+    // A loopback address only serves this machine; the other one is reachable from the LAN.
+    expect(screen.getByText('This machine')).toBeInTheDocument();
+    expect(screen.getByText('Network')).toBeInTheDocument();
     // no editable host/port inputs left
     expect(screen.queryByDisplayValue('0.0.0.0')).toBeNull();
   });
 
+  it('says "Reachable at" and shows host and port when there is a single address', async () => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings, listeningAddresses: ['http://localhost:3000'] } as never);
+    renderGeneral();
+    await waitFor(() => screen.getByText('Reachable at'));
+    expect(screen.getByText('This machine')).toBeInTheDocument();
+    expect(screen.getByText('Host and port')).toBeInTheDocument();
+    expect(screen.getByText('0.0.0.0:3000')).toBeInTheDocument();
+  });
+
   it('falls back to host:port when the service reports no listening addresses', async () => {
     renderGeneral();
-    await waitFor(() => screen.getByText('Server listening at http://0.0.0.0:3000'));
+    await waitFor(() => screen.getByText('http://0.0.0.0:3000'));
   });
 
   it('copies a listening address to the clipboard', async () => {
@@ -3852,7 +3866,7 @@ describe('SettingsGeneralTab — null field fallback branches', () => {
   it('empty listeningAddresses falls back to the bind address', async () => {
     mockGetSettings.mockResolvedValue({ ...baseSettings, listeningAddresses: [] } as never);
     render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
-    await waitFor(() => screen.getByText('Server listening at http://0.0.0.0:3000'));
+    await waitFor(() => screen.getByText('http://0.0.0.0:3000'));
   });
 
   it('settings?.host undefined → placeholder uses localhost fallback (L163 false+nullish branch)', async () => {
