@@ -33,6 +33,7 @@ import { NotificationChannelEditPage } from './pages/NotificationChannelEditPage
 import { NotificationChannelCreatePage } from './pages/NotificationChannelCreatePage';
 import { RolesPage } from './pages/RolesPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { McpTokenNewPage } from './pages/McpTokenNewPage';
 import { UserEditPage } from './pages/UserEditPage';
 import { HelpPage } from './pages/HelpPage';
 import { ModelDiscoveryPage } from './pages/ModelDiscoveryPage';
@@ -476,6 +477,7 @@ const router = createBrowserRouter([
           { path: 'profile', element: <ProfilePage /> },
           { path: 'profile/notifications', element: <ProfilePage initialTab="notifications" /> },
           { path: 'profile/mcp', element: <ProfilePage initialTab="mcp" /> },
+          { path: 'profile/mcp/new', element: <McpTokenNewPage /> },
           { path: 'usage/:id', element: <UsageRecordPage /> },
           { path: '*', element: <Navigate to="overview" replace /> },
         ],

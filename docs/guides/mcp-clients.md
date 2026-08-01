@@ -32,8 +32,10 @@ Token (save it now, it is shown only once):
 sk-rt-mcp-8f3c1d...
 ```
 
-Or from the dashboard: **Profile → MCP → New Token** (see
-[Dashboard: Profile: MCP tab](../dashboard/profile.md#mcp-tab)).
+Or from the dashboard: **Profile → MCP → New Token**, which opens
+`/dashboard/profile/mcp/new`. That page shows the value once and, right below
+it, the configuration for the client you pick, with the token already in it
+(see [Dashboard: Profile: MCP tab](../dashboard/profile.md#mcp-tab)).
 
 Copy the value immediately: Routerly stores only its hash and never shows it
 again. Revoke it at any time with `routerly mcp token remove <token-id>`, and
@@ -219,6 +221,80 @@ Check the connection:
 ```bash
 openclaw mcp probe routerly --json
 ```
+
+---
+
+## Cursor
+
+Cursor reads `~/.cursor/mcp.json` for every project, or `.cursor/mcp.json`
+inside a repository to scope the server to that project alone:
+
+```json
+{
+  "mcpServers": {
+    "routerly": {
+      "url": "http://localhost:3000/mcp",
+      "headers": {
+        "Authorization": "Bearer sk-rt-mcp-YOUR_TOKEN"
+      }
+    }
+  }
+}
+```
+
+An entry with a `url` is remote by definition, so there is no transport field
+to set. The server then appears under **Settings → Tools & Integrations →
+MCP**, where it can be toggled per project.
+
+---
+
+## Cline
+
+Cline keeps its servers in `~/.cline/mcp.json`, editable from the panel
+(**MCP Servers → Configure MCP Servers**):
+
+```json
+{
+  "mcpServers": {
+    "routerly": {
+      "type": "streamableHttp",
+      "url": "http://localhost:3000/mcp",
+      "headers": {
+        "Authorization": "Bearer sk-rt-mcp-YOUR_TOKEN"
+      },
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}
+```
+
+`"type": "streamableHttp"` is required: without it Cline falls back to the
+legacy `sse` transport, which Routerly does not serve.
+
+---
+
+## Zed
+
+Zed calls MCP servers **context servers**, configured in the same
+`settings.json` as everything else (**Zed → Settings → Open Settings**):
+
+```json
+{
+  "context_servers": {
+    "routerly": {
+      "url": "http://localhost:3000/mcp",
+      "headers": {
+        "Authorization": "Bearer sk-rt-mcp-YOUR_TOKEN"
+      }
+    }
+  }
+}
+```
+
+The `headers` entry is not optional: without it Zed starts an OAuth flow
+against the server, and Routerly's MCP surface only authenticates bearer
+tokens.
 
 ---
 

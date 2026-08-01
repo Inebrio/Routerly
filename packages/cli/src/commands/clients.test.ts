@@ -180,7 +180,7 @@ describe('clients list', () => {
     expect(parsed).toEqual([
       { id: 'claude-code', label: 'Claude Code', supportState: 'auto-configurable', modes: ['llm', 'mcp'] },
       { id: 'claude-desktop', label: 'Claude Desktop', supportState: 'documented', modes: ['mcp'] },
-      { id: 'cline', label: 'Cline', supportState: 'documented', modes: ['llm'] },
+      { id: 'cline', label: 'Cline', supportState: 'documented', modes: ['llm', 'mcp'] },
     ]);
   });
 });

@@ -1,19 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Trash2, Key, Copy, Check, Wrench, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Trash2, Key, Wrench } from 'lucide-react';
 import {
-  getMyMcpTokens, getMyMcpTools, createMyMcpToken, deleteMyMcpToken,
+  getMyMcpTokens, getMyMcpTools, deleteMyMcpToken,
   type McpTokenRow, type McpToolRow,
 } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { writeToClipboard } from '../utils/clipboard';
+import { CopyBlock } from '../components/CopyBlock';
+import { McpClientGuide } from '../components/McpClientGuide';
+import { PLACEHOLDER_MCP_TOKEN } from './connectShared';
 
 const HTTP_ENDPOINT = `${window.location.origin}/mcp`;
-
-const CODE_BLOCK: React.CSSProperties = {
-  margin: 0, padding: 12, background: 'var(--surface-active)',
-  border: '1px solid var(--border)', borderRadius: 6, fontSize: '0.78rem',
-  overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all',
-};
 
 const SECTION_TITLE: React.CSSProperties = {
   fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em',
@@ -31,18 +28,12 @@ function fmtDate(iso?: string): string {
  * permission of its own: the tool list is already filtered server-side.
  */
 export function ProfileMcpTab() {
+  const navigate = useNavigate();
   const [tokens, setTokens] = useState<McpTokenRow[]>([]);
   const [tools, setTools] = useState<McpToolRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  const [formOpen, setFormOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [expiry, setExpiry] = useState('');
   const [busy, setBusy] = useState(false);
-
-  const [revealed, setRevealed] = useState('');
-  const [copied, setCopied] = useState(false);
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   useEffect(() => { void load(); }, []);
@@ -58,31 +49,6 @@ export function ProfileMcpTab() {
       setError(e instanceof Error ? e.message : 'Failed to load the MCP surface');
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-    setBusy(true);
-    try {
-      // The date input yields a plain day; the API wants an ISO instant, so the
-      // token stays valid through the end of the chosen day.
-      const created = await createMyMcpToken({
-        name: name.trim(),
-        ...(expiry ? { expiresAt: new Date(`${expiry}T23:59:59Z`).toISOString() } : {}),
-      });
-      const { token, ...row } = created;
-      setTokens(prev => [...prev, row]);
-      setRevealed(token);
-      setCopied(false);
-      setName('');
-      setExpiry('');
-      setFormOpen(false);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create the token');
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -105,16 +71,6 @@ export function ProfileMcpTab() {
     });
   }
 
-  async function handleCopy() {
-    try {
-      await writeToClipboard(revealed);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setError('Copy failed, select and copy the token manually.');
-    }
-  }
-
   if (loading) return <div className="loading-center"><div className="spinner" /></div>;
 
   return (
@@ -125,83 +81,15 @@ export function ProfileMcpTab() {
       <section>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <h3 style={{ ...SECTION_TITLE, marginBottom: 0 }}>MCP Tokens</h3>
-          {!formOpen && (
-            <button className="btn btn-primary" onClick={() => setFormOpen(true)} disabled={busy}>
-              <Plus size={16} /> New Token
-            </button>
-          )}
+          <button className="btn btn-primary" onClick={() => navigate('/dashboard/profile/mcp/new')} disabled={busy}>
+            <Plus size={16} /> New Token
+          </button>
         </div>
 
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 0, marginBottom: 16 }}>
           Each token acts as you: it exposes exactly the tools your role permits. The full value is shown
-          once, at creation.
+          once, on the page that creates it.
         </p>
-
-        {revealed && (
-          <div className="card" style={{ padding: 16, marginBottom: 16, border: '1px solid var(--border)', borderRadius: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                Token created. Copy it now, it will not be shown again.
-              </span>
-              <button className="btn-icon" onClick={() => setRevealed('')} title="Dismiss"><X size={16} /></button>
-            </div>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <div className="token-box" style={{ flex: 1, margin: 0, wordBreak: 'break-all', fontSize: '0.82rem' }}>
-                {revealed}
-              </div>
-              <button className="btn btn-secondary" onClick={handleCopy} style={{ flexShrink: 0 }}>
-                {copied ? <Check size={15} /> : <Copy size={15} />}
-                {copied ? 'Copied!' : 'Copy'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {formOpen && (
-          <form
-            onSubmit={handleCreate}
-            className="card"
-            style={{ padding: 16, marginBottom: 16, border: '1px solid var(--border)', borderRadius: 8, display: 'flex', flexDirection: 'column', gap: 14 }}
-          >
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" htmlFor="mcp-token-name">Name</label>
-              <input
-                id="mcp-token-name"
-                type="text"
-                className="form-input"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="laptop"
-                maxLength={60}
-                required
-              />
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '6px 0 0' }}>
-                Where this token is used, for example "laptop" or "claude-desktop".
-              </p>
-            </div>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" htmlFor="mcp-token-expiry">Expires on (optional)</label>
-              <input
-                id="mcp-token-expiry"
-                type="date"
-                className="form-input"
-                value={expiry}
-                onChange={e => setExpiry(e.target.value)}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button type="submit" className="btn btn-primary" disabled={busy || !name.trim()}>Create token</button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => { setFormOpen(false); setName(''); setExpiry(''); }}
-                disabled={busy}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        )}
 
         {tokens.length === 0 ? (
           <div className="empty-state">
@@ -289,27 +177,26 @@ export function ProfileMcpTab() {
       <section>
         <h3 style={SECTION_TITLE}>Connect an MCP Client</h3>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 0, marginBottom: 16 }}>
-          Two transports are available. Use stdio for local desktop clients, HTTP for remote ones. Both
-          authenticate with one of your MCP tokens.
+          Pick the client you are wiring up, then replace <span className="mono">{PLACEHOLDER_MCP_TOKEN}</span> with
+          one of your tokens. Creating a token shows the same snippet with the value already in it.
         </p>
 
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 6 }}>stdio (local)</div>
-          <pre className="mono" style={CODE_BLOCK}>routerly mcp serve</pre>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 8, lineHeight: 1.5 }}>
-            The CLI passes your token through. Running the service directly instead? Set{' '}
-            <span className="mono">ROUTERLY_MCP_STDIO=1</span> and{' '}
+        <McpClientGuide token={PLACEHOLDER_MCP_TOKEN} />
+
+        <div style={{ marginTop: 24 }}>
+          <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 6 }}>Any other client</div>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 0, marginBottom: 10 }}>
+            Over HTTP, point it at this endpoint and authenticate with{' '}
+            <span className="mono">Authorization: Bearer &lt;your MCP token&gt;</span>. It is JSON-RPC 2.0
+            over Streamable HTTP.
+          </p>
+          <CopyBlock text={HTTP_ENDPOINT} />
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 12, marginBottom: 10 }}>
+            Over stdio, the CLI bridges it and passes your token through. Running the service directly
+            instead? Set <span className="mono">ROUTERLY_MCP_STDIO=1</span> and{' '}
             <span className="mono">ROUTERLY_MCP_TOKEN=&lt;your MCP token&gt;</span> yourself.
           </p>
-        </div>
-
-        <div>
-          <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 6 }}>HTTP (remote)</div>
-          <pre className="mono" style={CODE_BLOCK}>{HTTP_ENDPOINT}</pre>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 8, lineHeight: 1.5 }}>
-            JSON-RPC 2.0 over Streamable HTTP. Authenticate with{' '}
-            <span className="mono">Authorization: Bearer &lt;your MCP token&gt;</span>.
-          </p>
+          <CopyBlock text="routerly mcp serve" />
         </div>
       </section>
 

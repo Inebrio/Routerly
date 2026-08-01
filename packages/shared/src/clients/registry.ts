@@ -8,7 +8,7 @@ export type WireFormat = 'openai' | 'anthropic';
  * `mcp`: it can consume Routerly's MCP server (see docs/concepts/mcp.md).
  *
  * They are independent: Claude Desktop has no base-URL override at all and is
- * `mcp` only, Cursor has no verified MCP wiring here and is `llm` only.
+ * `mcp` only, Continue has no verified MCP wiring here and is `llm` only.
  */
 export type ConnectMode = 'llm' | 'mcp';
 
@@ -95,7 +95,8 @@ export const CLIENT_REGISTRY: readonly ClientMeta[] = [
     docSlug: 'integrations/cursor',
     configKind: 'ui',
     configPathHint: 'Cursor Settings > Models, no file',
-    modes: ['llm'],
+    // The LLM side is UI-only, the MCP side is a file: ~/.cursor/mcp.json.
+    modes: ['llm', 'mcp'],
   },
   {
     id: 'cline',
@@ -105,7 +106,8 @@ export const CLIENT_REGISTRY: readonly ClientMeta[] = [
     docSlug: 'integrations/clients/cline',
     configKind: 'ui',
     configPathHint: 'VS Code Settings (Cline panel), no file',
-    modes: ['llm'],
+    // MCP lives in ~/.cline/mcp.json, or in the panel's "Configure MCP Servers".
+    modes: ['llm', 'mcp'],
   },
   {
     id: 'zed',
@@ -115,7 +117,8 @@ export const CLIENT_REGISTRY: readonly ClientMeta[] = [
     docSlug: 'integrations/clients/zed',
     configKind: 'json',
     configPathHint: '~/.config/zed/settings.json',
-    modes: ['llm'],
+    // MCP servers live in the same settings.json, under `context_servers`.
+    modes: ['llm', 'mcp'],
   },
   {
     id: 'generic-openai',
@@ -346,6 +349,52 @@ export function buildMcpSnippet(meta: ClientMeta, baseUrl: string, mcpToken: str
     case 'openclaw': {
       // OpenClaw defaults to the sse transport, which Routerly does not serve.
       return `openclaw mcp add routerly \\\n  --url ${endpoint} \\\n  --transport streamable-http \\\n  --header "Authorization: Bearer ${mcpToken}"`;
+    }
+    case 'cursor': {
+      // ~/.cursor/mcp.json (or .cursor/mcp.json in a project). A `url` entry is
+      // remote by definition, so Cursor's format carries no transport field.
+      return JSON.stringify(
+        {
+          mcpServers: {
+            routerly: { url: endpoint, headers: { Authorization: `Bearer ${mcpToken}` } },
+          },
+        },
+        null,
+        2
+      );
+    }
+    case 'cline': {
+      // Cline falls back to the legacy sse transport when `type` is missing,
+      // so the streamableHttp value is written out.
+      return JSON.stringify(
+        {
+          mcpServers: {
+            routerly: {
+              type: 'streamableHttp',
+              url: endpoint,
+              headers: { Authorization: `Bearer ${mcpToken}` },
+              disabled: false,
+              autoApprove: [],
+            },
+          },
+        },
+        null,
+        2
+      );
+    }
+    case 'zed': {
+      // Zed calls MCP servers context servers, in the same settings.json the
+      // LLM provider lives in. Without an Authorization header it would start
+      // its own OAuth flow, which Routerly's MCP surface does not serve.
+      return JSON.stringify(
+        {
+          context_servers: {
+            routerly: { url: endpoint, headers: { Authorization: `Bearer ${mcpToken}` } },
+          },
+        },
+        null,
+        2
+      );
     }
     default: {
       return '';

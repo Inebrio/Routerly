@@ -44,6 +44,36 @@ Agentic tasks consume many tokens per step. Set a [budget limit](../concepts/bud
 
 ---
 
+## MCP server
+
+Cline can also load Routerly as an MCP server, which lets its agent list
+models, preview routing, and read usage. Put this in `~/.cline/mcp.json`, or
+paste it into **MCP Servers → Configure MCP Servers** in the Cline panel:
+
+```json
+{
+  "mcpServers": {
+    "routerly": {
+      "type": "streamableHttp",
+      "url": "http://localhost:3000/mcp",
+      "headers": {
+        "Authorization": "Bearer sk-rt-mcp-YOUR_TOKEN"
+      },
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}
+```
+
+`"type": "streamableHttp"` is required: without it Cline falls back to the
+legacy `sse` transport, which Routerly does not serve. The token is a
+personal MCP token (`sk-rt-mcp-…`), not a project token: create one with
+`routerly mcp token create cline` or from **Profile → MCP** in the
+dashboard. See [Connect an MCP client](../guides/mcp-clients.md#cline).
+
+---
+
 ## Usage
 
 Open the Cline panel and describe the task. Cline will plan, write code, and execute steps autonomously. Every LLM call is routed through Routerly — costs and traces are visible in the dashboard.

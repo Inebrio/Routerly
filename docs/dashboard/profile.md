@@ -114,15 +114,19 @@ never been used).
 
 To create one:
 
-1. Click **+ New Token**
+1. Click **+ New Token**, which opens `/dashboard/profile/mcp/new`
 2. Enter a **Name** (e.g. `laptop`, `desktop`, `ci`), unique among your tokens
-3. Optionally pick an **Expires on** date; leave it empty for a token that
-   never expires
+3. Optionally pick an **Expires on** date; leave it empty and the token never
+   expires, until you revoke it
 4. Click **Create token**
 
-The raw value appears once, in a highlighted box with a **Copy** button.
-Copy it before dismissing the box: Routerly stores only its SHA-256 hash and
-cannot show it again. Losing it means creating a new token.
+The raw value appears once, on that page, with a **Copy** button. Copy it
+before leaving: Routerly stores only its SHA-256 hash and cannot show it
+again. Losing it means creating a new token.
+
+Below the value, the same page shows the configuration for the client you
+pick, with the token already in it, so the wiring can be pasted without a
+detour through the docs. **Done** goes back to the tab.
 
 The trash icon revokes a token after a confirmation. Revocation is immediate:
 any client using that token stops working on its next call.
@@ -137,16 +141,26 @@ without any of the tool permissions sees an empty state here.
 
 ### Connect an MCP Client
 
-The last section gives the two ways to connect:
+Pick your client from the dropdown and the section shows where its
+configuration lives and the exact snippet to put there. Eight clients are
+covered: Claude Code, Claude Desktop, Codex, OpenCode, OpenClaw, Cursor,
+Cline, and Zed.
 
-- **stdio (local)**: run `routerly mcp serve`, which passes your token to the
-  service. Running the service binary directly instead means setting
-  `ROUTERLY_MCP_STDIO=1` and `ROUTERLY_MCP_TOKEN=<your MCP token>` yourself.
+Here the snippet carries the placeholder `<YOUR_MCP_TOKEN>`, since the tab
+never holds a token after the one-time reveal. Replace it with one of yours,
+or create a token and copy the snippet from the creation page, where the
+value is already filled in.
+
+**Any other client** closes the section with the two raw ways in:
+
 - **HTTP (remote)**: JSON-RPC 2.0 over Streamable HTTP at this instance's
   `/mcp` endpoint, authenticated with
   `Authorization: Bearer <your MCP token>`.
+- **stdio (local)**: run `routerly mcp serve`, which passes your token to the
+  service. Running the service binary directly instead means setting
+  `ROUTERLY_MCP_STDIO=1` and `ROUTERLY_MCP_TOKEN=<your MCP token>` yourself.
 
-For the exact configuration each client expects, see
+For the same configurations outside the dashboard, see
 [Guides: Connect an MCP client](../guides/mcp-clients.md).
 
 ---

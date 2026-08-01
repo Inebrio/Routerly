@@ -1,55 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Check, Copy, ExternalLink, Terminal } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Terminal } from 'lucide-react';
 import { buildSnippet, buildMcpSnippet } from '@routerly/shared';
 import { getClients } from '../api';
 import type { ApiError, ClientListItem } from '../api';
 import { ClientLogo } from '../components/ClientLogo';
-import { writeToClipboard } from '../utils/clipboard';
+import { CopyBlock } from '../components/CopyBlock';
 import {
   DOCS_BASE, PLACEHOLDER_MCP_TOKEN, PLACEHOLDER_TOKEN,
   SUPPORT_BADGE, SUPPORT_LABEL, isAutoConfigurable,
 } from './connectShared';
 
-const CODE_BLOCK: React.CSSProperties = {
-  margin: 0, padding: 12, background: 'var(--surface-active)',
-  border: '1px solid var(--border)', borderRadius: 6, fontSize: '0.78rem',
-  overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all',
-};
-
 const SECTION_TITLE: React.CSSProperties = {
   fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em',
   color: 'var(--text-muted)', marginBottom: 10,
 };
-
-function CopyBlock({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  const [error, setError] = useState('');
-
-  async function handleCopy() {
-    setError('');
-    try {
-      await writeToClipboard(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setError('Copy failed, select and copy manually.');
-    }
-  }
-
-  return (
-    <>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        <pre className="mono" style={{ ...CODE_BLOCK, flex: 1 }}>{text}</pre>
-        <button type="button" className="btn btn-secondary" onClick={handleCopy} style={{ flexShrink: 0 }}>
-          {copied ? <Check size={14} /> : <Copy size={14} />}
-          {copied ? 'Copied!' : 'Copy'}
-        </button>
-      </div>
-      {error && <div className="form-error" style={{ marginTop: 6 }}>{error}</div>}
-    </>
-  );
-}
 
 export function ConnectClientPage() {
   const { id = '' } = useParams<{ id: string }>();
@@ -166,8 +131,8 @@ export function ConnectClientPage() {
             <div style={SECTION_TITLE}>MCP server</div>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 10px' }}>
               Exposes the Routerly tools to {client.label}. Mint the token with{' '}
-              <code>routerly mcp token create --label {client.id}</code>, or from your{' '}
-              <Link to="/dashboard/profile">profile</Link>.
+              <code>routerly mcp token create {client.id}</code>, or from your{' '}
+              <Link to="/dashboard/profile/mcp">profile</Link>.
             </p>
             <CopyBlock text={mcpSnippet} />
           </section>

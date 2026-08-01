@@ -2190,11 +2190,11 @@ routerly clients list
 ├───────────────────┼───────────────────────┼───────────────────┼──────────┤
 │ continue          │ Continue              │ auto-configurable │ llm      │
 ├───────────────────┼───────────────────────┼───────────────────┼──────────┤
-│ cursor            │ Cursor                │ documented        │ llm      │
+│ cursor            │ Cursor                │ documented        │ llm, mcp │
 ├───────────────────┼───────────────────────┼───────────────────┼──────────┤
-│ cline             │ Cline                 │ documented        │ llm      │
+│ cline             │ Cline                 │ documented        │ llm, mcp │
 ├───────────────────┼───────────────────────┼───────────────────┼──────────┤
-│ zed               │ Zed                   │ documented        │ llm      │
+│ zed               │ Zed                   │ documented        │ llm, mcp │
 ├───────────────────┼───────────────────────┼───────────────────┼──────────┤
 │ generic-openai    │ Any OpenAI SDK app    │ documented        │ llm      │
 ├───────────────────┼───────────────────────┼───────────────────┼──────────┤
@@ -2361,7 +2361,7 @@ Claude Desktop: connects over MCP only
 }
 
 Docs: https://doc.routerly.ai/next/integrations/clients/claude-desktop
-Create the token with `routerly mcp token create --label claude-desktop`.
+Create the token with `routerly mcp token create claude-desktop`.
 ```
 
 See [`routerly mcp`](#routerly-mcp) for the token commands.

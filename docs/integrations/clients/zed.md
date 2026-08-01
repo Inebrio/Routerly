@@ -13,7 +13,7 @@ an environment variable.
 **Support state:** `documented`. Configured by hand.
 **Config file:** `~/.config/zed/settings.json` (JSON)
 **Wire format:** OpenAI
-**Connect modes:** LLM
+**Connect modes:** LLM + MCP
 
 Zed is not auto-configured by the CLI: the settings file is one users edit
 constantly by hand, and the API key does not belong in it at all.
@@ -78,3 +78,28 @@ or let `routerly clients configure zed` mint one for you.
 Pick **Routerly (auto-routed)** in the agent's model picker and send a
 message. The request shows up in [Usage](../../dashboard/usage.md) with the
 model Routerly selected.
+
+## MCP server
+
+Zed calls MCP servers **context servers**, configured in the same
+`settings.json`:
+
+```json
+{
+  "context_servers": {
+    "routerly": {
+      "url": "http://localhost:3000/mcp",
+      "headers": {
+        "Authorization": "Bearer sk-rt-mcp-YOUR_TOKEN"
+      }
+    }
+  }
+}
+```
+
+The `headers` entry is not optional: without it Zed starts an OAuth flow
+against the server, and Routerly's MCP surface only authenticates bearer
+tokens. That token is a personal MCP token (`sk-rt-mcp-…`), not a project
+token: create one with `routerly mcp token create zed` or from
+**Profile → MCP** in the dashboard. See
+[Connect an MCP client](../../guides/mcp-clients.md#zed).

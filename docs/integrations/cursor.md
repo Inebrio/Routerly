@@ -28,6 +28,31 @@ Cursor sends model names from its own list. Because Routerly's router ignores th
 
 ---
 
+## MCP server
+
+Cursor can also load Routerly as an MCP server, which lets its agent list
+models, preview routing, and read usage. Put this in `~/.cursor/mcp.json`,
+or in `.cursor/mcp.json` to scope it to one project:
+
+```json
+{
+  "mcpServers": {
+    "routerly": {
+      "url": "http://localhost:3000/mcp",
+      "headers": {
+        "Authorization": "Bearer sk-rt-mcp-YOUR_TOKEN"
+      }
+    }
+  }
+}
+```
+
+The token is a personal MCP token (`sk-rt-mcp-…`), not a project token:
+create one with `routerly mcp token create cursor` or from **Profile → MCP**
+in the dashboard. See [Connect an MCP client](../guides/mcp-clients.md#cursor).
+
+---
+
 ## Usage
 
 Use Cursor as normal. All AI requests — Tab completions, Chat, Composer — are proxied through Routerly. Cost data and routing traces appear in **Usage** in the Routerly dashboard.
