@@ -136,6 +136,31 @@ describe('GET /api/experiments/:id/metrics', () => {
     expect(body.variants[1]).toMatchObject({ variantId: 'v-b', name: 'B', calls: 1, errors: 1, errorRate: 1 })
   })
 
+  it('measures only the calls inside the requested window', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/experiments/exp-1/metrics?from=2026-08-01T10:00:00.500Z&to=2026-08-01T10:00:01.500Z',
+      headers: authWith('experiments:read', { experiments: [experiment({ status: 'running' })], usage, projects }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.totalCalls).toBe(1)
+    expect(body.variants[0]).toMatchObject({ variantId: 'v-a', calls: 0 })
+    expect(body.variants[1]).toMatchObject({ variantId: 'v-b', calls: 1 })
+  })
+
+  it('measures the whole history when no window is given', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET', url: '/api/experiments/exp-1/metrics?from=&to=',
+      headers: authWith('experiments:read', { experiments: [experiment({ status: 'running' })], usage, projects }),
+    })
+    await app.close()
+    expect(JSON.parse(res.body).totalCalls).toBe(2)
+  })
+
   it('404s on an unknown id', async () => {
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/experiments/nope/metrics', headers: authWith('experiments:read', { experiments: [experiment()] }) })

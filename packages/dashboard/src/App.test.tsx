@@ -5,7 +5,7 @@
  * Strategy: mock every page and heavy component so tests focus on App-level logic.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // ── Page mocks — all pages render their route name only ────────────────────────
@@ -59,13 +59,14 @@ vi.mock('./api', () => ({
   getSettings: vi.fn(),
   updateSettings: vi.fn(),
   getClients: vi.fn(),
+  getExperiments: vi.fn(),
 }));
 
 // ── AuthContext mock ───────────────────────────────────────────────────────────
 vi.mock('./AuthContext', () => ({ useAuth: vi.fn() }));
 
 import App from './App';
-import { checkSetupStatus, getSystemInfo, getSettings, updateSettings, getClients } from './api';
+import { checkSetupStatus, getSystemInfo, getSettings, updateSettings, getClients, getExperiments } from './api';
 import { useAuth } from './AuthContext';
 
 const mockCheckSetup = vi.mocked(checkSetupStatus as () => Promise<unknown>);
@@ -73,6 +74,7 @@ const mockGetSystemInfo = vi.mocked(getSystemInfo as () => Promise<unknown>);
 const mockGetSettings = vi.mocked(getSettings as () => Promise<unknown>);
 const mockUpdateSettings = vi.mocked(updateSettings as (...a: unknown[]) => Promise<unknown>);
 const mockGetClients = vi.mocked(getClients as () => Promise<unknown>);
+const mockGetExperiments = vi.mocked(getExperiments as () => Promise<unknown>);
 const mockUseAuth = vi.mocked(useAuth);
 
 const adminUser = { id: 'u1', email: 'admin@test.com', role: 'admin', totpEnabled: false };
@@ -88,6 +90,7 @@ beforeEach(() => {
   mockGetSettings.mockResolvedValue({ telemetry: true, requireMfa: false });
   mockUpdateSettings.mockResolvedValue(undefined);
   mockGetClients.mockRejectedValue(Object.assign(new Error('Not found'), { status: 404 }));
+  mockGetExperiments.mockRejectedValue(Object.assign(new Error('module_disabled'), { status: 403 }));
   mockUseAuth.mockReturnValue({
     user: adminUser,
     isLoading: false,
@@ -270,6 +273,17 @@ describe('Sidebar', () => {
     expect(screen.getByText('Models')).toBeTruthy();
     expect(screen.getByText('Projects')).toBeTruthy();
     expect(screen.getByText('Usage')).toBeTruthy();
+  });
+
+  it('offers Experiments only when the module answers', async () => {
+    renderApp();
+    await waitFor(() => screen.getByText('Overview'));
+    expect(screen.queryByText('Experiments')).toBeNull();
+
+    mockGetExperiments.mockResolvedValue([]);
+    cleanup();
+    renderApp();
+    await waitFor(() => expect(screen.getByText('Experiments')).toBeTruthy());
   });
 
   it('renders Connections before Models in nav order', async () => {

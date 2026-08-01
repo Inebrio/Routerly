@@ -62,6 +62,26 @@ export const ROTATION_CATALOG: Record<ExperimentRotation, ExperimentRotationMeta
   },
 };
 
+/** Same purpose as ROTATION_CATALOG, for the value that only `sticky` reads. */
+export const STICKY_KEY_CATALOG: Record<ExperimentStickyKey, ExperimentRotationMeta> = {
+  auto: {
+    label: 'Automatic',
+    description: 'Uses the standard `user` field when the client sends it, and otherwise a stable fingerprint of the conversation, IP and user agent.',
+  },
+  'end-user': {
+    label: 'End user',
+    description: 'Pins on the standard `user` field only. A call that omits it gets a random variant.',
+  },
+  conversation: {
+    label: 'Conversation',
+    description: 'Pins on the conversation itself, so each new thread can land on a different variant.',
+  },
+  client: {
+    label: 'Client',
+    description: 'Pins on the calling machine (IP and user agent), so one client always sees one variant.',
+  },
+};
+
 export function rotationLabel(rotation: ExperimentRotation): string {
   return ROTATION_CATALOG[rotation].label;
 }

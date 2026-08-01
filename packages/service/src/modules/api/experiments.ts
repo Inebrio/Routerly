@@ -122,13 +122,24 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
 
   // Read straight off the usage log: the experiment stamps its id on every record
   // it routes (T71), so the comparison needs no store of its own.
-  fastify.get<{ Params: { id: string } }>('/api/experiments/:id/metrics', async (req, reply) => {
+  fastify.get<{ Params: { id: string }; Querystring: { from?: string; to?: string } }>('/api/experiments/:id/metrics', async (req, reply) => {
     if (!requirePerm(req, 'experiments:read', reply)) return;
     if (!await checkModuleGate(reply)) return;
     const found = (await readConfig('experiments')).find(e => e.id === req.params.id);
     if (!found) return reply.status(404).send({ error: 'Not found' });
     const [records, projects] = await Promise.all([readConfig('usage'), readConfig('projects')]);
-    return reply.send(computeExperimentMetrics(found, records, projects));
+    // ponytail: an explicit ISO window, not the period vocabulary /api/usage uses.
+    // The caller already knows which window it wants; the server needs no names for them.
+    const { from, to } = req.query;
+    const since = from ? new Date(from) : null;
+    const until = to ? new Date(to) : null;
+    const windowed = since || until
+      ? records.filter(r => {
+        const ts = new Date(r.timestamp);
+        return (!since || ts >= since) && (!until || ts <= until);
+      })
+      : records;
+    return reply.send(computeExperimentMetrics(found, windowed, projects));
   });
 
   fastify.post<{ Body: unknown }>('/api/experiments', async (req, reply) => {

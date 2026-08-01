@@ -1022,6 +1022,67 @@ export const assignProjectProfiles = (
   body: Partial<Record<ProfileKind, string | null>>,
 ) => request<Project>(`/projects/${encodeURIComponent(projectId)}/profiles`, { method: 'PUT', body: JSON.stringify(body) });
 
+// ── Experiments (T73) ─────────────────────────────────────────────────────────
+
+export type {
+  ExperimentConfig as Experiment,
+  ExperimentJudge,
+  ExperimentMetrics,
+  ExperimentRotation,
+  ExperimentStatus,
+  ExperimentStickyKey,
+  ExperimentVariant,
+  ExperimentVariantMetrics,
+} from '@routerly/shared';
+import type { ExperimentConfig, ExperimentJudge, ExperimentMetrics, ExperimentRotation, ExperimentStickyKey, ExperimentVariant } from '@routerly/shared';
+
+/** The list and detail routes blank out the token value: only creation returns it. */
+export type MaskedExperiment = Omit<ExperimentConfig, 'tokens'> & { tokens: ProjectToken[] };
+
+/** A variant added in the form has no id yet: the service mints one on save. */
+export type ExperimentVariantInput = Omit<ExperimentVariant, 'id'> & { id?: string };
+
+export interface CreateExperimentBody {
+  name: string;
+  description?: string;
+  rotation?: ExperimentRotation;
+  stickyKey?: ExperimentStickyKey;
+  variants: ExperimentVariantInput[];
+  judge?: ExperimentJudge;
+  minSamplesPerVariant?: number;
+}
+
+export type UpdateExperimentBody = Partial<CreateExperimentBody>;
+
+export const getExperiments = () => request<MaskedExperiment[]>('/experiments');
+export const getExperiment = (id: string) => request<MaskedExperiment>(`/experiments/${encodeURIComponent(id)}`);
+/** `from`/`to` are ISO timestamps; omitting both measures the whole history. */
+export const getExperimentMetrics = (id: string, window?: { from?: string; to?: string }) => {
+  const qs = new URLSearchParams();
+  if (window?.from) qs.set('from', window.from);
+  if (window?.to) qs.set('to', window.to);
+  const suffix = qs.toString() ? `?${qs}` : '';
+  return request<ExperimentMetrics>(`/experiments/${encodeURIComponent(id)}/metrics${suffix}`);
+};
+/** The only response that carries the raw token: show it once, it is never readable again. */
+export const createExperiment = (data: CreateExperimentBody) =>
+  request<MaskedExperiment & { token: string }>('/experiments', { method: 'POST', body: JSON.stringify(data) });
+export const updateExperiment = (id: string, data: UpdateExperimentBody) =>
+  request<MaskedExperiment>(`/experiments/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
+export const startExperiment = (id: string) =>
+  request<MaskedExperiment>(`/experiments/${encodeURIComponent(id)}/start`, { method: 'POST' });
+export const closeExperiment = (id: string, winnerVariantId?: string) =>
+  request<MaskedExperiment>(`/experiments/${encodeURIComponent(id)}/close`, {
+    method: 'POST',
+    body: JSON.stringify(winnerVariantId ? { winnerVariantId } : {}),
+  });
+export const createExperimentToken = (id: string) =>
+  request<{ token: string; tokenInfo: ProjectToken }>(`/experiments/${encodeURIComponent(id)}/tokens`, { method: 'POST' });
+export const deleteExperimentToken = (id: string, tokenId: string) =>
+  request<void>(`/experiments/${encodeURIComponent(id)}/tokens/${encodeURIComponent(tokenId)}`, { method: 'DELETE' });
+export const deleteExperiment = (id: string) =>
+  request<void>(`/experiments/${encodeURIComponent(id)}`, { method: 'DELETE' });
+
 // ── Optimizers ────────────────────────────────────────────────────────────
 import type { Message, OptimizerConfig, OptimizerId, OptimizerStep } from '@routerly/shared';
 export type { OptimizerConfig, OptimizerId, OptimizerStep } from '@routerly/shared';
