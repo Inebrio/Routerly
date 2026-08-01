@@ -157,6 +157,16 @@ export { CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from './clients/index.
 export { NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, DEFAULT_PROJECT_TIMEOUT_MS } from './types/config.js';
 export type { NotificationEvent } from './types/config.js';
 
+// Readable catalog for those events: title, category, cause line (T51)
+export {
+  NOTIFICATION_CATEGORIES,
+  NOTIFICATION_EVENT_CATALOG,
+  notificationTitle,
+  notificationCategory,
+  notificationCause,
+} from './types/notifications.js';
+export type { NotificationCategory, NotificationEventMeta } from './types/notifications.js';
+
 // Static configuration data
 import providersConf from './conf/providers.json' with { type: 'json' };
 export { providersConf };
