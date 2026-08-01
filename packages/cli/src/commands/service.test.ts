@@ -192,6 +192,24 @@ describe('service configure', () => {
     expect(patch['prometheusAuthToken']).toBeUndefined();
   });
 
+  it('sends publicUrl when --public-url provided', async () => {
+    mockApi.mockResolvedValueOnce(undefined);
+    await run('configure', '--public-url', 'https://routerly.example.com');
+    expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', expect.objectContaining({ publicUrl: 'https://routerly.example.com' }));
+  });
+
+  it('sends requireMfa=true when --require-mfa true', async () => {
+    mockApi.mockResolvedValueOnce(undefined);
+    await run('configure', '--require-mfa', 'true');
+    expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', expect.objectContaining({ requireMfa: true }));
+  });
+
+  it('sends requireMfa=false when --require-mfa false', async () => {
+    mockApi.mockResolvedValueOnce(undefined);
+    await run('configure', '--require-mfa', 'false');
+    expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', expect.objectContaining({ requireMfa: false }));
+  });
+
   it('exits 1 with admin-required message on 401', async () => {
     mockApi.mockRejectedValueOnce(new ApiError(401, 'Unauthorized'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });

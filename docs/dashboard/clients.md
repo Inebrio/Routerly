@@ -27,7 +27,7 @@ Navigate to `/dashboard/clients`.
 
 The nav item is only shown if the client-configurator module is enabled on
 the server. If it is disabled, the page shows an empty state pointing at
-**Settings → Modules**.
+`routerly modules enable clients`.
 
 Each client is shown as a card with:
 

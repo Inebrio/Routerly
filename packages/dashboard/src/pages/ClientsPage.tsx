@@ -186,8 +186,8 @@ export function ClientsPage() {
           <div className="empty-state">
             <Terminal size={40} />
             <p>
-              Client configurator is not enabled. Ask an admin to enable it from{' '}
-              <Link to="/dashboard/settings/modules">Settings &rarr; Modules</Link>.
+              Client configurator is not enabled. Ask an admin to enable it with{' '}
+              <code>routerly modules enable clients</code>.
             </p>
           </div>
         ) : error ? (

@@ -15,18 +15,39 @@ Open Settings from the **Settings** item in the sidebar.
 
 ![Settings General tab showing server info, runtime settings, and anonymous metrics toggle](../assets/screenshot-settings.png)
 
-### Service Configuration
+### Server Info
+
+Read-only block, one line per address the service is actually reachable at:
+
+```text
+Server listening at http://127.0.0.1:3000
+Server listening at http://192.168.1.116:3000
+```
+
+The list is derived at runtime from the bind address: a wildcard bind (`0.0.0.0`) expands to every IPv4 interface, any other host resolves to that single address. Each line has a **Copy** button. Below the list, **Version** and **Uptime** report the running build.
+
+Host and port come from the environment or the settings file and cannot be changed here; changing them requires a restart.
+
+### Runtime Settings
 
 | Field | Description |
 |-------|-------------|
-| **Port** | The port the service listens on (read-only — change via CLI or environment variable) |
-| **Host** | The bind address (read-only) |
 | **Public URL** | The externally accessible URL of this Routerly instance. Shown in project connection snippets |
-| **Default Timeout** | Per-request timeout in milliseconds (applies to all projects unless overridden per-project) |
 | **Log Level** | `trace` / `debug` / `info` / `warn` / `error` |
-| **Dashboard Enabled** | Toggle the web dashboard on or off |
 
-Changes are saved immediately and take effect without a restart (except Port and Host, which require a restart).
+**Anonymous metrics** is a separate self-saving toggle at the bottom of the tab.
+
+Per-request timeouts are configured per project (see [Projects](./projects#advanced-settings)), not globally.
+
+---
+
+## Security Tab {#security-tab}
+
+| Field | Description |
+|-------|-------------|
+| **Require Two-Factor Authentication for all users** | When enabled, users without 2FA are prompted to set it up right after login. Users enrol from their [Profile](./profile) page |
+
+Press **Save Settings** to apply.
 
 ---
 
@@ -188,68 +209,17 @@ Click the **Refresh** button in the top right to invalidate the 6-hour in-memory
 
 ---
 
-## Modules Tab {#modules-tab}
+## Modules {#modules-tab}
 
-Manage optional service modules. Routerly's core infrastructure (routing, reverse proxy, provider adapters) cannot be disabled, but optional modules like `guardrails` and `pii` can be toggled on or off to reduce memory overhead or disable unused features entirely at boot.
+Optional service modules are managed from the CLI, not from the dashboard:
 
-### Module List
-
-The list displays all available modules in a table with the following columns:
-
-- **Module** — module identifier
-- **Version** — semantic version
-- **Depends on** — comma-separated list of module IDs this module requires; `-` if no dependencies
-- **State** — `Enabled` or `Disabled`
-- **Action** — `Enable` / `Disable` button (grayed out and labeled "Locked" for always-on core modules)
-
-### Enabling and Disabling Modules
-
-Click the **Enable** or **Disable** button to toggle a module. The button becomes disabled while the request is in flight (`...`).
-
-After a successful toggle, a yellow alert banner appears at the top:
-
-```
-Module changes require a service restart to take effect. Restart the Routerly service
-(for Docker: docker restart <container>; otherwise stop and re-run the service process).
+```bash
+routerly modules list
+routerly modules enable <id>
+routerly modules disable <id>
 ```
 
-**Core modules** (always-on) show a "Locked" label instead of an action button. They cannot be disabled.
-
-### Supported Modules
-
-| Module | ID | Always-on | Purpose |
-|--------|-----|-----------|---------|
-| Reverse Proxy | `reverse-proxy` | yes | Core request routing engine |
-| Provider | `provider` | yes | Model provider adapters |
-| Routing | `routing` | yes | Routing policy evaluation |
-| Config | `config` | yes | Configuration management |
-| Catalog | `catalog` | yes | Provider and model catalog |
-| Guardrails | `guardrails` | no | Content security rules (regex, semantic, topic, moderation, PII scrubbing) |
-
-### Dependency Handling
-
-A module cannot be disabled if other enabled modules depend on it. For example, disabling the `provider` module fails with the error:
-
-```
-Cannot disable "provider": required by reverse-proxy, routing
-```
-
-Similarly, enabling a module fails if its dependencies are disabled:
-
-```
-Cannot enable "guardrails": depends on disabled provider
-```
-
-Resolve dependency conflicts by enabling the required module(s) first, or by disabling the dependent module(s).
-
-### Error States
-
-- **Load failure** — if the module list fails to load, a red error message appears: `Failed to load modules: <error message>`
-- **Toggle failure** — if an enable/disable request fails (e.g. permission denied, dependency conflict), an error message appears below the table and the module state is reloaded to reflect the actual state on the server
-
-### Access Control
-
-Viewing the list requires `modules:read` (held by `viewer`, `operator`, and `admin` by default). Enabling/disabling requires `modules:manage` (`admin` only by default). The tab itself is always visible; a user lacking `modules:read` sees the load-failure error state instead of the module list.
+Module changes require a service restart to take effect. See [CLI — Commands](../cli/commands#routerly-modules) for the full command reference and the list of modules.
 
 ---
 

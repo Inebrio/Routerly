@@ -168,7 +168,7 @@ Both adapters are gated by the `provider-web` module, which is **disabled by def
 routerly modules enable provider-web
 ```
 
-or from the dashboard: **Settings → Modules → provider-web → Enable**. The equivalent management API is `POST /api/modules/provider-web/enable` (see [API — Management](../api/management#modules)).
+The equivalent management API is `POST /api/modules/provider-web/enable` (see [API — Management](../api/management#modules)).
 
 **Credentials** — instead of an API key, the connection's encrypted credentials hold the session cookie value copied from a logged-in browser session:
 
@@ -188,7 +188,7 @@ Credentials are encrypted at rest (`encryptCredential`/`decryptCredential`, AES-
 
 ## Timeout Handling
 
-Each adapter respects the `timeout` field in the model config (in milliseconds). If not set, it falls back to the service-wide `defaultTimeoutMs` setting (`30000` ms). Timed-out requests are recorded as `outcome: "timeout"` in usage records and the `health` policy will penalise the model accordingly.
+Each adapter respects the `timeout` field in the model config (in milliseconds). If not set, it falls back to the project's `timeoutMs` (default `2000` ms, `0` disables it) — a time-to-first-token budget, not a total-duration cap. Timed-out requests are recorded as `outcome: "timeout"` in usage records and the `health` policy will penalise the model accordingly.
 
 ---
 

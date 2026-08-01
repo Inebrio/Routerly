@@ -25,7 +25,7 @@ Shows and lets you edit:
 
 - **Name** — display name for the project
 - **Slug** — URL-safe identifier (read-only after creation)
-- **Default Timeout** — per-request timeout in milliseconds (overrides the global `defaultTimeoutMs`)
+- **Timeout (TTFT)** — how long a model attempt may take to produce its first token, in milliseconds. Defaults to `2000`; `0` waits as long as the provider takes
 - **Connection Info** — base URL and masked token snippet ready to copy into your SDK configuration
 - **Budget** — project-level cost limit (daily / monthly)
 

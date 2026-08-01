@@ -101,6 +101,7 @@ import {
 
 import {
   SettingsGeneralTab,
+  SettingsSecurityTab,
   SettingsNotificationsTab,
   SettingsIntegrationsTab,
   SettingsCatalogTab,
@@ -160,6 +161,7 @@ describe('SettingsGeneralTab', () => {
   beforeEach(() => {
     mockGetSettings.mockResolvedValue({ ...baseSettings } as never);
     mockUpdateSettings.mockResolvedValue({ ...baseSettings } as never);
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo } as never);
   });
 
   function renderGeneral() {
@@ -185,14 +187,52 @@ describe('SettingsGeneralTab', () => {
     await waitFor(() => expect(screen.queryByText('Failed to load settings')).not.toBeNull());
   });
 
-  it('renders host and port from settings as read-only', async () => {
+  it('renders one read-only line per listening address', async () => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings, listeningAddresses: ['http://127.0.0.1:3000', 'http://192.168.1.10:3000'] } as never);
     renderGeneral();
-    // labels have no htmlFor — query by display value instead
-    await waitFor(() => expect(screen.queryByDisplayValue('0.0.0.0')).not.toBeNull());
-    const hostInput = screen.getByDisplayValue('0.0.0.0') as HTMLInputElement;
-    expect(hostInput.disabled).toBe(true);
-    const portInput = screen.getByDisplayValue('3000') as HTMLInputElement;
-    expect(portInput.disabled).toBe(true);
+    await waitFor(() => screen.getByText('Server listening at http://127.0.0.1:3000'));
+    expect(screen.queryByText('Server listening at http://192.168.1.10:3000')).not.toBeNull();
+    // no editable host/port inputs left
+    expect(screen.queryByDisplayValue('0.0.0.0')).toBeNull();
+  });
+
+  it('falls back to host:port when the service reports no listening addresses', async () => {
+    renderGeneral();
+    await waitFor(() => screen.getByText('Server listening at http://0.0.0.0:3000'));
+  });
+
+  it('copies a listening address to the clipboard', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    mockGetSettings.mockResolvedValue({ ...baseSettings, listeningAddresses: ['http://127.0.0.1:3000'] } as never);
+    renderGeneral();
+    await waitFor(() => screen.getByLabelText('Copy http://127.0.0.1:3000'));
+    await userEvent.click(screen.getByLabelText('Copy http://127.0.0.1:3000'));
+    expect(writeText).toHaveBeenCalledWith('http://127.0.0.1:3000');
+    await waitFor(() => screen.getByText('Copied!'));
+  });
+
+  it('keeps the copy button silent when the clipboard write fails', async () => {
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: vi.fn().mockRejectedValue(new Error('denied')) }, configurable: true });
+    mockGetSettings.mockResolvedValue({ ...baseSettings, listeningAddresses: ['http://127.0.0.1:3000'] } as never);
+    renderGeneral();
+    await waitFor(() => screen.getByLabelText('Copy http://127.0.0.1:3000'));
+    await userEvent.click(screen.getByLabelText('Copy http://127.0.0.1:3000'));
+    expect(screen.queryByText('Copied!')).toBeNull();
+  });
+
+  it('shows version and uptime from the system info endpoint', async () => {
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo } as never);
+    renderGeneral();
+    await waitFor(() => screen.getByText('0.3.0'));
+    expect(screen.queryByText('1h 1m 1s')).not.toBeNull();
+  });
+
+  it('still renders the form when the system info endpoint fails', async () => {
+    mockGetSystemInfo.mockRejectedValue(new Error('down'));
+    renderGeneral();
+    await waitFor(() => screen.getByRole('button', { name: /Save Settings/i }));
+    expect(screen.queryByText('Version')).toBeNull();
   });
 
   it('renders publicUrl input pre-filled from settings', async () => {
@@ -225,23 +265,10 @@ describe('SettingsGeneralTab', () => {
     expect(values).toEqual(['trace', 'debug', 'info', 'warn', 'error']);
   });
 
-  it('renders requireMfa checkbox pre-filled', async () => {
-    mockGetSettings.mockResolvedValue({ ...baseSettings, requireMfa: true } as never);
+  it('does not render the 2FA toggle — it lives in the Security tab', async () => {
     renderGeneral();
-    await waitFor(() => screen.getByText(/Require Two-Factor Authentication/));
-    const cb = screen.getByText(/Require Two-Factor Authentication/).closest('label')!
-      .querySelector('input[type="checkbox"]') as HTMLInputElement;
-    expect(cb.checked).toBe(true);
-  });
-
-  it('toggling requireMfa updates form state', async () => {
-    renderGeneral();
-    await waitFor(() => screen.getByText(/Require Two-Factor Authentication/));
-    const cb = screen.getByText(/Require Two-Factor Authentication/).closest('label')!
-      .querySelector('input[type="checkbox"]') as HTMLInputElement;
-    expect(cb.checked).toBe(false);
-    await userEvent.click(cb);
-    expect(cb.checked).toBe(true);
+    await waitFor(() => screen.getByRole('button', { name: /Save Settings/i }));
+    expect(screen.queryByText(/Require Two-Factor Authentication/)).toBeNull();
   });
 
   it('submitting form calls updateSettings with form fields', async () => {
@@ -354,15 +381,6 @@ describe('SettingsGeneralTab', () => {
     await waitFor(() => expect(screen.queryByText('Failed to save')).not.toBeNull());
   });
 
-  it('settings with requireMfa undefined omits it from form fields (no checkbox truthy)', async () => {
-    mockGetSettings.mockResolvedValue({ ...baseSettings, requireMfa: undefined } as never);
-    renderGeneral();
-    await waitFor(() => screen.getByText(/Require Two-Factor Authentication/));
-    const cb = screen.getByText(/Require Two-Factor Authentication/).closest('label')!
-      .querySelector('input[type="checkbox"]') as HTMLInputElement;
-    expect(cb.checked).toBe(false);
-  });
-
   it('settings with notifications populates form.notifications', async () => {
     const notif = { channels: [{ id: 'ch1', provider: 'dashboard' as const }] };
     mockGetSettings.mockResolvedValue({ ...baseSettings, notifications: notif } as never);
@@ -380,6 +398,83 @@ describe('SettingsGeneralTab', () => {
     const sel = screen.getByLabelText('Log Level') as HTMLSelectElement;
     await userEvent.selectOptions(sel, 'warn');
     expect(sel.value).toBe('warn');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SettingsSecurityTab
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('SettingsSecurityTab', () => {
+  beforeEach(() => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings } as never);
+    mockUpdateSettings.mockResolvedValue({ ...baseSettings } as never);
+  });
+
+  function renderSecurity() {
+    return render(<MemoryRouter><SettingsSecurityTab /></MemoryRouter>);
+  }
+
+  function checkbox() {
+    return screen.getByText(/Require Two-Factor Authentication/).closest('label')!
+      .querySelector('input[type="checkbox"]') as HTMLInputElement;
+  }
+
+  it('shows spinner while loading', () => {
+    mockGetSettings.mockReturnValue(new Promise(() => {}));
+    renderSecurity();
+    expect(document.querySelector('.spinner')).toBeTruthy();
+  });
+
+  it('renders the 2FA toggle pre-filled from settings', async () => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings, requireMfa: true } as never);
+    renderSecurity();
+    await waitFor(() => screen.getByText(/Require Two-Factor Authentication/));
+    expect(checkbox().checked).toBe(true);
+  });
+
+  it('treats a missing requireMfa as disabled', async () => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings, requireMfa: undefined } as never);
+    renderSecurity();
+    await waitFor(() => screen.getByText(/Require Two-Factor Authentication/));
+    expect(checkbox().checked).toBe(false);
+  });
+
+  it('saves the toggled value', async () => {
+    renderSecurity();
+    await waitFor(() => screen.getByText(/Require Two-Factor Authentication/));
+    await userEvent.click(checkbox());
+    await userEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ requireMfa: true }));
+    expect(screen.queryByText('Settings saved successfully.')).not.toBeNull();
+  });
+
+  it('shows an error when loading fails', async () => {
+    mockGetSettings.mockRejectedValue(new Error('Network failure'));
+    renderSecurity();
+    await waitFor(() => expect(screen.queryByText('Network failure')).not.toBeNull());
+  });
+
+  it('shows a fallback error when loading rejects with a non-Error', async () => {
+    mockGetSettings.mockRejectedValue('boom');
+    renderSecurity();
+    await waitFor(() => expect(screen.queryByText('Failed to load settings')).not.toBeNull());
+  });
+
+  it('shows an error when saving fails', async () => {
+    mockUpdateSettings.mockRejectedValue(new Error('Save failed'));
+    renderSecurity();
+    await waitFor(() => screen.getByRole('button', { name: /Save Settings/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
+    await waitFor(() => expect(screen.queryByText('Save failed')).not.toBeNull());
+  });
+
+  it('shows a fallback error when saving rejects with a non-Error', async () => {
+    mockUpdateSettings.mockRejectedValue('oops');
+    renderSecurity();
+    await waitFor(() => screen.getByRole('button', { name: /Save Settings/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
+    await waitFor(() => expect(screen.queryByText('Failed to save settings')).not.toBeNull());
   });
 });
 
@@ -3751,26 +3846,13 @@ describe('SettingsNotificationsTab — summariseChannel singular and sendTest br
 describe('SettingsGeneralTab — null field fallback branches', () => {
   beforeEach(() => {
     mockUpdateSettings.mockResolvedValue({} as never);
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo } as never);
   });
 
-  it('settings?.host ?? "" fallback when host is undefined', async () => {
-    mockGetSettings.mockResolvedValue({ ...baseSettings, host: undefined } as never);
+  it('empty listeningAddresses falls back to the bind address', async () => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings, listeningAddresses: [] } as never);
     render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
-    await waitFor(() => screen.getByLabelText('Public URL'));
-    // host is undefined → settings?.host ?? '' → '' (covers L147 ?? fallback)
-    const hostInput = document.querySelector('input[disabled]') as HTMLInputElement | null;
-    // The disabled host input should show empty string
-    if (hostInput) expect(hostInput.value).toBe('');
-  });
-
-  it('settings?.port ?? "" fallback when port is undefined', async () => {
-    mockGetSettings.mockResolvedValue({ ...baseSettings, port: undefined } as never);
-    render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
-    await waitFor(() => screen.getByLabelText('Public URL'));
-    // port is undefined → settings?.port ?? '' → '' (covers L151 ?? fallback)
-    const disabledInputs = Array.from(document.querySelectorAll('input[disabled]')) as HTMLInputElement[];
-    const portInput = disabledInputs.find(i => i.value === '');
-    expect(portInput).toBeTruthy();
+    await waitFor(() => screen.getByText('Server listening at http://0.0.0.0:3000'));
   });
 
   it('settings?.host undefined → placeholder uses localhost fallback (L163 false+nullish branch)', async () => {

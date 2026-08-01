@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, ChevronUp, Globe, BarChart2, Bell, Users, GitBranch, Activity, TrendingUp, Database, Webhook, Dog } from 'lucide-react';
+import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, ChevronUp, Globe, BarChart2, Bell, Users, GitBranch, Activity, TrendingUp, Database, Webhook, Dog, Copy, Check, Shield } from 'lucide-react';
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
 import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases, getRoles, getUsers, ALL_PERMISSIONS, getIntegrations, createIntegration, updateIntegration, deleteIntegration, testIntegration, refreshCatalog, getCatalogStatus, probeRepo } from '../api';
 import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, Permission, Integration, IntegrationType, ProviderRepo, RepoStatus } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MultiSelect } from '../components/MultiSelect';
 import { SearchableSelect } from '../components/SearchableSelect';
+import { writeToClipboard } from '../utils/clipboard';
 import { NOTIFICATION_EVENTS } from '@routerly/shared';
 
 const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'error'];
@@ -90,10 +91,12 @@ function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: 
 
 export function SettingsGeneralTab() {
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [info, setInfo] = useState<SystemInfo | null>(null);
   const [form, setForm] = useState<Partial<Settings>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => { load(); }, []);
@@ -103,12 +106,22 @@ export function SettingsGeneralTab() {
     try {
       const s = await getSettings();
       setSettings(s);
-      setForm({ logLevel: s.logLevel, publicUrl: s.publicUrl || `http://localhost:${s.port}`, ...(s.requireMfa !== undefined ? { requireMfa: s.requireMfa } : {}), ...(s.notifications ? { notifications: s.notifications } : {}) });
+      setForm({ logLevel: s.logLevel, publicUrl: s.publicUrl || `http://localhost:${s.port}`, ...(s.notifications ? { notifications: s.notifications } : {}) });
+      // Version and uptime live on /api/system/info; a failure there must not hide the settings form.
+      getSystemInfo().then(setInfo).catch(() => setInfo(null));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load settings');
     } finally {
       setLoading(false);
     }
+  }
+
+  async function copyAddress(address: string) {
+    try {
+      await writeToClipboard(address);
+      setCopied(address);
+      setTimeout(/* v8 ignore next */ () => setCopied(null), 2000);
+    } catch { /* silently ignore — the address is selectable text */ }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -136,6 +149,11 @@ export function SettingsGeneralTab() {
   /* v8 ignore next */
   if (!settings) return <div className="form-error" style={{ margin: 24 }}>{error || 'Failed to load settings.'}</div>;
 
+  // Older services do not report the resolved interfaces: fall back to the bind address.
+  const listenAddresses = settings.listeningAddresses?.length
+    ? settings.listeningAddresses
+    : [`http://${settings.host}:${settings.port}`];
+
   return (
     <form onSubmit={handleSubmit} style={{ maxWidth: 560 }}>
 
@@ -143,19 +161,32 @@ export function SettingsGeneralTab() {
         <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12 }}>
           Server Info
         </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div>
-            <label className="form-label">Host</label>
-            <input className="form-input" value={settings?.host ?? ''} disabled readOnly />
+        {listenAddresses.map(address => (
+          <div key={address} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <div style={{ flex: 1, background: 'var(--bg-input, var(--bg-tertiary, var(--bg-secondary)))', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 10px', fontFamily: 'monospace', fontSize: '0.82rem', color: 'var(--text-primary)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              Server listening at {address}
+            </div>
+            <button
+              type="button"
+              onClick={() => copyAddress(address)}
+              className="btn btn-secondary"
+              aria-label={`Copy ${address}`}
+              style={{ flexShrink: 0, padding: '5px 10px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: 5 }}
+            >
+              {copied === address ? <Check size={13} /> : <Copy size={13} />}
+              {copied === address ? 'Copied!' : 'Copy'}
+            </button>
           </div>
-          <div>
-            <label className="form-label">Port</label>
-            <input className="form-input" value={settings?.port ?? ''} disabled readOnly />
-          </div>
-        </div>
+        ))}
         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 8 }}>
-          Host and port are configured via environment variables or the settings file and cannot be changed here.
+          Detected at runtime from the bind address. Host and port are configured via environment variables or the settings file and cannot be changed here.
         </p>
+        {info && (
+          <div style={{ marginTop: 14 }}>
+            <InfoRow label="Version" value={info.version} mono />
+            <InfoRow label="Uptime" value={formatUptime(info.uptimeSeconds)} />
+          </div>
+        )}
         <div className="form-group" style={{ marginTop: 14 }}>
           <label className="form-label" htmlFor="s-publicurl">Public URL</label>
           <input
@@ -190,22 +221,6 @@ export function SettingsGeneralTab() {
           />
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
             Controls the verbosity of service logs.
-          </p>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={!!form.requireMfa}
-              onChange={e => field('requireMfa', e.target.checked)}
-              style={{ width: 16, height: 16, cursor: 'pointer' }}
-            />
-            Require Two-Factor Authentication for all users
-          </label>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-            When enabled, users who have not set up 2FA will see a prompt to do so after logging in.
-            Users can configure 2FA in their Profile page.
           </p>
         </div>
 
@@ -2008,14 +2023,87 @@ export function SettingsAboutTab() {
   );
 }
 
+// ── Security tab ─────────────────────────────────────────────────────────────
+
+export function SettingsSecurityTab() {
+  const [requireMfa, setRequireMfa] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    getSettings()
+      .then(s => setRequireMfa(!!s.requireMfa))
+      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load settings'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setSaving(true);
+    setSaved(false);
+    try {
+      await updateSettings({ requireMfa });
+      setSaved(true);
+      setTimeout(/* v8 ignore next */ () => setSaved(false), 3000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <div className="loading-center"><div className="spinner" /></div>;
+
+  return (
+    <form onSubmit={handleSubmit} style={{ maxWidth: 560 }}>
+      <div style={{ marginBottom: 28 }}>
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Shield size={13} /> Authentication
+        </h3>
+
+        <div className="form-group">
+          <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={requireMfa}
+              onChange={e => setRequireMfa(e.target.checked)}
+              style={{ width: 16, height: 16, cursor: 'pointer' }}
+            />
+            Require Two-Factor Authentication for all users
+          </label>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+            When enabled, users who have not set up 2FA will see a prompt to do so after logging in.
+            Users can configure 2FA in their Profile page.
+          </p>
+        </div>
+      </div>
+
+      {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
+      {saved && (
+        <div style={{ marginBottom: 16, padding: '10px 14px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, fontSize: '0.85rem', color: '#22c55e' }}>
+          Settings saved successfully.
+        </div>
+      )}
+      <div>
+        <button type="submit" className="btn btn-primary" disabled={saving}>
+          {saving ? <><div className="spinner" style={{ width: 14, height: 14 }} /> Saving…</> : <><Save size={15} /> Save Settings</>}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 // ── Page layout ───────────────────────────────────────────────────────────────
 
 const TABS = [
   { path: 'general',       label: 'General' },
+  { path: 'security',      label: 'Security' },
   { path: 'notifications', label: 'Notifications' },
   { path: 'integrations',  label: 'Integrations' },
   { path: 'catalog',       label: 'Provider Catalog' },
-  { path: 'modules',       label: 'Modules' },
   { path: 'users',         label: 'Users' },
   { path: 'roles',         label: 'Roles' },
   { path: 'audit',         label: 'Audit Log' },
