@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile, rename, unlink, chmod } from 'node:fs/promi
 import { dirname } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import lockfile from 'proper-lockfile';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Settings, UsageRecord, NotificationInboxItem, ModuleRecord, ProviderConnection, ModelInstance, Profile } from '@routerly/shared';
+import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Settings, UsageRecord, NotificationInboxItem, ModuleRecord, ProviderConnection, ModelInstance, Profile, ExperimentConfig } from '@routerly/shared';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 
 /** Mirrors audit/logger.ts AuditEntry — defined here to avoid circular import */
@@ -37,6 +37,7 @@ const DEFAULTS: Record<string, unknown> = {
   // "no record = enabled" fallback.
   modules: [{ id: 'provider-web', enabled: false } satisfies ModuleRecord] as ModuleRecord[],
   profiles: [] as Profile[],
+  experiments: [] as ExperimentConfig[],
   connections: [] as ProviderConnection[],
   instances: [] as ModelInstance[],
   usage: [] as UsageRecord[],
@@ -54,6 +55,7 @@ type StoredTypeMap = {
   roles: RoleConfig[];
   modules: ModuleRecord[];
   profiles: Profile[];
+  experiments: ExperimentConfig[];
   connections: ProviderConnection[];
   instances: ModelInstance[];
   usage: UsageRecord[];

@@ -4,12 +4,16 @@ import type { ProjectConfig, ProjectToken } from '@routerly/shared';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { emitEvent } from '../notifications/emitter.js';
 import { applyProfiles } from '../routing/profiles/store.js';
+import { resolveExperimentRequest } from '../experiments/resolve.js';
+import { conversationPrefix } from '../experiments/rotation.js';
 
 // Augment FastifyRequest to carry the resolved project and token
 declare module 'fastify' {
   interface FastifyRequest {
     project: ProjectConfig;
     token: ProjectToken;
+    /** Set only when the caller used an experiment token: which test picked this project (T71). */
+    experiment?: { id: string; variantId: string };
   }
 }
 
@@ -97,6 +101,40 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
       // .guardrails / .pii and needs no knowledge of profiles at all.
       request.project = await applyProfiles(project);
       request.token = token;
+      return;
+    }
+
+    // Not a project token: it may be an experiment's own token, in which case
+    // the experiment picks one of its variant projects and the request
+    // continues as if that project's token had been used (T71).
+    const body = request.body as { user?: unknown } | undefined;
+    const experiment = await resolveExperimentRequest(incomingToken, {
+      ...(typeof body?.user === 'string' ? { endUserId: body.user } : {}),
+      ...(conversationPrefix(request.body) ? { conversationPrefix: conversationPrefix(request.body)! } : {}),
+      ...(request.ip ? { ip: request.ip } : {}),
+      ...(typeof request.headers['user-agent'] === 'string' ? { userAgent: request.headers['user-agent'] } : {}),
+    });
+
+    if (experiment) {
+      if (experiment.status === 'expired') {
+        void emitEvent('auth.token_invalid', 'warning', { experimentId: experiment.experiment.id, reason: 'expired' }, {});
+        return reply.status(401).send({ error: 'Token expired' });
+      }
+      if (experiment.status === 'not-running') {
+        return reply.status(403).send({
+          error: 'experiment_not_running',
+          message: `Experiment "${experiment.experiment.name}" is ${experiment.experiment.status}. Only a running experiment serves traffic.`,
+        });
+      }
+      if (experiment.status === 'misconfigured') {
+        return reply.status(503).send({
+          error: 'experiment_misconfigured',
+          message: `Experiment "${experiment.experiment.name}" has no variant pointing at an existing project.`,
+        });
+      }
+      request.project = await applyProfiles(experiment.project);
+      request.token = experiment.token;
+      request.experiment = { id: experiment.experiment.id, variantId: experiment.variant.id };
       return;
     }
 

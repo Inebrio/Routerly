@@ -241,4 +241,27 @@ describe('trackUsage', () => {
     const record = mockAppendUsageRecord.mock.calls[0]![0]
     expect(record).not.toHaveProperty('optimizers')
   })
+
+  it('stamps the experiment and variant that routed the call (T71)', async () => {
+    mockGetTrace.mockReturnValue(null)
+    await trackUsage({
+      projectId: 'p', model: makeModel() as any,
+      inputTokens: 10, outputTokens: 5, latencyMs: 100, outcome: 'success',
+      experimentId: 'exp-1', experimentVariantId: 'v-a',
+    })
+    const record = mockAppendUsageRecord.mock.calls[0]![0]
+    expect(record.experimentId).toBe('exp-1')
+    expect(record.experimentVariantId).toBe('v-a')
+  })
+
+  it('leaves the experiment fields off a call that no experiment routed', async () => {
+    mockGetTrace.mockReturnValue(null)
+    await trackUsage({
+      projectId: 'p', model: makeModel() as any,
+      inputTokens: 10, outputTokens: 5, latencyMs: 100, outcome: 'success',
+    })
+    const record = mockAppendUsageRecord.mock.calls[0]![0]
+    expect(record).not.toHaveProperty('experimentId')
+    expect(record).not.toHaveProperty('experimentVariantId')
+  })
 })

@@ -29,9 +29,13 @@ const testProject: ProjectConfig = {
 async function buildApp() {
   const app = Fastify({ logger: false })
   await app.register(authPlugin)
-  app.get('/v1/chat/completions', async (req, _reply) => {
-    return { project: req.project.id, token: req.token.token }
+  const handler = async (req: any) => ({
+    project: req.project.id,
+    token: req.token.token,
+    ...(req.experiment ? { experiment: req.experiment } : {}),
   })
+  app.get('/v1/chat/completions', handler)
+  app.post('/v1/chat/completions', handler)
   await app.ready()
   return app
 }
@@ -352,6 +356,108 @@ describe('authPlugin', () => {
     expect(res.statusCode).toBe(200)
     // writeConfig called with updated lastUsedAt
     expect(mockWriteConfig).toHaveBeenCalled()
+    await app.close()
+  })
+})
+
+describe('authPlugin — experiment tokens (T71)', () => {
+  const experiment: any = {
+    id: 'exp-1',
+    name: 'Prompt A vs B',
+    status: 'running',
+    rotation: 'round-robin',
+    variants: [{ id: 'v-a', projectId: 'proj-1' }, { id: 'v-b', projectId: 'proj-2' }],
+    tokens: [{ token: 'sk-rt-exp', name: 'Main', permissions: ['completion'] }],
+    createdAt: '2026-08-01T00:00:00.000Z',
+  }
+  const project2: ProjectConfig = { id: 'proj-2', name: 'P2', tokens: [], members: [], models: [] }
+
+  function stub(experiments: any[], projects: ProjectConfig[] = [testProject, project2]) {
+    mockReadConfig.mockImplementation(((key: string) =>
+      Promise.resolve(key === 'experiments' ? JSON.parse(JSON.stringify(experiments)) : JSON.parse(JSON.stringify(projects)))) as any)
+  }
+
+  it('routes an experiment token to a variant project and reports the pick', async () => {
+    stub([experiment])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/chat/completions',
+      headers: { authorization: 'Bearer sk-rt-exp' },
+      payload: { messages: [{ role: 'user', content: 'hi' }] },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().project).toBe('proj-1')
+    expect(res.json().experiment).toEqual({ id: 'exp-1', variantId: 'v-a' })
+    await app.close()
+  })
+
+  it('leaves request.experiment unset for a plain project token', async () => {
+    stub([experiment])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/chat/completions',
+      headers: { authorization: 'Bearer valid-token-123' },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().experiment).toBeUndefined()
+    await app.close()
+  })
+
+  it('refuses a token of an experiment that is not running with 403', async () => {
+    stub([{ ...experiment, status: 'draft' }])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/chat/completions',
+      headers: { authorization: 'Bearer sk-rt-exp' },
+      payload: {},
+    })
+    expect(res.statusCode).toBe(403)
+    expect(res.json().error).toBe('experiment_not_running')
+    await app.close()
+  })
+
+  it('refuses an expired experiment token with 401', async () => {
+    stub([{ ...experiment, tokens: [{ token: 'sk-rt-exp', name: 'Main', expiresAt: '2020-01-01T00:00:00.000Z' }] }])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/chat/completions',
+      headers: { authorization: 'Bearer sk-rt-exp' },
+      payload: {},
+    })
+    expect(res.statusCode).toBe(401)
+    expect(res.json().error).toBe('Token expired')
+    await app.close()
+  })
+
+  it('answers 503 when every variant project is gone', async () => {
+    stub([experiment], [])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/chat/completions',
+      headers: { authorization: 'Bearer sk-rt-exp' },
+      payload: {},
+    })
+    expect(res.statusCode).toBe(503)
+    expect(res.json().error).toBe('experiment_misconfigured')
+    await app.close()
+  })
+
+  it('still answers 401 for a token that is neither a project nor an experiment', async () => {
+    stub([experiment])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/chat/completions',
+      headers: { authorization: 'Bearer sk-rt-nothing' },
+      payload: {},
+    })
+    expect(res.statusCode).toBe(401)
+    expect(res.json().message).toContain('Invalid project token')
     await app.close()
   })
 })
