@@ -39,6 +39,8 @@ Below the cards: input, output and prompt-cached token totals with the money the
 
 **Where the traffic went** breaks the period down per model: calls, share of traffic, cost, p95 latency and errors.
 
+The same figures are available headless with [`routerly report savings --project <id>`](../cli/commands.md#routerly-report-savings).
+
 :::note Repricing is not a replay
 A different model tokenizes the same text slightly differently and may answer at a different length. Read a row as "the same conversation, priced elsewhere", not as a guarantee.
 :::
