@@ -63,6 +63,7 @@ import { verifyTotp, generateTotpSecret, generateBackupCodes, hashBackupCode } f
 import { catalogFetcher } from '../catalog/fetcher.js'
 import { OptimizerRegistry, setOptimizerRegistry, type Optimizer } from '../optimizers/registry.js'
 import { readMessages, writeMessages, tokensOf } from '../optimizers/messages.js'
+import { captureSample, clearSamples } from '../optimizers/samples.js'
 import { setClientConfiguratorEnabled } from '../clients/module.js'
 import { CLIENT_REGISTRY } from '@routerly/shared'
 import { splitModelsIntoInstancesConnections } from '../../test-support/effective-models.js'
@@ -12103,6 +12104,55 @@ describe('Optimizers API', () => {
       method: 'POST', url: '/api/optimizers/preview',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ sampleMessages: [{ role: 'user', content: 'x' }], steps: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('GET /api/projects/:id/optimizers/samples returns the captured prompts with optimizers:read (200)', async () => {
+    clearSamples()
+    captureSample('p1', [{ role: 'user', content: 'a real prompt' }], '2026-08-01T10:00:00.000Z')
+    authAs(adminUser)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET', url: '/api/projects/p1/optimizers/samples', headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toEqual([
+      { capturedAt: '2026-08-01T10:00:00.000Z', messages: [{ role: 'user', content: 'a real prompt' }], estimatedTokens: 4 },
+    ])
+  })
+
+  it('GET /api/projects/:id/optimizers/samples returns an empty list before any traffic', async () => {
+    clearSamples()
+    authAs(adminUser)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET', url: '/api/projects/p1/optimizers/samples', headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toEqual([])
+  })
+
+  it('GET /api/projects/:id/optimizers/samples returns 404 for an unknown project', async () => {
+    authAs(adminUser)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET', url: '/api/projects/nope/optimizers/samples', headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('GET /api/projects/:id/optimizers/samples returns 403 without optimizers:read', async () => {
+    const roRole = { id: 'ro', name: 'RO', permissions: ['project:read'] }
+    const roUser = { id: 'ro-id', email: 'ro@x.com', passwordHash: '$2b$12$h', roleId: 'ro', projectIds: [] }
+    authAs(roUser, [roRole])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET', url: '/api/projects/p1/optimizers/samples', headers: adminAuthHeaders(),
     })
     await app.close()
     expect(res.statusCode).toBe(403)

@@ -102,7 +102,7 @@ export interface OptimizerMeta {
 /**
  * The built-in optimizers, as dashboard, CLI and docs see them. `klass` and the
  * threshold defaults mirror the service implementations: change one and this
- * catalog has to follow, which is what `optimizers.catalog.test.ts` in the
+ * catalog has to follow, which is what `optimizers/catalog.test.ts` in the
  * service checks.
  */
 export const OPTIMIZER_CATALOG: Record<OptimizerId, OptimizerMeta> = {
