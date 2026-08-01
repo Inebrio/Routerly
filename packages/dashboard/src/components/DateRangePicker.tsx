@@ -519,22 +519,22 @@ export function DateRangePicker({ value, onChange }: Props) {
               {/* Time inputs */}
               <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginTop: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
-                  <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Da</label>
+                  <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>From</label>
                   <input type="time" step="1" value={pendingFromTime}
                     onChange={e => { let t = e.target.value; if (t.length === 5) t += ':00'; setPendingFromTime(t || '00:00:00'); }}
                     style={{
                       background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 6,
-                      color: 'var(--text-primary)', padding: '4px 8px', fontSize: '0.82rem', flex: 1, colorScheme: 'dark',
+                      color: 'var(--text-primary)', padding: '4px 8px', fontSize: '0.82rem', flex: 1, colorScheme: 'light dark',
                     }}
                   />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
-                  <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>A</label>
+                  <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>To</label>
                   <input type="time" step="1" value={pendingToTime}
                     onChange={e => { let t = e.target.value; if (t.length === 5) t += ':00'; setPendingToTime(t || '23:59:59'); }}
                     style={{
                       background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 6,
-                      color: 'var(--text-primary)', padding: '4px 8px', fontSize: '0.82rem', flex: 1, colorScheme: 'dark',
+                      color: 'var(--text-primary)', padding: '4px 8px', fontSize: '0.82rem', flex: 1, colorScheme: 'light dark',
                     }}
                   />
                 </div>
