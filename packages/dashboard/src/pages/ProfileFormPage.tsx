@@ -17,24 +17,17 @@ import {
 import { KIND_LABELS } from './ProfilesPage';
 import { useAuth } from '../AuthContext';
 
-const SELECTOR_LABELS: Record<SelectorType, string> = {
-  argmax:           'Highest Score (argmax)',
-  'weighted-random':'Weighted Random',
-  'round-robin':    'Round Robin',
-  cheapest:         'Cheapest',
-  'lowest-latency': 'Lowest Latency',
-};
-
-const FALLBACK_LABELS: Record<FallbackStrategyType, string> = {
-  'next-best':           'Next Best Candidate',
-  'retry-after-cooldown':'Retry After Cooldown',
-  abort:                 'Abort',
+const LABEL_PLACEHOLDERS: Record<ProfileKind, string> = {
+  routing: 'e.g. My Balanced Routing',
+  optimizer: 'e.g. My Prompt Trimmer',
+  security: 'e.g. My Strict Guardrails',
 };
 
 /**
  * Create and edit page for all three profile kinds. Creation starts either from
- * scratch or from an existing profile (`?base=<id>`, the clone entry point); the
- * config editors are the same ones the project tabs use.
+ * scratch or from an existing profile (`?base=<id>`, the clone entry point) and
+ * opens on the kind the list was showing (`?kind=<kind>`); the config editors are
+ * the same ones the project tabs use.
  */
 export function ProfileFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -46,16 +39,22 @@ export function ProfileFormPage() {
 
   const isCreate = id === undefined;
   const baseId = searchParams.get('base') ?? '';
+  const kindParam = searchParams.get('kind');
+  const initialKind: ProfileKind =
+    kindParam === 'optimizer' || kindParam === 'security' ? kindParam : 'routing';
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [builtin, setBuiltin] = useState(false);
 
-  const [kind, setKind] = useState<ProfileKind>('routing');
+  const [kind, setKind] = useState<ProfileKind>(initialKind);
   const [label, setLabel] = useState('');
 
-  // Routing
+  // Routing. Selector and fallback strategy are no longer editable here (T112):
+  // the engine defaults cover every real setup, and the two knobs asked operators
+  // a question they had no way to answer. They are still round-tripped so editing
+  // a profile that was created with other values does not silently reset them.
   const [policies, setPolicies] = useState<PolicyItem[]>([]);
   const [selector, setSelector] = useState<SelectorType>('argmax');
   const [fallbackStrategy, setFallbackStrategy] = useState<FallbackStrategyType>('next-best');
@@ -159,113 +158,91 @@ export function ProfileFormPage() {
 
   return (
     <>
-      <div style={{ marginBottom: 24 }}>
+      <div className="page-header">
         <button
           type="button"
           className="btn-icon"
-          style={{ marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6, padding: 4, width: 'fit-content' }}
+          style={{ marginBottom: 16, display: 'inline-flex', alignItems: 'center', gap: 6, padding: 4, width: 'fit-content' }}
           onClick={() => navigate('/dashboard/profiles')}
         >
           <ArrowLeft size={16} />
           <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Back to Profiles</span>
         </button>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          {isCreate ? 'New Profile' : readOnly ? label : `Edit ${label}`}
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: 4 }}>
+        <h1>{isCreate ? 'New Profile' : readOnly ? label : `Edit ${label}`}</h1>
+        <p>
           {readOnly
             ? 'Built-in profiles cannot be edited. Clone one to customize it.'
-            : `A ${KIND_LABELS[kind].toLowerCase()} profile can be assigned to any number of projects.`}
+            : `A${kind === 'optimizer' ? 'n' : ''} ${KIND_LABELS[kind].toLowerCase()} profile can be assigned to any number of projects.`}
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ maxWidth: 800 }}>
-        {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
+      <div className="page-body">
+        <form onSubmit={handleSubmit} style={{ maxWidth: 800 }}>
+          {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
 
-        <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-          <div className="form-group" style={{ flex: '1 1 240px', marginBottom: 0 }}>
-            <label className="form-label" htmlFor="profile-label">Label</label>
-            <input
-              id="profile-label"
-              className="form-input"
-              placeholder="e.g. My Balanced Routing"
-              value={label}
-              disabled={readOnly}
-              onChange={e => setLabel(e.target.value)}
-            />
+          <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
+            <div className="form-group" style={{ flex: '1 1 240px', marginBottom: 0 }}>
+              <label className="form-label" htmlFor="profile-label">Label</label>
+              <input
+                id="profile-label"
+                className="form-input"
+                placeholder={LABEL_PLACEHOLDERS[kind]}
+                value={label}
+                disabled={readOnly}
+                onChange={e => setLabel(e.target.value)}
+              />
+            </div>
+            <div className="form-group" style={{ flex: '1 1 200px', marginBottom: 0 }}>
+              <label className="form-label">Kind</label>
+              <SearchableSelect
+                ariaLabel="Kind"
+                value={kind}
+                // The kind of an existing profile is fixed: its config shape depends on it.
+                disabled={!isCreate || baseId !== '' || readOnly}
+                onChange={v => onKindChange(v as ProfileKind)}
+                options={(Object.keys(KIND_LABELS) as ProfileKind[]).map(k => ({ value: k, label: KIND_LABELS[k] }))}
+              />
+            </div>
           </div>
-          <div className="form-group" style={{ flex: '1 1 200px', marginBottom: 0 }}>
-            <label className="form-label">Kind</label>
-            <SearchableSelect
-              ariaLabel="Kind"
-              value={kind}
-              // The kind of an existing profile is fixed: its config shape depends on it.
-              disabled={!isCreate || baseId !== '' || readOnly}
-              onChange={v => onKindChange(v as ProfileKind)}
-              options={(Object.keys(KIND_LABELS) as ProfileKind[]).map(k => ({ value: k, label: KIND_LABELS[k] }))}
-            />
-          </div>
-        </div>
 
-        <div style={readOnly ? { pointerEvents: 'none', opacity: 0.7 } : {}}>
-          {kind === 'routing' && (
-            <>
-              <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-                <div className="form-group" style={{ flex: '1 1 240px', marginBottom: 0 }}>
-                  <label className="form-label">Selector</label>
-                  <SearchableSelect
-                    ariaLabel="Selector"
-                    value={selector}
-                    onChange={v => setSelector(v as SelectorType)}
-                    options={(Object.keys(SELECTOR_LABELS) as SelectorType[]).map(s => ({ value: s, label: SELECTOR_LABELS[s] }))}
-                  />
-                </div>
-                <div className="form-group" style={{ flex: '1 1 240px', marginBottom: 0 }}>
-                  <label className="form-label">Fallback strategy</label>
-                  <SearchableSelect
-                    ariaLabel="Fallback strategy"
-                    value={fallbackStrategy}
-                    onChange={v => setFallbackStrategy(v as FallbackStrategyType)}
-                    options={(Object.keys(FALLBACK_LABELS) as FallbackStrategyType[]).map(s => ({ value: s, label: FALLBACK_LABELS[s] }))}
-                  />
-                </div>
-              </div>
-              <label className="form-label" style={{ display: 'block', marginBottom: 8 }}>Policies</label>
+          <div style={readOnly ? { pointerEvents: 'none', opacity: 0.7 } : {}}>
+            {/* Each editor prints its own heading, so the form does not repeat it. */}
+            {kind === 'routing' && (
               <RoutingPoliciesEditor policies={policies} setPolicies={setPolicies} availableModels={models} />
-            </>
-          )}
+            )}
 
-          {kind === 'optimizer' && (
-            <>
-              <label className="form-label" style={{ display: 'block', marginBottom: 8 }}>Optimizers</label>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
-                Drag to reorder, toggle to enable. They run in order from top to bottom.
-              </p>
-              <OptimizerStepsEditor rows={rows} setRows={setRows} disabled={readOnly} />
-            </>
-          )}
+            {kind === 'optimizer' && (
+              <>
+                <label className="form-label" style={{ display: 'block', marginBottom: 8 }}>Optimizers</label>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
+                  Drag to reorder, toggle to enable. They run in order from top to bottom.
+                </p>
+                <OptimizerStepsEditor rows={rows} setRows={setRows} disabled={readOnly} />
+              </>
+            )}
 
-          {kind === 'security' && (
-            <SecurityRulesEditor
-              rules={rules}
-              setRules={setRules}
-              piiPolicies={piiPolicies}
-              setPiiPolicies={setPiiPolicies}
-            />
-          )}
-        </div>
-
-        {!readOnly && (
-          <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
-            <button type="submit" className="btn btn-primary" disabled={saveDisabled}>
-              {saving ? <span className="spinner" /> : <><Save size={14} /> {isCreate ? 'Create Profile' : 'Save Profile'}</>}
-            </button>
-            <button type="button" className="btn btn-secondary" onClick={() => navigate('/dashboard/profiles')}>
-              Cancel
-            </button>
+            {kind === 'security' && (
+              <SecurityRulesEditor
+                rules={rules}
+                setRules={setRules}
+                piiPolicies={piiPolicies}
+                setPiiPolicies={setPiiPolicies}
+              />
+            )}
           </div>
-        )}
-      </form>
+
+          {!readOnly && (
+            <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
+              <button type="submit" className="btn btn-primary" disabled={saveDisabled}>
+                {saving ? <span className="spinner" /> : <><Save size={14} /> {isCreate ? 'Create Profile' : 'Save Profile'}</>}
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={() => navigate('/dashboard/profiles')}>
+                Cancel
+              </button>
+            </div>
+          )}
+        </form>
+      </div>
     </>
   );
 }

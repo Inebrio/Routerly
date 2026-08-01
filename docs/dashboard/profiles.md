@@ -10,7 +10,7 @@ can adopt. A profile comes in one of three kinds:
 
 | Kind | What it bundles |
 |------|-----------------|
-| **Routing** | policy list, selector, fallback strategy |
+| **Routing** | the ordered policy list |
 | **Optimizer** | the ordered list of optimizer steps and which of them are enabled |
 | **Security** | content guardrail rules and PII redaction policies |
 
@@ -20,7 +20,7 @@ profile, security custom, optimizer from another profile. See
 
 Navigate to `/dashboard/profiles`.
 
-![Profiles list showing routing, optimizer and security profiles with the kind filter](../assets/screenshot-profiles.png)
+![Profiles list with one tab per kind and the routing tab open](../assets/screenshot-profiles.png)
 
 See [Concepts: Routing](../concepts/routing.md) for each routing policy's
 behaviour and parameters.
@@ -29,16 +29,20 @@ behaviour and parameters.
 
 ## Profiles List
 
+The page opens on three tabs, one per kind: **Routing**, **Optimizer**,
+**Security**. Each tab shows how many profiles it holds and lists only those,
+with a one-line reminder of what that kind configures. Routing is the tab the
+page opens on.
+
 | Column | Description |
 |--------|-------------|
 | **Label** | Display name of the profile |
-| **Kind** | `Routing`, `Optimizer` or `Security` |
 | **Type** | `Built-in` (read-only) or `Custom` (user-created, editable) |
 | **Configuration** | One-line summary of what the profile configures |
 | **Version** | Increments by 1 on every edit |
 
-The **Kind** dropdown filters the list; `All kinds` shows everything. The
-counter on the left reflects the filtered list.
+A tab with no profiles shows a kind-specific empty state (for example
+`No security profiles yet.`).
 
 Routerly ships these built-in profiles:
 
@@ -58,7 +62,8 @@ Without `profiles:manage`, every row is view-only and **New Profile** is hidden.
 
 ## Creating a Profile
 
-Click **New Profile** to open the form at `/dashboard/profiles/new`.
+Click **New Profile** to open the form at `/dashboard/profiles/new`. The form
+opens on the kind of the tab that was showing.
 
 1. Enter a **Label**
 2. Pick a **Kind**. Switching kind swaps the configuration editor below and
@@ -89,16 +94,18 @@ not editable and no save button is shown. Clone one to customize it.
 
 ### Routing configuration
 
-- **Selector**: one of `Highest Score (argmax)`, `Weighted Random`,
-  `Round Robin`, `Cheapest`, `Lowest Latency`
-- **Fallback strategy**: one of `Next Best Candidate`, `Retry After Cooldown`,
-  `Abort`
 - **Policies**: `health`, `context`, `capability`, `budget-remaining`,
   `rate-limit`, `semantic-intent`, `llm`, `performance`, `fairness`,
   `cheapest`, `model-preference`. Drag to reorder, toggle **Enabled**, remove
   with the trash icon, or add one from the **Add a policy...** dropdown. A
   policy's advanced `config` (when present) is edited as raw JSON; invalid
   JSON blocks saving until fixed.
+
+The selector and the fallback strategy are not editable from the dashboard:
+the engine defaults (`argmax` and `next-best`) apply to every profile created
+here. A profile that already carries other values keeps them when it is
+edited or cloned, and the [API](../api/management.md#profiles) still accepts
+both fields.
 
 ### Optimizer configuration
 

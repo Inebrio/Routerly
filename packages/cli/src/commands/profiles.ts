@@ -52,7 +52,7 @@ async function fetchProfiles(kind?: ProfileKind): Promise<Profile[]> {
 function summarize(profile: Profile): string {
   switch (profile.kind) {
     case 'routing':
-      return `${profile.selector}, ${profile.policies.filter(p => p.enabled).length} active policies`;
+      return `${profile.policies.filter(p => p.enabled).length} active policies`;
     case 'optimizer':
       return `${profile.optimizers.steps.filter(s => s.enabled).length}/${profile.optimizers.steps.length} steps enabled`;
     case 'security':
@@ -63,8 +63,7 @@ function summarize(profile: Profile): string {
 /** Kind-specific detail block for `profiles show`. */
 function printDetails(profile: Profile): void {
   if (profile.kind === 'routing') {
-    console.log(chalk.gray('selector:         ') + profile.selector);
-    console.log(chalk.gray('fallbackStrategy: ') + profile.fallbackStrategy);
+    // Selector and fallback strategy are engine internals, not operator knobs (T112).
     console.log(chalk.bold('\nPolicies:'));
     if (profile.policies.length === 0) console.log(chalk.gray('  (none)'));
     for (const p of profile.policies) {

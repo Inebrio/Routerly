@@ -497,7 +497,9 @@ configuration for a kind or is assigned a profile of that kind via
 assigned independently.
 
 See [Concepts: Routing: Routing Profiles](../concepts/routing.md#routing-profiles)
-for the selector and fallback strategy reference.
+for the selector and fallback strategy reference. Both fields are optional on
+write and default to `argmax` and `next-best`; the API is the only surface that
+sets them, since the dashboard and the CLI do not expose either.
 
 All profile endpoints return `403 module_disabled` when the `profiles` module
 is disabled.

@@ -1174,7 +1174,7 @@ Manage profiles: reusable configuration bundles a project can adopt in place of 
 
 | Kind | What it bundles |
 |------|-----------------|
-| `routing` | policy list, selector, fallback strategy |
+| `routing` | the ordered policy list |
 | `optimizer` | the ordered optimizer pipeline |
 | `security` | guardrail rules and PII policies |
 
@@ -1221,6 +1221,8 @@ routerly profiles show <id> [--json]
 Show full details of one profile. There is no single-item GET endpoint for profiles; `show` fetches the full list and filters client-side by ID.
 
 Prints the common fields (`id`, `kind`, `label`, `builtin`, `version`, and `baseId` if the profile was cloned), followed by a kind-specific block: policies for `routing`, the pipeline in execution order for `optimizer`, guardrail rules and PII policies for `security`.
+
+The selector and the fallback strategy of a routing profile are engine internals and are not printed; `--json` returns the stored profile as the API serves it, both fields included.
 
 ```bash
 routerly profiles show auto
