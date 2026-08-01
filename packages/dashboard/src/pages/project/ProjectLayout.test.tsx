@@ -69,9 +69,10 @@ describe('ProjectLayout — loaded state', () => {
     await waitFor(() => expect(screen.getByText('proj-1')).toBeTruthy());
   });
 
-  it('renders all 7 tabs', async () => {
+  it('renders all 8 tabs, Dashboard first', async () => {
     renderLayout('/dashboard/projects/proj-1/general');
     await waitFor(() => {
+      expect(screen.getByText('Dashboard')).toBeTruthy();
       expect(screen.getByText('General')).toBeTruthy();
       expect(screen.getByText('Routing')).toBeTruthy();
       expect(screen.getByText('Security')).toBeTruthy();
@@ -79,6 +80,25 @@ describe('ProjectLayout — loaded state', () => {
       expect(screen.getByText('Users')).toBeTruthy();
       expect(screen.getByText('Logs')).toBeTruthy();
       expect(screen.getByText('End Users')).toBeTruthy();
+      const labels = Array.from(document.querySelectorAll('a, [title="Save the project first to unlock this tab"]'))
+        .map(el => el.textContent?.trim());
+      expect(labels[0]).toBe('Dashboard');
+    });
+  });
+
+  it('marks Dashboard active on the bare project URL', async () => {
+    render(
+      <MemoryRouter initialEntries={['/dashboard/projects/proj-1']}>
+        <Routes>
+          <Route path="/dashboard/projects/:id" element={<ProjectLayout />}>
+            <Route index element={<div>Dashboard Tab</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+    await waitFor(() => {
+      const tab = screen.getByText('Dashboard').closest('a')!;
+      expect(tab.getAttribute('style')).toContain('var(--primary)');
     });
   });
 
@@ -117,6 +137,19 @@ describe('ProjectLayout — new project (no id)', () => {
     // Disabled tabs render as <div title="Save the project first to unlock this tab">
     const disabledTabs = document.querySelectorAll('[title="Save the project first to unlock this tab"]');
     expect(disabledTabs.length).toBeGreaterThan(0);
+  });
+
+  it('hides the Dashboard tab: a project with no traffic has nothing to show', () => {
+    render(
+      <MemoryRouter initialEntries={['/dashboard/projects/new']}>
+        <Routes>
+          <Route path="/dashboard/projects/new" element={<ProjectLayout />}>
+            <Route index element={<div />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+    expect(screen.queryByText('Dashboard')).toBeNull();
   });
 });
 

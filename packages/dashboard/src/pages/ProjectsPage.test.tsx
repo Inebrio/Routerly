@@ -152,12 +152,12 @@ describe('ProjectsPage — navigation', () => {
     expect(navigateFn).toHaveBeenCalledWith('/dashboard/projects/new');
   });
 
-  it('navigates to project detail on edit click', async () => {
+  it('navigates to the project settings form on edit click', async () => {
     mockGetProjects.mockResolvedValue([makeProject({ id: 'p1', name: 'Alpha' })]);
     renderPage();
     await waitFor(() => screen.getByTitle('Edit project'));
     await userEvent.click(screen.getByTitle('Edit project'));
-    expect(navigateFn).toHaveBeenCalledWith('/dashboard/projects/p1');
+    expect(navigateFn).toHaveBeenCalledWith('/dashboard/projects/p1/general');
   });
 
   it('navigates to project detail on row click', async () => {

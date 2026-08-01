@@ -86,7 +86,8 @@ export function ProjectsPage() {
                       {p.models.map(m => m.modelId).join(', ')}
                     </td>
                     <td style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
-                      <button className="btn-icon" onClick={() => navigate(`/dashboard/projects/${p.id}`)} title="Edit project">
+                      {/* The row opens the project Dashboard; the pencil goes straight to the settings form. */}
+                      <button className="btn-icon" onClick={() => navigate(`/dashboard/projects/${p.id}/general`)} title="Edit project">
                         <Pencil size={15} />
                       </button>
                       <button className="btn-icon danger" onClick={() => handleDelete(p.id)} title="Delete project">

@@ -61,7 +61,7 @@ export interface SavingsBaseline {
   modelId: string;
   /** The compared calls repriced at this model's rates, in USD. */
   cost: number;
-  /** `comparedCost - cost`. Positive means routing came out cheaper than this baseline. */
+  /** `cost - comparedCost`: money saved against this baseline. Negative means routing cost more. */
   costDelta: number;
   /** `costDelta` as a percentage of this baseline's cost. `0` when the baseline costs nothing. */
   costDeltaPercent: number;
@@ -71,7 +71,7 @@ export interface SavingsBaseline {
    * there is nothing to estimate from.
    */
   latencyMs?: number;
-  /** `comparedLatencyMs - latencyMs`. Positive means routing came out faster. Absent with `latencyMs`. */
+  /** `latencyMs - comparedLatencyMs`: time saved against this baseline. Absent with `latencyMs`. */
   latencyDeltaMs?: number;
   /** Calls of this model in the window that back the latency estimate. */
   latencySamples: number;

@@ -11,6 +11,7 @@ import { ModelsPage } from './pages/ModelsPage';
 import { ModelFormPage } from './pages/ModelFormPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { ProjectLayout } from './pages/project/ProjectLayout';
+import { ProjectDashboardTab } from './pages/project/ProjectDashboardTab';
 import { ProjectGeneralTab } from './pages/project/ProjectGeneralTab';
 import { ProjectRoutingTab } from './pages/project/ProjectRoutingTab';
 import { ProjectOptimizerTab } from './pages/project/ProjectOptimizerTab';
@@ -408,7 +409,8 @@ const router = createBrowserRouter([
             path: 'projects/:id',
             element: <ProjectLayout />,
             children: [
-              { index: true, element: <ProjectGeneralTab /> },
+              { index: true, element: <ProjectDashboardTab /> },
+              { path: 'dashboard', element: <ProjectDashboardTab /> },
               { path: 'general', element: <ProjectGeneralTab /> },
               { path: 'routing', element: <ProjectRoutingTab /> },
               { path: 'optimizer', element: <ProjectOptimizerTab /> },

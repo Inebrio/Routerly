@@ -44,8 +44,8 @@ describe('computeSavings', () => {
     expect(cheap.costDelta).toBe(0)
     expect(expensive.cost).toBe(0.03)
     // routing picked the cheap model: 0.003 actual vs 0.03 on the expensive baseline
-    expect(expensive.costDelta).toBe(-0.027)
-    expect(expensive.costDeltaPercent).toBe(-90)
+    expect(expensive.costDelta).toBe(0.027)
+    expect(expensive.costDeltaPercent).toBe(90)
   })
 
   it('sorts baselines cheapest first', () => {
@@ -53,11 +53,11 @@ describe('computeSavings', () => {
     expect(s.baselines.map(b => b.modelId)).toEqual(['cheap', 'expensive'])
   })
 
-  it('reports a positive delta when routing beat the baseline on price', () => {
+  it('reports a negative delta when routing cost more than the baseline', () => {
     // all traffic served by the expensive model, cheap as the baseline
     const s = computeSavings([record({ modelId: 'expensive', cost: 0.03 })], MODELS, ['cheap'])
     expect(s.baselines[0]!.cost).toBe(0.003)
-    expect(s.baselines[0]!.costDelta).toBe(0.027)
+    expect(s.baselines[0]!.costDelta).toBe(-0.027)
   })
 
   it('skips routing, guardrail, failed and zero-token records', () => {
@@ -93,7 +93,7 @@ describe('computeSavings', () => {
     const expensive = s.baselines.find(b => b.modelId === 'expensive')!
     expect(expensive.latencySamples).toBe(1)
     expect(expensive.latencyMs).toBe(800) // 0.4 ms/token x 2000 tokens
-    expect(expensive.latencyDeltaMs).toBe(600)
+    expect(expensive.latencyDeltaMs).toBe(-600) // routing took 1400ms, this baseline would have taken 800ms
   })
 
   it('leaves the time estimate out when a baseline produced no output token', () => {

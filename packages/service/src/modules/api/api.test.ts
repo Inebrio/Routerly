@@ -1661,7 +1661,7 @@ describe('GET /api/usage', () => {
       expect(b.savings.baselines.map((x: any) => x.modelId)).toEqual(['cheap', 'expensive'])
       const expensive = b.savings.baselines.find((x: any) => x.modelId === 'expensive')
       expect(expensive.cost).toBe(0.03)
-      expect(expensive.costDelta).toBe(-0.027)
+      expect(expensive.costDelta).toBe(0.027) // routing served the cheap model instead
     })
 
     it('leaves disabled target models out of the baselines', async () => {
@@ -1686,6 +1686,59 @@ describe('GET /api/usage', () => {
       const res = await app.inject({ method: 'GET', url: '/api/usage?savings=1', headers: { authorization: 'Bearer tok' } })
       await app.close()
       expect(res.statusCode).toBe(403)
+    })
+  })
+
+  describe('latency and TTFT distribution (T62)', () => {
+    const now = new Date().toISOString()
+    const base = { timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.01 }
+    const records = [
+      { ...base, id: 'a', outcome: 'success', callType: 'completion', latencyMs: 100, ttftMs: 10 },
+      { ...base, id: 'b', outcome: 'success', callType: 'completion', latencyMs: 200, ttftMs: 20 },
+      { ...base, id: 'c', outcome: 'success', callType: 'completion', latencyMs: 300, ttftMs: 90 },
+      { ...base, id: 'd', outcome: 'success', latencyMs: 400 }, // legacy: no callType, no ttft
+      { ...base, id: 'e', outcome: 'success', callType: 'completion', latencyMs: 5000 }, // tail
+      { ...base, id: 'r', outcome: 'success', callType: 'routing', latencyMs: 9000, ttftMs: 9000 },
+      { ...base, id: 'g', outcome: 'blocked', callType: 'guardrail', latencyMs: 9000, ttftMs: 9000 },
+      { ...base, id: 'x', outcome: 'error', callType: 'completion', latencyMs: 9000, ttftMs: 9000 },
+    ]
+    const get = async (qs: string, rows: any[] = records) => {
+      setupAdminAuth()
+      mockReadConfig.mockImplementation(async (t: string) => {
+        if (t === 'users') return [adminUser]
+        if (t === 'roles') return []
+        if (t === 'usage') return rows
+        return []
+      })
+      const app = await buildApp()
+      const res = await app.inject({ method: 'GET', url: `/api/usage?${qs}`, headers: adminAuthHeaders() })
+      await app.close()
+      return JSON.parse(res.body)
+    }
+
+    it('reports median and p95 latency over successful client calls', async () => {
+      const s = (await get('')).summary
+      // 100, 200, 300, 400, 5000 — the routing, guardrail and failed calls are out
+      expect(s.latencyMedianMs).toBe(300)
+      expect(s.latencyP95Ms).toBe(5000)
+    })
+
+    it('counts TTFT separately since the field is optional on the record', async () => {
+      const s = (await get('')).summary
+      expect(s.ttftSamples).toBe(3) // a, b, c
+      expect(s.ttftMedianMs).toBe(20)
+      expect(s.ttftP95Ms).toBe(90)
+    })
+
+    it('follows the active filters', async () => {
+      const s = (await get('outcome=error')).summary
+      expect(s.latencyMedianMs).toBe(0) // the only match is a failed call
+      expect(s.ttftSamples).toBe(0)
+    })
+
+    it('returns zeros on an empty window', async () => {
+      const s = (await get('', [])).summary
+      expect(s).toMatchObject({ latencyMedianMs: 0, latencyP95Ms: 0, ttftMedianMs: 0, ttftP95Ms: 0, ttftSamples: 0 })
     })
   })
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Outlet, NavLink, useLocation } from 'react-router-dom';
-import { ArrowLeft, Settings, Route, Users, FileText, Key, Shield, UserSearch, Gauge } from 'lucide-react';
+import { ArrowLeft, Settings, Route, Users, FileText, Key, Shield, UserSearch, Gauge, LayoutDashboard } from 'lucide-react';
 import { getProjects, type Project } from '../../api';
 
 export function ProjectLayout() {
@@ -27,6 +27,9 @@ export function ProjectLayout() {
   }, [id, isNew]);
 
   const tabs = [
+    // Dashboard is the project landing page; a new project has no traffic yet,
+    // so it starts on General instead.
+    ...(isNew ? [] : [{ id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} /> }]),
     { id: 'general', label: 'General', icon: <Settings size={16} /> },
     { id: 'routing', label: 'Routing', icon: <Route size={16} />, disabled: isNew },
     { id: 'optimizer', label: 'Optimizer', icon: <Gauge size={16} />, disabled: isNew },
@@ -48,12 +51,11 @@ export function ProjectLayout() {
     );
   }
 
-  // Determine current active tab from URL, defaulting to 'general'
+  // Determine current active tab from URL. On the bare `/projects/:id` the index
+  // route renders Dashboard, so the last path segment is the project id itself.
   /* v8 ignore next */
-  const currentTab = location.pathname.split('/').pop() || 'general';
-
-  // If we are on `/projects/:id` (exact match), treat it as 'general' visually,
-  // but React Router's Outlet needs the index route.
+  const currentTab = location.pathname.split('/').pop() || 'dashboard';
+  const landingTab = isNew ? 'general' : 'dashboard';
 
   return (
     <>
@@ -76,7 +78,7 @@ export function ProjectLayout() {
         <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--border)' }}>
           {tabs.map(tab => {
             /* v8 ignore next */
-            const isActive = currentTab === tab.id || (currentTab === id && tab.id === 'general');
+            const isActive = currentTab === tab.id || (currentTab === id && tab.id === landingTab);
             if (tab.disabled) {
               return (
                 <div

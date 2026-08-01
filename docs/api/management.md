@@ -1325,7 +1325,12 @@ All filters are applied server-side. `projectIds` and `modelIds` accept comma-se
     "guardrailCalls": 12,
     "completionCost": 0.1200,
     "routingCost": 0.0011,
-    "guardrailCost": 0.0023
+    "guardrailCost": 0.0023,
+    "latencyMedianMs": 780,
+    "latencyP95Ms": 2450,
+    "ttftMedianMs": 210,
+    "ttftP95Ms": 900,
+    "ttftSamples": 176
   },
   "byModel": {
     "openai/gpt-5-mini": {
@@ -1351,6 +1356,9 @@ The `summary` object breaks down calls and cost by sub-activity type:
 | `guardrailCalls` / `guardrailCost` | Model calls made by security rules (semantic embedding, topic judge, moderation judge) |
 | `blockedCalls` | Requests blocked by a guardrail rule before reaching any model |
 | `errorCalls` | Failed calls -- does **not** include blocked calls |
+| `latencyMedianMs` / `latencyP95Ms` | Response time distribution over successful client calls. Routing and guardrail calls are excluded: they are gateway overhead, not client-visible time |
+| `ttftMedianMs` / `ttftP95Ms` | Time-to-first-token distribution over the same calls |
+| `ttftSamples` | Calls backing the TTFT figures. `ttftMs` is optional on the record, so this can be lower than `successCalls` |
 
 Each `byModel` entry includes:
 
@@ -1410,10 +1418,10 @@ Each baseline entry:
 |-------|-------------|
 | `modelId` | The baseline model |
 | `cost` | The compared calls repriced at this model's rates, in USD |
-| `costDelta` | `comparedCost - cost`. Positive means routing came out cheaper than this baseline |
+| `costDelta` | `cost - comparedCost`: money saved against this baseline. Negative means routing cost more |
 | `costDeltaPercent` | `costDelta` as a percentage of the baseline cost |
 | `latencyMs` | Estimated total time, from this model's own median milliseconds per output token over the same window. Absent when the model produced no output token in the window |
-| `latencyDeltaMs` | `comparedLatencyMs - latencyMs`. Positive means routing came out faster. Absent together with `latencyMs` |
+| `latencyDeltaMs` | `latencyMs - comparedLatencyMs`: time saved against this baseline. Negative means routing was slower. Absent together with `latencyMs` |
 | `latencySamples` | Calls of this model in the window backing the time estimate. `0` means there is no estimate, only the cost figure |
 
 Baselines are the enabled target models of every project present in the filtered result, so a query scoped with `projectId` counterfactuals exactly that project's targets, and an unscoped query counterfactuals every target model in use.
