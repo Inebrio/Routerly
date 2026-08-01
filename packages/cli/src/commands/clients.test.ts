@@ -9,6 +9,7 @@ const {
   mockListBackups,
   claudeCodeMock,
   clineMock,
+  claudeDesktopMock,
 } = vi.hoisted(() => {
   const claudeCodeMock = {
     id: 'claude-code',
@@ -33,6 +34,17 @@ const {
     validate: vi.fn(),
     rollback: vi.fn(),
   };
+  const claudeDesktopMock = {
+    id: 'claude-desktop',
+    label: 'Claude Desktop',
+    supportState: 'documented' as const,
+    detect: vi.fn(),
+    inspect: vi.fn(),
+    plan: vi.fn(),
+    apply: vi.fn(),
+    validate: vi.fn(),
+    rollback: vi.fn(),
+  };
   return {
     mockApi: vi.fn(),
     mockRequireAccount: vi.fn(),
@@ -41,6 +53,7 @@ const {
     mockListBackups: vi.fn(),
     claudeCodeMock,
     clineMock,
+    claudeDesktopMock,
   };
 });
 
@@ -66,7 +79,7 @@ vi.mock('../lib/safe-file.js', () => ({
 }));
 
 vi.mock('../clients/index.js', () => ({
-  INTEGRATIONS: { 'claude-code': claudeCodeMock, cline: clineMock },
+  INTEGRATIONS: { 'claude-code': claudeCodeMock, cline: clineMock, 'claude-desktop': claudeDesktopMock },
   acquireToken: mockAcquireToken,
 }));
 
@@ -165,8 +178,9 @@ describe('clients list', () => {
     await makeCmd().parseAsync(['node', 'clients', 'list', '--json']);
     const parsed = JSON.parse(lines.join('\n'));
     expect(parsed).toEqual([
-      { id: 'claude-code', label: 'Claude Code', supportState: 'auto-configurable' },
-      { id: 'cline', label: 'Cline', supportState: 'documented' },
+      { id: 'claude-code', label: 'Claude Code', supportState: 'auto-configurable', modes: ['llm', 'mcp'] },
+      { id: 'claude-desktop', label: 'Claude Desktop', supportState: 'documented', modes: ['mcp'] },
+      { id: 'cline', label: 'Cline', supportState: 'documented', modes: ['llm'] },
     ]);
   });
 });
@@ -483,16 +497,41 @@ describe('clients configure', () => {
     expect(parsed.validated).toEqual(fakeValidate);
   });
 
-  it('propagates a documented-only integration error (cline plan() throws) to stderr + exit 1', async () => {
+  it('prints manual steps with the real token for a documented client, without calling plan()', async () => {
     mockApi.mockResolvedValueOnce([baseProject]);
     mockRequireAccount.mockResolvedValueOnce(account);
-    mockAcquireToken.mockResolvedValueOnce('minted-token');
-    clineMock.plan.mockRejectedValueOnce(new Error('Cline has no config file to write; see the docs.'));
-    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(
-      makeCmd().parseAsync(['node', 'clients', 'configure', 'cline', '--project', 'my-api', '--yes'])
-    ).rejects.toThrow('exit');
-    expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Cline has no config file'));
+    mockAcquireToken.mockResolvedValueOnce('sk-rt-minted');
+    const lines = collectLog();
+    await makeCmd().parseAsync(['node', 'clients', 'configure', 'cline', '--project', 'my-api', '--yes']);
+    const out = lines.join('\n');
+    expect(clineMock.plan).not.toHaveBeenCalled();
+    expect(clineMock.apply).not.toHaveBeenCalled();
+    expect(out).toContain('API Provider: OpenAI Compatible');
+    expect(out).toContain('http://localhost:3000/v1');
+    expect(out).toContain('sk-rt-minted');
+    expect(out).toContain('integrations/clients/cline');
+  });
+
+  it('documented client with --json emits a parseable manual result', async () => {
+    mockApi.mockResolvedValueOnce([baseProject]);
+    mockRequireAccount.mockResolvedValueOnce(account);
+    mockAcquireToken.mockResolvedValueOnce('sk-rt-minted');
+    const lines = collectLog();
+    await makeCmd().parseAsync(['node', 'clients', 'configure', 'cline', '--project', 'my-api', '--yes', '--json']);
+    const parsed = JSON.parse(lines.join('\n'));
+    expect(parsed).toMatchObject({ id: 'cline', manual: true, mode: 'llm' });
+    expect(parsed.steps).toContain('http://localhost:3000/v1');
+  });
+
+  it('MCP-only client prints the MCP wiring and never mints a project token', async () => {
+    mockRequireAccount.mockResolvedValueOnce(account);
+    const lines = collectLog();
+    await makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-desktop', '--yes']);
+    const out = lines.join('\n');
+    expect(mockApi).not.toHaveBeenCalled();
+    expect(mockAcquireToken).not.toHaveBeenCalled();
+    expect(out).toContain('<YOUR_MCP_TOKEN>');
+    expect(out).toContain('mcpServers');
+    expect(out).toContain('routerly mcp token create');
   });
 });
