@@ -6812,6 +6812,127 @@ describe('notification incidents', () => {
   })
 })
 
+// ─── Inbox visibility: projects and permissions (T52) ────────────────────────
+describe('notification inbox visibility', () => {
+  const inbox = [
+    { id: 'mine',    event: 'provider.error',      severity: 'critical', timestamp: '2026-01-05T00:00:00.000Z', details: { projectId: 'p1' }, readBy: [] },
+    { id: 'theirs',  event: 'provider.error',      severity: 'critical', timestamp: '2026-01-04T00:00:00.000Z', details: { projectId: 'p2' }, readBy: [] },
+    { id: 'gone',    event: 'config.project_deleted', severity: 'info',  timestamp: '2026-01-03T00:00:00.000Z', details: { projectId: 'p9' }, readBy: [] },
+    { id: 'login',   event: 'auth.login_failed',   severity: 'warning',  timestamp: '2026-01-02T00:00:00.000Z', details: { email: 'x@y.z' }, readBy: [] },
+    { id: 'startup', event: 'system.startup',      severity: 'info',     timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [] },
+  ]
+
+  /** A user in project p1 only, with the permissions listed. */
+  function setupMember(permissions: string[]) {
+    mockVerifyToken.mockReturnValue({ sub: 'member-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [{ id: 'member-id', email: 'member@example.com', passwordHash: 'h', roleId: 'member', projectIds: ['p1'] }]
+      if (type === 'roles') return [{ id: 'member', name: 'Member', permissions }]
+      if (type === 'projects') return [{ id: 'p1', name: 'Mine' }, { id: 'p2', name: 'Theirs' }]
+      if (type === 'notifications') return inbox.map(n => ({ ...n, readBy: [...n.readBy] }))
+      return []
+    })
+  }
+
+  const memberHeaders = { authorization: 'Bearer tok' }
+
+  it('hides events of a project the user cannot reach', async () => {
+    setupMember(['project:read', 'audit:read', 'settings:read'])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox', headers: memberHeaders })
+    await app.close()
+    const ids = JSON.parse(res.body).items.map((n: { id: string }) => n.id)
+    expect(ids).toContain('mine')
+    expect(ids).not.toContain('theirs')
+  })
+
+  it('keeps an event about a project that no longer exists', async () => {
+    setupMember(['project:read', 'audit:read', 'settings:read'])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox', headers: memberHeaders })
+    await app.close()
+    const ids = JSON.parse(res.body).items.map((n: { id: string }) => n.id)
+    expect(ids).toContain('gone')
+  })
+
+  it('hides events whose subject the user cannot read', async () => {
+    setupMember([])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox', headers: memberHeaders })
+    await app.close()
+    const body = JSON.parse(res.body)
+    const ids = body.items.map((n: { id: string }) => n.id)
+    expect(ids).toEqual(['mine'])
+    expect(body.unreadCount).toBe(1)
+  })
+
+  it('404s the detail of a notification the user cannot see', async () => {
+    setupMember([])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox/login', headers: memberHeaders })
+    await app.close()
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('marks read only what the user can see', async () => {
+    setupMember([])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/read',
+      headers: { ...memberHeaders, 'content-type': 'application/json' },
+      payload: JSON.stringify({ all: true }),
+    })
+    await app.close()
+    expect(JSON.parse(res.body).updated).toBe(1)
+  })
+
+  it('dismisses only what the user can see', async () => {
+    setupMember([])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/delete',
+      headers: { ...memberHeaders, 'content-type': 'application/json' },
+      payload: JSON.stringify({ ids: ['mine', 'theirs', 'login'] }),
+    })
+    await app.close()
+    expect(JSON.parse(res.body).deleted).toBe(1)
+  })
+
+  it('unmarks read only what the user can see', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'member-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [{ id: 'member-id', email: 'member@example.com', passwordHash: 'h', roleId: 'member', projectIds: ['p1'] }]
+      if (type === 'roles') return [{ id: 'member', name: 'Member', permissions: [] }]
+      if (type === 'projects') return [{ id: 'p1', name: 'Mine' }, { id: 'p2', name: 'Theirs' }]
+      if (type === 'notifications') return inbox.map(n => ({ ...n, readBy: ['member-id'] }))
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/inbox/unread',
+      headers: { ...memberHeaders, 'content-type': 'application/json' },
+      payload: JSON.stringify({ all: true }),
+    })
+    await app.close()
+    expect(JSON.parse(res.body).updated).toBe(1)
+  })
+
+  it('shows everything to a user scoped to no project', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'member-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [{ id: 'member-id', email: 'member@example.com', passwordHash: 'h', roleId: 'member', projectIds: [] }]
+      if (type === 'roles') return [{ id: 'member', name: 'Member', permissions: ['project:read', 'audit:read', 'settings:read', 'model:read'] }]
+      if (type === 'projects') return [{ id: 'p1', name: 'Mine' }, { id: 'p2', name: 'Theirs' }]
+      if (type === 'notifications') return inbox.map(n => ({ ...n, readBy: [...n.readBy] }))
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox', headers: memberHeaders })
+    await app.close()
+    expect(JSON.parse(res.body).items).toHaveLength(inbox.length)
+  })
+})
+
 // ─── Notification inbox pagination + filters (portal table) ──────────────────
 describe('GET /api/notifications/inbox pagination + filters', () => {
   const inbox = [

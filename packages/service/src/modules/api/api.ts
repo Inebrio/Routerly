@@ -25,6 +25,7 @@ import { listEffectiveModelsIncludingDisabled } from '../provider/list-effective
 import { resolveEffectiveModel } from '../provider/resolve.js';
 import { sendTestNotification } from '../notifications/sender.js';
 import { emitEvent } from '../notifications/emitter.js';
+import { isVisibleToUser, loadInboxScope } from './inbox-access.js';
 import { ALL_PERMISSIONS, BUILT_IN_ROLES, getEffectiveRoles } from '../auth/roles.js';
 import { updateChecker } from '../update-checker/update-checker.js';
 import { logAudit } from '../audit/logger.js';
@@ -1941,17 +1942,18 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get<{ Querystring: { limit?: string; unreadOnly?: string; page?: string; pageSize?: string; severity?: string; event?: string; from?: string; to?: string } }>('/api/notifications/inbox', async (req, reply) => {
     const userId = req.dashUser!.id;
     const unreadOnly = req.query.unreadOnly === 'true';
-    const [all, settings] = await Promise.all([
+    const [all, settings, scope] = await Promise.all([
       readConfig('notifications'),
       readConfig('settings'),
+      loadInboxScope(userId),
     ]);
     // In-app inbox is opt-in: active only when a `dashboard`-provider channel exists.
     const channels = settings.notifications?.channels ?? [];
     const enabled = channels.some(c => c.provider === 'dashboard');
-    // Per-user audience filter (U5): item.recipients undefined = everyone.
-    // Per-user soft delete: items the user dismissed are hidden from their inbox.
+    // Audience, project scope and permissions (U5 + T52), then the per-user soft
+    // delete: items the user dismissed are hidden from their inbox.
     const mine = all.filter(n =>
-      (n.recipients === undefined || n.recipients.includes(userId)) &&
+      isVisibleToUser(n, userId, req.dashUser!.permissions, scope) &&
       !(n.deletedBy ?? []).includes(userId));
     // Newest first
     const sorted = [...mine].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
@@ -2004,13 +2006,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // ─── GET /api/notifications/inbox/:id ──────────────────────────────────────
-  // Single in-app notification (detail view). Audience-checked: a user can only
-  // read items addressed to them (recipients undefined = everyone).
+  // Single in-app notification (detail view). Same three gates as the list: a
+  // user can only read items addressed to them, about a project they reach and
+  // a subject they may read.
   fastify.get<{ Params: { id: string } }>('/api/notifications/inbox/:id', async (req, reply) => {
     const userId = req.dashUser!.id;
-    const all = await readConfig('notifications');
+    const [all, scope] = await Promise.all([readConfig('notifications'), loadInboxScope(userId)]);
     const n = all.find(x => x.id === req.params.id &&
-      (x.recipients === undefined || x.recipients.includes(userId)) &&
+      isVisibleToUser(x, userId, req.dashUser!.permissions, scope) &&
       !(x.deletedBy ?? []).includes(userId));
     if (!n) return reply.status(404).send({ error: 'Notification not found' });
     return reply.send({
@@ -2033,12 +2036,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.issues[0]!.message });
     const userId = req.dashUser!.id;
     const { ids, all } = parsed.data;
-    const items = await readConfig('notifications');
+    const [items, scope] = await Promise.all([readConfig('notifications'), loadInboxScope(userId)]);
     const idSet = new Set(ids); // ponytail: ids is always defined when all=false (Zod refine ensures either ids or all)
     let updated = 0;
     for (const n of items) {
-      // Audience filter (U5): a user can only mark items addressed to them.
-      const visibleToUser = n.recipients === undefined || n.recipients.includes(userId);
+      // Same gates as the list (U5 + T52): a user can only mark what they see.
+      const visibleToUser = isVisibleToUser(n, userId, req.dashUser!.permissions, scope);
       // Already-dismissed items are out of the user's inbox; don't touch them.
       const dismissed = (n.deletedBy ?? []).includes(userId);
       if (visibleToUser && !dismissed && (all || idSet.has(n.id)) && !n.readBy.includes(userId)) {
@@ -2063,11 +2066,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.issues[0]!.message });
     const userId = req.dashUser!.id;
     const { ids, all } = parsed.data;
-    const items = await readConfig('notifications');
+    const [items, scope] = await Promise.all([readConfig('notifications'), loadInboxScope(userId)]);
     const idSet = new Set(ids);
     let updated = 0;
     for (const n of items) {
-      const visibleToUser = n.recipients === undefined || n.recipients.includes(userId);
+      const visibleToUser = isVisibleToUser(n, userId, req.dashUser!.permissions, scope);
       const dismissed = (n.deletedBy ?? []).includes(userId);
       if (visibleToUser && !dismissed && (all || idSet.has(n.id)) && n.readBy.includes(userId)) {
         n.readBy = n.readBy.filter(u => u !== userId);
@@ -2092,12 +2095,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.issues[0]!.message });
     const userId = req.dashUser!.id;
     const { ids, all } = parsed.data;
-    const items = await readConfig('notifications');
+    const [items, scope] = await Promise.all([readConfig('notifications'), loadInboxScope(userId)]);
     const idSet = new Set(ids);
     let deleted = 0;
     for (const n of items) {
-      // Audience filter (U5): a user can only dismiss items addressed to them.
-      const visibleToUser = n.recipients === undefined || n.recipients.includes(userId);
+      // Same gates as the list (U5 + T52): a user can only dismiss what they see.
+      const visibleToUser = isVisibleToUser(n, userId, req.dashUser!.permissions, scope);
       const already = (n.deletedBy ?? []).includes(userId);
       if (visibleToUser && !already && (all || idSet.has(n.id))) {
         (n.deletedBy ??= []).push(userId);
