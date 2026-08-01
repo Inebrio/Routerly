@@ -40,7 +40,8 @@ import { ConnectionsPage } from './pages/ConnectionsPage';
 import { ConnectionFormPage } from './pages/ConnectionFormPage';
 import { ProfilesPage } from './pages/ProfilesPage';
 import { ProfileFormPage } from './pages/ProfileFormPage';
-import { ClientsPage, useClientsEnabled } from './pages/ClientsPage';
+import { ConnectPage, useClientsEnabled } from './pages/ConnectPage';
+import { ConnectClientPage } from './pages/ConnectClientPage';
 
 import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Plug, Route, Terminal } from 'lucide-react';
 import { Logo } from './components/Logo';
@@ -108,7 +109,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
     { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Playground' },
-    ...(clientsEnabled ? [{ to: '/dashboard/clients', icon: <Terminal size={17} />, label: 'Clients' }] : []),
+    ...(clientsEnabled ? [{ to: '/dashboard/connect', icon: <Terminal size={17} />, label: 'Connect' }] : []),
   ];
 
   return (
@@ -377,7 +378,10 @@ const router = createBrowserRouter([
           { path: 'profiles', element: <ProfilesPage /> },
           { path: 'profiles/new', element: <ProfileFormPage /> },
           { path: 'profiles/:id', element: <ProfileFormPage /> },
-          { path: 'clients', element: <ClientsPage /> },
+          { path: 'connect', element: <ConnectPage /> },
+          { path: 'connect/:id', element: <ConnectClientPage /> },
+          // Kept for links minted before the section was renamed.
+          { path: 'clients', element: <Navigate to="/dashboard/connect" replace /> },
           { path: 'projects', element: <ProjectsPage /> },
           {
             path: 'projects/new',
