@@ -1,36 +1,59 @@
 /**
- * Monogram mark for a client in the Connect section.
+ * Brand mark for a client in the Connect section.
  *
- * Deliberately not the vendors' own logos: those are trademarked assets we
- * would have to vendor, keep in sync and license. A monogram is self-hosted,
- * renders identically in both themes and never goes stale.
+ * Official glyphs, self-hosted: the path data comes from Simple Icons (CC0)
+ * and is inlined here, so the dashboard never calls a CDN and the mark is
+ * identical offline. Each glyph identifies that vendor's own client only;
+ * the trademarks stay with their owners.
+ *
+ * Every glyph is drawn in white on a rounded tile filled with the brand
+ * colour, which keeps the grid consistent and legible in both themes.
+ * Clients with no published mark (OpenClaw, Continue) and the two generic
+ * SDK entries fall back to a monogram.
  */
 
 interface Mark {
-  text: string;
   color: string;
+  /** Official glyph, on a 24x24 viewBox. Absent for monogram fallbacks. */
+  path?: string;
+  /** Monogram text, used when there is no official mark. */
+  text?: string;
 }
 
+const CLAUDE = 'm4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z';
+
+const OPENAI = 'M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z';
+
 const MARKS: Record<string, Mark> = {
-  'claude-code': { text: 'CC', color: '#d97757' },
-  'claude-desktop': { text: 'CD', color: '#b8562f' },
-  codex: { text: 'CX', color: '#10a37f' },
-  opencode: { text: 'OC', color: '#6366f1' },
-  openclaw: { text: 'OW', color: '#f59e0b' },
-  continue: { text: 'CN', color: '#8b5cf6' },
-  cursor: { text: 'CU', color: '#475569' },
-  cline: { text: 'CL', color: '#0ea5e9' },
-  zed: { text: 'ZD', color: '#ef4444' },
-  'generic-openai': { text: 'API', color: '#0f766e' },
-  'generic-anthropic': { text: 'API', color: '#a3552f' },
+  'claude-code': { color: '#d97757', path: CLAUDE },
+  'claude-desktop': { color: '#d97757', path: CLAUDE },
+  codex: { color: '#000000', path: OPENAI },
+  opencode: { color: '#000000', path: 'M22 24H2V0h20zM17 4.8H7v14.4h10z' },
+  cursor: {
+    color: '#000000',
+    path: 'M11.503.131 1.891 5.678a.84.84 0 0 0-.42.726v11.188c0 .3.162.575.42.724l9.609 5.55a1 1 0 0 0 .998 0l9.61-5.55a.84.84 0 0 0 .42-.724V6.404a.84.84 0 0 0-.42-.726L12.497.131a1.01 1.01 0 0 0-.996 0M2.657 6.338h18.55c.263 0 .43.287.297.515L12.23 22.918c-.062.107-.229.064-.229-.06V12.335a.59.59 0 0 0-.295-.51l-9.11-5.257c-.109-.063-.064-.23.061-.23',
+  },
+  cline: {
+    color: '#18181b',
+    path: 'm23.365 13.556-1.442-2.895V8.994c0-2.764-2.218-5.002-4.954-5.002h-2.464c.178-.367.276-.779.276-1.213A2.77 2.77 0 0 0 12.018 0a2.77 2.77 0 0 0-2.763 2.779c0 .434.098.846.276 1.213H7.067c-2.736 0-4.954 2.238-4.954 5.002v1.667L.64 13.549c-.149.29-.149.636 0 .927l1.472 2.855v1.667C2.113 21.762 4.33 24 7.067 24h9.902c2.736 0 4.954-2.238 4.954-5.002V17.33l1.44-2.865c.143-.286.143-.622.002-.91m-12.854 2.36a2.27 2.27 0 0 1-2.261 2.273 2.27 2.27 0 0 1-2.261-2.273v-4.042A2.27 2.27 0 0 1 8.249 9.6a2.267 2.267 0 0 1 2.262 2.274zm7.285 0a2.27 2.27 0 0 1-2.26 2.273 2.27 2.27 0 0 1-2.262-2.273v-4.042A2.267 2.267 0 0 1 15.535 9.6a2.267 2.267 0 0 1 2.261 2.274z',
+  },
+  zed: {
+    color: '#084ccf',
+    path: 'M2.25 1.5a.75.75 0 0 0-.75.75v16.5H0V2.25A2.25 2.25 0 0 1 2.25 0h20.095c1.002 0 1.504 1.212.795 1.92L10.764 14.298h3.486V12.75h1.5v1.922a1.125 1.125 0 0 1-1.125 1.125H9.264l-2.578 2.578h11.689V9h1.5v9.375a1.5 1.5 0 0 1-1.5 1.5H5.185L2.562 22.5H21.75a.75.75 0 0 0 .75-.75V5.25H24v16.5A2.25 2.25 0 0 1 21.75 24H1.655C.653 24 .151 22.788.86 22.08L13.19 9.75H9.75v1.5h-1.5V9.375A1.125 1.125 0 0 1 9.375 8.25h5.314l2.625-2.625H5.625V15h-1.5V5.625a1.5 1.5 0 0 1 1.5-1.5h13.19L21.438 1.5z',
+  },
+  openclaw: { color: '#f59e0b', text: 'OW' },
+  continue: { color: '#8b5cf6', text: 'CN' },
+  'generic-openai': { color: '#0f766e', text: 'API' },
+  'generic-anthropic': { color: '#a3552f', text: 'API' },
 };
 
-const FALLBACK: Mark = { text: '?', color: '#64748b' };
+const FALLBACK: Mark = { color: '#64748b', text: '?' };
 
 export function ClientLogo({ id, label, size = 36 }: { id: string; label: string; size?: number }) {
   const mark = MARKS[id] ?? FALLBACK;
+  const text = mark.text ?? '';
   // Three-character marks need to shrink to stay inside the tile.
-  const fontSize = mark.text.length > 2 ? size * 0.3 : size * 0.38;
+  const fontSize = text.length > 2 ? 30 : 38;
 
   return (
     <svg
@@ -41,20 +64,31 @@ export function ClientLogo({ id, label, size = 36 }: { id: string; label: string
       aria-label={`${label} logo`}
       style={{ flexShrink: 0, display: 'block' }}
     >
-      <rect width="100" height="100" rx="22" fill={mark.color} />
-      <text
-        x="50"
-        y="50"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fill="#ffffff"
-        fontSize={(fontSize / size) * 100}
-        fontWeight="600"
-        fontFamily="system-ui, sans-serif"
-        letterSpacing="1"
-      >
-        {mark.text}
-      </text>
+      {/* The hairline keeps near-black tiles from melting into a dark card. */}
+      <rect
+        x="1" y="1" width="98" height="98" rx="22"
+        fill={mark.color}
+        stroke="rgba(127,127,127,0.35)"
+        strokeWidth="2"
+      />
+      {mark.path ? (
+        // 24x24 glyph scaled to 52 units and centred on the 100x100 tile.
+        <path d={mark.path} fill="#ffffff" transform="translate(24 24) scale(2.1667)" />
+      ) : (
+        <text
+          x="50"
+          y="50"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fill="#ffffff"
+          fontSize={fontSize}
+          fontWeight="600"
+          fontFamily="system-ui, sans-serif"
+          letterSpacing="1"
+        >
+          {text}
+        </text>
+      )}
     </svg>
   );
 }

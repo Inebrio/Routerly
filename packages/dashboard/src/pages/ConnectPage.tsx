@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Terminal } from 'lucide-react';
 import { getClients } from '../api';
 import type { ApiError, ClientListItem } from '../api';
 import { ClientLogo } from '../components/ClientLogo';
-import { SUPPORT_BADGE, SUPPORT_LABEL } from './connectShared';
+import { MODE_HINT, SUPPORT_BADGE, SUPPORT_LABEL, isAutoConfigurable } from './connectShared';
 
 /**
  * Fetches GET /api/clients once and reports whether the client-configurator
@@ -40,13 +41,33 @@ function ClientTile({ client }: { client: ClientListItem }) {
         <div style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: 4 }}>{client.label}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span className={`badge ${SUPPORT_BADGE[client.supportState]}`}>{SUPPORT_LABEL[client.supportState]}</span>
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-            {client.modes.join(' + ')}
-          </span>
+          {client.modes.map(mode => (
+            <span key={mode} className="badge badge-neutral" title={MODE_HINT[mode]}>
+              {mode.toUpperCase()}
+            </span>
+          ))}
         </div>
       </div>
       <ChevronRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
     </Link>
+  );
+}
+
+const GROUP_TITLE: CSSProperties = {
+  fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em',
+  color: 'var(--text-muted)', marginBottom: 4,
+};
+
+function ClientGroup({ title, hint, clients }: { title: string; hint: string; clients: ClientListItem[] }) {
+  if (clients.length === 0) return null;
+  return (
+    <section>
+      <div style={GROUP_TITLE}>{title}</div>
+      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 12px' }}>{hint}</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+        {clients.map(c => <ClientTile key={c.id} client={c} />)}
+      </div>
+    </section>
   );
 }
 
@@ -71,7 +92,12 @@ export function ConnectPage() {
     <>
       <div className="page-header">
         <h1>Connect</h1>
-        <p>Point an AI coding client at this gateway. Pick a client for its setup steps.</p>
+        <p>
+          Point an AI coding client at this gateway. Pick a client for its setup steps.
+          <br />
+          <strong>LLM</strong> routes that client model traffic through Routerly.{' '}
+          <strong>MCP</strong> loads Routerly as a tool server inside it.
+        </p>
       </div>
       <div className="page-body">
         {loading ? (
@@ -87,8 +113,17 @@ export function ConnectPage() {
         ) : error ? (
           <div className="form-error">Failed to load clients: {error}</div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-            {(clients ?? []).map(c => <ClientTile key={c.id} client={c} />)}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+            <ClientGroup
+              title="One command"
+              hint="The CLI writes the config file for you, with a backup you can undo."
+              clients={(clients ?? []).filter(c => isAutoConfigurable(c.supportState))}
+            />
+            <ClientGroup
+              title="By hand"
+              hint="Copy the snippet from the client page into its settings, then restart it."
+              clients={(clients ?? []).filter(c => !isAutoConfigurable(c.supportState))}
+            />
           </div>
         )}
       </div>

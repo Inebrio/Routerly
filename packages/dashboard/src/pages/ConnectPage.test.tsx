@@ -45,12 +45,33 @@ describe('ConnectPage', () => {
       .toBe('/dashboard/connect/claude-code');
   });
 
-  it('shows the connect modes of each client', async () => {
+  it('shows the connect modes of each client, spelled out on hover', async () => {
     mockGetClients.mockResolvedValue(makeClients());
     renderPage();
     await waitFor(() => expect(screen.getByText('Cline')).toBeTruthy());
-    expect(screen.getAllByText('llm + mcp').length).toBe(2);
-    expect(screen.getByText('llm')).toBeTruthy();
+    const badges = [...document.querySelectorAll('.badge-neutral')];
+    expect(badges.map(b => b.textContent)).toEqual(['LLM', 'MCP', 'LLM', 'MCP', 'LLM']);
+    expect(badges[0]!.getAttribute('title')).toBe('Routes the client model traffic through Routerly');
+    expect(badges[1]!.getAttribute('title')).toBe('Loads Routerly as an MCP tool server');
+  });
+
+  it('groups the clients by how they get set up', async () => {
+    mockGetClients.mockResolvedValue(makeClients());
+    renderPage();
+    await waitFor(() => expect(screen.getByText('One command')).toBeTruthy());
+    expect(screen.getByText('By hand')).toBeTruthy();
+    // Claude Code and Codex are auto-configurable, Cline is not.
+    const groups = document.querySelectorAll('section');
+    expect(groups[0]!.querySelectorAll('a').length).toBe(2);
+    expect(groups[1]!.querySelectorAll('a').length).toBe(1);
+  });
+
+  it('drops a group with no clients in it', async () => {
+    const { clients, ...rest } = makeClients();
+    mockGetClients.mockResolvedValue({ ...rest, clients: clients.filter(c => c.id === 'cline') });
+    renderPage();
+    await waitFor(() => expect(screen.getByText('By hand')).toBeTruthy());
+    expect(screen.queryByText('One command')).toBeNull();
   });
 
   it('shows a generic error state on a non-404 failure', async () => {
