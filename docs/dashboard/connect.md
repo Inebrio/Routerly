@@ -24,6 +24,8 @@ reference (`configure`, `undo`, `doctor`, `inspect`, `launch`).
 
 Navigate to `/dashboard/connect`.
 
+![Connect page showing one tile per client with its support badge and connect modes](../assets/screenshot-connect.png)
+
 The nav item is only shown if the client-configurator module is enabled on
 the server. If it is disabled, the page shows an empty state pointing at
 `routerly modules enable clients`. The Overview page carries a shortcut card
