@@ -7,13 +7,17 @@ import type { ApiError, ClientListItem } from '../api';
 import { ClientLogo } from '../components/ClientLogo';
 import { CopyBlock } from '../components/CopyBlock';
 import {
-  DOCS_BASE, PLACEHOLDER_MCP_TOKEN, PLACEHOLDER_TOKEN,
+  DOCS_BASE, MODE_HINT, PLACEHOLDER_MCP_TOKEN, PLACEHOLDER_TOKEN,
   SUPPORT_BADGE, SUPPORT_LABEL, isAutoConfigurable,
 } from './connectShared';
 
 const SECTION_TITLE: React.CSSProperties = {
   fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em',
-  color: 'var(--text-muted)', marginBottom: 10,
+  color: 'var(--text-muted)', marginBottom: 6,
+};
+
+const SECTION_TEXT: React.CSSProperties = {
+  fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 10px', lineHeight: 1.55,
 };
 
 export function ConnectClientPage() {
@@ -75,6 +79,7 @@ export function ConnectClientPage() {
     ? buildMcpSnippet(client, client.baseUrl, PLACEHOLDER_MCP_TOKEN)
     : '';
   const cliCommand = `routerly clients configure ${client.id}`;
+  const autoConfigurable = isAutoConfigurable(client.supportState);
 
   return (
     <>
@@ -87,7 +92,11 @@ export function ConnectClientPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span className={`badge ${SUPPORT_BADGE[client.supportState]}`}>{SUPPORT_LABEL[client.supportState]}</span>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{client.wireFormat} wire format</span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{client.modes.join(' + ')}</span>
+              {client.modes.map(mode => (
+                <span key={mode} className="badge badge-neutral" title={MODE_HINT[mode]}>
+                  {mode.toUpperCase()}
+                </span>
+              ))}
               <a
                 href={`${DOCS_BASE}${client.docSlug}`}
                 target="_blank"
@@ -102,11 +111,12 @@ export function ConnectClientPage() {
       </div>
 
       <div className="page-body" style={{ display: 'flex', flexDirection: 'column', gap: 28, maxWidth: 900 }}>
-        {isAutoConfigurable(client.supportState) && (
+        {autoConfigurable && (
           <section>
-            <div style={SECTION_TITLE}>Configure from the CLI</div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 10px' }}>
-              Writes {client.configPathHint} on this machine, with a backup you can undo.
+            <div style={SECTION_TITLE}>Fastest: one command</div>
+            <p style={SECTION_TEXT}>
+              Run it on the machine where {client.label} is installed. It writes{' '}
+              {client.configPathHint}, keeping a backup you can undo.
             </p>
             <CopyBlock text={cliCommand} />
           </section>
@@ -114,8 +124,10 @@ export function ConnectClientPage() {
 
         {snippet !== '' && (
           <section>
-            <div style={SECTION_TITLE}>{client.configKind === 'ui' ? 'Manual steps' : 'Manual setup'}</div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 10px' }}>
+            <div style={SECTION_TITLE}>
+              {autoConfigurable ? 'Or set it up by hand' : client.configKind === 'ui' ? 'Set it up by hand' : 'Set up the config file'}
+            </div>
+            <p style={SECTION_TEXT}>
               {client.configKind === 'ui'
                 ? `Set these values in ${client.configPathHint}.`
                 : <>Put this in <code>{client.configPathHint}</code>.</>}
@@ -129,14 +141,25 @@ export function ConnectClientPage() {
         {mcpSnippet !== '' && (
           <section>
             <div style={SECTION_TITLE}>MCP server</div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 10px' }}>
-              Exposes the Routerly tools to {client.label}. Mint the token with{' '}
-              <code>routerly mcp token create {client.id}</code>, or from your{' '}
+            <p style={SECTION_TEXT}>
+              Separate from the steps above: this one lets {client.label} call the
+              Routerly tools. It needs a personal MCP token, minted with{' '}
+              <code>routerly mcp token create {client.id}</code> or from your{' '}
               <Link to="/dashboard/profile/mcp">profile</Link>.
             </p>
             <CopyBlock text={mcpSnippet} />
           </section>
         )}
+
+        <section>
+          <div style={SECTION_TITLE}>Check it worked</div>
+          <p style={SECTION_TEXT}>
+            Restart {client.label}, send it a prompt, then look for the call in{' '}
+            <Link to="/dashboard/usage">Usage</Link>. From the same machine, the CLI
+            reports what it finds:
+          </p>
+          <CopyBlock text="routerly clients doctor" />
+        </section>
       </div>
     </>
   );

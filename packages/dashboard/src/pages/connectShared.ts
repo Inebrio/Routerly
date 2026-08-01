@@ -26,6 +26,12 @@ export const SUPPORT_LABEL: Record<SupportState, string> = {
   stale: 'Out of date',
 };
 
+/** What each connect mode buys you. Spelled out on the grid, on hover elsewhere. */
+export const MODE_HINT: Record<string, string> = {
+  llm: 'Routes the client model traffic through Routerly',
+  mcp: 'Loads Routerly as an MCP tool server',
+};
+
 /** These two states are the ones `routerly clients configure` can write for you. */
 export function isAutoConfigurable(state: SupportState): boolean {
   return state === 'auto-configurable' || state === 'launchable';

@@ -24,20 +24,27 @@ reference (`configure`, `undo`, `doctor`, `inspect`, `launch`).
 
 Navigate to `/dashboard/connect`.
 
-![Connect page showing one tile per client with its support badge and connect modes](../assets/screenshot-connect.png)
+![Connect page showing the clients grouped by setup method, each tile with its brand mark, support badge and connect modes](../assets/screenshot-connect.png)
 
 The nav item is only shown if the client-configurator module is enabled on
 the server. If it is disabled, the page shows an empty state pointing at
 `routerly modules enable clients`. The Overview page carries a shortcut card
 to this section under the same condition.
 
+Clients are split into two groups:
+
+| Group | Who lands there |
+|-------|-----------------|
+| **One command** | Clients the CLI can configure for you, with a backup you can undo |
+| **By hand** | Clients whose settings you copy in yourself |
+
 Each client is a tile with:
 
 | Element | Description |
 |---------|-------------|
-| **Mark + label** | The client's monogram and name |
+| **Mark + label** | The client's own brand mark and name. Clients with no published mark (OpenClaw, Continue) and the two generic SDK entries show a monogram instead |
 | **Support badge** | `CLI setup` (green) when the CLI can write the config, `Manual setup` (amber) when the steps are by hand, `Partial support` (amber), `Out of date` (red) |
-| **Modes** | `llm`, `mcp`, or `llm + mcp` — whether the client can route its model traffic through Routerly, load Routerly as an MCP server, or both |
+| **Mode badges** | `LLM` routes that client's model traffic through Routerly, `MCP` loads Routerly as a tool server inside it. Both are spelled out at the top of the page, and again on hover |
 
 Selecting a tile opens that client's page.
 
@@ -48,11 +55,14 @@ Selecting a tile opens that client's page.
 | Section | Shown when | Content |
 |---------|------------|---------|
 | **Header** | always | Support badge, wire format (`openai` or `anthropic`), connect modes, and a link to the client's full documentation page |
-| **Configure from the CLI** | the client is auto-configurable | The `routerly clients configure <id>` command to copy and run |
-| **Manual steps** | the client has a config file or environment setup | The config path and the exact block to paste |
-| **MCP server** | the client supports `mcp` | That client's own MCP configuration (`mcpServers`, `context_servers`, a TOML section, or a command) plus the command that mints an MCP token |
+| **Fastest: one command** | the client is auto-configurable | The `routerly clients configure <id>` command to copy and run on the machine where the client is installed |
+| **Or set it up by hand** | the client has a config file or environment setup | The config path and the exact block to paste. Titled **Set it up by hand** (or **Set up the config file**) when there is no CLI alternative |
+| **MCP server** | the client supports `mcp` | That client's own MCP configuration (`mcpServers`, `context_servers`, a TOML section, or a command) plus the command that mints an MCP token. Independent from the sections above |
+| **Check it worked** | always | `routerly clients doctor`, and a link to [Usage](./usage.md) where the first call shows up |
 
 Every code block has a Copy button.
+
+![Client page for Codex: the CLI command, the manual snippet, the MCP block and the check step](../assets/screenshot-connect-client.png)
 
 ## Tokens are placeholders here
 

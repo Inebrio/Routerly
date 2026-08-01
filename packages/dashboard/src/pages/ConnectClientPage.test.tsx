@@ -39,14 +39,18 @@ describe('ConnectClientPage', () => {
     renderPage('codex');
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Codex' })).toBeTruthy());
     expect(screen.getByText('CLI setup')).toBeTruthy();
+    expect([...document.querySelectorAll('.badge-neutral')].map(b => b.textContent))
+      .toEqual(['LLM', 'MCP']);
     expect(screen.getByRole('link', { name: /docs/i }).getAttribute('href'))
       .toBe('https://doc.routerly.ai/next/integrations/clients/codex');
   });
 
-  it('offers the CLI command for an auto-configurable client', async () => {
+  it('offers the CLI command for an auto-configurable client, manual setup as the alternative', async () => {
     mockGetClients.mockResolvedValue(makeClients());
     renderPage('codex');
     await waitFor(() => expect(screen.getByText('routerly clients configure codex')).toBeTruthy());
+    expect(screen.getByText('Fastest: one command')).toBeTruthy();
+    expect(screen.getByText('Or set it up by hand')).toBeTruthy();
   });
 
   it('hides the CLI command for a client configured by hand', async () => {
@@ -54,7 +58,16 @@ describe('ConnectClientPage', () => {
     renderPage('cline');
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Cline' })).toBeTruthy());
     expect(screen.queryByText('routerly clients configure cline')).toBeNull();
+    expect(screen.getByText('Set it up by hand')).toBeTruthy();
     expect(screen.getByText(/API Provider: OpenAI Compatible/)).toBeTruthy();
+  });
+
+  it('closes with a way to check the connection', async () => {
+    mockGetClients.mockResolvedValue(makeClients());
+    renderPage('cline');
+    await waitFor(() => expect(screen.getByText('Check it worked')).toBeTruthy());
+    expect(screen.getByText('routerly clients doctor')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Usage' }).getAttribute('href')).toBe('/dashboard/usage');
   });
 
   it('renders the manual snippet with the token placeholder and a link to create one', async () => {
