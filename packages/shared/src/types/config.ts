@@ -612,7 +612,9 @@ export type Permission =
   | 'profiles:read'
   | 'profiles:manage'
   | 'optimizers:read'
-  | 'optimizers:manage';
+  | 'optimizers:manage'
+  | 'experiments:read'
+  | 'experiments:manage';
 
 // ─── Integration types ────────────────────────────────────────────────────────
 
@@ -1051,6 +1053,10 @@ export interface UsageRecord {
    * the prompt are listed, so the field is absent on the vast majority of records.
    */
   optimizers?: OptimizerCallStat[];
+  /** Experiment the call was routed by, when the client used an experiment token (T70). */
+  experimentId?: string;
+  /** Variant of that experiment the rotation picked. Always set together with `experimentId`. */
+  experimentVariantId?: string;
 }
 
 /** Per-model aggregate row in the GET /api/usage response (`byModel`). */

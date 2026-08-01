@@ -35,6 +35,23 @@ describe('roles', () => {
     expect(ALL_PERMISSIONS).toContain('optimizers:manage');
   });
 
+  it('admin includes experiments permissions', () => {
+    expect(ALL_PERMISSIONS).toContain('experiments:read');
+    expect(ALL_PERMISSIONS).toContain('experiments:manage');
+  });
+
+  it('viewer can read experiments but not manage them', () => {
+    const viewer = BUILT_IN_ROLES.find(r => r.id === 'viewer')!;
+    expect(viewer.permissions).toContain('experiments:read');
+    expect(viewer.permissions).not.toContain('experiments:manage');
+  });
+
+  it('operator can read and manage experiments', () => {
+    const operator = BUILT_IN_ROLES.find(r => r.id === 'operator')!;
+    expect(operator.permissions).toContain('experiments:read');
+    expect(operator.permissions).toContain('experiments:manage');
+  });
+
   it('viewer can read optimizers but not manage them', () => {
     const viewer = BUILT_IN_ROLES.find(r => r.id === 'viewer')!;
     expect(viewer.permissions).toContain('optimizers:read');

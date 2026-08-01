@@ -25,6 +25,27 @@ export type { NotificationCategory, NotificationEventMeta } from './types/notifi
 export { REQUEST_TYPES, requestTypeFromPath, requestTypeLabel } from './types/usage.js';
 export type { RequestType, SavingsBaseline, SavingsOptimizerEntry, SavingsSummary } from './types/usage.js';
 
+// Experiments (T70) — plain data plus pure functions
+export {
+  EXPERIMENT_ROTATIONS,
+  EXPERIMENT_STATUSES,
+  STICKY_KEYS,
+  ROTATION_CATALOG,
+  DEFAULT_MIN_SAMPLES_PER_VARIANT,
+  rotationLabel,
+  rotationDescription,
+  variantShares,
+} from './types/experiments.js';
+export type {
+  ExperimentConfig,
+  ExperimentRotation,
+  ExperimentRotationMeta,
+  ExperimentStatus,
+  ExperimentStickyKey,
+  ExperimentVariant,
+  ExperimentJudge,
+} from './types/experiments.js';
+
 // Optimizer catalog (T63) — plain data plus pure functions
 export { OPTIMIZER_CATALOG, optimizerLabel, optimizerThreshold } from './types/optimizers.js';
 export type {

@@ -177,6 +177,27 @@ export type { NotificationCategory, NotificationEventMeta } from './types/notifi
 export { REQUEST_TYPES, requestTypeFromPath, requestTypeLabel } from './types/usage.js';
 export type { RequestType, SavingsBaseline, SavingsOptimizerEntry, SavingsSummary } from './types/usage.js';
 
+// Experiments: A/B tests that pick a whole project per request (T70)
+export {
+  EXPERIMENT_ROTATIONS,
+  EXPERIMENT_STATUSES,
+  STICKY_KEYS,
+  ROTATION_CATALOG,
+  DEFAULT_MIN_SAMPLES_PER_VARIANT,
+  rotationLabel,
+  rotationDescription,
+  variantShares,
+} from './types/experiments.js';
+export type {
+  ExperimentConfig,
+  ExperimentRotation,
+  ExperimentRotationMeta,
+  ExperimentStatus,
+  ExperimentStickyKey,
+  ExperimentVariant,
+  ExperimentJudge,
+} from './types/experiments.js';
+
 // Static configuration data
 import providersConf from './conf/providers.json' with { type: 'json' };
 export { providersConf };
