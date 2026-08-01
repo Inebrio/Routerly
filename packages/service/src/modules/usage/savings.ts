@@ -5,6 +5,8 @@ import type {
   SavingsOptimizerEntry,
   SavingsSummary,
   UsageRecord,
+  UsageSeries,
+  UsageSeriesPoint,
 } from '@routerly/shared';
 import { isCompletionCall } from '@routerly/shared';
 import { calculateCost } from '../../lib/cost.js';
@@ -171,5 +173,79 @@ export function computeSavings(
     cache: { inputTokens: cacheTokens, cost: round(cacheCost) },
     baselines,
     optimizers: computeOptimizerSavings(compared, byId),
+  };
+}
+
+/** Bucket key of a record: `YYYY-MM-DDTHH` by hour, `YYYY-MM-DD` by day. */
+const bucketKey = (timestamp: string, bucket: 'hour' | 'day'): string =>
+  bucket === 'hour' ? timestamp.slice(0, 13) : timestamp.slice(0, 10);
+
+/**
+ * The savings summary spread over time (T81). Same compared record set, same
+ * arithmetic, cut into hour or day buckets so the overview can show whether the
+ * gap between routed and baseline traffic is widening or closing.
+ *
+ * The counterfactual is priced against the *costliest* baseline, which is the
+ * headline the project dashboard already shows: the worst case routing avoided.
+ * Per-bucket baseline latency reuses that baseline's whole-window throughput
+ * (`latencyMs / comparedOutputTokens`) rather than recomputing a median per
+ * bucket, where a quiet hour would rest on one or two calls.
+ *
+ * Buckets with no compared call are absent rather than zero-filled: a gap in the
+ * line is honest about there being no traffic, a zero would read as free traffic.
+ */
+export function computeSeries(
+  records: UsageRecord[],
+  models: ModelConfig[],
+  summary: SavingsSummary,
+  bucket: 'hour' | 'day',
+): UsageSeries {
+  // Baselines come out cheapest first, so the costliest is the last one.
+  const worst = summary.baselines[summary.baselines.length - 1];
+  const baselineModel = worst ? models.find(m => m.id === worst.modelId) : undefined;
+  const msPerOutputToken = worst?.latencyMs !== undefined && summary.comparedOutputTokens > 0
+    ? worst.latencyMs / summary.comparedOutputTokens
+    : 0;
+
+  const buckets = new Map<string, UsageSeriesPoint>();
+  for (const r of records.filter(isCompared)) {
+    const key = bucketKey(r.timestamp, bucket);
+    let point = buckets.get(key);
+    if (!point) {
+      point = {
+        bucket: key, calls: 0, cost: 0, baselineCost: 0,
+        inputTokens: 0, outputTokens: 0, cachedInputTokens: 0,
+        latencyMs: 0, baselineLatencyMs: 0,
+      };
+      buckets.set(key, point);
+    }
+    point.calls += 1;
+    point.cost += r.cost;
+    point.inputTokens += r.inputTokens;
+    point.outputTokens += r.outputTokens;
+    point.cachedInputTokens += r.cachedInputTokens ?? 0;
+    point.latencyMs += r.latencyMs;
+    if (baselineModel) {
+      point.baselineCost += calculateCost(
+        r.inputTokens, r.outputTokens, baselineModel, r.cachedInputTokens, r.cacheCreationInputTokens,
+      );
+    }
+    point.baselineLatencyMs += msPerOutputToken * r.outputTokens;
+  }
+
+  const points = [...buckets.values()]
+    .sort((a, b) => a.bucket.localeCompare(b.bucket))
+    .slice(-60)
+    .map(p => ({
+      ...p,
+      cost: round(p.cost),
+      baselineCost: round(p.baselineCost),
+      baselineLatencyMs: Math.round(p.baselineLatencyMs),
+    }));
+
+  return {
+    bucket,
+    ...(baselineModel ? { baselineModelId: baselineModel.id } : {}),
+    points,
   };
 }

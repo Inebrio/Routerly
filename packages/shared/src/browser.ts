@@ -23,7 +23,9 @@ export type { NotificationCategory, NotificationEventMeta } from './types/notifi
 
 // Usage request types (T60) — plain data plus pure functions
 export { REQUEST_TYPES, requestTypeFromPath, requestTypeLabel } from './types/usage.js';
-export type { RequestType, SavingsBaseline, SavingsOptimizerEntry, SavingsSummary } from './types/usage.js';
+export type {
+  RequestType, SavingsBaseline, SavingsOptimizerEntry, SavingsSummary, UsageSeries, UsageSeriesPoint,
+} from './types/usage.js';
 
 // Experiments (T70) — plain data plus pure functions
 export {

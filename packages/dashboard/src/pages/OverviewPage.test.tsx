@@ -7,7 +7,9 @@ import { MemoryRouter } from 'react-router-dom';
 // ponytail: stub recharts — invoke tickFormatters and render the tooltip content
 // so the formatters this page passes into the chart system stay covered.
 vi.mock('recharts', () => ({
-  AreaChart: ({ children }: { children: React.ReactNode }) => <div data-testid="area-chart">{children}</div>,
+  AreaChart: ({ children, data }: { children: React.ReactNode; data?: Array<Record<string, unknown>> }) => (
+    <div data-testid="area-chart" data-labels={(data ?? []).map(d => d.label ?? d.date).join(',')}>{children}</div>
+  ),
   Area: () => null,
   CartesianGrid: () => null,
   BarChart: ({ children }: { children: React.ReactNode }) => <div data-testid="bar-chart">{children}</div>,
@@ -267,7 +269,7 @@ describe('OverviewPage — period selector', () => {
     await waitFor(() => screen.queryByText('Daily'));
     await userEvent.click(screen.getByText('Daily'));
     await waitFor(() =>
-      expect(mockGetUsage).toHaveBeenCalledWith('daily')
+      expect(mockGetUsage).toHaveBeenCalledWith('daily', undefined, undefined, undefined, undefined, undefined, { series: true })
     );
   });
 
@@ -275,14 +277,14 @@ describe('OverviewPage — period selector', () => {
     renderPage();
     await waitFor(() => screen.queryByText('Weekly'));
     await userEvent.click(screen.getByText('Weekly'));
-    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith('weekly'));
+    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith('weekly', undefined, undefined, undefined, undefined, undefined, { series: true }));
   });
 
   it('clicking All calls getUsage with "all"', async () => {
     renderPage();
     await waitFor(() => screen.queryByText('All'));
     await userEvent.click(screen.getByText('All'));
-    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith('all'));
+    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith('all', undefined, undefined, undefined, undefined, undefined, { series: true }));
   });
 });
 
@@ -411,5 +413,105 @@ describe('OverviewPage — dark theme', () => {
     await waitFor(() => expect(screen.queryByTestId('area-chart')).not.toBeNull());
 
     globalThis.Date = origDate;
+  });
+});
+
+// ── Savings over time (T81) ───────────────────────────────────────────────────
+
+const SERIES = {
+  bucket: 'day' as const,
+  baselineModelId: 'openai/gpt-4o',
+  points: [
+    { bucket: '2026-07-31', calls: 2, cost: 0.006, baselineCost: 0.06, inputTokens: 2000, outputTokens: 1000, cachedInputTokens: 0, latencyMs: 2000, baselineLatencyMs: 4000 },
+    { bucket: '2026-08-01', calls: 1, cost: 0.003, baselineCost: 0.03, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0, latencyMs: 1000, baselineLatencyMs: 2000 },
+  ],
+};
+
+describe('OverviewPage — savings over time', () => {
+  it('asks the service for the series', async () => {
+    renderPage();
+    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith(
+      'monthly', undefined, undefined, undefined, undefined, undefined, { series: true },
+    ));
+  });
+
+  it('stays hidden when the service returned no series', async () => {
+    renderPage();
+    await waitFor(() => screen.queryByText('Overview'));
+    expect(screen.queryByText('What routing saved')).toBeNull();
+  });
+
+  it('shows what the routed traffic saved against the baseline', async () => {
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    expect(screen.getByText('openai/gpt-4o')).toBeTruthy();
+    const card = screen.getByText('What routing saved').closest('.chart-card')!;
+    expect(card.textContent).toContain('$0.0810'); // 0.09 baseline - 0.009 actual
+    expect(card.textContent).toContain('(90.0%)');
+    expect(card.textContent).toContain('3 client calls');
+  });
+
+  it('switches the chart between cost, tokens and speed', async () => {
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    // Cost: actual against the counterfactual
+    expect(screen.getByText('On gpt-4o')).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Tokens' }));
+    expect(screen.getByText('Input')).toBeTruthy();
+    expect(screen.getByText('Output')).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Speed' }));
+    expect(screen.getByText('On gpt-4o')).toBeTruthy();
+  });
+
+  it('drops the counterfactual when no baseline model applies', async () => {
+    const { baselineModelId: _baseline, ...noBaseline } = SERIES;
+    mockGetUsage.mockResolvedValue(makeStats({ series: noBaseline }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    expect(screen.queryByText('On gpt-4o')).toBeNull();
+    expect(screen.queryByText('$0.0810')).toBeNull();
+  });
+
+  it('labels hourly buckets by the hour and daily ones by the date', async () => {
+    mockGetUsage.mockResolvedValue(makeStats({
+      series: { bucket: 'hour', points: [{ ...SERIES.points[0], bucket: '2026-08-01T09' }] },
+    }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    const chart = screen.getByText('What routing saved').closest('.chart-card')!.querySelector('[data-testid="area-chart"]');
+    expect(chart?.getAttribute('data-labels')).toBe('09:00');
+  });
+
+  it('labels daily buckets by the date', async () => {
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    const chart = screen.getByText('What routing saved').closest('.chart-card')!.querySelector('[data-testid="area-chart"]');
+    expect(chart?.getAttribute('data-labels')).toBe('07-31,08-01');
+  });
+});
+
+// ── Cross-links (T81) ─────────────────────────────────────────────────────────
+
+describe('OverviewPage — stat card links', () => {
+  it('points each stat at the section that explains it', async () => {
+    renderPage();
+    await waitFor(() => screen.queryByText('Total Cost'));
+    const links = Object.fromEntries(
+      [...document.querySelectorAll('a.stat-card')]
+        .map(a => [a.querySelector('.stat-label')?.textContent, a.getAttribute('href')]),
+    );
+    expect(links).toEqual({
+      'Total Cost': '/dashboard/usage',
+      'Total Calls': '/dashboard/usage',
+      'Success Rate': '/dashboard/usage',
+      Errors: '/dashboard/usage',
+      Models: '/dashboard/models',
+      Projects: '/dashboard/projects',
+    });
   });
 });

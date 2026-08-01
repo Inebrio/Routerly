@@ -375,6 +375,19 @@ input, select, textarea { font-family: inherit; }
   overflow: hidden;
 }
 
+/* A stat card that points at the section explaining its number (T81). */
+a.stat-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+a.stat-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+
 .stat-card::before {
   content: '';
   position: absolute;
