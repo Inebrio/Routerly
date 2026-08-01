@@ -825,6 +825,322 @@ An empty array means the project has sent no traffic since the last restart.
 
 ---
 
+## Experiments
+
+A/B tests that route each call to one of several projects. A variant is an
+existing project taken whole, so the whole of what a project expresses (its
+models, routing profile, optimizer pipeline, guardrails) becomes comparable.
+See [Concepts: Experiments](../concepts/experiments.md) for the lifecycle,
+the rotations and how the numbers are computed.
+
+Experiments are a **module**. With it disabled every route below answers
+`403 {"error":"module_disabled"}` before the handler runs, so a client can
+tell "turned off" from "not allowed" (`403 Forbidden` with a
+`Required permission:` message).
+
+Tokens are returned with `token` stripped on every read: the raw value exists
+only in the `201` of [Create Experiment](#create-experiment) and the response
+of [Create Experiment Token](#create-experiment-token), the same rule project
+tokens follow.
+
+### List Experiments
+
+```
+GET /api/experiments
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:read`)
+
+**Response `200`:**
+```json
+[
+  {
+    "id": "8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31",
+    "name": "Cheap vs premium",
+    "description": "Is the cheap model good enough for support replies?",
+    "status": "running",
+    "rotation": "sticky",
+    "stickyKey": "auto",
+    "variants": [
+      { "id": "4d3b2a10-8c7e-4f21-9b0d-1e2f3a4b5c6d", "projectId": "proj-cheap", "name": "Cheap" },
+      { "id": "6a1c9e07-5b3d-42f8-8e10-7c4d9f2b0a35", "projectId": "proj-premium", "name": "Premium" }
+    ],
+    "tokens": [
+      {
+        "id": "b7e5c3a1-9f2d-4e60-a8b3-0c1d2e3f4a5b",
+        "tokenSnippet": "sk-rt-2246",
+        "createdAt": "2026-08-01T10:12:03.000Z",
+        "lastUsedAt": "2026-08-01T10:41:55.000Z"
+      }
+    ],
+    "judge": { "enabled": true, "modelId": "gpt-4o", "criteria": ["Answers the question asked"], "sampleRate": 0.2 },
+    "createdAt": "2026-08-01T10:12:03.000Z",
+    "startedAt": "2026-08-01T10:19:41.000Z"
+  }
+]
+```
+
+| Field | Description |
+|-------|-------------|
+| `status` | `draft`, `running` or `closed` |
+| `rotation` | `sticky` (default), `weighted` or `round-robin` |
+| `stickyKey` | `auto` (default), `end-user`, `conversation` or `client`. Read only by `sticky` |
+| `variants[].projectId` | The project this arm routes to |
+| `variants[].name` | Display label. Absent means the project's own name is shown |
+| `variants[].weight` | Share of traffic under `weighted`. Normalised against the other weights, so `1`/`1` and `50`/`50` are the same split. A missing weight counts as `1` |
+| `judge` | Quality scoring. Absent when never configured, `enabled: false` when turned off |
+| `judge.sampleRate` | Fraction of calls scored, `0`-`1` (the dashboard field and the CLI flag take a percentage) |
+| `judgeScores` | Verdict tally per variant id: `{ count, totalScore, lastAt }`. Absent until the first verdict |
+| `minSamplesPerVariant` | Overrides the default of `30` |
+| `winnerVariantId` | Set at close, when the operator declared one |
+
+**Errors**: `403` insufficient permissions · `403` `module_disabled`
+
+### Get Experiment
+
+```
+GET /api/experiments/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:read`)
+
+**Response `200`**: one experiment, same shape as the list entries.
+
+**Errors**: `404` not found · `403` insufficient permissions · `403`
+`module_disabled`
+
+### Experiment Metrics
+
+```
+GET /api/experiments/:id/metrics?from=<iso>&to=<iso>
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:read`)
+
+The comparison, one entry per variant. Read straight off the usage log,
+which the experiment stamps with its id on every call it routes, so the
+numbers agree with [Usage](#usage) by construction and the experiment keeps
+no counters of its own.
+
+**Query:** `from` and `to`, both optional ISO 8601 instants. Neither given
+measures the whole history. An explicit window, not the period vocabulary
+`/api/usage` uses: the caller already knows the window it wants.
+
+**Response `200`:**
+```json
+{
+  "experimentId": "8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31",
+  "status": "running",
+  "minSamplesPerVariant": 30,
+  "totalCalls": 214,
+  "ready": false,
+  "variants": [
+    {
+      "variantId": "4d3b2a10-8c7e-4f21-9b0d-1e2f3a4b5c6d",
+      "projectId": "proj-cheap",
+      "name": "Cheap",
+      "calls": 118,
+      "errors": 2,
+      "errorRate": 0.017,
+      "cost": 0.4212,
+      "avgCostPerCall": 0.00357,
+      "inputTokens": 91240,
+      "outputTokens": 30118,
+      "avgLatencyMs": 812,
+      "p95LatencyMs": 1904,
+      "avgTtftMs": 240,
+      "judgedCalls": 24,
+      "avgScore": 7.4,
+      "enoughSamples": true
+    }
+  ]
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `ready` | Every variant reached `minSamplesPerVariant`. Until then the comparison is premature |
+| `enoughSamples` | The same test for one variant |
+| `errors` / `errorRate` | Calls whose outcome was neither `success` nor `blocked` |
+| `p95LatencyMs` | Nearest-rank, the same method the usage route uses |
+| `avgTtftMs` | Over the streamed calls only. Absent when none streamed |
+| `judgedCalls` / `avgScore` | Judge verdicts, `0`-`10`. `avgScore` is absent until the first one |
+
+Only the client's own completion calls are counted. Router decision calls,
+guardrail passes and the judge's own verdicts are gateway overhead: counting
+them would make the cheap variant look expensive for a reason the operator
+cannot act on.
+
+**Errors**: `404` not found · `403` insufficient permissions · `403`
+`module_disabled`
+
+### Create Experiment
+
+```
+POST /api/experiments
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:manage`)
+
+```json
+{
+  "name": "Cheap vs premium",
+  "description": "Is the cheap model good enough for support replies?",
+  "rotation": "weighted",
+  "variants": [
+    { "projectId": "proj-cheap", "name": "Cheap", "weight": 80 },
+    { "projectId": "proj-premium", "name": "Premium", "weight": 20 }
+  ],
+  "judge": { "enabled": true, "modelId": "gpt-4o", "criteria": ["Answers the question asked"], "sampleRate": 0.2 },
+  "minSamplesPerVariant": 50
+}
+```
+
+**Fields:** `name` (required) · `description` · `rotation` (default
+`sticky`) · `stickyKey` · `variants` (default `[]`, each needs `projectId`;
+`id` is generated when omitted) · `judge` · `minSamplesPerVariant` (integer
+`>= 1`).
+
+The experiment is created in `draft` with its first token. Variants can be
+left empty here and added by `PATCH` before starting.
+
+**Response `201`**: the experiment, plus a top-level `token` holding the raw
+value. It is returned here and nowhere else.
+
+**Errors**: `400` invalid body · `404` `project_not_found` (with the offending
+`projectIds`) · `409` name already taken · `403` insufficient permissions ·
+`403` `module_disabled`
+
+### Update Experiment
+
+```
+PATCH /api/experiments/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:manage`)
+
+Same fields as create, all optional, at least one required. `variants` and
+`judge.criteria` replace the whole list rather than merging into it.
+
+Once the experiment leaves `draft` only `name`, `description` and
+`minSamplesPerVariant` are accepted. Changing who the arms route to, or how
+traffic splits between them, halfway through a comparison would make the two
+halves incomparable.
+
+**Response `200`**: the updated experiment.
+
+**Errors**: `400` invalid body · `404` not found · `404` `project_not_found` ·
+`409` `experiment_frozen` (the message names the refused fields) · `403`
+insufficient permissions · `403` `module_disabled`
+
+### Start Experiment
+
+```
+POST /api/experiments/:id/start
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:manage`)
+
+Moves a draft to `running` and stamps `startedAt`. From here the tokens serve
+traffic and the design is frozen. No body.
+
+**Response `200`**: the running experiment.
+
+**Errors**: `400` `too_few_variants` (fewer than two) · `400` `no_token` ·
+`404` not found · `409` `experiment_not_draft` · `403` insufficient
+permissions · `403` `module_disabled`
+
+### Close Experiment
+
+```
+POST /api/experiments/:id/close
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:manage`)
+
+```json
+{ "winnerVariantId": "6a1c9e07-5b3d-42f8-8e10-7c4d9f2b0a35" }
+```
+
+Stops the rotation and stamps `closedAt`. The body is optional; the winner is
+recorded for later reference and nothing else follows from it. There is no
+auto-stop rule and no statistical trigger: Routerly reports the numbers,
+declaring a winner is the operator's call.
+
+The experiment's tokens stop serving traffic immediately, answering
+`403 experiment_not_running`, so move clients to the winning project's own
+token first.
+
+**Response `200`**: the closed experiment.
+
+**Errors**: `400` invalid body · `404` not found · `404` `variant_not_found`
+(the id is not one of this experiment's variants) · `409`
+`experiment_not_running` · `403` insufficient permissions · `403`
+`module_disabled`
+
+### Create Experiment Token
+
+```
+POST /api/experiments/:id/tokens
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:manage`)
+
+An experiment can hold several tokens, which is how one test is handed to
+several clients and one of them revoked later. No body.
+
+**Response `200`:**
+```json
+{
+  "token": "sk-rt-91b0d4e7c2a58f36b1d09e4c7a2f5b8d3e6c1a0f9b4d7e2c5a8f1b6d3e0c9a4",
+  "tokenInfo": {
+    "id": "c8f6d4b2-0a3e-4f71-b9c4-1d2e3f4a5b6c",
+    "tokenSnippet": "sk-rt-91b0",
+    "createdAt": "2026-08-01T11:02:17.000Z"
+  }
+}
+```
+
+A client uses it exactly like a project token: same base URL, this value in
+place of the project's. Each request lands on one variant and is billed to
+that variant's project. Nothing about the test reaches the wire.
+
+**Errors**: `404` not found · `403` insufficient permissions · `403`
+`module_disabled`
+
+### Revoke Experiment Token
+
+```
+DELETE /api/experiments/:id/tokens/:tokenId
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:manage`)
+
+**Response `204`**: no content. Any client still using the token starts
+failing immediately.
+
+**Errors**: `404` not found · `404` token not found · `403` insufficient
+permissions · `403` `module_disabled`
+
+### Delete Experiment
+
+```
+DELETE /api/experiments/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:manage`)
+
+**Response `204`**: no content.
+
+A running experiment cannot be deleted: doing so would turn every client
+still calling its token into a `403` with no warning. Close it first, so
+stopping traffic is always a deliberate step.
+
+**Errors**: `404` not found · `409` `experiment_running` · `403` insufficient
+permissions · `403` `module_disabled`
+
+---
+
 ## Projects
 
 ### List Projects
