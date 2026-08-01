@@ -29,6 +29,7 @@ vi.mock('../api', () => ({
   getUsage: vi.fn(),
   getModels: vi.fn(),
   getProjects: vi.fn(),
+  getClients: vi.fn(),
 }));
 
 const mockUseTheme = vi.fn(() => ({ theme: 'light', setTheme: vi.fn() }));
@@ -37,11 +38,12 @@ vi.mock('../ThemeContext.js', () => ({
 }));
 
 import { OverviewPage } from './OverviewPage';
-import { getUsage, getModels, getProjects } from '../api';
+import { getUsage, getModels, getProjects, getClients } from '../api';
 
 const mockGetUsage    = vi.mocked(getUsage as (...a: unknown[]) => Promise<unknown>);
 const mockGetModels   = vi.mocked(getModels as () => Promise<unknown>);
 const mockGetProjects = vi.mocked(getProjects as () => Promise<unknown>);
+const mockGetClients  = vi.mocked(getClients as () => Promise<unknown>);
 
 function makeStats(overrides: Record<string, unknown> = {}) {
   return {
@@ -72,6 +74,7 @@ beforeEach(() => {
   mockGetUsage.mockResolvedValue(makeStats());
   mockGetModels.mockResolvedValue([{ id: 'm1' }, { id: 'm2' }]);
   mockGetProjects.mockResolvedValue([{ id: 'p1' }]);
+  mockGetClients.mockResolvedValue({ enabled: true, advertisedAddresses: [], clients: [] });
 });
 
 afterEach(() => vi.clearAllMocks());
@@ -149,6 +152,21 @@ describe('OverviewPage — loaded state', () => {
     renderPage();
     await waitFor(() => expect(screen.queryByText('1')).not.toBeNull());
     expect(screen.queryByText('Projects')).not.toBeNull();
+  });
+
+  it('links to the Connect section while the clients module is enabled', async () => {
+    renderPage();
+    const link = await screen.findByRole('link', { name: /Connect a client/ });
+    expect(link.getAttribute('href')).toBe('/dashboard/connect');
+  });
+
+  it('hides the Connect card when the clients module is disabled', async () => {
+    const err = new Error('Not found') as Error & { status?: number };
+    err.status = 404;
+    mockGetClients.mockRejectedValue(err);
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('Models')).not.toBeNull());
+    expect(screen.queryByText('Connect a client')).toBeNull();
   });
 
   it('does not render token strip when all tokens are 0', async () => {

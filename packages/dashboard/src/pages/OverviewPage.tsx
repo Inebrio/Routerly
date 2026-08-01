@@ -3,9 +3,12 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell,
 } from 'recharts';
-import { Activity, DollarSign, XCircle, Boxes, FolderOpen, TrendingUp } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Activity, ArrowRight, DollarSign, XCircle, Boxes, FolderOpen, Terminal, TrendingUp } from 'lucide-react';
+import { CLIENT_REGISTRY } from '@routerly/shared';
 import { getUsage, getModels, getProjects, type UsageStats } from '../api.js';
 import { useTheme } from '../ThemeContext.js';
+import { useClientsEnabled } from './ConnectPage.js';
 
 const PALETTE = ['#3d75f5', '#10b981', '#f59e0b', '#ec4899', '#3b82f6', '#8b5cf6', '#06b6d4', '#f97316'];
 
@@ -129,6 +132,8 @@ export function OverviewPage() {
         <p>Usage summary and cost breakdown</p>
       </div>
       <div className="page-body">
+
+        <ConnectCard />
 
         {/* Period selector — segmented control */}
         <div style={{ marginBottom: 24, display: 'inline-flex', alignItems: 'center', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 3, gap: 2 }}>
@@ -258,6 +263,32 @@ export function OverviewPage() {
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * Shortcut to the Connect section. Renders only while the client-configurator
+ * module is enabled, same signal the sidebar entry uses.
+ */
+function ConnectCard() {
+  const enabled = useClientsEnabled();
+  if (!enabled) return null;
+
+  return (
+    <Link
+      to="/dashboard/connect"
+      className="card"
+      style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24, textDecoration: 'none', color: 'inherit' }}
+    >
+      <Terminal size={20} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 2 }}>Connect a client</div>
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+          Point Claude Code, Codex, Cursor and {CLIENT_REGISTRY.length - 3} more at this gateway.
+        </div>
+      </div>
+      <ArrowRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+    </Link>
   );
 }
 
