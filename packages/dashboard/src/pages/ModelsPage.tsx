@@ -127,6 +127,7 @@ function formatCountdown(targetMs: number, now: number): string {
 export function ModelsPage() {
   const { can } = useAuth();
   const canManage = can('resilience:manage');
+  const canWriteModels = can('model:write');
   const now = useNow();
   const providerLabel = useProviderLabels();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -429,15 +430,19 @@ export function ModelsPage() {
                     </button>
                   )}
                 </div>
-                <Link to="/dashboard/models/discover" className="btn">
-                  <Telescope size={16} /> Discover
-                </Link>
-                <Link
-                  to={connectionFilter ? `/dashboard/models/new?connection=${encodeURIComponent(connectionFilter)}` : '/dashboard/models/new'}
-                  className="btn btn-primary"
-                >
-                  <Plus size={16} /> Add Model
-                </Link>
+                {canWriteModels && (
+                  <>
+                    <Link to="/dashboard/models/discover" className="btn">
+                      <Telescope size={16} /> Discover
+                    </Link>
+                    <Link
+                      to={connectionFilter ? `/dashboard/models/new?connection=${encodeURIComponent(connectionFilter)}` : '/dashboard/models/new'}
+                      className="btn btn-primary"
+                    >
+                      <Plus size={16} /> Add Model
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
             {loading ? (
@@ -486,15 +491,19 @@ export function ModelsPage() {
                               <button className="btn-icon" onClick={() => handleTest(m.id)} title="Test">
                                 <FlaskConical size={15} />
                               </button>
-                              <Link to={`/dashboard/models/new?clone=${encodeURIComponent(m.id)}`} className="btn-icon" title="Clone">
-                                <Copy size={15} />
-                              </Link>
-                              <Link to={`/dashboard/models/${encodeURIComponent(m.id)}`} className="btn-icon" title="Edit">
-                                <Edit2 size={15} />
-                              </Link>
-                              <button className="btn-icon danger" onClick={() => handleDelete(m.id)} title="Remove">
-                                <Trash2 size={15} />
-                              </button>
+                              {canWriteModels && (
+                                <>
+                                  <Link to={`/dashboard/models/new?clone=${encodeURIComponent(m.id)}`} className="btn-icon" title="Clone">
+                                    <Copy size={15} />
+                                  </Link>
+                                  <Link to={`/dashboard/models/${encodeURIComponent(m.id)}`} className="btn-icon" title="Edit">
+                                    <Edit2 size={15} />
+                                  </Link>
+                                  <button className="btn-icon danger" onClick={() => handleDelete(m.id)} title="Remove">
+                                    <Trash2 size={15} />
+                                  </button>
+                                </>
+                              )}
                             </td>
                           </tr>
                         ))}

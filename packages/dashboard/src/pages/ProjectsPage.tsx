@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, FolderOpen, Pencil } from 'lucide-react';
 import { getProjects, deleteProject, type Project } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { useAuth } from '../AuthContext';
 
 export function ProjectsPage() {
   const navigate = useNavigate();
+  const { can } = useAuth();
+  const canWrite = can('project:write');
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
@@ -45,9 +48,11 @@ export function ProjectsPage() {
       <div className="page-body">
         <div className="toolbar">
           <span className="toolbar-title">{projects.length} project{projects.length !== 1 ? 's' : ''}</span>
-          <button className="btn btn-primary" onClick={() => navigate('/dashboard/projects/new')}>
-            <Plus size={16} /> New Project
-          </button>
+          {canWrite && (
+            <button className="btn btn-primary" onClick={() => navigate('/dashboard/projects/new')}>
+              <Plus size={16} /> New Project
+            </button>
+          )}
         </div>
 
         {loading ? (
@@ -90,9 +95,11 @@ export function ProjectsPage() {
                       <button className="btn-icon" onClick={() => navigate(`/dashboard/projects/${p.id}/general`)} title="Edit project">
                         <Pencil size={15} />
                       </button>
-                      <button className="btn-icon danger" onClick={() => handleDelete(p.id)} title="Delete project">
-                        <Trash2 size={15} />
-                      </button>
+                      {canWrite && (
+                        <button className="btn-icon danger" onClick={() => handleDelete(p.id)} title="Delete project">
+                          <Trash2 size={15} />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

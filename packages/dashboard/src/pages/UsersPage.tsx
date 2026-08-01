@@ -4,11 +4,16 @@ import { Plus, Trash2, Users, Pencil, ShieldOff } from 'lucide-react';
 import { getUsers, createUser, deleteUser, reset2faForUser, type User } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { SearchableSelect } from '../components/SearchableSelect';
+import { useAuth } from '../AuthContext';
 
 type AddForm = { email: string; password: string; roleId: string };
 
 export function UsersPage() {
+  const { can } = useAuth();
+  const canRead  = can('user:read');
+  const canWrite = can('user:write');
   const [users, setUsers]         = useState<User[]>([]);
+  const [loadErr, setLoadErr]     = useState('');
   const [loading, setLoading]     = useState(true);
   const [showAdd, setShowAdd]     = useState(false);
   const [addForm, setAddForm]     = useState<AddForm>({ email: '', password: '', roleId: 'viewer' });
@@ -17,11 +22,16 @@ export function UsersPage() {
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const navigate = useNavigate();
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { if (canRead) load(); else setLoading(false); }, [canRead]);
 
   async function load() {
     setLoading(true);
-    try { setUsers(await getUsers()); } finally { setLoading(false); }
+    try {
+      setUsers(await getUsers());
+      setLoadErr('');
+    } catch (e) {
+      setLoadErr(e instanceof Error ? e.message : 'Failed to load users');
+    } finally { setLoading(false); }
   }
 
   async function handleAdd(e: React.FormEvent) {
@@ -58,14 +68,22 @@ export function UsersPage() {
     });
   }
 
+  if (!canRead) {
+    return <div className="empty-state"><ShieldOff size={40} /><p>You don't have permission to view users.</p></div>;
+  }
+
   return (
     <>
       <div className="toolbar">
         <span className="toolbar-title">{users.length} user{users.length !== 1 ? 's' : ''}</span>
-        <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
-          <Plus size={16} /> Add User
-        </button>
+        {canWrite && (
+          <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
+            <Plus size={16} /> Add User
+          </button>
+        )}
       </div>
+
+      {loadErr && <div className="form-error" style={{ margin: '0 20px' }}>{loadErr}</div>}
 
       {loading ? (
         <div className="loading-center"><div className="spinner" /></div>
@@ -84,17 +102,21 @@ export function UsersPage() {
                     {u.projectIds.length === 0 ? 'All' : u.projectIds.join(', ')}
                   </td>
                   <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
-                    {u.totpEnabled && (
+                    {canWrite && u.totpEnabled && (
                       <button className="btn-icon" title="Reset 2FA" onClick={() => handleReset2fa(u.id, u.email)}>
                         <ShieldOff size={14} />
                       </button>
                     )}
-                    <button className="btn-icon" onClick={() => navigate(`/dashboard/settings/users/${u.id}`)}>
-                      <Pencil size={14} />
-                    </button>
-                    <button className="btn-icon danger" onClick={() => handleDelete(u.id)}>
-                      <Trash2 size={15} />
-                    </button>
+                    {canWrite && (
+                      <>
+                        <button className="btn-icon" onClick={() => navigate(`/dashboard/settings/users/${u.id}`)}>
+                          <Pencil size={14} />
+                        </button>
+                        <button className="btn-icon danger" onClick={() => handleDelete(u.id)}>
+                          <Trash2 size={15} />
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}
