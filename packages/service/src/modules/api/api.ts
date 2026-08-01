@@ -14,7 +14,7 @@ import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } f
 import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults } from '@routerly/shared';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
-import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_PROJECT_TIMEOUT_MS, notificationCategory } from '@routerly/shared';
+import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_PROJECT_TIMEOUT_MS, isCompletionCall, notificationCategory } from '@routerly/shared';
 import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
@@ -1640,7 +1640,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (callType && callType !== 'all') {
       // 'completion' covers legacy records that carry no callType.
       filtered = callType === 'completion'
-        ? filtered.filter(r => r.callType !== 'routing' && r.callType !== 'guardrail')
+        ? filtered.filter(r => isCompletionCall(r.callType))
         : filtered.filter(r => r.callType === callType);
     }
     if (requestType && requestType !== 'all') {
@@ -1682,11 +1682,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // Records without callType default to completion (legacy data).
     const routingCalls = filtered.filter(r => r.callType === 'routing').length;
     const guardrailCalls = filtered.filter(r => r.callType === 'guardrail').length;
-    const completionCalls = filtered.filter(r => r.callType !== 'routing' && r.callType !== 'guardrail').length;
+    const completionCalls = filtered.filter(r => isCompletionCall(r.callType)).length;
     const succ = (r: typeof filtered[number]) => r.outcome === 'success';
     const routingCost = filtered.filter(r => r.callType === 'routing' && succ(r)).reduce((s, r) => s + r.cost, 0);
     const guardrailCost = filtered.filter(r => r.callType === 'guardrail' && succ(r)).reduce((s, r) => s + r.cost, 0);
-    const completionCost = filtered.filter(r => r.callType !== 'routing' && r.callType !== 'guardrail' && succ(r)).reduce((s, r) => s + r.cost, 0);
+    const completionCost = filtered.filter(r => isCompletionCall(r.callType) && succ(r)).reduce((s, r) => s + r.cost, 0);
 
     // Timeline for the selected period (hourly for daily, daily otherwise)
     const timeline: Record<string, number> = {};
@@ -1698,7 +1698,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // Latency and TTFT distribution over successful client calls. The average
     // alone hides the tail, so the project dashboard reads median and p95 (T62).
     // ttftMs is optional on the record, hence its own sample count.
-    const clientCalls = filtered.filter(r => r.outcome === 'success' && r.callType !== 'routing' && r.callType !== 'guardrail');
+    const clientCalls = filtered.filter(r => r.outcome === 'success' && isCompletionCall(r.callType));
     const latencySamples = clientCalls.map(r => r.latencyMs).filter((n): n is number => typeof n === 'number');
     const ttftSamples = clientCalls.map(r => r.ttftMs).filter((n): n is number => typeof n === 'number');
 

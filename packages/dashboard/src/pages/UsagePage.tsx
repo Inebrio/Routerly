@@ -33,6 +33,10 @@ function fmtCost(n: number): string {
   return `$${n.toFixed(n < 1 ? 3 : 2)}`;
 }
 
+/** Who made the call: the client, or Routerly on its own behalf (routing, guardrail, experiment judge). */
+const CALLER_FILTER_LABELS = { all: 'All', completion: 'Completion', routing: 'Router', guardrail: 'Guardrail', judge: 'Judge' } as const;
+const CALLER_BADGE_LABELS = { completion: 'completion', routing: 'router', guardrail: 'guardrail', judge: 'judge' } as const;
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function UsagePage() {
@@ -43,7 +47,7 @@ export function UsagePage() {
   const [dateRange, setDateRange]       = useFilterState<DateRange>({ key: 'usage-filters-dateRange', defaultValue: { from: '', to: '', label: 'This month' } });
   const [projectIds, setProjectIds]     = useFilterState<string[]>({ key: 'usage-filters-projectIds', defaultValue: [] });
   const [modelIds, setModelIds]         = useFilterState<string[]>({ key: 'usage-filters-modelIds', defaultValue: [] });
-  const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing' | 'guardrail'>({ key: 'usage-filters-callType', defaultValue: 'all' });
+  const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing' | 'guardrail' | 'judge'>({ key: 'usage-filters-callType', defaultValue: 'all' });
   const [requestTypeFilter, setRequestTypeFilter] = useFilterState<'all' | RequestType>({ key: 'usage-filters-requestType', defaultValue: 'all' });
   const [outcomeFilter, setOutcomeFilter]   = useFilterState<'all' | 'success' | 'error' | 'blocked'>({ key: 'usage-filters-outcome', defaultValue: 'all' });
   const [loading, setLoading]           = useState(true);
@@ -356,10 +360,10 @@ export function UsagePage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               <FilterLabel>Caller</FilterLabel>
               <div style={{ display: 'flex', gap: 4 }}>
-                {(['all', 'completion', 'routing', 'guardrail'] as const).map(f => (
+                {(['all', 'completion', 'routing', 'guardrail', 'judge'] as const).map(f => (
                   <button key={f} className={`btn btn-sm ${callTypeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setCallTypeFilter(f)}>
-                    {f === 'all' ? 'All' : f === 'completion' ? 'Completion' : f === 'routing' ? 'Router' : 'Guardrail'}
+                    {CALLER_FILTER_LABELS[f]}
                   </button>
                 ))}
               </div>
@@ -556,7 +560,9 @@ export function UsagePage() {
                     </thead>
                     <tbody>
                       {displayRecords.map((r) => {
-                        const isRouting = (r.callType ?? 'completion') === 'routing';
+                        // Records written before callType existed were all completions.
+                        const caller = r.callType ?? 'completion';
+                        const isRouting = caller === 'routing';
                         const isNew = liveMode && newRowIds.has(r.id);
                         return (
                           <tr
@@ -589,7 +595,7 @@ export function UsagePage() {
                                 background: isRouting ? 'rgba(99,102,241,0.12)' : 'rgba(59,130,246,0.12)',
                                 color: isRouting ? 'var(--accent)' : 'var(--primary)',
                               }}>
-                                {isRouting ? 'router' : 'completion'}
+                                {CALLER_BADGE_LABELS[caller]}
                               </span>
                             </td>
                             <td>{r.inputTokens}</td>

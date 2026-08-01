@@ -23,6 +23,8 @@ describe('core modules processor ordering', () => {
     expect(ids('routing.prepare')).toEqual(['routing.prepare', 'routing.memory'])
     expect(ids('upstream.prepare')).toEqual(['budget.upstream'])
     expect(ids('response.postprocess')).toEqual(['pii.output', 'guardrail.response'])
-    expect(ids('finalize')).toEqual(['usage.finalize', 'logging.finalize'])
+    // experiments.judge runs last: it scores the answer after usage and logging
+    // recorded the call, and only when an experiment routed it (T72).
+    expect(ids('finalize')).toEqual(['usage.finalize', 'logging.finalize', 'experiments.judge'])
   })
 })

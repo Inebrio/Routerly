@@ -997,7 +997,17 @@ export interface TraceEntry {
 
 export type CallOutcome = 'success' | 'error' | 'budget_exceeded' | 'timeout' | 'blocked';
 
-export type CallType = 'routing' | 'completion' | 'guardrail';
+export type CallType = 'routing' | 'completion' | 'guardrail' | 'judge';
+
+/**
+ * True for a call the client actually asked for. Routing, guardrail and judge
+ * calls are Routerly's own overhead: every "what did the client spend" figure
+ * excludes them. Records written before `callType` existed carry none, and back
+ * then everything tracked was a completion.
+ */
+export function isCompletionCall(callType?: CallType): boolean {
+  return callType !== 'routing' && callType !== 'guardrail' && callType !== 'judge';
+}
 
 export interface UsageRecord {
   id: string;

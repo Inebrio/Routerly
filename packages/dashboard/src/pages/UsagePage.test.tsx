@@ -182,6 +182,14 @@ describe('UsagePage — Guardrail filter button', () => {
     await userEvent.click(btn);
     expect(btn.className).toContain('btn-primary');
   });
+
+  it('offers the Judge filter for the experiment judge calls (T72)', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    const btn = await screen.findByRole('button', { name: 'Judge' });
+    await userEvent.click(btn);
+    expect(btn.className).toContain('btn-primary');
+  });
 });
 
 describe('UsagePage — blocked outcome', () => {
@@ -526,6 +534,18 @@ describe('UsagePage — records table', () => {
     vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord({ callType: 'completion' })]));
     renderPage();
     await waitFor(() => expect(screen.getByText('completion')).toBeTruthy());
+  });
+
+  it('names the caller of a guardrail and of a judge call (T72)', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([
+      makeRecord({ id: 'r-guard', callType: 'guardrail' }),
+      makeRecord({ id: 'r-judge', callType: 'judge' }),
+    ]));
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('guardrail')).toBeTruthy();
+      expect(screen.getByText('judge')).toBeTruthy();
+    });
   });
 
   it('shows the request type of a record', async () => {

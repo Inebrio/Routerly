@@ -35,7 +35,7 @@ export interface GuardrailProjectCtx {
  * commas, a single unterminated string/brace). Throws when unrecoverable so
  * the caller records the rule as judge-failed (skipped), same as before.
  */
-function parseJudgeJson(rawStr: string): { score?: unknown; reason?: unknown; message?: unknown } {
+export function parseJudgeJson(rawStr: string): { score?: unknown; reason?: unknown; message?: unknown } {
   // 1. Direct parse.
   try { return JSON.parse(rawStr) as { score?: unknown; reason?: unknown; message?: unknown }; } catch { /* try next */ }
 
