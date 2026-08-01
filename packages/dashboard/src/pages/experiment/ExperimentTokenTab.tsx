@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Trash2, Key, Copy, Check } from 'lucide-react';
 import { createExperimentToken, deleteExperimentToken } from '../../api';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { CopyBlock } from '../../components/CopyBlock';
 import { writeToClipboard } from '../../utils/clipboard';
 import { useAuth } from '../../AuthContext';
 import { useExperiment } from './ExperimentLayout';
@@ -69,6 +70,13 @@ export function ExperimentTokenTab() {
         A client calls the experiment exactly like a project: same base URL, this token instead of a project token.
         Each request lands on one variant and is billed to that variant's project.
       </p>
+
+      <div style={{ maxWidth: 620, marginBottom: 24 }}>
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 8 }}>
+          Base URL for the OpenAI or Anthropic SDK, with an experiment token as the API key:
+        </div>
+        <CopyBlock text={`${window.location.origin}/v1`} />
+      </div>
 
       {revealed && (
         <div style={{ padding: 16, background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 8, marginBottom: 24 }}>

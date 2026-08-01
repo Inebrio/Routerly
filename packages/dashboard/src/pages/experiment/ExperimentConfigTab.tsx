@@ -29,6 +29,19 @@ function toRow(v: ExperimentVariant): VariantRow {
 
 const EMPTY_ROW: VariantRow = { projectId: '', name: '', weight: '' };
 
+/**
+ * One line of the frozen view. A live experiment cannot change its split, so it
+ * reads as a summary instead of a form full of disabled controls.
+ */
+function SummaryRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', gap: 20, padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ width: 150, flexShrink: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>{label}</div>
+      <div style={{ fontSize: '0.875rem', minWidth: 0 }}>{children}</div>
+    </div>
+  );
+}
+
 export function ExperimentConfigTab() {
   const { experiment, setExperiment } = useExperiment();
   const navigate = useNavigate();
@@ -160,6 +173,7 @@ export function ExperimentConfigTab() {
     ? variantShares(variants.map(v => ({ id: '', projectId: v.projectId, ...(v.weight.trim() ? { weight: Number(v.weight) } : {}) })))
     : [];
   const projectOptions = projects.map(p => ({ value: p.id, label: p.name }));
+  const projectLabel = (id: string) => projects.find(p => p.id === id)?.name ?? id.slice(0, 8);
   const readOnly = !canManage;
 
   return (
@@ -183,7 +197,9 @@ export function ExperimentConfigTab() {
         </div>
         <div className="form-group">
           <label className="form-label" htmlFor="exp-description">Description <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
-          <input id="exp-description" className="form-input" value={description} disabled={readOnly}
+          {/* A textarea: the list shows this in full, so it must be readable while typing it. */}
+          <textarea id="exp-description" className="form-input" rows={2} value={description} disabled={readOnly}
+            style={{ resize: 'vertical' }}
             onChange={e => setDescription(e.target.value)} placeholder="What this test is trying to settle" />
         </div>
         <div className="form-group">
@@ -196,6 +212,51 @@ export function ExperimentConfigTab() {
         </div>
       </div>
 
+      {frozen ? (
+        <div className="form-section">
+          <div className="section-title">How this test is running</div>
+          <SummaryRow label="Rotation">
+            {ROTATION_CATALOG[rotation].label}
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
+              {ROTATION_CATALOG[rotation].description}
+            </div>
+          </SummaryRow>
+          {rotation === 'sticky' && (
+            <SummaryRow label="Sticky on">
+              {STICKY_KEY_CATALOG[stickyKey].label}
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                {STICKY_KEY_CATALOG[stickyKey].description}
+              </div>
+            </SummaryRow>
+          )}
+          <SummaryRow label={`Variants (${variants.length})`}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {variants.map((v, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span>{v.name || projectLabel(v.projectId)}</span>
+                  {v.name && <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{projectLabel(v.projectId)}</span>}
+                  {rotation === 'weighted' && shares[i] !== undefined && (
+                    <span className="badge badge-neutral">{Math.round(shares[i]! * 100)}%</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </SummaryRow>
+          <SummaryRow label="Judge">
+            {judgeEnabled ? (
+              <>
+                <div>{models.find(m => m.id === judgeModelId)?.name ?? judgeModelId}, {judgeSampleRate}% of calls scored</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2, whiteSpace: 'pre-line' }}>
+                  {judgeCriteria}
+                </div>
+              </>
+            ) : (
+              <span style={{ color: 'var(--text-muted)' }}>Off</span>
+            )}
+          </SummaryRow>
+        </div>
+      ) : (
+      <>
       <div className="form-section">
         <div className="section-title">Traffic split</div>
         <div className="form-group">
@@ -235,7 +296,7 @@ export function ExperimentConfigTab() {
           Each variant is an existing project, taken whole: its models, routing and guardrails all apply. A test needs at least two.
         </p>
         {variants.map((v, i) => (
-          <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 10 }}>
+          <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
             <div style={{ flex: 2 }}>
               <SearchableSelect
                 ariaLabel={`Variant ${i + 1} project`}
@@ -318,6 +379,8 @@ export function ExperimentConfigTab() {
           </>
         )}
       </div>
+      </>
+      )}
 
       {canManage && (
         <div style={{ display: 'flex', gap: 10, marginTop: 32 }}>

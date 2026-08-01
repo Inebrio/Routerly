@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('../api', () => ({
   getExperiments: vi.fn(),
+  getProjects: vi.fn(),
   deleteExperiment: vi.fn(),
   startExperiment: vi.fn(),
 }));
@@ -40,10 +41,11 @@ vi.mock('../components/SearchableSelect', () => ({
 }));
 
 import { ExperimentsPage, useExperimentsEnabled, STATUS_LABELS, STATUS_BADGE } from './ExperimentsPage';
-import { getExperiments, deleteExperiment, startExperiment } from '../api';
+import { getExperiments, getProjects, deleteExperiment, startExperiment } from '../api';
 import { useAuth } from '../AuthContext';
 
 const mockGetExperiments = vi.mocked(getExperiments as () => Promise<unknown>);
+const mockGetProjects = vi.mocked(getProjects as () => Promise<unknown>);
 const mockDelete = vi.mocked(deleteExperiment as (...a: unknown[]) => Promise<unknown>);
 const mockStart = vi.mocked(startExperiment as (...a: unknown[]) => Promise<unknown>);
 const mockUseAuth = vi.mocked(useAuth);
@@ -71,6 +73,7 @@ function badgeTexts() {
 
 beforeEach(() => {
   mockGetExperiments.mockResolvedValue([draft, running]);
+  mockGetProjects.mockResolvedValue([{ id: 'p1', name: 'Cheap' }, { id: 'p2', name: 'Premium' }]);
   mockDelete.mockResolvedValue(undefined);
   mockStart.mockResolvedValue({ ...draft, status: 'running' });
   setAuth(['experiments:read', 'experiments:manage']);
@@ -86,10 +89,12 @@ describe('status maps', () => {
 });
 
 describe('ExperimentsPage', () => {
-  it('lists experiments with status, rotation and counts', async () => {
+  it('lists experiments with status, rotation and the projects each variant routes to', async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('Cheap vs premium')).toBeInTheDocument());
     expect(screen.getByText('Which one wins')).toBeInTheDocument();
+    // A variant with no label of its own is named after its project.
+    await waitFor(() => expect(screen.getAllByText('Cheap vs Premium')).toHaveLength(2));
     // The status filter renders the same words as <option>s, so read the badges themselves.
     expect(badgeTexts()).toEqual(['Draft', 'Running']);
     expect(screen.getByText('Sticky per session')).toBeInTheDocument();
@@ -176,12 +181,17 @@ describe('ExperimentsPage', () => {
     expect(mockDelete).not.toHaveBeenCalled();
   });
 
-  it('opens an experiment', async () => {
-    const user = userEvent.setup();
+  it('opens an experiment from its name', async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('Cheap vs premium')).toBeInTheDocument());
-    await user.click(screen.getAllByTitle('Open')[0]!);
-    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/experiments/exp-1');
+    expect(screen.getByRole('link', { name: 'Cheap vs premium' }).getAttribute('href'))
+      .toBe('/dashboard/experiments/exp-1');
+  });
+
+  it('warns about an experiment no client can reach', async () => {
+    mockGetExperiments.mockResolvedValue([{ ...draft, tokens: [] }]);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('No token')).toBeInTheDocument());
   });
 
   it('navigates to the create page', async () => {

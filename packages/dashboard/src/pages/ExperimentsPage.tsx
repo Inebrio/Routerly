@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Edit2, Play, ShieldOff, Split } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Plus, Trash2, Play, ShieldOff, Split } from 'lucide-react';
 import {
-  getExperiments, deleteExperiment, startExperiment,
-  type ApiError, type ExperimentStatus, type MaskedExperiment,
+  getExperiments, getProjects, deleteExperiment, startExperiment,
+  type ApiError, type ExperimentStatus, type MaskedExperiment, type Project,
 } from '../api';
 import { rotationLabel, type ExperimentRotation } from '@routerly/shared';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -57,6 +57,7 @@ export function ExperimentsPage() {
   const canManage = can('experiments:manage');
 
   const [experiments, setExperiments] = useState<MaskedExperiment[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [statusFilter, setStatusFilter] = useState<'' | ExperimentStatus>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -69,7 +70,17 @@ export function ExperimentsPage() {
       .then(setExperiments)
       .catch(e => setError(e instanceof Error ? e.message : 'Failed to load experiments'))
       .finally(() => setLoading(false));
+    // Variants name their project, not its id: a failed lookup only costs the
+    // fallback label, so it never blocks the list.
+    getProjects().then(setProjects).catch(() => {});
   }, [canRead]);
+
+  /** What each variant is called on screen: its own label, else the project it routes to. */
+  function variantLabels(e: MaskedExperiment): string {
+    return e.variants
+      .map(v => v.name ?? projects.find(p => p.id === v.projectId)?.name ?? v.projectId.slice(0, 8))
+      .join(' vs ');
+  }
 
   async function handleStart(e: MaskedExperiment) {
     setError('');
@@ -156,14 +167,13 @@ export function ExperimentsPage() {
               </div>
             ) : (
               <div className="table-wrap" style={{ overflowX: 'auto' }}>
-                <table style={{ minWidth: 760 }}>
+                <table style={{ minWidth: 820 }}>
                   <thead>
                     <tr>
                       <th>Name</th>
                       <th>Status</th>
-                      <th>Rotation</th>
                       <th>Variants</th>
-                      <th>Tokens</th>
+                      <th>Rotation</th>
                       <th>Created</th>
                       <th></th>
                     </tr>
@@ -171,35 +181,41 @@ export function ExperimentsPage() {
                   <tbody>
                     {visible.map(e => (
                       <tr key={e.id}>
-                        <td>
-                          {e.name}
+                        <td style={{ maxWidth: 360 }}>
+                          <Link to={`/dashboard/experiments/${e.id}`} style={{ fontWeight: 500 }}>{e.name}</Link>
                           {e.description && (
-                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{e.description}</div>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.45 }}>
+                              {e.description}
+                            </div>
                           )}
                         </td>
-                        <td><span className={`badge ${STATUS_BADGE[e.status]}`}>{STATUS_LABELS[e.status]}</span></td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                            <span className={`badge ${STATUS_BADGE[e.status]}`}>{STATUS_LABELS[e.status]}</span>
+                            {e.tokens.length === 0 && (
+                              <span className="badge badge-warning" title="Without a token no client can reach this experiment">
+                                No token
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td><span style={{ fontSize: '0.82rem' }}>{variantLabels(e) || '—'}</span></td>
                         <td><span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{rotationLabel(e.rotation as ExperimentRotation)}</span></td>
-                        <td>{e.variants.length}</td>
-                        <td>{e.tokens.length}</td>
                         <td><span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{new Date(e.createdAt).toLocaleDateString()}</span></td>
-                        <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                          {canManage && e.status === 'draft' && (
-                            <button className="btn-icon" onClick={() => handleStart(e)} title="Start">
-                              <Play size={15} />
-                            </button>
-                          )}
-                          <button
-                            className="btn-icon"
-                            onClick={() => navigate(`/dashboard/experiments/${e.id}`)}
-                            title="Open"
-                          >
-                            <Edit2 size={15} />
-                          </button>
-                          {canManage && e.status !== 'running' && (
-                            <button className="btn-icon danger" onClick={() => handleDelete(e)} title="Delete">
-                              <Trash2 size={15} />
-                            </button>
-                          )}
+                        <td>
+                          {/* A flex td collapses the row's own height: keep the layout on an inner box. */}
+                          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                            {canManage && e.status === 'draft' && (
+                              <button className="btn-icon" onClick={() => handleStart(e)} title="Start">
+                                <Play size={15} />
+                              </button>
+                            )}
+                            {canManage && e.status !== 'running' && (
+                              <button className="btn-icon danger" onClick={() => handleDelete(e)} title="Delete">
+                                <Trash2 size={15} />
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

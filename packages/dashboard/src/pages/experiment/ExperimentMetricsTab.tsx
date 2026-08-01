@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Trophy, BarChart3 } from 'lucide-react';
 import {
-  closeExperiment, getExperimentMetrics,
-  type ExperimentMetrics, type ExperimentVariantMetrics,
+  closeExperiment, getExperimentMetrics, getProjects,
+  type ExperimentMetrics, type ExperimentVariantMetrics, type Project,
 } from '../../api';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
@@ -38,6 +38,7 @@ export function ExperimentMetricsTab() {
 
   const [range, setRange] = useState<string>('');
   const [metrics, setMetrics] = useState<ExperimentMetrics | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
   const [winner, setWinner] = useState('');
@@ -58,6 +59,9 @@ export function ExperimentMetricsTab() {
 
   useEffect(load, [load]);
 
+  // The table names the project behind each variant: metrics carry the id only.
+  useEffect(() => { getProjects().then(setProjects).catch(() => {}); }, []);
+
   if (!experiment) return null;
 
   async function handleClose() {
@@ -71,6 +75,8 @@ export function ExperimentMetricsTab() {
   }
 
   const rows = metrics?.variants ?? [];
+  const measured = rows.reduce((s, r) => s + r.calls, 0);
+  const projectName = (id: string) => projects.find(p => p.id === id)?.name ?? id.slice(0, 8);
   const bestCost = bestOf(rows, r => (r.calls > 0 ? r.avgCostPerCall : undefined), true);
   const bestLatency = bestOf(rows, r => (r.calls > 0 ? r.avgLatencyMs : undefined), true);
   const bestScore = bestOf(rows, r => r.avgScore, false);
@@ -102,11 +108,12 @@ export function ExperimentMetricsTab() {
         </div>
       ) : (
         <>
-          {metrics && !metrics.ready && (
-            <p className="section-desc" style={{ marginTop: 0 }}>
-              Not conclusive yet: every variant needs at least {metrics.minSamplesPerVariant} calls in this window.
-            </p>
-          )}
+          <p className="section-desc" style={{ marginTop: 0 }}>
+            {metrics && !metrics.ready
+              ? `Not conclusive yet: every variant needs at least ${metrics.minSamplesPerVariant} calls in this window. `
+              : ''}
+            The better figure of each pair is highlighted: cheaper per call, faster, higher judge score.
+          </p>
 
           <div className="table-wrap" style={{ overflowX: 'auto' }}>
             <table style={{ minWidth: 860 }}>
@@ -114,6 +121,7 @@ export function ExperimentMetricsTab() {
                 <tr>
                   <th>Variant</th>
                   <th style={{ textAlign: 'right' }}>Calls</th>
+                  <th style={{ textAlign: 'right' }}>Share</th>
                   <th style={{ textAlign: 'right' }}>Errors</th>
                   <th style={{ textAlign: 'right' }}>Cost</th>
                   <th style={{ textAlign: 'right' }}>Cost / call</th>
@@ -127,14 +135,24 @@ export function ExperimentMetricsTab() {
                   <tr key={r.variantId}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {r.name ?? r.variantId}
+                        {r.name ?? projectName(r.projectId)}
                         {experiment.winnerVariantId === r.variantId && (
                           <span className="badge badge-success" title="Declared winner"><Trophy size={12} /> Winner</span>
                         )}
-                        {!r.enoughSamples && <span className="badge badge-warning">Low sample</span>}
+                        {!r.enoughSamples && (
+                          <span className="badge badge-warning" title={`Under ${metrics?.minSamplesPerVariant} calls in this window`}>
+                            Low sample
+                          </span>
+                        )}
                       </div>
+                      {r.name && (
+                        <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: 2 }}>{projectName(r.projectId)}</div>
+                      )}
                     </td>
                     <td style={{ textAlign: 'right' }}>{r.calls}</td>
+                    <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>
+                      {measured > 0 ? fmtPct(r.calls / measured) : '—'}
+                    </td>
                     <td style={{ textAlign: 'right' }}>{r.errors > 0 ? `${r.errors} (${fmtPct(r.errorRate)})` : '0'}</td>
                     <td style={{ textAlign: 'right' }}>{fmtCost(r.cost)}</td>
                     <td style={{ textAlign: 'right', fontWeight: bestCost === r.variantId ? 600 : 400, color: bestCost === r.variantId ? 'var(--primary)' : undefined }}>
@@ -147,7 +165,12 @@ export function ExperimentMetricsTab() {
                     <td style={{ textAlign: 'right', fontWeight: bestScore === r.variantId ? 600 : 400, color: bestScore === r.variantId ? 'var(--primary)' : undefined }}>
                       {r.avgScore !== undefined ? `${r.avgScore.toFixed(1)} / 10` : '—'}
                       {r.judgedCalls > 0 && (
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: 6 }}>({r.judgedCalls})</span>
+                        <span
+                          style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: 6 }}
+                          title={`${r.judgedCalls} answer${r.judgedCalls !== 1 ? 's' : ''} scored by the judge`}
+                        >
+                          ({r.judgedCalls})
+                        </span>
                       )}
                     </td>
                   </tr>

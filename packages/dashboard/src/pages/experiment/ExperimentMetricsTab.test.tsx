@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 
 vi.mock('../../api', () => ({
   getExperimentMetrics: vi.fn(),
+  getProjects: vi.fn(),
   closeExperiment: vi.fn(),
 }));
 
@@ -33,11 +34,12 @@ vi.mock('../../components/SearchableSelect', () => ({
 }));
 
 import { ExperimentMetricsTab } from './ExperimentMetricsTab';
-import { getExperimentMetrics, closeExperiment } from '../../api';
+import { getExperimentMetrics, getProjects, closeExperiment } from '../../api';
 import { useAuth } from '../../AuthContext';
 import { useExperiment } from './ExperimentLayout';
 
 const mockGetMetrics = vi.mocked(getExperimentMetrics as (...a: unknown[]) => Promise<unknown>);
+const mockGetProjects = vi.mocked(getProjects as () => Promise<unknown>);
 const mockClose = vi.mocked(closeExperiment as (...a: unknown[]) => Promise<unknown>);
 const mockUseAuth = vi.mocked(useAuth);
 const mockUseExperiment = vi.mocked(useExperiment);
@@ -68,6 +70,7 @@ function setAuth(perms: string[]) {
 
 beforeEach(() => {
   mockGetMetrics.mockResolvedValue(metrics);
+  mockGetProjects.mockResolvedValue([{ id: 'p1', name: 'Small model' }, { id: 'p2', name: 'Big model' }]);
   mockClose.mockResolvedValue({ ...running, status: 'closed', winnerVariantId: 'v2' });
   setAuth(['experiments:read', 'experiments:manage']);
   setContext(running);
@@ -81,7 +84,11 @@ describe('ExperimentMetricsTab', () => {
     await waitFor(() => expect(screen.getByText('120 calls measured')).toBeInTheDocument());
     // The winner picker repeats the variant names, so read them off the table.
     const rows = [...document.querySelectorAll('tbody tr')];
-    expect(rows.map(r => r.querySelector('td')!.textContent)).toEqual(['Cheap', 'Premium']);
+    // Variant label first, then the project it routes to.
+    await waitFor(() => expect(rows.map(r => r.querySelector('td')!.textContent))
+      .toEqual(['CheapSmall model', 'PremiumBig model']));
+    // Both variants took half the traffic.
+    expect(screen.getAllByText('50.0%')).toHaveLength(2);
     expect(screen.getByText('$0.60')).toBeInTheDocument();
     expect(screen.getByText('3 (5.0%)')).toBeInTheDocument();
     expect(screen.getByText('900 ms')).toBeInTheDocument();
