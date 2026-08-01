@@ -1149,6 +1149,9 @@ permissions · `403` `module_disabled`
 GET /api/projects
 ```
 
+There is no single-project route: read a project from this list. Projects are
+addressed by `id`, never by name or slug.
+
 ### Create Project
 
 ```
@@ -1158,22 +1161,25 @@ POST /api/projects
 ```json
 {
   "name": "My App",
-  "slug": "my-app",
   "timeoutMs": 2000,
-  "models": ["gpt-5-mini"]
+  "models": [{ "modelId": "gpt-5-mini", "prompt": "Short factual answers" }],
+  "autoRouting": true,
+  "routingModelId": "ollama/qwen3.5:9b"
 }
 ```
 
-### Get Project
+Only `name` is required. `models` holds target model references, not bare id
+strings: each entry is `{ modelId, prompt? }`. **Response `201`**: the created
+project plus a `token` field with the first project token in clear text, which
+is the only time it is readable.
 
-```
-GET /api/projects/:slug
-```
+**Errors**: `400` empty name · `400` invalid `timeoutMs` · `409` a project with
+that name already exists · `403` insufficient permissions
 
 ### Update Project
 
 ```
-PUT /api/projects/:slug
+PUT /api/projects/:id
 ```
 
 On `PUT`, the `guardrails` and `pii` fields are optional: omit a field to leave it
@@ -1182,7 +1188,7 @@ unchanged, send `null` to clear it, or send an object to replace it.
 ### Content Guardrails and PII (project fields)
 
 A project may carry two optional security blocks, accepted by both
-`POST /api/projects` and `PUT /api/projects/:slug` and validated server-side.
+`POST /api/projects` and `PUT /api/projects/:id` and validated server-side.
 Use `PATCH /api/projects/:id/guardrails` for partial updates (guardrails or PII only).
 
 #### Guardrails
@@ -1354,7 +1360,7 @@ consumer-visible impact; the match is recorded on the usage record for audit pur
 ### Optimizers (project field) {#optimizers-project-field}
 
 A project may carry an optional `optimizers` block, accepted by both
-`POST /api/projects` and `PUT /api/projects/:slug`. On `PUT`, the field
+`POST /api/projects` and `PUT /api/projects/:id`. On `PUT`, the field
 follows the same undefined/null/object convention as `guardrails` and `pii`:
 omit it to leave the pipeline unchanged, send `null` to clear it, or send an
 object to validate and replace it. Setting or clearing it requires
@@ -1401,7 +1407,7 @@ threshold, or duplicate step id) · `403` insufficient permissions
 ### Delete Project
 
 ```
-DELETE /api/projects/:slug
+DELETE /api/projects/:id
 ```
 
 ---
@@ -1411,13 +1417,13 @@ DELETE /api/projects/:slug
 ### List Tokens
 
 ```
-GET /api/projects/:slug/tokens
+GET /api/projects/:id/tokens
 ```
 
 ### Create Token
 
 ```
-POST /api/projects/:slug/tokens
+POST /api/projects/:id/tokens
 ```
 
 ```json
@@ -1455,7 +1461,7 @@ POST /api/projects/:slug/tokens
 ### Update Token
 
 ```
-PUT /api/projects/:slug/tokens/:tokenId
+PUT /api/projects/:id/tokens/:tokenId
 ```
 
 ```json
@@ -1477,7 +1483,7 @@ Any field omitted from the request body is left unchanged (partial update).
 ### Delete Token
 
 ```
-DELETE /api/projects/:slug/tokens/:tokenId
+DELETE /api/projects/:id/tokens/:tokenId
 ```
 
 ---
@@ -1487,13 +1493,13 @@ DELETE /api/projects/:slug/tokens/:tokenId
 ### List Members
 
 ```
-GET /api/projects/:slug/members
+GET /api/projects/:id/members
 ```
 
 ### Add Member
 
 ```
-POST /api/projects/:slug/members
+POST /api/projects/:id/members
 ```
 
 ```json
@@ -1503,7 +1509,7 @@ POST /api/projects/:slug/members
 ### Update Member Role
 
 ```
-PUT /api/projects/:slug/members/:userId
+PUT /api/projects/:id/members/:userId
 ```
 
 ```json
@@ -1513,7 +1519,7 @@ PUT /api/projects/:slug/members/:userId
 ### Remove Member
 
 ```
-DELETE /api/projects/:slug/members/:userId
+DELETE /api/projects/:id/members/:userId
 ```
 
 ---

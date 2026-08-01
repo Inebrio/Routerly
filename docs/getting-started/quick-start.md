@@ -79,13 +79,13 @@ Built-in pricing presets are available for well-known model IDs. If a preset is 
 A **project** is an isolated workspace. It gets its own Bearer token and its own routing configuration.
 
 ```bash
-routerly project add \
-  --name "My App" \
-  --slug my-app \
-  --models gpt-5-mini
+routerly project create --name "My App"
+routerly project model add "My App" gpt-5-mini
 ```
 
-The command prints your **project token** — a string starting with `sk-rt-`. Save it; you'll use it in your application.
+`project create` makes an empty project; target models are attached one at a time with `project model add`, which is also where you set the priority and the system prompt hint for that model.
+
+`project create` prints your **project token**, a string starting with `sk-rt-`. Save it; you'll use it in your application.
 
 :::warning Token visibility
 The project token is shown **only once** after creation. Store it securely. You can generate a new token from the dashboard at any time.

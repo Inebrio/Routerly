@@ -251,17 +251,11 @@ Anthropic-compatible token counting endpoint. Returns the number of input tokens
 
 ---
 
-## Project-Scoped Proxy
+## Project Resolution
 
-The same endpoints are available scoped to a specific project:
+There is no project prefix in the proxy URL. The project is resolved from the Bearer token: a project token belongs to exactly one project, and that project's routing configuration, budgets and guardrails apply to the request.
 
-```
-POST /projects/{slug}/v1/chat/completions
-POST /projects/{slug}/v1/responses
-POST /projects/{slug}/v1/messages
-```
-
-The project slug in the URL takes precedence over the slug inferred from the Bearer token. Use this when one token has access to multiple projects.
+To send traffic to a different project, use that project's token.
 
 ---
 

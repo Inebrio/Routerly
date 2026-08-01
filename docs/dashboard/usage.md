@@ -107,7 +107,7 @@ Click any row to open the full **Trace view**.
 
 The trace view shows the complete lifecycle of a single request:
 
-1. **Router Request** -- the routing engine's input: the project slug, requested model (if any), and active policies
+1. **Router Request** -- the routing engine's input: the project, requested model (if any), and active policies
 2. **Router Response** -- which model was selected and why (policy scores listed)
 3. **Model Request** -- the actual payload sent to the provider
 4. **Model Response** -- the raw provider response including all tokens and finish reason

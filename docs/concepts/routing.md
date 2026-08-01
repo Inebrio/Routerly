@@ -203,15 +203,17 @@ active behaviour.
 ### CLI
 
 ```bash
-# Add a model to a project with a monthly budget
-routerly project add-model \
-  --slug my-app \
-  --model gpt-5-mini \
-  --monthly-budget 10.00
+# Add a target model to a project, with a hint for the routing model
+routerly project model add "My App" gpt-5-mini --prompt "Short factual answers"
+
+# List the target models of a project
+routerly project model list "My App"
 
 # Remove a model
-routerly project remove-model --slug my-app --model gpt-5-mini
+routerly project model remove "My App" gpt-5-mini
 ```
+
+Budgets are not set here: they live on the model (`routerly model edit <id> --monthly-budget`) or on a project token. See [Budgets and Limits](./budgets-and-limits.md).
 
 ---
 

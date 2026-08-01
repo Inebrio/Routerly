@@ -95,10 +95,11 @@ Capabilities control which models the **capability** routing policy will select.
 
 ## Assigning Models to Projects
 
-A model is not usable in a project until it is assigned. When creating a project via CLI, use `--models`:
+A model is not usable in a project until it is assigned. From the CLI, add one model at a time:
 
 ```bash
-routerly project add --name "My App" --slug my-app --models gpt-5-mini,claude-haiku-4-5
+routerly project model add "My App" gpt-5-mini
+routerly project model add "My App" claude-haiku-4-5 --prompt "Use for short, cheap answers"
 ```
 
 From the dashboard, open the project → **Routing** tab, then drag and drop models into the routing configuration.

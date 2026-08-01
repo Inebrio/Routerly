@@ -20,30 +20,33 @@ A **project** is an isolated workspace inside Routerly. Each project has:
 ### CLI
 
 ```bash
-routerly project add \
-  --name "My App" \
-  --slug my-app \
-  --models gpt-5-mini,claude-haiku-4-5
+routerly project create --name "My App"
+routerly project model add "My App" gpt-5-mini
+routerly project model add "My App" claude-haiku-4-5
 ```
 
-`--slug` is the URL-safe identifier used in logs and the dashboard. It must be unique.
+A project is created empty. Target models are attached one at a time, so each one can carry its own system prompt hint.
 
 ### Dashboard
 
 1. Open **Projects** in the sidebar
 2. Click **+ New Project**
-3. Fill in Name, Slug, and optionally an initial model list
-4. Click **Create**
+3. Fill in the project name and, if the default of 2000 ms does not fit, the TTFT timeout
+4. Click **Create**, then open the **Routing** tab to add target models
 
 ---
 
 ## Project Tabs
 
-Each project in the dashboard has five tabs:
+Each project in the dashboard has nine tabs. The most used ones:
+
+### Dashboard
+
+The landing tab: what routing saved against the project's own target models, latency and TTFT, tokens with the share served from cache, traffic distribution and reliability. See [Dashboard: Projects](../dashboard/projects.md).
 
 ### General
 
-Shows the project name, slug, default request timeout, and the connection snippet (base URL and a masked token) ready to copy into your code.
+Shows the project name, the TTFT timeout, and the connection snippet (base URL and a masked token) ready to copy into your code.
 
 ### Routing
 
@@ -74,15 +77,11 @@ The log table auto-refreshes at a configurable interval (5 s / 15 s / 30 s / 1 m
 
 ---
 
-## Project Slugs
+## How a Request Reaches a Project
 
-Slugs are used in the scoped proxy URL:
+There is one set of proxy paths, `/v1/...`, and no project prefix in the URL. The project is resolved from the Bearer token: a project token belongs to exactly one project, so the token alone says which routing configuration, budgets and guardrails apply.
 
-```
-POST http://localhost:3000/projects/{slug}/v1/chat/completions
-```
-
-Using the scoped URL is optional — you can also use the generic `/v1/chat/completions` with a project token that is already bound to the project.
+To send traffic to a different project, use that project's token.
 
 ---
 
@@ -90,7 +89,7 @@ Using the scoped URL is optional — you can also use the generic `/v1/chat/comp
 
 ```bash
 routerly project list
-routerly project remove --slug my-app
+routerly project remove "My App"
 ```
 
 :::warning
