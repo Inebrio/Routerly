@@ -409,3 +409,100 @@ describe('report end-users', () => {
     expect(err.join('\n')).toContain('fail');
   });
 });
+
+// ── report savings (T64) ─────────────────────────────────────────────────────
+
+const savingsFixture = {
+  ...usageFixture,
+  savings: {
+    comparedCalls: 9,
+    comparedCost: 0.003,
+    comparedLatencyMs: 9000,
+    comparedInputTokens: 1000,
+    comparedOutputTokens: 500,
+    cache: { inputTokens: 400, cost: 0.0009 },
+    baselines: [
+      { modelId: 'cheap', cost: 0.003, costDelta: 0, costDeltaPercent: 0, latencyMs: 8000, latencyDeltaMs: -1000, latencySamples: 8 },
+      { modelId: 'expensive', cost: 0.03, costDelta: 0.027, costDeltaPercent: 90, latencySamples: 0 },
+    ],
+    optimizers: [
+      { id: 'ccr', calls: 7, tokensSaved: 4200, costSaved: 0.0126, rolledBack: 0 },
+      { id: 'caveman', calls: 2, tokensSaved: 130, costSaved: 0.0004, rolledBack: 3 },
+    ],
+  },
+};
+
+describe('report savings', () => {
+  it('asks the service for the savings block', async () => {
+    mockApi.mockResolvedValue(savingsFixture);
+    await run('savings');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('savings=1'));
+  });
+
+  it('reports the actual traffic and what the cache already saved', async () => {
+    mockApi.mockResolvedValue(savingsFixture);
+    const { out } = await run('savings');
+    const text = out.join('\n');
+    expect(text).toContain('Compared calls: 9');
+    expect(text).toContain('$0.003000');
+    expect(text).toContain('$0.000900 saved');
+  });
+
+  it('lists one counterfactual per target, with no time estimate when there is no sample', async () => {
+    mockApi.mockResolvedValue(savingsFixture);
+    const { out } = await run('savings');
+    const text = out.join('\n');
+    expect(text).toContain('expensive');
+    expect(text).toContain('$0.027000');
+    expect(text).toContain('90.0%');
+    expect(text).toContain('no sample');
+    expect(text).toContain('8,000 ms');
+  });
+
+  it('names each optimizer and counts its rollbacks', async () => {
+    mockApi.mockResolvedValue(savingsFixture);
+    const { out } = await run('savings');
+    const text = out.join('\n');
+    expect(text).toContain('Conversation Context Reduction');
+    expect(text).toContain('4,200');
+    expect(text).toContain('Caveman');
+  });
+
+  it('stays quiet about optimizers when none touched a call', async () => {
+    mockApi.mockResolvedValue({ ...savingsFixture, savings: { ...savingsFixture.savings, optimizers: [] } });
+    const { out } = await run('savings');
+    expect(out.join('\n')).not.toContain('What the optimizers removed');
+  });
+
+  it('says so when the project has no target model to compare against', async () => {
+    mockApi.mockResolvedValue({ ...savingsFixture, savings: { ...savingsFixture.savings, baselines: [] } });
+    const { out } = await run('savings');
+    expect(out.join('\n')).toContain('No target model to compare against');
+  });
+
+  it('reports an empty period instead of a table of zeros', async () => {
+    mockApi.mockResolvedValue({ ...savingsFixture, savings: { ...savingsFixture.savings, comparedCalls: 0 } });
+    const { out } = await run('savings', '--period', 'daily');
+    expect(out.join('\n')).toContain('No comparable calls for period: daily');
+  });
+
+  it('outputs the savings block alone with --json', async () => {
+    mockApi.mockResolvedValue(savingsFixture);
+    const { out } = await run('savings', '--json');
+    expect(JSON.parse(out.join('\n'))).toEqual(savingsFixture.savings);
+  });
+
+  it('passes --project and --type through as filters', async () => {
+    mockApi.mockResolvedValue(savingsFixture);
+    await run('savings', '--project', 'p1', '--type', 'embedding');
+    const url = String(mockApi.mock.calls[0]![1]);
+    expect(url).toContain('projectId=p1');
+    expect(url).toContain('requestType=embedding');
+  });
+
+  it('exits 1 on API error', async () => {
+    mockApi.mockRejectedValue(new Error('forbidden'));
+    const { err } = await run('savings');
+    expect(err.join('\n')).toContain('forbidden');
+  });
+});
