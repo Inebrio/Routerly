@@ -44,36 +44,38 @@ The Notifications tab is your personal in-app notification inbox.
 
 ![Profile Notifications tab showing the in-app inbox](../assets/screenshot-profile-notifications.png)
 
-It shows all notification events routed to you via any `dashboard` channel that includes you in its targets (or all events when no targeting is configured). Items are listed newest-first and include the event type, severity icon, and age.
+It shows the notification events routed to you: those addressed to you by a `dashboard` channel's targets (or every event when no targeting is configured), minus what your permissions and project scope hide. Sign-in events need `audit:read`, model events `model:read`, project events `project:read`, service lifecycle events `settings:read`; an item about a project you cannot reach never appears. Items are listed newest-first.
 
 ### Filtering the Inbox
 
 The inbox supports several filters to help you find relevant notifications:
 
 - **Severity** - `All`, `Info`, `Warning`, or `Critical`
-- **Event** - text search on event name (case-insensitive)
+- **Category** - `All categories`, `Routing`, `Provider`, `Budget`, `Config`, `Security`, `System`
+- **Event** - pick a specific event from the list, for example `Budget exhausted (budget.exceeded)`
 - **Date range** - pick a start and end date; date-only values span the full day
 
 Filters work in combination: applying multiple filters shows only items matching all of them.
 
 ### Table and Row Selection
 
-Each row shows the event type, severity color-coded, timestamp, and a brief detail summary. Click a row to open the **notification detail drawer** (see below).
+Each row shows the notification **title** with the raw event name underneath (`Provider call failed` / `provider.error`), severity color-coded, and the timestamp. Events emitted while serving the same request are folded into one row, badged with the event count (`3 events`). Click a row to open the **notification detail drawer** (see below).
 
 Use the checkbox column to select multiple notifications. A **bulk action bar** appears when one or more items are selected, with options to:
 - **Mark as Read** - marks selected items as read
 - **Mark as Unread** - marks selected items as unread
-- **Delete** - dismisses selected items from your inbox
+- **Archive** - removes selected items from your inbox
 
 ### Notification Detail Drawer
 
 Click on a notification row to open a detail drawer showing:
-- Full **Event ID**
-- **Event** type and **Severity**
-- **Timestamp** (ISO 8601 with full precision)
+- The notification **title** and, under it, the **cause**: one line built from the details, ending with the provider's own message when there is one (`ollama/qwen2.5:3b on ollama - TTFT timeout after 3000ms`)
+- **Event** name and **Category**
+- **Severity** and **Timestamp** (ISO 8601 with full precision)
+- **Details**, one row per key. Ids are links: `projectId` opens the project, `modelId` (also `primaryModelId` and `fallbackModelId`) opens the model, `traceId` opens the matching record in Usage
+- **Events in this incident** - the full sequence in the order it happened, when the item folds more than one event
 - **Status** - read or unread with a toggle button
-- Complete **Details** object (JSON formatted)
-- **Delete** button to dismiss this item
+- **Archive** button to remove this item from your inbox
 
 Press **Esc** to close the drawer without saving changes.
 
@@ -81,15 +83,15 @@ The drawer's read/unread toggle is synced immediately to the server - you don't 
 
 ### Unread Badge
 
-The notification bell icon next to your email address in the sidebar shows an unread count badge when new items arrive. Click the bell icon to open a quick-view popup showing the latest few notifications. Navigate to the **Notifications** tab here for the full inbox.
+The notification bell icon next to your email address in the sidebar shows an unread count badge when new items arrive. Click the bell icon to open a quick-view popup showing the latest few notifications by title. Navigate to the **Notifications** tab here for the full inbox.
 
 ### Marking as Read
 
 Items are marked as read when you click them in the detail drawer. Use the bulk action bar to mark multiple items at once, or use the API endpoint `POST /api/notifications/inbox/read` with `{ "all": true }` to mark all as read programmatically. CLI: `routerly notification read`.
 
-### Dismissing Notifications
+### Archiving Notifications
 
-Use the **Delete** button in the detail drawer or the bulk action bar **Delete** option (API: `POST /api/notifications/inbox/delete`, CLI: `routerly notification delete`). Dismissal is **per-user only** - other users' copies of the same notification remain in their inboxes unless they also dismiss it. There is no global delete: an item dismissed by one user is never removed from anyone else's inbox.
+Use the **Archive** button in the detail drawer or the bulk action bar **Archive** option (API: `POST /api/notifications/inbox/delete`, CLI: `routerly notification archive`). Archiving is **per-user only** - other users' copies of the same notification remain in their inboxes unless they also archive it. There is no global delete: an item archived by one user is never removed from anyone else's inbox.
 
 ---
 

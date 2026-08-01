@@ -186,6 +186,7 @@ Full endpoint catalogue: [API — Management](../api/management).
 | `GET` | `/api/projects` | List projects |
 | `POST` | `/api/projects` | Create a project |
 | `GET` | `/api/usage` | Query usage records |
+| `GET` | `/api/usage/:id` | Read one usage record by record id or trace id |
 | `GET` | `/api/settings` | Read service settings |
 | `PUT` | `/api/settings` | Update service settings |
 | `GET` | `/api/users` | List users (admin only) |

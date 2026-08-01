@@ -1362,6 +1362,18 @@ Guardrail judge call records appear in the `records` array with `callType: "guar
 
 The `outcome` filter on `GET /api/usage` accepts `blocked` in addition to `success`, `error`, and `budget_exceeded`.
 
+### Get a Single Usage Record
+
+```
+GET /api/usage/:id
+```
+
+Requires `report:read`. Returns the full usage record.
+
+`:id` is matched against the record id first, then against its `traceId`. That second lookup is what makes a notification carrying only a trace id link straight to the request that produced it.
+
+**Errors**: `404` record not found · `403` missing `report:read`
+
 Individual usage records for blocked requests carry `guardrailTriggered` (the rule identifier, e.g. `regex:pattern` or `injection:dan-mode`) and `blockedBy` (same value; present only when the outcome is `blocked`). Records where PII was redacted carry `piiRedacted` with an array of redacted entity types. Records where a guardrail triggered on the `flag` or `log` path carry `guardrailTriggered` but not `blockedBy`.
 
 :::note Wire format unchanged
@@ -1912,12 +1924,18 @@ POST /api/notifications/channels/:id/test
 
 ### Notifications Inbox {#notifications-inbox}
 
-The in-app notification inbox is per-user, available to any authenticated dashboard user (no special permission required). Returns only items for the current user (matched by the `targets` of the `dashboard` channel that created each item, or all items when no targeting was configured). Users can also dismiss items individually (soft delete), which removes them from their personal inbox only.
+The in-app notification inbox is per-user, available to any authenticated dashboard user (no special permission required). Three gates decide whether an item reaches the caller:
+
+1. **Audience** - the `targets` of the `dashboard` channel that created the item; no targeting means everyone.
+2. **Permissions** - `auth.*` events need `audit:read`, `config.model_*` needs `model:read`, `config.project_*` needs `project:read`, `system.*` needs `settings:read`. Routing, provider and budget events are not gated.
+3. **Projects** - an item whose `details.projectId` points at a project the caller cannot reach (by `projectIds` scope or membership) is hidden. Callers without a project scope see every project.
+
+Users can also dismiss items individually (soft delete), which removes them from their personal inbox only.
 
 #### List Inbox Items
 
 ```
-GET /api/notifications/inbox?limit=50&page=1&pageSize=20&severity=all&event=&unreadOnly=false&from=&to=
+GET /api/notifications/inbox?limit=50&page=1&pageSize=20&severity=all&category=&event=&unreadOnly=false&from=&to=
 ```
 
 **Query params:**
@@ -1925,6 +1943,7 @@ GET /api/notifications/inbox?limit=50&page=1&pageSize=20&severity=all&event=&unr
 - `page` - page number for paginated response (1-indexed, default 1)
 - `pageSize` - items per page (1–100, default 20)
 - `severity` - filter by severity: `info`, `warning`, `critical`, or `all` (default `all`)
+- `category` - filter by event category: `routing`, `provider`, `budget`, `config`, `security`, `system`. Omit for all categories
 - `event` - filter by event name substring (case-insensitive)
 - `unreadOnly` - when `true`, returns only items the current user has not read
 - `from` - start date (YYYY-MM-DD or ISO 8601 timestamp); when date-only, spans from 00:00
@@ -1939,14 +1958,18 @@ GET /api/notifications/inbox?limit=50&page=1&pageSize=20&severity=all&event=&unr
       "event": "provider.error",
       "severity": "critical",
       "timestamp": "2026-06-24T12:00:00.000Z",
-      "details": { "modelId": "openai/gpt-4o" },
-      "read": false
+      "details": { "modelId": "openai/gpt-4o", "traceId": "e7b1…" },
+      "read": false,
+      "traceId": "e7b1…",
+      "eventCount": 3
     }
   ],
   "unreadCount": 5,
   "enabled": true
 }
 ```
+
+Events emitted while serving the same request share a trace id and are folded into a single item: `traceId` carries that id and `eventCount` how many events it represents. `eventCount` is omitted when the item stands alone. The list never carries the folded sequence - fetch the item to get it.
 
 **Response `200` (paginated mode when `page` is provided):**
 ```json
@@ -1981,12 +2004,32 @@ GET /api/notifications/inbox/:id
   "event": "provider.error",
   "severity": "critical",
   "timestamp": "2026-06-24T12:00:00.000Z",
-  "details": { "modelId": "openai/gpt-4o", "latencyMs": 5000 },
-  "read": false
+  "details": { "modelId": "openai/gpt-4o", "latencyMs": 5000, "traceId": "e7b1…" },
+  "read": false,
+  "traceId": "e7b1…",
+  "eventCount": 2,
+  "events": [
+    {
+      "event": "routing.fallback_used",
+      "severity": "info",
+      "timestamp": "2026-06-24T11:59:58.000Z",
+      "details": { "primaryModelId": "openai/gpt-4o", "fallbackModelId": "ollama/qwen2.5:3b" }
+    },
+    {
+      "event": "provider.error",
+      "severity": "critical",
+      "timestamp": "2026-06-24T12:00:00.000Z",
+      "details": { "modelId": "openai/gpt-4o", "latencyMs": 5000 }
+    }
+  ]
 }
 ```
 
-**Errors**: `404` notification not found (either does not exist or is not in the current user's inbox)
+- `eventCount` - number of events folded into this item; `1` for a lone event
+- `events` - the incident's sequence, oldest first. Present only when a second event correlated on the same `traceId`. The top-level `event`, `severity` and `details` mirror the most severe entry
+- Only this endpoint returns `events`; the list endpoint stops at `traceId` and `eventCount`
+
+**Errors**: `404` notification not found (does not exist, is not in the current user's inbox, or the caller lacks the permission or project scope the item requires)
 
 #### Mark Inbox Items as Read
 

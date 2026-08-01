@@ -2226,22 +2226,31 @@ Manage the in-app notification inbox and delivery channels.
 ### `routerly notification list`
 
 ```
-routerly notification list [--json] [--from <date>] [--to <date>]
+routerly notification list [--json] [--severity <level>] [--category <name>]
+                           [--event <slug>] [--unread] [--from <date>] [--to <date>]
 ```
 
-List the 50 most recent inbox notifications. Results are newest-first.
+List the 50 most recent inbox notifications. Results are newest-first. Each row shows the severity, the category, the human title with the event name underneath, and the cause built from the event details.
 
 | Option | Description |
 |--------|-------------|
 | `--json` | Output raw JSON array |
+| `--severity <level>` | Only items of this severity: `info`, `warning`, `critical` |
+| `--category <name>` | Only items of this category: `routing`, `provider`, `budget`, `config`, `security`, `system` |
+| `--event <slug>` | Only items whose event name contains this text |
+| `--unread` | Only unread items |
 | `--from <date>` | Only items on or after this date (YYYY-MM-DD or ISO 8601) |
 | `--to <date>` | Only items on or before this date (YYYY-MM-DD or ISO 8601) |
 
 ```bash
 routerly notification list
+routerly notification list --category provider --severity critical
+routerly notification list --event budget --unread
 routerly notification list --from 2026-06-01 --to 2026-06-30
 routerly notification list --json
 ```
+
+An unknown `--category` is rejected before any request is sent, with the valid values listed on stderr and exit code 1.
 
 ### `routerly notification show <id>`
 
@@ -2249,9 +2258,12 @@ routerly notification list --json
 routerly notification show <id> [--json]
 ```
 
-Show a single notification with all details (including the `details` object). Secrets are masked.
+Show a single notification: title, event name, category, severity, read status, timestamp, the cause, the trace id when the item belongs to a correlated incident, and the full `details` object. Secrets are masked.
+
+When several events share the same trace, the command also prints **Events in this incident** listing the whole sequence in the order it happened.
 
 ```bash
+routerly notification show 8f3c…
 routerly notification show 8f3c… --json
 ```
 
@@ -2281,25 +2293,25 @@ routerly notification unread 8f3c…
 routerly notification unread  # mark all as unread
 ```
 
-### `routerly notification delete [ids...]`
+### `routerly notification archive [ids...]`
 
 ```
-routerly notification delete [<id> ...] [--all] [--json]
+routerly notification archive [<id> ...] [--all] [--json]
 ```
 
-Dismiss (delete) one or more notifications from your inbox. Deletion is per-user only; other users' copies remain.
+Archive one or more notifications from your inbox. Archiving is per-user only; other users' copies remain. `routerly notification delete` is kept as an alias of this command.
 
 | Option | Description |
 |--------|-------------|
-| `<id> ...` | One or more notification IDs to delete |
-| `--all` | Delete all notifications in your inbox |
-| `--json` | Output the delete count as JSON |
+| `<id> ...` | One or more notification IDs to archive |
+| `--all` | Archive all notifications in your inbox |
+| `--json` | Output the archived count as JSON |
 
 ```bash
-routerly notification delete 8f3c…
-routerly notification delete 8f3c… 1a2b… 3c4d…
-routerly notification delete --all
-routerly notification delete --all --json
+routerly notification archive 8f3c…
+routerly notification archive 8f3c… 1a2b… 3c4d…
+routerly notification archive --all
+routerly notification archive --all --json
 ```
 
 ### `routerly notification channel list`
