@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
+import { OPTIMIZER_CATALOG, optimizerLabel, optimizerThreshold } from '@routerly/shared';
 import type { ProjectConfig, OptimizerStep, OptimizerId, Message } from '@routerly/shared';
 
 interface InstalledOptimizer {
@@ -13,7 +14,33 @@ interface InstalledOptimizer {
 interface PreviewResult {
   estimatedTokensBefore: number;
   estimatedTokensAfter: number;
-  perStep: { id: string; before: number; after: number }[];
+  perStep: { id: string; before: number; after: number; messages?: Message[]; rolledBack?: boolean }[];
+  messages?: Message[];
+}
+
+interface TrafficSample {
+  capturedAt: string;
+  messages: Message[];
+  estimatedTokens: number;
+  truncated?: boolean;
+}
+
+/** The threshold of an optimizer as one cell: what it means and where it starts. */
+function thresholdCell(id: string): string {
+  const spec = optimizerThreshold(id);
+  if (!spec) return '-';
+  const range = `${spec.min}-${spec.max} ${spec.unit}`;
+  return spec.default != null ? `${range}, default ${spec.default}` : `${range}, required`;
+}
+
+/** Plain text of a message, joining the text parts of a structured content array. */
+function messageText(m: Message): string {
+  if (typeof m.content === 'string') return m.content;
+  if (!Array.isArray(m.content)) return '';
+  return m.content
+    .map(part => (typeof (part as { text?: unknown }).text === 'string' ? (part as { text: string }).text : ''))
+    .filter(Boolean)
+    .join('\n');
 }
 
 // ─── Helper: resolve project by name or ID ────────────────────────────────────
@@ -54,18 +81,81 @@ Examples:
     .action(async (opts: { json?: boolean }) => {
       try {
         const optimizers = await api<InstalledOptimizer[]>('GET', '/api/optimizers');
+        // The service reports what is installed; the catalog says what each one
+        // means and what its threshold does, so both surfaces describe them alike.
+        const described = optimizers.map(o => ({
+          ...o,
+          label: optimizerLabel(o.id),
+          ...(OPTIMIZER_CATALOG[o.id as OptimizerId]
+            ? { description: OPTIMIZER_CATALOG[o.id as OptimizerId]!.description }
+            : {}),
+          ...(optimizerThreshold(o.id) ? { threshold: optimizerThreshold(o.id) } : {}),
+        }));
         if (opts.json) {
-          console.log(JSON.stringify(optimizers, null, 2));
+          console.log(JSON.stringify(described, null, 2));
           return;
         }
-        if (optimizers.length === 0) {
+        if (described.length === 0) {
           console.log(chalk.yellow('No optimizers installed.'));
           return;
         }
-        const table = new Table({ head: ['ID', 'Klass', 'Installed'].map(h => chalk.cyan(h)) });
-        for (const o of optimizers) {
-          table.push([o.id, o.klass, o.installed ? 'yes' : 'no']);
+        const table = new Table({ head: ['ID', 'Name', 'Klass', 'Installed', 'Threshold'].map(h => chalk.cyan(h)) });
+        for (const o of described) {
+          table.push([o.id, o.label, o.klass, o.installed ? 'yes' : 'no', thresholdCell(o.id)]);
         }
+        console.log(table.toString());
+      } catch (err) {
+        reportError(err);
+      }
+    });
+
+  // ── optimizers samples ───────────────────────────────────────────────────────
+  cmd.command('samples <project>')
+    .description("List the project's recent prompts kept in memory by the service")
+    .option('--show <index>', 'Print the full text of one sample (1-based)')
+    .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  routerly optimizers samples my-api
+  routerly optimizers samples my-api --show 1
+  routerly optimizers samples my-api --json
+
+Samples are captured after PII scrubbing, held in memory only, and lost when
+the service restarts. Replay one with \`optimizers preview --sample\`.
+`)
+    .action(async (nameOrId: string, opts: { show?: string; json?: boolean }) => {
+      try {
+        const project = await resolveProject(nameOrId);
+        const samples = await api<TrafficSample[]>('GET', `/api/projects/${encodeURIComponent(project.id)}/optimizers/samples`);
+
+        if (opts.show !== undefined) {
+          const index = Number(opts.show);
+          const sample = Number.isInteger(index) ? samples[index - 1] : undefined;
+          if (!sample) {
+            console.error(chalk.red(`Error: no sample ${opts.show}. This project has ${samples.length}.`));
+            process.exit(1);
+          }
+          if (opts.json) {
+            console.log(JSON.stringify(sample, null, 2));
+            return;
+          }
+          console.log(chalk.gray(`Captured ${sample.capturedAt} · ${sample.estimatedTokens} tokens${sample.truncated ? ' · excerpt' : ''}`));
+          for (const m of sample.messages) console.log(`\n${chalk.cyan(m.role)}: ${messageText(m)}`);
+          return;
+        }
+
+        if (opts.json) {
+          console.log(JSON.stringify(samples, null, 2));
+          return;
+        }
+        if (samples.length === 0) {
+          console.log(chalk.yellow('No prompts captured yet. They appear once the project sends traffic.'));
+          return;
+        }
+        const table = new Table({ head: ['#', 'Captured', 'Tokens', 'Messages', 'Excerpt'].map(h => chalk.cyan(h)) });
+        samples.forEach((s, i) => {
+          table.push([String(i + 1), s.capturedAt, String(s.estimatedTokens), String(s.messages.length), s.truncated ? 'yes' : 'no']);
+        });
         console.log(table.toString());
       } catch (err) {
         reportError(err);
@@ -160,9 +250,11 @@ Examples:
         if (finalSteps.length === 0) {
           console.log(chalk.gray('  (no steps)'));
         } else {
-          const table = new Table({ head: ['#', 'ID', 'Enabled', 'Threshold'].map(h => chalk.cyan(h)) });
+          const table = new Table({ head: ['#', 'ID', 'Name', 'Enabled', 'Threshold'].map(h => chalk.cyan(h)) });
           finalSteps.forEach((s, i) => {
-            table.push([String(i + 1), s.id, s.enabled ? 'yes' : 'no', s.threshold ?? '-']);
+            const spec = optimizerThreshold(s.id);
+            const threshold = s.threshold ?? (spec?.default != null ? `${spec.default} (default)` : '-');
+            table.push([String(i + 1), s.id, optimizerLabel(s.id), s.enabled ? 'yes' : 'no', String(threshold)]);
           });
           console.log(table.toString());
         }
@@ -174,21 +266,39 @@ Examples:
   // ── optimizers preview ───────────────────────────────────────────────────────
   cmd.command('preview <project>')
     .description('Dry-run the project optimizer pipeline over sample messages')
-    .requiredOption('--message <text>', 'A user message to include (repeatable)', collect, [])
+    .option('--message <text>', 'A user message to include (repeatable)', collect, [])
+    .option('--sample <index>', 'Replay a prompt listed by `optimizers samples` (1-based)')
     .option('--json', 'Output raw JSON')
     .addHelpText('after', `
 Examples:
   routerly optimizers preview my-api --message "Summarize this thread"
   routerly optimizers preview my-api --message "first" --message "second" --json
+  routerly optimizers preview my-api --sample 1
 `)
-    .action(async (nameOrId: string, opts: { message: string[]; json?: boolean }) => {
+    .action(async (nameOrId: string, opts: { message: string[]; sample?: string; json?: boolean }) => {
       try {
-        if (opts.message.length === 0) {
-          console.error(chalk.red('Error: provide at least one --message.'));
+        if (opts.message.length === 0 && opts.sample === undefined) {
+          console.error(chalk.red('Error: provide at least one --message, or --sample <index>.'));
+          process.exit(1);
+        }
+        if (opts.message.length > 0 && opts.sample !== undefined) {
+          console.error(chalk.red('Error: --message and --sample are mutually exclusive.'));
           process.exit(1);
         }
         const project = await resolveProject(nameOrId);
-        const sampleMessages: Message[] = opts.message.map(text => ({ role: 'user', content: text }));
+        let sampleMessages: Message[];
+        if (opts.sample !== undefined) {
+          const samples = await api<TrafficSample[]>('GET', `/api/projects/${encodeURIComponent(project.id)}/optimizers/samples`);
+          const index = Number(opts.sample);
+          const picked = Number.isInteger(index) ? samples[index - 1] : undefined;
+          if (!picked) {
+            console.error(chalk.red(`Error: no sample ${opts.sample}. This project has ${samples.length}.`));
+            process.exit(1);
+          }
+          sampleMessages = picked.messages;
+        } else {
+          sampleMessages = opts.message.map(text => ({ role: 'user', content: text }));
+        }
         const steps = project.optimizers?.steps ?? [];
         const result = await api<PreviewResult>('POST', '/api/optimizers/preview', {
           projectId: project.id,
@@ -207,11 +317,15 @@ Examples:
           console.log(chalk.yellow('\nNo optimizer steps configured on this project.'));
           return;
         }
-        const table = new Table({ head: ['ID', 'Before', 'After'].map(h => chalk.cyan(h)) });
+        const table = new Table({ head: ['ID', 'Name', 'Before', 'After', 'Saved'].map(h => chalk.cyan(h)) });
         for (const s of result.perStep) {
-          table.push([s.id, String(s.before), String(s.after)]);
+          const saved = s.rolledBack ? chalk.yellow('rolled back') : String(s.before - s.after);
+          table.push([s.id, optimizerLabel(s.id), String(s.before), String(s.after), saved]);
         }
         console.log('\n' + table.toString());
+        if (result.perStep.some(s => s.rolledBack)) {
+          console.log(chalk.yellow('\nA rolled-back step produced a prompt the service judged unsafe, so its change was discarded.'));
+        }
       } catch (err) {
         reportError(err);
       }
