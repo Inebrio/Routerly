@@ -35,7 +35,7 @@ const mockUseExperiment = vi.mocked(useExperiment);
 
 const token = { id: 't1', tokenSnippet: 'sk-rt-abc', createdAt: '2026-07-01T00:00:00.000Z', lastUsedAt: '2026-07-20T00:00:00.000Z' };
 const experiment = {
-  id: 'exp-1', name: 'Cheap vs premium', status: 'running',
+  id: 'exp-1', name: 'Cheap vs premium',
   variants: [], tokens: [token], createdAt: '2026-07-01T00:00:00.000Z',
 };
 

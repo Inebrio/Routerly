@@ -32,11 +32,6 @@ export const STICKY_KEYS = ['auto', 'end-user', 'conversation', 'client'] as con
 
 export type ExperimentStickyKey = (typeof STICKY_KEYS)[number];
 
-/** Lifecycle of an experiment. Closing is manual: there is no auto-stop rule. */
-export const EXPERIMENT_STATUSES = ['draft', 'running', 'closed'] as const;
-
-export type ExperimentStatus = (typeof EXPERIMENT_STATUSES)[number];
-
 export interface ExperimentRotationMeta {
   label: string;
   /** One line, written for the person choosing between the three. */
@@ -141,7 +136,6 @@ export interface ExperimentConfig {
   id: string;
   name: string;
   description?: string;
-  status: ExperimentStatus;
   rotation: ExperimentRotation;
   /** Only meaningful for `sticky` rotation. Defaults to `auto`. */
   stickyKey?: ExperimentStickyKey;
@@ -160,12 +154,6 @@ export interface ExperimentConfig {
   /** Overrides DEFAULT_MIN_SAMPLES_PER_VARIANT for this experiment. */
   minSamplesPerVariant?: number;
   createdAt: string; // ISO 8601
-  /** First transition to `running`. */
-  startedAt?: string;
-  /** Transition to `closed`. */
-  closedAt?: string;
-  /** Variant the operator declared the winner when closing. Free choice: the metrics inform it, they do not decide it. */
-  winnerVariantId?: string;
 }
 
 /**
@@ -215,7 +203,6 @@ export interface ExperimentVariantMetrics {
 /** The whole comparison, one entry per variant, plus whether it can be read yet. */
 export interface ExperimentMetrics {
   experimentId: string;
-  status: ExperimentStatus;
   minSamplesPerVariant: number;
   totalCalls: number;
   variants: ExperimentVariantMetrics[];

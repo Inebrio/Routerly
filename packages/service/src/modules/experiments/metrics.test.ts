@@ -7,7 +7,6 @@ function experiment(over: { [K in keyof ExperimentConfig]?: ExperimentConfig[K] 
   return {
     id: 'exp-1',
     name: 'Prompt A vs B',
-    status: 'running',
     rotation: 'round-robin',
     variants: [
       { id: 'v-a', projectId: 'proj-a' },
@@ -186,9 +185,8 @@ describe('computeExperimentMetrics', () => {
     expect(m.ready).toBe(false);
   });
 
-  it('echoes the experiment id and status', () => {
-    const m = computeExperimentMetrics(experiment({ status: 'closed' }), []);
+  it('echoes the experiment id', () => {
+    const m = computeExperimentMetrics(experiment(), []);
     expect(m.experimentId).toBe('exp-1');
-    expect(m.status).toBe('closed');
   });
 });

@@ -1,27 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Play, ShieldOff, Split } from 'lucide-react';
+import { Plus, Trash2, ShieldOff, Split } from 'lucide-react';
 import {
-  getExperiments, getProjects, deleteExperiment, startExperiment,
-  type ApiError, type ExperimentStatus, type MaskedExperiment, type Project,
+  getExperiments, getProjects, deleteExperiment,
+  type ApiError, type MaskedExperiment, type Project,
 } from '../api';
 import { rotationLabel, type ExperimentRotation } from '@routerly/shared';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { SearchableSelect } from '../components/SearchableSelect';
 import { useAuth } from '../AuthContext';
-
-export const STATUS_LABELS: Record<ExperimentStatus, string> = {
-  draft: 'Draft',
-  running: 'Running',
-  closed: 'Closed',
-};
-
-/** Draft still needs a start, running takes live traffic, closed is history. */
-export const STATUS_BADGE: Record<ExperimentStatus, string> = {
-  draft: 'badge-warning',
-  running: 'badge-success',
-  closed: 'badge-custom',
-};
 
 /**
  * Whether the nav should offer Experiments at all: the permission decides, and a
@@ -58,7 +44,6 @@ export function ExperimentsPage() {
 
   const [experiments, setExperiments] = useState<MaskedExperiment[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [statusFilter, setStatusFilter] = useState<'' | ExperimentStatus>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
@@ -80,16 +65,6 @@ export function ExperimentsPage() {
     return e.variants
       .map(v => v.name ?? projects.find(p => p.id === v.projectId)?.name ?? v.projectId.slice(0, 8))
       .join(' vs ');
-  }
-
-  async function handleStart(e: MaskedExperiment) {
-    setError('');
-    try {
-      const started = await startExperiment(e.id);
-      setExperiments(list => list.map(x => (x.id === e.id ? started : x)));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start the experiment');
-    }
   }
 
   function handleDelete(e: MaskedExperiment) {
@@ -122,8 +97,6 @@ export function ExperimentsPage() {
     );
   }
 
-  const visible = statusFilter === '' ? experiments : experiments.filter(e => e.status === statusFilter);
-
   return (
     <>
       <div className="page-header">
@@ -139,20 +112,8 @@ export function ExperimentsPage() {
           <>
             <div className="toolbar">
               <span className="toolbar-title">
-                {visible.length} experiment{visible.length !== 1 ? 's' : ''}
+                {experiments.length} experiment{experiments.length !== 1 ? 's' : ''}
               </span>
-              <div style={{ width: 200 }}>
-                <SearchableSelect
-                  ariaLabel="Status"
-                  placeholder="All statuses"
-                  value={statusFilter}
-                  onChange={v => setStatusFilter(v as '' | ExperimentStatus)}
-                  options={[
-                    { value: '', label: 'All statuses' },
-                    ...(Object.keys(STATUS_LABELS) as ExperimentStatus[]).map(s => ({ value: s, label: STATUS_LABELS[s] })),
-                  ]}
-                />
-              </div>
               {canManage && (
                 <button className="btn btn-primary" onClick={() => navigate('/dashboard/experiments/new')}>
                   <Plus size={16} /> New Experiment
@@ -160,18 +121,17 @@ export function ExperimentsPage() {
               )}
             </div>
 
-            {visible.length === 0 ? (
+            {experiments.length === 0 ? (
               <div className="empty-state">
                 <Split size={40} />
                 <p>No experiments yet. Create one to compare two projects on live traffic.</p>
               </div>
             ) : (
               <div className="table-wrap" style={{ overflowX: 'auto' }}>
-                <table style={{ minWidth: 820 }}>
+                <table style={{ minWidth: 760 }}>
                   <thead>
                     <tr>
                       <th>Name</th>
-                      <th>Status</th>
                       <th>Variants</th>
                       <th>Rotation</th>
                       <th>Created</th>
@@ -179,25 +139,22 @@ export function ExperimentsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {visible.map(e => (
+                    {experiments.map(e => (
                       <tr key={e.id}>
                         <td style={{ maxWidth: 360 }}>
-                          <Link to={`/dashboard/experiments/${e.id}`} style={{ fontWeight: 500 }}>{e.name}</Link>
-                          {e.description && (
-                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.45 }}>
-                              {e.description}
-                            </div>
-                          )}
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                            <span className={`badge ${STATUS_BADGE[e.status]}`}>{STATUS_LABELS[e.status]}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <Link to={`/dashboard/experiments/${e.id}`} style={{ fontWeight: 500 }}>{e.name}</Link>
                             {e.tokens.length === 0 && (
                               <span className="badge badge-warning" title="Without a token no client can reach this experiment">
                                 No token
                               </span>
                             )}
                           </div>
+                          {e.description && (
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.45 }}>
+                              {e.description}
+                            </div>
+                          )}
                         </td>
                         <td><span style={{ fontSize: '0.82rem' }}>{variantLabels(e) || '—'}</span></td>
                         <td><span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{rotationLabel(e.rotation as ExperimentRotation)}</span></td>
@@ -205,12 +162,7 @@ export function ExperimentsPage() {
                         <td>
                           {/* A flex td collapses the row's own height: keep the layout on an inner box. */}
                           <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                            {canManage && e.status === 'draft' && (
-                              <button className="btn-icon" onClick={() => handleStart(e)} title="Start">
-                                <Play size={15} />
-                              </button>
-                            )}
-                            {canManage && e.status !== 'running' && (
+                            {canManage && (
                               <button className="btn-icon danger" onClick={() => handleDelete(e)} title="Delete">
                                 <Trash2 size={15} />
                               </button>

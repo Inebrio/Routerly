@@ -68,7 +68,6 @@ export function computeExperimentMetrics(
 
   return {
     experimentId: experiment.id,
-    status: experiment.status,
     minSamplesPerVariant: minSamples,
     totalCalls: mine.length,
     variants,

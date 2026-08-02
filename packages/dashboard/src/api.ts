@@ -1040,7 +1040,6 @@ export type {
   ExperimentJudge,
   ExperimentMetrics,
   ExperimentRotation,
-  ExperimentStatus,
   ExperimentStickyKey,
   ExperimentVariant,
   ExperimentVariantMetrics,
@@ -1080,13 +1079,6 @@ export const createExperiment = (data: CreateExperimentBody) =>
   request<MaskedExperiment & { token: string }>('/experiments', { method: 'POST', body: JSON.stringify(data) });
 export const updateExperiment = (id: string, data: UpdateExperimentBody) =>
   request<MaskedExperiment>(`/experiments/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
-export const startExperiment = (id: string) =>
-  request<MaskedExperiment>(`/experiments/${encodeURIComponent(id)}/start`, { method: 'POST' });
-export const closeExperiment = (id: string, winnerVariantId?: string) =>
-  request<MaskedExperiment>(`/experiments/${encodeURIComponent(id)}/close`, {
-    method: 'POST',
-    body: JSON.stringify(winnerVariantId ? { winnerVariantId } : {}),
-  });
 export const createExperimentToken = (id: string) =>
   request<{ token: string; tokenInfo: ProjectToken }>(`/experiments/${encodeURIComponent(id)}/tokens`, { method: 'POST' });
 export const deleteExperimentToken = (id: string, tokenId: string) =>

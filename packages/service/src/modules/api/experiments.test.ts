@@ -48,7 +48,6 @@ function experiment(over: Record<string, any> = {}) {
   return {
     id: 'exp-1',
     name: 'Prompt A vs B',
-    status: 'draft',
     rotation: 'sticky',
     variants: [{ id: 'v-a', projectId: 'proj-a' }, { id: 'v-b', projectId: 'proj-b' }],
     tokens: [{ id: 'tok-1', token: 'sk-rt-secret', tokenSnippet: 'sk-rt-secr', createdAt: '2026-08-01T00:00:00.000Z' }],
@@ -122,7 +121,7 @@ describe('GET /api/experiments/:id/metrics', () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'GET', url: '/api/experiments/exp-1/metrics',
-      headers: authWith('experiments:read', { experiments: [experiment({ status: 'running' })], usage, projects }),
+      headers: authWith('experiments:read', { experiments: [experiment()], usage, projects }),
     })
     await app.close()
     expect(res.statusCode).toBe(200)
@@ -141,7 +140,7 @@ describe('GET /api/experiments/:id/metrics', () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/experiments/exp-1/metrics?from=2026-08-01T10:00:00.500Z&to=2026-08-01T10:00:01.500Z',
-      headers: authWith('experiments:read', { experiments: [experiment({ status: 'running' })], usage, projects }),
+      headers: authWith('experiments:read', { experiments: [experiment()], usage, projects }),
     })
     await app.close()
     expect(res.statusCode).toBe(200)
@@ -155,7 +154,7 @@ describe('GET /api/experiments/:id/metrics', () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'GET', url: '/api/experiments/exp-1/metrics?from=&to=',
-      headers: authWith('experiments:read', { experiments: [experiment({ status: 'running' })], usage, projects }),
+      headers: authWith('experiments:read', { experiments: [experiment()], usage, projects }),
     })
     await app.close()
     expect(JSON.parse(res.body).totalCalls).toBe(2)
@@ -188,7 +187,7 @@ describe('GET /api/experiments/:id/metrics', () => {
 })
 
 describe('POST /api/experiments', () => {
-  it('creates a draft with its own token, returned once', async () => {
+  it('creates an experiment with its own token, returned once', async () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'POST', url: '/api/experiments',
@@ -198,7 +197,6 @@ describe('POST /api/experiments', () => {
     await app.close()
     expect(res.statusCode).toBe(201)
     const body = JSON.parse(res.body)
-    expect(body.status).toBe('draft')
     expect(body.token).toMatch(/^sk-rt-[0-9a-f]{64}$/)
     expect(body.tokens[0].token).toBeUndefined()
     expect(body.variants.every((v: any) => typeof v.id === 'string' && v.id.length > 0)).toBe(true)
@@ -263,7 +261,7 @@ describe('POST /api/experiments', () => {
 })
 
 describe('PATCH /api/experiments/:id', () => {
-  it('edits a draft in full', async () => {
+  it('edits every field, at any point in the experiment life', async () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'PATCH', url: '/api/experiments/exp-1',
@@ -276,23 +274,11 @@ describe('PATCH /api/experiments/:id', () => {
     expect(written()[0].variants).toHaveLength(1)
   })
 
-  it('freezes the design of a running experiment', async () => {
+  it('renames an experiment', async () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'PATCH', url: '/api/experiments/exp-1',
-      headers: authWith('experiments:manage', { projects, experiments: [experiment({ status: 'running' })] }),
-      payload: { rotation: 'weighted' },
-    })
-    await app.close()
-    expect(res.statusCode).toBe(409)
-    expect(JSON.parse(res.body).error).toBe('experiment_frozen')
-  })
-
-  it('still renames a running experiment', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'PATCH', url: '/api/experiments/exp-1',
-      headers: authWith('experiments:manage', { projects, experiments: [experiment({ status: 'running' })] }),
+      headers: authWith('experiments:manage', { projects, experiments: [experiment()] }),
       payload: { name: 'Renamed' },
     })
     await app.close()
@@ -319,104 +305,6 @@ describe('PATCH /api/experiments/:id', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(404)
-  })
-})
-
-describe('POST /api/experiments/:id/start', () => {
-  it('moves a draft to running and stamps startedAt', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'POST', url: '/api/experiments/exp-1/start',
-      headers: authWith('experiments:manage', { experiments: [experiment()] }),
-    })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    const body = JSON.parse(res.body)
-    expect(body.status).toBe('running')
-    expect(body.startedAt).toBeTruthy()
-  })
-
-  it('refuses an experiment that is already running', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'POST', url: '/api/experiments/exp-1/start',
-      headers: authWith('experiments:manage', { experiments: [experiment({ status: 'running' })] }),
-    })
-    await app.close()
-    expect(res.statusCode).toBe(409)
-  })
-
-  it('refuses to start with fewer than two variants', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'POST', url: '/api/experiments/exp-1/start',
-      headers: authWith('experiments:manage', { experiments: [experiment({ variants: [{ id: 'v-a', projectId: 'proj-a' }] })] }),
-    })
-    await app.close()
-    expect(res.statusCode).toBe(400)
-    expect(JSON.parse(res.body).error).toBe('too_few_variants')
-  })
-
-  it('refuses to start with no token to call', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'POST', url: '/api/experiments/exp-1/start',
-      headers: authWith('experiments:manage', { experiments: [experiment({ tokens: [] })] }),
-    })
-    await app.close()
-    expect(res.statusCode).toBe(400)
-    expect(JSON.parse(res.body).error).toBe('no_token')
-  })
-})
-
-describe('POST /api/experiments/:id/close', () => {
-  it('closes a running experiment and records the winner', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'POST', url: '/api/experiments/exp-1/close',
-      headers: authWith('experiments:manage', { experiments: [experiment({ status: 'running' })] }),
-      payload: { winnerVariantId: 'v-b' },
-    })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    const body = JSON.parse(res.body)
-    expect(body.status).toBe('closed')
-    expect(body.winnerVariantId).toBe('v-b')
-    expect(body.closedAt).toBeTruthy()
-  })
-
-  it('closes without naming a winner', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'POST', url: '/api/experiments/exp-1/close',
-      headers: authWith('experiments:manage', { experiments: [experiment({ status: 'running' })] }),
-      payload: {},
-    })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    expect(JSON.parse(res.body).winnerVariantId).toBeUndefined()
-  })
-
-  it('refuses a winner that is not one of the variants', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'POST', url: '/api/experiments/exp-1/close',
-      headers: authWith('experiments:manage', { experiments: [experiment({ status: 'running' })] }),
-      payload: { winnerVariantId: 'ghost' },
-    })
-    await app.close()
-    expect(res.statusCode).toBe(404)
-  })
-
-  it('refuses to close a draft', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'POST', url: '/api/experiments/exp-1/close',
-      headers: authWith('experiments:manage', { experiments: [experiment()] }),
-      payload: {},
-    })
-    await app.close()
-    expect(res.statusCode).toBe(409)
   })
 })
 
@@ -458,7 +346,7 @@ describe('experiment tokens', () => {
 })
 
 describe('DELETE /api/experiments/:id', () => {
-  it('deletes a draft', async () => {
+  it('deletes an experiment', async () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'DELETE', url: '/api/experiments/exp-1',
@@ -467,27 +355,6 @@ describe('DELETE /api/experiments/:id', () => {
     await app.close()
     expect(res.statusCode).toBe(204)
     expect(written()).toHaveLength(0)
-  })
-
-  it('refuses to delete a running experiment', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'DELETE', url: '/api/experiments/exp-1',
-      headers: authWith('experiments:manage', { experiments: [experiment({ status: 'running' })] }),
-    })
-    await app.close()
-    expect(res.statusCode).toBe(409)
-    expect(JSON.parse(res.body).error).toBe('experiment_running')
-  })
-
-  it('deletes a closed experiment', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'DELETE', url: '/api/experiments/exp-1',
-      headers: authWith('experiments:manage', { experiments: [experiment({ status: 'closed' })] }),
-    })
-    await app.close()
-    expect(res.statusCode).toBe(204)
   })
 
   it('forbids without experiments:manage', async () => {

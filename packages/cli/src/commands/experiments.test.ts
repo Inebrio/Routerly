@@ -53,11 +53,10 @@ const projects: ProjectConfig[] = [
   { id: 'p-premium', name: 'premium-api', models: [], timeoutMs: 2000, autoRouting: true, tokens: [], members: [], policies: [] },
 ];
 
-const draft: ExperimentConfig = {
+const experiment: ExperimentConfig = {
   id: 'exp-1',
   name: 'Cheap vs premium',
   description: 'Which arm answers well enough',
-  status: 'draft',
   rotation: 'sticky',
   stickyKey: 'end-user',
   variants: [
@@ -71,11 +70,8 @@ const draft: ExperimentConfig = {
   createdAt: '2026-07-01T10:00:00.000Z',
 };
 
-const running: ExperimentConfig = { ...draft, status: 'running', startedAt: '2026-07-02T10:00:00.000Z' };
-
 const metrics: ExperimentMetrics = {
   experimentId: 'exp-1',
-  status: 'running',
   minSamplesPerVariant: 30,
   totalCalls: 120,
   ready: true,
@@ -93,32 +89,14 @@ beforeEach(() => {
 // ─── experiments list ──────────────────────────────────────────────────────
 
 describe('experiments list', () => {
-  it('prints one row per experiment with its status and rotation', async () => {
-    mockApi.mockResolvedValueOnce([draft, running]);
+  it('prints one row per experiment with its rotation', async () => {
+    mockApi.mockResolvedValueOnce([experiment]);
     const lines = capture();
     await makeCmd().parseAsync(['node', 'experiments', 'list']);
     const out = lines.join('\n');
     expect(out).toContain('Cheap vs premium');
-    expect(out).toContain('draft');
-    expect(out).toContain('running');
     expect(out).toContain('Sticky per session');
     expect(mockApi).toHaveBeenCalledWith('GET', '/api/experiments');
-  });
-
-  it('filters by status', async () => {
-    mockApi.mockResolvedValueOnce([draft, running]);
-    const lines = capture();
-    await makeCmd().parseAsync(['node', 'experiments', 'list', '--status', 'running', '--json']);
-    const parsed = JSON.parse(lines.join('\n')) as ExperimentConfig[];
-    expect(parsed.map(e => e.status)).toEqual(['running']);
-  });
-
-  it('rejects an unknown status before calling the API', async () => {
-    const exitSpy = expectExit();
-    await expect(makeCmd().parseAsync(['node', 'experiments', 'list', '--status', 'nope'])).rejects.toThrow('exit');
-    expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Unknown --status "nope"'));
-    expect(mockApi).not.toHaveBeenCalled();
   });
 
   it('shows the empty state', async () => {
@@ -150,7 +128,7 @@ describe('experiments list', () => {
 
 describe('experiments show', () => {
   it('prints the configuration, the variants and the tokens', async () => {
-    mockApi.mockResolvedValueOnce(draft).mockResolvedValueOnce(projects);
+    mockApi.mockResolvedValueOnce(experiment).mockResolvedValueOnce(projects);
     const lines = capture();
     await makeCmd().parseAsync(['node', 'experiments', 'show', 'exp-1']);
     const out = lines.join('\n');
@@ -165,24 +143,17 @@ describe('experiments show', () => {
   });
 
   it('flags a variant whose project was deleted', async () => {
-    mockApi.mockResolvedValueOnce(draft).mockResolvedValueOnce([projects[0]!]);
+    mockApi.mockResolvedValueOnce(experiment).mockResolvedValueOnce([projects[0]!]);
     const lines = capture();
     await makeCmd().parseAsync(['node', 'experiments', 'show', 'exp-1']);
     expect(lines.join('\n')).toContain('p-premium (deleted)');
   });
 
-  it('marks the declared winner', async () => {
-    mockApi.mockResolvedValueOnce({ ...draft, status: 'closed', winnerVariantId: 'v-b' }).mockResolvedValueOnce(projects);
-    const lines = capture();
-    await makeCmd().parseAsync(['node', 'experiments', 'show', 'exp-1']);
-    expect(lines.join('\n')).toContain('winner');
-  });
-
   it('outputs raw JSON with --json', async () => {
-    mockApi.mockResolvedValueOnce(draft);
+    mockApi.mockResolvedValueOnce(experiment);
     const lines = capture();
     await makeCmd().parseAsync(['node', 'experiments', 'show', 'exp-1', '--json']);
-    expect(JSON.parse(lines.join('\n'))).toEqual(draft);
+    expect(JSON.parse(lines.join('\n'))).toEqual(experiment);
   });
 });
 
@@ -190,7 +161,7 @@ describe('experiments show', () => {
 
 describe('experiments create', () => {
   it('resolves the variant projects by name and prints the token once', async () => {
-    mockApi.mockResolvedValueOnce(projects).mockResolvedValueOnce({ ...draft, token: 'sk-rt-plaintext' });
+    mockApi.mockResolvedValueOnce(projects).mockResolvedValueOnce({ ...experiment, token: 'sk-rt-plaintext' });
     const lines = capture();
     await makeCmd().parseAsync([
       'node', 'experiments', 'create', '--name', 'Cheap vs premium',
@@ -203,11 +174,10 @@ describe('experiments create', () => {
     });
     const out = lines.join('\n');
     expect(out).toContain('sk-rt-plaintext');
-    expect(out).toContain('routerly experiments start exp-1');
   });
 
   it('reads the weight off the variant spec', async () => {
-    mockApi.mockResolvedValueOnce(projects).mockResolvedValueOnce({ ...draft, token: 'x' });
+    mockApi.mockResolvedValueOnce(projects).mockResolvedValueOnce({ ...experiment, token: 'x' });
     await makeCmd().parseAsync([
       'node', 'experiments', 'create', '--name', 'Split', '--rotation', 'weighted',
       '--variant', 'cheap-api=80', '--variant', 'premium-api:Premium=20',
@@ -220,7 +190,7 @@ describe('experiments create', () => {
   });
 
   it('sends the judge sample rate as a fraction', async () => {
-    mockApi.mockResolvedValueOnce(projects).mockResolvedValueOnce({ ...draft, token: 'x' });
+    mockApi.mockResolvedValueOnce(projects).mockResolvedValueOnce({ ...experiment, token: 'x' });
     await makeCmd().parseAsync([
       'node', 'experiments', 'create', '--name', 'Judged', '--variant', 'cheap-api', '--variant', 'premium-api',
       '--judge-model', 'gpt-4o', '--criteria', 'Stays factual', '--criteria', 'Keeps the format', '--sample-rate', '20',
@@ -230,7 +200,7 @@ describe('experiments create', () => {
   });
 
   it('defaults the judge to every call when no rate is given', async () => {
-    mockApi.mockResolvedValueOnce(projects).mockResolvedValueOnce({ ...draft, token: 'x' });
+    mockApi.mockResolvedValueOnce(projects).mockResolvedValueOnce({ ...experiment, token: 'x' });
     await makeCmd().parseAsync(['node', 'experiments', 'create', '--name', 'Judged', '--variant', 'cheap-api', '--judge-model', 'gpt-4o']);
     const [, , body] = mockApi.mock.calls[1] as [string, string, { judge: { sampleRate: number } }];
     expect(body.judge.sampleRate).toBe(1);
@@ -268,7 +238,7 @@ describe('experiments create', () => {
   });
 
   it('outputs raw JSON with --json', async () => {
-    mockApi.mockResolvedValueOnce({ ...draft, token: 'sk-rt-plaintext' });
+    mockApi.mockResolvedValueOnce({ ...experiment, token: 'sk-rt-plaintext' });
     const lines = capture();
     await makeCmd().parseAsync(['node', 'experiments', 'create', '--name', 'X', '--json']);
     expect(JSON.parse(lines.join('\n')).token).toBe('sk-rt-plaintext');
@@ -279,13 +249,13 @@ describe('experiments create', () => {
 
 describe('experiments update', () => {
   it('sends only the fields that were given', async () => {
-    mockApi.mockResolvedValueOnce(draft);
+    mockApi.mockResolvedValueOnce(experiment);
     await makeCmd().parseAsync(['node', 'experiments', 'update', 'exp-1', '--name', 'New name', '--min-samples', '50']);
     expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/experiments/exp-1', { name: 'New name', minSamplesPerVariant: 50 });
   });
 
   it('disables the judge without losing its configuration', async () => {
-    mockApi.mockResolvedValueOnce(draft).mockResolvedValueOnce({ ...draft, judge: { ...draft.judge!, enabled: false } });
+    mockApi.mockResolvedValueOnce(experiment).mockResolvedValueOnce({ ...experiment, judge: { ...experiment.judge!, enabled: false } });
     await makeCmd().parseAsync(['node', 'experiments', 'update', 'exp-1', '--no-judge']);
     expect(mockApi).toHaveBeenNthCalledWith(1, 'GET', '/api/experiments/exp-1');
     expect(mockApi).toHaveBeenNthCalledWith(2, 'PATCH', '/api/experiments/exp-1', {
@@ -294,7 +264,7 @@ describe('experiments update', () => {
   });
 
   it('refuses to disable a judge that was never configured', async () => {
-    mockApi.mockResolvedValueOnce({ ...draft, judge: undefined });
+    mockApi.mockResolvedValueOnce({ ...experiment, judge: undefined });
     const exitSpy = expectExit();
     await expect(makeCmd().parseAsync(['node', 'experiments', 'update', 'exp-1', '--no-judge'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
@@ -315,95 +285,17 @@ describe('experiments update', () => {
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('nothing to update'));
     expect(mockApi).not.toHaveBeenCalled();
   });
-
-  it('explains what a live experiment still accepts', async () => {
-    const { ApiError } = await import('../api.js');
-    mockApi.mockRejectedValueOnce(new ApiError(409, 'experiment_frozen'));
-    const exitSpy = expectExit();
-    await expect(makeCmd().parseAsync(['node', 'experiments', 'update', 'exp-1', '--rotation', 'weighted'])).rejects.toThrow('exit');
-    expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('no longer a draft'));
-  });
 });
 
-// ─── experiments start, close, delete ──────────────────────────────────────
-
-describe('experiments start', () => {
-  it('starts the rotation', async () => {
-    mockApi.mockResolvedValueOnce(running);
-    const lines = capture();
-    await makeCmd().parseAsync(['node', 'experiments', 'start', 'exp-1']);
-    expect(mockApi).toHaveBeenCalledWith('POST', '/api/experiments/exp-1/start');
-    expect(lines.join('\n')).toContain('is running');
-  });
-
-  it('says how to add the missing variants', async () => {
-    const { ApiError } = await import('../api.js');
-    mockApi.mockRejectedValueOnce(new ApiError(400, 'too_few_variants'));
-    const exitSpy = expectExit();
-    await expect(makeCmd().parseAsync(['node', 'experiments', 'start', 'exp-1'])).rejects.toThrow('exit');
-    expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('at least two variants'));
-  });
-});
-
-describe('experiments close', () => {
-  it('closes without a winner', async () => {
-    mockApi.mockResolvedValueOnce({ ...running, status: 'closed' });
-    await makeCmd().parseAsync(['node', 'experiments', 'close', 'exp-1']);
-    expect(mockApi).toHaveBeenCalledWith('POST', '/api/experiments/exp-1/close', {});
-  });
-
-  it('records the winning variant', async () => {
-    mockApi.mockResolvedValueOnce(running).mockResolvedValueOnce({ ...running, status: 'closed', winnerVariantId: 'v-a' });
-    const lines = capture();
-    await makeCmd().parseAsync(['node', 'experiments', 'close', 'exp-1', '--winner', 'v-a']);
-    expect(mockApi).toHaveBeenLastCalledWith('POST', '/api/experiments/exp-1/close', { winnerVariantId: 'v-a' });
-    expect(lines.join('\n')).toContain('winner: Cheap');
-  });
-
-  it('takes the winner by label too', async () => {
-    mockApi.mockResolvedValueOnce(running).mockResolvedValueOnce({ ...running, status: 'closed', winnerVariantId: 'v-a' });
-    capture();
-    await makeCmd().parseAsync(['node', 'experiments', 'close', 'exp-1', '--winner', 'cheap']);
-    expect(mockApi).toHaveBeenLastCalledWith('POST', '/api/experiments/exp-1/close', { winnerVariantId: 'v-a' });
-  });
-
-  it('points at show when the winner is not one of the variants', async () => {
-    mockApi.mockResolvedValueOnce(running);
-    const exitSpy = expectExit();
-    await expect(makeCmd().parseAsync(['node', 'experiments', 'close', 'exp-1', '--winner', 'ghost'])).rejects.toThrow('exit');
-    expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('experiments show exp-1'));
-    expect(mockApi).toHaveBeenCalledTimes(1);
-  });
-
-  it('points at show when the variant vanished between the read and the close', async () => {
-    const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce(running).mockRejectedValueOnce(new ApiError(404, 'variant_not_found'));
-    const exitSpy = expectExit();
-    await expect(makeCmd().parseAsync(['node', 'experiments', 'close', 'exp-1', '--winner', 'v-a'])).rejects.toThrow('exit');
-    expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('experiments show'));
-  });
-});
+// ─── experiments delete ────────────────────────────────────────────────────
 
 describe('experiments delete', () => {
-  it('deletes a closed experiment', async () => {
+  it('deletes an experiment', async () => {
     mockApi.mockResolvedValueOnce(undefined);
     const lines = capture();
     await makeCmd().parseAsync(['node', 'experiments', 'delete', 'exp-1']);
     expect(mockApi).toHaveBeenCalledWith('DELETE', '/api/experiments/exp-1');
     expect(lines.join('\n')).toContain('deleted');
-  });
-
-  it('asks for a close first when it is still running', async () => {
-    const { ApiError } = await import('../api.js');
-    mockApi.mockRejectedValueOnce(new ApiError(409, 'experiment_running'));
-    const exitSpy = expectExit();
-    await expect(makeCmd().parseAsync(['node', 'experiments', 'delete', 'exp-1'])).rejects.toThrow('exit');
-    expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('routerly experiments close exp-1'));
   });
 });
 
@@ -479,21 +371,21 @@ describe('experiments metrics', () => {
 
 describe('experiments token', () => {
   it('lists the tokens with their snippet and usage dates', async () => {
-    mockApi.mockResolvedValueOnce(draft);
+    mockApi.mockResolvedValueOnce(experiment);
     const lines = capture();
     await makeCmd().parseAsync(['node', 'experiments', 'token', 'list', 'exp-1']);
     expect(lines.join('\n')).toContain('sk-rt-abcd');
   });
 
   it('says when a token has never been used', async () => {
-    mockApi.mockResolvedValueOnce({ ...draft, tokens: [{ ...draft.tokens[0]!, lastUsedAt: undefined }] });
+    mockApi.mockResolvedValueOnce({ ...experiment, tokens: [{ ...experiment.tokens[0]!, lastUsedAt: undefined }] });
     const lines = capture();
     await makeCmd().parseAsync(['node', 'experiments', 'token', 'list', 'exp-1']);
     expect(lines.join('\n')).toContain('never');
   });
 
   it('shows the empty state with no tokens', async () => {
-    mockApi.mockResolvedValueOnce({ ...draft, tokens: [] });
+    mockApi.mockResolvedValueOnce({ ...experiment, tokens: [] });
     const lines = capture();
     await makeCmd().parseAsync(['node', 'experiments', 'token', 'list', 'exp-1']);
     expect(lines.join('\n')).toContain('No tokens on this experiment');

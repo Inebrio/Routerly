@@ -120,12 +120,6 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
         void emitEvent('auth.token_invalid', 'warning', { experimentId: experiment.experiment.id, reason: 'expired' }, {});
         return reply.status(401).send({ error: 'Token expired' });
       }
-      if (experiment.status === 'not-running') {
-        return reply.status(403).send({
-          error: 'experiment_not_running',
-          message: `Experiment "${experiment.experiment.name}" is ${experiment.experiment.status}. Only a running experiment serves traffic.`,
-        });
-      }
       if (experiment.status === 'misconfigured') {
         return reply.status(503).send({
           error: 'experiment_misconfigured',

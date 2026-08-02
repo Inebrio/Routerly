@@ -46,8 +46,8 @@ const mockUseExperiment = vi.mocked(useExperiment);
 const projects = [{ id: 'p1', name: 'Cheap' }, { id: 'p2', name: 'Premium' }];
 const models = [{ id: 'gpt-4o', name: 'GPT-4o', provider: 'openai' }];
 
-const draft = {
-  id: 'exp-1', name: 'Cheap vs premium', status: 'draft', rotation: 'sticky', stickyKey: 'auto',
+const existing = {
+  id: 'exp-1', name: 'Cheap vs premium', rotation: 'sticky', stickyKey: 'auto',
   variants: [{ id: 'v1', projectId: 'p1' }, { id: 'v2', projectId: 'p2', name: 'Arm B', weight: 3 }],
   tokens: [], createdAt: '2026-07-01T00:00:00.000Z',
 };
@@ -69,8 +69,8 @@ function renderTab() {
 beforeEach(() => {
   mockGetProjects.mockResolvedValue(projects);
   mockGetModels.mockResolvedValue(models);
-  mockCreate.mockResolvedValue({ ...draft, token: 'sk-rt-secret' });
-  mockUpdate.mockResolvedValue(draft);
+  mockCreate.mockResolvedValue({ ...existing, token: 'sk-rt-secret' });
+  mockUpdate.mockResolvedValue(existing);
   setAuth(['experiments:read', 'experiments:manage']);
   setContext(null);
 });
@@ -190,7 +190,7 @@ describe('ExperimentConfigTab: create', () => {
 });
 
 describe('ExperimentConfigTab: edit', () => {
-  beforeEach(() => setContext(draft));
+  beforeEach(() => setContext(existing));
 
   it('prefills every field from the experiment', async () => {
     renderTab();
@@ -200,7 +200,7 @@ describe('ExperimentConfigTab: edit', () => {
     expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument();
   });
 
-  it('saves a draft with the full body', async () => {
+  it('saves the full body', async () => {
     const user = userEvent.setup();
     renderTab();
     await waitFor(() => expect(screen.getByLabelText('Name')).toHaveValue('Cheap vs premium'));
@@ -214,37 +214,13 @@ describe('ExperimentConfigTab: edit', () => {
     await waitFor(() => expect(screen.getByText('Saved.')).toBeInTheDocument());
   });
 
-  it('freezes the design of a running experiment and patches only what stays editable', async () => {
-    setContext({ ...draft, status: 'running', minSamplesPerVariant: 50 });
-    const user = userEvent.setup();
-    renderTab();
-    await waitFor(() => expect(screen.getByLabelText('Name')).toHaveValue('Cheap vs premium'));
-    // The frozen part reads as a summary: no disabled form controls left on screen.
-    expect(screen.queryByLabelText('Rotation')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Variant 1 project')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /add variant/i })).not.toBeInTheDocument();
-    expect(screen.getByText(/This experiment is running/)).toBeInTheDocument();
-    expect(screen.getByText('How this test is running')).toBeInTheDocument();
-    expect(screen.getByText('Sticky per session')).toBeInTheDocument();
-    expect(screen.getByText('Variants (2)')).toBeInTheDocument();
-    // A variant with no label of its own is named after its project.
-    await waitFor(() => expect(screen.getByText('Cheap')).toBeInTheDocument());
-    expect(screen.getByText('Arm B')).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /save changes/i }));
-    await waitFor(() => expect(mockUpdate).toHaveBeenCalledWith('exp-1', {
-      name: 'Cheap vs premium',
-      minSamplesPerVariant: 50,
-    }));
-  });
-
   it('reports a failed save', async () => {
-    mockUpdate.mockRejectedValue(new Error('experiment_frozen'));
+    mockUpdate.mockRejectedValue(new Error('boom'));
     const user = userEvent.setup();
     renderTab();
     await waitFor(() => expect(screen.getByLabelText('Name')).toHaveValue('Cheap vs premium'));
     await user.click(screen.getByRole('button', { name: /save changes/i }));
-    await waitFor(() => expect(screen.getByText('experiment_frozen')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('boom')).toBeInTheDocument());
   });
 
   it('is read-only without the manage permission', async () => {

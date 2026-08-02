@@ -11,7 +11,6 @@ import { pickVariant, type RotationInput } from './rotation.js';
 export type ExperimentResolution =
   | { status: 'ok'; experiment: ExperimentConfig; token: ProjectToken; variant: ExperimentVariant; project: ProjectConfig }
   | { status: 'expired'; experiment: ExperimentConfig }
-  | { status: 'not-running'; experiment: ExperimentConfig }
   | { status: 'misconfigured'; experiment: ExperimentConfig };
 
 /** Find the experiment owning this bearer, in the same plaintext way projects are matched. */
@@ -31,9 +30,9 @@ export async function resolveExperimentByToken(
  * Authenticate a bearer as an experiment token and pick the variant this
  * request runs on. Returns null when the token belongs to no experiment.
  *
- * Only a `running` experiment routes traffic: a draft has not been started and
- * a closed one is being read, not written to, so both refuse the call rather
- * than silently sending it to an arbitrary arm.
+ * An experiment routes traffic from the moment it exists: there is no start
+ * step, so the only reasons to refuse are an expired token or variants that no
+ * longer point at an existing project.
  */
 export async function resolveExperimentRequest(
   incomingToken: string,
@@ -44,7 +43,6 @@ export async function resolveExperimentRequest(
   const { experiment, token } = found;
 
   if (token.expiresAt && new Date(token.expiresAt) < new Date()) return { status: 'expired', experiment };
-  if (experiment.status !== 'running') return { status: 'not-running', experiment };
 
   const projects = await readConfig('projects');
   const byId = new Map(projects.map(p => [p.id, p]));

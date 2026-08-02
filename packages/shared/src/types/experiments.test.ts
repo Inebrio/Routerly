@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   EXPERIMENT_ROTATIONS,
-  EXPERIMENT_STATUSES,
   STICKY_KEYS,
   ROTATION_CATALOG,
   rotationLabel,
@@ -18,7 +17,6 @@ describe('experiment types', () => {
     const experiment: ExperimentConfig = {
       id: 'exp-1',
       name: 'Cheap vs strong',
-      status: 'running',
       rotation: 'sticky',
       stickyKey: 'auto',
       variants: [
@@ -29,7 +27,6 @@ describe('experiment types', () => {
       judge: { enabled: true, modelId: 'gpt-4o', criteria: ['Answers the question'], sampleRate: 0.1 },
       minSamplesPerVariant: 50,
       createdAt: '2026-08-01T00:00:00.000Z',
-      startedAt: '2026-08-01T00:00:00.000Z',
     };
     expect(experiment.variants).toHaveLength(2);
   });
@@ -42,9 +39,8 @@ describe('experiment types', () => {
     }
   });
 
-  it('keeps the three rotations and three statuses stable', () => {
+  it('keeps the three rotations and four sticky keys stable', () => {
     expect(EXPERIMENT_ROTATIONS).toEqual(['sticky', 'weighted', 'round-robin'] satisfies ExperimentRotation[]);
-    expect(EXPERIMENT_STATUSES).toEqual(['draft', 'running', 'closed']);
     expect(STICKY_KEYS).toEqual(['auto', 'end-user', 'conversation', 'client']);
     expect(DEFAULT_MIN_SAMPLES_PER_VARIANT).toBe(30);
   });

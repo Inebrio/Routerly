@@ -6,7 +6,6 @@ function experiment(over: Partial<ExperimentConfig> = {}): ExperimentConfig {
   return {
     id: 'exp-1',
     name: 'Prompt A vs B',
-    status: 'running',
     rotation: 'weighted',
     variants: [
       { id: 'v-a', projectId: 'proj-a' },

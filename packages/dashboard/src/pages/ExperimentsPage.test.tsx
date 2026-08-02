@@ -7,7 +7,6 @@ vi.mock('../api', () => ({
   getExperiments: vi.fn(),
   getProjects: vi.fn(),
   deleteExperiment: vi.fn(),
-  startExperiment: vi.fn(),
 }));
 
 const mockNavigate = vi.fn();
@@ -28,35 +27,22 @@ vi.mock('../components/ConfirmDialog', () => ({
   ),
 }));
 
-// ponytail: mock SearchableSelect as a plain <select> so onChange fires on selectOptions
-vi.mock('../components/SearchableSelect', () => ({
-  SearchableSelect: ({ options, value, onChange, ariaLabel }: {
-    options: { value: string; label: string }[];
-    value: string; onChange: (v: string) => void; ariaLabel?: string;
-  }) => (
-    <select aria-label={ariaLabel ?? 'select'} value={value} onChange={e => onChange(e.target.value)}>
-      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-    </select>
-  ),
-}));
-
-import { ExperimentsPage, useExperimentsEnabled, STATUS_LABELS, STATUS_BADGE } from './ExperimentsPage';
-import { getExperiments, getProjects, deleteExperiment, startExperiment } from '../api';
+import { ExperimentsPage, useExperimentsEnabled } from './ExperimentsPage';
+import { getExperiments, getProjects, deleteExperiment } from '../api';
 import { useAuth } from '../AuthContext';
 
 const mockGetExperiments = vi.mocked(getExperiments as () => Promise<unknown>);
 const mockGetProjects = vi.mocked(getProjects as () => Promise<unknown>);
 const mockDelete = vi.mocked(deleteExperiment as (...a: unknown[]) => Promise<unknown>);
-const mockStart = vi.mocked(startExperiment as (...a: unknown[]) => Promise<unknown>);
 const mockUseAuth = vi.mocked(useAuth);
 
-const draft = {
-  id: 'exp-1', name: 'Cheap vs premium', description: 'Which one wins', status: 'draft',
+const experiment = {
+  id: 'exp-1', name: 'Cheap vs premium', description: 'Which one wins',
   rotation: 'sticky', variants: [{ id: 'v1', projectId: 'p1' }, { id: 'v2', projectId: 'p2' }],
   tokens: [{ id: 't1', tokenSnippet: 'sk-rt-aaa', createdAt: '2026-07-01T00:00:00.000Z' }],
   createdAt: '2026-07-01T00:00:00.000Z',
 };
-const running = { ...draft, id: 'exp-2', name: 'Latency test', status: 'running', rotation: 'weighted', description: undefined };
+const second = { ...experiment, id: 'exp-2', name: 'Latency test', rotation: 'weighted', description: undefined };
 
 function setAuth(perms: string[]) {
   mockUseAuth.mockReturnValue({ can: vi.fn((p: string) => perms.includes(p)) } as unknown as ReturnType<typeof useAuth>);
@@ -66,95 +52,38 @@ function renderPage() {
   return render(<MemoryRouter><ExperimentsPage /></MemoryRouter>);
 }
 
-/** Status badges only: the filter <select> repeats the same labels. */
-function badgeTexts() {
-  return [...document.querySelectorAll('.badge')].map(b => b.textContent);
-}
-
 beforeEach(() => {
-  mockGetExperiments.mockResolvedValue([draft, running]);
+  mockGetExperiments.mockResolvedValue([experiment, second]);
   mockGetProjects.mockResolvedValue([{ id: 'p1', name: 'Cheap' }, { id: 'p2', name: 'Premium' }]);
   mockDelete.mockResolvedValue(undefined);
-  mockStart.mockResolvedValue({ ...draft, status: 'running' });
   setAuth(['experiments:read', 'experiments:manage']);
 });
 
 afterEach(() => vi.clearAllMocks());
 
-describe('status maps', () => {
-  it('names and colours every status', () => {
-    expect(Object.keys(STATUS_LABELS)).toEqual(['draft', 'running', 'closed']);
-    expect(Object.keys(STATUS_BADGE)).toEqual(['draft', 'running', 'closed']);
-  });
-});
-
 describe('ExperimentsPage', () => {
-  it('lists experiments with status, rotation and the projects each variant routes to', async () => {
+  it('lists experiments with their rotation and the projects each variant routes to', async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('Cheap vs premium')).toBeInTheDocument());
     expect(screen.getByText('Which one wins')).toBeInTheDocument();
     // A variant with no label of its own is named after its project.
     await waitFor(() => expect(screen.getAllByText('Cheap vs Premium')).toHaveLength(2));
-    // The status filter renders the same words as <option>s, so read the badges themselves.
-    expect(badgeTexts()).toEqual(['Draft', 'Running']);
     expect(screen.getByText('Sticky per session')).toBeInTheDocument();
     expect(screen.getByText('Random with weights')).toBeInTheDocument();
     expect(screen.getByText('2 experiments')).toBeInTheDocument();
   });
 
-  it('filters by status', async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await waitFor(() => expect(screen.getByText('Cheap vs premium')).toBeInTheDocument());
-    await user.selectOptions(screen.getByLabelText('Status'), 'running');
-    expect(screen.queryByText('Cheap vs premium')).not.toBeInTheDocument();
-    expect(screen.getByText('Latency test')).toBeInTheDocument();
-    expect(screen.getByText('1 experiment')).toBeInTheDocument();
-  });
-
-  it('shows the empty state when nothing matches', async () => {
+  it('shows the empty state when there is nothing to list', async () => {
     mockGetExperiments.mockResolvedValue([]);
     renderPage();
     await waitFor(() => expect(screen.getByText(/No experiments yet/)).toBeInTheDocument());
-  });
-
-  it('starts a draft and reflects the new status', async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await waitFor(() => expect(screen.getByText('Cheap vs premium')).toBeInTheDocument());
-    await user.click(screen.getByTitle('Start'));
-    await waitFor(() => expect(mockStart).toHaveBeenCalledWith('exp-1'));
-    await waitFor(() => expect(badgeTexts()).toEqual(['Running', 'Running']));
-  });
-
-  it('surfaces a failed start', async () => {
-    mockStart.mockRejectedValue(new Error('too few variants'));
-    const user = userEvent.setup();
-    renderPage();
-    await waitFor(() => expect(screen.getByText('Cheap vs premium')).toBeInTheDocument());
-    await user.click(screen.getByTitle('Start'));
-    await waitFor(() => expect(screen.getByText('too few variants')).toBeInTheDocument());
-  });
-
-  it('offers no start button once the experiment is running', async () => {
-    mockGetExperiments.mockResolvedValue([running]);
-    renderPage();
-    await waitFor(() => expect(screen.getByText('Latency test')).toBeInTheDocument());
-    expect(screen.queryByTitle('Start')).not.toBeInTheDocument();
-  });
-
-  it('never offers delete on a running experiment', async () => {
-    mockGetExperiments.mockResolvedValue([running]);
-    renderPage();
-    await waitFor(() => expect(screen.getByText('Latency test')).toBeInTheDocument());
-    expect(screen.queryByTitle('Delete')).not.toBeInTheDocument();
   });
 
   it('deletes after confirmation', async () => {
     const user = userEvent.setup();
     renderPage();
     await waitFor(() => expect(screen.getByText('Cheap vs premium')).toBeInTheDocument());
-    await user.click(screen.getByTitle('Delete'));
+    await user.click(screen.getAllByTitle('Delete')[0]!);
     expect(screen.getByTestId('confirm-dialog')).toBeInTheDocument();
     await user.click(screen.getByText('Confirm'));
     await waitFor(() => expect(mockDelete).toHaveBeenCalledWith('exp-1'));
@@ -162,20 +91,20 @@ describe('ExperimentsPage', () => {
   });
 
   it('reports a failed delete', async () => {
-    mockDelete.mockRejectedValue(new Error('experiment_running'));
+    mockDelete.mockRejectedValue(new Error('boom'));
     const user = userEvent.setup();
     renderPage();
     await waitFor(() => expect(screen.getByText('Cheap vs premium')).toBeInTheDocument());
-    await user.click(screen.getByTitle('Delete'));
+    await user.click(screen.getAllByTitle('Delete')[0]!);
     await user.click(screen.getByText('Confirm'));
-    await waitFor(() => expect(screen.getByText('experiment_running')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText('boom')[0]).toBeInTheDocument());
   });
 
   it('cancels a delete', async () => {
     const user = userEvent.setup();
     renderPage();
     await waitFor(() => expect(screen.getByText('Cheap vs premium')).toBeInTheDocument());
-    await user.click(screen.getByTitle('Delete'));
+    await user.click(screen.getAllByTitle('Delete')[0]!);
     await user.click(screen.getByText('Cancel'));
     expect(screen.queryByTestId('confirm-dialog')).not.toBeInTheDocument();
     expect(mockDelete).not.toHaveBeenCalled();
@@ -189,7 +118,7 @@ describe('ExperimentsPage', () => {
   });
 
   it('warns about an experiment no client can reach', async () => {
-    mockGetExperiments.mockResolvedValue([{ ...draft, tokens: [] }]);
+    mockGetExperiments.mockResolvedValue([{ ...experiment, tokens: [] }]);
     renderPage();
     await waitFor(() => expect(screen.getByText('No token')).toBeInTheDocument());
   });
@@ -207,7 +136,6 @@ describe('ExperimentsPage', () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('Cheap vs premium')).toBeInTheDocument());
     expect(screen.queryByRole('button', { name: /new experiment/i })).not.toBeInTheDocument();
-    expect(screen.queryByTitle('Start')).not.toBeInTheDocument();
     expect(screen.queryByTitle('Delete')).not.toBeInTheDocument();
   });
 

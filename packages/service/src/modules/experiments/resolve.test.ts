@@ -22,7 +22,6 @@ function experiment(over: Partial<ExperimentConfig> = {}): ExperimentConfig {
   return {
     id: 'exp-1',
     name: 'Prompt A vs B',
-    status: 'running',
     rotation: 'round-robin',
     variants: [
       { id: 'v-a', projectId: 'proj-a' },
@@ -77,13 +76,6 @@ describe('resolveExperimentRequest', () => {
   it('refuses an expired token', async () => {
     stub([experiment({ tokens: [{ id: 'tok-1', token: 'sk-rt-exp', createdAt: '2026-08-01T00:00:00.000Z', expiresAt: '2020-01-01T00:00:00.000Z' }] })]);
     expect(await resolveExperimentRequest('sk-rt-exp', {})).toMatchObject({ status: 'expired' });
-  });
-
-  it('refuses a draft and a closed experiment', async () => {
-    stub([experiment({ status: 'draft' })]);
-    expect(await resolveExperimentRequest('sk-rt-exp', {})).toMatchObject({ status: 'not-running' });
-    stub([experiment({ status: 'closed' })]);
-    expect(await resolveExperimentRequest('sk-rt-exp', {})).toMatchObject({ status: 'not-running' });
   });
 
   it('reports misconfigured when no variant points at an existing project', async () => {

@@ -364,7 +364,6 @@ describe('authPlugin — experiment tokens (T71)', () => {
   const experiment: any = {
     id: 'exp-1',
     name: 'Prompt A vs B',
-    status: 'running',
     rotation: 'round-robin',
     variants: [{ id: 'v-a', projectId: 'proj-1' }, { id: 'v-b', projectId: 'proj-2' }],
     tokens: [{ token: 'sk-rt-exp', name: 'Main', permissions: ['completion'] }],
@@ -402,20 +401,6 @@ describe('authPlugin — experiment tokens (T71)', () => {
     })
     expect(res.statusCode).toBe(200)
     expect(res.json().experiment).toBeUndefined()
-    await app.close()
-  })
-
-  it('refuses a token of an experiment that is not running with 403', async () => {
-    stub([{ ...experiment, status: 'draft' }])
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'POST',
-      url: '/v1/chat/completions',
-      headers: { authorization: 'Bearer sk-rt-exp' },
-      payload: {},
-    })
-    expect(res.statusCode).toBe(403)
-    expect(res.json().error).toBe('experiment_not_running')
     await app.close()
   })
 
