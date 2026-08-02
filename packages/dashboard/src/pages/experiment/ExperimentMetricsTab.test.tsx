@@ -85,7 +85,7 @@ describe('ExperimentMetricsTab', () => {
     expect(screen.getByText('Fastest')).toBeInTheDocument();
     expect(screen.getByText('900 ms vs 1500 ms on average')).toBeInTheDocument();
     expect(screen.getByText('Best judge score')).toBeInTheDocument();
-    expect(screen.getByText('8.2 / 10 over 20 judged calls')).toBeInTheDocument();
+    expect(screen.getByText('8.2 / 10 over 20 judged calls, all time')).toBeInTheDocument();
   });
 
   it('shows each row distance from the best arm', async () => {

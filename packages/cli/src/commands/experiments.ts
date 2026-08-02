@@ -395,6 +395,11 @@ Examples:
           ]);
         }
         console.log(table.toString());
+        // The judge tally lives on the experiment, not on the usage records, so it is
+        // the one column the window leaves alone. Saying so beats a count that looks wrong.
+        if (metrics.variants.some(v => v.judgedCalls > 0)) {
+          console.log(chalk.gray('\nJudge score is a running average over the whole experiment, not the window.'));
+        }
         if (!metrics.ready) {
           console.log(chalk.yellow(`\nNot conclusive yet: every variant needs at least ${metrics.minSamplesPerVariant} calls in this window.`));
         }

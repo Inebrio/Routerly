@@ -192,9 +192,13 @@ export interface ExperimentVariantMetrics {
   p95LatencyMs: number;
   /** Average time to first token, over the streamed calls only. Absent when none streamed. */
   avgTtftMs?: number;
-  /** Answers the judge scored. `0` when the judge is off. */
+  /**
+   * Answers the judge scored, `0` when the judge is off. Read from the running
+   * tally on the experiment, so unlike every other figure here it covers the
+   * experiment's whole life rather than the requested window.
+   */
   judgedCalls: number;
-  /** Mean judge score, `0`–`10`. Absent until the judge scores an answer. */
+  /** Mean judge score, `0`–`10`, over `judgedCalls`. Absent until the judge scores an answer. */
   avgScore?: number;
   /** `calls >= minSamplesPerVariant`: below it, the numbers are noise. */
   enoughSamples: boolean;

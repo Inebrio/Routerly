@@ -43,6 +43,8 @@ export function computeExperimentMetrics(
     const cost = rows.reduce((s, r) => s + r.cost, 0);
     const latencies = rows.map(r => r.latencyMs).filter((n): n is number => typeof n === 'number');
     const ttfts = rows.map(r => r.ttftMs).filter((n): n is number => typeof n === 'number');
+    // The judge keeps a running tally on the experiment, not a score per usage
+    // record, so this pair is lifetime while everything else follows the window.
     const tally = experiment.judgeScores?.[variant.id];
     const name = variant.name ?? projects.find(p => p.id === variant.projectId)?.name;
 

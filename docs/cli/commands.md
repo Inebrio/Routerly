@@ -1982,6 +1982,10 @@ Errors (count and rate), Tokens in / out, Cost, Cost / call, Avg latency,
 p95, TTFT (mean time to first token on streamed calls), Judge score (mean out
 of 10, with the judged-call count).
 
+The judge score is the only column the window does not narrow: it is a running
+average kept on the experiment, so it always reads over the experiment's whole
+life, and its call count can exceed the calls measured in the window.
+
 ```bash
 routerly experiments metrics 8f2c1d64 --days 7
 ```
