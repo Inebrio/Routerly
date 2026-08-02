@@ -110,6 +110,13 @@ describe('processResponse — JSON body', () => {
     await expect(getModels()).rejects.toThrow('Bad request');
   });
 
+  it('prefers the sentence over the machine code when the body carries both', async () => {
+    const { getModels } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      mockRes(400, { error: 'label_taken', message: 'Label "Main" is already used by another connection' }, false));
+    await expect(getModels()).rejects.toThrow('Label "Main" is already used by another connection');
+  });
+
   it('throws HTTP status when non-ok and no error field', async () => {
     const { getModels } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(400, {}, false));

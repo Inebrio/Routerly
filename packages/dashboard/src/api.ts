@@ -121,7 +121,12 @@ async function processResponse<T>(res: Response, path: string): Promise<T> {
     throw new Error('Invalid JSON response from server');
   }
 
-  if (!res.ok) throw httpError((data as { error?: string }).error ?? `HTTP ${res.status}`, res.status);
+  if (!res.ok) {
+    // Some routes answer with a machine code plus a sentence (`label_taken` +
+    // "Label ... is already used"); the sentence is the one worth showing.
+    const body = data as { error?: string; message?: string };
+    throw httpError(body.message ?? body.error ?? `HTTP ${res.status}`, res.status);
+  }
   return data as T;
 }
 
@@ -933,8 +938,9 @@ export interface Connection {
 }
 
 export const getConnections = () => request<Connection[]>('/connections');
+/** `label` omitted or blank: the server names the connection after its provider. */
 export const createConnection = (data: {
-  providerId: string; providerName?: string; label: string; credentials: Record<string, string>;
+  providerId: string; providerName?: string; label?: string; credentials: Record<string, string>;
   endpoint?: string; enabled: boolean;
 }) => request<Connection>('/connections', { method: 'POST', body: JSON.stringify(data) });
 export const updateConnection = (id: string, data: Partial<{

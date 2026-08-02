@@ -761,7 +761,12 @@ export function ModelFormPage() {
                 <label className="form-label">Connection</label>
                 {connections.filter(c => c.providerId === form.provider).length > 0 ? (
                   <SearchableSelect
-                    options={connections.filter(c => c.providerId === form.provider).map(c => ({ value: c.id, label: c.label }))}
+                    options={connections.filter(c => c.providerId === form.provider).map(c => ({
+                      value: c.id, label: c.label,
+                      // Names are unique now, but a store written before that can still hold
+                      // two connections called "openai"; the endpoint tells them apart.
+                      ...(c.endpoint ? { description: c.endpoint } : {}),
+                    }))}
                     value={connectionId}
                     onChange={cid => {
                       setConnectionId(cid);

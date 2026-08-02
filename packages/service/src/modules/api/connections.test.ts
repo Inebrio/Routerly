@@ -639,6 +639,107 @@ describe('PATCH /api/connections/:id', () => {
 
 // ─── DELETE /api/connections/:id ─────────────────────────────────────────────
 
+describe('connection labels are generated and unique', () => {
+  /** Auth as connections:manage with a fixed set of stored connections. */
+  function authWith(connections: any[]) {
+    mockVerifyToken.mockReturnValue({ sub: 'test-user-id' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [testUser]
+      if (type === 'roles') return [{ id: 'test-role', name: 'Test', permissions: ['connections:manage'] }]
+      if (type === 'connections') return connections
+      return []
+    })
+    return { authorization: 'Bearer valid-jwt-token' }
+  }
+
+  it('names a connection after its provider when no label is sent', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/connections', headers: authWith([]),
+      payload: { providerId: 'openai', credentials: {}, enabled: true },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).label).toBe('openai')
+  })
+
+  it('counts up when the generated name is already taken', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/connections', headers: authWith([
+        { id: 'c1', providerId: 'openai', label: 'openai', credentials: {}, enabled: true },
+      ]),
+      payload: { providerId: 'openai', credentials: {}, enabled: true },
+    })
+    await app.close()
+    expect(JSON.parse(res.body).label).toBe('openai-2')
+  })
+
+  it('names a custom connection after the upstream it points at', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/connections', headers: authWith([]),
+      payload: { providerId: 'custom', providerName: 'DeepSeek', credentials: {}, enabled: true },
+    })
+    await app.close()
+    expect(JSON.parse(res.body).label).toBe('deepseek')
+  })
+
+  it('rejects a label already worn by another connection', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/connections', headers: authWith([
+        { id: 'c1', providerId: 'openai', label: 'Main', credentials: {}, enabled: true },
+      ]),
+      payload: { providerId: 'openai', label: ' main ', credentials: {}, enabled: true },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(JSON.parse(res.body).message).toContain('already used')
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
+  it('rejects a PATCH that renames a connection onto another one', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/connections/c2', headers: authWith([
+        { id: 'c1', providerId: 'openai', label: 'Main', credentials: {}, enabled: true },
+        { id: 'c2', providerId: 'openai', label: 'Spare', credentials: {}, enabled: true },
+      ]),
+      payload: { label: 'Main' },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
+  it('lets a connection keep its own label through a PATCH', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/connections/c1', headers: authWith([
+        { id: 'c1', providerId: 'openai', label: 'Main', credentials: {}, enabled: true },
+      ]),
+      payload: { label: 'Main', enabled: false },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).label).toBe('Main')
+  })
+
+  it('regenerates the name when a PATCH clears the label', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/connections/c1', headers: authWith([
+        { id: 'c1', providerId: 'openai', label: 'Main', credentials: {}, enabled: true },
+        { id: 'c2', providerId: 'openai', label: 'openai', credentials: {}, enabled: true },
+      ]),
+      payload: { label: '' },
+    })
+    await app.close()
+    expect(JSON.parse(res.body).label).toBe('openai-2')
+  })
+})
+
 describe('DELETE /api/connections/:id', () => {
   it('allows with connections:manage', async () => {
     const app = await buildApp()

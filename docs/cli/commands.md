@@ -191,7 +191,7 @@ List all configured provider connections.
 **Table columns:**
 - **ID** - connection identifier
 - **Provider** - provider ID (e.g. `openai`, `anthropic`, `ollama`); a `custom` connection also shows its upstream provider name, e.g. `custom (deepseek)`
-- **Label** - display label
+- **Label** - unique name of the connection
 - **Endpoint** - custom endpoint, or `-` if using the provider default
 - **Enabled** - `yes` / `no`
 
@@ -205,13 +205,13 @@ routerly connections list --json
 ### `routerly connections add`
 
 ```
-routerly connections add --provider-id <id> --label <label> [options]
+routerly connections add --provider-id <id> [options]
 ```
 
 | Option | Description |
 |--------|-------------|
 | `--provider-id <id>` | Provider ID (e.g. `openai`, `anthropic`, `ollama`, `custom`) - required |
-| `--label <label>` | Display label for this connection - required |
+| `--label <label>` | Unique name for this connection. Omit it and the server names it after the provider: `openai`, then `openai-2`, `openai-3`, ... A `custom` connection is named after `--provider-name` instead. A name already used by another connection is rejected with `API error 400: Label "<name>" is already used by another connection` |
 | `--provider-name <name>` | Upstream provider behind a `custom` connection (e.g. `deepseek`); models on this connection use it as their ID prefix |
 | `--endpoint <url>` | Custom API endpoint (uses provider default if omitted) |
 | `--api-key <key>` | API key credential (stored plaintext; file permissions protect it) |
@@ -219,6 +219,7 @@ routerly connections add --provider-id <id> --label <label> [options]
 | `--enabled` / `--no-enabled` | Enable immediately (default: `true`) |
 
 ```bash
+routerly connections add --provider-id openai --api-key sk-...
 routerly connections add --provider-id openai --label "Main OpenAI" --api-key sk-...
 routerly connections add --provider-id ollama --label "Local Ollama" --endpoint http://localhost:11434/v1
 routerly connections add --provider-id anthropic --label "Anthropic" \
@@ -244,7 +245,7 @@ options as `add`. Credential flags replace only the fields passed; the rest of t
 credentials are preserved.
 
 ```bash
-routerly connections edit c1 --label "Renamed"
+routerly connections edit c1 --label "Renamed"   # blank name regenerates it from the provider
 routerly connections edit c1 --provider-name deepseek
 routerly connections edit c1 --api-key sk-new
 routerly connections edit c1 --no-enabled

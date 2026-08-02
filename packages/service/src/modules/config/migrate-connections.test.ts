@@ -74,6 +74,29 @@ describe('migrateModelsToConnections', () => {
     expect(savedConnections[0].label).toBe('openai');
   });
 
+  it('renames existing connections that share a label', async () => {
+    mockReadConfig.mockImplementation(async (key: string) => {
+      if (key === 'models') return [] as any;
+      if (key === 'connections')
+        return [
+          { id: 'c1', providerId: 'openai', label: 'openai', credentials: {}, enabled: true },
+          { id: 'c2', providerId: 'openai', label: 'openai', credentials: {}, enabled: true },
+          { id: 'c3', providerId: 'openai', label: 'OpenAI (migrated)', credentials: {}, enabled: true },
+          { id: 'c4', providerId: 'anthropic', label: 'anthropic', credentials: {}, enabled: true },
+        ] as any;
+      if (key === 'instances') return [] as any;
+      return [] as any;
+    });
+
+    const r = await migrateModelsToConnections();
+
+    // Nothing new to migrate, but the duplicate labels alone justify the write.
+    expect(r.connections).toBe(0);
+    const savedConnections = mockWriteConfig.mock.calls.find((c) => c[0] === 'connections')?.[1] as any[];
+    expect(savedConnections.map((c: any) => c.label)).toEqual(['openai', 'openai-2', 'openai-3', 'anthropic']);
+    expect(savedConnections.map((c: any) => c.id)).toEqual(['c1', 'c2', 'c3', 'c4']);
+  });
+
   it('is idempotent', async () => {
     // First run starts from empty stores; second run sees what the first run produced.
     let connections: unknown[] = [];

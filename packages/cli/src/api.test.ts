@@ -109,6 +109,17 @@ describe('api() error handling', () => {
     await expect(api('GET', '/api/models')).rejects.toBeInstanceOf(ApiError);
   });
 
+  it('prefers the sentence over the machine code when the body carries both', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      status: 400,
+      ok: false,
+      statusText: 'Bad Request',
+      json: vi.fn().mockResolvedValue({ error: 'label_taken', message: 'Label "Main" is already used by another connection' }),
+    } as unknown as Response));
+
+    await expect(api('POST', '/api/connections')).rejects.toThrow('Label "Main" is already used by another connection');
+  });
+
   it('falls back to statusText when error response has no error field', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       status: 500,

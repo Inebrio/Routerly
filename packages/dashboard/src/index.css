@@ -896,6 +896,47 @@ td .badge {
   gap: 16px;
 }
 
+/* ─── Provider picker ────────────────────────────────────────────────────── */
+.provider-group + .provider-group { margin-top: 16px; }
+
+.provider-group-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.provider-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.provider-tile {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-align: left;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.provider-tile:hover {
+  color: var(--text-primary);
+  border-color: var(--border-focus);
+}
+
+.provider-tile[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  color: var(--text-primary);
+}
+
 /* Markdown content inside chat bubbles */
 .md-content { line-height: 1.6; }
 .md-content > *:first-child { margin-top: 0; }

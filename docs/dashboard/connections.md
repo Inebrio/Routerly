@@ -23,7 +23,7 @@ Navigate to `/dashboard/connections`.
 
 | Column | Description |
 |--------|-------------|
-| **Label** | Friendly name you gave the connection |
+| **Name** | Unique name of the connection, generated from the provider unless you typed one |
 | **Provider** | Provider badge (e.g. `openai`, `anthropic-oauth`); a `custom` connection also shows the upstream provider name next to the badge |
 | **Endpoint** | Base URL override, or a dash if using the provider default |
 | **Status** | `Enabled` or `Disabled` |
@@ -46,12 +46,12 @@ There is no inline row expander.
 
 1. Click **+ Add Connection**. This navigates to `/dashboard/connections/new`.
 2. Fill in the form:
-   - **Provider** - select from the dropdown, populated from `GET /api/providers/descriptors`. Selecting a provider fills **Endpoint** with that provider's default address; providers with no fixed address (`custom`, Azure, Bedrock, Vertex) leave it empty
+   - **Provider** - a tile per provider, populated from `GET /api/providers/descriptors` and grouped by what you need to bring: **Direct API** (an API key), **Cloud platform** (Azure, Bedrock, Vertex credentials), **Subscription** (a paid chat plan, the OAuth providers), **Browser session** (the web providers), **Self-hosted** (Ollama and custom endpoints). One click picks the provider; picking one fills **Endpoint** with that provider's default address, and providers with no fixed address leave it empty
    - **Provider (upstream provider name)** - shown only when the provider is `custom`. Names the service the endpoint belongs to (e.g. `deepseek`); models created on this connection use it as their ID prefix, e.g. `deepseek/deepseek-r1`
-   - **Label** - friendly name (e.g. "Primary OpenAI account")
+   - **Name** - identifies the connection everywhere it is referenced, so it has to be unique. Leave it blank and the server names it after the provider (`openai`, then `openai-2`, `openai-3`, ...); the field placeholder previews the exact name you would get. A custom connection is named after its upstream instead (`deepseek`)
    - **Endpoint** (optional) - override base URL, for custom/self-hosted deployments
-   - **Enabled** - whether the connection is usable by routing
    - **Credentials** - typed fields, the same ones the model form shows for that provider (see [Credential Fields](#credential-fields))
+   - **Enabled** - the toggle next to the page title, not a field in the form. Controls whether routing may use the connection
 3. Click **Create**. You are returned to the Connections list.
 
 Secrets are never displayed once saved - the form only accepts new values, it
@@ -86,8 +86,11 @@ field mapping.
 
 Click a row (or its **Edit** pencil icon) to navigate to
 `/dashboard/connections/:id/edit`, the same form used for creation, prefilled
-with the connection's current **Provider**, **Label**, **Endpoint**, and
-**Enabled** state. All fields are editable, including **Provider**.
+with the connection's current **Provider**, **Name**, **Endpoint**, and
+**Enabled** state. All fields are editable, including **Provider**. Renaming
+onto a name another connection already uses is rejected with
+`Label "<name>" is already used by another connection`; clearing the field
+regenerates the provider-based name.
 Secret fields start blank; leave them blank to keep the existing stored
 credentials unchanged, or type a new value to replace them (replacing the whole
 credentials object, not a per-field merge).
@@ -112,7 +115,7 @@ Registering or editing a model with **Custom** credentials (see
 [Models: Preconfigured vs. Custom connection](models.md#preconfigured-vs-custom-connection))
 does not bypass the connection layer. Routerly creates (or updates) a
 dedicated, single-model connection for it with id `conn-for-<model-id>`
-(labeled with the model's name), and it shows up here like any other
+(named after the model), and it shows up here like any other
 connection. Deleting that model also removes its dedicated connection,
 provided no other instance references it.
 
