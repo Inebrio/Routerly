@@ -520,6 +520,10 @@ export interface UsageStats {
     ttftMedianMs?: number; ttftP95Ms?: number; ttftSamples?: number;
   };
   byModel: Record<string, UsageByModelEntry>;
+  /** Calls per caller in the window, before the caller filter narrowed it (T210). */
+  byCallType?: Record<string, number>;
+  /** Calls per request type in the window, before the type filter narrowed it (T210). */
+  byRequestType?: Record<string, number>;
   timeline: [string, number][];
   records: Array<UsageRecord>;
   pagination?: { page: number; pageSize: number; totalRecords: number; totalPages: number };

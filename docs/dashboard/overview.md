@@ -13,16 +13,14 @@ The Overview page is the dashboard home screen. It shows a snapshot of activity 
 
 ## Period Selector
 
-A segmented control at the top of the page switches between four reporting windows:
+A date range picker at the top of the page selects the reporting window: the
+same one the [Usage](usage.md) page carries, with the same presets (today,
+yesterday, last 7 days, this month, and so on), a custom from/to range, and
+**All time**.
 
-| Option | Description |
-|--------|-------------|
-| **Daily** | Today, broken down by hour (00:00–23:00) |
-| **Weekly** | Current calendar week (Monday–Sunday) |
-| **Monthly** | Current calendar month |
-| **All** | All recorded activity |
-
-The entire page — cards, charts, and tables — updates instantly when you switch periods.
+The entire page — cards, charts, and tables — updates instantly when you change
+the window. The savings chart follows it too: a window of two days or less is
+bucketed by hour, anything longer by day.
 
 ---
 
@@ -32,17 +30,18 @@ The top row shows aggregate numbers for the selected period:
 
 | Card | Description | Links to |
 |------|-------------|----------|
-| **Total Cost** | Sum of all LLM costs in USD | [Usage](usage.md) |
+| **Total Cost** | Sum of all LLM costs in USD, with what routing saved against sending the same traffic to one model every time as a second line | [Usage](usage.md) |
 | **Total Calls** | Number of API requests, with a routing vs. completion breakdown in the sub-text | [Usage](usage.md) |
 | **Success Rate** | Percentage of requests that returned a successful response | [Usage](usage.md) |
 | **Errors** | Number of failed requests (provider errors, budget exceeded, and so on) | [Usage](usage.md) |
 | **Models** | Number of registered models | [Models](models.md) |
 | **Projects** | Number of projects | [Projects](projects.md) |
-| **Cost saved** | What routing saved over sending the same traffic to one model every time. Green when routing came out cheaper, red when it came out more expensive | — |
 | **Time saved** | The same comparison in wall time over the whole period | — |
 | **Tokens saved** | What the [optimizers](../concepts/optimizers.md) really removed, plus the tokenizer estimate as a second line | — |
 
-Every card except the three saving ones is a link to the section that explains its number, so a figure that looks wrong is one click from the records behind it. The saving cards are explained by the card below them and appear only when there is something to compare against.
+Every card except the two saving ones is a link to the section that explains its number, so a figure that looks wrong is one click from the records behind it. The saving cards are explained by the card below them.
+
+A saving is shown only when it is positive. Money saved rides on Total Cost, the number it changes, and disappears when routing came out level or more expensive; the same holds for the Time saved and Tokens saved cards. A window too small to compare produces no saving line at all rather than a zero or a red number.
 
 ---
 
@@ -73,11 +72,11 @@ Free models are left out because they make the cost comparison meaningless, and 
 
 ### The saving cards
 
-The three saving cards in the top row read this comparison. Each one is anchored on the **costliest model in play**, the worst case routing avoided, and names it: `vs always claude-opus-4-6`.
+The saving figures in the top row read this comparison. Each one is anchored on the **costliest model in play**, the worst case routing avoided, and names it: `vs always claude-opus-4-6`.
 
-| Card | Description |
-|------|-------------|
-| **Cost saved** | What routing saved against always using the anchor model. The second line repeats the comparison against the cheapest model in play, which is usually negative: sending everything to the cheapest model always costs less than routing, and costs quality, which is the trade-off routing exists to make |
+| Figure | Description |
+|--------|-------------|
+| **Total Cost, second line** | What routing saved against always using the anchor model |
 | **Time saved** | The same comparison in wall time over the whole period, from each model's own throughput in it. Models that never answered in the period carry no estimate, so this card falls back to the costliest one that did |
 | **Tokens saved** | Two different figures, kept apart: what the [optimizers](../concepts/optimizers.md) really removed, which is measured, and what a different tokenizer would have counted, which is an estimate |
 

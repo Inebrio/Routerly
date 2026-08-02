@@ -1721,6 +1721,8 @@ All filters are applied server-side. `projectIds` and `modelIds` accept comma-se
       "p95LatencyMs": 1540
     }
   },
+  "byCallType": { "completion": 180, "routing": 8, "guardrail": 12 },
+  "byRequestType": { "chat": 176, "embedding": 24 },
   "timeline": [],
   "records": [],
   "pagination": {}
@@ -1739,6 +1741,8 @@ The `summary` object breaks down calls and cost by sub-activity type:
 | `latencyMedianMs` / `latencyP95Ms` | Response time distribution over successful client calls. Routing and guardrail calls are excluded: they are gateway overhead, not client-visible time |
 | `ttftMedianMs` / `ttftP95Ms` | Time-to-first-token distribution over the same calls |
 | `ttftSamples` | Calls backing the TTFT figures. `ttftMs` is optional on the record, so this can be lower than `successCalls` |
+
+`byCallType` and `byRequestType` count the records of each kind in the window. Both are counted **before** the `callType` and `requestType` filters are applied, so they stay stable while a type filter is active: a client can build its filter controls from them and still show every value available. The other filters (period, project, model, outcome, tags) do narrow them. Records written before these fields existed are counted as `completion` and `chat`.
 
 Each `byModel` entry includes:
 

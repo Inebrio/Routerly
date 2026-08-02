@@ -1637,6 +1637,27 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (projectIdSet) filtered = filtered.filter(r => projectIdSet.has(r.projectId));
     const modelIdSet = csv(modelIds);
     if (modelIdSet) filtered = filtered.filter(r => modelIdSet.has(r.modelId));
+    if (outcome && outcome !== 'all') {
+      // 'error' is any outcome that is neither success nor blocked.
+      filtered = outcome === 'error'
+        ? filtered.filter(r => r.outcome !== 'success' && r.outcome !== 'blocked')
+        : filtered.filter(r => r.outcome === outcome);
+    }
+
+    // What types the window actually holds, counted before the two type filters
+    // narrow it (T210): a filter built from the filtered set would show only the
+    // value already picked. Each map counts the whole window, so picking a caller
+    // does not change the request-type counts or the other way round. Legacy
+    // records carry neither field: they are all client chat calls.
+    const byCallType: Record<string, number> = {};
+    const byRequestType: Record<string, number> = {};
+    for (const r of filtered) {
+      const call = isCompletionCall(r.callType) ? 'completion' : r.callType!;
+      byCallType[call] = (byCallType[call] ?? 0) + 1;
+      const request = r.requestType ?? 'chat';
+      byRequestType[request] = (byRequestType[request] ?? 0) + 1;
+    }
+
     if (callType && callType !== 'all') {
       // 'completion' covers legacy records that carry no callType.
       filtered = callType === 'completion'
@@ -1649,12 +1670,6 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       filtered = requestType === 'chat'
         ? filtered.filter(r => (r.requestType ?? 'chat') === 'chat')
         : filtered.filter(r => r.requestType === requestType);
-    }
-    if (outcome && outcome !== 'all') {
-      // 'error' is any outcome that is neither success nor blocked.
-      filtered = outcome === 'error'
-        ? filtered.filter(r => r.outcome !== 'success' && r.outcome !== 'blocked')
-        : filtered.filter(r => r.outcome === outcome);
     }
 
     // Aggregate by model. Latencies collected per model to derive avg + p95 (leaderboard metrics, #80).
@@ -1739,10 +1754,15 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         .map(m => m.id);
       const computed = computeSavings(filtered, allModels, baselineIds);
       if (req.query.savings === '1') savings = computed;
-      // The series buckets by hour on a single day and by day otherwise, the
-      // same cut as `timeline`, so the two charts line up (T81).
+      // The bucket follows the window actually shown, not the name of the period
+      // (T203): any picked range arrives as `custom`, so keying off the period
+      // gave a day bucket to a one-hour window and drew it as a single point.
+      // Two days of traffic or less reads as hours, anything longer as days.
       if (req.query.series === '1') {
-        series = computeSeries(filtered, allModels, computed, period === 'daily' ? 'hour' : 'day');
+        const spanMs = filtered.length > 0
+          ? Date.parse(filtered[filtered.length - 1]!.timestamp) - Date.parse(filtered[0]!.timestamp)
+          : 0;
+        series = computeSeries(filtered, allModels, computed, spanMs <= 2 * 86_400_000 ? 'hour' : 'day');
       }
     }
 
@@ -1768,6 +1788,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ttftMedianMs: median(ttftSamples), ttftP95Ms: p95(ttftSamples), ttftSamples: ttftSamples.length,
       },
       byModel,
+      byCallType,
+      byRequestType,
       timeline: Object.entries(timeline).sort(([a], [b]) => a.localeCompare(b)).slice(-30),
       // Strip trace from list response to keep payload small
       records: paged.map(({ trace: _trace, ...r }) => r),

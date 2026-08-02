@@ -8,7 +8,7 @@ import providersConf from './conf/providers.json' with { type: 'json' };
 export { providersConf };
 
 // Static notification event list and secret-field map (safe for browser — plain data)
-export { NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, DEFAULT_PROJECT_TIMEOUT_MS, isCompletionCall } from './types/config.js';
+export { NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, DEFAULT_PROJECT_TIMEOUT_MS, CALL_TYPES, isCompletionCall } from './types/config.js';
 export type { NotificationEvent } from './types/config.js';
 
 // Readable catalog for those events (T51) — plain data plus pure functions

@@ -160,6 +160,18 @@ describe('report usage', () => {
     expect(out.join('\n')).toMatch(/1/);
   });
 
+  it('lists the request types the window holds, busiest first (T210)', async () => {
+    mockApi.mockResolvedValue({ ...usageFixture, byRequestType: { chat: 4, embedding: 1 } });
+    const { out } = await run('usage');
+    expect(out.join('\n')).toContain('Types — Chat: 4  |  Embedding: 1');
+  });
+
+  it('prints no type line when the service ships no counts (T210)', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    const { out } = await run('usage');
+    expect(out.join('\n')).not.toContain('Types —');
+  });
+
   it('does not show breakdown when optional fields absent', async () => {
     // No completionCalls/routingCalls/guardrailCalls
     const minimal = {
