@@ -332,6 +332,13 @@ describe('experiments metrics', () => {
     expect(path).toContain('to=2026-08-02T00%3A00%3A00.000Z');
   });
 
+  it('leaves a bare day untouched, so the service reads it as the whole day', async () => {
+    mockApi.mockResolvedValueOnce(metrics);
+    await makeCmd().parseAsync(['node', 'experiments', 'metrics', 'exp-1', '--from', '2026-08-01', '--to', '2026-08-01']);
+    const [, path] = mockApi.mock.calls[0] as [string, string];
+    expect(path).toContain('from=2026-08-01&to=2026-08-01');
+  });
+
   it('rejects a date it cannot read', async () => {
     const exitSpy = expectExit();
     await expect(makeCmd().parseAsync(['node', 'experiments', 'metrics', 'exp-1', '--from', 'yesterday'])).rejects.toThrow('exit');

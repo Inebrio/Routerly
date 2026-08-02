@@ -377,18 +377,20 @@ Examples:
         }
         console.log(chalk.bold(`\n${metrics.totalCalls} call${metrics.totalCalls !== 1 ? 's' : ''} measured\n`));
         const table = new Table({
-          head: ['Variant', 'Calls', 'Errors', 'Cost', 'Cost / call', 'Avg latency', 'p95', 'Judge score'].map(h => chalk.cyan(h)),
-          colAligns: ['left', 'right', 'right', 'right', 'right', 'right', 'right', 'right'],
+          head: ['Variant', 'Calls', 'Errors', 'Tokens in / out', 'Cost', 'Cost / call', 'Avg latency', 'p95', 'TTFT', 'Judge score'].map(h => chalk.cyan(h)),
+          colAligns: ['left', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right'],
         });
         for (const v of metrics.variants) {
           table.push([
             (v.name ?? v.variantId) + (v.enoughSamples ? '' : chalk.yellow(' (low sample)')),
             String(v.calls),
             v.errors > 0 ? `${v.errors} (${(v.errorRate * 100).toFixed(1)}%)` : '0',
+            `${v.inputTokens.toLocaleString()} / ${v.outputTokens.toLocaleString()}`,
             fmtCost(v.cost),
             fmtCost(v.avgCostPerCall),
             fmtMs(v.avgLatencyMs),
             fmtMs(v.p95LatencyMs),
+            v.avgTtftMs !== undefined ? fmtMs(v.avgTtftMs) : chalk.gray('-'),
             v.avgScore !== undefined ? `${v.avgScore.toFixed(1)} / 10 (${v.judgedCalls})` : chalk.gray('-'),
           ]);
         }
@@ -470,5 +472,8 @@ Examples:
 function isoOrFail(value: string, flag: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) fail(`Invalid ${flag} "${value}". Expected an ISO 8601 date, e.g. 2026-08-01T00:00:00Z.`);
-  return date.toISOString();
+  // A bare day is passed through: the service reads it as the whole day, the
+  // same window the dashboard picker asks for. Expanding it here would cut it
+  // at midnight instead.
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : date.toISOString();
 }
