@@ -118,6 +118,50 @@ export class AnthropicAdapter implements ProviderAdapter {
     return result;
   }
 
+  /**
+   * OpenAI tool definitions → Anthropic `tools`.
+   * The inverse (Anthropic → OpenAI) lives in messages-compat for the /v1/messages lane.
+   */
+  private convertTools(tools: unknown): any[] | undefined {
+    if (!Array.isArray(tools) || tools.length === 0) return undefined;
+    return tools.map((raw) => {
+      const tool = raw as any;
+      const fn = tool.function ?? tool;
+      return {
+        name: fn.name,
+        ...(fn.description ? { description: fn.description } : {}),
+        input_schema: fn.parameters ?? { type: 'object', properties: {} },
+      };
+    });
+  }
+
+  /** OpenAI tool_choice → Anthropic tool_choice. */
+  private convertToolChoice(choice: unknown): any | undefined {
+    if (choice === undefined || choice === null) return undefined;
+    if (choice === 'auto') return { type: 'auto' };
+    if (choice === 'required') return { type: 'any' };
+    if (choice === 'none') return { type: 'none' };
+    const named = choice as any;
+    if (named?.type === 'function' && named.function?.name) return { type: 'tool', name: named.function.name };
+    return undefined;
+  }
+
+  /** Adds `tools`/`tool_choice` to an Anthropic request when the client sent them. */
+  private applyTools(params: any, request: ChatCompletionRequest): void {
+    const tools = this.convertTools((request as any).tools);
+    if (!tools) return;
+    params.tools = tools;
+    const toolChoice = this.convertToolChoice((request as any).tool_choice);
+    if (toolChoice) params.tool_choice = toolChoice;
+  }
+
+  /** Anthropic stop_reason → OpenAI finish_reason. */
+  private finishReason(stopReason: string | null | undefined): 'stop' | 'length' | 'tool_calls' {
+    if (stopReason === 'tool_use') return 'tool_calls';
+    if (stopReason === 'max_tokens') return 'length';
+    return 'stop';
+  }
+
   async chatCompletion(
     request: ChatCompletionRequest,
     model: ModelConfig,
@@ -138,6 +182,7 @@ export class AnthropicAdapter implements ProviderAdapter {
     if (systemMessage?.content) {
       params.system = this.convertSystem(systemMessage.content as string | any[]);
     }
+    this.applyTools(params, request);
 
     // Extended thinking — requires min 16k max_tokens per Anthropic spec
     const thinkingEnabled = model.capabilities?.thinking === true;
@@ -150,6 +195,13 @@ export class AnthropicAdapter implements ProviderAdapter {
 
     // Convert Anthropic response to OpenAI format
     const textContent = response.content.find((b) => b.type === 'text');
+    const toolCalls = response.content
+      .filter((b): b is Extract<typeof b, { type: 'tool_use' }> => b.type === 'tool_use')
+      .map((block) => ({
+        id: block.id,
+        type: 'function' as const,
+        function: { name: block.name, arguments: JSON.stringify(block.input ?? {}) },
+      }));
     const cacheRead = (response.usage as any).cache_read_input_tokens ?? 0;
     const cacheCreation = (response.usage as any).cache_creation_input_tokens ?? 0;
     const totalInputTokens = response.usage.input_tokens + cacheRead + cacheCreation;
@@ -164,8 +216,9 @@ export class AnthropicAdapter implements ProviderAdapter {
           message: {
             role: 'assistant',
             content: textContent?.type === 'text' ? textContent.text : '',
+            ...(toolCalls.length > 0 ? { tool_calls: toolCalls } : {}),
           },
-          finish_reason: response.stop_reason === 'end_turn' ? 'stop' : 'length',
+          finish_reason: this.finishReason(response.stop_reason),
         },
       ],
       usage: {
@@ -201,6 +254,7 @@ export class AnthropicAdapter implements ProviderAdapter {
     if (systemMessage?.content) {
       params.system = this.convertSystem(systemMessage.content as string | any[]);
     }
+    this.applyTools(params, request);
 
     // Extended thinking — requires min 16k max_tokens per Anthropic spec
     const thinkingEnabled = model.capabilities?.thinking === true;
@@ -218,8 +272,12 @@ export class AnthropicAdapter implements ProviderAdapter {
     let cacheReadTokens = 0;
     let cacheCreationTokens = 0;
 
-    // Track which content block index is which type (thinking vs text)
-    const blockTypes = new Map<number, 'thinking' | 'text'>();
+    // Track which content block index is which type (thinking vs text vs tool_use)
+    const blockTypes = new Map<number, 'thinking' | 'text' | 'tool_use'>();
+    // Anthropic numbers every content block; OpenAI numbers tool calls only, so
+    // tool_use blocks get their own counter.
+    const toolSlots = new Map<number, number>();
+    let toolCount = 0;
 
     for await (const event of stream) {
       if (event.type === 'message_start') {
@@ -242,7 +300,34 @@ export class AnthropicAdapter implements ProviderAdapter {
         } as unknown as StreamChunk;
       } else if (event.type === 'content_block_start') {
         // Register block type so we know how to handle its deltas
-        blockTypes.set(event.index as number, event.content_block?.type === 'thinking' ? 'thinking' : 'text');
+        const blockType = event.content_block?.type;
+        if (blockType === 'tool_use') {
+          const slot = toolCount++;
+          blockTypes.set(event.index as number, 'tool_use');
+          toolSlots.set(event.index as number, slot);
+          yield {
+            id,
+            object: 'chat.completion.chunk',
+            created,
+            model: responseModel,
+            choices: [
+              {
+                index: 0,
+                delta: {
+                  tool_calls: [{
+                    index: slot,
+                    id: event.content_block.id,
+                    type: 'function',
+                    function: { name: event.content_block.name, arguments: '' },
+                  }],
+                },
+                finish_reason: null,
+              },
+            ],
+          } as unknown as StreamChunk;
+        } else {
+          blockTypes.set(event.index as number, blockType === 'thinking' ? 'thinking' : 'text');
+        }
       } else if (event.type === 'content_block_delta') {
         const blockType = blockTypes.get(event.index as number) ?? 'text';
 
@@ -257,6 +342,25 @@ export class AnthropicAdapter implements ProviderAdapter {
               {
                 index: 0,
                 delta: { thinking: event.delta.thinking } as any,
+                finish_reason: null,
+              },
+            ],
+          } as unknown as StreamChunk;
+        } else if (blockType === 'tool_use' && event.delta.type === 'input_json_delta') {
+          yield {
+            id,
+            object: 'chat.completion.chunk',
+            created,
+            model: responseModel,
+            choices: [
+              {
+                index: 0,
+                delta: {
+                  tool_calls: [{
+                    index: toolSlots.get(event.index as number) ?? 0,
+                    function: { arguments: event.delta.partial_json ?? '' },
+                  }],
+                },
                 finish_reason: null,
               },
             ],
@@ -279,10 +383,7 @@ export class AnthropicAdapter implements ProviderAdapter {
       } else if (event.type === 'message_delta') {
         const outputTokens = event.usage?.output_tokens ?? 0;
         const totalInputTokens = inputTokens + cacheReadTokens + cacheCreationTokens;
-        let finish_reason = null;
-        if (event.delta.stop_reason === 'end_turn') finish_reason = 'stop';
-        else if (event.delta.stop_reason === 'max_tokens') finish_reason = 'length';
-        else if (event.delta.stop_reason === 'stop_sequence') finish_reason = 'stop';
+        const finish_reason = event.delta.stop_reason ? this.finishReason(event.delta.stop_reason) : null;
 
         yield {
           id,

@@ -50,6 +50,22 @@ Routerly instance's URL and `sk-rt-YOUR_PROJECT_TOKEN` with a project token
 (create one on the [Projects](../../dashboard/projects.md) page, or let
 `clients configure` mint one for you).
 
+## Provider compatibility
+
+Claude Code sends its full tool set on every request, so a provider is only
+usable here if tool calls survive the round trip. Verified end to end with the
+real `claude` binary (a prompt that forces a `Read` tool call, then the answer):
+
+| Connection provider | Works |
+|--|--|
+| `anthropic` (API key) | yes, verbatim pass-through |
+| `anthropic-oauth` (Pro/Max) | yes. Routerly drops the `context-1m` beta, which a subscription token cannot use |
+| `openai` (API key) | yes |
+| `openai-oauth` (ChatGPT subscription) | yes. The Codex Responses backend is mapped to and from the Anthropic format, tool calls included |
+| `gemini` | yes. Replayed tool calls are stamped with the placeholder thought signature Gemini 3 requires |
+| `deepseek` | yes |
+| local models via `ollama` | wire format works; whether the model follows Claude Code's system prompt depends on the model |
+
 ## Undo
 
 Every `configure` run prints a `Backup ID`. Restore the file to its exact

@@ -52,7 +52,7 @@ const request: Processor<ProxyContext> = {
         if (ctx.protocol === 'openai' && ctx.stream) {
           // buildContentFilterBlock is JSON-only; the streaming request-block has its
           // own wire form (hijack + SSE content_filter chunk + [DONE]).
-          writeOpenAIStreamingBlock(ctx)
+          await writeOpenAIStreamingBlock(ctx)
         } else {
           // Plan 4 owns the wire-faithful content_filter payload shape; this reuses it unchanged.
           ctx.result = buildContentFilterBlock(ctx)

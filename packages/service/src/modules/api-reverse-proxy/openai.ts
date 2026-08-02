@@ -1,7 +1,8 @@
 import type { FastifyPluginAsync } from 'fastify';
 import type { ChatCompletionRequest, ModelObject } from '@routerly/shared';
+import type { ResponsesRequest } from '../provider/responses-compat.js';
 import { listEffectiveModels } from '../provider/list-effective.js';
-import { buildOpenAIContext, runProxy, getProxyPipeline } from '../reverse-proxy/index.js';
+import { buildOpenAIContext, buildResponsesContext, runProxy, getProxyPipeline } from '../reverse-proxy/index.js';
 
 export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/chat/completions ───────────────────────────────────────────────
@@ -14,30 +15,24 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // ─── POST /v1/responses ───────────────────────────────────────────────────────
-  fastify.post<{ Body: ChatCompletionRequest }>(
+  fastify.post<{ Body: ResponsesRequest }>(
     '/v1/responses',
     async (request, reply) => {
-      // The new Responses API uses 'input' instead of 'messages' and 'max_output_tokens' instead of 'max_tokens'
-      const body = { ...request.body };
-      if (body.input && !body.messages) {
-        body.messages = body.input;
+      // Server-side conversation state: Routerly keeps none, and silently answering
+      // without the prior turns would be worse than saying so.
+      if (request.body?.previous_response_id) {
+        return reply.code(400).send({
+          error: {
+            message: 'previous_response_id is not supported: Routerly does not store conversation state. Send the full input list instead.',
+            type: 'invalid_request_error',
+            param: 'previous_response_id',
+            code: null,
+          },
+        });
       }
-      delete body.input;
-      if (body.max_tokens !== undefined) {
-        body.max_output_tokens = body.max_tokens;
-        delete body.max_tokens;
-      }
-      if (body.max_completion_tokens !== undefined) {
-        body.max_output_tokens = body.max_completion_tokens;
-        delete body.max_completion_tokens;
-      }
-      // Responses API always streams
-      body.stream = true;
-
-      // Reuse the exact same pipeline as chat/completions by forwarding the normalized body.
-      request.body = body;
-
-      const ctx = buildOpenAIContext(request, reply);
+      // Same lane as chat/completions: the body is decoded to the chat view here and
+      // re-encoded as a `response` object / Responses SSE at egress.
+      const ctx = buildResponsesContext(request, reply);
       await runProxy(getProxyPipeline(), ctx);
     }
   );

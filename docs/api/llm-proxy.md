@@ -170,13 +170,31 @@ management API (`GET /api/traces/stream`), never from the LLM wire.
 POST /v1/responses
 ```
 
-OpenAI Responses API compatible endpoint. Supports stateful multi-turn conversations via `previous_response_id`.
+OpenAI Responses API compatible endpoint. Works with the official OpenAI SDK's
+`client.responses.create()` against any provider Routerly can route to, including
+Anthropic and Gemini models: the request is translated to Routerly's canonical
+chat view, routed like any other request, and re-encoded as a `Response` object on
+the way out.
+
+Supported input: a plain string, or an `input` list of `message` (string content or
+`input_text` / `output_text` / `input_image` parts), `function_call` and
+`function_call_output` items. `instructions`, `tools`, `tool_choice`,
+`max_output_tokens` and `text.format` are honoured; the request settings are echoed
+back on the response object.
+
+`previous_response_id` is **not** supported: Routerly stores no conversation state,
+so a request that sends it is rejected with HTTP 400 rather than silently answering
+without the earlier turns. Send the full `input` list instead.
 
 ### Request headers
 
 Same headers as [Chat Completions](#request-headers):
 - `x-routerly-trace: <id>` — correlation id for the live trace side channel
 - `x-routerly-conversation-id: <string>` — session identifier for usage tracking
+
+No stream carries trace frames: an unnamed SSE frame is not part of either
+protocol. The trace is read on the management API, live on
+`GET /api/traces/stream` or afterwards on the usage record.
 
 ### Request
 
@@ -190,7 +208,28 @@ Same headers as [Chat Completions](#request-headers):
 
 ### Response
 
-Standard OpenAI `Response` object structure.
+Standard OpenAI `Response` object: `output` holds one `message` item per assistant
+answer and one `function_call` item per tool call.
+
+### Response (streaming)
+
+With `"stream": true` the response is the typed Responses event sequence, each frame
+`event:`-named and numbered with `sequence_number`, ending on `response.completed`
+with **no** `[DONE]` sentinel:
+
+```
+response.created → response.in_progress → response.output_item.added
+→ response.content_part.added → response.output_text.delta*
+→ response.output_text.done → response.content_part.done
+→ response.output_item.done → response.completed
+```
+
+Tool calls stream as `response.output_item.added` (a `function_call` item) →
+`response.function_call_arguments.delta`* → `response.function_call_arguments.done`
+→ `response.output_item.done`.
+
+A guardrail block is reported in the same shape: an empty response that ends
+`incomplete` with `incomplete_details.reason = "content_filter"`.
 
 ---
 

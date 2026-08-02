@@ -39,6 +39,43 @@ export const unwrapGeminiError: typeof fetch = async (input, init) => {
 };
 
 /**
+ * Documented placeholder for function calls the API did not generate itself.
+ * Gemini 3 rejects a replayed tool call whose `thought_signature` is missing:
+ *   400 INVALID_ARGUMENT — "Function call is missing a thought_signature in
+ *   functionCall parts."
+ * Routerly always hits that case: the signature travels in Google's
+ * `extra_content`, which has no place in the Anthropic wire format, so the
+ * client (Claude Code) sends the tool_use back without it.
+ * See https://ai.google.dev/gemini-api/docs/generate-content/thought-signatures
+ */
+const THOUGHT_SIGNATURE_PLACEHOLDER = 'skip_thought_signature_validator';
+
+/**
+ * Stamp the placeholder signature on every assistant tool call that lacks one,
+ * so a multi-turn tool conversation survives the round trip through Routerly.
+ *
+ * ponytail: the placeholder costs reasoning quality (Google's own warning). The
+ * upgrade path is caching the real `extra_content.google.thought_signature` by
+ * tool-call id on the way out and re-attaching it here — worth doing only if
+ * tool-heavy Gemini sessions measurably degrade.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function withThoughtSignatures(messages: any[]): any[] {
+  return messages.map((m) => {
+    if (m?.role !== 'assistant' || !Array.isArray(m.tool_calls) || m.tool_calls.length === 0) return m;
+    return {
+      ...m,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tool_calls: m.tool_calls.map((call: any) =>
+        call?.extra_content?.google?.thought_signature
+          ? call
+          : { ...call, extra_content: { google: { thought_signature: THOUGHT_SIGNATURE_PLACEHOLDER } } },
+      ),
+    };
+  });
+}
+
+/**
  * Google Gemini adapter using the OpenAI-compatible endpoint.
  * Gemini supports an OpenAI-compatible API at:
  *   https://generativelanguage.googleapis.com/v1beta/openai/
@@ -65,7 +102,7 @@ export class GeminiAdapter implements ProviderAdapter {
     const client = this.getClient(model);
     const { stream: _stream, ...rest } = request;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = await client.chat.completions.create({ ...rest, model: this.getUpstreamModelId(model), stream: false } as any);
+    const response = await client.chat.completions.create({ ...rest, messages: withThoughtSignatures(rest.messages), model: this.getUpstreamModelId(model), stream: false } as any);
     return response as unknown as ChatCompletionResponse;
   }
 
@@ -76,7 +113,7 @@ export class GeminiAdapter implements ProviderAdapter {
     const client = this.getClient(model);
     const { stream: _stream, ...rest } = request;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stream: any = await client.chat.completions.create({ ...rest, model: this.getUpstreamModelId(model), stream: true } as any);
+    const stream: any = await client.chat.completions.create({ ...rest, messages: withThoughtSignatures(rest.messages), model: this.getUpstreamModelId(model), stream: true } as any);
     for await (const chunk of stream) {
       yield chunk as unknown as StreamChunk;
     }
@@ -91,7 +128,7 @@ export class GeminiAdapter implements ProviderAdapter {
       : messages;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response: any = await client.chat.completions.create({
-      messages: openAIMessages,
+      messages: withThoughtSignatures(openAIMessages),
       model: upstreamModel,
       max_tokens: request.max_tokens,
       stream: false,
