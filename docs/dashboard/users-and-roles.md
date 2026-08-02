@@ -70,7 +70,8 @@ The new user can log in immediately.
 
 ### Editing a User
 
-Click the **Edit** icon to change the user's email, password, or role.
+Click a row, or its **Edit** icon, to change the user's email, password, or
+role. With `user:write` missing the row is inert and the icon is hidden.
 
 ### Removing a User
 

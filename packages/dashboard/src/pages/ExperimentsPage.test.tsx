@@ -131,6 +131,14 @@ describe('ExperimentsPage', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard/experiments/new');
   });
 
+  it('opens the experiment when clicking the row', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Which one wins')).toBeInTheDocument());
+    await user.click(screen.getByText('Which one wins'));
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/experiments/exp-1');
+  });
+
   it('hides every management action without the manage permission', async () => {
     setAuth(['experiments:read']);
     renderPage();

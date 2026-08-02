@@ -165,12 +165,12 @@ export function ProfilesPage() {
                   </thead>
                   <tbody>
                     {visible.map(p => (
-                      <tr key={p.id}>
+                      <tr key={p.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/dashboard/profiles/${p.id}`)}>
                         <td>{p.label}</td>
                         <td><span className={`badge badge-${p.builtin ? 'success' : 'custom'}`}>{p.builtin ? 'Built-in' : 'Custom'}</span></td>
                         <td><span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{profileSummary(p)}</span></td>
                         <td><span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{p.version}</span></td>
-                        <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                        <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }} onClick={e => e.stopPropagation()}>
                           <button
                             className="btn-icon"
                             onClick={() => navigate(`/dashboard/profiles/${p.id}`)}

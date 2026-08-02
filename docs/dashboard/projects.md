@@ -180,8 +180,8 @@ lost on restart. The dropdown shows only **Type a prompt below** when the
 project has sent no traffic since the last restart.
 
 Click **Run Preview** for tokens before, tokens after, tokens saved, and a
-per-step breakdown. Each step row expands to a word-level diff of what that
-step changed: removed words struck through in red, added words in green,
+per-step breakdown. Clicking anywhere on a step row expands it to a word-level
+diff of what that step changed: removed words struck through in red, added words in green,
 compared against the previous step's output so the diff reads as a chain. A
 step whose result the safety gate rejected is labelled **rolled back: the
 change was rejected as unsafe** rather than shown as a no-op, which tells a
@@ -238,6 +238,8 @@ Any changes to scopes, tags, or limits take effect immediately and do not invali
 Assign dashboard users to this project. A user assigned here can see and manage the project based on their role's permissions.
 
 Available roles: `viewer`, `editor`, `admin` (or any custom role defined in [Users & Roles](./users-and-roles.md)).
+
+Clicking a member row puts it in edit mode, the same the **Edit** icon does; a row already being edited keeps the click for its inputs. Removing a member stays on its own button.
 
 ---
 

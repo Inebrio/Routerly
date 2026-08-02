@@ -142,6 +142,14 @@ describe('ProfilesPage', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard/profiles/my-sec');
   });
 
+  it('opens the profile when clicking the row', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Auto')).toBeInTheDocument());
+    await user.click(screen.getByText('Auto'));
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/profiles/auto');
+  });
+
   it('clone navigates to the create page with the base profile', async () => {
     const user = userEvent.setup();
     renderPage();

@@ -55,6 +55,10 @@ Built-in profiles cannot be edited or deleted, so their row shows a **View**
 **Delete** with `profiles:manage`. Every row has a **Clone** button with
 `profiles:manage`.
 
+Clicking a row opens the profile, in edit or view mode depending on the two
+above: the same page **Edit** and **View** open. Clone and Delete stay on
+their buttons.
+
 Without `profiles:read`, the page shows a permission-denied empty state.
 Without `profiles:manage`, every row is view-only and the create button is
 hidden.

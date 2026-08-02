@@ -32,8 +32,9 @@ the entry is hidden; modules are turned on from the CLI
 
 The counter on the left shows how many experiments there are.
 
-**Delete** is the only row action, and needs `experiments:manage`. The name is
-the link into the experiment, so opening one needs no separate action.
+**Delete** is the only row action, and needs `experiments:manage`. Clicking
+anywhere else on a row opens that experiment, so there is no separate open
+action.
 
 Deleting asks for confirmation and warns that the experiment's tokens stop
 working immediately.

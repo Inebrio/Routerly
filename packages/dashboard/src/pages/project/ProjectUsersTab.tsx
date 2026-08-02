@@ -170,7 +170,13 @@ export function ProjectUsersTab() {
                 const isEditing = editingUserId === member.userId;
 
                 return (
-                  <tr key={member.userId}>
+                  <tr
+                    key={member.userId}
+                    {...(isEditing ? {} : {
+                      style: { cursor: 'pointer' },
+                      onClick: () => { setEditingUserId(member.userId); setEditRole(member.role); },
+                    })}
+                  >
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {user?.email || <span style={{ color: 'var(--text-muted)' }}>{member.userId}</span>}
@@ -201,7 +207,7 @@ export function ProjectUsersTab() {
                         </span>
                       )}
                     </td>
-                    <td style={{ textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                    <td style={{ textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: 6 }} onClick={e => e.stopPropagation()}>
                       {isEditing ? (
                         <>
                           <button className="btn-icon" onClick={() => handleUpdateMember(member.userId)} disabled={loading} title="Save changes">

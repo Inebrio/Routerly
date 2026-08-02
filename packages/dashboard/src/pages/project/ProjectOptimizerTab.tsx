@@ -374,11 +374,11 @@ export function ProjectOptimizerTab() {
                     const previous = i === 0 ? previewInput : preview.perStep[i - 1]!.messages;
                     return (
                       <React.Fragment key={`${s.id}-${i}`}>
-                        <tr style={{ borderTop: '1px solid var(--border)' }}>
+                        <tr style={{ borderTop: '1px solid var(--border)', cursor: 'pointer' }} onClick={() => setOpenStep(open ? null : i)}>
                           <td style={{ padding: '8px 16px' }}>
                             <button
                               type="button"
-                              onClick={() => setOpenStep(open ? null : i)}
+                              onClick={e => { e.stopPropagation(); setOpenStep(open ? null : i); }}
                               aria-expanded={open}
                               style={{
                                 display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none',

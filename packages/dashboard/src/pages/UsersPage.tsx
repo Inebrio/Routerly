@@ -95,13 +95,19 @@ export function UsersPage() {
             <thead><tr><th>Email</th><th>Role</th><th>Projects</th><th></th></tr></thead>
             <tbody>
               {users.map(u => (
-                <tr key={u.id}>
+                <tr
+                  key={u.id}
+                  {...(canWrite ? {
+                    style: { cursor: 'pointer' },
+                    onClick: () => navigate(`/dashboard/settings/users/${u.id}`),
+                  } : {})}
+                >
                   <td><strong style={{ color: 'var(--text-primary)' }}>{u.email}</strong></td>
                   <td><span className={`badge ${u.roleId === 'admin' ? 'badge-success' : 'badge-ollama'}`}>{u.roleId}</span></td>
                   <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                     {u.projectIds.length === 0 ? 'All' : u.projectIds.join(', ')}
                   </td>
-                  <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
+                  <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }} onClick={e => e.stopPropagation()}>
                     {canWrite && u.totpEnabled && (
                       <button className="btn-icon" title="Reset 2FA" onClick={() => handleReset2fa(u.id, u.email)}>
                         <ShieldOff size={14} />
