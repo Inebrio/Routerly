@@ -46,8 +46,19 @@ vi.mock('../ThemeContext.js', () => ({
   get useTheme() { return mockUseTheme; },
 }));
 
-import { OverviewPage, compactCost } from './OverviewPage';
+import { OverviewPage } from './OverviewPage';
+import { compactCost } from '../components/savings';
 import { getUsage, getModels, getProjects, getClients } from '../api';
+
+/** "This month", the window the page opens on. */
+const monthStart = () => {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+};
+const today = () => new Date().toISOString().slice(0, 10);
+
+/** The date range picker: its trigger is the only secondary button on the page. */
+const openPicker = () => userEvent.click(document.querySelector('button.btn-secondary') as HTMLElement);
 
 const mockGetUsage    = vi.mocked(getUsage as (...a: unknown[]) => Promise<unknown>);
 const mockGetModels   = vi.mocked(getModels as () => Promise<unknown>);
@@ -252,39 +263,36 @@ describe('OverviewPage — loaded state', () => {
   });
 });
 
-// ── Period selector ────────────────────────────────────────────────────────────
+// ── Period selector (T203) ─────────────────────────────────────────────────────
 
 describe('OverviewPage — period selector', () => {
-  it('renders four period buttons', async () => {
+  it('opens on this month and asks the service for that window', async () => {
     renderPage();
-    await waitFor(() => screen.queryByText('Overview'));
-    expect(screen.queryByText('Daily')).not.toBeNull();
-    expect(screen.queryByText('Weekly')).not.toBeNull();
-    expect(screen.queryByText('Monthly')).not.toBeNull();
-    expect(screen.queryByText('All')).not.toBeNull();
+    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith(
+      'custom', undefined, monthStart(), today(), undefined, undefined, { series: true, savings: true },
+    ));
+    expect(screen.queryByText('This month')).not.toBeNull();
   });
 
-  it('clicking Daily switches period and calls getUsage with "daily"', async () => {
+  it('picking a preset re-reads that window', async () => {
     renderPage();
-    await waitFor(() => screen.queryByText('Daily'));
-    await userEvent.click(screen.getByText('Daily'));
-    await waitFor(() =>
-      expect(mockGetUsage).toHaveBeenCalledWith('daily', undefined, undefined, undefined, undefined, undefined, { series: true, savings: true })
-    );
+    await waitFor(() => screen.queryByText('This month'));
+    await openPicker();
+    await userEvent.click(screen.getByRole('button', { name: 'Last 7 days' }));
+    const from = new Date(Date.now() - 6 * 86400_000).toISOString().slice(0, 10);
+    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith(
+      'custom', undefined, from, today(), undefined, undefined, { series: true, savings: true },
+    ));
   });
 
-  it('clicking Weekly calls getUsage with "weekly"', async () => {
+  it('an open-ended window falls back to the whole history', async () => {
     renderPage();
-    await waitFor(() => screen.queryByText('Weekly'));
-    await userEvent.click(screen.getByText('Weekly'));
-    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith('weekly', undefined, undefined, undefined, undefined, undefined, { series: true, savings: true }));
-  });
-
-  it('clicking All calls getUsage with "all"', async () => {
-    renderPage();
-    await waitFor(() => screen.queryByText('All'));
-    await userEvent.click(screen.getByText('All'));
-    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith('all', undefined, undefined, undefined, undefined, undefined, { series: true, savings: true }));
+    await waitFor(() => screen.queryByText('This month'));
+    await openPicker();
+    await userEvent.click(screen.getByRole('button', { name: 'All time' }));
+    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith(
+      'all', undefined, undefined, undefined, undefined, undefined, { series: true, savings: true },
+    ));
   });
 });
 
@@ -393,7 +401,7 @@ describe('OverviewPage — savings over time', () => {
   it('asks the service for the series and the totals', async () => {
     renderPage();
     await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith(
-      'monthly', undefined, undefined, undefined, undefined, undefined, { series: true, savings: true },
+      'custom', undefined, monthStart(), today(), undefined, undefined, { series: true, savings: true },
     ));
   });
 
@@ -431,7 +439,8 @@ describe('OverviewPage — savings over time', () => {
       .mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
     renderPage();
     await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
-    await userEvent.click(screen.getByRole('button', { name: 'All' }));
+    await openPicker();
+    await userEvent.click(screen.getByRole('button', { name: 'All time' }));
     await waitFor(() => expect(screen.queryByRole('button', { name: /^claude-sonnet-4$/ })).not.toBeNull());
     expect(screen.getByRole('button', { name: /^claude-sonnet-4$/ }).getAttribute('aria-pressed')).toBe('false');
     expect(screen.getByRole('button', { name: /^gpt-4o-mini$/ }).getAttribute('aria-pressed')).toBe('true');
@@ -448,18 +457,36 @@ describe('OverviewPage — savings over time', () => {
     expect(middle.getAttribute('aria-pressed')).toBe('false');
   });
 
-  it('anchors every saving card on the costliest baseline, the cheapest as context', async () => {
+  it('carries the money saved on the Total Cost card, anchored on the costliest baseline', async () => {
     mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
     renderPage();
-    await waitFor(() => expect(screen.queryByText('Cost saved')).not.toBeNull());
-    expect(screen.getByText('$0.0810')).toBeTruthy();
-    expect(screen.getAllByText('vs always gpt-4o').length).toBe(2); // cost and time
-    expect(screen.getByText('$0.00600000 vs always gpt-4o-mini')).toBeTruthy();
-    // Tokens: what the optimizers really cut, then the tokenizer estimate apart from it
+    await waitFor(() => expect(screen.queryByText('$0.0810 saved vs always gpt-4o')).not.toBeNull());
+    // No card of its own: the saving belongs to the number it changes (T201).
+    expect(screen.queryByText('Cost saved')).toBeNull();
+    const card = screen.getByText('Total Cost').closest('.stat-card')!;
+    expect(card.textContent).toContain('$1.2345');
+  });
+
+  it('keeps time and tokens as cards of their own', async () => {
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('Time saved')).not.toBeNull());
+    expect(screen.getByText('2.00s')).toBeTruthy();
+    expect(screen.getByText('vs always gpt-4o')).toBeTruthy();
+    // Tokens: what the optimizers really cut. The tokenizer estimate is 0 against
+    // this baseline, so no second line claims one.
     expect(screen.getByText('1,200')).toBeTruthy();
     expect(screen.getByText('cut by optimizers, measured')).toBeTruthy();
-    expect(screen.getByText('0 vs always gpt-4o, estimated')).toBeTruthy();
-    expect(screen.getByText('2.00s')).toBeTruthy();
+    expect(screen.queryByText(/estimated/)).toBeNull();
+  });
+
+  it('shows the tokenizer estimate when the optimizers cut nothing', async () => {
+    const savings = { ...SAVINGS, optimizers: [], baselines: SAVINGS.baselines.map(b => ({ ...b, tokenDelta: 675 })) };
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('Tokens saved')).not.toBeNull());
+    expect(screen.getByText('675')).toBeTruthy();
+    expect(screen.getByText('vs always gpt-4o, estimated')).toBeTruthy();
   });
 
   it('falls back to the costliest baseline that answered for the time card', async () => {
@@ -476,12 +503,28 @@ describe('OverviewPage — savings over time', () => {
     expect(screen.getByText('vs always claude-sonnet-4')).toBeTruthy();
   });
 
-  it('says so when no baseline answered in the window', async () => {
+  it('drops the time card when no baseline answered in the window', async () => {
     const savings = { ...SAVINGS, baselines: SAVINGS.baselines.map(({ latencyMs: _l, latencyDeltaMs: _d, ...b }) => b) };
     mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings }));
     renderPage();
-    await waitFor(() => expect(screen.queryByText('Time saved')).not.toBeNull());
-    expect(screen.getByText('no baseline answered in this window')).toBeTruthy();
+    await waitFor(() => expect(screen.queryByText('Tokens saved')).not.toBeNull());
+    expect(screen.queryByText('Time saved')).toBeNull();
+  });
+
+  // T202 — a saving that is zero or negative is a window too small to compare,
+  // not news: no line, no card.
+  it('drops every saving that is not positive', async () => {
+    const savings = {
+      ...SAVINGS,
+      optimizers: [],
+      baselines: SAVINGS.baselines.map(b => ({ ...b, costDelta: -0.01, latencyDeltaMs: 0, tokenDelta: 0 })),
+    };
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    expect(screen.queryByText(/saved vs always/)).toBeNull();
+    expect(screen.queryByText('Time saved')).toBeNull();
+    expect(screen.queryByText('Tokens saved')).toBeNull();
   });
 
   it('drops the saving cards when no baseline costs anything', async () => {
@@ -489,7 +532,9 @@ describe('OverviewPage — savings over time', () => {
     mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings }));
     renderPage();
     await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
-    expect(screen.queryByText('Cost saved')).toBeNull();
+    expect(screen.queryByText('Time saved')).toBeNull();
+    expect(screen.queryByText('Tokens saved')).toBeNull();
+    expect(screen.queryByText(/saved vs always/)).toBeNull();
   });
 
   it('switches the chart between cost, tokens and speed', async () => {

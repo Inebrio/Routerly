@@ -2704,9 +2704,12 @@ The footer line below the model table shows a summary and a **callType breakdown
 ```
 Total: $0.001234 USD (142 ok, 2 errors, 3 blocked)
 Breakdown - completion: 142 calls / $0.001200  |  routing: 8 calls / $0.000011  |  guardrail: 12 calls / $0.000023  |  blocked: 3 calls
+Types - Chat: 138  |  Embedding: 24
 ```
 
 The summary suffix `, N blocked` appears when at least one request was blocked by a guardrail rule. Blocked requests contribute zero cost. The breakdown line includes a `blocked: N calls` entry for the same count.
+
+The **Types** line lists the request types the window actually holds, busiest first: it says which values of `--type` are worth passing. It counts the window before `--type` and `--caller` narrow it, so it stays the same when either flag is set.
 
 The `--json` output includes these fields in `summary`:
 

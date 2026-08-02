@@ -27,6 +27,8 @@ interface UsageResponse {
     guardrailCost?: number;
   };
   byModel: Record<string, UsageByModel>;
+  /** Calls per request type in the window, counted before `--type` narrowed it (T210). */
+  byRequestType?: Record<string, number>;
   records: Array<{
     timestamp: string;
     projectId: string;
@@ -225,6 +227,14 @@ Examples:
         if (s.guardrailCalls !== undefined) breakdown.push(`guardrail: ${s.guardrailCalls} calls / $${(s.guardrailCost ?? 0).toFixed(6)}`);
         if (s.blockedCalls) breakdown.push(`blocked: ${s.blockedCalls} calls`);
         if (breakdown.length > 0) console.log(chalk.gray(`Breakdown — ${breakdown.join('  |  ')}`));
+
+        // What `--type` has to choose from in this window (T210): the flag takes
+        // six values while most instances only ever serve one or two, and a list
+        // of the types actually recorded says which ones are worth passing.
+        const types = Object.entries(data.byRequestType ?? {}).sort(([, a], [, b]) => b - a);
+        if (types.length > 0) {
+          console.log(chalk.gray(`Types — ${types.map(([t, n]) => `${requestTypeLabel(t as RequestType)}: ${n}`).join('  |  ')}`));
+        }
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);

@@ -4,40 +4,20 @@ import {
   BarChart, Bar, Cell,
 } from 'recharts';
 import { Link } from 'react-router-dom';
-import { Activity, ArrowRight, DollarSign, XCircle, Boxes, FolderOpen, PiggyBank, Scissors, Terminal, Timer, TrendingUp } from 'lucide-react';
-import { CLIENT_REGISTRY, type SavingsSummary } from '@routerly/shared';
+import { Activity, ArrowRight, DollarSign, XCircle, Boxes, FolderOpen, Terminal, TrendingUp } from 'lucide-react';
+import { CLIENT_REGISTRY } from '@routerly/shared';
 import { getUsage, getModels, getProjects, type UsageStats } from '../api.js';
 import { useClientsEnabled } from './ConnectPage.js';
-import { ChartTooltip, TimeSeriesChart, axisProps, seriesColor, useChartTheme, type ChartSeries } from '../components/charts.js';
-import { formatCost, formatDuration, formatTokens } from '../utils/traceUtils.js';
-
-/** Model id without its provider prefix: what fits in a legend entry. */
-const shortModel = (id: string): string => id.split('/').pop() ?? id;
-
-/** What the savings chart is showing. */
-type SavingsMetric = 'cost' | 'tokens' | 'speed';
-
-const SAVINGS_METRIC_LABEL: Record<SavingsMetric, string> = { cost: 'Cost', tokens: 'Tokens', speed: 'Speed' };
-
-/**
- * Axis ticks: a chart axis has no room for the eight decimals `formatCost` gives sub-cent
- * values, and a fixed three decimals collapses a whole sub-cent axis into repeated "$0.000".
- * Scale the decimals to the tick instead, so every tick stays distinct and inside the gutter.
- */
-export const compactCost = (v: number): string => {
-  if (!v) return '$0';
-  const abs = Math.abs(v);
-  if (abs >= 1000) return `$${(v / 1000).toFixed(1)}k`;
-  return `$${v.toFixed(Math.min(6, Math.max(2, 1 - Math.floor(Math.log10(abs)))))}`;
-};
-
-const compactTokens = (v: number): string =>
-  v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(Math.round(v));
+import { ChartTooltip, axisProps, seriesColor, useChartTheme } from '../components/charts.js';
+import { DateRangePicker, PRESETS, type DateRange } from '../components/DateRangePicker.js';
+import { SavingsCard, SavingsStats, StatCard, compactCost, costSavedNote, savingsSeriesData, type SavingsMetric } from '../components/savings.js';
+import { formatCost } from '../utils/traceUtils.js';
 
 export function OverviewPage() {
   const [stats, setStats] = useState<UsageStats | null>(null);
   const [statsError, setStatsError] = useState(false);
-  const [period, setPeriod] = useState('monthly');
+  // Same picker the Usage page carries, so a window means the same thing on both (T203).
+  const [dateRange, setDateRange] = useState<DateRange>(() => PRESETS.find(p => p.label === 'This month')!.range());
   const [modelCount, setModelCount] = useState(0);
   const [projectCount, setProjectCount] = useState(0);
   const [savingsMetric, setSavingsMetric] = useState<SavingsMetric>('cost');
@@ -46,9 +26,12 @@ export function OverviewPage() {
   useEffect(() => {
     // `series` carries the savings bucketed over time for the chart (T81),
     // `savings` the whole-window totals per baseline the saving cards read (T102).
-    getUsage(period, undefined, undefined, undefined, undefined, undefined, { series: true, savings: true })
+    const from = dateRange.from || undefined;
+    const to = dateRange.to || undefined;
+    const period = from || to ? 'custom' : 'all';
+    getUsage(period, undefined, from, to, undefined, undefined, { series: true, savings: true })
       .then(setStats).catch(() => setStatsError(true));
-  }, [period]);
+  }, [dateRange]);
 
   useEffect(() => {
     getModels().then(m => setModelCount(m.length)).catch(console.error);
@@ -68,26 +51,7 @@ export function OverviewPage() {
       });
   }, [stats]);
 
-  /**
-   * One point per bucket, with the derived per-call figures the Speed metric
-   * needs. Every paid baseline gets its own `b<i>` key rather than its model id:
-   * recharts reads a dataKey containing a dot as a path, and model ids are full
-   * of dots.
-   */
-  const savingsData = useMemo(() => {
-    const series = stats?.series;
-    if (!series) return [];
-    return series.points.map(p => ({
-      label: series.bucket === 'hour' ? `${p.bucket.slice(11)}:00` : p.bucket.slice(5),
-      cost: p.cost,
-      ...Object.fromEntries(series.baselineModelIds.map((id, i) => [`b${i}`, p.baselineCosts[id] ?? 0])),
-      inputTokens: p.inputTokens,
-      outputTokens: p.outputTokens,
-      /* v8 ignore next 2 — a bucket exists only because it has calls */
-      latencyPerCall: p.calls > 0 ? Math.round(p.latencyMs / p.calls) : 0,
-      baselineLatencyPerCall: p.calls > 0 ? Math.round(p.baselineLatencyMs / p.calls) : 0,
-    }));
-  }, [stats]);
+  const savingsData = useMemo(() => savingsSeriesData(stats?.series), [stats]);
 
   const sortedModels = useMemo(() =>
     stats ? Object.entries(stats.byModel).sort(([, a], [, b]) => b.calls - a.calls) : [],
@@ -121,24 +85,19 @@ export function OverviewPage() {
 
         <ConnectCard />
 
-        {/* Period selector — segmented control */}
-        <div style={{ marginBottom: 24, display: 'inline-flex', alignItems: 'center', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 3, gap: 2 }}>
-          {(['daily', 'weekly', 'monthly', 'all'] as const).map(p => (
-            <button
-              key={p}
-              className={`theme-btn${period === p ? ' active' : ''}`}
-              style={{ minWidth: 64 }}
-              onClick={() => setPeriod(p)}
-            >
-              {p.charAt(0).toUpperCase() + p.slice(1)}
-            </button>
-          ))}
+        {/* Period selector */}
+        <div style={{ marginBottom: 24, display: 'inline-flex' }}>
+          <DateRangePicker value={dateRange} onChange={setDateRange} />
         </div>
 
         {/* Stats grid */}
         <div className="stats-grid">
+          {/* What routing saved is what the cost would otherwise have been, so it
+              rides on the cost itself instead of a card of its own (T201). */}
           <StatCard icon={<DollarSign size={18} />} label="Total Cost" accentColor="#3D75F5"
-            value={`$${stats.summary.totalCost.toFixed(4)}`} sub="USD this period" to="/dashboard/usage" />
+            value={`$${stats.summary.totalCost.toFixed(4)}`} sub="USD this period"
+            {...(costSavedNote(stats.savings) ? { sub2: costSavedNote(stats.savings)! } : {})}
+            to="/dashboard/usage" />
           <StatCard icon={<Activity size={18} />} label="Total Calls" accentColor="#5A90F8"
             value={stats.summary.totalCalls}
             sub={`${stats.summary.routingCalls} routing · ${stats.summary.completionCalls} completion`}
@@ -175,14 +134,14 @@ export function OverviewPage() {
         {/* What routing saved, over time (T81) */}
         {savingsData.length > 0 && (
           <SavingsCard
-            key={period}
+            key={dateRange.label}
             data={savingsData}
             baselineIds={stats.series?.baselineModelIds ?? []}
             {...(stats.series?.baselineModelId ? { baselineModelId: stats.series.baselineModelId } : {})}
             {...(stats.savings ? { savings: stats.savings } : {})}
             metric={savingsMetric}
             onMetric={setSavingsMetric}
-            period={period}
+            resetKey={dateRange.label}
           />
         )}
 
@@ -195,7 +154,7 @@ export function OverviewPage() {
             {barData.length === 0 ? (
               <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', paddingTop: 8 }}>No cost recorded this period.</p>
             ) : (
-              <ResponsiveContainer key={period} width="100%" height={Math.max(barData.length * 36, 120)}>
+              <ResponsiveContainer key={dateRange.label} width="100%" height={Math.max(barData.length * 36, 120)}>
                 <BarChart data={barData} layout="vertical" margin={{ left: 8, right: 32 }}>
                   <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" horizontal={false} />
                   <XAxis type="number" {...axisProps(chartTheme)} tickFormatter={v => compactCost(Number(v))} />
@@ -255,161 +214,6 @@ export function OverviewPage() {
 }
 
 /**
- * The savings layer over time (T81): what the routed traffic cost, moved and
- * took, against what the same calls would have cost, moved and taken on the
- * costliest model the projects allow.
- *
- * The counterfactual is drawn dashed because it never happened. Tokens have no
- * counterfactual at all: the same conversation is assumed to produce the same
- * tokens everywhere, so only the price of those tokens changes.
- */
-function SavingsCard({ data, baselineIds, baselineModelId, savings, metric, onMetric, period }: {
-  data: Array<Record<string, string | number>>;
-  /** Paid models the chart can price against, cheapest first. */
-  baselineIds: string[];
-  /** Costliest baseline: what the Speed counterfactual is estimated from. */
-  baselineModelId?: string;
-  savings?: SavingsSummary;
-  metric: SavingsMetric;
-  onMetric: (m: SavingsMetric) => void;
-  period: string;
-}) {
-  // Cheapest and costliest are the two ends of the range, so those two start
-  // visible; every other paid model waits in the legend, one click away (T100).
-  // The default is derived at render, not seeded into state: the card mounts
-  // before the first fetch answers, when baselineIds is still empty, and a
-  // seeded set would keep that empty default forever and draw every line.
-  const [hidden, setHidden] = useState<Set<string> | null>(null);
-  const hiddenKeys = hidden ?? new Set(
-    baselineIds.flatMap((_, i) => (i === 0 || i === baselineIds.length - 1 ? [] : [`b${i}`])),
-  );
-  const toggle = (key: string) => setHidden(() => {
-    const next = new Set(hiddenKeys);
-    if (!next.delete(key)) next.add(key);
-    return next;
-  });
-
-  const hasBaselineLatency = (savings?.baselines[savings.baselines.length - 1]?.latencyMs ?? 0) > 0;
-
-  const series: ChartSeries[] = (metric === 'tokens'
-    ? [
-      { key: 'inputTokens', label: 'Input', color: seriesColor(5) },
-      { key: 'outputTokens', label: 'Output', color: seriesColor(1) },
-    ]
-    : metric === 'speed'
-      ? [
-        { key: 'latencyPerCall', label: 'Actual', color: seriesColor(0) },
-        ...(hasBaselineLatency ? [{ key: 'baselineLatencyPerCall', label: `On ${shortModel(baselineModelId ?? '')}`, color: seriesColor(2), dashed: true }] : []),
-      ]
-      : [
-        { key: 'cost', label: 'Actual', color: seriesColor(0) },
-        ...baselineIds.map((id, i) => ({
-          key: `b${i}`,
-          label: shortModel(id),
-          color: seriesColor(i + 1),
-          dashed: true,
-        })),
-      ]
-  // Every legend entry toggles, not just the baselines: the legend renders a
-  // button for each series, and a button that does nothing is worse than none.
-  ).map(s => ({ ...s, hidden: hiddenKeys.has(s.key) }));
-
-  const formatValue = metric === 'cost' ? formatCost : metric === 'tokens' ? formatTokens : formatDuration;
-  const formatAxis = metric === 'cost' ? compactCost : metric === 'tokens' ? compactTokens : formatDuration;
-
-  return (
-    <div className="chart-card">
-      <div className="chart-card-head">
-        <div>
-          <h3>What routing saved</h3>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-            {(savings?.comparedCalls ?? 0).toLocaleString()} client {savings?.comparedCalls === 1 ? 'call' : 'calls'}
-            {baselineIds.length > 0 && (
-              <>
-                {savings?.comparedCalls === 1 ? ', against sending it to each of the ' : ', against sending them all to each of the '}
-                <Link to="/dashboard/models" style={{ color: 'var(--accent)' }}>{baselineIds.length} paid models in play</Link>
-              </>
-            )}
-          </div>
-        </div>
-        <div style={{ display: 'inline-flex', alignItems: 'center', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 3, gap: 2 }}>
-          {(['cost', 'tokens', 'speed'] as const).map(m => (
-            <button
-              key={m}
-              className={`theme-btn${metric === m ? ' active' : ''}`}
-              style={{ minWidth: 64 }}
-              onClick={() => onMetric(m)}
-            >
-              {SAVINGS_METRIC_LABEL[m]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <TimeSeriesChart
-        key={`${period}-${metric}`}
-        data={data}
-        series={series}
-        formatValue={formatValue}
-        formatAxis={formatAxis}
-        onToggleSeries={toggle}
-      />
-    </div>
-  );
-}
-
-/**
- * What routing saved, as three more cards in the summary grid (T102).
- *
- * Every card is anchored on the same baseline: the costliest single model the
- * traffic could have gone to, which is the policy routing replaces. A min-max
- * range over every baseline was the first cut and it read as a verdict against
- * routing: its low end is always "sending everything to the cheapest model would
- * have cost less", true of any router and not what the card is asking. That end
- * is still shown, as the second line, where it reads as context instead.
- *
- * Money is exact arithmetic. Time comes from each model's own throughput in the
- * window, so a baseline that never answered carries none. Tokens are two things
- * kept apart on purpose: what the optimizers really cut, which is measured, and
- * what a different tokenizer would have counted, which is an estimate.
- */
-function SavingsStats({ savings }: { savings: SavingsSummary }) {
-  const paid = [...savings.baselines.filter(b => b.cost > 0)].sort((a, b) => a.costDelta - b.costDelta);
-  if (paid.length === 0) return null;
-
-  const anchor = paid[paid.length - 1]!;
-  const cheapest = paid[0]!;
-  const anchorName = shortModel(anchor.modelId);
-  const optimizerTokens = savings.optimizers.reduce((sum, o) => sum + o.tokensSaved, 0);
-  // The anchor is picked on price, so it need not be one of the models that
-  // answered: the time card falls back to the costliest one that did.
-  const timed = paid.filter(b => b.latencyDeltaMs !== undefined);
-  const timeAnchor = timed[timed.length - 1];
-
-  return (
-    <>
-      <StatCard icon={<PiggyBank size={18} />} label="Cost saved" accentColor="#10B981"
-        valueColor={anchor.costDelta >= 0 ? '#10B981' : '#EF4444'}
-        value={formatCost(anchor.costDelta)}
-        sub={`vs always ${anchorName}`}
-        {...(cheapest !== anchor
-          ? { sub2: `${formatCost(cheapest.costDelta)} vs always ${shortModel(cheapest.modelId)}` }
-          : {})}
-      />
-      <StatCard icon={<Timer size={18} />} label="Time saved" accentColor="#F59E0B"
-        value={timeAnchor ? formatDuration(timeAnchor.latencyDeltaMs!) : '—'}
-        sub={timeAnchor ? `vs always ${shortModel(timeAnchor.modelId)}` : 'no baseline answered in this window'}
-      />
-      <StatCard icon={<Scissors size={18} />} label="Tokens saved" accentColor="#8B5CF6"
-        value={formatTokens(optimizerTokens)}
-        sub="cut by optimizers, measured"
-        sub2={`${formatTokens(anchor.tokenDelta)} vs always ${anchorName}, estimated`}
-      />
-    </>
-  );
-}
-
-/**
  * Shortcut to the Connect section. Renders only while the client-configurator
  * module is enabled, same signal the sidebar entry uses.
  */
@@ -433,35 +237,4 @@ function ConnectCard() {
       <ArrowRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
     </Link>
   );
-}
-
-function StatCard({ icon, label, value, sub, sub2, accentColor, valueColor, to }: {
-  icon: React.ReactNode;
-  label: string;
-  value: React.ReactNode;
-  sub: string;
-  /** Second line, for a card whose number needs a counterweight to be read right. */
-  sub2?: string;
-  accentColor?: string;
-  valueColor?: string;
-  /** Section this number is explained in. The card becomes a link to it. */
-  to?: string;
-}) {
-  /* v8 ignore next */
-  const iconColor = accentColor || 'var(--accent)';
-  const style = { '--stat-accent': accentColor } as React.CSSProperties;
-  const body = (
-    <>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: iconColor }}>
-        {icon}<span className="stat-label">{label}</span>
-      </div>
-      <div className="stat-value" style={valueColor ? { color: valueColor } : undefined}>{value}</div>
-      <div className="stat-sub">{sub}</div>
-      {sub2 && <div className="stat-sub">{sub2}</div>}
-    </>
-  );
-
-  return to
-    ? <Link to={to} className="stat-card" style={style}>{body}</Link>
-    : <div className="stat-card" style={style}>{body}</div>;
 }

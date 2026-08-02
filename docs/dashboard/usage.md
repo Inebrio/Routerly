@@ -17,7 +17,7 @@ The top row shows aggregated totals for the selected filter set:
 
 | Card | Description |
 |------|-------------|
-| **Total Cost** | USD cost of all successful calls in the period |
+| **Total Cost** | USD cost of all successful calls in the period, with what routing saved as a second line when it came out ahead |
 | **Total Calls** | All usage records (completion + routing + guardrail + blocked) |
 | **Completion Calls** | Main model inference calls, with their total cost |
 | **Router Calls** | Model calls the router makes to decide where to route: the `llm` policy's decision call and the `semantic-intent` policy's embedding call, with their cost |
@@ -31,6 +31,26 @@ clears the filter.
 
 Guardrail judge calls are charged to the project like any other model call and are subject to the project's budget limits. Blocked requests record zero cost and zero tokens.
 
+**Time saved** and **Tokens saved** join the row when the filtered traffic has
+something to compare against, exactly as on the [Overview](overview.md#the-saving-cards).
+Like the saving line on Total Cost, they are shown only when the saving is
+positive.
+
+---
+
+## What Routing Saved
+
+Below the summary cards, the same chart the [Overview](overview.md#what-routing-saved)
+carries, over the filtered records rather than the whole instance: what the
+traffic cost, moved and took, against what the same calls would have cost, moved
+and taken on each single model that could have served them. The metric selector
+switches between **Cost**, **Tokens** and **Speed**, and the legend toggles each
+model line.
+
+It follows every filter on the page but does not follow the live refresh: the
+comparison is expensive, so it is recomputed when the window or the filters
+change, not every two seconds.
+
 ---
 
 ## Filters
@@ -40,13 +60,19 @@ Guardrail judge calls are charged to the project like any other model call and a
 | **Period** | Preset time window (today, this month, etc.) or custom range |
 | **Project** | Filter to a specific project |
 | **Model** | Filter to specific model IDs |
-| **Caller** | `All`, `Completion`, `Router`, `Guardrail`, or `Judge` -- who made the call: the client, the router, the guardrail pipeline, or an experiment judge |
-| **Type** | `All`, `Chat`, `Text Completion`, `Embedding`, `Rerank`, `Image`, or `Audio` -- what the call asked for, taken from the endpoint the client hit |
+| **Caller** | Who made the call: the client (`Completion`), the router, the guardrail pipeline, or an experiment judge |
+| **Type** | What the call asked for, taken from the endpoint the client hit: `Chat`, `Text Completion`, `Embedding`, `Rerank`, `Image`, `Audio` |
 | **Status** | `All`, `Success`, `Blocked`, or `Error` -- `Blocked` shows only guardrail-blocked requests |
 | **Session ID** | Filter to requests from a specific session (from the `x-routerly-conversation-id` header) |
 | **Tags** | Filter by token metadata (e.g., `environment: production`) |
 
-Filters are applied immediately and affect the summary cards, the per-model breakdown table, and the request log simultaneously.
+**Caller** and **Type** only offer the values the selected window actually
+contains, each with its call count next to it, and disappear entirely when there
+is nothing to choose: an instance serving only chat completions gets neither
+group. The counts are taken before those two filters are applied, so picking a
+value never changes the list you picked it from.
+
+Filters are applied immediately and affect the summary cards, the savings block, the per-model breakdown table, and the request log simultaneously.
 
 :::tip Session tracking and custom metadata
 Use the **Session ID** filter to view all requests from a specific conversation or user session. Use the **Tags** filter to analyze traffic by team, environment, application, or any custom dimension you tag your tokens with.

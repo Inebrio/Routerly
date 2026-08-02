@@ -1,10 +1,11 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
-import { REQUEST_TYPES, requestTypeLabel, type RequestType } from '@routerly/shared';
+import { CALL_TYPES, REQUEST_TYPES, requestTypeLabel, type RequestType } from '@routerly/shared';
 import { getUsage, getProjects, getModels, type UsageStats, type Project, type Model } from '../api';
 import { MultiSelect } from '../components/MultiSelect';
 import { DateRangePicker, PRESETS, RECENT_PRESETS, parseStoredRange, type DateRange } from '../components/DateRangePicker';
+import { SavingsCard, SavingsStats, costSavedNote, savingsSeriesData, type SavingsMetric } from '../components/savings';
 import { useFilterState } from '../hooks/useFilterState';
 import { useProviderLabels } from '../hooks/useProviderLabels';
 
@@ -68,6 +69,11 @@ export function UsagePage() {
   const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing' | 'guardrail' | 'judge'>({ key: 'usage-filters-callType', defaultValue: 'all' });
   const [requestTypeFilter, setRequestTypeFilter] = useFilterState<'all' | RequestType>({ key: 'usage-filters-requestType', defaultValue: 'all' });
   const [outcomeFilter, setOutcomeFilter]   = useFilterState<'all' | 'success' | 'error' | 'blocked'>({ key: 'usage-filters-outcome', defaultValue: 'all' });
+  // The savings layer rides a fetch of its own: the counterfactual is expensive
+  // and the record table polls every 2s, so it follows the filters and nothing
+  // else (T209).
+  const [savingsStats, setSavingsStats] = useState<UsageStats | null>(null);
+  const [savingsMetric, setSavingsMetric] = useState<SavingsMetric>('cost');
   const [loading, setLoading]           = useState(true);
   const [fetchError, setFetchError]     = useState<string | null>(null);
   const [lastUpdated, setLastUpdated]   = useState<Date | null>(null);
@@ -183,6 +189,46 @@ export function UsagePage() {
   }, [fetchStats, pollInterval]);
 
   useEffect(() => { setPage(1); }, [dateRange, projectIds, modelIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
+
+  // Savings over the same window and the same filters, one page of records asked
+  // for because only the aggregates are read here (T209).
+  useEffect(() => {
+    let from = dateRange.from || undefined;
+    let to = dateRange.to || undefined;
+    const recentPreset = RECENT_PRESETS.find(p => p.label === dateRange.label);
+    if (recentPreset) {
+      const fresh = recentPreset.range();
+      from = fresh.from;
+      to = fresh.to;
+    }
+    const period = from || to ? 'custom' : 'all';
+    getUsage(period, undefined, from, to, 1, 1, {
+      projectIds,
+      modelIds,
+      callType: callTypeFilter,
+      requestType: requestTypeFilter,
+      outcome: outcomeFilter,
+      series: true,
+      savings: true,
+    })
+      .then(setSavingsStats)
+      .catch(() => setSavingsStats(null));
+  }, [dateRange, projectIds, modelIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
+
+  const savingsData = useMemo(() => savingsSeriesData(savingsStats?.series), [savingsStats]);
+
+  // Both type filters are built from what the window actually holds (T210): the
+  // static lists offered nine buttons where the traffic had two, and a filter
+  // whose every button but one returns nothing is noise. A filter still renders
+  // while it is set, otherwise picking the only value would hide the way back.
+  const callerOptions = useMemo(
+    () => CALL_TYPES.filter(t => (stats?.byCallType?.[t] ?? 0) > 0),
+    [stats],
+  );
+  const requestTypeOptions = useMemo(
+    () => REQUEST_TYPES.filter(t => (stats?.byRequestType?.[t] ?? 0) > 0),
+    [stats],
+  );
 
   // ponytail: model options sourced from getModels() (stable, unfiltered) so
   // the dropdown does not shrink when a model filter is active
@@ -373,29 +419,35 @@ export function UsagePage() {
               />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-              <FilterLabel>Caller</FilterLabel>
-              <div style={{ display: 'flex', gap: 4 }}>
-                {(['all', 'completion', 'routing', 'guardrail', 'judge'] as const).map(f => (
-                  <button key={f} className={`btn btn-sm ${callTypeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => setCallTypeFilter(f)}>
-                    {CALLER_FILTER_LABELS[f]}
-                  </button>
-                ))}
+            {(callerOptions.length > 1 || callTypeFilter !== 'all') && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <FilterLabel>Caller</FilterLabel>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {(['all', ...callerOptions] as const).map(f => (
+                    <button key={f} className={`btn btn-sm ${callTypeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => setCallTypeFilter(f)}>
+                      {CALLER_FILTER_LABELS[f]}
+                      {f !== 'all' && <span style={{ opacity: 0.6, marginLeft: 5 }}>{stats?.byCallType?.[f] ?? 0}</span>}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-              <FilterLabel>Type</FilterLabel>
-              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                {(['all', ...REQUEST_TYPES] as const).map(f => (
-                  <button key={f} className={`btn btn-sm ${requestTypeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => setRequestTypeFilter(f)}>
-                    {f === 'all' ? 'All' : requestTypeLabel(f)}
-                  </button>
-                ))}
+            {(requestTypeOptions.length > 1 || requestTypeFilter !== 'all') && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <FilterLabel>Type</FilterLabel>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {(['all', ...requestTypeOptions] as const).map(f => (
+                    <button key={f} className={`btn btn-sm ${requestTypeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => setRequestTypeFilter(f)}>
+                      {f === 'all' ? 'All' : requestTypeLabel(f)}
+                      {f !== 'all' && <span style={{ opacity: 0.6, marginLeft: 5 }}>{stats?.byRequestType?.[f] ?? 0}</span>}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               <FilterLabel>Status</FilterLabel>
@@ -435,6 +487,11 @@ export function UsagePage() {
               <div className="stat-card">
                 <div className="stat-label">Total Cost</div>
                 <div className="stat-value">${stats.summary.totalCost.toFixed(4)}</div>
+                {/* Same reading as the Overview: what routing saved belongs to the
+                    number it changed, not to a card of its own (T201/T209). */}
+                {costSavedNote(savingsStats?.savings) && (
+                  <div className="stat-sub">{costSavedNote(savingsStats?.savings)}</div>
+                )}
               </div>
               <div className="stat-card">
                 <div className="stat-label">Total Calls</div>
@@ -483,7 +540,22 @@ export function UsagePage() {
                   {stats.summary.errorCalls}
                 </div>
               </div>
+              {savingsStats?.savings && <SavingsStats savings={savingsStats.savings} />}
             </div>
+
+            {/* What routing saved over the filtered window, the same chart the Overview carries (T209) */}
+            {savingsData.length > 0 && (
+              <SavingsCard
+                key={dateRange.label}
+                data={savingsData}
+                baselineIds={savingsStats?.series?.baselineModelIds ?? []}
+                {...(savingsStats?.series?.baselineModelId ? { baselineModelId: savingsStats.series.baselineModelId } : {})}
+                {...(savingsStats?.savings ? { savings: savingsStats.savings } : {})}
+                metric={savingsMetric}
+                onMetric={setSavingsMetric}
+                resetKey={dateRange.label}
+              />
+            )}
 
             {/* Per-model table — enriched with performance columns + Rank */}
             {sortedModelRows.length > 0 && (() => {

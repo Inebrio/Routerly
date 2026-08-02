@@ -1494,6 +1494,52 @@ describe('GET /api/usage', () => {
     expect(s.routingCost).toBeCloseTo(0.02)
   })
 
+  describe('type counts (T210)', () => {
+    const now = new Date().toISOString()
+    const records = [
+      { id: 'c1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.1, outcome: 'success', callType: 'completion', requestType: 'chat', latencyMs: 100 },
+      { id: 'c2', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.1, outcome: 'success', callType: 'completion', requestType: 'embedding', latencyMs: 100 },
+      // No callType and no requestType: a legacy record, a client chat call.
+      { id: 'c3', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.1, outcome: 'error', latencyMs: 100 },
+      { id: 'r1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.02, outcome: 'success', callType: 'routing', requestType: 'chat', latencyMs: 100 },
+    ]
+
+    const get = async (qs: string) => {
+      setupAdminAuth()
+      mockReadConfig.mockImplementation(async (t: string) => {
+        if (t === 'users') return [adminUser]
+        if (t === 'roles') return []
+        if (t === 'usage') return records
+        return []
+      })
+      const app = await buildApp()
+      const res = await app.inject({ method: 'GET', url: `/api/usage?${qs}`, headers: adminAuthHeaders() })
+      await app.close()
+      return JSON.parse(res.body)
+    }
+
+    it('counts callers and request types, legacy records included', async () => {
+      const b = await get('period=all')
+      expect(b.byCallType).toEqual({ completion: 3, routing: 1 })
+      expect(b.byRequestType).toEqual({ chat: 3, embedding: 1 })
+    })
+
+    it('counts the window before the type filters narrow it', async () => {
+      const b = await get('period=all&callType=routing&requestType=chat')
+      expect(b.summary.totalCalls).toBe(1)
+      // The filters pick one record, the counts still describe every caller and
+      // type available: the dashboard builds the filter buttons from them.
+      expect(b.byCallType).toEqual({ completion: 3, routing: 1 })
+      expect(b.byRequestType).toEqual({ chat: 3, embedding: 1 })
+    })
+
+    it('counts only what the other filters left', async () => {
+      const b = await get('period=all&outcome=error')
+      expect(b.byCallType).toEqual({ completion: 1 })
+      expect(b.byRequestType).toEqual({ chat: 1 })
+    })
+  })
+
   it('buckets a blocked outcome separately from errors (#77 C3)', async () => {
     setupAdminAuth()
     const now = new Date().toISOString()
@@ -1747,14 +1793,21 @@ describe('GET /api/usage', () => {
         expect(b.series.points[0].baselineCost).toBe(0.03)
       })
 
-      it('buckets by hour on a single day and by day over a longer period', async () => {
-        const daily = await get('series=1&period=daily')
-        expect(daily.series.bucket).toBe('hour')
-        expect(daily.series.points[0].bucket).toBe(now.slice(0, 13))
+      // T203: any window the picker sends arrives as period=custom, so the cut
+      // is taken from the traffic in the window, not from the period name.
+      it('buckets by hour when the traffic in the window spans two days or less', async () => {
+        const b = await get('series=1&period=monthly')
+        expect(b.series.bucket).toBe('hour')
+        expect(b.series.points[0].bucket).toBe(now.slice(0, 13))
+      })
 
-        const monthly = await get('series=1&period=monthly')
-        expect(monthly.series.bucket).toBe('day')
-        expect(monthly.series.points[0].bucket).toBe(now.slice(0, 10))
+      it('buckets by day when it spans more', async () => {
+        const old = new Date(Date.now() - 10 * 86_400_000).toISOString()
+        const b = await get('series=1&period=all', {
+          records: [{ ...records[0], id: 'u0', timestamp: old }, ...records],
+        })
+        expect(b.series.bucket).toBe('day')
+        expect(b.series.points[0].bucket).toBe(old.slice(0, 10))
       })
     })
   })

@@ -47,6 +47,10 @@ function makeStats(overrides: Record<string, unknown> = {}) {
       ...overrides,
     },
     byModel: {},
+    // The filter buttons are built from these (T210), so a fixture that wants a
+    // caller or a type to be offered has to put traffic behind it.
+    byCallType: { completion: 8, routing: 2, guardrail: 1, judge: 1 },
+    byRequestType: { chat: 5, completion: 1, embedding: 1, rerank: 1, image: 1, audio: 1 },
     timeline: [],
     records: [],
   };
@@ -170,16 +174,16 @@ describe('UsagePage — Guardrail filter button', () => {
     vi.mocked(getUsage).mockResolvedValue(makeStats());
     renderPage();
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Completion' })).toBeTruthy();
-      expect(screen.getByRole('button', { name: 'Router' })).toBeTruthy();
-      expect(screen.getByRole('button', { name: 'Guardrail' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: /^Completion \d/ })).toBeTruthy();
+      expect(screen.getByRole('button', { name: /^Router \d/ })).toBeTruthy();
+      expect(screen.getByRole('button', { name: /^Guardrail \d/ })).toBeTruthy();
     });
   });
 
   it('clicking Guardrail button marks it active (btn-primary)', async () => {
     vi.mocked(getUsage).mockResolvedValue(makeStats());
     renderPage();
-    const btn = await screen.findByRole('button', { name: 'Guardrail' });
+    const btn = await screen.findByRole('button', { name: /^Guardrail \d/ });
     await userEvent.click(btn);
     expect(btn.className).toContain('btn-primary');
   });
@@ -187,7 +191,7 @@ describe('UsagePage — Guardrail filter button', () => {
   it('offers the Judge filter for the experiment judge calls (T72)', async () => {
     vi.mocked(getUsage).mockResolvedValue(makeStats());
     renderPage();
-    const btn = await screen.findByRole('button', { name: 'Judge' });
+    const btn = await screen.findByRole('button', { name: /^Judge \d/ });
     await userEvent.click(btn);
     expect(btn.className).toContain('btn-primary');
   });
@@ -246,7 +250,7 @@ describe('UsagePage — blockedCalls stat card', () => {
     vi.mocked(getUsage).mockResolvedValue(makeStats({ blockedCalls: 5 }));
     renderPage();
     await waitFor(() => expect(screen.getByText('Blocked Calls')).toBeTruthy());
-    expect(screen.getByText('5')).toBeTruthy();
+    expect(screen.getByText('Blocked Calls').closest('.stat-card')?.querySelector('.stat-value')?.textContent).toBe('5');
   });
 });
 
@@ -645,7 +649,7 @@ describe('UsagePage — stat card click toggles callTypeFilter', () => {
     expect(card).toBeTruthy();
     fireEvent.click(card);
     // After click, Completion Type filter button becomes active
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Completion' }).className).toContain('btn-primary'));
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Completion \d/ }).className).toContain('btn-primary'));
   });
 
   it('clicking Router Calls card activates routing filter (Router button becomes primary)', async () => {
@@ -655,7 +659,7 @@ describe('UsagePage — stat card click toggles callTypeFilter', () => {
     const card = screen.getByText('Router Calls').closest('.stat-card') as HTMLElement;
     expect(card).toBeTruthy();
     fireEvent.click(card);
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Router' }).className).toContain('btn-primary'));
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Router \d/ }).className).toContain('btn-primary'));
   });
 
   it('clicking Router Calls card again deactivates routing filter', async () => {
@@ -664,11 +668,11 @@ describe('UsagePage — stat card click toggles callTypeFilter', () => {
     await waitFor(() => screen.getByText('Router Calls'));
     // Activate via the explicit Router filter button (not the card) then click the card
     // to cover the card's f===routing → 'all' toggle branch
-    await userEvent.click(screen.getByRole('button', { name: 'Router' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Router' }).className).toContain('btn-primary'));
+    await userEvent.click(screen.getByRole('button', { name: /^Router \d/ }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Router \d/ }).className).toContain('btn-primary'));
     const card = screen.getByText('Router Calls').closest('.stat-card') as HTMLElement;
     fireEvent.click(card); // callTypeFilter=routing → card sets it to 'all'
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Router' }).className).not.toContain('btn-primary'));
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Router \d/ }).className).not.toContain('btn-primary'));
   });
 });
 
@@ -680,7 +684,7 @@ describe('UsagePage — reset filters button', () => {
     renderPage();
     await waitFor(() => screen.getByText('Total Calls'));
     // Activate a filter via the Type buttons
-    const guardrailBtn = screen.getByRole('button', { name: 'Guardrail' });
+    const guardrailBtn = screen.getByRole('button', { name: /^Guardrail \d/ });
     await userEvent.click(guardrailBtn);
     await waitFor(() => expect(screen.getByRole('button', { name: 'Reset filters' })).toBeTruthy());
     await userEvent.click(screen.getByRole('button', { name: 'Reset filters' }));
@@ -711,7 +715,7 @@ describe('UsagePage — request type filter', () => {
   it('sends the picked request type to the server', async () => {
     vi.mocked(getUsage).mockResolvedValue(makeStats());
     renderPage();
-    const btn = await screen.findByRole('button', { name: 'Embedding' });
+    const btn = await screen.findByRole('button', { name: /^Embedding \d/ });
     await userEvent.click(btn);
     expect(btn.className).toContain('btn-primary');
     await waitFor(() => {
@@ -723,9 +727,9 @@ describe('UsagePage — request type filter', () => {
   it('reset clears the request type filter', async () => {
     vi.mocked(getUsage).mockResolvedValue(makeStats());
     renderPage();
-    await userEvent.click(await screen.findByRole('button', { name: 'Image' }));
+    await userEvent.click(await screen.findByRole('button', { name: /^Image \d/ }));
     await userEvent.click(await screen.findByRole('button', { name: 'Reset filters' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Image' }).className).not.toContain('btn-primary'));
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Image \d/ }).className).not.toContain('btn-primary'));
   });
 });
 
@@ -1607,5 +1611,136 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
     // recentPreset.range() provides today/today → period='custom' (both truthy)
     const firstCall = mockGetUsage.mock.calls[0];
     expect(firstCall?.[0]).toBe('custom');
+  });
+});
+
+// The same savings layer the Overview carries, over the filtered window (T209).
+const SERIES = {
+  bucket: 'day' as const,
+  baselineModelId: 'openai/gpt-4o',
+  baselineModelIds: ['openai/gpt-4o-mini', 'openai/gpt-4o'],
+  points: [
+    {
+      bucket: '2026-07-31', calls: 2, cost: 0.006, baselineCost: 0.06,
+      baselineCosts: { 'openai/gpt-4o-mini': 0.01, 'openai/gpt-4o': 0.06 },
+      inputTokens: 2000, outputTokens: 1000, cachedInputTokens: 0, latencyMs: 2000, baselineLatencyMs: 4000,
+    },
+  ],
+};
+
+const SAVINGS = {
+  comparedCalls: 2,
+  comparedCost: 0.006,
+  comparedLatencyMs: 2000,
+  comparedInputTokens: 2000,
+  comparedOutputTokens: 1000,
+  cache: { inputTokens: 0, cost: 0 },
+  baselines: [
+    { modelId: 'openai/gpt-4o-mini', cost: 0.015, costDelta: 0.006, costDeltaPercent: 40, latencyMs: 4500, latencyDeltaMs: 1500, latencySamples: 2, tokensEstimated: 4500, tokenDelta: 0 },
+    { modelId: 'openai/gpt-4o', cost: 0.09, costDelta: 0.081, costDeltaPercent: 90, latencyMs: 5000, latencyDeltaMs: 2000, latencySamples: 1, tokensEstimated: 4500, tokenDelta: 675 },
+  ],
+  optimizers: [{ id: 'rtk', calls: 2, tokensSaved: 1200, costSaved: 0.002, rolledBack: 0 }],
+};
+
+describe('UsagePage — type filters follow the traffic (T210)', () => {
+  it('offers only the callers and types the window holds', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byCallType: { completion: 9, routing: 1 },
+      byRequestType: { chat: 10 },
+    } as never);
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Completion \d/ })).toBeTruthy());
+    expect(screen.queryByRole('button', { name: /^Guardrail/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Judge/ })).toBeNull();
+    // One type in the whole window is not a choice, so the group is not drawn.
+    expect(screen.queryByText('Type')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Chat/ })).toBeNull();
+  });
+
+  it('counts each caller and type next to its button', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byCallType: { completion: 9, routing: 1 },
+      byRequestType: { chat: 8, embedding: 2 },
+    } as never);
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Completion 9' })).toBeTruthy());
+    expect(screen.getByRole('button', { name: 'Router 1' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Embedding 2' })).toBeTruthy();
+  });
+
+  it('keeps a one-value filter on screen while it is the active one', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byCallType: { completion: 10 },
+      byRequestType: { chat: 8, embedding: 2 },
+    } as never);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Completion Calls')).toBeTruthy());
+    // Nothing but completions: the caller filter has nothing to pick.
+    expect(screen.queryByText('Caller')).toBeNull();
+    // The stat card sets that filter anyway, so the group comes back with it:
+    // hiding it would leave no way to clear what the card just set.
+    await userEvent.click(screen.getByText('Completion Calls'));
+    await waitFor(() => expect(screen.getByText('Caller')).toBeTruthy());
+    expect(screen.getByRole('button', { name: /^Completion \d/ }).className).toContain('btn-primary');
+  });
+
+  it('survives a service that ships no counts', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byCallType: undefined, byRequestType: undefined } as never);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Total Calls')).toBeTruthy());
+    expect(screen.queryByText('Caller')).toBeNull();
+    expect(screen.queryByText('Type')).toBeNull();
+  });
+});
+
+describe('UsagePage — savings (T209)', () => {
+  it('asks the service for the series and the totals, one record page wide', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    await waitFor(() => expect(vi.mocked(getUsage).mock.calls.some(c =>
+      c[4] === 1 && c[5] === 1 && (c[6] as Record<string, unknown>)?.series === true && (c[6] as Record<string, unknown>)?.savings === true,
+    )).toBe(true));
+  });
+
+  it('draws no savings chart when the service returned no series', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Total Cost')).toBeTruthy());
+    expect(screen.queryByText('What routing saved')).toBeNull();
+  });
+
+  it('carries the money saved on the Total Cost card and the rest as its own cards', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), series: SERIES, savings: SAVINGS } as never);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('$0.0810 saved vs always gpt-4o')).toBeTruthy());
+    expect(screen.queryByText('Cost saved')).toBeNull();
+    expect(screen.getByText('Time saved')).toBeTruthy();
+    expect(screen.getByText('Tokens saved')).toBeTruthy();
+  });
+
+  it('draws the savings chart over the filtered window', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), series: SERIES, savings: SAVINGS } as never);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('What routing saved')).toBeTruthy());
+    expect(screen.getByRole('button', { name: 'Tokens' })).toBeTruthy();
+  });
+
+  it('switches the chart metric', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), series: SERIES, savings: SAVINGS } as never);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('What routing saved')).toBeTruthy());
+    await userEvent.click(screen.getByRole('button', { name: 'Speed' }));
+    expect(screen.getByRole('button', { name: 'Speed' }).className).toContain('active');
+  });
+
+  it('keeps the savings layer out when the fetch fails', async () => {
+    vi.mocked(getUsage).mockImplementation(((_p: string, _pr: unknown, _f: unknown, _t: unknown, _pg: unknown, _ps: unknown, opts?: { savings?: boolean }) =>
+      opts?.savings ? Promise.reject(new Error('nope')) : Promise.resolve(makeStats())) as never);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Total Cost')).toBeTruthy());
+    expect(screen.queryByText('What routing saved')).toBeNull();
   });
 });
