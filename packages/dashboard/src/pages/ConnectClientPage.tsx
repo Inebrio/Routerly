@@ -7,7 +7,7 @@ import type { ApiError, ClientListItem } from '../api';
 import { ClientLogo } from '../components/ClientLogo';
 import { CopyBlock } from '../components/CopyBlock';
 import {
-  DOCS_BASE, MODE_HINT, PLACEHOLDER_MCP_TOKEN, PLACEHOLDER_TOKEN,
+  AUTO_MODEL, DOCS_BASE, MODE_HINT, PLACEHOLDER_MCP_TOKEN, PLACEHOLDER_TOKEN,
   SUPPORT_BADGE, SUPPORT_LABEL, isAutoConfigurable,
 } from './connectShared';
 
@@ -135,6 +135,13 @@ export function ConnectClientPage() {
               <Link to="/dashboard/projects">create one</Link> on the Projects page.
             </p>
             <CopyBlock text={snippet} />
+            {client.modes.includes('llm') && (
+              <p style={{ ...SECTION_TEXT, margin: '10px 0 0' }}>
+                Model: <code>{AUTO_MODEL}</code> hands the choice to Routerly, any model id
+                from <Link to="/dashboard/models">Models</Link> works too.
+                {client.wireFormat === 'openai' && ' The same base URL, key and model fit any client that offers an "OpenAI compatible" provider.'}
+              </p>
+            )}
           </section>
         )}
 

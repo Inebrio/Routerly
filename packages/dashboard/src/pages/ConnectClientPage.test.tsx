@@ -78,6 +78,21 @@ describe('ConnectClientPage', () => {
       .toBe('/dashboard/projects');
   });
 
+  it('spells out the model to use, and the shared OpenAI-compatible shape', async () => {
+    mockGetClients.mockResolvedValue(makeClients());
+    const { unmount } = renderPage('cline');
+    await waitFor(() => expect(screen.getByText(/hands the choice to Routerly/)).toBeTruthy());
+    const line = screen.getByText(/hands the choice to Routerly/);
+    expect(line.textContent).toContain('routerly/ada');
+    expect(line.textContent).toContain('OpenAI compatible');
+    unmount();
+
+    // Claude Code speaks the Anthropic format, so the OpenAI note does not apply.
+    renderPage('claude-code');
+    await waitFor(() => expect(screen.getByText(/hands the choice to Routerly/)).toBeTruthy());
+    expect(screen.getByText(/hands the choice to Routerly/).textContent).not.toContain('OpenAI compatible');
+  });
+
   it('renders the MCP snippet only for a client that speaks MCP', async () => {
     mockGetClients.mockResolvedValue(makeClients());
     const { unmount } = renderPage('codex');

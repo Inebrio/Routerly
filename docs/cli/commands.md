@@ -2149,7 +2149,7 @@ per client, and [Dashboard: Connect](../dashboard/connect.md) for the same
 steps in the browser.
 
 These commands require a logged-in session (`routerly auth login`). No
-specific permission is required for `list`, `inspect`, `doctor`, `undo`,
+specific permission is required for `list`, `endpoints`, `inspect`, `doctor`, `undo`,
 `launch`, or `configure --token <token>` (reusing an existing token skips
 minting). Minting a new token via `configure` (the default, when `--token`
 is omitted) requires `project:write` permission on the target project.
@@ -2213,6 +2213,44 @@ With `--json`, each entry carries `id`, `label`, `supportState` and `modes`:
     "modes": ["llm", "mcp"]
   }
 ]
+```
+
+### `routerly clients endpoints`
+
+```
+routerly clients endpoints [--json]
+```
+
+Print what any OpenAI- or Anthropic-compatible client needs, whether or not
+it appears in `clients list`: the two base URLs, how the key travels, and the
+model to ask for. Nothing else changes on the client side, since requests and
+responses cross Routerly untouched.
+
+```bash
+routerly clients endpoints
+```
+```
+Point any client here
+  OpenAI base URL:     http://localhost:3000/v1
+  Anthropic base URL:  http://localhost:3000
+  API key:             a project token, as Authorization: Bearer or x-api-key
+  Model:               routerly/ada (Routerly picks), or any model id
+  From other machines: 192.168.1.116, 192.168.1.111
+```
+
+`routerly/ada` hands the model choice to the router; any model id from
+`routerly models list` works in its place. Mint the token with
+`routerly project token create <project>`.
+
+With `--json`:
+
+```json
+{
+  "openaiBaseUrl": "http://localhost:3000/v1",
+  "anthropicBaseUrl": "http://localhost:3000",
+  "model": "routerly/ada",
+  "advertisedAddresses": ["192.168.1.116", "192.168.1.111"]
+}
 ```
 
 ### `routerly clients inspect`

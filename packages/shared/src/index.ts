@@ -157,7 +157,7 @@ export type {
 } from './types/resilience.js';
 
 export type { SupportState, WireFormat, ConnectMode, ClientMeta } from './clients/index.js';
-export { CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from './clients/index.js';
+export { AUTO_MODEL, CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from './clients/index.js';
 
 // Notification event taxonomy (runtime value + derived type)
 export { NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, DEFAULT_PROJECT_TIMEOUT_MS, CALL_TYPES, isCompletionCall } from './types/config.js';

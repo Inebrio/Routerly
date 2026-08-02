@@ -132,7 +132,7 @@ export function ProfilesPage() {
               </span>
               {canManage && (
                 <button className="btn btn-primary" onClick={() => navigate(`/dashboard/profiles/new?kind=${kind}`)}>
-                  <Plus size={16} /> New Profile
+                  <Plus size={16} /> New {KIND_LABELS[kind]} Profile
                 </button>
               )}
             </div>

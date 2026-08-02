@@ -122,19 +122,23 @@ afterEach(() => vi.clearAllMocks());
 describe('ProfileFormPage — create', () => {
   it('starts empty on the routing kind', async () => {
     renderPage('/dashboard/profiles/new');
-    await waitFor(() => expect(screen.getByText('New Profile')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('New Routing Profile')).toBeInTheDocument());
     expect(screen.getByLabelText('Label')).toHaveValue('');
     expect(screen.getByTestId('routing-editor')).toBeInTheDocument();
   });
 
-  it('switching kind swaps the config editor', async () => {
-    const user = userEvent.setup();
-    renderPage('/dashboard/profiles/new');
-    await waitFor(() => expect(screen.getByTestId('routing-editor')).toBeInTheDocument());
-    await user.selectOptions(screen.getByLabelText('Kind'), 'optimizer');
+  it('is one form per kind, with no kind to pick', async () => {
+    const { unmount } = renderPage('/dashboard/profiles/new?kind=optimizer');
+    await waitFor(() => expect(screen.getByText('New Optimizer Profile')).toBeInTheDocument());
     expect(screen.getByTestId('optimizer-editor')).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Kind'), 'security');
+    expect(screen.queryByTestId('routing-editor')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Kind')).not.toBeInTheDocument();
+    unmount();
+
+    renderPage('/dashboard/profiles/new?kind=security');
+    await waitFor(() => expect(screen.getByText('New Security Profile')).toBeInTheDocument());
     expect(screen.getByTestId('security-editor')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Kind')).not.toBeInTheDocument();
   });
 
   it('creates a routing profile on the engine defaults, with no selector knobs on screen', async () => {
@@ -158,9 +162,8 @@ describe('ProfileFormPage — create', () => {
 
   it('creates a security profile with its guardrails and PII payload', async () => {
     const user = userEvent.setup();
-    renderPage('/dashboard/profiles/new');
-    await waitFor(() => expect(screen.getByTestId('routing-editor')).toBeInTheDocument());
-    await user.selectOptions(screen.getByLabelText('Kind'), 'security');
+    renderPage('/dashboard/profiles/new?kind=security');
+    await waitFor(() => expect(screen.getByTestId('security-editor')).toBeInTheDocument());
     await user.type(screen.getByLabelText('Label'), 'My Sec');
     await user.click(screen.getByRole('button', { name: /create profile/i }));
     await waitFor(() => expect(mockCreateProfile).toHaveBeenCalledWith({
@@ -194,10 +197,10 @@ describe('ProfileFormPage — create', () => {
 });
 
 describe('ProfileFormPage — clone', () => {
-  it('prefills the base profile config and locks the kind', async () => {
+  it('prefills the base profile config and stays on its kind', async () => {
     renderPage('/dashboard/profiles/new?base=auto');
     await waitFor(() => expect(screen.getByLabelText('Label')).toHaveValue('Auto copy'));
-    expect(screen.getByLabelText('Kind')).toBeDisabled();
+    expect(screen.getByText('New Routing Profile')).toBeInTheDocument();
     expect(screen.getByTestId('routing-editor')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /create profile/i })).toBeInTheDocument();
   });
