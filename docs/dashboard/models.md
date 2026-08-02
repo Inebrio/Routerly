@@ -42,6 +42,8 @@ Results are paginated at 20 models per page.
 
 Health columns show a dash when no data is available for the window. The health data refreshes automatically every 30 seconds (visible in the subtitle bar).
 
+With `models:write`, clicking a row on the Models tab opens that model's edit form, the same page the pencil icon opens; without the permission the row is inert. Rows on the Health tab are not clickable: their only action is the per-row resilience reset button.
+
 Click any column header to sort.
 
 :::note Redirected from /dashboard/health
@@ -182,4 +184,4 @@ Click any column header to sort ascending; click again to reverse. All five colu
 
 Click **Reset filters** to clear all filters at once.
 
-Click **Add** next to any model to open the new-model form with that model's details pre-filled. Pricing and context window are populated automatically from the catalog. You only need to supply the API key to complete registration.
+Click **Add** next to any model, or anywhere else on its row, to open the new-model form with that model's details pre-filled. Pricing and context window are populated automatically from the catalog. You only need to supply the API key to complete registration.

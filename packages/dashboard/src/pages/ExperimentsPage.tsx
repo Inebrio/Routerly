@@ -140,7 +140,7 @@ export function ExperimentsPage() {
                   </thead>
                   <tbody>
                     {experiments.map(e => (
-                      <tr key={e.id}>
+                      <tr key={e.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/dashboard/experiments/${e.id}`)}>
                         <td style={{ maxWidth: 360 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                             <Link to={`/dashboard/experiments/${e.id}`} style={{ fontWeight: 500 }}>{e.name}</Link>
@@ -159,7 +159,7 @@ export function ExperimentsPage() {
                         <td><span style={{ fontSize: '0.82rem' }}>{variantLabels(e) || '—'}</span></td>
                         <td><span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{rotationLabel(e.rotation as ExperimentRotation)}</span></td>
                         <td><span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{new Date(e.createdAt).toLocaleDateString()}</span></td>
-                        <td>
+                        <td onClick={ev => ev.stopPropagation()}>
                           {/* A flex td collapses the row's own height: keep the layout on an inner box. */}
                           <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                             {canManage && (

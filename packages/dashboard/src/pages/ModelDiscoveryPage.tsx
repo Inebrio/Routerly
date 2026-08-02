@@ -265,7 +265,11 @@ export function ModelDiscoveryPage() {
                 </thead>
                 <tbody>
                   {paginated.map(e => (
-                    <tr key={`${e.provider}/${e.id}`}>
+                    <tr
+                      key={`${e.provider}/${e.id}`}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => navigate(`/dashboard/models/new?provider=${encodeURIComponent(e.provider)}&modelId=${encodeURIComponent(e.id)}`, { state: { catalogEntry: e } })}
+                    >
                       <td>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -299,7 +303,7 @@ export function ModelDiscoveryPage() {
                       <td style={{ whiteSpace: 'nowrap' }}>
                         {e.local ? <span style={{ color: 'var(--success, #22c55e)', fontWeight: 600, fontSize: '0.82rem' }}>free</span> : fmtPricePer1M(e.pricing.outputPer1kTokens)}
                       </td>
-                      <td>
+                      <td onClick={ev => ev.stopPropagation()}>
                         <button
                           className={`btn btn-sm${e.isConfigured ? ' btn-secondary' : ''}`}
                           onClick={() => navigate(`/dashboard/models/new?provider=${encodeURIComponent(e.provider)}&modelId=${encodeURIComponent(e.id)}`, { state: { catalogEntry: e } })}

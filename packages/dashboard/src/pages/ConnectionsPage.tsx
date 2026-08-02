@@ -104,7 +104,13 @@ export function ConnectionsPage() {
                   </thead>
                   <tbody>
                     {connections.map(conn => (
-                      <tr key={conn.id}>
+                      <tr
+                        key={conn.id}
+                        {...(canManage ? {
+                          style: { cursor: 'pointer' },
+                          onClick: () => navigate(`/dashboard/connections/${encodeURIComponent(conn.id)}/edit`),
+                        } : {})}
+                      >
                         <td>{conn.label}</td>
                         <td>
                           <span className={`badge badge-${conn.providerId}`}>{conn.providerId}</span>
@@ -119,7 +125,7 @@ export function ConnectionsPage() {
                             {conn.enabled ? 'Enabled' : 'Disabled'}
                           </span>
                         </td>
-                        <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                        <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }} onClick={e => e.stopPropagation()}>
                           <Link to={`/dashboard/models?connection=${encodeURIComponent(conn.id)}`} className="btn-icon" title="Models">
                             <Boxes size={15} />
                           </Link>

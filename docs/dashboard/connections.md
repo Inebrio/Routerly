@@ -5,12 +5,13 @@ sidebar_position: 4
 
 # Dashboard: Connections
 
-The Connections page lets you register provider accounts (credentials) and,
-per connection, the model instances routable on top of it. This replaces
-configuring a model's provider and credentials in one step: a **connection**
-holds the account (e.g. one OpenAI API key, one Anthropic OAuth login), and a
-**model instance** exposes one upstream model on top of that connection with
-its own pricing, context window, and capability overrides.
+The Connections page lets you register provider accounts (credentials) once
+and reuse them across models. A **connection** holds the account (e.g. one
+OpenAI API key, one Anthropic OAuth login) and its endpoint; a **model** binds
+to a connection and adds its own upstream model ID, pricing, context window,
+and capability overrides. Editing a connection changes routing for every model
+bound to it, which is the whole point of the layer, see
+[Models: Preconfigured vs. Custom connection](models.md#preconfigured-vs-custom-connection).
 
 ---
 
@@ -27,9 +28,13 @@ Navigate to `/dashboard/connections`.
 | **Endpoint** | Base URL override, or a dash if using the provider default |
 | **Status** | `Enabled` or `Disabled` |
 
-Each row also has an **Instances** button (linking to that connection's
-[Model Instances](#model-instances) page), and, with `connections:manage`,
-**Edit** and **Remove** buttons.
+Each row also has a **Models** button (opening the Models page filtered to
+that connection, see [Models on a Connection](#models-on-a-connection)), and,
+with `connections:manage`, **Edit** and **Remove** buttons.
+
+With `connections:manage`, clicking anywhere else on a row opens the same
+edit page the pencil icon does. Without it the row is inert, since there is
+nothing to open.
 
 Users without `connections:read` see a permission-denied empty state instead
 of the list.
@@ -46,31 +51,45 @@ There is no inline row expander.
    - **Label** - friendly name (e.g. "Primary OpenAI account")
    - **Endpoint** (optional) - override base URL, for custom/self-hosted deployments
    - **Enabled** - whether the connection is usable by routing
-   - **Credentials** - add one or more key/value rows. Field names are free-form text; the value input is masked (`type="password"`)
+   - **Credentials** - typed fields, the same ones the model form shows for that provider (see [Credential Fields](#credential-fields))
 3. Click **Create**. You are returned to the Connections list.
 
-Credentials are never displayed once saved - the form only accepts new
-values, it never pre-fills or echoes existing ones.
+Secrets are never displayed once saved - the form only accepts new values, it
+never pre-fills or echoes existing ones. Non-secret cloud settings (AWS region
+and access key ID, the Azure resource/deployment/API version, the Vertex
+project and location) are returned by the API and do pre-fill on edit.
 
-:::note oauth/web providers
-For providers whose type is OAuth- or web-session-based (e.g. `anthropic-oauth`,
-`openai-web`), enter the plaintext credential under the conventional field name
-the resolver expects - `oauthPlain` / `refreshPlain` for OAuth providers,
-`cookiePlain` / `cfClearancePlain` for web-session providers. Routerly
-encrypts these server-side on save and never returns them; see
-[Connections: Credential encryption](../api/management.md#connections) for
-the full field mapping. All other providers use a plain `apiKey` field, which
-is stored as entered.
-:::
+### Credential Fields
+
+The credential section is rendered by the provider, not by free-form key/value
+rows: picking a provider swaps in exactly the fields that provider needs. It is
+the same component the model form uses for a custom connection, so both forms
+ask for the same things in the same order.
+
+| Provider | Fields |
+|----------|--------|
+| API-key providers (`openai`, `anthropic`, `ollama`, `custom`, …) | **API Key / Token** (masked, with a show/hide toggle) |
+| `anthropic-oauth` | **Subscription OAuth Token**, with instructions to generate it via `claude setup-token` |
+| `openai-oauth` | **Auth file path** (blank means `~/.codex/auth.json`) plus a **Test** button that reports the account and token expiry |
+| `openai-web`, `anthropic-web` | the session token for that provider, an optional **cf_clearance**, and an unofficial-provider warning |
+| `azure-openai` | **Azure Resource Name**, **Deployment ID**, **API Version** |
+| `bedrock` | **AWS Region**, **AWS Access Key ID**, **AWS Secret Access Key**, optional **Session Token** |
+| `vertex` | **GCP Project ID**, **Location**, **Service Account Key** (JSON) |
+
+**Endpoint URL** sits above them and is optional on a connection: leaving it
+blank keeps the provider default. Routerly encrypts OAuth and web-session
+credentials server-side on save and never returns them; see
+[Connections: Credential encryption](../api/management.md#connections) for the
+field mapping.
 
 ### Editing a Connection
 
-Click the **Edit** (pencil) icon on a row to navigate to
+Click a row (or its **Edit** pencil icon) to navigate to
 `/dashboard/connections/:id/edit`, the same form used for creation, prefilled
 with the connection's current **Provider**, **Label**, **Endpoint**, and
 **Enabled** state. All fields are editable, including **Provider**.
-Credential rows start empty; leave them empty to keep the existing stored
-credentials unchanged, or add rows to replace them (replacing the whole
+Secret fields start blank; leave them blank to keep the existing stored
+credentials unchanged, or type a new value to replace them (replacing the whole
 credentials object, not a per-field merge).
 
 :::note Change one, change all
@@ -99,43 +118,15 @@ provided no other instance references it.
 
 ---
 
-## Model Instances
+## Models on a Connection
 
-Click the **Instances** button on any connection row to open
-`/dashboard/connections/:connectionId/instances`. This page lists (and lets
-you add or remove) the model instances exposed on top of that one connection.
+The **Models** button on a connection row opens
+`/dashboard/models?connection=<id>`: the ordinary Models page with its
+**Connection** filter already set to that connection. There is no separate
+per-connection page, models are managed in one place whichever way you get
+there.
 
-The page header shows the connection's label and provider badge, with a
-back arrow to return to the Connections list.
-
-### Model Instances List Columns
-
-| Column | Description |
-|--------|-------------|
-| **Upstream Model ID** | The provider's model identifier, e.g. `gpt-5-mini` |
-| **Input $/1M** | Input token price in USD |
-| **Output $/1M** | Output token price in USD |
-| **Cache $/1M** | Cache read price, or a dash if not set |
-| **Context Size** | Maximum context window, e.g. `128k`, or a dash if not set |
-
-With `connections:manage`, each row also has a **Remove** button.
-
-### Adding an Instance Manually
-
-1. Click **+ Add Instance**
-2. Fill in **Upstream Model ID**, **Input $/1M**, **Output $/1M**, **Cache $/1M** (optional), and **Context Size**
-3. Click **Create**
-
-### Importing from the Catalog
-
-Click **Import from catalog** to open an inline panel listing built-in
-catalog entries filtered to the connection's provider. Each entry shows its
-price and context window and an **Import** button, which creates an instance
-pre-filled from the catalog entry (pricing and context window; you don't
-enter them manually). Entries already imported (matched by upstream model ID)
-show **Imported** instead and cannot be re-imported.
-
-### Removing an Instance
-
-Click the **Remove** (trash) icon next to an instance row. You will be asked
-to confirm.
+From that filtered list, **+ Add Model** carries the filter into the form
+(`/dashboard/models/new?connection=<id>`), so the new model is bound to the
+same connection without picking it again. Pricing, context window, and
+capabilities are set on the model, see [Models](models.md).

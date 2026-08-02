@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope, FlaskConical, RotateCcw } from 'lucide-react';
 import { getModels, deleteModel, testModel, getProviderHealth, resetResilience, getConnections, type Model, type ProviderHealth, type ResilienceState, type Connection } from '../api';
 import { useAuth } from '../AuthContext';
@@ -129,6 +129,7 @@ export function ModelsPage() {
   const canManage = can('resilience:manage');
   const canWriteModels = can('model:write');
   const now = useNow();
+  const navigate = useNavigate();
   const providerLabel = useProviderLabels();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') === 'health' ? 'health' : 'models';
@@ -469,7 +470,13 @@ export function ModelsPage() {
                     </thead>
                     <tbody>
                       {paginated.map(m => (
-                          <tr key={m.id}>
+                          <tr
+                            key={m.id}
+                            {...(canWriteModels ? {
+                              style: { cursor: 'pointer' },
+                              onClick: () => navigate(`/dashboard/models/${encodeURIComponent(m.id)}`),
+                            } : {})}
+                          >
                             <td><span className="mono">{m.id}</span></td>
                             <td><span className={`badge badge-${m.provider}`}>{providerLabel(m.provider)}</span></td>
                             <td><span className="mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{m.endpoint}</span></td>
@@ -477,7 +484,7 @@ export function ModelsPage() {
                             <td>${m.cost.outputPerMillion}</td>
                             <td>{m.cost.cachePerMillion != null ? `$${m.cost.cachePerMillion}` : <span className="text-muted">—</span>}</td>
                             <td>{m.contextWindow != null ? `${(m.contextWindow / 1000).toFixed(0)}k` : <span className="text-muted">—</span>}</td>
-                            <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
+                            <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }} onClick={e => e.stopPropagation()}>
                               {(() => {
                                 const tr = testResults[m.id];
                                 if (tr === 'loading') return <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>…</span>;

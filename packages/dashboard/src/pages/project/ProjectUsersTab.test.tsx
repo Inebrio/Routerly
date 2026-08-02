@@ -298,6 +298,13 @@ describe('ProjectUsersTab — edit member role', () => {
     expect(screen.getByRole('combobox')).toBeTruthy();
   });
 
+  it('clicking the row enters edit mode too', async () => {
+    renderTab();
+    await waitFor(() => screen.getByTitle('Change Role'));
+    await userEvent.click(screen.getByText('alice@example.com'));
+    expect(screen.getByRole('combobox')).toBeTruthy();
+  });
+
   it('save check calls updateProjectMember', async () => {
     renderTab();
     await waitFor(() => screen.getByTitle('Change Role'));

@@ -191,6 +191,14 @@ describe('UsersPage — navigation', () => {
     await userEvent.click(btnIcons[0] as HTMLElement);
     expect(navigateFn).toHaveBeenCalledWith('/dashboard/settings/users/u1');
   });
+
+  it('opens the user edit page on row click', async () => {
+    mockGetUsers.mockResolvedValue([makeUser({ id: 'u1', email: 'alice@x.com' })]);
+    renderPage();
+    await waitFor(() => screen.getByText('alice@x.com'));
+    await userEvent.click(screen.getByText('alice@x.com'));
+    expect(navigateFn).toHaveBeenCalledWith('/dashboard/settings/users/u1');
+  });
 });
 
 // ── Add user modal ─────────────────────────────────────────────────────────────

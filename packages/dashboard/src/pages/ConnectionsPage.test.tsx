@@ -138,6 +138,34 @@ describe('ConnectionsPage — navigation to dedicated pages', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard/connections/c1/edit');
   });
 
+  it('opens the edit page when clicking the row', async () => {
+    const user = userEvent.setup();
+    mockGetConnections.mockResolvedValue([makeConnection()]);
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('My OpenAI')).not.toBeNull());
+
+    await user.click(screen.getByText('My OpenAI'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/connections/c1/edit');
+  });
+
+  it('leaves the row inert without connections:manage', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'u1', email: 'user@test.com', role: 'member' },
+      isLoading: false,
+      login: vi.fn(), loginDirect: vi.fn(), logout: vi.fn(), updateUser: vi.fn(),
+      can: vi.fn().mockImplementation((p: string) => p === 'connections:read'),
+    });
+    const user = userEvent.setup();
+    mockGetConnections.mockResolvedValue([makeConnection()]);
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('My OpenAI')).not.toBeNull());
+
+    await user.click(screen.getByText('My OpenAI'));
+
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
   it('does not render the add button without connections:manage', async () => {
     mockUseAuth.mockReturnValue({
       user: { id: 'u1', email: 'user@test.com', role: 'member' },

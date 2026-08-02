@@ -44,6 +44,12 @@ vi.mock('../AuthContext', () => ({
   }),
 }));
 
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async (importActual) => {
+  const actual = await importActual<typeof import('react-router-dom')>();
+  return { ...actual, useNavigate: () => mockNavigate };
+});
+
 // ponytail: stub ConfirmDialog so it renders inline without portal issues
 vi.mock('../components/ConfirmDialog', () => ({
   ConfirmDialog: ({ message, onConfirm, onCancel }: {
@@ -127,6 +133,24 @@ describe('ModelsPage — models list', () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('gpt-4o')).toBeTruthy());
     expect(screen.getAllByText('openai').length).toBeGreaterThan(0);
+  });
+
+  it('opens the model edit page on row click', async () => {
+    mockGetModels.mockResolvedValue([makeModel()]);
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    await userEvent.click(screen.getByText('gpt-4o'));
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/models/gpt-4o');
+  });
+
+  it('leaves the row inert without model:write', async () => {
+    mockCanWriteModels = false;
+    mockGetModels.mockResolvedValue([makeModel()]);
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    await userEvent.click(screen.getByText('gpt-4o'));
+    expect(mockNavigate).not.toHaveBeenCalled();
+    mockCanWriteModels = true;
   });
 
   it('shows filtered empty state when filter matches nothing', async () => {
