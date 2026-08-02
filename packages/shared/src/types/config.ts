@@ -10,6 +10,12 @@ export type ProviderId = string;
 export interface ProviderConnection {
   id: string;
   providerId: ProviderId;
+  /**
+   * Upstream provider behind a `custom` connection, e.g. `deepseek`. Free text: it names
+   * the service the endpoint belongs to, exactly like the custom provider name on the model
+   * form. Dispatch still happens on `providerId`, so the adapter stays the custom one.
+   */
+  providerName?: string;
   label: string;
   credentials: Record<string, unknown>;
   endpoint?: string;

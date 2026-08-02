@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, X } from 'lucide-react';
+import { providersConf } from '@routerly/shared';
 import {
   getConnections, createConnection, updateConnection, getProviderDescriptors, testOpenAIOAuth,
   type ProviderDescriptor,
@@ -10,6 +11,16 @@ import {
   ConnectionCredentialsFields, emptyCredentialValues, type CredentialValues,
 } from '../components/ConnectionCredentialsFields';
 
+/**
+ * The endpoint a provider is reached at unless the account overrides it. Read from the
+ * bundled provider list rather than the catalog API so the prefill also works for an
+ * operator who may manage connections but not read models (T204). Providers that have no
+ * fixed address (custom, the cloud ones, the web ones) return an empty string.
+ */
+function defaultEndpoint(providerId: string): string {
+  return (providersConf as Record<string, { endpoint?: string }>)[providerId]?.endpoint ?? '';
+}
+
 export function ConnectionFormPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
@@ -17,6 +28,7 @@ export function ConnectionFormPage() {
 
   const [providers, setProviders] = useState<ProviderDescriptor[]>([]);
   const [providerId, setProviderId] = useState('');
+  const [providerName, setProviderName] = useState('');
   const [label, setLabel] = useState('');
   const [enabled, setEnabled] = useState(true);
   const [values, setValues] = useState<CredentialValues>(emptyCredentialValues());
@@ -37,6 +49,7 @@ export function ConnectionFormPage() {
           const conn = connections.find(c => c.id === id);
           if (conn) {
             setProviderId(conn.providerId);
+            setProviderName(conn.providerName ?? '');
             setLabel(conn.label);
             setEnabled(conn.enabled);
             const c = conn.credentials ?? {};
@@ -56,7 +69,9 @@ export function ConnectionFormPage() {
             setErr('Connection not found');
           }
         } else {
-          setProviderId(descriptors[0]?.id ?? '');
+          const first = descriptors[0]?.id ?? '';
+          setProviderId(first);
+          setValues(v => ({ ...v, endpoint: defaultEndpoint(first) }));
         }
       } catch (e) {
         setErr(e instanceof Error ? e.message : 'Failed to load connection');
@@ -100,9 +115,12 @@ export function ConnectionFormPage() {
       ...(values.vertexServiceAccountKey ? { vertexServiceAccountKey: values.vertexServiceAccountKey } : {}),
     };
     try {
+      // Only a custom connection carries an upstream name; a named provider is its own name.
+      const upstream = providerId === 'custom' ? providerName.trim() : '';
       if (isEditing && id) {
         const patch: Parameters<typeof updateConnection>[1] = {
           providerId,
+          providerName: upstream,
           label,
           ...(values.endpoint ? { endpoint: values.endpoint } : {}),
           enabled,
@@ -112,6 +130,7 @@ export function ConnectionFormPage() {
       } else {
         await createConnection({
           providerId,
+          ...(upstream ? { providerName: upstream } : {}),
           label,
           ...(values.endpoint ? { endpoint: values.endpoint } : {}),
           enabled,
@@ -158,9 +177,29 @@ export function ConnectionFormPage() {
               <SearchableSelect
                 options={providers.map(p => ({ value: p.id, label: p.label }))}
                 value={providerId}
-                onChange={setProviderId}
+                onChange={p => {
+                  setProviderId(p);
+                  // Picking a provider carries its address with it, the way the model form
+                  // has always done it: an endpoint left over from the previous provider
+                  // would point the account at the wrong API (T204).
+                  setValues(v => ({ ...v, endpoint: defaultEndpoint(p) }));
+                }}
               />
             </div>
+
+            {providerId === 'custom' && (
+              <div className="form-group">
+                <label className="form-label" htmlFor="conn-provider-name">
+                  Provider <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(upstream provider name)</span>
+                </label>
+                <input id="conn-provider-name" className="form-input"
+                  value={providerName} onChange={e => setProviderName(e.target.value)}
+                  placeholder="e.g. deepseek, mistral, groq" required />
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                  Names the service this endpoint belongs to. Models on this connection use it as their ID prefix (e.g. <code style={{ fontSize: '0.72rem' }}>deepseek/deepseek-r1</code>).
+                </div>
+              </div>
+            )}
 
             <div className="form-group">
               <label className="form-label" htmlFor="conn-label">Label</label>

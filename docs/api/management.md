@@ -319,6 +319,7 @@ POST /api/connections
 
 **Fields:**
 - `providerId` - must match a known provider id from [Provider Descriptors](#provider-descriptors) (required)
+- `providerName` - upstream provider behind a `custom` connection, e.g. `deepseek` (optional). Free text: it names the service the `endpoint` belongs to, and models created on the connection use it as their ID prefix (`deepseek/deepseek-r1`). Routing still dispatches on `providerId`
 - `label` - friendly name (required)
 - `credentials` - arbitrary key-value object; shape depends on `supportLevel` (required, may be `{}`). See **Credential encryption** below
 - `endpoint` - override base URL, e.g. for `custom`/Azure-style deployments (optional)

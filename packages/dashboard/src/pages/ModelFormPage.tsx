@@ -763,7 +763,13 @@ export function ModelFormPage() {
                   <SearchableSelect
                     options={connections.filter(c => c.providerId === form.provider).map(c => ({ value: c.id, label: c.label }))}
                     value={connectionId}
-                    onChange={setConnectionId}
+                    onChange={cid => {
+                      setConnectionId(cid);
+                      // A custom connection already names its upstream provider; the model ID
+                      // prefix follows it instead of asking for the same name twice (T205).
+                      const upstream = connections.find(c => c.id === cid)?.providerName;
+                      if (upstream) setForm(f => ({ ...f, customProviderName: upstream }));
+                    }}
                     placeholder="— select a connection —"
                   />
                 ) : (

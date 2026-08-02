@@ -23,7 +23,7 @@ Navigate to `/dashboard/connections`.
 | Column | Description |
 |--------|-------------|
 | **Label** | Friendly name you gave the connection |
-| **Provider** | Provider badge (e.g. `openai`, `anthropic-oauth`) |
+| **Provider** | Provider badge (e.g. `openai`, `anthropic-oauth`); a `custom` connection also shows the upstream provider name next to the badge |
 | **Endpoint** | Base URL override, or a dash if using the provider default |
 | **Status** | `Enabled` or `Disabled` |
 
@@ -41,7 +41,8 @@ There is no inline row expander.
 
 1. Click **+ Add Connection**. This navigates to `/dashboard/connections/new`.
 2. Fill in the form:
-   - **Provider** - select from the dropdown, populated from `GET /api/providers/descriptors`
+   - **Provider** - select from the dropdown, populated from `GET /api/providers/descriptors`. Selecting a provider fills **Endpoint** with that provider's default address; providers with no fixed address (`custom`, Azure, Bedrock, Vertex) leave it empty
+   - **Provider (upstream provider name)** - shown only when the provider is `custom`. Names the service the endpoint belongs to (e.g. `deepseek`); models created on this connection use it as their ID prefix, e.g. `deepseek/deepseek-r1`
    - **Label** - friendly name (e.g. "Primary OpenAI account")
    - **Endpoint** (optional) - override base URL, for custom/self-hosted deployments
    - **Enabled** - whether the connection is usable by routing

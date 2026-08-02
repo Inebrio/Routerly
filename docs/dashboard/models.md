@@ -72,7 +72,10 @@ toggle, not a fixed API Key + Base URL pair:
   **Provider**. No endpoint or credential fields are shown; none are sent.
   The model binds to that connection's `connectionId`. If no connection
   exists yet for the selected provider, the dropdown is replaced with a
-  message pointing you to the Connections page.
+  message pointing you to the Connections page. Picking a `custom` connection
+  that carries an upstream provider name fills the model's **Provider
+  (upstream provider name)** field with it, so the model ID prefix follows the
+  connection.
 - **Custom** -- the classic inline **Base URL** and **API Key** fields (plus
   the provider-specific fields for Azure/Bedrock/Vertex/web providers), typed
   directly into the model form. On save, Routerly creates or updates a

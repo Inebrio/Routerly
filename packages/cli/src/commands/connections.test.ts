@@ -62,6 +62,17 @@ describe('connections list', () => {
     expect(out).toContain('ollama');
   });
 
+  it('shows the upstream name next to the provider of a custom connection', async () => {
+    mockApi.mockResolvedValueOnce([
+      { id: 'c9', providerId: 'custom', providerName: 'deepseek', label: 'DeepSeek', enabled: true },
+    ]);
+    const lines: string[] = [];
+    vi.mocked(console.log).mockImplementation((...a) => lines.push(a.join(' ')));
+    const cmd = makeConnectionsCommand();
+    await cmd.parseAsync(['node', 'routerly', 'list']);
+    expect(lines.join('\n')).toContain('custom (deepseek)');
+  });
+
   it('prints message when no connections', async () => {
     mockApi.mockResolvedValueOnce([]);
     const cmd = makeConnectionsCommand();
@@ -111,6 +122,26 @@ describe('connections add', () => {
       endpoint: 'http://localhost:11434/v1',
       enabled: true,
     });
+  });
+
+  it('sends --provider-name for a custom connection', async () => {
+    mockApi.mockResolvedValueOnce({ id: 'c9', providerId: 'custom', label: 'DeepSeek', credentials: undefined, enabled: true });
+    const cmd = makeConnectionsCommand();
+    await cmd.parseAsync([
+      'node', 'routerly', 'add', '--provider-id', 'custom', '--provider-name', 'deepseek',
+      '--label', 'DeepSeek', '--endpoint', 'https://api.deepseek.com/v1',
+    ]);
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/connections', expect.objectContaining({
+      providerId: 'custom',
+      providerName: 'deepseek',
+    }));
+  });
+
+  it('omits providerName when the flag is absent', async () => {
+    mockApi.mockResolvedValueOnce({ id: 'c1', providerId: 'openai', label: 'Main', credentials: undefined, enabled: true });
+    const cmd = makeConnectionsCommand();
+    await cmd.parseAsync(['node', 'routerly', 'add', '--provider-id', 'openai', '--label', 'Main']);
+    expect(mockApi.mock.calls[0]?.[2]).not.toHaveProperty('providerName');
   });
 
   it('--no-enabled adds a disabled connection', async () => {
@@ -212,6 +243,13 @@ describe('connections edit', () => {
     });
   });
 
+  it('PATCHes providerName when --provider-name is passed', async () => {
+    mockApi.mockResolvedValueOnce({ id: 'c1', providerId: 'custom', label: 'DS', enabled: true });
+    const cmd = makeConnectionsCommand();
+    await cmd.parseAsync(['node', 'routerly', 'edit', 'c1', '--provider-name', 'deepseek']);
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/connections/c1', { providerName: 'deepseek' });
+  });
+
   it('errors and exits 1 when nothing is passed', async () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     const cmd = makeConnectionsCommand();
@@ -274,6 +312,19 @@ describe('connections show', () => {
     expect(out).toContain('c1');
     expect(out).toContain('openai');
     expect(out).not.toContain('sk-leaked-secret');
+  });
+
+  it('shows the upstream provider name of a custom connection', async () => {
+    mockApi.mockResolvedValueOnce([
+      { id: 'c9', providerId: 'custom', providerName: 'deepseek', label: 'DeepSeek', enabled: true },
+    ]);
+    const lines: string[] = [];
+    vi.mocked(console.log).mockImplementation((...a) => lines.push(a.join(' ')));
+    const cmd = makeConnectionsCommand();
+    await cmd.parseAsync(['node', 'routerly', 'show', 'c9']);
+    const out = lines.join('\n');
+    expect(out).toContain('Provider name');
+    expect(out).toContain('deepseek');
   });
 
   it('exits 1 when the connection is not found', async () => {

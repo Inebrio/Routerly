@@ -87,7 +87,7 @@ Examples:
         for (const c of connections) {
           table.push([
             c.id,
-            c.providerId,
+            c.providerName ? `${c.providerId} (${c.providerName})` : c.providerId,
             c.label,
             c.endpoint ?? chalk.gray('-'),
             c.enabled ? chalk.green('yes') : chalk.gray('no'),
@@ -106,6 +106,7 @@ Examples:
       .description('Add a provider connection')
       .requiredOption('--provider-id <id>', 'Provider ID (e.g. openai, anthropic, ollama, bedrock)')
       .requiredOption('--label <label>', 'Display label for this connection')
+      .option('--provider-name <name>', 'Upstream provider behind a custom connection (e.g. deepseek); used as the model ID prefix')
       .option('--endpoint <url>', 'Custom API endpoint (uses provider default if omitted)'),
   )
     .option('--enabled', 'Enable immediately (default: true)')
@@ -118,9 +119,11 @@ Examples:
     --aws-region us-east-1 --aws-access-key-id AKIA... --aws-secret-access-key ...
   routerly connections add --provider-id anthropic --label "Anthropic" \\
     --credentials-json '{"apiKey":"sk-ant-..."}'
+  routerly connections add --provider-id custom --provider-name deepseek --label "DeepSeek" \\
+    --endpoint https://api.deepseek.com/v1 --api-key sk-...
 `)
     .action(async (opts: CredentialOpts & {
-      providerId: string; label: string; endpoint?: string; enabled?: boolean;
+      providerId: string; label: string; providerName?: string; endpoint?: string; enabled?: boolean;
     }) => {
       // ponytail: `--enabled`/`--no-enabled` both declared without a shared default leaves
       // opts.enabled undefined when neither flag is passed; the POST schema requires a boolean.
@@ -136,6 +139,7 @@ Examples:
 
       const body = {
         providerId: opts.providerId,
+        ...(opts.providerName ? { providerName: opts.providerName } : {}),
         label: opts.label,
         credentials,
         ...(opts.endpoint ? { endpoint: opts.endpoint } : {}),
@@ -157,6 +161,7 @@ Examples:
     cmd.command('edit <id>')
       .description('Edit a provider connection (only the fields you pass are changed)')
       .option('--label <label>', 'Display label for this connection')
+      .option('--provider-name <name>', 'Upstream provider behind a custom connection (e.g. deepseek)')
       .option('--endpoint <url>', 'Custom API endpoint'),
   )
     .option('--enabled', 'Enable the connection')
@@ -169,10 +174,11 @@ Examples:
   routerly connections edit c1 --aws-region us-west-2 --aws-access-key-id AKIA...
 `)
     .action(async (id: string, opts: CredentialOpts & {
-      label?: string; endpoint?: string; enabled?: boolean;
+      label?: string; providerName?: string; endpoint?: string; enabled?: boolean;
     }) => {
       const body: Record<string, unknown> = {};
       if (opts.label !== undefined) body['label'] = opts.label;
+      if (opts.providerName !== undefined) body['providerName'] = opts.providerName;
       if (opts.endpoint !== undefined) body['endpoint'] = opts.endpoint;
       if (opts.enabled !== undefined) body['enabled'] = opts.enabled;
       if (hasAnyCredentialFlag(opts)) {
@@ -234,6 +240,7 @@ Examples:
         table.push(
           { [chalk.cyan('ID')]: safe.id },
           { [chalk.cyan('Provider')]: safe.providerId },
+          ...(safe.providerName ? [{ [chalk.cyan('Provider name')]: safe.providerName }] : []),
           { [chalk.cyan('Label')]: safe.label },
           { [chalk.cyan('Endpoint')]: safe.endpoint ?? chalk.gray('-') },
           { [chalk.cyan('Enabled')]: safe.enabled ? chalk.green('yes') : chalk.gray('no') },

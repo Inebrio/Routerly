@@ -204,6 +204,8 @@ const credentialFieldsSchema = z.object({
 
 const connectionSchema = z.object({
   providerId: z.string().refine(isKnownProvider, { message: 'Unknown providerId' }),
+  // Names the upstream service behind a custom connection; free text, never dispatched on.
+  providerName: z.string().optional(),
   label: z.string(),
   credentials: credentialFieldsSchema,
   endpoint: z.string().optional(),
