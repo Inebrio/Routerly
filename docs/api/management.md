@@ -964,7 +964,7 @@ a full instant is taken as given.
 | `errors` / `errorRate` | Calls whose outcome was neither `success` nor `blocked` |
 | `p95LatencyMs` | Nearest-rank, the same method the usage route uses |
 | `avgTtftMs` | Over the streamed calls only. Absent when none streamed |
-| `judgedCalls` / `avgScore` | Judge verdicts, `0`-`10`. `avgScore` is absent until the first one |
+| `judgedCalls` / `avgScore` | Judge verdicts, `0`-`10`. `avgScore` is absent until the first one. Both come from the running tally on the experiment, so they cover its whole life and ignore `from`/`to` |
 
 Only the client's own completion calls are counted. Router decision calls,
 guardrail passes and the judge's own verdicts are gateway overhead: counting

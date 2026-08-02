@@ -316,6 +316,19 @@ describe('experiments metrics', () => {
     expect(out).toContain('6.4 / 10 (10)');
   });
 
+  it('warns that the judge score ignores the window, and only when there is one', async () => {
+    mockApi.mockResolvedValueOnce(metrics);
+    let lines = capture();
+    await makeCmd().parseAsync(['node', 'experiments', 'metrics', 'exp-1']);
+    expect(lines.join('\n')).toContain('running average over the whole experiment');
+
+    const unjudged = { ...metrics, variants: metrics.variants.map(v => ({ ...v, judgedCalls: 0, avgScore: undefined })) };
+    mockApi.mockResolvedValueOnce(unjudged);
+    lines = capture();
+    await makeCmd().parseAsync(['node', 'experiments', 'metrics', 'exp-1']);
+    expect(lines.join('\n')).not.toContain('running average over the whole experiment');
+  });
+
   it('turns --days into an ISO window', async () => {
     mockApi.mockResolvedValueOnce(metrics);
     await makeCmd().parseAsync(['node', 'experiments', 'metrics', 'exp-1', '--days', '7']);

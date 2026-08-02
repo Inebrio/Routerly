@@ -121,7 +121,7 @@ A row of cards summarises the comparison before the table:
 | **Errors** | Failed calls and their share of the total, in red when above zero |
 | **Cheapest per call** | Winning variant, its cost per call against the priciest one, and the gap between them |
 | **Fastest** | Winning variant, its average latency against the slowest one, and the gap |
-| **Best judge score** | Winning variant, its score out of 10 and the judged-call count |
+| **Best judge score** | Winning variant, its score out of 10 and the judged-call count, both all time (see the note below) |
 
 | Column | Description |
 |--------|-------------|
@@ -144,6 +144,14 @@ highlighted in the accent colour. A tie highlights nothing, and a column with
 fewer than two comparable values highlights nothing. Under every other value
 of those three columns a percentage reads its distance from the best variant,
 so a losing arm says how much it loses by.
+
+:::note the judge score ignores the window
+The judge keeps a running average per variant on the experiment itself, not a
+score attached to each call, so **Judge score** and its call count cover the
+experiment's whole life whichever window you pick. Every other figure on this
+tab is measured over the window. That is why the judged-call count can be
+higher than the calls measured in a narrow window.
+:::
 
 While any variant is below the minimum, a line above the table reads "Not
 conclusive yet" and names the threshold. With no calls in the window at all,

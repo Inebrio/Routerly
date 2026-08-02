@@ -130,7 +130,7 @@ export function ExperimentMetricsTab() {
             {topScore && (
               <StatCard icon={<Star size={18} />} label="Best judge score" accentColor="#F59E0B"
                 value={label(topScore)}
-                sub={`${topScore.avgScore!.toFixed(1)} / 10 over ${judgedCalls} judged call${judgedCalls !== 1 ? 's' : ''}`} />
+                sub={`${topScore.avgScore!.toFixed(1)} / 10 over ${judgedCalls} judged call${judgedCalls !== 1 ? 's' : ''}, all time`} />
             )}
           </div>
 
@@ -139,7 +139,8 @@ export function ExperimentMetricsTab() {
               ? `Not conclusive yet: every variant needs at least ${metrics.minSamplesPerVariant} calls in this window. `
               : ''}
             The better figure of each pair is highlighted: cheaper per call, faster, higher judge score. The
-            percentage under a value is its distance from the best arm.
+            percentage under a value is its distance from the best arm. The judge score is a running average
+            over the whole life of the experiment, so it is the one figure the window does not narrow.
           </p>
 
           <div className="table-wrap" style={{ overflowX: 'auto' }}>
@@ -203,7 +204,7 @@ export function ExperimentMetricsTab() {
                         {r.judgedCalls > 0 && (
                           <span
                             style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: 6 }}
-                            title={`${r.judgedCalls} answer${r.judgedCalls !== 1 ? 's' : ''} scored by the judge`}
+                            title={`${r.judgedCalls} answer${r.judgedCalls !== 1 ? 's' : ''} scored by the judge since the experiment started`}
                           >
                             ({r.judgedCalls})
                           </span>
