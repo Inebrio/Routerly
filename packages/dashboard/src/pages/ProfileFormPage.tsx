@@ -6,7 +6,6 @@ import {
   type CreateProfileBody, type FallbackStrategyType, type InstalledOptimizer, type Model,
   type PiiPolicy, type Profile, type ProfileKind, type SelectorType,
 } from '../api';
-import { SearchableSelect } from '../components/SearchableSelect';
 import { RoutingPoliciesEditor, mkPolicyId, type PolicyItem } from '../components/RoutingPoliciesEditor';
 import {
   OptimizerStepsEditor, buildOptimizerSteps, mergeOptimizerRows, type OptimizerRow,
@@ -24,10 +23,11 @@ const LABEL_PLACEHOLDERS: Record<ProfileKind, string> = {
 };
 
 /**
- * Create and edit page for all three profile kinds. Creation starts either from
- * scratch or from an existing profile (`?base=<id>`, the clone entry point) and
- * opens on the kind the list was showing (`?kind=<kind>`); the config editors are
- * the same ones the project tabs use.
+ * One form per profile kind: the kind is fixed by where you came from, either
+ * the tab that opened the create page (`?kind=<kind>`), the profile being
+ * cloned (`?base=<id>`) or the profile being edited. Nothing on the form asks
+ * for it, since the three kinds share no field beyond the label; the config
+ * editors are the same ones the project tabs use.
  */
 export function ProfileFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -62,7 +62,6 @@ export function ProfileFormPage() {
 
   // Optimizer
   const [rows, setRows] = useState<OptimizerRow[]>([]);
-  const [installed, setInstalled] = useState<InstalledOptimizer[]>([]);
 
   // Security
   const [rules, setRules] = useState<RuleWithId[]>([]);
@@ -89,7 +88,6 @@ export function ProfileFormPage() {
     Promise.all([getProfiles(), getModels().catch(() => []), getInstalledOptimizers().catch(() => [])])
       .then(([list, ms, opts]) => {
         setModels(ms);
-        setInstalled(opts);
         const source = list.find(p => p.id === (isCreate ? baseId : id));
         if (!isCreate && !source) {
           setError('Profile not found.');
@@ -106,12 +104,6 @@ export function ProfileFormPage() {
       .catch(e => setError(e instanceof Error ? e.message : 'Failed to load profile'))
       .finally(() => setLoading(false));
   }, [canRead, id, baseId, isCreate]);
-
-  // A kind switch on a from-scratch create resets to that kind's empty config.
-  function onKindChange(next: ProfileKind) {
-    setKind(next);
-    if (next === 'optimizer') setRows(mergeOptimizerRows([], installed));
-  }
 
   const { regexErrorsByRule, moderationErrorIds } = validateSecurityRules(rules);
   const securityInvalid = Object.keys(regexErrorsByRule).length > 0 || moderationErrorIds.size > 0;
@@ -168,7 +160,7 @@ export function ProfileFormPage() {
           <ArrowLeft size={16} />
           <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Back to Profiles</span>
         </button>
-        <h1>{isCreate ? 'New Profile' : readOnly ? label : `Edit ${label}`}</h1>
+        <h1>{isCreate ? `New ${KIND_LABELS[kind]} Profile` : readOnly ? label : `Edit ${label}`}</h1>
         <p>
           {readOnly
             ? 'Built-in profiles cannot be edited. Clone one to customize it.'
@@ -180,29 +172,16 @@ export function ProfileFormPage() {
         <form onSubmit={handleSubmit} style={{ maxWidth: 800 }}>
           {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
 
-          <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-            <div className="form-group" style={{ flex: '1 1 240px', marginBottom: 0 }}>
-              <label className="form-label" htmlFor="profile-label">Label</label>
-              <input
-                id="profile-label"
-                className="form-input"
-                placeholder={LABEL_PLACEHOLDERS[kind]}
-                value={label}
-                disabled={readOnly}
-                onChange={e => setLabel(e.target.value)}
-              />
-            </div>
-            <div className="form-group" style={{ flex: '1 1 200px', marginBottom: 0 }}>
-              <label className="form-label">Kind</label>
-              <SearchableSelect
-                ariaLabel="Kind"
-                value={kind}
-                // The kind of an existing profile is fixed: its config shape depends on it.
-                disabled={!isCreate || baseId !== '' || readOnly}
-                onChange={v => onKindChange(v as ProfileKind)}
-                options={(Object.keys(KIND_LABELS) as ProfileKind[]).map(k => ({ value: k, label: KIND_LABELS[k] }))}
-              />
-            </div>
+          <div className="form-group" style={{ maxWidth: 400, marginBottom: 24 }}>
+            <label className="form-label" htmlFor="profile-label">Label</label>
+            <input
+              id="profile-label"
+              className="form-input"
+              placeholder={LABEL_PLACEHOLDERS[kind]}
+              value={label}
+              disabled={readOnly}
+              onChange={e => setLabel(e.target.value)}
+            />
           </div>
 
           <div style={readOnly ? { pointerEvents: 'none', opacity: 0.7 } : {}}>

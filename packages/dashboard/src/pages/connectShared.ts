@@ -1,5 +1,7 @@
 import type { SupportState } from '../api';
 
+export { AUTO_MODEL } from '@routerly/shared';
+
 /** Docs site root; every client meta carries the slug to append. */
 export const DOCS_BASE = 'https://doc.routerly.ai/next/';
 
@@ -31,6 +33,11 @@ export const MODE_HINT: Record<string, string> = {
   llm: 'Routes the client model traffic through Routerly',
   mcp: 'Loads Routerly as an MCP tool server',
 };
+
+/** Gateway root without its trailing slash, so `${root}/v1` never doubles up. */
+export function gatewayRoot(baseUrl: string): string {
+  return baseUrl.replace(/\/$/, '');
+}
 
 /** These two states are the ones `routerly clients configure` can write for you. */
 export function isAutoConfigurable(state: SupportState): boolean {

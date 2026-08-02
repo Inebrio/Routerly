@@ -66,7 +66,7 @@ export type {
 } from './types/optimizers.js';
 
 // Client registry: plain data plus pure string builders, no Node.js APIs.
-export { CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from './clients/index.js';
+export { AUTO_MODEL, CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from './clients/index.js';
 export type { SupportState, WireFormat, ConnectMode, ClientMeta } from './clients/index.js';
 
 // Re-export all types (erased at compile time, no runtime cost)

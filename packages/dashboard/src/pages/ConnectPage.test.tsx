@@ -61,9 +61,27 @@ describe('ConnectPage', () => {
     await waitFor(() => expect(screen.getByText('One command')).toBeTruthy());
     expect(screen.getByText('By hand')).toBeTruthy();
     // Claude Code and Codex are auto-configurable, Cline is not.
-    const groups = document.querySelectorAll('section');
-    expect(groups[0]!.querySelectorAll('a').length).toBe(2);
-    expect(groups[1]!.querySelectorAll('a').length).toBe(1);
+    expect(screen.getByText('One command').closest('section')!.querySelectorAll('a').length).toBe(2);
+    expect(screen.getByText('By hand').closest('section')!.querySelectorAll('a').length).toBe(1);
+  });
+
+  it('opens with the endpoints any client needs, whether or not it is in the grid', async () => {
+    mockGetClients.mockResolvedValue(makeClients());
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Point any client here')).toBeTruthy());
+    const card = screen.getByText('Point any client here').closest('section')!;
+    expect(card.textContent).toContain('http://localhost:3000/v1');
+    expect(card.textContent).toContain('routerly/ada');
+    expect(card.querySelector('a')!.getAttribute('href')).toBe('/dashboard/projects');
+    // Two copy buttons: the OpenAI base URL and the Anthropic one.
+    expect(card.querySelectorAll('button').length).toBe(2);
+  });
+
+  it('leaves the endpoints out when the service reports no client at all', async () => {
+    mockGetClients.mockResolvedValue({ ...makeClients(), clients: [] });
+    renderPage();
+    await waitFor(() => expect(mockGetClients).toHaveBeenCalled());
+    expect(screen.queryByText('Point any client here')).toBeNull();
   });
 
   it('drops a group with no clients in it', async () => {

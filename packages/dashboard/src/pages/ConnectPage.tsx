@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Terminal } from 'lucide-react';
 import { getClients } from '../api';
 import type { ApiError, ClientListItem } from '../api';
 import { ClientLogo } from '../components/ClientLogo';
-import { MODE_HINT, SUPPORT_BADGE, SUPPORT_LABEL, isAutoConfigurable } from './connectShared';
+import { CopyBlock } from '../components/CopyBlock';
+import { AUTO_MODEL, MODE_HINT, SUPPORT_BADGE, SUPPORT_LABEL, isAutoConfigurable, gatewayRoot } from './connectShared';
 
 /**
  * Fetches GET /api/clients once and reports whether the client-configurator
@@ -57,6 +58,57 @@ const GROUP_TITLE: CSSProperties = {
   fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em',
   color: 'var(--text-muted)', marginBottom: 4,
 };
+
+const ROW_LABEL: CSSProperties = {
+  fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', paddingTop: 10,
+};
+
+function EndpointRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <>
+      <div style={ROW_LABEL}>{label}</div>
+      <div style={{ minWidth: 0 }}>{children}</div>
+    </>
+  );
+}
+
+/**
+ * The generic setup, for anything the grid below does not name: base URL, key
+ * and model are all a client needs, because Routerly speaks the two SDK wire
+ * formats as they are.
+ */
+function EndpointCard({ baseUrl }: { baseUrl: string }) {
+  const root = gatewayRoot(baseUrl);
+  const note: CSSProperties = { fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 };
+
+  return (
+    <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div>
+        <div style={GROUP_TITLE}>Point any client here</div>
+        <p style={{ ...note, marginTop: 4 }}>
+          Anything built on the OpenAI or Anthropic SDK works by changing the base URL
+          and the key. Nothing else changes: requests and responses cross Routerly as they are.
+        </p>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(140px, max-content) 1fr', gap: '10px 16px', alignItems: 'start' }}>
+        <EndpointRow label="OpenAI base URL"><CopyBlock text={`${root}/v1`} /></EndpointRow>
+        <EndpointRow label="Anthropic base URL"><CopyBlock text={root} /></EndpointRow>
+        <EndpointRow label="API key">
+          <p style={{ ...note, paddingTop: 10 }}>
+            A project token, sent as <code>Authorization: Bearer</code> or <code>x-api-key</code>.{' '}
+            <Link to="/dashboard/projects">Create one</Link> on the Projects page.
+          </p>
+        </EndpointRow>
+        <EndpointRow label="Model">
+          <p style={{ ...note, paddingTop: 10 }}>
+            <code>{AUTO_MODEL}</code> lets Routerly pick. Any model id from the{' '}
+            <Link to="/dashboard/models">Models</Link> page works too.
+          </p>
+        </EndpointRow>
+      </div>
+    </section>
+  );
+}
 
 function ClientGroup({ title, hint, clients }: { title: string; hint: string; clients: ClientListItem[] }) {
   if (clients.length === 0) return null;
@@ -114,6 +166,7 @@ export function ConnectPage() {
           <div className="form-error">Failed to load clients: {error}</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+            {clients?.[0] && <EndpointCard baseUrl={clients[0].baseUrl} />}
             <ClientGroup
               title="One command"
               hint="The CLI writes the config file for you, with a backup you can undo."

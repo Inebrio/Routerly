@@ -231,6 +231,57 @@ describe('clients inspect', () => {
   });
 });
 
+// ─── clients endpoints ─────────────────────────────────────────────────────
+
+describe('clients endpoints', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  it('prints the two base URLs, the key hint and the model', async () => {
+    mockApi.mockResolvedValueOnce({
+      enabled: true,
+      clients: [{ id: 'claude-code', baseUrl: 'http://localhost:3000/' }],
+      advertisedAddresses: ['http://192.168.1.10:3000'],
+    });
+    const lines = collectLog();
+    await makeCmd().parseAsync(['node', 'clients', 'endpoints']);
+    expect(mockApi).toHaveBeenCalledWith('GET', '/api/clients');
+    const out = lines.join('\n');
+    // The trailing slash of the reported root must not survive into the URLs.
+    expect(out).toContain('http://localhost:3000/v1');
+    expect(out).toContain('http://localhost:3000\n');
+    expect(out).toContain('routerly/ada');
+    expect(out).toContain('x-api-key');
+    expect(out).toContain('http://192.168.1.10:3000');
+  });
+
+  it('outputs parseable JSON with --json', async () => {
+    mockApi.mockResolvedValueOnce({
+      enabled: true,
+      clients: [{ id: 'claude-code', baseUrl: 'http://localhost:3000' }],
+      advertisedAddresses: [],
+    });
+    const lines = collectLog();
+    await makeCmd().parseAsync(['node', 'clients', 'endpoints', '--json']);
+    expect(JSON.parse(lines.join('\n'))).toEqual({
+      openaiBaseUrl: 'http://localhost:3000/v1',
+      anthropicBaseUrl: 'http://localhost:3000',
+      model: 'routerly/ada',
+      advertisedAddresses: [],
+    });
+  });
+
+  it('exits 1 with a hint when the module is disabled', async () => {
+    mockApi.mockRejectedValueOnce(new ApiError(404, 'Not found'));
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync(['node', 'clients', 'endpoints'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('modules enable clients'));
+  });
+});
+
 // ─── clients doctor ────────────────────────────────────────────────────────
 
 describe('clients doctor', () => {

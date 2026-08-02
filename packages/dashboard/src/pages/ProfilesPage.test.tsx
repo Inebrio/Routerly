@@ -128,7 +128,8 @@ describe('ProfilesPage', () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('Auto')).toBeInTheDocument());
     await openTab(user, 'Security');
-    await user.click(screen.getByRole('button', { name: /new profile/i }));
+    // The button names the kind it creates: there is no kind to pick on the form.
+    await user.click(screen.getByRole('button', { name: 'New Security Profile' }));
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard/profiles/new?kind=security');
   });
 
@@ -204,7 +205,7 @@ describe('ProfilesPage', () => {
     await waitFor(() => expect(screen.getByText('Auto')).toBeInTheDocument());
     await openTab(user, 'Security');
     expect(screen.getByText('My Security')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /new profile/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /new .* profile/i })).not.toBeInTheDocument();
     expect(screen.queryByTitle('Clone')).not.toBeInTheDocument();
     expect(screen.queryByTitle('Delete')).not.toBeInTheDocument();
     expect(screen.getAllByTitle('View').length).toBe(1);

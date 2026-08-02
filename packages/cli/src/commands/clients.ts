@@ -6,7 +6,7 @@ import { requireAccount } from '../store.js';
 import { INTEGRATIONS, acquireToken } from '../clients/index.js';
 import type { ClientIntegration } from '../clients/index.js';
 import { restoreBackup, listBackups } from '../lib/safe-file.js';
-import { CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from '@routerly/shared';
+import { AUTO_MODEL, CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from '@routerly/shared';
 import type { ClientMeta, ProjectConfig, SupportState } from '@routerly/shared';
 
 const MCP_TOKEN_PLACEHOLDER = '<YOUR_MCP_TOKEN>';
@@ -108,6 +108,50 @@ Examples:
         table.push([i.id, i.label, colorSupportState(i.supportState), modesOf(i.id).join(', ')]);
       }
       console.log(table.toString());
+    });
+
+  // ── clients endpoints ────────────────────────────────────────────────────────
+  cmd.command('endpoints')
+    .description('Show the base URL, key and model any OpenAI or Anthropic client needs')
+    .option('--json', 'Output as JSON')
+    .addHelpText('after', `
+Examples:
+  routerly clients endpoints
+  routerly clients endpoints --json
+`)
+    .action(async (opts: { json?: boolean }) => {
+      try {
+        // The service reports the root as the request reached it, so the URL
+        // printed here is one the caller can actually use.
+        const res = await api<{ clients: { baseUrl: string }[]; advertisedAddresses: string[] }>('GET', '/api/clients');
+        const root = (res.clients[0]?.baseUrl ?? '').replace(/\/$/, '');
+        const endpoints = {
+          openaiBaseUrl: `${root}/v1`,
+          anthropicBaseUrl: root,
+          model: AUTO_MODEL,
+          advertisedAddresses: res.advertisedAddresses,
+        };
+        if (opts.json) {
+          console.log(JSON.stringify(endpoints, null, 2));
+          return;
+        }
+        console.log(chalk.bold('\nPoint any client here'));
+        console.log(chalk.gray('  OpenAI base URL:     ') + endpoints.openaiBaseUrl);
+        console.log(chalk.gray('  Anthropic base URL:  ') + endpoints.anthropicBaseUrl);
+        console.log(chalk.gray('  API key:             ') + 'a project token, as Authorization: Bearer or x-api-key');
+        console.log(chalk.gray('  Model:               ') + `${AUTO_MODEL} (Routerly picks), or any model id`);
+        if (endpoints.advertisedAddresses.length > 0) {
+          console.log(chalk.gray('  From other machines: ') + endpoints.advertisedAddresses.join(', '));
+        }
+        console.log('');
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) {
+          console.error(chalk.red('Client configurator module is disabled on the service. Enable it with: routerly modules enable clients'));
+        } else {
+          console.error(chalk.red(`Error: ${(err as Error).message}`));
+        }
+        process.exit(1);
+      }
     });
 
   // ── clients inspect ──────────────────────────────────────────────────────────

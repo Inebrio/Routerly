@@ -142,6 +142,12 @@ export const CLIENT_REGISTRY: readonly ClientMeta[] = [
   },
 ];
 
+/**
+ * Virtual model id that hands the model choice back to Routerly's router.
+ * The snippets below embed it wherever a client insists on a model name.
+ */
+export const AUTO_MODEL = 'routerly/ada';
+
 /** Strips a trailing slash so `${root}/v1` never doubles up. */
 function normalize(baseUrl: string): string {
   return baseUrl.replace(/\/$/, '');

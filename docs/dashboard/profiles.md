@@ -56,30 +56,33 @@ Built-in profiles cannot be edited or deleted, so their row shows a **View**
 `profiles:manage`.
 
 Without `profiles:read`, the page shows a permission-denied empty state.
-Without `profiles:manage`, every row is view-only and **New Profile** is hidden.
+Without `profiles:manage`, every row is view-only and the create button is
+hidden.
 
 ---
 
 ## Creating a Profile
 
-Click **New Profile** to open the form at `/dashboard/profiles/new`. The form
-opens on the kind of the tab that was showing.
+Each tab has its own create button, named after the kind it creates: **New
+Routing Profile**, **New Optimizer Profile**, **New Security Profile**. It
+opens `/dashboard/profiles/new?kind=<kind>`, one form per kind, headed the
+same way. There is no kind to pick on the form: the three kinds share no
+field beyond the label.
 
 1. Enter a **Label**
-2. Pick a **Kind**. Switching kind swaps the configuration editor below and
-   resets it to that kind's empty configuration
-3. Fill in the configuration (see the per-kind editors below)
-4. Click **Create Profile**
+2. Fill in the configuration (see the per-kind editors below)
+3. Click **Create Profile**
 
-The kind cannot be changed after creation: the stored configuration shape
-depends on it. To change kind, create a new profile.
+To create a profile of another kind, go back and use that tab's button: the
+stored configuration shape depends on the kind, so an existing profile never
+changes kind.
 
 ### Cloning
 
 The **Clone** button on a list row opens the same form pre-filled with that
-profile's configuration and a `<label> copy` label, with the kind locked to
-the source profile's kind. Nothing is written until **Create Profile** is
-clicked, so a clone can be adjusted before it exists.
+profile's configuration and a `<label> copy` label, on the source profile's
+kind. Nothing is written until **Create Profile** is clicked, so a clone can
+be adjusted before it exists.
 
 ---
 
