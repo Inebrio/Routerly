@@ -106,7 +106,13 @@ export function ConnectionsPage() {
                     {connections.map(conn => (
                       <tr key={conn.id}>
                         <td>{conn.label}</td>
-                        <td><span className={`badge badge-${conn.providerId}`}>{conn.providerId}</span></td>
+                        <td>
+                          <span className={`badge badge-${conn.providerId}`}>{conn.providerId}</span>
+                          {/* A custom connection is only telling once it says what it points at (T205) */}
+                          {conn.providerName && (
+                            <span style={{ marginLeft: 6, fontSize: '0.75rem', color: 'var(--text-muted)' }}>{conn.providerName}</span>
+                          )}
+                        </td>
                         <td><span className="mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{conn.endpoint || '—'}</span></td>
                         <td>
                           <span style={{ fontSize: '0.8rem', color: conn.enabled ? 'var(--success)' : 'var(--text-muted)' }}>

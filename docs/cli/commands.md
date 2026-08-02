@@ -190,7 +190,7 @@ List all configured provider connections.
 
 **Table columns:**
 - **ID** - connection identifier
-- **Provider** - provider ID (e.g. `openai`, `anthropic`, `ollama`)
+- **Provider** - provider ID (e.g. `openai`, `anthropic`, `ollama`); a `custom` connection also shows its upstream provider name, e.g. `custom (deepseek)`
 - **Label** - display label
 - **Endpoint** - custom endpoint, or `-` if using the provider default
 - **Enabled** - `yes` / `no`
@@ -210,8 +210,9 @@ routerly connections add --provider-id <id> --label <label> [options]
 
 | Option | Description |
 |--------|-------------|
-| `--provider-id <id>` | Provider ID (e.g. `openai`, `anthropic`, `ollama`) - required |
+| `--provider-id <id>` | Provider ID (e.g. `openai`, `anthropic`, `ollama`, `custom`) - required |
 | `--label <label>` | Display label for this connection - required |
+| `--provider-name <name>` | Upstream provider behind a `custom` connection (e.g. `deepseek`); models on this connection use it as their ID prefix |
 | `--endpoint <url>` | Custom API endpoint (uses provider default if omitted) |
 | `--api-key <key>` | API key credential (stored plaintext; file permissions protect it) |
 | `--credentials-json <json>` | Full credentials object as JSON (advanced; merges over `--api-key` on conflict) |
@@ -222,6 +223,45 @@ routerly connections add --provider-id openai --label "Main OpenAI" --api-key sk
 routerly connections add --provider-id ollama --label "Local Ollama" --endpoint http://localhost:11434/v1
 routerly connections add --provider-id anthropic --label "Anthropic" \
   --credentials-json '{"apiKey":"sk-ant-..."}'
+routerly connections add --provider-id custom --provider-name deepseek --label "DeepSeek" \
+  --endpoint https://api.deepseek.com/v1 --api-key sk-...
+```
+
+An OpenAI-compatible service that has no dedicated provider ID is registered with
+`--provider-id custom`. `--provider-name` names the service behind the endpoint: a model
+created on that connection is addressed as `<provider-name>/<model>`, e.g.
+`deepseek/deepseek-r1`.
+
+### `routerly connections edit`
+
+```
+routerly connections edit <id> [options]
+```
+
+Update a connection; only the fields passed are changed. Accepts the same
+`--label`, `--provider-name`, `--endpoint`, credential and `--enabled` / `--no-enabled`
+options as `add`. Credential flags replace only the fields passed; the rest of the stored
+credentials are preserved.
+
+```bash
+routerly connections edit c1 --label "Renamed"
+routerly connections edit c1 --provider-name deepseek
+routerly connections edit c1 --api-key sk-new
+routerly connections edit c1 --no-enabled
+```
+
+### `routerly connections show`
+
+```
+routerly connections show <id> [--json]
+```
+
+Show one connection. Credentials are never printed. `Provider name` appears only when the
+connection carries an upstream provider name.
+
+```bash
+routerly connections show c1
+routerly connections show c1 --json
 ```
 
 ### `routerly connections remove`

@@ -924,6 +924,8 @@ export const getProviderDescriptors = () => request<ProviderDescriptor[]>('/prov
 export interface Connection {
   id: string;
   providerId: string;
+  /** Upstream provider behind a `custom` connection, e.g. `deepseek` (T205). */
+  providerName?: string;
   label: string;
   credentials?: Record<string, string>;
   endpoint?: string;
@@ -932,11 +934,11 @@ export interface Connection {
 
 export const getConnections = () => request<Connection[]>('/connections');
 export const createConnection = (data: {
-  providerId: string; label: string; credentials: Record<string, string>;
+  providerId: string; providerName?: string; label: string; credentials: Record<string, string>;
   endpoint?: string; enabled: boolean;
 }) => request<Connection>('/connections', { method: 'POST', body: JSON.stringify(data) });
 export const updateConnection = (id: string, data: Partial<{
-  providerId: string; label: string; credentials: Record<string, string>;
+  providerId: string; providerName: string; label: string; credentials: Record<string, string>;
   endpoint?: string; enabled: boolean;
 }>) => request<Connection>(`/connections/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
 export const deleteConnection = (id: string) => request<void>(`/connections/${encodeURIComponent(id)}`, { method: 'DELETE' });

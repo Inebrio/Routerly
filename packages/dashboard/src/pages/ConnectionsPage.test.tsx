@@ -95,6 +95,14 @@ describe('ConnectionsPage — list', () => {
     expect(screen.queryByText(/credential/i)).toBeNull();
   });
 
+  it('shows the upstream provider name of a custom connection (T205)', async () => {
+    mockGetConnections.mockResolvedValue([makeConnection({ providerId: 'custom', providerName: 'deepseek', label: 'DeepSeek' })]);
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('DeepSeek')).not.toBeNull());
+    expect(screen.getByText('custom')).not.toBeNull();
+    expect(screen.getByText('deepseek')).not.toBeNull();
+  });
+
   it('shows an error state when loading fails', async () => {
     mockGetConnections.mockRejectedValue(new Error('boom'));
     renderPage();

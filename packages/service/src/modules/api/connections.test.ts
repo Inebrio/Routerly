@@ -110,6 +110,22 @@ describe('POST /api/connections', () => {
     expect(JSON.stringify(body)).not.toContain('sk-secret')
   })
 
+  it('stores and returns providerName for a custom connection (T205)', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/connections', headers: auth('connections:manage'),
+      payload: {
+        providerId: 'custom', providerName: 'deepseek', label: 'DeepSeek',
+        credentials: { apiKey: 'sk' }, endpoint: 'https://api.deepseek.com/v1', enabled: true,
+      },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).providerName).toBe('deepseek')
+    const [, stored] = mockWriteConfig.mock.calls.find(c => c[0] === 'connections')!
+    expect(stored[0].providerName).toBe('deepseek')
+  })
+
   // ─── Step 8.1 — module gating ──────────────────────────────────────────────
 
   it('blocks oauth connections when provider-oauth module disabled', async () => {
@@ -414,6 +430,24 @@ describe('PATCH /api/connections/:id', () => {
     const body = JSON.parse(res.body)
     expect(body.label).toBe('New')
     expect(body.credentials).toBeUndefined()
+  })
+
+  it('patches providerName on a custom connection (T205)', async () => {
+    const app = await buildApp()
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [testUser]
+      if (type === 'roles') return [{ id: 'test-role', name: 'Test', permissions: ['connections:manage'] }]
+      if (type === 'connections') return [{ id: 'c1', providerId: 'custom', providerName: 'mistral', label: 'Old', credentials: {}, enabled: true }]
+      return []
+    })
+    mockVerifyToken.mockReturnValue({ sub: 'test-user-id' } as any)
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/connections/c1', headers: { authorization: 'Bearer valid-jwt-token' },
+      payload: { providerName: 'deepseek' },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).providerName).toBe('deepseek')
   })
 
   it('forbids without connections:manage', async () => {

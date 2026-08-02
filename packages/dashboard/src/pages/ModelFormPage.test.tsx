@@ -663,6 +663,29 @@ describe('ModelFormPage — connection picker', () => {
     expect(payload.endpoint).toBeUndefined();
   });
 
+  it('takes the upstream provider name from the selected custom connection (T205)', async () => {
+    const user = userEvent.setup();
+    mockGetConnections.mockResolvedValue([
+      ...CONNECTIONS,
+      { id: 'conn-custom-1', providerId: 'custom', providerName: 'deepseek', label: 'DeepSeek', credentials: undefined, endpoint: 'https://api.deepseek.com/v1', enabled: true },
+    ]);
+    renderPage('/dashboard/models/new');
+
+    await waitFor(() => {
+      const all = screen.getAllByRole('combobox') as HTMLSelectElement[];
+      expect(all[0]!.value).toBe('openai');
+    });
+
+    await user.selectOptions(screen.getAllByRole('combobox')[0] as HTMLSelectElement, 'custom');
+    await user.click(screen.getByRole('button', { name: 'Preconfigured' }));
+
+    const connSelect = await waitFor(() => screen.getByText('DeepSeek').closest('select') as HTMLSelectElement);
+    await user.selectOptions(connSelect, 'conn-custom-1');
+
+    const upstream = screen.getByPlaceholderText('e.g. deepseek, mistral, groq') as HTMLInputElement;
+    await waitFor(() => expect(upstream.value).toBe('deepseek'));
+  });
+
   it('Custom mode submits apiKey+endpoint and omits connectionId', async () => {
     const user = userEvent.setup();
     mockGetConnections.mockResolvedValue(CONNECTIONS);
