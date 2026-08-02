@@ -9,6 +9,13 @@ vi.mock('./oauthForward.js', () => ({
   forwardAnthropicOAuth: vi.fn().mockResolvedValue(undefined),
   forwardAnthropicApiKey: vi.fn().mockResolvedValue(undefined),
 }))
+// Only the network-touching exports are stubbed: primeStream is pure and the lane's
+// fallback behaviour depends on it actually pulling the first chunk.
+vi.mock('./openaiOAuthForward.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./openaiOAuthForward.js')>()),
+  streamOpenAIOAuthChunks: vi.fn(),
+  chunksToChatResponse: vi.fn(),
+}))
 
 import {
   anthropicTransportProcessors, anthropicEgress, anthropicInject, anthropicUpstream, anthropicAttempt,
@@ -16,6 +23,7 @@ import {
 } from './anthropic.js'
 import { llmChat, llmStream, BudgetExceededError } from '../execute.js'
 import { forwardAnthropicOAuth, forwardAnthropicApiKey } from './oauthForward.js'
+import { streamOpenAIOAuthChunks, chunksToChatResponse } from './openaiOAuthForward.js'
 import { setProxyPipeline } from '../run.js'
 import { writeConfig } from '../../config/loader.js'
 import { splitModelsIntoInstancesConnections } from '../../../test-support/effective-models.js'
@@ -422,9 +430,66 @@ describe('anthropic:upstream', () => {
     expect(ctx.result).toEqual({ kind: 'passthrough' })
   })
 
-  it('toChat converts a non-string system, filters non-text content blocks, defaults unset content/stream, and forwards temperature/top_p', async () => {
+  describe('openai-oauth', () => {
+    const oauthCtx = (stream: boolean) => ({
+      protocol: 'anthropic', traceId: 't-oa',
+      attempt: { model: { ...model, id: 'openai-oauth/gpt-5.5', provider: 'openai-oauth' }, candidate },
+      original: { model: 'gpt-5.5', max_tokens: 100, messages: [{ role: 'user', content: 'hi' }], stream },
+      req: {}, log: makeLog(), project: { id: 'p1' },
+    } as unknown as ProxyContext)
+
+    it('streams Codex chunks through the standard egress converter', async () => {
+      const chunks = [
+        { id: 'c1', object: 'chat.completion.chunk', created: 1, model: 'gpt-5.5', choices: [{ index: 0, delta: { content: '42' }, finish_reason: null }] },
+        { id: 'c1', object: 'chat.completion.chunk', created: 1, model: 'gpt-5.5', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] },
+      ]
+      vi.mocked(streamOpenAIOAuthChunks).mockReturnValue((async function* () { for (const c of chunks) yield c as any })())
+
+      const ctx = oauthCtx(true)
+      await anthropicUpstream.run(ctx)
+
+      expect(ctx.result?.kind).toBe('stream')
+      const seen: unknown[] = []
+      for await (const c of ctx.result!.body as AsyncIterable<unknown>) seen.push(c)
+      expect(seen).toEqual(chunks)
+    })
+
+    it('collapses the stream into a MessagesResponse when the client does not stream', async () => {
+      vi.mocked(streamOpenAIOAuthChunks).mockReturnValue((async function* () {})())
+      vi.mocked(chunksToChatResponse).mockResolvedValue({
+        id: 'chatcmpl-9', model: 'gpt-5.5',
+        choices: [{ index: 0, message: { role: 'assistant', content: '42' }, finish_reason: 'stop' }],
+        usage: { prompt_tokens: 3, completion_tokens: 1, total_tokens: 4 },
+      } as any)
+
+      const ctx = oauthCtx(false)
+      await anthropicUpstream.run(ctx)
+
+      expect(ctx.result?.kind).toBe('json')
+      const body = ctx.result!.body as any
+      expect(body.content).toEqual([{ type: 'text', text: '42' }])
+      expect(body.stop_reason).toBe('end_turn')
+      expect(body.usage).toEqual({ input_tokens: 3, output_tokens: 1 })
+    })
+
+    it('advances to the next candidate when the first chunk fails', async () => {
+      vi.mocked(streamOpenAIOAuthChunks).mockReturnValue((async function* () {
+        throw new Error('openai-oauth upstream HTTP 401')
+        // eslint-disable-next-line no-unreachable
+        yield undefined as never
+      })())
+
+      const ctx = oauthCtx(true)
+      await anthropicUpstream.run(ctx)
+
+      expect(ctx.result).toBeUndefined()
+      expect(ctx.attemptError).toBeInstanceOf(Error)
+    })
+  })
+
+  it('toChat flattens a block-list system, filters non-text content blocks, defaults unset content/stream, and forwards temperature/top_p', async () => {
     mockLlmChat.mockImplementationOnce(async (req) => {
-      expect(req.messages[0]).toEqual({ role: 'system', content: JSON.stringify([{ type: 'text', text: 'sys' }]) })
+      expect(req.messages[0]).toEqual({ role: 'system', content: 'sys' })
       expect(req.messages[1]).toEqual({ role: 'user', content: 'A' })
       expect(req.messages[3]).toEqual({ role: 'user', content: '' })
       expect(req.messages[2]).toEqual({ role: 'user', content: '' })

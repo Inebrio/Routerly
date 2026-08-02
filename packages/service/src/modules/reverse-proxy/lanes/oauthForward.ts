@@ -21,6 +21,32 @@ import { trackUsage } from '../../usage/tracker.js';
 const ANTHROPIC_OAUTH_BETA = 'oauth-2025-04-20';
 
 /**
+ * Betas a subscription credential cannot use. Claude Code always asks for the
+ * 1M-context beta; on a Pro/Max token Anthropic answers
+ * `400 The long context beta is not yet available for this subscription.`, so
+ * the request fails before it starts. Dropping the beta is the only way the
+ * client works at all — everything else in the header is forwarded untouched.
+ */
+const SUBSCRIPTION_UNSUPPORTED_BETA = /^context-1m-/;
+
+/**
+ * The bare model name the provider knows.
+ *
+ * Instance ids are namespaced (`anthropic/claude-haiku-4-5`) and `upstreamModelId`
+ * is stored namespaced too — both the connections migration and POST /api/models
+ * default it to the full instance id — so the prefix has to come off before the
+ * name goes upstream, or Anthropic answers 404 `model: anthropic/claude-haiku-4-5`.
+ * Only the model's own provider prefix is stripped: a name that legitimately
+ * contains a slash (`fauxpaslife/arch-router:1.5b`) is left alone.
+ */
+export function upstreamModelName(model: ModelConfig): string {
+  const raw = model.upstreamModelId ?? model.id;
+  const prefix = `${model.id.split('/')[0]}/`;
+  const stripped = raw.startsWith(prefix) ? raw.slice(prefix.length) : raw;
+  return stripped || model.id;
+}
+
+/**
  * Serialize the outbound body, replacing the `model` field with the upstream
  * model id (OAuth/API-key scopes don't always cover the client-supplied id).
  * Everything else is forwarded verbatim.
@@ -30,8 +56,7 @@ const ANTHROPIC_OAUTH_BETA = 'oauth-2025-04-20';
  * deliberate pass-through, not a catch-all that hides serialization bugs.
  */
 function rewriteBodyModel(rawBody: unknown, model: ModelConfig): string {
-  const stripped = model.id.split('/').slice(1).join('/');
-  const upstreamModel = model.upstreamModelId ?? (stripped || model.id);
+  const upstreamModel = upstreamModelName(model);
   if (typeof rawBody === 'string') {
     let parsed: unknown;
     try {
@@ -88,7 +113,7 @@ export function buildOAuthForwardHeaders(
   out['anthropic-dangerous-direct-browser-access'] = 'true';
 
   const betas = out['anthropic-beta']
-    ? out['anthropic-beta'].split(',').map((s) => s.trim()).filter(Boolean)
+    ? out['anthropic-beta'].split(',').map((s) => s.trim()).filter(Boolean).filter((b) => !SUBSCRIPTION_UNSUPPORTED_BETA.test(b))
     : [];
   if (!betas.includes(ANTHROPIC_OAUTH_BETA)) betas.push(ANTHROPIC_OAUTH_BETA);
   out['anthropic-beta'] = betas.join(',');

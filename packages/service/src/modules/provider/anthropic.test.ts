@@ -808,11 +808,11 @@ describe('AnthropicAdapter.streamCompletion — additional branches', () => {
     expect(usageChunk.usage.prompt_tokens).toBe(7)
   })
 
-  it('registers tool_use content_block_start as text type (line 247 non-thinking branch)', async () => {
+  it('opens a tool call on a tool_use content_block_start and ignores text deltas on it', async () => {
     const events = [
       { type: 'message_start', message: { id: 'msg-tu', usage: { input_tokens: 5, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } },
-      // type 'tool_use' is not 'thinking', so blockTypes.set → 'text'
-      { type: 'content_block_start', index: 0, content_block: { type: 'tool_use' } },
+      { type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'toolu_x', name: 'fn' } },
+      // A text_delta on a tool_use block belongs to no OpenAI field — it is dropped
       { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'fn' } },
       { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 2 } },
     ]
@@ -824,9 +824,8 @@ describe('AnthropicAdapter.streamCompletion — additional branches', () => {
     for await (const chunk of adapter.streamCompletion({ model: 'auto', messages: [{ role: 'user', content: 'Hi' }] }, makeModel())) {
       chunks.push(chunk)
     }
-    // The tool_use block is treated as text — a content delta should be yielded
-    const textChunk = chunks.find(c => c.choices?.[0]?.delta?.content === 'fn')
-    expect(textChunk).toBeDefined()
+    expect(chunks.find(c => c.choices?.[0]?.delta?.content === 'fn')).toBeUndefined()
+    expect(chunks.find(c => c.choices?.[0]?.delta?.tool_calls?.[0]?.id === 'toolu_x')).toBeDefined()
   })
 
   it('skips content_block_delta when blockType is thinking but delta is not thinking_delta (line 264 false branch)', async () => {
@@ -850,11 +849,11 @@ describe('AnthropicAdapter.streamCompletion — additional branches', () => {
     expect(ignoredChunk).toBeUndefined()
   })
 
-  it('skips content_block_delta when blockType is text but delta type is input_json_delta (line 264 false branch)', async () => {
+  it('never reports tool arguments as assistant content', async () => {
     const events = [
       { type: 'message_start', message: { id: 'msg-json-skip', usage: { input_tokens: 5, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } },
-      { type: 'content_block_start', index: 0, content_block: { type: 'tool_use' } },
-      // input_json_delta on a text-type block — text branch condition is false
+      { type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'toolu_k', name: 'fn' } },
+      // input_json_delta feeds tool_calls[].function.arguments, never delta.content
       { type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: '{"k":' } },
       { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 1 } },
     ]
@@ -871,13 +870,14 @@ describe('AnthropicAdapter.streamCompletion — additional branches', () => {
     expect(jsonChunk).toBeUndefined()
   })
 
-  it('emits null finish_reason when stop_reason is unknown (line 284 else branch)', async () => {
+  it('closes the stream on an unrecognised stop_reason instead of leaving finish_reason null', async () => {
     const events = [
       { type: 'message_start', message: { id: 'msg-unknwn', usage: { input_tokens: 5, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } },
       { type: 'content_block_start', index: 0, content_block: { type: 'text' } },
       { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'hi' } },
-      // stop_reason is something unknown — none of the if/else if branches match → finish_reason stays null
-      { type: 'message_delta', delta: { stop_reason: 'tool_use' }, usage: { output_tokens: 1 } },
+      // A stop_reason Routerly does not map: the turn is over, so the client must
+      // still get a terminal finish_reason.
+      { type: 'message_delta', delta: { stop_reason: 'pause_turn' }, usage: { output_tokens: 1 } },
     ]
     mockCreate.mockReturnValue({
       [Symbol.asyncIterator]: async function* () { for (const e of events) yield e },
@@ -888,7 +888,25 @@ describe('AnthropicAdapter.streamCompletion — additional branches', () => {
       chunks.push(chunk)
     }
     const deltaChunk = chunks.find(c => c.usage != null)
-    expect(deltaChunk.choices[0].finish_reason).toBeNull()
+    expect(deltaChunk.choices[0].finish_reason).toBe('stop')
+  })
+
+  it('keeps finish_reason null while the turn is still open (no stop_reason yet)', async () => {
+    const events = [
+      { type: 'message_start', message: { id: 'msg-open', usage: { input_tokens: 5, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } },
+      { type: 'content_block_start', index: 0, content_block: { type: 'text' } },
+      { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'hi' } },
+      { type: 'message_delta', delta: {}, usage: { output_tokens: 1 } },
+    ]
+    mockCreate.mockReturnValue({
+      [Symbol.asyncIterator]: async function* () { for (const e of events) yield e },
+    })
+
+    const chunks: any[] = []
+    for await (const chunk of adapter.streamCompletion({ model: 'auto', messages: [{ role: 'user', content: 'Hi' }] }, makeModel())) {
+      chunks.push(chunk)
+    }
+    expect(chunks.find(c => c.usage != null).choices[0].finish_reason).toBeNull()
   })
 
   it('includes only cached_tokens in stream usage when cacheCreation is 0 (lines 305 true, 306 false)', async () => {
@@ -1054,3 +1072,150 @@ describe('AnthropicAdapter — remaining branch coverage', () => {
   })
 })
 
+
+describe('AnthropicAdapter — tool declarations and tool calls', () => {
+  const WEATHER = [{
+    type: 'function',
+    function: {
+      name: 'get_weather',
+      description: 'Get the weather for a city',
+      parameters: { type: 'object', properties: { city: { type: 'string' } }, required: ['city'] },
+    },
+  }]
+
+  it('forwards tools to Anthropic as input_schema definitions', async () => {
+    mockCreate.mockResolvedValue({
+      id: 'msg-tools', model: 'claude-3-haiku-20240307',
+      content: [{ type: 'text', text: 'ok' }], stop_reason: 'end_turn',
+      usage: { input_tokens: 1, output_tokens: 1 },
+    })
+
+    await adapter.chatCompletion({
+      model: 'auto', messages: [{ role: 'user', content: 'Weather in Rome?' }], tools: WEATHER,
+    }, makeModel())
+
+    expect(mockCreate.mock.calls[0]![0].tools).toEqual([{
+      name: 'get_weather',
+      description: 'Get the weather for a city',
+      input_schema: { type: 'object', properties: { city: { type: 'string' } }, required: ['city'] },
+    }])
+  })
+
+  it('omits tools when the request has none', async () => {
+    mockCreate.mockResolvedValue({
+      id: 'msg-no-tools', model: 'claude-3-haiku-20240307',
+      content: [{ type: 'text', text: 'ok' }], stop_reason: 'end_turn',
+      usage: { input_tokens: 1, output_tokens: 1 },
+    })
+
+    await adapter.chatCompletion({ model: 'auto', messages: [{ role: 'user', content: 'Hi' }] }, makeModel())
+
+    expect(mockCreate.mock.calls[0]![0]).not.toHaveProperty('tools')
+    expect(mockCreate.mock.calls[0]![0]).not.toHaveProperty('tool_choice')
+  })
+
+  it.each([
+    ['auto', { type: 'auto' }],
+    ['required', { type: 'any' }],
+    ['none', { type: 'none' }],
+    [{ type: 'function', function: { name: 'get_weather' } }, { type: 'tool', name: 'get_weather' }],
+  ])('maps tool_choice %j to %j', async (choice, expected) => {
+    mockCreate.mockResolvedValue({
+      id: 'msg-choice', model: 'claude-3-haiku-20240307',
+      content: [{ type: 'text', text: 'ok' }], stop_reason: 'end_turn',
+      usage: { input_tokens: 1, output_tokens: 1 },
+    })
+
+    await adapter.chatCompletion({
+      model: 'auto', messages: [{ role: 'user', content: 'Weather?' }], tools: WEATHER, tool_choice: choice,
+    }, makeModel())
+
+    expect(mockCreate.mock.calls[0]![0].tool_choice).toEqual(expected)
+  })
+
+  it('converts tool_use blocks to OpenAI tool_calls with finish_reason tool_calls', async () => {
+    mockCreate.mockResolvedValue({
+      id: 'msg-use', model: 'claude-3-haiku-20240307',
+      content: [
+        { type: 'text', text: 'Let me check.' },
+        { type: 'tool_use', id: 'toolu_1', name: 'get_weather', input: { city: 'Rome' } },
+      ],
+      stop_reason: 'tool_use',
+      usage: { input_tokens: 20, output_tokens: 7 },
+    })
+
+    const result = await adapter.chatCompletion({
+      model: 'auto', messages: [{ role: 'user', content: 'Weather in Rome?' }], tools: WEATHER,
+    }, makeModel())
+
+    expect(result.choices[0]!.message.tool_calls).toEqual([
+      { id: 'toolu_1', type: 'function', function: { name: 'get_weather', arguments: '{"city":"Rome"}' } },
+    ])
+    expect(result.choices[0]!.finish_reason).toBe('tool_calls')
+    expect(result.choices[0]!.message.content).toBe('Let me check.')
+  })
+
+  it('maps stop_reason max_tokens to length and stop_sequence to stop', async () => {
+    for (const [stop, finish] of [['max_tokens', 'length'], ['stop_sequence', 'stop']] as const) {
+      mockCreate.mockResolvedValue({
+        id: 'msg-stop', model: 'claude-3-haiku-20240307',
+        content: [{ type: 'text', text: 'x' }], stop_reason: stop,
+        usage: { input_tokens: 1, output_tokens: 1 },
+      })
+      const result = await adapter.chatCompletion({ model: 'auto', messages: [{ role: 'user', content: 'Hi' }] }, makeModel())
+      expect(result.choices[0]!.finish_reason).toBe(finish)
+    }
+  })
+
+  it('streams tool calls as OpenAI tool_call deltas', async () => {
+    const events = [
+      { type: 'message_start', message: { id: 'msg-stream-tool', usage: { input_tokens: 5 } } },
+      { type: 'content_block_start', index: 0, content_block: { type: 'text' } },
+      { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'checking' } },
+      { type: 'content_block_start', index: 1, content_block: { type: 'tool_use', id: 'toolu_9', name: 'get_weather' } },
+      { type: 'content_block_delta', index: 1, delta: { type: 'input_json_delta', partial_json: '{"city":' } },
+      { type: 'content_block_delta', index: 1, delta: { type: 'input_json_delta', partial_json: '"Milan"}' } },
+      { type: 'message_delta', delta: { stop_reason: 'tool_use' }, usage: { output_tokens: 9 } },
+    ]
+    mockCreate.mockReturnValue({ [Symbol.asyncIterator]: async function* () { for (const e of events) yield e } })
+
+    const chunks: any[] = []
+    for await (const chunk of adapter.streamCompletion({
+      model: 'auto', messages: [{ role: 'user', content: 'Weather in Milan?' }], tools: WEATHER,
+    }, makeModel())) chunks.push(chunk)
+
+    const opening = chunks.find(c => c.choices[0].delta.tool_calls?.[0]?.id === 'toolu_9')
+    expect(opening.choices[0].delta.tool_calls[0]).toEqual({
+      index: 0, id: 'toolu_9', type: 'function', function: { name: 'get_weather', arguments: '' },
+    })
+    const args = chunks
+      .filter(c => c.choices[0].delta.tool_calls?.[0]?.function?.arguments)
+      .map(c => c.choices[0].delta.tool_calls[0].function.arguments)
+      .join('')
+    expect(args).toBe('{"city":"Milan"}')
+    expect(chunks.at(-1).choices[0].finish_reason).toBe('tool_calls')
+    expect(mockCreate.mock.calls[0]![0].tools).toHaveLength(1)
+  })
+
+  it('numbers parallel tool calls by tool slot, not by content block index', async () => {
+    const events = [
+      { type: 'message_start', message: { id: 'msg-parallel', usage: { input_tokens: 5 } } },
+      { type: 'content_block_start', index: 0, content_block: { type: 'text' } },
+      { type: 'content_block_start', index: 1, content_block: { type: 'tool_use', id: 'toolu_a', name: 'get_weather' } },
+      { type: 'content_block_delta', index: 1, delta: { type: 'input_json_delta', partial_json: '{"city":"Rome"}' } },
+      { type: 'content_block_start', index: 2, content_block: { type: 'tool_use', id: 'toolu_b', name: 'get_weather' } },
+      { type: 'content_block_delta', index: 2, delta: { type: 'input_json_delta', partial_json: '{"city":"Milan"}' } },
+      { type: 'message_delta', delta: { stop_reason: 'tool_use' }, usage: { output_tokens: 9 } },
+    ]
+    mockCreate.mockReturnValue({ [Symbol.asyncIterator]: async function* () { for (const e of events) yield e } })
+
+    const slots: number[] = []
+    for await (const chunk of adapter.streamCompletion({
+      model: 'auto', messages: [{ role: 'user', content: 'Weather?' }], tools: WEATHER,
+    }, makeModel())) {
+      const call = (chunk as any).choices[0].delta.tool_calls?.[0]
+      if (call) slots.push(call.index)
+    }
+    expect(slots).toEqual([0, 0, 1, 1])
+  })
+})

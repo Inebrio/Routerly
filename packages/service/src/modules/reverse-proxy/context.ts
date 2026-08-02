@@ -59,6 +59,10 @@ export interface ProxyContext {
   request: ChatCompletionRequest    // canonical OpenAI view (=== original for the OpenAI lane)
   stream: boolean
   passthrough: boolean              // true = verbatim upstream lane
+  // /v1/responses: same lane, same routing, different wire shape on the way out. The
+  // request is decoded to the chat view up front (responses-compat), so only egress
+  // and the byte-writing block paths need to know.
+  responsesApi?: boolean
 
   // routing / attempt loop
   candidates?: RoutingCandidate[]

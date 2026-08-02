@@ -131,9 +131,10 @@ function messagePreserved(before: Message, after: Message): boolean {
   const aa = Array.isArray(after.content)
   if (ba !== aa) return false
   if (ba && aa) {
-    if (before.content.length !== (after.content as unknown[]).length) return false
-    for (let j = 0; j < before.content.length; j++) {
-      const op = before.content[j] as { type?: unknown; text?: unknown } | null
+    const beforeParts = before.content as unknown[]
+    if (beforeParts.length !== (after.content as unknown[]).length) return false
+    for (let j = 0; j < beforeParts.length; j++) {
+      const op = beforeParts[j] as { type?: unknown; text?: unknown } | null
       const np = (after.content as unknown[])[j] as { type?: unknown; text?: unknown } | null
       if (op && op.type === 'text') {
         if (!np || np.type !== 'text') return false

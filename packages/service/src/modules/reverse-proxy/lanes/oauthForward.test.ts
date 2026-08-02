@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import Fastify from 'fastify'
 import type { ProjectConfig, ModelConfig } from '@routerly/shared'
-import { buildOAuthForwardHeaders, forwardAnthropicOAuth } from './oauthForward.js'
+import { buildOAuthForwardHeaders, forwardAnthropicOAuth, upstreamModelName } from './oauthForward.js'
 
 vi.mock('../../usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
 import { trackUsage } from '../../usage/tracker.js'
@@ -27,6 +27,49 @@ const testProject: ProjectConfig = {
   members: [],
   models: [{ modelId: 'claude-max' }],
 }
+
+// ─── subscription-unsupported betas ───────────────────────────────────────────
+
+describe('buildOAuthForwardHeaders / betas', () => {
+  it('drops the 1M-context beta a subscription credential cannot use, keeping the rest', () => {
+    const h = buildOAuthForwardHeaders(oauthModel, {
+      'anthropic-beta': 'claude-code-20250219,context-1m-2025-08-07,interleaved-thinking-2025-05-14',
+    })
+    const betas = h['anthropic-beta']!.split(',')
+    expect(betas).toContain('claude-code-20250219')
+    expect(betas).toContain('interleaved-thinking-2025-05-14')
+    expect(betas).toContain('oauth-2025-04-20')
+    expect(betas.some((b) => b.startsWith('context-1m-'))).toBe(false)
+  })
+})
+
+// ─── upstreamModelName ────────────────────────────────────────────────────────
+
+describe('upstreamModelName', () => {
+  const m = (id: string, upstreamModelId?: string): ModelConfig =>
+    ({ ...oauthModel, id, ...(upstreamModelId ? { upstreamModelId } : {}) })
+
+  it('strips the provider namespace from a namespaced upstreamModelId', () => {
+    expect(upstreamModelName(m('anthropic/claude-haiku-4-5', 'anthropic/claude-haiku-4-5'))).toBe('claude-haiku-4-5')
+  })
+
+  it('keeps an upstreamModelId that is already bare', () => {
+    expect(upstreamModelName(m('anthropic/claude-haiku-4-5', 'claude-haiku-4-5-20251001'))).toBe('claude-haiku-4-5-20251001')
+  })
+
+  it('keeps a slash that belongs to the model name itself', () => {
+    expect(upstreamModelName(m('ollama/fauxpaslife/arch-router:1.5b', 'ollama/fauxpaslife/arch-router:1.5b')))
+      .toBe('fauxpaslife/arch-router:1.5b')
+  })
+
+  it('falls back to the id when upstreamModelId is absent', () => {
+    expect(upstreamModelName(m('anthropic/claude-haiku-4-5'))).toBe('claude-haiku-4-5')
+  })
+
+  it('never returns an empty name', () => {
+    expect(upstreamModelName(m('anthropic/', 'anthropic/'))).toBe('anthropic/')
+  })
+})
 
 // ─── buildOAuthForwardHeaders ─────────────────────────────────────────────────
 

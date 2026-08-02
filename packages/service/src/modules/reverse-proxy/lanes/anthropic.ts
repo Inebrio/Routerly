@@ -1,8 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { FastifyRequest, FastifyReply } from 'fastify'
-import type {
-  MessagesRequest, MessagesResponse, ChatCompletionRequest, ChatCompletionResponse, StreamChunk,
-} from '@routerly/shared'
+import type { MessagesRequest, ChatCompletionRequest, StreamChunk } from '@routerly/shared'
 import type { Processor } from '../../../core/index.js'
 import type { ProxyContext } from '../context.js'
 import { getProxyPipeline } from '../run.js'
@@ -10,57 +8,13 @@ import { listEffectiveModels } from '../../provider/list-effective.js'
 import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
 import { forwardAnthropicOAuth, forwardAnthropicApiKey } from './oauthForward.js'
+import { streamOpenAIOAuthChunks, chunksToChatResponse, primeStream } from './openaiOAuthForward.js'
+import {
+  anthropicToChatRequest, openAIToAnthropicResponse, openAIChunksToAnthropicSSE,
+} from '../../provider/messages-compat.js'
 
-// ─── protocol translation (anthropic.ts L42-89, moved verbatim) ──────────────────
 /** Convert a MessagesRequest to an OpenAI-compat ChatCompletionRequest for non-Anthropic providers. */
-function toChat(body: MessagesRequest): ChatCompletionRequest {
-  const msgs: Array<{ role: string; content: string }> = []
-  if (body.system) {
-    msgs.push({ role: 'system', content: typeof body.system === 'string' ? body.system : JSON.stringify(body.system) })
-  }
-  for (const m of body.messages) {
-    msgs.push({
-      role: m.role,
-      content: typeof m.content === 'string' ? m.content :
-        Array.isArray(m.content) ? (m.content as Array<{ type: string; text?: string }>).filter(b => b.type === 'text').map(b => b.text ?? '').join('') : '',
-    })
-  }
-  return { model: body.model, messages: msgs as ChatCompletionRequest['messages'], max_tokens: body.max_tokens, stream: body.stream ?? false, ...(body.temperature != null ? { temperature: body.temperature } : {}), ...(body.top_p != null ? { top_p: body.top_p } : {}) }
-}
-
-/** Convert an OpenAI ChatCompletionResponse to Anthropic MessagesResponse. */
-function chatToMessages(chat: ChatCompletionResponse, id: string, requestedModel: string): MessagesResponse {
-  const choice = chat.choices?.[0]
-  const msgContent = choice?.message?.content
-  return { id: chat.id || `msg_${id}`, type: 'message', role: 'assistant', content: [{ type: 'text', text: typeof msgContent === 'string' ? msgContent : '' }], model: chat.model || requestedModel, stop_reason: choice?.finish_reason === 'stop' ? 'end_turn' : 'max_tokens', stop_sequence: null, usage: { input_tokens: chat.usage?.prompt_tokens ?? 0, output_tokens: chat.usage?.completion_tokens ?? 0 } }
-}
-
-/** Convert OpenAI StreamChunks to Anthropic SSE event lines. */
-async function* chunksToAnthropicSSE(
-  chunks: AsyncIterable<StreamChunk>,
-  msgId: string,
-  requestedModel: string,
-): AsyncGenerator<string> {
-  let started = false
-  for await (const chunk of chunks) {
-    if (!started) {
-      started = true
-      const chunkAny = chunk as any
-      yield `event: message_start\ndata: ${JSON.stringify({ type: 'message_start', message: { id: msgId, type: 'message', role: 'assistant', content: [], stop_reason: null, stop_sequence: null, model: chunk.model || requestedModel, usage: { input_tokens: chunkAny.usage?.prompt_tokens ?? 0, output_tokens: 0 } } })}\n\n`
-      yield `event: content_block_start\ndata: ${JSON.stringify({ type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } })}\n\n`
-      yield `event: ping\ndata: {"type":"ping"}\n\n`
-    }
-    const text = chunk.choices?.[0]?.delta?.content
-    if (text) yield `event: content_block_delta\ndata: ${JSON.stringify({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } })}\n\n`
-    const finish = chunk.choices?.[0]?.finish_reason
-    if (finish) {
-      const outTokens = (chunk as any).usage?.completion_tokens ?? 0
-      yield `event: content_block_stop\ndata: ${JSON.stringify({ type: 'content_block_stop', index: 0 })}\n\n`
-      yield `event: message_delta\ndata: ${JSON.stringify({ type: 'message_delta', delta: { stop_reason: finish === 'stop' ? 'end_turn' : 'max_tokens', stop_sequence: null }, usage: { output_tokens: outTokens } })}\n\n`
-      yield `event: message_stop\ndata: {"type":"message_stop"}\n\n`
-    }
-  }
-}
+const toChat = (body: MessagesRequest): ChatCompletionRequest => anthropicToChatRequest(body)
 
 export function buildAnthropicContext(req: FastifyRequest, reply: FastifyReply): ProxyContext {
   const body = req.body as MessagesRequest
@@ -134,6 +88,31 @@ export const anthropicUpstream: Processor<ProxyContext> = {
       return
     }
 
+    // ── openai-oauth speaks the Responses API only. streamOpenAIOAuthChunks maps it
+    //    back to OpenAI chunks, so tool calls and text render through the same egress
+    //    converter as every other non-Anthropic provider. ──
+    if (model.provider === 'openai-oauth') {
+      try {
+        const chunks = streamOpenAIOAuthChunks(toChat(body), model, log, {
+          traceId: ctx.traceId,
+          projectId: project.id,
+          ...(project.pii ? { pii: project.pii } : {}),
+        })
+        if (!body.stream) {
+          const chatResp = await chunksToChatResponse(chunks, model.id)
+          ctx.result = { kind: 'json', body: openAIToAnthropicResponse(chatResp, body.model, `msg_${ctx.traceId}`) }
+          return
+        }
+        // Primed so an auth or upstream failure advances to the next candidate
+        // instead of opening a stream that turns out to be empty.
+        ctx.result = { kind: 'stream', body: await primeStream(chunks) }
+      } catch (err) {
+        log.warn({ err, modelId: model.id }, 'openai-oauth call failed, trying next candidate')
+        ctx.attemptError = err
+      }
+      return
+    }
+
     // ── Non-Anthropic providers: convert format and call the executor. ──
     const cctx: LLMCallContext = {
       projectId: project.id,
@@ -172,7 +151,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
 
     try {
       const chatResp = await llmChat(toChat(body), model, cctx)
-      ctx.result = { kind: 'json', body: chatToMessages(chatResp, ctx.traceId, body.model) }
+      ctx.result = { kind: 'json', body: openAIToAnthropicResponse(chatResp, body.model, `msg_${ctx.traceId}`) }
     } catch (err: unknown) {
       if (!(err instanceof BudgetExceededError)) {
         log.warn({ err, modelId: model.id }, 'Anthropic messages call failed, trying next candidate')
@@ -250,7 +229,7 @@ export const anthropicEgress: Processor<ProxyContext> = {
     reply.raw.setHeader('Connection', 'keep-alive')
     reply.raw.flushHeaders()
     try {
-      for await (const line of chunksToAnthropicSSE(result.body as AsyncIterable<StreamChunk>, `msg_${ctx.traceId}`, body.model)) {
+      for await (const line of openAIChunksToAnthropicSSE(result.body as AsyncIterable<StreamChunk>, `msg_${ctx.traceId}`, body.model)) {
         reply.raw.write(line)
       }
     } catch { /* mid-stream error, nothing to do */ }
