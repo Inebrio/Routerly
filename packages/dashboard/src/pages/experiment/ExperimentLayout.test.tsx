@@ -17,7 +17,7 @@ import { getExperiment } from '../../api';
 const mockGet = vi.mocked(getExperiment as (...a: unknown[]) => Promise<unknown>);
 
 const experiment = {
-  id: 'exp-1', name: 'Cheap vs premium', status: 'running',
+  id: 'exp-1', name: 'Cheap vs premium',
   rotation: 'sticky', variants: [], tokens: [], createdAt: '2026-07-01T00:00:00.000Z',
 };
 
@@ -56,7 +56,6 @@ describe('ExperimentLayout', () => {
     await waitFor(() => expect(screen.getByTestId('probe')).toHaveTextContent('Cheap vs premium'));
     expect(mockGet).toHaveBeenCalledWith('exp-1');
     expect(screen.getByRole('heading', { name: 'Cheap vs premium' })).toBeInTheDocument();
-    expect(screen.getByText('Running')).toBeInTheDocument();
     expect(screen.getByText('exp-1')).toBeInTheDocument();
   });
 

@@ -29,28 +29,12 @@ function toRow(v: ExperimentVariant): VariantRow {
 
 const EMPTY_ROW: VariantRow = { projectId: '', name: '', weight: '' };
 
-/**
- * One line of the frozen view. A live experiment cannot change its split, so it
- * reads as a summary instead of a form full of disabled controls.
- */
-function SummaryRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', gap: 20, padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
-      <div style={{ width: 150, flexShrink: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>{label}</div>
-      <div style={{ fontSize: '0.875rem', minWidth: 0 }}>{children}</div>
-    </div>
-  );
-}
-
 export function ExperimentConfigTab() {
   const { experiment, setExperiment } = useExperiment();
   const navigate = useNavigate();
   const { can } = useAuth();
   const canManage = can('experiments:manage');
   const isNew = !experiment;
-  // A running or closed test only takes name, description and sample size: everything
-  // that would make the arms incomparable is frozen server-side too.
-  const frozen = experiment !== null && experiment.status !== 'draft';
 
   const [name, setName] = useState(experiment?.name ?? '');
   const [description, setDescription] = useState(experiment?.description ?? '');
@@ -121,16 +105,7 @@ export function ExperimentConfigTab() {
         setExperiment(masked);
         setCreated({ id: masked.id, token });
       } else {
-        // Only the fields the service still accepts are sent once the test is live.
-        const body = buildBody();
-        const patch = frozen
-          ? {
-              name: body.name,
-              ...(body.description !== undefined ? { description: body.description } : {}),
-              ...(body.minSamplesPerVariant !== undefined ? { minSamplesPerVariant: body.minSamplesPerVariant } : {}),
-            }
-          : body;
-        setExperiment(await updateExperiment(experiment.id, patch));
+        setExperiment(await updateExperiment(experiment.id, buildBody()));
         setSaved(true);
       }
     } catch (e) {
@@ -173,7 +148,6 @@ export function ExperimentConfigTab() {
     ? variantShares(variants.map(v => ({ id: '', projectId: v.projectId, ...(v.weight.trim() ? { weight: Number(v.weight) } : {}) })))
     : [];
   const projectOptions = projects.map(p => ({ value: p.id, label: p.name }));
-  const projectLabel = (id: string) => projects.find(p => p.id === id)?.name ?? id.slice(0, 8);
   const readOnly = !canManage;
 
   return (
@@ -181,12 +155,6 @@ export function ExperimentConfigTab() {
       {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
       {saved && (
         <div style={{ marginBottom: 16, fontSize: '0.85rem', color: 'var(--success, #059669)' }}>Saved.</div>
-      )}
-      {frozen && (
-        <p className="section-desc" style={{ marginTop: 0 }}>
-          This experiment is {experiment.status}. Only its name, description and sample size can still change: variants,
-          rotation and judge are frozen so the arms stay comparable.
-        </p>
       )}
 
       <div className="form-section">
@@ -212,51 +180,6 @@ export function ExperimentConfigTab() {
         </div>
       </div>
 
-      {frozen ? (
-        <div className="form-section">
-          <div className="section-title">How this test is running</div>
-          <SummaryRow label="Rotation">
-            {ROTATION_CATALOG[rotation].label}
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
-              {ROTATION_CATALOG[rotation].description}
-            </div>
-          </SummaryRow>
-          {rotation === 'sticky' && (
-            <SummaryRow label="Sticky on">
-              {STICKY_KEY_CATALOG[stickyKey].label}
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                {STICKY_KEY_CATALOG[stickyKey].description}
-              </div>
-            </SummaryRow>
-          )}
-          <SummaryRow label={`Variants (${variants.length})`}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {variants.map((v, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span>{v.name || projectLabel(v.projectId)}</span>
-                  {v.name && <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{projectLabel(v.projectId)}</span>}
-                  {rotation === 'weighted' && shares[i] !== undefined && (
-                    <span className="badge badge-neutral">{Math.round(shares[i]! * 100)}%</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </SummaryRow>
-          <SummaryRow label="Judge">
-            {judgeEnabled ? (
-              <>
-                <div>{models.find(m => m.id === judgeModelId)?.name ?? judgeModelId}, {judgeSampleRate}% of calls scored</div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2, whiteSpace: 'pre-line' }}>
-                  {judgeCriteria}
-                </div>
-              </>
-            ) : (
-              <span style={{ color: 'var(--text-muted)' }}>Off</span>
-            )}
-          </SummaryRow>
-        </div>
-      ) : (
-      <>
       <div className="form-section">
         <div className="section-title">Traffic split</div>
         <div className="form-group">
@@ -264,7 +187,7 @@ export function ExperimentConfigTab() {
           <SearchableSelect
             ariaLabel="Rotation"
             value={rotation}
-            disabled={readOnly || frozen}
+            disabled={readOnly}
             onChange={v => setRotation(v as ExperimentRotation)}
             options={EXPERIMENT_ROTATIONS.map(r => ({
               value: r, label: ROTATION_CATALOG[r].label, description: ROTATION_CATALOG[r].description,
@@ -279,7 +202,7 @@ export function ExperimentConfigTab() {
             <SearchableSelect
               ariaLabel="Sticky key"
               value={stickyKey}
-              disabled={readOnly || frozen}
+              disabled={readOnly}
               onChange={v => setStickyKey(v as ExperimentStickyKey)}
               options={STICKY_KEYS.map(k => ({
                 value: k, label: STICKY_KEY_CATALOG[k].label, description: STICKY_KEY_CATALOG[k].description,
@@ -302,20 +225,20 @@ export function ExperimentConfigTab() {
                 ariaLabel={`Variant ${i + 1} project`}
                 placeholder="Select a project"
                 value={v.projectId}
-                disabled={readOnly || frozen}
+                disabled={readOnly}
                 onChange={val => setVariant(i, { projectId: val })}
                 options={projectOptions}
               />
             </div>
             <input
-              className="form-input" style={{ flex: 1 }} value={v.name} disabled={readOnly || frozen}
+              className="form-input" style={{ flex: 1 }} value={v.name} disabled={readOnly}
               aria-label={`Variant ${i + 1} label`} placeholder="Label (optional)"
               onChange={e => setVariant(i, { name: e.target.value })}
             />
             {rotation === 'weighted' && (
               <div style={{ width: 120 }}>
                 <input
-                  className="form-input" type="number" min={0} step="any" value={v.weight} disabled={readOnly || frozen}
+                  className="form-input" type="number" min={0} step="any" value={v.weight} disabled={readOnly}
                   aria-label={`Variant ${i + 1} weight`} placeholder="Weight"
                   onChange={e => setVariant(i, { weight: e.target.value })}
                 />
@@ -324,7 +247,7 @@ export function ExperimentConfigTab() {
                 </div>
               </div>
             )}
-            {!readOnly && !frozen && (
+            {!readOnly && (
               <button type="button" className="btn-icon danger" title={`Remove variant ${i + 1}`}
                 onClick={() => setVariants(rows => rows.filter((_, j) => j !== i))}>
                 <X size={15} />
@@ -332,7 +255,7 @@ export function ExperimentConfigTab() {
             )}
           </div>
         ))}
-        {!readOnly && !frozen && (
+        {!readOnly && (
           <button type="button" className="btn btn-secondary" onClick={() => setVariants(rows => [...rows, { ...EMPTY_ROW }])}>
             <Plus size={15} /> Add variant
           </button>
@@ -347,7 +270,7 @@ export function ExperimentConfigTab() {
         </p>
         <div className="form-group">
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem' }}>
-            <input type="checkbox" checked={judgeEnabled} disabled={readOnly || frozen}
+            <input type="checkbox" checked={judgeEnabled} disabled={readOnly}
               onChange={e => setJudgeEnabled(e.target.checked)} />
             Score answers with a judge model
           </label>
@@ -360,27 +283,25 @@ export function ExperimentConfigTab() {
                 ariaLabel="Judge model"
                 placeholder="Select a model"
                 value={judgeModelId}
-                disabled={readOnly || frozen}
+                disabled={readOnly}
                 onChange={setJudgeModelId}
                 options={models.map(m => ({ value: m.id, label: m.name, description: m.provider }))}
               />
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="exp-criteria">Criteria</label>
-              <textarea id="exp-criteria" className="form-input" rows={4} value={judgeCriteria} disabled={readOnly || frozen}
+              <textarea id="exp-criteria" className="form-input" rows={4} value={judgeCriteria} disabled={readOnly}
                 onChange={e => setJudgeCriteria(e.target.value)}
                 placeholder={'One per line, e.g.\nAnswers the question asked\nStays factual\nKeeps to the requested format'} />
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="exp-sample-rate">Share of calls judged (%)</label>
               <input id="exp-sample-rate" className="form-input" type="number" min={0} max={100} value={judgeSampleRate}
-                disabled={readOnly || frozen} onChange={e => setJudgeSampleRate(e.target.value)} />
+                disabled={readOnly} onChange={e => setJudgeSampleRate(e.target.value)} />
             </div>
           </>
         )}
       </div>
-      </>
-      )}
 
       {canManage && (
         <div style={{ display: 'flex', gap: 10, marginTop: 32 }}>

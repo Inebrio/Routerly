@@ -94,15 +94,6 @@ const patchSchema = z.object({
   minSamplesPerVariant: z.number().int().min(1).optional(),
 }).refine(b => Object.keys(b).length > 0, { message: 'At least one field must be provided' });
 
-/**
- * What may still change once traffic is flowing. Everything that would make the
- * two arms incomparable (who they route to, how traffic splits, how quality is
- * judged) is frozen: a running test can be renamed, not redesigned.
- */
-const EDITABLE_WHILE_RUNNING = ['name', 'description', 'minSamplesPerVariant'] as const;
-
-const closeSchema = z.object({ winnerVariantId: z.string().trim().min(1).optional() });
-
 // ── Routes ─────────────────────────────────────────────────────────────────────
 
 export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
@@ -160,7 +151,6 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
       id: randomUUID(),
       name: parsed.data.name,
       ...(parsed.data.description ? { description: parsed.data.description } : {}),
-      status: 'draft',
       rotation: parsed.data.rotation,
       ...(parsed.data.stickyKey ? { stickyKey: parsed.data.stickyKey } : {}),
       variants: parsed.data.variants.map(toVariant),
@@ -187,15 +177,6 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
     if (idx === -1) return reply.status(404).send({ error: 'Not found' });
     const current = experiments[idx]!;
 
-    if (current.status !== 'draft') {
-      const frozen = Object.keys(parsed.data).filter(k => !EDITABLE_WHILE_RUNNING.includes(k as never));
-      if (frozen.length > 0) {
-        return reply.status(409).send({
-          error: 'experiment_frozen',
-          message: `A ${current.status} experiment cannot change ${frozen.join(', ')}. Only ${EDITABLE_WHILE_RUNNING.join(', ')} stay editable.`,
-        });
-      }
-    }
     if (parsed.data.variants) {
       const unknown = await unknownProjects(parsed.data.variants.map(v => v.projectId));
       if (unknown.length > 0) return reply.status(404).send({ error: 'project_not_found', projectIds: unknown });
@@ -215,60 +196,6 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
     experiments[idx] = updated;
     await writeConfig('experiments', experiments);
     audit(req, 'experiment:update', 'success', { id: req.params.id });
-    return reply.send(mask(updated));
-  });
-
-  fastify.post<{ Params: { id: string } }>('/api/experiments/:id/start', async (req, reply) => {
-    if (!requirePerm(req, 'experiments:manage', reply)) return;
-    if (!await checkModuleGate(reply)) return;
-    const experiments = await readConfig('experiments');
-    const idx = experiments.findIndex(e => e.id === req.params.id);
-    if (idx === -1) return reply.status(404).send({ error: 'Not found' });
-    const current = experiments[idx]!;
-    if (current.status !== 'draft') {
-      return reply.status(409).send({ error: 'experiment_not_draft', message: `This experiment is already ${current.status}.` });
-    }
-    if (current.variants.length < 2) {
-      return reply.status(400).send({ error: 'too_few_variants', message: 'An experiment needs at least two variants to compare.' });
-    }
-    if (current.tokens.length === 0) {
-      return reply.status(400).send({ error: 'no_token', message: 'An experiment needs a token for clients to call.' });
-    }
-
-    const updated: ExperimentConfig = { ...current, status: 'running', startedAt: new Date().toISOString() };
-    experiments[idx] = updated;
-    await writeConfig('experiments', experiments);
-    audit(req, 'experiment:start', 'success', { id: req.params.id });
-    return reply.send(mask(updated));
-  });
-
-  fastify.post<{ Params: { id: string }; Body: unknown }>('/api/experiments/:id/close', async (req, reply) => {
-    if (!requirePerm(req, 'experiments:manage', reply)) return;
-    if (!await checkModuleGate(reply)) return;
-    const parsed = closeSchema.safeParse(req.body ?? {});
-    if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
-
-    const experiments = await readConfig('experiments');
-    const idx = experiments.findIndex(e => e.id === req.params.id);
-    if (idx === -1) return reply.status(404).send({ error: 'Not found' });
-    const current = experiments[idx]!;
-    if (current.status !== 'running') {
-      return reply.status(409).send({ error: 'experiment_not_running', message: `Only a running experiment can be closed; this one is ${current.status}.` });
-    }
-    const winnerVariantId = parsed.data.winnerVariantId;
-    if (winnerVariantId && !current.variants.some(v => v.id === winnerVariantId)) {
-      return reply.status(404).send({ error: 'variant_not_found' });
-    }
-
-    const updated: ExperimentConfig = {
-      ...current,
-      status: 'closed',
-      closedAt: new Date().toISOString(),
-      ...(winnerVariantId ? { winnerVariantId } : {}),
-    };
-    experiments[idx] = updated;
-    await writeConfig('experiments', experiments);
-    audit(req, 'experiment:close', 'success', { id: req.params.id, ...(winnerVariantId ? { winnerVariantId } : {}) });
     return reply.send(mask(updated));
   });
 
@@ -307,11 +234,6 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
     const experiments = await readConfig('experiments');
     const idx = experiments.findIndex(e => e.id === req.params.id);
     if (idx === -1) return reply.status(404).send({ error: 'Not found' });
-    // Deleting a running test would silently 401 every client still calling its
-    // token: close it first, so stopping traffic is always a deliberate step.
-    if (experiments[idx]!.status === 'running') {
-      return reply.status(409).send({ error: 'experiment_running', message: 'Close the experiment before deleting it.' });
-    }
 
     experiments.splice(idx, 1);
     await writeConfig('experiments', experiments);

@@ -28,42 +28,24 @@ on (`routerly modules enable experiments`). See
 
 ---
 
-## Lifecycle
+## Life of an experiment
 
-| Status | What it means |
-|--------|---------------|
-| `draft` | Being designed. Its token exists but refuses traffic. Everything is editable. |
-| `running` | Serving traffic and collecting measurements. Design is frozen. |
-| `closed` | Stopped. Its token refuses traffic; the metrics stay readable. |
+An experiment routes traffic from the moment it exists. There is no start step,
+no stop step and no recorded winner: creating it is enough for its token to
+serve calls, and deleting it is how it ends.
 
-The transitions are manual in both directions that exist: `draft -> running`
-(start) and `running -> closed` (close). There is no auto-stop rule and no
-statistical trigger. Routerly reports the numbers; declaring a winner is the
-operator's call.
+Every field stays editable for the whole life of the test: name, description,
+variants, weights, rotation, sticky key, judge and `minSamplesPerVariant`.
+Redesigning a test that already has traffic mixes two different measurements
+under one set of numbers, so narrow the metrics window to the period after the
+change when the design moved.
 
-Starting requires at least two variants and at least one token. Closing takes
-an optional winning variant, recorded on the experiment for later reference.
+Routerly reports the numbers; deciding which arm wins is the operator's call
+and lives outside the experiment.
 
-A `closed` experiment can be deleted; a `running` one cannot, because deleting
-it would turn every client still calling its token into a `403` with no
-warning. Close first, move the clients to the winning project's own token,
-then delete.
-
-### What stays editable while running
-
-Once a test leaves `draft` only three fields may change:
-
-- `name`
-- `description`
-- `minSamplesPerVariant`
-
-Everything else (variants, weights, rotation, sticky key, judge) is frozen.
-Changing who the arms route to, or how traffic splits between them, halfway
-through a comparison would make the two halves of the measurement
-incomparable. A running test can be renamed, not redesigned.
-
-Editing a frozen field answers `409 experiment_frozen` and names the fields it
-refused.
+Deleting an experiment removes its tokens with it, so every client still
+calling one starts getting `401`. Move those clients to the winning project's
+own token first, then delete.
 
 ---
 
@@ -119,13 +101,12 @@ The raw value is shown once, at creation, and never again. An experiment can
 hold several tokens, which is how one test can be handed to several clients
 and one of them revoked later.
 
-What a client gets back depends on the experiment's state:
+What a client gets back:
 
 | Situation | Response |
 |-----------|----------|
-| Running, variant resolved | The provider's own response, unaltered |
+| Variant resolved | The provider's own response, unaltered |
 | Token past its expiry | `401 Token expired` |
-| Experiment is `draft` or `closed` | `403 experiment_not_running` |
 | No variant points at an existing project | `503 experiment_misconfigured` |
 
 A variant whose project was deleted is skipped rather than served as an error:
@@ -216,7 +197,7 @@ missing data point, not a failure: the call is never affected.
 | Permission | Grants |
 |------------|--------|
 | `experiments:read` | List experiments, read one, read its metrics |
-| `experiments:manage` | Create, edit, start, close, delete, manage tokens |
+| `experiments:manage` | Create, edit, delete, manage tokens |
 
 ---
 

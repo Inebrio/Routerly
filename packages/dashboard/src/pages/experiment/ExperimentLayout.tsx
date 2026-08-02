@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Outlet, NavLink, useLocation, useOutletContext } from 'react-router-dom';
 import { ArrowLeft, Settings, Key, BarChart3 } from 'lucide-react';
 import { getExperiment, type MaskedExperiment } from '../../api';
-import { STATUS_BADGE, STATUS_LABELS } from '../ExperimentsPage';
 
 export function ExperimentLayout() {
   const navigate = useNavigate();
@@ -53,12 +52,7 @@ export function ExperimentLayout() {
             <ArrowLeft size={18} />
           </button>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <h1 style={{ margin: 0 }}>{isNew ? 'New Experiment' : experiment?.name || 'Loading...'}</h1>
-              {experiment && (
-                <span className={`badge ${STATUS_BADGE[experiment.status]}`}>{STATUS_LABELS[experiment.status]}</span>
-              )}
-            </div>
+            <h1 style={{ margin: 0 }}>{isNew ? 'New Experiment' : experiment?.name || 'Loading...'}</h1>
             {!isNew && experiment && (
               <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                 Experiment ID: <span className="mono">{experiment.id}</span>

@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Trophy, BarChart3 } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 import {
-  closeExperiment, getExperimentMetrics, getProjects,
+  getExperimentMetrics, getProjects,
   type ExperimentMetrics, type ExperimentVariantMetrics, type Project,
 } from '../../api';
 import { SearchableSelect } from '../../components/SearchableSelect';
-import { ConfirmDialog } from '../../components/ConfirmDialog';
-import { useAuth } from '../../AuthContext';
 import { useExperiment } from './ExperimentLayout';
 
 /** Windows offered on top of the whole history. Days back from now, ISO-encoded on the request. */
@@ -32,17 +30,13 @@ function bestOf(rows: ExperimentVariantMetrics[], pick: (r: ExperimentVariantMet
 }
 
 export function ExperimentMetricsTab() {
-  const { experiment, setExperiment } = useExperiment();
-  const { can } = useAuth();
-  const canManage = can('experiments:manage');
+  const { experiment } = useExperiment();
 
   const [range, setRange] = useState<string>('');
   const [metrics, setMetrics] = useState<ExperimentMetrics | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
-  const [winner, setWinner] = useState('');
-  const [confirming, setConfirming] = useState(false);
 
   const experimentId = experiment?.id;
 
@@ -63,16 +57,6 @@ export function ExperimentMetricsTab() {
   useEffect(() => { getProjects().then(setProjects).catch(() => {}); }, []);
 
   if (!experiment) return null;
-
-  async function handleClose() {
-    setConfirming(false);
-    setErr('');
-    try {
-      setExperiment(await closeExperiment(experiment!.id, winner || undefined));
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to close the experiment');
-    }
-  }
 
   const rows = metrics?.variants ?? [];
   const measured = rows.reduce((s, r) => s + r.calls, 0);
@@ -136,9 +120,6 @@ export function ExperimentMetricsTab() {
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {r.name ?? projectName(r.projectId)}
-                        {experiment.winnerVariantId === r.variantId && (
-                          <span className="badge badge-success" title="Declared winner"><Trophy size={12} /> Winner</span>
-                        )}
                         {!r.enoughSamples && (
                           <span className="badge badge-warning" title={`Under ${metrics?.minSamplesPerVariant} calls in this window`}>
                             Low sample
@@ -181,39 +162,6 @@ export function ExperimentMetricsTab() {
         </>
       )}
 
-      {canManage && experiment.status === 'running' && (
-        <div className="form-section" style={{ marginTop: 32 }}>
-          <div className="section-title">Close this experiment</div>
-          <p className="section-desc">
-            Closing stops variant rotation: the experiment's tokens stop working, so move clients to the winning
-            project's own token first. The winner is your call, the numbers only inform it.
-          </p>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ width: 260 }}>
-              <SearchableSelect
-                ariaLabel="Winning variant"
-                placeholder="No winner"
-                value={winner}
-                onChange={setWinner}
-                options={[
-                  { value: '', label: 'No winner' },
-                  ...experiment.variants.map(v => ({ value: v.id, label: v.name ?? v.id })),
-                ]}
-              />
-            </div>
-            <button className="btn btn-danger" onClick={() => setConfirming(true)}>Close Experiment</button>
-          </div>
-        </div>
-      )}
-
-      {confirming && (
-        <ConfirmDialog
-          message={`Close "${experiment.name}"? Its tokens stop working immediately and the split cannot be restarted.`}
-          confirmLabel="Close"
-          onConfirm={handleClose}
-          onCancel={() => setConfirming(false)}
-        />
-      )}
     </>
   );
 }

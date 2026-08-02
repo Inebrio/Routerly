@@ -30,7 +30,6 @@ export type {
 // Experiments (T70) — plain data plus pure functions
 export {
   EXPERIMENT_ROTATIONS,
-  EXPERIMENT_STATUSES,
   STICKY_KEYS,
   ROTATION_CATALOG,
   STICKY_KEY_CATALOG,
@@ -43,7 +42,6 @@ export type {
   ExperimentConfig,
   ExperimentRotation,
   ExperimentRotationMeta,
-  ExperimentStatus,
   ExperimentStickyKey,
   ExperimentVariant,
   ExperimentJudge,

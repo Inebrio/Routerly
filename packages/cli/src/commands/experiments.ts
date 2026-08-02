@@ -3,12 +3,12 @@ import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
 import {
-  EXPERIMENT_ROTATIONS, EXPERIMENT_STATUSES, STICKY_KEYS,
+  EXPERIMENT_ROTATIONS, STICKY_KEYS,
   ROTATION_CATALOG, STICKY_KEY_CATALOG,
 } from '@routerly/shared';
 import type {
-  ExperimentConfig, ExperimentMetrics, ExperimentRotation, ExperimentStatus,
-  ExperimentStickyKey, ExperimentVariant, ProjectConfig, ProjectToken,
+  ExperimentConfig, ExperimentMetrics, ExperimentRotation,
+  ExperimentStickyKey, ProjectConfig, ProjectToken,
 } from '@routerly/shared';
 
 interface VariantBody {
@@ -145,16 +145,6 @@ async function fetchExperiment(id: string): Promise<ExperimentConfig> {
 const fmtCost = (n: number) => `$${n < 0.01 && n > 0 ? n.toFixed(5) : n.toFixed(2)}`;
 const fmtMs = (n?: number) => (n === undefined ? '-' : `${Math.round(n)} ms`);
 
-function statusColor(status: ExperimentStatus): string {
-  if (status === 'running') return chalk.green(status);
-  if (status === 'closed') return chalk.gray(status);
-  return chalk.yellow(status);
-}
-
-function variantLabel(variant: ExperimentVariant): string {
-  return variant.name ?? variant.id;
-}
-
 function printTokens(tokens: ProjectToken[]): void {
   const table = new Table({ head: ['ID', 'Token', 'Created', 'Last used'].map(h => chalk.cyan(h)) });
   for (const t of tokens) {
@@ -174,19 +164,15 @@ export function makeExperimentsCommand(): Command {
   // ── experiments list ─────────────────────────────────────────────────────────
   cmd.command('list')
     .description('List experiments')
-    .option('--status <status>', `Filter by status: ${EXPERIMENT_STATUSES.join(', ')}`)
     .option('--json', 'Output raw JSON')
     .addHelpText('after', `
 Examples:
   routerly experiments list
-  routerly experiments list --status running
   routerly experiments list --json
 `)
-    .action(async (opts: { status?: string; json?: boolean }) => {
+    .action(async (opts: { json?: boolean }) => {
       try {
-        const status = opts.status ? parseEnum(opts.status, EXPERIMENT_STATUSES, '--status') : undefined;
-        const all = await api<ExperimentConfig[]>('GET', '/api/experiments');
-        const experiments = status ? all.filter(e => e.status === status) : all;
+        const experiments = await api<ExperimentConfig[]>('GET', '/api/experiments');
         if (opts.json) {
           console.log(JSON.stringify(experiments, null, 2));
           return;
@@ -195,9 +181,9 @@ Examples:
           console.log(chalk.yellow('No experiments found.'));
           return;
         }
-        const table = new Table({ head: ['ID', 'Name', 'Status', 'Rotation', 'Variants', 'Created'].map(h => chalk.cyan(h)) });
+        const table = new Table({ head: ['ID', 'Name', 'Rotation', 'Variants', 'Created'].map(h => chalk.cyan(h)) });
         for (const e of experiments) {
-          table.push([e.id, e.name, statusColor(e.status), ROTATION_CATALOG[e.rotation].label, String(e.variants.length), new Date(e.createdAt).toLocaleDateString()]);
+          table.push([e.id, e.name, ROTATION_CATALOG[e.rotation].label, String(e.variants.length), new Date(e.createdAt).toLocaleDateString()]);
         }
         console.log(table.toString());
       } catch (err) {
@@ -226,11 +212,8 @@ Examples:
         console.log(chalk.gray('id:          ') + e.id);
         console.log(chalk.gray('name:        ') + e.name);
         if (e.description) console.log(chalk.gray('description: ') + e.description);
-        console.log(chalk.gray('status:      ') + statusColor(e.status));
         console.log(chalk.gray('rotation:    ') + `${ROTATION_CATALOG[e.rotation].label}${e.rotation === 'sticky' ? `, on ${STICKY_KEY_CATALOG[e.stickyKey ?? 'auto'].label.toLowerCase()}` : ''}`);
         console.log(chalk.gray('created:     ') + new Date(e.createdAt).toLocaleString());
-        if (e.startedAt) console.log(chalk.gray('started:     ') + new Date(e.startedAt).toLocaleString());
-        if (e.closedAt) console.log(chalk.gray('closed:      ') + new Date(e.closedAt).toLocaleString());
         if (e.judge?.enabled) {
           console.log(chalk.gray('judge:       ') + `${e.judge.modelId}, ${Math.round(e.judge.sampleRate * 100)}% of calls`);
           for (const c of e.judge.criteria) console.log(chalk.gray('             - ') + c);
@@ -242,10 +225,9 @@ Examples:
         } else {
           const table = new Table({ head: ['ID', 'Label', 'Project', 'Weight'].map(h => chalk.cyan(h)) });
           for (const v of e.variants) {
-            const winner = e.winnerVariantId === v.id ? chalk.green(' (winner)') : '';
             const project = projects.find(p => p.id === v.projectId);
             table.push([
-              v.id + winner,
+              v.id,
               v.name ?? chalk.gray(project?.name ?? '-'),
               project?.name ?? chalk.red(`${v.projectId} (deleted)`),
               v.weight !== undefined ? String(v.weight) : chalk.gray('1'),
@@ -264,7 +246,7 @@ Examples:
 
   // ── experiments create ───────────────────────────────────────────────────────
   cmd.command('create')
-    .description('Create an experiment in draft, with its first token')
+    .description('Create an experiment with its first token. It routes traffic from the moment it exists')
     .requiredOption('--name <name>', 'Name of the experiment')
     .option('--description <text>', 'What this test is trying to settle')
     .option('--rotation <rotation>', `How a variant is picked: ${EXPERIMENT_ROTATIONS.join(', ')}`)
@@ -296,10 +278,9 @@ Examples:
           console.log(JSON.stringify(created, null, 2));
           return;
         }
-        console.log(chalk.green(`✓ Experiment "${created.name}" created in draft -> ${created.id}`));
+        console.log(chalk.green(`✓ Experiment "${created.name}" created -> ${created.id}`));
         console.log(chalk.bold('\nToken (shown once, point your client at it instead of a project token):'));
         console.log(created.token);
-        console.log(chalk.gray(`\nStart it with: routerly experiments start ${created.id}`));
       } catch (err) {
         handleError(err);
       }
@@ -307,7 +288,7 @@ Examples:
 
   // ── experiments update ───────────────────────────────────────────────────────
   cmd.command('update <id>')
-    .description('Change an experiment. Once it is running only name, description and --min-samples still change')
+    .description('Change an experiment. Every field stays editable for its whole life')
     .option('--name <name>', 'New name')
     .option('--description <text>', 'New description')
     .option('--rotation <rotation>', `How a variant is picked: ${EXPERIMENT_ROTATIONS.join(', ')}`)
@@ -342,83 +323,13 @@ Examples:
         }
         console.log(chalk.green(`✓ Experiment "${updated.name}" updated`));
       } catch (err) {
-        if (err instanceof ApiError && err.message === 'experiment_frozen') {
-          fail('This experiment is no longer a draft: only --name, --description and --min-samples can still change.');
-        }
-        handleError(err);
-      }
-    });
-
-  // ── experiments start ────────────────────────────────────────────────────────
-  cmd.command('start <id>')
-    .description('Start routing traffic across the variants')
-    .option('--json', 'Output raw JSON')
-    .addHelpText('after', `
-Examples:
-  routerly experiments start 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31
-`)
-    .action(async (id: string, opts: { json?: boolean }) => {
-      try {
-        const started = await api<ExperimentConfig>('POST', `/api/experiments/${encodeURIComponent(id)}/start`);
-        if (opts.json) {
-          console.log(JSON.stringify(started, null, 2));
-          return;
-        }
-        console.log(chalk.green(`✓ Experiment "${started.name}" is running`));
-      } catch (err) {
-        if (err instanceof ApiError && err.message === 'too_few_variants') {
-          fail('An experiment needs at least two variants to compare. Add them with: routerly experiments update <id> --variant <project> --variant <project>');
-        }
-        handleError(err);
-      }
-    });
-
-  // ── experiments close ────────────────────────────────────────────────────────
-  cmd.command('close <id>')
-    .description('Stop the rotation and optionally declare the winning variant')
-    .option('--winner <variant>', 'Variant to record as the winner, by id or label')
-    .option('--json', 'Output raw JSON')
-    .addHelpText('after', `
-Closing stops the rotation: the experiment's tokens stop working, so move clients
-to the winning project's own token first.
-
-Examples:
-  routerly experiments close 8f2c1d64
-  routerly experiments close 8f2c1d64 --winner Premium
-  routerly experiments close 8f2c1d64 --winner 4d3b2a10-8c7e-4f21-9b0d-1e2f3a4b5c6d
-`)
-    .action(async (id: string, opts: { winner?: string; json?: boolean }) => {
-      try {
-        let winnerVariantId = opts.winner;
-        if (winnerVariantId) {
-          // `show` lists variants by label, so accept the label here too.
-          const current = await fetchExperiment(id);
-          const match = current.variants.find(v => v.id === winnerVariantId)
-            ?? current.variants.find(v => v.name?.toLowerCase() === winnerVariantId!.toLowerCase());
-          if (!match) {
-            fail(`No variant "${opts.winner}" in this experiment. Run \`routerly experiments show ${id}\` for the variants.`);
-          }
-          winnerVariantId = match.id;
-        }
-        const closed = await api<ExperimentConfig>('POST', `/api/experiments/${encodeURIComponent(id)}/close`,
-          winnerVariantId ? { winnerVariantId } : {});
-        if (opts.json) {
-          console.log(JSON.stringify(closed, null, 2));
-          return;
-        }
-        const winner = closed.variants.find(v => v.id === closed.winnerVariantId);
-        console.log(chalk.green(`✓ Experiment "${closed.name}" closed${winner ? `, winner: ${variantLabel(winner)}` : ''}`));
-      } catch (err) {
-        if (err instanceof ApiError && err.message === 'variant_not_found') {
-          fail('That variant does not belong to this experiment. Run `routerly experiments show <id>` for the variant ids.');
-        }
         handleError(err);
       }
     });
 
   // ── experiments delete ───────────────────────────────────────────────────────
   cmd.command('delete <id>')
-    .description('Delete an experiment. A running one must be closed first')
+    .description('Delete an experiment. Its tokens stop working immediately')
     .addHelpText('after', `
 Examples:
   routerly experiments delete 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31
@@ -428,9 +339,6 @@ Examples:
         await api<void>('DELETE', `/api/experiments/${encodeURIComponent(id)}`);
         console.log(chalk.green(`✓ Experiment "${id}" deleted`));
       } catch (err) {
-        if (err instanceof ApiError && err.message === 'experiment_running') {
-          fail(`Close it first: routerly experiments close ${id}`);
-        }
         handleError(err);
       }
     });

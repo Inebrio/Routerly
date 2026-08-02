@@ -833,7 +833,7 @@ An empty array means the project has sent no traffic since the last restart.
 A/B tests that route each call to one of several projects. A variant is an
 existing project taken whole, so the whole of what a project expresses (its
 models, routing profile, optimizer pipeline, guardrails) becomes comparable.
-See [Concepts: Experiments](../concepts/experiments.md) for the lifecycle,
+See [Concepts: Experiments](../concepts/experiments.md) for how a test lives,
 the rotations and how the numbers are computed.
 
 Experiments are a **module**. With it disabled every route below answers
@@ -861,7 +861,6 @@ GET /api/experiments
     "id": "8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31",
     "name": "Cheap vs premium",
     "description": "Is the cheap model good enough for support replies?",
-    "status": "running",
     "rotation": "sticky",
     "stickyKey": "auto",
     "variants": [
@@ -877,15 +876,13 @@ GET /api/experiments
       }
     ],
     "judge": { "enabled": true, "modelId": "gpt-4o", "criteria": ["Answers the question asked"], "sampleRate": 0.2 },
-    "createdAt": "2026-08-01T10:12:03.000Z",
-    "startedAt": "2026-08-01T10:19:41.000Z"
+    "createdAt": "2026-08-01T10:12:03.000Z"
   }
 ]
 ```
 
 | Field | Description |
 |-------|-------------|
-| `status` | `draft`, `running` or `closed` |
 | `rotation` | `sticky` (default), `weighted` or `round-robin` |
 | `stickyKey` | `auto` (default), `end-user`, `conversation` or `client`. Read only by `sticky` |
 | `variants[].projectId` | The project this arm routes to |
@@ -895,7 +892,6 @@ GET /api/experiments
 | `judge.sampleRate` | Fraction of calls scored, `0`-`1` (the dashboard field and the CLI flag take a percentage) |
 | `judgeScores` | Verdict tally per variant id: `{ count, totalScore, lastAt }`. Absent until the first verdict |
 | `minSamplesPerVariant` | Overrides the default of `30` |
-| `winnerVariantId` | Set at close, when the operator declared one |
 
 **Errors**: `403` insufficient permissions · `403` `module_disabled`
 
@@ -933,7 +929,6 @@ measures the whole history. An explicit window, not the period vocabulary
 ```json
 {
   "experimentId": "8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31",
-  "status": "running",
   "minSamplesPerVariant": 30,
   "totalCalls": 214,
   "ready": false,
@@ -1004,8 +999,8 @@ POST /api/experiments
 `id` is generated when omitted) · `judge` · `minSamplesPerVariant` (integer
 `>= 1`).
 
-The experiment is created in `draft` with its first token. Variants can be
-left empty here and added by `PATCH` before starting.
+The experiment is created with its first token and routes traffic straight
+away. Variants can be left empty here and added by `PATCH` later.
 
 **Response `201`**: the experiment, plus a top-level `token` holding the raw
 value. It is returned here and nowhere else.
@@ -1025,61 +1020,15 @@ PATCH /api/experiments/:id
 Same fields as create, all optional, at least one required. `variants` and
 `judge.criteria` replace the whole list rather than merging into it.
 
-Once the experiment leaves `draft` only `name`, `description` and
-`minSamplesPerVariant` are accepted. Changing who the arms route to, or how
-traffic splits between them, halfway through a comparison would make the two
-halves incomparable.
+Every field stays editable for the whole life of the experiment, including
+one already serving traffic. Redesigning a test that already has traffic mixes
+two different measurements under one set of numbers, so narrow the metrics
+window to the period after the change.
 
 **Response `200`**: the updated experiment.
 
 **Errors**: `400` invalid body · `404` not found · `404` `project_not_found` ·
-`409` `experiment_frozen` (the message names the refused fields) · `403`
-insufficient permissions · `403` `module_disabled`
-
-### Start Experiment
-
-```
-POST /api/experiments/:id/start
-```
-
-**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:manage`)
-
-Moves a draft to `running` and stamps `startedAt`. From here the tokens serve
-traffic and the design is frozen. No body.
-
-**Response `200`**: the running experiment.
-
-**Errors**: `400` `too_few_variants` (fewer than two) · `400` `no_token` ·
-`404` not found · `409` `experiment_not_draft` · `403` insufficient
-permissions · `403` `module_disabled`
-
-### Close Experiment
-
-```
-POST /api/experiments/:id/close
-```
-
-**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:manage`)
-
-```json
-{ "winnerVariantId": "6a1c9e07-5b3d-42f8-8e10-7c4d9f2b0a35" }
-```
-
-Stops the rotation and stamps `closedAt`. The body is optional; the winner is
-recorded for later reference and nothing else follows from it. There is no
-auto-stop rule and no statistical trigger: Routerly reports the numbers,
-declaring a winner is the operator's call.
-
-The experiment's tokens stop serving traffic immediately, answering
-`403 experiment_not_running`, so move clients to the winning project's own
-token first.
-
-**Response `200`**: the closed experiment.
-
-**Errors**: `400` invalid body · `404` not found · `404` `variant_not_found`
-(the id is not one of this experiment's variants) · `409`
-`experiment_not_running` · `403` insufficient permissions · `403`
-`module_disabled`
+`403` insufficient permissions · `403` `module_disabled`
 
 ### Create Experiment Token
 
@@ -1135,12 +1084,11 @@ DELETE /api/experiments/:id
 
 **Response `204`**: no content.
 
-A running experiment cannot be deleted: doing so would turn every client
-still calling its token into a `403` with no warning. Close it first, so
-stopping traffic is always a deliberate step.
+The experiment's tokens go with it, so every client still calling one starts
+getting `401`. Move those clients to a project token first.
 
-**Errors**: `404` not found · `409` `experiment_running` · `403` insufficient
-permissions · `403` `module_disabled`
+**Errors**: `404` not found · `403` insufficient permissions · `403`
+`module_disabled`
 
 ---
 

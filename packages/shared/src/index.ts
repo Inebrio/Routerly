@@ -182,7 +182,6 @@ export type {
 // Experiments: A/B tests that pick a whole project per request (T70)
 export {
   EXPERIMENT_ROTATIONS,
-  EXPERIMENT_STATUSES,
   STICKY_KEYS,
   ROTATION_CATALOG,
   STICKY_KEY_CATALOG,
@@ -195,7 +194,6 @@ export type {
   ExperimentConfig,
   ExperimentRotation,
   ExperimentRotationMeta,
-  ExperimentStatus,
   ExperimentStickyKey,
   ExperimentVariant,
   ExperimentJudge,

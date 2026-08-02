@@ -38,7 +38,7 @@ Routerly has a role-based access control (RBAC) system for the dashboard. Users 
 | `optimizers:read` | View the [optimizer](../concepts/optimizers.md) catalog, samples, and previews |
 | `optimizers:manage` | Change a project's optimizer pipeline |
 | `experiments:read` | View [experiments](./experiments.md) and their metrics |
-| `experiments:manage` | Create, edit, start, close, and delete experiments, manage their tokens |
+| `experiments:manage` | Create, edit, and delete experiments, manage their tokens |
 
 Permissions gated by a module (`experiments:*`, for instance) still answer
 `403` while that module is disabled, whatever the role says.

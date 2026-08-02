@@ -24,7 +24,6 @@ function experiment(over: { [K in keyof ExperimentConfig]?: ExperimentConfig[K] 
   return {
     id: 'exp-1',
     name: 'Prompt A vs B',
-    status: 'running',
     rotation: 'round-robin',
     variants: [{ id: 'v-a', projectId: 'proj-a' }, { id: 'v-b', projectId: 'proj-b' }],
     tokens: [],
