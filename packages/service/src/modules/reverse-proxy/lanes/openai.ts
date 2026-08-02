@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { FastifyRequest, FastifyReply } from 'fastify'
-import type { ChatCompletionRequest } from '@routerly/shared'
+import type { ChatCompletionRequest, ChatCompletionResponse, StreamChunk } from '@routerly/shared'
 import type { Processor } from '../../../core/index.js'
 import type { ProxyContext } from '../context.js'
 import { getProxyPipeline } from '../run.js'
@@ -10,7 +10,9 @@ import type { TraceEntry } from '../../logging/traceStore.js'
 import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
 import { emitEvent } from '../../notifications/emitter.js'
-import { forwardOpenAIOAuthSSE } from './openaiOAuthForward.js'
+import { forwardOpenAIOAuthSSE, streamOpenAIOAuthChunks, chunksToChatResponse, primeStream } from './openaiOAuthForward.js'
+import { responsesToChatRequest, chatToResponsesObject, openAIChunksToResponsesSSE } from '../../provider/responses-compat.js'
+import type { ResponsesRequest } from '../../provider/responses-compat.js'
 
 /** Build the initial ProxyContext for an OpenAI request. protocol.decode is identity: request === original. */
 export function buildOpenAIContext(req: FastifyRequest, reply: FastifyReply): ProxyContext {
@@ -33,6 +35,22 @@ export function buildOpenAIContext(req: FastifyRequest, reply: FastifyReply): Pr
     stream: body.stream === true,
     passthrough: false,
   }
+}
+
+/**
+ * Build the ProxyContext for a `/v1/responses` request. Same lane, same routing,
+ * same processors: the Responses body is decoded to the canonical chat view here,
+ * and `responsesApi` tells egress to encode the answer back.
+ */
+export function buildResponsesContext(req: FastifyRequest, reply: FastifyReply): ProxyContext {
+  const body = req.body as ResponsesRequest
+  const chat = responsesToChatRequest(body)
+  const ctx = buildOpenAIContext(req, reply)
+  ctx.original = body
+  ctx.request = chat
+  ctx.stream = chat.stream === true
+  ctx.responsesApi = true
+  return ctx
 }
 
 // ─── upstream.prepare: merge guardrail request-injection (steering text) into the outgoing
@@ -96,12 +114,36 @@ export const openaiUpstream: Processor<ProxyContext> = {
       ...(ctx.token?.tags ? { tags: ctx.token.tags } : {}),
     }
 
-    // ── openai-oauth: streaming passthrough (verbatim), non-stream is unsupported. ──
+    // ── openai-oauth: Codex Responses backend, mapped back to OpenAI chunks. ──
     if (model.provider === 'openai-oauth') {
       if (!ctx.stream) {
-        ctx.result = {
-          kind: 'block', status: 422,
-          body: { error: { message: 'openai-oauth requires streaming. Use /v1/responses with stream: true.', type: 'invalid_request_error' } },
+        // The backend only streams; collapse it so a non-streaming client still works.
+        try {
+          const chunks = streamOpenAIOAuthChunks(body as Record<string, unknown>, model, log, {
+            traceId: ctx.traceId,
+            projectId: project.id,
+            ...(project.pii ? { pii: project.pii } : {}),
+          })
+          ctx.result = { kind: 'json', body: await chunksToChatResponse(chunks, model.id) }
+        } catch (err) {
+          log.warn({ err, modelId: model.id }, 'openai-oauth call failed, trying next candidate')
+          ctx.attemptError = err
+        }
+        return
+      }
+      if (ctx.responsesApi) {
+        // Responses clients need the typed event stream, which egress builds from the
+        // chunks: hand them over instead of writing OpenAI SSE bytes here.
+        try {
+          const chunks = streamOpenAIOAuthChunks(body as Record<string, unknown>, model, log, {
+            traceId: ctx.traceId,
+            projectId: project.id,
+            ...(project.pii ? { pii: project.pii } : {}),
+          })
+          ctx.result = { kind: 'stream', body: await primeStream(chunks) }
+        } catch (err) {
+          log.warn({ err, modelId: model.id }, 'openai-oauth call failed, trying next candidate')
+          ctx.attemptError = err
         }
         return
       }
@@ -242,7 +284,9 @@ export const openaiEgress: Processor<ProxyContext> = {
     if (result.kind === 'json') {
       if (traceOptIn) reply.header('x-routerly-trace-id', ctx.traceId)
       if (result.status) reply.code(result.status)
-      reply.send(result.body)
+      reply.send(ctx.responsesApi
+        ? chatToResponsesObject(result.body as ChatCompletionResponse, ctx.request.model ?? '', ctx.traceId, ctx.original as ResponsesRequest)
+        : result.body)
       return
     }
 
@@ -270,6 +314,22 @@ export const openaiEgress: Processor<ProxyContext> = {
     reply.raw.setHeader('Connection', 'keep-alive')
     if (traceOptIn) reply.raw.setHeader('x-routerly-trace-id', ctx.traceId)
     reply.raw.flushHeaders()
+
+    if (ctx.responsesApi) {
+      // Typed event stream: every frame is `event:`-named and the sequence ends on
+      // response.completed, with no `[DONE]` sentinel. No trace frames either — an
+      // unnamed frame here is not part of the protocol.
+      try {
+        const events = openAIChunksToResponsesSSE(
+          result.body as AsyncIterable<StreamChunk>, ctx.traceId, ctx.request.model ?? '', ctx.original as ResponsesRequest,
+        )
+        for await (const line of events) reply.raw.write(line)
+      } catch (err: unknown) {
+        ctx.log.error({ err }, 'Streaming error mid-stream')
+      }
+      reply.raw.end()
+      return
+    }
 
     // Trace frames: main writes them live during routing (all before the first data
     // chunk, since routing completes first). Plan 5 buffers routing trace into

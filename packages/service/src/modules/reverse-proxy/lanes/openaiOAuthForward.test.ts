@@ -221,7 +221,7 @@ describe('forwardOpenAIOAuthSSE', () => {
     expect(init.method).toBe('POST')
 
     const sentBody = JSON.parse(init.body as string)
-    expect(sentBody.input).toEqual([{ role: 'user', content: 'Hello' }])
+    expect(sentBody.input).toEqual([{ type: 'message', role: 'user', content: 'Hello' }])
     expect(sentBody.stream).toBe(true)
     expect(sentBody.store).toBe(false)
     expect(sentBody.instructions).toBe('')
@@ -248,7 +248,7 @@ describe('forwardOpenAIOAuthSSE', () => {
     const upstreamCall = mockFetch.mock.calls.find((c) => (c[0] as string).includes('chatgpt.com'))
     const sentBody = JSON.parse((upstreamCall as [string, RequestInit])[1].body as string)
     expect(sentBody.instructions).toBe('You are helpful.')
-    expect(sentBody.input).toEqual([{ role: 'user', content: 'Hi' }])
+    expect(sentBody.input).toEqual([{ type: 'message', role: 'user', content: 'Hi' }])
   })
 
   it('injects required auth headers in the upstream request', async () => {
@@ -275,11 +275,11 @@ describe('forwardOpenAIOAuthSSE', () => {
     await forwardOpenAIOAuthSSE(raw as any, {}, oauthModel, log, 'trace-4', 'proj-1')
 
     expect(raw.chunks.at(-1)).toBe('data: [DONE]\n\n')
-    expect(log.warn).toHaveBeenCalled()
+    expect(log.error).toHaveBeenCalled()
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ projectId: 'proj-1', outcome: 'error' }))
   })
 
-  it('handles upstream.text() rejection gracefully (line 187 .catch callback)', async () => {
+  it('handles upstream.text() rejection gracefully (error body unreadable)', async () => {
     // upstream is !ok, and text() throws → .catch(() => '') fires, errBody becomes ''
     vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
     mockFetch.mockResolvedValue({ ok: false, status: 503, text: async () => { throw new Error('body read error') }, body: null })
@@ -289,7 +289,7 @@ describe('forwardOpenAIOAuthSSE', () => {
     await forwardOpenAIOAuthSSE(raw as any, {}, oauthModel, log, 'trace-4b', 'proj-1')
 
     expect(raw.chunks.at(-1)).toBe('data: [DONE]\n\n')
-    expect(log.warn).toHaveBeenCalled()
+    expect(log.error).toHaveBeenCalled()
   })
 
   it('writes [DONE] and logs on fetch throw', async () => {
@@ -353,27 +353,43 @@ describe('forwardOpenAIOAuthSSE', () => {
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ projectId: 'proj-1', outcome: 'error' }))
   })
 
-  it('includes name, tool_calls and tool_call_id when present in messages (sanitizeMessage lines 95-97)', async () => {
+  it('maps a tool round trip onto Responses items (chat shapes are refused upstream)', async () => {
     vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
     mockFetch.mockResolvedValue({ ok: true, status: 200, body: makeReadableStream('') })
 
     const raw = makeRaw()
     const body = {
       messages: [
-        { role: 'user', content: 'hi', name: 'alice', tool_calls: [{ id: 'tc1' }], tool_call_id: 'tc1' },
+        { role: 'user', content: [{ type: 'text', text: 'read it' }] },
+        { role: 'assistant', content: null, tool_calls: [{ id: 'call_1', type: 'function', function: { name: 'Read', arguments: '{"path":"./data.txt"}' } }] },
+        { role: 'tool', tool_call_id: 'call_1', content: '42' },
       ],
     }
     await forwardOpenAIOAuthSSE(raw as any, body, oauthModel, makeLog(), 'trace-8', 'proj-1')
 
     const upstreamCall = mockFetch.mock.calls.find((c) => (c[0] as string).includes('chatgpt.com'))
     const sentBody = JSON.parse((upstreamCall as [string, RequestInit])[1].body as string)
-    const msg = sentBody.input[0]
-    expect(msg.name).toBe('alice')
-    expect(msg.tool_calls).toEqual([{ id: 'tc1' }])
-    expect(msg.tool_call_id).toBe('tc1')
+    expect(sentBody.input).toEqual([
+      { type: 'message', role: 'user', content: [{ type: 'input_text', text: 'read it' }] },
+      { type: 'function_call', call_id: 'call_1', name: 'Read', arguments: '{"path":"./data.txt"}' },
+      { type: 'function_call_output', call_id: 'call_1', output: '42' },
+    ])
   })
 
-  it('writes [DONE] when upstream body is null (line 194-197)', async () => {
+  it('renders assistant text parts as output_text (input_text is refused for that role)', async () => {
+    vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
+    mockFetch.mockResolvedValue({ ok: true, status: 200, body: makeReadableStream('') })
+
+    const raw = makeRaw()
+    const body = { messages: [{ role: 'assistant', content: [{ type: 'text', text: 'hello' }] }] }
+    await forwardOpenAIOAuthSSE(raw as any, body, oauthModel, makeLog(), 'trace-8b', 'proj-1')
+
+    const upstreamCall = mockFetch.mock.calls.find((c) => (c[0] as string).includes('chatgpt.com'))
+    const sentBody = JSON.parse((upstreamCall as [string, RequestInit])[1].body as string)
+    expect(sentBody.input[0].content).toEqual([{ type: 'output_text', text: 'hello' }])
+  })
+
+  it('writes [DONE] and reports an error when upstream returns no body', async () => {
     vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
     // body: null simulates response with no body
     mockFetch.mockResolvedValue({ ok: true, status: 200, body: null })
@@ -382,7 +398,7 @@ describe('forwardOpenAIOAuthSSE', () => {
     await forwardOpenAIOAuthSSE(raw as any, {}, oauthModel, makeLog(), 'trace-9', 'proj-1')
 
     expect(raw.chunks).toContain('data: [DONE]\n\n')
-    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'success' }))
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'error' }))
   })
 
   it('flushes scrubber remainder when it yields content (lines 252-258)', async () => {
@@ -488,18 +504,95 @@ describe('forwardOpenAIOAuthSSE', () => {
     expect(joined).toContain('data: [DONE]')
   })
 
-  it('includes tools in payload when body.tools is set (line 116 if branch=0)', async () => {
-    // body.tools is truthy → payload.tools = body.tools (branch=0 = condition true)
+  it('flattens chat tools into Responses tools (nested `function` is rejected upstream)', async () => {
     vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
     mockFetch.mockResolvedValue({ ok: true, status: 200, body: makeReadableStream('') })
 
     const raw = makeRaw()
-    const tools = [{ type: 'function', function: { name: 'get_weather', description: 'Get weather' } }]
-    await forwardOpenAIOAuthSSE(raw as any, { messages: [], tools }, oauthModel, makeLog(), 'trace-tools', 'proj-1')
+    const tools = [{ type: 'function', function: { name: 'get_weather', description: 'Get weather', parameters: { type: 'object', properties: { city: { type: 'string' } } } } }]
+    const toolChoice = { type: 'function', function: { name: 'get_weather' } }
+    await forwardOpenAIOAuthSSE(raw as any, { messages: [], tools, tool_choice: toolChoice }, oauthModel, makeLog(), 'trace-tools', 'proj-1')
 
     const upstreamCall = mockFetch.mock.calls.find((c) => (c[0] as string).includes('chatgpt.com'))
     const sentBody = JSON.parse((upstreamCall as [string, RequestInit])[1].body as string)
-    expect(sentBody.tools).toEqual(tools)
+    expect(sentBody.tools).toEqual([{
+      type: 'function',
+      name: 'get_weather',
+      description: 'Get weather',
+      parameters: { type: 'object', properties: { city: { type: 'string' } } },
+      // client schemas are not strict-mode compliant
+      strict: false,
+    }])
+    expect(sentBody.tool_choice).toEqual({ type: 'function', name: 'get_weather' })
+  })
+
+  it('streams function calls back as OpenAI tool_call deltas', async () => {
+    const upstreamSSE = [
+      'event: response.output_item.added',
+      'data: {"item":{"id":"fc_1","type":"function_call","call_id":"call_abc","name":"Read","arguments":""},"output_index":0}',
+      '',
+      'event: response.function_call_arguments.delta',
+      'data: {"delta":"{\\"path\\":","item_id":"fc_1"}',
+      '',
+      'event: response.function_call_arguments.delta',
+      'data: {"delta":"\\"./data.txt\\"}","item_id":"fc_1"}',
+      '',
+      'event: response.completed',
+      'data: {"response":{"usage":{"input_tokens":11,"output_tokens":7}}}',
+      '',
+    ].join('\n')
+    vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
+    mockFetch.mockResolvedValue({ ok: true, status: 200, body: makeReadableStream(upstreamSSE) })
+
+    const raw = makeRaw()
+    await forwardOpenAIOAuthSSE(raw as any, { messages: [] }, oauthModel, makeLog(), 'trace-fc', 'proj-1')
+
+    const chunks = raw.chunks.filter((c) => c.startsWith('data: {')).map((c) => JSON.parse(c.slice(6)))
+    expect(chunks[0].choices[0].delta.tool_calls).toEqual([
+      { index: 0, id: 'call_abc', type: 'function', function: { name: 'Read', arguments: '' } },
+    ])
+    const args = chunks.flatMap((c: any) => c.choices[0].delta.tool_calls ?? []).map((t: any) => t.function?.arguments ?? '').join('')
+    expect(args).toBe('{"path":"./data.txt"}')
+    const last = chunks.at(-1)
+    expect(last.choices[0].finish_reason).toBe('tool_calls')
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ inputTokens: 11, outputTokens: 7, outcome: 'success' }))
+  })
+
+  it('falls back to the arguments on output_item.done when no delta carried them', async () => {
+    const upstreamSSE = [
+      'event: response.output_item.added',
+      'data: {"item":{"id":"fc_2","type":"function_call","call_id":"call_z","name":"Bash","arguments":""},"output_index":0}',
+      '',
+      'event: response.output_item.done',
+      'data: {"item":{"id":"fc_2","type":"function_call","call_id":"call_z","name":"Bash","arguments":"{\\"command\\":\\"ls\\"}"}}',
+      '',
+    ].join('\n')
+    vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
+    mockFetch.mockResolvedValue({ ok: true, status: 200, body: makeReadableStream(upstreamSSE) })
+
+    const raw = makeRaw()
+    await forwardOpenAIOAuthSSE(raw as any, { messages: [] }, oauthModel, makeLog(), 'trace-fcdone', 'proj-1')
+
+    const joined = raw.chunks.join('')
+    expect(joined).toContain('{\\"command\\":\\"ls\\"}')
+  })
+
+  it('surfaces a mid-stream response.failed as an error', async () => {
+    const upstreamSSE = [
+      'event: response.failed',
+      'data: {"response":{"error":{"message":"quota exceeded"}}}',
+      '',
+    ].join('\n')
+    vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
+    mockFetch.mockResolvedValue({ ok: true, status: 200, body: makeReadableStream(upstreamSSE) })
+
+    const raw = makeRaw()
+    const log = makeLog()
+    await forwardOpenAIOAuthSSE(raw as any, { messages: [] }, oauthModel, log, 'trace-failed', 'proj-1')
+
+    expect(log.error).toHaveBeenCalled()
+    expect(raw.chunks.at(-1)).toBe('data: [DONE]\n\n')
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'error' }))
   })
 
   it('uses DEFAULT_AUTH_PATH when model.apiKey is absent (line 154 || branch=1)', async () => {

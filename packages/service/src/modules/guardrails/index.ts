@@ -55,7 +55,7 @@ const request: Processor<ProxyContext> = {
           // buildContentFilterBlock is JSON-only; the streaming request-block has its
           // own wire form (hijack + SSE content_filter chunk + [DONE]) and sets its
           // own trace header on the raw stream (routes/openai.ts L178-197 verbatim).
-          writeOpenAIStreamingBlock(ctx)
+          await writeOpenAIStreamingBlock(ctx)
         } else {
           if (ctx.traceEnabled) ctx.reply.header('x-routerly-trace-id', ctx.traceId)
           // Plan 4 owns the wire-faithful content_filter payload shape; this reuses it unchanged.

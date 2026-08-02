@@ -46,7 +46,9 @@ The `model` field is the model ID registered in your project. Routerly ignores i
 
 ### `POST /v1/responses`
 
-OpenAI Responses API format (newer API surface). Uses `input` instead of `messages` and always streams. Routerly normalises it to the `chat/completions` shape internally before routing.
+OpenAI Responses API format (newer API surface). Uses `input` instead of `messages`, and streams only when `"stream": true`. Routerly normalises it to the `chat/completions` shape internally before routing, then answers in the Responses wire format — a `response` object, or the typed `event:`-named SSE sequence that ends on `response.completed` with no `[DONE]` sentinel.
+
+`previous_response_id` is rejected with HTTP 400: Routerly keeps no conversation state, so the full `input` list must be sent each turn. See the [LLM Proxy API](../api/llm-proxy.md#responses-api) for the supported item types and event sequence.
 
 ```http
 POST /v1/responses
