@@ -65,6 +65,45 @@ describe('GeminiAdapter.chatCompletion', () => {
   })
 })
 
+describe('GeminiAdapter thought signatures', () => {
+  const toolHistory = [
+    { role: 'user' as const, content: 'read it' },
+    {
+      role: 'assistant' as const, content: null,
+      tool_calls: [{ id: 'toolu_01', type: 'function' as const, function: { name: 'Read', arguments: '{}' } }],
+    },
+    { role: 'tool' as const, tool_call_id: 'toolu_01', content: '42' },
+  ]
+
+  it('stamps the placeholder signature on replayed tool calls (Gemini 3 rejects them otherwise)', async () => {
+    mockCreate.mockResolvedValue({ id: '1', choices: [{ message: { content: '42' }, finish_reason: 'stop' }], usage: {} })
+
+    await adapter.chatCompletion({ model: 'auto', messages: toolHistory as any }, makeModel('gemini-3.5-flash'))
+
+    const sent = mockCreate.mock.calls[0]![0].messages
+    expect(sent[1].tool_calls[0].extra_content).toEqual({ google: { thought_signature: 'skip_thought_signature_validator' } })
+    expect(sent[0]).toEqual({ role: 'user', content: 'read it' })
+    expect(sent[2]).toEqual({ role: 'tool', tool_call_id: 'toolu_01', content: '42' })
+  })
+
+  it('keeps a real signature when the tool call already carries one', async () => {
+    mockCreate.mockResolvedValue({ id: '1', choices: [{ message: { content: '42' }, finish_reason: 'stop' }], usage: {} })
+    const signed = [
+      toolHistory[0],
+      {
+        ...toolHistory[1],
+        tool_calls: [{ ...toolHistory[1]!.tool_calls![0], extra_content: { google: { thought_signature: 'real-sig' } } }],
+      },
+      toolHistory[2],
+    ]
+
+    await adapter.chatCompletion({ model: 'auto', messages: signed as any }, makeModel('gemini-3.5-flash'))
+
+    const sent = mockCreate.mock.calls[0]![0].messages
+    expect(sent[1].tool_calls[0].extra_content.google.thought_signature).toBe('real-sig')
+  })
+})
+
 describe('GeminiAdapter.streamCompletion', () => {
   it('yields chunks from the stream', async () => {
     const chunks = [

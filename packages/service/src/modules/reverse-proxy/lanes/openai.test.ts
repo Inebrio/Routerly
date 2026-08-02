@@ -6,15 +6,22 @@ vi.mock('../execute.js', async (importOriginal) => {
   return { ...actual, llmChat: vi.fn(), llmStream: vi.fn() }
 })
 vi.mock('../../notifications/emitter.js', () => ({ emitEvent: vi.fn().mockResolvedValue(undefined) }))
-vi.mock('./openaiOAuthForward.js', () => ({ forwardOpenAIOAuthSSE: vi.fn().mockResolvedValue(undefined) }))
+// Only the network-touching exports are stubbed: primeStream is pure and the lane's
+// fallback behaviour depends on it actually pulling the first chunk.
+vi.mock('./openaiOAuthForward.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./openaiOAuthForward.js')>()),
+  forwardOpenAIOAuthSSE: vi.fn().mockResolvedValue(undefined),
+  streamOpenAIOAuthChunks: vi.fn(() => (async function* () {})()),
+  chunksToChatResponse: vi.fn().mockResolvedValue({ id: 'chatcmpl-1', choices: [{ index: 0, message: { role: 'assistant', content: 'hi' }, finish_reason: 'stop' }] }),
+}))
 
 import {
   openaiTransportProcessors, openaiEgress, openaiInject, openaiUpstream, openaiAttempt,
-  buildOpenAIContext,
+  buildOpenAIContext, buildResponsesContext,
 } from './openai.js'
 import { llmChat, llmStream, BudgetExceededError } from '../execute.js'
 import { emitEvent } from '../../notifications/emitter.js'
-import { forwardOpenAIOAuthSSE } from './openaiOAuthForward.js'
+import { forwardOpenAIOAuthSSE, streamOpenAIOAuthChunks } from './openaiOAuthForward.js'
 import { setProxyPipeline } from '../run.js'
 import { writeConfig } from '../../config/loader.js'
 import { splitModelsIntoInstancesConnections } from '../../../test-support/effective-models.js'
@@ -402,6 +409,118 @@ describe('buildOpenAIContext', () => {
   })
 })
 
+describe('/v1/responses on the openai lane', () => {
+  function makeReq(body: Record<string, unknown>) {
+    return {
+      body,
+      headers: {},
+      log: makeLog(),
+      project: { id: 'p1', name: 'P', tokens: [], members: [], models: [] },
+    } as any
+  }
+
+  it('decodes the Responses body to the chat view and flags the lane', () => {
+    const ctx = buildResponsesContext(makeReq({
+      model: 'gpt-4o',
+      instructions: 'be terse',
+      input: [{ type: 'message', role: 'user', content: [{ type: 'input_text', text: 'hi' }] }],
+      stream: true,
+    }), {} as any)
+    expect(ctx.protocol).toBe('openai')
+    expect(ctx.responsesApi).toBe(true)
+    expect(ctx.stream).toBe(true)
+    expect(ctx.request.messages).toEqual([
+      { role: 'system', content: 'be terse' },
+      { role: 'user', content: 'hi' },
+    ])
+    expect((ctx.original as any).input).toBeDefined() // the raw body stays untouched
+  })
+
+  it('egress encodes a non-streaming answer as a response object', async () => {
+    const sent: any[] = []
+    const reply: any = { send: (b: unknown) => sent.push(b), header: () => {}, code: () => reply }
+    const ctx = {
+      protocol: 'openai', responsesApi: true, reply, traceEnabled: false, traceId: 't1',
+      request: { model: 'gpt-4o', messages: [] },
+      result: {
+        kind: 'json',
+        body: {
+          id: 'chatcmpl-1', object: 'chat.completion', created: 1, model: 'gpt-4o',
+          choices: [{ index: 0, message: { role: 'assistant', content: '42' }, finish_reason: 'stop' }],
+          usage: { prompt_tokens: 3, completion_tokens: 1, total_tokens: 4 },
+        },
+      },
+    } as unknown as ProxyContext
+    await openaiEgress.run(ctx)
+    expect(sent[0].object).toBe('response')
+    expect(sent[0].status).toBe('completed')
+    expect(sent[0].output[0].content[0].text).toBe('42')
+  })
+
+  it('egress writes named Responses events, with no [DONE] and no trace frames', async () => {
+    const written: string[] = []
+    const reply: any = {
+      hijack: () => {},
+      raw: { setHeader: () => {}, flushHeaders: () => {}, write: (s: string) => written.push(s), end: () => {} },
+    }
+    async function* body() {
+      yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'hi' }, finish_reason: 'stop' }] }
+    }
+    const ctx = {
+      protocol: 'openai', responsesApi: true, reply, traceEnabled: false, traceSuppressed: false, traceId: 't1',
+      req: { headers: {} }, request: { model: 'gpt-4o', messages: [] },
+      routeTrace: [{ panel: 'response', message: 'model:success', details: {} }],
+      result: { kind: 'stream', body: body() },
+    } as unknown as ProxyContext
+    await openaiEgress.run(ctx)
+    expect(written.every((w) => w.startsWith('event: '))).toBe(true)
+    expect(written.some((w) => w.includes('"type":"trace"'))).toBe(false)
+    expect(written.some((w) => w.includes('[DONE]'))).toBe(false)
+    expect(written[0]).toContain('event: response.created')
+    expect(written.at(-1)).toContain('event: response.completed')
+  })
+
+  it('egress catches a mid-stream error and still closes the stream', async () => {
+    const written: string[] = []
+    const logError = vi.fn()
+    let ended = false
+    const reply: any = {
+      hijack: () => {},
+      raw: { setHeader: () => {}, flushHeaders: () => {}, write: (s: string) => written.push(s), end: () => { ended = true } },
+    }
+    async function* body(): AsyncGenerator<unknown> {
+      yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'hi' }, finish_reason: null }] }
+      throw new Error('mid-stream boom')
+    }
+    const ctx = {
+      protocol: 'openai', responsesApi: true, reply, traceEnabled: false, traceSuppressed: true, traceId: 't1',
+      req: { headers: {} }, log: { error: logError }, request: { model: 'gpt-4o', messages: [] },
+      result: { kind: 'stream', body: body() },
+    } as unknown as ProxyContext
+    await openaiEgress.run(ctx)
+    expect(logError).toHaveBeenCalledOnce()
+    expect(ended).toBe(true)
+  })
+
+  it('openai-oauth streams through egress instead of writing OpenAI SSE bytes', async () => {
+    const oauthModel: ModelConfig = {
+      id: 'sub', name: 'sub', provider: 'openai-oauth', endpoint: 'https://chatgpt.com/backend-api/codex',
+      cost: { inputPerMillion: 0, outputPerMillion: 0 },
+    }
+    vi.mocked(streamOpenAIOAuthChunks).mockReturnValue((async function* () {
+      yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'sub', choices: [{ index: 0, delta: { content: 'x' }, finish_reason: 'stop' }] } as any
+    })())
+    const ctx = {
+      protocol: 'openai', responsesApi: true, stream: true, traceId: 't1',
+      log: makeLog(), project: { id: 'p1', models: [] }, request: { model: 'sub', messages: [] },
+      attempt: { model: oauthModel, candidate: { model: 'sub', weight: 1 } },
+    } as unknown as ProxyContext
+    await openaiUpstream.run(ctx)
+    expect(ctx.result?.kind).toBe('stream')
+    expect(forwardOpenAIOAuthSSE).not.toHaveBeenCalled()
+  })
+})
+
 describe('openai:upstream', () => {
   const model: ModelConfig = {
     id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'https://api.openai.com/v1',
@@ -427,17 +546,17 @@ describe('openai:upstream', () => {
     expect(mockLlmChat).not.toHaveBeenCalled()
   })
 
-  it('openai-oauth + non-stream returns a 422 block requiring streaming', async () => {
+  it('openai-oauth + non-stream collapses the Codex stream into a chat completion', async () => {
     const ctx = {
-      protocol: 'openai', stream: false,
+      protocol: 'openai', stream: false, traceId: 't-nostream',
       attempt: { model: { ...model, provider: 'openai-oauth' }, candidate },
       request: { model: 'gpt-4o', messages: [] }, log: makeLog(),
       project: { id: 'p1' },
     } as unknown as ProxyContext
     await openaiUpstream.run(ctx)
     expect(ctx.result).toEqual({
-      kind: 'block', status: 422,
-      body: { error: { message: 'openai-oauth requires streaming. Use /v1/responses with stream: true.', type: 'invalid_request_error' } },
+      kind: 'json',
+      body: { id: 'chatcmpl-1', choices: [{ index: 0, message: { role: 'assistant', content: 'hi' }, finish_reason: 'stop' }] },
     })
   })
 

@@ -145,7 +145,7 @@ x-routerly-trace-id: 018f3c2a-4b5d-7e8f-9012-34567890abcd
 | Header | Value | Description |
 |--------|-------|-------------|
 | `x-routerly-trace` | `1` | Opt in to receiving the `x-routerly-trace-id` response header. Used by the Routerly Playground. Standard API clients should not send this header. |
-| `x-routerly-no-trace` | `1` | Suppresses `data: {"type":"trace",...}` SSE events from the streaming response wire. Trace data is still recorded server-side and accessible via `GET /api/traces/:id`. Use with strict OpenAI-compatible SDK clients that validate SSE frame schemas and reject non-standard event types. Applies to all three endpoints (`/v1/chat/completions`, `/v1/responses`, `/v1/messages`). |
+| `x-routerly-no-trace` | `1` | Suppresses `data: {"type":"trace",...}` SSE events from the streaming response wire. Trace data is still recorded server-side and accessible via `GET /api/traces/:id`. Use with strict OpenAI-compatible SDK clients that validate SSE frame schemas and reject non-standard event types. Applies to `/v1/chat/completions` and `/v1/messages`; `/v1/responses` never emits trace frames. |
 | `x-routerly-conversation-id` | string | Session identifier for grouping related requests. Appears in usage records as `sessionId` for analysis and filtering. Useful for tracking multi-turn conversations, thread IDs, or user sessions. |
 
 ### Response (streaming)
@@ -168,13 +168,30 @@ The `trace` event includes the selected model, policy scores, and request cost e
 POST /v1/responses
 ```
 
-OpenAI Responses API compatible endpoint. Supports stateful multi-turn conversations via `previous_response_id`.
+OpenAI Responses API compatible endpoint. Works with the official OpenAI SDK's
+`client.responses.create()` against any provider Routerly can route to, including
+Anthropic and Gemini models: the request is translated to Routerly's canonical
+chat view, routed like any other request, and re-encoded as a `Response` object on
+the way out.
+
+Supported input: a plain string, or an `input` list of `message` (string content or
+`input_text` / `output_text` / `input_image` parts), `function_call` and
+`function_call_output` items. `instructions`, `tools`, `tool_choice`,
+`max_output_tokens` and `text.format` are honoured; the request settings are echoed
+back on the response object.
+
+`previous_response_id` is **not** supported: Routerly stores no conversation state,
+so a request that sends it is rejected with HTTP 400 rather than silently answering
+without the earlier turns. Send the full `input` list instead.
 
 ### Request headers
 
 Same headers as [Chat Completions](#request-headers):
-- `x-routerly-no-trace: 1` — suppresses trace events in streaming responses
 - `x-routerly-conversation-id: <string>` — session identifier for usage tracking
+
+`x-routerly-no-trace` has no effect here: the Responses event stream never carries
+trace frames, since an unnamed SSE frame is not part of the protocol. Trace data is
+still recorded server-side and readable via `GET /api/traces/:id`.
 
 ### Request
 
@@ -188,7 +205,28 @@ Same headers as [Chat Completions](#request-headers):
 
 ### Response
 
-Standard OpenAI `Response` object structure.
+Standard OpenAI `Response` object: `output` holds one `message` item per assistant
+answer and one `function_call` item per tool call.
+
+### Response (streaming)
+
+With `"stream": true` the response is the typed Responses event sequence, each frame
+`event:`-named and numbered with `sequence_number`, ending on `response.completed`
+with **no** `[DONE]` sentinel:
+
+```
+response.created → response.in_progress → response.output_item.added
+→ response.content_part.added → response.output_text.delta*
+→ response.output_text.done → response.content_part.done
+→ response.output_item.done → response.completed
+```
+
+Tool calls stream as `response.output_item.added` (a `function_call` item) →
+`response.function_call_arguments.delta`* → `response.function_call_arguments.done`
+→ `response.output_item.done`.
+
+A guardrail block is reported in the same shape: an empty response that ends
+`incomplete` with `incomplete_details.reason = "content_filter"`.
 
 ---
 
