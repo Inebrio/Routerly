@@ -269,7 +269,7 @@ Click a row to expand inline details (endpoint, protocol, headers, etc. dependin
    - **Auth Token** (optional) — if Routerly's `/metrics` endpoint requires bearer authentication
 
    **OpenTelemetry** (push):
-   - **Endpoint URL** (required) — e.g. `http://localhost:4318/v1/metrics`
+   - **Endpoint URL** (required) — e.g. `http://localhost:4318`
    - **Protocol** (required) — `http` or `grpc`
    - **Headers** (optional) — one per line, format `Key: Value` (e.g. `Authorization: Bearer token`)
 
@@ -293,9 +293,10 @@ Click a row to expand inline details (endpoint, protocol, headers, etc. dependin
    - **Secret** (optional) — if set, Routerly signs each request with HMAC-SHA256 in the `X-Routerly-Signature` header
    - **Headers** (optional) — custom headers to include with each request
 
-5. Check the **Enabled** toggle to activate immediately upon creation
-6. Click **Create Integration**
-7. Use **Test** to verify connectivity before relying on it for production metrics
+5. For **OpenTelemetry** and **Webhook**, optionally turn on [trace export](#exporting-traces)
+6. Check the **Enabled** toggle to activate immediately upon creation
+7. Click **Create Integration**
+8. Use **Test** to verify connectivity before relying on it for production metrics
 
 ### Editing an Integration
 
@@ -342,6 +343,34 @@ Each platform receives metrics in its native format:
 - **Grafana** — Prometheus remote_write format
 - **InfluxDB** — InfluxDB v2 line protocol
 - **Webhook** — JSON POST with metric snapshot
+
+### Exporting Traces {#exporting-traces}
+
+Metrics are aggregates pushed every 60 seconds. A **trace** is the opposite: the
+full record of one proxied request, every phase it went through and every module
+that spoke in it. The two sinks that can carry a per-request payload,
+**OpenTelemetry** and **Webhook**, can export traces as well, on the create and
+edit forms:
+
+| Field | Description |
+|-------|-------------|
+| **Export request traces** | Off by default. Unlike the 60-second metric push, this is one outbound request per proxied request |
+| **Sample rate** | Shown once export is on. `1` exports every request, `0.1` one in ten. The decision is taken once per request, so a sampled-out request produces no partial export |
+
+What each sink receives:
+
+- **OpenTelemetry** — native OTLP spans on `<endpoint>/v1/traces`: a
+  `routerly.request` root span with one `routerly.<phase>` child span per
+  pipeline phase, and each trace entry as a span event. No extra configuration:
+  the same endpoint already used for metrics.
+- **Webhook** — one POST per completed request, `{ "source": "routerly", "type":
+  "trace", "timestamp", "trace": { "id", "projectId", "entries" } }`, signed with
+  the same `X-Routerly-Signature` HMAC as the metric payloads when a secret is set.
+
+Traces always carry metadata: models, policies, guardrail outcomes, PII scan
+results, tokens and timings. Prompts and answers are included only for projects
+that opted in (**Trace content** on the project's General tab, or `routerly
+project edit <project> --trace-content`).
 
 ---
 

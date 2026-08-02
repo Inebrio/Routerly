@@ -15,7 +15,6 @@ import { metricsRoutes } from './modules/observability/metrics.js';
 import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage } from './modules/config/loader.js';
 import { pingTelemetry } from './modules/telemetry/telemetry.js';
 import { updateChecker } from './modules/update-checker/update-checker.js';
-import { startIntegrationRunner } from './modules/observability/runner.js';
 import { bootstrap } from './bootstrap/index.js';
 import type { Kernel } from './core/index.js';
 
@@ -61,7 +60,7 @@ export async function buildServer() {
   });
 
   // ─── Plugins ─────────────────────────────────────────────────────────────────
-  await fastify.register(cors, { origin: true, exposedHeaders: ['x-routerly-trace-id'] });
+  await fastify.register(cors, { origin: true });
 
   // ─── Dashboard static files (served before auth plugin) ───────────────────
   if (settings.dashboardEnabled) {
@@ -152,8 +151,8 @@ export async function startServer() {
 
   try {
     await server.listen({ port: settings.port, host: settings.host });
+    // The 60s integration push is started by the observability module (kernel start).
     updateChecker.start(pkgVersion, settings.channel ?? 'latest');
-    startIntegrationRunner();
   } catch (err) {
     server.log.error(err);
     process.exit(1);

@@ -29,8 +29,7 @@ function baseCtx(overrides: Partial<ProxyContext> = {}): ProxyContext {
     project: { id: 'p1', policies: [] } as any,
     projectId: 'p1',
     traceId: 't1',
-    traceEnabled: true,
-    traceSuppressed: false,
+    emit: vi.fn(),
     original: { model: 'gpt', messages: [] },
     request: { model: 'gpt', messages: [{ role: 'user', content: 'hi' }] } as any,
     stream: false,
@@ -65,7 +64,7 @@ describe('routing module', () => {
     })
 
     it('passes undefined as the resilience store when RESILIENCE_STORE is not registered (optional-safe)', async () => {
-      // Also invokes the emit callback routeRequest received, exercising the appendTrace closure.
+      // Also invokes the emit callback routeRequest received: it is ctx.emit, installed by trace.ingress.
       routeRequestMock.mockImplementation(async (...args: unknown[]) => {
         const emit = args[3] as (entry: unknown) => void
         emit({ panel: 'router-request', message: 'router:intake', details: {} })

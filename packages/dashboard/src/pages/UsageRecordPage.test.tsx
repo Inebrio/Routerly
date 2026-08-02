@@ -324,6 +324,37 @@ describe('UsageRecordPage — TracePanel', () => {
   });
 });
 
+describe('UsageRecordPage — phase deep dive', () => {
+  const phaseTrace = [
+    { message: 'pii:scrubbed', panel: 'request', phase: 'request.preprocess', module: 'pii', at: 1000 },
+    { message: 'router:selected', panel: 'router-response', phase: 'routing.execute', module: 'router', at: 1040 },
+    { message: 'model:success', panel: 'response', phase: 'routing.execute', module: 'model', at: 1300 },
+  ];
+
+  it('groups entries by pipeline phase, with modules and elapsed time', async () => {
+    mockGetRecord.mockResolvedValue(makeRecord({ trace: phaseTrace }));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Request · Preprocess')).toBeTruthy());
+    expect(screen.getByText('Routing · Execute')).toBeTruthy();
+    expect(screen.getByText('pii')).toBeTruthy();
+    expect(screen.getByText('1 event')).toBeTruthy();
+    expect(screen.getByText('2 events · 260 ms')).toBeTruthy();
+    expect(screen.getByText('+40 ms')).toBeTruthy();
+    // Panel grouping is not used when the entries carry a phase
+    expect(screen.queryByText('Model Request')).toBeNull();
+  });
+
+  it('collapses and reopens a phase', async () => {
+    mockGetRecord.mockResolvedValue(makeRecord({ trace: phaseTrace }));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('pii:scrubbed')).toBeTruthy());
+    await userEvent.click(screen.getByText('Request · Preprocess'));
+    expect(screen.queryByText('pii:scrubbed')).toBeNull();
+    await userEvent.click(screen.getByText('Request · Preprocess'));
+    expect(screen.getByText('pii:scrubbed')).toBeTruthy();
+  });
+});
+
 // ── Guardrail/PII fields ───────────────────────────────────────────────────────
 
 describe('UsageRecordPage — guardrail/PII fields', () => {

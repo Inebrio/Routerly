@@ -374,7 +374,9 @@ Policies are applied in the order configured in the project. Their positional we
 
 ## Routing Trace
 
-Every request produces a routing trace that records each policy's scores and decisions. The trace is accessible in the dashboard's Playground view and is identified by the `x-routerly-trace-id` response header.
+Every request produces a routing trace that records each policy's scores and decisions, alongside what the other modules did (guardrails, PII, budget, resilience, the upstream call). Each entry is stamped with the pipeline phase and the module that reported it.
+
+The trace is visible in the dashboard's Playground and Usage views, streamed live on `GET /api/traces/stream`, and can be exported to an OpenTelemetry collector or a webhook (see [Trace Export](../api/management#trace-export)). The proxied response is never modified to carry it.
 
 ---
 

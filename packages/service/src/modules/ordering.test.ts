@@ -18,13 +18,13 @@ describe('core modules processor ordering', () => {
     const pipeline = container.resolve(PROXY_PIPELINE)
     const ids = (phase: string) => pipeline.orderedFor(phase).map((p) => p.id)
 
-    expect(ids('ingress')).toEqual(['logging.ingress'])
+    expect(ids('ingress')).toEqual(['trace.ingress'])
     expect(ids('request.preprocess')).toEqual(['pii.input', 'guardrail.request'])
     expect(ids('routing.prepare')).toEqual(['routing.prepare', 'routing.memory'])
     expect(ids('upstream.prepare')).toEqual(['budget.upstream'])
     expect(ids('response.postprocess')).toEqual(['pii.output', 'guardrail.response'])
-    // experiments.judge runs last: it scores the answer after usage and logging
+    // experiments.judge runs last: it scores the answer after usage and trace
     // recorded the call, and only when an experiment routed it (T72).
-    expect(ids('finalize')).toEqual(['usage.finalize', 'logging.finalize', 'experiments.judge'])
+    expect(ids('finalize')).toEqual(['usage.finalize', 'trace.finalize', 'experiments.judge'])
   })
 })

@@ -131,12 +131,13 @@ describe('ProjectDashboardTab', () => {
     expect(screen.getByText(/\$0\.0009 saved/)).toBeInTheDocument();
   });
 
-  it('lists one counterfactual row per target, with no time estimate when there is no sample', async () => {
+  it('lists one counterfactual row per target, priced and never timed', async () => {
     renderTab();
     await screen.findByText('780 ms');
     expect(screen.getByText('$0.0300')).toBeInTheDocument();
-    expect(screen.getByText('no sample')).toBeInTheDocument();
-    expect(screen.getByText('8,000 ms')).toBeInTheDocument();
+    // The time counterfactual was an estimate nobody could check: it is gone.
+    expect(screen.queryByText('Time saved')).toBeNull();
+    expect(screen.queryByText('no sample')).toBeNull();
   });
 
   it('shows the routing distribution per model', async () => {

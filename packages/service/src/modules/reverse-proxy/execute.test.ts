@@ -245,7 +245,7 @@ describe('llmChat', () => {
     const reqEntry = emitted.find(e => e.message === 'model:request')
     expect(reqEntry?.details?.maxTokens).toBe(50)
     expect(reqEntry?.details?.temperature).toBe(0.7)
-    expect(reqEntry?.details?.systemPrompt).toBe('sys')
+    expect(reqEntry?.content?.systemPrompt).toBe('sys')
   })
 
   it('handles cached tokens in response', async () => {
@@ -570,7 +570,7 @@ describe('llmChat — additional branches', () => {
     expect(result).toBeDefined()
     // responseText is undefined (null coalesced), responseJSON is the whole response
     const successEntry = emitted.find(e => e.message === 'model:success')
-    expect(successEntry?.details?.responseJSON).toBeDefined()
+    expect(successEntry?.content?.responseJSON).toBeDefined()
   })
 
   it('handles response with no usage object (covers usage?.x ?? 0 branches)', async () => {

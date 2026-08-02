@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, Code, Trash2, Save, BookOpen,
   SplitSquareHorizontal, MessageSquare,
 } from 'lucide-react';
-import { getProjects, getPlaygroundPresets, createPlaygroundPreset, deletePlaygroundPreset, getTrace, type Project, type PlaygroundPreset, type TraceEntry } from '../api.js';
+import { getProjects, getPlaygroundPresets, createPlaygroundPreset, deletePlaygroundPreset, getTrace, streamTraces, type Project, type PlaygroundPreset, type TraceEntry } from '../api.js';
 import { TraceEntryRenderer } from '../components/TraceEntryRenderer.js';
 import { MessageStatsCard } from '../components/MessageStatsCard.js';
 import { SearchableSelect } from '../components/SearchableSelect.js';
@@ -130,6 +130,14 @@ function ComparePanel({
     let inputTokens = 0;
     let outputTokens = 0;
     const turnTraces: unknown[] = [];
+    // The trace never rides the LLM wire: the caller picks a correlation id, sends it
+    // on the request and reads its own entries on the management side channel.
+    const correlationId = crypto.randomUUID();
+    let traceId = '';
+    const stopTrace = await streamTraces({ correlationId }, ev => {
+      traceId = ev.traceId;
+      turnTraces.push(ev.entry);
+    });
 
     const sysMsgs = systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : [];
     const payload = {
@@ -142,11 +150,10 @@ function ComparePanel({
       const cleanKey = key.trim().replace(/[''"""']/g, '');
       const res = await fetch('/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cleanKey}`, 'x-routerly-trace': '1' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cleanKey}`, 'x-routerly-trace': correlationId },
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
-      const traceId = res.headers.get('x-routerly-trace-id');
       if (!res.ok || !res.body) {
         const body = await res.text();
         let msg = `HTTP ${res.status}`;
@@ -164,7 +171,6 @@ function ComparePanel({
         if (dataStr === '[DONE]' || !dataStr) return;
         try {
           const data = JSON.parse(dataStr);
-          if (data.type === 'trace') { turnTraces.push(data.entry); return; }
           /* v8 ignore next */
           if (data.type === 'result') return;
           /* v8 ignore next */
@@ -212,6 +218,7 @@ function ComparePanel({
         setMsgs(prev => prev.slice(0, -1));
       }
     } finally {
+      stopTrace();
       abortRef.current = null;
       setLoading(false);
     }
@@ -478,6 +485,21 @@ export function TestPage() {
     const turnIndex = debugTraceHistory.length;
     setDebugTraceHistory(prev => [...prev, []]);
 
+    // The trace never rides the LLM wire: the caller picks a correlation id, sends it
+    // on the request and reads its own entries on the management side channel.
+    const correlationId = crypto.randomUUID();
+    let traceId = '';
+    const stopTrace = await streamTraces({ correlationId }, ev => {
+      traceId = ev.traceId;
+      setDebugTraceHistory(prev => {
+        const u = [...prev];
+        /* v8 ignore next */
+        const cur = (u[turnIndex] as unknown[]) ?? [];
+        u[turnIndex] = [...cur, ev.entry];
+        return u;
+      });
+    });
+
     const sysMsgs = systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : [];
     const modelToUse = selectedModelId || matchedProject?.routingModelId || matchedProject?.models?.[0]?.modelId || '';
 
@@ -504,12 +526,10 @@ export function TestPage() {
       const cleanKey = apiKey.trim().replace(/[''"""']/g, '');
       const res = await fetch('/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cleanKey}`, 'x-routerly-trace': '1' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cleanKey}`, 'x-routerly-trace': correlationId },
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
-      // Capture trace ID for post-stream trace fetch
-      const traceId = res.headers.get('x-routerly-trace-id');
 
       if (!res.ok || !res.body) {
         const body = await res.text();
@@ -528,16 +548,6 @@ export function TestPage() {
         if (dataStr === '[DONE]' || !dataStr) return;
         try {
           const data = JSON.parse(dataStr);
-          if (data.type === 'trace') {
-            setDebugTraceHistory(prev => {
-              const u = [...prev];
-              /* v8 ignore next */
-              const cur = (u[turnIndex] as unknown[]) ?? [];
-              u[turnIndex] = [...cur, data.entry];
-              return u;
-            });
-            return;
-          }
           /* v8 ignore next */
           if (data.type === 'result') return;
           /* v8 ignore next */
@@ -589,7 +599,7 @@ export function TestPage() {
       const latencyMs = Date.now() - startMs;
       const isBlocked = finishReason === 'content_filter' || stopReason === 'refusal';
 
-      // Fetch full trace from API (SSE trace events may be incomplete; the stored trace is authoritative)
+      // Fetch full trace from API (live entries may be incomplete; the stored trace is authoritative)
       let traceEntries: TraceEntry[] = [];
       if (traceId) {
         try {
@@ -602,7 +612,7 @@ export function TestPage() {
             return u;
           });
         } catch {
-          // Trace fetch failed — keep SSE-collected entries
+          // Trace fetch failed — keep the entries collected live
         }
       }
 
@@ -657,6 +667,7 @@ export function TestPage() {
         setMessages(prev => prev.slice(0, -1));
       }
     } finally {
+      stopTrace();
       abortRef.current = null;
       setLoading(false);
     }

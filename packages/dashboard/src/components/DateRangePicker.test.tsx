@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DateRangePicker, PRESETS, RECENT_PRESETS, parseStoredRange, type DateRange } from './DateRangePicker';
@@ -6,6 +6,11 @@ import { DateRangePicker, PRESETS, RECENT_PRESETS, parseStoredRange, type DateRa
 function mkRange(from = '', to = '', label = 'All time'): DateRange {
   return { from, to, label };
 }
+
+// The calendar refuses future days, so "today" has to be fixed for every test
+// that clicks one. Late June leaves the whole first three weeks selectable.
+beforeEach(() => { vi.setSystemTime(new Date(2024, 5, 28)); });
+afterEach(() => { vi.useRealTimers(); });
 
 function renderPicker(value = mkRange(), onChange = vi.fn()) {
   return { ...render(<DateRangePicker value={value} onChange={onChange} />), onChange };
@@ -299,6 +304,75 @@ describe('DateRangePicker — month navigation (lines 190-197)', () => {
       }
       expect(screen.getByText('Apply')).toBeTruthy();
     }
+  });
+});
+
+// ── Future dates are out of reach ─────────────────────────────────────────────
+
+describe('DateRangePicker — future dates', () => {
+  it('a day after today cannot be picked', async () => {
+    const onChange = vi.fn();
+    render(<DateRangePicker value={mkRange()} onChange={onChange} />);
+    await userEvent.click(screen.getAllByRole('button')[0]!);
+    await waitFor(() => screen.getByText('Apply'));
+
+    // Today is June 28 2024, so June 30 is in the future.
+    const day30 = Array.from(document.querySelectorAll('[style*="border-radius: 50%"]'))
+      .find(d => d.textContent?.trim() === '30') as HTMLElement;
+    expect(day30.style.cursor).toBe('default');
+    await userEvent.click(day30);
+    await userEvent.click(screen.getByText('Apply'));
+
+    // Nothing was selected, so the range stays empty.
+    expect(onChange).toHaveBeenCalledWith({ from: '', to: '', label: 'All time' });
+  });
+
+  it('labels and picks the local calendar day, east of UTC too', async () => {
+    // Rome is UTC+2 in June: a UTC-based day label would be one day behind what
+    // the cell says, which both mis-picks and lets tomorrow through the check.
+    const tz = process.env['TZ'];
+    process.env['TZ'] = 'Europe/Rome';
+    vi.setSystemTime(new Date('2024-06-28T12:00:00+02:00'));
+    try {
+      const onChange = vi.fn();
+      render(<DateRangePicker value={mkRange()} onChange={onChange} />);
+      await userEvent.click(screen.getAllByRole('button')[0]!);
+      await waitFor(() => screen.getByText('Apply'));
+
+      const cell = (day: string) => Array.from(document.querySelectorAll('[style*="border-radius: 50%"]'))
+        .find(d => d.textContent?.trim() === day) as HTMLElement;
+
+      expect(cell('29').style.cursor).toBe('default');
+      await userEvent.click(cell('28'));
+      await userEvent.click(screen.getByText('Apply'));
+
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ from: '2024-06-28T00:00:00' }));
+    } finally {
+      if (tz === undefined) delete process.env['TZ']; else process.env['TZ'] = tz;
+    }
+  });
+
+  it('the month after the current one cannot be reached', async () => {
+    render(<DateRangePicker value={mkRange()} onChange={vi.fn()} />);
+    await userEvent.click(screen.getAllByRole('button')[0]!);
+    await waitFor(() => screen.getByText('Apply'));
+
+    const nextBtn = screen.getAllByRole('button').filter(b => !b.textContent?.trim())[1]!;
+    expect(nextBtn.hasAttribute('disabled')).toBe(true);
+    await userEvent.click(nextBtn);
+    expect(screen.getByText('June 2024')).toBeTruthy();
+  });
+
+  it('going back then forward again is allowed up to the current month', async () => {
+    render(<DateRangePicker value={mkRange()} onChange={vi.fn()} />);
+    await userEvent.click(screen.getAllByRole('button')[0]!);
+    await waitFor(() => screen.getByText('Apply'));
+
+    const iconBtns = screen.getAllByRole('button').filter(b => !b.textContent?.trim());
+    await userEvent.click(iconBtns[0]!);
+    expect(screen.getByText('May 2024')).toBeTruthy();
+    await userEvent.click(iconBtns[1]!);
+    expect(screen.getByText('June 2024')).toBeTruthy();
   });
 });
 

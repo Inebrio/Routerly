@@ -15,7 +15,7 @@ vi.mock('../auth/jwt.js', () => ({
 }))
 vi.mock('../notifications/sender.js', () => ({ sendTestNotification: vi.fn() }))
 vi.mock('../notifications/emitter.js', () => ({ emitEvent: vi.fn() }))
-vi.mock('../logging/traceStore.js', () => ({ getTrace: vi.fn() }))
+vi.mock('../trace/store.js', () => ({ getTrace: vi.fn() }))
 const mockChatCompletion = vi.fn()
 vi.mock('../provider/registry.js', () => ({
   getProviderAdapter: vi.fn(() => ({ chatCompletion: mockChatCompletion })),
@@ -56,7 +56,7 @@ import { loadCredentialKey, decryptCredential } from '../../lib/crypto-cred.js'
 import { resolveOpenAIWebCredential } from '../provider/openai-web.js'
 import { createSessionToken, verifyToken } from '../auth/jwt.js'
 import { sendTestNotification } from '../notifications/sender.js'
-import { getTrace } from '../logging/traceStore.js'
+import { getTrace } from '../trace/store.js'
 import bcrypt from 'bcrypt'
 import { resolveCodexToken } from '../reverse-proxy/lanes/openaiOAuthForward.js'
 import { verifyTotp, generateTotpSecret, generateBackupCodes, hashBackupCode } from '../auth/totp.js'
@@ -9717,6 +9717,33 @@ describe('POST /api/integrations', () => {
       method: 'POST', url: '/api/integrations',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ type: 'otel' }), // missing endpoint and protocol
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('stores the trace export opt-in and its sample rate', async () => {
+    setupIntegrations([])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/integrations',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ type: 'otel', endpoint: 'http://collector:4318', protocol: 'http', traces: { enabled: true, sampleRate: 0.2 } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')
+    const stored = (written![1] as any).integrations as Array<Record<string, unknown>>
+    expect(stored[0]!['traces']).toEqual({ enabled: true, sampleRate: 0.2 })
+  })
+
+  it('rejects a sample rate outside 0..1', async () => {
+    setupIntegrations([])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/integrations',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ type: 'webhook', url: 'http://hook.local', traces: { enabled: true, sampleRate: 4 } }),
     })
     await app.close()
     expect(res.statusCode).toBe(400)

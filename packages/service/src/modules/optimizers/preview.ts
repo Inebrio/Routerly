@@ -81,8 +81,6 @@ function buildPreviewContext(messages: Message[], project: ProjectConfig): Proxy
     project,
     projectId: project.id,
     traceId: 'preview',
-    traceEnabled: false,
-    traceSuppressed: false,
     original: request,
     request,
     stream: false,

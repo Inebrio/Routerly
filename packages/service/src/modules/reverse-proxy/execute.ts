@@ -39,7 +39,8 @@ import { resolveAnthropicOAuthCredential } from '../provider/anthropic-oauth.js'
 import { resolveOpenAIOAuthCredential } from '../provider/openai-oauth.js';
 import { resolveAnthropicWebCredential } from '../provider/anthropic-web.js';
 import { resolveOpenAIWebCredential } from '../provider/openai-web.js';
-import type { TraceEntry, TracePanel } from '../logging/traceStore.js';
+import type { TraceEntry } from '@routerly/shared';
+import type { TracePanel } from '../trace/store.js';
 import { getResilienceStore } from '../resilience/index.js';
 import { resilienceKeys } from '../resilience/keys.js';
 import { recordFault } from '../resilience/record.js';
@@ -330,8 +331,11 @@ export async function llmChat(
       ...(request.max_completion_tokens != null ? { maxTokens: request.max_completion_tokens } : {}),
       ...(request.max_tokens != null ? { maxTokens: request.max_tokens } : {}),
       ...(request.temperature != null ? { temperature: request.temperature } : {}),
-      ...(systemMsg != null ? { systemPrompt: (systemMsg as { role: string; content: string }).content } : {}),
     },
+    // Prompt text: dropped by publishTrace unless the project opted in.
+    ...(systemMsg != null
+      ? { content: { systemPrompt: (systemMsg as { role: string; content: string }).content } }
+      : {}),
   });
 
   try {
@@ -373,9 +377,16 @@ export async function llmChat(
         totalCostUsd,
         inputPerMillion: model.cost.inputPerMillion,
         outputPerMillion: model.cost.outputPerMillion,
-        ...(responseText != null ? { responseText } : {}),
-        ...(responseJSON != null ? { responseJSON } : {}),
       },
+      // Answer text: dropped by publishTrace unless the project opted in.
+      ...(responseText != null || responseJSON != null
+        ? {
+            content: {
+              ...(responseText != null ? { responseText } : {}),
+              ...(responseJSON != null ? { responseJSON } : {}),
+            },
+          }
+        : {}),
     });
 
     const cachedInputTokens = cachedTokens;
@@ -564,7 +575,9 @@ export async function llmStream(
         emit?.({
           panel: res,
           message: 'model:thinking',
-          details: { modelId: model.id, text: thinkingAccum },
+          details: { modelId: model.id },
+          // Reasoning text: dropped by publishTrace unless the project opted in.
+          content: { text: thinkingAccum },
         });
         thinkingEmitted = true;
       }
@@ -591,7 +604,9 @@ export async function llmStream(
         emit?.({
           panel: res,
           message: 'model:thinking',
-          details: { modelId: model.id, text: thinkingAccum },
+          details: { modelId: model.id },
+          // Reasoning text: dropped by publishTrace unless the project opted in.
+          content: { text: thinkingAccum },
         });
       }
     } catch (err: unknown) {

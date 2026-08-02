@@ -389,6 +389,8 @@ export interface Project {
   guardrails?: GuardrailConfig;
   pii?: PiiConfig;
   optimizers?: OptimizerConfig;
+  /** Capture prompts and answers in traces. Off = metadata only. */
+  traceContent?: boolean;
 }
 
 export const getProjects = () => request<Project[]>('/projects');
@@ -414,6 +416,7 @@ export const updateProject = (id: string, data: {
   guardrails?: GuardrailConfig | null;
   pii?: PiiConfig | null;
   optimizers?: OptimizerConfig | null;
+  traceContent?: boolean;
 }) => request<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteProject = (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' });
 export const createProjectToken = (id: string, labels?: string[], tags?: Record<string, string>, scopes?: string[]) => request<{ token: string; tokenInfo: ProjectToken }>(`/projects/${id}/tokens`, { method: 'POST', body: JSON.stringify({ labels, ...(tags ? { tags } : {}), ...(scopes ? { scopes } : {}) }) });
@@ -499,6 +502,12 @@ export interface TraceEntry {
   panel: string;
   message: string;
   details: Record<string, unknown>;
+  /** Stamped by the trace module: emitting module, pipeline phase, wall clock. */
+  module?: string;
+  phase?: string;
+  at?: number;
+  /** Prompts and answers. Present only for projects that opted in. */
+  content?: Record<string, unknown>;
 }
 
 export interface UsageRecord {
@@ -513,8 +522,8 @@ export interface UsageRecord {
   piiRedacted?: string[];
 }
 
-import type { UsageByModelEntry, Integration, IntegrationType, ProviderRepo, RequestType, SavingsSummary, UsageSeries } from '@routerly/shared';
-export type { UsageByModelEntry, Integration, IntegrationType, ProviderRepo, RequestType, SavingsSummary, UsageSeries };
+import type { UsageByModelEntry, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RequestType, SavingsSummary, UsageSeries } from '@routerly/shared';
+export type { UsageByModelEntry, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RequestType, SavingsSummary, UsageSeries };
 
 export interface UsageStats {
   summary: {
@@ -578,6 +587,61 @@ export const getUsageRecord = (id: string) =>
 
 export const getTrace = (id: string) =>
   request<{ trace: TraceEntry[] }>(`/traces/${id}`);
+
+export interface TraceStreamEvent {
+  traceId: string;
+  projectId?: string;
+  correlationId?: string;
+  topic: string;
+  entry: TraceEntry;
+}
+
+/**
+ * Live trace side channel. Resolves once the stream is open — the server has
+ * subscribed by then, so a request fired afterwards loses no entry — and calls
+ * `onEvent` for each one until the returned stop function runs.
+ *
+ * fetch, not EventSource: the bearer token has to travel in a header.
+ */
+export async function streamTraces(
+  query: { correlationId?: string; projectId?: string; traceId?: string },
+  onEvent: (event: TraceStreamEvent) => void,
+): Promise<() => void> {
+  const controller = new AbortController();
+  const params = new URLSearchParams(Object.entries(query).filter(([, v]) => v) as [string, string][]);
+  const stop = (): void => controller.abort();
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}/traces/stream?${params.toString()}`, {
+      headers: authHeaders(),
+      signal: controller.signal,
+    });
+  } catch {
+    return stop; // no side channel: the stored trace is still fetched after the turn
+  }
+  if (!res.ok || !res.body) return stop;
+
+  const reader = res.body.getReader();
+  void (async () => {
+    const decoder = new TextDecoder();
+    let buffer = '';
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const frames = buffer.split('\n\n');
+        buffer = frames.pop() ?? '';
+        for (const frame of frames) {
+          const line = frame.split('\n').find(l => l.startsWith('data: '));
+          if (!line) continue; // keepalive comment
+          try { onEvent(JSON.parse(line.slice(6)) as TraceStreamEvent); } catch { /* malformed frame */ }
+        }
+      }
+    } catch { /* aborted or dropped */ }
+  })();
+  return stop;
+}
 
 // ── Provider Health ───────────────────────────────────────────────────────
 export interface ProviderHealth {

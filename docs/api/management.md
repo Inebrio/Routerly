@@ -1141,6 +1141,12 @@ PUT /api/projects/:id
 On `PUT`, the `guardrails` and `pii` fields are optional: omit a field to leave it
 unchanged, send `null` to clear it, or send an object to replace it.
 
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Project name |
+| `timeoutMs` | number | Upstream timeout for this project's requests |
+| `traceContent` | boolean | Trace content opt-in. Default `false`: traces record metadata only. Set to `true` to also store prompts and answers on the trace (`entry.content`) — they then reach the trace stream, the usage record and any integration exporting traces. |
+
 ### Content Guardrails and PII (project fields)
 
 A project may carry two optional security blocks, accepted by both
@@ -1877,7 +1883,19 @@ The block response sent to the API client is standard and unchanged: HTTP 200, e
 GET /api/traces/:id
 ```
 
-Returns the routing trace (`{ trace: [...] }`). All trace entries are stored out-of-band in the trace store; the wire response sent to your API client is never modified.
+Returns the routing trace (`{ trace: [...] }`) of a request still in the in-memory buffer (5 minutes). All trace entries are stored out-of-band; the wire response sent to your API client is never modified. The durable copy is on the request's usage record.
+
+Every entry carries where it came from, so a consumer can group a request by phase or by module without knowing who produced it:
+
+| Field | Description |
+|-------|-------------|
+| `phase` | Pipeline phase that was running: `ingress`, `request.preprocess`, `routing.prepare`, `routing.execute`, `response.postprocess`, `finalize` |
+| `module` | Module that reported it: `router`, `policy`, `model`, `pii`, `guardrail`, `budget`, `resilience`, … (read from the `module:event` message) |
+| `message` | The event, e.g. `router:result`, `policy:result:cheapest`, `pii:scrubbed` |
+| `panel` | Which Playground panel the entry belongs to: `router-request`, `router-response`, `request`, `response` |
+| `details` | Event-specific metadata (see below) |
+| `at` | Epoch milliseconds |
+| `content` | Prompts and answers. Present **only** for projects with `traceContent: true` (see [Update Project](#update-project)); otherwise the field never exists, in the buffer or on disk |
 
 | Entry | When emitted | `details` shape |
 |-------|-------------|-----------------|
@@ -1887,12 +1905,44 @@ Returns the routing trace (`{ trace: [...] }`). All trace entries are stored out
 | `pii:evaluated` | After every PII scrubbing pass, whether or not anything was redacted | `{ redacted: string[] }`. Entity types found (e.g. `["EMAIL"]`). Empty array on a clean pass. `panel` indicates `"request"` or `"response"`. |
 | `pii:scrubbed` | When at least one PII entity was detected and replaced | `{ entities: string[] }`. Entity types that were replaced. Also emitted alongside `pii:evaluated` on a hit. |
 
-Use the `x-routerly-trace-id` header from any LLM proxy response - present even on blocked responses - to look up its trace:
-
 ```bash
 curl -s http://localhost:3000/api/traces/$TRACE_ID \
   -H "Authorization: Bearer <jwt>"
 ```
+
+### Stream Traces
+
+```
+GET /api/traces/stream
+```
+
+Server-sent events, one `trace` event per entry, as the entries happen. Requires `report:read`.
+
+| Query parameter | Description |
+|-----------------|-------------|
+| `correlationId` | Only requests that carried this `x-routerly-trace` value |
+| `projectId` | Only requests of this project |
+| `traceId` | Only this one request |
+
+Without filters the stream carries every request the service handles. Filters combine (AND).
+
+```bash
+curl -N "http://localhost:3000/api/traces/stream?correlationId=my-id" \
+  -H "Authorization: Bearer <jwt>"
+```
+
+```
+: open
+
+event: trace
+data: {"traceId":"018f3c2a-...","entry":{"phase":"routing.prepare","module":"router","message":"router:result","panel":"router-response","details":{...},"at":1785700142000},"projectId":"...","correlationId":"my-id","topic":"trace/routing.prepare/router/result"}
+
+: ping
+```
+
+This is how the Playground follows a request live: it picks a correlation id, sends it on the proxy request as `x-routerly-trace`, and reads it back here. The proxied request and its response are untouched — the id never reaches the provider and no header is added to the answer.
+
+A comment line (`: ping`) is written every 15 seconds so idle streams survive proxies.
 
 ---
 
@@ -2636,7 +2686,7 @@ GET /api/integrations
       "type": "otel",
       "enabled": true,
       "name": "OpenTelemetry",
-      "endpoint": "http://localhost:4318/v1/metrics",
+      "endpoint": "http://localhost:4318",
       "protocol": "http",
       "headers": {}
     }
@@ -2696,7 +2746,7 @@ POST /api/integrations
 {
   "type": "otel",
   "name": "OpenTelemetry Collector",
-  "endpoint": "http://localhost:4318/v1/metrics",
+  "endpoint": "http://localhost:4318",
   "protocol": "http",
   "headers": {
     "Authorization": "Bearer otel-token"
@@ -2761,7 +2811,7 @@ Webhook requests are signed with HMAC-SHA256 using the `secret` field; the signa
   "type": "otel",
   "enabled": true,
   "name": "OpenTelemetry Collector",
-  "endpoint": "http://localhost:4318/v1/metrics",
+  "endpoint": "http://localhost:4318",
   "protocol": "http",
   "headers": {}
 }
@@ -2797,7 +2847,7 @@ PATCH /api/integrations/:id
   "type": "otel",
   "enabled": false,
   "name": "Updated Name",
-  "endpoint": "http://localhost:4318/v1/metrics",
+  "endpoint": "http://localhost:4318",
   "protocol": "http"
 }
 ```
@@ -2852,6 +2902,56 @@ All push-type integrations (OpenTelemetry, Datadog, Grafana, InfluxDB, Webhook) 
 | `routerly_budget_used_ratio` | Gauge | `project` | Budget consumption (0–1) |
 
 Each integration type sends these metrics in its native format (OTLP, Datadog Series API, Prometheus remote_write, InfluxDB line protocol, JSON webhook).
+
+### Trace Export
+
+Metrics answer "how much"; traces answer "why this model". An `otel` or `webhook`
+integration can also receive one export per proxied request:
+
+```json
+{
+  "traces": { "enabled": true, "sampleRate": 0.1 }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `enabled` | boolean | Off by default. Unlike the 60s metric push, trace export costs one outbound request per proxied request. |
+| `sampleRate` | number | `0`–`1`, share of traces exported. Omit for every trace. |
+
+Accepted by `POST /api/integrations` and `PATCH /api/integrations/:id`, on `otel`
+and `webhook` only: Datadog, Grafana and InfluxDB are metric-only write paths and
+reject the field. A settings write takes effect immediately (the export path
+caches the integration list for 30 seconds otherwise).
+
+**OpenTelemetry** — OTLP/HTTP JSON to `<endpoint>/v1/traces`, native spans:
+
+- one `routerly.request` server span per request, carrying `routerly.trace_id` and `routerly.project_id`
+- one `routerly.<phase>` internal child span per pipeline phase (`routerly.routing.prepare`, `routerly.routing.execute`, …)
+- every trace entry as a span event on its phase, named after the entry (`router:result`), with `routerly.panel`, `routerly.module` and the entry details as attributes (values over 4096 chars are truncated)
+
+Span ids are derived from the trace id, so a retried export overwrites instead of duplicating.
+
+**Webhook** — the signed envelope used by the metric push, with the trace as body:
+
+```json
+{
+  "source": "routerly",
+  "type": "trace",
+  "timestamp": "2026-08-02T19:37:33.485Z",
+  "trace": {
+    "id": "018f3c2a-4b5d-7e8f-9012-34567890abcd",
+    "projectId": "7a1f9a3b-...",
+    "entries": [
+      { "phase": "routing.prepare", "module": "router", "panel": "router-response", "message": "router:result", "details": { }, "at": 1785700142000 }
+    ]
+  }
+}
+```
+
+Prompts and answers are included only for projects with `traceContent: true`.
+An export failure is never surfaced on the proxy path: the request that produced
+the trace is unaffected.
 
 ---
 

@@ -860,7 +860,23 @@ describe('project edit', () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'project', 'edit', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('at least --name or --timeout'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('at least --name, --timeout or --trace-content'));
+  });
+
+  it('turns trace content capture on and back off', async () => {
+    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'project', 'edit', 'my-api', '--trace-content']);
+    expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/projects/${baseProject.id}`, expect.objectContaining({ traceContent: true }));
+
+    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'project', 'edit', 'my-api', '--no-trace-content']);
+    expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/projects/${baseProject.id}`, expect.objectContaining({ traceContent: false }));
+  });
+
+  it('leaves trace content untouched when neither flag is given', async () => {
+    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'project', 'edit', 'my-api', '--name', 'Renamed']);
+    expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/projects/${baseProject.id}`, expect.not.objectContaining({ traceContent: expect.anything() }));
   });
 
   it('updates project name', async () => {

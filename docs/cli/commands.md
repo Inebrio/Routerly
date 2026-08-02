@@ -510,6 +510,20 @@ routerly project edit <project> [options]
 |--------|-------------|
 | `--name <name>` | New display name |
 | `--timeout <ms>` | New time-to-first-token timeout per model attempt, in ms (`0` disables it) |
+| `--trace-content` | Record prompts and answers in the project's traces |
+| `--no-trace-content` | Record metadata only: no prompts, no answers (default) |
+
+Traces always carry metadata (models, policies, guardrail outcomes, tokens,
+timings). Prompts and answers are recorded only with `--trace-content`, and the
+setting applies to every surface that reads a trace: the dashboard, the
+Playground, and any integration exporting traces. A flag that is not passed
+leaves the stored value alone. `routerly project show` prints the current state
+as `Traces: metadata only` or `Traces: metadata + content`.
+
+```bash
+routerly project edit my-api --trace-content
+routerly project edit my-api --no-trace-content
+```
 
 ### `routerly project remove`
 
@@ -906,7 +920,7 @@ routerly integrations add --type prometheus --name "Prometheus" --auth-token my-
 **OpenTelemetry** (push):
 ```bash
 routerly integrations add --type otel --name "OTEL Collector" \
-  --endpoint http://localhost:4318/v1/metrics \
+  --endpoint http://localhost:4318 \
   --protocol http \
   --header "Authorization: Bearer token" \
   --header "X-Custom: value"
@@ -914,7 +928,7 @@ routerly integrations add --type otel --name "OTEL Collector" \
 
 | Option | Description |
 |--------|-------------|
-| `--endpoint <url>` | Required. OTLP receiver endpoint (e.g. `http://localhost:4318/v1/metrics`) |
+| `--endpoint <url>` | Required. Base URL of the OTLP receiver (e.g. `http://localhost:4318`). Routerly appends `/v1/metrics`, and `/v1/traces` when trace export is on. |
 | `--protocol <proto>` | Required. `http` or `grpc` (default: `http`) |
 | `--header <key=value>` | Optional custom header (repeatable, format: `Key: Value`) |
 
@@ -973,6 +987,53 @@ routerly integrations add --type webhook --name "Webhook" \
 | `--url <url>` | Required. HTTPS endpoint for metric POST requests |
 | `--secret <secret>` | Optional. If set, requests are HMAC-SHA256 signed (header: `X-Routerly-Signature`) |
 | `--header <key=value>` | Optional custom header (repeatable, format: `Key: Value`) |
+
+**Trace export** (`otel` and `webhook` only):
+
+| Option | Description |
+|--------|-------------|
+| `--traces` | Also export request traces, not only metrics |
+| `--trace-sample-rate <rate>` | Fraction of traces to export, `0`..`1` (default `1`, all of them) |
+
+```bash
+routerly integrations add --type otel --name "Tempo" \
+  --endpoint http://localhost:4318 \
+  --traces --trace-sample-rate 0.1
+```
+
+Passing `--traces` on any other type is an error. See
+[`routerly integrations traces`](#routerly-integrations-traces) for what gets exported.
+
+### `routerly integrations traces`
+
+```
+routerly integrations traces <id> <on|off> [--sample-rate <rate>]
+```
+
+Turns request-trace export on or off for an existing `otel` or `webhook`
+integration, without touching its metric export.
+
+| Parameter | Description |
+|-----------|-------------|
+| `<id>` | Integration ID (full UUID or first 8 chars) |
+| `<state>` | `on` or `off` |
+| `--sample-rate <rate>` | Fraction of traces to export, `0`..`1` (default `1`); ignored with `off` |
+
+```bash
+routerly integrations traces int-uuid2 on --sample-rate 0.25
+routerly integrations traces int-uuid2 off
+```
+
+What each type receives:
+
+| Type | Shape |
+|------|-------|
+| `otel` | Native OTLP spans on `<endpoint>/v1/traces`: a `routerly.request` root span with one `routerly.<phase>` child per pipeline phase, and each trace entry as a span event |
+| `webhook` | One POST per completed request, `{ "source": "routerly", "type": "trace", "timestamp", "trace": { "id", "projectId", "entries" } }`, signed like the metric payloads when a secret is set |
+
+Sampling is per request and decided once, so a sampled-out request produces no
+partial export. Prompts and answers appear in the exported entries only for
+projects with trace content enabled (`routerly project edit <project> --trace-content`).
 
 ### `routerly integrations remove`
 

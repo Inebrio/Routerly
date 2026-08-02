@@ -53,8 +53,10 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
   const labelColor = isError ? 'var(--danger)' : isGuardrailTriggered ? '#ef4444' : isGuardrailEvaluated ? '#fb923c' : isPiiScrubbed ? '#f97316' : isPiiEvaluated ? '#34d399' : isThinking ? '#a78bfa' : isModelPrompt ? '#c4b5fd' : isRecap ? '#34d399' : isCacheEmbedding ? '#38bdf8' : isCacheHit ? '#10b981' : isCacheMiss ? '#f59e0b' : 'var(--accent)';
   const hasDetails = e.details != null && Object.keys(e.details).length > 0;
 
-  // Estrai i campi "speciali" dal JSON tecnico per non duplicarli nel fallback
-  const { systemPrompt, responseText, responseJSON, ...baseDetails } = e.details ?? {};
+  // Prompts and answers live in `content` (only present when the project opted in);
+  // traces recorded before 0.4.0 still carry them inside `details`.
+  const { systemPrompt, responseText, responseJSON, ...baseDetails } = { ...(e.details ?? {}), ...(e.content ?? {}) };
+  const thinkingText = String(e.content?.text ?? e.details?.text ?? '');
 
   const preStyle: React.CSSProperties = {
     margin: 0, padding: 10,
@@ -100,11 +102,11 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
       ) : isThinking ? (
         <details>
           <summary style={{ fontSize: '0.85rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
-            {String(e.details?.text ?? '').substring(0, 80)}
-            {String(e.details?.text ?? '').length > 80 ? '\u2026' : ''}
+            {thinkingText.substring(0, 80)}
+            {thinkingText.length > 80 ? '\u2026' : ''}
           </summary>
           <pre style={{ ...preStyle, margin: '4px 0 0', border: '1px solid rgba(167,139,250,0.3)' }}>
-            {String(e.details?.text ?? '')}
+            {thinkingText}
           </pre>
         </details>
 

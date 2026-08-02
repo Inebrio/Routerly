@@ -18,7 +18,8 @@ import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_PROJECT_TIMEOUT_MS, isC
 import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
-import { getTrace } from '../logging/traceStore.js';
+import { getTrace } from '../trace/store.js';
+import { resetTraceExportCache } from '../observability/traces-export.js';
 import { getProviderAdapter } from '../provider/registry.js';
 import { loadEffectiveModel } from '../reverse-proxy/execute.js';
 import { listEffectiveModels, listEffectiveModelsIncludingDisabled } from '../provider/list-effective.js';
@@ -1096,6 +1097,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       guardrails?: GuardrailConfig | null;
       pii?: PiiConfig | null;
       optimizers?: OptimizerConfig | null;
+      traceContent?: boolean;
     };
   }>('/api/projects/:id', async (req, reply) => {
     if (!requirePerm(req, 'project:write', reply)) return;
@@ -1155,6 +1157,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...(m.prompt ? { prompt: m.prompt } : {}),
       })),
         timeoutMs: req.body.timeoutMs ?? existing.timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS,
+      // Absent = leave as is; the flag gates prompt/answer capture in traces.
+      ...(req.body.traceContent !== undefined ? { traceContent: req.body.traceContent } : {}),
       ...guardrailsUpdate,
       ...piiUpdate,
       ...optimizersUpdate,
@@ -2531,13 +2535,16 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return out;
   }
 
+  // Trace export: only the sinks that can carry a per-request payload have it.
+  const tracesSchema = z.object({ enabled: z.boolean(), sampleRate: z.number().min(0).max(1).optional() }).optional();
+
   const integrationSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('prometheus'), enabled: z.boolean().optional(), authToken: z.string().optional() }).passthrough(),
-    z.object({ type: z.literal('otel'),       enabled: z.boolean().optional(), endpoint: z.string().min(1), protocol: z.enum(['http', 'grpc']), headers: z.record(z.string(), z.string()).optional() }).passthrough(),
+    z.object({ type: z.literal('otel'),       enabled: z.boolean().optional(), endpoint: z.string().min(1), protocol: z.enum(['http', 'grpc']), headers: z.record(z.string(), z.string()).optional(), traces: tracesSchema }).passthrough(),
     z.object({ type: z.literal('datadog'),    enabled: z.boolean().optional(), apiKey: z.string().min(1), site: z.enum(['datadoghq.com', 'datadoghq.eu', 'us3.datadoghq.com', 'us5.datadoghq.com', 'ddog-gov.com']) }).passthrough(),
     z.object({ type: z.literal('grafana'),    enabled: z.boolean().optional(), url: z.string().min(1), username: z.string().min(1), apiKey: z.string().min(1) }).passthrough(),
     z.object({ type: z.literal('influxdb'),   enabled: z.boolean().optional(), url: z.string().min(1), token: z.string().min(1), org: z.string().min(1), bucket: z.string().min(1) }).passthrough(),
-    z.object({ type: z.literal('webhook'),    enabled: z.boolean().optional(), url: z.string().min(1), secret: z.string().optional(), headers: z.record(z.string(), z.string()).optional() }).passthrough(),
+    z.object({ type: z.literal('webhook'),    enabled: z.boolean().optional(), url: z.string().min(1), secret: z.string().optional(), headers: z.record(z.string(), z.string()).optional(), traces: tracesSchema }).passthrough(),
   ]);
 
   // ─── GET /api/integrations ────────────────────────────────────────────────────
@@ -2568,6 +2575,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const intg = { ...parsed.data, id: randomUUID(), enabled: parsed.data.enabled ?? true };
     const settings = await readConfig('settings');
     await writeConfig('settings', { ...settings, integrations: [...(settings.integrations ?? []), intg] } as Settings);
+    resetTraceExportCache();
     return reply.status(201).send(redactIntegration(intg as unknown as Record<string, unknown>));
   });
 
@@ -2593,6 +2601,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const updated = [...integrations];
     updated[idx] = merged;
     await writeConfig('settings', { ...settings, integrations: updated } as unknown as Settings);
+    resetTraceExportCache();
     return reply.send(redactIntegration(merged));
   });
 
@@ -2606,6 +2615,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(404).send({ error: `Integration "${req.params.id}" not found` });
     }
     await writeConfig('settings', { ...settings, integrations: filtered } as Settings);
+    resetTraceExportCache();
     return reply.status(204).send();
   });
 

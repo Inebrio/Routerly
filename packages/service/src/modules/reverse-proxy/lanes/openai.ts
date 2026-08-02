@@ -5,8 +5,7 @@ import type { Processor } from '../../../core/index.js'
 import type { ProxyContext } from '../context.js'
 import { getProxyPipeline } from '../run.js'
 import { listEffectiveModels } from '../../provider/list-effective.js'
-import { appendTrace } from '../../logging/traceStore.js'
-import type { TraceEntry } from '../../logging/traceStore.js'
+import type { TraceEntry } from '@routerly/shared'
 import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
 import { emitEvent } from '../../notifications/emitter.js'
@@ -25,8 +24,6 @@ export function buildOpenAIContext(req: FastifyRequest, reply: FastifyReply): Pr
     projectId: req.project.id,
     ...(req.token ? { token: req.token } : {}),
     traceId: randomUUID(),
-    traceEnabled: req.headers['x-routerly-trace'] === '1',
-    traceSuppressed: req.headers['x-routerly-no-trace'] === '1',
     ...(conversationId ? { conversationId } : {}),
     original: body,
     request: body,
@@ -76,7 +73,6 @@ export const openaiUpstream: Processor<ProxyContext> = {
     const body = ctx.request
     const log = ctx.log
     const project = ctx.project
-    const emit = (entry: TraceEntry) => { appendTrace(ctx.traceId, [entry]) }
     const endUserId = (body as any).user as string | undefined || undefined
 
     const cctx: LLMCallContext = {
@@ -85,7 +81,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
       ...(ctx.token ? { token: ctx.token } : {}),
       callType: 'completion',
       traceId: ctx.traceId,
-      emit,
+      ...(ctx.emit ? { emit: ctx.emit } : {}),
       log,
       ...(endUserId ? { endUserId } : {}),
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
@@ -114,12 +110,10 @@ export const openaiUpstream: Processor<ProxyContext> = {
       if (origin) {
         reply.raw.setHeader('Access-Control-Allow-Origin', origin)
         reply.raw.setHeader('Access-Control-Allow-Credentials', 'true')
-        if (ctx.traceEnabled) reply.raw.setHeader('Access-Control-Expose-Headers', 'x-routerly-trace-id')
       }
       reply.raw.setHeader('Content-Type', 'text/event-stream')
       reply.raw.setHeader('Cache-Control', 'no-cache')
       reply.raw.setHeader('Connection', 'keep-alive')
-      if (ctx.traceEnabled) reply.raw.setHeader('x-routerly-trace-id', ctx.traceId)
       reply.raw.flushHeaders()
       await forwardOpenAIOAuthSSE(reply.raw, body as Record<string, unknown>, model, log, ctx.traceId, project.id, project.pii)
       reply.raw.end()
@@ -216,8 +210,7 @@ export const openaiAttempt: Processor<ProxyContext> = {
     void emitEvent('routing.no_candidates', 'critical', { projectId: project.id, requestedModel: ctx.request.model ?? null, traceId: ctx.traceId }, { projectId: project.id, log })
     if (ctx.stream) {
       const errorEntry: TraceEntry = { panel: 'response', message: 'model:error', details: { error: 'All candidates unavailable or budget-exhausted' } }
-      appendTrace(ctx.traceId, [errorEntry])
-      ctx.routeTrace = [...(ctx.routeTrace ?? []), errorEntry]
+      ctx.emit?.(errorEntry)
       const errChunk = { id: `chatcmpl-${ctx.traceId}`, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: ctx.request.model ?? '', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] }
       ctx.result = { kind: 'stream', body: (async function* () { yield errChunk })() }
     } else {
@@ -235,12 +228,10 @@ export const openaiEgress: Processor<ProxyContext> = {
     const result = ctx.result
     if (!result) return
     const reply = ctx.reply
-    const traceOptIn = ctx.traceEnabled
 
     if (result.kind === 'passthrough') return // already piped by openai:upstream
 
     if (result.kind === 'json') {
-      if (traceOptIn) reply.header('x-routerly-trace-id', ctx.traceId)
       if (result.status) reply.code(result.status)
       reply.send(result.body)
       return
@@ -248,11 +239,6 @@ export const openaiEgress: Processor<ProxyContext> = {
 
     if (result.kind === 'block') {
       if (result.body === undefined) return // a streaming block already wrote its own bytes
-      // No trace header here: neither block producer in this file (openai-oauth's 422,
-      // openai:attempt's 503) sets it in the live route today. A future block-producing
-      // processor (Plan 5 guardrail/budget) that needs the header must call
-      // reply.header('x-routerly-trace-id', ctx.traceId) itself before assigning ctx.result,
-      // same as routes/openai.ts does at its guardrail/content-filter block sites.
       reply.code(result.status ?? 200).send(result.body)
       return
     }
@@ -263,23 +249,14 @@ export const openaiEgress: Processor<ProxyContext> = {
     if (origin) {
       reply.raw.setHeader('Access-Control-Allow-Origin', origin)
       reply.raw.setHeader('Access-Control-Allow-Credentials', 'true')
-      if (traceOptIn) reply.raw.setHeader('Access-Control-Expose-Headers', 'x-routerly-trace-id')
     }
     reply.raw.setHeader('Content-Type', 'text/event-stream')
     reply.raw.setHeader('Cache-Control', 'no-cache')
     reply.raw.setHeader('Connection', 'keep-alive')
-    if (traceOptIn) reply.raw.setHeader('x-routerly-trace-id', ctx.traceId)
     reply.raw.flushHeaders()
 
-    // Trace frames: main writes them live during routing (all before the first data
-    // chunk, since routing completes first). Plan 5 buffers routing trace into
-    // ctx.routeTrace; egress replays it here to reproduce the ordering.
-    if (!ctx.traceSuppressed) {
-      for (const entry of ctx.routeTrace ?? []) {
-        reply.raw.write(`data: ${JSON.stringify({ type: 'trace', entry })}\n\n`)
-      }
-    }
-
+    // The stream carries provider bytes only. Trace entries reach the caller on the
+    // management side channel (GET /api/traces/stream), never in this stream.
     try {
       for await (const chunk of result.body as AsyncIterable<unknown>) {
         reply.raw.write(`data: ${JSON.stringify(chunk)}\n\n`)

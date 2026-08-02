@@ -9,7 +9,7 @@ import type {
   UsageInfo,
 } from '@routerly/shared'
 import type { EffectivePii } from '../pii/piiScrubber.js'
-import type { TraceEntry } from '../logging/traceStore.js'
+import type { TraceEntry } from '@routerly/shared'
 import type { UpstreamResponse } from '../resilience/classifier.js'
 
 export interface ProxyResult {
@@ -40,8 +40,18 @@ export interface ProxyContext {
 
   // trace
   traceId: string
-  traceEnabled: boolean      // x-routerly-trace === '1'
-  traceSuppressed: boolean   // x-routerly-no-trace === '1'
+  /**
+   * Id the caller chose for this request (`x-routerly-trace`), so it can follow the
+   * trace on the management side channel. Request-only: it is never forwarded
+   * upstream and never appears on the response.
+   */
+  correlationId?: string
+  /** Publishes a trace entry on the kernel event bus. Installed by trace.ingress. */
+  emit?: (entry: TraceEntry) => void
+  /** Mirror of `project.traceContent`, read once by trace.ingress. */
+  captureContent?: boolean
+  /** Phase currently being walked, stamped by runProxy so emitters need not repeat it. */
+  phase?: string
   conversationId?: string
 
   // request views
@@ -52,7 +62,6 @@ export interface ProxyContext {
 
   // routing / attempt loop
   candidates?: RoutingCandidate[]
-  routeTrace?: TraceEntry[]
   attempt?: { model: ModelConfig; candidate: RoutingCandidate }
   // Task 7 (resilience): the upstream.execute processor stashes a failed candidate's raw error
   // here (never for BudgetExceededError — that's a local skip, not an upstream fault) so the

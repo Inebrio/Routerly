@@ -5,7 +5,7 @@ import { CALL_TYPES, REQUEST_TYPES, requestTypeLabel, type RequestType } from '@
 import { getUsage, getProjects, getModels, type UsageStats, type Project, type Model } from '../api';
 import { MultiSelect } from '../components/MultiSelect';
 import { DateRangePicker, PRESETS, RECENT_PRESETS, parseStoredRange, type DateRange } from '../components/DateRangePicker';
-import { SavingsCard, SavingsStats, costSavedNote, savingsSeriesData, type SavingsMetric } from '../components/savings';
+import { CostCard, SavingsCard, TokensCard, savingsSeriesData, type SavingsMetric } from '../components/savings';
 import { useFilterState } from '../hooks/useFilterState';
 import { useProviderLabels } from '../hooks/useProviderLabels';
 
@@ -56,6 +56,10 @@ const CALLER_COLORS: Record<string, string> = { routing: 'var(--accent)', guardr
 const numTh: React.CSSProperties = { textAlign: 'right' };
 const numTd: React.CSSProperties = { textAlign: 'right', fontVariantNumeric: 'tabular-nums' };
 
+/** The window the page opens on, taken from the presets so label and dates agree. */
+const THIS_MONTH = PRESETS.find(p => p.label === 'This month');
+const ALL_TIME: DateRange = { from: '', to: '', label: 'All time' };
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function UsagePage() {
@@ -63,7 +67,10 @@ export function UsagePage() {
   const [stats, setStats]               = useState<UsageStats | null>(null);
   const [projects, setProjects]         = useState<Project[]>([]);
   const [allModels, setAllModels]       = useState<Model[]>([]);
-  const [dateRange, setDateRange]       = useFilterState<DateRange>({ key: 'usage-filters-dateRange', defaultValue: { from: '', to: '', label: 'This month' }, deserialize: parseStoredRange });
+  // "This month" is the default, and it has to arrive as a real range: an empty
+  // one used to be filled in on mount, which overwrote a stored "All time" on
+  // every reload and lost the filter the user had picked.
+  const [dateRange, setDateRange]       = useFilterState<DateRange>({ key: 'usage-filters-dateRange', defaultValue: THIS_MONTH?.range() ?? ALL_TIME, deserialize: parseStoredRange });
   const [projectIds, setProjectIds]     = useFilterState<string[]>({ key: 'usage-filters-projectIds', defaultValue: [] });
   const [modelIds, setModelIds]         = useFilterState<string[]>({ key: 'usage-filters-modelIds', defaultValue: [] });
   const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing' | 'guardrail' | 'judge'>({ key: 'usage-filters-callType', defaultValue: 'all' });
@@ -73,17 +80,20 @@ export function UsagePage() {
   // and the record table polls every 2s, so it follows the filters and nothing
   // else (T209).
   const [savingsStats, setSavingsStats] = useState<UsageStats | null>(null);
-  const [savingsMetric, setSavingsMetric] = useState<SavingsMetric>('cost');
+  const [savingsMetric, setSavingsMetric] = useFilterState<SavingsMetric>({ key: 'usage-filters-savingsMetric', defaultValue: 'cost' });
   const [loading, setLoading]           = useState(true);
   const [fetchError, setFetchError]     = useState<string | null>(null);
   const [lastUpdated, setLastUpdated]   = useState<Date | null>(null);
   const [pollInterval, setPollInterval] = useFilterState<number>({ key: 'usage-filters-pollInterval', defaultValue: 2_000 });
-  const [liveMode, setLiveMode]         = useState(true);
+  // Live mode and the poll interval are two halves of one choice, so they are
+  // remembered together: restoring one without the other showed "30s" selected
+  // while the page was really polling every 2s.
+  const [liveMode, setLiveMode]         = useFilterState<boolean>({ key: 'usage-filters-liveMode', defaultValue: true });
   const [refreshing, setRefreshing]     = useState(false);
   const [page, setPage]                 = useState(1);
   const [pageSize]                      = useState(100);
-  const [modelSortKey, setModelSortKey] = useState<ModelSortKey>('rank');
-  const [modelSortDir, setModelSortDir] = useState<SortDir>('asc');
+  const [modelSortKey, setModelSortKey] = useFilterState<ModelSortKey>({ key: 'usage-filters-modelSortKey', defaultValue: 'rank' });
+  const [modelSortDir, setModelSortDir] = useFilterState<SortDir>({ key: 'usage-filters-modelSortDir', defaultValue: 'asc' });
   const [newRowIds, setNewRowIds]       = useState<ReadonlySet<string>>(new Set());
   const latestTimestampRef              = useRef<string | null>(null);
   const navigate = useNavigate();
@@ -105,21 +115,15 @@ export function UsagePage() {
     });
   }, [setPollInterval]);
 
-  // Initialize date range to "This month" if not already set,
-  // or re-apply stale relative presets (e.g. saved on a previous day).
+  // A relative preset stored yesterday still says "This month" but holds
+  // yesterday's dates: re-apply it so the label and the window agree again.
+  // Anything else the user picked, custom range or All time, is left alone.
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10);
-    const isRecentPreset = RECENT_PRESETS.some(p => p.label === dateRange.label);
-    if (isRecentPreset) return;
-
-    if (!dateRange.from && !dateRange.to) {
-      const now = new Date();
-      const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-      setDateRange({ from, to: today, label: 'This month' });
-    } else if (dateRange.to && dateRange.to.slice(0, 10) < today) {
-      const preset = PRESETS.find(p => p.label === dateRange.label);
-      if (preset) setDateRange(preset.range());
-    }
+    if (RECENT_PRESETS.some(p => p.label === dateRange.label)) return;
+    if (!dateRange.to || dateRange.to.slice(0, 10) >= today) return;
+    const preset = PRESETS.find(p => p.label === dateRange.label);
+    if (preset) setDateRange(preset.range());
   }, []);
 
   useEffect(() => {
@@ -280,6 +284,17 @@ export function UsagePage() {
       rank: (row as typeof row & { rank: number }).rank,
     }));
   }, [stats, allModels]);
+
+  // The summary carries no token totals, but the per-model breakdown does, and it
+  // covers exactly the same filtered window: adding it up is the whole widget.
+  const tokenTotals = useMemo(() => {
+    const rows = Object.values(stats?.byModel ?? {});
+    return {
+      input: rows.reduce((sum, v) => sum + v.inputTokens, 0),
+      output: rows.reduce((sum, v) => sum + v.outputTokens, 0),
+      cached: rows.reduce((sum, v) => sum + v.cachedInputTokens, 0),
+    };
+  }, [stats]);
 
   // Best = rank 1 (lowest metric among finite ranks)
   const bestModelId = useMemo(() => {
@@ -484,15 +499,11 @@ export function UsagePage() {
           <>
             {/* Summary */}
             <div className="stats-grid" style={{ marginBottom: 24 }}>
-              <div className="stat-card">
-                <div className="stat-label">Total Cost</div>
-                <div className="stat-value">${stats.summary.totalCost.toFixed(4)}</div>
-                {/* Same reading as the Overview: what routing saved belongs to the
-                    number it changed, not to a card of its own (T201/T209). */}
-                {costSavedNote(savingsStats?.savings) && (
-                  <div className="stat-sub">{costSavedNote(savingsStats?.savings)}</div>
-                )}
-              </div>
+              {/* Same reading as the Overview: what routing saved belongs to the
+                  number it changed, not to a card of its own (T201/T209). */}
+              <CostCard totalCost={stats.summary.totalCost} {...(savingsStats?.savings ? { savings: savingsStats.savings } : {})} />
+              <TokensCard inputTokens={tokenTotals.input} outputTokens={tokenTotals.output} cachedTokens={tokenTotals.cached}
+                {...(savingsStats?.savings ? { savings: savingsStats.savings } : {})} />
               <div className="stat-card">
                 <div className="stat-label">Total Calls</div>
                 <div className="stat-value">{stats.summary.totalCalls}</div>
@@ -540,7 +551,6 @@ export function UsagePage() {
                   {stats.summary.errorCalls}
                 </div>
               </div>
-              {savingsStats?.savings && <SavingsStats savings={savingsStats.savings} />}
             </div>
 
             {/* What routing saved over the filtered window, the same chart the Overview carries (T209) */}
@@ -549,7 +559,6 @@ export function UsagePage() {
                 key={dateRange.label}
                 data={savingsData}
                 baselineIds={savingsStats?.series?.baselineModelIds ?? []}
-                {...(savingsStats?.series?.baselineModelId ? { baselineModelId: savingsStats.series.baselineModelId } : {})}
                 {...(savingsStats?.savings ? { savings: savingsStats.savings } : {})}
                 metric={savingsMetric}
                 onMetric={setSavingsMetric}

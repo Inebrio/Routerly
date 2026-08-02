@@ -26,7 +26,9 @@ function getCalendarDays(year: number, month: number): (Date | null)[] {
 }
 
 function fmt(d: Date) {
-  return d.toISOString().slice(0, 10);
+  // The calendar day as the user sees it: toISOString() is UTC, so east of Greenwich
+  // it labels every cell one day ahead and tomorrow slips past the future check.
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 function startOfWeek(d: Date) {
@@ -217,6 +219,7 @@ export function DateRangePicker({ value, onChange }: Props) {
     else setViewMonth(m => m - 1);
   }
   function nextMonth() {
+    if (atLastMonth) return;
     if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0); }
     else setViewMonth(m => m + 1);
   }
@@ -288,6 +291,8 @@ export function DateRangePicker({ value, onChange }: Props) {
   const dispTo   = !pickingEnd || !hovered ? pendingTo   : (pendingFrom < hovered ? hovered : pendingFrom);
 
   const today = fmt(new Date());
+  // The month of today is the last one worth showing: past it every day is unselectable.
+  const atLastMonth = today.slice(0, 7) <= `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`;
   const days  = getCalendarDays(viewYear, viewMonth);
   const ACCENT15 = 'rgba(99,102,241,0.18)';
 
@@ -426,9 +431,9 @@ export function DateRangePicker({ value, onChange }: Props) {
                 <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                   {MONTHS[viewMonth]} {viewYear}
                 </span>
-                <button onClick={nextMonth}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', padding: '4px 6px', borderRadius: 6, display: 'flex' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-elevated)')}
+                <button onClick={nextMonth} disabled={atLastMonth}
+                  style={{ background: 'none', border: 'none', cursor: atLastMonth ? 'default' : 'pointer', color: 'var(--text-primary)', opacity: atLastMonth ? 0.3 : 1, padding: '4px 6px', borderRadius: 6, display: 'flex' }}
+                  onMouseEnter={e => { if (!atLastMonth) e.currentTarget.style.background = 'var(--bg-elevated)'; }}
                   onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                 >
                   <ChevronRight size={16} />
@@ -456,6 +461,9 @@ export function DateRangePicker({ value, onChange }: Props) {
                   const isEndpoint  = isFrom || isTo;
                   const inRange     = !!(dispFrom && dispTo && ds > dispFrom && ds < dispTo);
                   const isOtherMon  = d.getMonth() !== viewMonth;
+                  // Nothing has happened tomorrow: a future day is shown, greyed, but not selectable.
+                  const isFuture    = ds > today;
+                  const isDisabled  = isOtherMon || isFuture;
 
                   // Range band behind the circle
                   let wrapBg = 'transparent';
@@ -466,7 +474,7 @@ export function DateRangePicker({ value, onChange }: Props) {
                   // Circle styling
                   let circleBg     = 'transparent';
                   /* v8 ignore next */
-                  let circleColor  = isOtherMon ? 'var(--text-muted)' : 'var(--text-primary)';
+                  let circleColor  = isDisabled ? 'var(--text-muted)' : 'var(--text-primary)';
                   let circleWeight: number | string = 400;
                   let circleBorder = 'transparent';
 
@@ -482,8 +490,8 @@ export function DateRangePicker({ value, onChange }: Props) {
                   return (
                     <div key={ds} style={{ background: wrapBg, display: 'flex', alignItems: 'center', justifyContent: 'center', height: 36 }}>
                       <div
-                        onClick={() => !isOtherMon && handleDayClick(d)}
-                        onMouseEnter={() => { if (pickingEnd && !isOtherMon) setHovered(ds); }}
+                        onClick={() => !isDisabled && handleDayClick(d)}
+                        onMouseEnter={() => { if (pickingEnd && !isDisabled) setHovered(ds); }}
                         onMouseLeave={() => { if (pickingEnd) setHovered(''); }}
                         style={{
                           width: 32, height: 32,
@@ -495,13 +503,14 @@ export function DateRangePicker({ value, onChange }: Props) {
                           fontSize: '0.85rem',
                           border: `2px solid ${circleBorder}`,
                           /* v8 ignore next */
-                          cursor: isOtherMon ? 'default' : 'pointer',
+                          cursor: isDisabled ? 'default' : 'pointer',
+                          opacity: isFuture ? 0.45 : 1,
                           userSelect: 'none',
                           boxSizing: 'border-box',
                           transition: 'background 0.12s',
                         }}
                         onMouseOver={e => {
-                          if (!isOtherMon && !isEndpoint)
+                          if (!isDisabled && !isEndpoint)
                             (e.currentTarget as HTMLElement).style.background = 'var(--bg-elevated)';
                         }}
                         onMouseOut={e => {

@@ -97,6 +97,7 @@ export type {
   GrafanaIntegration,
   InfluxDBIntegration,
   WebhookIntegration,
+  IntegrationTraces,
 } from './types/config.js';
 
 export type {

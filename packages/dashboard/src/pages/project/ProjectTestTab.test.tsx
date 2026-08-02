@@ -3,6 +3,7 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { ProjectTestTab } from './ProjectTestTab';
+import { streamTraces } from '../../api';
 
 // ponytail: mock ReactMarkdown as identity render — we only care about content
 vi.mock('react-markdown', () => ({
@@ -10,6 +11,8 @@ vi.mock('react-markdown', () => ({
 }));
 
 vi.mock('remark-gfm', () => ({ default: () => {} }));
+
+vi.mock('../../api', () => ({ streamTraces: vi.fn() }));
 
 vi.mock('../../components/TraceEntryRenderer', () => ({
   TraceEntryRenderer: ({ entry }: { entry: { message: string; details?: unknown } }) => (
@@ -62,6 +65,18 @@ function mockFetchOk(lines: string[]) {
     body: sseStream(lines),
   }));
 }
+
+/** Feeds the component the trace side channel it opens before each turn. */
+function mockTraceStream(entries: Array<{ panel: string; message: string; details?: Record<string, unknown> }> = []) {
+  vi.mocked(streamTraces).mockImplementation(async (_query, onEvent) => {
+    for (const entry of entries) {
+      onEvent({ traceId: 'tr-1', topic: `trace/request/${entry.message}`, entry: { details: {}, ...entry } });
+    }
+    return () => {};
+  });
+}
+
+beforeEach(() => { mockTraceStream(); });
 
 function mockFetchError(status: number) {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
@@ -493,8 +508,8 @@ describe('ProjectTestTab — stop generation', () => {
 
 describe('ProjectTestTab — trace events', () => {
   it('trace entries appear in debug panels', async () => {
+    mockTraceStream([{ panel: 'router-request', message: 'req' }]);
     mockFetchOk([
-      'data: {"type":"trace","entry":{"panel":"router-request","message":"req"}}',
       'data: {"choices":[{"delta":{"content":"hi"}}],"model":"m"}',
       'data: [DONE]',
     ]);
@@ -507,8 +522,8 @@ describe('ProjectTestTab — trace events', () => {
   });
 
   it('Clear button removes trace history', async () => {
+    mockTraceStream([{ panel: 'router-request', message: 'req' }]);
     mockFetchOk([
-      'data: {"type":"trace","entry":{"panel":"router-request","message":"req"}}',
       'data: [DONE]',
     ]);
     renderTab();
@@ -723,8 +738,8 @@ describe('ProjectTestTab — assistant array content', () => {
 
 describe('ProjectTestTab — response panel trace entries', () => {
   it('response panel renders model:error entry with error styling', async () => {
+    mockTraceStream([{"panel":"response","message":"model:error","details":{"msg":"oops"}}]);
     mockFetchOk([
-      'data: {"type":"trace","entry":{"panel":"response","message":"model:error","details":{"msg":"oops"}}}',
       'data: [DONE]',
     ]);
     renderTab();
@@ -735,8 +750,8 @@ describe('ProjectTestTab — response panel trace entries', () => {
   });
 
   it('response panel renders model:thinking entry with details toggle', async () => {
+    mockTraceStream([{"panel":"response","message":"model:thinking","details":{"text":"I am thinking"}}]);
     mockFetchOk([
-      'data: {"type":"trace","entry":{"panel":"response","message":"model:thinking","details":{"text":"I am thinking"}}}',
       'data: [DONE]',
     ]);
     renderTab();
@@ -749,8 +764,8 @@ describe('ProjectTestTab — response panel trace entries', () => {
   });
 
   it('response panel renders non-error non-thinking entry as JSON', async () => {
+    mockTraceStream([{"panel":"response","message":"model:response","details":{"tokens":42}}]);
     mockFetchOk([
-      'data: {"type":"trace","entry":{"panel":"response","message":"model:response","details":{"tokens":42}}}',
       'data: [DONE]',
     ]);
     renderTab();
@@ -767,9 +782,9 @@ describe('ProjectTestTab — response panel trace entries', () => {
 
 describe('ProjectTestTab — request panel empty entries', () => {
   it('shows "No model calls (routing only)" when request entries are empty for a turn', async () => {
+    mockTraceStream([{"panel":"router-request","message":"route"}]);
     mockFetchOk([
       // trace for request panel with empty entries (routing-only call)
-      'data: {"type":"trace","entry":{"panel":"router-request","message":"route"}}',
       'data: [DONE]',
     ]);
     renderTab();
@@ -786,8 +801,8 @@ describe('ProjectTestTab — request panel empty entries', () => {
 
 describe('ProjectTestTab — router response panel entries', () => {
   it('router-response panel renders entries from trace', async () => {
+    mockTraceStream([{"panel":"router-response","message":"routing-done"}]);
     mockFetchOk([
-      'data: {"type":"trace","entry":{"panel":"router-response","message":"routing-done"}}',
       'data: [DONE]',
     ]);
     renderTab();
@@ -798,8 +813,8 @@ describe('ProjectTestTab — router response panel entries', () => {
   });
 
   it('request panel renders entries from trace', async () => {
+    mockTraceStream([{"panel":"request","message":"req-entry"}]);
     mockFetchOk([
-      'data: {"type":"trace","entry":{"panel":"request","message":"req-entry"}}',
       'data: [DONE]',
     ]);
     renderTab();
@@ -894,8 +909,8 @@ describe('ProjectTestTab — additional branch coverage', () => {
 
   it('thinking entry with details.text longer than 80 chars shows ellipsis', async () => {
     const longText = 'a'.repeat(90);
+    mockTraceStream([{ panel: 'response', message: 'model:thinking', details: { text: longText } }]);
     mockFetchOk([
-      `data: {"type":"trace","entry":{"panel":"response","message":"model:thinking","details":{"text":"${longText}"}}}`,
       'data: [DONE]',
     ]);
     renderTab();
@@ -907,8 +922,8 @@ describe('ProjectTestTab — additional branch coverage', () => {
   });
 
   it('thinking entry with missing details.text renders empty string', async () => {
+    mockTraceStream([{"panel":"response","message":"model:thinking","details":{}}]);
     mockFetchOk([
-      'data: {"type":"trace","entry":{"panel":"response","message":"model:thinking","details":{}}}',
       'data: [DONE]',
     ]);
     renderTab();

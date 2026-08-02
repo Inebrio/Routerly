@@ -4813,3 +4813,87 @@ describe('SettingsAboutTab — unknown channel label (L1806) + non-Error rejecti
     expect(nightlyOpt?.textContent).toBe('nightly');
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SettingsIntegrationsTab — trace export
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('SettingsIntegrationsTab — trace export', () => {
+  const otelIntegration = {
+    id: 'otel-1', type: 'otel', enabled: true,
+    endpoint: 'http://collector:4318', protocol: 'http',
+  };
+
+  beforeEach(() => {
+    mockCreateIntegration.mockResolvedValue({ id: 'new1', type: 'otel', enabled: true } as never);
+    mockUpdateIntegration.mockImplementation((id: string, patch: Record<string, unknown>) =>
+      Promise.resolve({ ...otelIntegration, ...patch, id }) as never);
+    mockTestIntegration.mockResolvedValue({ ok: true, message: 'OK' } as never);
+  });
+
+  async function expand(integrations: Record<string, unknown>[]) {
+    mockGetIntegrations.mockResolvedValue(integrations as never);
+    render(<MemoryRouter><SettingsIntegrationsTab /></MemoryRouter>);
+    await waitFor(() => screen.getByText(integrations[0]!['id'] as string));
+    const chevron = document.querySelectorAll('button')[0]!;
+    await userEvent.click(chevron);
+    await waitFor(() => screen.getByLabelText(/Export request traces/i));
+  }
+
+  it('opts an OTLP integration in and saves the flag', async () => {
+    await expand([otelIntegration]);
+
+    const checkbox = screen.getByLabelText(/Export request traces/i) as HTMLInputElement;
+    expect(checkbox.checked).toBe(false);
+    expect(screen.queryByText(/exports every request/i)).toBeNull();
+
+    await userEvent.click(checkbox);
+    expect(screen.getByText(/exports every request/i)).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: /Save/i }));
+    await waitFor(() => expect(mockUpdateIntegration).toHaveBeenCalledWith('otel-1', expect.objectContaining({
+      traces: { enabled: true },
+    })));
+  });
+
+  it('pre-fills the sample rate and clamps what is typed', async () => {
+    await expand([{ ...otelIntegration, traces: { enabled: true, sampleRate: 0.25 } }]);
+
+    const rate = screen.getByRole('spinbutton') as HTMLInputElement;
+    expect(rate.value).toBe('0.25');
+
+    fireEvent.change(rate, { target: { value: '7' } });
+    expect((screen.getByRole('spinbutton') as HTMLInputElement).value).toBe('1');
+
+    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '' } });
+    expect((screen.getByRole('spinbutton') as HTMLInputElement).value).toBe('1');
+  });
+
+  it('turning it off saves enabled:false, not a missing field', async () => {
+    await expand([{ ...otelIntegration, traces: { enabled: true, sampleRate: 0.5 } }]);
+
+    await userEvent.click(screen.getByLabelText(/Export request traces/i));
+    await userEvent.click(screen.getByRole('button', { name: /Save/i }));
+
+    await waitFor(() => expect(mockUpdateIntegration).toHaveBeenCalledWith('otel-1', expect.objectContaining({
+      traces: { enabled: false, sampleRate: 0.5 },
+    })));
+  });
+
+  it('is offered by webhook and by no metric-only integration', async () => {
+    await expand([
+      { id: 'hook-1', type: 'webhook', enabled: true, url: 'http://hook.local' },
+    ]);
+    expect(screen.getByLabelText(/Export request traces/i)).toBeTruthy();
+
+    cleanup();
+    mockGetIntegrations.mockResolvedValue([
+      { id: 'dd-1', type: 'datadog', enabled: true, apiKey: 'k', site: 'datadoghq.com' },
+    ] as never);
+    render(<MemoryRouter><SettingsIntegrationsTab /></MemoryRouter>);
+    await waitFor(() => screen.getByText('dd-1'));
+    await userEvent.click(document.querySelectorAll('button')[0]!);
+    await waitFor(() => screen.getByPlaceholderText('Your Datadog API key'));
+    expect(screen.queryByLabelText(/Export request traces/i)).toBeNull();
+  });
+});

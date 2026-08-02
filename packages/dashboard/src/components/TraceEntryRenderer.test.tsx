@@ -624,6 +624,30 @@ describe('TraceEntryRenderer — other entry types', () => {
     expect(screen.getByText('response JSON')).toBeTruthy();
   });
 
+  it('renders prompts and answers from the gated content field', () => {
+    render(
+      <TraceEntryRenderer entry={{
+        message: 'model:success',
+        details: { inputTokens: 10 },
+        content: { systemPrompt: 'Be helpful.', responseText: 'Hello!', responseJSON: { id: 'chatcmpl-1' } },
+      }} />
+    );
+    expect(screen.getByText('Be helpful.')).toBeTruthy();
+    expect(screen.getByText('Hello!')).toBeTruthy();
+    expect(screen.getByText('response JSON')).toBeTruthy();
+  });
+
+  it('renders model:thinking text from the content field', () => {
+    render(
+      <TraceEntryRenderer entry={{
+        message: 'model:thinking',
+        details: { modelId: 'gpt-4o' },
+        content: { text: 'let me think' },
+      }} />
+    );
+    expect(screen.getAllByText('let me think').length).toBeGreaterThan(0);
+  });
+
   it('renders fallback pre block for unknown message types', () => {
     render(
       <TraceEntryRenderer entry={{

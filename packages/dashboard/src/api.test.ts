@@ -938,6 +938,56 @@ describe('getTrace', () => {
   });
 });
 
+describe('streamTraces', () => {
+  function sseRes(frames: string[]): Response {
+    const encoder = new TextEncoder();
+    return {
+      ok: true,
+      status: 200,
+      body: new ReadableStream<Uint8Array>({
+        start(c) { for (const f of frames) c.enqueue(encoder.encode(f)); c.close(); },
+      }),
+    } as unknown as Response;
+  }
+
+  it('forwards each frame and skips keepalive comments', async () => {
+    const { streamTraces } = await api();
+    const event = { traceId: 't1', topic: 'trace/request/pii/scrubbed', entry: { panel: 'request', message: 'pii:scrubbed', details: {} } };
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(sseRes([': open\n\n', `event: trace\ndata: ${JSON.stringify(event)}\n\n`, ': ping\n\n']));
+    const seen: unknown[] = [];
+    const stop = await streamTraces({ correlationId: 'c1' }, e => seen.push(e));
+    await vi.waitFor(() => expect(seen).toHaveLength(1));
+    expect(seen[0]).toEqual(event);
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/traces/stream?correlationId=c1');
+    stop();
+  });
+
+  it('ignores a malformed frame', async () => {
+    const { streamTraces } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(sseRes(['data: not json\n\n']));
+    const seen: unknown[] = [];
+    const stop = await streamTraces({}, e => seen.push(e));
+    await new Promise(r => setTimeout(r, 10));
+    expect(seen).toHaveLength(0);
+    stop();
+  });
+
+  it('returns a no-op stop when the channel cannot be opened', async () => {
+    const { streamTraces } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ ok: false, status: 403, body: null } as unknown as Response);
+    const stop = await streamTraces({ traceId: 't1' }, () => { throw new Error('must not fire'); });
+    expect(typeof stop).toBe('function');
+    stop();
+  });
+
+  it('survives a fetch rejection', async () => {
+    const { streamTraces } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('offline'));
+    const stop = await streamTraces({ projectId: 'p1' }, () => { throw new Error('must not fire'); });
+    expect(typeof stop).toBe('function');
+  });
+});
+
 // ── Provider Health ───────────────────────────────────────────────────────────
 
 describe('getProviderHealth', () => {

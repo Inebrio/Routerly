@@ -7,8 +7,6 @@ import type { Processor } from '../../../core/index.js'
 import type { ProxyContext } from '../context.js'
 import { getProxyPipeline } from '../run.js'
 import { listEffectiveModels } from '../../provider/list-effective.js'
-import { appendTrace } from '../../logging/traceStore.js'
-import type { TraceEntry } from '../../logging/traceStore.js'
 import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
 import { forwardAnthropicOAuth, forwardAnthropicApiKey } from './oauthForward.js'
@@ -76,8 +74,6 @@ export function buildAnthropicContext(req: FastifyRequest, reply: FastifyReply):
     projectId: req.project.id,
     ...(req.token ? { token: req.token } : {}),
     traceId: randomUUID(),
-    traceEnabled: req.headers['x-routerly-trace'] === '1',
-    traceSuppressed: req.headers['x-routerly-no-trace'] === '1',
     ...(conversationId ? { conversationId } : {}),
     original: body,
     request: body as unknown as ChatCompletionRequest, // canonical view built per-candidate via toChat
@@ -120,14 +116,11 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     const reply = ctx.reply
     const log = ctx.log
     const project = ctx.project
-    const traceOptIn = ctx.traceEnabled
-    const emit = (entry: TraceEntry) => { appendTrace(ctx.traceId, [entry]) }
     const endUserId = (body as any).user as string | undefined || undefined
 
     // ── OAuth models: verbatim pass-through with OAuth token (anthropic.ts L221-224). ──
     if (model.provider === 'anthropic-oauth') {
       ctx.passthrough = true
-      if (traceOptIn) reply.header('x-routerly-trace-id', ctx.traceId)
       await forwardAnthropicOAuth(req, reply, model)
       ctx.result = { kind: 'passthrough' }
       return
@@ -136,7 +129,6 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     // ── Anthropic API-key / web models: verbatim pass-through (anthropic.ts L229-232). ──
     if (model.provider === 'anthropic' || model.provider === 'anthropic-web') {
       ctx.passthrough = true
-      if (traceOptIn) reply.header('x-routerly-trace-id', ctx.traceId)
       await forwardAnthropicApiKey(req, reply, model)
       ctx.result = { kind: 'passthrough' }
       return
@@ -149,7 +141,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
       ...(ctx.token ? { token: ctx.token } : {}),
       callType: 'completion',
       traceId: ctx.traceId,
-      emit,
+      ...(ctx.emit ? { emit: ctx.emit } : {}),
       log,
       ...(endUserId ? { endUserId } : {}),
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
@@ -236,12 +228,10 @@ export const anthropicEgress: Processor<ProxyContext> = {
     const result = ctx.result
     if (!result) return
     const reply = ctx.reply
-    const traceOptIn = ctx.traceEnabled
 
     if (result.kind === 'passthrough') return // already piped by anthropic:upstream
 
     if (result.kind === 'json') {
-      if (traceOptIn) reply.header('x-routerly-trace-id', ctx.traceId)
       if (result.status) reply.status(result.status)
       reply.send(result.body)
       return
@@ -249,12 +239,6 @@ export const anthropicEgress: Processor<ProxyContext> = {
 
     if (result.kind === 'block') {
       if (result.body === undefined) return
-      // No trace header here: the only block producer in this file (anthropic:attempt's 503)
-      // does not set it in the live route today. A future block-producing processor (Plan 5
-      // guardrail/budget) that needs the header must call
-      // reply.header('x-routerly-trace-id', ctx.traceId) itself before assigning ctx.result,
-      // same as routes/anthropic.ts does at its guardrail/refusal block sites, and the
-      // identical fix already applied to openai.ts's egress.
       reply.status(result.status ?? 200).send(result.body)
       return
     }
@@ -264,7 +248,6 @@ export const anthropicEgress: Processor<ProxyContext> = {
     reply.raw.setHeader('Content-Type', 'text/event-stream')
     reply.raw.setHeader('Cache-Control', 'no-cache')
     reply.raw.setHeader('Connection', 'keep-alive')
-    if (traceOptIn) reply.raw.setHeader('x-routerly-trace-id', ctx.traceId)
     reply.raw.flushHeaders()
     try {
       for await (const line of chunksToAnthropicSSE(result.body as AsyncIterable<StreamChunk>, `msg_${ctx.traceId}`, body.model)) {

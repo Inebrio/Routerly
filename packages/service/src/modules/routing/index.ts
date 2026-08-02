@@ -5,8 +5,6 @@ import type { ProxyContext } from '../reverse-proxy/context.js'
 import { routeRequest } from './router.js'
 import { migrateProfiles } from './profiles/migrate.js'
 import { addRoutingDecision } from './routingMemoryStore.js'
-import { appendTrace } from '../logging/traceStore.js'
-import type { TraceEntry } from '../logging/traceStore.js'
 
 // Store resolution is optional-safe: if the resilience module isn't registered in a given
 // kernel/test composition, resilienceStore is undefined and routeRequest skips the filter
@@ -17,19 +15,19 @@ function makePrepare(resilienceStore: ResilienceStore | undefined): Processor<Pr
     phase: 'routing.prepare',
     async run(ctx) {
       if (ctx.result) return
-      const emit = (entry: TraceEntry): void => appendTrace(ctx.traceId, [entry])
-      const { models, trace } = await routeRequest(
+      // The trace routeRequest returns is for callers without an event bus (the MCP
+      // read tool): here every entry already went out through ctx.emit.
+      const { models } = await routeRequest(
         ctx.request,
         ctx.project,
         ctx.log,
-        emit,
+        ctx.emit,
         ctx.token,
         ctx.traceId,
         ctx.conversationId,
         resilienceStore,
       )
       ctx.candidates = models
-      ctx.routeTrace = trace
     },
   }
 }

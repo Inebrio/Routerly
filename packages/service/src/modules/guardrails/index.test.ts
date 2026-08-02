@@ -44,8 +44,6 @@ function baseCtx(overrides: Partial<ProxyContext> = {}): ProxyContext {
     project: { id: 'p1', guardrails: { rules: [] } } as any,
     projectId: 'p1',
     traceId: 't1',
-    traceEnabled: true,
-    traceSuppressed: false,
     original: { model: 'gpt', messages: [] },
     request: { model: 'gpt', messages: [{ role: 'user', content: 'hi' }] } as any,
     stream: false,
@@ -77,34 +75,34 @@ describe('guardrails module', () => {
     expect(pipeline.orderedFor('response.postprocess').map((p) => p.id)).toContain('guardrail.response')
   })
 
-  it('sets the trace header before a non-streaming request hard-block', async () => {
+  it('hard-blocks a non-streaming request without touching the response headers', async () => {
     checkGuardrailsMock.mockResolvedValue({ evaluated: [], triggered: 'rule1', block: true, log: false })
     const proc = await requestProcessor()
     const ctx = baseCtx({ stream: false })
     await proc.run(ctx)
-    expect((ctx.reply as any).header).toHaveBeenCalledWith('x-routerly-trace-id', 't1')
+    expect((ctx.reply as any).header).not.toHaveBeenCalled()
     expect(ctx.result?.kind).toBe('block')
     expect(ctx.result?.body).toBeDefined()
   })
 
-  it('converts a BudgetExceededError from the guardrail judge into an OpenAI 429 block, with header', async () => {
+  it('converts a BudgetExceededError from the guardrail judge into an OpenAI 429 block', async () => {
     checkGuardrailsMock.mockRejectedValue(new BudgetExceededError('over'))
     const proc = await requestProcessor()
     const ctx = baseCtx({ protocol: 'openai' })
     await proc.run(ctx)
-    expect((ctx.reply as any).header).toHaveBeenCalledWith('x-routerly-trace-id', 't1')
+    expect((ctx.reply as any).header).not.toHaveBeenCalled()
     expect(ctx.result).toEqual({
       kind: 'block', status: 429,
       body: { error: { message: 'Usage limit exceeded by content-guardrail check.', type: 'insufficient_quota' } },
     })
   })
 
-  it('converts a BudgetExceededError from the guardrail judge into an Anthropic 429 block, with header', async () => {
+  it('converts a BudgetExceededError from the guardrail judge into an Anthropic 429 block', async () => {
     checkGuardrailsMock.mockRejectedValue(new BudgetExceededError('over'))
     const proc = await requestProcessor()
     const ctx = baseCtx({ protocol: 'anthropic' })
     await proc.run(ctx)
-    expect((ctx.reply as any).header).toHaveBeenCalledWith('x-routerly-trace-id', 't1')
+    expect((ctx.reply as any).header).not.toHaveBeenCalled()
     expect(ctx.result).toEqual({
       kind: 'block', status: 429,
       body: { type: 'error', error: { type: 'rate_limit_error', message: 'Usage limit exceeded by content-guardrail check.' } },
@@ -130,7 +128,7 @@ describe('guardrails module', () => {
     expect(ctx.result).toEqual({ kind: 'block' })
   })
 
-  it('sets the trace header before a non-streaming response hard-block (OpenAI only)', async () => {
+  it('hard-blocks a non-streaming response without touching the response headers (OpenAI only)', async () => {
     checkGuardrailsMock.mockResolvedValue({ evaluated: [], triggered: 'rule1', block: true, log: false })
     const proc = await responseProcessor()
     const ctx = baseCtx({
@@ -138,7 +136,7 @@ describe('guardrails module', () => {
       result: { kind: 'json', body: { choices: [{ message: { content: 'bad text' } }] } } as any,
     })
     await proc.run(ctx)
-    expect((ctx.reply as any).header).toHaveBeenCalledWith('x-routerly-trace-id', 't1')
+    expect((ctx.reply as any).header).not.toHaveBeenCalled()
     expect(ctx.result?.kind).toBe('block')
   })
 })

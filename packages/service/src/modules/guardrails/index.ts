@@ -3,7 +3,6 @@ import { defineModule, shortCircuit, type Processor, type RouterlyModule } from 
 import { PROXY_PIPELINE } from '../../core/tokens.js'
 import type { ProxyContext } from '../reverse-proxy/context.js'
 import { checkGuardrails, buildRequestInjection } from './guardrails.js'
-import { appendTrace } from '../logging/traceStore.js'
 import { BudgetExceededError } from '../reverse-proxy/execute.js'
 import {
   buildContentFilterBlock,
@@ -36,7 +35,6 @@ const request: Processor<ProxyContext> = {
     } catch (err: unknown) {
       if (!(err instanceof BudgetExceededError)) throw err
       // Over-limit guardrail judge call: fail like an over-limit completion (matches routes/*.ts today).
-      if (ctx.traceEnabled) ctx.reply.header('x-routerly-trace-id', ctx.traceId)
       const message = 'Usage limit exceeded by content-guardrail check.'
       ctx.result = ctx.protocol === 'anthropic'
         ? { kind: 'block', status: 429, body: { type: 'error', error: { type: 'rate_limit_error', message } } }
@@ -44,20 +42,18 @@ const request: Processor<ProxyContext> = {
       return shortCircuit(ctx.result)
     }
     if (result.evaluated.length > 0) {
-      appendTrace(ctx.traceId, [{ panel: 'request', message: 'guardrail:evaluated', details: { target: 'request', rules: result.evaluated } }])
+      ctx.emit?.({ panel: 'request', message: 'guardrail:evaluated', details: { target: 'request', rules: result.evaluated } })
     }
     if (result.triggered) {
       const blockMessage = result.blockMessage ?? 'This request was blocked by content guardrails.'
-      appendTrace(ctx.traceId, [{ panel: 'request', message: 'guardrail:triggered', details: { rule: result.triggered, target: 'request', block: result.block, log: result.log, blockMessage } }])
+      ctx.emit?.({ panel: 'request', message: 'guardrail:triggered', details: { rule: result.triggered, target: 'request', block: result.block, log: result.log, blockMessage } })
       if (result.block) {
         ctx.blockedBy = result.triggered
         if (ctx.protocol === 'openai' && ctx.stream) {
           // buildContentFilterBlock is JSON-only; the streaming request-block has its
-          // own wire form (hijack + SSE content_filter chunk + [DONE]) and sets its
-          // own trace header on the raw stream (routes/openai.ts L178-197 verbatim).
+          // own wire form (hijack + SSE content_filter chunk + [DONE]).
           writeOpenAIStreamingBlock(ctx)
         } else {
-          if (ctx.traceEnabled) ctx.reply.header('x-routerly-trace-id', ctx.traceId)
           // Plan 4 owns the wire-faithful content_filter payload shape; this reuses it unchanged.
           ctx.result = buildContentFilterBlock(ctx)
         }
@@ -103,14 +99,13 @@ const response: Processor<ProxyContext> = {
     if (!content) return
     const result = await checkGuardrails('response', content, guardrails, pctx, ctx.log)
     if (result.evaluated.length > 0) {
-      appendTrace(ctx.traceId, [{ panel: 'response', message: 'guardrail:evaluated', details: { target: 'response', rules: result.evaluated } }])
+      ctx.emit?.({ panel: 'response', message: 'guardrail:evaluated', details: { target: 'response', rules: result.evaluated } })
     }
     if (result.triggered) {
       const blockMessage = result.blockMessage ?? 'Response blocked by content guardrails.'
-      appendTrace(ctx.traceId, [{ panel: 'response', message: 'guardrail:response-triggered', details: { rule: result.triggered, target: 'response', block: result.block, log: result.log, blockMessage } }])
+      ctx.emit?.({ panel: 'response', message: 'guardrail:response-triggered', details: { rule: result.triggered, target: 'response', block: result.block, log: result.log, blockMessage } })
       if (result.block) {
         ctx.blockedBy = result.triggered
-        if (ctx.traceEnabled) ctx.reply.header('x-routerly-trace-id', ctx.traceId)
         ctx.result = buildContentFilterBlock(ctx)
       } else if (result.log) {
         ctx.guardrailTriggered = result.triggered

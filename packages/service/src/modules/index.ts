@@ -8,7 +8,8 @@ import { budgetModule } from './budget/index.js'
 import { usageModule } from './usage/index.js'
 import { guardrailsModule } from './guardrails/index.js'
 import { piiModule } from './pii/index.js'
-import { loggingModule } from './logging/index.js'
+import { traceModule } from './trace/index.js'
+import { observabilityModule } from './observability/index.js'
 import { cacheModule } from './cache.js'
 import { resilienceModule } from './resilience/index.js'
 import { optimizerModules } from './optimizers/index.js'
@@ -28,7 +29,8 @@ export const coreModules = [
   usageModule,
   guardrailsModule,
   piiModule,
-  loggingModule,
+  traceModule,
+  observabilityModule,
   cacheModule,
   resilienceModule,
   mcpModule,

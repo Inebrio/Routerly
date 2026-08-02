@@ -22,7 +22,9 @@ reference (`configure`, `undo`, `doctor`, `inspect`, `launch`).
 
 ## The client grid
 
-Navigate to `/dashboard/connect`.
+**Connect** sits at the bottom of the sidebar, right under **Settings**, next
+to the other instance-level entries rather than in the working section above.
+Or navigate to `/dashboard/connect` directly.
 
 ![Connect page: the generic endpoint block on top, then the clients grouped by setup method, each tile with its brand mark, support badge and connect modes](../assets/screenshot-connect.png)
 

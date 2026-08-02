@@ -72,6 +72,33 @@ When your application sends a chat request to Routerly:
 
 ---
 
+## Tracing
+
+Every step above is a **pipeline phase**, and each phase runs the modules
+registered for it: `ingress`, `request.preprocess` (PII, guardrails,
+optimizers), `routing.prepare` (policies and the decision), `routing.execute`
+(the upstream call, retries, fallbacks), `response.postprocess`, `finalize`.
+
+Modules do not write to a shared trace object. They publish events on the
+service event bus, on topics shaped `trace/<phase>/<module>/<event>`, and the
+trace module is the only subscriber: it buffers the entries of a request,
+stamping each one with the phase, the module and the moment it arrived. When
+the request finishes it publishes the completed trace on `traces/completed`,
+which is where the readers pick it up:
+
+| Reader | What it does with the trace |
+|--------|-----------------------------|
+| Usage | Stores it on the usage record, shown as the [trace view](../dashboard/usage.md#trace-view) grouped by phase |
+| Live stream | `GET /api/traces/stream`, the management side channel the [Playground](../dashboard/playground.md) reads while the answer is still streaming |
+| Integrations | [Exports](../api/management#trace-export) it as OTLP spans or a signed webhook payload, per integration and with its own sample rate |
+
+Adding a module to the pipeline therefore adds it to the trace, to the live
+stream, and to every export, without touching any of them. Nothing about this
+reaches the LLM wire: the proxied request and response carry no Routerly
+header and no Routerly field.
+
+---
+
 ## Configuration Storage
 
 All state is stored as JSON files on disk under `~/.routerly/` (override with `$ROUTERLY_HOME`). There is no external database dependency.

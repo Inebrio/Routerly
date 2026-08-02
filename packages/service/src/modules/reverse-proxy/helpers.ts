@@ -65,12 +65,10 @@ export function writeOpenAIStreamingBlock(ctx: ProxyContext): void {
   if (origin) {
     reply.raw.setHeader('Access-Control-Allow-Origin', origin)
     reply.raw.setHeader('Access-Control-Allow-Credentials', 'true')
-    if (ctx.traceEnabled) reply.raw.setHeader('Access-Control-Expose-Headers', 'x-routerly-trace-id')
   }
   reply.raw.setHeader('Content-Type', 'text/event-stream')
   reply.raw.setHeader('Cache-Control', 'no-cache')
   reply.raw.setHeader('Connection', 'keep-alive')
-  if (ctx.traceEnabled) reply.raw.setHeader('x-routerly-trace-id', ctx.traceId)
   reply.raw.flushHeaders()
   const body = ctx.request
   const chunk = JSON.stringify({
