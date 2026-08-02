@@ -985,6 +985,7 @@ Examples:
         console.log(chalk.bold(`\n── ${project.name} ──────────────────────────────────`));
         console.log(chalk.gray(`  ID:      `) + project.id);
         console.log(chalk.gray(`  Timeout: `) + formatTimeout(project.timeoutMs));
+        console.log(chalk.gray(`  Traces:  `) + (project.traceContent ? 'metadata + content' : 'metadata only'));
 
         // Routing
         console.log(chalk.bold('\n  Routing'));
@@ -1095,18 +1096,25 @@ Examples:
 
   // ── project edit ─────────────────────────────────────────────────────────────
   cmd.command('edit <project>')
-    .description('Edit project name or timeout')
+    .description('Edit project name, timeout or trace content capture')
     .addHelpText('after', `
 Examples:
   routerly project edit my-api --name "My Production API"
   routerly project edit my-api --timeout 5000
   routerly project edit my-api --timeout 0
+  routerly project edit my-api --trace-content
+  routerly project edit my-api --no-trace-content
 `)
     .option('--name <name>', 'New project name')
     .option('--timeout <ms>', 'New TTFT timeout per model attempt in milliseconds (0 disables it)')
-    .action(async (nameOrId: string, opts: { name?: string; timeout?: string }) => {
-      if (!opts.name && opts.timeout === undefined) {
-        console.error(chalk.red('Provide at least --name or --timeout.'));
+    .option('--trace-content', 'Record prompts and answers in traces (off by default: metadata only)')
+    .option('--no-trace-content', 'Record metadata only, no prompts or answers')
+    // --trace-content declared before --no-trace-content, so an untouched flag stays
+    // undefined and leaves the stored value alone.
+    .action(async (nameOrId: string, opts: { name?: string; timeout?: string; traceContent?: boolean }) => {
+      const traceContent = opts.traceContent;
+      if (!opts.name && opts.timeout === undefined && traceContent === undefined) {
+        console.error(chalk.red('Provide at least --name, --timeout or --trace-content.'));
         process.exit(1);
       }
       try {
@@ -1119,6 +1127,7 @@ Examples:
           fallbackRoutingModelIds: project.fallbackRoutingModelIds,
           policies: project.policies,
           models: project.models,
+          ...(traceContent !== undefined ? { traceContent } : {}),
         });
         console.log(chalk.green(`✓ Project "${project.name}" updated.`));
       } catch (err) {

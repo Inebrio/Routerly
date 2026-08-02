@@ -4,13 +4,13 @@ import {
   BarChart, Bar, Cell,
 } from 'recharts';
 import { Link } from 'react-router-dom';
-import { Activity, ArrowRight, DollarSign, XCircle, Boxes, FolderOpen, Terminal, TrendingUp } from 'lucide-react';
+import { Activity, ArrowRight, Coins, DollarSign, XCircle, Boxes, FolderOpen, Terminal, TrendingUp } from 'lucide-react';
 import { CLIENT_REGISTRY } from '@routerly/shared';
 import { getUsage, getModels, getProjects, type UsageStats } from '../api.js';
 import { useClientsEnabled } from './ConnectPage.js';
 import { ChartTooltip, axisProps, seriesColor, useChartTheme } from '../components/charts.js';
 import { DateRangePicker, PRESETS, type DateRange } from '../components/DateRangePicker.js';
-import { SavingsCard, SavingsStats, StatCard, compactCost, costSavedNote, savingsSeriesData, type SavingsMetric } from '../components/savings.js';
+import { CostCard, SavingsCard, StatCard, TokensCard, compactCost, savingsSeriesData, type SavingsMetric } from '../components/savings.js';
 import { formatCost } from '../utils/traceUtils.js';
 
 export function OverviewPage() {
@@ -94,9 +94,13 @@ export function OverviewPage() {
         <div className="stats-grid">
           {/* What routing saved is what the cost would otherwise have been, so it
               rides on the cost itself instead of a card of its own (T201). */}
-          <StatCard icon={<DollarSign size={18} />} label="Total Cost" accentColor="#3D75F5"
-            value={`$${stats.summary.totalCost.toFixed(4)}`} sub="USD this period"
-            {...(costSavedNote(stats.savings) ? { sub2: costSavedNote(stats.savings)! } : {})}
+          <CostCard icon={<DollarSign size={18} />} accentColor="#3D75F5"
+            totalCost={stats.summary.totalCost}
+            {...(stats.savings ? { savings: stats.savings } : {})}
+            to="/dashboard/usage" />
+          <TokensCard icon={<Coins size={18} />} accentColor="#8B5CF6"
+            inputTokens={totalIn} outputTokens={totalOut} cachedTokens={totalCached}
+            {...(stats.savings ? { savings: stats.savings } : {})}
             to="/dashboard/usage" />
           <StatCard icon={<Activity size={18} />} label="Total Calls" accentColor="#5A90F8"
             value={stats.summary.totalCalls}
@@ -113,23 +117,7 @@ export function OverviewPage() {
             value={modelCount} sub="registered" to="/dashboard/models" />
           <StatCard icon={<FolderOpen size={18} />} label="Projects" accentColor="#A78BFA"
             value={projectCount} sub="active" to="/dashboard/projects" />
-          {stats.savings && <SavingsStats savings={stats.savings} />}
         </div>
-
-        {/* Token aggregate strip */}
-        {(totalIn > 0 || totalOut > 0) && (
-          <div style={{ marginBottom: 20, fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <span>Input tokens: <strong style={{ color: 'var(--text-secondary)' }}>{totalIn.toLocaleString()}</strong></span>
-            <span>·</span>
-            <span>Output tokens: <strong style={{ color: 'var(--text-secondary)' }}>{totalOut.toLocaleString()}</strong></span>
-            {totalCached > 0 && (
-              <>
-                <span>·</span>
-                <span>Cached: <strong style={{ color: 'var(--text-secondary)' }}>{totalCached.toLocaleString()}</strong></span>
-              </>
-            )}
-          </div>
-        )}
 
         {/* What routing saved, over time (T81) */}
         {savingsData.length > 0 && (
@@ -137,7 +125,6 @@ export function OverviewPage() {
             key={dateRange.label}
             data={savingsData}
             baselineIds={stats.series?.baselineModelIds ?? []}
-            {...(stats.series?.baselineModelId ? { baselineModelId: stats.series.baselineModelId } : {})}
             {...(stats.savings ? { savings: stats.savings } : {})}
             metric={savingsMetric}
             onMetric={setSavingsMetric}

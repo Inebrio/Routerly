@@ -19,6 +19,7 @@ vi.mock('../api.js', () => ({
   createPlaygroundPreset: vi.fn(),
   deletePlaygroundPreset: vi.fn(),
   getTrace: vi.fn(),
+  streamTraces: vi.fn(),
 }));
 
 // ponytail: mock SearchableSelect as a plain <select> so getByRole('combobox')/fireEvent.change tests keep working
@@ -63,7 +64,7 @@ vi.mock('../utils/traceUtils.js', () => ({
 // ── Imports after mocks ────────────────────────────────────────────────────
 
 import { TestPage } from './TestPage';
-import { getProjects, getPlaygroundPresets, getTrace, createPlaygroundPreset, deletePlaygroundPreset } from '../api.js';
+import { getProjects, getPlaygroundPresets, getTrace, createPlaygroundPreset, deletePlaygroundPreset, streamTraces } from '../api.js';
 
 const FAKE_PROJECT = {
   id: 'proj-1', name: 'Test',
@@ -83,7 +84,7 @@ const FAKE_PROJECT_BLOCK_RESPONSE = {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function makeSSEResponse(finishReason: string, content = '', traceId = 'trace-123') {
+function makeSSEResponse(finishReason: string, content = '') {
   const chunk = JSON.stringify({
     id: 'c1', object: 'chat.completion.chunk',
     choices: [{ index: 0, delta: content ? { content } : {}, finish_reason: finishReason }],
@@ -93,7 +94,21 @@ function makeSSEResponse(finishReason: string, content = '', traceId = 'trace-12
     start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); },
   }), {
     status: 200,
-    headers: { 'x-routerly-trace-id': traceId, 'content-type': 'text/event-stream' },
+    headers: { 'content-type': 'text/event-stream' },
+  });
+}
+
+/**
+ * The trace side channel the page opens before each turn. It is where the traceId
+ * comes from now — the proxy response carries no trace header.
+ */
+function mockTraceStream(entries: Array<{ panel: string; message: string; details?: Record<string, unknown> }> = [], traceId = 'trace-123') {
+  vi.mocked(streamTraces).mockImplementation(async (_query, onEvent) => {
+    onEvent({ traceId, topic: 'trace/request/trace/open', entry: { panel: 'request', message: 'trace:open', details: {} } });
+    for (const entry of entries) {
+      onEvent({ traceId, topic: `trace/request/${entry.message}`, entry: { details: {}, ...entry } });
+    }
+    return () => {};
   });
 }
 
@@ -116,6 +131,7 @@ beforeEach(() => {
   vi.mocked(getProjects).mockResolvedValue([FAKE_PROJECT] as never);
   vi.mocked(getPlaygroundPresets).mockResolvedValue([]);
   vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
+  mockTraceStream();
 });
 
 // ── Tests ──────────────────────────────────────────────────────────────────
@@ -199,7 +215,7 @@ function makeChunkedSSEResponse(chunks: string[], traceId = 'trace-123') {
         else c.close();
       },
     }),
-    { status: 200, headers: { 'x-routerly-trace-id': traceId, 'content-type': 'text/event-stream' } },
+    { status: 200, headers: { 'content-type': 'text/event-stream' } },
   );
 }
 
@@ -670,7 +686,7 @@ describe('TestPage — costEstimate display', () => {
     const body = `data: ${usageChunk}\n\ndata: ${finalChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': 'trace-tok', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -1090,19 +1106,19 @@ describe('TestPage — savePreset with conversation', () => {
   });
 });
 
-// ── SSE trace event in single mode handleSend (lines 518-521) ────────────────
+// ── Live trace entries from the side channel, single mode ───────────────────
 
-describe('TestPage — SSE trace event in handleSend', () => {
-  it('processes trace event in SSE stream and populates debug history', async () => {
-    vi.mocked(getTrace).mockRejectedValue(new Error('no trace fetch')); // force SSE-collected entries
-    const traceChunk = JSON.stringify({ type: 'trace', entry: { message: 'routing:selected', details: {} } });
+describe('TestPage — live trace entries in handleSend', () => {
+  it('keeps the entries collected live when the stored trace cannot be fetched', async () => {
+    vi.mocked(getTrace).mockRejectedValue(new Error('no trace fetch')); // force the live entries
+    mockTraceStream([{ panel: 'request', message: 'routing:selected' }]);
     const contentChunk = JSON.stringify({
       choices: [{ delta: { content: 'Routed reply' }, finish_reason: 'stop' }],
     });
-    const body = `data: ${traceChunk}\n\ndata: ${contentChunk}\n\ndata: [DONE]\n\n`;
+    const body = `data: ${contentChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -1114,9 +1130,8 @@ describe('TestPage — SSE trace event in handleSend', () => {
     await waitFor(() =>
       expect(screen.queryByText('Routed reply')).not.toBeNull(),
     { timeout: 4000 });
-    // stats-card rendered in debug sidebar (SSE trace processed)
     await waitFor(() =>
-      expect(screen.queryByTestId('stats-card')).not.toBeNull()
+      expect(screen.queryByText('routing:selected')).not.toBeNull()
     );
   });
 });
@@ -1135,7 +1150,7 @@ describe('TestPage — SSE thinking delta', () => {
     const body = `data: ${thinkingChunk}\n\ndata: ${contentChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': 'tr-think', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -1353,7 +1368,7 @@ describe('TestPage — ComparePanel response stats row', () => {
     const body = `data: ${usageChunk}\n\ndata: ${contentChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': 'cmp-stats', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     renderPage();
@@ -1408,16 +1423,16 @@ describe('TestPage — ComparePanel stop button', () => {
 // ── ComparePanel trace + getTrace fetch ────────────────────────────────────────
 
 describe('TestPage — ComparePanel trace + getTrace fetch', () => {
-  it('compare mode processes trace type events and fetches full trace', async () => {
+  it('compare mode collects live entries and fetches the stored trace', async () => {
     vi.mocked(getTrace).mockResolvedValue({
       trace: [{ message: 'compare:route', details: {} }],
     } as never);
-    const traceChunk = JSON.stringify({ type: 'trace', entry: { message: 'cmp:route', details: {} } });
+    mockTraceStream([{ panel: 'request', message: 'cmp:route' }], 'cmp-trace');
     const contentChunk = JSON.stringify({ choices: [{ delta: { content: 'Cmp reply' }, finish_reason: 'stop' }] });
-    const body = `data: ${traceChunk}\n\ndata: ${contentChunk}\n\ndata: [DONE]\n\n`;
+    const body = `data: ${contentChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': 'cmp-trace', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     renderPage();
@@ -1438,6 +1453,7 @@ describe('TestPage — ComparePanel trace + getTrace fetch', () => {
     await waitFor(() =>
       expect(screen.queryByText(/Debug/)).not.toBeNull()
     );
+    expect(vi.mocked(getTrace)).toHaveBeenCalledWith('cmp-trace');
   });
 });
 
@@ -1700,7 +1716,7 @@ describe('TestPage — assistant message without model name', () => {
     const body = `data: ${chunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': 'tr-nomodel', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -1727,7 +1743,7 @@ describe('TestPage — message token cost with null tokens', () => {
     const body = `data: ${usageChunk}\n\ndata: ${contentChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': 'tr-tokens', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -1766,7 +1782,7 @@ describe('TestPage — Reasoning spinner during streaming', () => {
           // Don't close — stream stays open, loading=true
         },
       }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     const textarea = screen.getByPlaceholderText('Type a message...');
@@ -1811,7 +1827,7 @@ describe('TestPage — ComparePanel assistant message with latencyMs', () => {
     const body = `data: ${contentChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': 'cmp-lat', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     renderPage();
@@ -1871,7 +1887,7 @@ describe('TestPage — ComparePanel SSE tail flush', () => {
     const body = `data: ${contentChunk}`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     renderPage();
@@ -1901,7 +1917,7 @@ describe('TestPage — handleSend SSE tail flush (main send)', () => {
     const body = `data: ${contentChunk}`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -1924,7 +1940,7 @@ describe('TestPage — ComparePanel getTrace rejection is caught', () => {
     const body = `data: ${contentChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': 'trace-id-cmp', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     renderPage();
@@ -1953,7 +1969,7 @@ describe('TestPage — ComparePanel data.model captured', () => {
     const body = `data: ${chunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     renderPage();
@@ -1983,7 +1999,7 @@ describe('TestPage — ComparePanel data.usage branch', () => {
     const body = `data: ${usageChunk}\n\ndata: ${contentChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     renderPage();
@@ -2017,7 +2033,7 @@ describe('TestPage — ComparePanel data.error SSE event', () => {
     const body = `data: ${errChunk}\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     renderPage();
@@ -2046,7 +2062,7 @@ describe('TestPage — ComparePanel data.type=error SSE event', () => {
     const body = `data: ${errChunk}\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     renderPage();
@@ -2076,7 +2092,7 @@ describe('TestPage — handleSend data.type=result event skipped', () => {
     const body = `data: ${resultChunk}\n\ndata: ${contentChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -2099,7 +2115,7 @@ describe('TestPage — handleSend data.error SSE event', () => {
     const body = `data: ${errChunk}\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -2123,7 +2139,7 @@ describe('TestPage — handleSend blocked with no trace entry', () => {
     const body = `data: ${chunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': 'tr-noentry', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -2148,7 +2164,7 @@ describe('TestPage — handleSend stop_reason=refusal blocked', () => {
     const body = `data: ${chunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': 'tr-refusal', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -2184,7 +2200,7 @@ describe('TestPage — handleSend guardrail trace with full details', () => {
     const body = `data: ${chunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': 'tr-details', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -2219,7 +2235,7 @@ describe('TestPage — handleSend guardrail:response-triggered entry', () => {
     const body = `data: ${chunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': 'tr-resp-trig', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -2249,7 +2265,7 @@ describe('TestPage — handleSend guardrail block+log action', () => {
     const body = `data: ${chunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': 'tr-block-log', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -2386,7 +2402,7 @@ describe('TestPage — assistant message with model name from SSE', () => {
     const body = `data: ${chunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': 'tr-model', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -2508,7 +2524,7 @@ describe('TestPage — ComparePanel data.type=result event skipped', () => {
     const body = `data: ${resultChunk}\n\ndata: ${contentChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     renderPage();
@@ -2538,7 +2554,7 @@ describe('TestPage — ComparePanel multi-delta SSE stream', () => {
     const body = `data: ${delta1}\n\ndata: ${delta2}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     renderPage();
@@ -2599,7 +2615,7 @@ describe('TestPage — ComparePanel usage-only SSE (no content delta)', () => {
     const body = `data: ${usageChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     renderPage();
@@ -2631,7 +2647,7 @@ describe('TestPage — handleSend data.type checks', () => {
     const body = `data: ${resultChunk}\n\ndata: ${contentChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -2656,7 +2672,7 @@ describe('TestPage — handleSend no finish_reason in delta', () => {
     const body = `data: ${chunk}\n\ndata: ${doneChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -2736,7 +2752,7 @@ describe('TestPage — ComparePanel usage without prompt_tokens', () => {
     const body = `data: ${usageChunk}\n\ndata: ${contentChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     renderPage();
@@ -2766,7 +2782,7 @@ describe('TestPage — ComparePanel SyntaxError swallowed', () => {
     const body = `data: {not valid json!!!\n\ndata: ${validChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     renderPage();
@@ -2835,7 +2851,7 @@ describe('TestPage — ComparePanel assistant message latencyMs=0', () => {
     const body = `data: ${contentChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     renderPage();
@@ -2938,7 +2954,7 @@ describe('TestPage — handleSend usage without prompt_tokens', () => {
     const body = `data: ${usageChunk}\n\ndata: ${contentChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -2963,7 +2979,7 @@ describe('TestPage — handleSend second thinking delta', () => {
     const body = `data: ${thinking1}\n\ndata: ${thinking2}\n\ndata: ${content}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -2988,7 +3004,7 @@ describe('TestPage — handleSend content delta after thinking sets assistantAdd
     const body = `data: ${thinkingChunk}\n\ndata: ${contentChunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -3013,7 +3029,7 @@ describe('TestPage — handleSend finish_reason never set in stream', () => {
     const body = `data: ${d1}\n\ndata: ${d2}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': '', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -3043,7 +3059,7 @@ describe('TestPage — handleSend guardrail action fallback to block', () => {
     const body = `data: ${chunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': 'tr-both-false', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -3073,7 +3089,7 @@ describe('TestPage — handleSend guardrail action=log only', () => {
     const body = `data: ${chunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': 'tr-log-only', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();
@@ -3103,7 +3119,7 @@ describe('TestPage — handleSend guardrail action=block only (no log)', () => {
     const body = `data: ${chunk}\n\ndata: [DONE]\n\n`;
     global.fetch = vi.fn().mockResolvedValue(new Response(
       new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
-      { status: 200, headers: { 'x-routerly-trace-id': 'tr-block-no-log', 'content-type': 'text/event-stream' } },
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
     ));
 
     await setupWithToken();

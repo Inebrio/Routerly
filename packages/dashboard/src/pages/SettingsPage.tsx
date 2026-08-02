@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, ChevronUp, Globe, BarChart2, Bell, Users, GitBranch, Activity, TrendingUp, Database, Webhook, Dog, Copy, Check, Shield } from 'lucide-react';
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
 import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases, getRoles, getUsers, ALL_PERMISSIONS, getIntegrations, createIntegration, updateIntegration, deleteIntegration, testIntegration, refreshCatalog, getCatalogStatus, probeRepo } from '../api';
-import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, Permission, Integration, IntegrationType, ProviderRepo, RepoStatus } from '../api';
+import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, Permission, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RepoStatus } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MultiSelect } from '../components/MultiSelect';
 import { SearchableSelect } from '../components/SearchableSelect';
@@ -999,6 +999,48 @@ function textToHeaders(text: string): Record<string, string> {
   return result;
 }
 
+/**
+ * Trace export opt-in, offered only by the sinks that can carry a per-request
+ * payload (OTLP spans, webhook JSON). Off by default: unlike the 60s metric push
+ * this is one outbound request per proxied request.
+ */
+function TraceExportFields({ form, onChange }: {
+  form: Record<string, unknown>;
+  onChange: (patch: Record<string, unknown>) => void;
+}) {
+  const traces = form.traces as IntegrationTraces | undefined;
+  const enabled = traces?.enabled === true;
+  const rate = traces?.sampleRate;
+
+  return (
+    <div className="form-group">
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+        <input type="checkbox" checked={enabled} style={{ accentColor: 'var(--primary)' }}
+          onChange={e => onChange({ traces: { enabled: e.target.checked, ...(rate != null ? { sampleRate: rate } : {}) } })} />
+        <span className="form-label" style={{ margin: 0 }}>Export request traces</span>
+      </label>
+      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+        Ships the full trace of each proxied request: every phase, every module that
+        spoke, and prompts and answers for the projects that opted in.
+      </p>
+      {enabled && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+          <label className="form-label" style={{ margin: 0 }}>Sample rate</label>
+          <input className="form-input" type="number" min={0} max={1} step={0.05} style={{ width: 100 }}
+            value={rate ?? 1}
+            onChange={e => {
+              // An emptied field reads as "no sampling", the default, not as "export nothing".
+              const value = e.target.value === '' ? 1 : Number(e.target.value);
+              const clamped = Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 1;
+              onChange({ traces: { enabled: true, sampleRate: clamped } });
+            }} />
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>1 exports every request, 0.1 one in ten.</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function IntegrationIcon({ type, size = 14 }: { type: IntegrationType; size?: number }) {
   const Icon: React.ElementType = INTEGRATION_TYPES.find(t => t.type === type)?.Icon ?? Activity;
   return <Icon size={size} />;
@@ -1035,7 +1077,7 @@ function integrationFormFields(
                 onChange={e => onChange({ endpoint: e.target.value })}
                 required />
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                Base URL of your OTLP receiver. Routerly appends <code>/v1/metrics</code>. Default HTTP port is 4318, gRPC is 4317.
+                Base URL of your OTLP receiver. Routerly appends <code>/v1/metrics</code>, and <code>/v1/traces</code> when trace export is on. Default HTTP port is 4318, gRPC is 4317.
               </p>
             </div>
             <div className="form-group" style={{ margin: 0 }}>
@@ -1055,6 +1097,7 @@ function integrationFormFields(
               onChange={e => onChange({ headers: Object.keys(textToHeaders(e.target.value)).length ? textToHeaders(e.target.value) : undefined })}
               style={{ resize: 'vertical', fontFamily: 'monospace', fontSize: '0.8rem' }} />
           </div>
+          <TraceExportFields form={form} onChange={onChange} />
         </>
       );
     case 'datadog':
@@ -1199,6 +1242,7 @@ function integrationFormFields(
               onChange={e => onChange({ headers: Object.keys(textToHeaders(e.target.value)).length ? textToHeaders(e.target.value) : undefined })}
               style={{ resize: 'vertical', fontFamily: 'monospace', fontSize: '0.8rem' }} />
           </div>
+          <TraceExportFields form={form} onChange={onChange} />
         </>
       );
   }

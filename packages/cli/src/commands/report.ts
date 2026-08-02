@@ -73,8 +73,8 @@ function parseCallType(value: string): string {
 }
 
 /**
- * What routing saved (T102), the same three figures the Overview cards show,
- * anchored the same way: the costliest paid baseline, the single-model policy
+ * What routing saved (T102), the same figures the Overview cards show, anchored
+ * the same way: the costliest paid baseline, the single-model policy
  * routing replaces. The cheapest baseline follows as context, because "sending
  * everything to the cheapest model would have cost less" is true of any router
  * and reads as a verdict when it comes first.
@@ -88,10 +88,6 @@ function printSavingsRange(savings: SavingsSummary): void {
 
   const anchor = paid[paid.length - 1]!;
   const cheapest = paid[0]!;
-  // The anchor is picked on price, so it need not be one of the models that
-  // answered: the time line falls back to the costliest one that did.
-  const timed = paid.filter(b => b.latencyDeltaMs !== undefined);
-  const timeAnchor = timed[timed.length - 1];
 
   console.log(chalk.gray('Cost saved:   ') + `$${anchor.costDelta.toFixed(6)}`
     + chalk.gray(` (vs always ${anchor.modelId})`));
@@ -99,10 +95,6 @@ function printSavingsRange(savings: SavingsSummary): void {
     console.log(chalk.gray('              ') + `$${cheapest.costDelta.toFixed(6)}`
       + chalk.gray(` (vs always ${cheapest.modelId})`));
   }
-  console.log(chalk.gray('Time saved:   ') + (timeAnchor
-    ? `${Math.round(timeAnchor.latencyDeltaMs!).toLocaleString()} ms`
-      + chalk.gray(` (vs always ${timeAnchor.modelId})`)
-    : chalk.gray('no baseline answered in this window')));
   console.log(chalk.gray('Tokens saved: ')
     + `${savings.optimizers.reduce((sum, o) => sum + o.tokensSaved, 0).toLocaleString()} cut by optimizers, measured`);
   console.log(chalk.gray('              ')
@@ -124,7 +116,7 @@ function printSavingsTrend(series: UsageSeries | undefined): void {
   console.log(chalk.bold(`\nPer ${series.bucket}`)
     + (series.baselineModelId ? chalk.gray(`, against ${series.baselineModelId}`) : ''));
   const table = new Table({
-    head: ['Bucket', 'Calls', 'Cost', 'Would cost', 'Saved', 'Tokens in/out', 'Avg ms', 'Would take'].map(h => chalk.cyan(h)),
+    head: ['Bucket', 'Calls', 'Cost', 'Would cost', 'Saved', 'Tokens in/out', 'Avg ms'].map(h => chalk.cyan(h)),
   });
   for (const p of series.points) {
     const saved = p.baselineCost - p.cost;
@@ -138,7 +130,6 @@ function printSavingsTrend(series: UsageSeries | undefined): void {
         : saved >= 0 ? chalk.green(`$${saved.toFixed(6)}`) : chalk.red(`-$${Math.abs(saved).toFixed(6)}`),
       `${p.inputTokens.toLocaleString()} / ${p.outputTokens.toLocaleString()}`,
       perCall(p.latencyMs),
-      p.baselineLatencyMs > 0 ? perCall(p.baselineLatencyMs) : chalk.gray('-'),
     ]);
   }
   console.log(table.toString());
@@ -462,17 +453,12 @@ Examples:
         } else {
           console.log(chalk.bold('\nIf everything had gone to one model'));
           const table = new Table({
-            head: ['Model', 'Would cost', 'Saved', 'Saved %', 'Would take', 'Time saved', 'Tokens saved'].map(h => chalk.cyan(h)),
+            head: ['Model', 'Would cost', 'Saved', 'Saved %', 'Tokens saved'].map(h => chalk.cyan(h)),
           });
           for (const b of savings.baselines) {
             const saved = b.costDelta >= 0 ? chalk.green(`$${b.costDelta.toFixed(6)}`) : chalk.red(`-$${Math.abs(b.costDelta).toFixed(6)}`);
-            // No output token from this model in the window means no throughput to estimate from.
-            const would = b.latencyMs === undefined ? chalk.gray('no sample') : `${Math.round(b.latencyMs).toLocaleString()} ms`;
-            const timeSaved = b.latencyDeltaMs === undefined
-              ? chalk.gray('-')
-              : `${Math.round(b.latencyDeltaMs).toLocaleString()} ms`;
             table.push([
-              b.modelId, `$${b.cost.toFixed(6)}`, saved, `${b.costDeltaPercent.toFixed(1)}%`, would, timeSaved,
+              b.modelId, `$${b.cost.toFixed(6)}`, saved, `${b.costDeltaPercent.toFixed(1)}%`,
               b.tokenDelta.toLocaleString(),
             ]);
           }
@@ -500,7 +486,7 @@ Examples:
 
         if (opts.trend) printSavingsTrend(data.series);
 
-        console.log(chalk.gray('\nCosts are the observed tokens repriced, times are estimated from each model\'s own throughput in the period.'));
+        console.log(chalk.gray('\nCosts are the observed tokens repriced at each model\'s rates.'));
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);

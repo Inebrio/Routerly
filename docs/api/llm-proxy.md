@@ -38,8 +38,8 @@ Array (multimodal) message content is not inspected by either stage. See the
 
 When a guardrail rule with `block: true` triggers, Routerly returns **HTTP 200**
 and mimics the provider's native content-filter format. No HTTP error is returned.
-The `x-routerly-trace-id` header is present on blocked responses only when the
-client sends `x-routerly-trace: 1` (see [Response headers](#response-headers)).
+The block is recorded on the trace like any other decision; the response itself
+carries no Routerly headers (see [Response headers](#response-headers)).
 
 **OpenAI `/v1/chat/completions` (non-streaming):**
 
@@ -89,12 +89,16 @@ only and is retrievable via
 OpenAI and Anthropic SDKs that do not expect a text body on content-filter events.
 :::
 
-When the Playground sends `x-routerly-trace: 1`, the `x-routerly-trace-id` response header can be used to look up the full trace:
+A caller that wants to read its own trace sends its own correlation id on the
+request (`x-routerly-trace: <id>`) and watches the management side channel:
 
 ```bash
-curl -s http://localhost:3000/api/traces/$TRACE_ID \
+curl -N "http://localhost:3000/api/traces/stream?correlationId=$MY_ID" \
   -H "Authorization: Bearer <jwt>"
 ```
+
+The trace of a finished request is also on its usage record
+(`GET /api/usage`, field `trace`).
 
 ---
 
@@ -132,33 +136,31 @@ Anthropic SDKs) receive a fully standard response with no Routerly-specific head
 
 ### Response headers
 
-| Header | Condition | Description |
-|--------|-----------|-------------|
-| `x-routerly-trace-id` | Only when `x-routerly-trace: 1` was sent | Trace ID for the request. Used by the Routerly Playground to fetch routing debug data via `GET /api/traces/:id`. Standard SDK clients do not receive this header. |
-
-```
-x-routerly-trace-id: 018f3c2a-4b5d-7e8f-9012-34567890abcd
-```
+Routerly adds none. The response is the provider's response, headers included, so
+any OpenAI or Anthropic SDK works by changing the base URL and nothing else.
 
 ### Request headers
 
+Both headers below are optional and are consumed by Routerly: neither is forwarded
+to the provider, and neither changes the request or the response payload.
+
 | Header | Value | Description |
 |--------|-------|-------------|
-| `x-routerly-trace` | `1` | Opt in to receiving the `x-routerly-trace-id` response header. Used by the Routerly Playground. Standard API clients should not send this header. |
-| `x-routerly-no-trace` | `1` | Suppresses `data: {"type":"trace",...}` SSE events from the streaming response wire. Trace data is still recorded server-side and accessible via `GET /api/traces/:id`. Use with strict OpenAI-compatible SDK clients that validate SSE frame schemas and reject non-standard event types. Applies to all three endpoints (`/v1/chat/completions`, `/v1/responses`, `/v1/messages`). |
+| `x-routerly-trace` | any id you choose | Correlation id for this request. Pass the same value to `GET /api/traces/stream?correlationId=<id>` to watch the trace live on the management API. The value never leaves Routerly. |
 | `x-routerly-conversation-id` | string | Session identifier for grouping related requests. Appears in usage records as `sessionId` for analysis and filtering. Useful for tracking multi-turn conversations, thread IDs, or user sessions. |
 
 ### Response (streaming)
 
-When `"stream": true`, the response is a Server-Sent Events stream. Each event has one of the following types:
+When `"stream": true`, the response is the provider's own Server-Sent Events
+stream, forwarded chunk by chunk:
 
 | SSE data prefix | Description |
 |----------------|-------------|
-| `data: {"type":"trace",...}` | Routing decision metadata (first event, omitted if `x-routerly-no-trace: 1`) |
-| `data: {"type":"content",...}` | Token chunk from the model |
+| `data: {"id":"...","object":"chat.completion.chunk","choices":[{"delta":{...}}]}` | Token chunk from the model |
 | `data: [DONE]` | End of stream |
 
-The `trace` event includes the selected model, policy scores, and request cost estimate.
+Routerly injects no frames of its own. Routing decisions are read on the
+management API (`GET /api/traces/stream`), never from the LLM wire.
 
 ---
 
@@ -173,7 +175,7 @@ OpenAI Responses API compatible endpoint. Supports stateful multi-turn conversat
 ### Request headers
 
 Same headers as [Chat Completions](#request-headers):
-- `x-routerly-no-trace: 1` — suppresses trace events in streaming responses
+- `x-routerly-trace: <id>` — correlation id for the live trace side channel
 - `x-routerly-conversation-id: <string>` — session identifier for usage tracking
 
 ### Request
@@ -215,7 +217,7 @@ Anthropic Messages API compatible endpoint. Use this with the Anthropic SDK by s
 ### Request headers
 
 Same headers as [Chat Completions](#request-headers):
-- `x-routerly-no-trace: 1` — suppresses trace events in streaming responses
+- `x-routerly-trace: <id>` — correlation id for the live trace side channel
 - `x-routerly-conversation-id: <string>` — session identifier for usage tracking
 
 ### Response
@@ -281,16 +283,19 @@ See [Service — Pass-Through Proxy](../service/endpoints#pass-through-proxy) fo
 
 ## Streaming Protocol Details
 
-Routerly extends the standard SSE stream with a `trace` event at the start:
+The stream is the provider's stream. Routerly adds no event of its own, so an SDK
+that validates SSE frames sees exactly what it would see talking to the provider
+directly:
 
 ```
-data: {"type":"trace","model":"gpt-5-mini","provider":"openai","policies":["health","cheapest"],"costEstimate":0.000025}
+data: {"id":"chatcmpl-...","object":"chat.completion.chunk","model":"gpt-5-mini","choices":[{"index":0,"delta":{"content":"Hello"},"finish_reason":null}]}
 
-data: {"type":"content","delta":"Hello"}
-
-data: {"type":"content","delta":" there"}
+data: {"id":"chatcmpl-...","object":"chat.completion.chunk","model":"gpt-5-mini","choices":[{"index":0,"delta":{"content":" there"},"finish_reason":null}]}
 
 data: [DONE]
 ```
+
+Which model was picked, and why, is on the trace: live on
+`GET /api/traces/stream`, or afterwards on the request's usage record.
 
 Clients that only look for `data:` lines starting after the `trace` event will receive standard OpenAI delta chunks and will not need modification.

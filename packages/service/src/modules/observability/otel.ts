@@ -5,7 +5,7 @@ import { SERVICE_VERSION } from '../telemetry/telemetry.js';
 
 type Snapshot = Awaited<ReturnType<typeof getMetricsSnapshot>>;
 
-function toAttrs(labels: Record<string, string>): { key: string; value: { stringValue: string } }[] {
+export function toAttrs(labels: Record<string, string>): { key: string; value: { stringValue: string } }[] {
   return Object.entries(labels).map(([key, value]) => ({ key, value: { stringValue: value } }));
 }
 

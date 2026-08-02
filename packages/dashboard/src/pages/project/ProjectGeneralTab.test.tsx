@@ -226,6 +226,25 @@ describe('ProjectGeneralTab — Advanced settings toggle', () => {
     await waitFor(() => expect(screen.queryByText('TTFT Timeout (ms)')).toBeNull());
   });
 
+  it('saves the trace content opt-in', async () => {
+    renderTab();
+    await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Advanced settings/i }));
+    const checkbox = await screen.findByLabelText(/Capture prompts and answers/i);
+    expect((checkbox as HTMLInputElement).checked).toBe(false);
+    await userEvent.click(checkbox);
+    await userEvent.click(screen.getByRole('button', { name: /Save Changes/i }));
+    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalledWith('proj-1', expect.objectContaining({ traceContent: true })));
+  });
+
+  it('pre-fills the trace content opt-in from the project', async () => {
+    renderTab({ ...mockProject, traceContent: true });
+    await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Advanced settings/i }));
+    const checkbox = await screen.findByLabelText(/Capture prompts and answers/i);
+    expect((checkbox as HTMLInputElement).checked).toBe(true);
+  });
+
   it('pre-fills timeoutMs from project', async () => {
     renderTab();
     await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));

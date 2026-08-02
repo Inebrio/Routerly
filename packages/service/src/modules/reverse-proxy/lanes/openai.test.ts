@@ -172,20 +172,20 @@ describe('openai transport lane', () => {
     })
   })
 
-  it('egress writes a json result via reply.send and honors trace opt-in', async () => {
+  it('egress writes a json result via reply.send, adding no headers of its own', async () => {
     const sent: unknown[] = []
     const headers: Record<string, string> = {}
     const reply: any = { send: (b: unknown) => sent.push(b), header: (k: string, v: string) => { headers[k] = v }, code: () => reply }
     const ctx = {
-      protocol: 'openai', reply, traceEnabled: true, traceId: 't1',
+      protocol: 'openai', reply, traceId: 't1',
       result: { kind: 'json', body: { object: 'chat.completion' } },
     } as unknown as ProxyContext
     await openaiEgress.run(ctx)
     expect(sent).toEqual([{ object: 'chat.completion' }])
-    expect(headers['x-routerly-trace-id']).toBe('t1')
+    expect(headers).toEqual({})
   })
 
-  it('egress writes a json result with an explicit status and skips the trace header when trace is off', async () => {
+  it('egress writes a json result with an explicit status', async () => {
     const sent: unknown[] = []
     let sentStatus: number | undefined
     const headers: Record<string, string> = {}
@@ -195,12 +195,12 @@ describe('openai transport lane', () => {
       code: (c: number) => { sentStatus = c; return reply },
     }
     const ctx = {
-      protocol: 'openai', reply, traceEnabled: false, traceId: 't1',
+      protocol: 'openai', reply, traceId: 't1',
       result: { kind: 'json', status: 201, body: { object: 'chat.completion' } },
     } as unknown as ProxyContext
     await openaiEgress.run(ctx)
     expect(sentStatus).toBe(201)
-    expect(headers['x-routerly-trace-id']).toBeUndefined()
+    expect(headers).toEqual({})
   })
 
   it('is a no-op when protocol is not openai', async () => {
@@ -230,7 +230,7 @@ describe('openai transport lane', () => {
         code: (c: number) => { sentStatus = c; return reply },
       }
       const ctx = {
-        protocol: 'openai', reply, traceEnabled: true, traceId: 't1',
+        protocol: 'openai', reply, traceId: 't1',
         result: { kind: 'block', status, body: { error: { message: 'x', type: 'server_error' } } },
       } as unknown as ProxyContext
       await openaiEgress.run(ctx)
@@ -269,7 +269,7 @@ describe('openai transport lane', () => {
     expect(sentStatus).toBe(200)
   })
 
-  it('egress streams: replays routeTrace, writes chunks + [DONE], sets CORS + trace headers when opted in', async () => {
+  it('egress streams: writes chunks + [DONE] and sets CORS, never trace frames or trace headers', async () => {
     const rawHeaders: Record<string, string> = {}
     const written: string[] = []
     let hijacked = false
@@ -281,23 +281,22 @@ describe('openai transport lane', () => {
       yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'm', choices: [{ index: 0, delta: { content: 'hi' }, finish_reason: null }] }
     }
     const ctx = {
-      protocol: 'openai', reply, traceEnabled: true, traceSuppressed: false, traceId: 't1',
+      protocol: 'openai', reply, traceId: 't1',
       req: { headers: { origin: 'https://app.example.com' } },
-      routeTrace: [{ panel: 'response', message: 'model:success', details: {} }],
       result: { kind: 'stream', body: body() },
     } as unknown as ProxyContext
     await openaiEgress.run(ctx)
     expect(hijacked).toBe(true)
     expect(rawHeaders['Access-Control-Allow-Origin']).toBe('https://app.example.com')
     expect(rawHeaders['Access-Control-Allow-Credentials']).toBe('true')
-    expect(rawHeaders['Access-Control-Expose-Headers']).toBe('x-routerly-trace-id')
-    expect(rawHeaders['x-routerly-trace-id']).toBe('t1')
-    expect(written[0]).toContain('"type":"trace"')
+    expect(rawHeaders['Access-Control-Expose-Headers']).toBeUndefined()
+    expect(rawHeaders['x-routerly-trace-id']).toBeUndefined()
+    expect(written.some((w) => w.includes('"type":"trace"'))).toBe(false)
     expect(written.some((w) => w.includes('"content":"hi"'))).toBe(true)
     expect(written.at(-1)).toBe('data: [DONE]\n\n')
   })
 
-  it('egress streams: skips routeTrace replay when traceSuppressed, skips CORS when no origin', async () => {
+  it('egress streams: never injects trace frames, skips CORS when no origin', async () => {
     const rawHeaders: Record<string, string> = {}
     const written: string[] = []
     const reply: any = {
@@ -306,9 +305,8 @@ describe('openai transport lane', () => {
     }
     async function* body() { /* no chunks */ }
     const ctx = {
-      protocol: 'openai', reply, traceEnabled: false, traceSuppressed: true, traceId: 't1',
+      protocol: 'openai', reply, traceId: 't1',
       req: { headers: {} },
-      routeTrace: [{ panel: 'response', message: 'model:success', details: {} }],
       result: { kind: 'stream', body: body() },
     } as unknown as ProxyContext
     await openaiEgress.run(ctx)
@@ -317,7 +315,7 @@ describe('openai transport lane', () => {
     expect(written).toEqual(['data: [DONE]\n\n'])
   })
 
-  it('egress streams: sets CORS without the expose-header when trace is off, and defaults an unset routeTrace to empty', async () => {
+  it('egress streams: sets CORS without any expose-header', async () => {
     const rawHeaders: Record<string, string> = {}
     const written: string[] = []
     const reply: any = {
@@ -326,7 +324,7 @@ describe('openai transport lane', () => {
     }
     async function* body() { /* no chunks */ }
     const ctx = {
-      protocol: 'openai', reply, traceEnabled: false, traceSuppressed: false, traceId: 't1',
+      protocol: 'openai', reply, traceId: 't1',
       req: { headers: { origin: 'https://app.example.com' } },
       result: { kind: 'stream', body: body() },
     } as unknown as ProxyContext
@@ -348,7 +346,7 @@ describe('openai transport lane', () => {
       throw new Error('mid-stream boom')
     }
     const ctx = {
-      protocol: 'openai', reply, traceEnabled: false, traceSuppressed: true, traceId: 't1',
+      protocol: 'openai', reply, traceId: 't1',
       req: { headers: {} }, log: { error: logError },
       result: { kind: 'stream', body: body() },
     } as unknown as ProxyContext
@@ -376,28 +374,20 @@ describe('buildOpenAIContext', () => {
     expect(ctx.request).toBe(ctx.original)
     expect(ctx.stream).toBe(false)
     expect(ctx.passthrough).toBe(false)
-    expect(ctx.traceEnabled).toBe(false)
-    expect(ctx.traceSuppressed).toBe(false)
     expect(ctx.conversationId).toBeUndefined()
     expect(ctx.token).toBeUndefined()
     expect(typeof ctx.traceId).toBe('string')
   })
 
-  it('reads stream, trace opt-in, conversation id, and token from the request', () => {
+  it('reads stream, conversation id, and token from the request', () => {
     const req = makeReq({
       body: { model: 'gpt-4o', messages: [], stream: true },
-      headers: {
-        'x-routerly-conversation-id': 'conv-1',
-        'x-routerly-trace': '1',
-        'x-routerly-no-trace': '1',
-      },
+      headers: { 'x-routerly-conversation-id': 'conv-1' },
       token: { id: 'tok-1', token: 'abc', createdAt: '2024-01-01' },
     })
     const ctx = buildOpenAIContext(req, {} as any)
     expect(ctx.stream).toBe(true)
     expect(ctx.conversationId).toBe('conv-1')
-    expect(ctx.traceEnabled).toBe(true)
-    expect(ctx.traceSuppressed).toBe(true)
     expect(ctx.token).toEqual({ id: 'tok-1', token: 'abc', createdAt: '2024-01-01' })
   })
 })
@@ -441,7 +431,7 @@ describe('openai:upstream', () => {
     })
   })
 
-  it('openai-oauth + stream hijacks, sets SSE/CORS/trace headers, forwards, and marks passthrough', async () => {
+  it('openai-oauth + stream hijacks, sets SSE/CORS headers, forwards, and marks passthrough', async () => {
     const rawHeaders: Record<string, string> = {}
     let hijacked = false
     let ended = false
@@ -452,7 +442,7 @@ describe('openai:upstream', () => {
     const ctx = {
       protocol: 'openai', stream: true, reply,
       req: { headers: { origin: 'https://app.example.com' } },
-      traceEnabled: true, traceId: 't1',
+      traceId: 't1',
       attempt: { model: { ...model, provider: 'openai-oauth' }, candidate },
       request: { model: 'gpt-4o', messages: [] }, log: makeLog(),
       project: { id: 'p1', pii: undefined },
@@ -461,15 +451,15 @@ describe('openai:upstream', () => {
     expect(ctx.passthrough).toBe(true)
     expect(hijacked).toBe(true)
     expect(rawHeaders['Access-Control-Allow-Origin']).toBe('https://app.example.com')
-    expect(rawHeaders['Access-Control-Expose-Headers']).toBe('x-routerly-trace-id')
+    expect(rawHeaders['Access-Control-Expose-Headers']).toBeUndefined()
     expect(rawHeaders['Content-Type']).toBe('text/event-stream')
-    expect(rawHeaders['x-routerly-trace-id']).toBe('t1')
+    expect(rawHeaders['x-routerly-trace-id']).toBeUndefined()
     expect(mockForwardSSE).toHaveBeenCalledOnce()
     expect(ended).toBe(true)
     expect(ctx.result).toEqual({ kind: 'passthrough' })
   })
 
-  it('openai-oauth + stream skips CORS/trace headers when no origin and trace is off', async () => {
+  it('openai-oauth + stream skips CORS headers when there is no origin', async () => {
     const rawHeaders: Record<string, string> = {}
     const reply: any = {
       hijack: () => {},
@@ -477,7 +467,7 @@ describe('openai:upstream', () => {
     }
     const ctx = {
       protocol: 'openai', stream: true, reply,
-      req: { headers: {} }, traceEnabled: false, traceId: 't1',
+      req: { headers: {} }, traceId: 't1',
       attempt: { model: { ...model, provider: 'openai-oauth' }, candidate },
       request: { model: 'gpt-4o', messages: [] }, log: makeLog(),
       project: { id: 'p1' },
@@ -487,7 +477,7 @@ describe('openai:upstream', () => {
     expect(rawHeaders['x-routerly-trace-id']).toBeUndefined()
   })
 
-  it('openai-oauth + stream sets CORS without the expose-header when trace is off', async () => {
+  it('openai-oauth + stream sets CORS without any expose-header', async () => {
     const rawHeaders: Record<string, string> = {}
     const reply: any = {
       hijack: () => {},
@@ -495,7 +485,7 @@ describe('openai:upstream', () => {
     }
     const ctx = {
       protocol: 'openai', stream: true, reply,
-      req: { headers: { origin: 'https://app.example.com' } }, traceEnabled: false, traceId: 't1',
+      req: { headers: { origin: 'https://app.example.com' } }, traceId: 't1',
       attempt: { model: { ...model, provider: 'openai-oauth' }, candidate },
       request: { model: 'gpt-4o', messages: [] }, log: makeLog(),
       project: { id: 'p1' },
@@ -734,7 +724,7 @@ describe('openai:attempt', () => {
     )
   })
 
-  it('all candidates exhausted, streaming: yields a stop-finish error chunk and records route trace', async () => {
+  it('all candidates exhausted, streaming: yields a stop-finish error chunk and emits the failure', async () => {
     const models: ModelConfig[] = [
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
     ]
@@ -742,11 +732,13 @@ describe('openai:attempt', () => {
     const reg = new ProcessorRegistry<ProxyContext>()
     reg.contribute(fakeUpstream(['model-a']))
     setProxyPipeline(reg)
+    const entries: { message: string }[] = []
     const ctx = {
       protocol: 'openai', stream: true, log: makeLog(),
       project: { id: 'p1' }, traceId: 't-stream-1',
       request: { messages: [] },
       candidates: [{ model: 'model-a', weight: 1 }],
+      emit: (e: { message: string }) => entries.push(e),
     } as unknown as ProxyContext
     await openaiAttempt.run(ctx)
     expect((ctx.result as any).kind).toBe('stream')
@@ -754,8 +746,7 @@ describe('openai:attempt', () => {
     for await (const chunk of (ctx.result as any).body) collected.push(chunk)
     expect(collected).toHaveLength(1)
     expect((collected[0] as any).choices[0].finish_reason).toBe('stop')
-    expect(ctx.routeTrace).toHaveLength(1)
-    expect((ctx.routeTrace as any)[0].message).toBe('model:error')
+    expect(entries.map((e) => e.message)).toContain('model:error')
   })
 
   it('defaults ctx.candidates to an empty list when unset, exhausting immediately', async () => {

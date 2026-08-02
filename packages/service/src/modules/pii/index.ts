@@ -3,7 +3,6 @@ import { PROXY_PIPELINE } from '../../core/tokens.js'
 import type { ProxyContext } from '../reverse-proxy/context.js'
 import type { ChatCompletionRequest } from '@routerly/shared'
 import { mergePolicies, scrubMessages } from './piiScrubber.js'
-import { appendTrace } from '../logging/traceStore.js'
 import { applyResponseScrub, wrapWithStreamingScrubber } from '../reverse-proxy/helpers.js'
 
 const input: Processor<ProxyContext> = {
@@ -19,11 +18,11 @@ const input: Processor<ProxyContext> = {
     if (!Array.isArray(ctx.request.messages)) return
     ctx.piiInput = effective
     const { messages, redacted } = scrubMessages(ctx.request.messages, effective)
-    appendTrace(ctx.traceId, [{ panel: 'request', message: 'pii:evaluated', details: { redacted } }])
+    ctx.emit?.({ panel: 'request', message: 'pii:evaluated', details: { redacted } })
     if (redacted.length > 0) {
       ;(ctx.request as { messages?: unknown[] }).messages = messages as ChatCompletionRequest['messages']
       ctx.piiRedacted = redacted
-      appendTrace(ctx.traceId, [{ panel: 'request', message: 'pii:scrubbed', details: { entities: redacted } }])
+      ctx.emit?.({ panel: 'request', message: 'pii:scrubbed', details: { entities: redacted } })
     }
   },
 }

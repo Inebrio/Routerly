@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import { Send, Square, Paperclip, AlertCircle, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { useProject } from './ProjectLayout';
 import { TraceEntryRenderer } from '../../components/TraceEntryRenderer';
+import { streamTraces } from '../../api';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -119,8 +120,20 @@ export function ProjectTestTab() {
     };
 
     const turnIndex = debugTraceHistory.length;
-    // Inizializza il slot con array vuoto — si popola in real-time via SSE
+    // Empty slot, filled live from the trace side channel
     setDebugTraceHistory(prev => [...prev, []]);
+
+    // The trace never rides the LLM wire: the caller picks a correlation id, sends it
+    // on the request and reads its own entries on the management side channel.
+    const correlationId = crypto.randomUUID();
+    const stopTrace = await streamTraces({ correlationId }, ev => {
+      setDebugTraceHistory(prev => {
+        const updated = [...prev];
+        const current = updated[turnIndex] ?? [];
+        updated[turnIndex] = [...current, ev.entry];
+        return updated;
+      });
+    });
 
     try {
       const t0 = performance.now();
@@ -133,7 +146,8 @@ export function ProjectTestTab() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${cleanKey}`
+          'Authorization': `Bearer ${cleanKey}`,
+          'x-routerly-trace': correlationId
         },
         body: JSON.stringify(payload),
         signal: controller.signal
@@ -166,17 +180,6 @@ export function ProjectTestTab() {
               if (dataStr) {
                 try {
                   const data = JSON.parse(dataStr);
-
-                  // ── Evento trace in real-time ─────────────────────────────
-                  if (data.type === 'trace') {
-                    setDebugTraceHistory(prev => {
-                      const updated = [...prev];
-                      const current = updated[turnIndex] as any[];
-                      updated[turnIndex] = [...current, data.entry];
-                      return updated;
-                    });
-                    continue;
-                  }
 
                   // ── Routing completato (routing-only mode) ────────────────
                   if (data.type === 'result') {
@@ -247,6 +250,7 @@ export function ProjectTestTab() {
         setError(e instanceof Error ? e.message : 'Unknown error occurred');
       }
     } finally {
+      stopTrace();
       abortControllerRef.current = null;
       setLoading(false);
     }

@@ -174,8 +174,6 @@ export function ProjectDashboardTab() {
                     <th>Target model</th>
                     <th style={{ textAlign: 'right' }}>Would have cost</th>
                     <th style={{ textAlign: 'right' }}>Saved</th>
-                    <th style={{ textAlign: 'right' }}>Would have taken</th>
-                    <th style={{ textAlign: 'right' }}>Time saved</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -186,12 +184,6 @@ export function ProjectDashboardTab() {
                       <td style={{ textAlign: 'right', color: b.costDelta >= 0 ? 'var(--success)' : 'var(--danger)' }}>
                         {usd(b.costDelta)} ({b.costDeltaPercent.toFixed(1)}%)
                       </td>
-                      <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
-                        {b.latencySamples > 0 ? ms(b.latencyMs) : 'no sample'}
-                      </td>
-                      <td style={{ textAlign: 'right', color: b.latencyDeltaMs == null ? 'var(--text-muted)' : b.latencyDeltaMs >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-                        {b.latencyDeltaMs == null ? '—' : ms(b.latencyDeltaMs)}
-                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -199,8 +191,7 @@ export function ProjectDashboardTab() {
             </div>
           )}
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '-12px 0 24px' }}>
-            Costs are the observed tokens repriced at each target's rates. Times are estimated from
-            each target's own throughput in this period, so a target with no traffic has no estimate.
+            Costs are the observed tokens repriced at each target's rates.
           </p>
 
           {/* What the optimizers actually removed (T63) */}

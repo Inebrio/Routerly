@@ -17,7 +17,8 @@ The top row shows aggregated totals for the selected filter set:
 
 | Card | Description |
 |------|-------------|
-| **Total Cost** | USD cost of all successful calls in the period, with what routing saved as a second line when it came out ahead |
+| **Total Cost** | USD cost of all successful calls in the period. When routing came out ahead, a bar draws the counterfactual bill to scale: the coloured part is what was paid, the gap is what routing saved, and the caption names the model it is compared against. A saving of zero or less gets no bar. |
+| **Tokens** | Tokens in and out for the period, in compact form (`1.2k`, `4.3M`), split to scale by a bar. The caption breaks it into in, out and, when the provider served any, cached. When optimizers cut tokens, their measured total is the second line; otherwise it is the estimated difference against always using the comparison model. |
 | **Total Calls** | All usage records (completion + routing + guardrail + blocked) |
 | **Completion Calls** | Main model inference calls, with their total cost |
 | **Router Calls** | Model calls the router makes to decide where to route: the `llm` policy's decision call and the `semantic-intent` policy's embedding call, with their cost |
@@ -31,10 +32,9 @@ clears the filter.
 
 Guardrail judge calls are charged to the project like any other model call and are subject to the project's budget limits. Blocked requests record zero cost and zero tokens.
 
-**Time saved** and **Tokens saved** join the row when the filtered traffic has
-something to compare against, exactly as on the [Overview](overview.md#the-saving-cards).
-Like the saving line on Total Cost, they are shown only when the saving is
-positive.
+What routing saved is read on the two cards that carry the numbers it changed:
+money on **Total Cost**, tokens on **Tokens**. There is no separate saving card,
+and no time-saved figure.
 
 ---
 
@@ -73,6 +73,13 @@ group. The counts are taken before those two filters are applied, so picking a
 value never changes the list you picked it from.
 
 Filters are applied immediately and affect the summary cards, the savings block, the per-model breakdown table, and the request log simultaneously.
+
+Every filter, including the period, is kept in the browser: a refresh, or coming
+back to the page later, restores the view you were looking at rather than the
+defaults. Use **Reset** to go back to the defaults.
+
+The date range picker offers no future date: days after today are dimmed and not
+clickable, and the calendar stops at the current month.
 
 :::tip Session tracking and custom metadata
 Use the **Session ID** filter to view all requests from a specific conversation or user session. Use the **Tags** filter to analyze traffic by team, environment, application, or any custom dimension you tag your tokens with.
@@ -145,16 +152,37 @@ The **Status** badge in the table uses colour coding:
 | `blocked` | Amber |
 | `error` / other | Red |
 
-Click any row to open the full **Trace view**.
+Click any row to open the full **Trace view** (`/dashboard/usage/<record id>`).
 
 ### Trace View
 
-The trace view shows the complete lifecycle of a single request:
+The trace view shows the complete lifecycle of a single request, in the order
+the pipeline walked it. Entries are grouped by **phase**, the stage of the
+pipeline that produced them:
 
-1. **Router Request** -- the routing engine's input: the project, requested model (if any), and active policies
-2. **Router Response** -- which model was selected and why (policy scores listed)
-3. **Model Request** -- the actual payload sent to the provider
-4. **Model Response** -- the raw provider response including all tokens and finish reason
+| Phase | What happened there |
+|-------|---------------------|
+| **Ingress** | The request arrived and was identified: project, token, session |
+| **Request · Preprocess** | Everything that ran on the way in: PII scan and scrub, guardrail rules, optimizers |
+| **Routing · Prepare** | The routing engine's input and its decision: active policies, scored candidates, selected model |
+| **Routing · Execute** | The call to the provider: payload sent, response received, retries and fallbacks |
+| **Response · Postprocess** | Everything that ran on the way out: response-side guardrails, PII scrub |
+| **Finalize** | Cost and token accounting, and the export of the finished trace |
+
+Each phase header carries the modules that spoke in it (`pii`, `guardrail`,
+`router`, `policy`, `model`, `cost`), the number of events, and how long the
+phase took. Click it to fold the phase away. Inside, every entry is stamped with
+its offset from the start of the request (`+83 ms`), so a slow phase is visible
+without reading the numbers.
+
+A phase only appears when a module emitted something in it: a project with no
+guardrails and no PII scrubbing gets no **Request · Preprocess** section.
+
+:::note Traces recorded before 0.4.0
+Older records carry no phase on their entries. Those fall back to the previous
+grouping -- Router Request, Router Response, Model Request, Model Response --
+and are shown unchanged.
+:::
 
 The trace also includes guardrail and PII entries when those features are active:
 

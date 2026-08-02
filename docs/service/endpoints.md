@@ -321,13 +321,23 @@ Suitable for Docker `HEALTHCHECK`, Kubernetes liveness probes, and load balancer
 
 ---
 
-## Trace Header
+## Traces
 
-Every LLM Proxy response includes an `x-routerly-trace-id` header containing a UUID that identifies the routing trace for that request. You can use this ID to look up the routing decision in the dashboard's Playground trace viewer.
+LLM Proxy responses carry no Routerly headers. To follow a request, send your own
+correlation id on it and read the entries on the management API while they happen:
 
 ```http
-x-routerly-trace-id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+POST /v1/chat/completions
+x-routerly-trace: my-request-42
 ```
+
+```http
+GET /api/traces/stream?correlationId=my-request-42
+```
+
+The id is consumed by Routerly: it is not forwarded upstream and changes neither
+the request nor the response payload. Once the request is done, its trace is on
+the usage record, and the dashboard shows it in Usage and in the Playground.
 
 ---
 

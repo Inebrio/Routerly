@@ -296,8 +296,11 @@ describe('Sidebar', () => {
     const labels = Array.from(document.querySelectorAll('.sidebar-nav .nav-label')).map(el => el.textContent);
     expect(labels).toEqual([
       'Overview', 'Connections', 'Models', 'Profiles', 'Projects',
-      'Connect', 'Playground', 'Experiments', 'Usage',
+      'Playground', 'Experiments', 'Usage',
     ]);
+    // Connect is a setup step, not a daily destination: it sits with Settings.
+    const footer = Array.from(document.querySelectorAll('.sidebar-footer .nav-label')).map(el => el.textContent);
+    expect(footer).toContain('Connect');
   });
 
   it('toggles collapsed state on toggle button click', async () => {

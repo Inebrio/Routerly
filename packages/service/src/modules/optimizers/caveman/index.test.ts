@@ -18,8 +18,6 @@ function ctxWith(messages: Message[]): ProxyContext {
     project: { id: 'p1', optimizers: { steps: [{ id: 'caveman', enabled: true }] } } as any,
     projectId: 'p1',
     traceId: 't1',
-    traceEnabled: false,
-    traceSuppressed: false,
     original: request,
     request,
     stream: false,

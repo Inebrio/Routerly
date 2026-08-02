@@ -49,6 +49,7 @@ export function ProjectGeneralTab() {
   const [form, setForm] = useState({
     name: '',
     timeoutMs: String(DEFAULT_PROJECT_TIMEOUT_MS),
+    traceContent: false,
   });
 
   useEffect(() => {
@@ -56,13 +57,15 @@ export function ProjectGeneralTab() {
       setForm({
         name: project.name,
         timeoutMs: String(project.timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS),
+        traceContent: project.traceContent === true,
       });
     }
   }, [project]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isDirty = isEdit
     ? form.name !== (/* v8 ignore next */ project?.name ?? '') ||
-      form.timeoutMs !== String(/* v8 ignore next */ project?.timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS)
+      form.timeoutMs !== String(/* v8 ignore next */ project?.timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS) ||
+      form.traceContent !== (/* v8 ignore next */ project?.traceContent === true)
     : form.name !== '';
 
   // Once the token is revealed the form is "done" — don't block navigation anymore.
@@ -79,6 +82,7 @@ export function ProjectGeneralTab() {
             ...(project!.routingModelId ? { routingModelId: project!.routingModelId } : {}),
             models: project!.models.map(m => ({ modelId: m.modelId })),
             timeoutMs: parseInt(form.timeoutMs),
+            traceContent: form.traceContent,
           }
         : {
             name: form.name,
@@ -89,9 +93,9 @@ export function ProjectGeneralTab() {
       if (isEdit && project) {
         await updateProject(project.id, payload);
         // Update context and reset form so isDirty becomes false — no navigation needed
-        const updated = { ...project, name: form.name, timeoutMs: parseInt(form.timeoutMs) };
+        const updated = { ...project, name: form.name, timeoutMs: parseInt(form.timeoutMs), traceContent: form.traceContent };
         setProject(updated);
-        setForm({ name: updated.name, timeoutMs: String(updated.timeoutMs) });
+        setForm({ name: updated.name, timeoutMs: String(updated.timeoutMs), traceContent: updated.traceContent });
       } else {
         const proj = await createProject(payload);
         if (proj.token) {
@@ -238,6 +242,24 @@ export function ProjectGeneralTab() {
                   min={0}
                   step={100}
                 />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Trace content</label>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
+                  Traces always record metadata (models, scores, tokens, cost, latency). Turn this on to also
+                  record the prompts sent and the answers received. They are stored with the usage record and
+                  visible to anyone who can read reports.
+                </p>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={form.traceContent}
+                    onChange={e => setForm(f => ({ ...f, traceContent: e.target.checked }))}
+                    style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                  />
+                  Capture prompts and answers
+                </label>
               </div>
 
             </div>

@@ -51,11 +51,14 @@ import { compactCost } from '../components/savings';
 import { getUsage, getModels, getProjects, getClients } from '../api';
 
 /** "This month", the window the page opens on. */
+// Local calendar days, like the picker: toISOString() is UTC, so east of Greenwich
+// the first of the month reads as the last day of the previous one.
+const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const monthStart = () => {
   const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+  return iso(new Date(now.getFullYear(), now.getMonth(), 1));
 };
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => iso(new Date());
 
 /** The date range picker: its trigger is the only secondary button on the page. */
 const openPicker = () => userEvent.click(document.querySelector('button.btn-secondary') as HTMLElement);
@@ -189,31 +192,31 @@ describe('OverviewPage — loaded state', () => {
     expect(screen.queryByText('Connect a client')).toBeNull();
   });
 
-  it('does not render token strip when all tokens are 0', async () => {
+  it('shows an empty token card when all tokens are 0', async () => {
     renderPage();
     await waitFor(() => screen.queryByText('Overview'));
-    expect(screen.queryByText(/Input tokens/)).toBeNull();
+    expect(screen.queryByText('0 in · 0 out')).not.toBeNull();
   });
 
-  it('renders token aggregate strip when tokens > 0', async () => {
+  it('sums the per-model tokens into the token card', async () => {
     mockGetUsage.mockResolvedValue(makeStats({
       byModel: {
         'openai/gpt-4o': { calls: 10, errors: 0, cost: 0.5, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0 },
       },
     }));
     renderPage();
-    await waitFor(() => expect(screen.queryByText(/Input tokens/)).not.toBeNull());
-    expect(screen.queryByText(/Output tokens/)).not.toBeNull();
+    await waitFor(() => expect(screen.queryByText('1.5k')).not.toBeNull());
+    expect(screen.queryByText('1.0k in · 500 out')).not.toBeNull();
   });
 
-  it('renders cached token count when cachedInputTokens > 0', async () => {
+  it('adds the cached share to the token card when there is one', async () => {
     mockGetUsage.mockResolvedValue(makeStats({
       byModel: {
         'openai/gpt-4o': { calls: 10, errors: 0, cost: 0.5, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 200 },
       },
     }));
     renderPage();
-    await waitFor(() => expect(screen.queryByText(/Cached/)).not.toBeNull());
+    await waitFor(() => expect(screen.queryByText('1.0k in · 500 out · 200 cached')).not.toBeNull());
   });
 
   it('renders "No cost recorded" when byModel has no entries with cost>0', async () => {
@@ -460,23 +463,19 @@ describe('OverviewPage — savings over time', () => {
   it('carries the money saved on the Total Cost card, anchored on the costliest baseline', async () => {
     mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
     renderPage();
-    await waitFor(() => expect(screen.queryByText('$0.0810 saved vs always gpt-4o')).not.toBeNull());
+    await waitFor(() => expect(screen.queryByText('$0.0810 saved (90%) vs always gpt-4o')).not.toBeNull());
     // No card of its own: the saving belongs to the number it changes (T201).
     expect(screen.queryByText('Cost saved')).toBeNull();
     const card = screen.getByText('Total Cost').closest('.stat-card')!;
     expect(card.textContent).toContain('$1.2345');
   });
 
-  it('keeps time and tokens as cards of their own', async () => {
+  it('carries what the optimizers cut on the token card', async () => {
     mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
     renderPage();
-    await waitFor(() => expect(screen.queryByText('Time saved')).not.toBeNull());
-    expect(screen.getByText('2.00s')).toBeTruthy();
-    expect(screen.getByText('vs always gpt-4o')).toBeTruthy();
-    // Tokens: what the optimizers really cut. The tokenizer estimate is 0 against
-    // this baseline, so no second line claims one.
-    expect(screen.getByText('1,200')).toBeTruthy();
-    expect(screen.getByText('cut by optimizers, measured')).toBeTruthy();
+    await waitFor(() => expect(screen.queryByText('1.2k cut by optimizers')).not.toBeNull());
+    // Time saved was an estimate nobody could check: it is gone for good.
+    expect(screen.queryByText('Time saved')).toBeNull();
     expect(screen.queryByText(/estimated/)).toBeNull();
   });
 
@@ -484,60 +483,34 @@ describe('OverviewPage — savings over time', () => {
     const savings = { ...SAVINGS, optimizers: [], baselines: SAVINGS.baselines.map(b => ({ ...b, tokenDelta: 675 })) };
     mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings }));
     renderPage();
-    await waitFor(() => expect(screen.queryByText('Tokens saved')).not.toBeNull());
-    expect(screen.getByText('675')).toBeTruthy();
-    expect(screen.getByText('vs always gpt-4o, estimated')).toBeTruthy();
-  });
-
-  it('falls back to the costliest baseline that answered for the time card', async () => {
-    const savings = {
-      ...SAVINGS,
-      baselines: SAVINGS.baselines.map(b => (b.modelId === 'openai/gpt-4o'
-        ? { modelId: b.modelId, cost: b.cost, costDelta: b.costDelta, costDeltaPercent: b.costDeltaPercent, latencySamples: 0, tokensEstimated: b.tokensEstimated, tokenDelta: b.tokenDelta }
-        : b)),
-    };
-    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings }));
-    renderPage();
-    await waitFor(() => expect(screen.queryByText('Time saved')).not.toBeNull());
-    expect(screen.getByText('3.00s')).toBeTruthy();
-    expect(screen.getByText('vs always claude-sonnet-4')).toBeTruthy();
-  });
-
-  it('drops the time card when no baseline answered in the window', async () => {
-    const savings = { ...SAVINGS, baselines: SAVINGS.baselines.map(({ latencyMs: _l, latencyDeltaMs: _d, ...b }) => b) };
-    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings }));
-    renderPage();
-    await waitFor(() => expect(screen.queryByText('Tokens saved')).not.toBeNull());
-    expect(screen.queryByText('Time saved')).toBeNull();
+    await waitFor(() => expect(screen.queryByText('675 fewer than always gpt-4o, estimated')).not.toBeNull());
   });
 
   // T202 — a saving that is zero or negative is a window too small to compare,
-  // not news: no line, no card.
+  // not news: no line, no bar.
   it('drops every saving that is not positive', async () => {
     const savings = {
       ...SAVINGS,
       optimizers: [],
-      baselines: SAVINGS.baselines.map(b => ({ ...b, costDelta: -0.01, latencyDeltaMs: 0, tokenDelta: 0 })),
+      baselines: SAVINGS.baselines.map(b => ({ ...b, costDelta: -0.01, tokenDelta: 0 })),
     };
     mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings }));
     renderPage();
     await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
-    expect(screen.queryByText(/saved vs always/)).toBeNull();
-    expect(screen.queryByText('Time saved')).toBeNull();
-    expect(screen.queryByText('Tokens saved')).toBeNull();
+    expect(screen.queryByText(/saved \(/)).toBeNull();
+    expect(screen.queryByText(/cut by optimizers/)).toBeNull();
   });
 
-  it('drops the saving cards when no baseline costs anything', async () => {
-    const savings = { ...SAVINGS, baselines: SAVINGS.baselines.map(b => ({ ...b, cost: 0 })) };
+  it('drops the saving lines when no baseline costs anything', async () => {
+    const savings = { ...SAVINGS, optimizers: [], baselines: SAVINGS.baselines.map(b => ({ ...b, cost: 0 })) };
     mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings }));
     renderPage();
     await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
-    expect(screen.queryByText('Time saved')).toBeNull();
-    expect(screen.queryByText('Tokens saved')).toBeNull();
-    expect(screen.queryByText(/saved vs always/)).toBeNull();
+    expect(screen.queryByText(/saved \(/)).toBeNull();
+    expect(screen.queryByText(/estimated/)).toBeNull();
   });
 
-  it('switches the chart between cost, tokens and speed', async () => {
+  it('switches the chart between cost and tokens', async () => {
     mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
     renderPage();
     await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
@@ -548,17 +521,7 @@ describe('OverviewPage — savings over time', () => {
     expect(screen.getByText('Input')).toBeTruthy();
     expect(screen.getByText('Output')).toBeTruthy();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Speed' }));
-    expect(screen.getByText('On gpt-4o')).toBeTruthy();
-  });
-
-  it('drops the speed counterfactual when no baseline answered', async () => {
-    const savings = { ...SAVINGS, baselines: SAVINGS.baselines.map(({ latencyMs: _l, latencyDeltaMs: _d, ...b }) => b) };
-    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings }));
-    renderPage();
-    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
-    await userEvent.click(screen.getByRole('button', { name: 'Speed' }));
-    expect(screen.queryByText('On gpt-4o')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Speed' })).toBeNull();
   });
 
   it('drops the cost counterfactual when no baseline model applies', async () => {
@@ -602,6 +565,7 @@ describe('OverviewPage — stat card links', () => {
     );
     expect(links).toEqual({
       'Total Cost': '/dashboard/usage',
+      Tokens: '/dashboard/usage',
       'Total Calls': '/dashboard/usage',
       'Success Rate': '/dashboard/usage',
       Errors: '/dashboard/usage',

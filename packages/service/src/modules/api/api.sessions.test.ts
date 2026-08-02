@@ -11,7 +11,7 @@ vi.mock('../auth/jwt.js', () => ({
   generateRawToken: vi.fn(() => 'raw-refresh-token-xxxx'),
 }))
 vi.mock('../notifications/sender.js', () => ({ sendTestNotification: vi.fn() }))
-vi.mock('../logging/traceStore.js', () => ({ getTrace: vi.fn() }))
+vi.mock('../trace/store.js', () => ({ getTrace: vi.fn() }))
 vi.mock('../update-checker/update-checker.js', () => ({
   updateChecker: { getLastResult: vi.fn(() => null), check: vi.fn(), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))

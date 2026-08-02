@@ -14,7 +14,14 @@ vi.mock('../api', () => ({
 // Mock DateRangePicker and MultiSelect to avoid complex UI
 vi.mock('../components/DateRangePicker', () => ({
   DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
-  PRESETS: [],
+  // The page seeds its default range from PRESETS, so the stub has to carry the
+  // preset it looks for: an empty list would make the default throw.
+  PRESETS: [
+    {
+      label: 'This month',
+      range: () => ({ from: '2024-06-01', to: new Date().toISOString().slice(0, 10), label: 'This month' }),
+    },
+  ],
   RECENT_PRESETS: [],
   parseStoredRange: (v: string) => JSON.parse(v),
 }));
@@ -1712,13 +1719,30 @@ describe('UsagePage — savings (T209)', () => {
     expect(screen.queryByText('What routing saved')).toBeNull();
   });
 
-  it('carries the money saved on the Total Cost card and the rest as its own cards', async () => {
+  it('carries the money saved on the Total Cost card and the tokens on their own', async () => {
     vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), series: SERIES, savings: SAVINGS } as never);
     renderPage();
-    await waitFor(() => expect(screen.getByText('$0.0810 saved vs always gpt-4o')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('$0.0810 saved (90%) vs always gpt-4o')).toBeTruthy());
     expect(screen.queryByText('Cost saved')).toBeNull();
-    expect(screen.getByText('Time saved')).toBeTruthy();
-    expect(screen.getByText('Tokens saved')).toBeTruthy();
+    // Time saved was never explainable from the numbers on screen, so it is gone.
+    expect(screen.queryByText('Time saved')).toBeNull();
+    expect(screen.getByText('1.2k cut by optimizers')).toBeTruthy();
+  });
+
+  it('sums the per-model tokens into one compact card', async () => {
+    // The summary ships no token totals, so the card adds up the same per-model
+    // breakdown the table below it renders.
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'openai/gpt-4o': { calls: 5, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 200, cost: 0.01, errors: 0, success: 5, avgLatencyMs: 320, p95LatencyMs: 600 },
+        'openai/gpt-4o-mini': { calls: 5, inputTokens: 2000, outputTokens: 1500, cachedInputTokens: 0, cost: 0.002, errors: 0, success: 5, avgLatencyMs: 120, p95LatencyMs: 200 },
+      },
+    } as never);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Tokens')).toBeTruthy());
+    expect(screen.getByText('5.0k')).toBeTruthy();
+    expect(screen.getByText('3.0k in · 2.0k out · 200 cached')).toBeTruthy();
   });
 
   it('draws the savings chart over the filtered window', async () => {
@@ -1732,8 +1756,10 @@ describe('UsagePage — savings (T209)', () => {
     vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), series: SERIES, savings: SAVINGS } as never);
     renderPage();
     await waitFor(() => expect(screen.getByText('What routing saved')).toBeTruthy());
-    await userEvent.click(screen.getByRole('button', { name: 'Speed' }));
-    expect(screen.getByRole('button', { name: 'Speed' }).className).toContain('active');
+    await userEvent.click(screen.getByRole('button', { name: 'Tokens' }));
+    expect(screen.getByRole('button', { name: 'Tokens' }).className).toContain('active');
+    // Speed was an estimate nobody could check, so the metric is gone with it.
+    expect(screen.queryByRole('button', { name: 'Speed' })).toBeNull();
   });
 
   it('keeps the savings layer out when the fetch fails', async () => {

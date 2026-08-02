@@ -98,8 +98,14 @@ When PII scrubbing is active, the Technical Details section always shows a **PII
 When entities were redacted, a separate **PII SCRUBBED** block (orange) also appears listing the replaced entity types.
 
 :::note
-All trace data is fetched out-of-band via the trace store using the `x-routerly-trace-id` response header. The wire response returned to your application is never modified to include trace information.
+Trace data never travels on the LLM wire. The Playground picks a correlation id, sends it on the request as `x-routerly-trace`, and reads the entries live from the management side channel (`GET /api/traces/stream`). The response returned to your application is exactly what the provider sent.
 :::
+
+Entries arrive as they happen, so the Technical Details section fills in while the
+answer is still streaming: PII and guardrail checks first, then the routing
+decision, then the upstream call. Prompts and answers appear on the trace only for
+projects with **Trace content** enabled (Project → General); otherwise the trace is
+metadata only.
 
 ---
 

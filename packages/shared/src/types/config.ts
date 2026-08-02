@@ -575,6 +575,11 @@ export interface ProjectConfig {
   profileId?: string;
   /** Prompt/context optimizer pipeline. Presence activates the subsystem; step order = execution order */
   optimizers?: OptimizerConfig;
+  /**
+   * Capture prompts and model answers in this project's traces. Off by default:
+   * a trace carries metadata only (models, scores, tokens, cost, latency).
+   */
+  traceContent?: boolean;
 }
 
 /**
@@ -665,6 +670,16 @@ export interface PrometheusIntegration {
   authToken?: string;
 }
 
+/**
+ * Trace export, per integration. Off unless asked for: a trace is one payload per
+ * request, so it costs far more than the 60s metric push and has to be opted in.
+ */
+export interface IntegrationTraces {
+  enabled: boolean;
+  /** 0..1, exported traces per request. Absent means every trace. */
+  sampleRate?: number;
+}
+
 export interface OtelIntegration {
   id: string;
   type: 'otel';
@@ -672,6 +687,7 @@ export interface OtelIntegration {
   endpoint: string;
   protocol: 'http' | 'grpc';
   headers?: Record<string, string>;
+  traces?: IntegrationTraces;
 }
 
 export interface DatadogIntegration {
@@ -708,6 +724,7 @@ export interface WebhookIntegration {
   url: string;
   secret?: string;
   headers?: Record<string, string>;
+  traces?: IntegrationTraces;
 }
 
 export type Integration =
@@ -1031,6 +1048,17 @@ export interface TraceEntry {
   panel: string;
   message: string;
   details: Record<string, unknown>;
+  /** Pipeline phase that produced the entry. Absent on traces recorded before 0.4.0 */
+  phase?: string;
+  /** Module that produced the entry, read from the `module:event` message prefix */
+  module?: string;
+  /** Epoch ms at emit time */
+  at?: number;
+  /**
+   * Prompts and responses. Only present when trace content capture is enabled:
+   * `details` carries metadata and is always safe to keep, this is not.
+   */
+  content?: Record<string, unknown>;
 }
 
 // ─── Usage & Cost types ───────────────────────────────────────────────────────
@@ -1078,7 +1106,7 @@ export interface UsageRecord {
   requestType?: RequestType;
   /** Full trace captured at tracking time (router + model call events) */
   trace?: TraceEntry[];
-  /** Request trace ID (matches x-routerly-trace-id response header) */
+  /** Request trace ID (matches the id carried by the trace side channel) */
   traceId?: string;
   /** Cost breakdown: input tokens cost in USD (includes cached + cache-write) */
   costInput?: number;

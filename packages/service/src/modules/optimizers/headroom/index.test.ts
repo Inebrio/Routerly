@@ -28,8 +28,6 @@ function ctxWith(messages: Message[], opts: CtxOpts = {}): ProxyContext {
     project: { id: 'p1', optimizers: { steps } } as any,
     projectId: 'p1',
     traceId: 't1',
-    traceEnabled: false,
-    traceSuppressed: false,
     original: request,
     request,
     stream: false,

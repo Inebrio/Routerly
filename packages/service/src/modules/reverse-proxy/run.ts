@@ -38,6 +38,9 @@ export async function runProxy(
 ): Promise<void> {
   for (const phase of PROXY_PHASES) {
     if (ctx.result?.kind === 'block' && phase !== 'finalize' && phase !== 'egress') continue
+    // Emitters read the phase off the context instead of repeating it at every
+    // call site, so a trace entry always says which phase produced it.
+    ctx.phase = phase
     await pipeline.runPhase(phase, ctx)
   }
 }

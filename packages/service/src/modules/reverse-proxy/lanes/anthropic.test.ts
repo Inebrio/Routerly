@@ -172,7 +172,7 @@ describe('anthropic transport lane', () => {
     expect(called).toBe(false)
   })
 
-  it('egress writes a json result and honors trace opt-in + explicit status', async () => {
+  it('egress writes a json result with an explicit status, adding no headers of its own', async () => {
     const sent: unknown[] = []
     let sentStatus: number | undefined
     const headers: Record<string, string> = {}
@@ -182,24 +182,13 @@ describe('anthropic transport lane', () => {
       status: (c: number) => { sentStatus = c; return reply },
     }
     const ctx = {
-      protocol: 'anthropic', reply, traceEnabled: true, traceId: 't1',
+      protocol: 'anthropic', reply, traceId: 't1',
       result: { kind: 'json', status: 201, body: { type: 'message' } },
     } as unknown as ProxyContext
     await anthropicEgress.run(ctx)
     expect(sent).toEqual([{ type: 'message' }])
     expect(sentStatus).toBe(201)
-    expect(headers['x-routerly-trace-id']).toBe('t1')
-  })
-
-  it('egress writes a json result without the trace header when trace is off', async () => {
-    const headers: Record<string, string> = {}
-    const reply: any = { send: () => {}, header: (k: string, v: string) => { headers[k] = v }, status: () => reply }
-    const ctx = {
-      protocol: 'anthropic', reply, traceEnabled: false, traceId: 't1',
-      result: { kind: 'json', body: { type: 'message' } },
-    } as unknown as ProxyContext
-    await anthropicEgress.run(ctx)
-    expect(headers['x-routerly-trace-id']).toBeUndefined()
+    expect(headers).toEqual({})
   })
 
   it('egress no-ops on a block with no body (streaming block already wrote its own bytes)', async () => {
@@ -218,7 +207,7 @@ describe('anthropic transport lane', () => {
     expect(sentStatus).toBe(200)
   })
 
-  it('egress sends a block result without the trace header, even when trace is opted in', async () => {
+  it('egress sends a block result without adding any header', async () => {
     const sent: unknown[] = []
     let sentStatus: number | undefined
     const headers: Record<string, string> = {}
@@ -228,7 +217,7 @@ describe('anthropic transport lane', () => {
       status: (c: number) => { sentStatus = c; return reply },
     }
     const ctx = {
-      protocol: 'anthropic', reply, traceEnabled: true, traceId: 't1',
+      protocol: 'anthropic', reply, traceId: 't1',
       result: { kind: 'block', status: 503, body: { type: 'error', error: { type: 'overloaded_error', message: 'All candidate models are budget-exhausted or unavailable.' } } },
     } as unknown as ProxyContext
     await anthropicEgress.run(ctx)
@@ -248,7 +237,7 @@ describe('anthropic transport lane', () => {
     }
     async function* body() { /* no chunks */ }
     const ctx = {
-      protocol: 'anthropic', reply, traceEnabled: false, traceId: 't1',
+      protocol: 'anthropic', reply, traceId: 't1',
       original: { model: 'claude', messages: [] },
       result: { kind: 'stream', body: body() },
     } as unknown as ProxyContext
@@ -258,7 +247,7 @@ describe('anthropic transport lane', () => {
     expect(rawHeaders['Access-Control-Allow-Origin']).toBeUndefined()
   })
 
-  it('egress streaming sets the trace header when opted in', async () => {
+  it('egress streaming never sets a trace header on the raw stream', async () => {
     const rawHeaders: Record<string, string> = {}
     const reply: any = {
       hijack: () => {},
@@ -266,12 +255,12 @@ describe('anthropic transport lane', () => {
     }
     async function* body() { /* no chunks */ }
     const ctx = {
-      protocol: 'anthropic', reply, traceEnabled: true, traceId: 't1',
+      protocol: 'anthropic', reply, traceId: 't1',
       original: { model: 'claude', messages: [] },
       result: { kind: 'stream', body: body() },
     } as unknown as ProxyContext
     await anthropicEgress.run(ctx)
-    expect(rawHeaders['x-routerly-trace-id']).toBe('t1')
+    expect(rawHeaders['x-routerly-trace-id']).toBeUndefined()
   })
 
   it('translates OpenAI-shaped stream chunks to Anthropic SSE, using request defaults when usage/model are absent', async () => {
@@ -285,7 +274,7 @@ describe('anthropic transport lane', () => {
       yield { choices: [{ delta: {}, finish_reason: 'length' }] }
     }
     const ctx = {
-      protocol: 'anthropic', reply, traceEnabled: false, traceId: 't1',
+      protocol: 'anthropic', reply, traceId: 't1',
       original: { model: 'claude-fallback', messages: [] },
       result: { kind: 'stream', body: body() },
     } as unknown as ProxyContext
@@ -311,7 +300,7 @@ describe('anthropic transport lane', () => {
       yield { choices: [{ delta: {}, finish_reason: 'stop' }], usage: { completion_tokens: 7 } }
     }
     const ctx = {
-      protocol: 'anthropic', reply, traceEnabled: false, traceId: 't1',
+      protocol: 'anthropic', reply, traceId: 't1',
       original: { model: 'claude-fallback', messages: [] },
       result: { kind: 'stream', body: body() },
     } as unknown as ProxyContext
@@ -335,7 +324,7 @@ describe('anthropic transport lane', () => {
       throw new Error('mid-stream boom')
     }
     const ctx = {
-      protocol: 'anthropic', reply, traceEnabled: false, traceId: 't1',
+      protocol: 'anthropic', reply, traceId: 't1',
       original: { model: 'claude', messages: [] },
       result: { kind: 'stream', body: body() },
     } as unknown as ProxyContext
@@ -362,28 +351,20 @@ describe('buildAnthropicContext', () => {
     expect(ctx.original).toEqual(req.body)
     expect(ctx.stream).toBe(false)
     expect(ctx.passthrough).toBe(false)
-    expect(ctx.traceEnabled).toBe(false)
-    expect(ctx.traceSuppressed).toBe(false)
     expect(ctx.conversationId).toBeUndefined()
     expect(ctx.token).toBeUndefined()
     expect(typeof ctx.traceId).toBe('string')
   })
 
-  it('reads stream, trace opt-in, conversation id, and token from the request', () => {
+  it('reads stream, conversation id, and token from the request', () => {
     const req = makeReq({
       body: { model: 'claude-3-5', messages: [], max_tokens: 100, stream: true },
-      headers: {
-        'x-routerly-conversation-id': 'conv-1',
-        'x-routerly-trace': '1',
-        'x-routerly-no-trace': '1',
-      },
+      headers: { 'x-routerly-conversation-id': 'conv-1' },
       token: { id: 'tok-1', token: 'abc', createdAt: '2024-01-01' },
     })
     const ctx = buildAnthropicContext(req, {} as any)
     expect(ctx.stream).toBe(true)
     expect(ctx.conversationId).toBe('conv-1')
-    expect(ctx.traceEnabled).toBe(true)
-    expect(ctx.traceSuppressed).toBe(true)
     expect(ctx.token).toEqual({ id: 'tok-1', token: 'abc', createdAt: '2024-01-01' })
   })
 })
@@ -413,54 +394,32 @@ describe('anthropic:upstream', () => {
     expect(mockLlmChat).not.toHaveBeenCalled()
   })
 
-  it('anthropic-oauth passes through verbatim and sets the trace header when opted in', async () => {
+  it('anthropic-oauth passes through verbatim without touching the response headers', async () => {
     const reply: any = { header: vi.fn() }
     const ctx = {
-      protocol: 'anthropic', reply, traceEnabled: true, traceId: 't1',
+      protocol: 'anthropic', reply, traceId: 't1',
       attempt: { model: { ...model, provider: 'anthropic-oauth' }, candidate },
       original: { model: 'claude-3-5', messages: [] }, req: {}, log: makeLog(), project: { id: 'p1' },
     } as unknown as ProxyContext
     await anthropicUpstream.run(ctx)
     expect(ctx.passthrough).toBe(true)
-    expect(reply.header).toHaveBeenCalledWith('x-routerly-trace-id', 't1')
+    expect(reply.header).not.toHaveBeenCalled()
     expect(mockForwardOAuth).toHaveBeenCalledOnce()
     expect(ctx.result).toEqual({ kind: 'passthrough' })
-  })
-
-  it('anthropic-oauth skips the trace header when trace is off', async () => {
-    const reply: any = { header: vi.fn() }
-    const ctx = {
-      protocol: 'anthropic', reply, traceEnabled: false, traceId: 't1',
-      attempt: { model: { ...model, provider: 'anthropic-oauth' }, candidate },
-      original: { model: 'claude-3-5', messages: [] }, req: {}, log: makeLog(), project: { id: 'p1' },
-    } as unknown as ProxyContext
-    await anthropicUpstream.run(ctx)
-    expect(reply.header).not.toHaveBeenCalled()
   })
 
   it.each(['anthropic', 'anthropic-web'] as const)('%s passes through verbatim via the API-key path', async (provider) => {
     const reply: any = { header: vi.fn() }
     const ctx = {
-      protocol: 'anthropic', reply, traceEnabled: true, traceId: 't1',
+      protocol: 'anthropic', reply, traceId: 't1',
       attempt: { model: { ...model, provider }, candidate },
       original: { model: 'claude-3-5', messages: [] }, req: {}, log: makeLog(), project: { id: 'p1' },
     } as unknown as ProxyContext
     await anthropicUpstream.run(ctx)
     expect(ctx.passthrough).toBe(true)
-    expect(reply.header).toHaveBeenCalledWith('x-routerly-trace-id', 't1')
+    expect(reply.header).not.toHaveBeenCalled()
     expect(mockForwardApiKey).toHaveBeenCalledOnce()
     expect(ctx.result).toEqual({ kind: 'passthrough' })
-  })
-
-  it('anthropic-web skips the trace header when trace is off', async () => {
-    const reply: any = { header: vi.fn() }
-    const ctx = {
-      protocol: 'anthropic', reply, traceEnabled: false, traceId: 't1',
-      attempt: { model: { ...model, provider: 'anthropic-web' }, candidate },
-      original: { model: 'claude-3-5', messages: [] }, req: {}, log: makeLog(), project: { id: 'p1' },
-    } as unknown as ProxyContext
-    await anthropicUpstream.run(ctx)
-    expect(reply.header).not.toHaveBeenCalled()
   })
 
   it('toChat converts a non-string system, filters non-text content blocks, defaults unset content/stream, and forwards temperature/top_p', async () => {
