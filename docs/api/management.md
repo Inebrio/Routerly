@@ -921,9 +921,11 @@ which the experiment stamps with its id on every call it routes, so the
 numbers agree with [Usage](#usage) by construction and the experiment keeps
 no counters of its own.
 
-**Query:** `from` and `to`, both optional ISO 8601 instants. Neither given
+**Query:** `from` and `to`, both optional ISO 8601 values. Neither given
 measures the whole history. An explicit window, not the period vocabulary
-`/api/usage` uses: the caller already knows the window it wants.
+`/api/usage` uses: the caller already knows the window it wants. A date-only
+bound (`2026-08-01`) covers the whole day, exactly as `/api/usage` reads it;
+a full instant is taken as given.
 
 **Response `200`:**
 ```json

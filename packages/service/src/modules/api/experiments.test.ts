@@ -150,6 +150,18 @@ describe('GET /api/experiments/:id/metrics', () => {
     expect(body.variants[1]).toMatchObject({ variantId: 'v-b', calls: 1 })
   })
 
+  it('reads a date-only bound as the whole day, like /api/usage does', async () => {
+    // A record early in the day: a bare `to` that stopped at midnight would drop it.
+    const sameDay = [{ ...usage[0]!, timestamp: '2026-08-01T00:30:00.000Z' }]
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET', url: '/api/experiments/exp-1/metrics?from=2026-08-01&to=2026-08-01',
+      headers: authWith('experiments:read', { experiments: [experiment()], usage: sameDay, projects }),
+    })
+    await app.close()
+    expect(JSON.parse(res.body).totalCalls).toBe(1)
+  })
+
   it('measures the whole history when no window is given', async () => {
     const app = await buildApp()
     const res = await app.inject({

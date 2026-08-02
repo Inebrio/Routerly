@@ -124,6 +124,9 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
     const { from, to } = req.query;
     const since = from ? new Date(from) : null;
     const until = to ? new Date(to) : null;
+    // A date-only bound means the whole day, the same reading /api/usage gives it.
+    if (since && from!.length <= 10) since.setHours(0, 0, 0, 0);
+    if (until && to!.length <= 10) until.setHours(23, 59, 59, 999);
     const windowed = since || until
       ? records.filter(r => {
         const ts = new Date(r.timestamp);

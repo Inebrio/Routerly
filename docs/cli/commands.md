@@ -1974,9 +1974,13 @@ window. With no window flags the whole history of the experiment is measured.
 `--from` overrides the start `--days` computed, so the two are not meant to
 be combined.
 
+A bare day (`--to 2026-08-01`) covers that whole day, the same window the
+dashboard picker asks for. A full instant is taken as given.
+
 **Table columns:** Variant (with `(low sample)` below the minimum), Calls,
-Errors (count and rate), Cost, Cost / call, Avg latency, p95, Judge score
-(mean out of 10, with the judged-call count).
+Errors (count and rate), Tokens in / out, Cost, Cost / call, Avg latency,
+p95, TTFT (mean time to first token on streamed calls), Judge score (mean out
+of 10, with the judged-call count).
 
 ```bash
 routerly experiments metrics 8f2c1d64 --days 7
@@ -1984,13 +1988,13 @@ routerly experiments metrics 8f2c1d64 --days 7
 ```
 4 calls measured
 
-┌──────────────────────┬───────┬───────────┬──────────┬─────────────┬─────────────┬───────────┬───────────────┐
-│ Variant              │ Calls │    Errors │     Cost │ Cost / call │ Avg latency │       p95 │   Judge score │
-├──────────────────────┼───────┼───────────┼──────────┼─────────────┼─────────────┼───────────┼───────────────┤
-│ Cheap (low sample)   │     2 │ 1 (50.0%) │ $0.00012 │    $0.00006 │   114289 ms │ 114289 ms │             - │
-├──────────────────────┼───────┼───────────┼──────────┼─────────────┼─────────────┼───────────┼───────────────┤
-│ Premium (low sample) │     2 │         0 │ $0.00240 │    $0.00120 │      881 ms │    881 ms │ 8.5 / 10 (2)  │
-└──────────────────────┴───────┴───────────┴──────────┴─────────────┴─────────────┴───────────┴───────────────┘
+┌──────────────────────┬───────┬───────────┬─────────────────┬──────────┬─────────────┬─────────────┬───────────┬────────┬──────────────┐
+│ Variant              │ Calls │    Errors │ Tokens in / out │     Cost │ Cost / call │ Avg latency │       p95 │   TTFT │  Judge score │
+├──────────────────────┼───────┼───────────┼─────────────────┼──────────┼─────────────┼─────────────┼───────────┼────────┼──────────────┤
+│ Cheap (low sample)   │     2 │ 1 (50.0%) │     1,204 / 318 │ $0.00012 │    $0.00006 │   114289 ms │ 114289 ms │      - │            - │
+├──────────────────────┼───────┼───────────┼─────────────────┼──────────┼─────────────┼─────────────┼───────────┼────────┼──────────────┤
+│ Premium (low sample) │     2 │         0 │     1,204 / 402 │ $0.00240 │    $0.00120 │      881 ms │    881 ms │ 612 ms │ 8.5 / 10 (2) │
+└──────────────────────┴───────┴───────────┴─────────────────┴──────────┴─────────────┴─────────────┴───────────┴────────┴──────────────┘
 
 Not conclusive yet: every variant needs at least 30 calls in this window.
 ```

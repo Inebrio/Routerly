@@ -104,9 +104,23 @@ hidden.
 
 One row per variant, over the selected window.
 
-The **Time range** dropdown offers All time (the default), Last 24 hours, Last
-7 days and Last 30 days. The counter on the left shows how many calls the
-window measured.
+The window is chosen with the same date range picker the
+[Overview](overview.md) and [Usage](usage.md) pages carry: the same presets
+(today, yesterday, last 7 days, this month, and so on), a custom from/to
+range, and **All time**, which is the default here since an experiment is
+usually read over its whole history. The counter on the left shows how many
+calls the window measured.
+
+A row of cards summarises the comparison before the table:
+
+| Card | Description |
+|------|-------------|
+| **Calls** | Calls measured in the window, and how many variants split them |
+| **Cost** | USD spent by the experiment in the window |
+| **Errors** | Failed calls and their share of the total, in red when above zero |
+| **Cheapest per call** | Winning variant, its cost per call against the priciest one, and the gap between them |
+| **Fastest** | Winning variant, its average latency against the slowest one, and the gap |
+| **Best judge score** | Winning variant, its score out of 10 and the judged-call count |
 
 | Column | Description |
 |--------|-------------|
@@ -114,17 +128,21 @@ window measured.
 | **Calls** | Client calls the variant served |
 | **Share** | That variant's percentage of the calls measured in the window |
 | **Errors** | Failed calls, with the rate |
+| **Tokens in / out** | Prompt and completion tokens the variant consumed |
 | **Cost** | USD across those calls |
 | **Cost / call** | Average per call |
 | **Avg latency** | Mean end-to-end latency |
 | **p95** | 95th percentile latency |
+| **TTFT** | Mean time to first token on streamed calls, blank if none were streamed |
 | **Judge score** | Mean judge verdict out of 10, with the judged-call count next to it |
 
 ![Metrics of an experiment: calls, share, cost, latency and judge score per variant](../assets/screenshot-experiment-metrics.png)
 
 The best value in **Cost / call**, **Avg latency** and **Judge score** is
 highlighted in the accent colour. A tie highlights nothing, and a column with
-fewer than two comparable values highlights nothing.
+fewer than two comparable values highlights nothing. Under every other value
+of those three columns a percentage reads its distance from the best variant,
+so a losing arm says how much it loses by.
 
 While any variant is below the minimum, a line above the table reads "Not
 conclusive yet" and names the threshold. With no calls in the window at all,

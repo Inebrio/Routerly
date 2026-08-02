@@ -9,18 +9,6 @@ vi.mock('../../api', () => ({
 
 vi.mock('./ExperimentLayout', () => ({ useExperiment: vi.fn() }));
 
-// ponytail: mock SearchableSelect as a plain <select> so onChange fires on selectOptions
-vi.mock('../../components/SearchableSelect', () => ({
-  SearchableSelect: ({ options, value, onChange, ariaLabel }: {
-    options: { value: string; label: string }[];
-    value: string; onChange: (v: string) => void; ariaLabel?: string;
-  }) => (
-    <select aria-label={ariaLabel ?? 'select'} value={value} onChange={e => onChange(e.target.value)}>
-      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-    </select>
-  ),
-}));
-
 import { ExperimentMetricsTab } from './ExperimentMetricsTab';
 import { getExperimentMetrics, getProjects } from '../../api';
 import { useExperiment } from './ExperimentLayout';
@@ -44,6 +32,10 @@ const metrics = {
 };
 
 const setExperiment = vi.fn();
+
+/** The range picker is the shared one: its trigger is the only .btn-secondary here. */
+const openPicker = () => userEvent.click(document.querySelector('button.btn-secondary') as HTMLElement);
+const today = () => new Date().toISOString().slice(0, 10);
 
 function setContext(experiment: unknown) {
   mockUseExperiment.mockReturnValue({ experiment, setExperiment } as unknown as ReturnType<typeof useExperiment>);
@@ -76,14 +68,43 @@ describe('ExperimentMetricsTab', () => {
   });
 
   it('measures the whole history by default and narrows to the chosen window', async () => {
-    const user = userEvent.setup();
     render(<ExperimentMetricsTab />);
-    await waitFor(() => expect(mockGetMetrics).toHaveBeenCalledWith('exp-1', undefined));
-    await user.selectOptions(screen.getByLabelText('Time range'), '7');
-    await waitFor(() => expect(mockGetMetrics).toHaveBeenLastCalledWith('exp-1', { from: expect.any(String) }));
-    const calls = mockGetMetrics.mock.calls;
-    const { from } = calls[calls.length - 1]![1] as { from: string };
-    expect(Date.now() - new Date(from).getTime()).toBeCloseTo(7 * 86400000, -4);
+    await waitFor(() => expect(mockGetMetrics).toHaveBeenCalledWith('exp-1', {}));
+    await openPicker();
+    await userEvent.click(screen.getByRole('button', { name: 'Last 7 days' }));
+    const from = new Date(Date.now() - 6 * 86400_000).toISOString().slice(0, 10);
+    await waitFor(() => expect(mockGetMetrics).toHaveBeenLastCalledWith('exp-1', { from, to: today() }));
+  });
+
+  it('summarises the comparison above the table', async () => {
+    render(<ExperimentMetricsTab />);
+    await waitFor(() => expect(screen.getByText('Cheapest per call')).toBeInTheDocument());
+    // The cheapest arm is named on its card, with the gap to the priciest one.
+    expect(screen.getByText('$0.01 vs $0.05')).toBeInTheDocument();
+    expect(screen.getByText('+400% on the most expensive arm')).toBeInTheDocument();
+    expect(screen.getByText('Fastest')).toBeInTheDocument();
+    expect(screen.getByText('900 ms vs 1500 ms on average')).toBeInTheDocument();
+    expect(screen.getByText('Best judge score')).toBeInTheDocument();
+    expect(screen.getByText('8.2 / 10 over 20 judged calls')).toBeInTheDocument();
+  });
+
+  it('shows each row distance from the best arm', async () => {
+    render(<ExperimentMetricsTab />);
+    await waitFor(() => expect(screen.getByText('120 calls measured')).toBeInTheDocument());
+    // Premium costs 5x the cheap arm and is 67% slower; the best arm carries no gap.
+    expect(screen.getByText('+400%')).toBeInTheDocument();
+    expect(screen.getByText('+67%')).toBeInTheDocument();
+    expect(screen.getByText('-22%')).toBeInTheDocument();
+  });
+
+  it('shows tokens and time to first token per variant', async () => {
+    mockGetMetrics.mockResolvedValue({
+      ...metrics,
+      variants: [{ ...metrics.variants[0]!, avgTtftMs: 240 }, metrics.variants[1]!],
+    });
+    render(<ExperimentMetricsTab />);
+    await waitFor(() => expect(screen.getByText('100 / 200')).toBeInTheDocument());
+    expect(screen.getByText('240 ms')).toBeInTheDocument();
   });
 
   it('flags a comparison that has too few calls', async () => {
@@ -108,7 +129,9 @@ describe('ExperimentMetricsTab', () => {
       variants: metrics.variants.map(v => ({ ...v, judgedCalls: 0, avgScore: undefined })),
     });
     render(<ExperimentMetricsTab />);
-    await waitFor(() => expect(screen.getAllByText('—')).toHaveLength(2));
+    // Judge score is the last cell of each row; TTFT is blank here too.
+    await waitFor(() => expect([...document.querySelectorAll('tbody tr')]
+      .map(r => r.querySelector('td:last-child')!.textContent)).toEqual(['—', '—']));
   });
 
   it('reports a failed metrics load', async () => {
