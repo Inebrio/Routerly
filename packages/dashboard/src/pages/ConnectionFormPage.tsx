@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, X } from 'lucide-react';
-import { providersConf } from '@routerly/shared';
+import { providersConf, suggestConnectionLabel } from '@routerly/shared';
 import {
   getConnections, createConnection, updateConnection, getProviderDescriptors, testOpenAIOAuth,
   type ProviderDescriptor,
 } from '../api';
-import { SearchableSelect } from '../components/SearchableSelect';
 import {
   ConnectionCredentialsFields, emptyCredentialValues, type CredentialValues,
 } from '../components/ConnectionCredentialsFields';
@@ -21,6 +20,27 @@ function defaultEndpoint(providerId: string): string {
   return (providersConf as Record<string, { endpoint?: string }>)[providerId]?.endpoint ?? '';
 }
 
+/**
+ * How the account behind a provider is obtained. That is the first thing an operator knows
+ * ("I have an API key", "I pay for a Claude plan", "it runs on my own box"), so the picker
+ * shows every provider at once under those headings instead of hiding them in a dropdown.
+ *
+ * The support level already separates the subscription and browser-session providers. The
+ * cloud and self-hosted sets are named here because both are "native" support: the level says
+ * how well Routerly speaks to the provider, not what an operator has to bring to use it.
+ */
+const CLOUD_PROVIDERS = new Set(['azure-openai', 'bedrock', 'vertex']);
+const SELF_HOSTED_PROVIDERS = new Set(['ollama', 'custom']);
+const PROVIDER_GROUPS = ['Direct API', 'Cloud platform', 'Subscription', 'Browser session', 'Self-hosted'] as const;
+
+function providerGroup(p: ProviderDescriptor): string {
+  if (p.supportLevel === 'oauth') return 'Subscription';
+  if (p.supportLevel === 'web') return 'Browser session';
+  if (CLOUD_PROVIDERS.has(p.id)) return 'Cloud platform';
+  if (SELF_HOSTED_PROVIDERS.has(p.id)) return 'Self-hosted';
+  return 'Direct API';
+}
+
 export function ConnectionFormPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
@@ -30,6 +50,7 @@ export function ConnectionFormPage() {
   const [providerId, setProviderId] = useState('');
   const [providerName, setProviderName] = useState('');
   const [label, setLabel] = useState('');
+  const [takenLabels, setTakenLabels] = useState<string[]>([]);
   const [enabled, setEnabled] = useState(true);
   const [values, setValues] = useState<CredentialValues>(emptyCredentialValues());
   const [oauthTest, setOauthTest] = useState<{ status: 'idle' | 'testing' | 'ok' | 'error'; msg?: string }>({ status: 'idle' });
@@ -42,10 +63,12 @@ export function ConnectionFormPage() {
       setLoading(true);
       setErr('');
       try {
-        const descriptors = await getProviderDescriptors();
+        // Connections are read even when creating: the names already taken are what the
+        // suggested name has to avoid.
+        const [descriptors, connections] = await Promise.all([getProviderDescriptors(), getConnections()]);
         setProviders(descriptors);
+        setTakenLabels(connections.filter(c => c.id !== id).map(c => c.label));
         if (isEditing && id) {
-          const connections = await getConnections();
           const conn = connections.find(c => c.id === id);
           if (conn) {
             setProviderId(conn.providerId);
@@ -121,7 +144,9 @@ export function ConnectionFormPage() {
         const patch: Parameters<typeof updateConnection>[1] = {
           providerId,
           providerName: upstream,
-          label,
+          // Blank means "name it after the provider": the server generates the same slug
+          // the field previews.
+          label: label.trim(),
           ...(values.endpoint ? { endpoint: values.endpoint } : {}),
           enabled,
         };
@@ -131,7 +156,9 @@ export function ConnectionFormPage() {
         await createConnection({
           providerId,
           ...(upstream ? { providerName: upstream } : {}),
-          label,
+          // Blank means "name it after the provider": the server generates the same slug
+          // the field previews.
+          label: label.trim(),
           ...(values.endpoint ? { endpoint: values.endpoint } : {}),
           enabled,
           credentials,
@@ -145,6 +172,13 @@ export function ConnectionFormPage() {
   }
 
   const goBack = () => navigate('/dashboard/connections');
+
+  // The exact name the server would generate, so a blank field is a preview and not a guess.
+  const suggestedLabel = suggestConnectionLabel(
+    providerId,
+    providerId === 'custom' ? providerName.trim() || undefined : undefined,
+    takenLabels,
+  );
 
   if (loading) {
     return (
@@ -160,7 +194,21 @@ export function ConnectionFormPage() {
         <button className="btn-icon" onClick={goBack} style={{ marginBottom: 16, display: 'inline-flex', padding: 4, width: 'fit-content' }}>
           <ArrowLeft size={16} /><span style={{ marginLeft: 6, fontSize: '0.8rem', fontWeight: 500 }}>Back to Connections</span>
         </button>
-        <h1>{isEditing ? 'Edit Connection' : 'Add Connection'}</h1>
+        {/* Same width as the form below, so the toggle sits over the form column
+            instead of drifting to the far edge of the page. */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, maxWidth: 800 }}>
+          <h1>{isEditing ? 'Edit Connection' : 'Add Connection'}</h1>
+          {/* Whether the connection is live is a property of the whole page, not one more
+              field to fill in, so it sits by the title instead of mid-form. */}
+          <label htmlFor="conn-enabled" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer',
+            fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 0,
+          }}>
+            <input type="checkbox" id="conn-enabled" checked={enabled}
+              onChange={e => setEnabled(e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
+            Enabled
+          </label>
+        </div>
         <p>{isEditing ? 'Update the provider account settings' : 'Register a new provider account'}</p>
       </div>
 
@@ -174,17 +222,30 @@ export function ConnectionFormPage() {
 
             <div className="form-group">
               <label className="form-label">Provider</label>
-              <SearchableSelect
-                options={providers.map(p => ({ value: p.id, label: p.label }))}
-                value={providerId}
-                onChange={p => {
-                  setProviderId(p);
-                  // Picking a provider carries its address with it, the way the model form
-                  // has always done it: an endpoint left over from the previous provider
-                  // would point the account at the wrong API (T204).
-                  setValues(v => ({ ...v, endpoint: defaultEndpoint(p) }));
-                }}
-              />
+              {PROVIDER_GROUPS.map(group => {
+                const inGroup = providers.filter(p => providerGroup(p) === group);
+                if (inGroup.length === 0) return null;
+                return (
+                  <div key={group} className="provider-group">
+                    <div className="provider-group-title">{group}</div>
+                    <div className="provider-grid" role="group" aria-label={group}>
+                      {inGroup.map(p => (
+                        <button key={p.id} type="button" className="provider-tile"
+                          aria-pressed={p.id === providerId}
+                          onClick={() => {
+                            setProviderId(p.id);
+                            // Picking a provider carries its address with it, the way the model form
+                            // has always done it: an endpoint left over from the previous provider
+                            // would point the account at the wrong API (T204).
+                            setValues(v => ({ ...v, endpoint: defaultEndpoint(p.id) }));
+                          }}>
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {providerId === 'custom' && (
@@ -202,15 +263,13 @@ export function ConnectionFormPage() {
             )}
 
             <div className="form-group">
-              <label className="form-label" htmlFor="conn-label">Label</label>
-              <input id="conn-label" className="form-input" placeholder="e.g. Primary OpenAI account"
+              <label className="form-label" htmlFor="conn-name">Name</label>
+              <input id="conn-name" className="form-input" placeholder={suggestedLabel}
                 value={label} onChange={e => setLabel(e.target.value)} />
-            </div>
-
-            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <input type="checkbox" id="conn-enabled" checked={enabled}
-                onChange={e => setEnabled(e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
-              <label htmlFor="conn-enabled" style={{ cursor: 'pointer', marginBottom: 0 }}>Enabled</label>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                Identifies this connection everywhere it is referenced, so it has to be unique.
+                Leave it blank to use <code style={{ fontSize: '0.72rem' }}>{suggestedLabel}</code>.
+              </div>
             </div>
 
             <ConnectionCredentialsFields
@@ -229,7 +288,7 @@ export function ConnectionFormPage() {
           </div>
 
           <div style={{ display: 'flex', gap: 8 }}>
-            <button type="submit" className="btn btn-primary" disabled={saving || !label.trim()}>
+            <button type="submit" className="btn btn-primary" disabled={saving}>
               {saving ? <span className="spinner" /> : <><Save size={14} /> {isEditing ? 'Save' : 'Create'}</>}
             </button>
             <button type="button" className="btn btn-secondary" onClick={goBack}>

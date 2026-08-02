@@ -2,6 +2,7 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import type { ProviderConnection, ModelInstance, Permission } from '@routerly/shared';
+import { suggestConnectionLabel, isConnectionLabelTaken } from '@routerly/shared';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { logAudit } from '../audit/logger.js';
 import type { AuditEntry } from '../audit/logger.js';
@@ -206,13 +207,36 @@ const connectionSchema = z.object({
   providerId: z.string().refine(isKnownProvider, { message: 'Unknown providerId' }),
   // Names the upstream service behind a custom connection; free text, never dispatched on.
   providerName: z.string().optional(),
-  label: z.string(),
+  // Blank or absent means "name it after the provider": the server generates a free slug.
+  label: z.string().optional(),
   credentials: credentialFieldsSchema,
   endpoint: z.string().optional(),
   enabled: z.boolean(),
 });
 
 const connectionPatchSchema = connectionSchema.partial();
+
+/**
+ * Settles the name a connection is stored under. A blank name is generated from what the
+ * connection points at; a name typed by hand is kept as typed but has to be free, since
+ * every list that references a connection shows only its name.
+ *
+ * `others` is every connection except the one being written.
+ */
+function resolveConnectionLabel(
+  label: string | undefined,
+  providerId: string,
+  providerName: string | undefined,
+  others: ProviderConnection[],
+): { label: string } | { error: string } {
+  const taken = others.map(c => c.label);
+  const wanted = (label ?? '').trim();
+  if (!wanted) return { label: suggestConnectionLabel(providerId, providerName, taken) };
+  if (isConnectionLabelTaken(wanted, taken)) {
+    return { error: `Label "${wanted}" is already used by another connection` };
+  }
+  return { label: wanted };
+}
 
 const pricingTierSchema = z.object({
   metric: z.string(),
@@ -285,9 +309,15 @@ export const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
     if (!(await checkProviderModuleGate(parsed.data.providerId, reply))) return;
 
     const connections = await readConfig('connections');
+    const resolved = resolveConnectionLabel(
+      parsed.data.label, parsed.data.providerId, parsed.data.providerName, connections,
+    );
+    if ('error' in resolved) return reply.status(400).send({ error: 'label_taken', message: resolved.error });
+
     const connection = {
       id: uuidv4(),
       ...parsed.data,
+      label: resolved.label,
       credentials: buildConnectionCredentials(parsed.data.providerId, parsed.data.credentials ?? {}),
     } as ProviderConnection;
     connections.push(connection);
@@ -309,6 +339,13 @@ export const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
     if (!(await checkProviderModuleGate(effectiveProviderId, reply))) return;
 
     const patchData = { ...parsed.data } as Partial<ProviderConnection>;
+    if (parsed.data.label !== undefined) {
+      const others = connections.filter((_, i) => i !== index);
+      const effectiveProviderName = parsed.data.providerName ?? connections[index]!.providerName;
+      const resolved = resolveConnectionLabel(parsed.data.label, effectiveProviderId, effectiveProviderName, others);
+      if ('error' in resolved) return reply.status(400).send({ error: 'label_taken', message: resolved.error });
+      patchData.label = resolved.label;
+    }
     if (parsed.data.credentials) {
       // Partial-preserving: merge only the mapped, non-empty fields onto the stored credentials so
       // patching one field never clobbers the others. Absent `credentials` leaves the record intact.

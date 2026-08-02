@@ -13,6 +13,7 @@
  */
 import { createHash } from 'node:crypto';
 import type { ModelConfig, ProviderConnection, ModelInstance } from '@routerly/shared';
+import { suggestConnectionLabel, isConnectionLabelTaken } from '@routerly/shared';
 import { readConfig, writeConfig } from './loader.js';
 
 /**
@@ -102,6 +103,19 @@ export async function migrateModelsToConnections(): Promise<{ connections: numbe
     }
   }
 
+  // One-time cleanup: earlier migrations named every connection after its provider, so three
+  // OpenAI accounts all answered to "openai" and the connection picker on the model form
+  // listed the same name three times. Names are display-only (models reference the id), so
+  // renaming the later ones in place is safe.
+  const kept: string[] = [];
+  for (const c of existingConnections) {
+    if (isConnectionLabelTaken(c.label, kept)) {
+      c.label = suggestConnectionLabel(c.providerId, c.providerName, kept);
+      labelsChanged = true;
+    }
+    kept.push(c.label);
+  }
+
   const connectionIds = new Set(existingConnections.map((c) => c.id));
   const instanceIds = new Set(existingInstances.map((i) => i.id));
 
@@ -117,12 +131,13 @@ export async function migrateModelsToConnections(): Promise<{ connections: numbe
       const conn: ProviderConnection = {
         id: connId,
         providerId: model.provider,
-        label: model.provider,
+        label: suggestConnectionLabel(model.provider, undefined, kept),
         credentials: buildCredentials(model),
         enabled: true,
       };
       if (model.endpoint !== undefined) conn.endpoint = model.endpoint;
       newConnections.push(conn);
+      kept.push(conn.label);
     }
 
     if (!instanceIds.has(model.id)) {

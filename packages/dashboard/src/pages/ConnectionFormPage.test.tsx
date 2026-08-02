@@ -11,20 +11,6 @@ vi.mock('../api', () => ({
   testOpenAIOAuth: vi.fn(),
 }));
 
-// The provider picker is a div-based combobox; driving it as a native select keeps these
-// tests about the form and not about the widget, the way ModelFormPage.test.tsx does.
-vi.mock('../components/SearchableSelect', () => ({
-  SearchableSelect: ({ options, value, onChange }: {
-    options: { value: string; label: string }[];
-    value: string;
-    onChange: (v: string) => void;
-  }) => (
-    <select aria-label="Provider" value={value} onChange={e => onChange(e.target.value)}>
-      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-    </select>
-  ),
-}));
-
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async (importActual) => {
   const actual = await importActual<typeof import('react-router-dom')>();
@@ -83,8 +69,63 @@ describe('ConnectionFormPage — create mode', () => {
   it('renders an empty form', async () => {
     renderNew();
     await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
-    expect((screen.getByLabelText('Label') as HTMLInputElement).value).toBe('');
-    expect(mockGetConnections).not.toHaveBeenCalled();
+    expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('');
+  });
+
+  it('previews the name the server would generate, avoiding the ones already taken', async () => {
+    mockGetConnections.mockResolvedValue([makeConnection({ label: 'openai' })]);
+    renderNew();
+    await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
+
+    expect((screen.getByLabelText('Name') as HTMLInputElement).placeholder).toBe('openai-2');
+  });
+
+  it('creates a connection with a blank name, letting the server name it', async () => {
+    const user = userEvent.setup();
+    renderNew();
+    await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
+
+    await user.click(screen.getByRole('button', { name: /^create$/i }));
+
+    await waitFor(() => expect(mockCreateConnection).toHaveBeenCalledWith(expect.objectContaining({
+      providerId: 'openai', label: '',
+    })));
+  });
+
+  it('groups the provider tiles by how the account is obtained', async () => {
+    mockGetDescriptors.mockResolvedValue([
+      makeDescriptor(),
+      makeDescriptor({ id: 'bedrock', label: 'AWS Bedrock' }),
+      makeDescriptor({ id: 'anthropic-oauth', label: 'Anthropic (OAuth)', supportLevel: 'oauth' }),
+      makeDescriptor({ id: 'openai-web', label: 'OpenAI (Web)', supportLevel: 'web' }),
+      makeDescriptor({ id: 'ollama', label: 'Ollama' }),
+    ]);
+    renderNew();
+    await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
+
+    for (const group of ['Direct API', 'Cloud platform', 'Subscription', 'Browser session', 'Self-hosted']) {
+      expect(screen.queryByText(group)).not.toBeNull();
+    }
+    expect(screen.getByRole('group', { name: 'Cloud platform' }).textContent).toBe('AWS Bedrock');
+    expect(screen.getByRole('group', { name: 'Self-hosted' }).textContent).toBe('Ollama');
+    // The picked provider is the pressed tile, no dropdown to open.
+    expect(screen.getByRole('button', { name: 'OpenAI' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Ollama' }).getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('carries the Enabled toggle in the page header', async () => {
+    const user = userEvent.setup();
+    renderNew();
+    await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
+
+    const toggle = screen.getByLabelText('Enabled') as HTMLInputElement;
+    expect(toggle.closest('.page-header')).not.toBeNull();
+    expect(toggle.checked).toBe(true);
+
+    await user.click(toggle);
+    await user.click(screen.getByRole('button', { name: /^create$/i }));
+
+    await waitFor(() => expect(mockCreateConnection).toHaveBeenCalledWith(expect.objectContaining({ enabled: false })));
   });
 
   it('creates a connection, sending endpoint top-level and credentials from the fields', async () => {
@@ -92,7 +133,7 @@ describe('ConnectionFormPage — create mode', () => {
     renderNew();
     await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
 
-    await user.type(screen.getByLabelText('Label'), 'My OpenAI');
+    await user.type(screen.getByLabelText('Name'), 'My OpenAI');
     // The endpoint is left untouched: it arrives prefilled with the provider default (T204).
     // API key credential input.
     await user.type(screen.getByPlaceholderText('sk-…'), 'sk-secret');
@@ -112,7 +153,7 @@ describe('ConnectionFormPage — create mode', () => {
     renderNew();
     await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
 
-    await user.type(screen.getByLabelText('Label'), 'X');
+    await user.type(screen.getByLabelText('Name'), 'X');
     await user.click(screen.getByRole('button', { name: /^create$/i }));
 
     await waitFor(() => expect(screen.queryByText('create failed')).not.toBeNull());
@@ -125,7 +166,7 @@ describe('ConnectionFormPage — create mode', () => {
     renderNew();
     await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
 
-    await user.type(screen.getByLabelText('Label'), 'X');
+    await user.type(screen.getByLabelText('Name'), 'X');
     await user.click(screen.getByRole('button', { name: /^create$/i }));
 
     await waitFor(() => expect(screen.queryByText('Failed to create connection')).not.toBeNull());
@@ -158,7 +199,7 @@ describe('ConnectionFormPage — provider defaults (T204)', () => {
     renderNew();
     await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
 
-    await user.selectOptions(screen.getByLabelText('Provider'), 'ollama');
+    await user.click(screen.getByRole('button', { name: 'Ollama' }));
 
     expect(screen.getByDisplayValue('http://localhost:11434/v1')).not.toBeNull();
     expect(screen.queryByDisplayValue('https://api.openai.com/v1')).toBeNull();
@@ -170,9 +211,9 @@ describe('ConnectionFormPage — provider defaults (T204)', () => {
     renderNew();
     await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
 
-    await user.selectOptions(screen.getByLabelText('Provider'), 'bedrock');
+    await user.click(screen.getByRole('button', { name: 'AWS Bedrock' }));
 
-    const labelInput = screen.getByLabelText('Label');
+    const labelInput = screen.getByLabelText('Name');
     const endpointInput = screen.getAllByRole('textbox').find(t => t !== labelInput) as HTMLInputElement;
     expect(endpointInput.value).toBe('');
   });
@@ -191,7 +232,7 @@ describe('ConnectionFormPage — edit mode', () => {
     renderEdit();
     await waitFor(() => expect(screen.queryByText('Edit Connection')).not.toBeNull());
 
-    expect((screen.getByLabelText('Label') as HTMLInputElement).value).toBe('My OpenAI');
+    expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('My OpenAI');
     expect(screen.getByDisplayValue('https://api.openai.com/v1')).not.toBeNull();
     expect(screen.queryByText(/leave credential fields blank/i)).not.toBeNull();
     expect((screen.getByPlaceholderText('Leave blank to keep existing key') as HTMLInputElement).value).toBe('');
@@ -202,7 +243,7 @@ describe('ConnectionFormPage — edit mode', () => {
     renderEdit();
     await waitFor(() => expect(screen.queryByText('Edit Connection')).not.toBeNull());
 
-    const labelInput = screen.getByLabelText('Label');
+    const labelInput = screen.getByLabelText('Name');
     await user.clear(labelInput);
     await user.type(labelInput, 'Renamed');
     await user.click(screen.getByRole('button', { name: /^save$/i }));
@@ -297,7 +338,7 @@ describe('ConnectionFormPage — custom provider (T205)', () => {
     await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
 
     expect(screen.queryByPlaceholderText(UPSTREAM)).toBeNull();
-    await user.selectOptions(screen.getByLabelText('Provider'), 'custom');
+    await user.click(screen.getByRole('button', { name: 'Custom (OpenAI-compatible)' }));
     expect(screen.queryByPlaceholderText(UPSTREAM)).not.toBeNull();
   });
 
@@ -306,9 +347,9 @@ describe('ConnectionFormPage — custom provider (T205)', () => {
     renderNew();
     await waitFor(() => expect(screen.queryByText('Add Connection')).not.toBeNull());
 
-    await user.selectOptions(screen.getByLabelText('Provider'), 'custom');
+    await user.click(screen.getByRole('button', { name: 'Custom (OpenAI-compatible)' }));
     await user.type(screen.getByPlaceholderText(UPSTREAM), 'deepseek');
-    await user.type(screen.getByLabelText('Label'), 'DeepSeek');
+    await user.type(screen.getByLabelText('Name'), 'DeepSeek');
     await user.click(screen.getByRole('button', { name: /^create$/i }));
 
     await waitFor(() => expect(mockCreateConnection).toHaveBeenCalledWith(expect.objectContaining({
@@ -332,7 +373,7 @@ describe('ConnectionFormPage — custom provider (T205)', () => {
     renderEdit();
     await waitFor(() => expect(screen.queryByText('Edit Connection')).not.toBeNull());
 
-    await user.selectOptions(screen.getByLabelText('Provider'), 'openai');
+    await user.click(screen.getByRole('button', { name: 'OpenAI' }));
     await user.click(screen.getByRole('button', { name: /^save$/i }));
 
     await waitFor(() => expect(mockUpdateConnection).toHaveBeenCalledWith('c1', expect.objectContaining({

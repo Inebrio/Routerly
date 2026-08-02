@@ -320,7 +320,7 @@ POST /api/connections
 **Fields:**
 - `providerId` - must match a known provider id from [Provider Descriptors](#provider-descriptors) (required)
 - `providerName` - upstream provider behind a `custom` connection, e.g. `deepseek` (optional). Free text: it names the service the `endpoint` belongs to, and models created on the connection use it as their ID prefix (`deepseek/deepseek-r1`). Routing still dispatches on `providerId`
-- `label` - friendly name (required)
+- `label` - unique name for the connection (optional). Blank or absent means the server generates one from the provider (`openai`, then `openai-2`, `openai-3`, ...), or from `providerName` for a `custom` connection. A name another connection already uses is rejected
 - `credentials` - arbitrary key-value object; shape depends on `supportLevel` (required, may be `{}`). See **Credential encryption** below
 - `endpoint` - override base URL, e.g. for `custom`/Azure-style deployments (optional)
 - `enabled` - whether the connection is usable by routing (required)
@@ -346,7 +346,7 @@ intentional for those providers.
 
 **Response `200`:** the created connection, `credentials` omitted (see List Connections above).
 
-**Errors**: `400` invalid body / unknown `providerId` · `403` insufficient permissions or `module_disabled` (oauth/web connection while the corresponding `provider-oauth`/`provider-web` module is disabled)
+**Errors**: `400` invalid body / unknown `providerId` / `label_taken` (`{"error":"label_taken","message":"Label \"<name>\" is already used by another connection"}`) · `403` insufficient permissions or `module_disabled` (oauth/web connection while the corresponding `provider-oauth`/`provider-web` module is disabled)
 
 ### Update Connection
 
@@ -360,6 +360,9 @@ PATCH /api/connections/:id
 ```json
 { "label": "Renamed", "credentials": { "oauthPlain": "new-access-token" } }
 ```
+
+Sending `"label": ""` regenerates the name from the provider; sending a name
+another connection already uses returns `400 label_taken`.
 
 When `credentials` is present in the body, it **replaces** the stored
 credentials object wholesale (not a deep merge) - resend every field you want

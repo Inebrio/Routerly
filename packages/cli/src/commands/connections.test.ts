@@ -144,6 +144,24 @@ describe('connections add', () => {
     expect(mockApi.mock.calls[0]?.[2]).not.toHaveProperty('providerName');
   });
 
+  it('omits label when the flag is absent and reports the name the server picked', async () => {
+    mockApi.mockResolvedValueOnce({ id: 'c7', providerId: 'openai', label: 'openai-2', credentials: undefined, enabled: true });
+    const cmd = makeConnectionsCommand();
+    await cmd.parseAsync(['node', 'routerly', 'add', '--provider-id', 'openai', '--api-key', 'sk-abc']);
+    expect(mockApi.mock.calls[0]?.[2]).not.toHaveProperty('label');
+    expect(console.log).toHaveBeenCalledWith(expect.stringContaining('openai-2'));
+  });
+
+  it('prints the server message when the label is already taken', async () => {
+    mockApi.mockRejectedValueOnce(new ApiError(400, 'Label "Main" is already used by another connection'));
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    const cmd = makeConnectionsCommand();
+    await expect(cmd.parseAsync(['node', 'routerly', 'add', '--provider-id', 'openai', '--label', 'Main']))
+      .rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('already used by another connection'));
+  });
+
   it('--no-enabled adds a disabled connection', async () => {
     mockApi.mockResolvedValueOnce({ id: 'c3', providerId: 'openai', label: 'Disabled one', credentials: undefined, enabled: false });
     const cmd = makeConnectionsCommand();

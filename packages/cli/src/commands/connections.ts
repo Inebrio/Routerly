@@ -105,7 +105,7 @@ Examples:
     cmd.command('add')
       .description('Add a provider connection')
       .requiredOption('--provider-id <id>', 'Provider ID (e.g. openai, anthropic, ollama, bedrock)')
-      .requiredOption('--label <label>', 'Display label for this connection')
+      .option('--label <label>', 'Unique name for this connection (default: generated from the provider, e.g. openai-2)')
       .option('--provider-name <name>', 'Upstream provider behind a custom connection (e.g. deepseek); used as the model ID prefix')
       .option('--endpoint <url>', 'Custom API endpoint (uses provider default if omitted)'),
   )
@@ -113,6 +113,7 @@ Examples:
     .option('--no-enabled', 'Add disabled')
     .addHelpText('after', `
 Examples:
+  routerly connections add --provider-id openai --api-key sk-...
   routerly connections add --provider-id openai --label "Main OpenAI" --api-key sk-...
   routerly connections add --provider-id ollama --label "Local Ollama" --endpoint http://localhost:11434/v1
   routerly connections add --provider-id bedrock --label "AWS Bedrock" \\
@@ -123,7 +124,7 @@ Examples:
     --endpoint https://api.deepseek.com/v1 --api-key sk-...
 `)
     .action(async (opts: CredentialOpts & {
-      providerId: string; label: string; providerName?: string; endpoint?: string; enabled?: boolean;
+      providerId: string; label?: string; providerName?: string; endpoint?: string; enabled?: boolean;
     }) => {
       // ponytail: `--enabled`/`--no-enabled` both declared without a shared default leaves
       // opts.enabled undefined when neither flag is passed; the POST schema requires a boolean.
@@ -140,7 +141,8 @@ Examples:
       const body = {
         providerId: opts.providerId,
         ...(opts.providerName ? { providerName: opts.providerName } : {}),
-        label: opts.label,
+        // Omitted entirely when not given: the server names the connection after its provider.
+        ...(opts.label ? { label: opts.label } : {}),
         credentials,
         ...(opts.endpoint ? { endpoint: opts.endpoint } : {}),
         enabled,
