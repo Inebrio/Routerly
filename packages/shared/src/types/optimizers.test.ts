@@ -83,7 +83,7 @@ describe('type-checks', () => {
 describe('OPTIMIZER_CATALOG', () => {
   it('has one entry per optimizer id, keyed by its own id', () => {
     const entries = Object.entries(OPTIMIZER_CATALOG);
-    expect(entries.length).toBe(7);
+    expect(entries.length).toBe(8);
     for (const [key, meta] of entries) expect(meta.id).toBe(key);
   });
 
@@ -109,8 +109,8 @@ describe('OPTIMIZER_CATALOG', () => {
     }
   });
 
-  it('leaves relevance without a default, since it is inert without a threshold', () => {
-    expect(OPTIMIZER_CATALOG.relevance.threshold?.default).toBeUndefined();
+  it('gives relevance a default, so enabling the step is the whole opt-in', () => {
+    expect(OPTIMIZER_CATALOG.relevance.threshold?.default).toBe(0.1);
   });
 });
 
@@ -126,7 +126,7 @@ describe('optimizerLabel', () => {
 
 describe('optimizerThreshold', () => {
   it('returns the spec of an optimizer that takes a threshold', () => {
-    expect(optimizerThreshold('ccr')).toMatchObject({ unit: 'turns', default: 6 });
+    expect(optimizerThreshold('ccr')).toMatchObject({ unit: 'turns', default: 3 });
   });
 
   it('returns undefined for an optimizer that takes none', () => {

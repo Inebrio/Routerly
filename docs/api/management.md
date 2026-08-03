@@ -685,12 +685,11 @@ Kinds omitted from the body keep their current assignment.
 ## Optimizers
 
 Prompt/context optimizers reduce a request's token footprint before it is
-forwarded to a provider. All 7 ship disabled by default; a project opts in
+forwarded to a provider. All 8 ship disabled by default; a project opts in
 per-optimizer via its [`optimizers` field](#optimizers-project-field). See
 [Concepts: Optimizers](../concepts/optimizers.md) for what each optimizer
 does, its class (`lossless` / `recoverable` / `lossy`), the safety gate, and
-known limitations (`headroom` is a permanent no-op on live requests today;
-`llmlingua-2` uses a placeholder tokenizer).
+which steps are language-bound.
 
 ### List Optimizers
 
@@ -710,6 +709,7 @@ resolved from the in-memory registry populated at module bootstrap.
   { "id": "ccr", "klass": "recoverable", "installed": true },
   { "id": "rtk", "klass": "recoverable", "installed": true },
   { "id": "headroom", "klass": "lossless", "installed": true },
+  { "id": "json-table", "klass": "recoverable", "installed": true },
   { "id": "relevance", "klass": "lossy", "installed": true },
   { "id": "caveman", "klass": "lossy", "installed": true },
   { "id": "llmlingua-2", "klass": "lossy", "installed": true }
@@ -735,6 +735,7 @@ written.**
 ```json
 {
   "projectId": "proj-uuid",
+  "model": "openai/gpt-4o-mini",
   "sampleMessages": [{ "role": "user", "content": "Hello, please help me with this." }],
   "steps": [
     { "id": "caveman", "enabled": true },
@@ -752,6 +753,10 @@ written.**
   other config is read; nothing is written); `404` if unknown. The `steps`
   in the request body still drive which optimizers run. The project's own
   saved `optimizers.steps` are not substituted in
+- `model`: optional model id the sample is addressed to. `headroom` sizes its
+  budget on the requested model's context window, so without one it reports a
+  skip reason instead of trimming, exactly as it would on a request naming a
+  model Routerly has no window for
 
 **Response `200`:**
 ```json
@@ -770,7 +775,8 @@ written.**
       "id": "rtk",
       "before": 30,
       "after": 30,
-      "messages": [{ "role": "user", "content": "Hello, help me this." }]
+      "messages": [{ "role": "user", "content": "Hello, help me this." }],
+      "skipReason": "No redundant whitespace or repeated block found in the message text."
     }
   ]
 }
@@ -783,51 +789,99 @@ written.**
 | `perStep[].before` / `perStep[].after` | Token estimate around that single step |
 | `perStep[].messages` | The prompt as that step left it. Always present, so step *n*'s diff anchors on step *n-1*'s output; unchanged when the step did nothing |
 | `perStep[].rolledBack` | `true` when the step produced a result the safety gate rejected, so its change was discarded. Absent otherwise |
+| `perStep[].skipReason` | Why an enabled step declined to run, in the optimizer's own words. Absent when the step ran |
 
 A `lossy` step whose result fails the safety gate reports `rolledBack: true`
 and is otherwise unchanged (`before === after`), mirroring what happens on a
 live request. `rolledBack` is what separates "was rejected" from "had nothing
-to do", which the token delta alone cannot say. Context-dependent optimizers
-(`headroom`) are inert in preview, matching their live no-op state (see
-[Concepts: Optimizers](../concepts/optimizers.md#headroom)).
+to do", which the token delta alone cannot say. A step that declined to run
+at all reports `skipReason` instead: no context window for the model, no
+repeated message, text that is not English, no JSON array long enough, the
+`llmlingua-2` checkpoint not downloaded.
 
 **Errors**: `400` invalid body · `404` `projectId` given but not found ·
 `403` insufficient permissions
 
-### Recent Traffic Samples
+### LLMLingua-2 Checkpoints
 
 ```
-GET /api/projects/:id/optimizers/samples
+GET /api/optimizers/llmlingua2/model
 ```
 
 **Auth**: `Authorization: Bearer <jwt>` (requires `optimizers:read`)
 
-The last few prompts the project actually sent, so a pipeline can be tuned
-against real traffic instead of a hand-typed sentence. Feed one straight back
-into [Preview Optimizers](#preview-optimizers) as `sampleMessages`.
+State of the optional `llmlingua-2` install on **this service host**. Not
+project-scoped: the runtime and the downloaded checkpoints are shared by
+every project that names one. Carries no prompt content.
 
 **Response `200`:**
 ```json
-[
-  {
-    "capturedAt": "2026-08-01T10:00:00.000Z",
-    "estimatedTokens": 420,
-    "messages": [{ "role": "user", "content": "Summarize this thread" }],
-    "truncated": true
-  }
-]
+{
+  "runtimeInstalled": true,
+  "checkpoints": [
+    {
+      "key": "bert-multilingual-q8",
+      "label": "BERT multilingual, quantized",
+      "repo": "ldenoue/llmlingua-2-bert-base-multilingual-cased-meetingbank",
+      "dtype": "q8",
+      "sizeMb": 182,
+      "license": "The export repo declares no license; the upstream weights are Apache-2.0.",
+      "note": "The default. Smallest and fastest, and enough for prose in the 104 languages BERT multilingual covers.",
+      "isDefault": true,
+      "state": "downloading",
+      "progress": 42,
+      "loadedBytes": 76000000,
+      "totalBytes": 182000000
+    },
+    {
+      "key": "xlm-roberta-large-int8",
+      "label": "XLM-RoBERTa large, int8",
+      "repo": "atjsh/llmlingua-2-js-xlm-roberta-large-meetingbank",
+      "dtype": "int8",
+      "sizeMb": 579,
+      "license": "MIT.",
+      "note": "Better compression quality and a declared license, at roughly three times the disk and noticeably slower inference.",
+      "isDefault": false,
+      "state": "absent"
+    }
+  ]
+}
 ```
 
-Newest first, at most 5 per project. `truncated` is present when the sample
-was clipped to fit the buffer: at most 20 messages, each at most 1000
-characters.
+| Field | Description |
+|-------|-------------|
+| `runtimeInstalled` | Whether the optional `@huggingface/transformers` dependency is present. `false` means no checkpoint can be downloaded or used |
+| `checkpoints[].key` | The value a step's `model` field takes ([`optimizers` project field](#optimizers-project-field)) |
+| `checkpoints[].isDefault` | The checkpoint a step with no `model` runs on. Reported rather than derived, because `ROUTERLY_LLMLINGUA_MODEL` can move it |
+| `checkpoints[].state` | `absent`, `downloading` or `ready` |
+| `checkpoints[].progress` | 0–100 while `downloading`, absent otherwise. `loadedBytes` / `totalBytes` accompany it when the host reports sizes |
+| `checkpoints[].error` | Why the last download attempt failed. The checkpoint goes back to `absent` and can be retried |
 
-Samples are captured in the optimizer pipeline, which runs **after** PII
-scrubbing and guardrails, so a scrubbed prompt is stored scrubbed. They live
-in memory only, are never written to disk, and are lost on service restart.
-An empty array means the project has sent no traffic since the last restart.
+**Errors**: `403` insufficient permissions
 
-**Errors**: `404` project not found · `403` insufficient permissions
+```
+POST /api/optimizers/llmlingua2/model
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `optimizers:manage`)
+
+Starts one checkpoint's download on the service host and returns
+immediately: it is hundreds of megabytes, so the caller polls the `GET`
+above rather than holding a request open.
+
+```json
+{ "key": "xlm-roberta-large-int8" }
+```
+
+`key` is optional; omitted, the default checkpoint is downloaded. It must be
+one this host publishes, and free text is refused rather than fetched, since
+fetching is what costs the disk.
+
+**Response `202`:** the same body as the `GET`, with the requested
+checkpoint already in `downloading`.
+
+**Errors**: `400` unknown checkpoint key · `409` `@huggingface/transformers`
+is not installed on the service host · `403` insufficient permissions
 
 ---
 
@@ -1338,7 +1392,8 @@ field is otherwise valid.
       { "id": "session-dedup", "enabled": true },
       { "id": "ccr", "enabled": true },
       { "id": "caveman", "enabled": true },
-      { "id": "relevance", "enabled": true, "threshold": 0.3 }
+      { "id": "relevance", "enabled": true, "threshold": 0.3 },
+      { "id": "llmlingua-2", "enabled": true, "model": "xlm-roberta-large-int8" }
     ]
   }
 }
@@ -1349,22 +1404,28 @@ field is otherwise valid.
   run top to bottom in the `request.preprocess` pipeline phase (required,
   may be empty)
 - Each step: `id` (one of `session-dedup`, `ccr`, `rtk`, `headroom`,
-  `relevance`, `caveman`, `llmlingua-2`; each id may appear at most once, and
-  a duplicate id is rejected), `enabled: boolean`, `threshold?: number`
-  (optional; a positive number, capped at `1` for `relevance` and
-  `llmlingua-2`, unbounded for `ccr` and `headroom`; unused for
-  `session-dedup`, `rtk` and `caveman`)
+  `json-table`, `relevance`, `caveman`, `llmlingua-2`; each id may appear at
+  most once, and a duplicate id is rejected), `enabled: boolean`,
+  `threshold?: number` (optional; a positive number, capped at `1` for
+  `relevance` and `llmlingua-2`, unbounded for `ccr`, `headroom` and
+  `json-table`; unused for `session-dedup`, `rtk` and `caveman`)
+- `model?: string`: **`llmlingua-2` only**, the key of the checkpoint that
+  step runs on, from [LLMLingua-2
+  Checkpoints](#llmlingua-2-checkpoints). Unset means the host's default
+  checkpoint. Set on any other id it is rejected with `400`
 
 See [Concepts: Optimizers](../concepts/optimizers.md) for what each id does
 and its class. See [Concepts: Optimizers, Threshold
 Range](../concepts/optimizers.md#threshold-range) for what each id's
-threshold means (`ccr`: turn count, default 6; `headroom`: reserved token
-budget, default 1024; `relevance` and `llmlingua-2`: a `0`–`1` ratio; the
-rest unused). Leave threshold unset to use the built-in default.
+threshold means (`ccr`: turn count, default 3; `headroom`: reserved token
+budget, default 1024; `json-table`: minimum rows, default 5; `relevance` and
+`llmlingua-2`: a `0`–`1` ratio, default 0.1 and 0.5; the rest unused). Leave
+threshold unset to use the built-in default.
 
 **Errors**: `400` invalid `optimizers` config (bad shape, out-of-range
-threshold, or duplicate step id) · `403` insufficient permissions
-(`optimizers:manage` required to set/clear)
+threshold, duplicate step id, unknown checkpoint key, or `model` on a step
+that runs on none) · `403` insufficient permissions (`optimizers:manage`
+required to set/clear)
 
 ### Delete Project
 

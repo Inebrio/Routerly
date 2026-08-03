@@ -106,7 +106,7 @@ Configure this project's prompt/context optimizer pipeline: a per-project,
 ordered list of optimizers that reduce a request's token footprint before it
 is forwarded to a provider.
 
-![Project Optimizer tab showing the seven built-in optimizer rows, four enabled (Session Dedup, Caveman, Redundant Token Killer, Relevance Filter) with a Preview panel below](../assets/screenshot-project-optimizer-tab.png)
+![Project Optimizer tab showing the eight built-in optimizer rows, four enabled (Session Dedup, Caveman, Redundant Token Killer, Relevance Filter) with a Preview panel below](../assets/screenshot-project-optimizer-tab.png)
 
 **Required permission:** `optimizers:read` to view the tab; `optimizers:manage` to toggle, reorder, edit thresholds, or save.
 
@@ -124,7 +124,7 @@ The switch is only shown with `optimizers:manage`.
 
 ### Optimizer Rows
 
-All 7 installed optimizers are listed, one per row, in pipeline execution
+All 8 installed optimizers are listed, one per row, in pipeline execution
 order:
 
 - **Checkbox**: enable/disable this optimizer for the project
@@ -133,23 +133,58 @@ order:
   behavior
 - **Threshold**: shown only on the optimizers that take one, labelled with
   what it actually controls (`Recent turns to keep` for `ccr`,
-  `Reserved completion budget` for `headroom`,
-  `Minimum overlap with the newest turn` for `relevance`,
+  `Reserved completion budget` for `headroom`, `Minimum rows to compact` for
+  `json-table`, `Minimum overlap with the newest turn` for `relevance`,
   `Fraction of tokens to keep` for `llmlingua-2`). The field carries the
   accepted range, its unit next to the input, and a line saying which way to
-  move it. Left empty it uses the built-in default shown as the input's
-  placeholder; `relevance` has no default and its placeholder reads
-  `required`, since it stays inert until a threshold is set.
-  `session-dedup`, `rtk` and `caveman` have no threshold field at all
+  move it. Left empty it uses the built-in default, shown as the input's
+  placeholder. `session-dedup`, `rtk` and `caveman` have no threshold field
+  at all
 - **Drag handle**: drag rows to reorder; the pipeline runs top to bottom
 
 Rows for optimizers not yet configured on the project appear disabled at the
 end of the list; enabling one and saving adds it to `optimizers.steps`.
 
 See [Concepts: Optimizers](../concepts/optimizers.md) for what each
-optimizer does, its class, and known limitations, including the
+optimizer does, its class, and which steps are language-bound, including the
 [Threshold Range](../concepts/optimizers.md#threshold-range) each
 optimizer's threshold accepts.
+
+### The LLMLingua-2 Row
+
+`llmlingua-2` runs on a downloaded model, so its row carries the download
+rather than a separate box elsewhere on the page. It appears only on that
+row, and only once the row is in the pipeline.
+
+Its checkbox stays **disabled until at least one checkpoint is downloaded**:
+the step is skipped on every request without one, so enabling it would do
+nothing. An already-enabled step stays toggleable, so a pipeline can always
+be turned off.
+
+Under the description, one line per checkpoint: its name, size, licence note
+and a **Download** button. What each line can show:
+
+| State | What it looks like |
+|-------|--------------------|
+| Not downloaded | A **Download** button |
+| Downloading | A progress bar with the percentage and, when the host reports sizes, `42% (76 of 182 MB)`. It polls every 3 seconds, so a page opened or refreshed mid-download picks the progress straight up |
+| Downloaded | `Downloaded`, and the checkpoint becomes selectable |
+| Failed | The host's error message and a **Retry** button |
+
+The checkpoints live on the service host and are shared: every project that
+picks one uses the same download. Which one *this* project's step runs on is
+the **LLMLingua-2 checkpoint** dropdown below the list, offered once at least
+one is downloaded; leaving it on **Default checkpoint** uses the one the host
+marks `default`. Picking a checkpoint that is not downloaded warns that the
+step will be skipped on every request until it is.
+
+When the optional `@huggingface/transformers` dependency is missing on the
+host, the row says so instead of offering a download: there is nothing to run
+a checkpoint with. See [Concepts: Optimizers,
+llmlingua-2](../concepts/optimizers.md#llmlingua-2) for the install.
+
+Downloading needs `optimizers:manage`; with `optimizers:read` alone the
+buttons are disabled and the states are still visible.
 
 ### Saving
 
@@ -165,28 +200,39 @@ Below the pipeline editor, **Preview token savings** dry-runs the current
 made and nothing is saved. It matches `POST /api/optimizers/preview` (see
 [API: Optimizers](../api/management.md#optimizers)).
 
-The dropdown above the input chooses what to run it against:
+The **Prompt** dropdown chooses what to run it against:
 
 - **Type a prompt below** (the default) keeps the free-text box, where you
   paste a sample user message
-- Any other entry replays a prompt this project actually sent, labelled with
-  how long ago it was captured, its token estimate and its message count.
-  Picking one replaces the text box with the captured prompt, read-only
+- Any other entry is one of the sample conversations shipped with Routerly.
+  Picking one replaces the text box with that conversation, read-only, above
+  a line saying which steps it exercises
 
-Replaying real traffic is the point of the picker: a hand-typed sentence
-rarely resembles the long, repetitive conversations optimizers work on, so it
-under-reports what a pipeline would do in production. The service keeps the
-last 5 prompts per project, in memory only, captured after PII scrubbing and
-lost on restart. The dropdown shows only **Type a prompt below** when the
-project has sent no traffic since the last restart.
+Running a fixture is the point of the picker: a hand-typed sentence rarely
+resembles the long, repetitive conversations optimizers work on, so it
+under-reports what a pipeline would do in production. Each fixture is built
+to trigger a different group of steps, and `long-context-en` is the one for
+`headroom`, previewed against a model whose window is 32k or smaller.
+Routerly does not record real prompts, so these conversations are the only
+preview material (see [Concepts: Optimizers,
+Privacy](../concepts/optimizers.md#privacy)).
+
+The **Model** dropdown addresses the sample to a model, listing this
+project's models (or every configured model when the project allows all of
+them) with each one's context window on the label. Steps that trim to fit a
+window need to know which window: on **No model** they are skipped, exactly
+as they would be on a request naming a model Routerly has no window for.
 
 Click **Run Preview** for tokens before, tokens after, tokens saved, and a
 per-step breakdown. Clicking anywhere on a step row expands it to a word-level
 diff of what that step changed: removed words struck through in red, added words in green,
 compared against the previous step's output so the diff reads as a chain. A
 step whose result the safety gate rejected is labelled **rolled back: the
-change was rejected as unsafe** rather than shown as a no-op, which tells a
-zero saving apart from a threshold set too aggressively.
+change was rejected as unsafe** rather than shown as a no-op, and a step that
+declined to run reads **skipped:** followed by its own reason (no context
+window for the model, no repeated message, text that is not English, no JSON
+array long enough, the checkpoint not downloaded). Both tell a zero saving
+apart from a threshold set too aggressively.
 
 ---
 
