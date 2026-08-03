@@ -16,7 +16,7 @@ import { makeTraceStreamHandler } from './routes.js'
 import { readConfig } from '../config/loader.js'
 import { printTrace } from './console.js'
 import { buildRecap } from './recap.js'
-import { getTrace, getTraceStartedAt, openTrace, recordTrace, type TraceEvent } from './store.js'
+import { closeTrace, getTrace, getTraceStartedAt, openTrace, recordTrace, type TraceEvent } from './store.js'
 
 /**
  * The id a caller may put on the request to follow its own trace on the side
@@ -60,7 +60,10 @@ function makeFinalize(events: EventBus): Processor<ProxyContext> {
       // with phase, module and timestamp — which is what exporters need to rebuild
       // the shape of the request.
       const buffered = getTrace(ctx.traceId) ?? []
-      if (buffered.length === 0) return
+      if (buffered.length === 0) {
+        closeTrace(ctx.traceId)
+        return
+      }
       // The recap is emitted, not appended: publishing it puts it through the same
       // stamping and the same bus as everything else, and the buffer is live, so it
       // is part of the snapshot read on the next line.
@@ -74,6 +77,9 @@ function makeFinalize(events: EventBus): Processor<ProxyContext> {
         ...(ctx.projectId ? { projectId: ctx.projectId } : {}),
         ...(ctx.correlationId ? { correlationId: ctx.correlationId } : {}),
       }
+      // Closed only after the announcement: subscribers read the buffer, and
+      // whoever stores it must see the recap that was just emitted into it.
+      closeTrace(ctx.traceId)
       events.publish(TRACE_COMPLETED_TOPIC, completed)
     },
   }

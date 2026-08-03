@@ -221,8 +221,10 @@ function checkInjection(text: string): string | null {
 /** The identity checkRule would report, for a rule that never reaches it. */
 function ruleLabel(rule: GuardrailRule): string {
   const cfg = rule.config as { modelId?: string; embeddingModelId?: string };
-  if (rule.type === 'semantic') return `semantic:${cfg.embeddingModelId ?? ''}`;
-  if (rule.type === 'topic' || rule.type === 'moderation') return `${rule.type}:${cfg.modelId ?? ''}`;
+  // No model configured means the rule runs on the project default: label it by type alone,
+  // a dangling `moderation:` reads as a truncated name in the trace.
+  if (rule.type === 'semantic') return cfg.embeddingModelId ? `semantic:${cfg.embeddingModelId}` : 'semantic';
+  if (rule.type === 'topic' || rule.type === 'moderation') return cfg.modelId ? `${rule.type}:${cfg.modelId}` : rule.type;
   return String((rule as { type?: string }).type ?? 'unknown');
 }
 

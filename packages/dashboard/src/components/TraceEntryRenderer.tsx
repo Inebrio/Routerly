@@ -534,7 +534,10 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           ]} />
           {Array.isArray(e.details?.rules) && e.details.rules.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              {(e.details.rules as string[]).map((r: string, i: number) => <Pill key={i} text={String(r)} color="#a78bfa" />)}
+              {/* Since 0.4.0 each rule is `{ index, rule }`; older traces stored a bare string. */}
+              {(e.details.rules as Array<string | { rule?: unknown }>).map((r, i) => (
+                <Pill key={i} text={String(typeof r === 'object' && r !== null ? r.rule ?? '' : r)} color="#a78bfa" />
+              ))}
             </div>
           )}
           {/* The injected text itself is captured only for projects that opted in. */}

@@ -90,10 +90,16 @@ which is where the readers pick it up:
 
 | Reader | What it does with the trace |
 |--------|-----------------------------|
-| Usage | Stores it on the usage record, shown as the [trace view](../dashboard/usage.md#trace-view) grouped by phase |
+| Usage | Stores it on the usage record once the trace closes, shown as the [trace view](../dashboard/usage.md#trace-view) grouped by phase |
 | Live stream | `GET /api/traces/stream`, the management side channel the [Playground](../dashboard/playground.md) reads while the answer is still streaming |
 | Console | Prints every entry as it happens, one line each (see below) |
 | Integrations | [Exports](../api/management#trace-export) it as OTLP spans or a signed webhook payload, per integration and with its own sample rate |
+
+A call is accounted when its upstream request returns, but its trace keeps
+growing after that -- response guardrails, the PII scan of the answer, what
+egress wrote, the recap. The usage record therefore waits for the trace to close
+before it is written, so what is stored is the whole request and not the part of
+it that happened before the answer came back.
 
 Before it publishes, the trace module appends one derived entry, `trace:recap`:
 the request in a single object (outcome, model, attempts, tokens, cost,

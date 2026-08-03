@@ -1,15 +1,19 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
 vi.mock('../config/loader.js', () => ({ appendUsageRecord: vi.fn().mockResolvedValue(undefined) }))
-vi.mock('../trace/store.js', () => ({ getTrace: vi.fn() }))
+vi.mock('../trace/store.js', () => ({ getTrace: vi.fn(), isTraceOpen: vi.fn(() => false) }))
+vi.mock('./pending.js', () => ({ deferRecord: vi.fn() }))
 vi.mock('uuid', () => ({ v4: vi.fn(() => 'test-uuid') }))
 
 import { trackUsage } from './tracker.js'
 import { appendUsageRecord } from '../config/loader.js'
-import { getTrace } from '../trace/store.js'
+import { getTrace, isTraceOpen } from '../trace/store.js'
+import { deferRecord } from './pending.js'
 
 const mockAppendUsageRecord = vi.mocked(appendUsageRecord)
 const mockGetTrace = vi.mocked(getTrace)
+const mockIsTraceOpen = vi.mocked(isTraceOpen)
+const mockDeferRecord = vi.mocked(deferRecord)
 
 afterEach(() => { vi.clearAllMocks() })
 
@@ -124,6 +128,18 @@ describe('trackUsage', () => {
     const record = mockAppendUsageRecord.mock.calls[0]![0]
     expect(record.traceId).toBe('trace-abc')
     expect(record.trace).toEqual(trace)
+  })
+
+  it('holds the record while its trace is still open', async () => {
+    mockGetTrace.mockReturnValue([] as any)
+    mockIsTraceOpen.mockReturnValueOnce(true)
+    await trackUsage({
+      projectId: 'p', model: makeModel() as any,
+      inputTokens: 100, outputTokens: 50, latencyMs: 500,
+      outcome: 'success', traceId: 'trace-open',
+    })
+    expect(mockAppendUsageRecord).not.toHaveBeenCalled()
+    expect(mockDeferRecord).toHaveBeenCalledWith('trace-open', expect.objectContaining({ traceId: 'trace-open' }))
   })
 
   it('includes errorMessage when outcome is error', async () => {

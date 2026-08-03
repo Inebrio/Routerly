@@ -38,6 +38,8 @@ interface TraceRecord {
   ts: number
   correlationId?: string
   projectId?: string
+  /** Set at finalize: nothing more will be appended, so readers can snapshot. */
+  closed?: boolean
 }
 
 const store = new Map<string, TraceRecord>()
@@ -68,6 +70,22 @@ export function recordTrace(event: TraceEvent): void {
 
 export function getTrace(traceId: string): TraceEntry[] | null {
   return store.get(traceId)?.entries ?? null
+}
+
+/** Marks a trace finished. Buffered entries stay readable until they age out. */
+export function closeTrace(traceId: string): void {
+  const rec = store.get(traceId)
+  if (rec) rec.closed = true
+}
+
+/**
+ * True while entries can still arrive. Usage waits for this to go false before
+ * storing its copy: a trace snapshotted mid-request would stop at the upstream
+ * call and lose the response, egress and recap entries.
+ */
+export function isTraceOpen(traceId: string): boolean {
+  const rec = store.get(traceId)
+  return rec != null && rec.closed !== true
 }
 
 /** When the trace was opened (ingress). The only wall-clock the recap can trust. */
