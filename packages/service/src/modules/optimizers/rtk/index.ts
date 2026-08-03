@@ -139,6 +139,10 @@ export const rtkOptimizer = {
     return plan(readMessages(ctx.request)).changed
   },
 
+  explain() {
+    return 'No redundant whitespace or repeated block found in the message text.'
+  },
+
   estimate(ctx) {
     const messages = readMessages(ctx.request)
     const { newMessages } = plan(messages)

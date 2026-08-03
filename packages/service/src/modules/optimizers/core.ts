@@ -76,7 +76,12 @@ function applyProcessor(registry: OptimizerRegistry): Processor<ProxyContext> {
           continue
         }
         if (!optimizer.supports(ctx)) {
-          trace(optimizer.id, 'skipped', { reason: 'unsupported-request', klass: optimizer.klass })
+          const detail = optimizer.explain?.(ctx)
+          trace(optimizer.id, 'skipped', {
+            reason: 'unsupported-request',
+            klass: optimizer.klass,
+            ...(detail ? { detail } : {}),
+          })
           continue
         }
 

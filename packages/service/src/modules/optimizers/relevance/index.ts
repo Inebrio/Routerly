@@ -74,6 +74,10 @@ export const relevanceOptimizer = {
     return segment(readMessages(ctx.request)).turns.length > 1
   },
 
+  explain() {
+    return 'Only one turn: there is no older history to score against the newest one.'
+  },
+
   estimate(ctx) {
     const { before, after } = plan(readMessages(ctx.request), thresholdOf(ctx))
     return { estimatedTokensBefore: before, estimatedTokensAfter: after }
