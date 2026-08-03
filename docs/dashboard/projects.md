@@ -54,7 +54,7 @@ Shows and lets you edit:
 - **Name** — display name for the project
 - **Slug** — URL-safe identifier (read-only after creation)
 - **Timeout (TTFT)** — how long a model attempt may take to produce its first token, in milliseconds. Defaults to `2000`; `0` waits as long as the provider takes
-- **Trace content** — off by default. Traces always record metadata (models, scores, guardrail outcomes, tokens, cost, latency); turn **Capture prompts and answers** on to also record the message contents. They are stored with the usage record, shown in the [Usage](usage.md#trace-view) trace view and the [Playground](playground.md#debug-panels), included in [exported traces](settings.md#exporting-traces), and visible to anyone who can read reports. CLI equivalent: `routerly project edit <project> --trace-content`
+- **Trace content** — off by default. Traces always record metadata (models, scores, guardrail outcomes, tokens, cost, latency); turn **Capture prompts and answers** on to also record the message contents. They are stored with the usage record, shown in the [Usage](usage.md#trace-view) trace view and the [Playground](playground.md#debug), included in [exported traces](settings.md#exporting-traces), and visible to anyone who can read reports. CLI equivalent: `routerly project edit <project> --trace-content`
 - **Connection Info** — base URL and masked token snippet ready to copy into your SDK configuration
 - **Budget** — project-level cost limit (daily / monthly)
 

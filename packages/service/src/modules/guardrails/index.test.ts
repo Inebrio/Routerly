@@ -6,9 +6,11 @@ import type { ProxyContext } from '../reverse-proxy/context.js'
 import { BudgetExceededError } from '../reverse-proxy/execute.js'
 
 const checkGuardrailsMock = vi.fn()
+const injectionMock = vi.fn<() => string | null>(() => null)
 vi.mock('./guardrails.js', () => ({
   checkGuardrails: (...args: unknown[]) => checkGuardrailsMock(...args),
-  buildRequestInjection: () => null,
+  buildRequestInjection: () => injectionMock(),
+  injectingRules: () => [{ index: 2, rule: 'topic:judge' }],
 }))
 
 const { guardrailsModule } = await import('./index.js')
@@ -126,6 +128,30 @@ describe('guardrails module', () => {
     expect(writes.some((w) => w.includes('"finish_reason":"content_filter"'))).toBe(true)
     expect(writes[writes.length - 1]).toBe('data: [DONE]\n\n')
     expect(ctx.result).toEqual({ kind: 'block' })
+  })
+
+  it('traces the steering injection, with the injected text under the content opt-in', async () => {
+    checkGuardrailsMock.mockResolvedValue({ evaluated: [], triggered: undefined })
+    injectionMock.mockReturnValueOnce('Stay on topic.')
+    const proc = await requestProcessor()
+    const emit = vi.fn()
+    const ctx = baseCtx({ emit })
+    await proc.run(ctx)
+    expect(ctx.requestInjection).toBe('Stay on topic.')
+    expect(emit).toHaveBeenCalledWith({
+      panel: 'request',
+      message: 'guardrail:injected',
+      details: { target: 'request', rules: [{ index: 2, rule: 'topic:judge' }], chars: 14 },
+      content: { injection: 'Stay on topic.' },
+    })
+  })
+
+  it('emits nothing when there is no injection to apply', async () => {
+    checkGuardrailsMock.mockResolvedValue({ evaluated: [], triggered: undefined })
+    const proc = await requestProcessor()
+    const emit = vi.fn()
+    await proc.run(baseCtx({ emit }))
+    expect(emit).not.toHaveBeenCalled()
   })
 
   it('hard-blocks a non-streaming response without touching the response headers (OpenAI only)', async () => {

@@ -7,6 +7,7 @@ import { getProxyPipeline } from '../run.js'
 import { listEffectiveModels } from '../../provider/list-effective.js'
 import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
+import { traceEgress } from '../helpers.js'
 import { forwardAnthropicOAuth, forwardAnthropicApiKey } from './oauthForward.js'
 import { streamOpenAIOAuthChunks, chunksToChatResponse, primeStream } from './openaiOAuthForward.js'
 import {
@@ -208,17 +209,25 @@ export const anthropicEgress: Processor<ProxyContext> = {
     if (!result) return
     const reply = ctx.reply
 
-    if (result.kind === 'passthrough') return // already piped by anthropic:upstream
+    if (result.kind === 'passthrough') {
+      traceEgress(ctx, { kind: 'passthrough' }) // bytes piped upstream-to-client by anthropic:upstream
+      return
+    }
 
     if (result.kind === 'json') {
       if (result.status) reply.status(result.status)
       reply.send(result.body)
+      traceEgress(ctx, { kind: 'json', status: result.status ?? 200 })
       return
     }
 
     if (result.kind === 'block') {
-      if (result.body === undefined) return
+      if (result.body === undefined) {
+        traceEgress(ctx, { kind: 'block', encoding: 'sse', status: 200 })
+        return
+      }
       reply.status(result.status ?? 200).send(result.body)
+      traceEgress(ctx, { kind: 'block', status: result.status ?? 200 })
       return
     }
 
@@ -228,12 +237,21 @@ export const anthropicEgress: Processor<ProxyContext> = {
     reply.raw.setHeader('Cache-Control', 'no-cache')
     reply.raw.setHeader('Connection', 'keep-alive')
     reply.raw.flushHeaders()
+    let frames = 0
+    let bytes = 0
+    let failure: string | undefined
     try {
       for await (const line of openAIChunksToAnthropicSSE(result.body as AsyncIterable<StreamChunk>, `msg_${ctx.traceId}`, body.model)) {
         reply.raw.write(line)
+        frames++
+        bytes += line.length
       }
-    } catch { /* mid-stream error, nothing to do */ }
+    } catch (err: unknown) {
+      // mid-stream error: nothing to write to the client, but the trace says so.
+      failure = err instanceof Error ? err.message : String(err)
+    }
     reply.raw.end()
+    traceEgress(ctx, { kind: 'stream', encoding: 'anthropic-sse', frames, bytes, ...(failure ? { error: failure } : {}) })
   },
 }
 

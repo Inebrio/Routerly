@@ -256,30 +256,176 @@ describe('TraceEntryRenderer — guardrail:evaluated judgeRaw', () => {
 });
 
 describe('TraceEntryRenderer — pii:evaluated', () => {
-  it('shows "0 redacted" when redacted is empty', () => {
+  it('reports what was scanned when nothing was redacted', () => {
     render(
       <TraceEntryRenderer entry={{
         message: 'pii:evaluated',
         panel: 'request',
-        details: { redacted: [] },
+        details: {
+          target: 'request',
+          policies: { configured: 3, active: 2 },
+          entities: ['EMAIL', 'PHONE'],
+          customPatterns: 1,
+          scanned: 412,
+          redacted: [],
+          counts: {},
+          ms: 4,
+        },
       }} />
     );
     expect(screen.getByText(/PII SCANNED \(REQUEST\)/i)).toBeTruthy();
-    expect(screen.getByText('0 redacted')).toBeTruthy();
+    expect(screen.getByText('2/3')).toBeTruthy();       // policies active/configured
+    expect(screen.getByText('412')).toBeTruthy();       // characters scanned
+    expect(screen.getByText('4 ms')).toBeTruthy();
+    // Nothing redacted, so no chips — but the entity types are still listed, collapsed
+    expect(screen.queryByText(/×/)).toBeNull();
+    expect(screen.getByText('entity types scanned')).toBeTruthy();
   });
 
-  it('shows count + entity types when redacted has items', () => {
+  it('shows one chip per redacted entity with its occurrence count', () => {
     render(
       <TraceEntryRenderer entry={{
         message: 'pii:evaluated',
         panel: 'response',
-        details: { redacted: ['EMAIL', 'PHONE'] },
+        details: {
+          target: 'response',
+          mode: 'stream',
+          entities: ['EMAIL', 'PHONE'],
+          redacted: ['EMAIL', 'PHONE'],
+          counts: { EMAIL: 2, PHONE: 1 },
+        },
       }} />
     );
     expect(screen.getByText(/PII SCANNED \(RESPONSE\)/i)).toBeTruthy();
-    expect(screen.getByText(/2 redacted/i)).toBeTruthy();
-    expect(screen.getByText('EMAIL')).toBeTruthy();
-    expect(screen.getByText('PHONE')).toBeTruthy();
+    expect(screen.getByText('stream')).toBeTruthy();
+    expect(screen.getByText('EMAIL ×2')).toBeTruthy();
+    expect(screen.getByText('PHONE ×1')).toBeTruthy();
+  });
+
+  it('falls back to the panel when the entry carries no target', () => {
+    render(
+      <TraceEntryRenderer entry={{ message: 'pii:evaluated', panel: 'request', details: { redacted: [] } }} />
+    );
+    expect(screen.getByText(/PII SCANNED \(REQUEST\)/i)).toBeTruthy();
+  });
+});
+
+describe('TraceEntryRenderer — guardrail:injected', () => {
+  it('lists the rules that injected and how much text they added', () => {
+    render(
+      <TraceEntryRenderer entry={{
+        message: 'guardrail:injected',
+        panel: 'request',
+        details: { target: 'request', rules: ['tone', 'format'], chars: 128 },
+        content: { injection: 'Answer politely.' },
+      }} />
+    );
+    expect(screen.getByText('GUARDRAIL INJECTION')).toBeTruthy();
+    expect(screen.getByText('tone')).toBeTruthy();
+    expect(screen.getByText('format')).toBeTruthy();
+    expect(screen.getByText('128')).toBeTruthy();
+    expect(screen.getByText('injected text')).toBeTruthy();
+    expect(screen.getByText('Answer politely.')).toBeTruthy();
+  });
+
+  it('omits the injected text when the project did not opt into content capture', () => {
+    render(
+      <TraceEntryRenderer entry={{
+        message: 'guardrail:injected',
+        panel: 'request',
+        details: { rules: [], chars: 0 },
+      }} />
+    );
+    expect(screen.getByText('GUARDRAIL INJECTION')).toBeTruthy();
+    expect(screen.queryByText('injected text')).toBeNull();
+  });
+});
+
+describe('TraceEntryRenderer — optimizer:step', () => {
+  it('shows the token delta of an applied step', () => {
+    render(
+      <TraceEntryRenderer entry={{
+        message: 'optimizer:step',
+        panel: 'request',
+        details: { id: 'caveman', outcome: 'applied', klass: 'compression', tokensBefore: 900, tokensAfter: 600, saved: 300, ms: 12 },
+      }} />
+    );
+    expect(screen.getByText('OPTIMIZER caveman')).toBeTruthy();
+    expect(screen.getByText('applied')).toBeTruthy();
+    expect(screen.getByText('compression')).toBeTruthy();
+    expect(screen.getByText('900 → 600')).toBeTruthy();
+    expect(screen.getByText('300 tok')).toBeTruthy();
+  });
+
+  it('shows why a step rolled back', () => {
+    render(
+      <TraceEntryRenderer entry={{
+        message: 'optimizer:step',
+        panel: 'request',
+        details: { id: 'caveman', outcome: 'rolled-back', reason: 'output longer than input' },
+      }} />
+    );
+    expect(screen.getByText('rolled-back')).toBeTruthy();
+    expect(screen.getByText(/output longer than input/)).toBeTruthy();
+  });
+});
+
+describe('TraceEntryRenderer — budget:checked', () => {
+  it('reads as OK when the call is within every limit', () => {
+    render(
+      <TraceEntryRenderer entry={{
+        message: 'budget:checked',
+        panel: 'request',
+        details: { model: 'openai/gpt-4o', allowed: true, ms: 2 },
+      }} />
+    );
+    expect(screen.getByText('BUDGET OK')).toBeTruthy();
+    expect(screen.getByText('openai/gpt-4o')).toBeTruthy();
+  });
+
+  it('lists the violated limits when the call is blocked', () => {
+    render(
+      <TraceEntryRenderer entry={{
+        message: 'budget:checked',
+        panel: 'request',
+        details: {
+          model: 'openai/gpt-4o',
+          allowed: false,
+          violated: [{ metric: 'cost', window: 'day', limit: 5, current: 7.5 }],
+        },
+      }} />
+    );
+    expect(screen.getByText('BUDGET BLOCKED')).toBeTruthy();
+    expect(screen.getByText('cost')).toBeTruthy();
+    expect(screen.getByText('day')).toBeTruthy();
+    expect(screen.getByText('7.5 / 5')).toBeTruthy();
+  });
+});
+
+describe('TraceEntryRenderer — egress:sent', () => {
+  it('shows what was written back to the client', () => {
+    render(
+      <TraceEntryRenderer entry={{
+        message: 'egress:sent',
+        panel: 'response',
+        details: { kind: 'completion', protocol: 'openai', status: 200, encoding: 'sse', frames: 42, bytes: 1024 },
+      }} />
+    );
+    expect(screen.getByText('EGRESS SENT')).toBeTruthy();
+    expect(screen.getByText('completion')).toBeTruthy();
+    expect(screen.getByText('openai')).toBeTruthy();
+    expect(screen.getByText('42')).toBeTruthy();
+  });
+
+  it('shows the error when the client got one', () => {
+    render(
+      <TraceEntryRenderer entry={{
+        message: 'egress:sent',
+        panel: 'response',
+        details: { kind: 'error', status: 502, error: 'upstream unavailable' },
+      }} />
+    );
+    expect(screen.getByText(/upstream unavailable/)).toBeTruthy();
   });
 });
 

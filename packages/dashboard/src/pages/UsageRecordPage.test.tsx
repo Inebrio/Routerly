@@ -247,14 +247,14 @@ describe('UsageRecordPage — trace log', () => {
     await waitFor(() => expect(screen.getByTestId('trace-entry')).toBeTruthy());
   });
 
-  it('renders Router Recap section when trace has router:recap', async () => {
+  it('keeps router:recap in the log, inside its own panel', async () => {
     mockGetRecord.mockResolvedValue(makeRecord({ trace: [
       { message: 'router:recap', panel: 'router-response' },
     ]}));
     renderPage();
-    await waitFor(() => expect(screen.getByText('Router Recap')).toBeTruthy());
-    // trace-entry rendered twice: once in Router Recap section, but TracePanel filters it out
-    expect(screen.getAllByTestId('trace-entry').length).toBeGreaterThanOrEqual(1);
+    await waitFor(() => expect(screen.getByText('Router Response')).toBeTruthy());
+    // One entry, rendered once: there is no separate recap card duplicating it
+    expect(screen.getAllByTestId('trace-entry').length).toBe(1);
   });
 });
 
@@ -265,25 +265,39 @@ describe('UsageRecordPage — TracePanel', () => {
     mockGetRecord.mockResolvedValue(makeRecord({ trace: [
       { message: 'msg1', panel: 'request' },
       { message: 'msg2', panel: 'response' },
-      { message: 'router:recap', panel: 'router-response' }, // filtered out from TracePanel
-    ]}));
-    renderPage();
-    await waitFor(() => {
-      const entries = screen.getAllByTestId('trace-entry');
-      // TracePanel filters router:recap; Router Recap section also renders it
-      expect(entries.length).toBeGreaterThanOrEqual(2);
-    });
-  });
-
-  it('does not render empty TracePanel when all entries are router:recap', async () => {
-    mockGetRecord.mockResolvedValue(makeRecord({ trace: [
       { message: 'router:recap', panel: 'router-response' },
     ]}));
     renderPage();
-    await waitFor(() => screen.getByText('Router Recap'));
-    // TracePanel filters router:recap → filteredEntries=[]; TracePanel returns null
-    // Trace Log shows 1 event but TracePanel renders nothing from non-recap panels
-    expect(screen.getByText('1 event')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getAllByTestId('trace-entry').length).toBe(3);
+    });
+  });
+
+  it('summarises the request from trace:recap, above the log', async () => {
+    mockGetRecord.mockResolvedValue(makeRecord({ trace: [
+      { message: 'trace:recap', panel: 'response', details: {
+        outcome: 'blocked', model: 'openai/gpt-4o', provider: 'openai', attempts: 2,
+        durationMs: 1200, costUsd: 0.002, tokens: { input: 100, output: 50 },
+        guardrails: { rules: 3, triggered: 1, skipped: 1, blockedBy: 'no-secrets' },
+      } },
+      { message: 'msg1', panel: 'request' },
+    ]}));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('blocked')).toBeTruthy());
+    expect(screen.getByText('2 attempts')).toBeTruthy();
+    expect(screen.getByText('no-secrets')).toBeTruthy();
+    // The recap itself never appears in the log below
+    expect(screen.getAllByTestId('trace-entry').length).toBe(1);
+  });
+
+  it('drops trace:recap from the log — the summary card shows it', async () => {
+    mockGetRecord.mockResolvedValue(makeRecord({ trace: [
+      { message: 'trace:recap', panel: 'response', details: { outcome: 'ok' } },
+    ]}));
+    renderPage();
+    // The header still counts the stored entry, the log itself renders nothing
+    await waitFor(() => expect(screen.getByText('1 event')).toBeTruthy());
+    expect(screen.queryByTestId('trace-entry')).toBeNull();
   });
 
   it('renders router-request panel entries', async () => {

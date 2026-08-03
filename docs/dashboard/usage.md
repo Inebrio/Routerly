@@ -156,9 +156,32 @@ Click any row to open the full **Trace view** (`/dashboard/usage/<record id>`).
 
 ### Trace View
 
-The trace view shows the complete lifecycle of a single request, in the order
-the pipeline walked it. Entries are grouped by **phase**, the stage of the
-pipeline that produced them:
+The trace view reads on two levels: a **summary card** at the top of the page,
+and the **trace log** below it.
+
+#### Summary
+
+The card is built from the `trace:recap` entry the service writes when the
+request finishes, so it never disagrees with the log below it. It carries:
+
+| Part | Contents |
+|------|----------|
+| Header | Outcome (`ok`, `blocked`, `error`, `incomplete`), model, provider, number of attempts when the router had to retry, total duration, total cost |
+| Metrics | Input/output tokens, cached tokens when the provider reported any, latency, TTFT, throughput |
+| Guardrails | Rules configured, triggered, skipped, injected, and the rule that blocked the request |
+| PII | How many entities were redacted on the request and on the response |
+| Optimizers | Steps run, applied, rolled back, and tokens saved |
+| Router overhead | Calls the router itself made and what they cost -- kept out of the request's own numbers |
+| Errors | One row per failed attempt: model and error |
+
+A section only appears when that part of the pipeline did something.
+
+#### Trace log
+
+The log is the detail level: every entry the pipeline emitted, in the order the
+phases ran. It is deliberately dense -- open it when the summary says something
+went wrong and you need to see why. Entries are grouped by **phase**, the stage
+of the pipeline that produced them:
 
 | Phase | What happened there |
 |-------|---------------------|
@@ -184,14 +207,20 @@ grouping -- Router Request, Router Response, Model Request, Model Response --
 and are shown unchanged.
 :::
 
-The trace also includes guardrail and PII entries when those features are active:
+Every module on the path writes its own entries. The ones you meet most often:
 
 | Trace entry | When |
 |-------------|------|
-| `guardrail:evaluated` | After every guardrail check -- shows each rule's `outcome` (`passed`, `triggered`, or `skipped`) and `reason`, even when no rule fires |
+| `guardrail:evaluated` | After every guardrail check -- one row per configured rule, including the ones that only inject and the ones that were skipped, each with its type, target, score against threshold, duration and outcome |
+| `guardrail:injected` | A rule added text to the request -- lists the rules and how many characters they added |
 | `guardrail:triggered` | A request-side rule matched with log action (request continued) |
 | `guardrail:response-triggered` | A response-side rule matched with log action (response continued) |
+| `pii:evaluated` | After every PII scan, on the request and on the response -- active policies, entity types looked for, characters scanned, and per-entity redaction counts |
 | `pii:scrubbed` | PII was detected and replaced in the request or response |
+| `optimizer:step` | One row per optimizer step: tokens before and after, tokens saved, duration, and the reason when a step was skipped or rolled back |
+| `budget:checked` | The limit check before the upstream call -- the model, whether it was allowed, and every violated limit (metric, window, current, limit) |
+| `egress:sent` | What was written back to the client: kind, protocol, status, encoding, frames and bytes for a stream, or the error |
+| `trace:recap` | The end-of-request summary. It powers the card above and is not repeated in the log |
 
 For a **blocked** request (judged rule that triggers), the trace includes the `guardrail:evaluated` entry and the block message (from the judge's reason field, or a built-in default if the judge fails). The block message is stored on the trace only and is not included in the wire response sent to the client.
 

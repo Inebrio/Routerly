@@ -199,6 +199,40 @@ describe('anthropic transport lane', () => {
     expect(headers).toEqual({})
   })
 
+  it('egress traces what it put on the wire, whatever the result kind', async () => {
+    const emit = vi.fn()
+    const reply: any = { send: () => {}, header: () => {}, status: () => reply }
+
+    await anthropicEgress.run({ protocol: 'anthropic', reply, emit, result: { kind: 'passthrough' } } as unknown as ProxyContext)
+    await anthropicEgress.run({ protocol: 'anthropic', reply, emit, result: { kind: 'json', status: 201, body: {} } } as unknown as ProxyContext)
+    await anthropicEgress.run({ protocol: 'anthropic', reply, emit, result: { kind: 'block', status: 503 } } as unknown as ProxyContext)
+
+    expect(emit.mock.calls.map((c) => c[0].details)).toEqual([
+      { protocol: 'anthropic', kind: 'passthrough' },
+      { protocol: 'anthropic', kind: 'json', status: 201 },
+      { protocol: 'anthropic', kind: 'block', encoding: 'sse', status: 200 },
+    ])
+    expect(emit.mock.calls[0]![0]).toMatchObject({ panel: 'response', message: 'egress:sent' })
+  })
+
+  it('egress counts the SSE frames the client received on the Anthropic wire', async () => {
+    const emit = vi.fn()
+    const reply: any = { raw: { setHeader: () => {}, flushHeaders: () => {}, write: () => {}, end: () => {} } }
+    async function* body() {
+      yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'm', choices: [{ index: 0, delta: { content: 'hi' }, finish_reason: null }] }
+    }
+    const ctx = {
+      protocol: 'anthropic', reply, emit, traceId: 't1',
+      original: { model: 'claude', messages: [] },
+      result: { kind: 'stream', body: body() },
+    } as unknown as ProxyContext
+    await anthropicEgress.run(ctx)
+    const details = emit.mock.calls[0]![0].details
+    expect(details).toMatchObject({ protocol: 'anthropic', kind: 'stream', encoding: 'anthropic-sse' })
+    expect(details.frames).toBeGreaterThan(0)
+    expect(details.error).toBeUndefined()
+  })
+
   it('egress no-ops on a block with no body (streaming block already wrote its own bytes)', async () => {
     let called = false
     const reply: any = { send: () => { called = true }, header: () => {}, status: () => { called = true; return reply } }

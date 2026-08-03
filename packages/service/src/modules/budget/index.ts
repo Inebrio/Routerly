@@ -13,7 +13,23 @@ const upstream: Processor<ProxyContext> = {
     // Per-candidate eligibility. The executor's checkBudget (inside upstream.execute)
     // stays the authoritative recorder of budget-exceeded events + usage; this guard only
     // decides whether the candidate is attempted, mirroring routeRequest's existing pre-filter.
+    const startedAt = Date.now()
     const allowed = await isAllowed(attempt.model, ctx.project, ctx.token)
+    // A candidate silently dropped here looks, from the trace, like a routing
+    // decision nobody made. Say which limit dropped it and by how much.
+    const violated = allowed ? [] : await getViolatedLimits(attempt.model, ctx.project, ctx.token)
+    ctx.emit?.({
+      panel: 'request',
+      message: 'budget:checked',
+      details: {
+        model: attempt.model.id,
+        allowed,
+        ms: Date.now() - startedAt,
+        ...(violated.length > 0
+          ? { violated: violated.map((v) => ({ metric: v.metric, window: v.window, limit: v.value, current: v.current })) }
+          : {}),
+      },
+    })
     if (!allowed) {
       // ponytail: drop the candidate; routing.execute picks the next one, or the
       // no_candidates path fires in finalize when the loop exhausts.

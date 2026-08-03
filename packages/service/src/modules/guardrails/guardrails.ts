@@ -167,6 +167,25 @@ export interface RuleEval {
   /** Rule identifier: built-in flag name or `<type>:<config-id>`. */
   rule: string;
   outcome: 'passed' | 'triggered' | 'skipped';
+  /**
+   * Position in the project's rule list. Two rules of the same type on the same
+   * model are otherwise indistinguishable in the trace.
+   */
+  index?: number;
+  type?: string;
+  /** Target the rule was evaluated for, or `inject` for an inject-only rule. */
+  target?: string;
+  /**
+   * What the rule measured and what it was compared against, whatever the
+   * outcome: a rule that passed at 0.49 against a 0.50 threshold is the one an
+   * operator most wants to see, and until now it reported nothing at all.
+   */
+  score?: number;
+  threshold?: number;
+  /** Wall time of the rule, in ms. */
+  ms?: number;
+  /** The rule adds steering text to the request instead of (or besides) judging it. */
+  injects?: boolean;
   /** Triggered: the hit string. Skipped: why (model-not-found, embedding-failed, judge-failed). */
   reason?: string;
   /** Judge-generated user-facing message (topic/moderation with useJudgeResponse only, when triggered). */
@@ -197,6 +216,14 @@ function checkInjection(text: string): string | null {
     if (re.test(text)) return `injection:${name}`;
   }
   return null;
+}
+
+/** The identity checkRule would report, for a rule that never reaches it. */
+function ruleLabel(rule: GuardrailRule): string {
+  const cfg = rule.config as { modelId?: string; embeddingModelId?: string };
+  if (rule.type === 'semantic') return `semantic:${cfg.embeddingModelId ?? ''}`;
+  if (rule.type === 'topic' || rule.type === 'moderation') return `${rule.type}:${cfg.modelId ?? ''}`;
+  return String((rule as { type?: string }).type ?? 'unknown');
 }
 
 /** Check a single rule. Returns its evaluation outcome. */
@@ -268,10 +295,12 @@ async function checkRule(
             requestType: 'embedding',
           }).catch(() => {}); // ponytail: fire-and-forget error suppressor
         }
+        const similarity = classification.topScore ?? 0;
+        const cutoff = cfg.threshold ?? 0.82;
         if (classification.status === 'confident' && classification.topIntent === 'blocked') {
-          return { rule: ruleId, outcome: 'triggered', reason: `semantic:${Math.round((classification.topScore ?? 0) * 100)}%` };
+          return { rule: ruleId, outcome: 'triggered', reason: `semantic:${Math.round(similarity * 100)}%`, score: similarity, threshold: cutoff };
         }
-        return { rule: ruleId, outcome: 'passed' };
+        return { rule: ruleId, outcome: 'passed', score: similarity, threshold: cutoff };
       } catch (err) {
         if (err instanceof BudgetExceededError) throw err;
         log?.warn({ err, candidateId }, 'guardrail:semantic: embedding failed, trying next');
@@ -328,15 +357,16 @@ async function checkRule(
         const parsed = parseJudgeJson(rawStr);
         // Default 10.00 (fully on-topic) on unparseable score → passes, same fail-open as before.
         const score = normalizeJudgeScore(typeof parsed.score === 'number' ? parsed.score : 10);
-        if (score < (cfg.threshold ?? 0.5)) {
-          const ruleEval: RuleEval = { rule: ruleId, outcome: 'triggered', reason: `topic:score=${score.toFixed(2)}`, judgeRaw: rawStr, usage };
+        const cutoff = cfg.threshold ?? 0.5;
+        if (score < cutoff) {
+          const ruleEval: RuleEval = { rule: ruleId, outcome: 'triggered', reason: `topic:score=${score.toFixed(2)}`, score, threshold: cutoff, judgeRaw: rawStr, usage };
           const judgeMsg = typeof parsed.reason === 'string' ? parsed.reason : typeof parsed.message === 'string' ? parsed.message : '';
           if (rule.useJudgeResponse && judgeMsg.trim()) {
             ruleEval.judgeMessage = judgeMsg.trim();
           }
           return ruleEval;
         }
-        return { rule: ruleId, outcome: 'passed', judgeRaw: rawStr, usage };
+        return { rule: ruleId, outcome: 'passed', score, threshold: cutoff, judgeRaw: rawStr, usage };
       } catch (err) {
         // Over-limit judge call must fail the request like an over-limit completion (BUG-4).
         if (err instanceof BudgetExceededError) throw err;
@@ -395,15 +425,16 @@ async function checkRule(
         const parsed = parseJudgeJson(rawStr);
         // Default 0.00 (completely safe) on unparseable score → passes, same fail-open as before.
         const score = normalizeJudgeScore(typeof parsed.score === 'number' ? parsed.score : 0);
-        if (score > (cfg.threshold ?? 0.5)) {
-          const ruleEval: RuleEval = { rule: ruleId, outcome: 'triggered', reason: `moderation:score=${score.toFixed(2)}`, judgeRaw: rawStr, usage };
+        const cutoff = cfg.threshold ?? 0.5;
+        if (score > cutoff) {
+          const ruleEval: RuleEval = { rule: ruleId, outcome: 'triggered', reason: `moderation:score=${score.toFixed(2)}`, score, threshold: cutoff, judgeRaw: rawStr, usage };
           const judgeMsg = typeof parsed.reason === 'string' ? parsed.reason : typeof parsed.message === 'string' ? parsed.message : '';
           if (rule.useJudgeResponse && judgeMsg.trim()) {
             ruleEval.judgeMessage = judgeMsg.trim();
           }
           return ruleEval;
         }
-        return { rule: ruleId, outcome: 'passed', judgeRaw: rawStr, usage };
+        return { rule: ruleId, outcome: 'passed', score, threshold: cutoff, judgeRaw: rawStr, usage };
       } catch (err) {
         // Over-limit judge call must fail the request like an over-limit completion (BUG-4).
         if (err instanceof BudgetExceededError) throw err;
@@ -458,12 +489,49 @@ export async function checkGuardrails(
   // (they only add steering text via buildRequestInjection), so an undefined
   // target excludes them from the judge pass automatically. A rule that both
   // judges and injects has a matching target and still runs the judge here.
-  const activeRules = config.rules.filter(
-    r => r.enabled !== false && (r.target === target || r.target === 'both'),
-  );
-  if (activeRules.length === 0) return { evaluated };
-  const results = await Promise.all(activeRules.map(rule => checkRule(rule, text, pctx, log, context)));
-  evaluated.push(...results);
+  //
+  // Every configured rule reports, not only the ones that run: a rule that was
+  // skipped because it belongs to the other target, or because it only injects,
+  // is exactly what an operator looks for when a guardrail "did nothing".
+  const activeRules: GuardrailRule[] = [];
+  const activeIndexes: number[] = [];
+  const skipped: RuleEval[] = [];
+  config.rules.forEach((rule, index) => {
+    const stamp = { index, type: rule.type, target: rule.target ?? 'inject', ...(rule.inject ? { injects: true } : {}) };
+    if (rule.enabled === false) {
+      skipped.push({ rule: ruleLabel(rule), outcome: 'skipped', reason: 'disabled', ...stamp });
+      return;
+    }
+    if (rule.target === target || rule.target === 'both') {
+      activeRules.push(rule);
+      activeIndexes.push(index);
+      return;
+    }
+    skipped.push({
+      rule: ruleLabel(rule),
+      outcome: 'skipped',
+      reason: rule.inject ? 'inject-only' : `other-target:${rule.target ?? 'none'}`,
+      ...stamp,
+    });
+  });
+  const byIndex = (a: RuleEval, b: RuleEval): number => (a.index ?? 0) - (b.index ?? 0);
+  if (activeRules.length === 0) {
+    evaluated.push(...skipped.sort(byIndex));
+    return { evaluated };
+  }
+  const results = await Promise.all(activeRules.map(async (rule, i) => {
+    const startedAt = Date.now();
+    const result = await checkRule(rule, text, pctx, log, context);
+    return {
+      ...result,
+      index: activeIndexes[i] ?? i,
+      type: rule.type,
+      target: rule.target ?? target,
+      ms: Date.now() - startedAt,
+      ...(rule.inject ? { injects: true } : {}),
+    };
+  }));
+  evaluated.push(...[...results, ...skipped].sort(byIndex));
 
   // Aggregate all triggered blocking rules (fixes first-blocker-wins truncation).
   const blockers: Array<{ eval_: RuleEval; rule: GuardrailRule }> = [];
@@ -533,4 +601,20 @@ export function buildRequestInjection(config: GuardrailConfig | undefined): stri
     }
   }
   return parts.length > 0 ? parts.join('\n\n') : null;
+}
+
+/**
+ * The rules `buildRequestInjection` drew from. Injection is the one guardrail
+ * path that changes the request without judging it, so without this the trace
+ * shows nothing at all for a project whose rules are all inject-only.
+ */
+export function injectingRules(config: GuardrailConfig | undefined): Array<{ index: number; rule: string }> {
+  if (!config) return [];
+  const out: Array<{ index: number; rule: string }> = [];
+  config.rules.forEach((rule, index) => {
+    if (rule.enabled === false || !rule.inject) return;
+    if (rule.type !== 'topic' && rule.type !== 'moderation') return;
+    out.push({ index, rule: ruleLabel(rule) });
+  });
+  return out;
 }

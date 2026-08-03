@@ -70,6 +70,11 @@ export function getTrace(traceId: string): TraceEntry[] | null {
   return store.get(traceId)?.entries ?? null
 }
 
+/** When the trace was opened (ingress). The only wall-clock the recap can trust. */
+export function getTraceStartedAt(traceId: string): number | undefined {
+  return store.get(traceId)?.ts
+}
+
 /** The correlation id a caller sent for this trace, if any. */
 export function getTraceCorrelationId(traceId: string): string | undefined {
   return store.get(traceId)?.correlationId

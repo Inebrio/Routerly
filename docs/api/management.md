@@ -1892,18 +1892,23 @@ Every entry carries where it came from, so a consumer can group a request by pha
 | `phase` | Pipeline phase that was running: `ingress`, `request.preprocess`, `routing.prepare`, `routing.execute`, `response.postprocess`, `finalize` |
 | `module` | Module that reported it: `router`, `policy`, `model`, `pii`, `guardrail`, `budget`, `resilience`, … (read from the `module:event` message) |
 | `message` | The event, e.g. `router:result`, `policy:result:cheapest`, `pii:scrubbed` |
-| `panel` | Which Playground panel the entry belongs to: `router-request`, `router-response`, `request`, `response` |
+| `panel` | Which side of the call the entry belongs to: `request`/`response` for the client's own call, `router-request`/`router-response` for the calls Routerly made on its behalf. This is what keeps router overhead out of the request's own cost |
 | `details` | Event-specific metadata (see below) |
 | `at` | Epoch milliseconds |
 | `content` | Prompts and answers. Present **only** for projects with `traceContent: true` (see [Update Project](#update-project)); otherwise the field never exists, in the buffer or on disk |
 
 | Entry | When emitted | `details` shape |
 |-------|-------------|-----------------|
-| `guardrail:evaluated` | After every guardrail check on each target, whether or not any rule fires | `{ target: "request"\|"response", rules: [{ rule, outcome, reason? }] }`. One object per rule. `outcome` is `passed`, `triggered`, or `skipped`. `reason` is set on skipped rules (e.g. `judge-failed`) and on scoring rules (e.g. `regex:<pattern>`, `semantic:82%`). The built-in prompt-injection check appears as `rule: "injection"`. |
+| `guardrail:evaluated` | After every guardrail check on each target, whether or not any rule fires | `{ target: "request"\|"response", rules: RuleEval[] }`. One object per configured rule, inject-only and skipped rules included. `RuleEval` is `{ rule, outcome, index?, type?, target?, score?, threshold?, ms?, injects?, reason?, judgeMessage?, judgeRaw?, usage? }`. `outcome` is `passed`, `triggered`, or `skipped`; `score`/`threshold` are reported whatever the outcome, so a rule that passed at 0.49 against 0.50 is visible; `reason` carries the hit string on a trigger and the cause on a skip (`model-not-found`, `embedding-failed`, `judge-failed`); `usage` is the judge call's tokens. The built-in prompt-injection check appears as `rule: "injection"`. |
+| `guardrail:injected` | A rule added steering text to the request | `{ target: "request", rules: string[], chars }`. The injected text itself is on `content.injection`, and only for projects with `traceContent: true`. |
 | `guardrail:triggered` | Emitted whenever a rule triggers (block or log) on the request side | `{ rule, target, block, log, blockMessage }` |
 | `guardrail:response-triggered` | Emitted whenever a rule triggers (block or log) on the response side | `{ rule, target, block, log, blockMessage }` |
-| `pii:evaluated` | After every PII scrubbing pass, whether or not anything was redacted | `{ redacted: string[] }`. Entity types found (e.g. `["EMAIL"]`). Empty array on a clean pass. `panel` indicates `"request"` or `"response"`. |
-| `pii:scrubbed` | When at least one PII entity was detected and replaced | `{ entities: string[] }`. Entity types that were replaced. Also emitted alongside `pii:evaluated` on a hit. |
+| `pii:evaluated` | After every PII scrubbing pass, on the request and on the response, whether or not anything was redacted | `{ target, mode?, policies: { configured, active }, entities: string[], customPatterns, scanned, redacted: string[], counts: Record<string, number>, ms }`. `entities` is what was looked for, `redacted` what was found, `counts` how many of each. `scanned` is characters scanned on the request side. |
+| `pii:scrubbed` | When at least one PII entity was detected and replaced | `{ entities: string[], counts }`. Entity types that were replaced. Also emitted alongside `pii:evaluated` on a hit. |
+| `optimizer:step` | Once per configured optimizer step, whatever it did | `{ id, outcome, klass?, tokensBefore?, tokensAfter?, saved?, ms?, reason? }`. `outcome` is `applied`, `unchanged`, `skipped` or `rolled-back`; `reason` says why (`disabled`, `not-registered`, `unsupported-request`, `safety-gate`, `invalid-result`, `threw: …`). |
+| `budget:checked` | Before every upstream attempt, per candidate model | `{ model, allowed, ms, violated?: [{ metric, window, limit, current }] }`. A candidate refused here is dropped and the router moves to the next one. |
+| `egress:sent` | Last entry of the request: what was written back to the client | `{ protocol, kind, status?, encoding?, frames?, bytes?, error? }`. `kind` is `json`, `stream`, `block` or `passthrough`. |
+| `trace:recap` | Once, when the request finishes | The aggregate of everything above: `{ outcome, durationMs, model?, provider?, attempts, tokens, costUsd, latencyMs, ttftMs?, tokensPerSec?, overhead?, guardrails?, pii?, optimizers?, errors? }`. `outcome` is `ok`, `blocked`, `error` or `incomplete`; `overhead` is what Routerly's own model calls cost, kept out of the request's numbers. Purely derived, so it never disagrees with the entries it summarises. |
 
 ```bash
 curl -s http://localhost:3000/api/traces/$TRACE_ID \
