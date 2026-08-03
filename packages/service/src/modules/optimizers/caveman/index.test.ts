@@ -236,3 +236,33 @@ describe('caveman optimizer', () => {
     expect(cavemanModule.manifest.dependsOn).toEqual({ 'optimizer-core': '^0.4.0' })
   })
 })
+
+describe('caveman language gate', () => {
+  const IT = [
+    'Sei un consulente strategico e devi produrre una serie di raccomandazioni',
+    'per il consiglio di amministrazione di una azienda manifatturiera che ha',
+    'trecentocinquanta dipendenti e tre stabilimenti. La relazione non deve',
+    'superare le duemilacinquecento parole nel corpo principale e deve contenere',
+    'una analisi comparativa di almeno tre scenari alternativi di investimento.',
+  ].join(' ')
+  const EN = [
+    'You are a senior strategy consultant and you have to produce a set of',
+    'recommendations for the board of a manufacturing company that has three',
+    'hundred and fifty employees and three plants. The report should not exceed',
+    'two thousand five hundred words in the main body and it must contain a',
+    'comparative analysis of at least three alternative investment scenarios.',
+  ].join(' ')
+  const ctxOf = (text: string) => ctxWith([{ role: 'user', content: text }])
+
+  it('stays inert on text that is not English', () => {
+    expect(cavemanOptimizer.supports(ctxOf(IT))).toBe(false)
+  })
+
+  it('still fires on English', () => {
+    expect(cavemanOptimizer.supports(ctxOf(EN))).toBe(true)
+  })
+
+  it('does not gate short messages, where the ratio is not a signal', () => {
+    expect(cavemanOptimizer.supports(ctxOf('Please fix the bug in the parser.'))).toBe(true)
+  })
+})
