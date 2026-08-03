@@ -80,3 +80,33 @@ export function segment(messages: Message[]): { system: Message[]; turns: Messag
 export function tokensOf(messages: Message[]): number {
   return messages.reduce((sum, m) => sum + estimateTokens(messageText(m.content)), 0)
 }
+
+/** What one message's text mostly is. Drives which optimizers may touch it. */
+export type ContentKind = 'json' | 'code' | 'prose'
+
+/**
+ * Classify a message's text.
+ *
+ * `json` when the whole text parses as JSON: a lexical strip would eat object
+ * keys that happen to be function words, turning {"is":true} into {"":true}.
+ * `code` when the text is dominated by fenced blocks. Everything else is
+ * `prose`, including prose that quotes a JSON snippet inline, which the
+ * protected-span regex already handles.
+ *
+ * ponytail: whole-text parse plus a fence-share ratio. No tokenizer, no
+ * language guess. Refine only if a real payload is misclassified.
+ */
+export function contentKind(text: string): ContentKind {
+  const trimmed = text.trim()
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      JSON.parse(trimmed)
+      return 'json'
+    } catch {
+      // not whole-text JSON, fall through
+    }
+  }
+  const fenced = [...trimmed.matchAll(/```[\s\S]*?```/g)].reduce((n, m) => n + m[0]!.length, 0)
+  if (trimmed.length > 0 && fenced / trimmed.length > 0.5) return 'code'
+  return 'prose'
+}

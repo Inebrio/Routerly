@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { ChatCompletionRequest, Message } from '@routerly/shared'
-import { readMessages, writeMessages, estimateTokens, messageText } from './messages.js'
+import { readMessages, writeMessages, estimateTokens, messageText, contentKind } from './messages.js'
 
 function req(messages: Message[]): ChatCompletionRequest {
   return { model: 'gpt', messages }
@@ -44,5 +44,27 @@ describe('messages helpers', () => {
         { type: 'text', text: 'two' },
       ]),
     ).toBe('one\ntwo')
+  })
+})
+
+describe('contentKind', () => {
+  it('classifies a bare JSON array', () => {
+    expect(contentKind('[{"a":1},{"a":2}]')).toBe('json')
+  })
+
+  it('classifies a bare JSON object', () => {
+    expect(contentKind('  {"is": true, "for": "x"}  ')).toBe('json')
+  })
+
+  it('classifies a fenced code block as code', () => {
+    expect(contentKind('```ts\nconst a = 1\n```')).toBe('code')
+  })
+
+  it('classifies ordinary text as prose', () => {
+    expect(contentKind('Please open the file and tell me what it does.')).toBe('prose')
+  })
+
+  it('classifies prose that merely quotes JSON inline as prose', () => {
+    expect(contentKind('The server answered with {"ok":true} and then closed the stream.')).toBe('prose')
   })
 })
