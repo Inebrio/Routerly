@@ -114,7 +114,7 @@ function incidentTurns(): Message[] {
 export const OPTIMIZER_FIXTURES: OptimizerFixture[] = [
   {
     id: 'support-chat-en',
-    label: 'Support chat (English, 13 turns)',
+    label: 'Support chat (English, 17 messages)',
     language: 'en',
     description:
       'A long support thread with a repeated hold message, pasted order details and a duplicated signature. Exercises session-dedup, ccr, rtk, relevance and caveman.',
@@ -238,7 +238,7 @@ ${SIGNATURE}`,
   },
   {
     id: 'agent-tools-en',
-    label: 'Coding agent with tool results (English, 10 turns)',
+    label: 'Coding agent with tool results (English, 16 messages)',
     language: 'en',
     description:
       'A build-and-test session with two JSON tool results, a pasted install log and a repeated status line. Exercises json-table, session-dedup, rtk and ccr.',

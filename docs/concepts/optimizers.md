@@ -314,7 +314,7 @@ preview box.
 | `support-chat-en` | A 17-message support thread with a repeated hold message, pasted order details and a duplicated signature | `session-dedup`, `ccr`, `rtk`, `relevance`, `caveman` |
 | `agent-tools-en` | A build-and-test session with two JSON tool results, a pasted install log and a repeated status line | `json-table`, `session-dedup`, `rtk`, `ccr` |
 | `brief-en` | One long instruction, dense with filler | `caveman`, `llmlingua-2` |
-| `long-context-en` | About 35k tokens of pasted gateway logs across 55 turns | `headroom`, previewed against a model whose window is 32k or smaller |
+| `long-context-en` | About 36k tokens of pasted gateway logs across 45 turns | `headroom`, previewed against a model whose window is 32k or smaller |
 
 A short invented prompt under-reports what optimizers do, because it lacks
 the repetition and history they cut.
