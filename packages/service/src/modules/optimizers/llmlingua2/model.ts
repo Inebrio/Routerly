@@ -137,6 +137,7 @@ interface Lib {
   AutoModelForTokenClassification: {
     from_pretrained(id: string, o: Record<string, unknown>): Promise<Classifier>
   }
+  Tensor: new (type: string, data: BigInt64Array, dims: number[]) => unknown
 }
 
 // ponytail: one entry per checkpoint actually used, never evicted. A host runs
@@ -290,6 +291,45 @@ export function resetModelState(): void {
 }
 
 /**
+ * Longest sequence one forward pass may carry.
+ *
+ * ponytail: a constant, not read from the checkpoint's config. Both curated
+ * encoders are BERT-family with 512 usable positions, and XLM-RoBERTa's config
+ * declares 514 while only 512 are addressable (its position ids start at
+ * padding_idx + 1), so trusting the declared number is how you get a throw.
+ */
+const MAX_TOKENS = 512
+
+/**
+ * Keep-probability per token, scored in windows the encoder can actually embed.
+ *
+ * A pass over more positions than the model has position embeddings does not
+ * truncate, it throws inside the ONNX graph ("axis == 1 || axis == largest was
+ * false" from the embedding Add node). Both the pipeline and the preview catch
+ * that and roll back, so before this the step was a silent no-op on every
+ * message past one window: exactly the long prompts it exists to compress.
+ * Windows are scored independently, as upstream LLMLingua-2 chunks long inputs,
+ * and the ids are never re-tokenized.
+ */
+async function scoreTokens(ids: number[], model: Classifier, lib: Lib): Promise<number[]> {
+  const scores: number[] = []
+  for (let start = 0; start < ids.length; start += MAX_TOKENS) {
+    const window = ids.slice(start, start + MAX_TOKENS)
+    const dims = [1, window.length]
+    const out = await model({
+      input_ids: new lib.Tensor('int64', BigInt64Array.from(window, (id) => BigInt(id)), dims),
+      attention_mask: new lib.Tensor('int64', new BigInt64Array(window.length).fill(1n), dims),
+    })
+    for (const pair of out.logits.tolist()[0] ?? []) {
+      const ea = Math.exp(pair[0] ?? 0)
+      const eb = Math.exp(pair[1] ?? 0)
+      scores.push(eb / (ea + eb))
+    }
+  }
+  return scores
+}
+
+/**
  * Compress one text blob to approximately `keepRatio` of its tokens, using the
  * checkpoint `key` names (or the default).
  *
@@ -309,13 +349,7 @@ export async function compress(text: string, keepRatio: number, key?: string): P
   const ids = enc.input_ids.tolist()[0] ?? []
   if (ids.length <= 2) return text
 
-  const out = await model({ input_ids: enc.input_ids, attention_mask: enc.attention_mask })
-  const logits = out.logits.tolist()[0] ?? []
-  const scores = logits.map((pair) => {
-    const ea = Math.exp(pair[0] ?? 0)
-    const eb = Math.exp(pair[1] ?? 0)
-    return eb / (ea + eb)
-  })
+  const scores = await scoreTokens(ids, model, await importRuntime())
 
   const keep = Math.max(1, Math.round(ids.length * keepRatio))
   const keepSet = new Set(

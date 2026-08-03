@@ -12,6 +12,13 @@ const forward = vi.fn()
 vi.mock('@huggingface/transformers', () => ({
   AutoTokenizer: { from_pretrained: vi.fn(async () => Object.assign(encode, { decode })) },
   AutoModelForTokenClassification: { from_pretrained: vi.fn(async () => forward) },
+  Tensor: class {
+    constructor(
+      public type: string,
+      public data: BigInt64Array,
+      public dims: number[],
+    ) {}
+  },
 }))
 
 /** State of one checkpoint by key, out of the full list. */
@@ -110,6 +117,31 @@ describe('llmlingua-2 model', () => {
     expect(decode).toHaveBeenCalledWith([22, 33, 44], { skip_special_tokens: true })
     // The ids fed to the model are the tokenizer's, never a local hash.
     expect(forward).toHaveBeenCalledOnce()
+  })
+
+  it('scores a text longer than the encoder window in windows, not in one throwing pass', async () => {
+    // 700 ids: one full 512 window plus a 188 remainder. A single pass over them
+    // throws inside the ONNX embedding graph, which used to silently no-op the
+    // step on exactly the long prompts it exists to compress.
+    const ids = [101, ...Array.from({ length: 698 }, (_, i) => 1000 + i), 102]
+    encode.mockResolvedValue({
+      input_ids: { tolist: () => [ids] },
+      attention_mask: { tolist: () => [ids.map(() => 1)] },
+    })
+    forward.mockImplementation(async (feeds: { input_ids: { dims: number[] } }) => {
+      const len = feeds.input_ids.dims[1]!
+      return { logits: { tolist: () => [Array.from({ length: len }, () => [1, 0])] } }
+    })
+    decode.mockReturnValue('kept')
+
+    const m = await import('./model.js')
+    await m.compress('a very long text', 0.5)
+
+    expect(forward).toHaveBeenCalledTimes(2)
+    expect(forward.mock.calls[0]![0].input_ids.dims).toEqual([1, 512])
+    expect(forward.mock.calls[1]![0].input_ids.dims).toEqual([1, 188])
+    // Every position was scored, so the keep count is a fraction of all 700.
+    expect(decode.mock.calls[0]![0]).toHaveLength(350)
   })
 
   it('loads the checkpoint the caller named, at its own dtype', async () => {
