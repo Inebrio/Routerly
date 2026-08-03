@@ -50,7 +50,7 @@ import { ExperimentConfigTab } from './pages/experiment/ExperimentConfigTab';
 import { ExperimentMetricsTab } from './pages/experiment/ExperimentMetricsTab';
 import { ExperimentTokenTab } from './pages/experiment/ExperimentTokenTab';
 
-import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Plug, Route, AppWindow, Split } from 'lucide-react';
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Cloud, Route, AppWindow, Split } from 'lucide-react';
 import { Logo } from './components/Logo';
 import { ProfileNotificationBadge } from './components/NotificationBell';
 
@@ -117,7 +117,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
   // Routerly itself, so it sits in the footer next to Settings.
   const navItems = [
     { to: '/dashboard/overview', icon: <LayoutDashboard size={17} />, label: 'Overview' },
-    ...(can('connections:read') ? [{ to: '/dashboard/connections', icon: <Plug size={17} />, label: 'Providers' }] : []),
+    ...(can('connections:read') ? [{ to: '/dashboard/connections', icon: <Cloud size={17} />, label: 'Providers' }] : []),
     { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
     ...(can('profiles:read') ? [{ to: '/dashboard/profiles', icon: <Route size={17} />, label: 'Profiles' }] : []),
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
