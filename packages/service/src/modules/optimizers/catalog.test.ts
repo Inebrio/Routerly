@@ -8,6 +8,7 @@ import { sessionDedupOptimizer } from './session-dedup/index.js'
 import { ccrOptimizer } from './ccr/index.js'
 import { rtkOptimizer } from './rtk/index.js'
 import { headroomOptimizer } from './headroom/index.js'
+import { jsonTableOptimizer } from './json-table/index.js'
 import { relevanceOptimizer } from './relevance/index.js'
 import { cavemanOptimizer } from './caveman/index.js'
 import { llmlingua2Optimizer } from './llmlingua2/index.js'
@@ -24,6 +25,7 @@ const IMPLEMENTATIONS: Optimizer[] = [
   ccrOptimizer,
   rtkOptimizer,
   headroomOptimizer,
+  jsonTableOptimizer,
   relevanceOptimizer,
   cavemanOptimizer,
   llmlingua2Optimizer,
@@ -88,7 +90,7 @@ describe('OPTIMIZER_CATALOG parity with the implementations', () => {
       .filter((m) => m.threshold)
       .map((m) => m.id)
       .sort()
-    expect(withThreshold).toEqual(['ccr', 'headroom', 'llmlingua-2', 'relevance'])
+    expect(withThreshold).toEqual(['ccr', 'headroom', 'json-table', 'llmlingua-2', 'relevance'])
   })
 
   it("ccr's catalog default is the window it actually falls back to", () => {

@@ -14,6 +14,7 @@ export type OptimizerId =
   | 'ccr'
   | 'rtk'
   | 'headroom'
+  | 'json-table'
   | 'relevance'
   | 'caveman'
   | 'llmlingua-2';
@@ -79,7 +80,7 @@ export interface OptimizerThresholdSpec {
   /** What the number means, e.g. "Recent turns to keep". */
   label: string;
   /** Unit shown next to the control. */
-  unit: 'turns' | 'tokens' | 'ratio';
+  unit: 'turns' | 'tokens' | 'ratio' | 'rows';
   min: number;
   max: number;
   step: number;
@@ -137,7 +138,7 @@ export const OPTIMIZER_CATALOG: Record<OptimizerId, OptimizerMeta> = {
     id: 'headroom',
     label: 'Context Headroom',
     klass: 'lossless',
-    description: 'Drops the oldest turns until the request fits the model context window with the reserved headroom.',
+    description: 'Drops the oldest turns until the request fits the context window of the requested model, with the reserved headroom left free. Inert when the requested model is unknown.',
     threshold: {
       label: 'Reserved completion budget',
       unit: 'tokens',
@@ -146,6 +147,21 @@ export const OPTIMIZER_CATALOG: Record<OptimizerId, OptimizerMeta> = {
       step: 128,
       default: 1024,
       help: 'Tokens kept free for the answer. A larger reserve trims more history.',
+    },
+  },
+  'json-table': {
+    id: 'json-table',
+    label: 'JSON Table',
+    klass: 'recoverable',
+    description: 'Rewrites long JSON arrays of uniform objects as a compact table. Every value is kept; only the repeated key names and punctuation go.',
+    threshold: {
+      label: 'Minimum rows to compact',
+      unit: 'rows',
+      min: 2,
+      max: 500,
+      step: 1,
+      default: 5,
+      help: 'Lower compacts smaller arrays. Below about 3 rows the table header costs more than the repeated keys.',
     },
   },
   relevance: {

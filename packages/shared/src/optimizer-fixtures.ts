@@ -74,9 +74,12 @@ export const OPTIMIZER_FIXTURES: OptimizerFixture[] = [
         role: 'assistant',
         content: 'I will read the two files first.\n\n```bash\ncat docs/concepts/on-call.md\n```',
       },
+      { role: 'user', content: 'Here is the directory listing you asked for.' },
+      // The payload is its own message, the way a tool result actually arrives.
+      // json-table only compacts a message that is nothing but a JSON array.
       {
         role: 'user',
-        content: 'Here is the directory listing you asked for:\n\n[{"path":"src/a/index.ts","bytes":1420,"modified":"2026-07-01"},{"path":"src/b/index.ts","bytes":880,"modified":"2026-07-02"},{"path":"src/c/index.ts","bytes":2310,"modified":"2026-07-03"},{"path":"src/d/index.ts","bytes":640,"modified":"2026-07-04"},{"path":"src/e/index.ts","bytes":1190,"modified":"2026-07-05"},{"path":"src/f/index.ts","bytes":2040,"modified":"2026-07-06"},{"path":"src/g/index.ts","bytes":760,"modified":"2026-07-07"},{"path":"src/h/index.ts","bytes":1530,"modified":"2026-07-08"},{"path":"src/i/index.ts","bytes":990,"modified":"2026-07-09"},{"path":"src/j/index.ts","bytes":1870,"modified":"2026-07-10"}]',
+        content: '[{"path":"src/a/index.ts","bytes":1420,"modified":"2026-07-01"},{"path":"src/b/index.ts","bytes":880,"modified":"2026-07-02"},{"path":"src/c/index.ts","bytes":2310,"modified":"2026-07-03"},{"path":"src/d/index.ts","bytes":640,"modified":"2026-07-04"},{"path":"src/e/index.ts","bytes":1190,"modified":"2026-07-05"},{"path":"src/f/index.ts","bytes":2040,"modified":"2026-07-06"},{"path":"src/g/index.ts","bytes":760,"modified":"2026-07-07"},{"path":"src/h/index.ts","bytes":1530,"modified":"2026-07-08"},{"path":"src/i/index.ts","bytes":990,"modified":"2026-07-09"},{"path":"src/j/index.ts","bytes":1870,"modified":"2026-07-10"}]',
       },
       { role: 'assistant', content: 'Ten files. The largest is src/c/index.ts at 2310 bytes. I will start there.' },
       { role: 'user', content: 'Yes, and please do not touch scripts/for-each/do-it.sh, it must stay exactly as it is.' },
