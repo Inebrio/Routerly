@@ -70,9 +70,9 @@ The trim is sized for the requested model, not for whichever model routing
 ends up picking. A policy can send the request elsewhere, so the result may
 leave more history than a smaller fallback would accept; it can never trim
 more than the requested model needs. The step is inert when the requested
-model is unknown to the effective list or declares no window, which is also
-why it stays inert in the preview, where the request carries the placeholder
-model name `preview`.
+model is unknown to the effective list or declares no window. Preview takes a
+`model` for exactly that reason: without one the sample is addressed to no
+model and this step reports why instead of trimming.
 
 ## json-table
 
@@ -168,35 +168,41 @@ Provenance:
 
 - Technique / reference code: `microsoft/LLMLingua`,
   https://github.com/microsoft/LLMLingua, MIT license.
-- Default checkpoint:
-  `ldenoue/llmlingua-2-bert-base-multilingual-cased-meetingbank` at dtype `q8`,
-  170 MB. It is an ONNX export of the Apache-2.0
-  `microsoft/llmlingua-2-bert-base-multilingual-cased-meetingbank`, which ships
-  no ONNX build of its own. **The export repo declares no license on its model
-  card.** Operators who need a declared license should switch to the alternative
-  below.
-- Alternative checkpoint:
-  `atjsh/llmlingua-2-js-xlm-roberta-large-meetingbank` at dtype `int8`, 536 MB,
-  MIT license. Higher quality, heavier on disk and at inference.
 
-Two env vars pick what lands on the host, and nothing else configures this:
+The curated list lives in `packages/shared` as `LLMLINGUA_CHECKPOINTS`, so
+the service, the CLI and the dashboard all name the same three keys:
 
-| Variable | Default |
-|---|---|
-| `ROUTERLY_LLMLINGUA_MODEL` | `ldenoue/llmlingua-2-bert-base-multilingual-cased-meetingbank` |
-| `ROUTERLY_LLMLINGUA_DTYPE` | `q8` |
+| Key | Repo, dtype | Size | License |
+|---|---|---|---|
+| `bert-multilingual-q8` (default) | `ldenoue/llmlingua-2-bert-base-multilingual-cased-meetingbank`, `q8` | 182 MB | The export repo declares no license on its model card; the upstream `microsoft/llmlingua-2-bert-base-multilingual-cased-meetingbank` weights it exports are Apache-2.0 |
+| `xlm-roberta-large-int8` | `atjsh/llmlingua-2-js-xlm-roberta-large-meetingbank`, `int8` | 579 MB | MIT. Higher quality, heavier on disk and at inference. The one to pick when a declared license is required |
+| `bert-multilingual-fp32` | Same repo as the default, `fp32` | 713 MB | As the default |
 
-The checkpoint is cached at `<ROUTERLY_HOME>/models/<model-id>/`, in the layout
+Which key a step runs on is the step's own `model` field, validated against
+those keys (`schemas.ts`) and read by `modelKeyOf()`. The bytes are shared:
+one host cache, one download per key, whatever mix of projects names it.
+
+`ROUTERLY_LLMLINGUA_MODEL` / `ROUTERLY_LLMLINGUA_DTYPE` publish one extra
+`custom` checkpoint from a raw repo id and make it the host's default. It is
+deployment configuration, deliberately env-only: it writes files to this
+host's disk, which is not a per-project decision. `checkpointStates()`
+reports `isDefault` for that reason, so no surface re-derives a fallback the
+env can move.
+
+Checkpoints are cached under `<ROUTERLY_HOME>/models/<repo>/`, in the layout
 transformers.js expects (`tokenizer.json` at the root, ONNX graphs under
-`onnx/`). It is never auto-downloaded on install or at request time: loading is
-`local_files_only`, so a proxied request can never trigger a download. The
-download is started explicitly through `POST /api/optimizers/llmlingua2/model`
-(permission `optimizers:manage`), which returns 202 immediately; progress is
-polled from `GET /api/optimizers/llmlingua2/model` (`optimizers:read`), exposed
-as `routerly optimizers model [--install]` and as a status box on the project
-optimizer tab. With no checkpoint cached and the optional dependency not
-installed, the default state, the optimizer still self-registers but
-`supports()` always returns false, so it is a permanent no-op.
+`onnx/`, one file per dtype, which is how two dtypes of one repo are told
+apart on disk). Nothing is auto-downloaded on install or at request time:
+loading is `local_files_only`, so a proxied request can never trigger a
+download. A download is started explicitly through `POST
+/api/optimizers/llmlingua2/model` (`optimizers:manage`, optional `key`),
+which returns 202 immediately; progress is polled from `GET
+/api/optimizers/llmlingua2/model` (`optimizers:read`), exposed as `routerly
+optimizers model [--install [key]]` and, in the dashboard, inside the
+llmlingua-2 row itself, which is also where the step's checkbox stays
+disabled until a checkpoint is ready. With no checkpoint cached and the
+optional dependency not installed, the default state, the optimizer still
+self-registers but `supports()` always returns false, so it is a no-op.
 
 The `@huggingface/transformers` package is declared in
 `packages/service/package.json` under `optionalDependencies`: it brings the

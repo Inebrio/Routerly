@@ -1472,7 +1472,7 @@ what each optimizer does and its class.
 routerly optimizers list [--json]
 ```
 
-List the installed optimizer catalog (all 7 optimizer ids ship built-in;
+List the installed optimizer catalog (all 8 optimizer ids ship built-in;
 `installed` reflects whether the module registered itself, which is always
 `true` unless a module was intentionally removed from the build).
 
@@ -1493,13 +1493,15 @@ routerly optimizers list
 ├───────────────┼────────────────────────────────┼─────────────┼───────────┼──────────────────────────────┤
 │ session-dedup │ Session Dedup                  │ lossless    │ yes       │ -                            │
 ├───────────────┼────────────────────────────────┼─────────────┼───────────┼──────────────────────────────┤
-│ ccr           │ Conversation Context Reduction │ recoverable │ yes       │ 1-50 turns, default 6        │
+│ ccr           │ Conversation Context Reduction │ recoverable │ yes       │ 1-50 turns, default 3        │
 ├───────────────┼────────────────────────────────┼─────────────┼───────────┼──────────────────────────────┤
 │ rtk           │ Redundant Token Killer         │ recoverable │ yes       │ -                            │
 ├───────────────┼────────────────────────────────┼─────────────┼───────────┼──────────────────────────────┤
 │ headroom      │ Context Headroom               │ lossless    │ yes       │ 0-32768 tokens, default 1024 │
 ├───────────────┼────────────────────────────────┼─────────────┼───────────┼──────────────────────────────┤
-│ relevance     │ Relevance Filter               │ lossy       │ yes       │ 0-1 ratio, required          │
+│ json-table    │ JSON Table                     │ recoverable │ yes       │ 2-500 rows, default 5        │
+├───────────────┼────────────────────────────────┼─────────────┼───────────┼──────────────────────────────┤
+│ relevance     │ Relevance Filter               │ lossy       │ yes       │ 0-1 ratio, default 0.1       │
 ├───────────────┼────────────────────────────────┼─────────────┼───────────┼──────────────────────────────┤
 │ caveman       │ Caveman                        │ lossy       │ yes       │ -                            │
 ├───────────────┼────────────────────────────────┼─────────────┼───────────┼──────────────────────────────┤
@@ -1507,8 +1509,9 @@ routerly optimizers list
 └───────────────┴────────────────────────────────┴─────────────┴───────────┴──────────────────────────────┘
 ```
 
-`required` on `relevance` means it has no default and stays inert until a
-project sets one.
+`required` in the threshold column would mean an optimizer with no default,
+which stays inert until a project sets one. No shipped optimizer is in that
+state today.
 
 ```bash
 routerly optimizers list --json
@@ -1534,7 +1537,7 @@ routerly optimizers list --json
       "min": 1,
       "max": 50,
       "step": 1,
-      "default": 6,
+      "default": 3,
       "help": "Fewer turns means a shorter prompt and less history for the model to work with."
     }
   }
@@ -1548,73 +1551,114 @@ take none.
 
 Requires `optimizers:read` permission.
 
-### `routerly optimizers samples`
+### `routerly optimizers fixtures`
 
 ```
-routerly optimizers samples <project> [--show index] [--json]
+routerly optimizers fixtures [--json]
 ```
 
-List the prompts the service kept in memory for the project, newest first,
-so a pipeline can be tuned against real traffic. Replay one with
-[`optimizers preview --sample`](#routerly-optimizers-preview).
+List the sample conversations shipped with Routerly. Feed one to
+[`optimizers preview --fixture`](#routerly-optimizers-preview). Each is
+written to exercise a different group of steps, because a short invented
+prompt lacks the repetition and history optimizers cut.
+
+```bash
+routerly optimizers fixtures
+```
+```
+┌──────────────────┬────────────────────────────────────────────────┬──────┬───────┬──────────────────────────────────────────────────────────┐
+│ ID               │ Name                                           │ Lang │ Turns │ Exercises                                                │
+├──────────────────┼────────────────────────────────────────────────┼──────┼───────┼──────────────────────────────────────────────────────────┤
+│ support-chat-en  │ Support chat (English, 13 turns)                │ en   │ 17    │ session-dedup, ccr, rtk, relevance and caveman            │
+├──────────────────┼────────────────────────────────────────────────┼──────┼───────┼──────────────────────────────────────────────────────────┤
+│ brief-en         │ Long brief (English, single turn)               │ en   │ 1     │ caveman and llmlingua-2                                  │
+├──────────────────┼────────────────────────────────────────────────┼──────┼───────┼──────────────────────────────────────────────────────────┤
+│ agent-tools-en   │ Coding agent with tool results (10 turns)       │ en   │ 16    │ json-table, session-dedup, rtk and ccr                   │
+├──────────────────┼────────────────────────────────────────────────┼──────┼───────┼──────────────────────────────────────────────────────────┤
+│ long-context-en  │ Incident log triage (English, very long)        │ en   │ 111   │ headroom, previewed against a 32k window or smaller      │
+└──────────────────┴────────────────────────────────────────────────┴──────┴───────┴──────────────────────────────────────────────────────────┘
+```
+
+**Turns** is the message count. `--json` prints the fixtures whole, messages
+included.
+
+These conversations ship with Routerly, are identical on every install, and
+are the only preview material: the service never records real prompts (see
+[Concepts: Optimizers, Privacy](../concepts/optimizers.md#privacy)).
+
+No permission beyond dashboard authentication: the fixtures are in the CLI
+itself and the command makes no API call.
+
+### `routerly optimizers model`
+
+```
+routerly optimizers model [--install [key]] [--json]
+```
+
+Show, and install, the optional LLMLingua-2 checkpoints on the **service
+host**. Checkpoints are shared by every project; which one a project uses is
+set with [`optimizers config --checkpoint`](#routerly-optimizers-config).
 
 | Option | Description |
 |--------|-------------|
-| `--show <index>` | Print one sample's messages in full (1-based, as numbered in the table) |
-| `--json` | Output raw JSON: the whole list, or the single sample with `--show` |
+| `--install [key]` | Start a checkpoint's download, the default one when no key is given |
+| `--json` | Output the raw model state as JSON |
 
 ```bash
-routerly optimizers samples Test
+routerly optimizers model
 ```
 ```
-┌───┬──────────────────────────┬────────┬──────────┬─────────┐
-│ # │ Captured                 │ Tokens │ Messages │ Excerpt │
-├───┼──────────────────────────┼────────┼──────────┼─────────┤
-│ 1 │ 2026-08-01T09:41:12.004Z │ 1180   │ 7        │ yes     │
-├───┼──────────────────────────┼────────┼──────────┼─────────┤
-│ 2 │ 2026-08-01T09:38:55.610Z │ 412    │ 3        │ no      │
-└───┴──────────────────────────┴────────┴──────────┴─────────┘
+runtime: installed
+┌───────────────────────────────┬───────────────────────────────┬────────┬──────────────────────────┬──────────────────────────────────────┐
+│ Key                           │ Name                          │ Size   │ State                    │ Notes                                │
+├───────────────────────────────┼───────────────────────────────┼────────┼──────────────────────────┼──────────────────────────────────────┤
+│ bert-multilingual-q8 (default)│ BERT multilingual, quantized  │ 182 MB │ downloading 42% 76/182 MB│ The default. Smallest and fastest... │
+├───────────────────────────────┼───────────────────────────────┼────────┼──────────────────────────┼──────────────────────────────────────┤
+│ xlm-roberta-large-int8        │ XLM-RoBERTa large, int8       │ 579 MB │ absent                   │ Better compression quality...        │
+├───────────────────────────────┼───────────────────────────────┼────────┼──────────────────────────┼──────────────────────────────────────┤
+│ bert-multilingual-fp32        │ BERT multilingual, full prec. │ 713 MB │ ready                    │ Same model without quantization...   │
+└───────────────────────────────┴───────────────────────────────┴────────┴──────────────────────────┴──────────────────────────────────────┘
+Downloading. Run `routerly optimizers model` again to check progress.
 ```
 
-**Excerpt** is `yes` when the prompt was clipped to fit the buffer (at most
-20 messages, each at most 1000 characters).
-
-```bash
-routerly optimizers samples Test --show 2
-```
-```
-Captured 2026-08-01T09:38:55.610Z · 412 tokens
-
-system: You answer in one paragraph.
-
-user: Summarize the thread above.
-```
+`(default)` marks the checkpoint a step with no checkpoint of its own runs
+on. The service reports it, so an `ROUTERLY_LLMLINGUA_MODEL` override on the
+host shows up here.
 
 ```bash
-routerly optimizers samples Test
-```
-```
-No prompts captured yet. They appear once the project sends traffic.
+routerly optimizers model --install
+routerly optimizers model --install xlm-roberta-large-int8
 ```
 
-At most 5 prompts are kept per project. They are captured after PII
-scrubbing, held in memory only, never written to disk, and lost when the
-service restarts.
+The download runs on the service host, not here, and is hundreds of
+megabytes: `--install` returns as soon as it has started, and the command
+run again reports progress. A failed download reads `failed` in the State
+column and prints its reason to stderr; running `--install` again retries.
 
 **Error cases:**
 ```bash
-routerly optimizers samples Test --show 9
+routerly optimizers model --install
 ```
 ```
-Error: no sample 9. This project has 2.
+Error: @huggingface/transformers is not installed on the service host
+```
+```bash
+routerly optimizers model --install not-a-checkpoint
+```
+```
+Error: Unknown checkpoint not-a-checkpoint
 ```
 
-Requires `optimizers:read` permission.
+See [Concepts: Optimizers,
+llmlingua-2](../concepts/optimizers.md#llmlingua-2) for what to install on
+the host first, and what each checkpoint costs.
+
+`optimizers:read` to show, `optimizers:manage` to install.
 
 ### `routerly optimizers config`
 
 ```
-routerly optimizers config <project> [--enable id] [--disable id] [--threshold id=val] [--order ids] [--json]
+routerly optimizers config <project> [--enable id] [--disable id] [--threshold id=val] [--checkpoint key] [--order ids] [--json]
 ```
 
 Read-modify-write a project's `optimizers.steps`. Run with no flags to print
@@ -1625,36 +1669,45 @@ the current pipeline unchanged.
 | `--enable <id>` | Enable an optimizer step (repeatable) |
 | `--disable <id>` | Disable an optimizer step (repeatable) |
 | `--threshold <id=val>` | Set an optimizer step's threshold, range depends on the optimizer id (repeatable), see [Threshold Range](../concepts/optimizers.md#threshold-range) |
+| `--checkpoint <key>` | LLMLingua-2 checkpoint this project runs on, from [`optimizers model`](#routerly-optimizers-model) |
 | `--order <ids>` | Comma-separated optimizer ids controlling step order |
 | `--json` | Output the updated (sanitized) project as raw JSON |
 
 `--enable`/`--disable`/`--threshold` create the step if it is not already
 configured (new steps default to `enabled: false` unless `--enable` is also
-given for that id). `--order` stable-sorts existing steps to the given id
-order; ids not listed keep their relative order at the end.
+given for that id). `--checkpoint` lands on the `llmlingua-2` step, the only
+one that runs on a model, creating it the same way. `--order` stable-sorts
+existing steps to the given id order; ids not listed keep their relative
+order at the end.
 
 ```bash
 routerly optimizers config Test --order session-dedup,caveman,rtk,relevance,ccr
 ```
 ```
 ✓ Updated optimizer pipeline on project "Test"
-┌───┬───────────────┬────────────────────────────────┬─────────┬───────────┐
-│ # │ ID            │ Name                           │ Enabled │ Threshold │
-├───┼───────────────┼────────────────────────────────┼─────────┼───────────┤
-│ 1 │ session-dedup │ Session Dedup                  │ yes     │ -         │
-├───┼───────────────┼────────────────────────────────┼─────────┼───────────┤
-│ 2 │ caveman       │ Caveman                        │ yes     │ -         │
-├───┼───────────────┼────────────────────────────────┼─────────┼───────────┤
-│ 3 │ rtk           │ Redundant Token Killer         │ yes     │ -         │
-├───┼───────────────┼────────────────────────────────┼─────────┼───────────┤
-│ 4 │ relevance     │ Relevance Filter               │ yes     │ 0.3       │
-├───┼───────────────┼────────────────────────────────┼─────────┼───────────┤
-│ 5 │ ccr           │ Conversation Context Reduction │ no      │ 8         │
-└───┴───────────────┴────────────────────────────────┴─────────┴───────────┘
+┌───┬───────────────┬────────────────────────────────┬─────────┬─────────────┬────────────┐
+│ # │ ID            │ Name                           │ Enabled │ Threshold   │ Checkpoint │
+├───┼───────────────┼────────────────────────────────┼─────────┼─────────────┼────────────┤
+│ 1 │ session-dedup │ Session Dedup                  │ yes     │ -           │ -          │
+├───┼───────────────┼────────────────────────────────┼─────────┼─────────────┼────────────┤
+│ 2 │ caveman       │ Caveman                        │ yes     │ -           │ -          │
+├───┼───────────────┼────────────────────────────────┼─────────┼─────────────┼────────────┤
+│ 3 │ rtk           │ Redundant Token Killer         │ yes     │ -           │ -          │
+├───┼───────────────┼────────────────────────────────┼─────────┼─────────────┼────────────┤
+│ 4 │ relevance     │ Relevance Filter               │ yes     │ 0.3         │ -          │
+├───┼───────────────┼────────────────────────────────┼─────────┼─────────────┼────────────┤
+│ 5 │ ccr           │ Conversation Context Reduction │ no      │ 3 (default) │ -          │
+└───┴───────────────┴────────────────────────────────┴─────────┴─────────────┴────────────┘
 ```
 
 A step that leaves its threshold unset shows the value it will run with,
-marked `(default)`; `-` means the optimizer takes no threshold at all.
+marked `(default)`; `-` means the optimizer takes no threshold at all. The
+**Checkpoint** column is `-` on every step but `llmlingua-2`, which shows the
+key it runs on, or `-` for the host's default.
+
+```bash
+routerly optimizers config Test --enable llmlingua-2 --checkpoint xlm-roberta-large-int8
+```
 
 **Error cases:**
 ```bash
@@ -1670,9 +1723,17 @@ routerly optimizers config Test --threshold relevance=1.5
 Error: Invalid optimizers config
 ```
 `relevance` and `llmlingua-2` thresholds are capped at `1` (a
-ratio); `ccr` and `headroom` accept any positive number (a turn count and a
-token budget respectively). See [Concepts: Optimizers, Threshold
-Range](../concepts/optimizers.md#threshold-range).
+ratio); `ccr`, `headroom` and `json-table` accept any positive number (a turn
+count, a token budget and a row count respectively). See [Concepts:
+Optimizers, Threshold Range](../concepts/optimizers.md#threshold-range).
+```bash
+routerly optimizers config Test --checkpoint not-a-checkpoint
+```
+```
+Error: Invalid optimizers config
+```
+The checkpoint must be one the service publishes, see [`optimizers
+model`](#routerly-optimizers-model).
 ```bash
 routerly optimizers config nonexistent-project-xyz --enable rtk
 ```
@@ -1685,7 +1746,7 @@ Requires `optimizers:manage` permission.
 ### `routerly optimizers preview`
 
 ```
-routerly optimizers preview <project> (--message <text> ... | --sample <index>) [--json]
+routerly optimizers preview <project> (--message <text> ... | --fixture <id>) [--model <id>] [--json]
 ```
 
 Dry-run the project's currently configured optimizer pipeline against a
@@ -1695,11 +1756,17 @@ not modified.
 | Option | Description |
 |--------|-------------|
 | `--message <text>` | Sample user message (repeatable) |
-| `--sample <index>` | Replay a prompt from [`optimizers samples`](#routerly-optimizers-samples) instead, by its number in that table |
+| `--fixture <id>` | Use a shipped sample conversation instead, from [`optimizers fixtures`](#routerly-optimizers-fixtures) |
+| `--model <id>` | Address the sample to this model, so context-window steps have a window to fit |
 | `--json` | Output the raw preview result as JSON |
 
 Exactly one prompt source is required: give `--message` at least once, or
-`--sample`, not both.
+`--fixture`, not both.
+
+`--model` matters to `headroom`, which sizes its budget on the requested
+model's context window. Without it the sample is addressed to no model and
+that step reports it has nothing to size against instead of trimming, which
+is exactly what a live request naming an unknown model does.
 
 ```bash
 routerly optimizers preview Test \
@@ -1711,31 +1778,35 @@ Tokens before: 46
 Tokens after:  32
 Saved:         14
 
-┌───────────────┬────────────────────────────────┬────────┬───────┬───────┐
-│ ID            │ Name                           │ Before │ After │ Saved │
-├───────────────┼────────────────────────────────┼────────┼───────┼───────┤
-│ ccr           │ Conversation Context Reduction │ 46     │ 46    │ 0     │
-├───────────────┼────────────────────────────────┼────────┼───────┼───────┤
-│ session-dedup │ Session Dedup                  │ 46     │ 46    │ 0     │
-├───────────────┼────────────────────────────────┼────────┼───────┼───────┤
-│ caveman       │ Caveman                        │ 46     │ 32    │ 14    │
-├───────────────┼────────────────────────────────┼────────┼───────┼───────┤
-│ rtk           │ Redundant Token Killer         │ 32     │ 32    │ 0     │
-├───────────────┼────────────────────────────────┼────────┼───────┼───────┤
-│ relevance     │ Relevance Filter               │ 32     │ 32    │ 0     │
-└───────────────┴────────────────────────────────┴────────┴───────┴───────┘
+┌───────────────┬────────────────────────────────┬────────┬───────┬───────┬───────────────────────────────────────────────────────────┐
+│ ID            │ Name                           │ Before │ After │ Saved │ Note                                                      │
+├───────────────┼────────────────────────────────┼────────┼───────┼───────┼───────────────────────────────────────────────────────────┤
+│ ccr           │ Conversation Context Reduction │ 46     │ 46    │ 0     │ Conversation has 2 turns; condensing starts above 3.      │
+├───────────────┼────────────────────────────────┼────────┼───────┼───────┼───────────────────────────────────────────────────────────┤
+│ session-dedup │ Session Dedup                  │ 46     │ 46    │ 0     │ No message repeats three or more times in a row.          │
+├───────────────┼────────────────────────────────┼────────┼───────┼───────┼───────────────────────────────────────────────────────────┤
+│ caveman       │ Caveman                        │ 46     │ 32    │ 14    │                                                           │
+├───────────────┼────────────────────────────────┼────────┼───────┼───────┼───────────────────────────────────────────────────────────┤
+│ rtk           │ Redundant Token Killer         │ 32     │ 32    │ 0     │ No redundant whitespace or repeated block found.          │
+├───────────────┼────────────────────────────────┼────────┼───────┼───────┼───────────────────────────────────────────────────────────┤
+│ headroom      │ Context Headroom               │ 32     │ 32    │ 0     │ No context window known for the requested model (unnamed).│
+└───────────────┴────────────────────────────────┴────────┴───────┴───────┴───────────────────────────────────────────────────────────┘
 ```
 
-Tune against real traffic by replaying a captured prompt instead:
+Preview something that resembles real traffic by running a fixture, and name
+a model so the context-window steps have a window:
 
 ```bash
-routerly optimizers samples Test
-routerly optimizers preview Test --sample 1
+routerly optimizers fixtures
+routerly optimizers preview Test --fixture support-chat-en
+routerly optimizers preview Test --fixture long-context-en --model ollama/qwen3:4b
 ```
 
 The per-step table lists every configured step in pipeline order, including
-disabled ones (`Saved: 0` for a disabled or no-op step). A step whose result
-was rejected by the safety gate reads `rolled back` instead of a number,
+disabled ones (`Saved: 0` for a disabled or no-op step). **Note** carries the
+step's own reason when it declined to run, so a `0` that means "nothing to
+do" is not confused with one that means "never ran". A step whose result was
+rejected by the safety gate reads `rolled back` instead of a number,
 followed by:
 
 ```
@@ -1756,13 +1827,19 @@ Optimizers](../api/management.md#preview-optimizers)).
 routerly optimizers preview Test
 ```
 ```
-Error: provide at least one --message, or --sample <index>.
+Error: provide at least one --message, or --fixture <id>.
 ```
 ```bash
-routerly optimizers preview Test --sample 4
+routerly optimizers preview Test --message "hi" --fixture brief-en
 ```
 ```
-Error: no sample 4. This project has 2.
+Error: --message and --fixture are mutually exclusive.
+```
+```bash
+routerly optimizers preview Test --fixture nope
+```
+```
+Error: unknown fixture "nope". Available: support-chat-en, brief-en, agent-tools-en, long-context-en.
 ```
 
 Requires `optimizers:read` permission.

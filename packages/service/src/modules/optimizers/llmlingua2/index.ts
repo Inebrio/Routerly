@@ -85,7 +85,7 @@ export const llmlingua2Optimizer: Optimizer = {
     }
     const checkpoint = model.checkpointFor(modelKeyOf(ctx))
     if (!model.isModelAvailable(modelKeyOf(ctx))) {
-      return `Checkpoint ${checkpoint.label} is not downloaded yet. Install it from the optimizer tab or with \`routerly optimizers models download ${checkpoint.key}\`.`
+      return `Checkpoint ${checkpoint.label} is not downloaded yet. Install it from the optimizer tab or with \`routerly optimizers model --install ${checkpoint.key}\`.`
     }
     return 'Step is not enabled on this project.'
   },
