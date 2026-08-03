@@ -335,15 +335,21 @@ function ComparePanel({
                     Debug ({traceHistory.length} {traceHistory.length === 1 ? 'turn' : 'turns'})
                   </summary>
                   <div style={{ maxHeight: 200, overflowY: 'auto', padding: 10, background: 'var(--bg-base)', fontSize: '0.82rem' }}>
-                    {traceHistory.map((traces, i) => (
+                    {[...traceHistory.entries()].reverse().map(([i, traces]) => (
                       <div key={i} style={{ marginBottom: 8 }}>
-                        <TraceSummary trace={traces as TraceEntry[]} turn={i + 1} />
-                        <details style={{ marginTop: 4 }}>
-                          <summary style={{ cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-muted)', padding: '4px 8px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 4, userSelect: 'none', display: 'list-item' }}>Turn #{i + 1} trace log</summary>
-                          <div style={{ marginTop: 4, padding: 8, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4 }}>
-                            <TraceLog entries={traces as TraceEntry[]} collapsed />
-                          </div>
-                        </details>
+                        <TraceSummary
+                          trace={traces as TraceEntry[]}
+                          turn={i + 1}
+                          collapsible
+                          defaultOpen={i === traceHistory.length - 1}
+                        >
+                          <details>
+                            <summary style={{ cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-muted)', padding: '4px 8px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, userSelect: 'none', display: 'list-item' }}>Turn #{i + 1} trace log</summary>
+                            <div style={{ marginTop: 4, padding: 8, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4 }}>
+                              <TraceLog entries={traces as TraceEntry[]} collapsed />
+                            </div>
+                          </details>
+                        </TraceSummary>
                       </div>
                     ))}
                   </div>
@@ -402,7 +408,7 @@ export function TestPage() {
   const [showRaw, setShowRaw] = useState<Record<number, boolean>>({});
   const abortRef = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
-  const debugEndRef = useRef<HTMLDivElement>(null);
+  const debugTopRef = useRef<HTMLDivElement>(null);
   const [debugTraceHistory, setDebugTraceHistory] = useState<(unknown[] | null)[]>([]);
   const [showDebugSidebar, setShowDebugSidebar] = useState(true);
 
@@ -454,7 +460,8 @@ export function TestPage() {
   }, [matchedProject?.id]);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading]);
-  useEffect(() => { debugEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [debugTraceHistory]);
+  // The newest turn is at the top of the list, so that is where the debug panel goes.
+  useEffect(() => { debugTopRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [debugTraceHistory]);
 
   // ── Send ───────────────────────────────────────────────────────────────────
 
@@ -1151,31 +1158,38 @@ export function TestPage() {
                   </div>
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: 12, background: 'var(--bg-base)' }}>
+                  <div ref={debugTopRef} />
                   {debugTraceHistory.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
                       <p style={{ margin: 0, fontSize: '0.82rem' }}>No debug data yet.</p>
                       <p style={{ margin: '6px 0 0', fontSize: '0.75rem' }}>Send a message to see routing details.</p>
                     </div>
                   ) : (
-                    debugTraceHistory.map((traces, i) => {
+                    // Newest turn first: the one you just sent is the one you want to read.
+                    [...debugTraceHistory.entries()].reverse().map(([i, traces]) => {
                       /* v8 ignore next */
                       if (!traces) return null;
                       return (
                         <div key={i} style={{ marginBottom: 14 }}>
-                          <TraceSummary trace={traces as TraceEntry[]} turn={i + 1} />
-                          <details style={{ marginTop: 6 }}>
-                            <summary style={{ cursor: 'pointer', fontSize: '0.78rem', color: 'var(--text-muted)', padding: '6px 10px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 6, userSelect: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
-                              Turn #{i + 1} trace log
-                            </summary>
-                            <div style={{ marginTop: 6, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, fontSize: '0.83rem' }}>
-                              <TraceLog entries={traces as TraceEntry[]} collapsed />
-                            </div>
-                          </details>
+                          <TraceSummary
+                            trace={traces as TraceEntry[]}
+                            turn={i + 1}
+                            collapsible
+                            defaultOpen={i === debugTraceHistory.length - 1}
+                          >
+                            <details>
+                              <summary style={{ cursor: 'pointer', fontSize: '0.78rem', color: 'var(--text-muted)', padding: '6px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, userSelect: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
+                                Turn #{i + 1} trace log
+                              </summary>
+                              <div style={{ marginTop: 6, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, fontSize: '0.83rem' }}>
+                                <TraceLog entries={traces as TraceEntry[]} collapsed />
+                              </div>
+                            </details>
+                          </TraceSummary>
                         </div>
                       );
                     })
                   )}
-                  <div ref={debugEndRef} />
                 </div>
               </div>
             )}

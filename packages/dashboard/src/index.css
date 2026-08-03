@@ -1236,3 +1236,9 @@ tr.row-new { animation: row-highlight 2.5s ease-out; }
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.6; }
 }
+
+/* ─── Playground turn card (TraceSummary, collapsible) ───────────────────── */
+.trace-turn > summary { list-style: none; cursor: pointer; }
+.trace-turn > summary::-webkit-details-marker { display: none; }
+.trace-turn-chevron { transition: transform 0.15s ease; }
+.trace-turn[open] > summary .trace-turn-chevron { transform: rotate(90deg); }

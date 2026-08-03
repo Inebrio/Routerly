@@ -286,7 +286,7 @@ describe('Sidebar', () => {
     await waitFor(() => expect(screen.getByText('Experiments')).toBeTruthy());
   });
 
-  it('lists the nav flat, in setup then use then measure order', async () => {
+  it('lists the nav flat, in setup then measure order, Playground last', async () => {
     // Both optional modules on, so the whole intended order is visible at once.
     mockGetClients.mockResolvedValue([]);
     mockGetExperiments.mockResolvedValue([]);
@@ -296,7 +296,7 @@ describe('Sidebar', () => {
     const labels = Array.from(document.querySelectorAll('.sidebar-nav .nav-label')).map(el => el.textContent);
     expect(labels).toEqual([
       'Overview', 'Connections', 'Models', 'Profiles', 'Projects',
-      'Playground', 'Experiments', 'Usage',
+      'Experiments', 'Usage', 'Playground',
     ]);
     // Connect is a setup step, not a daily destination: it sits with Settings.
     const footer = Array.from(document.querySelectorAll('.sidebar-footer .nav-label')).map(el => el.textContent);

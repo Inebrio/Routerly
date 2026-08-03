@@ -111,19 +111,19 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
   function handleLogout() { logout(); navigate('/dashboard/login'); }
 
   // One flat list, ordered the way the product is used: what you set up
-  // (Connections to Projects), then how you use it (Playground), then what it
-  // tells you back (Experiments, Usage). Connect is not here: it configures the
-  // tools around Routerly rather than Routerly itself, so it sits in the footer
-  // next to Settings.
+  // (Connections to Projects), then what it tells you back (Experiments, Usage),
+  // and last the Playground, the bench you drop into to try things out. Connect
+  // is not here: it configures the tools around Routerly rather than Routerly
+  // itself, so it sits in the footer next to Settings.
   const navItems = [
     { to: '/dashboard/overview', icon: <LayoutDashboard size={17} />, label: 'Overview' },
     ...(can('connections:read') ? [{ to: '/dashboard/connections', icon: <Plug size={17} />, label: 'Connections' }] : []),
     { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
     ...(can('profiles:read') ? [{ to: '/dashboard/profiles', icon: <Route size={17} />, label: 'Profiles' }] : []),
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
-    { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Playground' },
     ...(experimentsEnabled ? [{ to: '/dashboard/experiments', icon: <Split size={17} />, label: 'Experiments' }] : []),
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
+    { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Playground' },
   ];
 
   return (

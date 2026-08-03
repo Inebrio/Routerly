@@ -8,7 +8,8 @@
  * Everything here is read from the recap. Nothing is recomputed from the other
  * entries, so this card can never disagree with them.
  */
-import { AlertTriangle, CheckCircle2, Route, ShieldAlert, ShieldCheck, Sparkles, XCircle } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { AlertTriangle, CheckCircle2, ChevronRight, Route, ShieldAlert, ShieldCheck, Sparkles, XCircle } from 'lucide-react';
 import type { TraceEntry } from '../api';
 import { formatCost, formatDuration, formatTokens, formatTokensPerSec } from '../utils/traceUtils';
 
@@ -63,12 +64,26 @@ function Section({ icon: Icon, title, color, items }: {
   );
 }
 
-export function TraceSummary({ trace, turn }: { trace: TraceEntry[] | undefined; turn?: number }) {
-  // Traces recorded before 0.4.0 carry no recap: the detail log stands alone.
+/**
+ * @param collapsible turn the card into the turn itself: the header stays visible
+ *   and clicking it folds everything below, `children` included. A turn still
+ *   streaming has no recap yet, and neither has a trace recorded before 0.4.0 —
+ *   the card then shows what it knows and keeps the detail reachable.
+ * @param defaultOpen whether it starts unfolded (the newest turn does).
+ * @param children the detail of this turn, rendered inside the card.
+ */
+export function TraceSummary({ trace, turn, collapsible = false, defaultOpen = true, children }: {
+  trace: TraceEntry[] | undefined;
+  turn?: number;
+  collapsible?: boolean;
+  defaultOpen?: boolean;
+  children?: ReactNode;
+}) {
   const recap = trace?.find(e => e.message === 'trace:recap');
-  if (!recap) return null;
+  // Standalone, with nothing to summarise, the card has nothing to say.
+  if (!recap && !collapsible) return null;
 
-  const d = recap.details;
+  const d = recap?.details ?? {};
   const status = OUTCOMES[str(d.outcome) ?? ''] ?? INCOMPLETE;
   const StatusIcon = status.icon;
   const tokens = obj(d.tokens);
@@ -80,20 +95,23 @@ export function TraceSummary({ trace, turn }: { trace: TraceEntry[] | undefined;
   const errors = Array.isArray(d.errors) ? (d.errors as Array<Record<string, unknown>>) : [];
   const attempts = num(d.attempts) ?? 0;
 
-  return (
-    <div style={{
-      background: 'var(--bg-elevated)',
-      border: `1px solid ${status.color}55`,
-      borderRadius: 8,
-      overflow: 'hidden',
-    }}>
+  const frame = {
+    background: 'var(--bg-elevated)',
+    border: `1px solid ${status.color}55`,
+    borderRadius: 8,
+    overflow: 'hidden',
+  };
 
+  const header = (
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
         padding: '10px 14px',
         background: `${status.color}14`,
         borderBottom: '1px solid var(--border)',
       }}>
+        {collapsible && (
+          <ChevronRight className="trace-turn-chevron" size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+        )}
         {turn != null && (
           <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
             TURN #{turn}
@@ -125,7 +143,9 @@ export function TraceSummary({ trace, turn }: { trace: TraceEntry[] | undefined;
           </span>
         </span>
       </div>
+  );
 
+  const body = (
       <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 12 }}>
@@ -209,7 +229,17 @@ export function TraceSummary({ trace, turn }: { trace: TraceEntry[] | undefined;
           </div>
         )}
 
+        {children}
+
       </div>
-    </div>
+  );
+
+  if (!collapsible) return <div style={frame}>{header}{body}</div>;
+
+  return (
+    <details className="trace-turn" open={defaultOpen} style={frame}>
+      <summary>{header}</summary>
+      {body}
+    </details>
   );
 }

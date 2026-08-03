@@ -58,10 +58,12 @@ The wire response seen by your application is a standard `finish_reason: "conten
 
 ## Debug
 
-The **Debug** sidebar (right side of the screen) shows one block per conversation
-turn, and each block reads on two levels: a **summary card**, and the **trace
-log** a click below it. Same two levels the [Usage trace view](usage.md#trace-view)
-uses, on the same data.
+The **Debug** sidebar (right side of the screen) shows one card per conversation
+turn, newest first: the turn you just sent is open at the top, the earlier ones
+folded under it. Each card reads on two levels: the **summary** in the card
+itself, and the **trace log** it holds one click deeper. Same two levels the
+[Usage trace view](usage.md#trace-view) uses, on the same data. Clicking the turn
+header folds the whole card away.
 
 ![Playground Debug panel showing the turn summary card above the collapsed trace log](../assets/screenshot-playground-trace.png)
 
