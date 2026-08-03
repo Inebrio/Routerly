@@ -30,6 +30,12 @@ export interface PreviewStepResult {
    * and the difference is exactly what a threshold needs tuning for.
    */
   rolledBack?: boolean
+  /**
+   * Why the step did nothing, from the optimizer's own `explain()`. Present only
+   * when the step was configured, enabled, and declined to run. A step that ran
+   * and changed nothing has no reason to give: `before === after` says it all.
+   */
+  skipReason?: string
 }
 
 /** Result of a dry-run optimizer preview over sample messages. */
@@ -116,7 +122,10 @@ export async function runPreview(input: PreviewInput): Promise<PreviewResult> {
     let rolledBack = false
 
     const optimizer = step.enabled ? registry?.get(step.id) : undefined
-    if (optimizer && optimizer.supports(ctx)) {
+    let skipReason: string | undefined
+    if (optimizer && !optimizer.supports(ctx)) {
+      skipReason = optimizer.explain?.(ctx)
+    } else if (optimizer) {
       const snapshot = structuredClone(req)
       let result: OptimizerResult | undefined
       try {
@@ -144,6 +153,7 @@ export async function runPreview(input: PreviewInput): Promise<PreviewResult> {
       after,
       messages: structuredClone(req.messages ?? []),
       ...(rolledBack ? { rolledBack: true } : {}),
+      ...(skipReason ? { skipReason } : {}),
     })
   }
 

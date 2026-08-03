@@ -43,6 +43,23 @@ const nuke = {
   validate: () => true,
 } satisfies Optimizer
 
+// Never runs, and says why. Mirrors a real optimizer whose threshold is not met.
+const declines = {
+  id: 'ccr',
+  klass: 'recoverable',
+  supports: () => false,
+  explain: () => 'Conversation has 1 turn; condensing starts above 3.',
+  estimate(ctx) {
+    const before = tokensOf(readMessages(ctx.request))
+    return { estimatedTokensBefore: before, estimatedTokensAfter: before }
+  },
+  optimize(ctx) {
+    const before = tokensOf(readMessages(ctx.request))
+    return { changed: false, estimatedTokensBefore: before, estimatedTokensAfter: before }
+  },
+  validate: () => true,
+} satisfies Optimizer
+
 function makeRegistry(...optimizers: Optimizer[]): OptimizerRegistry {
   const r = new OptimizerRegistry()
   for (const o of optimizers) r.register(o)
@@ -179,6 +196,24 @@ describe('runPreview', () => {
 
     expect(res.perStep[0]!.messages).toEqual(sample)
     expect(res.perStep[0]!.rolledBack).toBeUndefined()
+  })
+
+  it('reports why a step was skipped', async () => {
+    const registry = makeRegistry(declines)
+
+    const res = await runPreview({ registry, sampleMessages: sample, steps: [{ id: 'ccr', enabled: true }] })
+
+    const step = res.perStep.find((s) => s.id === 'ccr')!
+    expect(step.before).toBe(step.after)
+    expect(step.skipReason).toContain('turn')
+  })
+
+  it('leaves skipReason unset for a step that ran', async () => {
+    const registry = makeRegistry(dropLast)
+
+    const res = await runPreview({ registry, sampleMessages: sample, steps: [{ id: 'session-dedup', enabled: true }] })
+
+    expect(res.perStep[0]!.skipReason).toBeUndefined()
   })
 
   it('does not mutate the caller sampleMessages array', async () => {
