@@ -18,6 +18,38 @@ describe('TraceSummary', () => {
     expect(container.firstChild).toBeNull();
   });
 
+  it('is the turn itself when collapsible: the detail lives inside the card', () => {
+    const { container } = render(
+      <TraceSummary trace={recap({ outcome: 'ok', tokens: { input: 1, output: 1 } })} turn={2} collapsible>
+        <div>trace log</div>
+      </TraceSummary>,
+    );
+    const details = container.querySelector('details.trace-turn');
+    expect(details).not.toBeNull();
+    expect(details?.querySelector('summary')?.textContent).toContain('TURN #2');
+    expect(details?.textContent).toContain('trace log');
+  });
+
+  it('opens only when asked — older turns start folded', () => {
+    const { container, rerender } = render(
+      <TraceSummary trace={recap({ outcome: 'ok' })} turn={1} collapsible defaultOpen />,
+    );
+    expect(container.querySelector('details')?.open).toBe(true);
+    rerender(<TraceSummary trace={recap({ outcome: 'ok' })} turn={1} collapsible defaultOpen={false} />);
+    expect(container.querySelector('details')?.open).toBe(false);
+  });
+
+  it('still shows the turn while it is streaming, before the recap arrives', () => {
+    render(
+      <TraceSummary trace={[{ panel: 'request', message: 'model:request', details: {} }]} turn={1} collapsible>
+        <div>trace log</div>
+      </TraceSummary>,
+    );
+    expect(screen.getByText('TURN #1')).toBeTruthy();
+    expect(screen.getByText('incomplete')).toBeTruthy();
+    expect(screen.getByText('trace log')).toBeTruthy();
+  });
+
   it('heads the card with outcome, model, provider, duration and cost', () => {
     render(<TraceSummary trace={recap({
       outcome: 'ok', model: 'gpt-4o', provider: 'openai', durationMs: 1200, costUsd: 0.0021,
