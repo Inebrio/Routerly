@@ -126,7 +126,7 @@ export function OptimizerStepsEditor({ rows, setRows, disabled = false }: Optimi
               style={{ width: 15, height: 15, accentColor: 'var(--primary)', cursor: editable ? 'pointer' : 'default' }}
             />
           </label>
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ flex: 1, minWidth: 0 }} data-testid={`optimizer-row-body-${row.id}`}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
               <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{meta?.label ?? row.id}</span>
               {meta && (
@@ -141,16 +141,14 @@ export function OptimizerStepsEditor({ rows, setRows, disabled = false }: Optimi
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.45 }}>
               {meta?.description}
             </div>
-          </div>
-          {spec && (
-            <div style={{ flexShrink: 0, width: 172, textAlign: 'right' }}>
-              <label
-                htmlFor={`optimizer-threshold-${row.id}`}
-                style={{ display: 'block', fontSize: '0.68rem', color: 'var(--text-secondary)', marginBottom: 4 }}
-              >
-                {spec.label}
-              </label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
+            {spec && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                <label
+                  htmlFor={`optimizer-threshold-${row.id}`}
+                  style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}
+                >
+                  {spec.label}
+                </label>
                 <input
                   id={`optimizer-threshold-${row.id}`}
                   type="number"
@@ -158,22 +156,18 @@ export function OptimizerStepsEditor({ rows, setRows, disabled = false }: Optimi
                   max={spec.max}
                   step={spec.step}
                   className="form-input"
-                  placeholder={spec.default != null ? String(spec.default) : 'required'}
+                  placeholder={spec.default != null ? String(spec.default) : ''}
                   disabled={!editable}
-                  style={{ width: 96, padding: '4px 8px', fontSize: '0.8rem', textAlign: 'right' }}
+                  style={{ width: 84, padding: '4px 8px', fontSize: '0.8rem' }}
                   value={row.threshold ?? ''}
                   onChange={e => setThreshold(idx, e.target.value)}
                   onMouseDown={e => e.stopPropagation()}
                 />
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', minWidth: 42, textAlign: 'left' }}>
-                  {spec.unit}
-                </span>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{spec.unit}</span>
+                <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>{spec.help}</span>
               </div>
-              <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.4, textAlign: 'left' }}>
-                {spec.help}
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
         );
       })}
