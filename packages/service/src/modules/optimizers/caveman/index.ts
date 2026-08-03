@@ -42,10 +42,16 @@ const STOPWORDS = new Set<string>([
  *  1. fenced code block (``` ... ```) — whole block, inner filler untouched
  *  2. inline code span (` ... `)
  *  3. URL (http/https)
+ *  4. compound token: two or more word runs joined by `/`, `.` or `-` with no
+ *     surrounding space. That is what a file path, a dotted identifier and a
+ *     hyphenated compound all look like. Without it the strip ate the word runs
+ *     that happened to be stopwords and turned docs/concepts/on-call.md into
+ *     docs/concepts/-call.md, silently, since validate() reads this same regex
+ *     to decide what had to survive.
  * Wrapped in a single capture group so `String.split` returns the spans
  * interleaved with the plain text between them.
  */
-const PROTECTED = /(```[\s\S]*?```|`[^`]*`|https?:\/\/\S+)/g
+const PROTECTED = /(```[\s\S]*?```|`[^`]*`|https?:\/\/\S+|[A-Za-z0-9_]+(?:[./-][A-Za-z0-9_]+)+)/g
 
 /**
  * Strip stopwords from a plain (unprotected) text segment and collapse the

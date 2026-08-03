@@ -77,6 +77,32 @@ describe('caveman optimizer', () => {
     expect(out).toContain('call function `the_of_a()`')
   })
 
+  it('keeps unquoted file paths byte-identical', () => {
+    const ctx = ctxWith([
+      { role: 'user', content: 'Open docs/concepts/on-call.md and src/a/index.ts, then run scripts/for-each/do-it.sh.' },
+    ])
+    cavemanOptimizer.optimize(ctx)
+    const out = textOf(readMessages(ctx.request)[0]!)
+    expect(out).toContain('docs/concepts/on-call.md')
+    expect(out).toContain('src/a/index.ts')
+    expect(out).toContain('scripts/for-each/do-it.sh')
+  })
+
+  it('keeps dotted identifiers byte-identical', () => {
+    const ctx = ctxWith([
+      { role: 'user', content: 'The failing assertion is in config.is.enabled and it should be true.' },
+    ])
+    cavemanOptimizer.optimize(ctx)
+    expect(textOf(readMessages(ctx.request)[0]!)).toContain('config.is.enabled')
+  })
+
+  it('a path made of stopword segments survives, and validate agrees', () => {
+    const ctx = ctxWith([{ role: 'user', content: 'Read src/on/index.ts now.' }])
+    const result = cavemanOptimizer.optimize(ctx)
+    expect(cavemanOptimizer.validate(ctx, result)).toBe(true)
+    expect(textOf(readMessages(ctx.request)[0]!)).toContain('src/on/index.ts')
+  })
+
   it('preserves URLs verbatim', () => {
     const url = 'https://example.com/the/of/a?x=the&y=of'
     const ctx = ctxWith([{ role: 'user', content: `see the docs at ${url} for the details` }])
