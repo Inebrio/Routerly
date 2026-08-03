@@ -75,9 +75,11 @@ When your application sends a chat request to Routerly:
 ## Tracing
 
 Every step above is a **pipeline phase**, and each phase runs the modules
-registered for it: `ingress`, `request.preprocess` (PII, guardrails,
-optimizers), `routing.prepare` (policies and the decision), `routing.execute`
-(the upstream call, retries, fallbacks), `response.postprocess`, `finalize`.
+registered for it: `ingress`, `protocol.decode`, `request.preprocess` (PII,
+guardrails, optimizers), `routing.prepare` (policies and the decision),
+`routing.execute` with `upstream.prepare` and `upstream.execute` (the budget
+check, the upstream call, retries, fallbacks), `response.postprocess`,
+`protocol.encode`, `egress` (what the client is sent) and `finalize`.
 
 Modules do not write to a shared trace object. They publish events on the
 service event bus, on topics shaped `trace/<phase>/<module>/<event>`, and the
