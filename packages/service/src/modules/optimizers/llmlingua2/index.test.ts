@@ -9,9 +9,14 @@ import { optimizerCoreModule } from '../core.js'
 import * as model from './model.js'
 import { llmlingua2Module, llmlingua2Optimizer } from './index.js'
 
-function ctxWith(messages: Message[], threshold?: number): ProxyContext {
+function ctxWith(messages: Message[], threshold?: number, modelKey?: string): ProxyContext {
   const request = { model: 'gpt', messages } as ChatCompletionRequest
-  const step = { id: 'llmlingua-2', enabled: true, ...(threshold !== undefined ? { threshold } : {}) }
+  const step = {
+    id: 'llmlingua-2',
+    enabled: true,
+    ...(threshold !== undefined ? { threshold } : {}),
+    ...(modelKey !== undefined ? { model: modelKey } : {}),
+  }
   return {
     protocol: 'openai',
     req: { headers: {} } as any,
@@ -90,7 +95,22 @@ describe('llmlingua-2 optimizer', () => {
     const spy = vi.spyOn(model, 'compress').mockResolvedValue('kept')
     const ctx = ctxWith([{ role: 'user', content: 'a b c d e f' }], 0.3)
     await llmlingua2Optimizer.optimize(ctx)
-    expect(spy).toHaveBeenCalledWith('a b c d e f', 0.3)
+    expect(spy).toHaveBeenCalledWith('a b c d e f', 0.3, undefined)
+  })
+
+  it('runs on the checkpoint the step names', async () => {
+    makeAvailable()
+    const spy = vi.spyOn(model, 'compress').mockResolvedValue('kept')
+    const ctx = ctxWith([{ role: 'user', content: 'a b c d e f' }], 0.3, 'xlm-roberta-large-int8')
+    await llmlingua2Optimizer.optimize(ctx)
+    expect(spy).toHaveBeenCalledWith('a b c d e f', 0.3, 'xlm-roberta-large-int8')
+  })
+
+  it('names the missing checkpoint in the skip reason', () => {
+    vi.spyOn(model, 'isRuntimeInstalled').mockReturnValue(true)
+    vi.spyOn(model, 'isModelAvailable').mockReturnValue(false)
+    const ctx = ctxWith([{ role: 'user', content: 'a b c' }], undefined, 'xlm-roberta-large-int8')
+    expect(llmlingua2Optimizer.explain!(ctx)).toContain('XLM-RoBERTa large, int8')
   })
 
   it('compresses only text parts of array content, leaving non-text parts byte-identical', async () => {

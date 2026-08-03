@@ -1,44 +1,89 @@
 import { createRequire } from 'node:module'
-import { existsSync, readdirSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
+import {
+  DEFAULT_LLMLINGUA_CHECKPOINT,
+  LLMLINGUA_CHECKPOINTS,
+  llmLinguaCheckpoint,
+  type LlmLinguaCheckpoint,
+} from '@routerly/shared'
 import { CONFIG_PATHS } from '../../../lib/paths.js'
 
 /**
- * Where transformers.js caches the checkpoint. It lays files out as
- * <cache>/<model-id>/<file>, with the ONNX graphs under <model-id>/onnx/.
+ * Where transformers.js caches the checkpoints. It lays files out as
+ * <cache>/<repo>/<file>, with the ONNX graphs under <repo>/onnx/.
  *
- *   <ROUTERLY_HOME>/models/<model-id>/onnx/model_quantized.onnx
+ *   <ROUTERLY_HOME>/models/<repo>/onnx/model_quantized.onnx
+ *
+ * One cache for the whole host: the checkpoint a step names is a per-project
+ * choice, but the bytes are downloaded once and shared by every project that
+ * names the same one.
  */
 export const MODEL_CACHE_DIR = join(CONFIG_PATHS.base, 'models')
 
 /**
- * LLMLingua-2 is multilingual because its encoder is: this checkpoint is
- * multilingual BERT (104 languages), so the same weights score Italian, German
- * or Japanese without any per-language configuration. Quantized to 8 bit it is
- * 170 MB on disk, which is what makes it viable on a small self-hosted box.
- *
- * Provenance: an ONNX export of the Apache-2.0
- * `microsoft/llmlingua-2-bert-base-multilingual-cased-meetingbank`. The export
- * repo declares no license of its own; operators who need a declared license
- * can set ROUTERLY_LLMLINGUA_MODEL to the MIT-licensed
- * `atjsh/llmlingua-2-js-xlm-roberta-large-meetingbank` with dtype `int8`
- * (536 MB, higher quality, heavier). See ../README.md#llmlingua-2.
+ * transformers.js resolves a dtype to a filename suffix
+ * (utils/dtypes.js, DEFAULT_DTYPE_SUFFIX_MAPPING). Knowing the exact file is
+ * what lets two dtypes of the same repo be told apart on disk: they share a
+ * cache directory, so "is there any .onnx here" would report the full-precision
+ * checkpoint as installed the moment the quantized one arrived.
  */
-export const DEFAULT_MODEL_ID = 'ldenoue/llmlingua-2-bert-base-multilingual-cased-meetingbank'
+const DTYPE_SUFFIX: Record<string, string> = {
+  fp32: '',
+  fp16: '_fp16',
+  int8: '_int8',
+  uint8: '_uint8',
+  q8: '_quantized',
+  q4: '_q4',
+  q4f16: '_q4f16',
+  bnb4: '_bnb4',
+}
 
-/** transformers.js resolves `q8` to `onnx/model_quantized.onnx`. */
-export const DEFAULT_DTYPE = 'q8'
+/** ONNX filename a dtype selects inside a repo's `onnx/` directory. */
+function onnxFile(dtype: string): string {
+  return `model${DTYPE_SUFFIX[dtype] ?? ''}.onnx`
+}
 
 /**
- * Operator-level knobs, deliberately env-only: they pick which files land on the
- * service host's disk, which is deployment configuration, not per-project
- * behaviour.
+ * Escape hatch for a checkpoint the curated list does not carry. Deployment
+ * configuration, so it stays env-only and out of the dashboard: it names files
+ * that get written to the service host's disk, which is not a per-project
+ * decision. When set, it becomes the default the pipeline falls back to.
  */
-export function modelId(): string {
-  return process.env.ROUTERLY_LLMLINGUA_MODEL?.trim() || DEFAULT_MODEL_ID
+function envCheckpoint(): LlmLinguaCheckpoint | undefined {
+  const repo = process.env.ROUTERLY_LLMLINGUA_MODEL?.trim()
+  if (!repo) return undefined
+  return {
+    key: 'custom',
+    label: 'Custom (ROUTERLY_LLMLINGUA_MODEL)',
+    repo,
+    dtype: process.env.ROUTERLY_LLMLINGUA_DTYPE?.trim() || 'q8',
+    sizeMb: 0,
+    license: 'Set by the operator; Routerly makes no claim about it.',
+    note: 'Configured through the environment on this host.',
+  }
 }
-export function modelDtype(): string {
-  return process.env.ROUTERLY_LLMLINGUA_DTYPE?.trim() || DEFAULT_DTYPE
+
+/** Every checkpoint this host can install: the curated list, plus the env one. */
+export function checkpoints(): LlmLinguaCheckpoint[] {
+  const env = envCheckpoint()
+  return env ? [...LLMLINGUA_CHECKPOINTS, env] : [...LLMLINGUA_CHECKPOINTS]
+}
+
+/**
+ * Resolve the checkpoint a step runs on. An unknown key falls back to the
+ * default rather than throwing: a project keeps working when an operator
+ * removes the env override or the build stops publishing a checkpoint.
+ */
+export function checkpointFor(key?: string): LlmLinguaCheckpoint {
+  const all = checkpoints()
+  const named = key ? all.find((c) => c.key === key) : undefined
+  if (named) return named
+  return (
+    envCheckpoint() ??
+    llmLinguaCheckpoint(DEFAULT_LLMLINGUA_CHECKPOINT) ??
+    LLMLINGUA_CHECKPOINTS[0]!
+  )
 }
 
 // `string` (not a literal) so tsc never tries to statically resolve the optional
@@ -62,15 +107,14 @@ export function isRuntimeInstalled(): boolean {
 }
 
 /**
- * Is the checkpoint on disk? Checks for the tokenizer plus at least one ONNX
- * graph rather than a specific filename, so a change of dtype does not need a
- * dtype-to-filename table here. Sync, cheap, and safe from `supports()`.
+ * Is this checkpoint's tokenizer and ONNX graph on disk? Sync, cheap, and safe
+ * from `supports()`.
  */
-export function isModelAvailable(): boolean {
-  const base = join(MODEL_CACHE_DIR, modelId())
+export function isModelAvailable(key?: string): boolean {
+  const c = checkpointFor(key)
+  const base = join(MODEL_CACHE_DIR, c.repo)
   try {
-    if (!existsSync(join(base, 'tokenizer.json'))) return false
-    return readdirSync(join(base, 'onnx')).some((f) => f.endsWith('.onnx'))
+    return existsSync(join(base, 'tokenizer.json')) && existsSync(join(base, 'onnx', onnxFile(c.dtype)))
   } catch {
     return false
   }
@@ -88,24 +132,21 @@ interface Tokenizer {
 }
 type Classifier = (feeds: Record<string, unknown>) => Promise<{ logits: { tolist(): number[][][] } }>
 
-let tokenizer: Tokenizer | undefined
-let classifier: Classifier | undefined
-
-/**
- * Load tokenizer and model from the local cache only. `local_files_only: true`
- * is load-bearing: a proxied request must never trigger a 170 MB download. The
- * download happens once, explicitly, through startDownload().
- */
-async function load(): Promise<{ tok: Tokenizer; model: Classifier }> {
-  if (tokenizer && classifier) return { tok: tokenizer, model: classifier }
-  let lib: {
-    AutoTokenizer: { from_pretrained(id: string, o: Record<string, unknown>): Promise<Tokenizer> }
-    AutoModelForTokenClassification: {
-      from_pretrained(id: string, o: Record<string, unknown>): Promise<Classifier>
-    }
+interface Lib {
+  AutoTokenizer: { from_pretrained(id: string, o: Record<string, unknown>): Promise<Tokenizer> }
+  AutoModelForTokenClassification: {
+    from_pretrained(id: string, o: Record<string, unknown>): Promise<Classifier>
   }
+}
+
+// ponytail: one entry per checkpoint actually used, never evicted. A host runs
+// one or two; add an LRU only if someone is genuinely cycling through more than
+// fits in memory.
+const loaded = new Map<string, { tok: Tokenizer; model: Classifier }>()
+
+async function importRuntime(): Promise<Lib> {
   try {
-    lib = (await import(RUNTIME_MODULE)) as never
+    return (await import(RUNTIME_MODULE)) as never as Lib
   } catch (err) {
     throw new Error(
       '@huggingface/transformers is not installed; the llmlingua-2 optimizer is unavailable. ' +
@@ -113,71 +154,136 @@ async function load(): Promise<{ tok: Tokenizer; model: Classifier }> {
       { cause: err },
     )
   }
-  const id = modelId()
+}
+
+/**
+ * Load tokenizer and model from the local cache only. `local_files_only: true`
+ * is load-bearing: a proxied request must never trigger a download of hundreds
+ * of megabytes. Downloads happen once, explicitly, through startDownload().
+ */
+async function load(key?: string): Promise<{ tok: Tokenizer; model: Classifier }> {
+  const c = checkpointFor(key)
+  const cached = loaded.get(c.key)
+  if (cached) return cached
+  const lib = await importRuntime()
   const opts = { cache_dir: MODEL_CACHE_DIR, local_files_only: true }
-  tokenizer = await lib.AutoTokenizer.from_pretrained(id, opts)
-  classifier = await lib.AutoModelForTokenClassification.from_pretrained(id, {
+  const tok = await lib.AutoTokenizer.from_pretrained(c.repo, opts)
+  const model = await lib.AutoModelForTokenClassification.from_pretrained(c.repo, {
     ...opts,
-    dtype: modelDtype(),
+    dtype: c.dtype,
   })
-  return { tok: tokenizer, model: classifier }
+  const entry = { tok, model }
+  loaded.set(c.key, entry)
+  return entry
 }
 
-let downloading = false
-let downloadError: string | undefined
-
-/**
- * Status for the management route, the CLI and the dashboard. `ready` comes from
- * the filesystem, never from an in-process flag: the checkpoint outlives the
- * process, and a restart must report what is actually on disk.
- */
-export function modelState(): {
-  state: 'absent' | 'downloading' | 'ready'
-  modelId: string
-  dtype: string
+/** Live byte counters of one in-flight download, keyed by checkpoint key. */
+interface Download {
+  /** Bytes seen per file, so a progress event replaces rather than accumulates. */
+  files: Map<string, { loaded: number; total: number }>
   error?: string
-} {
-  const state = isModelAvailable() ? 'ready' : downloading ? 'downloading' : 'absent'
-  return {
-    state,
-    modelId: modelId(),
-    dtype: modelDtype(),
-    ...(downloadError ? { error: downloadError } : {}),
-  }
+}
+
+const downloads = new Map<string, Download>()
+
+/** What a surface needs to render one checkpoint's row. */
+export interface CheckpointState extends LlmLinguaCheckpoint {
+  state: 'absent' | 'downloading' | 'ready'
+  /** 0-100 while downloading, absent otherwise. */
+  progress?: number
+  /** Bytes fetched so far, while downloading. */
+  loadedBytes?: number
+  /** Bytes the files seen so far declare, while downloading. */
+  totalBytes?: number
+  error?: string
 }
 
 /**
- * Fetch the checkpoint into MODEL_CACHE_DIR. Returns immediately: the download
- * is hundreds of megabytes and the caller is an HTTP request. Progress is read
- * back through modelState(). Idempotent while one is in flight, and never
- * called automatically anywhere.
+ * Progress across the files fetched so far, 0-100.
+ *
+ * ponytail: the denominator is the total of the files transformers.js has
+ * STARTED, not of the whole repo, because only a started file has declared its
+ * size. The ONNX graph dwarfs the tokenizer and config, so the number is honest
+ * within a few points once the graph starts, and never overshoots 100.
  */
-export function startDownload(): void {
-  if (downloading || isModelAvailable()) return
-  downloading = true
-  downloadError = undefined
+function progressOf(d: Download): { progress: number; loadedBytes: number; totalBytes: number } {
+  let loadedBytes = 0
+  let totalBytes = 0
+  for (const f of d.files.values()) {
+    loadedBytes += f.loaded
+    totalBytes += f.total
+  }
+  const progress = totalBytes > 0 ? Math.min(100, Math.round((loadedBytes / totalBytes) * 100)) : 0
+  return { progress, loadedBytes, totalBytes }
+}
+
+/**
+ * State of every installable checkpoint, for the management route, the CLI and
+ * the dashboard. `ready` comes from the filesystem, never from an in-process
+ * flag: the files outlive the process, and a restart must report what is
+ * actually on disk.
+ */
+export function checkpointStates(): CheckpointState[] {
+  return checkpoints().map((c) => {
+    const ready = isModelAvailable(c.key)
+    const d = downloads.get(c.key)
+    if (ready) return { ...c, state: 'ready' as const, ...(d?.error ? { error: d.error } : {}) }
+    if (!d) return { ...c, state: 'absent' as const }
+    if (d.error) return { ...c, state: 'absent' as const, error: d.error }
+    return { ...c, state: 'downloading' as const, ...progressOf(d) }
+  })
+}
+
+/**
+ * Fetch a checkpoint into MODEL_CACHE_DIR. Returns immediately: the download is
+ * hundreds of megabytes and the caller is an HTTP request. Progress is read back
+ * through checkpointStates(). Idempotent while one is in flight, and never
+ * called automatically anywhere.
+ *
+ * A restart mid-download loses the in-memory counters and the checkpoint reads
+ * as absent again; the partial files stay in the cache and transformers.js
+ * skips whatever completed, so re-running this costs only what is missing.
+ */
+export function startDownload(key?: string): { ok: boolean; error?: string } {
+  const c = checkpointFor(key)
+  if (key && !checkpoints().some((x) => x.key === key)) {
+    return { ok: false, error: `Unknown checkpoint ${key}` }
+  }
+  if (downloads.has(c.key) && !downloads.get(c.key)!.error) return { ok: true }
+  if (isModelAvailable(c.key)) return { ok: true }
+
+  const d: Download = { files: new Map() }
+  downloads.set(c.key, d)
   void (async () => {
     try {
-      const lib = (await import(RUNTIME_MODULE)) as never as {
-        AutoTokenizer: { from_pretrained(id: string, o: Record<string, unknown>): Promise<unknown> }
-        AutoModelForTokenClassification: {
-          from_pretrained(id: string, o: Record<string, unknown>): Promise<unknown>
-        }
+      const lib = await importRuntime()
+      const opts = {
+        cache_dir: MODEL_CACHE_DIR,
+        local_files_only: false,
+        progress_callback: (e: { status?: string; file?: string; loaded?: number; total?: number }) => {
+          if (e.status !== 'progress' || !e.file) return
+          d.files.set(e.file, { loaded: e.loaded ?? 0, total: e.total ?? 0 })
+        },
       }
-      const id = modelId()
-      const opts = { cache_dir: MODEL_CACHE_DIR, local_files_only: false }
-      await lib.AutoTokenizer.from_pretrained(id, opts)
-      await lib.AutoModelForTokenClassification.from_pretrained(id, { ...opts, dtype: modelDtype() })
+      await lib.AutoTokenizer.from_pretrained(c.repo, opts)
+      await lib.AutoModelForTokenClassification.from_pretrained(c.repo, { ...opts, dtype: c.dtype })
+      downloads.delete(c.key)
     } catch (err) {
-      downloadError = err instanceof Error ? err.message : String(err)
-    } finally {
-      downloading = false
+      d.error = err instanceof Error ? err.message : String(err)
     }
   })()
+  return { ok: true }
+}
+
+/** Test seam: forget every in-flight download and every loaded checkpoint. */
+export function resetModelState(): void {
+  downloads.clear()
+  loaded.clear()
 }
 
 /**
- * Compress one text blob to approximately `keepRatio` of its tokens.
+ * Compress one text blob to approximately `keepRatio` of its tokens, using the
+ * checkpoint `key` names (or the default).
  *
  * This is LLMLingua-2 as published: the text is tokenized with the model's OWN
  * tokenizer, the token-classification head emits [1, seq, 2] logits (discard,
@@ -185,12 +291,12 @@ export function startDownload(): void {
  * top-scoring `keepRatio` fraction of positions survive in original order, and
  * the surviving ids are decoded back through the same tokenizer.
  *
- * Nothing here is language-specific. The encoder is multilingual, so the same
- * code path compresses any language its vocabulary covers.
+ * Nothing here is language-specific. The encoders are multilingual, so the same
+ * code path compresses any language their vocabulary covers.
  */
-export async function compress(text: string, keepRatio: number): Promise<string> {
+export async function compress(text: string, keepRatio: number, key?: string): Promise<string> {
   if (text.trim() === '') return text
-  const { tok, model } = await load()
+  const { tok, model } = await load(key)
   const enc = await tok(text, { add_special_tokens: true })
   const ids = enc.input_ids.tolist()[0] ?? []
   if (ids.length <= 2) return text

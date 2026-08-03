@@ -85,19 +85,20 @@ describe('ccr optimizer', () => {
     expect(msgs[msgs.length - 1]!.content).toContain('a8')
   })
 
-  it('reaches past the window on a six-turn conversation with no explicit threshold', () => {
+  it('condenses the support-chat fixture with no explicit threshold', () => {
     // The point of the 3-turn default: six turns used to sit inside the window
-    // and the optimizer never even looked at them.
+    // and the optimizer never even looked at them. The fixture's older messages
+    // are longer than CONDENSE_CAP, so the clip is a real saving and not just
+    // the header plus the role prefixes.
     const fixture = optimizerFixture('support-chat-en')!
     const ctx = ctxWith(fixture.messages.map((m) => ({ ...m })))
     expect(ccrOptimizer.supports(ctx)).toBe(true)
     const result = ccrOptimizer.optimize(ctx)
-    // Every message in this fixture is shorter than CONDENSE_CAP, so there is
-    // nothing to clip and condensing would only add the header and the role
-    // prefixes. The prompt is left alone rather than made longer.
-    expect(result.changed).toBe(false)
-    expect(result.estimatedTokensAfter).toBe(result.estimatedTokensBefore)
+    expect(result.changed).toBe(true)
+    expect(result.estimatedTokensAfter).toBeLessThan(result.estimatedTokensBefore)
     expect(ccrOptimizer.validate(ctx, result)).toBe(true)
+    // The newest turn survives verbatim, which is what makes this recoverable.
+    expect(readMessages(ctx.request).at(-1)!.content).toBe(fixture.messages.at(-1)!.content)
   })
 
   it('never hands back a longer prompt than it was given', () => {

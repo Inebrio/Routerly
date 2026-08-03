@@ -177,6 +177,18 @@ describe('optimizers config', () => {
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('invalid --threshold'));
   });
 
+  it('puts --checkpoint on the llmlingua-2 step, which is the only one that runs on a model', async () => {
+    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(baseProject);
+    await makeCmd().parseAsync([
+      'node', 'optimizers', 'config', 'my-api',
+      '--enable', 'llmlingua-2', '--checkpoint', 'xlm-roberta-large-int8',
+    ]);
+    const body = mockApi.mock.calls[1]![2];
+    expect(body.optimizers.steps).toEqual([
+      { id: 'llmlingua-2', enabled: true, model: 'xlm-roberta-large-int8' },
+    ]);
+  });
+
   it('exits 1 when project not found', async () => {
     mockApi.mockResolvedValueOnce([]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
@@ -211,6 +223,7 @@ describe('optimizers fixtures', () => {
     expect(out).toContain('support-chat-en');
     expect(out).toContain('brief-en');
     expect(out).toContain('agent-tools-en');
+    expect(out).toContain('long-context-en');
     expect(mockApi).not.toHaveBeenCalled();
   });
 
@@ -219,7 +232,12 @@ describe('optimizers fixtures', () => {
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'optimizers', 'fixtures', '--json']);
     const parsed = JSON.parse(lines.join('\n'));
-    expect(parsed.map((f: { id: string }) => f.id)).toEqual(['support-chat-en', 'brief-en', 'agent-tools-en']);
+    expect(parsed.map((f: { id: string }) => f.id)).toEqual([
+      'support-chat-en',
+      'brief-en',
+      'agent-tools-en',
+      'long-context-en',
+    ]);
     expect(parsed[0].messages.length).toBeGreaterThan(0);
   });
 
@@ -232,32 +250,72 @@ describe('optimizers fixtures', () => {
 // ─── optimizers model ────────────────────────────────────────────────────────
 
 describe('optimizers model', () => {
-  const state = { state: 'absent', modelId: 'microsoft/llmlingua-2', dtype: 'q8', runtimeInstalled: true };
+  const checkpoint = {
+    key: 'bert-multilingual-q8',
+    label: 'BERT multilingual, quantized',
+    repo: 'ldenoue/llmlingua-2-bert-base-multilingual-cased-meetingbank',
+    dtype: 'q8',
+    sizeMb: 182,
+    license: 'Apache-2.0 upstream.',
+    note: 'The default.',
+    state: 'absent' as const,
+  };
+  const state = { runtimeInstalled: true, checkpoints: [checkpoint] };
 
   beforeEach(() => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('reports the checkpoint state on the service host', async () => {
+  it('lists every checkpoint the service host can install', async () => {
     mockApi.mockResolvedValueOnce(state);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'optimizers', 'model']);
     expect(mockApi).toHaveBeenCalledWith('GET', '/api/optimizers/llmlingua2/model');
     const out = lines.join('\n');
-    expect(out).toContain('microsoft/llmlingua-2');
+    expect(out).toContain('bert-multilingual-q8');
+    expect(out).toContain('182 MB');
     expect(out).toContain('absent');
     expect(out).toContain('installed');
   });
 
-  it('starts the download with --install and says it is polled', async () => {
-    mockApi.mockResolvedValueOnce({ ...state, state: 'downloading' });
+  it('shows the percentage and the megabytes of a download in flight', async () => {
+    mockApi.mockResolvedValueOnce({
+      runtimeInstalled: true,
+      checkpoints: [{ ...checkpoint, state: 'downloading', progress: 42, loadedBytes: 76_000_000, totalBytes: 182_000_000 }],
+    });
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'optimizers', 'model']);
+    const out = lines.join('\n');
+    expect(out).toContain('42%');
+    expect(out).toContain('76/182 MB');
+    expect(out).toContain('again to check progress');
+  });
+
+  it('starts the download of the default checkpoint with a bare --install', async () => {
+    mockApi.mockResolvedValueOnce({ runtimeInstalled: true, checkpoints: [{ ...checkpoint, state: 'downloading', progress: 0 }] });
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'optimizers', 'model', '--install']);
     expect(mockApi).toHaveBeenCalledWith('POST', '/api/optimizers/llmlingua2/model', {});
     expect(lines.join('\n')).toContain('again to check progress');
+  });
+
+  it('starts the download of the checkpoint named after --install', async () => {
+    mockApi.mockResolvedValueOnce(state);
+    await makeCmd().parseAsync(['node', 'optimizers', 'model', '--install', 'xlm-roberta-large-int8']);
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/optimizers/llmlingua2/model', { key: 'xlm-roberta-large-int8' });
+  });
+
+  it('reports a failed download on the checkpoint that failed', async () => {
+    mockApi.mockResolvedValueOnce({
+      runtimeInstalled: true,
+      checkpoints: [{ ...checkpoint, error: 'network down' }],
+    });
+    await makeCmd().parseAsync(['node', 'optimizers', 'model']);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('network down'));
   });
 
   it('outputs valid JSON with --json', async () => {

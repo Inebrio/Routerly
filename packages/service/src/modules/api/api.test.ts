@@ -27,9 +27,11 @@ vi.mock('../telemetry/telemetry.js', () => ({ pingTelemetry: vi.fn() }))
 // The optional checkpoint is never on a test host, and startDownload() would
 // reach the network. Mocked so the two model routes are testable deterministically.
 vi.mock('../optimizers/llmlingua2/model.js', () => ({
-  modelState: vi.fn(() => ({ state: 'absent', modelId: 'test/model', dtype: 'q8' })),
+  checkpointStates: vi.fn(() => [
+    { key: 'bert-multilingual-q8', label: 'BERT multilingual, quantized', repo: 'test/model', dtype: 'q8', sizeMb: 182, license: 'x', note: 'y', state: 'absent' },
+  ]),
   isRuntimeInstalled: vi.fn(() => true),
-  startDownload: vi.fn(),
+  startDownload: vi.fn(() => ({ ok: true })),
 }))
 vi.mock('../audit/logger.js', () => ({ logAudit: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('bcrypt', () => ({
@@ -12284,7 +12286,10 @@ describe('Optimizers API', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ state: 'absent', modelId: 'test/model', runtimeInstalled: true })
+    expect(res.json()).toMatchObject({
+      runtimeInstalled: true,
+      checkpoints: [{ key: 'bert-multilingual-q8', state: 'absent', repo: 'test/model' }],
+    })
   })
 
   it('refuses status without optimizers:read (403)', async () => {
@@ -12301,14 +12306,31 @@ describe('Optimizers API', () => {
 
   it('accepts a download request with optimizers:manage (202)', async () => {
     vi.mocked(llmlingua2Model.isRuntimeInstalled).mockReturnValue(true)
+    vi.mocked(llmlingua2Model.startDownload).mockReturnValue({ ok: true })
     authAs(adminUser)
     const app = await buildApp()
     const res = await app.inject({
       method: 'POST', url: '/api/optimizers/llmlingua2/model', headers: adminAuthHeaders(),
+      payload: { key: 'xlm-roberta-large-int8' },
     })
     await app.close()
     expect(res.statusCode).toBe(202)
-    expect(llmlingua2Model.startDownload).toHaveBeenCalled()
+    expect(llmlingua2Model.startDownload).toHaveBeenCalledWith('xlm-roberta-large-int8')
+  })
+
+  it('refuses a download of a checkpoint this host does not publish (400)', async () => {
+    vi.mocked(llmlingua2Model.isRuntimeInstalled).mockReturnValue(true)
+    vi.mocked(llmlingua2Model.startDownload).mockReturnValue({ ok: false, error: 'Unknown checkpoint nope' })
+    authAs(adminUser)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/optimizers/llmlingua2/model', headers: adminAuthHeaders(),
+      payload: { key: 'nope' },
+    })
+    await app.close()
+    vi.mocked(llmlingua2Model.startDownload).mockReturnValue({ ok: true })
+    expect(res.statusCode).toBe(400)
+    expect(res.json()).toMatchObject({ error: 'Unknown checkpoint nope' })
   })
 
   it('refuses a download when the optional runtime is missing (409)', async () => {

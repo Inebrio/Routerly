@@ -249,6 +249,9 @@ function resolveTestRecipient(provider: string, to: string | undefined, fallback
 
 const previewBodySchema = z.object({
   projectId: z.string().optional(),
+  // Model the sample is addressed to. Only `headroom` reads it, to size its
+  // budget against that model's context window exactly as it would live.
+  model: z.string().optional(),
   sampleMessages: z.array(z.any()).min(1),
   steps: z.array(optimizerStepSchema),
 });
@@ -1225,27 +1228,37 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send(installed);
   });
 
-  // Availability of the optional llmlingua-2 checkpoint on THIS host. Read-only,
-  // no prompt content, no project scope: it describes the service install.
+  // Every llmlingua-2 checkpoint installable on THIS host, with its state and
+  // live download progress. Read-only, no prompt content, no project scope: it
+  // describes the service install, which is shared by every project.
   fastify.get('/api/optimizers/llmlingua2/model', async (req, reply) => {
     if (!requirePerm(req, 'optimizers:read', reply)) return;
-    return reply.send({ ...llmlingua2Model.modelState(), runtimeInstalled: llmlingua2Model.isRuntimeInstalled() });
+    return reply.send({
+      runtimeInstalled: llmlingua2Model.isRuntimeInstalled(),
+      checkpoints: llmlingua2Model.checkpointStates(),
+    });
   });
 
-  // Start the checkpoint download. 202 and return: it is hundreds of megabytes,
-  // so the caller polls the GET above instead of holding a request open.
-  fastify.post('/api/optimizers/llmlingua2/model', async (req, reply) => {
+  // Start one checkpoint's download. 202 and return: it is hundreds of
+  // megabytes, so the caller polls the GET above instead of holding a request
+  // open. The key must be one this host publishes; free text is refused rather
+  // than fetched, since fetching is what costs the disk.
+  fastify.post<{ Body: { key?: string } }>('/api/optimizers/llmlingua2/model', async (req, reply) => {
     if (!requirePerm(req, 'optimizers:manage', reply)) return;
     if (!llmlingua2Model.isRuntimeInstalled()) {
       return reply.status(409).send({ error: '@huggingface/transformers is not installed on the service host' });
     }
-    llmlingua2Model.startDownload();
-    return reply.status(202).send({ ...llmlingua2Model.modelState(), runtimeInstalled: true });
+    const started = llmlingua2Model.startDownload(req.body?.key);
+    if (!started.ok) return reply.status(400).send({ error: started.error });
+    return reply.status(202).send({
+      runtimeInstalled: true,
+      checkpoints: llmlingua2Model.checkpointStates(),
+    });
   });
 
   // Dry-run: apply the given steps to sample messages and report token deltas.
   // Pure — no upstream call, no config write.
-  fastify.post<{ Body: { projectId?: string; sampleMessages: Message[]; steps: { id: string; enabled: boolean; threshold?: number }[] } }>('/api/optimizers/preview', async (req, reply) => {
+  fastify.post<{ Body: { projectId?: string; model?: string; sampleMessages: Message[]; steps: { id: string; enabled: boolean; threshold?: number }[] } }>('/api/optimizers/preview', async (req, reply) => {
     if (!requirePerm(req, 'optimizers:read', reply)) return;
     const parsed = previewBodySchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: 'Invalid preview request', details: parsed.error.issues });
@@ -1259,6 +1272,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       registry: getOptimizerRegistry(),
       sampleMessages: parsed.data.sampleMessages as Message[],
       steps: parsed.data.steps as OptimizerConfig['steps'],
+      ...(parsed.data.model ? { model: parsed.data.model } : {}),
       ...(project ? { project } : {}),
     });
     return reply.send(result);

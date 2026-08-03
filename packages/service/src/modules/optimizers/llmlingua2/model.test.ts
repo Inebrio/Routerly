@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-// @huggingface/transformers is an OPTIONAL dependency and the checkpoint is a
-// 170 MB download, so neither is available to a test run. The module is mocked
-// and the assertions are about the two things the previous implementation got
-// wrong: the ids must come from the model's own tokenizer, and the survivors
-// must be decoded back through it.
+// @huggingface/transformers is an OPTIONAL dependency and the checkpoints are
+// hundreds of megabytes, so neither is available to a test run. The module is
+// mocked and the assertions are about the two things the previous
+// implementation got wrong: the ids must come from the model's own tokenizer,
+// and the survivors must be decoded back through it.
 const encode = vi.fn()
 const decode = vi.fn()
 const forward = vi.fn()
@@ -13,6 +13,11 @@ vi.mock('@huggingface/transformers', () => ({
   AutoTokenizer: { from_pretrained: vi.fn(async () => Object.assign(encode, { decode })) },
   AutoModelForTokenClassification: { from_pretrained: vi.fn(async () => forward) },
 }))
+
+/** State of one checkpoint by key, out of the full list. */
+function stateOf<T extends { key: string }>(states: T[], key: string): T | undefined {
+  return states.find((s) => s.key === key)
+}
 
 describe('llmlingua-2 model', () => {
   beforeEach(() => {
@@ -31,27 +36,47 @@ describe('llmlingua-2 model', () => {
 
   it('defaults to the multilingual BERT checkpoint at q8', async () => {
     const m = await import('./model.js')
-    expect(m.modelId()).toBe('ldenoue/llmlingua-2-bert-base-multilingual-cased-meetingbank')
-    expect(m.modelDtype()).toBe('q8')
+    expect(m.checkpointFor()).toMatchObject({
+      key: 'bert-multilingual-q8',
+      repo: 'ldenoue/llmlingua-2-bert-base-multilingual-cased-meetingbank',
+      dtype: 'q8',
+    })
   })
 
-  it('honours the env overrides', async () => {
-    process.env.ROUTERLY_LLMLINGUA_MODEL = 'atjsh/llmlingua-2-js-xlm-roberta-large-meetingbank'
+  it('resolves a step-selected checkpoint by key', async () => {
+    const m = await import('./model.js')
+    expect(m.checkpointFor('xlm-roberta-large-int8')).toMatchObject({
+      repo: 'atjsh/llmlingua-2-js-xlm-roberta-large-meetingbank',
+      dtype: 'int8',
+    })
+  })
+
+  it('falls back to the default for a key this build does not publish', async () => {
+    const m = await import('./model.js')
+    expect(m.checkpointFor('deleted-checkpoint').key).toBe('bert-multilingual-q8')
+  })
+
+  it('publishes the env override as an extra checkpoint and makes it the default', async () => {
+    process.env.ROUTERLY_LLMLINGUA_MODEL = 'someone/their-own-export'
     process.env.ROUTERLY_LLMLINGUA_DTYPE = 'int8'
     const m = await import('./model.js')
-    expect(m.modelId()).toBe('atjsh/llmlingua-2-js-xlm-roberta-large-meetingbank')
-    expect(m.modelDtype()).toBe('int8')
+    expect(m.checkpoints().map((c) => c.key)).toContain('custom')
+    expect(m.checkpointFor()).toMatchObject({ repo: 'someone/their-own-export', dtype: 'int8' })
+    // A step naming a curated checkpoint still gets that one.
+    expect(m.checkpointFor('bert-multilingual-q8').dtype).toBe('q8')
   })
 
-  it('caches the checkpoint under the routerly models directory', async () => {
+  it('caches the checkpoints under the routerly models directory', async () => {
     const m = await import('./model.js')
     expect(m.MODEL_CACHE_DIR.replace(/\\/g, '/')).toMatch(/\/models$/)
   })
 
-  it('reports the model as absent when nothing is on disk', async () => {
+  it('reports every checkpoint as absent when nothing is on disk', async () => {
     const m = await import('./model.js')
+    const states = m.checkpointStates()
+    expect(states).toHaveLength(3)
+    expect(states.every((s) => s.state === 'absent')).toBe(true)
     expect(m.isModelAvailable()).toBe(false)
-    expect(m.modelState()).toMatchObject({ state: 'absent', dtype: 'q8' })
   })
 
   it('scores the tokenizer ids and decodes the survivors back', async () => {
@@ -87,20 +112,92 @@ describe('llmlingua-2 model', () => {
     expect(forward).toHaveBeenCalledOnce()
   })
 
+  it('loads the checkpoint the caller named, at its own dtype', async () => {
+    encode.mockResolvedValue({
+      input_ids: { tolist: () => [[101, 11, 102]] },
+      attention_mask: { tolist: () => [[1, 1, 1]] },
+    })
+    forward.mockResolvedValue({ logits: { tolist: () => [[[1, 0], [1, 2], [1, 0]]] } })
+    decode.mockReturnValue('out')
+
+    const lib = await import('@huggingface/transformers')
+    const m = await import('./model.js')
+    await m.compress('some text', 0.5, 'xlm-roberta-large-int8')
+
+    expect(lib.AutoModelForTokenClassification.from_pretrained).toHaveBeenCalledWith(
+      'atjsh/llmlingua-2-js-xlm-roberta-large-meetingbank',
+      expect.objectContaining({ dtype: 'int8', local_files_only: true }),
+    )
+  })
+
   it('returns the text untouched when there is nothing to compress', async () => {
     const m = await import('./model.js')
     expect(await m.compress('   ', 0.5)).toBe('   ')
     expect(forward).not.toHaveBeenCalled()
   })
 
-  it('reports downloading while a fetch is in flight and clears it afterwards', async () => {
+  it('reports downloading with progress while a fetch is in flight', async () => {
+    const lib = await import('@huggingface/transformers')
+    // Hold the fetch open: the assertion is about the state DURING a download,
+    // which a mock that resolves immediately never lets anyone observe.
+    let finish: () => void = () => {}
+    const inFlight = new Promise<void>((resolve) => {
+      finish = resolve
+    })
+    vi.mocked(lib.AutoTokenizer.from_pretrained).mockImplementation((async (
+      _repo: string,
+      o: Record<string, unknown>,
+    ) => {
+      const report = o.progress_callback as (e: Record<string, unknown>) => void
+      report({ status: 'progress', file: 'onnx/model_quantized.onnx', loaded: 50, total: 200 })
+      // Events that are not byte progress must not move the bar.
+      report({ status: 'initiate', file: 'config.json' })
+      await inFlight
+      return Object.assign(encode, { decode })
+    }) as never)
+
+    const m = await import('./model.js')
+    m.startDownload('bert-multilingual-q8')
+    await vi.waitFor(() =>
+      expect(stateOf(m.checkpointStates(), 'bert-multilingual-q8')).toMatchObject({
+        state: 'downloading',
+        progress: 25,
+        loadedBytes: 50,
+        totalBytes: 200,
+      }),
+    )
+    // Only the checkpoint asked for is touched.
+    expect(stateOf(m.checkpointStates(), 'xlm-roberta-large-int8')!.state).toBe('absent')
+    finish()
+  })
+
+  it('clears the download once it finishes and refuses an unknown checkpoint', async () => {
     const lib = await import('@huggingface/transformers')
     const m = await import('./model.js')
-    m.startDownload()
-    expect(m.modelState().state).toBe('downloading')
-    m.startDownload() // idempotent: no second fetch while one is in flight
-    await vi.waitFor(() => expect(m.modelState().state).not.toBe('downloading'))
+    m.startDownload('bert-multilingual-q8')
+    m.startDownload('bert-multilingual-q8') // idempotent: no second fetch in flight
+    await vi.waitFor(() =>
+      expect(stateOf(m.checkpointStates(), 'bert-multilingual-q8')!.state).not.toBe('downloading'),
+    )
     expect(lib.AutoTokenizer.from_pretrained).toHaveBeenCalledOnce()
-    expect(m.modelState().error).toBeUndefined()
+
+    expect(m.startDownload('not-a-checkpoint')).toEqual({
+      ok: false,
+      error: 'Unknown checkpoint not-a-checkpoint',
+    })
+  })
+
+  it('surfaces a failed download as an error on that checkpoint', async () => {
+    const lib = await import('@huggingface/transformers')
+    vi.mocked(lib.AutoTokenizer.from_pretrained).mockRejectedValueOnce(new Error('network down'))
+
+    const m = await import('./model.js')
+    m.startDownload('bert-multilingual-q8')
+    await vi.waitFor(() =>
+      expect(stateOf(m.checkpointStates(), 'bert-multilingual-q8')).toMatchObject({
+        state: 'absent',
+        error: 'network down',
+      }),
+    )
   })
 })

@@ -150,10 +150,18 @@ export type {
   OptimizerCallStat,
   OptimizerThresholdSpec,
   OptimizerMeta,
+  LlmLinguaCheckpoint,
 } from './types/optimizers.js';
 
 // Readable catalog for the built-in optimizers: label, class, threshold spec (T63)
-export { OPTIMIZER_CATALOG, optimizerLabel, optimizerThreshold } from './types/optimizers.js';
+export {
+  OPTIMIZER_CATALOG,
+  optimizerLabel,
+  optimizerThreshold,
+  LLMLINGUA_CHECKPOINTS,
+  DEFAULT_LLMLINGUA_CHECKPOINT,
+  llmLinguaCheckpoint,
+} from './types/optimizers.js';
 
 // Synthetic preview conversations. Routerly never records real prompts, so these
 // are the only sample material the dashboard and the CLI offer.

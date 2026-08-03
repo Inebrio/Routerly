@@ -60,6 +60,28 @@ const declines = {
   validate: () => true,
 } satisfies Optimizer
 
+// Records the model name the preview addressed the sample to. `headroom` reads
+// exactly this to find a context window.
+const seen: { model?: string } = {}
+const readsModel = {
+  id: 'headroom',
+  klass: 'lossless',
+  supports: (ctx) => {
+    seen.model = ctx.request.model
+    return false
+  },
+  explain: (ctx) => `No context window known for ${ctx.request.model}.`,
+  estimate(ctx) {
+    const before = tokensOf(readMessages(ctx.request))
+    return { estimatedTokensBefore: before, estimatedTokensAfter: before }
+  },
+  optimize(ctx) {
+    const before = tokensOf(readMessages(ctx.request))
+    return { changed: false, estimatedTokensBefore: before, estimatedTokensAfter: before }
+  },
+  validate: () => true,
+} satisfies Optimizer
+
 function makeRegistry(...optimizers: Optimizer[]): OptimizerRegistry {
   const r = new OptimizerRegistry()
   for (const o of optimizers) r.register(o)
@@ -74,6 +96,26 @@ const sample: Message[] = [
 ]
 
 describe('runPreview', () => {
+  it('addresses the sample to the model the caller named', async () => {
+    const res = await runPreview({
+      registry: makeRegistry(readsModel),
+      sampleMessages: sample,
+      steps: [{ id: 'headroom', enabled: true }],
+      model: 'gpt-4o-mini',
+    })
+    expect(seen.model).toBe('gpt-4o-mini')
+    expect(res.perStep[0]!.skipReason).toContain('gpt-4o-mini')
+  })
+
+  it('falls back to a name no model carries when the caller names none', async () => {
+    await runPreview({
+      registry: makeRegistry(readsModel),
+      sampleMessages: sample,
+      steps: [{ id: 'headroom', enabled: true }],
+    })
+    expect(seen.model).toBe('preview')
+  })
+
   it('reports per-step and total token deltas for an applied lossless step', async () => {
     const registry = makeRegistry(dropLast)
     const totalBefore = tokensOf(sample)

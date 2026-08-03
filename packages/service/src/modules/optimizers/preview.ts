@@ -53,6 +53,12 @@ export interface PreviewInput {
   steps: OptimizerStep[]
   /** Optional project the preview runs "as" — only its config is read; nothing is written. */
   project?: ProjectConfig
+  /**
+   * Model id the sample is addressed to. `headroom` sizes its budget on the
+   * requested model's context window, so without one it has nothing to compare
+   * against and reports why instead.
+   */
+  model?: string
 }
 
 // A no-op logger: the pure runner never touches the network or a real request,
@@ -74,16 +80,16 @@ const NOOP_LOG = {
  * validate/recover to run against sample messages. It carries no reply, no route,
  * and no upstream: optimizers only read ctx.request and ctx.project.optimizers.
  *
- * `model: 'preview'` is a name no effective model carries, so `headroom` finds
- * no context window and stays inert here even though it does fire live. A
- * preview has no model to size a window against; the step reports why rather
- * than inventing one.
+ * The model name is what `headroom` sizes its budget against. When the caller
+ * names one of the configured models, the step fires here exactly as it does
+ * live. The fallback `'preview'` is a name no effective model carries, so
+ * headroom finds no window and says so rather than inventing a budget.
  */
-function buildPreviewContext(messages: Message[], project: ProjectConfig): ProxyContext {
+function buildPreviewContext(messages: Message[], project: ProjectConfig, model: string): ProxyContext {
   // Same object for request and original — the in-place mutation contract in core.ts
   // assumes ctx.request === ctx.original for the Anthropic lane. Cloning keeps the
   // caller's sampleMessages untouched.
-  const request = { model: 'preview', messages: structuredClone(messages) } as ChatCompletionRequest
+  const request = { model, messages: structuredClone(messages) } as ChatCompletionRequest
   return {
     protocol: 'openai',
     log: NOOP_LOG,
@@ -110,7 +116,7 @@ export async function runPreview(input: PreviewInput): Promise<PreviewResult> {
   // (ccr/headroom/relevance read ctx.project.optimizers.steps.find(...)).
   const base = input.project ?? ({ id: 'preview' } as ProjectConfig)
   const project = { ...base, optimizers: { steps } }
-  const ctx = buildPreviewContext(sampleMessages, project)
+  const ctx = buildPreviewContext(sampleMessages, project, input.model || 'preview')
   const req = ctx.request
 
   const estimatedTokensBefore = tokensOf(req.messages ?? [])
