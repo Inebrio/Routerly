@@ -40,6 +40,90 @@ export interface OptimizerStep {
   id: OptimizerId;
   enabled: boolean;
   threshold?: number;
+  /**
+   * Which downloaded checkpoint this step runs on. Only `llmlingua-2` reads it,
+   * and only a key from `LLMLINGUA_CHECKPOINTS` is accepted. Absent = the
+   * default checkpoint.
+   *
+   * The choice is per step, the download is per host: the checkpoints live in
+   * one shared cache, so two projects picking the same one pay for it once.
+   */
+  model?: string;
+}
+
+/**
+ * A checkpoint the llmlingua-2 step can run on.
+ *
+ * `repo` and `dtype` together identify the files: transformers.js resolves a
+ * dtype to a filename suffix, so `q8` and `fp32` of the same repo are two
+ * different ONNX graphs sharing one cache directory. That is why `key`, not
+ * `repo`, is what a step stores and what a download request names.
+ */
+export interface LlmLinguaCheckpoint {
+  /** Stable slug stored in `OptimizerStep.model` and used by the API and CLI. */
+  key: string;
+  label: string;
+  /** HuggingFace repo id, also the directory name inside the model cache. */
+  repo: string;
+  /** transformers.js dtype, which selects the ONNX file inside the repo. */
+  dtype: string;
+  /** Download size of the files this dtype needs, in MB. */
+  sizeMb: number;
+  /** License declared by the repo, or what to know when it declares none. */
+  license: string;
+  /** One line on when to pick this one over the others. */
+  note: string;
+}
+
+/**
+ * The checkpoints an operator can install, deliberately a closed list.
+ *
+ * Downloading is a privileged action that writes hundreds of megabytes to the
+ * service host, so the id cannot come from free text: an arbitrary repo would
+ * be fetched in full before anything could tell whether it is even a
+ * token-classification model. Operators who need one that is not here set
+ * ROUTERLY_LLMLINGUA_MODEL / ROUTERLY_LLMLINGUA_DTYPE, which is deployment
+ * configuration and stays out of the dashboard.
+ *
+ * Sizes are the sum of the tokenizer and the ONNX graph that dtype selects,
+ * read from the HuggingFace API, not estimated.
+ */
+export const LLMLINGUA_CHECKPOINTS: LlmLinguaCheckpoint[] = [
+  {
+    key: 'bert-multilingual-q8',
+    label: 'BERT multilingual, quantized',
+    repo: 'ldenoue/llmlingua-2-bert-base-multilingual-cased-meetingbank',
+    dtype: 'q8',
+    sizeMb: 182,
+    license: 'The export repo declares no license; the upstream weights are Apache-2.0.',
+    note: 'The default. Smallest and fastest, and enough for prose in the 104 languages BERT multilingual covers.',
+  },
+  {
+    key: 'xlm-roberta-large-int8',
+    label: 'XLM-RoBERTa large, int8',
+    repo: 'atjsh/llmlingua-2-js-xlm-roberta-large-meetingbank',
+    dtype: 'int8',
+    sizeMb: 579,
+    license: 'MIT.',
+    note: 'Better compression quality and a declared license, at roughly three times the disk and noticeably slower inference.',
+  },
+  {
+    key: 'bert-multilingual-fp32',
+    label: 'BERT multilingual, full precision',
+    repo: 'ldenoue/llmlingua-2-bert-base-multilingual-cased-meetingbank',
+    dtype: 'fp32',
+    sizeMb: 713,
+    license: 'The export repo declares no license; the upstream weights are Apache-2.0.',
+    note: 'Same model as the default without the quantization loss. Pick it when scoring quality matters more than memory.',
+  },
+];
+
+/** Checkpoint a step runs on when it names none. */
+export const DEFAULT_LLMLINGUA_CHECKPOINT = 'bert-multilingual-q8';
+
+/** Checkpoint by key, or `undefined` for a key this build does not publish. */
+export function llmLinguaCheckpoint(key: string): LlmLinguaCheckpoint | undefined {
+  return LLMLINGUA_CHECKPOINTS.find(c => c.key === key);
 }
 
 /**

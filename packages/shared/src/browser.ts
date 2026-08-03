@@ -54,7 +54,14 @@ export type {
 } from './types/experiments.js';
 
 // Optimizer catalog (T63) — plain data plus pure functions
-export { OPTIMIZER_CATALOG, optimizerLabel, optimizerThreshold } from './types/optimizers.js';
+export {
+  OPTIMIZER_CATALOG,
+  optimizerLabel,
+  optimizerThreshold,
+  LLMLINGUA_CHECKPOINTS,
+  DEFAULT_LLMLINGUA_CHECKPOINT,
+  llmLinguaCheckpoint,
+} from './types/optimizers.js';
 export type {
   OptimizerClass,
   OptimizerId,
@@ -64,6 +71,7 @@ export type {
   OptimizerCallStat,
   OptimizerThresholdSpec,
   OptimizerMeta,
+  LlmLinguaCheckpoint,
 } from './types/optimizers.js';
 
 // Shipped preview conversations — plain data, no real prompt is ever recorded.

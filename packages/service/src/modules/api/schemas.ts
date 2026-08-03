@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { OPTIMIZER_CATALOG, type OptimizerId } from '@routerly/shared';
+import { LLMLINGUA_CHECKPOINTS, OPTIMIZER_CATALOG, type OptimizerId } from '@routerly/shared';
 
 /**
  * Zod schemas for the project config shapes that more than one route file has
@@ -83,9 +83,16 @@ export const optimizerStepSchema = z.object({
   id: optimizerIdEnum,
   enabled: z.boolean(),
   threshold: z.number().positive().optional(),
+  // Only llmlingua-2 runs on a checkpoint, and only one of the curated keys:
+  // a free-text repo id would be fetched in full before anything could tell
+  // whether it is even the right kind of model.
+  model: z.enum(LLMLINGUA_CHECKPOINTS.map(c => c.key) as [string, ...string[]]).optional(),
 }).superRefine((step, ctx) => {
   if (step.threshold !== undefined && RATIO_THRESHOLD_IDS.has(step.id) && step.threshold > 1) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${step.id}: threshold must be between 0 and 1`, path: ['threshold'] });
+  }
+  if (step.model !== undefined && step.id !== 'llmlingua-2') {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${step.id}: this optimizer runs on no model`, path: ['model'] });
   }
 });
 

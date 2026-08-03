@@ -21,6 +21,11 @@ function ratioOf(ctx: ProxyContext): number {
   return typeof t === 'number' && t > 0 && t < 1 ? t : DEFAULT_KEEP_RATIO
 }
 
+/** Checkpoint key this project's step selected, or undefined for the default. */
+function modelKeyOf(ctx: ProxyContext): string | undefined {
+  return stepOf(ctx)?.model
+}
+
 /**
  * Compress a message's own text via the ONNX model, structurally: string content
  * is compressed directly; array content only has its `type: 'text'` parts
@@ -30,9 +35,10 @@ function ratioOf(ctx: ProxyContext): number {
 async function compressMessage(
   m: Message,
   ratio: number,
+  modelKey?: string,
 ): Promise<{ message: Message; changed: boolean }> {
   if (typeof m.content === 'string') {
-    const text = await model.compress(m.content, ratio)
+    const text = await model.compress(m.content, ratio, modelKey)
     if (text === m.content) return { message: m, changed: false }
     return { message: { ...m, content: text }, changed: true }
   }
@@ -41,7 +47,7 @@ async function compressMessage(
     const content: unknown[] = []
     for (const p of m.content) {
       if (p.type === 'text' && typeof p.text === 'string') {
-        const text = await model.compress(p.text, ratio)
+        const text = await model.compress(p.text, ratio, modelKey)
         if (text !== p.text) {
           changed = true
           content.push({ ...p, text })
@@ -70,15 +76,16 @@ export const llmlingua2Optimizer: Optimizer = {
   supports(ctx) {
     const step = stepOf(ctx)
     if (!step?.enabled) return false
-    return model.isModelAvailable() && model.isRuntimeInstalled()
+    return model.isModelAvailable(modelKeyOf(ctx)) && model.isRuntimeInstalled()
   },
 
-  explain() {
+  explain(ctx) {
     if (!model.isRuntimeInstalled()) {
       return 'Optional dependency @huggingface/transformers is not installed on the service host.'
     }
-    if (!model.isModelAvailable()) {
-      return 'Compression model is not downloaded yet. Install it from the optimizer tab or with `routerly optimizers model --install`.'
+    const checkpoint = model.checkpointFor(modelKeyOf(ctx))
+    if (!model.isModelAvailable(modelKeyOf(ctx))) {
+      return `Checkpoint ${checkpoint.label} is not downloaded yet. Install it from the optimizer tab or with \`routerly optimizers models download ${checkpoint.key}\`.`
     }
     return 'Step is not enabled on this project.'
   },
@@ -97,11 +104,12 @@ export const llmlingua2Optimizer: Optimizer = {
     originals.set(ctx, messages.slice())
     const before = tokensOf(messages)
     const ratio = ratioOf(ctx)
+    const modelKey = modelKeyOf(ctx)
 
     let changed = false
     const newMessages: Message[] = []
     for (const m of messages) {
-      const r = await compressMessage(m, ratio)
+      const r = await compressMessage(m, ratio, modelKey)
       if (r.changed) changed = true
       newMessages.push(r.message)
     }

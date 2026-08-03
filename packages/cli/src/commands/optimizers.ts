@@ -18,12 +18,35 @@ interface PreviewResult {
   messages?: Message[];
 }
 
-interface LlmLinguaModelState {
-  state: 'absent' | 'downloading' | 'ready';
-  modelId: string;
+/** One installable checkpoint as the service reports it. */
+interface CheckpointState {
+  key: string;
+  label: string;
+  repo: string;
   dtype: string;
-  runtimeInstalled: boolean;
+  sizeMb: number;
+  license: string;
+  note: string;
+  state: 'absent' | 'downloading' | 'ready';
+  progress?: number;
+  loadedBytes?: number;
+  totalBytes?: number;
   error?: string;
+}
+
+interface LlmLinguaModelState {
+  runtimeInstalled: boolean;
+  checkpoints: CheckpointState[];
+}
+
+/** State column of one checkpoint, with the download progress when there is one. */
+function checkpointStateCell(c: CheckpointState): string {
+  if (c.state === 'downloading') {
+    const mb = c.totalBytes ? ` ${Math.round((c.loadedBytes ?? 0) / 1e6)}/${Math.round(c.totalBytes / 1e6)} MB` : '';
+    return chalk.yellow(`downloading ${c.progress ?? 0}%${mb}`);
+  }
+  if (c.state === 'ready') return chalk.green('ready');
+  return c.error ? chalk.red('failed') : 'absent';
 }
 
 /** The threshold of an optimizer as one cell: what it means and where it starts. */
@@ -126,33 +149,41 @@ repo, are identical on every install, and are the only preview material.
 
   // ── optimizers model ─────────────────────────────────────────────────────────
   cmd.command('model')
-    .description('Show or install the optional LLMLingua-2 checkpoint on the service host')
-    .option('--install', 'Start the download and return immediately')
+    .description('Show or install the optional LLMLingua-2 checkpoints on the service host')
+    .option('--install [key]', 'Start the download of a checkpoint (default: the recommended one)')
     .option('--json', 'Output raw JSON')
     .addHelpText('after', `
 Examples:
   routerly optimizers model
   routerly optimizers model --install
+  routerly optimizers model --install xlm-roberta-large-int8
   routerly optimizers model --json
 
-The checkpoint is hundreds of megabytes and downloads on the service host, not
+Checkpoints are hundreds of megabytes and download on the service host, not
 here. --install returns as soon as the download starts; run the command again
-to see its progress.
+to see its progress. The checkpoints are shared by every project; which one a
+project uses is set with \`routerly optimizers config <project> --checkpoint <key>\`.
 `)
-    .action(async (opts: { install?: boolean; json?: boolean }) => {
+    .action(async (opts: { install?: boolean | string; json?: boolean }) => {
       try {
         const state = opts.install
-          ? await api<LlmLinguaModelState>('POST', '/api/optimizers/llmlingua2/model', {})
+          ? await api<LlmLinguaModelState>('POST', '/api/optimizers/llmlingua2/model',
+              typeof opts.install === 'string' ? { key: opts.install } : {})
           : await api<LlmLinguaModelState>('GET', '/api/optimizers/llmlingua2/model');
         if (opts.json) {
           console.log(JSON.stringify(state, null, 2));
           return;
         }
-        console.log(`${chalk.gray('model:  ')} ${state.modelId} (${state.dtype})`);
         console.log(`${chalk.gray('runtime:')} ${state.runtimeInstalled ? 'installed' : 'not installed'}`);
-        console.log(`${chalk.gray('state:  ')} ${state.state}`);
-        if (state.error) console.error(chalk.red(`error:   ${state.error}`));
-        if (state.state === 'downloading') {
+        const table = new Table({ head: ['Key', 'Name', 'Size', 'State', 'Notes'].map(h => chalk.cyan(h)) });
+        for (const c of state.checkpoints) {
+          table.push([c.key, c.label, `${c.sizeMb} MB`, checkpointStateCell(c), c.note]);
+        }
+        console.log(table.toString());
+        for (const c of state.checkpoints) {
+          if (c.error) console.error(chalk.red(`${c.key}: ${c.error}`));
+        }
+        if (state.checkpoints.some(c => c.state === 'downloading')) {
           console.log(chalk.gray('Downloading. Run `routerly optimizers model` again to check progress.'));
         }
       } catch (err) {
@@ -166,6 +197,7 @@ to see its progress.
     .option('--enable <id>', 'Enable an optimizer step (repeatable)', collect, [])
     .option('--disable <id>', 'Disable an optimizer step (repeatable)', collect, [])
     .option('--threshold <id=val>', 'Set an optimizer step threshold (repeatable)', collect, [])
+    .option('--checkpoint <key>', 'LLMLingua-2 checkpoint this project runs on (see `routerly optimizers model`)')
     .option('--order <ids>', 'Comma-separated optimizer ids controlling step order')
     .option('--json', 'Output raw JSON')
     .addHelpText('after', `
@@ -173,11 +205,13 @@ Examples:
   routerly optimizers config my-api --enable ccr
   routerly optimizers config my-api --enable ccr --threshold ccr=8
   routerly optimizers config my-api --disable rtk --order ccr,headroom,rtk
+  routerly optimizers config my-api --enable llmlingua-2 --checkpoint xlm-roberta-large-int8
 `)
     .action(async (nameOrId: string, opts: {
       enable: string[];
       disable: string[];
       threshold: string[];
+      checkpoint?: string;
       order?: string;
       json?: boolean;
     }) => {
@@ -216,6 +250,10 @@ Examples:
           upsert(id).threshold = val;
         }
 
+        // Only llmlingua-2 runs on a checkpoint; the service rejects the field
+        // on any other step, so target it here rather than surfacing that 400.
+        if (opts.checkpoint !== undefined) upsert('llmlingua-2').model = opts.checkpoint;
+
         let ordered = steps;
         if (opts.order !== undefined) {
           const orderIds = opts.order.split(',').map(s => s.trim()).filter(Boolean);
@@ -248,11 +286,11 @@ Examples:
         if (finalSteps.length === 0) {
           console.log(chalk.gray('  (no steps)'));
         } else {
-          const table = new Table({ head: ['#', 'ID', 'Name', 'Enabled', 'Threshold'].map(h => chalk.cyan(h)) });
+          const table = new Table({ head: ['#', 'ID', 'Name', 'Enabled', 'Threshold', 'Checkpoint'].map(h => chalk.cyan(h)) });
           finalSteps.forEach((s, i) => {
             const spec = optimizerThreshold(s.id);
             const threshold = s.threshold ?? (spec?.default != null ? `${spec.default} (default)` : '-');
-            table.push([String(i + 1), s.id, optimizerLabel(s.id), s.enabled ? 'yes' : 'no', String(threshold)]);
+            table.push([String(i + 1), s.id, optimizerLabel(s.id), s.enabled ? 'yes' : 'no', String(threshold), s.model ?? '-']);
           });
           console.log(table.toString());
         }
@@ -266,16 +304,20 @@ Examples:
     .description('Dry-run the project optimizer pipeline over sample messages')
     .option('--message <text>', 'A user message to include (repeatable)', collect, [])
     .option('--fixture <id>', 'Use a shipped sample conversation instead of --message')
+    .option('--model <id>', 'Address the sample to this model, so context-window steps have a window to fit')
     .option('--json', 'Output raw JSON')
     .addHelpText('after', `
 Examples:
   routerly optimizers preview my-api --message "Summarize this thread"
   routerly optimizers preview my-api --message "first" --message "second" --json
   routerly optimizers preview my-api --fixture support-chat-en
+  routerly optimizers preview my-api --fixture long-context-en --model ollama/qwen3:4b
 
-Run \`routerly optimizers fixtures\` for the available conversations.
+Run \`routerly optimizers fixtures\` for the available conversations. Without
+--model the sample is addressed to no model, and the headroom step reports that
+it has no context window to size against instead of trimming.
 `)
-    .action(async (nameOrId: string, opts: { message: string[]; fixture?: string; json?: boolean }) => {
+    .action(async (nameOrId: string, opts: { message: string[]; fixture?: string; model?: string; json?: boolean }) => {
       try {
         if (opts.message.length === 0 && opts.fixture === undefined) {
           console.error(chalk.red('Error: provide at least one --message, or --fixture <id>.'));
@@ -302,6 +344,7 @@ Run \`routerly optimizers fixtures\` for the available conversations.
           projectId: project.id,
           sampleMessages,
           steps,
+          ...(opts.model ? { model: opts.model } : {}),
         });
 
         if (opts.json) {
