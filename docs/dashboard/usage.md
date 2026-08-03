@@ -190,6 +190,7 @@ of the pipeline that produced them:
 | **Routing · Prepare** | The routing engine's input and its decision: active policies, scored candidates, selected model |
 | **Routing · Execute** | The call to the provider: payload sent, response received, retries and fallbacks |
 | **Response · Postprocess** | Everything that ran on the way out: response-side guardrails, PII scrub |
+| **Egress** | What was written back to the client |
 | **Finalize** | Cost and token accounting, and the export of the finished trace |
 
 Each phase header carries the modules that spoke in it (`pii`, `guardrail`,
@@ -215,7 +216,7 @@ Every module on the path writes its own entries. The ones you meet most often:
 | `guardrail:injected` | A rule added text to the request -- lists the rules and how many characters they added |
 | `guardrail:triggered` | A request-side rule matched with log action (request continued) |
 | `guardrail:response-triggered` | A response-side rule matched with log action (response continued) |
-| `pii:evaluated` | After every PII scan, on the request and on the response -- active policies, entity types looked for, characters scanned, and per-entity redaction counts |
+| `pii:evaluated` | After every PII scan, on the request and on the response -- active policies, entity types looked for, how many message contents were scanned, and per-entity redaction counts |
 | `pii:scrubbed` | PII was detected and replaced in the request or response |
 | `optimizer:step` | One row per optimizer step: tokens before and after, tokens saved, duration, and the reason when a step was skipped or rolled back |
 | `budget:checked` | The limit check before the upstream call -- the model, whether it was allowed, and every violated limit (metric, window, current, limit) |
