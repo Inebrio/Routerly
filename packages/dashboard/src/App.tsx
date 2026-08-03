@@ -50,7 +50,7 @@ import { ExperimentConfigTab } from './pages/experiment/ExperimentConfigTab';
 import { ExperimentMetricsTab } from './pages/experiment/ExperimentMetricsTab';
 import { ExperimentTokenTab } from './pages/experiment/ExperimentTokenTab';
 
-import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Plug, Route, Terminal, Split } from 'lucide-react';
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Plug, Route, AppWindow, Split } from 'lucide-react';
 import { Logo } from './components/Logo';
 import { ProfileNotificationBadge } from './components/NotificationBell';
 
@@ -111,13 +111,13 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
   function handleLogout() { logout(); navigate('/dashboard/login'); }
 
   // One flat list, ordered the way the product is used: what you set up
-  // (Connections to Projects), then what it tells you back (Experiments, Usage),
+  // (Providers to Projects), then what it tells you back (Experiments, Usage),
   // and last the Playground, the bench you drop into to try things out. Connect
-  // is not here: it configures the tools around Routerly rather than Routerly
-  // itself, so it sits in the footer next to Settings.
+  // app is not here: it configures the tools around Routerly rather than
+  // Routerly itself, so it sits in the footer next to Settings.
   const navItems = [
     { to: '/dashboard/overview', icon: <LayoutDashboard size={17} />, label: 'Overview' },
-    ...(can('connections:read') ? [{ to: '/dashboard/connections', icon: <Plug size={17} />, label: 'Connections' }] : []),
+    ...(can('connections:read') ? [{ to: '/dashboard/connections', icon: <Plug size={17} />, label: 'Providers' }] : []),
     { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
     ...(can('profiles:read') ? [{ to: '/dashboard/profiles', icon: <Route size={17} />, label: 'Profiles' }] : []),
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
@@ -183,11 +183,11 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
         {clientsEnabled && (
           <NavLink
             to="/dashboard/connect"
-            title={collapsed ? 'Connect' : undefined}
+            title={collapsed ? 'Connect app' : undefined}
             className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
           >
-            <Terminal size={15} />
-            <span className="nav-label">Connect</span>
+            <AppWindow size={15} />
+            <span className="nav-label">Connect app</span>
           </NavLink>
         )}
         <NavLink
