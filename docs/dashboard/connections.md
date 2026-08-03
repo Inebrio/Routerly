@@ -17,7 +17,7 @@ bound to it, which is the whole point of the layer, see
 
 ## Connections List
 
-Navigate to `/dashboard/connections`.
+Open **Providers** in the sidebar, or navigate to `/dashboard/connections`.
 
 ### Connections List Columns
 

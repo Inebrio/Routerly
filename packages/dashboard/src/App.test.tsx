@@ -291,16 +291,16 @@ describe('Sidebar', () => {
     mockGetClients.mockResolvedValue([]);
     mockGetExperiments.mockResolvedValue([]);
     renderApp();
-    await waitFor(() => screen.getByText('Connect'));
+    await waitFor(() => screen.getByText('Connect app'));
     await waitFor(() => screen.getByText('Experiments'));
     const labels = Array.from(document.querySelectorAll('.sidebar-nav .nav-label')).map(el => el.textContent);
     expect(labels).toEqual([
-      'Overview', 'Connections', 'Models', 'Profiles', 'Projects',
+      'Overview', 'Providers', 'Models', 'Profiles', 'Projects',
       'Experiments', 'Usage', 'Playground',
     ]);
-    // Connect is a setup step, not a daily destination: it sits with Settings.
+    // Connect app is a setup step, not a daily destination: it sits with Settings.
     const footer = Array.from(document.querySelectorAll('.sidebar-footer .nav-label')).map(el => el.textContent);
-    expect(footer).toContain('Connect');
+    expect(footer).toContain('Connect app');
   });
 
   it('toggles collapsed state on toggle button click', async () => {
