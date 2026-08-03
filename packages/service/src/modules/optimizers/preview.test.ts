@@ -107,13 +107,13 @@ describe('runPreview', () => {
     expect(res.perStep[0]!.skipReason).toContain('gpt-4o-mini')
   })
 
-  it('falls back to a name no model carries when the caller names none', async () => {
+  it('leaves the model empty when the caller names none, so no window is found', async () => {
     await runPreview({
       registry: makeRegistry(readsModel),
       sampleMessages: sample,
       steps: [{ id: 'headroom', enabled: true }],
     })
-    expect(seen.model).toBe('preview')
+    expect(seen.model).toBe('')
   })
 
   it('reports per-step and total token deltas for an applied lossless step', async () => {

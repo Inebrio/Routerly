@@ -82,8 +82,9 @@ const NOOP_LOG = {
  *
  * The model name is what `headroom` sizes its budget against. When the caller
  * names one of the configured models, the step fires here exactly as it does
- * live. The fallback `'preview'` is a name no effective model carries, so
- * headroom finds no window and says so rather than inventing a budget.
+ * live. Naming none leaves the field empty, so headroom finds no window and
+ * says the sample is addressed to no model rather than inventing a budget or
+ * naming a placeholder the reader would go looking for in the model list.
  */
 function buildPreviewContext(messages: Message[], project: ProjectConfig, model: string): ProxyContext {
   // Same object for request and original — the in-place mutation contract in core.ts
@@ -116,7 +117,7 @@ export async function runPreview(input: PreviewInput): Promise<PreviewResult> {
   // (ccr/headroom/relevance read ctx.project.optimizers.steps.find(...)).
   const base = input.project ?? ({ id: 'preview' } as ProjectConfig)
   const project = { ...base, optimizers: { steps } }
-  const ctx = buildPreviewContext(sampleMessages, project, input.model || 'preview')
+  const ctx = buildPreviewContext(sampleMessages, project, input.model ?? '')
   const req = ctx.request
 
   const estimatedTokensBefore = tokensOf(req.messages ?? [])

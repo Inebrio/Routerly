@@ -1566,21 +1566,20 @@ prompt lacks the repetition and history optimizers cut.
 routerly optimizers fixtures
 ```
 ```
-┌──────────────────┬────────────────────────────────────────────────┬──────┬───────┬──────────────────────────────────────────────────────────┐
-│ ID               │ Name                                           │ Lang │ Turns │ Exercises                                                │
-├──────────────────┼────────────────────────────────────────────────┼──────┼───────┼──────────────────────────────────────────────────────────┤
-│ support-chat-en  │ Support chat (English, 13 turns)                │ en   │ 17    │ session-dedup, ccr, rtk, relevance and caveman            │
-├──────────────────┼────────────────────────────────────────────────┼──────┼───────┼──────────────────────────────────────────────────────────┤
-│ brief-en         │ Long brief (English, single turn)               │ en   │ 1     │ caveman and llmlingua-2                                  │
-├──────────────────┼────────────────────────────────────────────────┼──────┼───────┼──────────────────────────────────────────────────────────┤
-│ agent-tools-en   │ Coding agent with tool results (10 turns)       │ en   │ 16    │ json-table, session-dedup, rtk and ccr                   │
-├──────────────────┼────────────────────────────────────────────────┼──────┼───────┼──────────────────────────────────────────────────────────┤
-│ long-context-en  │ Incident log triage (English, very long)        │ en   │ 111   │ headroom, previewed against a 32k window or smaller      │
-└──────────────────┴────────────────────────────────────────────────┴──────┴───────┴──────────────────────────────────────────────────────────┘
+┌──────────────────┬────────────────────────────────────────────────┬──────┬──────────┬───────────────────────────────────────────────────────┐
+│ ID               │ Name                                           │ Lang │ Messages │ Exercises                                             │
+├──────────────────┼────────────────────────────────────────────────┼──────┼──────────┼───────────────────────────────────────────────────────┤
+│ support-chat-en  │ Support chat (English, 17 messages)             │ en   │ 17       │ session-dedup, ccr, rtk, relevance and caveman         │
+├──────────────────┼────────────────────────────────────────────────┼──────┼──────────┼───────────────────────────────────────────────────────┤
+│ brief-en         │ Long brief (English, single turn)              │ en   │ 1        │ caveman and llmlingua-2                               │
+├──────────────────┼────────────────────────────────────────────────┼──────┼──────────┼───────────────────────────────────────────────────────┤
+│ agent-tools-en   │ Coding agent with tool results (16 messages)    │ en   │ 16       │ json-table, session-dedup, rtk and ccr                │
+├──────────────────┼────────────────────────────────────────────────┼──────┼──────────┼───────────────────────────────────────────────────────┤
+│ long-context-en  │ Incident log triage (English, very long)        │ en   │ 91       │ headroom, previewed against a 32k window or smaller   │
+└──────────────────┴────────────────────────────────────────────────┴──────┴──────────┴───────────────────────────────────────────────────────┘
 ```
 
-**Turns** is the message count. `--json` prints the fixtures whole, messages
-included.
+`--json` prints the fixtures whole, messages included.
 
 These conversations ship with Routerly, are identical on every install, and
 are the only preview material: the service never records real prompts (see

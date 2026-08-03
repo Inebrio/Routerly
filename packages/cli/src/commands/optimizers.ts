@@ -142,7 +142,7 @@ repo, are identical on every install, and are the only preview material.
         console.log(JSON.stringify(OPTIMIZER_FIXTURES, null, 2));
         return;
       }
-      const table = new Table({ head: ['ID', 'Name', 'Lang', 'Turns', 'Exercises'].map(h => chalk.cyan(h)) });
+      const table = new Table({ head: ['ID', 'Name', 'Lang', 'Messages', 'Exercises'].map(h => chalk.cyan(h)) });
       for (const f of OPTIMIZER_FIXTURES) {
         table.push([f.id, f.label, f.language, String(f.messages.length), f.description]);
       }
@@ -271,22 +271,30 @@ Examples:
           });
         }
 
-        const updated = await api<ProjectConfig>('PUT', `/api/projects/${encodeURIComponent(project.id)}`, {
-          name: project.name,
-          models: project.models,
-          ...(project.routingModelId !== undefined ? { routingModelId: project.routingModelId } : {}),
-          ...(project.autoRouting !== undefined ? { autoRouting: project.autoRouting } : {}),
-          ...(project.fallbackRoutingModelIds !== undefined ? { fallbackRoutingModelIds: project.fallbackRoutingModelIds } : {}),
-          ...(project.policies !== undefined ? { policies: project.policies } : {}),
-          ...(project.timeoutMs !== undefined ? { timeoutMs: project.timeoutMs } : {}),
-          optimizers: { steps: ordered },
-        });
+        // With no flag to apply this is a read: show the pipeline, write nothing.
+        const mutating = opts.enable.length > 0 || opts.disable.length > 0
+          || opts.threshold.length > 0 || opts.checkpoint !== undefined || opts.order !== undefined;
+
+        const updated = mutating
+          ? await api<ProjectConfig>('PUT', `/api/projects/${encodeURIComponent(project.id)}`, {
+            name: project.name,
+            models: project.models,
+            ...(project.routingModelId !== undefined ? { routingModelId: project.routingModelId } : {}),
+            ...(project.autoRouting !== undefined ? { autoRouting: project.autoRouting } : {}),
+            ...(project.fallbackRoutingModelIds !== undefined ? { fallbackRoutingModelIds: project.fallbackRoutingModelIds } : {}),
+            ...(project.policies !== undefined ? { policies: project.policies } : {}),
+            ...(project.timeoutMs !== undefined ? { timeoutMs: project.timeoutMs } : {}),
+            optimizers: { steps: ordered },
+          })
+          : project;
 
         if (opts.json) {
           console.log(JSON.stringify(updated, null, 2));
           return;
         }
-        console.log(chalk.green(`✓ Updated optimizer pipeline on project "${project.name}"`));
+        console.log(mutating
+          ? chalk.green(`✓ Updated optimizer pipeline on project "${project.name}"`)
+          : chalk.gray(`Optimizer pipeline on project "${project.name}"`));
         const finalSteps = updated.optimizers?.steps ?? ordered;
         if (finalSteps.length === 0) {
           console.log(chalk.gray('  (no steps)'));

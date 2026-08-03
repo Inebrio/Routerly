@@ -97,6 +97,12 @@ describe('headroom optimizer', () => {
     expect(headroomOptimizer.supports(ctx)).toBe(false)
   })
 
+  it('explains an unnamed model without inventing one, as a preview with no model does', () => {
+    const ctx = ctxWith(conversation(5), { threshold: 20 })
+    ;(ctx.request as ChatCompletionRequest).model = ''
+    expect(headroomOptimizer.explain?.(ctx)).toBe('No context window known for the requested model (unnamed).')
+  })
+
   it('supports is false when the model has no known context window', () => {
     expect(headroomOptimizer.supports(ctxWith(conversation(5), { threshold: 20, contextWindow: undefined }))).toBe(
       false,
