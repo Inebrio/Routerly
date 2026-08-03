@@ -80,7 +80,7 @@ describe('optimizers list', () => {
     const out = lines.join('\n');
     expect(out).toContain('Conversation Context');   // catalog label, wrapped by the table
     expect(out).toContain('1-50 turns');
-    expect(out).toContain('default 6');
+    expect(out).toContain('default 3');
     // session-dedup takes no threshold
     expect(out).toContain('-');
   });
@@ -95,7 +95,7 @@ describe('optimizers list', () => {
     expect(parsed[0]).toMatchObject({ id: 'session-dedup', klass: 'lossless', installed: true });
     expect(parsed[0].threshold).toBeUndefined();
     expect(parsed[1]).toMatchObject({ id: 'ccr', label: 'Conversation Context Reduction' });
-    expect(parsed[1].threshold).toMatchObject({ unit: 'turns', min: 1, max: 50, default: 6 });
+    expect(parsed[1].threshold).toMatchObject({ unit: 'turns', min: 1, max: 50, default: 3 });
   });
 
   it('shows empty state when none installed', async () => {
