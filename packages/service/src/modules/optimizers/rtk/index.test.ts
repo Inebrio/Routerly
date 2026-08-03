@@ -3,7 +3,7 @@ import { ServiceContainer, EventBus, ProcessorRegistry } from '../../../core/ind
 import { OPTIMIZER_REGISTRY, PROXY_PIPELINE } from '../../../core/tokens.js'
 import type { ChatCompletionRequest, Message } from '@routerly/shared'
 import type { ProxyContext } from '../../reverse-proxy/context.js'
-import { readMessages } from '../messages.js'
+import { readMessages, tokensOf as sharedTokensOf } from '../messages.js'
 import { optimizerCoreModule } from '../core.js'
 import { rtkModule, rtkOptimizer } from './index.js'
 
@@ -193,6 +193,15 @@ describe('rtk optimizer', () => {
     await rtkModule.register({ container, events })
     const registry = container.resolve(OPTIMIZER_REGISTRY)
     expect(registry.get('rtk')).toBe(rtkOptimizer)
+  })
+
+  it('counts tokens the same way the rest of the pipeline does', () => {
+    const messages: Message[] = [
+      { role: 'user', content: [{ type: 'text', text: 'one    two     three' }] },
+    ]
+    const ctx = ctxWith(messages)
+    const result = rtkOptimizer.optimize(ctx) as { estimatedTokensBefore: number }
+    expect(result.estimatedTokensBefore).toBe(sharedTokensOf(messages))
   })
 
   it('module manifest depends on optimizer-core', () => {
