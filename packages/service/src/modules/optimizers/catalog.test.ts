@@ -12,6 +12,13 @@ import { jsonTableOptimizer } from './json-table/index.js'
 import { relevanceOptimizer } from './relevance/index.js'
 import { cavemanOptimizer } from './caveman/index.js'
 import { llmlingua2Optimizer } from './llmlingua2/index.js'
+import { resetContextWindowCache } from './headroom/index.js'
+
+// headroom resolves the window from the model the request names, so the model
+// list has to answer for `gpt`, the model every ctxWith below sends.
+vi.mock('../provider/list-effective.js', () => ({
+  listEffectiveModels: vi.fn(async () => [{ id: 'gpt', contextWindow: 1200 }]),
+}))
 
 /**
  * The shared catalog (T63) is what dashboard, CLI and docs read to present an
@@ -31,7 +38,7 @@ const IMPLEMENTATIONS: Optimizer[] = [
   llmlingua2Optimizer,
 ]
 
-function ctxWith(messages: Message[], step?: { id: OptimizerId; threshold?: number }, attempt?: unknown): ProxyContext {
+function ctxWith(messages: Message[], step?: { id: OptimizerId; threshold?: number }): ProxyContext {
   const request = { model: 'gpt', messages } as ChatCompletionRequest
   return {
     protocol: 'openai',
@@ -45,7 +52,6 @@ function ctxWith(messages: Message[], step?: { id: OptimizerId; threshold?: numb
     request,
     stream: false,
     passthrough: false,
-    ...(attempt ? { attempt } : {}),
   } as ProxyContext
 }
 
@@ -102,12 +108,16 @@ describe('OPTIMIZER_CATALOG parity with the implementations', () => {
     expect(fallback.changed).toBe(true)
   })
 
-  it("headroom's catalog default is the reserve it actually falls back to", () => {
-    const attempt = { model: { contextWindow: 1200 } }
+  it("headroom's catalog default is the reserve it actually falls back to", async () => {
+    // supports() is sync and the model list is not, so warm the cache first.
+    resetContextWindowCache()
+    headroomOptimizer.supports(ctxWith(conversation(40)))
+    await vi.waitFor(() => expect(headroomOptimizer.supports(ctxWith(conversation(40)))).toBe(true))
+
     const messages = conversation(40)
-    const fallback = headroomOptimizer.optimize(ctxWith(messages.slice(), undefined, attempt))
+    const fallback = headroomOptimizer.optimize(ctxWith(messages.slice()))
     const explicit = headroomOptimizer.optimize(
-      ctxWith(messages.slice(), { id: 'headroom', threshold: catalogDefault('headroom') }, attempt),
+      ctxWith(messages.slice(), { id: 'headroom', threshold: catalogDefault('headroom') }),
     )
     expect(fallback.estimatedTokensAfter).toBe(explicit.estimatedTokensAfter)
     expect(fallback.changed).toBe(true)

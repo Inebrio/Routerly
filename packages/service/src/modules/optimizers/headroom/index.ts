@@ -4,6 +4,7 @@ import type { Message, OptimizerResult } from '@routerly/shared'
 import type { ProxyContext } from '../../reverse-proxy/context.js'
 import type { Optimizer } from '../registry.js'
 import { readMessages, segment, tokensOf, writeMessages } from '../messages.js'
+import { listEffectiveModels } from '../../provider/list-effective.js'
 
 // ponytail: trim-oldest to fit; no re-summarize (that is ccr's job).
 
@@ -16,12 +17,57 @@ function reservedOf(ctx: ProxyContext): number {
   return typeof step?.threshold === 'number' && step.threshold > 0 ? step.threshold : DEFAULT_RESERVED
 }
 
+// A model-list read per proxied request would be two fs hits on the hot path,
+// and supports() is synchronous so it cannot await one anyway. Same cache shape
+// as observability/traces-export.ts.
+// ponytail: 30s staleness is fine for a context window; a model's window changes
+// when an operator edits it, not per request. Drop the TTL and invalidate from
+// writeConfig only if that turns out to matter.
+const WINDOWS_TTL_MS = 30_000
+let windows: { at: number; byId: Map<string, number> } | null = null
+let refreshing = false
+
+/** Kick a background refresh; never awaited, never throws into the request. */
+function refreshWindows(): void {
+  if (refreshing) return
+  refreshing = true
+  void listEffectiveModels()
+    .then((models) => {
+      const byId = new Map<string, number>()
+      for (const m of models) if ((m.contextWindow ?? 0) > 0) byId.set(m.id, m.contextWindow!)
+      windows = { at: Date.now(), byId }
+    })
+    .catch(() => {
+      // Leave the previous snapshot in place: a failed config read must not
+      // silently turn a working trimmer off mid-flight.
+    })
+    .finally(() => {
+      refreshing = false
+    })
+}
+
+/** Test seam, and the way a model edit takes effect before the TTL runs out. */
+export function resetContextWindowCache(): void {
+  windows = null
+  refreshing = false
+}
+
 /**
- * Target model's context window for this attempt, or undefined when not yet
- * known — no candidate resolved yet, or the model config doesn't declare one.
+ * Context window of the model the client asked for, or undefined when it is
+ * unknown or declares none.
+ *
+ * The requested model, not the attempt's: this runs in `request.preprocess`,
+ * two phases before `ctx.attempt` exists. Reading `ctx.attempt` is what kept
+ * this optimizer inert on every install since it shipped. A routing policy may
+ * still send the request elsewhere, so the trim is sized for what the client
+ * named. That can leave more history than a smaller fallback model would
+ * accept; it can never trim more than the requested model needs.
  */
 function contextWindowOf(ctx: ProxyContext): number | undefined {
-  return ctx.attempt?.model?.contextWindow || undefined
+  if (!windows || Date.now() - windows.at > WINDOWS_TTL_MS) refreshWindows()
+  const requested = ctx.request.model
+  if (typeof requested !== 'string' || !requested) return undefined
+  return windows?.byId.get(requested)
 }
 
 interface Plan {
