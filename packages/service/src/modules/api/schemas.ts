@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { OPTIMIZER_CATALOG, type OptimizerId } from '@routerly/shared';
 
 /**
  * Zod schemas for the project config shapes that more than one route file has
@@ -66,7 +67,12 @@ export const piiConfigSchema = z.object({
   policies: z.array(piiPolicySchema),
 });
 
-export const optimizerIdEnum = z.enum(['session-dedup', 'ccr', 'rtk', 'headroom', 'relevance', 'caveman', 'llmlingua-2']);
+// Derived from the catalog, never hand-listed: a hand-listed copy is what made
+// `json-table` unsaveable the day it shipped, with every save and every preview
+// answering 400 "Invalid optimizers config".
+export const optimizerIdEnum = z.enum(
+  Object.keys(OPTIMIZER_CATALOG) as [OptimizerId, ...OptimizerId[]],
+);
 
 // threshold's natural range depends on the optimizer: ccr (turn count) and
 // headroom (token budget) are unbounded positive numbers; relevance and
