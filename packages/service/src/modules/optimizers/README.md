@@ -52,22 +52,42 @@ optimizer registry.
 ## headroom
 
 `headroom` (id `'headroom'`, klass `'lossless'`) trims the oldest whole turns
-until the request fits inside the target model's context window minus a
-reserved completion headroom (default 1024 tokens, via the step's
+until the request fits inside the context window of the model the client asked
+for, minus a reserved completion headroom (default 1024 tokens, via the step's
 `threshold`). It never re-summarizes dropped content, that is `ccr`'s job.
 
-Known limitation: `headroom` reads the target context window from
-`ctx.attempt?.model?.contextWindow`, which is only populated once the routing
-engine resolves a candidate model, a step that runs **after** the
-`request.preprocess` pipeline phase where all optimizers execute. On a real
-request `ctx.attempt` is not yet set, so `headroom`'s `supports()` check
-never sees a context window and the optimizer is a **permanent no-op in
-production** today, even though its trim logic is correct and fully covered
-in isolation by its own tests. See [Concepts:
-Optimizers](../../../../../docs/concepts/optimizers.md#headroom) and
-[Service: Routing
-Engine](../../../../../docs/service/routing-engine.md#optimizers-and-context-window-fit)
-for the full explanation and the pipeline-ordering fix this depends on.
+The window is resolved from `ctx.request.model` against the effective model
+list, held in a 30-second cache because `supports()` is synchronous and
+`listEffectiveModels()` is not. The first request after boot (or after a
+`resetContextWindowCache()`) sees a cold cache and skips the step once.
+
+It used to read `ctx.attempt?.model?.contextWindow` instead. `optimizer.apply`
+runs in `request.preprocess`; `ctx.attempt` is assigned two phases later,
+inside the `routing.execute` candidate loop, so `supports()` always returned
+false and the step had **never fired on any install**.
+
+The trim is sized for the requested model, not for whichever model routing
+ends up picking. A policy can send the request elsewhere, so the result may
+leave more history than a smaller fallback would accept; it can never trim
+more than the requested model needs. The step is inert when the requested
+model is unknown to the effective list or declares no window, which is also
+why it stays inert in the preview, where the request carries the placeholder
+model name `preview`.
+
+## json-table
+
+`json-table` (id `'json-table'`, klass `'recoverable'`) rewrites a long JSON
+array of uniform flat objects as a header line plus one line per row, values
+separated by ` | `, under a `[Compacted JSON table]` header. Every value
+survives byte-for-byte: only the repeated key names and the JSON punctuation
+go. Long uniform arrays are where the tokens sit in coding-agent and RAG
+traffic, and no other step touches them.
+
+It only rewrites a message that is *nothing but* a JSON array, which is how a
+tool result actually arrives (`contentKind()` decides). It stays inert on a
+ragged array, on rows carrying a nested value, on any value containing `|` or a
+newline, on arrays shorter than the step's `threshold` (default 5 rows), and
+whenever the table would not be shorter than the JSON it replaces.
 
 ## relevance
 

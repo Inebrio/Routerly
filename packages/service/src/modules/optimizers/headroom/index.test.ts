@@ -1,25 +1,44 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeAll } from 'vitest'
 import { ServiceContainer, EventBus, ProcessorRegistry } from '../../../core/index.js'
 import { OPTIMIZER_REGISTRY, PROXY_PIPELINE } from '../../../core/tokens.js'
-import type { ChatCompletionRequest, Message, ModelConfig, OptimizerStep } from '@routerly/shared'
+import type { ChatCompletionRequest, Message, OptimizerStep } from '@routerly/shared'
 import type { ProxyContext } from '../../reverse-proxy/context.js'
 import { readMessages } from '../messages.js'
 import { optimizerCoreModule } from '../core.js'
-import { headroomModule, headroomOptimizer } from './index.js'
+
+/**
+ * The window comes from the effective model list, keyed by the model the client
+ * named on the request. `w<n>` is a model whose window is exactly n, so every
+ * budget assertion below still reads as `window - reserved`.
+ */
+const WINDOWS = [20, 25, 30, 100, 2000, 100000]
+vi.mock('../../provider/list-effective.js', () => ({
+  listEffectiveModels: vi.fn(async () => [
+    ...WINDOWS.map((w) => ({ id: `w${w}`, contextWindow: w })),
+    { id: 'no-window-model', contextWindow: 0 },
+  ]),
+}))
+
+const { headroomModule, headroomOptimizer, resetContextWindowCache } = await import('./index.js')
 
 interface CtxOpts {
   threshold?: number
   contextWindow?: number | undefined
-  noAttempt?: boolean
+  /** Name a model the effective list has never heard of. */
+  unknownModel?: boolean
 }
 
 function ctxWith(messages: Message[], opts: CtxOpts = {}): ProxyContext {
-  const request = { model: 'gpt', messages } as ChatCompletionRequest
+  const model = opts.unknownModel
+    ? 'who-is-this'
+    : opts.contextWindow === undefined
+      ? 'who-is-this'
+      : opts.contextWindow === 0
+        ? 'no-window-model'
+        : `w${opts.contextWindow}`
+  const request = { model, messages } as ChatCompletionRequest
   const steps: OptimizerStep[] =
     opts.threshold === undefined ? [] : [{ id: 'headroom', enabled: true, threshold: opts.threshold }]
-  const attempt = opts.noAttempt
-    ? undefined
-    : ({ model: { contextWindow: opts.contextWindow } as unknown as ModelConfig, candidate: {} as any } as ProxyContext['attempt'])
   return {
     protocol: 'openai',
     req: { headers: {} } as any,
@@ -32,7 +51,6 @@ function ctxWith(messages: Message[], opts: CtxOpts = {}): ProxyContext {
     request,
     stream: false,
     passthrough: false,
-    attempt,
   } as ProxyContext
 }
 
@@ -52,13 +70,30 @@ function conversation(n: number, withSystem = true): Message[] {
 }
 
 describe('headroom optimizer', () => {
+  beforeAll(async () => {
+    resetContextWindowCache()
+    // supports() is synchronous and the model list is not, so the first call
+    // after a reset always misses and kicks a background refresh. That is the
+    // cold start on a real boot: one request goes untrimmed.
+    expect(headroomOptimizer.supports(ctxWith(conversation(5), { threshold: 20, contextWindow: 100 }))).toBe(false)
+    await vi.waitFor(() =>
+      expect(headroomOptimizer.supports(ctxWith(conversation(5), { threshold: 20, contextWindow: 100 }))).toBe(true),
+    )
+  })
+
   it('is lossless with the headroom id', () => {
     expect(headroomOptimizer.id).toBe('headroom')
     expect(headroomOptimizer.klass).toBe('lossless')
   })
 
-  it('supports is false when there is no routing attempt yet', () => {
-    const ctx = ctxWith(conversation(5), { threshold: 20, noAttempt: true })
+  it('fires on the requested model window, with no ctx.attempt in sight', () => {
+    const ctx = ctxWith(conversation(5), { threshold: 20, contextWindow: 100 })
+    expect(ctx.attempt).toBeUndefined()
+    expect(headroomOptimizer.supports(ctx)).toBe(true)
+  })
+
+  it('supports is false for a model the effective list does not know', () => {
+    const ctx = ctxWith(conversation(5), { threshold: 20, unknownModel: true })
     expect(headroomOptimizer.supports(ctx)).toBe(false)
   })
 

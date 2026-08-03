@@ -66,9 +66,12 @@ const NOOP_LOG = {
 /**
  * Build a minimal ProxyContext sufficient for an optimizer's supports/optimize/
  * validate/recover to run against sample messages. It carries no reply, no route,
- * and no upstream — optimizers only read ctx.request, ctx.project.optimizers, and
- * (headroom) ctx.attempt, which is intentionally absent here so context-window
- * optimizers stay inert in a preview, matching their live behavior.
+ * and no upstream: optimizers only read ctx.request and ctx.project.optimizers.
+ *
+ * `model: 'preview'` is a name no effective model carries, so `headroom` finds
+ * no context window and stays inert here even though it does fire live. A
+ * preview has no model to size a window against; the step reports why rather
+ * than inventing one.
  */
 function buildPreviewContext(messages: Message[], project: ProjectConfig): ProxyContext {
   // Same object for request and original — the in-place mutation contract in core.ts
