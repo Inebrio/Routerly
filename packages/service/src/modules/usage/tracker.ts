@@ -1,7 +1,8 @@
 import type { UsageRecord, CallType, OptimizerCallStat, RequestType } from '@routerly/shared';
 import { appendUsageRecord } from '../config/loader.js';
 import { calculateCost } from '../../lib/cost.js';
-import { getTrace } from '../trace/store.js';
+import { getTrace, isTraceOpen } from '../trace/store.js';
+import { deferRecord } from './pending.js';
 import type { ModelConfig } from '@routerly/shared';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -96,5 +97,11 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     ...(params.experimentVariantId ? { experimentVariantId: params.experimentVariantId } : {}),
   };
 
+  // A trace still open keeps growing (response guardrails, PII on the answer,
+  // egress, recap): the record waits for it instead of storing a truncated copy.
+  if (params.traceId && isTraceOpen(params.traceId)) {
+    deferRecord(params.traceId, record);
+    return;
+  }
   await appendUsageRecord(record);
 }

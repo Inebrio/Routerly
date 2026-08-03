@@ -328,6 +328,19 @@ describe('TraceEntryRenderer — guardrail:injected', () => {
     expect(screen.getByText('Answer politely.')).toBeTruthy();
   });
 
+  it('names the rules when they arrive as { index, rule } objects', () => {
+    render(
+      <TraceEntryRenderer entry={{
+        message: 'guardrail:injected',
+        panel: 'request',
+        details: { target: 'request', rules: [{ index: 1, rule: 'moderation:gpt-4o-mini' }, { index: 3, rule: 'topic:judge' }], chars: 123 },
+      }} />
+    );
+    expect(screen.getByText('moderation:gpt-4o-mini')).toBeTruthy();
+    expect(screen.getByText('topic:judge')).toBeTruthy();
+    expect(screen.queryByText('[object Object]')).toBeNull();
+  });
+
   it('omits the injected text when the project did not opt into content capture', () => {
     render(
       <TraceEntryRenderer entry={{

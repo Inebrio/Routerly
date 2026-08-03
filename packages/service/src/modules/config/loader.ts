@@ -177,9 +177,15 @@ export async function writeConfig<K extends keyof StoredTypeMap>(
  * Appends a single usage record without locking the whole file for long.
  */
 export async function appendUsageRecord(record: UsageRecord): Promise<void> {
+  await appendUsageRecords([record]);
+}
+
+/** Same, for records that finish together: one read-modify-write for all of them. */
+export async function appendUsageRecords(records: UsageRecord[]): Promise<void> {
   if (process.env['ROUTERLY_SKIP_TRACKING']) return; // ponytail: env guard, skips write in e2e/test runs
+  if (records.length === 0) return;
   const existing = await readConfig('usage');
-  existing.push(record);
+  existing.push(...records);
   await writeConfig('usage', existing);
 }
 
