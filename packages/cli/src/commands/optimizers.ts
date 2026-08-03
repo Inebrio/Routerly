@@ -28,6 +28,8 @@ interface CheckpointState {
   license: string;
   note: string;
   state: 'absent' | 'downloading' | 'ready';
+  /** The one a step with no checkpoint of its own runs on. */
+  isDefault?: boolean;
   progress?: number;
   loadedBytes?: number;
   totalBytes?: number;
@@ -177,7 +179,10 @@ project uses is set with \`routerly optimizers config <project> --checkpoint <ke
         console.log(`${chalk.gray('runtime:')} ${state.runtimeInstalled ? 'installed' : 'not installed'}`);
         const table = new Table({ head: ['Key', 'Name', 'Size', 'State', 'Notes'].map(h => chalk.cyan(h)) });
         for (const c of state.checkpoints) {
-          table.push([c.key, c.label, `${c.sizeMb} MB`, checkpointStateCell(c), c.note]);
+          table.push([
+            c.isDefault ? `${c.key} ${chalk.dim('(default)')}` : c.key,
+            c.label, `${c.sizeMb} MB`, checkpointStateCell(c), c.note,
+          ]);
         }
         console.log(table.toString());
         for (const c of state.checkpoints) {

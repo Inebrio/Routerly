@@ -189,6 +189,12 @@ const downloads = new Map<string, Download>()
 /** What a surface needs to render one checkpoint's row. */
 export interface CheckpointState extends LlmLinguaCheckpoint {
   state: 'absent' | 'downloading' | 'ready'
+  /**
+   * The one a step with no `model` runs on. Reported rather than left for each
+   * surface to re-derive, because an env override changes it and only this host
+   * knows about that.
+   */
+  isDefault: boolean
   /** 0-100 while downloading, absent otherwise. */
   progress?: number
   /** Bytes fetched so far, while downloading. */
@@ -224,13 +230,15 @@ function progressOf(d: Download): { progress: number; loadedBytes: number; total
  * actually on disk.
  */
 export function checkpointStates(): CheckpointState[] {
+  const fallback = checkpointFor(undefined).key
   return checkpoints().map((c) => {
+    const isDefault = c.key === fallback
     const ready = isModelAvailable(c.key)
     const d = downloads.get(c.key)
-    if (ready) return { ...c, state: 'ready' as const, ...(d?.error ? { error: d.error } : {}) }
-    if (!d) return { ...c, state: 'absent' as const }
-    if (d.error) return { ...c, state: 'absent' as const, error: d.error }
-    return { ...c, state: 'downloading' as const, ...progressOf(d) }
+    if (ready) return { ...c, isDefault, state: 'ready' as const, ...(d?.error ? { error: d.error } : {}) }
+    if (!d) return { ...c, isDefault, state: 'absent' as const }
+    if (d.error) return { ...c, isDefault, state: 'absent' as const, error: d.error }
+    return { ...c, isDefault, state: 'downloading' as const, ...progressOf(d) }
   })
 }
 

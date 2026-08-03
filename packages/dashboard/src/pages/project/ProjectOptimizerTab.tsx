@@ -8,12 +8,11 @@ import {
   getProfiles,
   assignProjectProfiles,
   previewOptimizers,
-  getLlmLinguaModel,
-  installLlmLinguaModel,
+  getModels,
   type InstalledOptimizer,
+  type Model,
   type OptimizerProfile,
   type OptimizerPreviewResult,
-  type LlmLinguaModelState,
 } from '../../api';
 import { useProject } from './ProjectLayout';
 import { useAuth } from '../../AuthContext';
@@ -48,8 +47,10 @@ export function ProjectOptimizerTab() {
   // Sample conversations shipped with Routerly, offered as an alternative to
   // typing one. Routerly never records real prompts, so there is nothing else.
   const [pickedFixture, setPickedFixture] = useState('');
-  // The optional LLMLingua-2 checkpoint on the service host, loaded lazily.
-  const [model, setModel] = useState<LlmLinguaModelState | null>(null);
+  // Model the sample is addressed to. Steps that size themselves on a context
+  // window read it, so without one they have nothing to fit the prompt into.
+  const [previewModel, setPreviewModel] = useState('');
+  const [models, setModels] = useState<Model[]>([]);
   // The prompt the last preview actually ran on, so step 1 has something to diff against.
   const [previewInput, setPreviewInput] = useState<Message[]>([]);
   const [openStep, setOpenStep] = useState<number | null>(null);
@@ -71,18 +72,8 @@ export function ProjectOptimizerTab() {
 
   useEffect(() => {
     if (!canRead) return;
-    getLlmLinguaModel().then(setModel).catch(() => setModel(null));
+    getModels().then(setModels).catch(() => setModels([]));
   }, [canRead]);
-
-  // A download takes minutes and happens on the service host, so the only way to
-  // see it finish is to ask again. Polling stops as soon as it is not running.
-  useEffect(() => {
-    if (model?.state !== 'downloading') return;
-    const timer = setInterval(() => {
-      getLlmLinguaModel().then(setModel).catch(() => {});
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [model?.state]);
 
   // Merge the project's configured steps (in order) with any installed
   // optimizer not yet configured (appended, disabled).
@@ -142,14 +133,6 @@ export function ProjectOptimizerTab() {
     ? chosenFixture.messages
     : [{ role: 'user', content: sample }];
 
-  async function onInstallModel() {
-    try {
-      setModel(await installLlmLinguaModel());
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to start the model download');
-    }
-  }
-
   async function runPreview() {
     /* v8 ignore next */
     if (!project) return;
@@ -162,6 +145,7 @@ export function ProjectOptimizerTab() {
         projectId: project.id,
         sampleMessages: previewMessages,
         steps: buildOptimizerSteps(rows),
+        ...(previewModel ? { model: previewModel } : {}),
       });
       setPreviewInput(previewMessages);
       setPreview(result);
@@ -188,6 +172,15 @@ export function ProjectOptimizerTab() {
   );
 
   const savedDelta = preview ? preview.estimatedTokensBefore - preview.estimatedTokensAfter : 0;
+
+  // The models this project can be addressed with, or every configured model
+  // when the project allows all of them. The context window is what makes the
+  // choice matter, so it is on the label.
+  const modelOptions = (project?.models.length ? project.models.map(m => m.modelId) : models.map(m => m.id))
+    .map(id => {
+      const window = models.find(m => m.id === id)?.contextWindow;
+      return { value: id, label: window ? `${id} (${Math.round(window / 1000)}k context)` : id };
+    });
 
   const assignedProfileId = project?.optimizerProfileId ?? '';
   const profileAssigned = assignedProfileId !== '';
@@ -276,37 +269,6 @@ export function ProjectOptimizerTab() {
           </>
         )}
 
-        {/* Only a pipeline that lists llmlingua-2 has to care about the checkpoint. */}
-        {rows.some(r => r.id === 'llmlingua-2' && r.enabled) && model && (
-          <div style={{ marginTop: 12, padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 6 }}>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-              LLMLingua-2 model: <strong>{model.modelId}</strong> ({model.dtype})
-            </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.45 }}>
-              {!model.runtimeInstalled
-                ? 'The optional @huggingface/transformers dependency is not installed on the service host. Install it and restart the service to enable this step.'
-                : model.state === 'ready'
-                  ? 'Installed. This step compresses prompts in any language the model covers.'
-                  : model.state === 'downloading'
-                    ? 'Downloading. This takes a few minutes the first time.'
-                    : 'Not installed. Until it is, this step is skipped on every request.'}
-            </div>
-            {model.error && (
-              <div style={{ fontSize: '0.72rem', color: 'var(--danger)', marginTop: 4 }}>{model.error}</div>
-            )}
-            {model.runtimeInstalled && model.state === 'absent' && (
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                style={{ marginTop: 8 }}
-                onClick={() => void onInstallModel()}
-                disabled={!canManage}
-              >
-                Install model
-              </button>
-            )}
-          </div>
-        )}
       </div>
 
       {canManage && !profileAssigned && rows.length > 0 && (
@@ -346,6 +308,21 @@ export function ProjectOptimizerTab() {
           />
           <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.45 }}>
             Sample conversations shipped with Routerly. Routerly does not record real prompts.
+          </p>
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <span className="form-label" style={{ fontSize: '0.75rem' }}>Model</span>
+          <SearchableSelect
+            style={{ maxWidth: 420 }}
+            ariaLabel="Model to preview against"
+            value={previewModel}
+            onChange={v => { setPreviewModel(v); setPreview(null); }}
+            options={[{ value: '', label: 'No model' }, ...modelOptions]}
+          />
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.45 }}>
+            Steps that trim to fit a context window need to know which window. Without a model they are skipped, exactly
+            as they would be on a request that names a model Routerly has no window for.
           </p>
         </div>
 
