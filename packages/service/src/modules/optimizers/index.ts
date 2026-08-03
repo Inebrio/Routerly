@@ -3,6 +3,7 @@ import { sessionDedupModule } from './session-dedup/index.js'
 import { ccrModule } from './ccr/index.js'
 import { rtkModule } from './rtk/index.js'
 import { headroomModule } from './headroom/index.js'
+import { jsonTableModule } from './json-table/index.js'
 import { relevanceModule } from './relevance/index.js'
 import { cavemanModule } from './caveman/index.js'
 import { llmlingua2Module } from './llmlingua2/index.js'
@@ -20,6 +21,7 @@ export const optimizerModules: RouterlyModule[] = [
   ccrModule,
   rtkModule,
   headroomModule,
+  jsonTableModule,
   relevanceModule,
   cavemanModule,
   llmlingua2Module,

@@ -46,6 +46,7 @@ describe('type-checks', () => {
       'ccr',
       'rtk',
       'headroom',
+      'json-table',
       'relevance',
       'caveman',
       'llmlingua-2',
@@ -58,8 +59,8 @@ describe('type-checks', () => {
       ? true
       : false = true;
 
-    // Runtime check: exactly 7 members.
-    expect(ALL_OPTIMIZER_IDS.length).toBe(7);
+    // Runtime check: exactly 8 members.
+    expect(ALL_OPTIMIZER_IDS.length).toBe(8);
 
     // Type-level test: optimizers attaches to ProjectConfig
     const project: Pick<ProjectConfig, 'optimizers'> = { optimizers: config };
