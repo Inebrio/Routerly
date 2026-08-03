@@ -108,6 +108,15 @@ export const headroomOptimizer = {
     return tokensOf(readMessages(ctx.request)) > contextWindow - reservedOf(ctx)
   },
 
+  explain(ctx) {
+    const contextWindow = contextWindowOf(ctx)
+    if (!contextWindow) {
+      return `No context window known for the requested model ${ctx.request.model || '(unnamed)'}.`
+    }
+    const budget = contextWindow - reservedOf(ctx)
+    return `Prompt is ${tokensOf(readMessages(ctx.request))} tokens, within the ${budget}-token budget (${contextWindow} window minus ${reservedOf(ctx)} reserved).`
+  },
+
   estimate(ctx) {
     const contextWindow = contextWindowOf(ctx)
     const messages = readMessages(ctx.request)

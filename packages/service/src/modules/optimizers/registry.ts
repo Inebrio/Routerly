@@ -18,6 +18,12 @@ export interface Optimizer {
   id: OptimizerId
   klass: OptimizerClass
   supports(ctx: ProxyContext): boolean
+  /**
+   * One sentence saying why `supports()` said no, for the operator reading a
+   * preview or a trace. Optional: an optimizer without one skips silently, as
+   * every optimizer did before this existed. Never called when supports() is true.
+   */
+  explain?(ctx: ProxyContext): string | undefined
   estimate(ctx: ProxyContext): OptimizerEstimate
   // May be async: ONNX-backed optimizers (llmlingua-2) run Promise-based
   // inference. core.ts awaits the result; synchronous optimizers just return a

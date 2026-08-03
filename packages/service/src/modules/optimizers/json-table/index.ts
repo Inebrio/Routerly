@@ -103,6 +103,10 @@ export const jsonTableOptimizer = {
     return plan(readMessages(ctx.request), minRowsOf(ctx)).changed
   },
 
+  explain(ctx) {
+    return `No message is a JSON array of at least ${minRowsOf(ctx)} uniform flat objects.`
+  },
+
   estimate(ctx) {
     const messages = readMessages(ctx.request)
     const { newMessages } = plan(messages, minRowsOf(ctx))

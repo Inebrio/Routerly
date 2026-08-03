@@ -110,6 +110,11 @@ export const ccrOptimizer = {
     return segment(readMessages(ctx.request)).turns.length > windowOf(ctx)
   },
 
+  explain(ctx) {
+    const turns = segment(readMessages(ctx.request)).turns.length
+    return `Conversation has ${turns} turn${turns === 1 ? '' : 's'}; condensing starts above ${windowOf(ctx)}.`
+  },
+
   estimate(ctx) {
     const { before, after } = plan(readMessages(ctx.request), windowOf(ctx))
     return { estimatedTokensBefore: before, estimatedTokensAfter: after }

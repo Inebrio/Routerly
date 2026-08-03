@@ -73,6 +73,16 @@ export const llmlingua2Optimizer: Optimizer = {
     return model.isModelAvailable() && model.isRuntimeInstalled()
   },
 
+  explain() {
+    if (!model.isRuntimeInstalled()) {
+      return 'Optional dependency @huggingface/transformers is not installed on the service host.'
+    }
+    if (!model.isModelAvailable()) {
+      return 'Compression model is not downloaded yet. Install it from the optimizer tab or with `routerly optimizers model --install`.'
+    }
+    return 'Step is not enabled on this project.'
+  },
+
   // No inference in the sync preview: apply the keep-ratio as a cheap heuristic.
   estimate(ctx) {
     const before = tokensOf(readMessages(ctx.request))

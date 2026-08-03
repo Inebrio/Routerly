@@ -207,6 +207,14 @@ export const cavemanOptimizer = {
     return plan(messages).changed
   },
 
+  explain(ctx) {
+    const messages = readMessages(ctx.request)
+    if (englishRatio(messages) < MIN_ENGLISH_RATIO) {
+      return 'Text is not English: this step only knows English function words. Use LLMLingua-2 for other languages.'
+    }
+    return 'Nothing left to strip: no filler or function word outside code, URLs, paths and JSON.'
+  },
+
   estimate(ctx) {
     const messages = readMessages(ctx.request)
     const { newMessages } = plan(messages)

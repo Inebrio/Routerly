@@ -316,6 +316,23 @@ describe('optimizer.apply — trace', () => {
     ])
   })
 
+  it('carries the optimizer own words for a skip, and omits them when it has none', async () => {
+    const { proc } = await setup([
+      opt('ccr', 'lossless', { supports: () => false, explain: () => 'Conversation has 1 turn; condensing starts above 3.' }),
+      opt('rtk', 'lossless', { supports: () => false }),
+    ])
+    const emit = vi.fn()
+    const ctx = baseCtx({
+      project: { id: 'p1', optimizers: { steps: [{ id: 'ccr', enabled: true }, { id: 'rtk', enabled: true }] } } as any,
+      emit,
+    })
+    await proc.run(ctx)
+    const [ccr, rtk] = details(emit)
+    expect(ccr).toMatchObject({ id: 'ccr', outcome: 'skipped', reason: 'unsupported-request' })
+    expect(String(ccr.detail)).toContain('turn')
+    expect(rtk).not.toHaveProperty('detail')
+  })
+
   it('reports a rollback with its reason: safety gate, invalid result, or a throw', async () => {
     const shrink = (id: string, klass: OptimizerClass, after: number, over: Partial<Optimizer> = {}) =>
       opt(id, klass, {

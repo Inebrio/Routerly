@@ -57,6 +57,13 @@ export const sessionDedupOptimizer = {
     return readMessages(ctx.request).length > 1
   },
 
+  explain(ctx) {
+    const n = readMessages(ctx.request).length
+    return n < 2
+      ? 'Only one message: nothing can repeat yet.'
+      : 'No message repeats three or more times in a row.'
+  },
+
   estimate(ctx) {
     const messages = readMessages(ctx.request)
     const { kept } = plan(messages)
