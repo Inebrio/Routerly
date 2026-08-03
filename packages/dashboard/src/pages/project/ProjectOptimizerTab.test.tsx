@@ -11,6 +11,7 @@ vi.mock('../../api', () => ({
   previewOptimizers: vi.fn(),
   getProfiles: vi.fn(),
   assignProjectProfiles: vi.fn(),
+  getModels: vi.fn(),
   getLlmLinguaModel: vi.fn(),
   installLlmLinguaModel: vi.fn(),
 }));
@@ -41,7 +42,7 @@ vi.mock('../../components/SearchableSelect', () => ({
   ),
 }));
 
-import { updateProject, getInstalledOptimizers, previewOptimizers, getProfiles, assignProjectProfiles, getLlmLinguaModel, installLlmLinguaModel } from '../../api';
+import { updateProject, getInstalledOptimizers, previewOptimizers, getProfiles, assignProjectProfiles, getModels, getLlmLinguaModel } from '../../api';
 import { optimizerFixture } from '@routerly/shared';
 import { useAuth } from '../../AuthContext';
 
@@ -50,8 +51,19 @@ const mockGetInstalled = vi.mocked(getInstalledOptimizers as () => Promise<unkno
 const mockPreview = vi.mocked(previewOptimizers as (...a: unknown[]) => Promise<unknown>);
 const mockGetProfiles = vi.mocked(getProfiles as (...a: unknown[]) => Promise<unknown>);
 const mockAssignProfile = vi.mocked(assignProjectProfiles as (...a: unknown[]) => Promise<unknown>);
+const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
 const mockGetModel = vi.mocked(getLlmLinguaModel as (...a: unknown[]) => Promise<unknown>);
-const mockInstallModel = vi.mocked(installLlmLinguaModel as (...a: unknown[]) => Promise<unknown>);
+
+const checkpoint = {
+  key: 'bert-multilingual-q8',
+  label: 'BERT multilingual, quantized',
+  repo: 'org/repo',
+  dtype: 'q8',
+  sizeMb: 182,
+  license: 'Apache-2.0.',
+  note: 'The default.',
+  isDefault: true,
+};
 const mockUseAuth = vi.mocked(useAuth);
 
 const sampleProfiles = [
@@ -114,7 +126,8 @@ beforeEach(() => {
   mockGetProfiles.mockResolvedValue(sampleProfiles);
   mockAssignProfile.mockResolvedValue({ ...mockProject });
   mockUpdateProject.mockResolvedValue({ ...mockProject });
-  mockGetModel.mockResolvedValue({ state: 'absent', modelId: 'test/model', dtype: 'q8', runtimeInstalled: false });
+  mockGetModels.mockResolvedValue([{ id: 'openai/gpt-4o', name: 'GPT-4o', provider: 'openai', endpoint: '', cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 128000 }]);
+  mockGetModel.mockResolvedValue({ runtimeInstalled: false, checkpoints: [{ ...checkpoint, state: 'absent' }] });
   mockPreview.mockResolvedValue({
     estimatedTokensBefore: 100,
     estimatedTokensAfter: 60,
@@ -346,8 +359,8 @@ describe('ProjectOptimizerTab — fixtures and diff', () => {
   it('offers the shipped conversations and says real prompts are not recorded', async () => {
     renderTab();
     const select = await screen.findByLabelText('Prompt to preview');
-    // placeholder + 'type below' + the three shipped fixtures
-    await waitFor(() => expect(select.querySelectorAll('option')).toHaveLength(5));
+    // placeholder + 'type below' + the four shipped fixtures
+    await waitFor(() => expect(select.querySelectorAll('option')).toHaveLength(6));
     expect(screen.getByText(/routerly does not record real prompts/i)).toBeInTheDocument();
     expect(screen.getByLabelText('Sample prompt')).toBeInTheDocument();
   });
@@ -358,8 +371,8 @@ describe('ProjectOptimizerTab — fixtures and diff', () => {
     await user.selectOptions(await screen.findByLabelText('Prompt to preview'), 'support-chat-en');
     // The textarea gives way to a read-only rendering of the fixture.
     expect(screen.queryByLabelText('Sample prompt')).not.toBeInTheDocument();
-    expect(screen.getByText(/exercises ccr, session-dedup and relevance/i)).toBeInTheDocument();
-    expect(screen.getByText(/system: You are a support agent/)).toBeInTheDocument();
+    expect(screen.getByText(/exercises session-dedup, ccr, rtk, relevance and caveman/i)).toBeInTheDocument();
+    expect(screen.getByText(/system: You are a customer care agent for Northwind Supply/)).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /run preview/i }));
     await waitFor(() => expect(mockPreview).toHaveBeenCalled());
@@ -432,52 +445,77 @@ describe('ProjectOptimizerTab — fixtures and diff', () => {
     mockGetModel.mockRejectedValue(new Error('nope'));
     renderTab();
     await waitFor(() => expect(screen.getByLabelText('Prompt to preview')).toBeInTheDocument());
-    expect(screen.queryByText(/LLMLingua-2 model/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/checkpoints on the service host/i)).not.toBeInTheDocument();
   });
 });
 
-// ── The optional LLMLingua-2 checkpoint ──────────────────────────────────────
+// ── The model the sample is addressed to ─────────────────────────────────────
 
-describe('ProjectOptimizerTab — llmlingua-2 model', () => {
+describe('ProjectOptimizerTab — preview model', () => {
+  it('offers the project models with their context window', async () => {
+    renderTab();
+    const select = await screen.findByLabelText('Model to preview against');
+    await waitFor(() => expect(screen.getByText('openai/gpt-4o (128k context)')).toBeInTheDocument());
+    // placeholder + 'no model' + the one project model
+    expect(select.querySelectorAll('option')).toHaveLength(3);
+  });
+
+  it('sends the picked model, so context-window steps have a window to fit', async () => {
+    const user = userEvent.setup();
+    renderTab();
+    await user.selectOptions(await screen.findByLabelText('Model to preview against'), 'openai/gpt-4o');
+    await user.type(screen.getByLabelText('Sample prompt'), 'hello');
+    await user.click(screen.getByRole('button', { name: /run preview/i }));
+    await waitFor(() => expect(mockPreview).toHaveBeenCalled());
+    expect((mockPreview.mock.calls[0] as [{ model?: string }])[0].model).toBe('openai/gpt-4o');
+  });
+
+  it('omits the model when none is picked', async () => {
+    const user = userEvent.setup();
+    renderTab();
+    await user.type(await screen.findByLabelText('Sample prompt'), 'hello');
+    await user.click(screen.getByRole('button', { name: /run preview/i }));
+    await waitFor(() => expect(mockPreview).toHaveBeenCalled());
+    expect((mockPreview.mock.calls[0] as [{ model?: string }])[0]).not.toHaveProperty('model');
+  });
+});
+
+// ── The optional LLMLingua-2 checkpoint, rendered inside its own row ─────────
+
+describe('ProjectOptimizerTab — llmlingua-2 checkpoints', () => {
   const withStep = {
     ...mockProject,
     optimizers: { steps: [{ id: 'llmlingua-2', enabled: true }] },
   };
 
-  it('says nothing about the model when the pipeline does not use it', async () => {
-    mockGetModel.mockResolvedValue({ state: 'absent', modelId: 'm', dtype: 'q8', runtimeInstalled: true });
+  it('says nothing about checkpoints when the pipeline does not list the step', async () => {
+    mockGetModel.mockResolvedValue({ runtimeInstalled: true, checkpoints: [{ ...checkpoint, state: 'ready' }] });
     renderTab();
     await waitFor(() => expect(screen.getByLabelText('Prompt to preview')).toBeInTheDocument());
-    expect(screen.queryByText(/LLMLingua-2 model/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/checkpoints on the service host/i)).not.toBeInTheDocument();
   });
 
-  it('reports a missing runtime on the service host', async () => {
-    mockGetModel.mockResolvedValue({ state: 'absent', modelId: 'm', dtype: 'q8', runtimeInstalled: false });
+  it('puts the checkpoints inside the llmlingua-2 row, not in a box of their own', async () => {
+    mockGetModel.mockResolvedValue({ runtimeInstalled: true, checkpoints: [{ ...checkpoint, state: 'ready' }] });
     renderTab(withStep);
-    await waitFor(() => expect(screen.getByText(/is not installed on the service host/i)).toBeInTheDocument());
-    expect(screen.queryByRole('button', { name: /install model/i })).not.toBeInTheDocument();
+    const panel = await screen.findByText(/checkpoints on the service host/i);
+    expect(document.querySelector('[data-testid="optimizer-row-body-llmlingua-2"]')).toContainElement(panel);
   });
 
-  it('installs the checkpoint and reports the download', async () => {
+  it('saves the picked checkpoint on the step', async () => {
     const user = userEvent.setup();
-    mockGetModel.mockResolvedValue({ state: 'absent', modelId: 'm', dtype: 'q8', runtimeInstalled: true });
-    mockInstallModel.mockResolvedValue({ state: 'downloading', modelId: 'm', dtype: 'q8', runtimeInstalled: true });
+    mockGetModel.mockResolvedValue({
+      runtimeInstalled: true,
+      checkpoints: [
+        { ...checkpoint, state: 'ready' },
+        { ...checkpoint, key: 'xlm-roberta-large-int8', label: 'XLM-RoBERTa large, int8', isDefault: false, state: 'ready' },
+      ],
+    });
     renderTab(withStep);
-    await user.click(await screen.findByRole('button', { name: /install model/i }));
-    await waitFor(() => expect(screen.getByText(/downloading\. this takes a few minutes/i)).toBeInTheDocument());
-    expect(mockInstallModel).toHaveBeenCalled();
-  });
-
-  it('shows the error the host reported', async () => {
-    mockGetModel.mockResolvedValue({ state: 'absent', modelId: 'm', dtype: 'q8', runtimeInstalled: true, error: 'disk full' });
-    renderTab(withStep);
-    await waitFor(() => expect(screen.getByText('disk full')).toBeInTheDocument());
-  });
-
-  it('disables the install button without optimizers:manage', async () => {
-    setAuth(['optimizers:read']);
-    mockGetModel.mockResolvedValue({ state: 'absent', modelId: 'm', dtype: 'q8', runtimeInstalled: true });
-    renderTab(withStep);
-    await waitFor(() => expect(screen.getByRole('button', { name: /install model/i })).toBeDisabled());
+    await user.selectOptions(await screen.findByLabelText('LLMLingua-2 checkpoint'), 'xlm-roberta-large-int8');
+    await user.click(screen.getByRole('button', { name: /save optimizers/i }));
+    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
+    const [, payload] = mockUpdateProject.mock.calls[0] as [string, { optimizers: { steps: unknown[] } }];
+    expect(payload.optimizers.steps[0]).toEqual({ id: 'llmlingua-2', enabled: true, model: 'xlm-roberta-large-int8' });
   });
 });

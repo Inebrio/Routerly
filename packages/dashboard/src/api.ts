@@ -1157,7 +1157,7 @@ export const deleteExperiment = (id: string) =>
   request<void>(`/experiments/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
 // ── Optimizers ────────────────────────────────────────────────────────────
-import type { Message, OptimizerConfig, OptimizerId, OptimizerStep } from '@routerly/shared';
+import type { LlmLinguaCheckpoint, Message, OptimizerConfig, OptimizerId, OptimizerStep } from '@routerly/shared';
 export type { OptimizerConfig, OptimizerId, OptimizerStep } from '@routerly/shared';
 
 export interface InstalledOptimizer {
@@ -1190,24 +1190,38 @@ export interface OptimizerPreviewResult {
 
 export const previewOptimizers = (body: {
   projectId?: string;
+  /** Model the sample is addressed to, so context-window steps have a window. */
+  model?: string;
   sampleMessages: Message[];
   steps: OptimizerStep[];
 }) => request<OptimizerPreviewResult>('/optimizers/preview', { method: 'POST', body: JSON.stringify(body) });
 
-/** State of the optional LLMLingua-2 checkpoint on the service host. */
-export interface LlmLinguaModelState {
+/** One installable LLMLingua-2 checkpoint, as the service host reports it. */
+export interface LlmLinguaCheckpointState extends LlmLinguaCheckpoint {
   state: 'absent' | 'downloading' | 'ready';
-  modelId: string;
-  dtype: string;
-  runtimeInstalled: boolean;
+  /** The one a step with no `model` runs on. */
+  isDefault: boolean;
+  /** 0-100 while downloading, absent otherwise. */
+  progress?: number;
+  loadedBytes?: number;
+  totalBytes?: number;
   error?: string;
+}
+
+/** State of the optional LLMLingua-2 checkpoints on the service host. */
+export interface LlmLinguaModelState {
+  runtimeInstalled: boolean;
+  checkpoints: LlmLinguaCheckpointState[];
 }
 
 export const getLlmLinguaModel = () => request<LlmLinguaModelState>('/optimizers/llmlingua2/model');
 
-/** Starts the download and returns at once: the caller polls getLlmLinguaModel. */
-export const installLlmLinguaModel = () =>
-  request<LlmLinguaModelState>('/optimizers/llmlingua2/model', { method: 'POST' });
+/** Starts one download and returns at once: the caller polls getLlmLinguaModel. */
+export const installLlmLinguaModel = (key?: string) =>
+  request<LlmLinguaModelState>('/optimizers/llmlingua2/model', {
+    method: 'POST',
+    body: JSON.stringify(key ? { key } : {}),
+  });
 
 // ── Client configurator ──────────────────────────────────────────────────
 import type { ClientMeta } from '@routerly/shared';
