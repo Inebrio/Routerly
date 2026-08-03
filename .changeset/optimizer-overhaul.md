@@ -36,7 +36,9 @@ pseudo-random ids from a local hash instead of the checkpoint's vocabulary, and
 split text on whitespace instead of tokenizing it. It now loads the model
 through `@huggingface/transformers`, which replaces the `onnxruntime-node`
 optional dependency, and compresses any language the multilingual encoder
-covers.
+covers. It also threw on any message past the encoder's 512-token window and
+was rolled back silently, so it did nothing on exactly the long prompts it
+exists to compress; tokens are now scored one window at a time.
 
 Added: three installable `llmlingua-2` checkpoints instead of one unreachable
 default, from 182 MB at 8-bit to 713 MB at full precision, downloaded on the
