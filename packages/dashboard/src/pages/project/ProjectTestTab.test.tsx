@@ -3,7 +3,7 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { ProjectTestTab } from './ProjectTestTab';
-import { streamTraces } from '../../api';
+import { getTrace, streamTraces } from '../../api';
 
 // ponytail: mock ReactMarkdown as identity render — we only care about content
 vi.mock('react-markdown', () => ({
@@ -12,7 +12,7 @@ vi.mock('react-markdown', () => ({
 
 vi.mock('remark-gfm', () => ({ default: () => {} }));
 
-vi.mock('../../api', () => ({ streamTraces: vi.fn() }));
+vi.mock('../../api', () => ({ streamTraces: vi.fn(), getTrace: vi.fn() }));
 
 vi.mock('../../components/TraceEntryRenderer', () => ({
   TraceEntryRenderer: ({ entry }: { entry: { message: string; details?: unknown } }) => (
@@ -76,7 +76,11 @@ function mockTraceStream(entries: Array<{ panel: string; message: string; detail
   });
 }
 
-beforeEach(() => { mockTraceStream(); });
+beforeEach(() => {
+  mockTraceStream();
+  // No stored trace by default: the sidebar keeps what it collected live.
+  vi.mocked(getTrace).mockRejectedValue(new Error('not stored'));
+});
 
 function mockFetchError(status: number) {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
@@ -137,18 +141,9 @@ describe('ProjectTestTab — initial render', () => {
     expect(screen.getByText('Debug Log')).toBeTruthy();
   });
 
-  it('shows 4 debug panels', () => {
+  it('debug sidebar shows "No request sent yet." placeholder', () => {
     renderTab();
-    expect(screen.getByText('Router Request')).toBeTruthy();
-    expect(screen.getByText('Router Response')).toBeTruthy();
-    expect(screen.getByText('Request')).toBeTruthy();
-    expect(screen.getByText('Response')).toBeTruthy();
-  });
-
-  it('debug panels show "No request sent yet." placeholder', () => {
-    renderTab();
-    const placeholders = screen.getAllByText('No request sent yet.');
-    expect(placeholders.length).toBe(4);
+    expect(screen.getByText('No request sent yet.')).toBeTruthy();
   });
 
   it('Send button is disabled when input is empty or no API key', () => {
@@ -534,7 +529,7 @@ describe('ProjectTestTab — trace events', () => {
     await userEvent.click(screen.getByText('Clear'));
     await waitFor(() => expect(screen.queryByTestId('trace-entry')).toBeNull());
     // Should show placeholder again
-    expect(screen.getAllByText('No request sent yet.').length).toBe(4);
+    expect(screen.getByText('No request sent yet.')).toBeTruthy();
   });
 
   it('result event is ignored (no error shown)', async () => {
@@ -749,8 +744,12 @@ describe('ProjectTestTab — response panel trace entries', () => {
     await waitFor(() => expect(screen.getByText('model:error')).toBeTruthy());
   });
 
-  it('response panel renders model:thinking entry with details toggle', async () => {
-    mockTraceStream([{"panel":"response","message":"model:thinking","details":{"text":"I am thinking"}}]);
+  it('every entry of a turn lands in the same log, whatever its panel', async () => {
+    mockTraceStream([
+      { panel: 'router-request', message: 'route' },
+      { panel: 'response', message: 'model:thinking', details: { text: 'I am thinking' } },
+      { panel: 'response', message: 'model:response', details: { tokens: 42 } },
+    ]);
     mockFetchOk([
       'data: [DONE]',
     ]);
@@ -758,42 +757,32 @@ describe('ProjectTestTab — response panel trace entries', () => {
     await userEvent.type(screen.getByPlaceholderText('sk-rt-...'), 'sk-rt-mykey');
     await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'hi');
     await userEvent.click(screen.getByTitle('Send (Enter)'));
-    await waitFor(() => expect(screen.getByText('model:thinking')).toBeTruthy());
-    // The <details><summary> should contain the text — may appear in both summary and pre
-    expect(screen.getAllByText(/I am thinking/).length).toBeGreaterThan(0);
-  });
-
-  it('response panel renders non-error non-thinking entry as JSON', async () => {
-    mockTraceStream([{"panel":"response","message":"model:response","details":{"tokens":42}}]);
-    mockFetchOk([
-      'data: [DONE]',
-    ]);
-    renderTab();
-    await userEvent.type(screen.getByPlaceholderText('sk-rt-...'), 'sk-rt-mykey');
-    await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'hi');
-    await userEvent.click(screen.getByTitle('Send (Enter)'));
-    await waitFor(() => expect(screen.getByText('model:response')).toBeTruthy());
-    // JSON.stringify output should contain "tokens"
-    expect(screen.getByText(/"tokens": 42/)).toBeTruthy();
+    await waitFor(() => expect(screen.getAllByTestId('trace-entry').length).toBe(3));
+    expect(screen.getByText('Turn #1 trace log · 3 events')).toBeTruthy();
   });
 });
 
-// ── request/response panels "No model calls" empty message ────────────────────
+// ── The stored trace replaces the live one ────────────────────────────────────
 
-describe('ProjectTestTab — request panel empty entries', () => {
-  it('shows "No model calls (routing only)" when request entries are empty for a turn', async () => {
-    mockTraceStream([{"panel":"router-request","message":"route"}]);
+describe('ProjectTestTab — stored trace', () => {
+  it('summarises the turn from the recap the service stored', async () => {
+    mockTraceStream([{ panel: 'router-request', message: 'route' }]);
+    vi.mocked(getTrace).mockResolvedValue({ trace: [
+      { message: 'trace:recap', panel: 'response', details: { outcome: 'ok', model: 'openai/gpt-4o', durationMs: 900 } },
+      { message: 'route', panel: 'router-request' },
+    ] } as never);
     mockFetchOk([
-      // trace for request panel with empty entries (routing-only call)
       'data: [DONE]',
     ]);
     renderTab();
     await userEvent.type(screen.getByPlaceholderText('sk-rt-...'), 'sk-rt-mykey');
     await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'hi');
     await userEvent.click(screen.getByTitle('Send (Enter)'));
-    await waitFor(() => screen.getByText('route'));
-    // request panel: entries for turn 0 is [] (no 'request' panel traces)
-    expect(screen.getAllByText('No model calls (routing only)').length).toBeGreaterThan(0);
+    await waitFor(() => expect(screen.getByText('ok')).toBeTruthy());
+    expect(screen.getByText('TURN #1')).toBeTruthy();
+    expect(screen.getByText('openai/gpt-4o')).toBeTruthy();
+    // The recap belongs to the summary card only — the log keeps the rest
+    expect(screen.getAllByTestId('trace-entry').length).toBe(1);
   });
 });
 
@@ -905,34 +894,6 @@ describe('ProjectTestTab — additional branch coverage', () => {
     await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'hi');
     await userEvent.click(screen.getByTitle('Send (Enter)'));
     await waitFor(() => expect(screen.getByText('answer')).toBeTruthy());
-  });
-
-  it('thinking entry with details.text longer than 80 chars shows ellipsis', async () => {
-    const longText = 'a'.repeat(90);
-    mockTraceStream([{ panel: 'response', message: 'model:thinking', details: { text: longText } }]);
-    mockFetchOk([
-      'data: [DONE]',
-    ]);
-    renderTab();
-    await userEvent.type(screen.getByPlaceholderText('sk-rt-...'), 'sk-rt-mykey');
-    await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'hi');
-    await userEvent.click(screen.getByTitle('Send (Enter)'));
-    await waitFor(() => expect(screen.getByText('model:thinking')).toBeTruthy());
-    expect(screen.getAllByText(/…/).length).toBeGreaterThan(0);
-  });
-
-  it('thinking entry with missing details.text renders empty string', async () => {
-    mockTraceStream([{"panel":"response","message":"model:thinking","details":{}}]);
-    mockFetchOk([
-      'data: [DONE]',
-    ]);
-    renderTab();
-    await userEvent.type(screen.getByPlaceholderText('sk-rt-...'), 'sk-rt-mykey');
-    await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'hi');
-    await userEvent.click(screen.getByTitle('Send (Enter)'));
-    await waitFor(() => expect(screen.getByText('model:thinking')).toBeTruthy());
-    // No ellipsis — text is empty
-    expect(screen.queryByText('…')).toBeNull();
   });
 
   it('error with no message field falls back to "Service error"', async () => {

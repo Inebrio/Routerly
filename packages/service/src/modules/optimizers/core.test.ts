@@ -260,3 +260,89 @@ describe('optimizer.apply — optimizerStats', () => {
     expect(ctx.optimizerStats).toBeUndefined()
   })
 })
+
+// ── Per-step trace: every configured step reports, whatever it did ────────────
+
+describe('optimizer.apply — trace', () => {
+  const details = (emit: ReturnType<typeof vi.fn>) =>
+    emit.mock.calls.map((c) => c[0]).filter((e) => e.message === 'optimizer:step').map((e) => e.details)
+
+  it('reports a step that ran, with what it saved and how long it took', async () => {
+    const shrink = opt('ccr', 'recoverable', {
+      optimize: (ctx) => {
+        writeMessages(ctx.request, [{ role: 'user', content: 'shorter' }])
+        return { changed: true, estimatedTokensBefore: 100, estimatedTokensAfter: 60 }
+      },
+    })
+    const { proc } = await setup([shrink])
+    const emit = vi.fn()
+    const ctx = baseCtx({ project: { id: 'p1', optimizers: { steps: [{ id: 'ccr', enabled: true }] } } as any, emit })
+    await proc.run(ctx)
+    expect(details(emit)[0]).toMatchObject({
+      id: 'ccr', outcome: 'applied', klass: 'recoverable', tokensBefore: 100, tokensAfter: 60, saved: 40,
+    })
+    expect(details(emit)[0].ms).toBeGreaterThanOrEqual(0)
+  })
+
+  it('reports a step that ran and changed nothing', async () => {
+    const { proc } = await setup([opt('session-dedup', 'lossless')])
+    const emit = vi.fn()
+    const ctx = baseCtx({ project: { id: 'p1', optimizers: { steps: [{ id: 'session-dedup', enabled: true }] } } as any, emit })
+    await proc.run(ctx)
+    expect(details(emit)).toEqual([expect.objectContaining({ id: 'session-dedup', outcome: 'unchanged', saved: 0 })])
+  })
+
+  it('reports why each non-running step did not run', async () => {
+    const { proc } = await setup([opt('session-dedup', 'lossless'), opt('ccr', 'lossless', { supports: () => false })])
+    const emit = vi.fn()
+    const ctx = baseCtx({
+      project: {
+        id: 'p1',
+        optimizers: {
+          steps: [
+            { id: 'session-dedup', enabled: false },
+            { id: 'ccr', enabled: true },
+            { id: 'rtk', enabled: true },
+          ],
+        },
+      } as any,
+      emit,
+    })
+    await proc.run(ctx)
+    expect(details(emit)).toEqual([
+      expect.objectContaining({ id: 'session-dedup', outcome: 'skipped', reason: 'disabled' }),
+      expect.objectContaining({ id: 'ccr', outcome: 'skipped', reason: 'unsupported-request' }),
+      expect.objectContaining({ id: 'rtk', outcome: 'skipped', reason: 'not-registered' }),
+    ])
+  })
+
+  it('reports a rollback with its reason: safety gate, invalid result, or a throw', async () => {
+    const shrink = (id: string, klass: OptimizerClass, after: number, over: Partial<Optimizer> = {}) =>
+      opt(id, klass, {
+        optimize: (ctx) => {
+          writeMessages(ctx.request, [{ role: 'user', content: 'shorter' }])
+          return { changed: true, estimatedTokensBefore: 100, estimatedTokensAfter: after }
+        },
+        ...over,
+      })
+    const { proc } = await setup([
+      shrink('llmlingua-2', 'lossy', 5),
+      shrink('ccr', 'recoverable', 60, { validate: () => false }),
+      opt('rtk', 'recoverable', { optimize: () => { throw new Error('boom') } }),
+    ])
+    const emit = vi.fn()
+    const ctx = baseCtx({
+      project: {
+        id: 'p1',
+        optimizers: { steps: [{ id: 'llmlingua-2', enabled: true }, { id: 'ccr', enabled: true }, { id: 'rtk', enabled: true }] },
+      } as any,
+      emit,
+    })
+    await proc.run(ctx)
+    expect(details(emit)).toEqual([
+      expect.objectContaining({ id: 'llmlingua-2', outcome: 'rolled-back', reason: 'safety-gate', tokensAfter: 100, saved: 0 }),
+      expect.objectContaining({ id: 'ccr', outcome: 'rolled-back', reason: 'invalid-result', saved: 0 }),
+      expect.objectContaining({ id: 'rtk', outcome: 'rolled-back', reason: 'threw: boom' }),
+    ])
+  })
+})

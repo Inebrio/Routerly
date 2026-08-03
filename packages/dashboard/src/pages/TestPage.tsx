@@ -7,10 +7,9 @@ import {
   SplitSquareHorizontal, MessageSquare,
 } from 'lucide-react';
 import { getProjects, getPlaygroundPresets, createPlaygroundPreset, deletePlaygroundPreset, getTrace, streamTraces, type Project, type PlaygroundPreset, type TraceEntry } from '../api.js';
-import { TraceEntryRenderer } from '../components/TraceEntryRenderer.js';
-import { MessageStatsCard } from '../components/MessageStatsCard.js';
+import { TraceLog } from '../components/TraceLog.js';
+import { TraceSummary } from '../components/TraceSummary.js';
 import { SearchableSelect } from '../components/SearchableSelect.js';
-import { extractMessageStats } from '../utils/traceUtils.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -336,20 +335,17 @@ function ComparePanel({
                     Debug ({traceHistory.length} {traceHistory.length === 1 ? 'turn' : 'turns'})
                   </summary>
                   <div style={{ maxHeight: 200, overflowY: 'auto', padding: 10, background: 'var(--bg-base)', fontSize: '0.82rem' }}>
-                    {traceHistory.map((traces, i) => {
-                      const stats = extractMessageStats(traces as TraceEntry[]);
-                      return (
-                        <div key={i} style={{ marginBottom: 8 }}>
-                          <MessageStatsCard stats={stats} turnNumber={i + 1} />
-                          <details style={{ marginTop: 4 }}>
-                            <summary style={{ cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-muted)', padding: '4px 8px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 4, userSelect: 'none', display: 'list-item' }}>Technical Details</summary>
-                            <div style={{ marginTop: 4, padding: 8, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4 }}>
-                              {(traces as TraceEntry[]).map((entry, j) => <TraceEntryRenderer key={j} entry={entry} />)}
-                            </div>
-                          </details>
-                        </div>
-                      );
-                    })}
+                    {traceHistory.map((traces, i) => (
+                      <div key={i} style={{ marginBottom: 8 }}>
+                        <TraceSummary trace={traces as TraceEntry[]} turn={i + 1} />
+                        <details style={{ marginTop: 4 }}>
+                          <summary style={{ cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-muted)', padding: '4px 8px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 4, userSelect: 'none', display: 'list-item' }}>Turn #{i + 1} trace log</summary>
+                          <div style={{ marginTop: 4, padding: 8, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4 }}>
+                            <TraceLog entries={traces as TraceEntry[]} collapsed />
+                          </div>
+                        </details>
+                      </div>
+                    ))}
                   </div>
                 </details>
               )}
@@ -1164,20 +1160,15 @@ export function TestPage() {
                     debugTraceHistory.map((traces, i) => {
                       /* v8 ignore next */
                       if (!traces) return null;
-                      const stats = extractMessageStats(traces as any[]);
                       return (
                         <div key={i} style={{ marginBottom: 14 }}>
-                          <MessageStatsCard stats={stats} turnNumber={i + 1} />
+                          <TraceSummary trace={traces as TraceEntry[]} turn={i + 1} />
                           <details style={{ marginTop: 6 }}>
                             <summary style={{ cursor: 'pointer', fontSize: '0.78rem', color: 'var(--text-muted)', padding: '6px 10px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 6, userSelect: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
-                              Technical Details
+                              Turn #{i + 1} trace log
                             </summary>
                             <div style={{ marginTop: 6, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, fontSize: '0.83rem' }}>
-                              {(traces as any[]).map((entry, j) => (
-                                <div key={j} style={{ marginBottom: j < traces.length - 1 ? 10 : 0 }}>
-                                  <TraceEntryRenderer entry={entry} />
-                                </div>
-                              ))}
+                              <TraceLog entries={traces as TraceEntry[]} collapsed />
                             </div>
                           </details>
                         </div>

@@ -128,19 +128,31 @@ export function assembledResponseText(ctx: ProxyContext): string {
 }
 
 /**
+ * What egress actually put on the wire. Last entry of the request, and the only
+ * one that reports the client's side of it: everything before it says what
+ * Routerly decided, this says what the caller received.
+ */
+export function traceEgress(ctx: ProxyContext, details: Record<string, unknown>): void {
+  ctx.emit?.({ panel: 'response', message: 'egress:sent', details: { protocol: ctx.protocol, ...details } })
+}
+
+/**
  * Non-streaming output PII scrub, in place, per first choice (openai.ts L493-506).
  * Returns the found entity list; the caller (Plan 5 pii.output) emits the trace.
  * Callers MUST gate this behind a "should scrub" check (entities/patterns configured)
  * themselves: scrubText defaults to ALL_ENTITIES when effective.entities is undefined,
  * and this function does not gate that on its own.
  */
-export function applyResponseScrub(ctx: ProxyContext, effective: EffectivePii): string[] {
+export function applyResponseScrub(
+  ctx: ProxyContext,
+  effective: EffectivePii,
+): { found: string[]; counts: Record<string, number>; scanned: boolean } {
   const response = ctx.result?.body as ChatCompletionResponse | undefined
   const content = response?.choices?.[0]?.message?.content
-  if (typeof content !== 'string') return []
-  const { text, found } = scrubText(content, effective)
+  if (typeof content !== 'string') return { found: [], counts: {}, scanned: false }
+  const { text, found, counts } = scrubText(content, effective)
   if (found.length > 0 && response) response.choices![0]!.message.content = text
-  return found
+  return { found, counts, scanned: true }
 }
 
 /**
@@ -173,6 +185,25 @@ export async function* wrapWithStreamingScrubber(
       created: Math.floor(Date.now() / 1000), model: ctx.request.model ?? '',
       choices: [{ index: 0, delta: { content: remaining }, finish_reason: null }],
     }
+  }
+  // Only here is the streamed answer complete, so this is the earliest point the
+  // response-side scrub can report anything at all. Until now it reported nothing.
+  const redacted = [...scrubber.found]
+  ctx.emit?.({
+    panel: 'response',
+    message: 'pii:evaluated',
+    details: {
+      target: 'response',
+      mode: 'stream',
+      entities: effective.entities ?? [],
+      customPatterns: effective.customPatterns?.length ?? 0,
+      bufferSize: effective.outputBufferSize ?? 30,
+      redacted,
+      counts: scrubber.counts,
+    },
+  })
+  if (redacted.length > 0) {
+    ctx.emit?.({ panel: 'response', message: 'pii:scrubbed', details: { entities: redacted, counts: scrubber.counts } })
   }
 }
 

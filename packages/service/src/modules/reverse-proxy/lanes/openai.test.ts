@@ -255,6 +255,47 @@ describe('openai transport lane', () => {
     expect(called).toBe(false)
   })
 
+  it('egress traces what it put on the wire, whatever the result kind', async () => {
+    const emit = vi.fn()
+    const reply: any = { send: () => {}, header: () => {}, code: () => reply }
+
+    await openaiEgress.run({ protocol: 'openai', reply, emit, result: { kind: 'passthrough' } } as unknown as ProxyContext)
+    await openaiEgress.run({ protocol: 'openai', reply, emit, traceId: 't1', request: {}, result: { kind: 'json', body: {} } } as unknown as ProxyContext)
+    await openaiEgress.run({ protocol: 'openai', reply, emit, result: { kind: 'block', status: 503, body: { error: {} } } } as unknown as ProxyContext)
+    await openaiEgress.run({ protocol: 'openai', reply, emit, result: { kind: 'block', status: 422 } } as unknown as ProxyContext)
+
+    expect(emit.mock.calls.map((c) => c[0].details)).toEqual([
+      { protocol: 'openai', kind: 'passthrough' },
+      { protocol: 'openai', kind: 'json', status: 200 },
+      { protocol: 'openai', kind: 'block', status: 503 },
+      { protocol: 'openai', kind: 'block', encoding: 'sse', status: 200 },
+    ])
+    expect(emit.mock.calls[0]![0]).toMatchObject({ panel: 'response', message: 'egress:sent' })
+  })
+
+  it('egress counts the SSE frames the client actually received, and names a mid-stream failure', async () => {
+    const emit = vi.fn()
+    const reply: any = {
+      hijack: () => {},
+      raw: { setHeader: () => {}, flushHeaders: () => {}, write: () => {}, end: () => {} },
+    }
+    async function* body() {
+      yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'm', choices: [{ index: 0, delta: { content: 'hi' }, finish_reason: null }] }
+      throw new Error('upstream reset')
+    }
+    const ctx = {
+      protocol: 'openai', reply, emit, traceId: 't1', log: { error: vi.fn() },
+      req: { headers: {} }, request: { model: 'm' },
+      result: { kind: 'stream', body: body() },
+    } as unknown as ProxyContext
+    await openaiEgress.run(ctx)
+    expect(emit).toHaveBeenCalledWith({
+      panel: 'response',
+      message: 'egress:sent',
+      details: { protocol: 'openai', kind: 'stream', encoding: 'sse', frames: 1, bytes: expect.any(Number), error: 'upstream reset' },
+    })
+  })
+
   it('egress no-ops on a block with no body (streaming block already wrote its own bytes)', async () => {
     let called = false
     const reply: any = { send: () => { called = true }, header: () => {}, code: () => { called = true; return reply } }

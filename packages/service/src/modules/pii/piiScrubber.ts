@@ -39,17 +39,26 @@ export interface EffectivePii {
  *   output => target 'response' or 'both'
  * outputBufferSize = max across matched policies (default 30 when none specify).
  */
+/**
+ * The policies `mergePolicies` will actually merge for this direction. The trace
+ * reports "2 of 5 policies active", which is only meaningful if it counts them
+ * by the same rule the scrubber uses.
+ */
+export function activePolicies(policies: PiiPolicy[], direction: 'input' | 'output'): PiiPolicy[] {
+  return policies.filter((p) => {
+    if (p.enabled === false) return false;
+    return direction === 'input'
+      ? (p.target === 'request' || p.target === 'both')
+      : (p.target === 'response' || p.target === 'both');
+  });
+}
+
 export function mergePolicies(policies: PiiPolicy[], direction: 'input' | 'output'): EffectivePii {
   const entitySet = new Set<PiiEntity>();
   const patternSet = new Set<string>();
   let bufferSize: number | undefined;
 
-  for (const p of policies) {
-    if (p.enabled === false) continue;
-    const matches = direction === 'input'
-      ? (p.target === 'request' || p.target === 'both')
-      : (p.target === 'response' || p.target === 'both');
-    if (!matches) continue;
+  for (const p of activePolicies(policies, direction)) {
     for (const e of (p.entities ?? ALL_ENTITIES)) entitySet.add(e);
     for (const pat of (p.customPatterns ?? [])) patternSet.add(pat);
     if (p.outputBufferSize !== undefined) {
@@ -69,21 +78,23 @@ export function mergePolicies(policies: PiiPolicy[], direction: 'input' | 'outpu
  * Replaces PII entities in `text` with typed placeholders (#76).
  *
  * @param entities Entity types to scrub (e.g. ['EMAIL','PHONE']).
- * @returns the scrubbed text and the distinct entity types that were found.
+ * @returns the scrubbed text, the distinct entity types found, and how many
+ *          occurrences each type accounted for (the trace reports both: "EMAIL"
+ *          alone does not say whether one address or forty were redacted).
  */
 export function scrubPii(
   text: string,
   entities: string[],
   customPatterns?: string[],
-): { text: string; found: string[] } {
+): { text: string; found: string[]; counts: Record<string, number> } {
   const active = new Set(entities);
-  const found = new Set<string>();
+  const counts: Record<string, number> = {};
   let result = text;
 
   for (const detector of DETECTORS) {
     if (!active.has(detector.entity)) continue;
     result = result.replace(detector.re, () => {
-      found.add(detector.entity);
+      counts[detector.entity] = (counts[detector.entity] ?? 0) + 1;
       return detector.placeholder;
     });
   }
@@ -91,19 +102,20 @@ export function scrubPii(
   for (const pattern of (customPatterns ?? [])) {
     try {
       const re = new RegExp(pattern, 'gi');
-      const before = result;
-      result = result.replace(re, '[REDACTED]');
-      if (result !== before) found.add('CUSTOM');
+      result = result.replace(re, () => {
+        counts.CUSTOM = (counts.CUSTOM ?? 0) + 1;
+        return '[REDACTED]';
+      });
     } catch { /* skip invalid regex */ }
   }
 
-  return { text: result, found: [...found] };
+  return { text: result, found: Object.keys(counts), counts };
 }
 
 /**
  * Scrubs PII from a single string using the effective config (output direction).
  */
-export function scrubText(text: string, effective: EffectivePii): { text: string; found: string[] } {
+export function scrubText(text: string, effective: EffectivePii): { text: string; found: string[]; counts: Record<string, number> } {
   const entities = effective.entities !== undefined ? effective.entities : ALL_ENTITIES;
   const patterns = effective.customPatterns ?? [];
   return scrubPii(text, entities, patterns);
@@ -116,12 +128,19 @@ export function scrubText(text: string, effective: EffectivePii): { text: string
  * across chunk boundaries are caught. Call push() per chunk, flush() at
  * stream end. N=30 covers most emails, phone numbers, and short IBANs.
  */
+/** Sums per-entity occurrence counts into an accumulator. */
+function addCounts(into: Record<string, number>, from: Record<string, number>): void {
+  for (const [entity, n] of Object.entries(from)) into[entity] = (into[entity] ?? 0) + n;
+}
+
 export class StreamingScrubber {
   private buffer = '';
   private readonly n: number;
   private readonly effective: EffectivePii;
   /** Distinct entity types redacted across all chunks — for the response trace (#76). */
   readonly found = new Set<string>();
+  /** Occurrences per entity type across all chunks. */
+  readonly counts: Record<string, number> = {};
 
   constructor(effective: EffectivePii) {
     this.n = effective.outputBufferSize ?? 30;
@@ -141,15 +160,17 @@ export class StreamingScrubber {
     if (lastSpace <= 0) return '';
     const safe = this.buffer.slice(0, lastSpace + 1);
     this.buffer = this.buffer.slice(lastSpace + 1);
-    const { text: scrubbed, found } = scrubText(safe, this.effective);
+    const { text: scrubbed, found, counts } = scrubText(safe, this.effective);
     found.forEach((e) => this.found.add(e));
+    addCounts(this.counts, counts);
     return scrubbed;
   }
 
   /** Call at stream end. Scrubs and returns the remaining buffer. */
   flush(): string {
-    const { text: result, found } = scrubText(this.buffer, this.effective);
+    const { text: result, found, counts } = scrubText(this.buffer, this.effective);
     found.forEach((e) => this.found.add(e));
+    addCounts(this.counts, counts);
     this.buffer = '';
     return result;
   }
@@ -159,27 +180,33 @@ export class StreamingScrubber {
  * Applies PII scrubbing to every message's string content (#76).
  * Array (multimodal) message content is left untouched.
  *
- * @returns the scrubbed messages array and the distinct entity types redacted
- *          across all messages.
+ * @returns the scrubbed messages array, the distinct entity types redacted
+ *          across all messages, their occurrence counts, and how many message
+ *          contents were actually scanned (multimodal ones are skipped, and a
+ *          trace that says "0 entities" should say what it looked at).
  */
 export function scrubMessages(
   messages: unknown[],
   effective: EffectivePii,
-): { messages: unknown[]; redacted: string[] } {
+): { messages: unknown[]; redacted: string[]; counts: Record<string, number>; scanned: number } {
   const entities = effective.entities !== undefined ? effective.entities : ALL_ENTITIES;
   const patterns = effective.customPatterns ?? [];
   const redacted = new Set<string>();
+  const totals: Record<string, number> = {};
+  let scanned = 0;
 
   const scrubbed = messages.map((message) => {
     if (!message || typeof message !== 'object') return message;
     const content = (message as { content?: unknown }).content;
     if (typeof content !== 'string') return message;
 
-    const { text, found } = scrubPii(content, entities, patterns);
+    scanned += 1;
+    const { text, found, counts } = scrubPii(content, entities, patterns);
     if (found.length === 0) return message;
     found.forEach((entity) => redacted.add(entity));
+    addCounts(totals, counts);
     return { ...(message as object), content: text };
   });
 
-  return { messages: scrubbed, redacted: [...redacted] };
+  return { messages: scrubbed, redacted: [...redacted], counts: totals, scanned };
 }

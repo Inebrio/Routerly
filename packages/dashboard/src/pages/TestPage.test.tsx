@@ -47,20 +47,6 @@ vi.mock('../components/TraceEntryRenderer.js', () => ({
   ),
 }));
 
-vi.mock('../components/MessageStatsCard.js', () => ({
-  MessageStatsCard: () => <div data-testid="stats-card" />,
-}));
-
-vi.mock('../utils/traceUtils.js', () => ({
-  extractMessageStats: vi.fn().mockReturnValue({
-    selectedModel: null, routerScore: null, inputTokens: null, outputTokens: null,
-    cachedTokens: null, latencyMs: null, ttftMs: null, tokensPerSec: null,
-    inputCostUsd: null, outputCostUsd: null, totalCostUsd: null,
-    inputPerMillion: null, outputPerMillion: null,
-    hasError: false, fallbackUsed: false,
-  }),
-}));
-
 // ── Imports after mocks ────────────────────────────────────────────────────
 
 import { TestPage } from './TestPage';
@@ -306,8 +292,8 @@ describe('TestPage — Clear resets debug', () => {
       expect(screen.queryByText('Hello!')).not.toBeNull(),
     { timeout: 4000 });
 
-    // Debug sidebar should show TURN #1 (via stats-card)
-    expect(screen.getAllByTestId('stats-card').length).toBeGreaterThan(0);
+    // Debug sidebar should show the turn
+    expect(screen.getAllByText('Turn #1 trace log').length).toBeGreaterThan(0);
 
     // Click the first Clear button (chat-area; resets both messages and debug)
     const clearBtns = screen.getAllByRole('button', { name: 'Clear' });
@@ -318,7 +304,7 @@ describe('TestPage — Clear resets debug', () => {
     expect(screen.queryByText('Hello!')).toBeNull();
     // Debug sidebar back to empty state
     expect(screen.getByText('No debug data yet.')).toBeTruthy();
-    expect(screen.queryByTestId('stats-card')).toBeNull();
+    expect(screen.queryByText('Turn #1 trace log')).toBeNull();
   });
 });
 
@@ -924,9 +910,12 @@ describe('TestPage — image message content parts', () => {
 // ── Debug sidebar shows trace entries after a turn ────────────────────────────
 
 describe('TestPage — debug sidebar trace entries rendered', () => {
-  it('shows MessageStatsCard for a turn in the debug sidebar', async () => {
+  it('summarises a turn in the debug sidebar from the recap', async () => {
     vi.mocked(getTrace).mockResolvedValue({
-      trace: [{ message: 'routing', details: {} }],
+      trace: [
+        { message: 'trace:recap', details: { outcome: 'ok', model: 'openai/gpt-4o', durationMs: 700 } },
+        { message: 'routing', details: {} },
+      ],
     } as never);
     global.fetch = vi.fn().mockResolvedValue(makeSSEResponse('stop', 'Debug visible'));
 
@@ -940,13 +929,12 @@ describe('TestPage — debug sidebar trace entries rendered', () => {
       expect(screen.queryByText('Debug visible')).not.toBeNull(),
     { timeout: 4000 });
 
-    // Stats card rendered in debug sidebar for turn 1
-    await waitFor(() =>
-      expect(screen.queryByTestId('stats-card')).not.toBeNull()
-    );
+    // Summary card rendered in debug sidebar for turn 1
+    await waitFor(() => expect(screen.getAllByText('TURN #1').length).toBeGreaterThan(0));
+    expect(screen.getAllByText('ok').length).toBeGreaterThan(0);
   });
 
-  it('clicking Technical Details summary expands trace entry in debug', async () => {
+  it('clicking the trace log summary expands the entries in debug', async () => {
     vi.mocked(getTrace).mockResolvedValue({
       trace: [{ message: 'routed', details: { model: 'gpt-4o' } }],
     } as never);
@@ -962,14 +950,14 @@ describe('TestPage — debug sidebar trace entries rendered', () => {
       expect(screen.queryByText('Trace expand reply')).not.toBeNull(),
     { timeout: 4000 });
 
-    // Technical Details <details> should exist
+    // The trace log <details> should exist
     await waitFor(() =>
-      expect(screen.queryByText('Technical Details')).not.toBeNull()
+      expect(screen.queryAllByText('Turn #1 trace log').length).toBeGreaterThan(0)
     );
 
     // Click summary to expand
-    const summary = screen.getByText('Technical Details');
-    await userEvent.click(summary);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    await userEvent.click(screen.getAllByText('Turn #1 trace log')[0]!);
     // TraceEntryRenderer mock renders entry.message
     await waitFor(() =>
       expect(screen.queryByTestId('trace-entry')).not.toBeNull()
@@ -1640,9 +1628,10 @@ describe('TestPage — debug sidebar trace entry last item', () => {
 
     await waitFor(() => expect(screen.queryByText('Multi trace reply')).not.toBeNull(), { timeout: 4000 });
 
-    // Technical Details should be clickable to expand trace entries
-    await waitFor(() => expect(screen.queryByText('Technical Details')).not.toBeNull());
-    await userEvent.click(screen.getByText('Technical Details'));
+    // The trace log should be clickable to expand trace entries
+    await waitFor(() => expect(screen.queryAllByText('Turn #1 trace log').length).toBeGreaterThan(0));
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    await userEvent.click(screen.getAllByText('Turn #1 trace log')[0]!);
 
     // Both trace entries should render — last entry triggers j === traces.length-1 branch
     await waitFor(() =>

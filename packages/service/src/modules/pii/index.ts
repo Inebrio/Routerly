@@ -2,7 +2,7 @@ import { defineModule, type Processor, type RouterlyModule } from '../../core/in
 import { PROXY_PIPELINE } from '../../core/tokens.js'
 import type { ProxyContext } from '../reverse-proxy/context.js'
 import type { ChatCompletionRequest } from '@routerly/shared'
-import { mergePolicies, scrubMessages } from './piiScrubber.js'
+import { activePolicies, mergePolicies, scrubMessages } from './piiScrubber.js'
 import { applyResponseScrub, wrapWithStreamingScrubber } from '../reverse-proxy/helpers.js'
 
 const input: Processor<ProxyContext> = {
@@ -17,12 +17,28 @@ const input: Processor<ProxyContext> = {
     if (!(effective.entities?.length || effective.customPatterns?.length)) return
     if (!Array.isArray(ctx.request.messages)) return
     ctx.piiInput = effective
-    const { messages, redacted } = scrubMessages(ctx.request.messages, effective)
-    ctx.emit?.({ panel: 'request', message: 'pii:evaluated', details: { redacted } })
+    const startedAt = Date.now()
+    const { messages, redacted, counts, scanned } = scrubMessages(ctx.request.messages, effective)
+    // "Nothing was redacted" is only useful next to what was looked for: which
+    // policies were active, which entity types they cover, how much text they saw.
+    ctx.emit?.({
+      panel: 'request',
+      message: 'pii:evaluated',
+      details: {
+        target: 'request',
+        policies: { configured: policies.length, active: activePolicies(policies, 'input').length },
+        entities: effective.entities ?? [],
+        customPatterns: effective.customPatterns?.length ?? 0,
+        scanned,
+        redacted,
+        counts,
+        ms: Date.now() - startedAt,
+      },
+    })
     if (redacted.length > 0) {
       ;(ctx.request as { messages?: unknown[] }).messages = messages as ChatCompletionRequest['messages']
       ctx.piiRedacted = redacted
-      ctx.emit?.({ panel: 'request', message: 'pii:scrubbed', details: { entities: redacted } })
+      ctx.emit?.({ panel: 'request', message: 'pii:scrubbed', details: { entities: redacted, counts } })
     }
   },
 }
@@ -41,7 +57,26 @@ const output: Processor<ProxyContext> = {
     ctx.piiOutput = effective
     // Non-streaming JSON: scrub the completed body in place.
     if (ctx.result?.kind === 'json') {
-      applyResponseScrub(ctx, effective)
+      const startedAt = Date.now()
+      const { found, counts, scanned } = applyResponseScrub(ctx, effective)
+      ctx.emit?.({
+        panel: 'response',
+        message: 'pii:evaluated',
+        details: {
+          target: 'response',
+          mode: 'json',
+          policies: { configured: policies.length, active: activePolicies(policies, 'output').length },
+          entities: effective.entities ?? [],
+          customPatterns: effective.customPatterns?.length ?? 0,
+          scanned: scanned ? 1 : 0,
+          redacted: found,
+          counts,
+          ms: Date.now() - startedAt,
+        },
+      })
+      if (found.length > 0) {
+        ctx.emit?.({ panel: 'response', message: 'pii:scrubbed', details: { entities: found, counts } })
+      }
       return
     }
     // Streaming: WRAP the raw provider iterator with the per-chunk StreamingScrubber. This is the

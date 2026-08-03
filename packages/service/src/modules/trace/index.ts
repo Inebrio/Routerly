@@ -13,7 +13,10 @@ import { PROXY_PIPELINE, API_ROUTES } from '../../core/tokens.js'
 import type { ProxyContext } from '../reverse-proxy/context.js'
 import { publishTrace, TRACE_COMPLETED_TOPIC, type TraceCompletedEvent } from './publish.js'
 import { makeTraceStreamHandler } from './routes.js'
-import { getTrace, openTrace, recordTrace, type TraceEvent } from './store.js'
+import { readConfig } from '../config/loader.js'
+import { printTrace } from './console.js'
+import { buildRecap } from './recap.js'
+import { getTrace, getTraceStartedAt, openTrace, recordTrace, type TraceEvent } from './store.js'
 
 /**
  * The id a caller may put on the request to follow its own trace on the side
@@ -56,8 +59,13 @@ function makeFinalize(events: EventBus): Processor<ProxyContext> {
       // The buffer is the only source: it holds the entries as published — stamped
       // with phase, module and timestamp — which is what exporters need to rebuild
       // the shape of the request.
+      const buffered = getTrace(ctx.traceId) ?? []
+      if (buffered.length === 0) return
+      // The recap is emitted, not appended: publishing it puts it through the same
+      // stamping and the same bus as everything else, and the buffer is live, so it
+      // is part of the snapshot read on the next line.
+      ctx.emit?.(buildRecap(buffered, Date.now() - (getTraceStartedAt(ctx.traceId) ?? Date.now())))
       const entries = getTrace(ctx.traceId) ?? []
-      if (entries.length === 0) return
       // The finished trace, announced once. Exporters (integrations) subscribe here
       // instead of following every single entry.
       const completed: TraceCompletedEvent = {
@@ -73,8 +81,16 @@ function makeFinalize(events: EventBus): Processor<ProxyContext> {
 
 export const traceModule: RouterlyModule = defineModule({
   manifest: { id: 'trace', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0', api: '^0.4.0' } },
-  register({ container, events }) {
-    events.subscribe('trace/**', (_topic, payload) => recordTrace(payload as TraceEvent))
+  async register({ container, events }) {
+    // The console gets the whole trace, live. Read once at boot: the level only
+    // decides how much of it is printed, and re-reading it per entry would put a
+    // config read on the hot path of every emit.
+    const logLevel = await readConfig('settings').then((s) => s.logLevel).catch(() => 'info')
+    events.subscribe('trace/**', (_topic, payload) => {
+      const event = payload as TraceEvent
+      recordTrace(event)
+      printTrace(event, logLevel)
+    })
     const pipeline = container.resolve(PROXY_PIPELINE)
     pipeline.contribute(makeIngress(events))
     pipeline.contribute(makeFinalize(events))

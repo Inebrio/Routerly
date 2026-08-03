@@ -9,6 +9,7 @@ import type { TraceEntry } from '@routerly/shared'
 import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
 import { emitEvent } from '../../notifications/emitter.js'
+import { traceEgress } from '../helpers.js'
 import { forwardOpenAIOAuthSSE, streamOpenAIOAuthChunks, chunksToChatResponse, primeStream } from './openaiOAuthForward.js'
 import { responsesToChatRequest, chatToResponsesObject, openAIChunksToResponsesSSE } from '../../provider/responses-compat.js'
 import type { ResponsesRequest } from '../../provider/responses-compat.js'
@@ -271,19 +272,27 @@ export const openaiEgress: Processor<ProxyContext> = {
     if (!result) return
     const reply = ctx.reply
 
-    if (result.kind === 'passthrough') return // already piped by openai:upstream
+    if (result.kind === 'passthrough') {
+      traceEgress(ctx, { kind: 'passthrough' }) // bytes piped upstream-to-client by openai:upstream
+      return
+    }
 
     if (result.kind === 'json') {
       if (result.status) reply.code(result.status)
       reply.send(ctx.responsesApi
         ? chatToResponsesObject(result.body as ChatCompletionResponse, ctx.request.model ?? '', ctx.traceId, ctx.original as ResponsesRequest)
         : result.body)
+      traceEgress(ctx, { kind: 'json', status: result.status ?? 200, ...(ctx.responsesApi ? { encoding: 'responses' } : {}) })
       return
     }
 
     if (result.kind === 'block') {
-      if (result.body === undefined) return // a streaming block already wrote its own bytes
+      if (result.body === undefined) {
+        traceEgress(ctx, { kind: 'block', encoding: 'sse', status: 200 }) // a streaming block already wrote its own bytes
+        return
+      }
       reply.code(result.status ?? 200).send(result.body)
+      traceEgress(ctx, { kind: 'block', status: result.status ?? 200 })
       return
     }
 
@@ -302,6 +311,12 @@ export const openaiEgress: Processor<ProxyContext> = {
     // The stream carries provider bytes only. Trace entries reach the caller on the
     // management side channel (GET /api/traces/stream), never in this stream.
 
+    // Counted as written, not as produced: a stream that dies mid-flight reports
+    // how much of it the client actually got.
+    let frames = 0
+    let bytes = 0
+    let failure: string | undefined
+
     if (ctx.responsesApi) {
       // Typed event stream: every frame is `event:`-named and the sequence ends on
       // response.completed, with no `[DONE]` sentinel.
@@ -309,23 +324,34 @@ export const openaiEgress: Processor<ProxyContext> = {
         const events = openAIChunksToResponsesSSE(
           result.body as AsyncIterable<StreamChunk>, ctx.traceId, ctx.request.model ?? '', ctx.original as ResponsesRequest,
         )
-        for await (const line of events) reply.raw.write(line)
+        for await (const line of events) {
+          reply.raw.write(line)
+          frames++
+          bytes += line.length
+        }
       } catch (err: unknown) {
         ctx.log.error({ err }, 'Streaming error mid-stream')
+        failure = err instanceof Error ? err.message : String(err)
       }
       reply.raw.end()
+      traceEgress(ctx, { kind: 'stream', encoding: 'responses', frames, bytes, ...(failure ? { error: failure } : {}) })
       return
     }
 
     try {
       for await (const chunk of result.body as AsyncIterable<unknown>) {
-        reply.raw.write(`data: ${JSON.stringify(chunk)}\n\n`)
+        const line = `data: ${JSON.stringify(chunk)}\n\n`
+        reply.raw.write(line)
+        frames++
+        bytes += line.length
       }
     } catch (err: unknown) {
       ctx.log.error({ err }, 'Streaming error mid-stream')
+      failure = err instanceof Error ? err.message : String(err)
     }
     reply.raw.write('data: [DONE]\n\n')
     reply.raw.end()
+    traceEgress(ctx, { kind: 'stream', encoding: 'sse', frames, bytes, ...(failure ? { error: failure } : {}) })
   },
 }
 

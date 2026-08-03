@@ -46,7 +46,7 @@ Everything in this block is editable and saved with **Save Settings**.
 
 | Field | Description |
 |-------|-------------|
-| **Log Level** | `trace` / `debug` / `info` / `warn` / `error` |
+| **Log Level** | `trace` / `debug` / `info` / `warn` / `error`. Routerly prints the [full request trace](../concepts/architecture.md#the-trace-on-the-console) on stdout, with failures on stderr; at `warn` and `error` only the failures are printed |
 | **Public URL** | The externally accessible URL of this Routerly instance. Shown in project connection snippets. Useful when the dashboard runs on a different machine or port than the service |
 
 **Anonymous metrics** is a separate self-saving toggle at the bottom of the tab.

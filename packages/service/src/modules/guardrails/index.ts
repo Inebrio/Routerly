@@ -2,7 +2,7 @@
 import { defineModule, shortCircuit, type Processor, type RouterlyModule } from '../../core/index.js'
 import { PROXY_PIPELINE } from '../../core/tokens.js'
 import type { ProxyContext } from '../reverse-proxy/context.js'
-import { checkGuardrails, buildRequestInjection } from './guardrails.js'
+import { checkGuardrails, buildRequestInjection, injectingRules } from './guardrails.js'
 import { BudgetExceededError } from '../reverse-proxy/execute.js'
 import {
   buildContentFilterBlock,
@@ -65,7 +65,15 @@ const request: Processor<ProxyContext> = {
     }
     // No block: steer the serving model via the opt-in injection (wire-payload change allowed as a guardrail feature).
     const injection = buildRequestInjection(guardrails)
-    if (injection) ctx.requestInjection = injection
+    if (injection) {
+      ctx.requestInjection = injection
+      ctx.emit?.({
+        panel: 'request',
+        message: 'guardrail:injected',
+        details: { target: 'request', rules: injectingRules(guardrails), chars: injection.length },
+        content: { injection },
+      })
+    }
   },
 }
 

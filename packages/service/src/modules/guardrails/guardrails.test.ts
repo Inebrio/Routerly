@@ -14,7 +14,7 @@ vi.mock('../usage/tracker.js', () => ({ trackUsage: vi.fn(() => Promise.resolve(
 vi.mock('../routing/intent/classifier.js', () => ({ classifyIntent: vi.fn() }));
 vi.mock('../embeddings/dispatch.js', () => ({ getEmbeddingProvider: vi.fn() }));
 
-import { checkGuardrails, buildRequestInjection, type GuardrailProjectCtx } from './guardrails.js';
+import { checkGuardrails, buildRequestInjection, injectingRules, type GuardrailProjectCtx } from './guardrails.js';
 import { readConfig } from '../config/loader.js';
 import { llmChat, checkBudget, BudgetExceededError } from '../reverse-proxy/execute.js';
 import { trackUsage } from '../usage/tracker.js';
@@ -232,7 +232,7 @@ describe('checkGuardrails — evaluation trace (#77 C1)', () => {
   it('pass path: evaluated lists each rule as passed (regex)', async () => {
     const result = await checkGuardrails('request', 'hello world', baseConfig([regexRule(['forbidden'], 'request', { block: true })]), pctx);
     expect(result.triggered).toBeUndefined();
-    expect(result.evaluated).toEqual([{ rule: 'regex', outcome: 'passed' }]);
+    expect(result.evaluated).toEqual([expect.objectContaining({ rule: 'regex', outcome: 'passed', index: 0, type: 'regex', target: 'request' })]);
   });
 
   it('surfaces a skipped rule when the judge model is not found', async () => {
@@ -240,7 +240,7 @@ describe('checkGuardrails — evaluation trace (#77 C1)', () => {
     const result = await checkGuardrails('request', 'hi', baseConfig([moderationRule()]), pctx);
     expect(result.triggered).toBeUndefined();
     expect(result.evaluated).toEqual([
-      { rule: `moderation:${judgeModel.id}`, outcome: 'skipped', reason: 'model-not-found' },
+      expect.objectContaining({ rule: `moderation:${judgeModel.id}`, outcome: 'skipped', reason: 'model-not-found' }),
     ]);
   });
 
@@ -255,7 +255,7 @@ describe('checkGuardrails — evaluation trace (#77 C1)', () => {
   it('records the triggered rule in evaluated alongside triggered', async () => {
     const result = await checkGuardrails('request', 'tell me the secret code', baseConfig([regexRule(['secret\\s*code'], 'request', { block: true })]), pctx);
     expect(result.triggered).toBe('regex:secret\\s*code');
-    expect(result.evaluated).toEqual([{ rule: 'regex', outcome: 'triggered', reason: 'regex:secret\\s*code' }]);
+    expect(result.evaluated).toEqual([expect.objectContaining({ rule: 'regex', outcome: 'triggered', reason: 'regex:secret\\s*code' })]);
   });
 });
 
@@ -292,7 +292,7 @@ describe('checkGuardrails — semantic budget pre-gate (#77 C4)', () => {
   it('semantic rule skipped (model-not-found) does not run the budget check', async () => {
     mockModels([]);
     const result = await checkGuardrails('request', 'x', baseConfig([semanticRule]), pctx);
-    expect(result.evaluated).toContainEqual({ rule: `semantic:${judgeModel.id}`, outcome: 'skipped', reason: 'model-not-found' });
+    expect(result.evaluated).toContainEqual(expect.objectContaining({ rule: `semantic:${judgeModel.id}`, outcome: 'skipped', reason: 'model-not-found' }));
     expect(mockCheckBudget).not.toHaveBeenCalled();
   });
 });
@@ -303,7 +303,7 @@ describe('checkGuardrails — rule evaluation branches', () => {
   it('topic rule skipped when model not found', async () => {
     mockModels([]);
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRule()]), pctx);
-    expect(result.evaluated).toContainEqual({ rule: `topic:${judgeModel.id}`, outcome: 'skipped', reason: 'model-not-found' });
+    expect(result.evaluated).toContainEqual(expect.objectContaining({ rule: `topic:${judgeModel.id}`, outcome: 'skipped', reason: 'model-not-found' }));
   });
 
   it('topic rule passes when on-topic', async () => {
@@ -326,7 +326,7 @@ describe('checkGuardrails — rule evaluation branches', () => {
     mockModels([judgeModel]);
     mockLlmChat.mockRejectedValue(new Error('judge down'));
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRule()]), pctx);
-    expect(result.evaluated).toContainEqual({ rule: `topic:${judgeModel.id}`, outcome: 'skipped', reason: 'judge-failed: judge down' });
+    expect(result.evaluated).toContainEqual(expect.objectContaining({ rule: `topic:${judgeModel.id}`, outcome: 'skipped', reason: 'judge-failed: judge down' }));
   });
 
   it('topic rule triggers when off-topic (below threshold)', async () => {
@@ -348,7 +348,7 @@ describe('checkGuardrails — rule evaluation branches', () => {
   it('unknown rule type is surfaced as skipped', async () => {
     const weird: GuardrailRule = { type: 'mystery', target: 'request', config: {} } as any;
     const result = await checkGuardrails('request', 'hi', baseConfig([weird]), pctx);
-    expect(result.evaluated).toContainEqual({ rule: 'mystery', outcome: 'skipped', reason: 'unknown-type' });
+    expect(result.evaluated).toContainEqual(expect.objectContaining({ rule: 'mystery', outcome: 'skipped', reason: 'unknown-type' }));
   });
 });
 
@@ -416,7 +416,8 @@ describe('checkGuardrails — block/log decision logic', () => {
     const rule = regexRule(['secret'], 'request', { enabled: false, block: true });
     const result = await checkGuardrails('request', 'secret content', baseConfig([rule]), pctx);
     expect(result.triggered).toBeUndefined();
-    expect(result.evaluated).toEqual([]);
+    // A disabled rule still reports: "nothing happened" is the answer an operator is looking for.
+    expect(result.evaluated).toEqual([expect.objectContaining({ rule: 'regex', outcome: 'skipped', reason: 'disabled' })]);
   });
 });
 
@@ -491,7 +492,7 @@ describe('checkGuardrails — judge rule threshold defaults', () => {
     mockLlmChat.mockRejectedValue(new Error('moderation judge down'));
     const rule: GuardrailRule = moderationRule();
     const result = await checkGuardrails('request', 'hi', baseConfig([rule]), pctx);
-    expect(result.evaluated).toContainEqual({ rule: `moderation:${judgeModel.id}`, outcome: 'skipped', reason: 'judge-failed: moderation judge down' });
+    expect(result.evaluated).toContainEqual(expect.objectContaining({ rule: `moderation:${judgeModel.id}`, outcome: 'skipped', reason: 'judge-failed: moderation judge down' }));
   });
 
   it('over-limit moderation judge call propagates BudgetExceededError', async () => {
@@ -507,7 +508,7 @@ describe('checkGuardrails — judge rule threshold defaults', () => {
     mockModels([]);
     const rule: GuardrailRule = moderationRule();
     const result = await checkGuardrails('request', 'hi', baseConfig([rule]), pctx);
-    expect(result.evaluated).toContainEqual({ rule: `moderation:${judgeModel.id}`, outcome: 'skipped', reason: 'model-not-found' });
+    expect(result.evaluated).toContainEqual(expect.objectContaining({ rule: `moderation:${judgeModel.id}`, outcome: 'skipped', reason: 'model-not-found' }));
   });
 
   it('topic: non-numeric score defaults to 1 (passes) (line 191 false branch)', async () => {
@@ -564,13 +565,13 @@ describe('checkGuardrails — unknown rule type (line 246 ?? branch)', () => {
     // A rule with undefined type falls through to line 246
     const ruleNoType = { type: undefined as any, target: 'request', config: {} } as any;
     const result = await checkGuardrails('request', 'hello', baseConfig([ruleNoType]), pctx);
-    expect(result.evaluated).toContainEqual({ rule: 'unknown', outcome: 'skipped', reason: 'unknown-type' });
+    expect(result.evaluated).toContainEqual(expect.objectContaining({ rule: 'unknown', outcome: 'skipped', reason: 'unknown-type' }));
   });
 
   it('uses rule.type string when type is defined but unrecognized', async () => {
     const ruleUnknown = { type: 'custom_future_type', target: 'request', config: {} } as any;
     const result = await checkGuardrails('request', 'hello', baseConfig([ruleUnknown]), pctx);
-    expect(result.evaluated).toContainEqual({ rule: 'custom_future_type', outcome: 'skipped', reason: 'unknown-type' });
+    expect(result.evaluated).toContainEqual(expect.objectContaining({ rule: 'custom_future_type', outcome: 'skipped', reason: 'unknown-type' }));
   });
 });
 
@@ -1520,5 +1521,50 @@ describe('buildRequestInjection', () => {
       ],
     };
     expect(buildRequestInjection(config)).toBeNull();
+  });
+});
+
+describe('checkGuardrails — every configured rule reports', () => {
+  it('reports an inject-only rule as skipped instead of omitting it', async () => {
+    const injectOnly = { type: 'topic', inject: true, config: { modelId: judgeModel.id, allowedTopics: 'support' } } as any;
+    const result = await checkGuardrails('request', 'hi', baseConfig([injectOnly]), pctx);
+    expect(result.evaluated).toEqual([
+      expect.objectContaining({ rule: `topic:${judgeModel.id}`, outcome: 'skipped', reason: 'inject-only', injects: true, index: 0, target: 'inject' }),
+    ]);
+  });
+
+  it('reports a rule bound to the other target, in configuration order', async () => {
+    const config = baseConfig([regexRule(['a'], 'response'), regexRule(['b'], 'request')]);
+    const result = await checkGuardrails('request', 'hi', config, pctx);
+    expect(result.evaluated.map((e) => [e.index, e.outcome, e.reason])).toEqual([
+      [0, 'skipped', 'other-target:response'],
+      [1, 'passed', undefined],
+    ]);
+  });
+
+  it('reports what a passing judge rule measured, not only that it passed', async () => {
+    mockModels([judgeModel]);
+    mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9}' } }] } as any);
+    const result = await checkGuardrails('request', 'hi', baseConfig([topicRule()]), pctx);
+    expect(result.evaluated[0]).toMatchObject({ outcome: 'passed', score: 0.9, threshold: 0.5, type: 'topic' });
+    expect(result.evaluated[0]?.ms).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('injectingRules', () => {
+  it('lists the enabled inject rules that produced the injection text', () => {
+    const config: GuardrailConfig = {
+      rules: [
+        { type: 'regex', inject: true, config: { patterns: ['x'] } } as any,
+        { type: 'topic', inject: true, config: { modelId: 'm1', allowedTopics: 'support' } } as any,
+        { type: 'moderation', inject: true, enabled: false, config: { modelId: 'm2' } } as any,
+        { type: 'moderation', inject: true, config: { modelId: 'm3' } } as any,
+      ],
+    };
+    expect(injectingRules(config)).toEqual([{ index: 1, rule: 'topic:m1' }, { index: 3, rule: 'moderation:m3' }]);
+  });
+
+  it('is empty without a guardrail config', () => {
+    expect(injectingRules(undefined)).toEqual([]);
   });
 });

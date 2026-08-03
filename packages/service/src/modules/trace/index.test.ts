@@ -88,7 +88,7 @@ describe('trace module', () => {
 
     // Exporters group by phase and module: a copy taken before publishTrace stamped
     // the entries would flatten the whole request into one anonymous bucket.
-    expect(completed[0]!.entries).toHaveLength(1)
+    expect(completed[0]!.entries).toHaveLength(2) // the emitted entry + the recap
     expect(completed[0]!.entries[0]!.phase).toBe('routing.prepare')
     expect(completed[0]!.entries[0]!.module).toBe('router')
 
@@ -121,9 +121,44 @@ describe('trace module', () => {
     expect(completed[0]!.traceId).toBe('trace-test-5')
     expect(completed[0]!.projectId).toBe('p1')
     expect(completed[0]!.correlationId).toBe('c9')
-    expect(completed[0]!.entries).toHaveLength(1)
+    expect(completed[0]!.entries).toHaveLength(2)
     // The completion event must never be mistaken for one more entry.
-    expect(recorded).toHaveLength(1)
+    expect(recorded).toHaveLength(2)
+  })
+
+  it('trace.finalize closes the trace with a recap of the request', async () => {
+    const { container, events } = harness()
+    await traceModule.register({ container, events })
+    const pipeline = container.resolve(PROXY_PIPELINE)
+    const ingress = pipeline.orderedFor('ingress').find((p) => p.id === 'trace.ingress')!
+    const finalize = pipeline.orderedFor('finalize').find((p) => p.id === 'trace.finalize')!
+
+    const ctx = { traceId: 'trace-test-7', projectId: 'p1' } as unknown as ProxyContext
+    await ingress.run(ctx)
+    ctx.phase = 'upstream.execute'
+    ctx.emit!({ panel: 'request', message: 'model:request', details: { modelId: 'gpt-4o', provider: 'openai' } })
+    ctx.emit!({
+      panel: 'response',
+      message: 'model:success',
+      details: { modelId: 'gpt-4o', inputTokens: 10, outputTokens: 4, totalCostUsd: 0.002, latencyMs: 120 },
+    })
+    ctx.phase = 'finalize' // the driver stamps the phase before running it
+    await finalize.run(ctx)
+
+    const trace = getTrace('trace-test-7')!
+    const recap = trace[trace.length - 1]!
+    expect(recap.message).toBe('trace:recap')
+    expect(recap.module).toBe('trace')
+    expect(recap.phase).toBe('finalize')
+    expect(recap.details).toMatchObject({
+      outcome: 'ok',
+      model: 'gpt-4o',
+      provider: 'openai',
+      attempts: 1,
+      tokens: { input: 10, output: 4 },
+      costUsd: 0.002,
+    })
+    expect(recap.details.durationMs).toBeTypeOf('number')
   })
 
   it('trace.finalize stays quiet on an empty trace', async () => {

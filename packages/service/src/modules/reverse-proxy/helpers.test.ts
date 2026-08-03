@@ -57,6 +57,27 @@ describe('helpers', () => {
     expect((out[1] as any).choices[0].delta.content).toBe('hello')
   })
 
+  it('wrapWithStreamingScrubber traces the response scan once the stream is complete', async () => {
+    const emit = vi.fn()
+    const effective = { entities: ['EMAIL'], customPatterns: [], outputBufferSize: 5 } as any
+    async function* src() {
+      yield { choices: [{ index: 0, delta: { content: 'write to a@b.com ' }, finish_reason: null }] }
+      yield { choices: [{ index: 0, delta: { content: 'or c@d.com' }, finish_reason: null }] }
+    }
+    await collect(wrapWithStreamingScrubber(src(), effective, ctxOf({ emit })))
+    expect(emit).toHaveBeenCalledWith({
+      panel: 'response',
+      message: 'pii:evaluated',
+      details: {
+        target: 'response', mode: 'stream', entities: ['EMAIL'], customPatterns: 0, bufferSize: 5,
+        redacted: ['EMAIL'], counts: { EMAIL: 2 },
+      },
+    })
+    expect(emit).toHaveBeenCalledWith({
+      panel: 'response', message: 'pii:scrubbed', details: { entities: ['EMAIL'], counts: { EMAIL: 2 } },
+    })
+  })
+
   it('assembledResponseText extracts the first choice message content', () => {
     const ctx = ctxOf({ result: { kind: 'json', body: { choices: [{ message: { content: 'hi there' } }] } } as any })
     expect(assembledResponseText(ctx)).toBe('hi there')
@@ -68,27 +89,27 @@ describe('helpers', () => {
     expect(assembledResponseText(ctxOf({ result: { kind: 'json', body: { choices: [{ message: { content: 42 } }] } } as any }))).toBe('')
   })
 
-  it('applyResponseScrub mutates the message content in place and returns found entities', () => {
-    const body: any = { choices: [{ message: { content: 'contact me at john@example.com please' } }] }
+  it('applyResponseScrub mutates the message content in place and returns found entities with counts', () => {
+    const body: any = { choices: [{ message: { content: 'write to john@example.com or jane@example.com' } }] }
     const ctx = ctxOf({ result: { kind: 'json', body } as any })
-    const found = applyResponseScrub(ctx, { entities: ['EMAIL'], customPatterns: [] })
-    expect(found).toEqual(['EMAIL'])
-    expect(body.choices[0].message.content).toBe('contact me at [EMAIL] please')
+    expect(applyResponseScrub(ctx, { entities: ['EMAIL'], customPatterns: [] }))
+      .toEqual({ found: ['EMAIL'], counts: { EMAIL: 2 }, scanned: true })
+    expect(body.choices[0].message.content).toBe('write to [EMAIL] or [EMAIL]')
   })
 
-  it('applyResponseScrub is a no-op when content is not a string', () => {
+  it('applyResponseScrub reports nothing scanned when content is not a string', () => {
     const body: any = { choices: [{ message: {} }] }
     const ctx = ctxOf({ result: { kind: 'json', body } as any })
-    const found = applyResponseScrub(ctx, { entities: ['EMAIL'], customPatterns: [] })
-    expect(found).toEqual([])
+    expect(applyResponseScrub(ctx, { entities: ['EMAIL'], customPatterns: [] }))
+      .toEqual({ found: [], counts: {}, scanned: false })
     expect(body.choices[0].message).toEqual({})
   })
 
   it('applyResponseScrub is a no-op when nothing is found', () => {
     const body: any = { choices: [{ message: { content: 'nothing sensitive here' } }] }
     const ctx = ctxOf({ result: { kind: 'json', body } as any })
-    const found = applyResponseScrub(ctx, { entities: ['EMAIL'], customPatterns: [] })
-    expect(found).toEqual([])
+    expect(applyResponseScrub(ctx, { entities: ['EMAIL'], customPatterns: [] }))
+      .toEqual({ found: [], counts: {}, scanned: true })
     expect(body.choices[0].message.content).toBe('nothing sensitive here')
   })
 
