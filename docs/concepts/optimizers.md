@@ -137,6 +137,17 @@ head; the lowest-scoring tokens are dropped down to a target keep-ratio (the
 step's `threshold`, default `0.5`). Tokenization is the checkpoint's own, so
 the ids the model scores are the ids it was trained on.
 
+A message longer than the encoder's 512-token window is scored one window at
+a time and the scores concatenated, so length is not a ceiling: the longest
+prompts, which are the ones worth compressing, are compressed too.
+
+The step rolls itself back whenever any message comes out longer in
+characters than it went in. Decoding a subset of subword tokens re-inserts
+spaces between them, so on messages that tokenize into many short pieces
+(dense JSON, tool results) a high keep-ratio can cost more characters than it
+saves. Lower the threshold if a step reports no change on payload-heavy
+prompts.
+
 It is multilingual: it compresses any language the encoder covers, which is
 why it, not `caveman`, is the step to reach for outside English.
 
