@@ -167,13 +167,13 @@ export const OPTIMIZER_CATALOG: Record<OptimizerId, OptimizerMeta> = {
     id: 'caveman',
     label: 'Caveman',
     klass: 'lossy',
-    description: 'Strips filler and function words from message text while preserving code, URLs and numbers.',
+    description: 'Strips English filler and function words while preserving code, URLs and numbers. English only: it stays inert on any other language, where LLMLingua-2 is the step to use.',
   },
   'llmlingua-2': {
     id: 'llmlingua-2',
     label: 'LLMLingua-2',
     klass: 'lossy',
-    description: 'ONNX-backed prompt compression. Off unless the optional runtime and model are installed.',
+    description: 'Model-based compression: a multilingual model scores every token and the least useful ones are dropped. Works in any language it covers. Off until the optional runtime and the model are installed.',
     threshold: {
       label: 'Fraction of tokens to keep',
       unit: 'ratio',

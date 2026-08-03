@@ -66,6 +66,10 @@ export type {
   OptimizerMeta,
 } from './types/optimizers.js';
 
+// Shipped preview conversations — plain data, no real prompt is ever recorded.
+export { OPTIMIZER_FIXTURES, optimizerFixture } from './optimizer-fixtures.js';
+export type { OptimizerFixture } from './optimizer-fixtures.js';
+
 // Client registry: plain data plus pure string builders, no Node.js APIs.
 export { AUTO_MODEL, CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from './clients/index.js';
 export type { SupportState, WireFormat, ConnectMode, ClientMeta } from './clients/index.js';
