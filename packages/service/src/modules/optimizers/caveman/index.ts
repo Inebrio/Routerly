@@ -3,7 +3,7 @@ import { OPTIMIZER_REGISTRY } from '../../../core/tokens.js'
 import type { Message, OptimizerResult } from '@routerly/shared'
 import type { ProxyContext } from '../../reverse-proxy/context.js'
 import type { Optimizer } from '../registry.js'
-import { messageText, readMessages, tokensOf, writeMessages } from '../messages.js'
+import { contentKind, messageText, readMessages, tokensOf, writeMessages } from '../messages.js'
 
 // ponytail: rule-based lexical strip; no model.
 //
@@ -103,8 +103,15 @@ function stripPlain(text: string): string {
  * Lexically compress a text string: strip stopwords/filler from the plain
  * regions while leaving fenced code, inline code, and URLs byte-for-byte
  * intact. Even-index split parts are plain text, odd-index parts are protected.
+ *
+ * Non-prose is returned untouched. A bare JSON payload is not a protected span,
+ * so an object key that happens to be a function word was stripped to nothing:
+ * {"is":true} came out as {"":true}. Classifying the whole text is one check;
+ * protecting every quoted string with another regex alternative would be a
+ * second guess on top of the first.
  */
 function stripText(text: string): string {
+  if (contentKind(text) !== 'prose') return text
   const parts = text.split(PROTECTED)
   return parts.map((p, i) => (i % 2 === 0 ? stripPlain(p) : p)).join('').trim()
 }

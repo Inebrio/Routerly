@@ -99,6 +99,14 @@ on any other language. There is no language-detection dependency: the list is
 its own detector. `llmlingua-2` is the multilingual step. Texts under 20 words
 are not gated, because the ratio carries no signal there.
 
+It is also prose-only. `contentKind()` in `messages.ts` classifies each
+message's text and the strip returns anything that is not `prose` untouched: a
+bare JSON payload (whole-text parse) or a message dominated by fenced code. A
+pasted payload is not a protected span, so an object key that happens to be a
+function word used to be stripped to nothing and `{"is":true}` came out as
+`{"":true}`. The classification is per message, so prose sitting next to a
+payload is still compressed.
+
 Preserved verbatim, unconditionally, even under aggressive compression:
 fenced code blocks (```` ``` ````), inline code spans (`` ` ``), URLs
 (`http`/`https`), compound tokens whose parts are joined by `/`, `.` or `-`

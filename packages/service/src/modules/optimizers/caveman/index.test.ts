@@ -266,3 +266,26 @@ describe('caveman language gate', () => {
     expect(cavemanOptimizer.supports(ctxOf('Please fix the bug in the parser.'))).toBe(true)
   })
 })
+
+describe('caveman content gate', () => {
+  it('leaves a bare JSON tool result byte-identical', () => {
+    const payload =
+      '[{"path":"src/a/index.ts","is":true,"for":"build"},{"path":"src/b/index.ts","is":false,"for":"test"}]'
+    const ctx = ctxWith([
+      { role: 'user', content: 'Here are the build targets, tell me which ones are stale.' },
+      { role: 'user', content: payload },
+    ])
+    cavemanOptimizer.optimize(ctx)
+    const after = readMessages(ctx.request)
+    expect(textOf(after[1]!)).toBe(payload)
+    // The prose message next to it is still compressed: the gate is per message.
+    expect(textOf(after[0]!)).not.toBe('Here are the build targets, tell me which ones are stale.')
+  })
+
+  it('leaves a message that is mostly a fenced code block alone', () => {
+    const code = '```ts\nconst a = 1\nexport function f() { return a }\n```\nok'
+    const ctx = ctxWith([{ role: 'user', content: code }])
+    cavemanOptimizer.optimize(ctx)
+    expect(textOf(readMessages(ctx.request)[0]!)).toBe(code)
+  })
+})
