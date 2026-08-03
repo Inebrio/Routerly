@@ -16,6 +16,12 @@ import { messageText, readMessages, tokensOf, writeMessages } from '../messages.
  * high-frequency articles, conjunctions, prepositions, pronouns, auxiliaries,
  * and hedges that carry little standalone signal. Nouns, verbs of substance,
  * and every non-listed token are kept.
+ *
+ * English-only is a property, not a limitation to fix here. Growing this into
+ * one list per language does not scale and is not how the problem is solved:
+ * `llmlingua-2` compresses any language its multilingual encoder covers. This
+ * optimizer is the zero-dependency English fallback, and englishRatio() below
+ * keeps it out of every other language.
  */
 const STOPWORDS = new Set<string>([
   // articles / determiners
@@ -36,6 +42,29 @@ const STOPWORDS = new Set<string>([
   'just', 'very', 'really', 'actually', 'basically', 'simply', 'literally',
   'please', 'kindly',
 ])
+
+/**
+ * Below this fraction of words drawn from STOPWORDS, the text is not English and
+ * this optimizer would strip words that merely look like English function words.
+ * Measured on the analysis corpus: English 0.46, Italian 0.026. Anything in
+ * between is a wide, empty margin.
+ */
+const MIN_ENGLISH_RATIO = 0.12
+
+/** Minimum word count before the ratio means anything. */
+const MIN_WORDS_TO_JUDGE = 20
+
+/**
+ * Fraction of words that are English function words. Counts every Unicode letter
+ * run in the denominator, so accented words count as words and a non-English
+ * text is not flattered by its own spelling. Short texts return 1: the ratio is
+ * noise there, and a strip that short is bounded anyway.
+ */
+function englishRatio(messages: Message[]): number {
+  const words = messages.flatMap((m) => messageText(m.content).toLowerCase().match(/\p{L}+/gu) ?? [])
+  if (words.length < MIN_WORDS_TO_JUDGE) return 1
+  return words.filter((w) => STOPWORDS.has(w)).length / words.length
+}
 
 /**
  * Verbatim-preservation spans, matched greedily in this priority order:
@@ -166,7 +195,9 @@ export const cavemanOptimizer = {
   klass: 'lossy',
 
   supports(ctx) {
-    return plan(readMessages(ctx.request)).changed
+    const messages = readMessages(ctx.request)
+    if (englishRatio(messages) < MIN_ENGLISH_RATIO) return false
+    return plan(messages).changed
   },
 
   estimate(ctx) {
