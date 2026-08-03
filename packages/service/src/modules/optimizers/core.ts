@@ -4,8 +4,6 @@ import type { ChatCompletionRequest, OptimizerCallStat, OptimizerResult } from '
 import type { ProxyContext } from '../reverse-proxy/context.js'
 import { OptimizerRegistry, setOptimizerRegistry } from './registry.js'
 import { passesSafetyGate } from './gate.js'
-import { readMessages } from './messages.js'
-import { captureSample } from './samples.js'
 
 /**
  * Restore a request's fields IN PLACE from a snapshot, preserving object
@@ -38,11 +36,6 @@ function applyProcessor(registry: OptimizerRegistry): Processor<ProxyContext> {
     after: ['pii.input', 'guardrail.request'],
     async run(ctx) {
       if (ctx.result) return
-
-      // Capture before any step runs, and before the steps check: a project with
-      // no pipeline yet is exactly the one whose operator needs real prompts to
-      // tune against. PII scrub already ran, so this is the redacted text.
-      captureSample(ctx.projectId, readMessages(ctx.request))
 
       const steps = ctx.project.optimizers?.steps
       if (!steps?.length) return

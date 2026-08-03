@@ -123,7 +123,7 @@ export const OPTIMIZER_CATALOG: Record<OptimizerId, OptimizerMeta> = {
       min: 1,
       max: 50,
       step: 1,
-      default: 6,
+      default: 3,
       help: 'Fewer turns means a shorter prompt and less history for the model to work with.',
     },
   },
@@ -159,7 +159,8 @@ export const OPTIMIZER_CATALOG: Record<OptimizerId, OptimizerMeta> = {
       min: 0,
       max: 1,
       step: 0.05,
-      help: 'Required: without a value this optimizer stays inert. Higher drops more turns.',
+      default: 0.1,
+      help: 'Higher drops more turns. Above about 0.3 most history is dropped and the safety gate starts rejecting the result.',
     },
   },
   caveman: {

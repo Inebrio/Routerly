@@ -54,12 +54,17 @@ function catalogDefault(id: OptimizerId): number {
   return value
 }
 
-/** A conversation of `turns` user/assistant exchanges, long enough to be worth trimming. */
-function conversation(turns: number): Message[] {
+/**
+ * A conversation of `turns` user/assistant exchanges, long enough to be worth
+ * trimming. `answerLen` pads each answer past ccr's condense cap, which is what
+ * makes condensation save more than the condensed block's own overhead costs.
+ */
+function conversation(turns: number, answerLen = 0): Message[] {
   const messages: Message[] = [{ role: 'system', content: 'be terse' }]
+  const pad = answerLen > 0 ? ` ${'x'.repeat(answerLen)}` : ''
   for (let i = 0; i < turns; i++) {
     messages.push({ role: 'user', content: `question number ${i} with enough words to weigh something` })
-    messages.push({ role: 'assistant', content: `answer number ${i} with enough words to weigh something` })
+    messages.push({ role: 'assistant', content: `answer number ${i} with enough words to weigh something${pad}` })
   }
   return messages
 }
@@ -87,9 +92,9 @@ describe('OPTIMIZER_CATALOG parity with the implementations', () => {
   })
 
   it("ccr's catalog default is the window it actually falls back to", () => {
-    const fallback = ccrOptimizer.optimize(ctxWith(conversation(10)))
+    const fallback = ccrOptimizer.optimize(ctxWith(conversation(10, 400)))
     const explicit = ccrOptimizer.optimize(
-      ctxWith(conversation(10), { id: 'ccr', threshold: catalogDefault('ccr') }),
+      ctxWith(conversation(10, 400), { id: 'ccr', threshold: catalogDefault('ccr') }),
     )
     expect(fallback.estimatedTokensAfter).toBe(explicit.estimatedTokensAfter)
     expect(fallback.changed).toBe(true)
@@ -106,10 +111,21 @@ describe('OPTIMIZER_CATALOG parity with the implementations', () => {
     expect(fallback.changed).toBe(true)
   })
 
-  it('relevance stays inert without a threshold, which is why the catalog gives it no default', () => {
-    expect(OPTIMIZER_CATALOG.relevance.threshold!.default).toBeUndefined()
-    const ctx = ctxWith(conversation(6))
-    expect(relevanceOptimizer.supports(ctx)).toBe(false)
+  it("relevance's catalog default is the overlap it actually falls back to", () => {
+    // Enabling the step is the whole opt-in: no second, undiscoverable number.
+    const offTopic = (): Message[] => [
+      { role: 'user', content: 'how do I bake sourdough bread at home' },
+      { role: 'assistant', content: 'start with a ripe starter and a long bulk ferment' },
+      { role: 'user', content: 'which port does the proxy bind on' },
+      { role: 'assistant', content: 'the proxy binds port 3000 by default' },
+    ]
+    expect(relevanceOptimizer.supports(ctxWith(offTopic()))).toBe(true)
+    const fallback = relevanceOptimizer.optimize(ctxWith(offTopic()))
+    const explicit = relevanceOptimizer.optimize(
+      ctxWith(offTopic(), { id: 'relevance', threshold: catalogDefault('relevance') }),
+    )
+    expect(fallback.changed).toBe(true)
+    expect(fallback.estimatedTokensAfter).toBe(explicit.estimatedTokensAfter)
   })
 
   it('llmlingua-2 keeps the catalog default ratio when the threshold is out of range', () => {

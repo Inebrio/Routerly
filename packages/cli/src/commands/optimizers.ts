@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import { OPTIMIZER_CATALOG, optimizerLabel, optimizerThreshold } from '@routerly/shared';
+import { OPTIMIZER_CATALOG, OPTIMIZER_FIXTURES, optimizerFixture, optimizerLabel, optimizerThreshold } from '@routerly/shared';
 import type { ProjectConfig, OptimizerStep, OptimizerId, Message } from '@routerly/shared';
 
 interface InstalledOptimizer {
@@ -14,15 +14,16 @@ interface InstalledOptimizer {
 interface PreviewResult {
   estimatedTokensBefore: number;
   estimatedTokensAfter: number;
-  perStep: { id: string; before: number; after: number; messages?: Message[]; rolledBack?: boolean }[];
+  perStep: { id: string; before: number; after: number; messages?: Message[]; rolledBack?: boolean; skipReason?: string }[];
   messages?: Message[];
 }
 
-interface TrafficSample {
-  capturedAt: string;
-  messages: Message[];
-  estimatedTokens: number;
-  truncated?: boolean;
+interface LlmLinguaModelState {
+  state: 'absent' | 'downloading' | 'ready';
+  modelId: string;
+  dtype: string;
+  runtimeInstalled: boolean;
+  error?: string;
 }
 
 /** The threshold of an optimizer as one cell: what it means and where it starts. */
@@ -31,16 +32,6 @@ function thresholdCell(id: string): string {
   if (!spec) return '-';
   const range = `${spec.min}-${spec.max} ${spec.unit}`;
   return spec.default != null ? `${range}, default ${spec.default}` : `${range}, required`;
-}
-
-/** Plain text of a message, joining the text parts of a structured content array. */
-function messageText(m: Message): string {
-  if (typeof m.content === 'string') return m.content;
-  if (!Array.isArray(m.content)) return '';
-  return m.content
-    .map(part => (typeof (part as { text?: unknown }).text === 'string' ? (part as { text: string }).text : ''))
-    .filter(Boolean)
-    .join('\n');
 }
 
 // ─── Helper: resolve project by name or ID ────────────────────────────────────
@@ -109,54 +100,61 @@ Examples:
       }
     });
 
-  // ── optimizers samples ───────────────────────────────────────────────────────
-  cmd.command('samples <project>')
-    .description("List the project's recent prompts kept in memory by the service")
-    .option('--show <index>', 'Print the full text of one sample (1-based)')
+  // ── optimizers fixtures ──────────────────────────────────────────────────────
+  cmd.command('fixtures')
+    .description('List the sample conversations shipped with Routerly')
     .option('--json', 'Output raw JSON')
     .addHelpText('after', `
 Examples:
-  routerly optimizers samples my-api
-  routerly optimizers samples my-api --show 1
-  routerly optimizers samples my-api --json
+  routerly optimizers fixtures
+  routerly optimizers preview my-api --fixture support-chat-en
 
-Samples are captured after PII scrubbing, held in memory only, and lost when
-the service restarts. Replay one with \`optimizers preview --sample\`.
+Routerly never records real prompts. These conversations are written for the
+repo, are identical on every install, and are the only preview material.
 `)
-    .action(async (nameOrId: string, opts: { show?: string; json?: boolean }) => {
+    .action((opts: { json?: boolean }) => {
+      if (opts.json) {
+        console.log(JSON.stringify(OPTIMIZER_FIXTURES, null, 2));
+        return;
+      }
+      const table = new Table({ head: ['ID', 'Name', 'Lang', 'Turns', 'Exercises'].map(h => chalk.cyan(h)) });
+      for (const f of OPTIMIZER_FIXTURES) {
+        table.push([f.id, f.label, f.language, String(f.messages.length), f.description]);
+      }
+      console.log(table.toString());
+    });
+
+  // ── optimizers model ─────────────────────────────────────────────────────────
+  cmd.command('model')
+    .description('Show or install the optional LLMLingua-2 checkpoint on the service host')
+    .option('--install', 'Start the download and return immediately')
+    .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  routerly optimizers model
+  routerly optimizers model --install
+  routerly optimizers model --json
+
+The checkpoint is hundreds of megabytes and downloads on the service host, not
+here. --install returns as soon as the download starts; run the command again
+to see its progress.
+`)
+    .action(async (opts: { install?: boolean; json?: boolean }) => {
       try {
-        const project = await resolveProject(nameOrId);
-        const samples = await api<TrafficSample[]>('GET', `/api/projects/${encodeURIComponent(project.id)}/optimizers/samples`);
-
-        if (opts.show !== undefined) {
-          const index = Number(opts.show);
-          const sample = Number.isInteger(index) ? samples[index - 1] : undefined;
-          if (!sample) {
-            console.error(chalk.red(`Error: no sample ${opts.show}. This project has ${samples.length}.`));
-            process.exit(1);
-          }
-          if (opts.json) {
-            console.log(JSON.stringify(sample, null, 2));
-            return;
-          }
-          console.log(chalk.gray(`Captured ${sample.capturedAt} · ${sample.estimatedTokens} tokens${sample.truncated ? ' · excerpt' : ''}`));
-          for (const m of sample.messages) console.log(`\n${chalk.cyan(m.role)}: ${messageText(m)}`);
-          return;
-        }
-
+        const state = opts.install
+          ? await api<LlmLinguaModelState>('POST', '/api/optimizers/llmlingua2/model', {})
+          : await api<LlmLinguaModelState>('GET', '/api/optimizers/llmlingua2/model');
         if (opts.json) {
-          console.log(JSON.stringify(samples, null, 2));
+          console.log(JSON.stringify(state, null, 2));
           return;
         }
-        if (samples.length === 0) {
-          console.log(chalk.yellow('No prompts captured yet. They appear once the project sends traffic.'));
-          return;
+        console.log(`${chalk.gray('model:  ')} ${state.modelId} (${state.dtype})`);
+        console.log(`${chalk.gray('runtime:')} ${state.runtimeInstalled ? 'installed' : 'not installed'}`);
+        console.log(`${chalk.gray('state:  ')} ${state.state}`);
+        if (state.error) console.error(chalk.red(`error:   ${state.error}`));
+        if (state.state === 'downloading') {
+          console.log(chalk.gray('Downloading. Run `routerly optimizers model` again to check progress.'));
         }
-        const table = new Table({ head: ['#', 'Captured', 'Tokens', 'Messages', 'Excerpt'].map(h => chalk.cyan(h)) });
-        samples.forEach((s, i) => {
-          table.push([String(i + 1), s.capturedAt, String(s.estimatedTokens), String(s.messages.length), s.truncated ? 'yes' : 'no']);
-        });
-        console.log(table.toString());
       } catch (err) {
         reportError(err);
       }
@@ -267,38 +265,38 @@ Examples:
   cmd.command('preview <project>')
     .description('Dry-run the project optimizer pipeline over sample messages')
     .option('--message <text>', 'A user message to include (repeatable)', collect, [])
-    .option('--sample <index>', 'Replay a prompt listed by `optimizers samples` (1-based)')
+    .option('--fixture <id>', 'Use a shipped sample conversation instead of --message')
     .option('--json', 'Output raw JSON')
     .addHelpText('after', `
 Examples:
   routerly optimizers preview my-api --message "Summarize this thread"
   routerly optimizers preview my-api --message "first" --message "second" --json
-  routerly optimizers preview my-api --sample 1
+  routerly optimizers preview my-api --fixture support-chat-en
+
+Run \`routerly optimizers fixtures\` for the available conversations.
 `)
-    .action(async (nameOrId: string, opts: { message: string[]; sample?: string; json?: boolean }) => {
+    .action(async (nameOrId: string, opts: { message: string[]; fixture?: string; json?: boolean }) => {
       try {
-        if (opts.message.length === 0 && opts.sample === undefined) {
-          console.error(chalk.red('Error: provide at least one --message, or --sample <index>.'));
+        if (opts.message.length === 0 && opts.fixture === undefined) {
+          console.error(chalk.red('Error: provide at least one --message, or --fixture <id>.'));
           process.exit(1);
         }
-        if (opts.message.length > 0 && opts.sample !== undefined) {
-          console.error(chalk.red('Error: --message and --sample are mutually exclusive.'));
+        if (opts.message.length > 0 && opts.fixture !== undefined) {
+          console.error(chalk.red('Error: --message and --fixture are mutually exclusive.'));
           process.exit(1);
         }
-        const project = await resolveProject(nameOrId);
         let sampleMessages: Message[];
-        if (opts.sample !== undefined) {
-          const samples = await api<TrafficSample[]>('GET', `/api/projects/${encodeURIComponent(project.id)}/optimizers/samples`);
-          const index = Number(opts.sample);
-          const picked = Number.isInteger(index) ? samples[index - 1] : undefined;
-          if (!picked) {
-            console.error(chalk.red(`Error: no sample ${opts.sample}. This project has ${samples.length}.`));
+        if (opts.fixture !== undefined) {
+          const fixture = optimizerFixture(opts.fixture);
+          if (!fixture) {
+            console.error(chalk.red(`Error: unknown fixture "${opts.fixture}". Available: ${OPTIMIZER_FIXTURES.map(f => f.id).join(', ')}.`));
             process.exit(1);
           }
-          sampleMessages = picked.messages;
+          sampleMessages = fixture.messages;
         } else {
           sampleMessages = opts.message.map(text => ({ role: 'user', content: text }));
         }
+        const project = await resolveProject(nameOrId);
         const steps = project.optimizers?.steps ?? [];
         const result = await api<PreviewResult>('POST', '/api/optimizers/preview', {
           projectId: project.id,
@@ -317,10 +315,13 @@ Examples:
           console.log(chalk.yellow('\nNo optimizer steps configured on this project.'));
           return;
         }
-        const table = new Table({ head: ['ID', 'Name', 'Before', 'After', 'Saved'].map(h => chalk.cyan(h)) });
+        // "Saved 0" is the same cell whether a step ran and found nothing or never
+        // ran at all, which is exactly what sends an operator hunting. The reason
+        // column separates the two.
+        const table = new Table({ head: ['ID', 'Name', 'Before', 'After', 'Saved', 'Note'].map(h => chalk.cyan(h)) });
         for (const s of result.perStep) {
           const saved = s.rolledBack ? chalk.yellow('rolled back') : String(s.before - s.after);
-          table.push([s.id, optimizerLabel(s.id), String(s.before), String(s.after), saved]);
+          table.push([s.id, optimizerLabel(s.id), String(s.before), String(s.after), saved, s.skipReason ? chalk.gray(s.skipReason) : '']);
         }
         console.log('\n' + table.toString());
         if (result.perStep.some(s => s.rolledBack)) {

@@ -40,7 +40,7 @@ import { mcpApiRoutes } from './mcp.js';
 import { getOptimizerRegistry } from '../optimizers/registry.js';
 import { guardrailConfigSchema, piiConfigSchema, optimizerConfigSchema, optimizerStepSchema } from './schemas.js';
 import { runPreview } from '../optimizers/preview.js';
-import { listSamples } from '../optimizers/samples.js';
+import * as llmlingua2Model from '../optimizers/llmlingua2/model.js';
 import { computeSavings, computeSeries } from '../usage/savings.js';
 import { isClientConfiguratorEnabled } from '../clients/module.js';
 import {
@@ -1225,14 +1225,22 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send(installed);
   });
 
-  // Recent real prompts for a project, from the in-memory ring the optimizer
-  // pipeline fills (T63). Nothing here is persisted: an empty list is the normal
-  // answer after a restart, or for a project no request has reached yet.
-  fastify.get<{ Params: { id: string } }>('/api/projects/:id/optimizers/samples', async (req, reply) => {
+  // Availability of the optional llmlingua-2 checkpoint on THIS host. Read-only,
+  // no prompt content, no project scope: it describes the service install.
+  fastify.get('/api/optimizers/llmlingua2/model', async (req, reply) => {
     if (!requirePerm(req, 'optimizers:read', reply)) return;
-    const projects = await readConfig('projects');
-    if (!projects.some(p => p.id === req.params.id)) return reply.status(404).send({ error: 'Not found' });
-    return reply.send(listSamples(req.params.id));
+    return reply.send({ ...llmlingua2Model.modelState(), runtimeInstalled: llmlingua2Model.isRuntimeInstalled() });
+  });
+
+  // Start the checkpoint download. 202 and return: it is hundreds of megabytes,
+  // so the caller polls the GET above instead of holding a request open.
+  fastify.post('/api/optimizers/llmlingua2/model', async (req, reply) => {
+    if (!requirePerm(req, 'optimizers:manage', reply)) return;
+    if (!llmlingua2Model.isRuntimeInstalled()) {
+      return reply.status(409).send({ error: '@huggingface/transformers is not installed on the service host' });
+    }
+    llmlingua2Model.startDownload();
+    return reply.status(202).send({ ...llmlingua2Model.modelState(), runtimeInstalled: true });
   });
 
   // Dry-run: apply the given steps to sample messages and report token deltas.

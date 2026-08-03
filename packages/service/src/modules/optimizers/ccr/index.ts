@@ -7,8 +7,11 @@ import { messageText, readMessages, segment, tokensOf, writeMessages } from '../
 
 // ponytail: window-keep reduction, no LLM summarizer call; add a summarizer model only if window-keep loses needed context.
 
-// keep last 6 turns by default
-const DEFAULT_WINDOW = 6
+// Keep the last 3 turns by default. Six left the optimizer inert on ordinary
+// conversations: nothing is condensed until the thread exceeds the window, and
+// most threads never do. Three still hands the model a question, its answer and
+// the follow-up verbatim; everything older arrives as the condensed block.
+const DEFAULT_WINDOW = 3
 
 // segment()/isToolResultUser()'s turn-boundary + tool_use/tool_result atomicity
 // logic now lives in ../messages.js, shared with the headroom optimizer.
@@ -85,7 +88,15 @@ function plan(messages: Message[], window: number): Plan {
   const cut = turns.length - window
   const kept = turns.slice(cut).flat()
   const newMessages = withCondensed(system, condensedText(turns.slice(0, cut)), kept)
-  return { changed: true, newMessages, before, after: tokensOf(newMessages) }
+  const after = tokensOf(newMessages)
+  // The condensed block costs a header and one role prefix per message. When no
+  // older message exceeds CONDENSE_CAP there is nothing to clip, so that overhead
+  // is the whole delta and the rewrite would hand the provider a LONGER prompt.
+  // Keep the original in that case: an optimizer that grows the request is a bug.
+  if (after >= before) {
+    return { changed: false, newMessages: messages, before, after: before }
+  }
+  return { changed: true, newMessages, before, after }
 }
 
 /** Pre-optimize message array per context, read back by recover/validate. */

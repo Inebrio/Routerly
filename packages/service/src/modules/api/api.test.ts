@@ -24,6 +24,13 @@ vi.mock('../update-checker/update-checker.js', () => ({
   updateChecker: { getLastResult: vi.fn(() => null), check: vi.fn(), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))
 vi.mock('../telemetry/telemetry.js', () => ({ pingTelemetry: vi.fn() }))
+// The optional checkpoint is never on a test host, and startDownload() would
+// reach the network. Mocked so the two model routes are testable deterministically.
+vi.mock('../optimizers/llmlingua2/model.js', () => ({
+  modelState: vi.fn(() => ({ state: 'absent', modelId: 'test/model', dtype: 'q8' })),
+  isRuntimeInstalled: vi.fn(() => true),
+  startDownload: vi.fn(),
+}))
 vi.mock('../audit/logger.js', () => ({ logAudit: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('bcrypt', () => ({
   default: { hash: vi.fn(async (p: string) => `hashed:${p}`), compare: vi.fn() },
@@ -63,7 +70,7 @@ import { verifyTotp, generateTotpSecret, generateBackupCodes, hashBackupCode } f
 import { catalogFetcher } from '../catalog/fetcher.js'
 import { OptimizerRegistry, setOptimizerRegistry, type Optimizer } from '../optimizers/registry.js'
 import { readMessages, writeMessages, tokensOf } from '../optimizers/messages.js'
-import { captureSample, clearSamples } from '../optimizers/samples.js'
+import * as llmlingua2Model from '../optimizers/llmlingua2/model.js'
 import { setClientConfiguratorEnabled } from '../clients/module.js'
 import { CLIENT_REGISTRY } from '@routerly/shared'
 import { splitModelsIntoInstancesConnections } from '../../test-support/effective-models.js'
@@ -12258,52 +12265,74 @@ describe('Optimizers API', () => {
     expect(res.statusCode).toBe(403)
   })
 
-  it('GET /api/projects/:id/optimizers/samples returns the captured prompts with optimizers:read (200)', async () => {
-    clearSamples()
-    captureSample('p1', [{ role: 'user', content: 'a real prompt' }], '2026-08-01T10:00:00.000Z')
+  it('has no traffic-sample route: real prompts are never buffered or served', async () => {
     authAs(adminUser)
     const app = await buildApp()
     const res = await app.inject({
       method: 'GET', url: '/api/projects/p1/optimizers/samples', headers: adminAuthHeaders(),
-    })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    expect(res.json()).toEqual([
-      { capturedAt: '2026-08-01T10:00:00.000Z', messages: [{ role: 'user', content: 'a real prompt' }], estimatedTokens: 4 },
-    ])
-  })
-
-  it('GET /api/projects/:id/optimizers/samples returns an empty list before any traffic', async () => {
-    clearSamples()
-    authAs(adminUser)
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'GET', url: '/api/projects/p1/optimizers/samples', headers: adminAuthHeaders(),
-    })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    expect(res.json()).toEqual([])
-  })
-
-  it('GET /api/projects/:id/optimizers/samples returns 404 for an unknown project', async () => {
-    authAs(adminUser)
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'GET', url: '/api/projects/nope/optimizers/samples', headers: adminAuthHeaders(),
     })
     await app.close()
     expect(res.statusCode).toBe(404)
   })
 
-  it('GET /api/projects/:id/optimizers/samples returns 403 without optimizers:read', async () => {
+  describe('llmlingua-2 model routes', () => {
+  it('reports model status with optimizers:read (200)', async () => {
+    authAs(adminUser)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET', url: '/api/optimizers/llmlingua2/model', headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ state: 'absent', modelId: 'test/model', runtimeInstalled: true })
+  })
+
+  it('refuses status without optimizers:read (403)', async () => {
     const roRole = { id: 'ro', name: 'RO', permissions: ['project:read'] }
     const roUser = { id: 'ro-id', email: 'ro@x.com', passwordHash: '$2b$12$h', roleId: 'ro', projectIds: [] }
     authAs(roUser, [roRole])
     const app = await buildApp()
     const res = await app.inject({
-      method: 'GET', url: '/api/projects/p1/optimizers/samples', headers: adminAuthHeaders(),
+      method: 'GET', url: '/api/optimizers/llmlingua2/model', headers: adminAuthHeaders(),
     })
     await app.close()
     expect(res.statusCode).toBe(403)
+  })
+
+  it('accepts a download request with optimizers:manage (202)', async () => {
+    vi.mocked(llmlingua2Model.isRuntimeInstalled).mockReturnValue(true)
+    authAs(adminUser)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/optimizers/llmlingua2/model', headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(202)
+    expect(llmlingua2Model.startDownload).toHaveBeenCalled()
+  })
+
+  it('refuses a download when the optional runtime is missing (409)', async () => {
+    vi.mocked(llmlingua2Model.isRuntimeInstalled).mockReturnValue(false)
+    authAs(adminUser)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/optimizers/llmlingua2/model', headers: adminAuthHeaders(),
+    })
+    await app.close()
+    vi.mocked(llmlingua2Model.isRuntimeInstalled).mockReturnValue(true)
+    expect(res.statusCode).toBe(409)
+  })
+
+  it('refuses a download request without optimizers:manage (403)', async () => {
+    const roRole = { id: 'ro', name: 'RO', permissions: ['optimizers:read'] }
+    const roUser = { id: 'ro-id', email: 'ro@x.com', passwordHash: '$2b$12$h', roleId: 'ro', projectIds: [] }
+    authAs(roUser, [roRole])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/optimizers/llmlingua2/model', headers: adminAuthHeaders(),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
   })
 })

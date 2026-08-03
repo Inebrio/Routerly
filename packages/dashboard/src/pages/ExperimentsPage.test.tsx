@@ -139,12 +139,21 @@ describe('ExperimentsPage', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard/experiments/exp-1');
   });
 
+  it('opens the config tab from the edit icon', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Which one wins')).toBeInTheDocument());
+    await user.click(screen.getAllByTitle('Edit experiment')[0]!);
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/experiments/exp-1/config');
+  });
+
   it('hides every management action without the manage permission', async () => {
     setAuth(['experiments:read']);
     renderPage();
     await waitFor(() => expect(screen.getByText('Cheap vs premium')).toBeInTheDocument());
     expect(screen.queryByRole('button', { name: /new experiment/i })).not.toBeInTheDocument();
     expect(screen.queryByTitle('Delete')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Edit experiment')).not.toBeInTheDocument();
   });
 
   it('refuses to render the list without the read permission', async () => {

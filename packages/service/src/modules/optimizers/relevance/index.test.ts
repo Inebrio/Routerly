@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { ServiceContainer, EventBus, ProcessorRegistry } from '../../../core/index.js'
 import { OPTIMIZER_REGISTRY, PROXY_PIPELINE } from '../../../core/tokens.js'
+import { OPTIMIZER_CATALOG } from '@routerly/shared'
 import type { ChatCompletionRequest, Message, OptimizerStep } from '@routerly/shared'
 import type { ProxyContext } from '../../reverse-proxy/context.js'
 import { readMessages } from '../messages.js'
@@ -49,8 +50,10 @@ describe('relevance optimizer', () => {
     expect(relevanceOptimizer.klass).toBe('lossy')
   })
 
-  it('supports is false (opt-in) when no threshold is configured on the step', () => {
-    expect(relevanceOptimizer.supports(ctxWith(conversation()))).toBe(false)
+  it('supports is true with no threshold on the step: the catalog default applies', () => {
+    // Enabling the step is the opt-in. Requiring a second number on top of it
+    // left the optimizer silently inert for anyone who enabled it and saved.
+    expect(relevanceOptimizer.supports(ctxWith(conversation()))).toBe(true)
   })
 
   it('supports is true once a threshold is set and there is an older turn to score', () => {
@@ -96,14 +99,18 @@ describe('relevance optimizer', () => {
     expect(relevanceOptimizer.validate(ctx, result)).toBe(true)
   })
 
-  it('estimate and optimize are no-ops when no threshold is configured', () => {
+  it('estimate and optimize fall back to the catalog default when no threshold is configured', () => {
+    const fallback = relevanceOptimizer.estimate(ctxWith(conversation()))
+    const explicit = relevanceOptimizer.estimate(
+      ctxWith(conversation(), OPTIMIZER_CATALOG.relevance.threshold!.default!),
+    )
+    expect(fallback).toEqual(explicit)
+
     const ctx = ctxWith(conversation())
-    const before = readMessages(ctx.request).slice()
-    const est = relevanceOptimizer.estimate(ctx)
-    expect(est.estimatedTokensAfter).toBe(est.estimatedTokensBefore)
     const result = relevanceOptimizer.optimize(ctx)
-    expect(result.changed).toBe(false)
-    expect(readMessages(ctx.request)).toEqual(before)
+    expect(result.changed).toBe(true)
+    // the unrelated turn goes, exactly as it does with an explicit 0.1
+    expect(readMessages(ctx.request).some((m) => m.content === UNRELATED[0]!.content)).toBe(false)
   })
 
   it('is a no-op when there is only the newest turn (nothing older to score)', () => {

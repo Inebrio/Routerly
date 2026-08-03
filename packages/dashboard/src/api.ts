@@ -1176,6 +1176,8 @@ export interface OptimizerPreviewStep {
   messages: Message[];
   /** The step changed the prompt and the change was rejected and rolled back. */
   rolledBack?: boolean;
+  /** Why a step that saved nothing never ran, in the operator's words. */
+  skipReason?: string;
 }
 
 export interface OptimizerPreviewResult {
@@ -1192,17 +1194,20 @@ export const previewOptimizers = (body: {
   steps: OptimizerStep[];
 }) => request<OptimizerPreviewResult>('/optimizers/preview', { method: 'POST', body: JSON.stringify(body) });
 
-/** A real prompt this project sent, kept in memory by the service. */
-export interface TrafficSample {
-  capturedAt: string;
-  messages: Message[];
-  estimatedTokens: number;
-  truncated?: boolean;
+/** State of the optional LLMLingua-2 checkpoint on the service host. */
+export interface LlmLinguaModelState {
+  state: 'absent' | 'downloading' | 'ready';
+  modelId: string;
+  dtype: string;
+  runtimeInstalled: boolean;
+  error?: string;
 }
 
-/** Recent prompts of a project, newest first. Empty until traffic arrives. */
-export const getOptimizerSamples = (projectId: string) =>
-  request<TrafficSample[]>(`/projects/${encodeURIComponent(projectId)}/optimizers/samples`);
+export const getLlmLinguaModel = () => request<LlmLinguaModelState>('/optimizers/llmlingua2/model');
+
+/** Starts the download and returns at once: the caller polls getLlmLinguaModel. */
+export const installLlmLinguaModel = () =>
+  request<LlmLinguaModelState>('/optimizers/llmlingua2/model', { method: 'POST' });
 
 // ── Client configurator ──────────────────────────────────────────────────
 import type { ClientMeta } from '@routerly/shared';

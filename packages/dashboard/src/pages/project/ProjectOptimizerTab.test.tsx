@@ -11,7 +11,8 @@ vi.mock('../../api', () => ({
   previewOptimizers: vi.fn(),
   getProfiles: vi.fn(),
   assignProjectProfiles: vi.fn(),
-  getOptimizerSamples: vi.fn(),
+  getLlmLinguaModel: vi.fn(),
+  installLlmLinguaModel: vi.fn(),
 }));
 
 vi.mock('../../AuthContext', () => ({
@@ -40,7 +41,8 @@ vi.mock('../../components/SearchableSelect', () => ({
   ),
 }));
 
-import { updateProject, getInstalledOptimizers, previewOptimizers, getProfiles, assignProjectProfiles, getOptimizerSamples } from '../../api';
+import { updateProject, getInstalledOptimizers, previewOptimizers, getProfiles, assignProjectProfiles, getLlmLinguaModel, installLlmLinguaModel } from '../../api';
+import { optimizerFixture } from '@routerly/shared';
 import { useAuth } from '../../AuthContext';
 
 const mockUpdateProject = vi.mocked(updateProject as (...a: unknown[]) => Promise<unknown>);
@@ -48,7 +50,8 @@ const mockGetInstalled = vi.mocked(getInstalledOptimizers as () => Promise<unkno
 const mockPreview = vi.mocked(previewOptimizers as (...a: unknown[]) => Promise<unknown>);
 const mockGetProfiles = vi.mocked(getProfiles as (...a: unknown[]) => Promise<unknown>);
 const mockAssignProfile = vi.mocked(assignProjectProfiles as (...a: unknown[]) => Promise<unknown>);
-const mockGetSamples = vi.mocked(getOptimizerSamples as (...a: unknown[]) => Promise<unknown>);
+const mockGetModel = vi.mocked(getLlmLinguaModel as (...a: unknown[]) => Promise<unknown>);
+const mockInstallModel = vi.mocked(installLlmLinguaModel as (...a: unknown[]) => Promise<unknown>);
 const mockUseAuth = vi.mocked(useAuth);
 
 const sampleProfiles = [
@@ -111,7 +114,7 @@ beforeEach(() => {
   mockGetProfiles.mockResolvedValue(sampleProfiles);
   mockAssignProfile.mockResolvedValue({ ...mockProject });
   mockUpdateProject.mockResolvedValue({ ...mockProject });
-  mockGetSamples.mockResolvedValue([]);
+  mockGetModel.mockResolvedValue({ state: 'absent', modelId: 'test/model', dtype: 'q8', runtimeInstalled: false });
   mockPreview.mockResolvedValue({
     estimatedTokensBefore: 100,
     estimatedTokensAfter: 60,
@@ -337,53 +340,31 @@ describe('ProjectOptimizerTab — optimizer profile assignment', () => {
   });
 });
 
-// ── Replay of captured prompts and per-step diff (T63) ───────────────────────
+// ── Fixture preview and per-step diff (T63) ──────────────────────────────────
 
-const capturedSamples = [
-  {
-    capturedAt: new Date(Date.now() - 5 * 60_000).toISOString(),
-    messages: [{ role: 'user', content: 'summarize the quarterly report' }],
-    estimatedTokens: 812,
-  },
-  {
-    capturedAt: new Date(Date.now() - 2 * 3_600_000).toISOString(),
-    messages: [{ role: 'system', content: 'be brief' }, { role: 'user', content: 'and then?' }],
-    estimatedTokens: 40,
-    truncated: true,
-  },
-];
-
-describe('ProjectOptimizerTab — replay and diff', () => {
-  it('explains the picker is empty until traffic arrives', async () => {
+describe('ProjectOptimizerTab — fixtures and diff', () => {
+  it('offers the shipped conversations and says real prompts are not recorded', async () => {
     renderTab();
-    await waitFor(() => expect(screen.getByLabelText('Prompt to preview')).toBeInTheDocument());
-    expect(screen.getByText(/no recent prompts captured yet/i)).toBeInTheDocument();
+    const select = await screen.findByLabelText('Prompt to preview');
+    // placeholder + 'type below' + the three shipped fixtures
+    await waitFor(() => expect(select.querySelectorAll('option')).toHaveLength(5));
+    expect(screen.getByText(/routerly does not record real prompts/i)).toBeInTheDocument();
     expect(screen.getByLabelText('Sample prompt')).toBeInTheDocument();
   });
 
-  it('lists the captured prompts with their size', async () => {
-    mockGetSamples.mockResolvedValue(capturedSamples);
-    renderTab();
-    const select = await screen.findByLabelText('Prompt to preview');
-    await waitFor(() => expect(select.querySelectorAll('option')).toHaveLength(4)); // placeholder + 'type below' + 2
-    expect(screen.getByText(/5m ago · 812 tokens · 1 message$/)).toBeInTheDocument();
-    expect(screen.getByText(/2h ago · 40 tokens · 2 messages$/)).toBeInTheDocument();
-  });
-
-  it('replays a captured prompt instead of the textarea', async () => {
+  it('previews a shipped conversation instead of the textarea', async () => {
     const user = userEvent.setup();
-    mockGetSamples.mockResolvedValue(capturedSamples);
     renderTab();
-    await user.selectOptions(await screen.findByLabelText('Prompt to preview'), '1');
-    // The textarea gives way to a read-only excerpt of the captured prompt.
+    await user.selectOptions(await screen.findByLabelText('Prompt to preview'), 'support-chat-en');
+    // The textarea gives way to a read-only rendering of the fixture.
     expect(screen.queryByLabelText('Sample prompt')).not.toBeInTheDocument();
-    expect(screen.getByText(/system: be brief/)).toBeInTheDocument();
-    expect(screen.getByText(/\(excerpt\)/)).toBeInTheDocument();
+    expect(screen.getByText(/exercises ccr, session-dedup and relevance/i)).toBeInTheDocument();
+    expect(screen.getByText(/system: You are a support agent/)).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /run preview/i }));
     await waitFor(() => expect(mockPreview).toHaveBeenCalled());
-    const [body] = mockPreview.mock.calls[0] as [{ sampleMessages: unknown[] }];
-    expect(body.sampleMessages).toEqual(capturedSamples[1]!.messages);
+    const [body] = mockPreview.mock.calls[0] as [{ sampleMessages: { role: string }[] }];
+    expect(body.sampleMessages).toEqual(optimizerFixture('support-chat-en')!.messages);
   });
 
   it('shows what a step removed when its row is expanded', async () => {
@@ -428,9 +409,75 @@ describe('ProjectOptimizerTab — replay and diff', () => {
     expect(screen.getByText(/rolled back, so the prompt reached the next step untouched/i)).toBeInTheDocument();
   });
 
-  it('survives a failed samples fetch', async () => {
-    mockGetSamples.mockRejectedValue(new Error('nope'));
+  it('explains a step that never ran, so a zero saving is not a mystery', async () => {
+    const user = userEvent.setup();
+    mockPreview.mockResolvedValue({
+      estimatedTokensBefore: 10,
+      estimatedTokensAfter: 10,
+      perStep: [{
+        id: 'ccr', before: 10, after: 10, messages: [{ role: 'user', content: 'untouched' }],
+        skipReason: 'the conversation is shorter than the 3 turn window',
+      }],
+      messages: [{ role: 'user', content: 'untouched' }],
+    });
     renderTab();
-    await waitFor(() => expect(screen.getByText(/no recent prompts captured yet/i)).toBeInTheDocument());
+    await user.type(await screen.findByLabelText('Sample prompt'), 'untouched');
+    await user.click(screen.getByRole('button', { name: /run preview/i }));
+    await waitFor(() => expect(screen.getByText(/skipped: the conversation is shorter than the 3 turn window/i)).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: /conversation context reduction/i }));
+    expect(screen.getByText(/this step did not run: the conversation is shorter/i)).toBeInTheDocument();
+  });
+
+  it('survives a failed model fetch', async () => {
+    mockGetModel.mockRejectedValue(new Error('nope'));
+    renderTab();
+    await waitFor(() => expect(screen.getByLabelText('Prompt to preview')).toBeInTheDocument());
+    expect(screen.queryByText(/LLMLingua-2 model/)).not.toBeInTheDocument();
+  });
+});
+
+// ── The optional LLMLingua-2 checkpoint ──────────────────────────────────────
+
+describe('ProjectOptimizerTab — llmlingua-2 model', () => {
+  const withStep = {
+    ...mockProject,
+    optimizers: { steps: [{ id: 'llmlingua-2', enabled: true }] },
+  };
+
+  it('says nothing about the model when the pipeline does not use it', async () => {
+    mockGetModel.mockResolvedValue({ state: 'absent', modelId: 'm', dtype: 'q8', runtimeInstalled: true });
+    renderTab();
+    await waitFor(() => expect(screen.getByLabelText('Prompt to preview')).toBeInTheDocument());
+    expect(screen.queryByText(/LLMLingua-2 model/)).not.toBeInTheDocument();
+  });
+
+  it('reports a missing runtime on the service host', async () => {
+    mockGetModel.mockResolvedValue({ state: 'absent', modelId: 'm', dtype: 'q8', runtimeInstalled: false });
+    renderTab(withStep);
+    await waitFor(() => expect(screen.getByText(/is not installed on the service host/i)).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /install model/i })).not.toBeInTheDocument();
+  });
+
+  it('installs the checkpoint and reports the download', async () => {
+    const user = userEvent.setup();
+    mockGetModel.mockResolvedValue({ state: 'absent', modelId: 'm', dtype: 'q8', runtimeInstalled: true });
+    mockInstallModel.mockResolvedValue({ state: 'downloading', modelId: 'm', dtype: 'q8', runtimeInstalled: true });
+    renderTab(withStep);
+    await user.click(await screen.findByRole('button', { name: /install model/i }));
+    await waitFor(() => expect(screen.getByText(/downloading\. this takes a few minutes/i)).toBeInTheDocument());
+    expect(mockInstallModel).toHaveBeenCalled();
+  });
+
+  it('shows the error the host reported', async () => {
+    mockGetModel.mockResolvedValue({ state: 'absent', modelId: 'm', dtype: 'q8', runtimeInstalled: true, error: 'disk full' });
+    renderTab(withStep);
+    await waitFor(() => expect(screen.getByText('disk full')).toBeInTheDocument());
+  });
+
+  it('disables the install button without optimizers:manage', async () => {
+    setAuth(['optimizers:read']);
+    mockGetModel.mockResolvedValue({ state: 'absent', modelId: 'm', dtype: 'q8', runtimeInstalled: true });
+    renderTab(withStep);
+    await waitFor(() => expect(screen.getByRole('button', { name: /install model/i })).toBeDisabled());
   });
 });
