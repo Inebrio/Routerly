@@ -20,12 +20,18 @@ untouched. That is `relevance`'s job.
 
 `ccr` (id `'ccr'`, klass `'recoverable'`) is a window-keep conversation
 context reducer. It keeps the leading system prefix and the last N turns
-(default 6, via the step's `threshold`), condenses everything older into a
+(default 3, via the step's `threshold`), condenses everything older into a
 single compact text block (each condensed message clipped to ~200 characters)
 under a `[Condensed earlier context]` header, and merges that block into the
 first kept message rather than inserting it as a separate message. No LLM
 summarizer call is made. A tool-use / tool-result pair is never split across
 the window cut.
+
+The condensed block costs a header plus one role prefix per condensed message,
+so when no older message exceeds the ~200 character clip there is nothing to
+gain and the rewrite would produce a longer prompt. `ccr` detects that and
+returns the original untouched: the step reports `changed: false` rather than a
+negative saving.
 
 ## rtk
 
@@ -67,9 +73,9 @@ for the full explanation and the pipeline-ordering fix this depends on.
 
 `relevance` (id `'relevance'`, klass `'lossy'`) scores each older turn's
 lexical overlap (Jaccard similarity of lowercase word sets) against the
-newest turn and drops whole turns scoring below the step's `threshold`.
-Unlike `ccr`/`headroom`, there is no built-in default threshold, `relevance`
-stays inert until a project explicitly sets one. The newest turn is never
+newest turn and drops whole turns scoring below the step's `threshold`
+(default `0.1`, from the shared catalog: enabling the step is the whole opt-in,
+no second number is required). The newest turn is never
 scored and is always kept. This is a lexical, not semantic, heuristic;
 embedding-based scoring is a possible future upgrade if lexical overlap
 proves too blunt, not built speculatively today.
@@ -84,9 +90,20 @@ leave behind, keeping content words. It never drops, reorders, or merges
 messages, and never touches non-text content parts (images, `tool_use`,
 `tool_result` blocks) — only the density of a message's own text changes.
 
+`caveman` is English-only by design. Its word list is 90 English function
+words; on Italian it removed 1.0 percent of tokens and every removal was an
+Italian word that happens to be spelled like an English one. `supports()`
+therefore measures the share of words already in the list and returns false
+below 0.12 (English measures 0.46, Italian 0.026), so the optimizer stays inert
+on any other language. There is no language-detection dependency: the list is
+its own detector. `llmlingua-2` is the multilingual step. Texts under 20 words
+are not gated, because the ratio carries no signal there.
+
 Preserved verbatim, unconditionally, even under aggressive compression:
 fenced code blocks (```` ``` ````), inline code spans (`` ` ``), URLs
-(`http`/`https`), and digit sequences. These regions are matched out before
+(`http`/`https`), compound tokens whose parts are joined by `/`, `.` or `-`
+(file paths such as `docs/concepts/on-call.md`, dotted identifiers such as
+`config.is.enabled`, hyphenated compounds), and digit sequences. These regions are matched out before
 stripping and re-joined byte-for-byte; digit-bearing tokens are never matched
 by the word regex, so numbers survive intact. As a lossy optimizer, its
 result is additionally checked by the shared floor-ratio safety gate (core.ts
@@ -102,34 +119,59 @@ within Routerly's optimizer registry.
 ## llmlingua-2
 
 `llmlingua-2` (id `'llmlingua-2'`, klass `'lossy'`) is a token-level prompt
-compression pass backed by a real, named, third-party ONNX model. It scores
-each token of a message's own text with the model's keep/discard classification
-head and drops the lowest-scoring tokens down to a target keep-ratio (the step's
-`threshold`, default `0.5`). It never drops, reorders, or merges messages, and
-never touches non-text content parts (images, `tool_use`, `tool_result`) — only
-a message's text density changes. As a lossy optimizer its result is
+compression pass backed by a real, named, third-party model. The text is
+tokenized with the model's own tokenizer, a token-classification head emits a
+keep/discard pair of logits per position, and the top `threshold` fraction
+(default `0.5`) of positions survive in their original order and are decoded
+back through the same tokenizer. It never drops, reorders, or merges messages,
+and never touches non-text content parts (images, `tool_use`, `tool_result`):
+only a message's text density changes. As a lossy optimizer its result is
 additionally checked by the shared floor-ratio safety gate (core.ts / gate.ts).
 
-Unlike `rtk` and `caveman`, this is NOT a clean-room implementation: it wraps a
-license-verified external model.
+Nothing in the code path is language-specific. The multilinguality comes from
+the encoder's own vocabulary and weights, not from any word list anyone has to
+write or maintain, which is why this and not `caveman` is the step to use on
+non-English prompts.
 
-Provenance and license (both MIT, confirmed from source):
+Unlike `rtk` and `caveman`, this is NOT a clean-room implementation: it wraps an
+external model.
+
+Provenance:
 
 - Technique / reference code: `microsoft/LLMLingua`,
-  https://github.com/microsoft/LLMLingua — MIT license.
-- ONNX-usable model checkpoint:
-  `microsoft/llmlingua-2-xlm-roberta-large-meetingbank`,
-  https://huggingface.co/microsoft/llmlingua-2-xlm-roberta-large-meetingbank —
-  MIT license (confirmed on the model card).
+  https://github.com/microsoft/LLMLingua, MIT license.
+- Default checkpoint:
+  `ldenoue/llmlingua-2-bert-base-multilingual-cased-meetingbank` at dtype `q8`,
+  170 MB. It is an ONNX export of the Apache-2.0
+  `microsoft/llmlingua-2-bert-base-multilingual-cased-meetingbank`, which ships
+  no ONNX build of its own. **The export repo declares no license on its model
+  card.** Operators who need a declared license should switch to the alternative
+  below.
+- Alternative checkpoint:
+  `atjsh/llmlingua-2-js-xlm-roberta-large-meetingbank` at dtype `int8`, 536 MB,
+  MIT license. Higher quality, heavier on disk and at inference.
 
-Model download is optional and gated — never auto-downloaded on install or at
-first request; it requires explicit operator opt-in (`downloadModel(true)`) and
-lands at a fixed on-disk path (`<ROUTERLY_HOME>/models/llmlingua-2/model.onnx`).
-With no checkpoint on disk and the optional dependency not installed — the
-default state — the optimizer still self-registers into the registry but
+Two env vars pick what lands on the host, and nothing else configures this:
+
+| Variable | Default |
+|---|---|
+| `ROUTERLY_LLMLINGUA_MODEL` | `ldenoue/llmlingua-2-bert-base-multilingual-cased-meetingbank` |
+| `ROUTERLY_LLMLINGUA_DTYPE` | `q8` |
+
+The checkpoint is cached at `<ROUTERLY_HOME>/models/<model-id>/`, in the layout
+transformers.js expects (`tokenizer.json` at the root, ONNX graphs under
+`onnx/`). It is never auto-downloaded on install or at request time: loading is
+`local_files_only`, so a proxied request can never trigger a download. The
+download is started explicitly through `POST /api/optimizers/llmlingua2/model`
+(permission `optimizers:manage`), which returns 202 immediately; progress is
+polled from `GET /api/optimizers/llmlingua2/model` (`optimizers:read`), exposed
+as `routerly optimizers model [--install]` and as a status box on the project
+optimizer tab. With no checkpoint cached and the optional dependency not
+installed, the default state, the optimizer still self-registers but
 `supports()` always returns false, so it is a permanent no-op.
 
-The `onnxruntime-node` package is declared in `packages/service/package.json`
-under `optionalDependencies` because native ONNX inference has no pure-JS
-equivalent of comparable quality; it is imported lazily inside a try/catch so
-its absence never crashes module load or the service.
+The `@huggingface/transformers` package is declared in
+`packages/service/package.json` under `optionalDependencies`: it brings the
+tokenizer and the ONNX runtime together (`onnxruntime-node` arrives as its own
+dependency), and it is imported lazily inside a try/catch so its absence never
+crashes module load or the service.

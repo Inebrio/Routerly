@@ -33,7 +33,7 @@
     "zod": "^4.3.6"
   },
   "optionalDependencies": {
-    "onnxruntime-node": "^1.20.0"
+    "@huggingface/transformers": "^4.2.0"
   },
   "devDependencies": {
     "@types/nodemailer": "^7.0.11",

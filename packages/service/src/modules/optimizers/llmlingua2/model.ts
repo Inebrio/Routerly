@@ -1,51 +1,56 @@
 import { createRequire } from 'node:module'
-import { existsSync } from 'node:fs'
-import { mkdir, writeFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
+import { existsSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
 import { CONFIG_PATHS } from '../../../lib/paths.js'
 
 /**
- * Fixed on-disk convention for the (optional, operator-provided) LLMLingua-2
- * ONNX checkpoint. There is deliberately no config surface: the model is either
- * present at this exact path or the optimizer stays a permanent no-op.
+ * Where transformers.js caches the checkpoint. It lays files out as
+ * <cache>/<model-id>/<file>, with the ONNX graphs under <model-id>/onnx/.
  *
- *   <ROUTERLY_HOME>/models/llmlingua-2/model.onnx
+ *   <ROUTERLY_HOME>/models/<model-id>/onnx/model_quantized.onnx
  */
-export const MODEL_PATH = join(CONFIG_PATHS.base, 'models', 'llmlingua-2', 'model.onnx')
+export const MODEL_CACHE_DIR = join(CONFIG_PATHS.base, 'models')
 
 /**
- * MIT-licensed checkpoint. Downloaded ONLY on explicit operator opt-in via
- * downloadModel(true); never auto-fetched on install or at request time.
- * See ../README.md#llmlingua-2 for provenance and license.
+ * LLMLingua-2 is multilingual because its encoder is: this checkpoint is
+ * multilingual BERT (104 languages), so the same weights score Italian, German
+ * or Japanese without any per-language configuration. Quantized to 8 bit it is
+ * 170 MB on disk, which is what makes it viable on a small self-hosted box.
+ *
+ * Provenance: an ONNX export of the Apache-2.0
+ * `microsoft/llmlingua-2-bert-base-multilingual-cased-meetingbank`. The export
+ * repo declares no license of its own; operators who need a declared license
+ * can set ROUTERLY_LLMLINGUA_MODEL to the MIT-licensed
+ * `atjsh/llmlingua-2-js-xlm-roberta-large-meetingbank` with dtype `int8`
+ * (536 MB, higher quality, heavier). See ../README.md#llmlingua-2.
  */
-const MODEL_URL =
-  'https://huggingface.co/microsoft/llmlingua-2-xlm-roberta-large-meetingbank/resolve/main/onnx/model.onnx'
+export const DEFAULT_MODEL_ID = 'ldenoue/llmlingua-2-bert-base-multilingual-cased-meetingbank'
+
+/** transformers.js resolves `q8` to `onnx/model_quantized.onnx`. */
+export const DEFAULT_DTYPE = 'q8'
+
+/**
+ * Operator-level knobs, deliberately env-only: they pick which files land on the
+ * service host's disk, which is deployment configuration, not per-project
+ * behaviour.
+ */
+export function modelId(): string {
+  return process.env.ROUTERLY_LLMLINGUA_MODEL?.trim() || DEFAULT_MODEL_ID
+}
+export function modelDtype(): string {
+  return process.env.ROUTERLY_LLMLINGUA_DTYPE?.trim() || DEFAULT_DTYPE
+}
 
 // `string` (not a literal) so tsc never tries to statically resolve the optional
-// module's types — the dependency may not be installed at build time.
-const RUNTIME_MODULE: string = 'onnxruntime-node'
+// module's types: the dependency may not be installed at build time.
+const RUNTIME_MODULE: string = '@huggingface/transformers'
 
 const req = createRequire(import.meta.url)
 
-/** Narrow shape of onnxruntime-node this module relies on. */
-export interface OnnxRuntime {
-  InferenceSession: { create(path: string): Promise<OnnxSession> }
-  Tensor: new (type: string, data: BigInt64Array, dims: number[]) => unknown
-}
-export interface OnnxSession {
-  run(feeds: Record<string, unknown>): Promise<Record<string, { data: Float32Array }>>
-}
-
-/** True only when the checkpoint file is present on disk. */
-export function isModelAvailable(): boolean {
-  return existsSync(MODEL_PATH)
-}
-
 /**
- * Synchronous best-effort probe: is the optional `onnxruntime-node` dependency
- * installed? Resolves the module path WITHOUT importing/executing it, so it is
- * safe to call from the optimizer's synchronous `supports()`. Returns false
- * cleanly when the optional dependency was never installed.
+ * Synchronous best-effort probe: is the optional `@huggingface/transformers`
+ * dependency installed? Resolves the module path WITHOUT importing or executing
+ * it, so it is safe to call from the optimizer's synchronous `supports()`.
  */
 export function isRuntimeInstalled(): boolean {
   try {
@@ -56,99 +61,149 @@ export function isRuntimeInstalled(): boolean {
   }
 }
 
-let runtime: OnnxRuntime | undefined
-let session: OnnxSession | undefined
+/**
+ * Is the checkpoint on disk? Checks for the tokenizer plus at least one ONNX
+ * graph rather than a specific filename, so a change of dtype does not need a
+ * dtype-to-filename table here. Sync, cheap, and safe from `supports()`.
+ */
+export function isModelAvailable(): boolean {
+  const base = join(MODEL_CACHE_DIR, modelId())
+  try {
+    if (!existsSync(join(base, 'tokenizer.json'))) return false
+    return readdirSync(join(base, 'onnx')).some((f) => f.endsWith('.onnx'))
+  } catch {
+    return false
+  }
+}
+
+interface Tokenizer {
+  (
+    text: string,
+    opts: Record<string, unknown>,
+  ): Promise<{
+    input_ids: { tolist(): number[][] }
+    attention_mask: { tolist(): number[][] }
+  }>
+  decode(ids: number[], opts: { skip_special_tokens: boolean }): string
+}
+type Classifier = (feeds: Record<string, unknown>) => Promise<{ logits: { tolist(): number[][][] } }>
+
+let tokenizer: Tokenizer | undefined
+let classifier: Classifier | undefined
 
 /**
- * Dynamically import onnxruntime-node. The import is wrapped in try/catch so the
- * dependency's absence never crashes module load or the whole service; it throws
- * a clear, caught error instead. Cached after the first successful load.
+ * Load tokenizer and model from the local cache only. `local_files_only: true`
+ * is load-bearing: a proxied request must never trigger a 170 MB download. The
+ * download happens once, explicitly, through startDownload().
  */
-export async function loadRuntime(): Promise<OnnxRuntime> {
-  if (runtime) return runtime
+async function load(): Promise<{ tok: Tokenizer; model: Classifier }> {
+  if (tokenizer && classifier) return { tok: tokenizer, model: classifier }
+  let lib: {
+    AutoTokenizer: { from_pretrained(id: string, o: Record<string, unknown>): Promise<Tokenizer> }
+    AutoModelForTokenClassification: {
+      from_pretrained(id: string, o: Record<string, unknown>): Promise<Classifier>
+    }
+  }
   try {
-    runtime = (await import(RUNTIME_MODULE)) as unknown as OnnxRuntime
-    return runtime
+    lib = (await import(RUNTIME_MODULE)) as never
   } catch (err) {
     throw new Error(
-      'onnxruntime-node is not installed; the llmlingua-2 optimizer is unavailable. ' +
+      '@huggingface/transformers is not installed; the llmlingua-2 optimizer is unavailable. ' +
         'Install the optional dependency to enable it.',
       { cause: err },
     )
   }
-}
-
-/**
- * Download the checkpoint to MODEL_PATH. Hard-gated: a no-op unless the operator
- * explicitly passes optIn === true. Never called automatically anywhere in the
- * codebase. Networking uses global fetch (mocked in tests — no real network).
- */
-export async function downloadModel(optIn: boolean): Promise<void> {
-  if (optIn !== true) return
-  const res = await fetch(MODEL_URL)
-  if (!res.ok) {
-    throw new Error(`llmlingua-2 model download failed: HTTP ${res.status}`)
-  }
-  const buf = Buffer.from(await res.arrayBuffer())
-  await mkdir(dirname(MODEL_PATH), { recursive: true })
-  await writeFile(MODEL_PATH, buf)
-}
-
-async function getSession(): Promise<OnnxSession> {
-  if (session) return session
-  const rt = await loadRuntime()
-  session = await rt.InferenceSession.create(MODEL_PATH)
-  return session
-}
-
-function hashToken(t: string): number {
-  let h = 0
-  for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0
-  return Math.abs(h)
-}
-
-/**
- * Per-token keep-probability from the LLMLingua-2 token-classification head:
- * logits are shape [1, seq, 2] (discard/keep); keep-prob = softmax over the two
- * labels, label index 1.
- *
- * ponytail: the id mapping below is a placeholder hash, NOT the model's native
- * XLM-RoBERTa SentencePiece vocabulary. A production-grade run must feed the
- * exact input_ids the checkpoint was trained on; wiring that requires shipping
- * the tokenizer, out of scope for an OFF-by-default optional feature. Upgrade
- * path: add the @huggingface/transformers tokenizer and replace `ids` here.
- */
-async function scoreTokens(tokens: string[]): Promise<number[]> {
-  const rt = await loadRuntime()
-  const sess = await getSession()
-  const n = tokens.length
-  const ids = BigInt64Array.from(tokens.map((t) => BigInt(hashToken(t) % 250000)))
-  const mask = BigInt64Array.from(tokens.map(() => 1n))
-  const out = await sess.run({
-    input_ids: new rt.Tensor('int64', ids, [1, n]),
-    attention_mask: new rt.Tensor('int64', mask, [1, n]),
+  const id = modelId()
+  const opts = { cache_dir: MODEL_CACHE_DIR, local_files_only: true }
+  tokenizer = await lib.AutoTokenizer.from_pretrained(id, opts)
+  classifier = await lib.AutoModelForTokenClassification.from_pretrained(id, {
+    ...opts,
+    dtype: modelDtype(),
   })
-  const logits = Object.values(out)[0]!.data
-  const scores: number[] = []
-  for (let i = 0; i < n; i++) {
-    const ea = Math.exp(logits[i * 2] ?? 0)
-    const eb = Math.exp(logits[i * 2 + 1] ?? 0)
-    scores.push(eb / (ea + eb))
+  return { tok: tokenizer, model: classifier }
+}
+
+let downloading = false
+let downloadError: string | undefined
+
+/**
+ * Status for the management route, the CLI and the dashboard. `ready` comes from
+ * the filesystem, never from an in-process flag: the checkpoint outlives the
+ * process, and a restart must report what is actually on disk.
+ */
+export function modelState(): {
+  state: 'absent' | 'downloading' | 'ready'
+  modelId: string
+  dtype: string
+  error?: string
+} {
+  const state = isModelAvailable() ? 'ready' : downloading ? 'downloading' : 'absent'
+  return {
+    state,
+    modelId: modelId(),
+    dtype: modelDtype(),
+    ...(downloadError ? { error: downloadError } : {}),
   }
-  return scores
 }
 
 /**
- * Compress one text blob to approximately `keepRatio` of its whitespace tokens:
- * each token gets a keep-probability from the model, the top-scoring `keepRatio`
- * fraction survive, and they are re-joined in original order. Runtime + session
- * are loaded lazily and cached. See scoreTokens for the tokenizer caveat.
+ * Fetch the checkpoint into MODEL_CACHE_DIR. Returns immediately: the download
+ * is hundreds of megabytes and the caller is an HTTP request. Progress is read
+ * back through modelState(). Idempotent while one is in flight, and never
+ * called automatically anywhere.
+ */
+export function startDownload(): void {
+  if (downloading || isModelAvailable()) return
+  downloading = true
+  downloadError = undefined
+  void (async () => {
+    try {
+      const lib = (await import(RUNTIME_MODULE)) as never as {
+        AutoTokenizer: { from_pretrained(id: string, o: Record<string, unknown>): Promise<unknown> }
+        AutoModelForTokenClassification: {
+          from_pretrained(id: string, o: Record<string, unknown>): Promise<unknown>
+        }
+      }
+      const id = modelId()
+      const opts = { cache_dir: MODEL_CACHE_DIR, local_files_only: false }
+      await lib.AutoTokenizer.from_pretrained(id, opts)
+      await lib.AutoModelForTokenClassification.from_pretrained(id, { ...opts, dtype: modelDtype() })
+    } catch (err) {
+      downloadError = err instanceof Error ? err.message : String(err)
+    } finally {
+      downloading = false
+    }
+  })()
+}
+
+/**
+ * Compress one text blob to approximately `keepRatio` of its tokens.
+ *
+ * This is LLMLingua-2 as published: the text is tokenized with the model's OWN
+ * tokenizer, the token-classification head emits [1, seq, 2] logits (discard,
+ * keep), the softmax over those two labels is the keep-probability, the
+ * top-scoring `keepRatio` fraction of positions survive in original order, and
+ * the surviving ids are decoded back through the same tokenizer.
+ *
+ * Nothing here is language-specific. The encoder is multilingual, so the same
+ * code path compresses any language its vocabulary covers.
  */
 export async function compress(text: string, keepRatio: number): Promise<string> {
-  const tokens = text.split(/\s+/).filter(Boolean)
-  if (tokens.length <= 1) return text
-  const scores = await scoreTokens(tokens)
-  const keep = Math.max(1, Math.round(tokens.length * keepRatio))
+  if (text.trim() === '') return text
+  const { tok, model } = await load()
+  const enc = await tok(text, { add_special_tokens: true })
+  const ids = enc.input_ids.tolist()[0] ?? []
+  if (ids.length <= 2) return text
+
+  const out = await model({ input_ids: enc.input_ids, attention_mask: enc.attention_mask })
+  const logits = out.logits.tolist()[0] ?? []
+  const scores = logits.map((pair) => {
+    const ea = Math.exp(pair[0] ?? 0)
+    const eb = Math.exp(pair[1] ?? 0)
+    return eb / (ea + eb)
+  })
+
+  const keep = Math.max(1, Math.round(ids.length * keepRatio))
   const keepSet = new Set(
     scores
       .map((s, i) => [s, i] as const)
@@ -156,5 +211,6 @@ export async function compress(text: string, keepRatio: number): Promise<string>
       .slice(0, keep)
       .map(([, i]) => i),
   )
-  return tokens.filter((_, i) => keepSet.has(i)).join(' ')
+  const kept = ids.filter((_, i) => keepSet.has(i))
+  return tok.decode(kept, { skip_special_tokens: true })
 }

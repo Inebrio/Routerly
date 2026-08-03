@@ -63,10 +63,10 @@ export const llmlingua2Optimizer: Optimizer = {
   id: 'llmlingua-2',
   klass: 'lossy',
 
-  // OFF by default: enabled step AND the checkpoint on disk AND the optional
-  // ONNX runtime installed. With no model file and no dependency (the install
-  // default) this is a permanent no-op. isModelAvailable() is checked first so
-  // the common path stays a single cheap fs stat.
+  // OFF by default: enabled step AND the checkpoint in the local cache AND the
+  // optional @huggingface/transformers dependency installed. With neither (the
+  // install default) this is a permanent no-op. isModelAvailable() is checked
+  // first so the common path stays a cheap fs probe.
   supports(ctx) {
     const step = stepOf(ctx)
     if (!step?.enabled) return false
