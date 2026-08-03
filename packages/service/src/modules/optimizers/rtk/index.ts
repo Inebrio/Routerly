@@ -3,7 +3,7 @@ import { OPTIMIZER_REGISTRY } from '../../../core/tokens.js'
 import type { Message, OptimizerResult } from '@routerly/shared'
 import type { ProxyContext } from '../../reverse-proxy/context.js'
 import type { Optimizer } from '../registry.js'
-import { estimateTokens, readMessages, writeMessages } from '../messages.js'
+import { readMessages, tokensOf, writeMessages } from '../messages.js'
 
 // ponytail: clean-room rule-based whitespace/boilerplate compaction, no summarizer
 // call and no external technique reused — see ../README.md#rtk.
@@ -90,13 +90,6 @@ function compactMessage(m: Message): { message: Message; changed: boolean } {
     return { message: { ...m, content }, changed: true }
   }
   return { message: m, changed: false }
-}
-
-function tokensOf(messages: Message[]): number {
-  return messages.reduce((sum, m) => {
-    const text = typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
-    return sum + estimateTokens(text)
-  }, 0)
 }
 
 interface Plan {
