@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Trash2, ShieldOff, Split } from 'lucide-react';
+import { Plus, Trash2, Pencil, ShieldOff, Split } from 'lucide-react';
 import {
   getExperiments, getProjects, deleteExperiment,
   type ApiError, type MaskedExperiment, type Project,
@@ -163,9 +163,14 @@ export function ExperimentsPage() {
                           {/* A flex td collapses the row's own height: keep the layout on an inner box. */}
                           <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                             {canManage && (
-                              <button className="btn-icon danger" onClick={() => handleDelete(e)} title="Delete">
-                                <Trash2 size={15} />
-                              </button>
+                              <>
+                                <button className="btn-icon" onClick={() => navigate(`/dashboard/experiments/${e.id}/config`)} title="Edit experiment">
+                                  <Pencil size={15} />
+                                </button>
+                                <button className="btn-icon danger" onClick={() => handleDelete(e)} title="Delete">
+                                  <Trash2 size={15} />
+                                </button>
+                              </>
                             )}
                           </div>
                         </td>

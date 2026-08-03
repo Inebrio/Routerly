@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: Read-only code review. Reviews diff for security issues, correctness, pattern violations, and docs gaps. Does NOT edit code.
-model: opus
+model: sonnet
 tools: Read, Glob, Grep, LS
 ---
 

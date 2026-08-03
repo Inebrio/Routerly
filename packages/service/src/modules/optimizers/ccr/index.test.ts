@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { ServiceContainer, EventBus, ProcessorRegistry } from '../../../core/index.js'
 import { OPTIMIZER_REGISTRY, PROXY_PIPELINE } from '../../../core/tokens.js'
-import type { ChatCompletionRequest, Message, OptimizerStep } from '@routerly/shared'
+import { optimizerFixture, type ChatCompletionRequest, type Message, type OptimizerStep } from '@routerly/shared'
 import type { ProxyContext } from '../../reverse-proxy/context.js'
 import { readMessages } from '../messages.js'
 import { optimizerCoreModule } from '../core.js'
@@ -75,14 +75,38 @@ describe('ccr optimizer', () => {
     expect(ccrOptimizer.validate(ctx, result)).toBe(true)
   })
 
-  it('uses the default window of 6 turns when no threshold is configured', () => {
-    const ctx = ctxWith(conversation(8)) // no threshold -> default 6
+  it('uses the default window of 3 turns when no threshold is configured', () => {
+    const ctx = ctxWith(conversation(8, true, 400)) // no threshold -> default 3
     const result = ccrOptimizer.optimize(ctx)
     expect(result.changed).toBe(true)
     const msgs = readMessages(ctx.request)
-    // system + 6 kept turns (condensed merged into the first kept user message)
-    expect(msgs).toHaveLength(1 + 6 * 2)
-    expect(msgs[msgs.length - 1]).toEqual({ role: 'assistant', content: 'a8' })
+    // system + 3 kept turns (condensed merged into the first kept user message)
+    expect(msgs).toHaveLength(1 + 3 * 2)
+    expect(msgs[msgs.length - 1]!.content).toContain('a8')
+  })
+
+  it('reaches past the window on a six-turn conversation with no explicit threshold', () => {
+    // The point of the 3-turn default: six turns used to sit inside the window
+    // and the optimizer never even looked at them.
+    const fixture = optimizerFixture('support-chat-en')!
+    const ctx = ctxWith(fixture.messages.map((m) => ({ ...m })))
+    expect(ccrOptimizer.supports(ctx)).toBe(true)
+    const result = ccrOptimizer.optimize(ctx)
+    // Every message in this fixture is shorter than CONDENSE_CAP, so there is
+    // nothing to clip and condensing would only add the header and the role
+    // prefixes. The prompt is left alone rather than made longer.
+    expect(result.changed).toBe(false)
+    expect(result.estimatedTokensAfter).toBe(result.estimatedTokensBefore)
+    expect(ccrOptimizer.validate(ctx, result)).toBe(true)
+  })
+
+  it('never hands back a longer prompt than it was given', () => {
+    // Short older turns: the condensed block would cost more than it saves.
+    const ctx = ctxWith(conversation(12))
+    const before = readMessages(ctx.request).slice()
+    const result = ccrOptimizer.optimize(ctx)
+    expect(result.estimatedTokensAfter).toBeLessThanOrEqual(result.estimatedTokensBefore)
+    expect(readMessages(ctx.request)).toEqual(before)
   })
 
   it('leaves a conversation within the window untouched', () => {
@@ -100,7 +124,7 @@ describe('ccr optimizer', () => {
   })
 
   it('works without a system message', () => {
-    const ctx = ctxWith(conversation(8, false), 6)
+    const ctx = ctxWith(conversation(8, false, 400), 6)
     const result = ccrOptimizer.optimize(ctx)
     expect(result.changed).toBe(true)
     const msgs = readMessages(ctx.request)
@@ -117,7 +141,8 @@ describe('ccr optimizer', () => {
     const msgs: Message[] = [
       { role: 'system', content: 'sys' },
       { role: 'user', content: 'u1' },
-      { role: 'assistant', content: 'a1' },
+      // long enough that clipping it beats the condensed block's own overhead
+      { role: 'assistant', content: `a1 ${'x'.repeat(400)}` },
       { role: 'user', content: 'u2' },
       { role: 'assistant', content: 'a2' },
       { role: 'user', content: 'u3' },
@@ -156,7 +181,8 @@ describe('ccr optimizer', () => {
     const msgs: Message[] = [
       { role: 'system', content: 'sys' },
       { role: 'user', content: 'u1' },
-      { role: 'assistant', content: 'a1' },
+      // long enough that clipping it beats the condensed block's own overhead
+      { role: 'assistant', content: `a1 ${'x'.repeat(400)}` },
       { role: 'user', content: 'u2' },
       { role: 'assistant', content: 'a2' },
       // newest turn opens with an array-content user message (Anthropic shape)
@@ -189,13 +215,13 @@ describe('ccr optimizer', () => {
     expect(firstUser.content as string).toContain('[Condensed earlier context]')
   })
 
-  it('treats a non-positive threshold as the default window', () => {
-    expect(ccrOptimizer.supports(ctxWith(conversation(6), 0))).toBe(false)
-    expect(ccrOptimizer.supports(ctxWith(conversation(7), 0))).toBe(true)
+  it('treats a non-positive threshold as the default window of 3', () => {
+    expect(ccrOptimizer.supports(ctxWith(conversation(3), 0))).toBe(false)
+    expect(ccrOptimizer.supports(ctxWith(conversation(4), 0))).toBe(true)
   })
 
   it('recover restores the original messages when explicitly invoked', () => {
-    const ctx = ctxWith(conversation(10), 6)
+    const ctx = ctxWith(conversation(10, true, 400), 6)
     const original = readMessages(ctx.request).slice()
     ccrOptimizer.optimize(ctx)
     expect(readMessages(ctx.request).length).toBeLessThan(original.length)

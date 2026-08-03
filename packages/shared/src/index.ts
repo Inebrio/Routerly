@@ -155,6 +155,11 @@ export type {
 // Readable catalog for the built-in optimizers: label, class, threshold spec (T63)
 export { OPTIMIZER_CATALOG, optimizerLabel, optimizerThreshold } from './types/optimizers.js';
 
+// Synthetic preview conversations. Routerly never records real prompts, so these
+// are the only sample material the dashboard and the CLI offer.
+export { OPTIMIZER_FIXTURES, optimizerFixture } from './optimizer-fixtures.js';
+export type { OptimizerFixture } from './optimizer-fixtures.js';
+
 export type {
   ResilienceLevel,
   ResilienceState,

@@ -195,74 +195,86 @@ describe('optimizers config', () => {
   });
 });
 
-// ─── optimizers samples ──────────────────────────────────────────────────────
+// ─── optimizers fixtures ─────────────────────────────────────────────────────
 
-describe('optimizers samples', () => {
-  const captured = [
-    { capturedAt: '2026-08-01T10:00:00.000Z', messages: [{ role: 'user', content: 'first prompt' }], estimatedTokens: 4 },
-    { capturedAt: '2026-08-01T09:00:00.000Z', messages: [{ role: 'system', content: 'be brief' }, { role: 'user', content: 'second' }], estimatedTokens: 6, truncated: true },
-  ];
+describe('optimizers fixtures', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  it('lists the shipped conversations without calling the service', async () => {
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'optimizers', 'fixtures']);
+    const out = lines.join('\n');
+    expect(out).toContain('support-chat-en');
+    expect(out).toContain('brief-en');
+    expect(out).toContain('agent-tools-en');
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('outputs valid JSON with --json', async () => {
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'optimizers', 'fixtures', '--json']);
+    const parsed = JSON.parse(lines.join('\n'));
+    expect(parsed.map((f: { id: string }) => f.id)).toEqual(['support-chat-en', 'brief-en', 'agent-tools-en']);
+    expect(parsed[0].messages.length).toBeGreaterThan(0);
+  });
+
+  it('has no traffic-sample command: real prompts are never buffered', async () => {
+    await expect(makeCmd().parseAsync(['node', 'optimizers', 'samples', 'my-api'])).rejects.toThrow();
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+});
+
+// ─── optimizers model ────────────────────────────────────────────────────────
+
+describe('optimizers model', () => {
+  const state = { state: 'absent', modelId: 'microsoft/llmlingua-2', dtype: 'q8', runtimeInstalled: true };
 
   beforeEach(() => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('lists the prompts the service kept for the project', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(captured);
+  it('reports the checkpoint state on the service host', async () => {
+    mockApi.mockResolvedValueOnce(state);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'optimizers', 'samples', 'my-api']);
-    expect(mockApi).toHaveBeenNthCalledWith(2, 'GET', '/api/projects/proj-1/optimizers/samples');
+    await makeCmd().parseAsync(['node', 'optimizers', 'model']);
+    expect(mockApi).toHaveBeenCalledWith('GET', '/api/optimizers/llmlingua2/model');
     const out = lines.join('\n');
-    expect(out).toContain('2026-08-01T10:00:00.000Z');
-    expect(out).toContain('yes');   // the second sample is an excerpt
+    expect(out).toContain('microsoft/llmlingua-2');
+    expect(out).toContain('absent');
+    expect(out).toContain('installed');
   });
 
-  it('prints one prompt in full with --show', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(captured);
+  it('starts the download with --install and says it is polled', async () => {
+    mockApi.mockResolvedValueOnce({ ...state, state: 'downloading' });
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'optimizers', 'samples', 'my-api', '--show', '2']);
-    const out = lines.join('\n');
-    expect(out).toContain('system');
-    expect(out).toContain('be brief');
-    expect(out).toContain('second');
-  });
-
-  it('exits 1 when --show points past the end', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(captured);
-    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(
-      makeCmd().parseAsync(['node', 'optimizers', 'samples', 'my-api', '--show', '9'])
-    ).rejects.toThrow('exit');
-    expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('This project has 2'));
+    await makeCmd().parseAsync(['node', 'optimizers', 'model', '--install']);
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/optimizers/llmlingua2/model', {});
+    expect(lines.join('\n')).toContain('again to check progress');
   });
 
   it('outputs valid JSON with --json', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(captured);
+    mockApi.mockResolvedValueOnce(state);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'optimizers', 'samples', 'my-api', '--json']);
-    expect(JSON.parse(lines.join('\n'))).toEqual(captured);
+    await makeCmd().parseAsync(['node', 'optimizers', 'model', '--json']);
+    expect(JSON.parse(lines.join('\n'))).toEqual(state);
   });
 
-  it('says nothing was captured yet on a silent project', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce([]);
-    const lines: string[] = [];
-    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'optimizers', 'samples', 'my-api']);
-    expect(lines.join('\n')).toContain('No prompts captured yet');
-  });
-
-  it('exits 1 on ApiError', async () => {
+  it('exits 1 when the runtime is missing on the host', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new ApiError(403, 'optimizers:read required'));
+    mockApi.mockRejectedValueOnce(new ApiError(409, '@huggingface/transformers is not installed on the service host'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'optimizers', 'samples', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'optimizers', 'model', '--install'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('optimizers:read required'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not installed on the service host'));
   });
 });
 
@@ -307,57 +319,51 @@ describe('optimizers preview', () => {
     expect(JSON.parse(lines.join('\n'))).toEqual(previewResult);
   });
 
-  it('exits 1 when neither --message nor --sample is given', async () => {
+  it('exits 1 when neither --message nor --fixture is given', async () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'optimizers', 'preview', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('--sample'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('--fixture'));
   });
 
-  it('exits 1 when --message and --sample are combined', async () => {
+  it('exits 1 when --message and --fixture are combined', async () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(
-      makeCmd().parseAsync(['node', 'optimizers', 'preview', 'my-api', '--message', 'hi', '--sample', '1'])
+      makeCmd().parseAsync(['node', 'optimizers', 'preview', 'my-api', '--message', 'hi', '--fixture', 'brief-en'])
     ).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('mutually exclusive'));
   });
 
-  it('replays a captured prompt with --sample', async () => {
+  it('sends a shipped conversation with --fixture', async () => {
     const project = { ...baseProject, optimizers: { steps: [{ id: 'ccr', enabled: true }] } };
-    const captured = [
-      { capturedAt: '2026-08-01T10:00:00.000Z', messages: [{ role: 'user', content: 'real traffic' }], estimatedTokens: 3 },
-    ];
-    mockApi
-      .mockResolvedValueOnce([project])
-      .mockResolvedValueOnce(captured)
-      .mockResolvedValueOnce(previewResult);
-    await makeCmd().parseAsync(['node', 'optimizers', 'preview', 'my-api', '--sample', '1']);
-    expect(mockApi).toHaveBeenNthCalledWith(2, 'GET', '/api/projects/proj-1/optimizers/samples');
-    expect(mockApi).toHaveBeenNthCalledWith(3, 'POST', '/api/optimizers/preview', {
-      projectId: 'proj-1',
-      sampleMessages: [{ role: 'user', content: 'real traffic' }],
-      steps: [{ id: 'ccr', enabled: true }],
-    });
+    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(previewResult);
+    await makeCmd().parseAsync(['node', 'optimizers', 'preview', 'my-api', '--fixture', 'support-chat-en']);
+    const body = mockApi.mock.calls[1]![2];
+    expect(mockApi.mock.calls[1]![1]).toBe('/api/optimizers/preview');
+    expect(body.sampleMessages[0].role).toBe('system');
+    expect(body.sampleMessages.length).toBeGreaterThan(6);
+    expect(body.steps).toEqual([{ id: 'ccr', enabled: true }]);
   });
 
-  it('exits 1 when the --sample index has no prompt behind it', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce([]);
+  it('exits 1 on an unknown --fixture id, without calling the service', async () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(
-      makeCmd().parseAsync(['node', 'optimizers', 'preview', 'my-api', '--sample', '3'])
+      makeCmd().parseAsync(['node', 'optimizers', 'preview', 'my-api', '--fixture', 'nope'])
     ).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('no sample 3'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('unknown fixture "nope"'));
+    expect(mockApi).not.toHaveBeenCalled();
   });
 
-  it('shows what each step saved, and flags a rolled-back one', async () => {
+  it('shows what each step saved, flags a rolled-back one and explains a skip', async () => {
     mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce({
       estimatedTokensBefore: 100,
       estimatedTokensAfter: 60,
       perStep: [
         { id: 'ccr', before: 100, after: 60 },
         { id: 'caveman', before: 60, after: 60, rolledBack: true },
+        { id: 'llmlingua-2', before: 60, after: 60, skipReason: 'model not installed on this host' },
       ],
     });
     const lines: string[] = [];
@@ -367,6 +373,7 @@ describe('optimizers preview', () => {
     expect(out).toContain('40');            // ccr saved column
     expect(out).toContain('rolled back');
     expect(out).toContain('judged unsafe');
+    expect(out).toContain('model not installed');
   });
 
   it('exits 1 when project not found', async () => {

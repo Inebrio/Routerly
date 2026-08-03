@@ -1,6 +1,6 @@
 import { defineModule, type RouterlyModule } from '../../../core/index.js'
 import { OPTIMIZER_REGISTRY } from '../../../core/tokens.js'
-import type { Message, OptimizerResult } from '@routerly/shared'
+import { OPTIMIZER_CATALOG, type Message, type OptimizerResult } from '@routerly/shared'
 import type { ProxyContext } from '../../reverse-proxy/context.js'
 import type { Optimizer } from '../registry.js'
 import { messageText, readMessages, segment, tokensOf, writeMessages } from '../messages.js'
@@ -8,13 +8,15 @@ import { messageText, readMessages, segment, tokensOf, writeMessages } from '../
 // ponytail: lexical-overlap score; upgrade to embeddings only if lexical proves too blunt.
 
 /**
- * Relevance threshold for this context, from the step's `threshold`. Unlike
- * `ccr`/`headroom`, absence means "no default" -> the optimizer stays opt-in
- * (see `supports`), it never silently activates with a guessed cutoff.
+ * Relevance threshold for this context, from the step's `threshold` or the
+ * catalog default. Enabling the step in a surface is the opt-in; requiring a
+ * second, undiscoverable number on top of it just made the optimizer silently
+ * inert for anyone who enabled it and saved.
  */
-function thresholdOf(ctx: ProxyContext): number | undefined {
+function thresholdOf(ctx: ProxyContext): number {
   const step = ctx.project.optimizers?.steps.find((s) => s.id === 'relevance')
-  return typeof step?.threshold === 'number' ? step.threshold : undefined
+  if (typeof step?.threshold === 'number') return step.threshold
+  return OPTIMIZER_CATALOG.relevance.threshold!.default!
 }
 
 /** Lowercased, non-alphanumeric-split word set of a turn's combined text. */
@@ -69,31 +71,18 @@ export const relevanceOptimizer = {
   klass: 'lossy',
 
   supports(ctx) {
-    const threshold = thresholdOf(ctx)
-    if (threshold === undefined) return false
     return segment(readMessages(ctx.request)).turns.length > 1
   },
 
   estimate(ctx) {
-    const threshold = thresholdOf(ctx)
-    const messages = readMessages(ctx.request)
-    if (threshold === undefined) {
-      const before = tokensOf(messages)
-      return { estimatedTokensBefore: before, estimatedTokensAfter: before }
-    }
-    const { before, after } = plan(messages, threshold)
+    const { before, after } = plan(readMessages(ctx.request), thresholdOf(ctx))
     return { estimatedTokensBefore: before, estimatedTokensAfter: after }
   },
 
   optimize(ctx) {
     const messages = readMessages(ctx.request)
     originals.set(ctx, messages.slice())
-    const threshold = thresholdOf(ctx)
-    if (threshold === undefined) {
-      const before = tokensOf(messages)
-      return { changed: false, estimatedTokensBefore: before, estimatedTokensAfter: before }
-    }
-    const { changed, newMessages, before, after } = plan(messages, threshold)
+    const { changed, newMessages, before, after } = plan(messages, thresholdOf(ctx))
     if (!changed) return { changed: false, estimatedTokensBefore: before, estimatedTokensAfter: before }
     writeMessages(ctx.request, newMessages)
     return { changed: true, estimatedTokensBefore: before, estimatedTokensAfter: after }
