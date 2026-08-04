@@ -85,12 +85,20 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Extract version
+        id: meta
+        run: |
+          VERSION=$(node -p "require('./packages/service/package.json').version")
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
       - name: Build and push develop image
         uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: inebrio/routerly:develop
+          tags: |
+            inebrio/routerly:develop
+            inebrio/routerly:v${{ steps.meta.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
