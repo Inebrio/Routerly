@@ -5,8 +5,8 @@ tools: Read, Grep, Glob, Edit, Write, Bash, Skill, mcp__plugin_playwright_playwr
 skills:
   - docs-conventions
   - codebase-map
-model: sonnet
-effort: medium
+model: haiku
+effort: high
 maxTurns: 40
 color: white
 hooks:
