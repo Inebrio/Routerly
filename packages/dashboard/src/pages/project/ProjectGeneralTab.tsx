@@ -5,8 +5,19 @@ import { createProject, updateProject, getSettings } from '../../api';
 import { useProject } from './ProjectLayout';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
 import { SearchableSelect } from '../../components/SearchableSelect';
+import { CopyBlock } from '../../components/CopyBlock';
+import { AUTO_MODEL, PLACEHOLDER_TOKEN } from '../connectShared';
 import { writeToClipboard } from '../../utils/clipboard';
 import { DEFAULT_PROJECT_TIMEOUT_MS } from '@routerly/shared';
+
+const SECTION_TITLE: React.CSSProperties = {
+  fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em',
+  color: 'var(--text-muted)', marginBottom: 6,
+};
+
+const SECTION_TEXT: React.CSSProperties = {
+  fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 10px', lineHeight: 1.55,
+};
 
 export function ProjectGeneralTab() {
   const navigate = useNavigate();
@@ -44,7 +55,6 @@ export function ProjectGeneralTab() {
   // For the new token reveal modal
   const [revealedToken, setRevealedToken] = useState<{ name: string; token: string; isNew: boolean; projectId: string } | null>(null);
   const [copied, setCopied] = useState(false);
-  const [copiedEndpoint, setCopiedEndpoint] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: '',
@@ -120,14 +130,6 @@ export function ProjectGeneralTab() {
     } catch { setErr('Copy failed — please select and copy the token manually.'); }
   }
 
-  async function copyEndpoint(value: string) {
-    try {
-      await writeToClipboard(value);
-      setCopiedEndpoint(value);
-      setTimeout(/* v8 ignore next */ () => setCopiedEndpoint(null), 2000);
-    } catch { /* silently ignore — user can copy manually */ }
-  }
-
   // ── Token reveal view (after project creation) ───────────────────────────────
   if (revealedToken) {
     return (
@@ -167,41 +169,77 @@ export function ProjectGeneralTab() {
     <>
       {/* ── Connection info (only when editing an existing project) ────────────── */}
       {isEdit && project && (() => {
-        const baseUrl = (selectedEndpoint || window.location.origin) + '/v1';
+        const root = (selectedEndpoint || window.location.origin).replace(/\/$/, '');
+        // The two SDKs disagree on where the version prefix lives: the OpenAI
+        // client appends the path to whatever base URL it is given, the
+        // Anthropic client appends `/v1/messages` itself.
+        const openaiBase = `${root}/v1`;
         return (
-          <div style={{ marginBottom: 28, padding: '12px 16px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, maxWidth: 480 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
-              <Plug size={14} style={{ color: 'var(--color-primary, #6366f1)', flexShrink: 0 }} />
-              <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>How to connect</span>
-            </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 10px', lineHeight: 1.5 }}>
-              Use this endpoint as <code style={{ fontSize: '0.75rem' }}>base_url</code> with the OpenAI SDK or Anthropic SDK —
-              both use the same <code style={{ fontSize: '0.75rem' }}>/v1</code> prefix; the final path is appended automatically by the SDK.
-              Use a <Link to={`/dashboard/projects/${project.id}/token`} style={{ color: 'var(--color-primary, #6366f1)' }}>project token</Link> as the API key.
-            </p>
-            {endpointOptions.length > 1 && (
-              <SearchableSelect
-                value={selectedEndpoint}
-                onChange={setSelectedEndpoint}
-                options={endpointOptions.map(opt => ({ value: opt, label: opt }))}
-                style={{ marginBottom: 8, fontSize: '0.82rem', fontFamily: 'monospace' }}
-              />
-            )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-input, var(--bg-tertiary, var(--bg-secondary)))', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 10px', fontFamily: 'monospace', fontSize: '0.82rem', color: 'var(--text-primary)', minWidth: 0 }}>
-                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{baseUrl}</span>
+          <section style={{ marginBottom: 32, display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 900 }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
+                <Plug size={15} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                <h2 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600 }}>How to connect</h2>
               </div>
-              <button
-                type="button"
-                onClick={() => copyEndpoint(baseUrl)}
-                className="btn btn-secondary"
-                style={{ flexShrink: 0, padding: '5px 10px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: 5 }}
-              >
-                {copiedEndpoint === baseUrl ? <Check size={13} /> : <Copy size={13} />}
-                {copiedEndpoint === baseUrl ? 'Copied!' : 'Copy'}
-              </button>
+              <p style={SECTION_TEXT}>
+                Point any OpenAI or Anthropic SDK at Routerly and use a{' '}
+                <Link to={`/dashboard/projects/${project.id}/token`}>project token</Link> as
+                the API key. Replace <code>{PLACEHOLDER_TOKEN}</code> below with yours.
+                Model <code>{AUTO_MODEL}</code> hands the choice to Routerly; any model id
+                from <Link to="/dashboard/models">Models</Link> works too.
+              </p>
+              {endpointOptions.length > 1 && (
+                <SearchableSelect
+                  value={selectedEndpoint}
+                  onChange={setSelectedEndpoint}
+                  options={endpointOptions.map(opt => ({ value: opt, label: opt }))}
+                  style={{ marginBottom: 10, fontSize: '0.82rem', fontFamily: 'monospace', maxWidth: 420 }}
+                />
+              )}
             </div>
-          </div>
+
+            <div>
+              <div style={SECTION_TITLE}>OpenAI SDK</div>
+              <p style={SECTION_TEXT}>Base URL <code>{openaiBase}</code>, the same one any &quot;OpenAI compatible&quot; provider field takes.</p>
+              <CopyBlock text={`from openai import OpenAI
+
+client = OpenAI(
+    base_url="${openaiBase}",
+    api_key="${PLACEHOLDER_TOKEN}",
+)
+
+response = client.chat.completions.create(
+    model="${AUTO_MODEL}",
+    messages=[{"role": "user", "content": "Hello!"}],
+)`} />
+            </div>
+
+            <div>
+              <div style={SECTION_TITLE}>Anthropic SDK</div>
+              <p style={SECTION_TEXT}>Base URL <code>{root}</code>, without the <code>/v1</code>: the SDK adds it.</p>
+              <CopyBlock text={`from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="${root}",
+    api_key="${PLACEHOLDER_TOKEN}",
+)
+
+message = client.messages.create(
+    model="${AUTO_MODEL}",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello!"}],
+)`} />
+            </div>
+
+            <div>
+              <div style={SECTION_TITLE}>curl</div>
+              <p style={SECTION_TEXT}>Check the wiring without installing anything, then look for the call in <Link to="/dashboard/usage">Usage</Link>.</p>
+              <CopyBlock text={`curl ${openaiBase}/chat/completions \\
+  -H "Authorization: Bearer ${PLACEHOLDER_TOKEN}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"model":"${AUTO_MODEL}","messages":[{"role":"user","content":"Hello!"}]}'`} />
+            </div>
+          </section>
         );
       })()}
 

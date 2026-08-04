@@ -128,9 +128,16 @@ describe('ProjectGeneralTab — edit mode render', () => {
     await waitFor(() =>
       expect(screen.queryByText('How to connect')).not.toBeNull()
     );
+    // One snippet per SDK, plus curl, each carrying the configured endpoint.
     await waitFor(() =>
-      expect(screen.queryByText(/api\.example\.com/)).not.toBeNull()
+      expect(screen.queryAllByText(/api\.example\.com/).length).toBeGreaterThan(0)
     );
+    expect(screen.queryByText('OpenAI SDK')).not.toBeNull();
+    expect(screen.queryByText('Anthropic SDK')).not.toBeNull();
+    expect(screen.queryByText('curl')).not.toBeNull();
+    // The Anthropic client appends /v1 itself, so its base URL must not carry one.
+    expect(screen.getByText(/from anthropic import Anthropic/).textContent)
+      .toContain('base_url="https://api.example.com"');
   });
 
   it('falls back to window.location when publicUrl is empty', async () => {
