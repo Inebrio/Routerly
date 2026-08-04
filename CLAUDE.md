@@ -80,7 +80,7 @@ node .claude/scripts/story.mjs claim <story-id> --feature <feature> --base 0.4.0
 
 ### Parallelism
 
-Stories are the unit, not features. Independent stories run at once, up to **six** concurrently; the dependency graph decides what is independent.
+Stories are the unit, not features. Independent stories run at once, up to **three** concurrently; the dependency graph decides what is independent. Three is a machine limit, not a coordination one: six worktrees running suites, dev servers and container builds at the same time saturate the laptop this runs on, and every story then goes slower than it would have alone.
 
 A slot is held by a story's *implementation*, not by its paperwork. Once a story passes validation, its qa and docs agents keep running while the slot is already claimed by the next story. Holding a slot open for tests and documentation is the single cheapest way to waste hours. Stories touching the same file or the same contract run sequentially, in graph order. The registry (`.claude/registry.json`, main checkout, lock-protected) is what stops two sessions taking the same story or the same ports.
 
