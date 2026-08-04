@@ -18,7 +18,8 @@
     "changeset": "changeset",
     "version": "changeset version",
     "release": "npm run build && changeset tag",
-    "prepare": "husky"
+    "prepare": "husky",
+    "screenshots": "node scripts/capture-screenshots.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",
@@ -29,6 +30,7 @@
     "@vitest/coverage-v8": "^4.1.8",
     "eslint": "^9.39.4",
     "husky": "^9.1.7",
+    "playwright": "^1.48.0",
     "prettier": "^3.2.5",
     "typescript": "^5.9.3",
     "vitest": "^4.1.8"

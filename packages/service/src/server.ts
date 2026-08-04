@@ -152,7 +152,9 @@ export async function startServer() {
   try {
     await server.listen({ port: settings.port, host: settings.host });
     // The 60s integration push is started by the observability module (kernel start).
-    updateChecker.start(pkgVersion, settings.channel ?? 'latest');
+    if (process.env['ROUTERLY_DISABLE_UPDATE_CHECK'] !== 'true') {
+      updateChecker.start(pkgVersion, settings.channel ?? 'latest');
+    }
   } catch (err) {
     server.log.error(err);
     process.exit(1);

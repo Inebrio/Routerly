@@ -1,0 +1,25 @@
+[
+  {
+    "id": "conn-openai-demo",
+    "providerId": "openai",
+    "label": "openai-demo",
+    "credentials": { "apiKey": "sk-fake00000000000000000000000000000000000000" },
+    "enabled": true
+  },
+  {
+    "id": "conn-anthropic-demo",
+    "providerId": "anthropic",
+    "label": "anthropic-demo",
+    "credentials": { "apiKey": "sk-ant-fake0000000000000000000000000000000000" },
+    "enabled": true
+  },
+  {
+    "id": "conn-local-demo",
+    "providerId": "custom",
+    "providerName": "local-demo",
+    "label": "local-demo",
+    "credentials": {},
+    "endpoint": "http://127.0.0.1:11434/v1",
+    "enabled": true
+  }
+]
