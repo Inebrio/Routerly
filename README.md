@@ -321,6 +321,8 @@ See [SECURITY.md](SECURITY.md) for vulnerability reporting, supply chain notes, 
 
 Contributions are welcome. See [Releasing](docs/contributing/releasing.md) for what a contributor needs to know about version bumps and changesets.
 
+Maintainers cutting a release: see [RELEASING.md](RELEASING.md).
+
 ---
 
 ## Roadmap

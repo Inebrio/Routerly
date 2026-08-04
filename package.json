@@ -18,7 +18,8 @@
     "changeset": "changeset",
     "version": "changeset version",
     "release": "npm run build && changeset tag",
-    "prepare": "husky"
+    "prepare": "husky",
+    "docs:cut": "node scripts/docs-version.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",
