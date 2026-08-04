@@ -53,6 +53,7 @@ Nine agents, artifacts as the only hand-off. Nothing passes through conversation
 | Story | story-writer | `.claude/specs/<feature>/01-stories/<story-id>.md` |
 | Blueprint | project-manager | `.claude/specs/<feature>/02-blueprint/<story-id>.md` |
 | Validation | validator | `.claude/specs/<feature>/03-validation/<story-id>.md` |
+| Retrospective | main session | `.claude/specs/<feature>/04-retrospective.md` |
 
 ### Feature level — main session, main checkout
 
@@ -75,9 +76,13 @@ node .claude/scripts/story.mjs claim <story-id> --feature <feature> --base 0.4.0
 8. **qa-engineer** writes tests, only on a story that passed with zero blockers.
 9. **docs-writer** documents the change on every surface it ships on, in parallel with the tests. It reads the code, not the blueprint. A story with a user-visible change and no documentation is not done.
 
+**An agent's report is not evidence.** When an agent returns, the main session checks the worktree before believing it: `git status --short` plus the files the blueprint said would exist. Agents have returned confident summaries for files they never wrote, and have returned nothing at all after ninety minutes of work. Both are caught by looking, and only by looking. An agent that returns without a result is resumed with an order to write the deliverable to disk before composing any prose.
+
 ### Parallelism
 
-Stories are the unit, not features. Independent stories run at once, up to **three** concurrently; the dependency graph decides what is independent. Stories touching the same file or the same contract run sequentially, in graph order. The registry (`.claude/registry.json`, main checkout, lock-protected) is what stops two sessions taking the same story or the same ports.
+Stories are the unit, not features. Independent stories run at once, up to **six** concurrently; the dependency graph decides what is independent.
+
+A slot is held by a story's *implementation*, not by its paperwork. Once a story passes validation, its qa and docs agents keep running while the slot is already claimed by the next story. Holding a slot open for tests and documentation is the single cheapest way to waste hours. Stories touching the same file or the same contract run sequentially, in graph order. The registry (`.claude/registry.json`, main checkout, lock-protected) is what stops two sessions taking the same story or the same ports.
 
 ### Integration and closing
 
@@ -86,6 +91,21 @@ Merging is the main session's job, never a teammate's. When a story passes: merg
 A feature closes when every story is done, the integration branch builds and its tests pass, and the user approves. Specs stay on disk after closing: they are gitignored and they are the record of why the code looks the way it does.
 
 **Human gates: two.** The analyst's questions, and the merge. Everything between runs without asking.
+
+### Retrospective
+
+**Every merged story gets a retrospective entry, written by the main session, appended to `.claude/specs/<feature>/04-retrospective.md` at merge time.** This is a phase of the process, not a courtesy. A feature does not close without it.
+
+The entry answers four questions and nothing else:
+
+1. **Where did the wall-clock actually go?** Real durations, per agent. Not an impression.
+2. **What was rework?** An agent that stalled and needed resuming, a blueprint corrected mid-flight, a validator round that a better prompt would have made unnecessary, two agents solving the same problem twice in different places. Name it and say what it cost.
+3. **What changes because of it?** A concrete edit: to this file, to an agent definition, to a skill, to a blueprint template. If nothing changes, write "nothing changes" and the reason. A retrospective whose every entry is "went well" is not being written honestly.
+4. **What is now known that the next story should not rediscover?** Goes to `.ai/memory.md` if it is about the code, stays here if it is about the process.
+
+The rule that makes it worth anything: **a lesson that does not become an edit is not a lesson.** If three stories in a row report the same waste, the process is what is broken, and fixing it takes priority over the next story.
+
+Report the retrospective to the user in chat when it is written. The user is the one deciding whether the process is worth what it costs, and cannot decide that from a file they were never shown.
 
 **Interrupt policy**: stop and explain only when a story is unachievable for architectural or irreversible reasons. Give the exact problem, why it blocks, and the options with tradeoffs. Never interrupt for ordinary implementation difficulty: the remediation loop handles that.
 
