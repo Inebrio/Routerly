@@ -3061,6 +3061,8 @@ Admin role required. Not available inside Docker containers - pull the new image
 
 Manage the in-app notification inbox and delivery channels.
 
+This includes `system.update_available`, raised when the update checker finds a release newer than the one running on the configured channel. No CLI code is specific to this event: `routerly notification list` and `routerly notification show` render any event through the shared catalog, so it already appears with its readable title, "A newer release is available", the moment the check raises it.
+
 ### `routerly notification list`
 
 ```
