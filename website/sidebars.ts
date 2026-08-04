@@ -176,6 +176,13 @@ const sidebars: SidebarsConfig = {
         'reference/troubleshooting',
       ],
     },
+    {
+      type: 'category',
+      label: 'Contributing',
+      items: [
+        'contributing/releasing',
+      ],
+    },
   ],
 };
 
