@@ -78,7 +78,10 @@ cap() { # cap <n> <reason>
 REGISTRY=".claude/registry.json"
 INFLIGHT=0
 if [ -f "$REGISTRY" ]; then
-  INFLIGHT=$(grep -c '"state": "in-progress"' "$REGISTRY" 2>/dev/null || echo 0)
+  # grep -c already prints 0 on no match but exits 1, so `|| echo 0` used to
+  # append a second "0" line and break the arithmetic below on an idle registry.
+  INFLIGHT=$(grep -c '"state": "in-progress"' "$REGISTRY" 2>/dev/null)
+  INFLIGHT=${INFLIGHT:-0}
 fi
 HEADROOM=$((SLOTS - INFLIGHT))
 [ "$HEADROOM" -lt 0 ] && HEADROOM=0
