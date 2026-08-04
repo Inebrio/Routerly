@@ -1,3 +1,4 @@
+// RA-16 task 4: trivial change to exercise the single-page selector rule.
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
