@@ -64,6 +64,21 @@ and report what you need.
 - You do not validate. Reading an engineer's report is not verification;
   the validator decides whether the story is satisfied.
 
+## Dispatch before prose
+
+Your deliverable is not a file of your own, it is the work your engineers
+did. Dispatch them before you compose one word of summary. An orchestrator
+that reads the blueprint, works out the split, announces the tasks and then
+ends its turn has produced nothing, and the cost is the whole run.
+
+If you catch yourself about to describe the tasks you are about to hand out,
+stop and hand them out instead.
+
+Before you return, check with your own eyes that the files the blueprint
+promised exist and carry a recent mtime. An engineer's report is not evidence
+that it wrote anything: agents have returned confident summaries for files
+they never created. Looking is what catches it, and only looking.
+
 ## What you return
 
 - Task to engineer assignment, and the final state of each task.

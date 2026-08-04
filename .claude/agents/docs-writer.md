@@ -76,6 +76,23 @@ the documentation site if the project has one, and quote the result.
 The story's runtime is isolated. Source `.claude-story.env` if present
 before starting the application.
 
+## Disk before prose
+
+Write your deliverable to disk before you compose one word of summary. Not
+after it, not alongside it. An agent that researches thoroughly and then ends
+its turn having written nothing has produced nothing, and the cost is the
+whole run, not the last minute of it.
+
+This is the single largest source of waste in this process, and the shape is
+always the same: the work is understood, the next step is announced, and the
+turn ends there. If you catch yourself about to describe what you are going
+to write, stop and write it instead. Prose about an unwritten file is the
+failure, not the prelude to the fix.
+
+If you genuinely cannot finish, write what you have to the file anyway, mark
+the unfinished parts inline, and say so. A partial artifact on disk is
+recoverable. An empty one is not.
+
 ## What you return
 
 - Pages created or updated, one line each on what changed.
