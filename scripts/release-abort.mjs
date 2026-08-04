@@ -67,6 +67,9 @@ export function selectPrereleaseTags(tags, version) {
 }
 
 // ─── 3. Promoted-version refusal, before any network call ─────────────────
+// Reads local git tags rather than origin directly; correct only because the
+// workflow's checkout step (.github/workflows/release-abort.yml) uses
+// fetch-depth: 0 and fetch-tags: true.
 function isPromoted(version) {
   let out;
   try {
@@ -105,7 +108,7 @@ async function listAllTags(token) {
   while (url) {
     let response;
     try {
-      response = await fetch(url, { headers: { Authorization: `JWT ${token}` } });
+      response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     } catch (err) {
       die(`Network error calling GET ${url} (list tags): ${err.message}`);
     }
@@ -128,7 +131,7 @@ function buildDeleteRequest(token, tag) {
   return {
     method: 'DELETE',
     url: `${REGISTRY_BASE}/tags/${tag}/`,
-    headers: { Authorization: `JWT ${token}` },
+    headers: { Authorization: `Bearer ${token}` },
   };
 }
 
@@ -218,7 +221,7 @@ async function main() {
     process.stdout.write('dry run: nothing deleted.\n');
     for (const tag of toDelete) {
       const request = buildDeleteRequest(token ?? '<token>', tag);
-      process.stdout.write(`  would issue: ${request.method} ${request.url} (Authorization: JWT <redacted>)\n`);
+      process.stdout.write(`  would issue: ${request.method} ${request.url} (Authorization: Bearer <redacted>)\n`);
     }
     printProtectedReport('Protected tags after', allTags);
     process.exit(0);
