@@ -59,11 +59,15 @@ verifies every criterion against reality. It cannot change code, by design.
 - **PASS**, no blockers → continue.
 - **BLOCKED** → run `remediation-loop`. Three iterations, then escalate.
 
-## 6. Test
+## 6. Test and document
 
-Only on validated code with zero blockers. The qa-engineer writes the tests:
-one per acceptance criterion, one regression test per blocking finding that
-was raised. It writes tests, never source.
+Only on validated code with zero blockers, and both at once: they read the
+same shipped code and neither blocks the other.
+
+- **qa-engineer**: one test per acceptance criterion, one regression test
+  per blocking finding that was raised. Writes tests, never source.
+- **docs-writer**: every surface the change ships on, written against the
+  code rather than the blueprint. Writes documentation, never source.
 
 ## 7. Hand back
 

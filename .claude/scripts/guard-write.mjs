@@ -39,6 +39,12 @@ const TESTS = [
 ];
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 
+// Additionally writable in "docs" mode: the docs tree, the site that renders it,
+// and prose anywhere except the agent configuration itself.
+const DOCS = ['/docs/', '/website/'];
+const DOC_FILE = /\.mdx?$/;
+const AGENT_CONFIG = '/.claude/';
+
 const read = async (stream) => {
   let data = '';
   for await (const chunk of stream) data += chunk;
@@ -53,11 +59,12 @@ const target = input.file_path ?? input.notebook_path ?? input.path;
 if (!target) process.exit(0);
 
 const path = resolve(target);
-const allowed = MODE === 'tests' ? [...ARTIFACTS, ...TESTS] : ARTIFACTS;
+const extra = MODE === 'tests' ? TESTS : MODE === 'docs' ? DOCS : [];
 
 const ok =
-  allowed.some((dir) => path.includes(dir)) ||
-  (MODE === 'tests' && TEST_FILE.test(path));
+  [...ARTIFACTS, ...extra].some((dir) => path.includes(dir)) ||
+  (MODE === 'tests' && TEST_FILE.test(path)) ||
+  (MODE === 'docs' && DOC_FILE.test(path) && !path.includes(AGENT_CONFIG));
 
 if (ok) process.exit(0);
 
@@ -65,7 +72,9 @@ const agent = payload.agent_type ?? 'this agent';
 const permitted =
   MODE === 'tests'
     ? 'test files, plus spec artifacts and its own memory'
-    : 'spec artifacts and its own memory';
+    : MODE === 'docs'
+      ? 'documentation, plus spec artifacts and its own memory'
+      : 'spec artifacts and its own memory';
 
 process.stderr.write(
   `Blocked: ${agent} may only write ${permitted}. ` +

@@ -29,7 +29,7 @@ Not every change deserves eight agents. Pick the tier, state which one you picke
 
 All of these true: two files or fewer, one surface, no contract or permission or stored-shape change, no new dependency, no security or wire-format path, and you can prove it works in a single run.
 
-Still mandatory: `codebase-map` plus the conventions skill for the surface you touch, and self-verification with real evidence as in `validation-protocol`. No artifacts, no worktree, no registry.
+Still mandatory: `codebase-map` plus the conventions skill for the surface you touch, self-verification with real evidence as in `validation-protocol`, and the documentation for anything a user can see or call. No artifacts, no worktree, no registry.
 
 A batch of small independent fixes is Tier 0 repeated, not Tier 2. Fix them inline, then verify the whole batch once at the end, browser included.
 
@@ -37,7 +37,7 @@ A batch of small independent fixes is Tier 0 repeated, not Tier 2. Fix them inli
 
 One deliverable that fails any Tier 0 condition: several surfaces, a contract, a new permission, a data shape, anything a reviewer would want evidence for.
 
-Skip analyst and story-writer. **project-manager** writes the blueprint, then the story runs through `story-lifecycle` in its own worktree: **orchestrator** → engineers → **validator** → **qa-engineer**. The worktree is not ceremony: the validator starts the app, and on the main checkout it would collide with your running instance.
+Skip analyst and story-writer. **project-manager** writes the blueprint, then the story runs through `story-lifecycle` in its own worktree: **orchestrator** → engineers → **validator** → **qa-engineer** and **docs-writer**. The worktree is not ceremony: the validator starts the app, and on the main checkout it would collide with your running instance.
 
 ### Tier 2 — full chain
 
@@ -45,7 +45,7 @@ More than one deliverable, a new feature, a schema or wire-format or security ch
 
 **Uncertain between two tiers → take the higher one.** Over-verifying costs tokens. Under-verifying ships bugs, and the second is the expensive mistake.
 
-Eight agents, artifacts as the only hand-off. Nothing passes through conversation: an agent that needs something reads the file that holds it.
+Nine agents, artifacts as the only hand-off. Nothing passes through conversation: an agent that needs something reads the file that holds it.
 
 | Artifact | Written by | Path |
 |---|---|---|
@@ -73,6 +73,7 @@ node .claude/scripts/story.mjs claim <story-id> --feature <feature> --base 0.4.0
 6. **validator** starts the app on the story's ports and verifies every criterion for real, browser included. It can run anything and change nothing but its own report.
 7. **BLOCKED** → `remediation-loop`, three iterations maximum, then escalate to the user with what survived and why.
 8. **qa-engineer** writes tests, only on a story that passed with zero blockers.
+9. **docs-writer** documents the change on every surface it ships on, in parallel with the tests. It reads the code, not the blueprint. A story with a user-visible change and no documentation is not done.
 
 ### Parallelism
 
