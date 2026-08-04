@@ -2119,7 +2119,7 @@ GET /api/modules
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Module identifier |
-| `version` | string | Module semantic version |
+| `version` | string | Module version. Always equal to the running product's version, not versioned independently per module |
 | `enabled` | boolean | Whether the module is currently active. When a module is disabled, its routes, tools, and features are not loaded at boot; disabling requires a service restart to take effect |
 | `alwaysOn` | boolean | Whether this is a core module that cannot be disabled |
 | `dependsOn` | array | List of module IDs this module depends on; empty array if no dependencies |
