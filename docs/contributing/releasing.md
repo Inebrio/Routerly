@@ -139,6 +139,138 @@ you are actually about to release from.
 Everything below is run by a maintainer cutting a release, not by a
 contributor opening a pull request.
 
+## Branches and channels
+
+Three branches carry release meaning; everything else is ordinary
+development.
+
+| Branch | What it means | What it runs |
+|---|---|---|
+| `main` | The currently shipped release. | `ci.yml` and `release.yml` on every push. |
+| `develop` | The next release in progress. Nothing publishes automatically from a push here; publishing the `develop` channel is a manual dispatch (see [Promoting a release](#promoting-a-release)). | `ci.yml` only. |
+| `release/**` | A candidate line: future and unstable. **Not every `release/**` branch reaches `main`.** A branch can be abandoned instead, which is what [aborting a release](#aborting-a-release) is for. | `ci.yml` and `release-version.yml` on every push; a *green* CI run additionally triggers `release-docker.yml`. |
+
+The documentation site mirrors this with its own version labels, configured
+in `website/docusaurus.config.ts`:
+
+| Docs version | Label | What it tracks |
+|---|---|---|
+| `current` | "next (future)" | The live `docs/` tree on whatever branch is checked out. Content that has not necessarily shipped. |
+| `0.3.0` | "0.3.0 (develop)" | The snapshot corresponding to the `develop` line. |
+| `lastVersion` | no separate label, this is the default a visitor lands on | The currently shipped stable release, matching `main`. At the time of writing this is `0.2.0`. |
+
+`lastVersion` is not a fact frozen in this page: it is rewritten by
+`npm run docs:cut` every time a release is promoted (see
+[Cutting a documentation version](#cutting-a-documentation-version)), so it
+moves forward on every release. `website/versions.json` lists every cut
+version as a bare `X.Y.Z`, newest first, independently of this page.
+
+## What runs automatically
+
+One row per trigger, ordered by the branch it fires on.
+
+| Trigger | Workflow | What it produces |
+|---|---|---|
+| Push to `release/**` | `release-version.yml` | Fails fast if `.changeset/pre.json` exists (see [Prerelease mode is not used on this line](#prerelease-mode-is-not-used-on-this-line)). Otherwise opens or updates the Version PR, based on that same release branch. |
+| Push to `main`, `develop` or `release/**`, and pull requests targeting them | `ci.yml` | `npm audit --audit-level=high`; build and typecheck of all four packages; the four workspace test suites with coverage; `npm ci --prefix website`; the release-tooling test suites via `npx vitest run`. A coverage summary is written to the run summary. |
+| `ci.yml` completes successfully on `release/**` | `release-docker.yml` | A multi-arch (`linux/amd64`, `linux/arm64`) push of `inebrio/routerly:v<X.Y.Z>-rc.<CI run number>`, then a `release-docker` commit status on the head commit. The `-rc.N` number is the CI run number, not a changesets prerelease identifier, so it is not contiguous across failed and re-run CI attempts. |
+| Push to `main` | `release.yml`, job `release` | If changesets are pending, opens or updates the Version PR and stops there. Otherwise it builds every package, renders `RELEASE_NOTES.md` from the git history, creates tag `v<X.Y.Z>`, and publishes the GitHub Release. This step is idempotent: if the tag already exists, it does nothing further. |
+| `release` job promoted | `release.yml`, job `docker` | Multi-arch push of `inebrio/routerly:latest` and `inebrio/routerly:v<X.Y.Z>`. |
+| `release` job promoted | `release.yml`, job `docs` | Runs `npm run docs:cut -- <X.Y.Z>` and commits the result to `main` as `chore(docs): cut documentation version <X.Y.Z>`. No-ops cleanly if the cut produces no diff. |
+| `docs` job succeeded | `release.yml`, job `docs-deploy` | Builds `website/` and deploys it to Firebase Hosting (project `routerly-docs`, channel `live`). |
+| `docker` job succeeded | `release.yml`, job `stable` | The stable-channel promotion, see below. |
+
+`docs-deploy` and `stable` are reusable workflows called as jobs of
+`release.yml` with `secrets: inherit`. That only propagates secrets to
+them, not permissions: what each of those jobs is allowed to do is still
+capped by `release.yml`'s own `permissions:` block.
+
+## Promoting a release
+
+There are two promotion paths, each a separate workflow, and neither runs
+on a plain push.
+
+**Stable.** `promote-stable.yml` runs automatically as the `stable` job of
+`release.yml` once a release is built and its Docker image pushed, or on
+demand via `workflow_dispatch` with a `version` input like `v0.1.5`. It
+verifies the GitHub Release for that version exists, checks out the tag,
+force-pushes the `stable` git tag, recreates the `stable` GitHub Release,
+then re-tags the already-built multi-arch image from
+`inebrio/routerly:v<X.Y.Z>` to `inebrio/routerly:stable` — a re-tag via
+`docker buildx imagetools create`, not a rebuild.
+
+It refuses explicitly, before moving any tag, if
+`inebrio/routerly:v<X.Y.Z>` is not present in the registry. Versions at or
+before `0.3.0` only ever got the bare `X.Y.Z` image tag, never the
+`v`-prefixed one, so they cannot be promoted through this workflow as it
+stands; a version needs to have shipped through the current pipeline (or
+been rebuilt with the correct tag through **Docker Rebuild**) before it can
+become stable.
+
+**Develop.** `promote-develop.yml` is `workflow_dispatch` only, with a
+`branch` input defaulting to `develop`. It builds from that branch,
+force-pushes the `develop` git tag, recreates the `develop` GitHub Release
+as a prerelease titled `Routerly develop (<branch>@<short sha>)`, and
+pushes `inebrio/routerly:develop` plus `inebrio/routerly:v<X.Y.Z>`. Nothing
+promotes the develop channel automatically; a maintainer always dispatches
+it.
+
+## Aborting a release
+
+A `release/**` branch does not have to reach `main`. To abandon one, run
+the **Release Abort** workflow (`release-abort.yml`) from the Actions tab,
+`workflow_dispatch` only, with a `version` input accepting either `v0.5.0`
+or `0.5.0`. It runs `node scripts/release-abort.mjs --version "$INPUT_VERSION"`.
+
+What it does:
+
+- Deletes only the Docker Hub tags matching `^v<X.Y.Z>-rc\.[0-9]+$` in
+  `inebrio/routerly` — the prerelease images `release-docker.yml` published
+  from that branch's CI runs.
+- Refuses, with exit code `2`, and deletes nothing, if the git tag
+  `v<X.Y.Z>` already exists — that means the version was already promoted,
+  and this workflow is not the tool to undo a promotion. This check runs
+  before any network call to the registry.
+- `latest`, `develop` and `stable` are never touched; their digests are
+  printed before and after the run so that is verifiable from the log.
+- Exit codes: `0` for success, including "nothing to remove"; `1` for an
+  operational failure (bad arguments, missing `DOCKERHUB_USERNAME` or
+  `DOCKERHUB_TOKEN`, a network or auth error); `2` for the promoted-version
+  refusal above.
+- `--dry-run` prints the exact `DELETE` requests it would issue, with the
+  token redacted, without deleting anything. `--tags-file <path>` reads a
+  JSON array of tag names instead of querying the registry, for offline
+  preview.
+
+**What it leaves behind.** Aborting is registry cleanup only, not branch
+teardown. The release branch itself, its commits, its git tags, its
+Version PR and any GitHub Release it produced are all left untouched.
+Deleting the branch and closing the Version PR are manual steps a
+maintainer still has to do after the workflow runs.
+
+## Credentials the pipeline needs
+
+Names and purposes only; no value is ever recorded here.
+
+| Secret | Purpose | Where configured |
+|---|---|---|
+| `GITHUB_TOKEN` | Provided automatically by GitHub Actions. Used to open and update the Version PR, push tags, publish and delete GitHub Releases, push the docs-cut commit to `main`, and post the `release-docker` commit status. Its actual scope is each workflow's own `permissions:` block. | Nothing to configure; review the `permissions:` block of the workflow in question. |
+| `DOCKERHUB_USERNAME` | The Docker Hub account used to push and delete image tags. | Repository Settings → Secrets and variables → Actions. |
+| `DOCKERHUB_TOKEN` | Docker Hub access token. Needs Read, Write and Delete: delete is required because `release-abort.mjs` removes prerelease tags. | Repository Settings → Secrets and variables → Actions. |
+| `FIREBASE_SERVICE_ACCOUNT_ROUTERLY_DOCS` | Service-account JSON used to deploy the documentation site to Firebase Hosting, project `routerly-docs`, channel `live`. | Repository Settings → Secrets and variables → Actions. |
+
+## When a step fails
+
+| Failure | What is visible | What it leaves behind | What to do |
+|---|---|---|---|
+| Red `ci.yml` on a `release/**` branch | The CI run fails; no `release-docker` commit status appears | No prerelease image was built, since `release-docker.yml` only fires on a successful CI run | Fix the failure and push again. The next green CI produces a new `-rc.<run number>`, so `-rc` numbers are not contiguous. |
+| `.changeset/pre.json` present on a release branch | `release-version.yml` fails with the guard's error message | No Version PR is opened or updated | Run `npx changeset pre exit` on that branch and push again (see [Prerelease mode is not used on this line](#prerelease-mode-is-not-used-on-this-line)). |
+| Docker push fails in `release.yml` | The `docker` job is red | The git tag and GitHub Release already exist, since the `release` job runs first; the `stable` job is skipped because it needs `[release, docker]`; `latest` and `v<X.Y.Z>` were never pushed | Re-run the failed job, or use **Docker Rebuild** to push the missing tags, then dispatch **Promote Stable Channel** manually. |
+| `npm run docs:cut` fails in `release.yml` | The `docs` job is red | The release itself exists, but no documentation version was cut; `docs-deploy` is skipped since it needs `[release, docs]` | Cut the version locally following [Cutting a documentation version](#cutting-a-documentation-version), commit it to `main`, then dispatch **Deploy Docs** manually. |
+| Firebase deploy fails | The `docs-deploy` job is red | The version was cut and committed; the site is still serving the previous build | Dispatch **Deploy Docs** again. |
+| `promote-stable` cannot find the source image | An explicit `::error::` before any tag moves | `stable` is unchanged | Push the version image first (**Docker Rebuild**), then re-dispatch **Promote Stable Channel**. |
+| `release-abort` refuses (exit `2`) | The run fails with the refusal message | Nothing is deleted | This is intended behaviour: the version was already promoted and is not abortable through this workflow. |
+
 ## Keeping module manifests in sync
 
 `npm run version` runs `changeset version` and then, automatically,
