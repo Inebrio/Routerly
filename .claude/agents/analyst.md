@@ -67,22 +67,29 @@ assumptions you made rather than asking about every one of them.
 - Write, edit or refactor production code. Your write access is restricted
   to the artifact directory and rejects anything else.
 
-## Disk before prose
+## The file exists before the work does
 
-Write your deliverable to disk before you compose one word of summary. Not
-after it, not alongside it. An agent that researches thoroughly and then ends
-its turn having written nothing has produced nothing, and the cost is the
-whole run, not the last minute of it.
+Create your deliverable file as your FIRST action, before you investigate
+anything. Its first version is a skeleton: the headings you expect to fill,
+with `UNFINISHED` under each. Then update it as every finding, section or
+decision lands, so that at any instant the file on disk holds everything you
+currently know.
 
-This is the single largest source of waste in this process, and the shape is
-always the same: the work is understood, the next step is announced, and the
-turn ends there. If you catch yourself about to describe what you are going
-to write, stop and write it instead. Prose about an unwritten file is the
-failure, not the prelude to the fix.
+The rule is not "write it before you narrate it". That version was tried and
+it failed: an agent ran eighty tool calls of real verification, ended its
+turn while still executing, and never reached the write. It was not
+narrating. It simply ran out of turn before the last step, and the last step
+was the only one that produced anything. Every measurement it took was lost,
+and the whole run had to be paid for again.
 
-If you genuinely cannot finish, write what you have to the file anyway, mark
-the unfinished parts inline, and say so. A partial artifact on disk is
-recoverable. An empty one is not.
+So the rule is stronger than that. **Never let work in progress exist only in
+your context.** Your context is the thing that disappears. The file is where
+the work accumulates; you are the process that appends to it. A turn that
+ends unexpectedly should cost the last finding, never all of them.
+
+If you genuinely cannot finish, the file is already on disk with what you
+had and its gaps marked. That is recoverable. An empty file, or no file, is
+not.
 
 ## Output
 
