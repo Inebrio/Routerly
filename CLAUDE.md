@@ -37,7 +37,7 @@ A batch of small independent fixes is Tier 0 repeated, not Tier 2. Fix them inli
 
 One deliverable that fails any Tier 0 condition: several surfaces, a contract, a new permission, a data shape, anything a reviewer would want evidence for.
 
-Skip analyst and story-writer. **project-manager** writes the blueprint, then the story runs through `story-lifecycle` in its own worktree: **orchestrator** → engineers → **validator** → **qa-engineer** and **docs-writer**. The worktree is not ceremony: the validator starts the app, and on the main checkout it would collide with your running instance.
+Skip analyst and story-writer. **project-manager** writes the blueprint, then the story runs through `story-lifecycle` in its own worktree: **orchestrator** → engineers → **validator** → user-check gate → **qa-engineer** and **docs-writer**. The worktree is not ceremony: the validator starts the app, and on the main checkout it would collide with your running instance.
 
 ### Tier 2 — full chain
 
@@ -73,8 +73,8 @@ node .claude/scripts/story.mjs claim <story-id> --feature <feature> --base 0.4.0
 5. **orchestrator** freezes the interface, then dispatches **backend-engineer** and **frontend-engineer** in parallel where the blueprint says they are independent.
 6. **validator** starts the app on the story's ports and verifies every criterion for real, browser included. It can run anything and change nothing but its own report.
 7. **BLOCKED** → `remediation-loop`, three iterations maximum, then escalate to the user with what survived and why.
-8. **qa-engineer** writes tests, only on a story that passed with zero blockers.
-9. **docs-writer** documents the change on every surface it ships on, in parallel with the tests. It reads the code, not the blueprint. A story with a user-visible change and no documentation is not done.
+8. **User-check gate.** A story that passes validation with zero blocking findings stops here, not at qa-engineer. Report the worktree path, the exact start command and ports, and what changed — the user tests it themselves before anything is formalized. Working code the user can see and try beats a fully formalized story that turns out to be the wrong thing; formalizing it first only means redoing the formalization too. **qa-engineer**, **docs-writer** and the merge all wait for the user's go-ahead on that specific story. Skip this gate only when the user says so, for one story or for the session.
+9. On go-ahead: **qa-engineer** writes tests, **docs-writer** documents the change on every surface it ships on, in parallel with the tests. Docs-writer reads the code, not the blueprint. A story with a user-visible change and no documentation is not done.
 
 **An agent returns a summary and a path, never the report itself.** Its
 deliverable is already on disk by rule; returning the full text a second time
@@ -110,13 +110,13 @@ Two things the script cannot see, so they are yours to apply on top of it:
 - **A container build under QEMU emulation counts for more than one slot.** A `docker buildx --platform linux/amd64,linux/arm64` on this machine froze it hard: buildkit OOM-killed in an eight-gigabyte VM, load average fifty-nine, swap at thirteen gigabytes of fourteen. If a story needs one, it runs alone or it moves to CI.
 - **The measurement is a snapshot.** Re-run it between dispatches, not once at the start of a wave.
 
-A slot is held by a story's *implementation*, not by its paperwork. Once a story passes validation, its qa and docs agents keep running while the slot is already claimed by the next story. Holding a slot open for tests and documentation is the single cheapest way to waste hours. Stories touching the same file or the same contract run sequentially, in graph order. The registry (`.claude/registry.json`, main checkout, lock-protected) is what stops two sessions taking the same story or the same ports.
+A slot is held by a story's *implementation*, not by its paperwork. Once a story passes validation, it moves to the user-check gate and the slot is already claimed by the next story — waiting on the user does not hold a slot either. Holding a slot open for a human to click around, or for tests and documentation, is the single cheapest way to waste hours. Stories touching the same file or the same contract run sequentially, in graph order. The registry (`.claude/registry.json`, main checkout, lock-protected) is what stops two sessions taking the same story or the same ports.
 
 ### Integration and closing
 
 Merging is the main session's job, never a teammate's. When a story passes: merge its branch into the integration branch in dependency order, then `story.mjs state <id> done` and `story.mjs release <id>`. `release` refuses a worktree holding unmerged work; merge first, never force past it.
 
-**Finished work goes back to its base branch immediately. This is not a gate.** A story that has passed validation with zero blocking findings is merged as soon as it passes, without asking. Asking costs a round trip and leaves the branch drifting from a base that other stories are still moving; the user's instruction is that anything finished is always carried back to the branch it started from. The two things that still stop a merge are a blocking finding and a genuine conflict, and both are work, not permission.
+**Finished work goes back to its base branch as soon as the user has checked it.** A story that passed validation is not "finished" until the user has tested it themselves at the user-check gate above; once they give the go-ahead, qa-engineer and docs-writer run and the story is merged without a second round of asking. The three things that stop a merge are a blocking finding, a genuine conflict, and the user not having checked it yet — all three are work or a wait, not a standing permission requirement.
 
 Two mechanical notes, both learned by hitting them:
 
@@ -125,7 +125,7 @@ Two mechanical notes, both learned by hitting them:
 
 A feature closes when every story is done, the integration branch builds and its tests pass, and the user approves. Specs stay on disk after closing: they are gitignored and they are the record of why the code looks the way it does.
 
-**Human gates: one.** The analyst's questions. The merge used to be the second and no longer is: finished work goes back to its base branch on its own, as above. Everything else runs without asking.
+**Human gates: two.** The analyst's questions, and the per-story user-check gate before qa-engineer, docs-writer and merge. Everything else runs without asking.
 
 ### Retrospective
 
