@@ -76,6 +76,13 @@ jobs:
       - name: Test dashboard
         run: npm test --workspace=packages/dashboard -- --coverage --coverage.thresholds.lines=0 --coverage.thresholds.branches=0 --coverage.thresholds.functions=0 --coverage.thresholds.statements=0 --coverage.reportOnFailure
 
+      # `website` is gitignored and is not an npm workspace, so root `npm ci`
+      # never installs it. The docs-version suite drives the real Docusaurus
+      # CLI, so without this step it installs Docusaurus once per test instead
+      # of once per run.
+      - name: Install website dependencies (required by the docs-version suite)
+        run: npm ci --prefix website
+
       - name: Release tooling
         run: npx vitest run --exclude test/e2e.test.ts
 
