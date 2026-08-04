@@ -141,7 +141,8 @@ const readLines = (path) => {
   for (const line of text.split('\n')) {
     if (!line) continue;
     try {
-      out.push(JSON.parse(line));
+      const parsed = JSON.parse(line);
+      if (parsed && typeof parsed === 'object') out.push(parsed);
     } catch {
       // a half-written tail line while a session is still live
     }

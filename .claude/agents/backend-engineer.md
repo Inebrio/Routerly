@@ -50,6 +50,15 @@ line yourself.
    what a few lines already do.
 6. Do not write tests. The qa-engineer owns the automated suite. Verify your
    own work by running it.
+7. Before writing code that calls a third-party API (auth scheme, header
+   names, request/response shape, endpoint paths), confirm the contract
+   against that provider's live docs or source — never from training
+   memory. Two stories in this feature shipped a wrong auth header
+   (`pr-base-branch`'s frozen changesets/action input, RA-13's
+   `JWT`-instead-of-`Bearer` on Docker Hub) because the assumption went
+   unchecked until a validator caught it. The wire-format-transparency rule
+   in the project instructions applies to Routerly's own providers; this
+   extends the same discipline to any third-party contact point.
 
 ## Before you report done
 
