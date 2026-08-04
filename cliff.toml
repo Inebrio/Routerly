@@ -44,19 +44,30 @@ commit_parsers = [
     # Merge commits are noise, not a change a reader of release notes cares
     # about — skip them everywhere, including the catch-all.
     { message = "^Merge ", skip = true },
+    # Every pattern below is anchored to real conventional-commit syntax:
+    # a type, an optional (scope), an optional ! for a breaking change, then a
+    # mandatory colon. The colon is the part that matters. An unanchored "^fix"
+    # also matches "Fixing model form", and an unanchored "^chore" also matches
+    # "choreographed a smoother onboarding flow" — which, because chore is
+    # skipped, deleted that commit from the notes entirely. Both were observed
+    # on this repository's real history, not constructed.
+    #
+    # TOML literal strings (single quotes) so the regex backslashes are the
+    # regex's own and do not need escaping.
+    #
     # Deliberately omitted: these say nothing to a reader of release notes.
-    # "^chore" also covers "chore(release): ..." and the changesets
+    # The scope group also covers "chore(release): ..." and the changesets
     # version-bump commit ("chore: version packages").
-    { message = "^chore", skip = true },
-    { message = "^ci", skip = true },
-    { message = "^build", skip = true },
-    { message = "^test", skip = true },
-    { message = "^style", skip = true },
-    { message = "^feat", group = "<!-- 0 -->Features" },
-    { message = "^fix", group = "<!-- 1 -->Bug Fixes" },
-    { message = "^perf", group = "<!-- 2 -->Performance" },
-    { message = "^docs", group = "<!-- 3 -->Documentation" },
-    { message = "^refactor", group = "<!-- 4 -->Refactor" },
+    { message = '^chore(\(.*\))?!?:', skip = true },
+    { message = '^ci(\(.*\))?!?:', skip = true },
+    { message = '^build(\(.*\))?!?:', skip = true },
+    { message = '^test(\(.*\))?!?:', skip = true },
+    { message = '^style(\(.*\))?!?:', skip = true },
+    { message = '^feat(\(.*\))?!?:', group = "<!-- 0 -->Features" },
+    { message = '^fix(\(.*\))?!?:', group = "<!-- 1 -->Bug Fixes" },
+    { message = '^perf(\(.*\))?!?:', group = "<!-- 2 -->Performance" },
+    { message = '^docs(\(.*\))?!?:', group = "<!-- 3 -->Documentation" },
+    { message = '^refactor(\(.*\))?!?:', group = "<!-- 4 -->Refactor" },
     # Catch-all: anything non-conforming or otherwise unmatched (EC2).
     { message = ".*", group = "<!-- 5 -->Other Changes" },
 ]
