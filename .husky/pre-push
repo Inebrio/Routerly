@@ -1,0 +1,42 @@
+# Advisory only. Never blocks a push, never captures a screenshot, never
+# commits anything. On release/* branches, proposes which screenshots the
+# pushed commits may have affected, using scripts/screenshots-affected.mjs.
+set +e
+
+branch=$(git rev-parse --abbrev-ref HEAD)
+
+case "$branch" in
+  release/*) ;;
+  *) exit 0 ;;
+esac
+
+zero="0000000000000000000000000000000000000000"
+range="HEAD~1..HEAD"
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ -n "$local_sha" ] && [ "$local_sha" != "$zero" ] && [ -n "$remote_sha" ] && [ "$remote_sha" != "$zero" ]; then
+    range="$remote_sha..$local_sha"
+  fi
+done
+
+echo "screenshot-review (advisory, does not block this push): range $range"
+
+shots=$(npm run --silent screenshots:affected -- --range "$range" 2>&1)
+status=$?
+
+if [ $status -ne 0 ]; then
+  echo "screenshot-review: selector did not run cleanly, no proposal:"
+  echo "$shots"
+  exit 0
+fi
+
+if [ -z "$shots" ]; then
+  echo "screenshot-review: no screenshots affected"
+  exit 0
+fi
+
+echo "screenshot-review: affected shots:"
+printf '%s\n' "$shots"
+echo "screenshot-review: to regenerate, run:"
+echo '  npm run screenshots -- --only "$(npm run --silent screenshots:affected | paste -sd, -)"'
+
+exit 0
