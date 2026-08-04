@@ -1,0 +1,52 @@
+[
+  {
+    "id": "proj-acme-demo",
+    "name": "Acme Demo",
+    "tokens": [
+      {
+        "id": "tok-acme-1",
+        "token": "sk-rt-acmefake0000000000000000000000000000000000000000000000",
+        "tokenSnippet": "sk-rt-acme",
+        "createdAt": "2026-01-15T09:00:00.000Z"
+      }
+    ],
+    "members": [],
+    "models": [
+      { "modelId": "gpt-4o-demo", "enabled": true },
+      { "modelId": "claude-3-5-sonnet-demo", "enabled": true },
+      { "modelId": "local-demo-model", "enabled": true }
+    ],
+    "policies": [
+      { "type": "cheapest", "enabled": true },
+      { "type": "context", "enabled": false }
+    ],
+    "optimizers": {
+      "steps": [
+        { "id": "session-dedup", "enabled": true },
+        { "id": "caveman", "enabled": true },
+        { "id": "rtk", "enabled": true },
+        { "id": "relevance", "enabled": true },
+        { "id": "headroom", "enabled": false },
+        { "id": "json-table", "enabled": false },
+        { "id": "llmlingua-2", "enabled": false }
+      ]
+    }
+  },
+  {
+    "id": "proj-beta-demo",
+    "name": "Beta Labs",
+    "tokens": [
+      {
+        "id": "tok-beta-1",
+        "token": "sk-rt-betafake0000000000000000000000000000000000000000000000",
+        "tokenSnippet": "sk-rt-beta",
+        "createdAt": "2026-02-03T14:30:00.000Z"
+      }
+    ],
+    "members": [],
+    "models": [
+      { "modelId": "gpt-4o-mini-demo", "enabled": true },
+      { "modelId": "claude-3-opus-demo", "enabled": true }
+    ]
+  }
+]
