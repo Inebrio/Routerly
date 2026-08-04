@@ -5,6 +5,7 @@ import type { ChatCompletionRequest, Message, OptimizerStep } from '@routerly/sh
 import type { ProxyContext } from '../../reverse-proxy/context.js'
 import { readMessages } from '../messages.js'
 import { optimizerCoreModule } from '../core.js'
+import { PRODUCT_VERSION } from '../../../core/version.js'
 
 /**
  * The window comes from the effective model list, keyed by the model the client
@@ -277,6 +278,6 @@ describe('headroom optimizer', () => {
 
   it('module manifest depends on optimizer-core', () => {
     expect(headroomModule.manifest.id).toBe('optimizer-headroom')
-    expect(headroomModule.manifest.dependsOn).toEqual({ 'optimizer-core': '^0.4.0' })
+    expect(headroomModule.manifest.dependsOn).toEqual({ 'optimizer-core': `^${PRODUCT_VERSION}` })
   })
 })

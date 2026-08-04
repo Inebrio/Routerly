@@ -43,6 +43,33 @@ Skip the changeset only for changes with nothing for a user or operator to
 notice: internal refactors, test-only changes, CI and tooling. If you are
 unsure, add one.
 
+## Module manifests carry the product version, not their own
+
+Every module under `packages/service/src/modules/` declares a
+`manifest: { id, version, dependsOn }`. That `version`, and every
+`^X.Y.Z` range inside `dependsOn`, is rewritten to the current product
+version on every release (see "Keeping module manifests in sync" below).
+Whatever you type there when adding or editing a module is temporary: it
+gets replaced.
+
+Do not hand-pick a version number for a module manifest or a `dependsOn`
+range. Write any valid `X.Y.Z` placeholder; the release version script
+overwrites it unconditionally.
+
+In tests, do not assert against a literal version string. Import
+`PRODUCT_VERSION` from `packages/service/src/core/version.ts` and assert
+against that instead:
+
+```ts
+import { PRODUCT_VERSION } from '../../core/version.js'
+
+expect(myModule.manifest.version).toBe(PRODUCT_VERSION)
+expect(myModule.manifest.dependsOn).toEqual({ config: `^${PRODUCT_VERSION}` })
+```
+
+A test that hardcodes `'0.4.0'` breaks on the next release even though
+nothing about the module changed.
+
 ## What happens after you push
 
 Pushing to a `release/**` branch triggers a GitHub Actions workflow that
@@ -104,6 +131,48 @@ you are actually about to release from.
 
 Everything below is run by a maintainer cutting a release, not by a
 contributor opening a pull request.
+
+## Keeping module manifests in sync
+
+`npm run version` runs `changeset version` and then, automatically,
+`node scripts/sync-module-versions.mjs`. Nothing extra to run: the moment
+the Version PR bumps `packages/service/package.json` to the new number,
+this second step rewrites every module manifest's `version` field and
+every `^X.Y.Z` `dependsOn` range under `packages/service/src` to match it.
+It is unconditional, not differential: it overwrites every matching
+literal with the new canonical version, whatever it was before, and a
+tree that is already in sync produces zero file changes.
+
+The scope is fixed to `packages/service/src/**/*.ts`, excluding
+`*.test.ts`.
+
+To check whether the tree has drifted from the product version without
+changing anything:
+
+```bash
+node scripts/sync-module-versions.mjs --check
+```
+
+A synced tree:
+
+```
+All module version literals in packages/service/src already match 0.4.0.
+```
+exits `0`.
+
+A tree with a stale literal reports every occurrence, one line each, and
+exits `1`:
+
+```
+packages/service/src/modules/catalog/index.ts:13: expected 0.4.0, found 0.3.9
+```
+
+If `--check` reports drift outside of a release (for example, a manifest
+edited by hand with the wrong version), run `node
+scripts/sync-module-versions.mjs` without `--check` to rewrite it in
+place, or just let the next `npm run version` fix it: either way, never
+edit the version literal by hand to make `--check` pass, since the next
+release rewrites it again regardless.
 
 ## Cutting a documentation version
 

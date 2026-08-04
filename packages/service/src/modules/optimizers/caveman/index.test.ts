@@ -7,6 +7,7 @@ import { readMessages } from '../messages.js'
 import { passesSafetyGate } from '../gate.js'
 import { optimizerCoreModule } from '../core.js'
 import { cavemanModule, cavemanOptimizer } from './index.js'
+import { PRODUCT_VERSION } from '../../../core/version.js'
 
 function ctxWith(messages: Message[]): ProxyContext {
   const request = { model: 'gpt', messages } as ChatCompletionRequest
@@ -233,7 +234,7 @@ describe('caveman optimizer', () => {
 
   it('module manifest depends on optimizer-core', () => {
     expect(cavemanModule.manifest.id).toBe('optimizer-caveman')
-    expect(cavemanModule.manifest.dependsOn).toEqual({ 'optimizer-core': '^0.4.0' })
+    expect(cavemanModule.manifest.dependsOn).toEqual({ 'optimizer-core': `^${PRODUCT_VERSION}` })
   })
 })
 

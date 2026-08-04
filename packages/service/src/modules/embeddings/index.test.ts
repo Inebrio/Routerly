@@ -3,11 +3,12 @@ import { ServiceContainer, EventBus } from '../../core/index.js';
 import { embeddingsModule } from './index.js';
 import { EMBEDDINGS } from '../../core/tokens.js';
 import { getEmbeddingProvider } from './dispatch.js';
+import { PRODUCT_VERSION } from '../../core/version.js';
 
 describe('embeddings module', () => {
   it('has the frozen manifest', () => {
     expect(embeddingsModule.manifest.id).toBe('embeddings');
-    expect(embeddingsModule.manifest.version).toBe('0.4.0');
+    expect(embeddingsModule.manifest.version).toBe(PRODUCT_VERSION);
     expect(embeddingsModule.manifest.dependsOn).toBeUndefined();
   });
 

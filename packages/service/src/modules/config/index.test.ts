@@ -14,6 +14,7 @@ import { configModule } from './index.js'
 import { readConfig, writeConfig, appendUsageRecord } from './loader.js'
 import { migrateProjectConfigs, migrateSettings } from './migrate.js'
 import { migrateModelsToConnections } from './migrate-connections.js'
+import { PRODUCT_VERSION } from '../../core/version.js'
 
 const mockMigrateProjects = vi.mocked(migrateProjectConfigs)
 const mockMigrateConnections = vi.mocked(migrateModelsToConnections)
@@ -42,7 +43,7 @@ describe('config module', () => {
 
   it('has the frozen manifest identity', () => {
     expect(configModule.manifest.id).toBe('config')
-    expect(configModule.manifest.version).toBe('0.4.0')
+    expect(configModule.manifest.version).toBe(PRODUCT_VERSION)
   })
 
   it('runs every config migration', async () => {
