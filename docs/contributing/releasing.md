@@ -43,6 +43,13 @@ Skip the changeset only for changes with nothing for a user or operator to
 notice: internal refactors, test-only changes, CI and tooling. If you are
 unsure, add one.
 
+Your commit's subject also feeds the GitHub release notes, generated
+separately from the changeset (see [Generating release notes](#generating-release-notes)
+below). A conventional-commit type there is not just style: `feat` and `fix`
+are what puts your change in front of a reader under "Features" or "Bug
+Fixes". Get the type right for the same reason you get the changeset bump
+right.
+
 ## Module manifests carry the product version, not their own
 
 Every module under `packages/service/src/modules/` declares a
@@ -173,6 +180,105 @@ scripts/sync-module-versions.mjs` without `--check` to rewrite it in
 place, or just let the next `npm run version` fix it: either way, never
 edit the version literal by hand to make `--check` pass, since the next
 release rewrites it again regardless.
+
+## Generating release notes
+
+The body of the GitHub Release is generated from the git history, not
+written by hand. `scripts/release-notes.sh` renders it with
+[git-cliff](https://git-cliff.org), using the grouping rules in
+`cliff.toml` at the repository root, and the release workflow
+(`.github/workflows/release.yml`) calls it and puts the result straight
+into the release body. This is the GitHub Release only: it never touches
+the per-package `CHANGELOG.md` files, which stay Changesets' job (see
+above).
+
+### What ends up under which heading
+
+The commit's type, the same one commitlint enforces
+(`commitlint.config.js`), decides where it lands:
+
+| Commit type | Heading |
+|---|---|
+| `feat` | Features |
+| `fix` | Bug Fixes |
+| `perf` | Performance |
+| `docs` | Documentation |
+| `refactor` | Refactor |
+| `chore`, `ci`, `build`, `test`, `style` | not shown |
+| a merge commit (`Merge ...`) | not shown |
+| anything else, including a subject that is not a conventional commit at all | Other Changes |
+
+Nothing is silently dropped except merge commits and the five types the
+table marks "not shown": those exist for internal housekeeping and say
+nothing to someone reading what changed. A subject that does not follow
+the conventional-commit form still appears in the notes, under "Other
+Changes", so a change is never lost for having the wrong prefix; it is
+just not sorted by type.
+
+### Previewing locally
+
+```bash
+scripts/release-notes.sh <from-ref> <to-ref> [--tag vX.Y.Z]
+```
+
+The rendered notes go to stdout, nothing else; diagnostics go to stderr.
+Run it from the repository root against two real refs, for example the
+previous tag and `HEAD`:
+
+```
+$ scripts/release-notes.sh v0.1.5 v0.2.0
+## v0.2.0
+
+### Features
+
+- Add time-based filtering and pagination to usage page
+...
+
+### Bug Fixes
+
+- **auth:** Rotate refresh token on every use
+...
+```
+
+`--tag vX.Y.Z` labels the heading with that version explicitly; without
+it, git-cliff uses `<to-ref>` if it is itself a matching version tag. A
+range with no commits still renders a well-formed, empty document instead
+of failing:
+
+```
+$ scripts/release-notes.sh v0.2.0 v0.2.0
+## Release Notes
+```
+
+Two renders of the same range are byte-identical: nothing in the output
+depends on the wall clock or on which unrelated tags happen to exist in
+the repository.
+
+### Failures
+
+A missing or unresolvable ref, or the wrong number of arguments, exits
+`1` with one line on stderr:
+
+```
+$ scripts/release-notes.sh does-not-exist v0.2.0
+release-notes: unresolvable ref 'does-not-exist'
+
+$ scripts/release-notes.sh v0.2.0
+Usage: release-notes.sh <from-ref> <to-ref> [--tag vX.Y.Z]
+```
+
+If git-cliff itself fails to render (a malformed `cliff.toml`, for
+instance), the error is still one line on stderr with the underlying
+cause appended, and exit code `1`. This is what the release workflow sees
+if the step fails.
+
+### Prerequisite
+
+The script looks for `git-cliff` on `PATH` first. If it is not installed,
+it falls back to `npx --yes git-cliff@2.13.1`, so a working `node`/`npx`
+is enough to preview notes locally without installing anything. The
+version is pinned, not a floating range, so a preview and the release
+workflow's own run render the same output for the same range.
 
 ## Cutting a documentation version
 
