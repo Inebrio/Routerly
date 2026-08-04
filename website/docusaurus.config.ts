@@ -45,7 +45,7 @@ const config: Config = {
           routeBasePath: '/',
           sidebarPath: './sidebars.ts',
           editUrl: 'https://github.com/Inebrio/Routerly/edit/main/',
-          lastVersion: '0.2.0',
+          lastVersion: '0.4.0',
           versions: {
             current: {
               label: 'next',
