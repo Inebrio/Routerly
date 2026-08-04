@@ -38,3 +38,4 @@ export function CopyBlock({ text }: { text: string }) {
     </>
   );
 }
+// RA-16 task 6: trivial change to exercise the shared-component wildcard rule.
