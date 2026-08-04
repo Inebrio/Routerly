@@ -197,6 +197,7 @@ The event name is the stable identifier: rules, cooldowns and filters all match 
 | `config.model_added` / `config.model_deleted` | config | Model added / Model deleted | info | A model was created or deleted |
 | `config.project_created` / `config.project_deleted` | config | Project created / Project deleted | info | A project was created or deleted |
 | `system.startup` / `system.shutdown` | system | Service started / Service stopped | info | Service lifecycle |
+| `system.update_available` | system | A newer release is available | info | The update checker found a release newer than the one running on the configured channel; `details` carries `currentVersion`, `latestVersion`, `channel` and, when known, `releaseUrl`. Raised once per distinct release/channel/version combination, not on every scheduled check |
 
 An event that is not in this table still displays: its title is derived from the name (`cache.purged` reads as "Cache purged") and its category comes from the prefix.
 

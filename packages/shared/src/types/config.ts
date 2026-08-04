@@ -983,6 +983,7 @@ export const NOTIFICATION_EVENTS = [
   'budget.reset',
   'system.startup',
   'system.shutdown',
+  'system.update_available',
 ] as const;
 
 /** One of the canonical {@link NOTIFICATION_EVENTS} names. */
