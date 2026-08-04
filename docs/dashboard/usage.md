@@ -60,11 +60,18 @@ change, not every two seconds.
 | **Period** | Preset time window (today, this month, etc.) or custom range |
 | **Project** | Filter to a specific project |
 | **Model** | Filter to specific model IDs |
+| **Token** | Filter to the traffic that came in on specific project tokens |
 | **Caller** | Who made the call: the client (`Completion`), the router, the guardrail pipeline, or an experiment judge |
 | **Type** | What the call asked for, taken from the endpoint the client hit: `Chat`, `Text Completion`, `Embedding`, `Rerank`, `Image`, `Audio` |
 | **Status** | `All`, `Success`, `Blocked`, or `Error` -- `Blocked` shows only guardrail-blocked requests |
 | **Session ID** | Filter to requests from a specific session (from the `x-routerly-conversation-id` header) |
 | **Tags** | Filter by token metadata (e.g., `environment: production`) |
+
+**Token** lists every token of the selected projects, or of all projects when no
+project is picked, and appears only when there is more than one to choose from.
+A token is named by its first label, and by the visible head of the secret when
+it has none. Records written before 0.4.0 carry no token and drop out of the
+result as soon as the filter is set.
 
 **Caller** and **Type** only offer the values the selected window actually
 contains, each with its call count next to it, and disappear entirely when there
@@ -109,6 +116,10 @@ Below the summary cards, a table ranks all models that received traffic in the s
 A star marks the model with the best cost-performance ratio based on your own
 traffic. Every column header sorts. The table respects all active filters.
 
+Past ten models the table shows only the head of the current sort, with a
+**Show N more models** control below it that expands the rest and folds them
+back. Sorting a collapsed table changes which ten are on screen.
+
 :::note Redirected from /dashboard/leaderboard
 The standalone Leaderboard page has been merged into this page. `/dashboard/leaderboard` redirects to `/dashboard/usage`.
 :::
@@ -123,7 +134,7 @@ many records the active filters kept out of the period's total.
 | Column | Description |
 |--------|-------------|
 | Time | When the request arrived |
-| Project | The project the request belonged to |
+| Project | The project the request belonged to, with the token the call came in on underneath it |
 | Model | Provider model used |
 | Type | What the call asked for: `Chat`, `Text Completion`, `Embedding`, `Rerank`, `Image`, `Audio` |
 | Caller | Who made the call: `completion` (the client), `router`, `guardrail`, or `judge` |
@@ -152,7 +163,8 @@ The **Status** badge in the table uses colour coding:
 | `blocked` | Amber |
 | `error` / other | Red |
 
-Click any row to open the full **Trace view** (`/dashboard/usage/<record id>`).
+Click any row to open the full **Trace view** (`/dashboard/usage/<record id>`),
+where the same token appears as its own **Token** field in the Identity card.
 
 ### Trace View
 

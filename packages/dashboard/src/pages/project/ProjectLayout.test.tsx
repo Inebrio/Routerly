@@ -35,7 +35,6 @@ function renderLayout(path: string, projectId: string | undefined = 'proj-1') {
           <Route path="token" element={<div>Token Tab</div>} />
           <Route path="users" element={<div>Users Tab</div>} />
           <Route path="logs" element={<div>Logs Tab</div>} />
-          <Route path="end-users" element={<div>End Users Tab</div>} />
         </Route>
         <Route path="/dashboard/projects" element={<div>Projects list</div>} />
       </Routes>
@@ -79,7 +78,6 @@ describe('ProjectLayout — loaded state', () => {
       expect(screen.getByText('Token')).toBeTruthy();
       expect(screen.getByText('Users')).toBeTruthy();
       expect(screen.getByText('Logs')).toBeTruthy();
-      expect(screen.getByText('End Users')).toBeTruthy();
       const labels = Array.from(document.querySelectorAll('a, [title="Save the project first to unlock this tab"]'))
         .map(el => el.textContent?.trim());
       expect(labels[0]).toBe('Dashboard');

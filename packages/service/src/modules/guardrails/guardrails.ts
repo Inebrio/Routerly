@@ -295,6 +295,7 @@ async function checkRule(
             outcome: 'success',
             callType: 'guardrail',
             requestType: 'embedding',
+            ...(pctx.token?.id ? { tokenId: pctx.token.id } : {}),
           }).catch(() => {}); // ponytail: fire-and-forget error suppressor
         }
         const similarity = classification.topScore ?? 0;

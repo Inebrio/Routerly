@@ -40,6 +40,7 @@ export const semanticIntentPolicy: PolicyFn = async ({
   log,
   emit,
   projectId,
+  token,
   traceId,
 }) => {
   const cfg = config as SemanticIntentConfig | undefined;
@@ -130,6 +131,7 @@ export const semanticIntentPolicy: PolicyFn = async ({
         outcome: 'success',
         callType: 'routing',
         requestType: 'embedding',
+        ...(token?.id ? { tokenId: token.id } : {}),
         ...(traceId !== undefined ? { traceId } : {}),
       }).catch(() => {});
     }

@@ -1118,6 +1118,13 @@ export interface UsageRecord {
   priceOutput?: number;
   /** End-user identifier from the OpenAI `user` field — for per-user cost attribution (#96) */
   endUserId?: string;
+  /**
+   * Project token the call authenticated with. A project usually hands out one
+   * token per client, so this narrows a project's traffic down to the caller
+   * without asking the client for anything: it is read from the bearer token
+   * that was presented, never from the payload.
+   */
+  tokenId?: string;
   /** Session identifier — groups related calls for cost attribution */
   sessionId?: string;
   /** Arbitrary key-value tags — for cost attribution and filtering */

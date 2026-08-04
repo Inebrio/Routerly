@@ -79,10 +79,9 @@ or adding a payload field. The `stickyKey` chooses what it keys on:
 | `conversation` | The conversation itself, so each new thread can land on a different variant. |
 | `client` | The calling machine (IP and user agent), so one client always sees one arm. |
 
-The `user` field is the same one
-[End Users attribution](../dashboard/projects.md#end-users-tab) reads: it is part of the
-OpenAI and Anthropic request schemas, not something Routerly invented. The
-derived key is hashed before it is stored.
+The `user` field is the same one usage records store as `endUserId`: it is part
+of the OpenAI and Anthropic request schemas, not something Routerly invented.
+The derived key is hashed before it is stored.
 
 `auto` combines the conversation prefix with IP and user agent rather than
 using either alone: the prefix by itself would put two different people asking

@@ -649,6 +649,21 @@ describe('llmChat — additional branches', () => {
     }))
   })
 
+  it('records the project token the call came in on (T211)', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    const ctx = makeCtx({ token: { id: 'tok-1', token: 'sk-rt-x', createdAt: new Date().toISOString() } })
+    await llmChat({ messages: [] } as any, makeModel(), ctx)
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ tokenId: 'tok-1' }))
+  })
+
+  it('leaves tokenId off when the call carries no token', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
+    await llmChat({ messages: [] } as any, makeModel(), makeCtx())
+    expect(mockTrackUsage.mock.calls[0]![0]).not.toHaveProperty('tokenId')
+  })
+
   it('lines 317-322: truthy endUserId/sessionId/tags/guardrailTriggered/piiRedacted in llmChat error trackUsage', async () => {
     mockIsAllowed.mockResolvedValue(true)
     mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockRejectedValue(new Error('api fail')) } as any)

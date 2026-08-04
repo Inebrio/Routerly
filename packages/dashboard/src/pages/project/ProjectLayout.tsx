@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Outlet, NavLink, useLocation } from 'react-router-dom';
-import { ArrowLeft, Settings, Route, Users, FileText, Key, Shield, UserSearch, Gauge, LayoutDashboard } from 'lucide-react';
+import { ArrowLeft, Settings, Route, Users, FileText, Key, Shield, Gauge, LayoutDashboard } from 'lucide-react';
 import { getProjects, type Project } from '../../api';
 
 export function ProjectLayout() {
@@ -37,7 +37,6 @@ export function ProjectLayout() {
     { id: 'token', label: 'Token', icon: <Key size={16} />, disabled: isNew },
     { id: 'users', label: 'Users', icon: <Users size={16} />, disabled: isNew },
     { id: 'logs', label: 'Logs', icon: <FileText size={16} />, disabled: isNew },
-    { id: 'end-users', label: 'End Users', icon: <UserSearch size={16} />, disabled: isNew },
   ];
 
   if (err && !isNew) {

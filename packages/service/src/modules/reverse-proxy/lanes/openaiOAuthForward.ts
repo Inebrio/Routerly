@@ -236,7 +236,7 @@ export async function* streamOpenAIOAuthChunks(
   body: Record<string, unknown>,
   model: ModelConfig,
   log: FastifyBaseLogger,
-  opts: { traceId: string; projectId: string; pii?: PiiConfig | undefined },
+  opts: { traceId: string; projectId: string; pii?: PiiConfig | undefined; tokenId?: string | undefined },
 ): AsyncGenerator<StreamChunk> {
   const startMs = Date.now();
   const modelId = model.id.includes('/') ? model.id.split('/').slice(1).join('/') : model.id;
@@ -384,6 +384,7 @@ export async function* streamOpenAIOAuthChunks(
       void trackUsage({
         projectId: opts.projectId, model, inputTokens, outputTokens,
         latencyMs: Date.now() - startMs, outcome, callType: 'completion', traceId: opts.traceId,
+        ...(opts.tokenId ? { tokenId: opts.tokenId } : {}),
       }).catch(() => {});
     }
   }
@@ -459,9 +460,10 @@ export async function forwardOpenAIOAuthSSE(
   traceId: string,
   projectId: string,
   piiConfig?: PiiConfig,
+  tokenId?: string,
 ): Promise<void> {
   try {
-    for await (const chunk of streamOpenAIOAuthChunks(body, model, log, { traceId, projectId, pii: piiConfig })) {
+    for await (const chunk of streamOpenAIOAuthChunks(body, model, log, { traceId, projectId, pii: piiConfig, tokenId })) {
       raw.write(`data: ${JSON.stringify(chunk)}\n\n`);
     }
   } catch (err) {

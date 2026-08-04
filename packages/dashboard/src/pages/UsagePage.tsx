@@ -7,10 +7,14 @@ import { MultiSelect } from '../components/MultiSelect';
 import { DateRangePicker, PRESETS, RECENT_PRESETS, parseStoredRange, type DateRange } from '../components/DateRangePicker';
 import { CostCard, SavingsCard, TokensCard, savingsSeriesData, type SavingsMetric } from '../components/savings';
 import { useFilterState } from '../hooks/useFilterState';
+import { tokenLabel } from '../utils/tokenLabel';
 import { useProviderLabels } from '../hooks/useProviderLabels';
 
 type ModelSortKey = 'rank' | 'model' | 'provider' | 'calls' | 'errors' | 'successRate'
   | 'avgLatency' | 'p95Latency' | 'inputTokens' | 'outputTokens' | 'costPer1k' | 'cost';
+
+/** Rows the model ranking shows before it has to be expanded. */
+const MODEL_ROWS_COLLAPSED = 10;
 type SortDir = 'asc' | 'desc';
 
 function SortIcon({ col, sortKey, sortDir }: { col: ModelSortKey; sortKey: ModelSortKey; sortDir: SortDir }) {
@@ -73,6 +77,7 @@ export function UsagePage() {
   const [dateRange, setDateRange]       = useFilterState<DateRange>({ key: 'usage-filters-dateRange', defaultValue: THIS_MONTH?.range() ?? ALL_TIME, deserialize: parseStoredRange });
   const [projectIds, setProjectIds]     = useFilterState<string[]>({ key: 'usage-filters-projectIds', defaultValue: [] });
   const [modelIds, setModelIds]         = useFilterState<string[]>({ key: 'usage-filters-modelIds', defaultValue: [] });
+  const [tokenIds, setTokenIds]         = useFilterState<string[]>({ key: 'usage-filters-tokenIds', defaultValue: [] });
   const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing' | 'guardrail' | 'judge'>({ key: 'usage-filters-callType', defaultValue: 'all' });
   const [requestTypeFilter, setRequestTypeFilter] = useFilterState<'all' | RequestType>({ key: 'usage-filters-requestType', defaultValue: 'all' });
   const [outcomeFilter, setOutcomeFilter]   = useFilterState<'all' | 'success' | 'error' | 'blocked'>({ key: 'usage-filters-outcome', defaultValue: 'all' });
@@ -95,6 +100,9 @@ export function UsagePage() {
   const [modelSortKey, setModelSortKey] = useFilterState<ModelSortKey>({ key: 'usage-filters-modelSortKey', defaultValue: 'rank' });
   const [modelSortDir, setModelSortDir] = useFilterState<SortDir>({ key: 'usage-filters-modelSortDir', defaultValue: 'asc' });
   const [newRowIds, setNewRowIds]       = useState<ReadonlySet<string>>(new Set());
+  // A gateway with many models makes this ranking longer than the page: it opens
+  // on the head of the current sort and expands on demand.
+  const [showAllModels, setShowAllModels] = useState(false);
   const latestTimestampRef              = useRef<string | null>(null);
   const navigate = useNavigate();
 
@@ -137,7 +145,7 @@ export function UsagePage() {
   useEffect(() => {
     latestTimestampRef.current = null;
     setNewRowIds(new Set());
-  }, [dateRange, page, pageSize, projectIds, modelIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
+  }, [dateRange, page, pageSize, projectIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
 
   const fetchStats = useCallback(() => {
     const prevMax = latestTimestampRef.current;
@@ -153,6 +161,7 @@ export function UsagePage() {
     return getUsage(period, undefined, from, to, page, pageSize, {
       projectIds,
       modelIds,
+      tokenIds,
       callType: callTypeFilter,
       requestType: requestTypeFilter,
       outcome: outcomeFilter,
@@ -177,7 +186,7 @@ export function UsagePage() {
         setFetchError(msg);
         console.error('Failed to load usage stats:', msg);
       });
-  }, [dateRange, page, pageSize, projectIds, modelIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
+  }, [dateRange, page, pageSize, projectIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
 
   const handleRefreshNow = useCallback(() => {
     setRefreshing(true);
@@ -192,7 +201,7 @@ export function UsagePage() {
     return () => clearInterval(id);
   }, [fetchStats, pollInterval]);
 
-  useEffect(() => { setPage(1); }, [dateRange, projectIds, modelIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
+  useEffect(() => { setPage(1); }, [dateRange, projectIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
 
   // Savings over the same window and the same filters, one page of records asked
   // for because only the aggregates are read here (T209).
@@ -209,6 +218,7 @@ export function UsagePage() {
     getUsage(period, undefined, from, to, 1, 1, {
       projectIds,
       modelIds,
+      tokenIds,
       callType: callTypeFilter,
       requestType: requestTypeFilter,
       outcome: outcomeFilter,
@@ -217,7 +227,7 @@ export function UsagePage() {
     })
       .then(setSavingsStats)
       .catch(() => setSavingsStats(null));
-  }, [dateRange, projectIds, modelIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
+  }, [dateRange, projectIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
 
   const savingsData = useMemo(() => savingsSeriesData(savingsStats?.series), [savingsStats]);
 
@@ -246,10 +256,30 @@ export function UsagePage() {
     [projects],
   );
 
+  // Tokens are named per client, so filtering by one answers "what is this caller
+  // doing" without the caller sending anything. Scoped to the selected projects
+  // when there are any, otherwise the list is every token the gateway knows.
+  const tokenOptions = useMemo(() => {
+    const scope = projectIds.length > 0 ? projects.filter(p => projectIds.includes(p.id)) : projects;
+    return scope.flatMap(p =>
+      (p.tokens ?? []).map(t => ({
+        value: t.id,
+        label: projectIds.length === 1 ? tokenLabel(t) : `${p.name} / ${tokenLabel(t)}`,
+      })),
+    );
+  }, [projects, projectIds]);
+
+  /** Token name by id, for the caller shown under each call's project. */
+  const tokenNames = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const p of projects) for (const t of p.tokens ?? []) map[t.id] = tokenLabel(t);
+    return map;
+  }, [projects]);
+
   // Server now filters; records are already consistent with active filters.
   const displayRecords = stats?.records ?? [];
 
-  const hasActiveFilters = projectIds.length > 0 || modelIds.length > 0 || callTypeFilter !== 'all' || requestTypeFilter !== 'all' || outcomeFilter !== 'all';
+  const hasActiveFilters = projectIds.length > 0 || modelIds.length > 0 || tokenIds.length > 0 || callTypeFilter !== 'all' || requestTypeFilter !== 'all' || outcomeFilter !== 'all';
   const hasReset = hasActiveFilters;
 
   function handleModelSort(key: ModelSortKey) {
@@ -434,6 +464,18 @@ export function UsagePage() {
               />
             </div>
 
+            {(tokenOptions.length > 1 || tokenIds.length > 0) && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 200 }}>
+                <FilterLabel>Token</FilterLabel>
+                <MultiSelect
+                  options={tokenOptions}
+                  value={tokenIds}
+                  onChange={setTokenIds}
+                  placeholder="All Tokens"
+                />
+              </div>
+            )}
+
             {(callerOptions.length > 1 || callTypeFilter !== 'all') && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <FilterLabel>Caller</FilterLabel>
@@ -480,7 +522,7 @@ export function UsagePage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <FilterLabel>&nbsp;</FilterLabel>
                 <button className="btn btn-sm btn-secondary"
-                  onClick={() => { setProjectIds([]); setModelIds([]); setCallTypeFilter('all'); setRequestTypeFilter('all'); setOutcomeFilter('all'); }}>
+                  onClick={() => { setProjectIds([]); setModelIds([]); setTokenIds([]); setCallTypeFilter('all'); setRequestTypeFilter('all'); setOutcomeFilter('all'); }}>
                   Reset filters
                 </button>
               </div>
@@ -568,6 +610,8 @@ export function UsagePage() {
 
             {/* Per-model table — enriched with performance columns + Rank */}
             {sortedModelRows.length > 0 && (() => {
+              const hidden = sortedModelRows.length - MODEL_ROWS_COLLAPSED;
+              const visibleRows = showAllModels ? sortedModelRows : sortedModelRows.slice(0, MODEL_ROWS_COLLAPSED);
               const thS: React.CSSProperties = { cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' };
               const th = (label: string, key: ModelSortKey, align?: 'right') => (
                 <th style={align ? { ...thS, textAlign: align } : thS}>
@@ -597,7 +641,7 @@ export function UsagePage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {sortedModelRows.map(({ modelId, v, totalTok, successRate, costPer1k, rank, provider }) => {
+                      {visibleRows.map(({ modelId, v, totalTok, successRate, costPer1k, rank, provider }) => {
                         const isBest = modelId === bestModelId;
                         const displayRank = rank === Infinity ? '—' : String(rank);
                         return (
@@ -628,6 +672,16 @@ export function UsagePage() {
                       })}
                     </tbody>
                   </table>
+                  {hidden > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllModels(v => !v)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, width: '100%', justifyContent: 'center', background: 'none', border: 'none', borderTop: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 500, padding: '8px 0' }}
+                    >
+                      <ChevronDown size={14} style={{ transform: showAllModels ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
+                      {showAllModels ? 'Show fewer models' : `Show ${hidden} more model${hidden !== 1 ? 's' : ''}`}
+                    </button>
+                  )}
                 </div>
               );
             })()}
@@ -678,6 +732,11 @@ export function UsagePage() {
                             </td>
                             <td style={{ fontSize: '0.78rem' }}>
                               {projects.find(p => p.id === r.projectId)?.name ?? <span className="mono" style={{ fontSize: '0.72rem' }}>{r.projectId}</span>}
+                              {r.tokenId && (
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                  {tokenNames[r.tokenId] ?? r.tokenId}
+                                </div>
+                              )}
                             </td>
                             <td><span className="mono" style={{ fontSize: '0.78rem' }}>{r.modelId}</span></td>
                             <td style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>

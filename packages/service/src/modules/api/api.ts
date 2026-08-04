@@ -1611,10 +1611,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // USAGE STATS
   // ══════════════════════════════════════════════════════════════════════════════
 
-  fastify.get<{ Querystring: { period?: string; projectId?: string; projectIds?: string; modelIds?: string; callType?: string; requestType?: string; outcome?: string; from?: string; to?: string; page?: string; pageSize?: string; endUserId?: string; sessionId?: string; savings?: string; series?: string; [key: string]: string | undefined } }>('/api/usage', async (req, reply) => {
+  fastify.get<{ Querystring: { period?: string; projectId?: string; projectIds?: string; modelIds?: string; tokenIds?: string; callType?: string; requestType?: string; outcome?: string; from?: string; to?: string; page?: string; pageSize?: string; endUserId?: string; sessionId?: string; savings?: string; series?: string; [key: string]: string | undefined } }>('/api/usage', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
     const records = await readConfig('usage');
-    const { period = 'monthly', projectId, projectIds, modelIds, callType, requestType, outcome, from, to, endUserId, sessionId } = req.query;
+    const { period = 'monthly', projectId, projectIds, modelIds, tokenIds, callType, requestType, outcome, from, to, endUserId, sessionId } = req.query;
     const page = Math.max(1, parseInt(req.query.page ?? '1', 10) || 1);
     const pageSize = Math.min(200, Math.max(1, parseInt(req.query.pageSize ?? '100', 10) || 100));
     // Parse tag filters: ?tag[customer]=acme
@@ -1663,6 +1663,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (projectIdSet) filtered = filtered.filter(r => projectIdSet.has(r.projectId));
     const modelIdSet = csv(modelIds);
     if (modelIdSet) filtered = filtered.filter(r => modelIdSet.has(r.modelId));
+    // Which project token the call came in on: narrows a project's traffic down
+    // to one client without the client sending anything (T211).
+    const tokenIdSet = csv(tokenIds);
+    if (tokenIdSet) filtered = filtered.filter(r => r.tokenId !== undefined && tokenIdSet.has(r.tokenId));
     if (outcome && outcome !== 'all') {
       // 'error' is any outcome that is neither success nor blocked.
       filtered = outcome === 'error'
@@ -1872,29 +1876,6 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       .sort((a, b) => a.timestamp.localeCompare(b.timestamp))
       .map(({ trace: _trace, ...r }) => r);
     return reply.send({ sessionId: req.params.id, requests });
-  });
-
-  // ─── GET /api/end-users (#96) ─────────────────────────────────────────────
-  fastify.get<{ Querystring: { projectId?: string } }>('/api/end-users', async (req, reply) => {
-    if (!requirePerm(req, 'report:read', reply)) return;
-    const records = await readConfig('usage');
-    const { projectId } = req.query;
-
-    const userMap = new Map<string, { userId: string; projectId: string; firstSeen: string; lastSeen: string; requests: number; totalCost: number; totalTokens: number }>();
-    for (const r of records) {
-      if (!r.endUserId) continue;
-      if (projectId && r.projectId !== projectId) continue;
-      const u = userMap.get(r.endUserId) ?? { userId: r.endUserId, projectId: r.projectId, firstSeen: r.timestamp, lastSeen: r.timestamp, requests: 0, totalCost: 0, totalTokens: 0 };
-      u.requests++;
-      u.totalCost += r.cost;
-      u.totalTokens += r.inputTokens + r.outputTokens;
-      if (r.timestamp < u.firstSeen) u.firstSeen = r.timestamp;
-      if (r.timestamp > u.lastSeen) u.lastSeen = r.timestamp;
-      userMap.set(r.endUserId, u);
-    }
-
-    const users = [...userMap.values()].sort((a, b) => b.totalCost - a.totalCost);
-    return reply.send({ users });
   });
 
   // ─── GET /api/system/info ───────────────────────────────────────────────────
