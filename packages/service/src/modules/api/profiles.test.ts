@@ -59,7 +59,8 @@ describe('GET /api/profiles', () => {
     const body = JSON.parse(res.body)
     expect(body.some((p: any) => p.id === 'auto' && p.builtin === true)).toBe(true)
     expect(body.some((p: any) => p.id === 'optimizer-safe')).toBe(true)
-    expect(body.some((p: any) => p.id === 'security-standard')).toBe(true)
+    // No security preset ships any more: the kind only ever holds user overlays.
+    expect(body.some((p: any) => p.kind === 'security' && p.builtin === true)).toBe(false)
     expect(body.some((p: any) => p.id === 'u1')).toBe(true)
   })
 
