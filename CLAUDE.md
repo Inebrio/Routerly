@@ -116,9 +116,16 @@ A slot is held by a story's *implementation*, not by its paperwork. Once a story
 
 Merging is the main session's job, never a teammate's. When a story passes: merge its branch into the integration branch in dependency order, then `story.mjs state <id> done` and `story.mjs release <id>`. `release` refuses a worktree holding unmerged work; merge first, never force past it.
 
+**Finished work goes back to its base branch immediately. This is not a gate.** A story that has passed validation with zero blocking findings is merged as soon as it passes, without asking. Asking costs a round trip and leaves the branch drifting from a base that other stories are still moving; the user's instruction is that anything finished is always carried back to the branch it started from. The two things that still stop a merge are a blocking finding and a genuine conflict, and both are work, not permission.
+
+Two mechanical notes, both learned by hitting them:
+
+- **commitlint runs on merge commits.** `merge(RA-07): ...` is rejected: the type must be one of the conventional set. Use the type of the change being merged (`fix`, `feat`, `docs`) and name the branch in the body.
+- **`story.mjs state` has `merging` and `blocked` for a reason.** `capacity.sh` counts only `in-progress` against the machine's slots. A story that has passed and is waiting to merge is `merging`; a story parked on CI or an external gate is `blocked`. Leaving either at `in-progress` makes the capacity script refuse dispatches the machine could have carried, which is how this feature spent a stretch reporting "dispatch 0 more" with nothing actually running.
+
 A feature closes when every story is done, the integration branch builds and its tests pass, and the user approves. Specs stay on disk after closing: they are gitignored and they are the record of why the code looks the way it does.
 
-**Human gates: two.** The analyst's questions, and the merge. Everything between runs without asking.
+**Human gates: one.** The analyst's questions. The merge used to be the second and no longer is: finished work goes back to its base branch on its own, as above. Everything else runs without asking.
 
 ### Retrospective
 
