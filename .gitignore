@@ -104,6 +104,8 @@ docs/superpowers/
 *.webp
 !docs/**/*.png
 !docs/**/*.jpg
+!website/versioned_docs/**/*.png
+!website/versioned_docs/**/*.jpg
 
 # ===========================
 # Firebase

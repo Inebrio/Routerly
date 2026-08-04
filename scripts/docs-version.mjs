@@ -106,6 +106,16 @@ if (cut.status !== 0) {
   die(`Docusaurus CLI failed to cut version ${version}.`);
 }
 
+// ─── 5b. Copy docs/assets alongside the versioned snapshot ────────────────
+// The Docusaurus versioning CLI only copies markdown pages, not the assets/
+// folder docs pages reference by relative path. Without this, every image
+// in a versioned snapshot 404s.
+const sourceAssets = path.join(REPO_ROOT, 'docs', 'assets');
+const versionedAssets = path.join(WEBSITE_DIR, 'versioned_docs', `version-${version}`, 'assets');
+if (fs.existsSync(sourceAssets)) {
+  fs.cpSync(sourceAssets, versionedAssets, { recursive: true });
+}
+
 // ─── 6. Rewrite lastVersion in docusaurus.config.ts ────────────────────────
 let configContent;
 try {
