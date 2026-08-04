@@ -20,6 +20,7 @@ export const CONFIG_PATHS = {
   usage: join(base, 'data', 'usage.json'),
   notifications: join(base, 'data', 'notifications.json'),
   audit: join(base, 'data', 'audit.json'),
+  updateAnnouncement: join(base, 'data', 'update-announcement.json'),
   secret: join(base, 'config', 'secret'),
 } as const;
 
