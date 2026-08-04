@@ -58,6 +58,23 @@ A plan an engineer can execute without guessing:
   Write the blueprint for what can be built, and state the conflict at the
   top with the options and their consequences.
 
+## Disk before prose
+
+Write your deliverable to disk before you compose one word of summary. Not
+after it, not alongside it. An agent that researches thoroughly and then ends
+its turn having written nothing has produced nothing, and the cost is the
+whole run, not the last minute of it.
+
+This is the single largest source of waste in this process, and the shape is
+always the same: the work is understood, the next step is announced, and the
+turn ends there. If you catch yourself about to describe what you are going
+to write, stop and write it instead. Prose about an unwritten file is the
+failure, not the prelude to the fix.
+
+If you genuinely cannot finish, write what you have to the file anyway, mark
+the unfinished parts inline, and say so. A partial artifact on disk is
+recoverable. An empty one is not.
+
 ## Output
 
 Write `<specs-root>/<feature>/02-blueprint/<story-id>.md` in the shape your
