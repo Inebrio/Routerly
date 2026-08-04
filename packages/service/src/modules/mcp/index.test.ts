@@ -19,6 +19,7 @@ import {
 import { readConfig, writeConfig } from '../config/loader.js'
 import { mcpModule } from './index.js'
 import { startStdioServer } from './stdio.js'
+import { PRODUCT_VERSION } from '../../core/version.js'
 
 const mockStartStdioServer = vi.mocked(startStdioServer)
 const mockReadConfig = vi.mocked(readConfig)
@@ -44,7 +45,7 @@ afterEach(() => {
 describe('mcp module', () => {
   it('has the frozen manifest', () => {
     expect(mcpModule.manifest.id).toBe('mcp')
-    expect(mcpModule.manifest.version).toBe('0.4.0')
+    expect(mcpModule.manifest.version).toBe(PRODUCT_VERSION)
   })
 
   it('register() binds an empty MCP_TOOLS registry into the container', async () => {

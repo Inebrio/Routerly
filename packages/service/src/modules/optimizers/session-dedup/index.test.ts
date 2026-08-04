@@ -6,6 +6,7 @@ import type { ProxyContext } from '../../reverse-proxy/context.js'
 import { readMessages } from '../messages.js'
 import { optimizerCoreModule } from '../core.js'
 import { sessionDedupModule, sessionDedupOptimizer } from './index.js'
+import { PRODUCT_VERSION } from '../../../core/version.js'
 
 function ctxWith(messages: Message[]): ProxyContext {
   const request = { model: 'gpt', messages } as ChatCompletionRequest
@@ -223,6 +224,6 @@ describe('session-dedup optimizer', () => {
 
   it('module manifest depends on optimizer-core', () => {
     expect(sessionDedupModule.manifest.id).toBe('optimizer-session-dedup')
-    expect(sessionDedupModule.manifest.dependsOn).toEqual({ 'optimizer-core': '^0.4.0' })
+    expect(sessionDedupModule.manifest.dependsOn).toEqual({ 'optimizer-core': `^${PRODUCT_VERSION}` })
   })
 })
