@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag to build (e.g. v0.2.0). Defaults to version in package.json.'
+        description: 'Version to build, e.g. v0.2.0 or 0.2.0 (both accepted). Defaults to the version in packages/service/package.json.'
         required: false
 
 concurrency: docker-rebuild
@@ -19,6 +19,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -32,14 +35,64 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract version
+      - name: meta
         id: meta
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
         run: |
-          VERSION="${{ github.event.inputs.version }}"
+          VERSION="$INPUT_VERSION"
           if [ -z "$VERSION" ]; then
-            VERSION="v$(node -p "require('./packages/service/package.json').version")"
+            VERSION="$(node -p "require('./packages/service/package.json').version")"
           fi
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+          if ! [[ "$VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid version '${VERSION}' — accepted shapes are vX.Y.Z or X.Y.Z"
+            exit 1
+          fi
+
+          RAW="${VERSION#v}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$RAW"
+          MAJOR=$((10#$MAJOR))
+          MINOR=$((10#$MINOR))
+          PATCH=$((10#$PATCH))
+          NORMALIZED="${MAJOR}.${MINOR}.${PATCH}"
+          VNUM=$(( (MAJOR * 100000 + MINOR) * 100000 + PATCH ))
+
+          NEWEST=""
+          NEWEST_NUM=-1
+          while IFS= read -r tag; do
+            [ -z "$tag" ] && continue
+            t="${tag#v}"
+            IFS='.' read -r TMAJOR TMINOR TPATCH <<< "$t"
+            TMAJOR=$((10#$TMAJOR))
+            TMINOR=$((10#$TMINOR))
+            TPATCH=$((10#$TPATCH))
+            TNUM=$(( (TMAJOR * 100000 + TMINOR) * 100000 + TPATCH ))
+            if [ "$TNUM" -gt "$NEWEST_NUM" ]; then
+              NEWEST_NUM=$TNUM
+              NEWEST="$t"
+            fi
+          done < <(git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$')
+
+          if [ -z "$NEWEST" ]; then
+            IS_LATEST=true
+          elif [ "$VNUM" -eq "$NEWEST_NUM" ]; then
+            IS_LATEST=true
+          else
+            IS_LATEST=false
+          fi
+
+          echo "version=${NORMALIZED}" >> "$GITHUB_OUTPUT"
+          echo "is_latest=${IS_LATEST}" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "tags<<EOF"
+            echo "inebrio/routerly:v${NORMALIZED}"
+            if [ "$IS_LATEST" = "true" ]; then
+              echo "inebrio/routerly:latest"
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -47,8 +100,6 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            inebrio/routerly:latest
-            inebrio/routerly:${{ steps.meta.outputs.version }}
+          tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
