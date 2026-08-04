@@ -1,0 +1,79 @@
+---
+title: Cline
+sidebar_label: Cline
+---
+
+# Cline
+
+:::tip
+Cline has no config file to auto-apply, but the `routerly clients` CLI can
+still detect it. See [Cline: auto-configure](./clients/cline) for why
+`routerly clients configure cline` errors out and points back here.
+:::
+
+[Cline](https://github.com/cline/cline) is an autonomous coding agent that can read files, write code, run terminal commands, and browse the web. It runs inside VS Code and uses the OpenAI or Anthropic API for its reasoning model.
+
+---
+
+## Install
+
+Install the [Cline extension](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev) from the VS Code Marketplace.
+
+---
+
+## Configure
+
+1. Open the Cline extension panel and click the **Settings** gear.
+2. Set **API Provider** to `OpenAI Compatible`.
+3. Fill in:
+   - **Base URL** → `http://localhost:3000/v1`
+   - **API Key** → `sk-rt-YOUR_PROJECT_TOKEN`
+   - **Model** → any model registered in your Routerly project (e.g. `gpt-5-mini`)
+4. Set **Context Window** to at least `32000` — agentic tasks require a large context.
+
+To use Anthropic via Routerly:
+
+1. Set **API Provider** to `Anthropic`.
+2. Set **Base URL** to `http://localhost:3000` (no `/v1`).
+3. Set **API Key** to `sk-rt-YOUR_PROJECT_TOKEN`.
+4. Pick a model (e.g. `claude-haiku-4-5`).
+
+:::note
+Agentic tasks consume many tokens per step. Set a [budget limit](../concepts/budgets-and-limits) on your project token to cap spending automatically.
+:::
+
+---
+
+## MCP server
+
+Cline can also load Routerly as an MCP server, which lets its agent list
+models, preview routing, and read usage. Put this in `~/.cline/mcp.json`, or
+paste it into **MCP Servers → Configure MCP Servers** in the Cline panel:
+
+```json
+{
+  "mcpServers": {
+    "routerly": {
+      "type": "streamableHttp",
+      "url": "http://localhost:3000/mcp",
+      "headers": {
+        "Authorization": "Bearer sk-rt-mcp-YOUR_TOKEN"
+      },
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}
+```
+
+`"type": "streamableHttp"` is required: without it Cline falls back to the
+legacy `sse` transport, which Routerly does not serve. The token is a
+personal MCP token (`sk-rt-mcp-…`), not a project token: create one with
+`routerly mcp token create cline` or from **Profile → MCP** in the
+dashboard. See [Connect an MCP client](../guides/mcp-clients.md#cline).
+
+---
+
+## Usage
+
+Open the Cline panel and describe the task. Cline will plan, write code, and execute steps autonomously. Every LLM call is routed through Routerly — costs and traces are visible in the dashboard.

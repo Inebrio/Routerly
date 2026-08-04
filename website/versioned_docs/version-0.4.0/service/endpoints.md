@@ -1,0 +1,351 @@
+---
+title: HTTP Endpoints
+sidebar_position: 2
+---
+
+# HTTP Endpoints
+
+The service exposes five groups of HTTP endpoints on the same port (default: `3000`):
+
+| Group | Path prefix | Auth | Purpose |
+|-------|-------------|------|---------|
+| [LLM Proxy](#llm-proxy) | `/v1/*` | Bearer project token (`sk-rt-…`) | Forward requests to LLM providers |
+| [Pass-Through Proxy](#pass-through-proxy) | any other path | Bearer project token (`sk-rt-…`) | Transparently forward any unhandled provider endpoint |
+| [Management API](#management-api) | `/api/*` | Bearer JWT (dashboard session) | Configure models, projects, users |
+| [MCP Server](#mcp-server) | `/mcp` | Bearer personal MCP token (`sk-rt-mcp-…`) | Model Context Protocol tools for MCP clients |
+| [Dashboard](#dashboard) | `/dashboard/*` | Browser session (cookie) | Serve the React web UI |
+| [Health](#health-check) | `/health` | None | Liveness probe |
+
+For the full request/response schemas of each route, see [API — LLM Proxy](../api/llm-proxy) and [API — Management](../api/management).
+
+---
+
+## LLM Proxy
+
+These routes accept the same request bodies as the original provider APIs. Authentication is via a **project token** (`Authorization: Bearer sk-rt-…`).
+
+Every request goes through the full routing and budget stack before being forwarded to a provider.
+
+### `POST /v1/chat/completions`
+
+OpenAI Chat Completions format. Supports both streaming (`"stream": true`) and non-streaming responses.
+
+```http
+POST /v1/chat/completions
+Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN
+Content-Type: application/json
+
+{
+  "model": "gpt-5-mini",
+  "messages": [{ "role": "user", "content": "Hello!" }],
+  "stream": false
+}
+```
+
+The `model` field is the model ID registered in your project. Routerly ignores it as an upstream model directive — the routing engine picks the actual provider model based on your policies.
+
+### `POST /v1/responses`
+
+OpenAI Responses API format (newer API surface). Uses `input` instead of `messages`, and streams only when `"stream": true`. Routerly normalises it to the `chat/completions` shape internally before routing, then answers in the Responses wire format — a `response` object, or the typed `event:`-named SSE sequence that ends on `response.completed` with no `[DONE]` sentinel.
+
+`previous_response_id` is rejected with HTTP 400: Routerly keeps no conversation state, so the full `input` list must be sent each turn. See the [LLM Proxy API](../api/llm-proxy.md#responses-api) for the supported item types and event sequence.
+
+```http
+POST /v1/responses
+Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN
+Content-Type: application/json
+
+{
+  "model": "gpt-5-mini",
+  "input": [{ "role": "user", "content": "Hello!" }]
+}
+```
+
+### `POST /v1/messages`
+
+Anthropic Messages API format. The request body matches the Anthropic SDK wire format exactly.
+
+```http
+POST /v1/messages
+Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN
+Content-Type: application/json
+
+{
+  "model": "claude-haiku-4-5",
+  "max_tokens": 1024,
+  "messages": [{ "role": "user", "content": "Hello!" }]
+}
+```
+
+Routerly proxies this to the Anthropic provider adapter. If the selected model is an OpenAI model, the adapter translates the request format automatically.
+
+### `GET /v1/models`
+
+Returns the list of models available in the project associated with the token, in the OpenAI `GET /v1/models` response format.
+
+```http
+GET /v1/models
+Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN
+```
+
+### Error format
+
+All LLM Proxy errors follow the OpenAI error envelope:
+
+```json
+{
+  "error": {
+    "message": "Budget exceeded for model gpt-5-mini",
+    "type": "budget_exceeded",
+    "code": "budget_exceeded"
+  }
+}
+```
+
+Common status codes:
+
+| Code | Cause |
+|------|-------|
+| `401` | Missing or invalid project token |
+| `503` | No model passed all routing filters (all excluded or over budget) |
+| `503` | Budget exhausted for the project or token |
+| `504` | Provider timeout |
+
+---
+
+## Pass-Through Proxy
+
+Any path that Routerly does not explicitly handle is transparently forwarded to the project's upstream provider. Only the API key is swapped — method, headers, body, and query string are passed through verbatim. This makes Routerly a true drop-in replacement for the full provider API surface, not just chat completions.
+
+**Authentication:** same `Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN` header required for the LLM Proxy.
+
+### What it enables
+
+| Provider | Endpoints now available via Routerly |
+|----------|--------------------------------------|
+| OpenAI | `/v1/embeddings`, `/v1/audio/transcriptions`, `/v1/audio/speech`, `/v1/files`, `/v1/fine-tuning/*`, and any future endpoints |
+| Anthropic | `/v1/complete`, `/v1/messages/batches`, `/v1/models`, and any future endpoints |
+| Ollama | `/api/embeddings`, `/api/tags`, `/api/pull`, and more |
+| Custom providers | Any path your upstream accepts |
+
+### Model selection
+
+When the request body contains a `model` field, Routerly matches it against the project's configured models (by ID or upstream model ID) and uses the corresponding provider credentials. If no match is found, or the request has no body, it falls back to the first configured model in the project.
+
+### Reserved namespaces
+
+The following paths are **never** proxied and always return a Routerly-native response:
+
+| Path | Behaviour |
+|------|-----------|
+| `/` | Redirect to `/dashboard/` |
+| `/health` | Health check response |
+| `/api/*` | Management API |
+| `/dashboard*` | Dashboard static files |
+
+Any request to these paths with a project token receives a standard 404, not a proxy attempt.
+
+### Example: embeddings
+
+```http
+POST /v1/embeddings
+Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN
+Content-Type: application/json
+
+{
+  "model": "text-embedding-3-small",
+  "input": "The quick brown fox"
+}
+```
+
+Routerly finds the configured model matching `text-embedding-3-small`, injects the upstream API key, and forwards the request to `https://api.openai.com/v1/embeddings`. The response is streamed back as-is.
+
+### Error codes
+
+| Code | Cause |
+|------|-------|
+| `401` | Missing or invalid project token |
+| `502 no_upstream` | Project has no configured models |
+| `502 upstream_error` | Network error reaching the upstream provider |
+
+---
+
+## Management API
+
+The Management API is used by the dashboard and the CLI. Authentication is via a **JWT** obtained from `POST /api/auth/login`.
+
+Full endpoint catalogue: [API — Management](../api/management).
+
+### Key routes
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/auth/login` | Obtain a JWT |
+| `GET` | `/api/models` | List registered models |
+| `POST` | `/api/models` | Register a new model |
+| `PUT` | `/api/models/:id` | Update a model |
+| `DELETE` | `/api/models/:id` | Remove a model |
+| `GET` | `/api/projects` | List projects |
+| `POST` | `/api/projects` | Create a project |
+| `GET` | `/api/usage` | Query usage records |
+| `GET` | `/api/usage/:id` | Read one usage record by record id or trace id |
+| `GET` | `/api/settings` | Read service settings |
+| `PUT` | `/api/settings` | Update service settings |
+| `GET` | `/api/users` | List users (admin only) |
+| `GET` | `/api/spend-groups` | List org/team spend groups with usage |
+| `POST` | `/api/spend-groups` | Create a spend group |
+| `PUT` | `/api/spend-groups/:id` | Update a spend group |
+| `DELETE` | `/api/spend-groups/:id` | Delete a spend group |
+| `GET` | `/api/notifications/inbox` | List the current user's in-app notifications |
+| `POST` | `/api/notifications/inbox/read` | Mark notifications as read (`ids[]` or `all`) |
+| `GET` | `/api/me/mcp-tools` | List the MCP tools the caller's own tokens expose |
+| `GET` | `/api/me/mcp-tokens` | List the caller's personal MCP tokens |
+| `POST` | `/api/me/mcp-tokens` | Create a personal MCP token (raw value returned once) |
+| `DELETE` | `/api/me/mcp-tokens/:id` | Revoke a personal MCP token |
+
+---
+
+## MCP Server
+
+Routerly's `mcp` module exposes the gateway's own management API as tools to
+[Model Context Protocol](https://modelcontextprotocol.io/) clients (Claude
+Code, Claude Desktop, Codex, OpenCode, OpenClaw, and similar). This is a
+distinct surface from the LLM Proxy: `/mcp` never forwards anything to an
+upstream provider, it only reads and writes Routerly's own configuration and
+usage data through a fixed set of built-in tools. See
+[Concepts: MCP Server](../concepts/mcp.md) for the full tool list and both
+transports.
+
+### `POST /mcp`
+
+Streamable HTTP transport, JSON-RPC 2.0. Self-authenticating: this route is
+excluded from the standard project-token auth guard and validates the token
+itself.
+
+**Authentication:** `Authorization: Bearer sk-rt-mcp-YOUR_MCP_TOKEN`, a
+personal MCP token. Project tokens (`sk-rt-…`) are rejected: the token
+identifies a **user**, and the call runs with that user's permissions.
+
+```http
+POST /mcp
+Authorization: Bearer sk-rt-mcp-YOUR_MCP_TOKEN
+Content-Type: application/json
+Accept: application/json, text/event-stream
+
+{ "jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {} }
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "tools": [
+      { "name": "list_models", "description": "...", "inputSchema": { "type": "object", "properties": {} } }
+    ]
+  }
+}
+```
+
+`tools/list` returns only the tools the token owner's role permits, and
+`tools/call` re-checks the same permission, so an under-permissioned client
+can neither see nor reach a tool it cannot use.
+
+### stdio transport
+
+For local MCP clients that spawn a subprocess (Claude Desktop and similar),
+run:
+
+```bash
+routerly mcp serve
+```
+
+This is a thin wrapper: it resolves an MCP token, then spawns the Routerly
+service binary with `ROUTERLY_MCP_STDIO=1` and `ROUTERLY_MCP_TOKEN=<token>`
+set, which starts only the stdio MCP server bound to that token owner's
+identity. The identity is resolved once at startup, so a role change reaches
+a running session only after a restart. See
+[Reference: Environment Variables](../reference/environment-variables.md#mcp-server-variables)
+if you are connecting a real MCP client directly to the service binary
+instead of via the CLI.
+
+### Error codes
+
+| Code | Cause |
+|------|-------|
+| `401` | Missing `Authorization` header |
+| `401` | Unknown or revoked token, or a project token used in place of an MCP token |
+| `401` | Token past its `expiresAt` |
+
+A `tools/call` the caller lacks the permission for does not fail at the HTTP
+level (still `200`); the JSON-RPC result carries `isError: true` with an
+explanatory message.
+
+---
+
+## Dashboard
+
+When `dashboardEnabled: true` (default), the service bundles and serves the React web UI as static files.
+
+| Path | Behaviour |
+|------|-----------|
+| `GET /dashboard/` | Serves `index.html` (React app entry point) |
+| `GET /dashboard/*` | Static assets (JS, CSS, icons) — falls back to `index.html` for client-side routes |
+| `GET /dashboard` | Redirects to `/dashboard/` |
+| `GET /` | Redirects to `/dashboard/` |
+
+To disable the dashboard (e.g. in a headless production deployment):
+
+```json
+// settings.json
+{ "dashboardEnabled": false }
+```
+
+---
+
+## Health Check
+
+```http
+GET /health
+```
+
+No authentication required. Returns HTTP 200 with a JSON body:
+
+```json
+{
+  "status": "ok",
+  "version": "0.1.5",
+  "timestamp": "2026-03-27T12:00:00.000Z"
+}
+```
+
+Suitable for Docker `HEALTHCHECK`, Kubernetes liveness probes, and load balancer checks.
+
+---
+
+## Traces
+
+LLM Proxy responses carry no Routerly headers. To follow a request, send your own
+correlation id on it and read the entries on the management API while they happen:
+
+```http
+POST /v1/chat/completions
+x-routerly-trace: my-request-42
+```
+
+```http
+GET /api/traces/stream?correlationId=my-request-42
+```
+
+The id is consumed by Routerly: it is not forwarded upstream and changes neither
+the request nor the response payload. Once the request is done, its trace is on
+the usage record, and the dashboard shows it in Usage and in the Playground.
+
+---
+
+## Related
+
+- [API — LLM Proxy](../api/llm-proxy) — full request/response schemas
+- [API — Management](../api/management) — full management endpoint catalogue
+- [Service — Routing Engine](./routing-engine) — how the model is selected for each request
+- [Concepts: MCP Server](../concepts/mcp): MCP tools, transports, and personal tokens
