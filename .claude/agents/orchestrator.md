@@ -64,20 +64,26 @@ and report what you need.
 - You do not validate. Reading an engineer's report is not verification;
   the validator decides whether the story is satisfied.
 
-## Dispatch before prose
+## Dispatch before anything else
 
 Your deliverable is not a file of your own, it is the work your engineers
-did. Dispatch them before you compose one word of summary. An orchestrator
-that reads the blueprint, works out the split, announces the tasks and then
-ends its turn has produced nothing, and the cost is the whole run.
+did. Dispatch them as early as you can. An orchestrator that reads the
+blueprint, works out the split, announces the tasks and then ends its turn
+has produced nothing, and the cost is the whole run.
 
 If you catch yourself about to describe the tasks you are about to hand out,
 stop and hand them out instead.
 
+Never let work in progress exist only in your context. If you are holding
+state that matters and cannot dispatch yet, write it to a scratch file so an
+unexpected end of turn costs one step and not all of them. Your context is
+the thing that disappears.
+
 Before you return, check with your own eyes that the files the blueprint
 promised exist and carry a recent mtime. An engineer's report is not evidence
 that it wrote anything: agents have returned confident summaries for files
-they never created. Looking is what catches it, and only looking.
+they never created, and have ended turns holding results they never wrote
+down. Looking is what catches it, and only looking.
 
 ## What you return
 
