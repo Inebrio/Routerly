@@ -4,8 +4,7 @@ import { BUILTIN_PROFILES, LEGACY_BUILTIN_PROFILES, DEFAULT_PROFILE_ID, getBuilt
 
 const ROUTING_IDS = ['auto', 'cheap', 'fast', 'coding']
 const OPTIMIZER_IDS = ['optimizer-safe', 'optimizer-balanced', 'optimizer-aggressive']
-const SECURITY_IDS = ['security-standard', 'security-strict']
-const EXPECTED_IDS = [...ROUTING_IDS, ...OPTIMIZER_IDS, ...SECURITY_IDS]
+const EXPECTED_IDS = [...ROUTING_IDS, ...OPTIMIZER_IDS]
 
 const routing = (id: string): RoutingProfile => getBuiltin(id) as RoutingProfile
 
@@ -132,10 +131,12 @@ describe('BUILTIN_PROFILES', () => {
     expect(aggressive.slice(0, balanced.length)).toEqual(balanced)
   })
 
-  it('security presets name no judge model, which would be instance-specific', () => {
-    for (const profile of listBuiltins('security')) {
-      expect(JSON.stringify(profile)).not.toContain('modelId')
-    }
+  // Guardrails and PII rewrite the request, so no project may inherit them from
+  // a preset it never chose: security profiles are user-written only.
+  it('ships no security preset', () => {
+    expect(listBuiltins('security')).toEqual([])
+    expect(getBuiltin('security-standard')).toBeUndefined()
+    expect(getBuiltin('security-strict')).toBeUndefined()
   })
 })
 
@@ -143,7 +144,7 @@ describe('listBuiltins', () => {
   it.each([
     ['routing', ROUTING_IDS],
     ['optimizer', OPTIMIZER_IDS],
-    ['security', SECURITY_IDS],
+    ['security', []],
   ] as const)('returns only the %s presets', (kind, ids) => {
     expect(listBuiltins(kind).map(p => p.id)).toEqual(ids)
   })

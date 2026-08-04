@@ -48,7 +48,10 @@ Routerly ships these built-in profiles:
 
 - Routing: **Auto**, **Cheap**, **Fast**, **Coding**
 - Optimizer: **Safe**, **Balanced**, **Aggressive**
-- Security: **Standard**, **Strict**
+
+Security ships no built-in profile. Guardrails and PII policies rewrite the
+request, so a project never inherits them from a preset it did not choose: every
+security profile is written by you, from scratch or by cloning one of your own.
 
 Built-in profiles cannot be edited or deleted, so their row shows a **View**
 (read-only) button instead of Edit. Custom profile rows show **Edit** and
