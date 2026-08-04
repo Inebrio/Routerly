@@ -9,6 +9,7 @@ import { CostCard, SavingsCard, TokensCard, savingsSeriesData, type SavingsMetri
 import { useFilterState } from '../hooks/useFilterState';
 import { tokenLabel } from '../utils/tokenLabel';
 import { useProviderLabels } from '../hooks/useProviderLabels';
+import { isCaptureMode } from '../utils/captureMode';
 
 type ModelSortKey = 'rank' | 'model' | 'provider' | 'calls' | 'errors' | 'successRate'
   | 'avgLatency' | 'p95Latency' | 'inputTokens' | 'outputTokens' | 'costPer1k' | 'cost';
@@ -396,7 +397,10 @@ export function UsagePage() {
               Detailed call logs and per-model breakdown
               {lastUpdated && (
                 <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginLeft: 8 }}>
-                  · updated at {lastUpdated.toLocaleTimeString()}
+                  {/* Fixed placeholder while capturing documentation screenshots: the real
+                      clock is wall-clock derived and differs between two runs of the same
+                      commit. See ../utils/captureMode. */}
+                  · updated at {isCaptureMode() ? '12:00:00 PM' : lastUpdated.toLocaleTimeString()}
                 </span>
               )}
             </p>
