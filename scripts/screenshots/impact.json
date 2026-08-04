@@ -1,0 +1,37 @@
+{
+  "_readme": "Mapping from repo-relative source paths to RA-14 manifest shot names, consumed by scripts/screenshots-affected.mjs. 'match' is a glob against a repo-relative path: an exact path, a 'Prefix*' glob within one path segment, or a 'dir/**' recursive glob. 'shots' is an array of manifest names, or the literal '*' meaning every shot. Default when a changed path under packages/dashboard/src/** (or any other non-ignored path) matches no rule: every shot is selected, not none, erring toward more per EC1. This is loud and safe on purpose; do not read a full regeneration as a bug.",
+  "rules": [
+    { "match": "packages/dashboard/src/pages/LoginPage.tsx", "shots": ["screenshot-login"] },
+    { "match": "packages/dashboard/src/pages/OverviewPage.tsx", "shots": ["screenshot-overview"] },
+    { "match": "packages/dashboard/src/pages/ModelsPage.tsx", "shots": ["screenshot-models"] },
+    { "match": "packages/dashboard/src/pages/ModelDiscoveryPage.tsx", "shots": ["screenshot-models-discover"] },
+    { "match": "packages/dashboard/src/pages/ModelFormPage.tsx", "shots": ["screenshot-models-new-prefilled"] },
+    { "match": "packages/dashboard/src/pages/ProjectsPage.tsx", "shots": ["screenshot-projects"] },
+    { "match": "packages/dashboard/src/pages/project/ProjectRoutingTab.tsx", "shots": ["screenshot-project-routing-profile"] },
+    { "match": "packages/dashboard/src/pages/project/ProjectOptimizerTab.tsx", "shots": ["screenshot-project-optimizer-tab"] },
+    { "match": "packages/dashboard/src/pages/UsagePage.tsx", "shots": ["screenshot-usage", "screenshot-usage-calls"] },
+    { "match": "packages/dashboard/src/pages/TestPage.tsx", "shots": ["screenshot-playground", "screenshot-playground-trace"] },
+    { "match": "packages/dashboard/src/pages/ExperimentsPage.tsx", "shots": ["screenshot-experiments"] },
+    { "match": "packages/dashboard/src/pages/experiment/ExperimentMetricsTab.tsx", "shots": ["screenshot-experiment-metrics"] },
+    { "match": "packages/dashboard/src/pages/ProfilesPage.tsx", "shots": ["screenshot-profiles"] },
+    { "match": "packages/dashboard/src/pages/ProfilePage.tsx", "shots": ["screenshot-profile", "screenshot-profile-2fa", "screenshot-profile-notifications"] },
+    { "match": "packages/dashboard/src/pages/SettingsPage.tsx", "shots": ["screenshot-settings", "screenshot-settings-integrations"] },
+    { "match": "packages/dashboard/src/pages/NotificationChannelListPage.tsx", "shots": ["screenshot-settings-notifications", "screenshot-settings-notifications-dashboard", "screenshot-settings-notifications-expanded"] },
+    { "match": "packages/dashboard/src/pages/RolesPage.tsx", "shots": ["screenshot-settings-roles"] },
+    { "match": "packages/dashboard/src/pages/UsersPage.tsx", "shots": ["screenshot-settings-users"] },
+    { "match": "packages/dashboard/src/pages/ConnectPage.tsx", "shots": ["screenshot-connect"] },
+    { "match": "packages/dashboard/src/pages/ConnectClientPage.tsx", "shots": ["screenshot-connect-client"] },
+    { "match": "packages/dashboard/src/components/**", "shots": "*" },
+    { "match": "packages/dashboard/src/App.tsx", "shots": "*" }
+  ],
+  "ignore": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "docs/**",
+    "packages/service/**",
+    "packages/cli/**",
+    "packages/shared/**",
+    ".github/**",
+    "scripts/**"
+  ]
+}

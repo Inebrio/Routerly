@@ -20,7 +20,8 @@
     "release": "npm run build && changeset tag",
     "prepare": "husky",
     "docs:cut": "node scripts/docs-version.mjs",
-    "screenshots": "node scripts/capture-screenshots.mjs"
+    "screenshots": "node scripts/capture-screenshots.mjs",
+    "screenshots:affected": "node scripts/screenshots-affected.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",
