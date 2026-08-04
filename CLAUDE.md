@@ -80,7 +80,27 @@ node .claude/scripts/story.mjs claim <story-id> --feature <feature> --base 0.4.0
 
 ### Parallelism
 
-Stories are the unit, not features. Independent stories run at once, up to **three** concurrently; the dependency graph decides what is independent. Three is a machine limit, not a coordination one: six worktrees running suites, dev servers and container builds at the same time saturate the laptop this runs on, and every story then goes slower than it would have alone.
+Stories are the unit, not features. Independent stories run at once; the dependency graph decides what is *allowed* to run in parallel, and the machine decides how many of those actually do.
+
+**Concurrency is measured, not chosen. Between one and six, never a fixed number.** Before every dispatch:
+
+```
+sh .claude/scripts/capacity.sh
+```
+
+It samples for five seconds and prints the slot count, the reason it is that number, how many stories are already in flight, and how many more to dispatch. The exit code is the slot count, so it can gate a loop. Dispatch what it says and not one more. If it says zero more, the answer is to let the running stories finish, never to push the seventh and hope.
+
+The signals it reads, and why each is there:
+
+- **Kernel memory pressure** (`kern.memorystatus_vm_pressure_level`) is the one to trust over the others, because it is what the OS itself acts on. WARN caps at three, CRITICAL at one.
+- **Swap growth, not swap used.** Used never falls on macOS: pages stay in swap until something touches them, so a machine that recovered an hour ago still reads eleven gigabytes used and means nothing by it. Growth is the part that means something.
+- **Free memory percentage.** Below twenty per cent this laptop starts paging out things the user is actively using, which is the state where it stops being usable for anything else.
+- **Load per core**, not raw load. Eight cores make a load of eight ordinary and a load of twenty-four a wall.
+
+Two things the script cannot see, so they are yours to apply on top of it:
+
+- **A container build under QEMU emulation counts for more than one slot.** A `docker buildx --platform linux/amd64,linux/arm64` on this machine froze it hard: buildkit OOM-killed in an eight-gigabyte VM, load average fifty-nine, swap at thirteen gigabytes of fourteen. If a story needs one, it runs alone or it moves to CI.
+- **The measurement is a snapshot.** Re-run it between dispatches, not once at the start of a wave.
 
 A slot is held by a story's *implementation*, not by its paperwork. Once a story passes validation, its qa and docs agents keep running while the slot is already claimed by the next story. Holding a slot open for tests and documentation is the single cheapest way to waste hours. Stories touching the same file or the same contract run sequentially, in graph order. The registry (`.claude/registry.json`, main checkout, lock-protected) is what stops two sessions taking the same story or the same ports.
 
