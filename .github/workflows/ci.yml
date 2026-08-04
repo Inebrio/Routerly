@@ -64,14 +64,19 @@ jobs:
       - name: Build service (required by the cli suite)
         run: npm run build --workspace=packages/service
 
+      # Coverage floor rule: the floor only ever moves up, never down. It is
+      # raised by a maintainer, in a pull request that also shows the
+      # measurement supporting the new value. It is never lowered just to
+      # make a red build green. The floor itself lives in each package's
+      # vitest.config.ts, not here.
       - name: Test shared
-        run: npm test --workspace=packages/shared -- --coverage --coverage.thresholds.lines=0 --coverage.thresholds.branches=0 --coverage.thresholds.functions=0 --coverage.thresholds.statements=0 --coverage.reportOnFailure
+        run: npm test --workspace=packages/shared -- --coverage --coverage.reportOnFailure
 
       - name: Test service
-        run: npm test --workspace=packages/service -- --coverage --coverage.thresholds.lines=0 --coverage.thresholds.branches=0 --coverage.thresholds.functions=0 --coverage.thresholds.statements=0 --coverage.reportOnFailure
+        run: npm test --workspace=packages/service -- --coverage --coverage.reportOnFailure
 
       - name: Test cli
-        run: npm test --workspace=packages/cli -- --coverage --coverage.thresholds.lines=0 --coverage.thresholds.branches=0 --coverage.thresholds.functions=0 --coverage.thresholds.statements=0 --coverage.reportOnFailure
+        run: npm test --workspace=packages/cli -- --coverage --coverage.reportOnFailure
 
       - name: Test dashboard
         run: npm test --workspace=packages/dashboard -- --coverage --coverage.thresholds.lines=0 --coverage.thresholds.branches=0 --coverage.thresholds.functions=0 --coverage.thresholds.statements=0 --coverage.reportOnFailure
