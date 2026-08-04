@@ -5,6 +5,8 @@ tools: Read, Grep, Glob, Write, Skill
 skills:
   - user-story-format
 model: sonnet
+effort: medium
+maxTurns: 15
 color: yellow
 hooks:
   PreToolUse:

@@ -6,6 +6,8 @@ skills:
   - frontend-conventions
   - codebase-map
 model: sonnet
+effort: medium
+maxTurns: 50
 color: purple
 ---
 

@@ -5,9 +5,9 @@ tools: Read, Grep, Glob, Bash, Write, Skill, mcp__plugin_playwright_playwright__
 skills:
   - validation-protocol
   - codebase-map
-model: opus
+model: sonnet
 effort: high
-memory: project
+maxTurns: 60
 color: red
 hooks:
   PreToolUse:
