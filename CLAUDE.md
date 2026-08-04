@@ -21,53 +21,53 @@ Routerly is a router. Its only job is to forward requests to the best provider a
 
 ## Workflow
 
-**Classify first (orchestrator decides, no asking):**
-- No code change needed (question, explanation, reading) → respond directly
-- Any code change required → complex, launch workflow
-- Uncertain → treat as complex
+**Classify first, no asking:**
+- No code change needed (question, explanation, reading) → answer directly
+- Any code change → run the chain
+- Uncertain → run the chain
 
-**Simple** → respond directly, self-verify on each touched surface, report "ready to test".
+Eight agents, artifacts as the only hand-off. Nothing passes through conversation: an agent that needs something reads the file that holds it.
 
-**Complex** → deterministic workflow scripts, no permission seeking between steps:
+| Artifact | Written by | Path |
+|---|---|---|
+| Analysis | analyst | `.claude/specs/<feature>/00-analysis.md` |
+| Story | story-writer | `.claude/specs/<feature>/01-stories/<story-id>.md` |
+| Blueprint | project-manager | `.claude/specs/<feature>/02-blueprint/<story-id>.md` |
+| Validation | validator | `.claude/specs/<feature>/03-validation/<story-id>.md` |
 
-**Before launching Phase 1 — orchestrator pre-flight (mandatory):**
+### Feature level — main session, main checkout
 
-1. **Analyze**: read the relevant existing files (routes, components, similar pages). Understand current patterns, component usage, naming conventions.
-2. **Clarify**: if there are genuine doubts about behavior, placement, or scope — ask the user. One round, all questions together. Do NOT ask if the answer can be inferred from the codebase.
-3. **Task list**: decompose the work into numbered atomic micro-tasks (each independently testable). Example:
-   ```
-   1. Add GET /api/notifications/channels/:id route + test
-   2. Add PATCH /api/notifications/channels/:id route + test
-   3. Add dashboard NotificationChannelDetailPage + route
-   4. Add CLI `routerly notifications channels show <id>` command
-   ```
-4. **Communicate + launch immediately**: show the task list and launch the workflow in the same response — no pause, no confirmation request, no "shall I proceed?". Showing the plan IS the notification; execution follows without waiting.
-5. **Build goal**: detailed `goal` string — not "add X" but "add X to file Y using component Z, matching pattern in W, exact behavior: [description]"
-6. **Launch**:
-   ```
-   Workflow({scriptPath: '.claude/workflows/dev-loop.js', args: {goal, worktreeSlug, tasks}})
-   ```
-   `tasks` = array of `{id, description}` objects from step 3.
+1. **analyst** → analysis, task list, dependency graph. If its report starts with `NEEDS-INPUT`, put its questions to the user with `AskUserQuestion`: state the problem, the options with their consequences, and the recommendation. Send the answers back to the same agent and let it finish.
+2. **story-writer** → one story file per story. No file, function or endpoint names in a story.
+3. **project-manager** → one blueprint per story, with every contact point frozen and the exact start command the validator will run.
+4. **Show and launch in the same response.** Story list plus dependency graph, then start. No "shall I proceed".
 
-**Phase 1** (task-driven loop):
-- Processes tasks one by one: analysis → developer → checker → smoker per task
-- Task list lives in `.ai/state.md`, updated at every step
-- Orchestrator may modify the task list between tasks if new information warrants it
-- Returns when ALL tasks pass smoke, or BLOCKED if a task is unachievable
+### Story level — one teammate per story, one worktree per story
 
-**Interrupt policy**: orchestrator stops and explains to the user ONLY when a task is unachievable for reasons of major architectural impact or irreversible risk. Must detail: exact problem, why it blocks, all possible solutions with tradeoffs. Map the block in state.md. Never interrupt for normal implementation difficulty — the loop handles it.
+Each story runs the `story-lifecycle` skill in its own worktree, branch `story/<feature>/<story-id>`, its own ports, its own `ROUTERLY_HOME`:
 
-Orchestrator presents all-tasks-done evidence to user. **Waits for human approval.**
-
-**Phase 2** (after approval):
 ```
-Workflow({scriptPath: '.claude/workflows/qa-loop.js', args: {goal, worktreeSlug, startingBranch, tasks}})
+node .claude/scripts/story.mjs claim <story-id> --feature <feature> --base 0.4.0
 ```
-Runs: tester (full suite + coverage ≥98% + browser UAT) → docs → reviewer. Returns merge instructions.
 
-Orchestrator waits for **final user approval**, then executes merge + worktree cleanup.
+5. **orchestrator** freezes the interface, then dispatches **backend-engineer** and **frontend-engineer** in parallel where the blueprint says they are independent.
+6. **validator** starts the app on the story's ports and verifies every criterion for real, browser included. It can run anything and change nothing but its own report.
+7. **BLOCKED** → `remediation-loop`, three iterations maximum, then escalate to the user with what survived and why.
+8. **qa-engineer** writes tests, only on a story that passed with zero blockers.
 
-**Every step**: read `.ai/state.md` at start, update it at end.
+### Parallelism
+
+Stories are the unit, not features. Independent stories run at once, up to **three** concurrently; the dependency graph decides what is independent. Stories touching the same file or the same contract run sequentially, in graph order. The registry (`.claude/registry.json`, main checkout, lock-protected) is what stops two sessions taking the same story or the same ports.
+
+### Integration and closing
+
+Merging is the main session's job, never a teammate's. When a story passes: merge its branch into the integration branch in dependency order, then `story.mjs state <id> done` and `story.mjs release <id>`. `release` refuses a worktree holding unmerged work; merge first, never force past it.
+
+A feature closes when every story is done, the integration branch builds and its tests pass, and the user approves. Specs stay on disk after closing: they are gitignored and they are the record of why the code looks the way it does.
+
+**Human gates: two.** The analyst's questions, and the merge. Everything between runs without asking.
+
+**Interrupt policy**: stop and explain only when a story is unachievable for architectural or irreversible reasons. Give the exact problem, why it blocks, and the options with tradeoffs. Never interrupt for ordinary implementation difficulty: the remediation loop handles that.
 
 ---
 
@@ -107,16 +107,11 @@ Artifacts English. Chat follows user language.
 
 ---
 
-## Session memory
+## Memory
 
-`.ai/state.md` (gitignored) — current task, components touched, phase, next steps. Updated at every phase transition.
-
-## Working memory (`.ai/`, gitignored)
-
-Two files are the shared memory between the main thread and all agents. Keep both updated continuously — read them at the start of any task, write them as you go.
-
-- **`.ai/state.md`** — live tracker: current task, phase, doing now, to-do, done, blockers, files touched, hand-off notes. Update at task start, on every phase change, and at the end.
-- **`.ai/memory.md`** — persistent knowledge: non-obvious facts, gotchas, working commands, decisions + why. Append whenever you learn something a future task would otherwise rediscover. Don't duplicate what this file or the code already states.
+- **Specs** (`.claude/specs/`, gitignored) — what is being built and why. The hand-off between agents. One directory per feature, shared by every worktree through a symlink.
+- **Registry** (`.claude/registry.json`, gitignored) — what is in flight right now: story, state, worktree, branch, ports, owning session. Written only through `story.mjs`, never by hand.
+- **`.ai/memory.md`** (gitignored) — persistent knowledge: non-obvious facts, gotchas, working commands, decisions and why. Append whenever you learn something a future task would otherwise rediscover. Don't duplicate what this file, the specs or the code already state.
 
 ## Scratch files — ABSOLUTE
 
