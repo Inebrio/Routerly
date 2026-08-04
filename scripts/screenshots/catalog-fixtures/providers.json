@@ -1,0 +1,61 @@
+{
+  "fixture-labs": {
+    "endpoint": "https://api.fixture-labs.example/v1",
+    "models": [
+      {
+        "id": "fixture-large",
+        "input": 3,
+        "output": 15,
+        "contextWindow": 128000,
+        "notes": "Synthetic screenshot fixture model, not a real provider."
+      },
+      {
+        "id": "fixture-small",
+        "input": 0.5,
+        "output": 1.5,
+        "contextWindow": 32000
+      }
+    ]
+  },
+  "sample-ai": {
+    "endpoint": "https://api.sample-ai.example/v1",
+    "models": [
+      {
+        "id": "sample-pro",
+        "input": 2,
+        "output": 10,
+        "cache": 0.2,
+        "contextWindow": 200000
+      },
+      {
+        "id": "sample-mini",
+        "input": 0.2,
+        "output": 0.8,
+        "contextWindow": 16000
+      },
+      {
+        "id": "sample-embed",
+        "input": 0.02,
+        "output": 0,
+        "capabilities": { "embedding": true }
+      }
+    ]
+  },
+  "demo-cloud": {
+    "endpoint": "https://api.demo-cloud.example/v1",
+    "models": [
+      {
+        "id": "demo-flagship",
+        "input": 4,
+        "output": 20,
+        "contextWindow": 100000
+      },
+      {
+        "id": "demo-fast",
+        "input": 0.3,
+        "output": 1,
+        "contextWindow": 32000
+      }
+    ]
+  }
+}

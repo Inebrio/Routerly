@@ -19,7 +19,8 @@
     "version": "changeset version && node scripts/sync-module-versions.mjs",
     "release": "npm run build && changeset tag",
     "prepare": "husky",
-    "docs:cut": "node scripts/docs-version.mjs"
+    "docs:cut": "node scripts/docs-version.mjs",
+    "screenshots": "node scripts/capture-screenshots.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",
@@ -30,6 +31,7 @@
     "@vitest/coverage-v8": "^4.1.8",
     "eslint": "^9.39.4",
     "husky": "^9.1.7",
+    "playwright": "^1.48.0",
     "prettier": "^3.2.5",
     "typescript": "^5.9.3",
     "vitest": "^4.1.8"
