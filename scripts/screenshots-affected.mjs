@@ -60,6 +60,7 @@ function getChangedPaths(range) {
     const output = execFileSync('git', ['diff', '--name-only', range], {
       cwd: repoRoot,
       encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
     return output.split('\n').map((line) => line.trim()).filter(Boolean);
   } catch (err) {
