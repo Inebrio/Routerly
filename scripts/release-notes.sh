@@ -66,8 +66,11 @@ fi
 
 if command -v git-cliff >/dev/null 2>&1; then
   CLIFF=(git-cliff)
-else
+elif command -v npx >/dev/null 2>&1; then
   CLIFF=(npx --yes "git-cliff@${GIT_CLIFF_VERSION}")
+else
+  echo "release-notes: git-cliff is not installed and npx is not on PATH to fetch it. Install git-cliff ${GIT_CLIFF_VERSION}, or make node available." >&2
+  exit 1
 fi
 
 CLIFF_ARGS=(--config "${REPO_ROOT}/cliff.toml" "${FROM_REF}..${TO_REF}")
@@ -87,4 +90,16 @@ fi
 # directory, and git-cliff's own repository-path resolution does not follow
 # it — it only works through cwd-based discovery.
 cd "$REPO_ROOT"
-"${CLIFF[@]}" "${CLIFF_ARGS[@]}"
+
+# Capture stderr rather than letting it through. When git-cliff is reached via
+# `npx --yes` and the machine is offline, npm fails with a multi-line stack
+# trace, and this script's contract is one line. The captured text is not
+# thrown away: its first line is appended as the cause, so a genuine git-cliff
+# error (a malformed cliff.toml, say) still says what it was.
+CLIFF_ERR="$(mktemp)"
+trap 'rm -f "$CLIFF_ERR"' EXIT
+if ! "${CLIFF[@]}" "${CLIFF_ARGS[@]}" 2>"$CLIFF_ERR"; then
+  CAUSE="$(grep -v '^[[:space:]]*$' "$CLIFF_ERR" | head -1)"
+  echo "release-notes: git-cliff failed to render ${FROM_REF}..${TO_REF}${CAUSE:+ — ${CAUSE}}" >&2
+  exit 1
+fi
