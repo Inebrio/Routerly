@@ -8,6 +8,7 @@ import { passesSafetyGate } from '../gate.js'
 import { optimizerCoreModule } from '../core.js'
 import * as model from './model.js'
 import { llmlingua2Module, llmlingua2Optimizer } from './index.js'
+import { PRODUCT_VERSION } from '../../../core/version.js'
 
 function ctxWith(messages: Message[], threshold?: number, modelKey?: string): ProxyContext {
   const request = { model: 'gpt', messages } as ChatCompletionRequest
@@ -228,6 +229,6 @@ describe('llmlingua-2 optimizer', () => {
 
   it('module manifest depends on optimizer-core', () => {
     expect(llmlingua2Module.manifest.id).toBe('optimizer-llmlingua2')
-    expect(llmlingua2Module.manifest.dependsOn).toEqual({ 'optimizer-core': '^0.4.0' })
+    expect(llmlingua2Module.manifest.dependsOn).toEqual({ 'optimizer-core': `^${PRODUCT_VERSION}` })
   })
 })

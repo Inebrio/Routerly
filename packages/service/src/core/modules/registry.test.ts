@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { ModuleManifest, RouterlyModule } from './index.js'
+import { PRODUCT_VERSION } from '../version.js'
 import {
   isAlwaysOn,
   isModuleEnabled,
@@ -12,11 +13,11 @@ import {
 } from './registry.js'
 
 const all: ModuleManifest[] = [
-  { id: 'config', version: '0.4.0' },
-  { id: 'reverse-proxy', version: '0.4.0' },
-  { id: 'routing', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0' } },
-  { id: 'guardrails', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0' } },
-  { id: 'cache', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0' } },
+  { id: 'config', version: PRODUCT_VERSION },
+  { id: 'reverse-proxy', version: PRODUCT_VERSION },
+  { id: 'routing', version: PRODUCT_VERSION, dependsOn: { 'reverse-proxy': `^${PRODUCT_VERSION}` } },
+  { id: 'guardrails', version: PRODUCT_VERSION, dependsOn: { 'reverse-proxy': `^${PRODUCT_VERSION}` } },
+  { id: 'cache', version: PRODUCT_VERSION, dependsOn: { 'reverse-proxy': `^${PRODUCT_VERSION}` } },
 ]
 
 describe('registry', () => {

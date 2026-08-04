@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { ServiceContainer, EventBus } from '../../core/index.js'
 import { clientConfiguratorModule, isClientConfiguratorEnabled, setClientConfiguratorEnabled } from './module.js'
+import { PRODUCT_VERSION } from '../../core/version.js'
 
 describe('client-configurator module', () => {
   afterEach(() => {
@@ -9,8 +10,8 @@ describe('client-configurator module', () => {
 
   it('has the frozen manifest', () => {
     expect(clientConfiguratorModule.manifest.id).toBe('client-configurator')
-    expect(clientConfiguratorModule.manifest.version).toBe('0.4.0')
-    expect(clientConfiguratorModule.manifest.dependsOn).toEqual({ config: '^0.4.0' })
+    expect(clientConfiguratorModule.manifest.version).toBe(PRODUCT_VERSION)
+    expect(clientConfiguratorModule.manifest.dependsOn).toEqual({ config: `^${PRODUCT_VERSION}` })
   })
 
   it('register() runs without IO and marks the module enabled', async () => {

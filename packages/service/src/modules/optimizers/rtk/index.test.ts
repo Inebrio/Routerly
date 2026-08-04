@@ -6,6 +6,7 @@ import type { ProxyContext } from '../../reverse-proxy/context.js'
 import { readMessages, tokensOf as sharedTokensOf } from '../messages.js'
 import { optimizerCoreModule } from '../core.js'
 import { rtkModule, rtkOptimizer } from './index.js'
+import { PRODUCT_VERSION } from '../../../core/version.js'
 
 function ctxWith(messages: Message[]): ProxyContext {
   const request = { model: 'gpt', messages } as ChatCompletionRequest
@@ -206,6 +207,6 @@ describe('rtk optimizer', () => {
 
   it('module manifest depends on optimizer-core', () => {
     expect(rtkModule.manifest.id).toBe('optimizer-rtk')
-    expect(rtkModule.manifest.dependsOn).toEqual({ 'optimizer-core': '^0.4.0' })
+    expect(rtkModule.manifest.dependsOn).toEqual({ 'optimizer-core': `^${PRODUCT_VERSION}` })
   })
 })

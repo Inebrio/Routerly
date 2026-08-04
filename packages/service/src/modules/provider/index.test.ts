@@ -4,6 +4,7 @@ import { ServiceContainer, EventBus } from '../../core/index.js';
 import { providerModule } from './index.js';
 import { PROVIDER_REGISTRY } from '../../core/tokens.js';
 import { getProviderAdapter } from './registry.js';
+import { PRODUCT_VERSION } from '../../core/version.js';
 
 // Minimal ModelConfig views: getProviderAdapter only reads `provider` and `id`.
 // Casting keeps the test focused on registry behavior, not model shape.
@@ -13,8 +14,8 @@ const model = (provider: string): ModelConfig =>
 describe('provider module', () => {
   it('has the frozen manifest', () => {
     expect(providerModule.manifest.id).toBe('provider');
-    expect(providerModule.manifest.version).toBe('0.4.0');
-    expect(providerModule.manifest.dependsOn).toEqual({ config: '^0.4.0' });
+    expect(providerModule.manifest.version).toBe(PRODUCT_VERSION);
+    expect(providerModule.manifest.dependsOn).toEqual({ config: `^${PRODUCT_VERSION}` });
   });
 
   it('registers PROVIDER_REGISTRY exposing the real getProviderAdapter', async () => {
