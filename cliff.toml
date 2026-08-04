@@ -1,0 +1,70 @@
+# git-cliff configuration for Routerly release notes.
+#
+# git-cliff owns only the GitHub Release body, rendered by
+# scripts/release-notes.sh from an explicit commit range. It never touches
+# the per-package CHANGELOG.md files; those are written by Changesets
+# (.github/workflows/release-version.yml) and are a separate file.
+#
+# Keys verified against git-cliff 2.13.1's own `--init` output (see
+# scripts/release-notes.sh for the pinned version and why it is exact).
+
+[changelog]
+# No timestamp or "generated on" line anywhere in this template: AC2
+# requires two renders of the same range to be byte-identical, and any
+# wall-clock value would break that.
+body = """
+{% if version %}\
+## {{ version }}
+{% else %}\
+## Release Notes
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim }}
+{% for commit in commits %}
+- {% if commit.scope %}**{{ commit.scope }}:** {% endif %}{{ commit.message | upper_first }}
+{% endfor %}
+{% endfor %}
+"""
+trim = true
+# Render a well-formed document even for a range with zero commits (EC1).
+render_always = true
+postprocessors = []
+
+[git]
+conventional_commits = true
+# Non-conforming commits are not dropped (EC2): they fall through to the
+# "Other Changes" catch-all in commit_parsers below instead of being
+# filtered out here.
+filter_unconventional = false
+require_conventional = false
+split_commits = false
+commit_preprocessors = []
+protect_breaking_commits = false
+commit_parsers = [
+    # Merge commits are noise, not a change a reader of release notes cares
+    # about — skip them everywhere, including the catch-all.
+    { message = "^Merge ", skip = true },
+    # Deliberately omitted: these say nothing to a reader of release notes.
+    # "^chore" also covers "chore(release): ..." and the changesets
+    # version-bump commit ("chore: version packages").
+    { message = "^chore", skip = true },
+    { message = "^ci", skip = true },
+    { message = "^build", skip = true },
+    { message = "^test", skip = true },
+    { message = "^style", skip = true },
+    { message = "^feat", group = "<!-- 0 -->Features" },
+    { message = "^fix", group = "<!-- 1 -->Bug Fixes" },
+    { message = "^perf", group = "<!-- 2 -->Performance" },
+    { message = "^docs", group = "<!-- 3 -->Documentation" },
+    { message = "^refactor", group = "<!-- 4 -->Refactor" },
+    # Catch-all: anything non-conforming or otherwise unmatched (EC2).
+    { message = ".*", group = "<!-- 5 -->Other Changes" },
+]
+filter_commits = false
+fail_on_unmatched_commit = false
+link_parsers = []
+use_branch_tags = false
+topo_order = false
+topo_order_commits = true
+sort_commits = "oldest"
+recurse_submodules = false
