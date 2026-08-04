@@ -11,6 +11,9 @@
 
 import { request as httpsRequest } from 'node:https';
 import type { UpdateInfo, AvailableReleases } from '@routerly/shared';
+import { readConfig, writeConfig, type UpdateAnnouncement } from '../config/loader.js';
+import { emitEvent } from '../notifications/emitter.js';
+import { CONFIG_PATHS } from '../../lib/paths.js';
 
 const GITHUB_OWNER = 'Inebrio';
 const GITHUB_REPO  = 'Routerly';
@@ -34,6 +37,24 @@ function isNewer(candidate: string, current: string): boolean {
   if (a[0] !== b[0]) return a[0] > b[0];
   if (a[1] !== b[1]) return a[1] > b[1];
   return a[2] > b[2];
+}
+
+/** A non-empty string, the shared shape guard for the announcement record's fields. */
+function isNonEmptyString(v: unknown): v is string {
+  return typeof v === 'string' && v.length > 0;
+}
+
+/**
+ * True when a stored (possibly partial/corrupt) announcement has the three
+ * fields the announcement rule compares against, each a non-empty string.
+ * `announcedAt` is informational only and is not part of this guard.
+ */
+function isValidAnnouncement(v: Partial<UpdateAnnouncement>): v is UpdateAnnouncement {
+  return (
+    isNonEmptyString(v.announcedVersion) &&
+    isNonEmptyString(v.currentVersion) &&
+    isNonEmptyString(v.channel)
+  );
 }
 
 // ─── GitHub Releases API ──────────────────────────────────────────────────────
@@ -167,6 +188,7 @@ export class UpdateChecker {
         checkedAt: new Date().toISOString(),
       };
       this._result = result;
+      await this.maybeAnnounce(result);
       return result;
     } catch {
       // Network errors, rate limits, etc. — return a safe fallback
@@ -180,6 +202,63 @@ export class UpdateChecker {
       // Only overwrite cached result if we have none yet
       if (!this._result) this._result = fallback;
       return this._result;
+    }
+  }
+
+  /**
+   * Announcement rule (RA-15): when a check finds an available update that
+   * differs from the last persisted announcement, emit `system.update_available`
+   * and persist the new record. Never throws: any failure in reading, emitting
+   * or writing is caught and logged so it cannot change what `check()` returns
+   * or prevent it from returning.
+   */
+  private async maybeAnnounce(result: UpdateInfo): Promise<void> {
+    if (!result.available) return;
+    try {
+      let record: UpdateAnnouncement | null;
+      try {
+        const stored = await readConfig('updateAnnouncement');
+        if (isValidAnnouncement(stored)) {
+          record = stored;
+        } else {
+          record = null;
+          // An empty {} default (no record yet) is not corruption; only a
+          // non-empty object missing/invalidating a required field is.
+          if (Object.keys(stored).length > 0) {
+            console.warn(`update-checker: ignoring malformed announcement record at ${CONFIG_PATHS.updateAnnouncement}`);
+          }
+        }
+      } catch (err) {
+        // Read/parse failure (e.g. invalid JSON on disk): treat as no record,
+        // per the frozen contract, and keep going rather than aborting the check.
+        record = null;
+        console.warn(`update-checker: failed to read announcement record at ${CONFIG_PATHS.updateAnnouncement}`, err);
+      }
+
+      const alreadyAnnounced =
+        record !== null &&
+        record.announcedVersion === result.latestVersion &&
+        record.currentVersion === result.currentVersion &&
+        record.channel === result.channel;
+      if (alreadyAnnounced) return;
+
+      const details: Record<string, unknown> = {
+        currentVersion: result.currentVersion,
+        latestVersion: result.latestVersion,
+        channel: result.channel,
+      };
+      if (result.releaseUrl) details['releaseUrl'] = result.releaseUrl;
+
+      await emitEvent('system.update_available', 'info', details);
+
+      await writeConfig('updateAnnouncement', {
+        announcedVersion: result.latestVersion,
+        currentVersion: result.currentVersion,
+        channel: result.channel,
+        announcedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.warn('update-checker: failed to process the update announcement', err);
     }
   }
 
