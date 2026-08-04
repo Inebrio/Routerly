@@ -1,0 +1,387 @@
+---
+title: Routing Engine
+sidebar_position: 3
+---
+
+# Routing Engine
+
+The routing engine is the component responsible for selecting which model receives each request. It runs a configurable stack of **policies** that each score or filter the candidate model set. The highest-scoring model that passes all filters wins.
+
+---
+
+## Request Selection Lifecycle
+
+For each incoming request the engine performs the following steps:
+
+1. **Load candidates** — Read the project's model list. Each candidate carries its `ModelConfig` (id, provider, cost, context window, capabilities, limits) plus any per-model routing guidance (`prompt`) configured on the project.
+
+2. **Pre-filter: budget limits** — Any model that has already exceeded one of its configured spending or token limits is excluded before the policies run. This is a hard pre-check so exhausted models never consume policy computation.
+
+3. **Run policies in priority order** — Enabled policies execute in the order they appear in the project's policy list. Each policy receives the full candidate set and returns:
+   - A **score** for each model (`0.0` – `1.0`)
+   - Optionally an **excludes** set (hard filters: excluded models are dropped from the candidate set entirely)
+
+4. **Positional scoring** — A base weight is derived from the model's position in the project model list:
+   ```
+   weight = totalPolicies - policyIndex
+   ```
+   With 3 enabled policies: position 0 → weight 3, position 1 → weight 2, position 2 → weight 1. This creates a natural preference ordering even when policies produce equal scores.
+
+5. **Aggregate scores** — For each model: `totalScore = sum(policy.score × policy.weight)`.
+
+6. **Select winner** — The model with the highest `totalScore` among non-excluded candidates is chosen. On a tie the first in the project list wins.
+
+7. **Fallback** — If the winning model returns a provider error or timeout, the engine retries with the next-highest scoring candidate. This continues until a model succeeds or the candidate set is exhausted (→ `503`).
+
+### Optimizers and Context Window Fit
+
+Prompt/context optimizers (see [Concepts: Optimizers](../concepts/optimizers.md))
+run earlier in request handling, in the `request.preprocess` pipeline phase,
+before this lifecycle resolves a candidate model. `ctx.attempt`, which
+carries the resolved model's `contextWindow`, is only populated once step 1
+above has selected a candidate, i.e. after the optimizer pipeline has
+already run.
+
+:::caution headroom is a permanent no-op on live requests today
+The `headroom` optimizer needs the target model's `contextWindow` to decide
+how many turns to trim, but reads it from `ctx.attempt`, which does not
+exist yet during `request.preprocess`. As a result `headroom` never sees a
+context window on a real request and never trims anything in production,
+even though its trim logic is correct and fully covered in isolation by its
+own tests. This is a pipeline-phase ordering gap, not a bug in `headroom`
+itself. Re-checking attempt-dependent optimizers once a candidate is
+resolved is a documented follow-up, not yet scheduled.
+:::
+
+---
+
+## Available Policies
+
+### `context`
+
+**Type:** soft filter + scoring
+
+Estimates the token count of the request and checks it against each model's `contextWindow`. Models that cannot fit the request are excluded (score `0.0`). Models in the "danger zone" (>80% of their window consumed) receive a linear penalty down to a minimum of `0.1`.
+
+No configuration options.
+
+**Use when:** your project mixes models with different context window sizes.
+
+---
+
+### `cheapest`
+
+**Type:** scoring
+
+Scores models by cost efficiency. The cheapest model gets `1.0`; others receive a proportional score (`minCost / theirCost`). Free models (e.g. Ollama) always get `1.0` and paid models are capped at `0.5` when free models coexist — ensuring a meaningful, visible gap between free and paid options.
+
+No configuration options.
+
+**Use when:** cost control is the primary goal.
+
+---
+
+### `health`
+
+**Type:** scoring with circuit breaker
+
+Evaluates the weighted error rate for each model in a recent time window using exponential decay (recent errors weigh more than old ones). A Bayesian prior (`pseudoCounts`) prevents over-penalising models with little data.
+
+When the weighted error rate exceeds `circuitBreaker`, the model's score drops to `0.0` (effectively excluded).
+
+| Config key | Default | Description |
+|------------|---------|-------------|
+| `windowMinutes` | `20` | Look-back window for usage records |
+| `halfLifeMinutes` | `5` | Exponential decay half-life — smaller values weight recent errors more |
+| `pseudoCounts` | `2` | Bayesian smoothing counts (prior successes) |
+| `circuitBreaker` | `0.9` | Weighted error rate threshold that trips the circuit breaker |
+
+Models with no recent records get score `1.0` (optimistic exploration).
+
+Guardrail-blocked requests (`outcome: "blocked"`) are **excluded from the error rate calculation**. A block is a normal policy outcome — the model was not called and did not fail. Only actual model call outcomes (`error`, `timeout`) count against a model's health score.
+
+**Use when:** you want automatic failover when a provider degrades.
+
+---
+
+### `performance`
+
+**Type:** scoring
+
+Scores models by their recent weighted average latency. The fastest model gets `1.0`; others get `minLatency / theirLatency`. Uses the same exponential decay window as `health`.
+
+Only successful calls (`outcome !== 'error' && outcome !== 'timeout'`) contribute to the average. Models without enough samples (`minSamples`) get `1.0`.
+
+| Config key | Default | Description |
+|------------|---------|-------------|
+| `windowMinutes` | `20` | Look-back window |
+| `halfLifeMinutes` | `5` | Decay half-life (set to `0` for unweighted average) |
+| `minSamples` | `1` | Minimum sample count to use the model's data |
+
+**Use when:** response time matters more than cost.
+
+---
+
+### `llm`
+
+**Type:** scoring (uses an LLM to score)
+
+Sends the candidate list and the request to a small "routing LLM" and asks it to score each model's fit for the task. Scores are returned as JSON (`0.0`–`1.0`). The system prompt instructs the routing LLM to match task complexity to model capability (simple tasks → smaller models; complex tasks → stronger models).
+
+Per-model `prompt` guidance (set on the project model entry) is included in the system prompt to give the routing LLM operator-defined hints (e.g. "prefer this model for code tasks").
+
+| Config key | Default | Description |
+|------------|---------|-------------|
+| `modelId` | _(required)_ | ID of the model to use as the routing LLM |
+| `additionalPrompt` | — | Extra instructions injected into the routing system prompt |
+
+**Use when:** you want semantic, task-aware routing without hand-crafting rules.
+
+:::caution Cost
+The `llm` policy itself makes an LLM call, which incurs cost and adds latency to every proxied request. Use a small, fast model as the routing LLM.
+:::
+
+---
+
+### `capability`
+
+**Type:** hard filter
+
+Inspects the request body and excludes models that explicitly declare they do not support a required capability. Capability mismatches result in score `0.0`.
+
+Detected capabilities:
+
+| Capability | Trigger |
+|------------|---------|
+| `vision` | Request contains a message with an `image_url` content part |
+| `functionCalling` | Request contains `tools` or `functions` |
+| `json` | `response_format.type === 'json_object'` |
+
+Models that do not declare a capability (i.e. the field is absent) are assumed compatible — only an explicit `false` triggers exclusion.
+
+No configuration options.
+
+**Use when:** your project includes a mix of models with different capability sets.
+
+---
+
+### `rate-limit`
+
+**Type:** scoring with optional hard threshold
+
+Counts recent calls per model and penalises heavily-used ones to reduce the risk of hitting provider-side rate limits (HTTP 429). Uses proportional scoring: the least-used model gets `1.0`.
+
+Only models that have a `calls` limit configured are scored by this policy; models without a `calls` limit always get `1.0`.
+
+| Config key | Default | Description |
+|------------|---------|-------------|
+| `windowMinutes` | `1` | Look-back window |
+| `maxCallsPerWindow` | — | Hard threshold — models over this are excluded |
+
+**Use when:** you have multiple projects sharing a provider API key with a strict RPM limit.
+
+---
+
+### `fairness`
+
+**Type:** scoring
+
+Distributes traffic evenly across candidates by penalising models that have received a disproportionate share of recent successful calls. Score = `1 - (myShare / totalCalls)`. A model that monopolises all traffic scores `0.0`; a perfectly balanced distribution across N models gives each model `1 - 1/N`.
+
+| Config key | Default | Description |
+|------------|---------|-------------|
+| `windowMinutes` | `60` | Look-back window for call counts |
+
+**Use when:** you want round-robin-like load distribution across equivalent models.
+
+---
+
+### `budget-remaining`
+
+**Type:** scoring
+
+Scores models by how much budget headroom they have left across all configured limits (global thresholds, project budgets, token budgets). The score is the minimum headroom ratio across all active limits: `(limit - used) / limit`. A model with 80% budget remaining scores `0.8`; a fully exhausted model scores `0.0`.
+
+No configuration options (reads limits from the project and model config).
+
+**Use when:** you want to spread spending across multiple models before any single one runs dry.
+
+---
+
+### `semantic-intent`
+
+**Type:** hard filter (pool narrowing)
+
+Classifies the incoming request by semantic intent using embedding-based similarity, then restricts the candidate pool to the models mapped to that intent. Policies that run after it (e.g. `cheapest`, `performance`) operate only within the narrowed pool.
+
+#### How it works
+
+1. The last user message is extracted from the request.
+2. It is embedded using the configured embedding model/provider.
+3. Each intent's **centroid** — the element-wise mean of its example phrase embeddings — is computed (and cached for 1 hour).
+4. Cosine similarity is computed between the request vector and every intent centroid.
+5. The result is classified as `confident`, `ambiguous`, or `unknown`:
+
+| Status | Condition | Candidate pool |
+|---|---|---|
+| `confident` | `topScore ≥ absolute_threshold` and `margin ≥ ambiguity_threshold` | Intent's `candidate_models` only |
+| `ambiguous` | `topScore ≥ absolute_threshold` but `margin < ambiguity_threshold` | Union of top-2 intents' `candidate_models` |
+| `unknown` | `topScore < absolute_threshold` | All candidates (no filtering) |
+
+**Credential resolution:** When `embedding_model` is set, the policy automatically looks up `apiKey` and `endpoint` from the service's `models.json` registry. This lets the dashboard save only the model ID without storing API keys in project config. If the embedding model is not found in the registry, the policy logs a warning and passes all candidates through.
+
+If the embedding call itself fails (e.g. provider is unavailable), the policy degrades gracefully and passes all candidates through unchanged.
+
+#### Configuration
+
+| Config key | Default | Description |
+|------------|---------|-------------|
+| `embedding_provider` | _(required)_ | `openai` or `ollama` |
+| `embedding_model` | _(required)_ | Embedding model ID. The model must have `capabilities.embedding = true` in `models.json`. Credentials (`apiKey`, `endpoint`) are resolved from the model registry automatically. |
+| `embedding_endpoint` | — | Custom base URL override (useful for self-hosted Ollama). If not provided, the endpoint is looked up from the model registry. |
+| `embedding_api_key` | — | API key override. If not provided, the key is looked up from the model registry. |
+| `absolute_threshold` | `0.60` | Minimum cosine similarity to recognise a match |
+| `ambiguity_threshold` | `0.08` | Minimum margin between top-2 scores to resolve ambiguity |
+| `intents` | _(required)_ | Map of intent name → `{ examples: string[], candidate_models: string[] }` |
+
+#### Intent definition
+
+```json
+{
+  "intents": {
+    "billing": {
+      "examples": [
+        "I need an invoice",
+        "Can I change my payment method?",
+        "Refund request"
+      ],
+      "candidate_models": ["gpt-4.1-mini"]
+    },
+    "code_review": {
+      "examples": [
+        "Review this pull request",
+        "Check my TypeScript code",
+        "What's wrong with this function?"
+      ],
+      "candidate_models": ["claude-3-7-sonnet", "gpt-4.1"]
+    }
+  }
+}
+```
+
+Intent names are normalised to `snake_case` (e.g. `"Customer Support"` → `customer_support`).
+
+#### Trace entries
+
+The policy emits three trace entries visible in the **Router Response** panel of the dashboard:
+
+| Message | When | Details |
+|---|---|---|
+| `policy:semantic-intent:classification` | Always (when text is classified) | `topIntent`, `topScore`, `secondIntent`, `secondScore`, `margin`, `status` |
+| `policy:semantic-intent:result` | After pool narrowing | `allowed`, `excluded`, `status` |
+| `policy:semantic-intent:error` | If the embedding call fails | `error` message |
+
+#### Centroid cache
+
+Intent centroids are computed once — embedding all example phrases and averaging them — then stored in memory with a 1-hour TTL. The cache key includes a hash of the example phrases, so changing an intent's examples automatically invalidates it without a service restart.
+
+**Use when:** you have distinct request categories that must always reach specific models (support triage, multilingual routing, task-type segregation, etc.).
+
+:::info Recommended pipeline position
+Place `semantic-intent` **before** scoring policies (`cheapest`, `performance`, `llm`) so they score only within the already-narrowed pool. Place it **after** hard-filter policies (`health`, `context`, `capability`) so unhealthy or incapable models are excluded before intent matching.
+
+Suggested order: `health` → `context` → `capability` → `budget-remaining` → `rate-limit` → **`semantic-intent`** → `llm` → `performance` → `fairness` → `cheapest`
+:::
+
+---
+
+## Routing Profiles
+
+A **routing profile** (`RoutingProfile`, `kind: 'routing'`) packages a policy
+list, a **selector**, and a **fallback strategy** into one reusable, versioned
+unit, stored via [`GET/POST/PATCH/DELETE /api/profiles`](../api/management.md#profiles)
+alongside the optimizer and security profile kinds. A project resolves its
+effective routing profile at request time: if the project has a
+`routingProfileId` set, that profile's policies/selector/fallback are used
+instead of the project's own inline policy list; otherwise the project's own
+inline policies run through the default selector/fallback behaviour described
+above (argmax-equivalent, no live fallback wiring, see the caution below).
+
+### Built-in Profiles
+
+4 routing built-ins ship as code constants (never persisted, never mutable):
+`auto`, `cheap`, `fast`, `coding`. Two retired presets, `balanced` and
+`offline`, still resolve for projects that reference them but are never listed;
+`balanced` is rewritten to `auto` by the routing module's config migration.
+Cloning a built-in (`POST /api/profiles/clone`) writes a new, editable copy to
+`profiles.json` with `builtin: false` and `version: 1`; every subsequent
+`PATCH` bumps `version` by 1. See
+[Concepts: Routing: Routing Profiles](../concepts/routing.md#routing-profiles)
+for what each built-in optimizes for.
+
+### Selectors
+
+After the policy layer scores and filters candidates (steps 3-5 above), the
+profile's **selector** picks the final model from the ranked list:
+
+| Selector | Behaviour |
+|----------|-----------|
+| `argmax` | Highest score wins; near-ties (within a small tolerance) resolve by weighted-random among the tied group. |
+| `weighted-random` | One candidate is picked at random with probability proportional to its score. |
+| `round-robin` | Deterministic rotation through candidates, keyed by project id, ignoring score. |
+| `cheapest` | Lowest `cost` wins; undefined cost sorts last; ties break by score. |
+| `lowest-latency` | Lowest recently-observed latency wins; unknown latency sorts last. |
+
+Implemented in `packages/service/src/modules/routing/selectors/index.ts`
+(`SELECTOR_MAP`).
+
+### Fallback Strategies
+
+| Strategy | Behaviour |
+|----------|-----------|
+| `next-best` | Try the next-highest-ranked remaining candidate. |
+| `retry-after-cooldown` | Put the failed model on a cooldown and retry it later rather than moving on immediately. |
+| `abort` | Stop with no retry. |
+
+Implemented in `packages/service/src/modules/routing/fallback/index.ts`
+(`FALLBACK_MAP`).
+
+:::caution Not yet wired into the retry loop
+`fallbackStrategy` is stored on the profile, returned by every profile
+endpoint, and editable from the dashboard, but the reverse-proxy's retry loop
+(step 7 above) does not currently read it: retries still follow the
+positional-scoring fallback order described in step 7, regardless of the
+resolved profile's `fallbackStrategy`. This is confirmed scope for a future
+change, not a bug in the current profile CRUD endpoints.
+:::
+
+---
+
+## Policy Ordering and Weights
+
+Policies are applied in the order configured in the project. Their positional weight (`total − index`) means policies near the top of the list have more influence on the final score. Reorder policies via the dashboard (**Projects → your project → Routing**) or the CLI.
+
+**Example** — 3 policies enabled (health, cheapest, performance):
+
+| Policy | Position | Weight | Score for model A | Weighted score |
+|--------|----------|--------|-------------------|----------------|
+| health | 0 | 3 | 0.9 | 2.70 |
+| cheapest | 1 | 2 | 0.6 | 1.20 |
+| performance | 2 | 1 | 0.8 | 0.80 |
+| **Total** | | | | **4.70** |
+
+---
+
+## Routing Trace
+
+Every request produces a routing trace that records each policy's scores and decisions, alongside what the other modules did (guardrails, PII, budget, resilience, the upstream call). Each entry is stamped with the pipeline phase and the module that reported it.
+
+The trace is visible in the dashboard's Playground and Usage views, streamed live on `GET /api/traces/stream`, and can be exported to an OpenTelemetry collector or a webhook (see [Trace Export](../api/management#trace-export)). The proxied response is never modified to carry it.
+
+---
+
+## Related
+
+- [Concepts — Routing](../concepts/routing) — conceptual overview for end users
+- [Service — Provider Adapters](./providers) — what happens after a model is selected
+- [Dashboard — Playground](../dashboard/playground) — interactive trace viewer
