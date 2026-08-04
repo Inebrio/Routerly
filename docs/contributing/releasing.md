@@ -212,3 +212,61 @@ npm run serve --prefix website -- --port <port> --no-open
 Open the site and use the version switcher in the nav: the new version
 and `next` (the always-current, in-progress documentation) are both
 listed and each shows its own version banner.
+
+## Rebuilding a Docker image
+
+The published image can lag the code it was built from: a base image gets a
+security patch, a build step needs to run again, or a past release's image
+turns out to have shipped with a broken layer. The **Docker Rebuild**
+workflow (`.github/workflows/docker-rebuild.yml`) rebuilds and republishes
+the image for a version that has already been released, without cutting a
+new version and without going through the normal release pipeline.
+
+### Triggering it
+
+It only runs on manual dispatch, from the Actions tab (**Docker Rebuild** →
+**Run workflow**) or with the GitHub CLI:
+
+```bash
+gh workflow run docker-rebuild.yml -f version=1.4.0
+```
+
+The `version` input is optional and accepts either shape, `v1.4.0` or
+`1.4.0`. Leave it empty and the workflow reads the version straight out of
+`packages/service/package.json` instead.
+
+### What it writes, and what it leaves alone
+
+The workflow always pushes `inebrio/routerly:v<X.Y.Z>` for the version you
+gave it, rebuilt for both `linux/amd64` and `linux/arm64`. That part is
+unconditional: rebuilding `1.2.0` always overwrites `inebrio/routerly:v1.2.0`.
+
+`inebrio/routerly:latest` is different. The workflow reads every `vX.Y.Z`
+tag in the repository's git history, keeps the highest one, and moves
+`:latest` only if the version you are rebuilding is that highest version (or
+if no release tag exists yet at all). Rebuild the current newest release and
+`:latest` moves with it, as expected. Rebuild an older one, say `1.2.0` when
+`1.4.0` has since shipped, and only `inebrio/routerly:v1.2.0` is written;
+`inebrio/routerly:latest` still points at `1.4.0` and the workflow does not
+touch it. This is the whole point of the workflow: fixing an old image must
+never make an old image look like the newest one to anyone who pulls
+`:latest`.
+
+Pre-release tags (`vX.Y.Z-rc.N`) are not counted when the workflow looks for
+the highest version: it only reads tags shaped `vX.Y.Z`, plain semver, so a
+release candidate hanging around never becomes what an old rebuild is
+compared against.
+
+### Refusals
+
+The workflow validates the version before doing anything else — no checkout
+of Docker Hub credentials or build step runs on a bad input. Given a
+version that is not `vX.Y.Z` or `X.Y.Z` (`latest`, `0.2`, `1.4.0.0`), it
+fails the run with:
+
+```
+::error::Invalid version 'latest' — accepted shapes are vX.Y.Z or X.Y.Z
+```
+
+and pushes nothing. There is no partial state to clean up: the tag decision
+and the build both happen after this check passes.
