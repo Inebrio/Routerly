@@ -27,6 +27,10 @@ const ADMIN_PASSWORD = 'Capture-Fixture-Pass-1!';
 const VIEWPORT = { width: 1800, height: 987 };
 const HEALTH_TIMEOUT_MS = 30_000;
 const ACTION_TIMEOUT_MS = 10_000;
+// How long the page must stay free of in-flight requests and loading spinners
+// before it counts as settled, and how often that is sampled. See waitForQuiet.
+const QUIET_WINDOW_MS = 500;
+const POLL_INTERVAL_MS = 50;
 const DISABLE_MOTION_CSS = '* { animation: none !important; transition: none !important; }';
 // Fixed so the port never shows up as a moving value in a screenshot; override with
 // ROUTERLY_SCREENSHOT_PORT if 47816 is taken locally.
@@ -45,11 +49,11 @@ function withCaptureFlag(path) {
   return path.includes('?') ? `${path}&${CAPTURE_MODE_QUERY}` : `${path}?${CAPTURE_MODE_QUERY}`;
 }
 // Fixed TOTP secret baked into every 2FA-setup screenshot so the QR code is identical
-// across runs. Not a real secret — capture-only fixture, see the 2FA route handler below.
+// across runs. Not a real secret: capture-only fixture, see the 2FA route handler below.
 const FIXED_TOTP_SECRET = 'JBSWY3DPEHPK3PXP';
 // screenshot-profile-2fa's captured step (right after "Enable Two-Factor Authentication")
 // also renders the backup codes list, so it needs a fixed list for the same reason as the
-// secret above. Not real codes — capture-only fixture.
+// secret above. Not real codes: capture-only fixture.
 const FIXED_BACKUP_CODES = [
   'A1B2C3D4', 'E5F6A7B8', 'C9D0E1F2', 'A3B4C5D6',
   'E7F8A9B0', 'C1D2E3F4', 'A5B6C7D8', 'E9F0A1B2',
@@ -177,7 +181,7 @@ async function stopCatalogServer(server) {
 // this mock instead. custom providers are handled by CustomAdapter
 // (packages/service/src/modules/provider/custom.ts), which POSTs
 // `${endpoint}/chat/completions` with `stream: false|true` and expects back a
-// ChatCompletionResponse or an SSE stream of StreamChunk frames respectively — this mock
+// ChatCompletionResponse or an SSE stream of StreamChunk frames respectively. This mock
 // implements exactly that contract, nothing more.
 const MOCK_LLM_REPLY = 'This is a fixed local response used only to populate the debug trace for documentation screenshots.';
 // Fixed, not Date.now(): nothing in the mock's response should vary run to run.
@@ -320,13 +324,51 @@ async function runStep(page, step) {
   }
 }
 
+// Waits until the dashboard says it has finished loading, and keeps saying so
+// for QUIET_WINDOW_MS. `.spinner` is the single class every page uses for its
+// loading indicator (index.css), and every page raises it the same way: the
+// effect that fetches sets `loading` before the request and clears it after, so
+// the spinner is up for exactly as long as the data is missing. The periodic
+// refresh those pages also run does not raise it, so a settled page stays
+// settled.
+//
+// Playwright's own `networkidle` cannot do this job. It is a property of the
+// last *navigation*: once it has fired it stays fired, so awaiting it again
+// after an in-page click returns at once and proves nothing. That is how two
+// runs of the same shot disagreed, one catching the usage table and the other
+// the spinner that had replaced it while the filtered query was in flight.
+//
+// Counting requests instead was tried and abandoned: a request the browser
+// cancels because a navigation superseded it does not reliably emit
+// `requestfinished` or `requestfailed`, so the count leaks upward and every
+// later shot times out waiting for a page that is in fact idle. The spinner is
+// the page's own statement and cannot leak.
+//
+// The window matters as much as the check. Sampling once would pass on the
+// frame between a click and React mounting the spinner; requiring the page to
+// be clear for QUIET_WINDOW_MS means a spinner raised at any point inside it
+// resets the clock.
+async function waitForQuiet(page) {
+  const deadline = Date.now() + ACTION_TIMEOUT_MS;
+  let quietSince = null;
+  for (;;) {
+    if ((await page.$('.spinner')) !== null) {
+      quietSince = null;
+    } else if (quietSince === null) {
+      quietSince = Date.now();
+    } else if (Date.now() - quietSince >= QUIET_WINDOW_MS) {
+      return;
+    }
+    if (Date.now() > deadline) {
+      throw new Error(`page never went quiet: a loading spinner was still on screen after ${ACTION_TIMEOUT_MS}ms`);
+    }
+    await sleep(POLL_INTERVAL_MS);
+  }
+}
+
 async function captureShot(page, baseUrl, shot) {
   await page.goto(withCaptureFlag(`${baseUrl}${shot.path}`), { waitUntil: 'domcontentloaded' });
   await page.addStyleTag({ content: DISABLE_MOTION_CSS });
-
-  for (const step of shot.steps ?? []) {
-    await runStep(page, step);
-  }
 
   // A route with no match falls through to the client-side catch-all redirect
   // (`{ path: '*', element: <Navigate to="overview" replace /> }` in App.tsx),
@@ -334,18 +376,30 @@ async function captureShot(page, baseUrl, shot) {
   // Right after goto() the browser can still be sitting on the stale/bad URL;
   // give React Router's effect a chance to run before reading page.url(), or
   // this check races the redirect and silently passes on a bad path.
+  //
+  // Checked here, before the steps, and not after them: `path` is the URL this
+  // shot navigates to, and the only failure it can describe is a manifest entry
+  // pointing at a route that no longer exists. A step is free to navigate
+  // somewhere else on purpose (opening a channel pushes a detail route), and
+  // running this check afterwards flagged those shots as broken while they were
+  // behaving exactly as the manifest asked.
   await page.waitForLoadState('networkidle', { timeout: ACTION_TIMEOUT_MS }).catch(() => {});
 
   const expectedPathname = new URL(shot.path, baseUrl).pathname;
   const actualPathname = new URL(page.url()).pathname;
   if (actualPathname !== expectedPathname) {
-    throw new Error(`shot "${shot.name}" expected path "${expectedPathname}" but the page is at "${actualPathname}" — the manifest entry may point at a route that no longer exists`);
+    throw new Error(`shot "${shot.name}" expected path "${expectedPathname}" but the page is at "${actualPathname}": the manifest entry may point at a route that no longer exists`);
   }
+
+  for (const step of shot.steps ?? []) {
+    await runStep(page, step);
+  }
+
+  await waitForQuiet(page);
 
   if (shot.waitFor) {
     await page.waitForSelector(shot.waitFor, { state: 'visible', timeout: ACTION_TIMEOUT_MS });
   } else {
-    await page.waitForLoadState('networkidle', { timeout: ACTION_TIMEOUT_MS });
     // Authenticated routes render inside <main>; standalone routes (e.g. login) mount
     // straight into #root without a <main> landmark. Either satisfies "the page's main
     // landmark is attached".
@@ -392,7 +446,15 @@ async function main() {
 
   let browser;
   try {
-    browser = await chromium.launch();
+    browser = await chromium.launch({
+      // Two runs of the same shot differed in exactly twenty pixels, every one
+      // of them the antialiasing of a single card's two rounded corners and by
+      // one to three units on near-black. That is the rasterizer, not the page:
+      // tiled GPU raster may reuse a partially rastered tile and redraw an edge
+      // slightly differently. Force the software path and forbid partial raster
+      // so identical layout always produces identical bytes.
+      args: ['--disable-gpu', '--disable-partial-raster'],
+    });
   } catch (err) {
     if (!explainBrowserLaunchError(err)) {
       process.stderr.write(`failed to launch chromium: ${err.message}\n`);
@@ -438,8 +500,8 @@ async function main() {
     });
 
     // Defense-in-depth, browser-side network block: only the throwaway service and the
-    // catalog fixture server (both on 127.0.0.1) may be reached. Everything else — Google
-    // Fonts, any stray external call — is aborted so a capture run needs no network access.
+    // catalog fixture server (both on 127.0.0.1) may be reached. Everything else, Google
+    // Fonts included, is aborted so a capture run needs no network access.
     await context.route('**/*', async (route) => {
       const url = new URL(route.request().url());
       if (url.hostname === '127.0.0.1' || url.hostname === 'localhost') {
