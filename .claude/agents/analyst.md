@@ -7,7 +7,7 @@ skills:
   - codebase-map
 model: opus
 effort: high
-memory: project
+maxTurns: 40
 color: cyan
 hooks:
   PreToolUse:

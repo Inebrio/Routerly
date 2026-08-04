@@ -4,7 +4,9 @@ description: Runs the implementation of one story. Assigns blueprint tasks to th
 tools: Read, Grep, Glob, Write, Agent, Skill
 skills:
   - interface-contracts
-model: opus
+model: sonnet
+effort: high
+maxTurns: 40
 color: pink
 hooks:
   PreToolUse:

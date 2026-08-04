@@ -6,6 +6,8 @@ skills:
   - test-conventions
   - codebase-map
 model: sonnet
+effort: medium
+maxTurns: 40
 color: green
 hooks:
   PreToolUse:
