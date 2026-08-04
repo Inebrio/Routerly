@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Write, Bash, Skill
 skills:
   - blueprint-format
   - project-conventions
-model: sonnet
+model: opus
 effort: medium
 maxTurns: 30
 color: orange
