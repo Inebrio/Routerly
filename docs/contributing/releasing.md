@@ -259,13 +259,13 @@ compared against.
 
 ### Refusals
 
-The workflow validates the version before doing anything else — no checkout
+The workflow validates the version before doing anything else, so no checkout
 of Docker Hub credentials or build step runs on a bad input. Given a
 version that is not `vX.Y.Z` or `X.Y.Z` (`latest`, `0.2`, `1.4.0.0`), it
 fails the run with:
 
 ```
-::error::Invalid version 'latest' — accepted shapes are vX.Y.Z or X.Y.Z
+::error::Invalid version 'latest'. Accepted shapes are vX.Y.Z or X.Y.Z
 ```
 
 and pushes nothing. There is no partial state to clean up: the tag decision
