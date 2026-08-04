@@ -1,0 +1,35 @@
+{
+  "$comment": "Project-specific side of the story harness. story.mjs stays generic; everything that knows about this application lives here. Placeholders: {{worktree}}, {{storyId}}, {{port0}}..{{portN}}, {{home}}.",
+
+  "specsRoot": ".claude/specs",
+  "worktreeRoot": ".claude/worktrees",
+  "branchPattern": "story/{{feature}}/{{storyId}}",
+
+  "ports": {
+    "base": 3100,
+    "perStory": 2
+  },
+
+  "env": {
+    "ROUTERLY_HOME": "{{worktree}}/.routerly",
+    "ROUTERLY_STORY_ID": "{{storyId}}",
+    "PORT": "{{port0}}",
+    "VITE_PORT": "{{port1}}"
+  },
+
+  "carry": ["CLAUDE.local.md", ".env", ".env.local"],
+
+  "seed": [
+    { "from": "{{home}}/.routerly/config", "to": "{{worktree}}/.routerly/config" },
+    { "from": "{{home}}/.routerly/secret", "to": "{{worktree}}/.routerly/secret" }
+  ],
+
+  "patch": [
+    {
+      "file": "{{worktree}}/.routerly/config/settings.json",
+      "set": { "port": "{{port0}}" }
+    }
+  ],
+
+  "startCommand": "npm run dev"
+}

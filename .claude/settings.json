@@ -23,11 +23,15 @@
       "Bash(git add *)",
       "Bash(git commit*)",
       "Bash(git worktree *)",
+      "Bash(node .claude/scripts/story.mjs*)",
       "Bash(git merge*)",
       "Bash(git checkout*)",
       "Bash(curl http://localhost:*)",
       "Bash(python3 -c *)"
     ],
     "deny": []
+  },
+  "worktree": {
+    "baseRef": "head"
   }
 }
