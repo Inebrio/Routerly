@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { ServiceContainer, EventBus } from '../../core/index.js'
 import { PROXY_PIPELINE } from '../../core/tokens.js'
+import { PRODUCT_VERSION } from '../../core/version.js'
 import { reverseProxyModule } from './module.js'
 import { getProxyPipeline } from './run.js'
 import { openaiTransportProcessors } from './lanes/openai.js'
@@ -9,8 +10,8 @@ import { anthropicTransportProcessors } from './lanes/anthropic.js'
 describe('reverse-proxy module', () => {
   it('has the frozen manifest', () => {
     expect(reverseProxyModule.manifest.id).toBe('reverse-proxy')
-    expect(reverseProxyModule.manifest.version).toBe('0.4.0')
-    expect(reverseProxyModule.manifest.dependsOn).toEqual({ config: '^0.4.0', provider: '^0.4.0' })
+    expect(reverseProxyModule.manifest.version).toBe(PRODUCT_VERSION)
+    expect(reverseProxyModule.manifest.dependsOn).toEqual({ config: `^${PRODUCT_VERSION}`, provider: `^${PRODUCT_VERSION}` })
   })
 
   it('registers PROXY_PIPELINE with only the transport processors, and publishes it via setProxyPipeline', async () => {

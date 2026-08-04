@@ -8,6 +8,7 @@ import { readMessages } from '../messages.js'
 import { passesSafetyGate } from '../gate.js'
 import { optimizerCoreModule } from '../core.js'
 import { relevanceModule, relevanceOptimizer } from './index.js'
+import { PRODUCT_VERSION } from '../../../core/version.js'
 
 function ctxWith(messages: Message[], threshold?: number): ProxyContext {
   const request = { model: 'gpt', messages } as ChatCompletionRequest
@@ -222,6 +223,6 @@ describe('relevance optimizer', () => {
 
   it('module manifest depends on optimizer-core', () => {
     expect(relevanceModule.manifest.id).toBe('optimizer-relevance')
-    expect(relevanceModule.manifest.dependsOn).toEqual({ 'optimizer-core': '^0.4.0' })
+    expect(relevanceModule.manifest.dependsOn).toEqual({ 'optimizer-core': `^${PRODUCT_VERSION}` })
   })
 })

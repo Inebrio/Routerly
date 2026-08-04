@@ -16,7 +16,7 @@
     "lint": "eslint packages/*/src --ext .ts",
     "format": "prettier --write \"packages/*/src/**/*.ts\"",
     "changeset": "changeset",
-    "version": "changeset version",
+    "version": "changeset version && node scripts/sync-module-versions.mjs",
     "release": "npm run build && changeset tag",
     "prepare": "husky",
     "docs:cut": "node scripts/docs-version.mjs"
