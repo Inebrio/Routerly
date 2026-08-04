@@ -121,10 +121,22 @@ export function buildFixture(
   }
 
   fs.copyFileSync(path.join(REAL_WEBSITE, 'package.json'), path.join(websiteDir, 'package.json'))
+  fs.copyFileSync(path.join(REAL_WEBSITE, 'package-lock.json'), path.join(websiteDir, 'package-lock.json'))
   fs.copyFileSync(path.join(REAL_WEBSITE, 'sidebars.ts'), path.join(websiteDir, 'sidebars.ts'))
   fs.writeFileSync(path.join(websiteDir, 'src', 'css', 'custom.css'), '')
   fs.symlinkSync(path.join(REAL_WEBSITE, 'static'), path.join(websiteDir, 'static'))
-  fs.symlinkSync(path.join(REAL_WEBSITE, 'node_modules'), path.join(websiteDir, 'node_modules'))
+
+  // Borrow the real install when there is one: it turns a multi-minute `npm ci`
+  // into nothing. When there is not one — a fresh CI checkout, where
+  // `website/node_modules` is gitignored and `website` is not an npm workspace,
+  // so nothing installs it — leave the path empty instead of pointing it at a
+  // directory that does not exist. A dangling symlink is worse than no symlink:
+  // the script's own `npm ci --prefix website` fallback would then install
+  // through it, into the real checkout. With the lockfile copied above, that
+  // fallback now succeeds inside the fixture, where it belongs.
+  if (fs.existsSync(path.join(REAL_WEBSITE, 'node_modules'))) {
+    fs.symlinkSync(path.join(REAL_WEBSITE, 'node_modules'), path.join(websiteDir, 'node_modules'))
+  }
 
   const versionsPath = path.join(websiteDir, 'versions.json')
   fs.writeFileSync(versionsPath, JSON.stringify(initialVersions))
