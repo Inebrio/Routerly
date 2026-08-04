@@ -126,3 +126,73 @@ from several things working together, not from the fixed port alone:
 Framing (layout, viewport, element positions) is stable across two runs on
 the same machine. Byte-identical output across different machines is not
 guaranteed: font rendering varies by OS.
+
+## Deciding what to regenerate
+
+Everything above is fully sufficient on its own. A contributor with no Claude
+access and no interest in the pieces below can always run `npm run
+screenshots` to regenerate everything, or work out by hand which shots a
+change affects and run `npm run screenshots -- --only <names>`. Nothing in
+this section is a dependency of the capture script; it never calls the
+capture script and the capture script never calls it. It is a convenience
+layer that answers the "which shots" question for you, mechanically or with
+judgement, so you do not have to read `manifest.json` and the diff yourself
+every time.
+
+### The selector
+
+`scripts/screenshots-affected.mjs` reads a git diff, maps the changed paths
+to shot names through `scripts/screenshots/impact.json`, and prints the
+matching names to stdout, one per line:
+
+```
+npm run screenshots:affected -- --range <git-range>
+```
+
+The range defaults to `HEAD~1..HEAD` when `--range` is omitted. Output is
+empty (and the exit code still `0`) when nothing is affected. The script
+exits `1` with a message on stderr on an invalid range, or if
+`impact.json` names a shot that `manifest.json` does not have.
+
+`impact.json` is a committed, ordered list of glob rules mapping source
+paths to manifest shot names, plus an `ignore` list for paths that never
+invalidate a screenshot (tests, docs, non-dashboard packages). A changed
+dashboard path that matches neither list selects every shot rather than
+none: the default errs toward regenerating too much, never too little, so a
+full run should be read as the tool being cautious, not as a bug.
+
+The selector only prints names. It never invokes `npm run screenshots`
+itself, so it keeps telling you the truth even if the capture script itself
+is broken.
+
+### The one-liner
+
+The selector's output composes directly into the capture script's `--only`
+flag:
+
+```
+npm run screenshots -- --only "$(npm run --silent screenshots:affected | paste -sd, -)"
+```
+
+This is the whole convenience layer in one command: figure out what changed
+since the last commit, and regenerate only that. If the selector's output
+is empty, the composed command is a no-op.
+
+### The pre-push hook
+
+`.husky/pre-push` runs the selector automatically, but only on `release/*`
+branches, and only as a proposal: it prints the affected shots and the
+one-liner above to act on them, and always exits `0`. It never blocks a
+push, never captures a screenshot and never commits anything. On any other
+branch it exits immediately and adds no delay.
+
+### The review skill
+
+`.claude/skills/screenshot-review/SKILL.md` is the judgement layer on top
+of the selector, for changes a file-path map cannot decide on its own, such
+as a shared component that reaches pages `impact.json` did not anticipate.
+It runs the selector first, reads the actual diff, widens the list when the
+change reaches further than the mechanical rules describe, never narrows it
+below what the selector printed, and shows the final list to a person for
+approval before running the capture. It reports a failing capture as a
+failure, never as success, and leaves committing the result to the person.
