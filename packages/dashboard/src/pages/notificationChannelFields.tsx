@@ -60,6 +60,7 @@ const EVENT_LABELS: Record<string, string> = {
   'budget.reset':              'Budget – Reset',
   'system.startup':            'System – Startup',
   'system.shutdown':           'System – Shutdown',
+  'system.update_available':   'System – Update Available',
 };
 
 import { NOTIFICATION_EVENTS } from '@routerly/shared';
