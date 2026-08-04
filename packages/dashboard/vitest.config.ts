@@ -17,6 +17,10 @@ export default defineConfig({
     environment: 'happy-dom',
     include: ['src/**/*.test.tsx', 'src/**/*.test.ts'],
     setupFiles: ['./src/test-setup.ts'],
+    // 68 files render React in parallel: the 5s default expires on load, not on
+    // a broken assertion, and the file that times out changes every run.
+    testTimeout: 30000,
+    hookTimeout: 30000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

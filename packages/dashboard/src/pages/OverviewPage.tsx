@@ -9,15 +9,32 @@ import { CLIENT_REGISTRY } from '@routerly/shared';
 import { getUsage, getModels, getProjects, type UsageStats } from '../api.js';
 import { useClientsEnabled } from './ConnectPage.js';
 import { ChartTooltip, axisProps, seriesColor, useChartTheme } from '../components/charts.js';
-import { DateRangePicker, PRESETS, type DateRange } from '../components/DateRangePicker.js';
+import { DateRangePicker, PRESETS, RECENT_PRESETS, parseStoredRange, type DateRange } from '../components/DateRangePicker.js';
 import { CostCard, SavingsCard, StatCard, TokensCard, compactCost, savingsSeriesData, type SavingsMetric } from '../components/savings.js';
+import { useFilterState } from '../hooks/useFilterState.js';
 import { formatCost } from '../utils/traceUtils.js';
 
 export function OverviewPage() {
   const [stats, setStats] = useState<UsageStats | null>(null);
   const [statsError, setStatsError] = useState(false);
-  // Same picker the Usage page carries, so a window means the same thing on both (T203).
-  const [dateRange, setDateRange] = useState<DateRange>(() => PRESETS.find(p => p.label === 'This month')!.range());
+  // Same picker the Usage page carries, so a window means the same thing on both (T203),
+  // and remembered the same way, so a reload keeps the window the user picked.
+  const [dateRange, setDateRange] = useFilterState<DateRange>({
+    key: 'overview-filters-dateRange',
+    defaultValue: PRESETS.find(p => p.label === 'This month')!.range(),
+    deserialize: parseStoredRange,
+  });
+
+  // A relative preset stored yesterday still says "This month" but holds
+  // yesterday's dates: re-apply it so the label and the window agree again.
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    if (RECENT_PRESETS.some(p => p.label === dateRange.label)) return;
+    if (!dateRange.to || dateRange.to.slice(0, 10) >= today) return;
+    const preset = PRESETS.find(p => p.label === dateRange.label);
+    if (preset) setDateRange(preset.range());
+  }, []);
+
   const [modelCount, setModelCount] = useState(0);
   const [projectCount, setProjectCount] = useState(0);
   const [savingsMetric, setSavingsMetric] = useState<SavingsMetric>('cost');
@@ -26,8 +43,15 @@ export function OverviewPage() {
   useEffect(() => {
     // `series` carries the savings bucketed over time for the chart (T81),
     // `savings` the whole-window totals per baseline the saving cards read (T102).
-    const from = dateRange.from || undefined;
-    const to = dateRange.to || undefined;
+    let from = dateRange.from || undefined;
+    let to = dateRange.to || undefined;
+    // A stored minute/hour window is only meaningful relative to now.
+    const recentPreset = RECENT_PRESETS.find(p => p.label === dateRange.label);
+    if (recentPreset) {
+      const fresh = recentPreset.range();
+      from = fresh.from;
+      to = fresh.to;
+    }
     const period = from || to ? 'custom' : 'all';
     getUsage(period, undefined, from, to, undefined, undefined, { series: true, savings: true })
       .then(setStats).catch(() => setStatsError(true));
