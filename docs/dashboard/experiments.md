@@ -112,16 +112,9 @@ range, and **All time**, which is the default here since an experiment is
 usually read over its whole history. The counter on the left shows how many
 calls the window measured.
 
-A row of cards summarises the comparison before the table:
-
-| Card | Description |
-|------|-------------|
-| **Calls** | Calls measured in the window, and how many variants split them |
-| **Cost** | USD spent by the experiment in the window |
-| **Errors** | Failed calls and their share of the total, in red when above zero |
-| **Cheapest per call** | Winning variant, its cost per call against the priciest one, and the gap between them |
-| **Fastest** | Winning variant, its average latency against the slowest one, and the gap |
-| **Best judge score** | Winning variant, its score out of 10 and the judged-call count, both all time (see the note below) |
+The table carries the whole comparison. The better figure of each pair is
+highlighted (cheaper per call, faster, higher judge score) and the percentage
+under a value is its distance from the best arm.
 
 | Column | Description |
 |--------|-------------|
