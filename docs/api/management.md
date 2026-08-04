@@ -493,9 +493,11 @@ unit. Its `kind` decides which fields it carries:
 Every profile also has `id`, `kind`, `label`, `version`, `builtin` and, when it
 was produced by [Clone Profile](#clone-profile), `baseId`.
 
-Routerly ships read-only built-ins per kind (`auto`, `cheap`, `fast`, `coding`;
-`optimizer-safe`, `optimizer-balanced`, `optimizer-aggressive`;
-`security-standard`, `security-strict`). A project either keeps its own inline
+Routerly ships read-only built-ins for two kinds (`auto`, `cheap`, `fast`,
+`coding`; `optimizer-safe`, `optimizer-balanced`, `optimizer-aggressive`).
+Security ships none: guardrails and PII policies rewrite the request, so a
+project never inherits them from a preset it did not choose, and every security
+profile is user-created. A project either keeps its own inline
 configuration for a kind or is assigned a profile of that kind via
 [Assign Project Profiles](#assign-project-profiles); the three kinds are
 assigned independently.
@@ -547,13 +549,13 @@ result to one kind; omit it to get all three.
     "builtin": true
   },
   {
-    "id": "security-standard",
+    "id": "b1e7c0f2-9a4d-4c31-8f0a-2d6b5e7c1a90",
     "kind": "security",
     "version": 1,
-    "label": "Standard",
+    "label": "My Security Profile",
     "guardrails": { "detectInjection": true, "rules": [] },
     "pii": { "policies": [{ "target": "request", "entities": ["EMAIL", "PHONE", "CREDIT_CARD", "SSN", "IBAN"] }] },
-    "builtin": true
+    "builtin": false
   }
 ]
 ```
@@ -1699,6 +1701,7 @@ Query parameters:
 | `projectIds` | string | Comma-separated project IDs to filter by |
 | `model` | string | Filter by model ID |
 | `modelIds` | string | Comma-separated model IDs to filter by |
+| `tokenIds` | string | Comma-separated project token IDs to filter by. Matches the token the call authenticated with, so a project's traffic can be narrowed to one client. Records written before 0.4.0 carry no `tokenId` and are excluded whenever this filter is set |
 | `callType` | string | Who made the call: `completion` (the client), `routing`, or `guardrail`. `completion` also matches legacy records with no `callType` field |
 | `requestType` | string | What was asked for, from the endpoint the client hit: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio`. `chat` also matches records written before 0.4.0, which had no `requestType` field |
 | `outcome` | string | `success`, `error`, `budget_exceeded`, `timeout`, `blocked`. `error` matches records that are neither `success` nor `blocked` |
@@ -1709,7 +1712,7 @@ Query parameters:
 
 `callType` and `requestType` are two different questions about the same record. A semantic-intent embedding fired by the router is `callType: "routing"`, `requestType: "embedding"`; a plain chat request from a client is `callType: "completion"`, `requestType: "chat"`. Calls the gateway forwards through the pass-through proxy (embeddings, images, audio) are recorded with their `requestType` and zero tokens, since their body is streamed to the client rather than parsed.
 
-All filters are applied server-side. `projectIds` and `modelIds` accept comma-separated values for multi-value filtering; they combine with (AND) the single-value `project` and `model` parameters when both are provided, narrowing the result to records that match every active filter.
+All filters are applied server-side. `projectIds`, `modelIds` and `tokenIds` accept comma-separated values for multi-value filtering; they combine with (AND) the single-value `project` and `model` parameters when both are provided, narrowing the result to records that match every active filter.
 
 **Response summary object:**
 
@@ -1774,6 +1777,8 @@ Each `byModel` entry includes:
 | `success` | Number of successful calls |
 | `avgLatencyMs` | Mean response time in milliseconds |
 | `p95LatencyMs` | 95th-percentile response time in milliseconds |
+
+Every record in the `records` array carries `tokenId`, the project token the call authenticated with, taken from the bearer token that was presented and never from the payload. Records written before 0.4.0 have no such field. Internal calls that no client token stands behind, such as an experiment rotation firing on its own, are recorded without one.
 
 Guardrail judge call records appear in the `records` array with `callType: "guardrail"`. Blocked request records appear with `outcome: "blocked"` and `callType: "guardrail"`. The `errorCalls` counter excludes blocked requests -- a block is a normal guardrail outcome, not a model error.
 
@@ -2009,56 +2014,6 @@ data: {"traceId":"018f3c2a-...","entry":{"phase":"routing.prepare","module":"rou
 This is how the Playground follows a request live: it picks a correlation id, sends it on the proxy request as `x-routerly-trace`, and reads it back here. The proxied request and its response are untouched — the id never reaches the provider and no header is added to the answer.
 
 A comment line (`: ping`) is written every 15 seconds so idle streams survive proxies.
-
----
-
-## End Users
-
-### List End Users
-
-```
-GET /api/end-users
-```
-
-**Auth**: `Authorization: Bearer <jwt>` (requires `report:read`)
-
-**Query parameters:**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `projectId` | string | Filter by project ID (optional) |
-
-**Response `200`:**
-
-```json
-{
-  "users": [
-    {
-      "userId": "user-123",
-      "projectId": "proj-uuid",
-      "firstSeen": "2026-06-15T10:30:00.000Z",
-      "lastSeen": "2026-06-25T14:45:30.000Z",
-      "requests": 142,
-      "totalTokens": 45600,
-      "totalCost": 0.0456
-    }
-  ]
-}
-```
-
-**Response fields:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `userId` | string | End-user identifier (from `body.user` in the request) |
-| `projectId` | string | Project ID this user is attributed to |
-| `firstSeen` | ISO 8601 | Timestamp of first request |
-| `lastSeen` | ISO 8601 | Timestamp of most recent request |
-| `requests` | number | Total request count for this user |
-| `totalTokens` | number | Total tokens used (input + output) |
-| `totalCost` | number | Estimated USD cost |
-
-**Errors**: `403` insufficient permissions
 
 ---
 

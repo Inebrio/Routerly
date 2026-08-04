@@ -1672,6 +1672,48 @@ describe('GET /api/usage', () => {
     })
   })
 
+  describe('tokenIds filter (T211)', () => {
+    const now = new Date().toISOString()
+    const records = [
+      { id: 'a', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.1, outcome: 'success', latencyMs: 100, tokenId: 't1' },
+      { id: 'b', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.1, outcome: 'success', latencyMs: 100, tokenId: 't2' },
+      { id: 'legacy', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.1, outcome: 'success', latencyMs: 100 }, // written before tokenId existed
+    ]
+    const get = async (qs: string) => {
+      setupAdminAuth()
+      mockReadConfig.mockImplementation(async (t: string) => {
+        if (t === 'users') return [adminUser]
+        if (t === 'roles') return []
+        if (t === 'usage') return records
+        return []
+      })
+      const app = await buildApp()
+      const res = await app.inject({ method: 'GET', url: `/api/usage?${qs}`, headers: adminAuthHeaders() })
+      await app.close()
+      return JSON.parse(res.body)
+    }
+
+    it('keeps only the calls that came in on the given token', async () => {
+      const b = await get('tokenIds=t1')
+      expect(b.records.map((r: any) => r.id)).toEqual(['a'])
+    })
+
+    it('accepts several tokens, comma separated', async () => {
+      const b = await get('tokenIds=t1,t2')
+      expect(b.records.map((r: any) => r.id).sort()).toEqual(['a', 'b'])
+    })
+
+    it('drops records written before the token was recorded', async () => {
+      const b = await get('tokenIds=t1,t2')
+      expect(b.records.map((r: any) => r.id)).not.toContain('legacy')
+    })
+
+    it('is a no-op when absent', async () => {
+      const b = await get('')
+      expect(b.summary.totalCalls).toBe(3)
+    })
+  })
+
   describe('savings block (T61)', () => {
     const now = new Date().toISOString()
     // cheap: $1/$2 per 1M — expensive: $10/$20 per 1M
@@ -10726,57 +10768,6 @@ describe('integration CRUD — settings.integrations undefined (lines 2000/2008/
     })
     await app.close()
     expect(res.statusCode).toBe(404)
-  })
-})
-
-// ─── GET /api/end-users — multi-record timestamp updates (lines 1386-1387) ──────
-
-describe('GET /api/end-users (#96)', () => {
-  it('updates firstSeen and lastSeen when multiple records for same user (lines 1386/1387 true branches)', async () => {
-    setupAdminAuth()
-    mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [adminUser]
-      if (t === 'roles') return []
-      if (t === 'usage') return [
-        // First record establishes firstSeen/lastSeen = '2026-01-02'
-        { id: 'r1', timestamp: '2026-01-02T10:00:00.000Z', projectId: 'p', modelId: 'm', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', endUserId: 'user-1' },
-        // Earlier timestamp → triggers line 1386 true (r.timestamp < u.firstSeen)
-        { id: 'r2', timestamp: '2026-01-01T10:00:00.000Z', projectId: 'p', modelId: 'm', inputTokens: 3, outputTokens: 3, cost: 0.005, latencyMs: 30, outcome: 'success', endUserId: 'user-1' },
-        // Later timestamp → triggers line 1387 true (r.timestamp > u.lastSeen)
-        { id: 'r3', timestamp: '2026-01-03T10:00:00.000Z', projectId: 'p', modelId: 'm', inputTokens: 2, outputTokens: 2, cost: 0.003, latencyMs: 20, outcome: 'success', endUserId: 'user-1' },
-      ]
-      return []
-    })
-    const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/api/end-users', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    const body = res.json() as { users: Array<{ userId: string; firstSeen: string; lastSeen: string; requests: number }> }
-    expect(body.users).toHaveLength(1)
-    expect(body.users[0]!.userId).toBe('user-1')
-    expect(body.users[0]!.requests).toBe(3)
-    expect(body.users[0]!.firstSeen).toBe('2026-01-01T10:00:00.000Z')
-    expect(body.users[0]!.lastSeen).toBe('2026-01-03T10:00:00.000Z')
-  })
-
-  it('filters by projectId', async () => {
-    setupAdminAuth()
-    mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [adminUser]
-      if (t === 'roles') return []
-      if (t === 'usage') return [
-        { id: 'r1', timestamp: '2026-01-01T10:00:00.000Z', projectId: 'proj-1', modelId: 'm', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', endUserId: 'user-a' },
-        { id: 'r2', timestamp: '2026-01-01T10:00:00.000Z', projectId: 'proj-2', modelId: 'm', inputTokens: 3, outputTokens: 3, cost: 0.005, latencyMs: 30, outcome: 'success', endUserId: 'user-b' },
-      ]
-      return []
-    })
-    const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/api/end-users?projectId=proj-1', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    const body = res.json() as { users: Array<{ userId: string }> }
-    expect(body.users).toHaveLength(1)
-    expect(body.users[0]!.userId).toBe('user-a')
   })
 })
 

@@ -134,6 +134,7 @@ export async function forwardAnthropicOAuth(
 ): Promise<unknown> {
   const startMs = Date.now();
   const projectId = request.project?.id ?? '';
+  const tokenId = request.token?.id;
   const { method, url } = request;
   const targetUrl = buildUpstreamUrl(model, url);
   const headers = buildOAuthForwardHeaders(model, request.headers);
@@ -153,7 +154,7 @@ export async function forwardAnthropicOAuth(
   } catch (err) {
     request.log.error({ err, url: targetUrl }, 'oauth pass-through upstream error');
     if (projectId) {
-      void trackUsage({ projectId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion' }).catch(() => {});
+      void trackUsage({ projectId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}) }).catch(() => {});
     }
     return reply.code(502).send({
       type: 'error',
@@ -182,7 +183,7 @@ export async function forwardAnthropicOAuth(
   );
 
   if (projectId) {
-    void trackUsage({ projectId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion' }).catch(() => {});
+    void trackUsage({ projectId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}) }).catch(() => {});
   }
 
   reply.code(upstream.status);
@@ -209,6 +210,7 @@ export async function forwardAnthropicApiKey(
 ): Promise<unknown> {
   const startMs = Date.now();
   const projectId = request.project?.id ?? '';
+  const tokenId = request.token?.id;
   const { method, url } = request;
   const targetUrl = buildUpstreamUrl(model, url);
 
@@ -235,7 +237,7 @@ export async function forwardAnthropicApiKey(
   } catch (err) {
     request.log.error({ err, url: targetUrl }, 'api-key pass-through upstream error');
     if (projectId) {
-      void trackUsage({ projectId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion' }).catch(() => {});
+      void trackUsage({ projectId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}) }).catch(() => {});
     }
     return reply.code(502).send({ type: 'error', error: { type: 'api_error', message: err instanceof Error ? err.message : 'upstream request failed' } });
   }
@@ -246,7 +248,7 @@ export async function forwardAnthropicApiKey(
   );
 
   if (projectId) {
-    void trackUsage({ projectId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion' }).catch(() => {});
+    void trackUsage({ projectId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}) }).catch(() => {});
   }
 
   upstream.headers.forEach((value, key) => {

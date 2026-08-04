@@ -118,6 +118,7 @@ function trackPassthroughCall(
   latencyMs: number,
   outcome: 'success' | 'error',
   errorMessage?: string,
+  tokenId?: string,
 ): void {
   const requestType = requestTypeFromPath(path);
   if (!requestType) return;
@@ -130,6 +131,7 @@ function trackPassthroughCall(
     outcome,
     requestType,
     ...(errorMessage !== undefined ? { errorMessage } : {}),
+    ...(tokenId ? { tokenId } : {}),
   }).catch(() => {}); // ponytail: usage tracking never blocks the proxied response
 }
 
@@ -164,6 +166,7 @@ export async function passthroughHandler(
   // Authenticate. The auth preHandler usually resolves request.project already;
   // resolve here too as a safeguard for the not-found lifecycle.
   let project = request.project;
+  let tokenId = request.token?.id;
   if (!project) {
     const incomingToken = extractProjectToken(request.headers);
     if (!incomingToken) {
@@ -177,6 +180,7 @@ export async function passthroughHandler(
       return reply.code(401).send({ error: 'unauthorized', message: 'Invalid project token.' });
     }
     project = resolved.project;
+    tokenId = resolved.token.id;
   }
 
   // execution: only route to models on enabled connections
@@ -210,7 +214,7 @@ export async function passthroughHandler(
   } catch (err) {
     request.log.error({ err, url: targetUrl }, 'pass-through upstream error');
     trackPassthroughCall(project.id, model, path, Date.now() - startedAt, 'error',
-      err instanceof Error ? err.message : 'upstream request failed');
+      err instanceof Error ? err.message : 'upstream request failed', tokenId);
     return reply.code(502).send({
       error: 'upstream_error',
       message: err instanceof Error ? err.message : 'upstream request failed',
@@ -236,7 +240,8 @@ export async function passthroughHandler(
   // Latency is time to response headers: the body is streamed, not awaited.
   trackPassthroughCall(project.id, model, path, Date.now() - startedAt,
     upstream.status < 400 ? 'success' : 'error',
-    upstream.status < 400 ? undefined : `upstream responded ${upstream.status}`);
+    upstream.status < 400 ? undefined : `upstream responded ${upstream.status}`,
+    tokenId);
 
   reply.code(upstream.status);
   if (upstream.body) {

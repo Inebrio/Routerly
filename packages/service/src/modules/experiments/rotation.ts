@@ -8,7 +8,7 @@ import { variantShares } from '@routerly/shared';
  * header selects a variant, and nothing is added to the request.
  */
 export interface RotationInput {
-  /** The standard `user` field, when the client sends one. Same field End Users reads. */
+  /** The standard `user` field, when the client sends one. Stored on usage records as `endUserId`. */
   endUserId?: string;
   /** System prompt plus first user message, flattened to text. Stable across the turns of one conversation. */
   conversationPrefix?: string;

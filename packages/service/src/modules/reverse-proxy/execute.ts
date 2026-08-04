@@ -254,6 +254,7 @@ export async function checkBudget(model: ModelConfig, ctx: LLMCallContext): Prom
       outcome: 'error',
       errorMessage: 'budget_exceeded',
       callType,
+      ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
       ...(traceId !== undefined ? { traceId } : {}),
     }).catch(() => {});
     budgetExceededKeys.add(budgetKey);
@@ -404,6 +405,7 @@ export async function llmChat(
       callType,
       ...(traceId !== undefined ? { traceId } : {}),
       ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
+      ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
       ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
       ...(ctx.tags ? { tags: ctx.tags } : {}),
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
@@ -436,6 +438,7 @@ export async function llmChat(
       callType,
       ...(traceId !== undefined ? { traceId } : {}),
       ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
+      ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
       ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
       ...(ctx.tags ? { tags: ctx.tags } : {}),
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
@@ -539,6 +542,7 @@ export async function llmStream(
       outcome: isTtftTimeout ? 'timeout' : 'error',
       errorMessage: msg,
       callType,
+      ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
       ...(traceId !== undefined ? { traceId } : {}),
     }).catch(() => {});
     throw err;
@@ -660,6 +664,7 @@ export async function llmStream(
         callType,
         ...(traceId !== undefined ? { traceId } : {}),
         ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
+        ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
         ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
         ...(ctx.tags ? { tags: ctx.tags } : {}),
       }).catch(() => {});
@@ -756,6 +761,7 @@ export async function llmMessages(
       callType,
       ...(traceId !== undefined ? { traceId } : {}),
       ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
+      ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
       ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
       ...(ctx.tags ? { tags: ctx.tags } : {}),
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
@@ -788,6 +794,7 @@ export async function llmMessages(
       callType,
       ...(traceId !== undefined ? { traceId } : {}),
       ...(ctx.endUserId ? { endUserId: ctx.endUserId } : {}),
+      ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
       ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
       ...(ctx.tags ? { tags: ctx.tags } : {}),
       ...(ctx.guardrailTriggered ? { guardrailTriggered: ctx.guardrailTriggered } : {}),
