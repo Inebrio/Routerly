@@ -59,7 +59,7 @@ Nine agents, artifacts as the only hand-off. Nothing passes through conversation
 
 1. **analyst** → analysis, task list, dependency graph. If its report starts with `NEEDS-INPUT`, put its questions to the user with `AskUserQuestion`: state the problem, the options with their consequences, and the recommendation. Send the answers back to the same agent and let it finish.
 2. **story-writer** → one story file per story. No file, function or endpoint names in a story.
-3. **project-manager** → one blueprint per story, with every contact point frozen and the exact start command the validator will run.
+3. **project-manager** → one blueprint per story, with every contact point frozen and the exact start command the validator will run. **At most six engineer tasks per story.** Every task is a fresh agent that reads the repository, the blueprint and the conventions from nothing, so a seventh task costs more in re-read context than the split saves in focus. Measured: one story split into twelve tasks spent 57M input tokens on its engineers alone, 15% of an eighteen-story feature. If a story genuinely needs more than six, it is more than one story and belongs back with the story-writer.
 4. **Show and launch in the same response.** Story list plus dependency graph, then start. No "shall I proceed".
 
 ### Story level — one teammate per story, one worktree per story
@@ -75,6 +75,14 @@ node .claude/scripts/story.mjs claim <story-id> --feature <feature> --base 0.4.0
 7. **BLOCKED** → `remediation-loop`, three iterations maximum, then escalate to the user with what survived and why.
 8. **qa-engineer** writes tests, only on a story that passed with zero blockers.
 9. **docs-writer** documents the change on every surface it ships on, in parallel with the tests. It reads the code, not the blueprint. A story with a user-visible change and no documentation is not done.
+
+**An agent returns a summary and a path, never the report itself.** Its
+deliverable is already on disk by rule; returning the full text a second time
+puts it into the main session's context, where it is then re-read on every
+later turn. The main session is 27% of this feature's input tokens, more than
+any agent role except the engineers, and that is what most of it is. Ten lines
+and the path to the file is the whole contract: verdict, blocking count, and
+where to read the rest.
 
 **An agent's report is not evidence.** When an agent returns, the main session checks the worktree before believing it: `git status --short` plus the files the blueprint said would exist. Agents have returned confident summaries for files they never wrote, and have returned nothing at all after ninety minutes of work. Both are caught by looking, and only by looking. An agent that returns without a result is resumed with an order to write the deliverable to disk before composing any prose.
 
@@ -118,7 +126,15 @@ A feature closes when every story is done, the integration branch builds and its
 
 The entry answers four questions and nothing else:
 
-1. **Where did the wall-clock actually go?** Real durations, per agent. Not an impression.
+1. **Where did the wall-clock and the tokens actually go?** From
+   `node .claude/scripts/agent-cost.mjs`, never from memory. It reports minutes,
+   tokens in and tokens out for every point in the process, per story and per
+   role, plus resumes and stalls. The first time it was run it contradicted the
+   entry written from impressions the day before: stalls were 10% of the cost,
+   not the headline, and one story out of eighteen was 37%.
+
+   Run it before the agents' own transcripts are reaped. Nested agents, which is
+   to say the engineers, exist nowhere else.
 2. **What was rework?** An agent that stalled and needed resuming, a blueprint corrected mid-flight, a validator round that a better prompt would have made unnecessary, two agents solving the same problem twice in different places. Name it and say what it cost.
 3. **What changes because of it?** A concrete edit: to this file, to an agent definition, to a skill, to a blueprint template. If nothing changes, write "nothing changes" and the reason. A retrospective whose every entry is "went well" is not being written honestly.
 4. **What is now known that the next story should not rediscover?** Goes to `.ai/memory.md` if it is about the code, stays here if it is about the process.
