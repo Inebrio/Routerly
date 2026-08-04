@@ -45,6 +45,7 @@ export const NOTIFICATION_EVENT_CATALOG: Record<NotificationEvent, NotificationE
   'budget.reset':             { category: 'budget',   title: 'Budget period reset' },
   'system.startup':           { category: 'system',   title: 'Service started' },
   'system.shutdown':          { category: 'system',   title: 'Service stopped' },
+  'system.update_available':  { category: 'system',   title: 'A newer release is available' },
 };
 
 /** Prefix to category, so an event added later still lands in the right group. */

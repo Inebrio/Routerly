@@ -99,6 +99,8 @@ Click a channel row to navigate to its **edit page** for detailed configuration.
 
 See [Concepts: Notifications](../concepts/notifications.md) for the full event taxonomy and per-type configuration fields.
 
+Among the built-in events, the update checker raises **System – Update Available** whenever it finds a newer release on the configured update channel; it appears with that label in the Events dropdown here and in the routing-rule Events picker below, so it can be routed to any channel like any other event. It also lands in the in-app inbox for any `Dashboard` channel it matches.
+
 :::note Target scope
 **Recipients / Targets** control inbox visibility for the `Dashboard` channel and recipient resolution for email channels. Webhook and native channels (Slack, Teams, PagerDuty, Discord) deliver to a fixed endpoint - targets are stored but do not affect their delivery.
 :::

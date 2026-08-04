@@ -33,7 +33,8 @@ Everything lives under the installing user's home directory.
 └── data/
     ├── usage.json        # Usage records
     ├── notifications.json # Notification inbox
-    └── audit.json        # Audit log
+    ├── audit.json        # Audit log
+    └── update-announcement.json # Last update alert announced (RA-15)
 ```
 
 ### System scope
@@ -63,7 +64,8 @@ Service config and data move to a system-wide directory; the CLI auth tokens rem
 └── data/
     ├── usage.json
     ├── notifications.json
-    └── audit.json
+    ├── audit.json
+    └── update-announcement.json
 ```
 
 ### CLI auth tokens (always per-user)
@@ -295,6 +297,32 @@ Array of usage records, one per LLM request. Written by the service after each c
 ```
 
 This file grows continuously. Routerly does not currently rotate or archive it automatically — back it up and truncate as needed.
+
+---
+
+## data/update-announcement.json
+
+Records the last `system.update_available` alert the update checker raised, so the same release is not announced again after a restart. See [Concepts: Notifications](../concepts/notifications.md) for the event itself.
+
+```json
+{
+  "announcedVersion": "0.5.0",
+  "currentVersion": "0.4.0",
+  "channel": "stable",
+  "announcedAt": "2026-08-04T10:00:00.000Z"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `announcedVersion` | `string` | The `latestVersion` from the check that raised the alert |
+| `currentVersion` | `string` | The version the instance was running when it announced |
+| `channel` | `string` | The update channel the announcement came from |
+| `announcedAt` | `string` | ISO 8601 timestamp, informational only |
+
+The update checker is the file's only writer: it reads the record before each check and rewrites it whenever it raises a new alert. No API endpoint exposes this file; it is not readable or writable through the dashboard, the CLI, or the management API.
+
+Deleting this file does not disable the alert. It is read the same way a missing or corrupt file is: as "no prior announcement". The next check announces the current channel's release once more and rewrites the file, after which deduplication resumes as normal.
 
 ---
 
