@@ -5,6 +5,7 @@ on:
     branches: [main, develop, 'release/**']
   pull_request:
     branches: [main, develop, 'release/**']
+  workflow_call:
 
 jobs:
   build-and-typecheck:
@@ -22,8 +23,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # RC-2 decision (AC9): the audit runs and reports on every CI run, but
+      # does not block publishing. Four high advisories currently flagged have
+      # no upstream fix at any installable version, so a blocking gate here
+      # would keep every release forever red for a risk nobody can act on.
+      # Revisit this continue-on-error the moment any of the four gains a fix.
       - name: Security audit
         run: npm audit --audit-level=high
+        continue-on-error: true
 
       - name: Build shared (required by other packages)
         run: npm run build --workspace=packages/shared
