@@ -1889,6 +1889,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       dataDir: CONFIG_PATHS.data,
       uptimeSeconds: Math.floor(process.uptime()),
       channel: normalizeUpdateChannel(settings.channel).channel,
+      rawChannel: settings.channel ?? 'latest',
       isDocker: process.env['ROUTERLY_DOCKER'] === '1',
       updateInfo: updateChecker.getLastResult(),
     });

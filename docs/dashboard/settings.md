@@ -385,7 +385,7 @@ System information about the running instance:
 | Field | Description |
 |-------|-------------|
 | **Version** | Routerly version string |
-| **Channel** | Active update channel: `latest`, `stable`, `develop`, or a pinned version tag. Editable — see [Update Channel](#update-channel) below |
+| **Channel** | Active update channel: `latest`, `current`, `next`, or a pinned version tag. Editable — see [Update Channel](#update-channel) below |
 | **Uptime** | How long the service has been running since last start |
 | **Node.js** | Node.js runtime version |
 | **Platform** | OS and architecture |
@@ -397,10 +397,12 @@ The channel selector lets you choose which release stream Routerly follows when 
 
 | Channel | Description |
 |---------|-------------|
-| `latest` | Most recent release (may include pre-releases) |
-| `stable` | Most recent production-stable release |
-| `develop` | Development pre-release builds |
+| `latest` | Newest production-ready release |
+| `current` | Newest production-ready release (same as `latest`) |
+| `next` | Unstable/rolling release line |
 | Custom version | Pin to a specific release tag (e.g. `v0.2.0`) |
+
+`stable` and `develop` are still accepted as deprecated aliases for `current` and `next`, respectively. Removal is planned no earlier than the release after next.
 
 Changing the channel takes effect immediately — the running service is notified without a restart.
 
@@ -409,7 +411,7 @@ To enter a specific version tag, select **Custom…** in the dropdown. Type the 
 You can also change the channel from the CLI:
 
 ```bash
-routerly update channel stable
+routerly update channel current
 routerly update channel v0.2.0
 ```
 

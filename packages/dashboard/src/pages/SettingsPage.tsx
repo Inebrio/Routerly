@@ -8,7 +8,7 @@ import { MultiSelect } from '../components/MultiSelect';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { writeToClipboard } from '../utils/clipboard';
 import { isCaptureMode } from '../utils/captureMode';
-import { NOTIFICATION_EVENTS } from '@routerly/shared';
+import { NOTIFICATION_EVENTS, normalizeUpdateChannel } from '@routerly/shared';
 
 const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'error'];
 
@@ -1806,8 +1806,7 @@ export function SettingsCatalogTab() {
 
 // ── About tab ────────────────────────────────────────────────────────────────
 
-const FALLBACK_RELEASES: AvailableReleases = { channels: ['latest', 'stable', 'develop'], versions: [] };
-const CHANNEL_LABELS: Record<string, string> = { stable: 'current', latest: 'latest', develop: 'develop' };
+const FALLBACK_RELEASES: AvailableReleases = { channels: ['latest', 'current', 'next'], versions: [] };
 
 function ChannelSelector({
   current,
@@ -1827,11 +1826,15 @@ function ChannelSelector({
     getAvailableReleases().then(setReleases).catch(() => setReleases(FALLBACK_RELEASES));
   }, []);
 
+  const normalized = normalizeUpdateChannel(current);
+  const deprecatedAlias = normalized.deprecatedAlias;
   const knownValues = [...releases.channels, ...releases.versions];
-  const isKnown = knownValues.includes(current);
+  const isKnown = knownValues.includes(current) || deprecatedAlias !== undefined;
+  const selectValue = deprecatedAlias ? normalized.channel : current;
 
   React.useEffect(() => {
-    if (!isKnown) { setShowCustom(true); setCustomVal(current); }
+    setShowCustom(!isKnown);
+    if (!isKnown) setCustomVal(current);
   }, [current, isKnown]);
 
   async function save(ch: string) {
@@ -1860,6 +1863,9 @@ function ChannelSelector({
         {err && <span style={{ fontSize: '0.72rem', color: 'var(--error, #e53e3e)' }}>{err}</span>}
         {saved && <span style={{ fontSize: '0.72rem', color: '#22c55e' }}>Saved</span>}
         {saving && <div className="spinner" style={{ width: 12, height: 12 }} />}
+        {!showCustom && deprecatedAlias && (
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>stored as {deprecatedAlias} (deprecated)</span>
+        )}
         {showCustom ? (
           <>
             <input
@@ -1886,11 +1892,11 @@ function ChannelSelector({
         ) : (
           <SearchableSelect
             style={{ fontSize: '0.83rem', width: 130 }}
-            value={isKnown ? current : '__custom'}
+            value={isKnown ? selectValue : '__custom'}
             onChange={handleSelectChange}
             disabled={saving}
             options={[
-              ...releases.channels.map(ch => ({ value: ch, label: CHANNEL_LABELS[ch] ?? ch })),
+              ...releases.channels.map(ch => ({ value: ch, label: ch })),
               { value: '__custom', label: 'custom...' },
             ]}
           />
@@ -1951,7 +1957,7 @@ export function SettingsAboutTab() {
   async function handleChannelSave(ch: string) {
     await updateSettings({ channel: ch });
     /* v8 ignore next */
-    setInfo(prev => prev ? { ...prev, channel: ch } : prev);
+    setInfo(prev => prev ? { ...prev, channel: ch, rawChannel: ch } : prev);
   }
 
   async function handleCheckUpdates() {
@@ -2019,7 +2025,7 @@ export function SettingsAboutTab() {
       <div style={{ marginBottom: 28 }}>
         <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>Application</h3>
         <InfoRow label="Version" value={`v${info.version}`} />
-        <ChannelSelector current={info.channel ?? 'latest'} onSave={handleChannelSave} />
+        <ChannelSelector current={info.rawChannel ?? info.channel ?? 'latest'} onSave={handleChannelSave} />
         <InfoRow label="Uptime" value={formatUptime(info.uptimeSeconds)} />
       </div>
 
