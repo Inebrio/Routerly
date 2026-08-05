@@ -53,10 +53,13 @@ line yourself.
 7. Before writing code that calls a third-party API (auth scheme, header
    names, request/response shape, endpoint paths), confirm the contract
    against that provider's live docs or source — never from training
-   memory. Two stories in this feature shipped a wrong auth header
-   (`pr-base-branch`'s frozen changesets/action input, RA-13's
-   `JWT`-instead-of-`Bearer` on Docker Hub) because the assumption went
-   unchecked until a validator caught it. The wire-format-transparency rule
+   memory. RA-13 shipped a wrong auth header (`JWT`-instead-of-`Bearer`
+   on Docker Hub) because the assumption went unchecked until a validator
+   caught it. The same discipline holds for internal contracts too: RC-5's
+   test suite asserts `release.config.mjs`'s `branches` array
+   (`['main', { name: 'develop', channel: 'next' }]`) by reading the
+   shipped file through a real `import()`, never by re-typing the expected
+   order from memory. The wire-format-transparency rule
    in the project instructions applies to Routerly's own providers; this
    extends the same discipline to any third-party contact point.
 8. A script that runs against a live external service (a disposable repo, a
