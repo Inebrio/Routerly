@@ -1,5 +1,6 @@
-// Regression coverage for RA-03's frozen contact points (see
-// .claude/specs/release-automation/02-blueprint/RA-03.md, "Contact points").
+// Regression coverage for RC-2's frozen contact points, rewritten by RC-5
+// against the renamed release.yml (see
+// .claude/specs/release-channels/02-blueprint/RC-5.md, "Contact points").
 //
 // This story ships a GitHub Actions workflow, not application code, so there
 // is no source module to test beside. It lives here — inside packages/shared
@@ -8,171 +9,158 @@
 // for the others); a test placed at the repository root would never run in
 // that gate and would be decoration, not coverage.
 //
-// Everything here is asserted against the parsed YAML/JSON structure, never
+// Everything here is asserted against the parsed YAML/JS structure, never
 // against raw text, so a comment mentioning the right string cannot fake a
 // pass.
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
-import { execFileSync } from 'node:child_process'
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { createRequire } from 'node:module'
 
-// js-yaml has no bundled type declarations and is not a direct dependency of
-// any workspace (it is pulled in transitively by @changesets/cli, which is a
-// root devDependency and therefore always present after `npm ci`). Loaded via
-// createRequire rather than a static import so this file does not need to
-// augment an untyped module (TS2665) or add a package-wide ambient .d.ts.
+// js-yaml has no bundled type declarations. Loaded via createRequire rather
+// than a static import so this file does not need to augment an untyped
+// module (TS2665) or add a package-wide ambient .d.ts.
 const require = createRequire(import.meta.url)
 const yaml = require('js-yaml') as { load: (input: string) => unknown }
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
-const WORKFLOW_PATH = resolve(REPO_ROOT, '.github/workflows/release-version.yml')
-const CHANGESET_CONFIG_PATH = resolve(REPO_ROOT, '.changeset/config.json')
+const WORKFLOW_PATH = resolve(REPO_ROOT, '.github/workflows/release.yml')
+const RELEASE_CONFIG_PATH = resolve(REPO_ROOT, 'release.config.mjs')
 
 interface WorkflowStep {
   name?: string
   uses?: string
   run?: string
+  if?: string
   with?: Record<string, unknown>
   env?: Record<string, unknown>
+}
+
+interface WorkflowJob {
+  needs?: string | string[]
+  if?: string
+  outputs?: Record<string, string>
+  steps?: WorkflowStep[]
 }
 
 interface WorkflowDoc {
   name: string
   on: {
     push?: { branches?: string[]; paths?: unknown; 'paths-ignore'?: unknown }
+    workflow_dispatch?: unknown
   }
-  concurrency?: unknown
+  concurrency?: { group?: string; 'cancel-in-progress'?: boolean }
   permissions?: Record<string, string>
-  jobs: Record<string, { 'runs-on': string; steps: WorkflowStep[] }>
+  jobs: Record<string, WorkflowJob>
 }
 
-interface ChangesetConfig {
-  baseBranch: string
-  fixed: string[][]
+interface ReleaseConfig {
+  branches: unknown[]
+  plugins: unknown[]
 }
 
 function loadWorkflow(): WorkflowDoc {
   return yaml.load(readFileSync(WORKFLOW_PATH, 'utf-8')) as WorkflowDoc
 }
 
-function loadChangesetConfig(): ChangesetConfig {
-  return JSON.parse(readFileSync(CHANGESET_CONFIG_PATH, 'utf-8')) as ChangesetConfig
+async function loadReleaseConfig(): Promise<ReleaseConfig> {
+  const mod = (await import(RELEASE_CONFIG_PATH)) as { default: ReleaseConfig }
+  return mod.default
 }
 
-function versionSteps(doc: WorkflowDoc): WorkflowStep[] {
-  const job = doc.jobs.version
-  expect(job, 'version job').toBeDefined()
-  return job!.steps
+function pluginName(entry: unknown): string {
+  return Array.isArray(entry) ? (entry[0] as string) : (entry as string)
 }
 
-function versionStep(doc: WorkflowDoc): WorkflowStep {
-  const steps = versionSteps(doc)
-  const step = steps.find((s) => s.uses?.startsWith('changesets/action@'))
-  expect(step, 'changesets/action step').toBeDefined()
-  return step!
-}
-
-describe('RA-03 — release-version.yml workflow contract', () => {
-  it('AC1 — is named "Release Version", not "CI" (RA-05 matches workflow_run on CI by name)', () => {
+describe('RC-5 — release.yml workflow contract', () => {
+  it('A1 — is named "Release Pipeline", RC-2\'s shipped display name', () => {
     const doc = loadWorkflow()
-    expect(doc.name).toBe('Release Version')
+    expect(doc.name).toBe('Release Pipeline')
   })
 
-  it('AC1 — triggers on push to release/** branches', () => {
+  it('A2 — triggers on push to main and develop only', () => {
     const doc = loadWorkflow()
-    expect(doc.on.push?.branches).toContain('release/**')
+    expect(doc.on.push?.branches).toEqual(['main', 'develop'])
   })
 
-  it('neither trigger restricts by paths or paths-ignore', () => {
+  it('A3 — no workflow_dispatch key on the normal release flow', () => {
+    const doc = loadWorkflow()
+    expect(doc.on).not.toHaveProperty('workflow_dispatch')
+  })
+
+  it('A4 — the push trigger has no paths or paths-ignore restriction', () => {
     const doc = loadWorkflow()
     expect(doc.on.push).not.toHaveProperty('paths')
     expect(doc.on.push).not.toHaveProperty('paths-ignore')
   })
 
-  it('RA-04 contact point — the changesets/action step sets version: "npm run version" explicitly', () => {
+  it("A5 — permissions grant contents, issues and pull-requests write (semantic-release/github's requirement)", () => {
     const doc = loadWorkflow()
-    const step = versionStep(doc)
-    expect(step.with?.version).toBe('npm run version')
+    expect(doc.permissions).toEqual({
+      contents: 'write',
+      issues: 'write',
+      'pull-requests': 'write',
+    })
   })
 
-  it('the changesets/action step is pinned to the real published tag v1.9.0, and does not use pr-base-branch', () => {
+  it('A6 — concurrency is defined and scoped per-branch via github.ref, not global', () => {
     const doc = loadWorkflow()
-    const step = versionStep(doc)
-    expect(step.uses).toBe('changesets/action@v1.9.0')
-    expect(step.with).not.toHaveProperty('pr-base-branch')
+    expect(doc.concurrency?.group).toBeDefined()
+    expect(doc.concurrency!.group).toContain('github.ref')
   })
 
-  it('AC1 — branch input is the release branch itself, driving both PR base and derived head', () => {
+  it("A7 — the release job's needs includes the gate job, and the gate job is not the release job", () => {
     const doc = loadWorkflow()
-    const step = versionStep(doc)
-    expect(step.with?.branch).toBe('${{ github.ref_name }}')
+    const releaseJob = doc.jobs.release
+    expect(releaseJob, 'release job').toBeDefined()
+    expect(doc.jobs.gate, 'gate job').toBeDefined()
+    expect(releaseJob!.needs).toContain('gate')
+    expect('gate').not.toBe('release')
   })
 
-  it('the prerelease guard step exists and precedes the changesets/action step', () => {
+  it('A8 — jobs.release.outputs keys are exactly released, action, version, git_tag, channel, docker_channel_tag', () => {
     const doc = loadWorkflow()
-    const steps = versionSteps(doc)
-    const guardIndex = steps.findIndex((s) => /pre\.json/.test(s.run ?? ''))
-    const actionIndex = steps.findIndex((s) => s.uses?.startsWith('changesets/action@'))
-    expect(guardIndex, 'prerelease guard step').toBeGreaterThanOrEqual(0)
-    expect(actionIndex, 'changesets/action step').toBeGreaterThanOrEqual(0)
-    expect(guardIndex).toBeLessThan(actionIndex)
+    const outputs = doc.jobs.release?.outputs
+    expect(outputs, 'release job outputs').toBeDefined()
+    expect(Object.keys(outputs!).sort()).toEqual(
+      ['action', 'channel', 'docker_channel_tag', 'git_tag', 'released', 'version'].sort()
+    )
   })
 
-  it('AC3 — the prerelease guard fails the run when .changeset/pre.json exists, and passes when it does not', () => {
+  it("A9 — the docker job depends on release, gates on its released output, and its publish step's image tags are channel-derived (no hardcoded semver)", () => {
     const doc = loadWorkflow()
-    const steps = versionSteps(doc)
-    const guard = steps.find((s) => /pre\.json/.test(s.run ?? ''))
-    expect(guard?.run, 'guard step run block').toBeDefined()
+    const dockerJob = doc.jobs.docker
+    expect(dockerJob, 'docker job').toBeDefined()
+    expect(dockerJob!.needs).toContain('release')
+    expect(dockerJob!.if).toContain('needs.release.outputs.released')
 
-    const scratch = mkdtempSync(resolve(tmpdir(), 'ra03-guard-'))
-    try {
-      mkdirSync(resolve(scratch, '.changeset'))
-      writeFileSync(resolve(scratch, 'guard.sh'), guard!.run!)
+    const steps = dockerJob!.steps ?? []
+    const actionGatedSteps = steps.filter((s) => s.if?.includes('needs.release.outputs.action'))
+    expect(actionGatedSteps.length, 'steps gated on needs.release.outputs.action').toBeGreaterThan(0)
 
-      // Present: must fail with the ::error:: annotation.
-      writeFileSync(resolve(scratch, '.changeset/pre.json'), '{}')
-      let failure: unknown
-      try {
-        execFileSync('bash', ['guard.sh'], { cwd: scratch, stdio: 'pipe' })
-      } catch (err) {
-        failure = err
-      }
-      expect(failure, 'guard script must exit non-zero when pre.json exists').toBeDefined()
-      const output = String((failure as { stdout?: Buffer }).stdout ?? '')
-      expect(output).toContain('::error::')
-
-      // Absent: must succeed.
-      rmSync(resolve(scratch, '.changeset/pre.json'))
-      expect(() =>
-        execFileSync('bash', ['guard.sh'], { cwd: scratch, stdio: 'pipe' })
-      ).not.toThrow()
-    } finally {
-      rmSync(scratch, { recursive: true, force: true })
-    }
+    const publishStep = steps.find((s) => s.name === 'Build and push (publish)')
+    expect(publishStep, 'Build and push (publish) step').toBeDefined()
+    const tags = String(publishStep!.with?.tags ?? '')
+    expect(tags).toContain('needs.release.outputs.git_tag')
+    expect(tags).toContain('needs.release.outputs.docker_channel_tag')
+    expect(tags).not.toContain('needs.release.outputs.version')
+    expect(tags).not.toMatch(/\bv?\d+\.\d+\.\d+\b/)
   })
 })
 
-describe('RA-03 — .changeset/config.json contract', () => {
-  it('AC1/AC4 — baseBranch is 0.4.0, the branch releases are actually cut from, not the stale main', () => {
-    const config = loadChangesetConfig()
-    expect(config.baseBranch).toBe('0.4.0')
+describe('RC-5 — release.config.mjs contract', () => {
+  it('A10 — branches is [\'main\', { name: \'develop\', channel: \'next\' }], main first (analysis D1)', async () => {
+    const config = await loadReleaseConfig()
+    expect(config.branches).toEqual(['main', { name: 'develop', channel: 'next' }])
+    // branches[0] === 'main' asserted separately: the first entry drives the
+    // default/"current" channel and must never silently reorder (analysis D1).
+    expect(config.branches[0]).toBe('main')
   })
 
-  it('AC2 — the fixed group still moves all four released packages together', () => {
-    const config = loadChangesetConfig()
-    expect(config.fixed).toHaveLength(1)
-    expect(config.fixed[0]).toEqual(
-      expect.arrayContaining([
-        '@routerly/service',
-        '@routerly/dashboard',
-        '@routerly/cli',
-        '@routerly/shared',
-      ])
-    )
-    expect(config.fixed[0]).toHaveLength(4)
+  it('A11 — plugins contain no @semantic-release/npm entry', async () => {
+    const config = await loadReleaseConfig()
+    const names = config.plugins.map(pluginName)
+    expect(names).not.toContain('@semantic-release/npm')
   })
 })
