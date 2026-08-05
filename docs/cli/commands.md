@@ -2998,7 +2998,7 @@ Prints the current version, the latest version available on the active channel, 
 ```bash
 routerly update check
 #   Routerly v0.2.0 is up to date.
-#   Channel: stable   Checked: 6/9/2026, 10:00:00 AM
+#   Channel: current   Checked: 6/9/2026, 10:00:00 AM
 
 routerly update check --json
 ```
@@ -3017,16 +3017,18 @@ Valid values:
 
 | Value | Description |
 |-------|-------------|
-| `latest` | Most recent release (may include pre-releases) |
-| `stable` | Most recent production-stable release |
-| `develop` | Development pre-release builds |
+| `latest` | Newest production-ready release |
+| `current` | Newest production-ready release (same as `latest`) |
+| `next` | Unstable/rolling release line |
 | `vX.Y.Z` | Pin to a specific version tag (e.g. `v0.2.0`) |
+
+`stable` and `develop` are still accepted as deprecated aliases for `current` and `next`, respectively. Removal is planned no earlier than the release after next.
 
 ```bash
 routerly update channel           # show current channel
 routerly update channel latest    # switch to latest
-routerly update channel stable    # switch to stable
-routerly update channel develop   # switch to develop (pre-releases)
+routerly update channel current   # switch to current
+routerly update channel next      # switch to next (unstable/rolling)
 routerly update channel v0.2.0    # pin to a specific version
 ```
 

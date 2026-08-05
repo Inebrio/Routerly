@@ -6,8 +6,8 @@
 #   curl -fsSL https://your-domain.com/install.sh | bash
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --yes
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --scope=system
-#   curl -fsSL https://your-domain.com/install.sh | bash -s -- --channel=stable
-#   curl -fsSL https://your-domain.com/install.sh | bash -s -- --channel=develop
+#   curl -fsSL https://your-domain.com/install.sh | bash -s -- --channel=current
+#   curl -fsSL https://your-domain.com/install.sh | bash -s -- --channel=next
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --version=v0.2.0
 #
 # --channel and --version are resolved here; all other flags are forwarded to install.mjs.
@@ -20,8 +20,8 @@ GITHUB_REPO="Routerly"
 REQUIRED_NODE_MAJOR=20
 
 # ── Channel / version defaults ────────────────────────────────────────────────
-INSTALL_CHANNEL="stable"  # latest | stable | develop
-INSTALL_VERSION=""        # e.g. v0.2.0 — overrides INSTALL_CHANNEL when set
+INSTALL_CHANNEL="current"  # latest | current | next (stable, develop: deprecated aliases)
+INSTALL_VERSION=""         # e.g. v0.2.0 — overrides INSTALL_CHANNEL when set
 
 # ── Colors ────────────────────────────────────────────────────────────────────
 if [ -t 1 ]; then
@@ -266,13 +266,14 @@ need_cmd npm || die "'npm' not found. Something went wrong with the Node.js inst
 # ── Parse --channel / --version flags ─────────────────────────────────────────
 # These are consumed by this script and are NOT forwarded to install.mjs.
 FORWARD_ARGS=()
+CHANNEL_EXPLICIT=false
 _i=0
 _ORIG_ARGS=("$@")
 while [ $_i -lt ${#_ORIG_ARGS[@]} ]; do
   _arg="${_ORIG_ARGS[$_i]}"
   case "$_arg" in
-    --channel=*) INSTALL_CHANNEL="${_arg#--channel=}" ;;
-    --channel)   _i=$((_i + 1)); INSTALL_CHANNEL="${_ORIG_ARGS[$_i]}" ;;
+    --channel=*) INSTALL_CHANNEL="${_arg#--channel=}"; CHANNEL_EXPLICIT=true ;;
+    --channel)   _i=$((_i + 1)); INSTALL_CHANNEL="${_ORIG_ARGS[$_i]}"; CHANNEL_EXPLICIT=true ;;
     --version=*) INSTALL_VERSION="${_arg#--version=}" ;;
     --version)   _i=$((_i + 1)); INSTALL_VERSION="${_ORIG_ARGS[$_i]}" ;;
     *)           FORWARD_ARGS+=("$_arg") ;;
@@ -290,16 +291,28 @@ resolve_download_url() {
     api_url="${api_base}/tags/${INSTALL_VERSION}"
   else
     case "$INSTALL_CHANNEL" in
-      latest)
-        info "Resolving channel ${BOLD}latest${RESET}..."
+      stable)
+        echo "Channel 'stable' is deprecated; using 'current' instead." >&2
+        INSTALL_CHANNEL="current"
+        ;;
+      develop)
+        echo "Channel 'develop' is deprecated; using 'next' instead." >&2
+        INSTALL_CHANNEL="next"
+        ;;
+    esac
+
+    case "$INSTALL_CHANNEL" in
+      latest|current)
+        info "Resolving channel ${BOLD}${INSTALL_CHANNEL}${RESET}..."
         api_url="${api_base}/latest"
         ;;
-      stable|develop)
-        info "Resolving channel ${BOLD}${INSTALL_CHANNEL}${RESET}..."
-        api_url="${api_base}/tags/${INSTALL_CHANNEL}"
+      next)
+        info "Resolving channel ${BOLD}next${RESET}..."
+        api_url="${api_base}/tags/next"
         ;;
       *)
-        die "Unknown channel: '${INSTALL_CHANNEL}'. Valid values: latest, stable, develop"
+        die "Unknown channel: '${INSTALL_CHANNEL}'. Valid values: latest, current, next
+(deprecated aliases: stable, develop)"
         ;;
     esac
   fi
@@ -325,6 +338,9 @@ resolve_download_url() {
   else
     if [ -n "$INSTALL_VERSION" ]; then
       die "Could not find release '${INSTALL_VERSION}' on GitHub. Check the version tag and retry."
+    fi
+    if [ "$CHANNEL_EXPLICIT" = true ]; then
+      die "Could not fetch channel '${INSTALL_CHANNEL}' from the GitHub API. Check your network and retry."
     fi
     warn "Could not fetch release from GitHub API. Falling back to main branch..."
     TARBALL_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/heads/main.tar.gz"

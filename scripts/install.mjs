@@ -57,7 +57,20 @@ const FLAG_PORT      = getArg('port')        ?? process.env.ROUTERLY_PORT       
 const FLAG_HOST      = getArg('host')        ?? process.env.ROUTERLY_HOST        ?? '';
 const FLAG_URL       = getArg('public-url')  ?? process.env.ROUTERLY_PUBLIC_URL  ?? '';
 const INSTALL_VERSION = getArg('version') ?? ''; // set by install.sh/ps1 via --version=vX.Y.Z
-const INSTALL_CHANNEL = getArg('channel') ?? 'latest'; // set by install.sh/ps1 via --channel=
+let INSTALL_CHANNEL = getArg('channel') ?? 'current'; // set by install.sh/ps1 via --channel= (latest | current | next)
+
+// Normalize deprecated channel aliases (mirrors install.sh / install.ps1) before any
+// filesystem work — install.mjs can also be run standalone, not only via the shell wrappers.
+if (INSTALL_CHANNEL === 'stable') {
+  console.error("Channel 'stable' is deprecated; using 'current' instead.");
+  INSTALL_CHANNEL = 'current';
+} else if (INSTALL_CHANNEL === 'develop') {
+  console.error("Channel 'develop' is deprecated; using 'next' instead.");
+  INSTALL_CHANNEL = 'next';
+}
+if (!['latest', 'current', 'next'].includes(INSTALL_CHANNEL)) {
+  die(`Unknown channel: '${INSTALL_CHANNEL}'. Valid values: latest, current, next\n(deprecated aliases: stable, develop)`);
+}
 const FLAG_NO_TELEMETRY = hasFlag('no-telemetry') || process.env.CI === '1' || process.env.CI === 'true';
 
 // From env vars (--yes mode)

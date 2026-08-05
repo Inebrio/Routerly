@@ -142,6 +142,7 @@ const baseSettings = {
 const baseSystemInfo = {
   version: '0.3.0',
   channel: 'latest',
+  rawChannel: 'latest',
   uptimeSeconds: 3661,
   nodeVersion: 'v22.0.0',
   platform: 'linux',
@@ -1762,7 +1763,7 @@ describe('SettingsCatalogTab', () => {
 describe('SettingsAboutTab', () => {
   beforeEach(() => {
     mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo } as never);
-    mockGetAvailableReleases.mockResolvedValue({ channels: ['latest', 'stable', 'develop'], versions: [] } as never);
+    mockGetAvailableReleases.mockResolvedValue({ channels: ['latest', 'current', 'next'], versions: [] } as never);
     mockCheckForUpdates.mockResolvedValue({ available: false, currentVersion: '0.3.0', latestVersion: '0.3.0', checkedAt: new Date().toISOString() } as never);
     mockUpdateSettings.mockResolvedValue({ ...baseSettings } as never);
     mockTriggerUpdate.mockResolvedValue({ message: 'Update started' } as never);
@@ -1984,7 +1985,7 @@ describe('SettingsAboutTab', () => {
   it('ChannelSelector: renders channel select with releases', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    expect(screen.getByDisplayValue(/current|latest|develop/)).toBeTruthy();
+    expect(screen.getByRole('combobox')).toBeTruthy();
   });
 
   it('ChannelSelector: getAvailableReleases failure falls back to FALLBACK_RELEASES', async () => {
@@ -1992,104 +1993,83 @@ describe('SettingsAboutTab', () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
     // Still renders a select (from FALLBACK_RELEASES)
-    expect(screen.getByText('Channel')).toBeTruthy();
+    expect(screen.getByRole('combobox')).toBeTruthy();
   });
 
-  it('ChannelSelector: shows "custom…" option in select', async () => {
+  it('ChannelSelector: dropdown lists only latest, current, next and custom — no old names', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    expect(sel).toBeTruthy();
+    const sel = screen.getByRole('combobox') as HTMLSelectElement;
+    const values = Array.from(sel.options).map(o => o.value);
+    expect(values).toEqual(['latest', 'current', 'next', '__custom']);
   });
 
   it('ChannelSelector: selecting a known channel calls updateSettings', async () => {
-    mockGetAvailableReleases.mockResolvedValue({ channels: ['latest', 'stable', 'develop'], versions: [] } as never);
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, 'stable');
-      await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ channel: 'stable' }));
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'current');
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ channel: 'current' }));
   });
 
   it('ChannelSelector: selecting __custom shows custom input', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, '__custom');
-      await waitFor(() => expect(screen.queryByPlaceholderText('v0.2.0')).not.toBeNull());
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), '__custom');
+    await waitFor(() => expect(screen.queryByPlaceholderText('v0.2.0')).not.toBeNull());
   });
 
   it('ChannelSelector: custom input Apply calls updateSettings', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, '__custom');
-      await waitFor(() => screen.getByPlaceholderText('v0.2.0'));
-      const customInput = screen.getByPlaceholderText('v0.2.0') as HTMLInputElement;
-      await userEvent.type(customInput, 'v0.2.5');
-      await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
-      await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ channel: 'v0.2.5' }));
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), '__custom');
+    await waitFor(() => screen.getByPlaceholderText('v0.2.0'));
+    const customInput = screen.getByPlaceholderText('v0.2.0') as HTMLInputElement;
+    await userEvent.type(customInput, 'v0.2.5');
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ channel: 'v0.2.5' }));
+  });
+
+  it('ChannelSelector: custom input still accepts a deprecated alias by name', async () => {
+    renderAbout();
+    await waitFor(() => screen.getByText('Channel'));
+    await userEvent.selectOptions(screen.getByRole('combobox'), '__custom');
+    await waitFor(() => screen.getByPlaceholderText('v0.2.0'));
+    const customInput = screen.getByPlaceholderText('v0.2.0') as HTMLInputElement;
+    await userEvent.type(customInput, 'stable');
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ channel: 'stable' }));
   });
 
   it('ChannelSelector: pressing Enter in custom input calls save', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, '__custom');
-      await waitFor(() => screen.getByPlaceholderText('v0.2.0'));
-      const customInput = screen.getByPlaceholderText('v0.2.0') as HTMLInputElement;
-      await userEvent.type(customInput, 'v0.2.5{Enter}');
-      await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), '__custom');
+    await waitFor(() => screen.getByPlaceholderText('v0.2.0'));
+    const customInput = screen.getByPlaceholderText('v0.2.0') as HTMLInputElement;
+    await userEvent.type(customInput, 'v0.2.5{Enter}');
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
   });
 
   it('ChannelSelector: empty custom input disables Apply button', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, '__custom');
-      await waitFor(() => screen.getByRole('button', { name: 'Apply' }));
-      const applyBtn = screen.getByRole('button', { name: 'Apply' }) as HTMLButtonElement;
-      expect(applyBtn.disabled).toBe(true);
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), '__custom');
+    await waitFor(() => screen.getByRole('button', { name: 'Apply' }));
+    const applyBtn = screen.getByRole('button', { name: 'Apply' }) as HTMLButtonElement;
+    expect(applyBtn.disabled).toBe(true);
   });
 
   it('ChannelSelector: ← back button hides custom input', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, '__custom');
-      await waitFor(() => screen.getByRole('button', { name: '← back' }));
-      await userEvent.click(screen.getByRole('button', { name: '← back' }));
-      await waitFor(() => expect(screen.queryByPlaceholderText('v0.2.0')).toBeNull());
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), '__custom');
+    await waitFor(() => screen.getByRole('button', { name: '← back' }));
+    await userEvent.click(screen.getByRole('button', { name: '← back' }));
+    await waitFor(() => expect(screen.queryByPlaceholderText('v0.2.0')).toBeNull());
   });
 
   it('ChannelSelector: unknown current channel triggers showCustom=true automatically', async () => {
-    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: 'v0.2.1-beta' } as never);
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: 'v0.2.1-beta', rawChannel: 'v0.2.1-beta' } as never);
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
     await waitFor(() => expect(screen.queryByPlaceholderText('v0.2.0')).not.toBeNull());
@@ -2101,27 +2081,52 @@ describe('SettingsAboutTab', () => {
     mockUpdateSettings.mockRejectedValue(new Error('Channel save failed'));
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, 'stable');
-      await waitFor(() => expect(screen.queryByText('Channel save failed')).not.toBeNull());
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'current');
+    await waitFor(() => expect(screen.queryByText('Channel save failed')).not.toBeNull());
   });
 
   it('ChannelSelector: handleChannelSave updates info.channel', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, 'stable');
-      await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
-      // After save, "Saved" text appears briefly
-      await waitFor(() => expect(screen.queryByText('Saved')).not.toBeNull());
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'current');
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
+    // After save, "Saved" text appears briefly
+    await waitFor(() => expect(screen.queryByText('Saved')).not.toBeNull());
+  });
+
+  it('ChannelSelector: stored deprecated alias selects canonical option and shows a muted hint', async () => {
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: 'current', rawChannel: 'stable' } as never);
+    renderAbout();
+    await waitFor(() => screen.getByText('Channel'));
+    // Selected option is the canonical name, not the raw stored alias
+    const sel = screen.getByRole('combobox') as HTMLSelectElement;
+    expect(sel.value).toBe('current');
+    // No free-text fallback for a known alias
+    expect(screen.queryByPlaceholderText('v0.2.0')).toBeNull();
+    expect(screen.getByText('stored as stable (deprecated)')).toBeTruthy();
+  });
+
+  it('ChannelSelector: stored deprecated "develop" alias selects "next" and shows its hint', async () => {
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: 'next', rawChannel: 'develop' } as never);
+    renderAbout();
+    await waitFor(() => screen.getByText('Channel'));
+    const sel = screen.getByRole('combobox') as HTMLSelectElement;
+    expect(sel.value).toBe('next');
+    expect(screen.getByText('stored as develop (deprecated)')).toBeTruthy();
+  });
+
+  it('ChannelSelector: updateSettings is not called on render, dropdown open or dropdown close', async () => {
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: 'current', rawChannel: 'stable' } as never);
+    renderAbout();
+    await waitFor(() => screen.getByText('Channel'));
+    expect(mockUpdateSettings).not.toHaveBeenCalled();
+
+    const sel = screen.getByRole('combobox') as HTMLSelectElement;
+    await userEvent.click(sel);
+    expect(mockUpdateSettings).not.toHaveBeenCalled();
+
+    await userEvent.keyboard('{Escape}');
+    expect(mockUpdateSettings).not.toHaveBeenCalled();
   });
 });
 
@@ -2720,7 +2725,7 @@ describe('SettingsAboutTab — doUpdate polling', () => {
       isDocker: false,
       updateInfo: { available: true, currentVersion: '0.3.0', latestVersion: '0.4.0', checkedAt: new Date().toISOString() },
     } as never);
-    mockGetAvailableReleases.mockResolvedValue({ channels: ['latest', 'stable'], versions: [] } as never);
+    mockGetAvailableReleases.mockResolvedValue({ channels: ['latest', 'current'], versions: [] } as never);
     mockCheckForUpdates.mockResolvedValue({} as never);
   });
 
@@ -2824,44 +2829,30 @@ describe('SettingsAboutTab — doUpdate polling', () => {
   it('ChannelSelector: save with empty trimmed string returns early (line 1748)', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, '__custom');
-      await waitFor(() => screen.getByPlaceholderText('v0.2.0'));
-      const applyBtn = screen.getByRole('button', { name: 'Apply' });
-      // Apply is disabled when customVal is empty — but try pressing Enter in empty field
-      const customInput = screen.getByPlaceholderText('v0.2.0') as HTMLInputElement;
-      // Input is empty; pressing Enter calls save('') → !ch.trim() → return
-      fireEvent.keyDown(customInput, { key: 'Enter' });
-      await new Promise(r => setTimeout(r, 50));
-      expect(mockUpdateSettings).not.toHaveBeenCalled();
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), '__custom');
+    await waitFor(() => screen.getByPlaceholderText('v0.2.0'));
+    const customInput = screen.getByPlaceholderText('v0.2.0') as HTMLInputElement;
+    // Input is empty; pressing Enter calls save('') → !ch.trim() → return
+    fireEvent.keyDown(customInput, { key: 'Enter' });
+    await new Promise(r => setTimeout(r, 50));
+    expect(mockUpdateSettings).not.toHaveBeenCalled();
   });
 
   it('ChannelSelector: save non-Error shows "Failed to save"', async () => {
     mockUpdateSettings.mockRejectedValue('non-error string');
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, 'stable');
-      await waitFor(() => expect(screen.queryByText('Failed to save')).not.toBeNull());
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'current');
+    await waitFor(() => expect(screen.queryByText('Failed to save')).not.toBeNull());
   });
 
   it('info.channel null uses "latest" fallback in ChannelSelector', async () => {
-    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: null } as never);
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: null, rawChannel: null } as never);
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
     // channel ?? 'latest' → 'latest' branch
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    expect(sel).toBeTruthy();
+    expect(screen.getByRole('combobox')).toBeTruthy();
+    expect(screen.getByText('latest')).toBeTruthy();
   });
 
   it('handleChannelSave: prev is null branch (setInfo prev?... : prev)', async () => {
@@ -2872,13 +2863,8 @@ describe('SettingsAboutTab — doUpdate polling', () => {
     // Instead verify the normal path once more with a version that exercises setInfo update.
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, 'stable');
-      await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'current');
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
   });
 });
 
@@ -4386,13 +4372,13 @@ describe('SettingsAboutTab — additional ?? branch coverage', () => {
   const baseSystemInfo = {
     version: '0.3.0', nodeVersion: 'v22.0.0', platform: 'linux',
     uptimeSeconds: 3600, configDir: '/etc/routerly',
-    isDocker: false, channel: 'stable',
+    isDocker: false, channel: 'current',
     updateInfo: { hasUpdate: true, latestVersion: '0.4.0', releaseNotes: '' },
-    releases: { channels: ['stable', 'latest'], versions: ['0.3.0'] },
+    releases: { channels: ['latest', 'current', 'next'], versions: ['0.3.0'] },
   };
 
   beforeEach(() => {
-    mockGetAvailableReleases.mockResolvedValue({ channels: ['stable', 'latest'], versions: ['0.3.0'] } as never);
+    mockGetAvailableReleases.mockResolvedValue({ channels: ['latest', 'current', 'next'], versions: ['0.3.0'] } as never);
     mockUpdateSettings.mockResolvedValue({} as never);
     mockCheckForUpdates.mockResolvedValue({ hasUpdate: false, latestVersion: '0.3.0', releaseNotes: '' } as never);
   });
@@ -4409,27 +4395,18 @@ describe('SettingsAboutTab — additional ?? branch coverage', () => {
     mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo } as never);
     render(<MemoryRouter><SettingsAboutTab /></MemoryRouter>);
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === 'latest'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, 'latest');
-      await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
-      // setInfo(prev => prev ? { ...prev, channel: 'latest' } : prev) → prev is non-null, covers true branch
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'latest');
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
+    // setInfo(prev => prev ? { ...prev, channel: 'latest' } : prev) → prev is non-null, covers true branch
   });
 
-  it('CHANNEL_LABELS fallback (ch ?? ch) for version option (L1806)', async () => {
-    // releases.versions has '0.3.0' — it appears as a version option in ChannelSelector
-    // But CHANNEL_LABELS only has 'stable'/'latest'/'edge' → version '0.3.0' hits ?? ch fallback
+  it('a version stored as channel does not crash the selector (no dropdown label lookup left)', async () => {
     mockGetSystemInfo.mockResolvedValue({
       ...baseSystemInfo,
-      channel: '0.3.0', // current = '0.3.0', which is in versions → isKnown=true → shows select
+      channel: '0.3.0', // a version isn't in releases.channels — just verify no crash, no stale label lookup
     } as never);
     render(<MemoryRouter><SettingsAboutTab /></MemoryRouter>);
     await waitFor(() => screen.getByText('Channel'));
-    // The select shows channels (stable, latest) + custom option
-    // Actually versions are shown differently — let's just verify no crash
     expect(screen.queryByText('Channel')).not.toBeNull();
   });
 
@@ -4787,30 +4764,23 @@ describe('SettingsCatalogTab — non-Error rejection + confirmRemove + move same
   });
 });
 
-describe('SettingsAboutTab — unknown channel label (L1806) + non-Error rejection (L1468)', () => {
-  it('releases.channels with unknown channel → CHANNEL_LABELS ?? ch fallback (L1806 branch 268,1)', async () => {
+describe('SettingsAboutTab — rolling channel tag label + non-Error rejection (L1468)', () => {
+  it('a non-semver rolling tag from releases.channels is labelled with its own value', async () => {
     mockGetSystemInfo.mockResolvedValue({
       version: '0.3.0', nodeVersion: 'v22.0.0', platform: 'linux',
       uptimeSeconds: 3600, configDir: '/etc/routerly',
-      isDocker: false, channel: 'stable',
+      isDocker: false, channel: 'current',
       updateInfo: null,
-      releases: { channels: ['stable', 'nightly'], versions: [] },
+      releases: { channels: ['current', 'nightly'], versions: [] },
     } as never);
-    mockGetAvailableReleases.mockResolvedValue({ channels: ['stable', 'nightly'], versions: [] } as never);
+    mockGetAvailableReleases.mockResolvedValue({ channels: ['current', 'nightly'], versions: [] } as never);
     mockUpdateSettings.mockResolvedValue({} as never);
     mockCheckForUpdates.mockResolvedValue({ hasUpdate: false, latestVersion: '0.3.0', releaseNotes: '' } as never);
     render(<MemoryRouter><SettingsAboutTab /></MemoryRouter>);
     await waitFor(() => screen.getByText('Channel'));
-    // Select renders with 'stable' (CHANNEL_LABELS['stable']='current') and 'nightly' (no label → 'nightly')
     // The channel list arrives from getAvailableReleases(), so wait for it to replace FALLBACK_RELEASES.
-    const nightlyOpt = await waitFor(() => {
-      const sel = Array.from(document.querySelectorAll('select option')) as HTMLOptionElement[];
-      const opt = sel.find(o => o.value === 'nightly');
-      expect(opt).toBeTruthy();
-      return opt;
-    });
-    // Text content is 'nightly' (fallback from ?? ch)
-    expect(nightlyOpt?.textContent).toBe('nightly');
+    await userEvent.click(screen.getByRole('combobox'));
+    await waitFor(() => expect(screen.getByText('nightly')).toBeTruthy());
   });
 });
 

@@ -751,6 +751,7 @@ export interface SystemInfo {
   dataDir: string;
   uptimeSeconds: number;
   channel: string;
+  rawChannel: string;
   isDocker: boolean;
   updateInfo: UpdateInfo | null;
 }
