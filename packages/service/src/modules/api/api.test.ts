@@ -865,6 +865,18 @@ describe('GET /api/system/info', () => {
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
     expect(body.channel).toBe('current')
+    expect(body.rawChannel).toBe('stable')
+  })
+
+  it('reports channel and rawChannel identically for a stored canonical channel (RC-4 AC2)', async () => {
+    mockReadConfig.mockResolvedValue({ channel: 'current' } as any)
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/system/info' })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.channel).toBe('current')
+    expect(body.rawChannel).toBe('current')
   })
 })
 

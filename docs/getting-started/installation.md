@@ -37,18 +37,22 @@ curl -fsSL https://www.routerly.ai/install.sh | bash -s -- \
   --public-url https://routerly.example.com  # External URL of the service
   --no-service              # Skip service installation (CLI only)
   --no-daemon               # Skip auto-start setup
-  --channel stable          # Update channel: latest | stable | develop (default: stable)
+  --channel current         # Update channel: latest | current | next (default: current)
   --version v0.2.0          # Install a specific version tag (overrides --channel)
 ```
 
-By default, the installer fetches the **`stable`** channel — the latest production-ready release. Use `--channel latest` to get the most recent release (including pre-releases), or `--version vX.Y.Z` to pin an exact version.
+By default, the installer fetches the **`current`** channel — the newest production-ready release. `latest` resolves to the same release; `next` tracks the unstable/rolling line. Use `--version vX.Y.Z` to pin an exact version.
+
+:::note
+`stable` and `develop` are still accepted as deprecated aliases for `current` and `next` — using them prints a deprecation warning. Removal is planned no earlier than the release after next.
+:::
 
 ```bash
-# Install the stable release (default)
+# Install the current release (default)
 curl -fsSL https://www.routerly.ai/install.sh | bash
 
-# Install the latest release
-curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --channel latest
+# Track the unstable/rolling line
+curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --channel next
 
 # Install a specific version
 curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --version v0.2.0
@@ -79,11 +83,11 @@ Regardless of scope, each user's CLI credentials (JWT tokens, refresh tokens) ar
 ### Windows
 
 ```powershell
-# Stable release (default)
+# Current release (default)
 powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
 
 # Specific channel or version
-powershell -c "& ([scriptblock]::Create((irm https://www.routerly.ai/install.ps1))) -Channel latest"
+powershell -c "& ([scriptblock]::Create((irm https://www.routerly.ai/install.ps1))) -Channel next"
 powershell -c "& ([scriptblock]::Create((irm https://www.routerly.ai/install.ps1))) -Version v0.2.0"
 ```
 
@@ -91,8 +95,10 @@ This installs Routerly as a Windows Service and adds the CLI to your PATH.
 
 | Parameter | Description |
 |-----------|-------------|
-| `-Channel` | `latest` \| `stable` \| `develop` (default: `stable`) |
+| `-Channel` | `latest` \| `current` \| `next` (default: `current`) |
 | `-Version` | Specific version tag, e.g. `v0.2.0` (overrides `-Channel`) |
+
+`stable` and `develop` are still accepted as deprecated aliases for `current` and `next`.
 
 ---
 
