@@ -1,0 +1,264 @@
+name: Release Pipeline
+
+# RC-2: one pipeline reacting to a push on either long-lived branch. Not yet
+# named release.yml — that file is still the currently-shipped pipeline;
+# RC-5 renames this one over it and deletes the old one. See the RC-2
+# blueprint's "Conflict stated up front" for why two files coexist until then.
+on:
+  push:
+    branches: [main, develop]
+
+concurrency:
+  group: 'release-pipeline-${{ github.ref }}'
+  cancel-in-progress: false
+
+# contents: write covers tag creation (release, next-pointer), the GitHub
+# Release, the docs-versions branch push and the release asset upload.
+# issues/pull-requests: write cover the notes generator's issue/PR references.
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  gate:
+    name: Gate
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  release:
+    name: Release
+    needs: gate
+    runs-on: ubuntu-latest
+    outputs:
+      released: ${{ steps.semantic_release.outputs.released || steps.defaults.outputs.released }}
+      action: ${{ steps.semantic_release.outputs.action || steps.defaults.outputs.action }}
+      version: ${{ steps.semantic_release.outputs.version || steps.defaults.outputs.version }}
+      git_tag: ${{ steps.semantic_release.outputs.git_tag || steps.defaults.outputs.git_tag }}
+      channel: ${{ steps.semantic_release.outputs.channel || steps.defaults.outputs.channel }}
+      docker_channel_tag: ${{ steps.semantic_release.outputs.docker_channel_tag || steps.defaults.outputs.docker_channel_tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Defaults the job's outputs to "no release happened" so a run that
+      # never triggers a publishCmd/addChannelCmd (no releasable commits)
+      # still gates downstream jobs off cleanly (AC4, EC2).
+      - name: Default outputs
+        id: defaults
+        run: echo "released=false" >> "$GITHUB_OUTPUT"
+
+      - name: Run semantic-release
+        id: semantic_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -o pipefail
+          npx semantic-release 2>&1 | tee semantic-release.log
+
+      # AC8: surface the version-ordering failure as a readable annotation
+      # instead of an unexplained crash.
+      - name: Annotate branch-ordering failure
+        if: failure()
+        run: |
+          if grep -q 'EINVALIDNEXTVERSION' semantic-release.log; then
+            echo "::error title=Release blocked by branch ordering::semantic-release refused this release with EINVALIDNEXTVERSION: the version computed for '${{ github.ref_name }}' is not higher than the last release on the previous release branch. Recovery: docs/contributing/releasing.md#einvalidnextversion"
+          fi
+
+  docker:
+    name: Docker
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Publish path: the release's own stamped tarball is the source, not a
+      # checkout of the tag — the tag's tree is un-stamped (RC-1's
+      # Amendment). No actions/checkout runs in this job at all.
+      - name: Download release archive
+        if: needs.release.outputs.action == 'publish'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download "${{ needs.release.outputs.git_tag }}" \
+            --repo "${{ github.repository }}" \
+            --pattern 'routerly-*.tar.gz'
+          mkdir -p build-src
+          tar -xzf routerly-*.tar.gz -C build-src --strip-components=1
+
+      - name: Build and push (publish)
+        if: needs.release.outputs.action == 'publish'
+        uses: docker/build-push-action@v6
+        with:
+          context: build-src
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            inebrio/routerly:${{ needs.release.outputs.git_tag }}
+            inebrio/routerly:${{ needs.release.outputs.docker_channel_tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Re-tag path: no build, no source tree — imagetools only re-labels an
+      # already-published manifest.
+      - name: Verify source image exists (addChannel)
+        if: needs.release.outputs.action == 'addChannel'
+        run: |
+          if ! docker buildx imagetools inspect "inebrio/routerly:${{ needs.release.outputs.git_tag }}" > /dev/null 2>&1; then
+            echo "::error::inebrio/routerly:${{ needs.release.outputs.git_tag }} does not exist in the registry. inebrio/routerly:vX.Y.Z only exists for versions promoted through this pipeline; versions at or before 0.3.0 only have the bare X.Y.Z tag, not the v-prefixed one. Promoting one of those requires the bare tag as the source image, not this workflow as it stands."
+            exit 1
+          fi
+
+      - name: Re-tag version image onto channel (addChannel)
+        if: needs.release.outputs.action == 'addChannel'
+        run: |
+          docker buildx imagetools create \
+            --tag "inebrio/routerly:${{ needs.release.outputs.docker_channel_tag }}" \
+            "inebrio/routerly:${{ needs.release.outputs.git_tag }}"
+
+      - name: Verify multi-arch manifest
+        run: |
+          docker buildx imagetools inspect "inebrio/routerly:${{ needs.release.outputs.docker_channel_tag }}" > manifest.txt
+          cat manifest.txt
+          grep -q 'linux/amd64' manifest.txt || { echo "::error::linux/amd64 missing from inebrio/routerly:${{ needs.release.outputs.docker_channel_tag }} manifest"; exit 1; }
+          grep -q 'linux/arm64' manifest.txt || { echo "::error::linux/arm64 missing from inebrio/routerly:${{ needs.release.outputs.docker_channel_tag }} manifest"; exit 1; }
+
+  docs:
+    name: Docs
+    needs: release
+    if: needs.release.outputs.released == 'true' && needs.release.outputs.channel == 'current'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Nothing this pipeline cuts becomes a commit on main/develop any more
+      # (see C6) — layer every prior cut from docs-versions onto the working
+      # tree before deciding whether this version still needs cutting.
+      - name: Layer prior documentation cuts
+        id: layer
+        run: |
+          if git ls-remote --exit-code --heads origin docs-versions > /dev/null 2>&1; then
+            git fetch origin docs-versions
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "parent=$(git rev-parse FETCH_HEAD)" >> "$GITHUB_OUTPUT"
+            git checkout FETCH_HEAD -- website/versioned_docs website/versioned_sidebars website/versions.json
+            git reset
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check whether this version is already cut
+        id: guard
+        run: |
+          VERSION="${{ needs.release.outputs.version }}"
+          if node -e "process.exit(JSON.parse(require('fs').readFileSync('website/versions.json','utf-8')).includes(process.argv[1]) ? 0 : 1)" "$VERSION"; then
+            echo "already_cut=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "already_cut=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Cut documentation version
+        if: steps.guard.outputs.already_cut == 'false'
+        run: npm run docs:cut -- ${{ needs.release.outputs.version }}
+
+      # The docusaurus.config.ts edit docs:cut makes lives only in this
+      # job's own ephemeral working tree — only the three snapshot paths are
+      # published, and refs/heads/main / refs/heads/develop are never
+      # written by this or any other job in this pipeline.
+      - name: Publish documentation cut to docs-versions
+        if: steps.guard.outputs.already_cut == 'false'
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
+        run: |
+          set -e
+          GIT_INDEX_FILE="$(mktemp)"
+          export GIT_INDEX_FILE
+          git add -- website/versioned_docs website/versioned_sidebars website/versions.json
+          TREE=$(git write-tree)
+          if [ "${{ steps.layer.outputs.exists }}" = "true" ]; then
+            COMMIT=$(git commit-tree "$TREE" -p "${{ steps.layer.outputs.parent }}" -m "chore(docs): cut documentation version ${{ needs.release.outputs.version }}")
+          else
+            COMMIT=$(git commit-tree "$TREE" -m "chore(docs): cut documentation version ${{ needs.release.outputs.version }}")
+          fi
+          git push origin "${COMMIT}:refs/heads/docs-versions"
+          rm -f "$GIT_INDEX_FILE"
+
+  docs-deploy:
+    name: Deploy Docs
+    needs: [release, docs]
+    if: needs.release.outputs.released == 'true' && needs.release.outputs.channel == 'current'
+    uses: ./.github/workflows/docs-deploy.yml
+    with:
+      ref: ${{ github.ref_name }}
+    secrets: inherit
+
+  next-pointer:
+    name: Rolling next pointer
+    needs: release
+    if: needs.release.outputs.released == 'true' && needs.release.outputs.channel == 'next'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Force-move the next tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f next "${{ needs.release.outputs.git_tag }}"
+          git push origin next --force
+
+      - name: Recreate the next prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete next --yes 2>/dev/null || true
+          # shellcheck disable=SC2016  # the printf format string is deliberately single-quoted, %s is the interpolation point
+          gh release create next \
+            --title "Routerly next (→ ${{ needs.release.outputs.git_tag }})" \
+            --prerelease \
+            --notes "$(printf 'Unstable channel release. Points to **%s**.\n\nInstall:\n```bash\ncurl -fsSL https://routerly.ai/install.sh | bash -s -- --channel=next\n```' "${{ needs.release.outputs.git_tag }}")" \
+            scripts/install.sh \
+            scripts/install.ps1 \
+            scripts/install.mjs

@@ -17,9 +17,6 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT  = path.resolve(SCRIPT_DIR, '..');
 const WEBSITE_DIR = path.join(REPO_ROOT, 'website');
 const VERSIONS_PATH = path.join(WEBSITE_DIR, 'versions.json');
-const CONFIG_PATH   = path.join(WEBSITE_DIR, 'docusaurus.config.ts');
-
-const LAST_VERSION_LINE_RE = /^(\s*lastVersion:\s*)'[^']*'(,?)\s*$/gm;
 
 const die = (message) => {
   process.stderr.write(`${message}\n`);
@@ -58,28 +55,7 @@ if (versions.includes(version)) {
   die(`Version ${version} is already cut (present in website/versions.json).`);
 }
 
-// ─── 3. Pre-flight: confirm docusaurus.config.ts has a rewritable line ─────
-// Nothing has been mutated yet at this point, so refusing here leaves the
-// tree untouched. This does not replace the post-cut check below — it only
-// predicts it will succeed before steps 4-5 run.
-let preflightConfigContent;
-try {
-  preflightConfigContent = fs.readFileSync(CONFIG_PATH, 'utf-8');
-} catch (err) {
-  die(`Could not read ${CONFIG_PATH}: ${err.message}`);
-}
-
-const preflightMatches = preflightConfigContent.match(LAST_VERSION_LINE_RE);
-
-if (!preflightMatches || preflightMatches.length !== 1) {
-  die(
-    `Could not find a single "lastVersion: '...'" line in website/docusaurus.config.ts ` +
-    `(found ${preflightMatches ? preflightMatches.length : 0}). Refusing to write — update the script's regex ` +
-    `to match the current config shape.`
-  );
-}
-
-// ─── 4. Install website dependencies if needed ─────────────────────────────
+// ─── 3. Install website dependencies if needed ─────────────────────────────
 const websiteNodeModules = path.join(WEBSITE_DIR, 'node_modules');
 if (!fs.existsSync(websiteNodeModules)) {
   const install = spawnSync('npm', ['ci', '--prefix', 'website'], {
@@ -92,7 +68,7 @@ if (!fs.existsSync(websiteNodeModules)) {
   }
 }
 
-// ─── 5. Run the actual version cut ─────────────────────────────────────────
+// ─── 4. Run the actual version cut ─────────────────────────────────────────
 const cut = spawnSync(
   'npm',
   ['run', 'docusaurus', '--prefix', 'website', '--', 'docs:version', version],
@@ -106,7 +82,7 @@ if (cut.status !== 0) {
   die(`Docusaurus CLI failed to cut version ${version}.`);
 }
 
-// ─── 5b. Copy docs/assets alongside the versioned snapshot ────────────────
+// ─── 4b. Copy docs/assets alongside the versioned snapshot ────────────────
 // The Docusaurus versioning CLI only copies markdown pages, not the assets/
 // folder docs pages reference by relative path. Without this, every image
 // in a versioned snapshot 404s.
@@ -116,36 +92,7 @@ if (fs.existsSync(sourceAssets)) {
   fs.cpSync(sourceAssets, versionedAssets, { recursive: true });
 }
 
-// ─── 6. Rewrite lastVersion in docusaurus.config.ts ────────────────────────
-let configContent;
-try {
-  configContent = fs.readFileSync(CONFIG_PATH, 'utf-8');
-} catch (err) {
-  die(`Could not read ${CONFIG_PATH}: ${err.message}`);
-}
-
-const matches = configContent.match(LAST_VERSION_LINE_RE);
-
-if (!matches || matches.length !== 1) {
-  die(
-    `Could not find a single "lastVersion: '...'" line in website/docusaurus.config.ts ` +
-    `(found ${matches ? matches.length : 0}). Refusing to write — update the script's regex ` +
-    `to match the current config shape.`
-  );
-}
-
-const newConfigContent = configContent.replace(
-  LAST_VERSION_LINE_RE,
-  `$1'${version}'$2`
-);
-
-try {
-  fs.writeFileSync(CONFIG_PATH, newConfigContent);
-} catch (err) {
-  die(`Could not write ${CONFIG_PATH}: ${err.message}`);
-}
-
-// ─── 7. Report success ──────────────────────────────────────────────────────
+// ─── 5. Report success ──────────────────────────────────────────────────────
 const newVersionsContent = fs.readFileSync(VERSIONS_PATH, 'utf-8');
 process.stdout.write(`Cut documentation version ${version}\n\n`);
 process.stdout.write(`website/versions.json:\n${newVersionsContent}\n`);
