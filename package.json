@@ -15,16 +15,12 @@
     "test:e2e": "vitest run",
     "lint": "eslint packages/*/src --ext .ts",
     "format": "prettier --write \"packages/*/src/**/*.ts\"",
-    "changeset": "changeset",
-    "version": "changeset version && node scripts/sync-module-versions.mjs",
-    "release": "npm run build && changeset tag",
     "prepare": "husky",
     "docs:cut": "node scripts/docs-version.mjs",
     "screenshots": "node scripts/capture-screenshots.mjs",
     "screenshots:affected": "node scripts/screenshots-affected.mjs"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.30.0",
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
     "@semantic-release/commit-analyzer": "^13.0.1",
