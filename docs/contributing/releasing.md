@@ -203,39 +203,6 @@ own `GITHUB_TOKEN` would not trigger a fresh `develop` push in the way a
 human-authored merge does, so no `next` release would fire and the fix
 would sit on `develop`, unpublished on `next`.
 
-## Aborting a release
-
-A `release/**` branch does not have to reach `main`. To abandon one, run
-the **Release Abort** workflow (`release-abort.yml`) from the Actions tab,
-`workflow_dispatch` only, with a `version` input accepting either `v0.5.0`
-or `0.5.0`. It runs `node scripts/release-abort.mjs --version "$INPUT_VERSION"`.
-
-What it does:
-
-- Deletes only the Docker Hub tags matching `^v<X.Y.Z>-rc\.[0-9]+$` in
-  `inebrio/routerly` — the prerelease images `release-docker.yml` published
-  from that branch's CI runs.
-- Refuses, with exit code `2`, and deletes nothing, if the git tag
-  `v<X.Y.Z>` already exists — that means the version was already promoted,
-  and this workflow is not the tool to undo a promotion. This check runs
-  before any network call to the registry.
-- `latest`, `develop` and `stable` are never touched; their digests are
-  printed before and after the run so that is verifiable from the log.
-- Exit codes: `0` for success, including "nothing to remove"; `1` for an
-  operational failure (bad arguments, missing `DOCKERHUB_USERNAME` or
-  `DOCKERHUB_TOKEN`, a network or auth error); `2` for the promoted-version
-  refusal above.
-- `--dry-run` prints the exact `DELETE` requests it would issue, with the
-  token redacted, without deleting anything. `--tags-file <path>` reads a
-  JSON array of tag names instead of querying the registry, for offline
-  preview.
-
-**What it leaves behind.** Aborting is registry cleanup only, not branch
-teardown. The release branch itself, its commits, its git tags, its
-Version PR and any GitHub Release it produced are all left untouched.
-Deleting the branch and closing the Version PR are manual steps a
-maintainer still has to do after the workflow runs.
-
 ## Credentials the pipeline needs
 
 Names and purposes only; no value is ever recorded here. Three secrets are
@@ -309,14 +276,16 @@ failed.
 
 ## Keeping module manifests in sync
 
-`npm run version` runs `changeset version` and then, automatically,
-`node scripts/sync-module-versions.mjs`. Nothing extra to run: the moment
-the Version PR bumps `packages/service/package.json` to the new number,
-this second step rewrites every module manifest's `version` field and
-every `^X.Y.Z` `dependsOn` range under `packages/service/src` to match it.
-It is unconditional, not differential: it overwrites every matching
-literal with the new canonical version, whatever it was before, and a
-tree that is already in sync produces zero file changes.
+`release.config.mjs`'s `prepareCmd` runs `npm version ${nextRelease.version}
+--workspaces --include-workspace-root --no-git-tag-version
+--ignore-scripts`, then, automatically, `node
+scripts/sync-module-versions.mjs`. Nothing extra to run: the moment
+semantic-release bumps every `package.json` to the computed version, this
+second step rewrites every module manifest's `version` field and every
+`^X.Y.Z` `dependsOn` range under `packages/service/src` to match it. It is
+unconditional, not differential: it overwrites every matching literal with
+the new canonical version, whatever it was before, and a tree that is
+already in sync produces zero file changes.
 
 The scope is fixed to `packages/service/src/**/*.ts`, excluding
 `*.test.ts`.
@@ -349,105 +318,6 @@ place, or just let the next `npm run version` fix it: either way, never
 edit the version literal by hand to make `--check` pass, since the next
 release rewrites it again regardless.
 
-## Generating release notes
-
-The body of the GitHub Release is generated from the git history, not
-written by hand. `scripts/release-notes.sh` renders it with
-[git-cliff](https://git-cliff.org), using the grouping rules in
-`cliff.toml` at the repository root, and the release workflow
-(`.github/workflows/release.yml`) calls it and puts the result straight
-into the release body. This is the GitHub Release only: it never touches
-the per-package `CHANGELOG.md` files, which stay Changesets' job (see
-above).
-
-### What ends up under which heading
-
-The commit's type, the same one commitlint enforces
-(`commitlint.config.js`), decides where it lands:
-
-| Commit type | Heading |
-|---|---|
-| `feat` | Features |
-| `fix` | Bug Fixes |
-| `perf` | Performance |
-| `docs` | Documentation |
-| `refactor` | Refactor |
-| `chore`, `ci`, `build`, `test`, `style` | not shown |
-| a merge commit (`Merge ...`) | not shown |
-| anything else, including a subject that is not a conventional commit at all | Other Changes |
-
-Nothing is silently dropped except merge commits and the five types the
-table marks "not shown": those exist for internal housekeeping and say
-nothing to someone reading what changed. A subject that does not follow
-the conventional-commit form still appears in the notes, under "Other
-Changes", so a change is never lost for having the wrong prefix; it is
-just not sorted by type.
-
-### Previewing locally
-
-```bash
-scripts/release-notes.sh <from-ref> <to-ref> [--tag vX.Y.Z]
-```
-
-The rendered notes go to stdout, nothing else; diagnostics go to stderr.
-Run it from the repository root against two real refs, for example the
-previous tag and `HEAD`:
-
-```
-$ scripts/release-notes.sh v0.1.5 v0.2.0
-## v0.2.0
-
-### Features
-
-- Add time-based filtering and pagination to usage page
-...
-
-### Bug Fixes
-
-- **auth:** Rotate refresh token on every use
-...
-```
-
-`--tag vX.Y.Z` labels the heading with that version explicitly; without
-it, git-cliff uses `<to-ref>` if it is itself a matching version tag. A
-range with no commits still renders a well-formed, empty document instead
-of failing:
-
-```
-$ scripts/release-notes.sh v0.2.0 v0.2.0
-## Release Notes
-```
-
-Two renders of the same range are byte-identical: nothing in the output
-depends on the wall clock or on which unrelated tags happen to exist in
-the repository.
-
-### Failures
-
-A missing or unresolvable ref, or the wrong number of arguments, exits
-`1` with one line on stderr:
-
-```
-$ scripts/release-notes.sh does-not-exist v0.2.0
-release-notes: unresolvable ref 'does-not-exist'
-
-$ scripts/release-notes.sh v0.2.0
-Usage: release-notes.sh <from-ref> <to-ref> [--tag vX.Y.Z]
-```
-
-If git-cliff itself fails to render (a malformed `cliff.toml`, for
-instance), the error is still one line on stderr with the underlying
-cause appended, and exit code `1`. This is what the release workflow sees
-if the step fails.
-
-### Prerequisite
-
-The script looks for `git-cliff` on `PATH` first. If it is not installed,
-it falls back to `npx --yes git-cliff@2.13.1`, so a working `node`/`npx`
-is enough to preview notes locally without installing anything. The
-version is pinned, not a floating range, so a preview and the release
-workflow's own run render the same output for the same range.
-
 ## Cutting a documentation version
 
 The documentation site (`website/`, built with Docusaurus) keeps a
@@ -473,21 +343,23 @@ npm run docs:cut -- 1.4.0
 
 1. Reads and validates the version argument.
 2. Refuses if that version has already been cut.
-3. Confirms `website/docusaurus.config.ts` has exactly one rewritable
-   `lastVersion` line, before touching anything.
-4. Installs `website/`'s dependencies if `website/node_modules` is
+3. Installs `website/`'s dependencies if `website/node_modules` is
    missing (`npm ci --prefix website`).
-5. Runs the Docusaurus versioning CLI (`docusaurus docs:version <X.Y.Z>`),
+4. Runs the Docusaurus versioning CLI (`docusaurus docs:version <X.Y.Z>`),
    which:
    - copies `docs/` into `website/versioned_docs/version-<X.Y.Z>/`
    - copies `website/sidebars.ts` into
      `website/versioned_sidebars/version-<X.Y.Z>-sidebars.json`
    - prepends `<X.Y.Z>` to `website/versions.json`
-6. Rewrites the `lastVersion: '...'` line in
-   `website/docusaurus.config.ts` to the new version, so the site's
-   "latest" label points at what was just cut. The always-current
-   in-progress content in `docs/` is untouched and stays reachable as
-   `next`.
+5. Copies `docs/assets/` into the new versioned snapshot, since the
+   Docusaurus versioning CLI only copies markdown pages.
+
+`website/docusaurus.config.ts` sets no `lastVersion`: with it unset,
+Docusaurus serves whichever entry is first in `website/versions.json` as
+the default, un-prefixed version — and step 4 always prepends the new
+version there, so the site's default automatically becomes what was just
+cut. The always-current in-progress content in `docs/` is untouched and
+stays reachable as `next`.
 
 A successful run prints the new contents of `website/versions.json`:
 
@@ -505,14 +377,8 @@ website/versions.json:
 ]
 ```
 
-Exit code `0`. The only file changed outside `website/versioned_docs/`,
-`website/versioned_sidebars/` and `website/versions.json` is
-`website/docusaurus.config.ts`, and the diff on it is exactly one line:
-
-```
--          lastVersion: '1.3.0',
-+          lastVersion: '1.4.0',
-```
+Exit code `0`. `website/docusaurus.config.ts` is not touched: nothing
+in it names a specific version, so there is nothing to rewrite.
 
 Run it again for the next release when the time comes; each run is
 independent and does not touch a previously cut version's directory.
@@ -531,19 +397,8 @@ half-cut version behind.
 | Version has a `v` prefix | `Version must not have a "v" prefix. Use "1.4.0" instead of "v1.4.0".` | Drop the `v`: `npm run docs:cut -- 1.4.0`. |
 | Version is not bare `X.Y.Z` | `Malformed version "1.4". Expected bare semver in the form X.Y.Z (e.g. 1.2.3).` | Use exactly three numeric components, no pre-release or build metadata: `npm run docs:cut -- 1.4.0`. |
 | Version already cut | `Version 1.4.0 is already cut (present in website/versions.json).` | This is not a re-run path. If the cut version's content is wrong, fix it by hand in `website/versioned_docs/version-1.4.0/` (or remove the version and cut again), not by re-running this command. |
-| `website/docusaurus.config.ts` has no `lastVersion: '...'` line, or more than one | `Could not find a single "lastVersion: '...'" line in website/docusaurus.config.ts (found 0).` (or `found 2`) | The config's `lastVersion` line has been renamed, removed, duplicated or reshaped. Restore a single `lastVersion: '<version>',` line in the plugin options of `website/docusaurus.config.ts`, or update `LAST_VERSION_LINE_RE` in `scripts/docs-version.mjs` to match the new shape. |
 | Dependency install fails | `Failed to install website dependencies (npm ci --prefix website).` | Only shown when `website/node_modules` is missing. Run `npm ci --prefix website` yourself and inspect its output; the underlying npm error prints above this line. |
 | Docusaurus CLI itself fails | `Docusaurus CLI failed to cut version <X.Y.Z>.` | The Docusaurus CLI's own output prints above this line; the version was not added to `website/versions.json`. |
-
-### Known limitation
-
-If the Docusaurus CLI succeeds (`versions.json` and
-`versioned_docs/version-<X.Y.Z>/` written) but the subsequent rewrite of
-`website/docusaurus.config.ts` fails at the filesystem level (disk full,
-permission denied), the version is cut but `lastVersion` was not moved to
-it. This window is a plain OS-level write failure, not a defect in the
-script's logic; if it happens, check `website/docusaurus.config.ts` by
-hand and fix `lastVersion` yourself.
 
 ### Verifying a cut locally
 
