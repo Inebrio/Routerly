@@ -191,6 +191,48 @@ describe('RC-1, AC8: the real publishCmd stamps a tarball with zero commits and 
   })
 })
 
+describe('RC-1, AC5 (Task 7 fix): promoted releases are re-marked latest', () => {
+  it('carries an addChannelCmd exec entry running `gh release edit <tag> --latest`', async () => {
+    // Regression for the gap found live during Task 3 and fixed in Task 7:
+    // @semantic-release/github's addChannel PATCH flips `prerelease` to
+    // false on promotion but never touches `make_latest`, so GitHub's own
+    // "latest" selection does not reliably land on the just-promoted
+    // release. Losing this exec entry silently reintroduces that gap.
+    const config = await loadReleaseConfig()
+    const addChannelEntry = config.plugins.find(
+      (entry: unknown) =>
+        Array.isArray(entry) &&
+        entry[0] === '@semantic-release/exec' &&
+        typeof (entry[1] as Record<string, unknown>)?.addChannelCmd === 'string' &&
+        ((entry[1] as Record<string, string>).addChannelCmd as string).includes('--latest'),
+    )
+    expect(addChannelEntry).toBeDefined()
+    const [, options] = addChannelEntry as [string, { addChannelCmd: string }]
+    expect(options.addChannelCmd).toContain('gh release edit')
+    expect(options.addChannelCmd).toContain('${nextRelease.gitTag}')
+    expect(options.addChannelCmd).toContain('--latest')
+  })
+
+  it('the make-latest exec entry is positioned after @semantic-release/github in the plugin array', async () => {
+    // Order matters (blueprint task 7): the flag flip must run after
+    // @semantic-release/github's own addChannel PATCH, not before it.
+    const config = await loadReleaseConfig()
+    const names = config.plugins.map((entry: unknown) =>
+      Array.isArray(entry) ? (entry[0] as string) : (entry as string),
+    )
+    const githubIndex = names.indexOf('@semantic-release/github')
+    const makeLatestIndex = config.plugins.findIndex(
+      (entry: unknown) =>
+        Array.isArray(entry) &&
+        entry[0] === '@semantic-release/exec' &&
+        typeof (entry[1] as Record<string, unknown>)?.addChannelCmd === 'string' &&
+        ((entry[1] as Record<string, string>).addChannelCmd as string).includes('--latest'),
+    )
+    expect(githubIndex).toBeGreaterThanOrEqual(0)
+    expect(makeLatestIndex).toBeGreaterThan(githubIndex)
+  })
+})
+
 describe('RC-1: release.config.mjs cannot reintroduce a commit-back', () => {
   it('has no @semantic-release/git plugin entry', async () => {
     const config = await loadReleaseConfig()
