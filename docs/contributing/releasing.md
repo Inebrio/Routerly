@@ -82,79 +82,126 @@ contributor opening a pull request.
 
 ## Branches and channels
 
-Three branches carry release meaning; everything else is ordinary
-development.
+Two long-lived branches carry release meaning; everything else is ordinary
+development. Each is one of two update channels.
 
-| Branch | What it means | What it runs |
-|---|---|---|
-| `main` | The currently shipped release. | `ci.yml` and `release.yml` on every push. |
-| `develop` | The next release in progress. Nothing publishes automatically from a push here; publishing the `develop` channel is a manual dispatch (see [Promoting a release](#promoting-a-release)). | `ci.yml` only. |
-| `release/**` | A candidate line: future and unstable. **Not every `release/**` branch reaches `main`.** A branch can be abandoned instead, which is what [aborting a release](#aborting-a-release) is for. | `ci.yml` and `release-version.yml` on every push; a *green* CI run additionally triggers `release-docker.yml`. |
+| Branch | Channel | What it means | What it runs |
+|---|---|---|---|
+| `main` | `current` (semantic-release's own name for it is `latest` — see below) | The currently shipped, stable release. | `ci.yml` and `release.yml` on every push. |
+| `develop` | `next` | The next release, published automatically as soon as commits on it compute a version. | `ci.yml` and `release.yml` on every push. |
 
-The documentation site mirrors this with its own version labels, configured
-in `website/docusaurus.config.ts`:
+The order in `release.config.mjs` is load-bearing, not decoration:
+
+```
+branches: ['main', { name: 'develop', channel: 'next' }],
+```
+
+`main` being listed first is what makes its releases the stable, `latest`
+ones; `develop` is explicit about its own channel, `next`. Whether a release
+is a prerelease or the stable, `latest` one is derived by semantic-release
+from this order — nothing in this repository computes it. Reordering the
+array would silently swap which branch is the stable one.
+
+Both channels share **one tag namespace**: every release, on either branch,
+gets a single `vX.Y.Z` git tag. There is no second, channel-prefixed tag
+scheme — a version tagged `v1.5.3` is the same object whether it was first
+published from `develop` or later promoted onto `main`.
+
+**Migration note.** No `v0.4.0` starting tag was placed for this migration.
+The last reachable tag going into it was `v0.2.0`, and the first version
+semantic-release actually computed on `main` under this pipeline was
+**`0.3.0`** — not `0.4.0` and not `1.0.0`. This is a real, observed result
+from RC-1's dry run, not a hypothetical.
+
+**Channel names.** The CLI, the config and `scripts/install.sh` accept
+`latest`, `current` and `next`. `stable` and `develop` still work as
+deprecated aliases for `current` and `next` respectively; each prints a
+one-line deprecation warning once and is removed no earlier than the
+release after next. The two surfaces word the warning differently — this is
+not one shared string:
+
+- CLI and config (`@routerly/shared`): `Update channel "stable" was renamed
+  to "current". "stable" still works but is deprecated and will be removed
+  in a future release; switch to "current".` (and the equivalent line for
+  `develop` → `next`).
+- `scripts/install.sh`: `Channel 'stable' is deprecated; using 'current'
+  instead.` (and the equivalent line for `develop` → `next`).
+
+The documentation site mirrors the two-channel split with two live states,
+not three:
 
 | Docs version | Label | What it tracks |
 |---|---|---|
-| `current` | "next (future)" | The live `docs/` tree on whatever branch is checked out. Content that has not necessarily shipped. |
-| `0.3.0` | "0.3.0 (develop)" | The snapshot corresponding to the `develop` line. |
-| `lastVersion` | no separate label, this is the default a visitor lands on | The currently shipped stable release, matching `main`. At the time of writing this is `0.2.0`. |
+| Docusaurus's own unversioned `current` | "next" | The live `docs/` tree as committed — not frozen to any release, and can be ahead of the newest cut snapshot. |
+| Newest entry in `website/versions.json` | default landing page | The most recently cut documentation snapshot. |
 
-`lastVersion` is not a fact frozen in this page: it is rewritten by
-`npm run docs:cut` every time a release is promoted (see
-[Cutting a documentation version](#cutting-a-documentation-version)), so it
-moves forward on every release. `website/versions.json` lists every cut
-version as a bare `X.Y.Z`, newest first, independently of this page.
+Only the `current` channel (`main`) ever cuts a documentation version — the
+`docs` job in `release.yml` runs only when `channel == 'current'`. The
+`next` channel (`develop`) never cuts one of its own: `develop`'s
+documentation lives only in the always-live tree above, and gets no frozen
+snapshot until it is promoted. See [Cutting a documentation
+version](#cutting-a-documentation-version) for the mechanics of the cut
+itself.
 
 ## What runs automatically
 
-One row per trigger, ordered by the branch it fires on.
+One row per job in `.github/workflows/release.yml`, triggered by any push
+to `main` or `develop`.
 
-| Trigger | Workflow | What it produces |
+| Job | Runs when | What it produces |
 |---|---|---|
-| Push to `release/**` | `release-version.yml` | Fails fast if `.changeset/pre.json` exists (see [Prerelease mode is not used on this line](#prerelease-mode-is-not-used-on-this-line)). Otherwise opens or updates the Version PR, based on that same release branch. |
-| Push to `main`, `develop` or `release/**`, and pull requests targeting them | `ci.yml` | `npm audit --audit-level=high`; build and typecheck of all four packages; the four workspace test suites with coverage; `npm ci --prefix website`; the release-tooling test suites via `npx vitest run`. A coverage summary is written to the run summary. |
-| `ci.yml` completes successfully on `release/**` | `release-docker.yml` | A multi-arch (`linux/amd64`, `linux/arm64`) push of `inebrio/routerly:v<X.Y.Z>-rc.<CI run number>`, then a `release-docker` commit status on the head commit. The `-rc.N` number is the CI run number, not a changesets prerelease identifier, so it is not contiguous across failed and re-run CI attempts. |
-| Push to `main` | `release.yml`, job `release` | If changesets are pending, opens or updates the Version PR and stops there. Otherwise it builds every package, renders `RELEASE_NOTES.md` from the git history, creates tag `v<X.Y.Z>`, and publishes the GitHub Release. This step is idempotent: if the tag already exists, it does nothing further. |
-| `release` job promoted | `release.yml`, job `docker` | Multi-arch push of `inebrio/routerly:latest` and `inebrio/routerly:v<X.Y.Z>`. |
-| `release` job promoted | `release.yml`, job `docs` | Runs `npm run docs:cut -- <X.Y.Z>` and commits the result to `main` as `chore(docs): cut documentation version <X.Y.Z>`. No-ops cleanly if the cut produces no diff. |
-| `docs` job succeeded | `release.yml`, job `docs-deploy` | Builds `website/` and deploys it to Firebase Hosting (project `routerly-docs`, channel `live`). |
-| `docker` job succeeded | `release.yml`, job `stable` | The stable-channel promotion, see below. |
+| `gate` | Every push to `main` or `develop` | Runs the full `ci.yml` suite as a prerequisite. Nothing downstream runs if it fails. |
+| `release` | `gate` passed | `npx semantic-release`. Computes the next version from the commit history, creates the shared `vX.Y.Z` tag, and publishes (or updates) the GitHub Release. If there is nothing to release, it exits cleanly with `released=false` and nothing downstream runs. |
+| `docker` | `release` published (`released == 'true'`) | Multi-arch (`linux/amd64`, `linux/arm64`) build and push. A first publish (`action == 'publish'`) builds from the release tarball and tags both the git tag and the channel tag; a later channel move (`action == 'addChannel'`) re-tags with `docker buildx imagetools create` instead of rebuilding. |
+| `docs` | `release` published **and** `channel == 'current'` | Runs `npm run docs:cut` for the new version and pushes the cut to the `docs-versions` branch. Skipped entirely for a `next` release. |
+| `docs-deploy` | `docs` finished, same `channel == 'current'` gate | Builds `website/` and deploys it to Firebase Hosting. |
+| `next-pointer` | `release` published **and** `channel == 'next'` | Force-moves the `next` git tag to the new release and recreates the `next` GitHub Release as a prerelease, attaching the install scripts. A `main`-published release never touches this job. |
 
-`docs-deploy` and `stable` are reusable workflows called as jobs of
-`release.yml` with `secrets: inherit`. That only propagates secrets to
-them, not permissions: what each of those jobs is allowed to do is still
-capped by `release.yml`'s own `permissions:` block.
+## Promotion and back-merge
 
-## Promoting a release
+There is no separate "promote" workflow. Promoting a release means merging
+`develop` into `main` with an ordinary pull request; the pipeline then
+picks the merge commit up on push, the same as any other commit on `main`.
 
-There are two promotion paths, each a separate workflow, and neither runs
-on a plain push.
+**Promotion, not recomputation.** semantic-release computes a version from
+the commit history, not from which branch a merge lands on. `develop`,
+being on channel `next`, has typically already published its own
+`vX.Y.Z` release before the merge happens. Merging it into `main` does not
+put in front of `main` any commits that were not already accounted for —
+the same computation runs again and produces the same number. What actually
+happens is that the release already published from `develop` is
+republished from `main`: it loses its prerelease flag and takes over the
+`latest` channel tag. No new tag is created and no second release object is
+made; the existing one is mutated in place.
 
-**Stable.** `promote-stable.yml` runs automatically as the `stable` job of
-`release.yml` once a release is built and its Docker image pushed, or on
-demand via `workflow_dispatch` with a `version` input like `v0.1.5`. It
-verifies the GitHub Release for that version exists, checks out the tag,
-force-pushes the `stable` git tag, recreates the `stable` GitHub Release,
-then re-tags the already-built multi-arch image from
-`inebrio/routerly:v<X.Y.Z>` to `inebrio/routerly:stable` — a re-tag via
-`docker buildx imagetools create`, not a rebuild.
+**Worked example.** `main` is currently serving `1.4.1`. `develop` has
+already published `1.5.3`. A maintainer merges `develop` into `main`. The
+result: `main` serves **1.5.3** — no new tag, no second release object; the
+existing `1.5.3` release flips from prerelease to stable and becomes
+`latest`.
 
-It refuses explicitly, before moving any tag, if
-`inebrio/routerly:v<X.Y.Z>` is not present in the registry. Versions at or
-before `0.3.0` only ever got the bare `X.Y.Z` image tag, never the
-`v`-prefixed one, so they cannot be promoted through this workflow as it
-stands; a version needs to have shipped through the current pipeline (or
-been rebuilt with the correct tag through **Docker Rebuild**) before it can
-become stable.
+This is not what an earlier expectation held — that this merge would
+compute a fresh `1.5.0` on `main`. It does not: the merge promotes `1.5.3`
+as it already stands.
 
-**Develop.** `promote-develop.yml` is `workflow_dispatch` only, with a
-`branch` input defaulting to `develop`. It builds from that branch,
-force-pushes the `develop` git tag, recreates the `develop` GitHub Release
-as a prerelease titled `Routerly develop (<branch>@<short sha>)`, and
-pushes `inebrio/routerly:develop` plus `inebrio/routerly:v<X.Y.Z>`. Nothing
-promotes the develop channel automatically; a maintainer always dispatches
-it.
+### The back-merge
+
+The direction above only carries `develop`'s already-published work onto
+`main`. It does not cover the opposite case: a fix landed directly on
+`main`, outside the normal `develop` → `main` promotion. After that
+happens, a maintainer must open and merge a `main` → `develop` pull request
+by hand. Nothing in the pipeline automates this, and nothing detects a
+missed one.
+
+Forgetting it means the fix never reaches `develop`, the unstable line, and
+it **resurfaces as a regression the next time `develop` is promoted to
+`main`** — the promotion silently reintroduces whatever the fix corrected,
+because it never reached the branch being promoted.
+
+Automating the back-merge was rejected: a merge pushed with the workflow's
+own `GITHUB_TOKEN` would not trigger a fresh `develop` push in the way a
+human-authored merge does, so no `next` release would fire and the fix
+would sit on `develop`, unpublished on `next`.
 
 ## Aborting a release
 
