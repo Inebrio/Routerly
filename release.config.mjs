@@ -42,5 +42,14 @@ export default {
     ['@semantic-release/exec', {
       addChannelCmd: 'gh release edit ${nextRelease.gitTag} --latest',
     }],
+    // RC-2: single source of the branch → channel → docker-tag mapping the
+    // release-pipeline.yml workflow's downstream jobs key off of. That hook
+    // — and nothing else — is what distinguishes a build from a re-tag.
+    ['@semantic-release/exec', {
+      publishCmd:
+        'node scripts/ci-release-output.mjs publish ${nextRelease.version} ${nextRelease.gitTag} ${branch.name}',
+      addChannelCmd:
+        'node scripts/ci-release-output.mjs addChannel ${nextRelease.version} ${nextRelease.gitTag} ${branch.name}',
+    }],
   ],
 };
