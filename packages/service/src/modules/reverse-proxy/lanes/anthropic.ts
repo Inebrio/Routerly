@@ -98,6 +98,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
           traceId: ctx.traceId,
           projectId: project.id,
           ...(project.pii ? { pii: project.pii } : {}),
+          ...(ctx.token ? { tokenId: ctx.token.id } : {}),
         })
         if (!body.stream) {
           const chatResp = await chunksToChatResponse(chunks, model.id)

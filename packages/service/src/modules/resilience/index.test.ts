@@ -4,6 +4,7 @@ import { ServiceContainer, EventBus, createRouteRegistry } from '../../core/inde
 import { RESILIENCE_STORE, API_ROUTES } from '../../core/tokens.js'
 import { InMemoryResilienceStore } from './store.js'
 import { resilienceModule, setResilienceStore, getResilienceStore } from './index.js'
+import { PRODUCT_VERSION } from '../../core/version.js'
 
 /**
  * resilienceModule.register() now depends on API_ROUTES (dependsOn: { api } enforces
@@ -28,7 +29,7 @@ describe('resilience module', () => {
   })
 
   it('declares dependsOn: { api } so it always registers after apiModule (G3 module gating)', () => {
-    expect(resilienceModule.manifest.dependsOn).toEqual({ api: '^0.4.0' })
+    expect(resilienceModule.manifest.dependsOn).toEqual({ api: `^${PRODUCT_VERSION}` })
   })
 
   it('register() also publishes the same store instance via getResilienceStore()', async () => {

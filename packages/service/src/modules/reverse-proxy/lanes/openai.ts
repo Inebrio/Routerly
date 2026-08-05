@@ -120,6 +120,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
             traceId: ctx.traceId,
             projectId: project.id,
             ...(project.pii ? { pii: project.pii } : {}),
+            ...(ctx.token ? { tokenId: ctx.token.id } : {}),
           })
           ctx.result = { kind: 'json', body: await chunksToChatResponse(chunks, model.id) }
         } catch (err) {
@@ -136,6 +137,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
             traceId: ctx.traceId,
             projectId: project.id,
             ...(project.pii ? { pii: project.pii } : {}),
+            ...(ctx.token ? { tokenId: ctx.token.id } : {}),
           })
           ctx.result = { kind: 'stream', body: await primeStream(chunks) }
         } catch (err) {
@@ -158,7 +160,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
       reply.raw.setHeader('Cache-Control', 'no-cache')
       reply.raw.setHeader('Connection', 'keep-alive')
       reply.raw.flushHeaders()
-      await forwardOpenAIOAuthSSE(reply.raw, body as Record<string, unknown>, model, log, ctx.traceId, project.id, project.pii)
+      await forwardOpenAIOAuthSSE(reply.raw, body as Record<string, unknown>, model, log, ctx.traceId, project.id, project.pii, ctx.token?.id)
       reply.raw.end()
       ctx.result = { kind: 'passthrough' }
       return

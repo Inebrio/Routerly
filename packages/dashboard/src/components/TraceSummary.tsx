@@ -12,6 +12,15 @@ import type { ReactNode } from 'react';
 import { AlertTriangle, CheckCircle2, ChevronRight, Route, ShieldAlert, ShieldCheck, Sparkles, XCircle } from 'lucide-react';
 import type { TraceEntry } from '../api';
 import { formatCost, formatDuration, formatTokens, formatTokensPerSec } from '../utils/traceUtils';
+import { isCaptureMode } from '../utils/captureMode';
+
+// Fixed placeholders shown instead of real measured timings while capturing documentation
+// screenshots: the real values are wall-clock derived (measured round-trip to the provider)
+// and differ between two runs of the same commit. See ../utils/captureMode.
+const CAPTURE_DURATION_MS = 420;
+const CAPTURE_LATENCY_MS = 380;
+const CAPTURE_TTFT_MS = 140;
+const CAPTURE_TOKENS_PER_SEC = 52;
 
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 const str = (v: unknown): string | null => (typeof v === 'string' && v.length > 0 ? v : null);
@@ -136,7 +145,7 @@ export function TraceSummary({ trace, turn, collapsible = false, defaultOpen = t
         )}
         <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
-            {formatDuration(num(d.durationMs))}
+            {formatDuration(isCaptureMode() ? CAPTURE_DURATION_MS : num(d.durationMs))}
           </span>
           <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#4ade80', fontVariantNumeric: 'tabular-nums' }}>
             {formatCost(num(d.costUsd))}
@@ -154,9 +163,9 @@ export function TraceSummary({ trace, turn, collapsible = false, defaultOpen = t
             value={tokens ? `${formatTokens(num(tokens.input))} / ${formatTokens(num(tokens.output))}` : '—'}
           />
           {cached > 0 && <Metric label="Cached" value={formatTokens(cached)} accent="#38bdf8" />}
-          <Metric label="Latency" value={formatDuration(num(d.latencyMs))} />
-          <Metric label="TTFT" value={formatDuration(num(d.ttftMs))} />
-          <Metric label="Speed" value={formatTokensPerSec(num(d.tokensPerSec))} />
+          <Metric label="Latency" value={formatDuration(isCaptureMode() ? CAPTURE_LATENCY_MS : num(d.latencyMs))} />
+          <Metric label="TTFT" value={formatDuration(isCaptureMode() ? CAPTURE_TTFT_MS : num(d.ttftMs))} />
+          <Metric label="Speed" value={formatTokensPerSec(isCaptureMode() ? CAPTURE_TOKENS_PER_SEC : num(d.tokensPerSec))} />
         </div>
 
         {(guardrails || pii || optimizers || overhead) && (

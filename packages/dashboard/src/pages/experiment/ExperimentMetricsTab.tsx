@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Activity, BarChart3, DollarSign, Gauge, Star, XCircle } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 import {
   getExperimentMetrics, getProjects,
   type ExperimentMetrics, type ExperimentVariantMetrics, type Project,
 } from '../../api';
 import { DateRangePicker, PRESETS, type DateRange } from '../../components/DateRangePicker';
-import { StatCard } from '../../components/savings';
 import { useExperiment } from './ExperimentLayout';
 
 const fmtCost = (n: number) => `$${n < 0.01 && n > 0 ? n.toFixed(5) : n.toFixed(2)}`;
@@ -73,15 +72,9 @@ export function ExperimentMetricsTab() {
   const bestScore = bestOf(rows, r => r.avgScore, false);
   const rowOf = (variantId: string | null) => rows.find(r => r.variantId === variantId);
 
-  const totalCost = rows.reduce((s, r) => s + r.cost, 0);
-  const totalErrors = rows.reduce((s, r) => s + r.errors, 0);
-  const judgedCalls = rows.reduce((s, r) => s + r.judgedCalls, 0);
-
   const cheapest = rowOf(bestCost);
   const fastest = rowOf(bestLatency);
   const topScore = rowOf(bestScore);
-  const worstCost = cheapest ? rows.reduce((a, b) => (a.avgCostPerCall >= b.avgCostPerCall ? a : b)) : undefined;
-  const slowest = fastest ? rows.filter(r => r.avgLatencyMs !== undefined).reduce((a, b) => (a.avgLatencyMs! >= b.avgLatencyMs! ? a : b)) : undefined;
 
   return (
     <>
@@ -103,37 +96,6 @@ export function ExperimentMetricsTab() {
         </div>
       ) : (
         <>
-          <div className="stats-grid">
-            <StatCard icon={<Activity size={18} />} label="Calls" accentColor="#5A90F8"
-              value={measured} sub={`across ${rows.length} variant${rows.length !== 1 ? 's' : ''}`} />
-            <StatCard icon={<DollarSign size={18} />} label="Cost" accentColor="#3D75F5"
-              value={fmtCost(totalCost)} sub="USD in this window" />
-            <StatCard icon={<XCircle size={18} />} label="Errors" accentColor="#EF4444"
-              {...(totalErrors > 0 ? { valueColor: '#EF4444' } : {})}
-              value={totalErrors} sub={measured > 0 ? `${fmtPct(totalErrors / measured)} of the calls` : 'no calls yet'} />
-            {cheapest && worstCost && (
-              <StatCard icon={<DollarSign size={18} />} label="Cheapest per call" accentColor="#10B981"
-                value={label(cheapest)}
-                sub={`${fmtCost(cheapest.avgCostPerCall)} vs ${fmtCost(worstCost.avgCostPerCall)}`}
-                {...(gap(worstCost.avgCostPerCall, cheapest.avgCostPerCall)
-                  ? { sub2: `${gap(worstCost.avgCostPerCall, cheapest.avgCostPerCall)} on the most expensive arm` }
-                  : {})} />
-            )}
-            {fastest && slowest && (
-              <StatCard icon={<Gauge size={18} />} label="Fastest" accentColor="#8B5CF6"
-                value={label(fastest)}
-                sub={`${fmtMs(fastest.avgLatencyMs)} vs ${fmtMs(slowest.avgLatencyMs)} on average`}
-                {...(gap(slowest.avgLatencyMs, fastest.avgLatencyMs)
-                  ? { sub2: `${gap(slowest.avgLatencyMs, fastest.avgLatencyMs)} on the slowest arm` }
-                  : {})} />
-            )}
-            {topScore && (
-              <StatCard icon={<Star size={18} />} label="Best judge score" accentColor="#F59E0B"
-                value={label(topScore)}
-                sub={`${topScore.avgScore!.toFixed(1)} / 10 over ${judgedCalls} judged call${judgedCalls !== 1 ? 's' : ''}, all time`} />
-            )}
-          </div>
-
           <p className="section-desc" style={{ marginTop: 0 }}>
             {metrics && !metrics.ready
               ? `Not conclusive yet: every variant needs at least ${metrics.minSamplesPerVariant} calls in this window. `

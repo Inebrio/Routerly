@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "default": "latest",
+  "channels": {
+    "latest": "providers.json"
+  }
+}

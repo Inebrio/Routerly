@@ -56,6 +56,10 @@ export type {
   Permission,
   Settings,
   ProviderRepo,
+  UpdateChannel,
+  DeprecatedUpdateChannel,
+  UpdateChannelSetting,
+  NormalizedUpdateChannel,
   NotificationsConfig,
   NotificationSeverity,
   NotificationInboxItem,
@@ -187,6 +191,12 @@ export {
   suggestConnectionLabel, isConnectionLabelTaken,
 } from './types/config.js';
 export type { NotificationEvent } from './types/config.js';
+
+// Update channel vocabulary: 'latest' | 'current' | 'next', 'stable'/'develop' deprecated aliases (RC-3)
+export {
+  UPDATE_CHANNELS, DEPRECATED_UPDATE_CHANNELS, normalizeUpdateChannel,
+  updateChannelDeprecationWarning, isValidUpdateChannel, UPDATE_CHANNEL_ERROR,
+} from './types/config.js';
 
 // Readable catalog for those events: title, category, cause line (T51)
 export {

@@ -14,7 +14,7 @@ import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } f
 import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults } from '@routerly/shared';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
-import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_PROJECT_TIMEOUT_MS, isCompletionCall, notificationCategory } from '@routerly/shared';
+import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_PROJECT_TIMEOUT_MS, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, updateChannelDeprecationWarning, UPDATE_CHANNEL_ERROR } from '@routerly/shared';
 import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
@@ -1611,10 +1611,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // USAGE STATS
   // ══════════════════════════════════════════════════════════════════════════════
 
-  fastify.get<{ Querystring: { period?: string; projectId?: string; projectIds?: string; modelIds?: string; callType?: string; requestType?: string; outcome?: string; from?: string; to?: string; page?: string; pageSize?: string; endUserId?: string; sessionId?: string; savings?: string; series?: string; [key: string]: string | undefined } }>('/api/usage', async (req, reply) => {
+  fastify.get<{ Querystring: { period?: string; projectId?: string; projectIds?: string; modelIds?: string; tokenIds?: string; callType?: string; requestType?: string; outcome?: string; from?: string; to?: string; page?: string; pageSize?: string; endUserId?: string; sessionId?: string; savings?: string; series?: string; [key: string]: string | undefined } }>('/api/usage', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
     const records = await readConfig('usage');
-    const { period = 'monthly', projectId, projectIds, modelIds, callType, requestType, outcome, from, to, endUserId, sessionId } = req.query;
+    const { period = 'monthly', projectId, projectIds, modelIds, tokenIds, callType, requestType, outcome, from, to, endUserId, sessionId } = req.query;
     const page = Math.max(1, parseInt(req.query.page ?? '1', 10) || 1);
     const pageSize = Math.min(200, Math.max(1, parseInt(req.query.pageSize ?? '100', 10) || 100));
     // Parse tag filters: ?tag[customer]=acme
@@ -1663,6 +1663,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (projectIdSet) filtered = filtered.filter(r => projectIdSet.has(r.projectId));
     const modelIdSet = csv(modelIds);
     if (modelIdSet) filtered = filtered.filter(r => modelIdSet.has(r.modelId));
+    // Which project token the call came in on: narrows a project's traffic down
+    // to one client without the client sending anything (T211).
+    const tokenIdSet = csv(tokenIds);
+    if (tokenIdSet) filtered = filtered.filter(r => r.tokenId !== undefined && tokenIdSet.has(r.tokenId));
     if (outcome && outcome !== 'all') {
       // 'error' is any outcome that is neither success nor blocked.
       filtered = outcome === 'error'
@@ -1874,29 +1878,6 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send({ sessionId: req.params.id, requests });
   });
 
-  // ─── GET /api/end-users (#96) ─────────────────────────────────────────────
-  fastify.get<{ Querystring: { projectId?: string } }>('/api/end-users', async (req, reply) => {
-    if (!requirePerm(req, 'report:read', reply)) return;
-    const records = await readConfig('usage');
-    const { projectId } = req.query;
-
-    const userMap = new Map<string, { userId: string; projectId: string; firstSeen: string; lastSeen: string; requests: number; totalCost: number; totalTokens: number }>();
-    for (const r of records) {
-      if (!r.endUserId) continue;
-      if (projectId && r.projectId !== projectId) continue;
-      const u = userMap.get(r.endUserId) ?? { userId: r.endUserId, projectId: r.projectId, firstSeen: r.timestamp, lastSeen: r.timestamp, requests: 0, totalCost: 0, totalTokens: 0 };
-      u.requests++;
-      u.totalCost += r.cost;
-      u.totalTokens += r.inputTokens + r.outputTokens;
-      if (r.timestamp < u.firstSeen) u.firstSeen = r.timestamp;
-      if (r.timestamp > u.lastSeen) u.lastSeen = r.timestamp;
-      userMap.set(r.endUserId, u);
-    }
-
-    const users = [...userMap.values()].sort((a, b) => b.totalCost - a.totalCost);
-    return reply.send({ users });
-  });
-
   // ─── GET /api/system/info ───────────────────────────────────────────────────
   fastify.get('/api/system/info', async (_req, reply) => {
     const settings = await readConfig('settings');
@@ -1907,7 +1888,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       configDir: CONFIG_PATHS.config,
       dataDir: CONFIG_PATHS.data,
       uptimeSeconds: Math.floor(process.uptime()),
-      channel: settings.channel ?? 'latest',
+      channel: normalizeUpdateChannel(settings.channel).channel,
       isDocker: process.env['ROUTERLY_DOCKER'] === '1',
       updateInfo: updateChecker.getLastResult(),
     });
@@ -2010,6 +1991,20 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(400).send({ error: parsed.error.issues[0]!.message });
       }
     }
+    // RC-3: validate/normalise channel before persisting — aliases (stable/develop)
+    // resolve to their canonical name, which is what gets written and what
+    // updateChecker.updateChannel() receives below.
+    const channelPatch = (req.body as Partial<Settings>).channel;
+    let channelNormalized: ReturnType<typeof normalizeUpdateChannel> | undefined;
+    if (channelPatch !== undefined) {
+      if (!isValidUpdateChannel(channelPatch)) {
+        return reply.status(400).send({ error: UPDATE_CHANNEL_ERROR });
+      }
+      channelNormalized = normalizeUpdateChannel(channelPatch);
+      if (channelNormalized.deprecatedAlias) {
+        console.warn(updateChannelDeprecationWarning(channelNormalized.deprecatedAlias));
+      }
+    }
     const current = await readConfig('settings');
     const allowed: (keyof Settings)[] = [
       'logLevel',
@@ -2025,6 +2020,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       if ((req.body as Partial<Settings>)[key] !== undefined) {
         (updated as any)[key] = (req.body as Partial<Settings>)[key];
       }
+    }
+    if (channelNormalized) {
+      updated.channel = channelNormalized.channel;
     }
     // Telemetry is handled separately: server controls installId generation
     const telemetryPatch = (req.body as Partial<Settings>).telemetry;
@@ -2043,8 +2041,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
     await writeConfig('settings', updated);
-    if ((req.body as Partial<Settings>).channel !== undefined) {
-      updateChecker.updateChannel(updated.channel ?? 'latest');
+    if (channelNormalized) {
+      updateChecker.updateChannel(channelNormalized.channel);
     }
     if ((req.body as Partial<Settings>).providerRepos !== undefined) {
       catalogFetcher.setRepos((updated as Settings).providerRepos ?? []);

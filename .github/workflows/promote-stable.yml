@@ -6,6 +6,12 @@ on:
       version:
         description: 'Version tag to promote as stable (e.g. v0.1.5)'
         required: true
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version tag to promote as stable (e.g. v0.1.5)'
+        required: true
+        type: string
 
 concurrency: promote-stable
 
@@ -26,7 +32,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="${{ github.event.inputs.version }}"
+          VERSION="${{ inputs.version }}"
           if ! gh release view "$VERSION" > /dev/null 2>&1; then
             echo "::error::Release '$VERSION' does not exist. Create a versioned release first."
             exit 1
@@ -34,7 +40,7 @@ jobs:
           echo "Release $VERSION found — proceeding."
 
       - name: Checkout version tag
-        run: git checkout "refs/tags/${{ github.event.inputs.version }}"
+        run: git checkout "refs/tags/${{ inputs.version }}"
 
       - name: Force-tag stable
         env:
@@ -54,7 +60,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="${{ github.event.inputs.version }}"
+          VERSION="${{ inputs.version }}"
           gh release create stable \
             --title "Routerly stable (→ ${VERSION})" \
             --notes "$(printf 'Stable channel release. Points to **%s**.\n\nInstall:\n```bash\ncurl -fsSL https://routerly.ai/install.sh | bash -s -- --channel=stable\n```\n\nWindows:\n```powershell\n& ([scriptblock]::Create((irm https://routerly.ai/install.ps1))) -Channel stable\n```' "$VERSION")" \
@@ -77,11 +83,19 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Verify source image exists
+        run: |
+          VERSION="${{ inputs.version }}"
+          if ! docker buildx imagetools inspect "inebrio/routerly:${VERSION}" > /dev/null 2>&1; then
+            echo "::error::inebrio/routerly:${VERSION} does not exist in the registry. inebrio/routerly:vX.Y.Z only exists for versions promoted through this pipeline; versions at or before 0.3.0 only have the bare X.Y.Z tag, not the v-prefixed one. Promoting one of those requires the bare tag as the source image, not this workflow as it stands."
+            exit 1
+          fi
+
       # Re-tag the existing multi-arch image as :stable without re-building.
       # docker buildx imagetools create preserves the full multi-arch manifest.
       - name: Re-tag version image as stable
         run: |
-          VERSION="${{ github.event.inputs.version }}"
+          VERSION="${{ inputs.version }}"
           docker buildx imagetools create \
             --tag "inebrio/routerly:stable" \
             "inebrio/routerly:${VERSION}"

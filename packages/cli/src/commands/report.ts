@@ -32,6 +32,8 @@ interface UsageResponse {
   records: Array<{
     timestamp: string;
     projectId: string;
+    /** Project token the call authenticated with. Absent on records written before it was tracked. */
+    tokenId?: string;
     modelId: string;
     inputTokens: number;
     outputTokens: number;
@@ -159,6 +161,9 @@ Examples:
 
   # Only the calls the router made to decide where to route
   routerly report usage --caller routing
+
+  # Only the traffic that came in on one project token
+  routerly report usage --token 3f2b1c4d-...
 `)
     .option('--period <period>', 'Period: daily | weekly | monthly | all', 'monthly')
     .option('--project <id>', 'Filter by project ID')
@@ -166,9 +171,10 @@ Examples:
     .option('--caller <caller>', `Filter by who made the call: ${CALL_TYPES.join(' | ')}`, parseCallType)
     .option('--session-id <id>', 'Filter by session ID')
     .option('--end-user <id>', 'Filter by end-user ID')
+    .option('--token <id>', 'Filter by project token ID (comma-separated for several)')
     .option('--tag <key=value>', 'Filter by tag (key=value)')
     .option('--json', 'Output as JSON')
-    .action(async (opts: { period: string; project?: string; type?: string; caller?: string; sessionId?: string; endUser?: string; tag?: string; json?: boolean }) => {
+    .action(async (opts: { period: string; project?: string; type?: string; caller?: string; sessionId?: string; endUser?: string; token?: string; tag?: string; json?: boolean }) => {
       try {
         const params = new URLSearchParams({ period: opts.period });
         if (opts.project) params.set('projectId', opts.project);
@@ -176,6 +182,7 @@ Examples:
         if (opts.caller) params.set('callType', opts.caller);
         if (opts.sessionId) params.set('sessionId', opts.sessionId);
         if (opts.endUser) params.set('endUserId', opts.endUser);
+        if (opts.token) params.set('tokenIds', opts.token);
         if (opts.tag) {
           const [key, value] = opts.tag.split('=');
           if (key && value) params.set(`tag[${key}]`, value);
@@ -250,23 +257,28 @@ Examples:
 
   # Only the calls a guardrail made
   routerly report calls --caller guardrail
+
+  # Only the traffic that came in on one project token
+  routerly report calls --token 3f2b1c4d-...
 `)
     .option('--limit <n>', 'Number of records to show', '20')
     .option('--project <id>', 'Filter by project ID')
     .option('--type <type>', `Filter by request type: ${REQUEST_TYPES.join(' | ')}`, parseRequestType)
     .option('--caller <caller>', `Filter by who made the call: ${CALL_TYPES.join(' | ')}`, parseCallType)
-    .action(async (opts: { limit: string; project?: string; type?: string; caller?: string }) => {
+    .option('--token <id>', 'Filter by project token ID (comma-separated for several)')
+    .action(async (opts: { limit: string; project?: string; type?: string; caller?: string; token?: string }) => {
       try {
         const params = new URLSearchParams({ period: 'all' });
         if (opts.project) params.set('projectId', opts.project);
         if (opts.type) params.set('requestType', opts.type);
         if (opts.caller) params.set('callType', opts.caller);
+        if (opts.token) params.set('tokenIds', opts.token);
 
         const data = await api<UsageResponse>('GET', `/api/usage?${params.toString()}`);
         const limited = data.records.slice(0, parseInt(opts.limit, 10));
 
         const table = new Table({
-          head: ['Timestamp', 'Project', 'Model', 'Type', 'Caller', 'In Tokens', 'Out Tokens', 'Cost', 'Latency', 'Outcome'].map(h => chalk.cyan(h)),
+          head: ['Timestamp', 'Project', 'Token', 'Model', 'Type', 'Caller', 'In Tokens', 'Out Tokens', 'Cost', 'Latency', 'Outcome'].map(h => chalk.cyan(h)),
         });
 
         for (const r of limited) {
@@ -274,6 +286,8 @@ Examples:
           table.push([
             new Date(r.timestamp).toLocaleString(),
             r.projectId.slice(0, 8),
+            // Records written before tokenId existed carry no caller token.
+            r.tokenId ? r.tokenId.slice(0, 8) : '-',
             r.modelId,
             // Records written before requestType existed were all chat calls.
             requestTypeLabel((r.requestType ?? 'chat') as RequestType),
@@ -487,44 +501,6 @@ Examples:
         if (opts.trend) printSavingsTrend(data.series);
 
         console.log(chalk.gray('\nCosts are the observed tokens repriced at each model\'s rates.'));
-      } catch (err) {
-        console.error(chalk.red(`Error: ${(err as Error).message}`));
-        process.exit(1);
-      }
-    });
-
-  // ── report end-users ──
-  cmd.command('end-users')
-    .description('Show per-end-user usage stats')
-    .option('--project <id>', 'Filter by project ID')
-    .option('--json', 'Output as JSON')
-    .action(async (opts: { project?: string; json?: boolean }) => {
-      try {
-        const params = new URLSearchParams();
-        if (opts.project) params.set('projectId', opts.project);
-        const qs = params.toString();
-
-        const data = await api<Array<{
-          userId: string;
-          requests: number;
-          totalCost: number;
-        }>>('GET', `/api/end-users${qs ? `?${qs}` : ''}`);
-
-        if (opts.json) { console.log(JSON.stringify(data, null, 2)); return; }
-
-        if (data.length === 0) {
-          console.log(chalk.yellow('No end-user data found.'));
-          return;
-        }
-
-        const table = new Table({
-          head: ['User ID', 'Requests', 'Total Cost'].map(h => chalk.cyan(h)),
-        });
-
-        for (const u of data) {
-          table.push([u.userId, u.requests, `$${u.totalCost.toFixed(6)}`]);
-        }
-        console.log(table.toString());
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);

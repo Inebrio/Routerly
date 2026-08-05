@@ -1292,20 +1292,6 @@ describe('deletePlaygroundPreset', () => {
   });
 });
 
-// ── End users ─────────────────────────────────────────────────────────────────
-
-describe('getEndUsers', () => {
-  it('GET /end-users?projectId=... and extracts .users', async () => {
-    const { getEndUsers } = await api();
-    const users = [{ userId: 'u1', projectId: 'p1', firstSeen: '', lastSeen: '', requests: 1, totalCost: 0, totalTokens: 0 }];
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { users }));
-    const result = await getEndUsers('p1');
-    expect(result).toEqual(users);
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
-    expect(url).toContain('projectId=p1');
-  });
-});
-
 // ── Integrations ──────────────────────────────────────────────────────────────
 
 describe('getIntegrations', () => {

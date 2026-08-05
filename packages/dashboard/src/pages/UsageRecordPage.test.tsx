@@ -142,6 +142,31 @@ describe('UsageRecordPage — main display', () => {
     expect(screen.getByText('proj-1')).toBeTruthy();
   });
 
+  it('names the project token the call came in on', async () => {
+    mockGetProjects.mockResolvedValue([{
+      id: 'proj-1', name: 'My Project',
+      tokens: [{ id: 'tok-1', tokenSnippet: 'sk-rt-aaa', createdAt: '2026-01-01T00:00:00Z', labels: ['ci'] }],
+    }]);
+    mockGetRecord.mockResolvedValue(makeRecord({ tokenId: 'tok-1' }));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Token')).toBeTruthy());
+    expect(screen.getByText('ci')).toBeTruthy();
+  });
+
+  it('falls back to the token id when the token is gone', async () => {
+    mockGetProjects.mockResolvedValue([{ id: 'proj-1', name: 'My Project', tokens: [] }]);
+    mockGetRecord.mockResolvedValue(makeRecord({ tokenId: 'tok-revoked' }));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('tok-revoked')).toBeTruthy());
+  });
+
+  it('hides the Token field on a record written before tokens were tracked', async () => {
+    mockGetRecord.mockResolvedValue(makeRecord());
+    renderPage();
+    await waitFor(() => screen.getByText('openai/gpt-4o'));
+    expect(screen.queryByText('Token')).toBeNull();
+  });
+
   it('shows TTFT when present', async () => {
     mockGetRecord.mockResolvedValue(makeRecord({ ttftMs: 42 }));
     renderPage();

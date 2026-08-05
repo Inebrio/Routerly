@@ -37,7 +37,9 @@ A batch of small independent fixes is Tier 0 repeated, not Tier 2. Fix them inli
 
 One deliverable that fails any Tier 0 condition: several surfaces, a contract, a new permission, a data shape, anything a reviewer would want evidence for.
 
-Skip analyst and story-writer. **project-manager** writes the blueprint, then the story runs through `story-lifecycle` in its own worktree: **orchestrator** → engineers → **validator** → **qa-engineer** and **docs-writer**. The worktree is not ceremony: the validator starts the app, and on the main checkout it would collide with your running instance.
+Skip analyst and story-writer. **project-manager** writes the blueprint, then the story runs through `story-lifecycle` in its own worktree: **orchestrator** → engineers → **validator** → merge → user-check gate → **qa-engineer** and **docs-writer**. The worktree is not ceremony: the validator starts the app, and on the main checkout it would collide with your running instance.
+
+**Fast lane.** If the blueprint needs only one role (backend-only or frontend-only, no interface for the orchestrator to freeze between two engineers), skip project-manager and orchestrator: go straight to that engineer, then **validator**. The rest of Tier 1 (worktree, merge, user-check gate, qa-engineer, docs-writer) is unchanged. The moment a second role or a contract between them shows up, that story is back on the full Tier 1 floor.
 
 ### Tier 2 — full chain
 
@@ -53,41 +55,15 @@ Nine agents, artifacts as the only hand-off. Nothing passes through conversation
 | Story | story-writer | `.claude/specs/<feature>/01-stories/<story-id>.md` |
 | Blueprint | project-manager | `.claude/specs/<feature>/02-blueprint/<story-id>.md` |
 | Validation | validator | `.claude/specs/<feature>/03-validation/<story-id>.md` |
+| Retrospective | main session | `.claude/specs/<feature>/04-retrospective.md` |
 
-### Feature level — main session, main checkout
+### Running a Tier 1 or Tier 2 feature
 
-1. **analyst** → analysis, task list, dependency graph. If its report starts with `NEEDS-INPUT`, put its questions to the user with `AskUserQuestion`: state the problem, the options with their consequences, and the recommendation. Send the answers back to the same agent and let it finish.
-2. **story-writer** → one story file per story. No file, function or endpoint names in a story.
-3. **project-manager** → one blueprint per story, with every contact point frozen and the exact start command the validator will run.
-4. **Show and launch in the same response.** Story list plus dependency graph, then start. No "shall I proceed".
-
-### Story level — one teammate per story, one worktree per story
-
-Each story runs the `story-lifecycle` skill in its own worktree, branch `story/<feature>/<story-id>`, its own ports, its own `ROUTERLY_HOME`:
-
-```
-node .claude/scripts/story.mjs claim <story-id> --feature <feature> --base 0.4.0
-```
-
-5. **orchestrator** freezes the interface, then dispatches **backend-engineer** and **frontend-engineer** in parallel where the blueprint says they are independent.
-6. **validator** starts the app on the story's ports and verifies every criterion for real, browser included. It can run anything and change nothing but its own report.
-7. **BLOCKED** → `remediation-loop`, three iterations maximum, then escalate to the user with what survived and why.
-8. **qa-engineer** writes tests, only on a story that passed with zero blockers.
-9. **docs-writer** documents the change on every surface it ships on, in parallel with the tests. It reads the code, not the blueprint. A story with a user-visible change and no documentation is not done.
-
-### Parallelism
-
-Stories are the unit, not features. Independent stories run at once, up to **three** concurrently; the dependency graph decides what is independent. Stories touching the same file or the same contract run sequentially, in graph order. The registry (`.claude/registry.json`, main checkout, lock-protected) is what stops two sessions taking the same story or the same ports.
-
-### Integration and closing
-
-Merging is the main session's job, never a teammate's. When a story passes: merge its branch into the integration branch in dependency order, then `story.mjs state <id> done` and `story.mjs release <id>`. `release` refuses a worktree holding unmerged work; merge first, never force past it.
-
-A feature closes when every story is done, the integration branch builds and its tests pass, and the user approves. Specs stay on disk after closing: they are gitignored and they are the record of why the code looks the way it does.
-
-**Human gates: two.** The analyst's questions, and the merge. Everything between runs without asking.
-
-**Interrupt policy**: stop and explain only when a story is unachievable for architectural or irreversible reasons. Give the exact problem, why it blocks, and the options with tradeoffs. Never interrupt for ordinary implementation difficulty: the remediation loop handles that.
+Once the tier is picked, the feature level (analyst → story-writer →
+project-manager), the story level (one worktree per story), parallelism
+across stories, integration/closing, and the retrospective are all covered by
+the `feature-lifecycle` skill — load it before dispatching the first agent of
+a Tier 1 or Tier 2 feature.
 
 ---
 

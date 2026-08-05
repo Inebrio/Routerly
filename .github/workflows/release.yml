@@ -6,6 +6,11 @@ on:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
+# contents: write covers tag creation, release publishing and the docs commit push.
+# pull-requests: write covers the changesets "Version Packages" PR step.
+# Reusable workflow calls below (docs-deploy, promote-stable) run as jobs of this
+# workflow and are capped by this same block; secrets: inherit only propagates
+# secrets, not permissions, so neither called workflow needs its own grant here.
 permissions:
   contents: write
   pull-requests: write
@@ -16,6 +21,12 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       has_changesets: ${{ steps.changesets.outputs.hasChangesets }}
+      version: ${{ steps.tag.outputs.version }}
+      # Falls back to the default-promotion step's "false" when the tag step is
+      # skipped (hasChangesets == 'true'), whose own output would otherwise be
+      # empty. Empty already evaluates falsy against == 'true', so this fallback
+      # is for an explicit "false" rather than relying on emptiness alone.
+      promoted: ${{ steps.tag.outputs.promoted || steps.default-promotion.outputs.promoted }}
 
     steps:
       - uses: actions/checkout@v4
@@ -46,7 +57,21 @@ jobs:
         if: steps.changesets.outputs.hasChangesets == 'false'
         run: npm run build
 
+      - name: Render release notes
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        run: |
+          PREVIOUS_REF=$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' HEAD^ 2>/dev/null) \
+            || PREVIOUS_REF=$(git rev-list --max-parents=0 HEAD)
+          scripts/release-notes.sh "$PREVIOUS_REF" HEAD > RELEASE_NOTES.md
+
+      # Defaults the job's promoted output to false so a run that never reaches
+      # this step (hasChangesets == 'true') still gates downstream jobs off.
+      - name: Default promoted output
+        id: default-promotion
+        run: echo "promoted=false" >> "$GITHUB_OUTPUT"
+
       - name: Create tag and GitHub Release
+        id: tag
         if: steps.changesets.outputs.hasChangesets == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -56,6 +81,8 @@ jobs:
 
           if git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "Tag $TAG already exists, skipping."
+            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "promoted=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -70,17 +97,20 @@ jobs:
 
           gh release create "$TAG" \
             --title "Routerly ${TAG}" \
-            --generate-notes \
+            --notes-file RELEASE_NOTES.md \
             "${ARCHIVE}" \
             scripts/install.sh \
             scripts/install.ps1 \
             scripts/install.mjs
 
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "promoted=true" >> "$GITHUB_OUTPUT"
+
   docker:
     name: Docker
     runs-on: ubuntu-latest
     needs: release
-    if: needs.release.outputs.has_changesets == 'false'
+    if: needs.release.outputs.promoted == 'true'
 
     steps:
       - uses: actions/checkout@v4
@@ -114,3 +144,51 @@ jobs:
             inebrio/routerly:v${{ steps.meta.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    needs: release
+    if: needs.release.outputs.promoted == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cut documentation version
+        run: npm run docs:cut -- ${{ needs.release.outputs.version }}
+
+      - name: Commit and push documentation version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No documentation changes to commit."
+          else
+            git commit -m "chore(docs): cut documentation version ${{ needs.release.outputs.version }}"
+            git push origin main
+          fi
+
+  docs-deploy:
+    name: Deploy Docs
+    needs: [release, docs]
+    if: needs.release.outputs.promoted == 'true'
+    uses: ./.github/workflows/docs-deploy.yml
+    secrets: inherit
+
+  stable:
+    name: Promote Stable Channel
+    needs: [release, docker]
+    if: needs.release.outputs.promoted == 'true'
+    uses: ./.github/workflows/promote-stable.yml
+    with:
+      version: v${{ needs.release.outputs.version }}
+    secrets: inherit

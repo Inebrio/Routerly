@@ -3,6 +3,7 @@ import type { Message, OptimizerStep, ProjectConfig } from '@routerly/shared'
 import { optimizerFixture } from '@routerly/shared'
 import type { ProxyContext } from '../../reverse-proxy/context.js'
 import { jsonTableOptimizer, jsonTableModule } from './index.js'
+import { PRODUCT_VERSION } from '../../../core/version.js'
 
 function makeCtx(
   messages: Message[],
@@ -105,6 +106,6 @@ describe('json-table optimizer', () => {
 
   it('registers itself into the optimizer registry', () => {
     expect(jsonTableModule.manifest.id).toBe('optimizer-json-table')
-    expect(jsonTableModule.manifest.dependsOn).toEqual({ 'optimizer-core': '^0.4.0' })
+    expect(jsonTableModule.manifest.dependsOn).toEqual({ 'optimizer-core': `^${PRODUCT_VERSION}` })
   })
 })

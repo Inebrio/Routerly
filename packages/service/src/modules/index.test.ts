@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { ServiceContainer, EventBus } from '../core/index.js'
 import { ALL_MODULES, coreModules, providerOAuthModule, providerWebModule } from './index.js'
+import { PRODUCT_VERSION } from '../core/version.js'
 
 describe('provider-oauth / provider-web module manifests', () => {
   it('are pure no-op predisposition slots: register cleanly, no side effects', async () => {
@@ -19,7 +20,7 @@ describe('provider-oauth / provider-web module manifests', () => {
   })
 
   it('both depend on the always-on "provider" module', () => {
-    expect(providerOAuthModule.manifest.dependsOn).toEqual({ provider: '^0.4.0' })
-    expect(providerWebModule.manifest.dependsOn).toEqual({ provider: '^0.4.0' })
+    expect(providerOAuthModule.manifest.dependsOn).toEqual({ provider: `^${PRODUCT_VERSION}` })
+    expect(providerWebModule.manifest.dependsOn).toEqual({ provider: `^${PRODUCT_VERSION}` })
   })
 })

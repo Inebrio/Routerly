@@ -24,8 +24,9 @@ export type ExperimentRotation = (typeof EXPERIMENT_ROTATIONS)[number];
  * custom header or adding a payload field.
  *
  * `auto` uses the standard `user` field when the client sends it (the same
- * field End Users attribution reads) and otherwise falls back to a stable hash
- * of the conversation prefix combined with the caller's IP and user agent.
+ * field usage records store as `endUserId`) and otherwise falls back to a
+ * stable hash of the conversation prefix combined with the caller's IP and
+ * user agent.
  * The narrower values pin one source, for a deployment that knows its clients.
  */
 export const STICKY_KEYS = ['auto', 'end-user', 'conversation', 'client'] as const;

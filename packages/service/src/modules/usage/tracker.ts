@@ -25,6 +25,8 @@ export interface TrackUsageParams {
   traceId?: string;
   /** End-user id from OpenAI `user` field (#96) */
   endUserId?: string;
+  /** Project token the call authenticated with, for per-caller attribution */
+  tokenId?: string;
   /** Session identifier — groups related calls for cost attribution */
   sessionId?: string;
   /** Arbitrary key-value tags — for cost attribution and filtering */
@@ -87,6 +89,7 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     priceInput: params.model.cost.inputPerMillion,
     priceOutput: params.model.cost.outputPerMillion,
     ...(params.endUserId ? { endUserId: params.endUserId } : {}),
+    ...(params.tokenId ? { tokenId: params.tokenId } : {}),
     ...(params.sessionId ? { sessionId: params.sessionId } : {}),
     ...(params.tags ? { tags: params.tags } : {}),
     ...(params.guardrailTriggered ? { guardrailTriggered: params.guardrailTriggered } : {}),

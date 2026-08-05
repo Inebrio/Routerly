@@ -4,7 +4,6 @@ import type {
   ProfileKind,
   RoutingPolicy,
   RoutingProfile,
-  SecurityProfile,
 } from '@routerly/shared';
 
 /**
@@ -119,39 +118,15 @@ const OPTIMIZER_PRESETS = Object.freeze([
   }),
 ]) as readonly OptimizerProfile[];
 
-const PII_ENTITIES = ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'] as const;
-
 /**
- * Security presets stay model-free on purpose. Topic and moderation guardrails
- * need a judge model id, which is instance-specific: a preset that named one
- * would be broken on every install but the one it was written on. Users who
- * want a judge clone a preset and pick their model.
+ * No security presets ship any more. Guardrails and PII policies rewrite the
+ * request, and what a request may be rewritten into is never a default someone
+ * inherits without asking for it: a security profile is now always written by
+ * the user, from scratch or by cloning one of their own.
  */
-const SECURITY_PRESETS = Object.freeze([
-  Object.freeze({
-    id: 'security-standard',
-    kind: 'security',
-    version: 1,
-    label: 'Standard',
-    guardrails: { detectInjection: true, rules: [] },
-    pii: { policies: [{ target: 'request', entities: [...PII_ENTITIES] }] },
-    builtin: true,
-  }),
-  Object.freeze({
-    id: 'security-strict',
-    kind: 'security',
-    version: 1,
-    label: 'Strict',
-    guardrails: { detectInjection: true, rules: [] },
-    pii: { policies: [{ target: 'both', entities: [...PII_ENTITIES] }] },
-    builtin: true,
-  }),
-]) as readonly SecurityProfile[];
-
 export const BUILTIN_PROFILES: readonly Profile[] = Object.freeze([
   ...ROUTING_PRESETS,
   ...OPTIMIZER_PRESETS,
-  ...SECURITY_PRESETS,
 ]);
 
 /**
@@ -186,11 +161,15 @@ export const LEGACY_BUILTIN_PROFILES: readonly Profile[] = Object.freeze([
   }),
 ]) as readonly Profile[];
 
-/** The preset a project falls back to when it has neither a profile nor custom config of that kind. */
-export const DEFAULT_PROFILE_ID: Record<ProfileKind, string> = {
+/**
+ * The preset a project falls back to when it has neither a profile nor custom
+ * config of that kind. Security has no entry on purpose: a project with no
+ * security profile runs with no guardrails and no PII policy, which is the only
+ * safe default for a router that must not alter a request it was not told to.
+ */
+export const DEFAULT_PROFILE_ID: { routing: string; optimizer: string } = {
   routing: 'auto',
   optimizer: 'optimizer-safe',
-  security: 'security-standard',
 };
 
 /** Resolves a preset by id, current or legacy. Legacy ids resolve but are never listed. */

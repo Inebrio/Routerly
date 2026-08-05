@@ -316,6 +316,32 @@ describe('UsagePage — Rank column and sortable per-model table', () => {
     expect(rankCell?.textContent).toContain('1');
   });
 
+  it('shows the first 10 models and expands to the rest on demand', async () => {
+    const byModel = Object.fromEntries(
+      Array.from({ length: 14 }, (_, i) => [`model-${String(i).padStart(2, '0')}`, {
+        calls: 10, inputTokens: 5000, outputTokens: 2000, cachedInputTokens: 0,
+        cost: 0.001 * (i + 1), errors: 0, success: 10, avgLatencyMs: 200, p95LatencyMs: 400,
+      }])
+    );
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byModel });
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Rank')).toBeTruthy());
+    expect(document.querySelectorAll('tbody tr')).toHaveLength(10);
+
+    await userEvent.click(screen.getByText('Show 4 more models'));
+    expect(document.querySelectorAll('tbody tr')).toHaveLength(14);
+
+    await userEvent.click(screen.getByText('Show fewer models'));
+    expect(document.querySelectorAll('tbody tr')).toHaveLength(10);
+  });
+
+  it('leaves the ranking whole when it fits', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byModel: makeByModel() });
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Rank')).toBeTruthy());
+    expect(screen.queryByText(/Show \d+ more model/)).toBeNull();
+  });
+
   it('model with zero success gets rank — (Infinity, displays as dash)', async () => {
     vi.mocked(getUsage).mockResolvedValue({
       ...makeStats(),
@@ -506,6 +532,30 @@ describe('UsagePage — records table', () => {
     vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord()]));
     renderPage();
     await waitFor(() => expect(screen.getByText('MyProject')).toBeTruthy());
+  });
+
+  it('names the token a call came in on, and offers it as a filter', async () => {
+    vi.mocked(getProjects).mockResolvedValue([{
+      id: 'proj-abc', name: 'MyProject',
+      tokens: [
+        { id: 'tok-1', tokenSnippet: 'sk-rt-aaa', createdAt: '2026-01-01T00:00:00Z', labels: ['ci'] },
+        { id: 'tok-2', tokenSnippet: 'sk-rt-bbb', createdAt: '2026-01-01T00:00:00Z' },
+      ],
+    } as never]);
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord({ tokenId: 'tok-1' })]));
+    renderPage();
+    // The label wins over the snippet on the record row, and the filter is
+    // offered because the project has more than one token.
+    await waitFor(() => expect(screen.getAllByText('ci').length).toBeGreaterThan(0));
+    expect(screen.getByText('Token')).toBeTruthy();
+  });
+
+  it('shows no token line on a record written before tokens were tracked', async () => {
+    vi.mocked(getProjects).mockResolvedValue([{ id: 'proj-abc', name: 'MyProject', tokens: [] } as never]);
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord()]));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('MyProject')).toBeTruthy());
+    expect(screen.queryByText('Token')).toBeNull();
   });
 
   it('falls back to projectId span when project not found', async () => {

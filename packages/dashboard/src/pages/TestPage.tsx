@@ -10,6 +10,12 @@ import { getProjects, getPlaygroundPresets, createPlaygroundPreset, deletePlaygr
 import { TraceLog } from '../components/TraceLog.js';
 import { TraceSummary } from '../components/TraceSummary.js';
 import { SearchableSelect } from '../components/SearchableSelect.js';
+import { isCaptureMode } from '../utils/captureMode.js';
+
+// Fixed placeholder shown instead of the real measured per-message latency while capturing
+// documentation screenshots: the real value is wall-clock derived and differs between two
+// runs of the same commit. See ../utils/captureMode.
+const CAPTURE_MSG_LATENCY_MS = 380;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -299,7 +305,7 @@ function ComparePanel({
                         </div>
                         {isAssistant && (
                           <div style={{ display: 'flex', gap: 6, marginTop: 3, fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                            {msg.latencyMs ? <span>{msg.latencyMs}ms</span> : null}
+                            {msg.latencyMs ? <span>{isCaptureMode() ? CAPTURE_MSG_LATENCY_MS : msg.latencyMs}ms</span> : null}
                             {(msg.inputTokens || msg.outputTokens) ? (
                               /* v8 ignore next 3 */
                               <span style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 4px', fontFamily: 'monospace' }}>
@@ -1056,7 +1062,7 @@ export function TestPage() {
                               guardrail: {(msg.guardrailInputTokens ?? 0) + (msg.guardrailOutputTokens ?? 0)} | {costEstimate(msg.guardrailInputTokens ?? 0, msg.guardrailOutputTokens ?? 0)}
                             </span>
                           ) : null}
-                          {isAssistant && msg.latencyMs ? <span>{msg.latencyMs}ms</span> : null}
+                          {isAssistant && msg.latencyMs ? <span>{isCaptureMode() ? CAPTURE_MSG_LATENCY_MS : msg.latencyMs}ms</span> : null}
                           {/* Truncation badge — response cut off by max_tokens */}
                           {isAssistant && msg.finishReason === 'length' && (
                             <span
@@ -1139,7 +1145,7 @@ export function TestPage() {
                   />
                   {loading
                     ? <button className="btn btn-danger" onClick={handleStop}><Square size={15} /></button>
-                    : <button className="btn btn-primary" onClick={handleSend} disabled={!input.trim() || !apiKey}><Send size={15} /></button>
+                    : <button className="btn btn-primary" data-testid="playground-send-button" onClick={handleSend} disabled={!input.trim() || !apiKey}><Send size={15} /></button>
                   }
                 </div>
               </div>

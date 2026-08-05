@@ -2,7 +2,7 @@
 // Story harness: worktree, branch, ports, isolated runtime, shared registry.
 //
 //   story.mjs claim <story-id> --feature <name> --base <branch> [--owner <id>]
-//   story.mjs state <story-id> <planned|in-progress|validating|blocked|done>
+//   story.mjs state <story-id> <planned|in-progress|validating|merging|blocked|done>
 //   story.mjs list [--json]
 //   story.mjs release <story-id> [--force]
 //
@@ -25,7 +25,15 @@ import {
 } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
-const STATES = ['planned', 'in-progress', 'validating', 'blocked', 'done'];
+// `merging` is the state a story reaches when its implementation has passed
+// validation and only the merge is left. It exists because CLAUDE.md frees a
+// story's slot at that moment, while its qa and docs agents keep running, and
+// until this state existed the registry had no way to say so: such a story sat
+// at `in-progress` and capacity.sh counted it against the machine's slots. A
+// story parked on a human gate is `blocked`, not `in-progress`, for the same
+// reason. Both were over-counting the load and refusing dispatches the machine
+// could have carried.
+const STATES = ['planned', 'in-progress', 'validating', 'merging', 'blocked', 'done'];
 const LOCK_STALE_MS = 60_000;
 
 const git = (args, cwd) =>

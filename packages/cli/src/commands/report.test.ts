@@ -109,6 +109,12 @@ describe('report usage', () => {
     expect(mockApi).not.toHaveBeenCalled();
   });
 
+  it('appends --token filter as tokenIds', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    await run('usage', '--token', 'tok-1,tok-2');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('tokenIds=tok-1%2Ctok-2'));
+  });
+
   it('prints "no records" when totalCalls is 0', async () => {
     mockApi.mockResolvedValue({ ...usageFixture, summary: { ...usageFixture.summary, totalCalls: 0 } });
     const { out } = await run('usage');
@@ -319,6 +325,25 @@ describe('report calls', () => {
     expect(mockApi).not.toHaveBeenCalled();
   });
 
+  it('appends --token filter as tokenIds', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    await run('calls', '--token', 'tok-1');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('tokenIds=tok-1'));
+  });
+
+  it('prints the token column, dashed on records written before it was tracked', async () => {
+    mockApi.mockResolvedValue({
+      ...usageFixture,
+      records: [
+        { ...usageFixture.records[0], tokenId: '3f2b1c4d-9a8b-4c7d-8e6f-1a2b3c4d5e6f' },
+        usageFixture.records[1], // legacy: no tokenId
+      ],
+    });
+    const { out } = await run('calls');
+    expect(out.join('\n')).toContain('3f2b1c4d');
+    expect(out.join('\n')).toMatch(/-\s*\u2502/);
+  });
+
   it('prints the caller column, defaulting legacy records to completion', async () => {
     mockApi.mockResolvedValue({
       ...usageFixture,
@@ -416,47 +441,6 @@ describe('report sessions', () => {
   it('exits 1 on API error', async () => {
     mockApi.mockRejectedValue(new Error('fail'));
     const { err } = await run('sessions');
-    expect(err.join('\n')).toContain('fail');
-  });
-});
-
-// ── report end-users ─────────────────────────────────────────────────────────
-
-const endUsersFixture = [
-  { userId: 'user-111', requests: 10, totalCost: 0.05 },
-  { userId: 'user-222', requests: 3, totalCost: 0.01 },
-];
-
-describe('report end-users', () => {
-  it('prints end-users table', async () => {
-    mockApi.mockResolvedValue(endUsersFixture);
-    const { out } = await run('end-users');
-    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('/api/end-users'));
-    expect(out.join('\n')).toContain('user-111');
-  });
-
-  it('outputs JSON with --json flag', async () => {
-    mockApi.mockResolvedValue(endUsersFixture);
-    const { out } = await run('end-users', '--json');
-    const parsed = JSON.parse(out.join('\n'));
-    expect(Array.isArray(parsed)).toBe(true);
-  });
-
-  it('prints empty message when no data', async () => {
-    mockApi.mockResolvedValue([]);
-    const { out } = await run('end-users');
-    expect(out.join('\n')).toContain('No end-user data');
-  });
-
-  it('appends --project filter', async () => {
-    mockApi.mockResolvedValue(endUsersFixture);
-    await run('end-users', '--project', 'p1');
-    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('projectId=p1'));
-  });
-
-  it('exits 1 on API error', async () => {
-    mockApi.mockRejectedValue(new Error('fail'));
-    const { err } = await run('end-users');
     expect(err.join('\n')).toContain('fail');
   });
 });
