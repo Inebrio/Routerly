@@ -15,7 +15,7 @@ The Projects page gives you an overview of all projects and provides access to e
 
 The list has four columns: name, number of tokens, active routing policies, and assigned target models.
 
-Click any project to open its detail view, which has nine tabs.
+Click any project to open its detail view, which has eight tabs.
 
 ---
 
@@ -316,25 +316,6 @@ A `blocked` status means a guardrail rule rejected the request before it reached
 Click any row to open the **Trace view** which shows the full routing decision: which policies ran, which models were considered, and why the final model was chosen.
 
 The table auto-refreshes at a configurable interval. Use the interval selector (5 s / 15 s / 30 s / 1 min / 5 min / Off) to control polling.
-
----
-
-## End Users Tab
-
-Shows per-end-user activity attributed to this project via the `body.user` field in LLM requests.
-
-**Required permission:** `report:read`
-
-| Column | Description |
-|--------|-------------|
-| User ID | End-user identifier (from `body.user` in the request) |
-| Requests | Total number of requests attributed to this user |
-| Tokens | Total tokens used by this user (input + output) |
-| Cost | Estimated USD cost for this user's requests |
-| First Seen | Timestamp of this user's first request through the project |
-| Last Seen | Timestamp of this user's most recent request |
-
-The table is empty when no requests have been made with a `body.user` value.
 
 ---
 

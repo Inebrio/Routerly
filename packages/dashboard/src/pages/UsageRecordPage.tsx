@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'; // useState still used for record/p
 import { ArrowLeft } from 'lucide-react';
 import { requestTypeLabel } from '@routerly/shared';
 import { getProjects, getUsageRecord, type Project, type UsageRecord } from '../api';
+import { tokenLabel } from '../utils/tokenLabel';
 import { TraceLog } from '../components/TraceLog';
 import { TraceSummary } from '../components/TraceSummary';
 
@@ -110,6 +111,16 @@ export function UsageRecordPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}>
               <Field label="Record ID" value={record.id} mono />
               <Field label="Project" value={project ? project.name : <span className="mono" style={{ fontSize: '0.82rem' }}>{record.projectId}</span>} />
+              {/* Which of the project's tokens the call came in on. Older records carry none. */}
+              {record.tokenId && (
+                <Field
+                  label="Token"
+                  value={(() => {
+                    const t = project?.tokens?.find(tk => tk.id === record.tokenId);
+                    return t ? tokenLabel(t) : <span className="mono" style={{ fontSize: '0.82rem' }}>{record.tokenId}</span>;
+                  })()}
+                />
+              )}
               <Field label="Model" value={record.modelId} mono />
               <Field
                 label="Call Type"

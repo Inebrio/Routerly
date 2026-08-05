@@ -146,47 +146,89 @@ describe('routerly update check', () => {
 // ── update channel ─────────────────────────────────────────────────────────
 
 describe('routerly update channel', () => {
-  it('shows current channel when called with no argument', async () => {
+  it('help text lists only latest, current, next and version tags — not stable/develop as primary', () => {
+    const cmd = makeUpdateCommand();
+    const channelCmd = cmd.commands.find(c => c.name() === 'channel')!;
+    const helpText = channelCmd.helpInformation();
+
+    expect(helpText).toContain('latest | current | next | vX.Y.Z');
+    expect(helpText).not.toMatch(/latest \| stable \| develop/);
+  });
+
+  it('shows the canonical channel name and warns on stderr when the stored value is a deprecated alias', async () => {
     mockApi.mockResolvedValue({ channel: 'stable' });
     const { lines, spy } = captureConsole();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     await run('channel');
 
     spy.mockRestore();
     expect(mockApi).toHaveBeenCalledWith('GET', '/api/settings');
-    expect(lines.some(l => l.includes('stable'))).toBe(true);
+    expect(lines.some(l => l.includes('current'))).toBe(true);
+    expect(lines.some(l => l.includes('"stable"'))).toBe(false);
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy.mock.calls[0]![0]).toBe(
+      'Update channel "stable" was renamed to "current". "stable" still works but is deprecated and will be removed in a future release; switch to "current".'
+    );
+    errorSpy.mockRestore();
   });
 
-  it('shows "latest" as default when channel is not set in settings', async () => {
+  it('shows "latest" as default when channel is not set in settings, with no stderr output', async () => {
     mockApi.mockResolvedValue({});
     const { lines, spy } = captureConsole();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     await run('channel');
 
     spy.mockRestore();
     expect(lines.some(l => l.includes('latest'))).toBe(true);
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 
-  it('updates channel when argument is provided', async () => {
-    mockApi.mockResolvedValue({ channel: 'develop' });
+  it('updates channel to a canonical name with empty stderr and exit 0', async () => {
+    mockApi.mockResolvedValue({ channel: 'next' });
     const { lines, spy } = captureConsole();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await run('channel', 'next');
+
+    spy.mockRestore();
+    expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', { channel: 'next' });
+    expect(lines.some(l => l.includes('next'))).toBe(true);
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+
+  it('setting a deprecated alias writes exactly one deprecation line to stderr before the PUT, still exits 0, and updates the channel', async () => {
+    mockApi.mockResolvedValue({ channel: 'current' });
+    const { lines, spy } = captureConsole();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     await run('channel', 'develop');
 
     spy.mockRestore();
     expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', { channel: 'develop' });
-    expect(lines.some(l => l.includes('develop'))).toBe(true);
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy.mock.calls[0]![0]).toBe(
+      'Update channel "develop" was renamed to "next". "develop" still works but is deprecated and will be removed in a future release; switch to "next".'
+    );
+    expect(lines.some(l => l.includes('current'))).toBe(true);
+    errorSpy.mockRestore();
   });
 
-  it('accepts a specific version tag as channel name', async () => {
+  it('accepts a specific version tag as channel name with empty stderr', async () => {
     mockApi.mockResolvedValue({ channel: 'v0.2.0' });
     const { lines, spy } = captureConsole();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     await run('channel', 'v0.2.0');
 
     spy.mockRestore();
     expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', { channel: 'v0.2.0' });
     expect(lines.some(l => l.includes('v0.2.0'))).toBe(true);
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 });
 

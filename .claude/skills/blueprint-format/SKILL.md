@@ -30,8 +30,12 @@ shape, permission required. Field names exactly as they will ship.
 
 ## Tasks
 | # | Task | Surface | Depends on | Done when |
-Atomic, independently verifiable. "Done when" ties back to the story's
-acceptance criteria by id.
+One row is one engineer dispatch. Independently verifiable, but not
+necessarily one file or one step: group mechanical, same-surface steps with
+no cross-cutting contract (a config edit, a single-file addition, a small
+parity check) into one row rather than splitting by step. "Done when" ties
+back to the story's acceptance criteria by id, and may list several ids when
+a row bundles several steps.
 
 ## Validation setup
 - Start command: the exact command, run from the worktree root.

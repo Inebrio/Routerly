@@ -1328,7 +1328,7 @@ The selector and the fallback strategy of a routing profile are engine internals
 
 ```bash
 routerly profiles show auto
-routerly profiles show security-strict --json
+routerly profiles show optimizer-balanced --json
 ```
 
 **Error cases:**
@@ -2791,6 +2791,7 @@ routerly report usage [options]
 | `--caller <caller>` | Filter by who made the call: `routing`, `completion`, `guardrail`, `judge` |
 | `--session-id <id>` | Filter by session ID |
 | `--end-user <id>` | Filter by end-user ID |
+| `--token <id>` | Filter by project token ID, comma-separated for several |
 | `--tag <key=value>` | Filter by tag |
 | `--json` | JSON output |
 
@@ -2828,12 +2829,16 @@ routerly report calls [options]
 | `--project <slug>` | Filter to one project |
 | `--type <type>` | Filter by request type: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio` |
 | `--caller <caller>` | Filter by who made the call: `routing`, `completion`, `guardrail`, `judge` |
+| `--token <id>` | Filter by project token ID, comma-separated for several |
 
 The table has a **Type** column showing what each call asked for and a **Caller** column showing who made it: `completion` for what a client asked for, `routing` for the router's own decision calls, `guardrail` for security-rule calls, `judge` for experiment judges. Records written before 0.4.0 carry neither field and are shown as `Chat` / `completion`, which is what the gateway tracked at the time.
+
+The **Token** column shows the head of the project token the call came in on, the one identifier that separates two clients of the same project. It reads `-` on records written before 0.4.0 and on calls the gateway made on its own behalf. Pass the full token ID to `--token` to keep only that client's traffic.
 
 ```
 routerly report calls --type embedding --limit 10
 routerly report calls --caller routing --limit 10
+routerly report calls --token 3f2b1c4d-9a8b-4c7d-8e6f-1a2b3c4d5e6f
 ```
 
 An unknown `--type` or `--caller` value exits 1 with the list of accepted values, rather than returning an empty report.
@@ -2938,23 +2943,6 @@ With `--trend`, the series is added next to the savings fields rather than repla
 ```bash
 routerly report savings --json --trend | jq '.series.points[] | {bucket, saved: (.baselineCost - .cost)}'
 ```
-
-### `routerly report end-users`
-
-Lists end-users with their usage attributed to a project.
-
-```
-routerly report end-users [options]
-```
-
-| Option | Description |
-|--------|-------------|
-| `--project <id>` | Filter by project ID (optional) |
-| `--json` | JSON output |
-
-Displays a table with columns: User ID, Requests, Tokens, Cost, First Seen, Last Seen.
-
-Requires `report:read` permission.
 
 ---
 
@@ -3072,6 +3060,8 @@ Admin role required. Not available inside Docker containers - pull the new image
 ## `routerly notification`
 
 Manage the in-app notification inbox and delivery channels.
+
+This includes `system.update_available`, raised when the update checker finds a release newer than the one running on the configured channel. No CLI code is specific to this event: `routerly notification list` and `routerly notification show` render any event through the shared catalog, so it already appears with its readable title, "A newer release is available", the moment the check raises it.
 
 ### `routerly notification list`
 

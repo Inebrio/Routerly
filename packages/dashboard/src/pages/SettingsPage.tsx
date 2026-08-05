@@ -7,6 +7,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MultiSelect } from '../components/MultiSelect';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { writeToClipboard } from '../utils/clipboard';
+import { isCaptureMode } from '../utils/captureMode';
 import { NOTIFICATION_EVENTS } from '@routerly/shared';
 
 const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'error'];
@@ -300,6 +301,7 @@ const EVENT_LABELS: Record<string, string> = {
   'budget.reset':              'Budget – Reset',
   'system.startup':            'System – Startup',
   'system.shutdown':           'System – Shutdown',
+  'system.update_available':   'System – Update Available',
 };
 
 /* v8 ignore next */
@@ -1898,7 +1900,13 @@ function ChannelSelector({
   );
 }
 
+// Fixed placeholder shown instead of the real uptime while capturing documentation
+// screenshots: the real value is wall-clock derived and differs between two runs of the
+// same commit. See ../utils/captureMode.
+const CAPTURE_UPTIME_DISPLAY = '2d 4h 17m';
+
 function formatUptime(seconds: number): string {
+  if (isCaptureMode()) return CAPTURE_UPTIME_DISPLAY;
   const d = Math.floor(seconds / 86400);
   const h = Math.floor((seconds % 86400) / 3600);
   const m = Math.floor((seconds % 3600) / 60);

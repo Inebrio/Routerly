@@ -6,7 +6,23 @@ import { EventEmitter } from 'node:events';
 const { mockRequest } = vi.hoisted(() => ({ mockRequest: vi.fn() }));
 vi.mock('node:https', () => ({ request: mockRequest }));
 
+// ── Mock the announcement record store and the notification emitter (RA-15) ──
+
+vi.mock('../config/loader.js', () => ({
+  readConfig: vi.fn(),
+  writeConfig: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('../notifications/emitter.js', () => ({
+  emitEvent: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { UpdateChecker } from './update-checker.js';
+import { readConfig, writeConfig } from '../config/loader.js';
+import { emitEvent } from '../notifications/emitter.js';
+
+const mockReadConfig = vi.mocked(readConfig);
+const mockWriteConfig = vi.mocked(writeConfig);
+const mockEmitEvent = vi.mocked(emitEvent);
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -16,8 +32,12 @@ interface MockRes extends EventEmitter {
 
 type ReqLike = EventEmitter & { end: () => void; destroy: () => void };
 
+/** Path of the most recent request made through `stubGithubOk`'s mock. */
+let lastRequestPath: string | undefined;
+
 function stubGithubOk(body: object): void {
-  mockRequest.mockImplementation((_opts: unknown, cb: (res: MockRes) => void) => {
+  mockRequest.mockImplementation((opts: { path: string }, cb: (res: MockRes) => void) => {
+    lastRequestPath = opts.path;
     const req = new EventEmitter() as ReqLike;
     req.end = () => {
       const res = new EventEmitter() as MockRes;
@@ -61,6 +81,8 @@ let checker: UpdateChecker;
 
 beforeEach(() => {
   checker = new UpdateChecker();
+  // Default: no announcement record on disk yet (matches loader.ts DEFAULTS.updateAnnouncement).
+  mockReadConfig.mockResolvedValue({});
 });
 
 afterEach(() => {
@@ -100,7 +122,7 @@ describe('UpdateChecker.check()', () => {
   it('returns available=false when running newer than the channel tag', async () => {
     stubGithubOk({ tag_name: 'v0.1.4', html_url: '', prerelease: false });
 
-    checker.start('0.1.5', 'stable');
+    checker.start('0.1.5', 'current');
     const result = await checker.check();
 
     expect(result.available).toBe(false);
@@ -128,7 +150,7 @@ describe('UpdateChecker.check()', () => {
   it('returns available=false when candidate has a lower major version (isNewer branch)', async () => {
     stubGithubOk({ tag_name: 'v0.0.1', html_url: '', prerelease: false });
 
-    checker.start('1.0.0', 'stable');
+    checker.start('1.0.0', 'current');
     const result = await checker.check();
 
     expect(result.available).toBe(false);
@@ -143,10 +165,10 @@ describe('UpdateChecker.check()', () => {
     expect(result.available).toBe(false);
   });
 
-  it('extracts version from release name for rolling channels (develop/stable)', async () => {
-    stubGithubOk({ tag_name: 'develop', name: 'Routerly 0.3.0 (develop channel)', html_url: 'https://example.com', prerelease: true });
+  it('extracts version from release name for rolling channels (next)', async () => {
+    stubGithubOk({ tag_name: 'next', name: 'Routerly 0.3.0 (next channel)', html_url: 'https://example.com', prerelease: true });
 
-    checker.start('0.2.0', 'develop');
+    checker.start('0.2.0', 'next');
     const result = await checker.check();
 
     expect(result.available).toBe(true);
@@ -181,7 +203,7 @@ describe('UpdateChecker.check()', () => {
   it('swallows non-200 GitHub responses and returns safe fallback', async () => {
     stubGithubNotFound();
 
-    checker.start('0.1.5', 'stable');
+    checker.start('0.1.5', 'current');
     const result = await checker.check();
 
     expect(result.available).toBe(false);
@@ -221,12 +243,12 @@ describe('UpdateChecker.updateChannel()', () => {
     checker.start('0.1.5', 'latest');
     await checker.check();
 
-    // Switch to "stable"; use a tag older than the current version
-    updateChecker: checker.updateChannel('stable');
+    // Switch to "current"; use a tag older than the current version
+    checker.updateChannel('current');
     stubGithubOk({ tag_name: 'v0.1.0', html_url: '', prerelease: false });
     const result = await checker.check();
 
-    expect(result.channel).toBe('stable');
+    expect(result.channel).toBe('current');
     expect(result.available).toBe(false); // 0.1.0 < 0.1.5
   });
 
@@ -236,7 +258,7 @@ describe('UpdateChecker.updateChannel()', () => {
     await checker.check();
 
     const before = checker.getLastResult();
-    checker.updateChannel('develop');
+    checker.updateChannel('next');
     const after = checker.getLastResult();
 
     // Cached result channel is unchanged until next check
@@ -272,15 +294,18 @@ describe('UpdateChecker.getAvailableReleases()', () => {
     checker.start('0.1.5', 'latest');
     const result = await checker.getAvailableReleases();
     expect(result.channels).toContain('latest');
-    expect(result.channels).toContain('stable');
+    expect(result.channels).toContain('current');
+    expect(result.channels).toContain('next');
   });
 
-  it('returns base channels plus extra non-semver tags from GitHub', async () => {
+  it('returns base channels plus extra non-semver tags from GitHub, excluding the deprecated aliases', async () => {
     stubGithubOk([
       { tag_name: 'beta-2', draft: false, prerelease: true },
       { tag_name: 'v0.1.5', draft: false, prerelease: false },
       { tag_name: 'nightly', draft: false, prerelease: false },
       { tag_name: 'draft-only', draft: true, prerelease: false },
+      { tag_name: 'stable', draft: false, prerelease: false },
+      { tag_name: 'develop', draft: false, prerelease: false },
     ]);
 
     // Do NOT call start() — it fires check() which would consume the first mock call
@@ -290,6 +315,9 @@ describe('UpdateChecker.getAvailableReleases()', () => {
     expect(result.channels).not.toContain('v0.1.5')
     // draft-only is skipped
     expect(result.channels).not.toContain('draft-only')
+    // stable/develop are deprecated aliases, excluded even as rolling GitHub tags
+    expect(result.channels).not.toContain('stable')
+    expect(result.channels).not.toContain('develop')
   });
 
   it('falls back to base channels when fetchAllReleases returns invalid JSON', async () => {
@@ -307,7 +335,95 @@ describe('UpdateChecker.getAvailableReleases()', () => {
     });
 
     const result = await checker.getAvailableReleases();
-    expect(result.channels).toEqual(['latest', 'stable', 'develop']);
+    expect(result.channels).toEqual(['latest', 'current', 'next']);
+  });
+});
+
+describe('UpdateChecker.getAvailableReleases() base set (RC-3)', () => {
+  it('starts with exactly the canonical channel set and never includes deprecated aliases, even if GitHub still has them as tags', async () => {
+    stubGithubOk([
+      { tag_name: 'stable', draft: false, prerelease: false },
+      { tag_name: 'develop', draft: false, prerelease: false },
+      { tag_name: 'nightly', draft: false, prerelease: false },
+    ]);
+
+    const result = await checker.getAvailableReleases();
+
+    expect(result.channels.slice(0, 3)).toEqual(['latest', 'current', 'next']);
+    expect(result.channels).not.toContain('stable');
+    expect(result.channels).not.toContain('develop');
+    expect(result.channels).toContain('nightly');
+  });
+});
+
+describe('UpdateChecker channel resolution and deprecation warnings (RC-3)', () => {
+  const REPO_PATH = '/repos/Inebrio/Routerly';
+
+  it.each([
+    ['latest', `${REPO_PATH}/releases/latest`],
+    ['current', `${REPO_PATH}/releases/latest`],
+    ['next', `${REPO_PATH}/releases/tags/next`],
+    ['v0.3.0', `${REPO_PATH}/releases/tags/v0.3.0`],
+  ])('channel "%s" resolves to %s (AC8, EC3)', async (channel, expectedPath) => {
+    stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
+
+    checker.start('0.1.5', channel);
+    await checker.check();
+
+    expect(lastRequestPath).toBe(expectedPath);
+  });
+
+  it.each([
+    ['stable', 'current', `${REPO_PATH}/releases/latest`],
+    ['develop', 'next', `${REPO_PATH}/releases/tags/next`],
+  ])('deprecated alias "%s" resolves like "%s" (%s) and warns exactly once across two check() calls (AC2/AC3)', async (alias, canonical, expectedPath) => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
+
+    checker.start('0.1.5', alias);
+    await checker.check();
+    await checker.check();
+
+    expect(lastRequestPath).toBe(expectedPath);
+    expect(checker.getLastResult()?.channel).toBe(canonical);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith(
+      `Update channel "${alias}" was renamed to "${canonical}". "${alias}" still works but is deprecated and will be removed in a future release; switch to "${canonical}".`,
+    );
+    warnSpy.mockRestore();
+  });
+
+  it('does not warn for canonical channel names', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
+
+    checker.start('0.1.5', 'current');
+    await checker.check();
+
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it('warns again for a different alias even if one was already warned', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
+
+    checker.start('0.1.5', 'stable');
+    checker.updateChannel('develop');
+
+    expect(warnSpy).toHaveBeenCalledTimes(2);
+    warnSpy.mockRestore();
+  });
+
+  it('does not warn again when updateChannel repeats the same alias', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
+
+    checker.start('0.1.5', 'stable');
+    checker.updateChannel('stable');
+
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    warnSpy.mockRestore();
   });
 });
 
@@ -403,7 +519,7 @@ describe('UpdateChecker — remaining uncovered branches', () => {
     checker.start('0.1.5', 'latest');
     const result = await checker.getAvailableReleases();
     expect(result.channels).toContain('latest');
-    expect(result.channels).toContain('stable');
+    expect(result.channels).toContain('current');
   });
 
   it('setInterval callback fires and triggers a check (line 137 function)', async () => {
@@ -428,5 +544,208 @@ describe('UpdateChecker — remaining uncovered branches', () => {
     const result = await checker.check();
     // timeout → error caught → fallback result
     expect(result.available).toBe(false);
+  });
+});
+
+/**
+ * Sets a checker's target version/channel directly, without going through
+ * `start()`, whose fire-and-forget initial check would otherwise run a second,
+ * uncontrolled `check()` concurrently with the explicit one these tests make,
+ * double-counting emissions for what production only ever does once at boot.
+ */
+function prime(c: UpdateChecker, currentVersion: string, channel: string): void {
+  (c as unknown as { _currentVersion: string })._currentVersion = currentVersion;
+  (c as unknown as { _channel: string })._channel = channel;
+}
+
+describe('UpdateChecker — system.update_available announcement (RA-15)', () => {
+  it('emits system.update_available on first detection of an available update (AC1)', async () => {
+    stubGithubOk({
+      tag_name: 'v0.5.0',
+      html_url: 'https://github.com/Inebrio/Routerly/releases/tag/v0.5.0',
+      prerelease: false,
+    });
+
+    prime(checker, '0.4.0', 'stable');
+    const result = await checker.check();
+
+    expect(result.available).toBe(true);
+    expect(mockEmitEvent).toHaveBeenCalledTimes(1);
+    expect(mockEmitEvent).toHaveBeenCalledWith('system.update_available', 'info', {
+      currentVersion: '0.4.0',
+      latestVersion: '0.5.0',
+      channel: 'stable',
+      releaseUrl: 'https://github.com/Inebrio/Routerly/releases/tag/v0.5.0',
+    });
+    expect(mockWriteConfig).toHaveBeenCalledWith(
+      'updateAnnouncement',
+      expect.objectContaining({
+        announcedVersion: '0.5.0',
+        currentVersion: '0.4.0',
+        channel: 'stable',
+        announcedAt: expect.any(String),
+      }),
+    );
+  });
+
+  it('does not emit again when the next poll finds the identical release (AC5)', async () => {
+    stubGithubOk({ tag_name: 'v0.5.0', html_url: '', prerelease: false });
+    prime(checker, '0.4.0', 'stable');
+    await checker.check();
+    expect(mockEmitEvent).toHaveBeenCalledTimes(1);
+
+    // The record now "on disk" is exactly what the first check persisted.
+    const written = mockWriteConfig.mock.calls[0]![1];
+    mockReadConfig.mockResolvedValue(written as never);
+
+    await checker.check();
+    expect(mockEmitEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not re-emit across a restart when the record already on disk covers this release (AC6)', async () => {
+    mockReadConfig.mockResolvedValue({
+      announcedVersion: '0.5.0',
+      currentVersion: '0.4.0',
+      channel: 'stable',
+      announcedAt: '2026-08-01T00:00:00.000Z',
+    });
+    stubGithubOk({ tag_name: 'v0.5.0', html_url: '', prerelease: false });
+
+    // A fresh instance, as after a process restart, with no in-memory state at all.
+    const restarted = new UpdateChecker();
+    prime(restarted, '0.4.0', 'stable');
+    const result = await restarted.check();
+
+    expect(result.available).toBe(true);
+    expect(mockEmitEvent).not.toHaveBeenCalled();
+    restarted.stop();
+  });
+
+  it('emits again for a genuinely newer release than the one already announced (AC7)', async () => {
+    mockReadConfig.mockResolvedValue({
+      announcedVersion: '0.5.0',
+      currentVersion: '0.4.0',
+      channel: 'stable',
+      announcedAt: '2026-08-01T00:00:00.000Z',
+    });
+    stubGithubOk({ tag_name: 'v0.6.0', html_url: '', prerelease: false });
+
+    prime(checker, '0.4.0', 'stable');
+    const result = await checker.check();
+
+    expect(result.available).toBe(true);
+    expect(mockEmitEvent).toHaveBeenCalledTimes(1);
+    expect(mockEmitEvent).toHaveBeenCalledWith(
+      'system.update_available',
+      'info',
+      expect.objectContaining({ latestVersion: '0.6.0' }),
+    );
+  });
+
+  it('does not emit and leaves the record untouched when already on the newest release (AC8)', async () => {
+    stubGithubOk({ tag_name: 'v0.4.0', html_url: '', prerelease: false });
+    prime(checker, '0.4.0', 'stable');
+    const result = await checker.check();
+
+    expect(result.available).toBe(false);
+    expect(mockReadConfig).not.toHaveBeenCalled();
+    expect(mockEmitEvent).not.toHaveBeenCalled();
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('does not emit and leaves the record untouched on a network failure (EC1)', async () => {
+    stubGithubError();
+    prime(checker, '0.4.0', 'stable');
+    const result = await checker.check();
+
+    expect(result.available).toBe(false);
+    expect(mockEmitEvent).not.toHaveBeenCalled();
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('emits again when the channel changed, even if the release alone looks already known (EC3)', async () => {
+    mockReadConfig.mockResolvedValue({
+      announcedVersion: '0.5.0',
+      currentVersion: '0.4.0',
+      channel: 'develop',
+      announcedAt: '2026-08-01T00:00:00.000Z',
+    });
+    stubGithubOk({ tag_name: 'v0.5.0', html_url: '', prerelease: false });
+
+    prime(checker, '0.4.0', 'stable');
+    const result = await checker.check();
+
+    expect(result.available).toBe(true);
+    expect(result.channel).toBe('stable');
+    expect(mockEmitEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it('emits again after a downgrade, for the same announced release (downgrade case)', async () => {
+    mockReadConfig.mockResolvedValue({
+      announcedVersion: '0.5.0',
+      currentVersion: '0.5.0',
+      channel: 'stable',
+      announcedAt: '2026-08-01T00:00:00.000Z',
+    });
+    stubGithubOk({ tag_name: 'v0.5.0', html_url: '', prerelease: false });
+
+    // The operator rolled back to an older build; the same release is news again.
+    prime(checker, '0.4.0', 'stable');
+    const result = await checker.check();
+
+    expect(result.available).toBe(true);
+    expect(mockEmitEvent).toHaveBeenCalledTimes(1);
+    expect(mockEmitEvent).toHaveBeenCalledWith(
+      'system.update_available',
+      'info',
+      expect.objectContaining({ currentVersion: '0.4.0' }),
+    );
+  });
+
+  it('treats a missing record as first-run and a corrupt/malformed record as no record, without throwing', async () => {
+    // Missing file: readConfig resolves the empty DEFAULTS.updateAnnouncement.
+    mockReadConfig.mockResolvedValue({});
+    stubGithubOk({ tag_name: 'v0.5.0', html_url: '', prerelease: false });
+
+    prime(checker, '0.4.0', 'stable');
+    const first = await checker.check();
+
+    expect(first.available).toBe(true);
+    expect(mockEmitEvent).toHaveBeenCalledTimes(1);
+    expect(mockWriteConfig).toHaveBeenCalledTimes(1);
+    const written = mockWriteConfig.mock.calls[0]![1] as Record<string, unknown>;
+    expect(written['announcedVersion']).toBe('0.5.0');
+    expect(written['currentVersion']).toBe('0.4.0');
+    expect(written['channel']).toBe('stable');
+    expect(typeof written['announcedAt']).toBe('string');
+
+    // Corrupt/malformed file: a fresh checker, readConfig either rejects (JSON parse
+    // error) or resolves a valid-JSON object missing a required field. Both must be
+    // treated as record === null, log a warning, and never throw out of check().
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    mockReadConfig.mockRejectedValueOnce(new SyntaxError('Unexpected token in JSON'));
+
+    const corrupted = new UpdateChecker();
+    prime(corrupted, '0.4.0', 'stable');
+    const second = await corrupted.check();
+
+    expect(second.available).toBe(true);
+    expect(mockEmitEvent).toHaveBeenCalledTimes(2);
+    expect(warnSpy).toHaveBeenCalled();
+    corrupted.stop();
+
+    warnSpy.mockClear();
+    mockReadConfig.mockResolvedValueOnce({ announcedVersion: '0.5.0' }); // missing currentVersion, channel
+
+    const partial = new UpdateChecker();
+    prime(partial, '0.4.0', 'stable');
+    const third = await partial.check();
+
+    expect(third.available).toBe(true);
+    expect(mockEmitEvent).toHaveBeenCalledTimes(3);
+    expect(warnSpy).toHaveBeenCalled();
+    partial.stop();
+
+    warnSpy.mockRestore();
   });
 });

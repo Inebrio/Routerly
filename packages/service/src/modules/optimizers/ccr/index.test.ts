@@ -6,6 +6,7 @@ import type { ProxyContext } from '../../reverse-proxy/context.js'
 import { readMessages } from '../messages.js'
 import { optimizerCoreModule } from '../core.js'
 import { ccrModule, ccrOptimizer } from './index.js'
+import { PRODUCT_VERSION } from '../../../core/version.js'
 
 function ctxWith(messages: Message[], threshold?: number): ProxyContext {
   const request = { model: 'gpt', messages } as ChatCompletionRequest
@@ -309,6 +310,6 @@ describe('ccr optimizer', () => {
 
   it('module manifest depends on optimizer-core', () => {
     expect(ccrModule.manifest.id).toBe('optimizer-ccr')
-    expect(ccrModule.manifest.dependsOn).toEqual({ 'optimizer-core': '^0.4.0' })
+    expect(ccrModule.manifest.dependsOn).toEqual({ 'optimizer-core': `^${PRODUCT_VERSION}` })
   })
 })

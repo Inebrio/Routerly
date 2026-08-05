@@ -76,16 +76,12 @@ describe('ExperimentMetricsTab', () => {
     await waitFor(() => expect(mockGetMetrics).toHaveBeenLastCalledWith('exp-1', { from, to: today() }));
   });
 
-  it('summarises the comparison above the table', async () => {
+  it('carries the comparison in the table alone, no summary widgets', async () => {
     render(<ExperimentMetricsTab />);
-    await waitFor(() => expect(screen.getByText('Cheapest per call')).toBeInTheDocument());
-    // The cheapest arm is named on its card, with the gap to the priciest one.
-    expect(screen.getByText('$0.01 vs $0.05')).toBeInTheDocument();
-    expect(screen.getByText('+400% on the most expensive arm')).toBeInTheDocument();
-    expect(screen.getByText('Fastest')).toBeInTheDocument();
-    expect(screen.getByText('900 ms vs 1500 ms on average')).toBeInTheDocument();
-    expect(screen.getByText('Best judge score')).toBeInTheDocument();
-    expect(screen.getByText('8.2 / 10 over 20 judged calls, all time')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('120 calls measured')).toBeInTheDocument());
+    expect(document.querySelector('.stats-grid')).toBeNull();
+    expect(screen.queryByText('Cheapest per call')).toBeNull();
+    expect(screen.queryByText('Best judge score')).toBeNull();
   });
 
   it('shows each row distance from the best arm', async () => {

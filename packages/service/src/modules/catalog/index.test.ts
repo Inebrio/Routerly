@@ -4,12 +4,13 @@ import { catalogModule } from './index.js';
 import { CATALOG } from '../../core/tokens.js';
 import { catalogFetcher } from './fetcher.js';
 import { syncModelsFromCatalog } from './sync.js';
+import { PRODUCT_VERSION } from '../../core/version.js';
 
 describe('catalog module', () => {
   it('has the frozen manifest', () => {
     expect(catalogModule.manifest.id).toBe('catalog');
-    expect(catalogModule.manifest.version).toBe('0.4.0');
-    expect(catalogModule.manifest.dependsOn).toEqual({ config: '^0.4.0' });
+    expect(catalogModule.manifest.version).toBe(PRODUCT_VERSION);
+    expect(catalogModule.manifest.dependsOn).toEqual({ config: `^${PRODUCT_VERSION}` });
   });
 
   it('registers CATALOG exposing the real catalogFetcher/syncModelsFromCatalog surface', async () => {

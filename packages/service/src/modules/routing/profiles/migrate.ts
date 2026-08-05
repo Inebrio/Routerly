@@ -14,9 +14,17 @@ import { readConfig, writeConfig } from '../../config/loader.js';
  * `balanced` is rewritten to `auto`, the preset that replaced it: identical
  * policies, selector and fallback strategy, so routing is unchanged. Any other
  * retired preset id is left alone and stays resolvable as a legacy built-in.
+ *
+ * The two security presets are the exception: they were deleted outright, not
+ * retired, so a project still pointing at one has the dangling id stripped. The
+ * project then runs with no guardrails and no PII policy, which is what "no
+ * security profile" has always meant everywhere else.
  */
 
 const RENAMED_PRESETS: Record<string, string> = { balanced: 'auto' };
+
+/** Security presets that no longer exist. A project pointing at one is cleared. */
+const DELETED_SECURITY_PRESETS = new Set(['security-standard', 'security-strict']);
 
 /** Returns how many records were rewritten, projects and overlays together. */
 export async function migrateProfiles(): Promise<number> {
@@ -24,10 +32,18 @@ export async function migrateProfiles(): Promise<number> {
 
   const projects = await readConfig('projects');
   const migratedProjects = projects.map((project: ProjectConfig) => {
-    const legacyId = project.profileId;
-    if (legacyId === undefined) return project;
+    let next = project;
+
+    if (next.securityProfileId !== undefined && DELETED_SECURITY_PRESETS.has(next.securityProfileId)) {
+      changed++;
+      const { securityProfileId: _gone, ...rest } = next;
+      next = rest;
+    }
+
+    const legacyId = next.profileId;
+    if (legacyId === undefined) return next;
     changed++;
-    const { profileId: _dropped, ...rest } = project;
+    const { profileId: _dropped, ...rest } = next;
     const target = RENAMED_PRESETS[legacyId] ?? legacyId;
     // An explicit routingProfileId already wins: it can only come from a newer
     // write, which is by definition the intended one.

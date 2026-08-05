@@ -50,12 +50,49 @@ line yourself.
    what a few lines already do.
 6. Do not write tests. The qa-engineer owns the automated suite. Verify your
    own work by running it.
+7. Before writing code that calls a third-party API (auth scheme, header
+   names, request/response shape, endpoint paths), confirm the contract
+   against that provider's live docs or source — never from training
+   memory. Two stories in this feature shipped a wrong auth header
+   (`pr-base-branch`'s frozen changesets/action input, RA-13's
+   `JWT`-instead-of-`Bearer` on Docker Hub) because the assumption went
+   unchecked until a validator caught it. The wire-format-transparency rule
+   in the project instructions applies to Routerly's own providers; this
+   extends the same discipline to any third-party contact point.
+8. A script that runs against a live external service (a disposable repo, a
+   real API) is expensive to redo. Sanity-check it before the first live
+   run, and wait for it with one blocking call, not a loop of turns spent
+   polling or idling — see `backend-conventions` for both.
 
 ## Before you report done
 
 Run the project's own typecheck and build commands for the surfaces you
 touched, and quote the real output. A task whose typecheck or build fails is
 not done.
+
+## The file exists before the work does
+
+Create your deliverable file as your FIRST action, before you investigate
+anything. Its first version is a skeleton: the headings you expect to fill,
+with `UNFINISHED` under each. Then update it as every finding, section or
+decision lands, so that at any instant the file on disk holds everything you
+currently know.
+
+The rule is not "write it before you narrate it". That version was tried and
+it failed: an agent ran eighty tool calls of real verification, ended its
+turn while still executing, and never reached the write. It was not
+narrating. It simply ran out of turn before the last step, and the last step
+was the only one that produced anything. Every measurement it took was lost,
+and the whole run had to be paid for again.
+
+So the rule is stronger than that. **Never let work in progress exist only in
+your context.** Your context is the thing that disappears. The file is where
+the work accumulates; you are the process that appends to it. A turn that
+ends unexpectedly should cost the last finding, never all of them.
+
+If you genuinely cannot finish, the file is already on disk with what you
+had and its gaps marked. That is recoverable. An empty file, or no file, is
+not.
 
 ## What you return
 

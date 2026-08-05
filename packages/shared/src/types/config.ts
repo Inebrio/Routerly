@@ -755,6 +755,66 @@ export interface ProviderRepo {
   enabled: boolean;
 }
 
+// ─── Update channels ─────────────────────────────────────────────────────────
+
+/** Update channels an instance can follow, by their current names. */
+export const UPDATE_CHANNELS = ['latest', 'current', 'next'] as const;
+export type UpdateChannel = (typeof UPDATE_CHANNELS)[number];
+
+/**
+ * Channel names renamed in 0.4.0, kept working for one release cycle.
+ * Removal is a separate, later change.
+ */
+export const DEPRECATED_UPDATE_CHANNELS = {
+  stable:  'current',
+  develop: 'next',
+} as const satisfies Record<string, UpdateChannel>;
+export type DeprecatedUpdateChannel = keyof typeof DEPRECATED_UPDATE_CHANNELS;
+
+/** What may legally sit in `Settings.channel`: a channel name, a deprecated alias, or a version tag. */
+export type UpdateChannelSetting = UpdateChannel | DeprecatedUpdateChannel | (string & {});
+
+export interface NormalizedUpdateChannel {
+  /** Canonical value to resolve and to persist. Aliases mapped; every other input verbatim. */
+  channel: string;
+  /** Present only when the input was a deprecated alias. The alias exactly as it came in. */
+  deprecatedAlias?: DeprecatedUpdateChannel;
+}
+
+/**
+ * Maps a deprecated alias to its canonical name and reports which alias it saw.
+ * `undefined`/`''` resolve to `'latest'`. Every other value passes through verbatim,
+ * with no case folding and no trimming. Pure: no I/O, no logging, no throwing.
+ */
+export function normalizeUpdateChannel(value: string | undefined): NormalizedUpdateChannel {
+  if (value === undefined || value === '') {
+    return { channel: 'latest' };
+  }
+  if (value in DEPRECATED_UPDATE_CHANNELS) {
+    const alias = value as DeprecatedUpdateChannel;
+    return { channel: DEPRECATED_UPDATE_CHANNELS[alias], deprecatedAlias: alias };
+  }
+  return { channel: value };
+}
+
+/** One-line, human-readable deprecation notice. The only wording that ships. */
+export function updateChannelDeprecationWarning(alias: DeprecatedUpdateChannel): string {
+  const canonical = DEPRECATED_UPDATE_CHANNELS[alias];
+  return `Update channel "${alias}" was renamed to "${canonical}". "${alias}" still works but is deprecated and will be removed in a future release; switch to "${canonical}".`;
+}
+
+const VERSION_TAG_PATTERN = /^v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?$/;
+
+/** True for a channel name, a deprecated alias, or a version tag. */
+export function isValidUpdateChannel(value: string): boolean {
+  return (UPDATE_CHANNELS as readonly string[]).includes(value)
+    || value in DEPRECATED_UPDATE_CHANNELS
+    || VERSION_TAG_PATTERN.test(value);
+}
+
+/** The rejection message, so service and CLI cannot drift. */
+export const UPDATE_CHANNEL_ERROR = 'Invalid channel. Accepted values: latest, current, next, or a version tag such as v0.4.0.';
+
 export interface Settings {
   port: number;
   host: string;
@@ -770,8 +830,8 @@ export interface Settings {
   publicUrl?: string;
   /** Optional notification channels configuration */
   notifications?: NotificationsConfig;
-  /** Distribution channel for updates: 'latest' | 'stable' | 'develop' | vX.Y.Z tag */
-  channel?: string;
+  /** Distribution channel for updates: 'latest' | 'current' | 'next' | vX.Y.Z tag ('stable' and 'develop' are deprecated aliases) */
+  channel?: UpdateChannelSetting;
   /** Whether to expose the Prometheus-compatible /metrics endpoint (default true) */
   metricsEnabled?: boolean;
   /** Optional Bearer token required to access /metrics. Absent means no auth. */
@@ -983,6 +1043,7 @@ export const NOTIFICATION_EVENTS = [
   'budget.reset',
   'system.startup',
   'system.shutdown',
+  'system.update_available',
 ] as const;
 
 /** One of the canonical {@link NOTIFICATION_EVENTS} names. */
@@ -1118,6 +1179,13 @@ export interface UsageRecord {
   priceOutput?: number;
   /** End-user identifier from the OpenAI `user` field — for per-user cost attribution (#96) */
   endUserId?: string;
+  /**
+   * Project token the call authenticated with. A project usually hands out one
+   * token per client, so this narrows a project's traffic down to the caller
+   * without asking the client for anything: it is read from the bearer token
+   * that was presented, never from the payload.
+   */
+  tokenId?: string;
   /** Session identifier — groups related calls for cost attribution */
   sessionId?: string;
   /** Arbitrary key-value tags — for cost attribution and filtering */

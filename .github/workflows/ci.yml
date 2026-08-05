@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, 'release/**']
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, 'release/**']
 
 jobs:
   build-and-typecheck:
@@ -42,3 +42,88 @@ jobs:
 
       - name: Build remaining packages
         run: npm run build --workspace=packages/cli --workspace=packages/dashboard
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared (required by other packages)
+        run: npm run build --workspace=packages/shared
+
+      - name: Build service (required by the cli suite)
+        run: npm run build --workspace=packages/service
+
+      # Coverage floor rule: the floor only ever moves up, never down. It is
+      # raised by a maintainer, in a pull request that also shows the
+      # measurement supporting the new value. It is never lowered just to
+      # make a red build green. The floor itself lives in each package's
+      # vitest.config.ts, not here.
+      - name: Test shared
+        run: npm test --workspace=packages/shared -- --coverage --coverage.reportOnFailure
+
+      - name: Test service
+        run: npm test --workspace=packages/service -- --coverage --coverage.reportOnFailure
+
+      - name: Test cli
+        run: npm test --workspace=packages/cli -- --coverage --coverage.reportOnFailure
+
+      - name: Test dashboard
+        run: npm test --workspace=packages/dashboard -- --coverage --coverage.thresholds.lines=0 --coverage.thresholds.branches=0 --coverage.thresholds.functions=0 --coverage.thresholds.statements=0 --coverage.reportOnFailure
+
+      # `website` is gitignored and is not an npm workspace, so root `npm ci`
+      # never installs it. The docs-version suite drives the real Docusaurus
+      # CLI, so without this step it installs Docusaurus once per test instead
+      # of once per run.
+      - name: Install website dependencies (required by the docs-version suite)
+        run: npm ci --prefix website
+
+      - name: Release tooling
+        run: npx vitest run --exclude test/e2e.test.ts
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          {
+            echo "## Coverage"
+            for pkg in shared service cli dashboard; do
+              echo ""
+              echo "### packages/$pkg"
+              lcov_file="packages/$pkg/coverage/lcov.info"
+              if [ -f "$lcov_file" ]; then
+                echo '```'
+                awk -F: '
+                  /^LF:/ { lf += $2 }
+                  /^LH:/ { lh += $2 }
+                  /^FNF:/ { fnf += $2 }
+                  /^FNH:/ { fnh += $2 }
+                  /^BRF:/ { brf += $2 }
+                  /^BRH:/ { brh += $2 }
+                  END {
+                    printf "lines:     %d/%d", lh, lf
+                    if (lf > 0) printf " (%.2f%%)", (lh / lf) * 100
+                    print ""
+                    printf "functions: %d/%d", fnh, fnf
+                    if (fnf > 0) printf " (%.2f%%)", (fnh / fnf) * 100
+                    print ""
+                    printf "branches:  %d/%d", brh, brf
+                    if (brf > 0) printf " (%.2f%%)", (brh / brf) * 100
+                    print ""
+                  }
+                ' "$lcov_file"
+                echo '```'
+              else
+                echo "_coverage report not found_"
+              fi
+            done
+          } >> "$GITHUB_STEP_SUMMARY"

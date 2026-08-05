@@ -54,6 +54,22 @@ describe('migrateProfiles', () => {
     expect(store.projects[0]).not.toHaveProperty('profileId')
   })
 
+  it.each(['security-standard', 'security-strict'])('clears the deleted security preset %s', async (id) => {
+    const { migrateProfiles } = await import('./migrate.js')
+    store.projects = [project({ securityProfileId: id })]
+
+    expect(await migrateProfiles()).toBe(1)
+    expect(store.projects[0]).not.toHaveProperty('securityProfileId')
+  })
+
+  it('leaves a user-written security profile bound', async () => {
+    const { migrateProfiles } = await import('./migrate.js')
+    store.projects = [project({ securityProfileId: 's1' })]
+
+    expect(await migrateProfiles()).toBe(0)
+    expect(store.projects[0]).toMatchObject({ securityProfileId: 's1' })
+  })
+
   it('tags kind-less overlays as routing and remaps their baseId', async () => {
     const { migrateProfiles } = await import('./migrate.js')
     store.profiles = [

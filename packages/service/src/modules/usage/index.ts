@@ -41,6 +41,7 @@ export const usageModule: RouterlyModule = defineModule({
           traceId: ctx.traceId,
           guardrailTriggered: blockedBy,
           blockedBy,
+          ...(ctx.token ? { tokenId: ctx.token.id } : {}),
         }).catch(() => {})
       },
     }

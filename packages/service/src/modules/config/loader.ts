@@ -17,6 +17,14 @@ export interface AuditEntry {
   details?: Record<string, unknown>;
 }
 
+/** The persisted "already announced" record for the update checker (RA-15). */
+export interface UpdateAnnouncement {
+  announcedVersion: string;
+  currentVersion: string;
+  channel: string;
+  announcedAt: string;
+}
+
 // ─── Default configs ──────────────────────────────────────────────────────────
 
 const DEFAULTS: Record<string, unknown> = {
@@ -43,6 +51,7 @@ const DEFAULTS: Record<string, unknown> = {
   usage: [] as UsageRecord[],
   notifications: [] as NotificationInboxItem[],
   audit: [] as AuditEntry[],
+  updateAnnouncement: {} as Partial<UpdateAnnouncement>,
 };
 
 // ─── File mapping ─────────────────────────────────────────────────────────────
@@ -61,6 +70,7 @@ type StoredTypeMap = {
   usage: UsageRecord[];
   notifications: NotificationInboxItem[];
   audit: AuditEntry[];
+  updateAnnouncement: Partial<UpdateAnnouncement>;
 };
 
 // ─── Loader ───────────────────────────────────────────────────────────────────

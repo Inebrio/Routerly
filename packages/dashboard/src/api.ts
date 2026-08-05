@@ -520,6 +520,8 @@ export interface UsageRecord {
   guardrailTriggered?: string;
   blockedBy?: string;
   piiRedacted?: string[];
+  /** Project token the call authenticated with. Absent on records written before it was tracked. */
+  tokenId?: string;
 }
 
 import type { UsageByModelEntry, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RequestType, SavingsSummary, UsageSeries } from '@routerly/shared';
@@ -556,6 +558,7 @@ export interface GetUsageOptions {
   pageSize?: number;
   projectIds?: string[];
   modelIds?: string[];
+  tokenIds?: string[];
   callType?: string;
   requestType?: string;
   outcome?: string;
@@ -574,6 +577,7 @@ export const getUsage = (period = 'monthly', projectId?: string, from?: string, 
   if (pageSize != null) params.set('pageSize', String(pageSize));
   if (opts?.projectIds?.length) params.set('projectIds', opts.projectIds.join(','));
   if (opts?.modelIds?.length)   params.set('modelIds',   opts.modelIds.join(','));
+  if (opts?.tokenIds?.length)   params.set('tokenIds',   opts.tokenIds.join(','));
   if (opts?.callType && opts.callType !== 'all') params.set('callType', opts.callType);
   if (opts?.requestType && opts.requestType !== 'all') params.set('requestType', opts.requestType);
   if (opts?.outcome  && opts.outcome  !== 'all') params.set('outcome',  opts.outcome);
@@ -929,20 +933,6 @@ export interface AuditPage {
   entries: AuditEntry[];
   pagination: { page: number; pageSize: number; totalRecords: number; totalPages: number };
 }
-
-export interface EndUser {
-  userId: string;
-  projectId: string;
-  firstSeen: string;
-  lastSeen: string;
-  requests: number;
-  totalCost: number;
-  totalTokens: number;
-}
-
-export const getEndUsers = (projectId: string) =>
-  request<{ users: EndUser[] }>(`/end-users?projectId=${encodeURIComponent(projectId)}`)
-    .then(r => r.users);
 
 // ── Integrations ──────────────────────────────────────────────────────────────
 

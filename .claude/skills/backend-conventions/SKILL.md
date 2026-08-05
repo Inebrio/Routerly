@@ -36,6 +36,30 @@ get wrong.
 - `--json` where piping makes sense, and its output must always parse.
 - Register new commands in `index.ts`, or they do not exist.
 
+## Scripts against live external services
+
+A script that creates a disposable GitHub repo, hits a real API, or runs a
+live release tool is expensive to redo: minutes of wall-clock, a fresh
+external resource, and a full agent turn budget, every time it fails on
+something you could have caught for free.
+
+- **Sanity-check before the first live run.** `bash -n` the script. Re-read
+  it for shell portability this machine actually has — `grep -P`/`-Pq`
+  silently misbehaves here because this is BSD grep, not GNU; prefer
+  `gh api --jq` or POSIX-safe patterns. Check whether an early step
+  (`npm install`, a build) leaves the tree dirty in a way a later
+  `git checkout` in the same script will collide with. A live run that fails
+  on a bug like this bought no evidence and cost a real repo.
+- **Wait for it with one blocking call, not a loop of turns.** For a script
+  that logs many lines over minutes, do not stream it with `Monitor`
+  line-by-line and then fill turns with idle placeholder commands between
+  notifications — each notification and each placeholder is a paid turn,
+  and a chatty script can burn the whole budget before you ever reach the
+  step that writes your report. Prefer a single foreground `Bash` call with
+  a timeout that covers the expected wall-clock, or `run_in_background`
+  plus one wait for the process to actually exit. Read the resulting log
+  file once it is done, rather than watching it happen.
+
 ## Before you report done
 
 - The package builds and its tests pass.
