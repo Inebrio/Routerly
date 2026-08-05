@@ -238,26 +238,74 @@ maintainer still has to do after the workflow runs.
 
 ## Credentials the pipeline needs
 
-Names and purposes only; no value is ever recorded here.
+Names and purposes only; no value is ever recorded here. Three secrets are
+configured on the repository; `GITHUB_TOKEN` is provided automatically and
+needs no setup.
 
 | Secret | Purpose | Where configured |
 |---|---|---|
-| `GITHUB_TOKEN` | Provided automatically by GitHub Actions. Used to open and update the Version PR, push tags, publish and delete GitHub Releases, push the docs-cut commit to `main`, and post the `release-docker` commit status. Its actual scope is each workflow's own `permissions:` block. | Nothing to configure; review the `permissions:` block of the workflow in question. |
-| `DOCKERHUB_USERNAME` | The Docker Hub account used to push and delete image tags. | Repository Settings → Secrets and variables → Actions. |
-| `DOCKERHUB_TOKEN` | Docker Hub access token. Needs Read, Write and Delete: delete is required because `release-abort.mjs` removes prerelease tags. | Repository Settings → Secrets and variables → Actions. |
-| `FIREBASE_SERVICE_ACCOUNT_ROUTERLY_DOCS` | Service-account JSON used to deploy the documentation site to Firebase Hosting, project `routerly-docs`, channel `live`. | Repository Settings → Secrets and variables → Actions. |
+| `GITHUB_TOKEN` | Provided automatically by GitHub Actions. Used by the `release` job to create the shared `vX.Y.Z` tag and publish or update the GitHub Release, by the `docs` job to push the docs-cut commit to `docs-versions`, and by the `next-pointer` job to force-move the `next` tag and recreate the `next` prerelease Release. Its actual scope is `release.yml`'s own `permissions:` block. | Nothing to configure; review the `permissions:` block in `.github/workflows/release.yml`. |
+| `DOCKERHUB_USERNAME` | The Docker Hub account the `docker` job logs in as, to push and re-tag images. | Repository Settings → Secrets and variables → Actions. |
+| `DOCKERHUB_TOKEN` | Docker Hub access token the `docker` job logs in with, to push and re-tag images. | Repository Settings → Secrets and variables → Actions. |
+| `FIREBASE_SERVICE_ACCOUNT_ROUTERLY_DOCS` | Service-account JSON the `docs-deploy` job uses to deploy the documentation site to Firebase Hosting, project `routerly-docs`, channel `live`. | Repository Settings → Secrets and variables → Actions. |
 
 ## When a step fails
 
+One row per job in `.github/workflows/release.yml`, plus the two other
+workflows a release run can depend on.
+
 | Failure | What is visible | What it leaves behind | What to do |
 |---|---|---|---|
-| Red `ci.yml` on a `release/**` branch | The CI run fails; no `release-docker` commit status appears | No prerelease image was built, since `release-docker.yml` only fires on a successful CI run | Fix the failure and push again. The next green CI produces a new `-rc.<run number>`, so `-rc` numbers are not contiguous. |
-| `.changeset/pre.json` present on a release branch | `release-version.yml` fails with the guard's error message | No Version PR is opened or updated | Run `npx changeset pre exit` on that branch and push again (see [Prerelease mode is not used on this line](#prerelease-mode-is-not-used-on-this-line)). |
-| Docker push fails in `release.yml` | The `docker` job is red | The git tag and GitHub Release already exist, since the `release` job runs first; the `stable` job is skipped because it needs `[release, docker]`; `latest` and `v<X.Y.Z>` were never pushed | Re-run the failed job, or use **Docker Rebuild** to push the missing tags, then dispatch **Promote Stable Channel** manually. |
-| `npm run docs:cut` fails in `release.yml` | The `docs` job is red | The release itself exists, but no documentation version was cut; `docs-deploy` is skipped since it needs `[release, docs]` | Cut the version locally following [Cutting a documentation version](#cutting-a-documentation-version), commit it to `main`, then dispatch **Deploy Docs** manually. |
-| Firebase deploy fails | The `docs-deploy` job is red | The version was cut and committed; the site is still serving the previous build | Dispatch **Deploy Docs** again. |
-| `promote-stable` cannot find the source image | An explicit `::error::` before any tag moves | `stable` is unchanged | Push the version image first (**Docker Rebuild**), then re-dispatch **Promote Stable Channel**. |
-| `release-abort` refuses (exit `2`) | The run fails with the refusal message | Nothing is deleted | This is intended behaviour: the version was already promoted and is not abortable through this workflow. |
+| Red `gate` job | `ci.yml` fails as a called workflow | Nothing downstream runs: no tag, no release, no image, no docs cut | Fix the CI failure and push again. |
+| `release` job fails on `EINVALIDNEXTVERSION` | See [EINVALIDNEXTVERSION](#einvalidnextversion) below | No tag, no release, nothing to clean up; the branch is unchanged | See the recoveries below. |
+| `release` job fails for another reason | The `release` job is red; `semantic-release.log` is available in the run | No tag, no release, nothing downstream runs | Read `semantic-release.log` for the specific cause, fix it, and push again. |
+| `docker` job fails | The `docker` job is red | The git tag and GitHub Release already exist, since `release` already succeeded; no image was pushed or re-tagged | Re-run the failed job, or use **Docker Rebuild** afterward to push the missing tag. |
+| `docs` job fails (only runs for a `current`-channel release) | The `docs` job is red | The release itself exists, but no documentation version was cut; `docs-deploy` is skipped since it needs `[release, docs]` | Cut the version locally following [Cutting a documentation version](#cutting-a-documentation-version), then re-run the `docs` and `docs-deploy` jobs. |
+| `docs-deploy` job fails | The `docs-deploy` job is red | The version was cut and pushed to `docs-versions`; the live site still serves the previous build | Re-run the `docs-deploy` job. |
+| `next-pointer` job fails (only runs for a `next`-channel release) | The `next-pointer` job is red | The release itself exists on `develop`; the `next` git tag was not moved and the `next` prerelease GitHub Release was not recreated | Re-run the `next-pointer` job. |
+
+### EINVALIDNEXTVERSION
+
+**Trigger.** A commit lands directly on `main`, outside the normal
+`develop` → `main` promotion, and the version it computes would exceed
+`develop`'s last published release.
+
+**Cause.** `release.config.mjs`'s `branches` array orders `main` before
+`develop`. semantic-release enforces that each branch's computed version
+stays below the next branch's own valid range: a branch earlier in the
+order is not allowed to publish a version that outruns a branch later in
+the order. `main` publishing past what `develop` has already published
+breaks that order, and the `release` job fails before creating anything.
+
+Concrete shape, with `main` serving `1.4.0` and `develop` having already
+published `1.5.3`: a `fix` on `main` (→ `1.4.1`) is fine, and even a first
+`feat` (→ `1.5.0`) is fine, because both stay below `develop`'s `1.5.3`. A
+second `feat` on `main` (→ `1.6.0`) or a `BREAKING CHANGE` (→ `2.0.0`)
+fails the release run, because both exceed `1.5.3`.
+
+This is the mechanism RC-1's validation actually observed, not vendor
+documentation alone: a scratch repository with `main`'s valid next-version
+range at `>=1.1.0 <1.2.0` and `develop` already at `1.1.0`, a `feat` commit
+on `main` computing `1.2.0` was rejected with `EINVALIDNEXTVERSION`, exit
+code `1`, and a structured error naming the responsible commit, the valid
+range, and semantic-release's own suggested recovery: merge, cherry-pick,
+revert or reset — "a valid branch could be `develop`". See
+`.claude/specs/release-channels/03-validation/RC-1.md` for the captured
+error. The `1.4.0` / `1.5.3` numbers above are a worked illustration built
+on that same mechanism, not a restatement of RC-1's own numbers.
+
+**What the failed run leaves behind.** No tag, no release, nothing to
+clean up. The commit is still on `main`, unchanged; only the release run
+failed.
+
+**Recoveries**, any one of the three:
+
+1. Merge `develop` into `main` first, so `main` adopts `develop`'s number,
+   then land the change. This is an ordinary [promotion](#promotion-and-back-merge).
+2. Land the change on `develop` instead of committing to `main`, and
+   promote it from there once it has published.
+3. Push the equivalent commit to `develop` first, so `develop` stays ahead
+   of `main`, then push the same change to `main`.
 
 ## Keeping module manifests in sync
 
