@@ -5,50 +5,46 @@ sidebar_position: 1
 
 Routerly ships four packages together: `@routerly/service`, `@routerly/cli`,
 `@routerly/dashboard` and `@routerly/shared`. They always carry the same
-version number. This page covers the whole release path. The first part is what a
-contributor is expected to do: recording a changeset. The second is the
-maintainer procedure, which grows as more of the pipeline is automated.
+version number. This page covers the whole release path. The first part is
+what a contributor is expected to do: write a conventional commit. The
+second is the maintainer procedure, which grows as more of the pipeline is
+automated.
 
-## Recording a changeset
+## Write a conventional commit
 
-If your change is user-visible, add a changeset before opening a pull
-request:
+There is no separate step to declare a version bump or a changelog entry.
+The commit message is the whole contribution protocol: the next version
+number and the release notes are both computed from the commit history at
+release time, nothing is declared a second time anywhere.
 
-```bash
-npx changeset
-```
+Your commit's type must be one of the eleven `commitlint.config.js` allows:
+`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`,
+`chore`, `revert`. Three of those drive the version:
 
-This prompts you for which packages your change touches and which kind of
-version bump it deserves, then writes a markdown file under `.changeset/`
-that you commit alongside your code. That file is both the version bump
-instruction and the changelog entry: whatever you write in the prompt ends
-up verbatim in each affected package's `CHANGELOG.md`.
+- **`fix`** — a bug fix. Bumps the **patch** version.
+- **`feat`** — a new feature, flag, endpoint or option. Bumps the **minor**
+  version.
+- A `!` after the type/scope (`feat!:`, `fix!:`) or a `BREAKING CHANGE:`
+  footer in the commit body — a breaking change to the wire format, the
+  CLI, the API or the configuration shape. Bumps the **major** version,
+  regardless of the type it is attached to.
 
-Pick the bump type honestly:
+Every other type (`docs`, `style`, `refactor`, `perf`, `test`, `build`,
+`ci`, `chore`, `revert`) triggers no version bump on its own.
 
-- **patch** — a bug fix, with no change to any documented behaviour.
-- **minor** — a new feature, flag, endpoint or option; anything additive.
-- **major** — a breaking change to the wire format, the CLI, the API or the
-  configuration shape.
+The same type also decides where your change shows up in the GitHub
+release notes: `feat` under **Features**, `fix` under **Bug Fixes**, `perf`
+under **Performance**, `docs` under **Documentation**, `refactor` under
+**Refactor**. `chore`, `ci`, `build`, `test`, `style` and `revert` produce
+no heading and no bullet; they exist for internal housekeeping and stay out
+of what a reader sees changed.
 
-Because all four packages move together, `changeset` will bump every
-package you select to the same new number, not each to its own. Do not try
-to release, say, only `@routerly/cli` at a new minor while leaving the
-others untouched. If your change only touches one package's code, you can
-still record the changeset against just that package: the version number
-that results still applies to all four, since they are always published
-together.
-
-Skip the changeset only for changes with nothing for a user or operator to
-notice: internal refactors, test-only changes, CI and tooling. If you are
-unsure, add one.
-
-Your commit's subject also feeds the GitHub release notes, generated
-separately from the changeset (see [Generating release notes](#generating-release-notes)
-below). A conventional-commit type there is not just style: `feat` and `fix`
-are what puts your change in front of a reader under "Features" or "Bug
-Fixes". Get the type right for the same reason you get the changeset bump
-right.
+`commitlint` enforces the type against that list and requires a lower-case
+subject, on every commit via a Husky hook. It does **not** enforce the `!`
+or `BREAKING CHANGE:` marker: nothing stops a commit that changes the wire
+format from going out as a plain `feat` or `fix` and shipping as a minor or
+patch bump. Marking a breaking change correctly is on the author, not on
+tooling.
 
 ## Module manifests carry the product version, not their own
 
@@ -76,61 +72,6 @@ expect(myModule.manifest.dependsOn).toEqual({ config: `^${PRODUCT_VERSION}` })
 
 A test that hardcodes `'0.4.0'` breaks on the next release even though
 nothing about the module changed.
-
-## What happens after you push
-
-Pushing to a `release/**` branch triggers a GitHub Actions workflow that
-opens or updates a pull request against that same release branch. This is
-the **Version PR**. Its title is "chore: version packages", and it does two
-things once merged: it applies every pending changeset's version bump to
-all four packages at once, and it writes each affected package's
-`CHANGELOG.md` from the changeset files.
-
-The Version PR is not a proposal you can safely apply by hand. **Merging it
-is what performs the bump.** Nobody commits a version number directly:
-a script does not decide the number, a human reviews and merges it. This
-matters because the version is the one part of a release that cannot be
-corrected after the fact without breaking instances that already installed
-it. A wrong or accidental commit to `package.json` skips that review; the
-Version PR exists so a human always looks at the exact number and the exact
-changelog before it becomes real.
-
-If you push more changesets to the same release branch after the Version
-PR has already opened, it updates in place. You do not need to open a
-second one, and you should not close the first one manually while waiting
-for a second push.
-
-A release branch with nothing pending simply gets no Version PR. Pushing
-code that has no changeset attached does not produce an empty or broken
-one.
-
-## Prerelease mode is not used on this line
-
-Routerly does not cut release-candidate versions (`vX.Y.Z-rc.N`) through
-changesets' own prerelease mode. If a `.changeset/pre.json` file exists on
-a `release/**` branch, the version workflow refuses to run and fails with:
-
-```
-Prerelease mode is not used on this line. Exit it with 'npx changeset pre exit' before pushing this release branch.
-```
-
-If you hit this, someone left prerelease mode enabled from an earlier,
-unrelated experiment. Run `npx changeset pre exit` on that branch and push
-again; the version is decided once, in full, not incrementally through
-release-candidate identifiers.
-
-## Checking what would be released
-
-To see the pending version bump for the packages on your current branch
-without applying it:
-
-```bash
-npx changeset status
-```
-
-This compares against the branch the current line of development was cut
-from, not against a fixed default, so run it from a checkout of the branch
-you are actually about to release from.
 
 ---
 
