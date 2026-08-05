@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { api, ApiError } from '../api.js';
+import { normalizeUpdateChannel, updateChannelDeprecationWarning } from '@routerly/shared';
 
 interface UpdateInfo {
   available: boolean;
@@ -23,7 +24,7 @@ export function makeUpdateCommand(): Command {
 Examples:
   routerly update check            Check if a newer version is available
   routerly update channel          Show the current update channel
-  routerly update channel stable   Switch to the stable channel
+  routerly update channel current  Switch to the current channel
   routerly update run              Update to the latest version on the current channel
   routerly update run --version v0.2.0  Update to a specific version
 `);
@@ -64,17 +65,24 @@ Examples:
   // ── channel ─────────────────────────────────────────────────────────────────
   cmd
     .command('channel [name]')
-    .description('Show or change the update channel (latest | stable | develop | vX.Y.Z)')
+    .description('Show or change the update channel (latest | current | next | vX.Y.Z)')
     .action(async (name: string | undefined) => {
       try {
         if (!name) {
           const settings = await api<Settings>('GET', '/api/settings');
-          const current = settings.channel ?? 'latest';
+          const normalized = normalizeUpdateChannel(settings.channel);
           console.log();
-          console.log(`  Current channel: ${chalk.cyan(current)}`);
-          console.log(chalk.gray(`  Valid values: latest, stable, develop, or a specific tag (e.g. v0.2.0)`));
+          console.log(`  Current channel: ${chalk.cyan(normalized.channel)}`);
+          console.log(chalk.gray(`  Valid values: latest, current, next, or a specific tag (e.g. v0.4.0)`));
           console.log();
+          if (normalized.deprecatedAlias) {
+            console.error(updateChannelDeprecationWarning(normalized.deprecatedAlias));
+          }
           return;
+        }
+        const normalized = normalizeUpdateChannel(name);
+        if (normalized.deprecatedAlias) {
+          console.error(updateChannelDeprecationWarning(normalized.deprecatedAlias));
         }
         const updated = await api<Settings>('PUT', '/api/settings', { channel: name });
         console.log();

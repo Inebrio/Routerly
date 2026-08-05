@@ -14,7 +14,7 @@ import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } f
 import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults } from '@routerly/shared';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
-import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_PROJECT_TIMEOUT_MS, isCompletionCall, notificationCategory } from '@routerly/shared';
+import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_PROJECT_TIMEOUT_MS, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, updateChannelDeprecationWarning, UPDATE_CHANNEL_ERROR } from '@routerly/shared';
 import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
@@ -1888,7 +1888,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       configDir: CONFIG_PATHS.config,
       dataDir: CONFIG_PATHS.data,
       uptimeSeconds: Math.floor(process.uptime()),
-      channel: settings.channel ?? 'latest',
+      channel: normalizeUpdateChannel(settings.channel).channel,
       isDocker: process.env['ROUTERLY_DOCKER'] === '1',
       updateInfo: updateChecker.getLastResult(),
     });
@@ -1991,6 +1991,20 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(400).send({ error: parsed.error.issues[0]!.message });
       }
     }
+    // RC-3: validate/normalise channel before persisting — aliases (stable/develop)
+    // resolve to their canonical name, which is what gets written and what
+    // updateChecker.updateChannel() receives below.
+    const channelPatch = (req.body as Partial<Settings>).channel;
+    let channelNormalized: ReturnType<typeof normalizeUpdateChannel> | undefined;
+    if (channelPatch !== undefined) {
+      if (!isValidUpdateChannel(channelPatch)) {
+        return reply.status(400).send({ error: UPDATE_CHANNEL_ERROR });
+      }
+      channelNormalized = normalizeUpdateChannel(channelPatch);
+      if (channelNormalized.deprecatedAlias) {
+        console.warn(updateChannelDeprecationWarning(channelNormalized.deprecatedAlias));
+      }
+    }
     const current = await readConfig('settings');
     const allowed: (keyof Settings)[] = [
       'logLevel',
@@ -2006,6 +2020,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       if ((req.body as Partial<Settings>)[key] !== undefined) {
         (updated as any)[key] = (req.body as Partial<Settings>)[key];
       }
+    }
+    if (channelNormalized) {
+      updated.channel = channelNormalized.channel;
     }
     // Telemetry is handled separately: server controls installId generation
     const telemetryPatch = (req.body as Partial<Settings>).telemetry;
@@ -2024,8 +2041,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
     await writeConfig('settings', updated);
-    if ((req.body as Partial<Settings>).channel !== undefined) {
-      updateChecker.updateChannel(updated.channel ?? 'latest');
+    if (channelNormalized) {
+      updateChecker.updateChannel(channelNormalized.channel);
     }
     if ((req.body as Partial<Settings>).providerRepos !== undefined) {
       catalogFetcher.setRepos((updated as Settings).providerRepos ?? []);
