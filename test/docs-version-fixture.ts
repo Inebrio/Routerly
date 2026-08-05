@@ -33,17 +33,14 @@ export interface Fixture {
   configPath: string
 }
 
-function configSource(lastVersion: string, versions: string[], corrupt?: 'zero' | 'two'): string {
+// RC-2/task 7: docs-version.mjs no longer reads or writes lastVersion — the
+// fixture's config mirrors the real website/docusaurus.config.ts shape,
+// which no longer sets it either (Docusaurus's unset-lastVersion default
+// serves the newest versions.json entry at `/`).
+function configSource(versions: string[]): string {
   const versionsMap = versions
     .map((v) => `            '${v}': { label: '${v}', badge: true },`)
     .join('\n')
-
-  const lastVersionLine =
-    corrupt === 'zero'
-      ? `          lastVersionXXX: '${lastVersion}',`
-      : corrupt === 'two'
-        ? `          lastVersion: '${lastVersion}',\n          lastVersion: '${lastVersion}',`
-        : `          lastVersion: '${lastVersion}',`
 
   return `import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
@@ -65,7 +62,6 @@ const config: Config = {
           path: '../docs',
           routeBasePath: '/',
           sidebarPath: './sidebars.ts',
-${lastVersionLine}
           versions: {
             current: { label: 'next', badge: true },
 ${versionsMap}
@@ -93,7 +89,6 @@ export default config;
 export function buildFixture(
   opts: {
     initialVersions?: string[]
-    corrupt?: 'zero' | 'two'
     docsFiles?: string[]
   } = {},
 ): Fixture {
@@ -142,8 +137,7 @@ export function buildFixture(
   fs.writeFileSync(versionsPath, JSON.stringify(initialVersions))
 
   const configPath = path.join(websiteDir, 'docusaurus.config.ts')
-  const lastVersion = initialVersions[0] ?? '0.1.0'
-  fs.writeFileSync(configPath, configSource(lastVersion, initialVersions, opts.corrupt))
+  fs.writeFileSync(configPath, configSource(initialVersions))
 
   for (const v of initialVersions) {
     const versionDocsDir = path.join(websiteDir, 'versioned_docs', `version-${v}`)
