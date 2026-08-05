@@ -5,50 +5,46 @@ sidebar_position: 1
 
 Routerly ships four packages together: `@routerly/service`, `@routerly/cli`,
 `@routerly/dashboard` and `@routerly/shared`. They always carry the same
-version number. This page covers the whole release path. The first part is what a
-contributor is expected to do: recording a changeset. The second is the
-maintainer procedure, which grows as more of the pipeline is automated.
+version number. This page covers the whole release path. The first part is
+what a contributor is expected to do: write a conventional commit. The
+second is the maintainer procedure, which grows as more of the pipeline is
+automated.
 
-## Recording a changeset
+## Write a conventional commit
 
-If your change is user-visible, add a changeset before opening a pull
-request:
+There is no separate step to declare a version bump or a changelog entry.
+The commit message is the whole contribution protocol: the next version
+number and the release notes are both computed from the commit history at
+release time, nothing is declared a second time anywhere.
 
-```bash
-npx changeset
-```
+Your commit's type must be one of the eleven `commitlint.config.js` allows:
+`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`,
+`chore`, `revert`. Three of those drive the version:
 
-This prompts you for which packages your change touches and which kind of
-version bump it deserves, then writes a markdown file under `.changeset/`
-that you commit alongside your code. That file is both the version bump
-instruction and the changelog entry: whatever you write in the prompt ends
-up verbatim in each affected package's `CHANGELOG.md`.
+- **`fix`** — a bug fix. Bumps the **patch** version.
+- **`feat`** — a new feature, flag, endpoint or option. Bumps the **minor**
+  version.
+- A `!` after the type/scope (`feat!:`, `fix!:`) or a `BREAKING CHANGE:`
+  footer in the commit body — a breaking change to the wire format, the
+  CLI, the API or the configuration shape. Bumps the **major** version,
+  regardless of the type it is attached to.
 
-Pick the bump type honestly:
+Every other type (`docs`, `style`, `refactor`, `perf`, `test`, `build`,
+`ci`, `chore`, `revert`) triggers no version bump on its own.
 
-- **patch** — a bug fix, with no change to any documented behaviour.
-- **minor** — a new feature, flag, endpoint or option; anything additive.
-- **major** — a breaking change to the wire format, the CLI, the API or the
-  configuration shape.
+The same type also decides where your change shows up in the GitHub
+release notes: `feat` under **Features**, `fix` under **Bug Fixes**, `perf`
+under **Performance**, `docs` under **Documentation**, `refactor` under
+**Refactor**. `chore`, `ci`, `build`, `test`, `style` and `revert` produce
+no heading and no bullet; they exist for internal housekeeping and stay out
+of what a reader sees changed.
 
-Because all four packages move together, `changeset` will bump every
-package you select to the same new number, not each to its own. Do not try
-to release, say, only `@routerly/cli` at a new minor while leaving the
-others untouched. If your change only touches one package's code, you can
-still record the changeset against just that package: the version number
-that results still applies to all four, since they are always published
-together.
-
-Skip the changeset only for changes with nothing for a user or operator to
-notice: internal refactors, test-only changes, CI and tooling. If you are
-unsure, add one.
-
-Your commit's subject also feeds the GitHub release notes, generated
-separately from the changeset (see [Generating release notes](#generating-release-notes)
-below). A conventional-commit type there is not just style: `feat` and `fix`
-are what puts your change in front of a reader under "Features" or "Bug
-Fixes". Get the type right for the same reason you get the changeset bump
-right.
+`commitlint` enforces the type against that list and requires a lower-case
+subject, on every commit via a Husky hook. It does **not** enforce the `!`
+or `BREAKING CHANGE:` marker: nothing stops a commit that changes the wire
+format from going out as a plain `feat` or `fix` and shipping as a minor or
+patch bump. Marking a breaking change correctly is on the author, not on
+tooling.
 
 ## Module manifests carry the product version, not their own
 
@@ -77,61 +73,6 @@ expect(myModule.manifest.dependsOn).toEqual({ config: `^${PRODUCT_VERSION}` })
 A test that hardcodes `'0.4.0'` breaks on the next release even though
 nothing about the module changed.
 
-## What happens after you push
-
-Pushing to a `release/**` branch triggers a GitHub Actions workflow that
-opens or updates a pull request against that same release branch. This is
-the **Version PR**. Its title is "chore: version packages", and it does two
-things once merged: it applies every pending changeset's version bump to
-all four packages at once, and it writes each affected package's
-`CHANGELOG.md` from the changeset files.
-
-The Version PR is not a proposal you can safely apply by hand. **Merging it
-is what performs the bump.** Nobody commits a version number directly:
-a script does not decide the number, a human reviews and merges it. This
-matters because the version is the one part of a release that cannot be
-corrected after the fact without breaking instances that already installed
-it. A wrong or accidental commit to `package.json` skips that review; the
-Version PR exists so a human always looks at the exact number and the exact
-changelog before it becomes real.
-
-If you push more changesets to the same release branch after the Version
-PR has already opened, it updates in place. You do not need to open a
-second one, and you should not close the first one manually while waiting
-for a second push.
-
-A release branch with nothing pending simply gets no Version PR. Pushing
-code that has no changeset attached does not produce an empty or broken
-one.
-
-## Prerelease mode is not used on this line
-
-Routerly does not cut release-candidate versions (`vX.Y.Z-rc.N`) through
-changesets' own prerelease mode. If a `.changeset/pre.json` file exists on
-a `release/**` branch, the version workflow refuses to run and fails with:
-
-```
-Prerelease mode is not used on this line. Exit it with 'npx changeset pre exit' before pushing this release branch.
-```
-
-If you hit this, someone left prerelease mode enabled from an earlier,
-unrelated experiment. Run `npx changeset pre exit` on that branch and push
-again; the version is decided once, in full, not incrementally through
-release-candidate identifiers.
-
-## Checking what would be released
-
-To see the pending version bump for the packages on your current branch
-without applying it:
-
-```bash
-npx changeset status
-```
-
-This compares against the branch the current line of development was cut
-from, not against a fixed default, so run it from a checkout of the branch
-you are actually about to release from.
-
 ---
 
 # Maintainer procedure
@@ -141,146 +82,210 @@ contributor opening a pull request.
 
 ## Branches and channels
 
-Three branches carry release meaning; everything else is ordinary
-development.
+Two long-lived branches carry release meaning; everything else is ordinary
+development. Each is one of two update channels.
 
-| Branch | What it means | What it runs |
-|---|---|---|
-| `main` | The currently shipped release. | `ci.yml` and `release.yml` on every push. |
-| `develop` | The next release in progress. Nothing publishes automatically from a push here; publishing the `develop` channel is a manual dispatch (see [Promoting a release](#promoting-a-release)). | `ci.yml` only. |
-| `release/**` | A candidate line: future and unstable. **Not every `release/**` branch reaches `main`.** A branch can be abandoned instead, which is what [aborting a release](#aborting-a-release) is for. | `ci.yml` and `release-version.yml` on every push; a *green* CI run additionally triggers `release-docker.yml`. |
+| Branch | Channel | What it means | What it runs |
+|---|---|---|---|
+| `main` | `current` (semantic-release's own name for it is `latest` — see below) | The currently shipped, stable release. | `ci.yml` and `release.yml` on every push. |
+| `develop` | `next` | The next release, published automatically as soon as commits on it compute a version. | `ci.yml` and `release.yml` on every push. |
 
-The documentation site mirrors this with its own version labels, configured
-in `website/docusaurus.config.ts`:
+The order in `release.config.mjs` is load-bearing, not decoration:
+
+```
+branches: ['main', { name: 'develop', channel: 'next' }],
+```
+
+`main` being listed first is what makes its releases the stable, `latest`
+ones; `develop` is explicit about its own channel, `next`. Whether a release
+is a prerelease or the stable, `latest` one is derived by semantic-release
+from this order — nothing in this repository computes it. Reordering the
+array would silently swap which branch is the stable one.
+
+Both channels share **one tag namespace**: every release, on either branch,
+gets a single `vX.Y.Z` git tag. There is no second, channel-prefixed tag
+scheme — a version tagged `v1.5.3` is the same object whether it was first
+published from `develop` or later promoted onto `main`.
+
+**Migration note.** No `v0.4.0` starting tag was placed for this migration.
+The last reachable tag going into it was `v0.2.0`, and the first version
+semantic-release actually computed on `main` under this pipeline was
+**`0.3.0`** — not `0.4.0` and not `1.0.0`. This is a real, observed result
+from RC-1's dry run, not a hypothetical.
+
+**Channel names.** The CLI, the config and `scripts/install.sh` accept
+`latest`, `current` and `next`. `stable` and `develop` still work as
+deprecated aliases for `current` and `next` respectively; each prints a
+one-line deprecation warning once and is removed no earlier than the
+release after next. The two surfaces word the warning differently — this is
+not one shared string:
+
+- CLI and config (`@routerly/shared`): `Update channel "stable" was renamed
+  to "current". "stable" still works but is deprecated and will be removed
+  in a future release; switch to "current".` (and the equivalent line for
+  `develop` → `next`).
+- `scripts/install.sh`: `Channel 'stable' is deprecated; using 'current'
+  instead.` (and the equivalent line for `develop` → `next`).
+
+The documentation site mirrors the two-channel split with two live states,
+not three:
 
 | Docs version | Label | What it tracks |
 |---|---|---|
-| `current` | "next (future)" | The live `docs/` tree on whatever branch is checked out. Content that has not necessarily shipped. |
-| `0.3.0` | "0.3.0 (develop)" | The snapshot corresponding to the `develop` line. |
-| `lastVersion` | no separate label, this is the default a visitor lands on | The currently shipped stable release, matching `main`. At the time of writing this is `0.2.0`. |
+| Docusaurus's own unversioned `current` | "next" | The live `docs/` tree as committed — not frozen to any release, and can be ahead of the newest cut snapshot. |
+| Newest entry in `website/versions.json` | default landing page | The most recently cut documentation snapshot. |
 
-`lastVersion` is not a fact frozen in this page: it is rewritten by
-`npm run docs:cut` every time a release is promoted (see
-[Cutting a documentation version](#cutting-a-documentation-version)), so it
-moves forward on every release. `website/versions.json` lists every cut
-version as a bare `X.Y.Z`, newest first, independently of this page.
+Only the `current` channel (`main`) ever cuts a documentation version — the
+`docs` job in `release.yml` runs only when `channel == 'current'`. The
+`next` channel (`develop`) never cuts one of its own: `develop`'s
+documentation lives only in the always-live tree above, and gets no frozen
+snapshot until it is promoted. See [Cutting a documentation
+version](#cutting-a-documentation-version) for the mechanics of the cut
+itself.
 
 ## What runs automatically
 
-One row per trigger, ordered by the branch it fires on.
+One row per job in `.github/workflows/release.yml`, triggered by any push
+to `main` or `develop`.
 
-| Trigger | Workflow | What it produces |
+| Job | Runs when | What it produces |
 |---|---|---|
-| Push to `release/**` | `release-version.yml` | Fails fast if `.changeset/pre.json` exists (see [Prerelease mode is not used on this line](#prerelease-mode-is-not-used-on-this-line)). Otherwise opens or updates the Version PR, based on that same release branch. |
-| Push to `main`, `develop` or `release/**`, and pull requests targeting them | `ci.yml` | `npm audit --audit-level=high`; build and typecheck of all four packages; the four workspace test suites with coverage; `npm ci --prefix website`; the release-tooling test suites via `npx vitest run`. A coverage summary is written to the run summary. |
-| `ci.yml` completes successfully on `release/**` | `release-docker.yml` | A multi-arch (`linux/amd64`, `linux/arm64`) push of `inebrio/routerly:v<X.Y.Z>-rc.<CI run number>`, then a `release-docker` commit status on the head commit. The `-rc.N` number is the CI run number, not a changesets prerelease identifier, so it is not contiguous across failed and re-run CI attempts. |
-| Push to `main` | `release.yml`, job `release` | If changesets are pending, opens or updates the Version PR and stops there. Otherwise it builds every package, renders `RELEASE_NOTES.md` from the git history, creates tag `v<X.Y.Z>`, and publishes the GitHub Release. This step is idempotent: if the tag already exists, it does nothing further. |
-| `release` job promoted | `release.yml`, job `docker` | Multi-arch push of `inebrio/routerly:latest` and `inebrio/routerly:v<X.Y.Z>`. |
-| `release` job promoted | `release.yml`, job `docs` | Runs `npm run docs:cut -- <X.Y.Z>` and commits the result to `main` as `chore(docs): cut documentation version <X.Y.Z>`. No-ops cleanly if the cut produces no diff. |
-| `docs` job succeeded | `release.yml`, job `docs-deploy` | Builds `website/` and deploys it to Firebase Hosting (project `routerly-docs`, channel `live`). |
-| `docker` job succeeded | `release.yml`, job `stable` | The stable-channel promotion, see below. |
+| `gate` | Every push to `main` or `develop` | Runs the full `ci.yml` suite as a prerequisite. Nothing downstream runs if it fails. |
+| `release` | `gate` passed | `npx semantic-release`. Computes the next version from the commit history, creates the shared `vX.Y.Z` tag, and publishes (or updates) the GitHub Release. If there is nothing to release, it exits cleanly with `released=false` and nothing downstream runs. |
+| `docker` | `release` published (`released == 'true'`) | Multi-arch (`linux/amd64`, `linux/arm64`) build and push. A first publish (`action == 'publish'`) builds from the release tarball and tags both the git tag and the channel tag; a later channel move (`action == 'addChannel'`) re-tags with `docker buildx imagetools create` instead of rebuilding. |
+| `docs` | `release` published **and** `channel == 'current'` | Runs `npm run docs:cut` for the new version and pushes the cut to the `docs-versions` branch. Skipped entirely for a `next` release. |
+| `docs-deploy` | `docs` finished, same `channel == 'current'` gate | Builds `website/` and deploys it to Firebase Hosting. |
+| `next-pointer` | `release` published **and** `channel == 'next'` | Force-moves the `next` git tag to the new release and recreates the `next` GitHub Release as a prerelease, attaching the install scripts. A `main`-published release never touches this job. |
 
-`docs-deploy` and `stable` are reusable workflows called as jobs of
-`release.yml` with `secrets: inherit`. That only propagates secrets to
-them, not permissions: what each of those jobs is allowed to do is still
-capped by `release.yml`'s own `permissions:` block.
+## Promotion and back-merge
 
-## Promoting a release
+There is no separate "promote" workflow. Promoting a release means merging
+`develop` into `main` with an ordinary pull request; the pipeline then
+picks the merge commit up on push, the same as any other commit on `main`.
 
-There are two promotion paths, each a separate workflow, and neither runs
-on a plain push.
+**Promotion, not recomputation.** semantic-release computes a version from
+the commit history, not from which branch a merge lands on. `develop`,
+being on channel `next`, has typically already published its own
+`vX.Y.Z` release before the merge happens. Merging it into `main` does not
+put in front of `main` any commits that were not already accounted for —
+the same computation runs again and produces the same number. What actually
+happens is that the release already published from `develop` is
+republished from `main`: it loses its prerelease flag and takes over the
+`latest` channel tag. No new tag is created and no second release object is
+made; the existing one is mutated in place.
 
-**Stable.** `promote-stable.yml` runs automatically as the `stable` job of
-`release.yml` once a release is built and its Docker image pushed, or on
-demand via `workflow_dispatch` with a `version` input like `v0.1.5`. It
-verifies the GitHub Release for that version exists, checks out the tag,
-force-pushes the `stable` git tag, recreates the `stable` GitHub Release,
-then re-tags the already-built multi-arch image from
-`inebrio/routerly:v<X.Y.Z>` to `inebrio/routerly:stable` — a re-tag via
-`docker buildx imagetools create`, not a rebuild.
+**Worked example.** `main` is currently serving `1.4.1`. `develop` has
+already published `1.5.3`. A maintainer merges `develop` into `main`. The
+result: `main` serves **1.5.3** — no new tag, no second release object; the
+existing `1.5.3` release flips from prerelease to stable and becomes
+`latest`.
 
-It refuses explicitly, before moving any tag, if
-`inebrio/routerly:v<X.Y.Z>` is not present in the registry. Versions at or
-before `0.3.0` only ever got the bare `X.Y.Z` image tag, never the
-`v`-prefixed one, so they cannot be promoted through this workflow as it
-stands; a version needs to have shipped through the current pipeline (or
-been rebuilt with the correct tag through **Docker Rebuild**) before it can
-become stable.
+This is not what an earlier expectation held — that this merge would
+compute a fresh `1.5.0` on `main`. It does not: the merge promotes `1.5.3`
+as it already stands.
 
-**Develop.** `promote-develop.yml` is `workflow_dispatch` only, with a
-`branch` input defaulting to `develop`. It builds from that branch,
-force-pushes the `develop` git tag, recreates the `develop` GitHub Release
-as a prerelease titled `Routerly develop (<branch>@<short sha>)`, and
-pushes `inebrio/routerly:develop` plus `inebrio/routerly:v<X.Y.Z>`. Nothing
-promotes the develop channel automatically; a maintainer always dispatches
-it.
+### The back-merge
 
-## Aborting a release
+The direction above only carries `develop`'s already-published work onto
+`main`. It does not cover the opposite case: a fix landed directly on
+`main`, outside the normal `develop` → `main` promotion. After that
+happens, a maintainer must open and merge a `main` → `develop` pull request
+by hand. Nothing in the pipeline automates this, and nothing detects a
+missed one.
 
-A `release/**` branch does not have to reach `main`. To abandon one, run
-the **Release Abort** workflow (`release-abort.yml`) from the Actions tab,
-`workflow_dispatch` only, with a `version` input accepting either `v0.5.0`
-or `0.5.0`. It runs `node scripts/release-abort.mjs --version "$INPUT_VERSION"`.
+Forgetting it means the fix never reaches `develop`, the unstable line, and
+it **resurfaces as a regression the next time `develop` is promoted to
+`main`** — the promotion silently reintroduces whatever the fix corrected,
+because it never reached the branch being promoted.
 
-What it does:
-
-- Deletes only the Docker Hub tags matching `^v<X.Y.Z>-rc\.[0-9]+$` in
-  `inebrio/routerly` — the prerelease images `release-docker.yml` published
-  from that branch's CI runs.
-- Refuses, with exit code `2`, and deletes nothing, if the git tag
-  `v<X.Y.Z>` already exists — that means the version was already promoted,
-  and this workflow is not the tool to undo a promotion. This check runs
-  before any network call to the registry.
-- `latest`, `develop` and `stable` are never touched; their digests are
-  printed before and after the run so that is verifiable from the log.
-- Exit codes: `0` for success, including "nothing to remove"; `1` for an
-  operational failure (bad arguments, missing `DOCKERHUB_USERNAME` or
-  `DOCKERHUB_TOKEN`, a network or auth error); `2` for the promoted-version
-  refusal above.
-- `--dry-run` prints the exact `DELETE` requests it would issue, with the
-  token redacted, without deleting anything. `--tags-file <path>` reads a
-  JSON array of tag names instead of querying the registry, for offline
-  preview.
-
-**What it leaves behind.** Aborting is registry cleanup only, not branch
-teardown. The release branch itself, its commits, its git tags, its
-Version PR and any GitHub Release it produced are all left untouched.
-Deleting the branch and closing the Version PR are manual steps a
-maintainer still has to do after the workflow runs.
+Automating the back-merge was rejected: a merge pushed with the workflow's
+own `GITHUB_TOKEN` would not trigger a fresh `develop` push in the way a
+human-authored merge does, so no `next` release would fire and the fix
+would sit on `develop`, unpublished on `next`.
 
 ## Credentials the pipeline needs
 
-Names and purposes only; no value is ever recorded here.
+Names and purposes only; no value is ever recorded here. Three secrets are
+configured on the repository; `GITHUB_TOKEN` is provided automatically and
+needs no setup.
 
 | Secret | Purpose | Where configured |
 |---|---|---|
-| `GITHUB_TOKEN` | Provided automatically by GitHub Actions. Used to open and update the Version PR, push tags, publish and delete GitHub Releases, push the docs-cut commit to `main`, and post the `release-docker` commit status. Its actual scope is each workflow's own `permissions:` block. | Nothing to configure; review the `permissions:` block of the workflow in question. |
-| `DOCKERHUB_USERNAME` | The Docker Hub account used to push and delete image tags. | Repository Settings → Secrets and variables → Actions. |
-| `DOCKERHUB_TOKEN` | Docker Hub access token. Needs Read, Write and Delete: delete is required because `release-abort.mjs` removes prerelease tags. | Repository Settings → Secrets and variables → Actions. |
-| `FIREBASE_SERVICE_ACCOUNT_ROUTERLY_DOCS` | Service-account JSON used to deploy the documentation site to Firebase Hosting, project `routerly-docs`, channel `live`. | Repository Settings → Secrets and variables → Actions. |
+| `GITHUB_TOKEN` | Provided automatically by GitHub Actions. Used by the `release` job to create the shared `vX.Y.Z` tag and publish or update the GitHub Release, by the `docs` job to push the docs-cut commit to `docs-versions`, and by the `next-pointer` job to force-move the `next` tag and recreate the `next` prerelease Release. Its actual scope is `release.yml`'s own `permissions:` block. | Nothing to configure; review the `permissions:` block in `.github/workflows/release.yml`. |
+| `DOCKERHUB_USERNAME` | The Docker Hub account the `docker` job logs in as, to push and re-tag images. | Repository Settings → Secrets and variables → Actions. |
+| `DOCKERHUB_TOKEN` | Docker Hub access token the `docker` job logs in with, to push and re-tag images. | Repository Settings → Secrets and variables → Actions. |
+| `FIREBASE_SERVICE_ACCOUNT_ROUTERLY_DOCS` | Service-account JSON the `docs-deploy` job uses to deploy the documentation site to Firebase Hosting, project `routerly-docs`, channel `live`. | Repository Settings → Secrets and variables → Actions. |
 
 ## When a step fails
 
+One row per job in `.github/workflows/release.yml`, plus the two other
+workflows a release run can depend on.
+
 | Failure | What is visible | What it leaves behind | What to do |
 |---|---|---|---|
-| Red `ci.yml` on a `release/**` branch | The CI run fails; no `release-docker` commit status appears | No prerelease image was built, since `release-docker.yml` only fires on a successful CI run | Fix the failure and push again. The next green CI produces a new `-rc.<run number>`, so `-rc` numbers are not contiguous. |
-| `.changeset/pre.json` present on a release branch | `release-version.yml` fails with the guard's error message | No Version PR is opened or updated | Run `npx changeset pre exit` on that branch and push again (see [Prerelease mode is not used on this line](#prerelease-mode-is-not-used-on-this-line)). |
-| Docker push fails in `release.yml` | The `docker` job is red | The git tag and GitHub Release already exist, since the `release` job runs first; the `stable` job is skipped because it needs `[release, docker]`; `latest` and `v<X.Y.Z>` were never pushed | Re-run the failed job, or use **Docker Rebuild** to push the missing tags, then dispatch **Promote Stable Channel** manually. |
-| `npm run docs:cut` fails in `release.yml` | The `docs` job is red | The release itself exists, but no documentation version was cut; `docs-deploy` is skipped since it needs `[release, docs]` | Cut the version locally following [Cutting a documentation version](#cutting-a-documentation-version), commit it to `main`, then dispatch **Deploy Docs** manually. |
-| Firebase deploy fails | The `docs-deploy` job is red | The version was cut and committed; the site is still serving the previous build | Dispatch **Deploy Docs** again. |
-| `promote-stable` cannot find the source image | An explicit `::error::` before any tag moves | `stable` is unchanged | Push the version image first (**Docker Rebuild**), then re-dispatch **Promote Stable Channel**. |
-| `release-abort` refuses (exit `2`) | The run fails with the refusal message | Nothing is deleted | This is intended behaviour: the version was already promoted and is not abortable through this workflow. |
+| Red `gate` job | `ci.yml` fails as a called workflow | Nothing downstream runs: no tag, no release, no image, no docs cut | Fix the CI failure and push again. |
+| `release` job fails on `EINVALIDNEXTVERSION` | See [EINVALIDNEXTVERSION](#einvalidnextversion) below | No tag, no release, nothing to clean up; the branch is unchanged | See the recoveries below. |
+| `release` job fails for another reason | The `release` job is red; `semantic-release.log` is available in the run | No tag, no release, nothing downstream runs | Read `semantic-release.log` for the specific cause, fix it, and push again. |
+| `docker` job fails | The `docker` job is red | The git tag and GitHub Release already exist, since `release` already succeeded; no image was pushed or re-tagged | Re-run the failed job, or use **Docker Rebuild** afterward to push the missing tag. |
+| `docs` job fails (only runs for a `current`-channel release) | The `docs` job is red | The release itself exists, but no documentation version was cut; `docs-deploy` is skipped since it needs `[release, docs]` | Cut the version locally following [Cutting a documentation version](#cutting-a-documentation-version), then re-run the `docs` and `docs-deploy` jobs. |
+| `docs-deploy` job fails | The `docs-deploy` job is red | The version was cut and pushed to `docs-versions`; the live site still serves the previous build | Re-run the `docs-deploy` job. |
+| `next-pointer` job fails (only runs for a `next`-channel release) | The `next-pointer` job is red | The release itself exists on `develop`; the `next` git tag was not moved and the `next` prerelease GitHub Release was not recreated | Re-run the `next-pointer` job. |
+
+### EINVALIDNEXTVERSION
+
+**Trigger.** A commit lands directly on `main`, outside the normal
+`develop` → `main` promotion, and the version it computes would exceed
+`develop`'s last published release.
+
+**Cause.** `release.config.mjs`'s `branches` array orders `main` before
+`develop`. semantic-release enforces that each branch's computed version
+stays below the next branch's own valid range: a branch earlier in the
+order is not allowed to publish a version that outruns a branch later in
+the order. `main` publishing past what `develop` has already published
+breaks that order, and the `release` job fails before creating anything.
+
+Concrete shape, with `main` serving `1.4.0` and `develop` having already
+published `1.5.3`: a `fix` on `main` (→ `1.4.1`) is fine, and even a first
+`feat` (→ `1.5.0`) is fine, because both stay below `develop`'s `1.5.3`. A
+second `feat` on `main` (→ `1.6.0`) or a `BREAKING CHANGE` (→ `2.0.0`)
+fails the release run, because both exceed `1.5.3`.
+
+This is the mechanism RC-1's validation actually observed, not vendor
+documentation alone: a scratch repository with `main`'s valid next-version
+range at `>=1.1.0 <1.2.0` and `develop` already at `1.1.0`, a `feat` commit
+on `main` computing `1.2.0` was rejected with `EINVALIDNEXTVERSION`, exit
+code `1`, and a structured error naming the responsible commit, the valid
+range, and semantic-release's own suggested recovery: merge, cherry-pick,
+revert or reset — "a valid branch could be `develop`". See
+`.claude/specs/release-channels/03-validation/RC-1.md` for the captured
+error. The `1.4.0` / `1.5.3` numbers above are a worked illustration built
+on that same mechanism, not a restatement of RC-1's own numbers.
+
+**What the failed run leaves behind.** No tag, no release, nothing to
+clean up. The commit is still on `main`, unchanged; only the release run
+failed.
+
+**Recoveries**, any one of the three:
+
+1. Merge `develop` into `main` first, so `main` adopts `develop`'s number,
+   then land the change. This is an ordinary [promotion](#promotion-and-back-merge).
+2. Land the change on `develop` instead of committing to `main`, and
+   promote it from there once it has published.
+3. Push the equivalent commit to `develop` first, so `develop` stays ahead
+   of `main`, then push the same change to `main`.
 
 ## Keeping module manifests in sync
 
-`npm run version` runs `changeset version` and then, automatically,
-`node scripts/sync-module-versions.mjs`. Nothing extra to run: the moment
-the Version PR bumps `packages/service/package.json` to the new number,
-this second step rewrites every module manifest's `version` field and
-every `^X.Y.Z` `dependsOn` range under `packages/service/src` to match it.
-It is unconditional, not differential: it overwrites every matching
-literal with the new canonical version, whatever it was before, and a
-tree that is already in sync produces zero file changes.
+`release.config.mjs`'s `prepareCmd` runs `npm version ${nextRelease.version}
+--workspaces --include-workspace-root --no-git-tag-version
+--ignore-scripts`, then, automatically, `node
+scripts/sync-module-versions.mjs`. Nothing extra to run: the moment
+semantic-release bumps every `package.json` to the computed version, this
+second step rewrites every module manifest's `version` field and every
+`^X.Y.Z` `dependsOn` range under `packages/service/src` to match it. It is
+unconditional, not differential: it overwrites every matching literal with
+the new canonical version, whatever it was before, and a tree that is
+already in sync produces zero file changes.
 
 The scope is fixed to `packages/service/src/**/*.ts`, excluding
 `*.test.ts`.
@@ -313,105 +318,6 @@ place, or just let the next `npm run version` fix it: either way, never
 edit the version literal by hand to make `--check` pass, since the next
 release rewrites it again regardless.
 
-## Generating release notes
-
-The body of the GitHub Release is generated from the git history, not
-written by hand. `scripts/release-notes.sh` renders it with
-[git-cliff](https://git-cliff.org), using the grouping rules in
-`cliff.toml` at the repository root, and the release workflow
-(`.github/workflows/release.yml`) calls it and puts the result straight
-into the release body. This is the GitHub Release only: it never touches
-the per-package `CHANGELOG.md` files, which stay Changesets' job (see
-above).
-
-### What ends up under which heading
-
-The commit's type, the same one commitlint enforces
-(`commitlint.config.js`), decides where it lands:
-
-| Commit type | Heading |
-|---|---|
-| `feat` | Features |
-| `fix` | Bug Fixes |
-| `perf` | Performance |
-| `docs` | Documentation |
-| `refactor` | Refactor |
-| `chore`, `ci`, `build`, `test`, `style` | not shown |
-| a merge commit (`Merge ...`) | not shown |
-| anything else, including a subject that is not a conventional commit at all | Other Changes |
-
-Nothing is silently dropped except merge commits and the five types the
-table marks "not shown": those exist for internal housekeeping and say
-nothing to someone reading what changed. A subject that does not follow
-the conventional-commit form still appears in the notes, under "Other
-Changes", so a change is never lost for having the wrong prefix; it is
-just not sorted by type.
-
-### Previewing locally
-
-```bash
-scripts/release-notes.sh <from-ref> <to-ref> [--tag vX.Y.Z]
-```
-
-The rendered notes go to stdout, nothing else; diagnostics go to stderr.
-Run it from the repository root against two real refs, for example the
-previous tag and `HEAD`:
-
-```
-$ scripts/release-notes.sh v0.1.5 v0.2.0
-## v0.2.0
-
-### Features
-
-- Add time-based filtering and pagination to usage page
-...
-
-### Bug Fixes
-
-- **auth:** Rotate refresh token on every use
-...
-```
-
-`--tag vX.Y.Z` labels the heading with that version explicitly; without
-it, git-cliff uses `<to-ref>` if it is itself a matching version tag. A
-range with no commits still renders a well-formed, empty document instead
-of failing:
-
-```
-$ scripts/release-notes.sh v0.2.0 v0.2.0
-## Release Notes
-```
-
-Two renders of the same range are byte-identical: nothing in the output
-depends on the wall clock or on which unrelated tags happen to exist in
-the repository.
-
-### Failures
-
-A missing or unresolvable ref, or the wrong number of arguments, exits
-`1` with one line on stderr:
-
-```
-$ scripts/release-notes.sh does-not-exist v0.2.0
-release-notes: unresolvable ref 'does-not-exist'
-
-$ scripts/release-notes.sh v0.2.0
-Usage: release-notes.sh <from-ref> <to-ref> [--tag vX.Y.Z]
-```
-
-If git-cliff itself fails to render (a malformed `cliff.toml`, for
-instance), the error is still one line on stderr with the underlying
-cause appended, and exit code `1`. This is what the release workflow sees
-if the step fails.
-
-### Prerequisite
-
-The script looks for `git-cliff` on `PATH` first. If it is not installed,
-it falls back to `npx --yes git-cliff@2.13.1`, so a working `node`/`npx`
-is enough to preview notes locally without installing anything. The
-version is pinned, not a floating range, so a preview and the release
-workflow's own run render the same output for the same range.
-
 ## Cutting a documentation version
 
 The documentation site (`website/`, built with Docusaurus) keeps a
@@ -437,21 +343,23 @@ npm run docs:cut -- 1.4.0
 
 1. Reads and validates the version argument.
 2. Refuses if that version has already been cut.
-3. Confirms `website/docusaurus.config.ts` has exactly one rewritable
-   `lastVersion` line, before touching anything.
-4. Installs `website/`'s dependencies if `website/node_modules` is
+3. Installs `website/`'s dependencies if `website/node_modules` is
    missing (`npm ci --prefix website`).
-5. Runs the Docusaurus versioning CLI (`docusaurus docs:version <X.Y.Z>`),
+4. Runs the Docusaurus versioning CLI (`docusaurus docs:version <X.Y.Z>`),
    which:
    - copies `docs/` into `website/versioned_docs/version-<X.Y.Z>/`
    - copies `website/sidebars.ts` into
      `website/versioned_sidebars/version-<X.Y.Z>-sidebars.json`
    - prepends `<X.Y.Z>` to `website/versions.json`
-6. Rewrites the `lastVersion: '...'` line in
-   `website/docusaurus.config.ts` to the new version, so the site's
-   "latest" label points at what was just cut. The always-current
-   in-progress content in `docs/` is untouched and stays reachable as
-   `next`.
+5. Copies `docs/assets/` into the new versioned snapshot, since the
+   Docusaurus versioning CLI only copies markdown pages.
+
+`website/docusaurus.config.ts` sets no `lastVersion`: with it unset,
+Docusaurus serves whichever entry is first in `website/versions.json` as
+the default, un-prefixed version — and step 4 always prepends the new
+version there, so the site's default automatically becomes what was just
+cut. The always-current in-progress content in `docs/` is untouched and
+stays reachable as `next`.
 
 A successful run prints the new contents of `website/versions.json`:
 
@@ -469,14 +377,8 @@ website/versions.json:
 ]
 ```
 
-Exit code `0`. The only file changed outside `website/versioned_docs/`,
-`website/versioned_sidebars/` and `website/versions.json` is
-`website/docusaurus.config.ts`, and the diff on it is exactly one line:
-
-```
--          lastVersion: '1.3.0',
-+          lastVersion: '1.4.0',
-```
+Exit code `0`. `website/docusaurus.config.ts` is not touched: nothing
+in it names a specific version, so there is nothing to rewrite.
 
 Run it again for the next release when the time comes; each run is
 independent and does not touch a previously cut version's directory.
@@ -495,19 +397,8 @@ half-cut version behind.
 | Version has a `v` prefix | `Version must not have a "v" prefix. Use "1.4.0" instead of "v1.4.0".` | Drop the `v`: `npm run docs:cut -- 1.4.0`. |
 | Version is not bare `X.Y.Z` | `Malformed version "1.4". Expected bare semver in the form X.Y.Z (e.g. 1.2.3).` | Use exactly three numeric components, no pre-release or build metadata: `npm run docs:cut -- 1.4.0`. |
 | Version already cut | `Version 1.4.0 is already cut (present in website/versions.json).` | This is not a re-run path. If the cut version's content is wrong, fix it by hand in `website/versioned_docs/version-1.4.0/` (or remove the version and cut again), not by re-running this command. |
-| `website/docusaurus.config.ts` has no `lastVersion: '...'` line, or more than one | `Could not find a single "lastVersion: '...'" line in website/docusaurus.config.ts (found 0).` (or `found 2`) | The config's `lastVersion` line has been renamed, removed, duplicated or reshaped. Restore a single `lastVersion: '<version>',` line in the plugin options of `website/docusaurus.config.ts`, or update `LAST_VERSION_LINE_RE` in `scripts/docs-version.mjs` to match the new shape. |
 | Dependency install fails | `Failed to install website dependencies (npm ci --prefix website).` | Only shown when `website/node_modules` is missing. Run `npm ci --prefix website` yourself and inspect its output; the underlying npm error prints above this line. |
 | Docusaurus CLI itself fails | `Docusaurus CLI failed to cut version <X.Y.Z>.` | The Docusaurus CLI's own output prints above this line; the version was not added to `website/versions.json`. |
-
-### Known limitation
-
-If the Docusaurus CLI succeeds (`versions.json` and
-`versioned_docs/version-<X.Y.Z>/` written) but the subsequent rewrite of
-`website/docusaurus.config.ts` fails at the filesystem level (disk full,
-permission denied), the version is cut but `lastVersion` was not moved to
-it. This window is a plain OS-level write failure, not a defect in the
-script's logic; if it happens, check `website/docusaurus.config.ts` by
-hand and fix `lastVersion` yourself.
 
 ### Verifying a cut locally
 
