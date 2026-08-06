@@ -776,6 +776,41 @@ describe('router show', () => {
     expect(out).toContain('(not set)');
     expect(out).toContain('(none');
   });
+
+  it('lists candidates with name, routerId and weight for an orchestrator', async () => {
+    const orchestrator = { ...baseRouter, kind: 'orchestrator' as const, candidates: [{ routerId: 'r-1', name: 'r-1-name', weight: 2 }] };
+    mockApi.mockResolvedValueOnce([orchestrator])
+           .mockResolvedValueOnce([]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'router', 'show', 'my-api']);
+    const out = lines.join('\n');
+    expect(out).toContain('Candidates');
+    expect(out).toContain('r-1-name');
+    expect(out).toContain('r-1');
+    expect(out).toContain('weight 2');
+  });
+
+  it('skips the Candidates section for a plain router', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter])
+           .mockResolvedValueOnce([]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'router', 'show', 'my-api']);
+    const out = lines.join('\n');
+    expect(out).not.toContain('Candidates');
+  });
+
+  it('--json round-trips kind and candidates', async () => {
+    const orchestrator = { ...baseRouter, kind: 'orchestrator' as const, candidates: [{ routerId: 'r-1', name: 'r-1-name', weight: 2 }] };
+    mockApi.mockResolvedValueOnce([orchestrator]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'router', 'show', 'my-api', '--json']);
+    const parsed = JSON.parse(lines.join('\n'));
+    expect(parsed.kind).toBe('orchestrator');
+    expect(parsed.candidates).toEqual([{ routerId: 'r-1', name: 'r-1-name', weight: 2 }]);
+  });
 });
 
 // ─── router create ────────────────────────────────────────────────────────────
@@ -846,6 +881,60 @@ describe('router create', () => {
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('server error'));
   });
+
+  it('creates an orchestrator with --kind and a single --candidate', async () => {
+    mockApi.mockResolvedValueOnce({ ...baseRouter, kind: 'orchestrator', candidates: [{ routerId: 'r-1', name: 'r-1-name', weight: 1 }] });
+    await makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator', '--candidate', 'r-1:1']);
+    const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
+    expect(postCall![2]).toMatchObject({ kind: 'orchestrator', candidates: [{ routerId: 'r-1', weight: 1 }] });
+  });
+
+  it('accumulates repeatable --candidate into multiple entries', async () => {
+    mockApi.mockResolvedValueOnce({ ...baseRouter });
+    await makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator', '--candidate', 'r-1:2', '--candidate', 'r-2:1']);
+    const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
+    expect(postCall![2]).toMatchObject({
+      candidates: [{ routerId: 'r-1', weight: 2 }, { routerId: 'r-2', weight: 1 }],
+    });
+  });
+
+  it('does not send kind/candidates when --kind and --candidate are omitted', async () => {
+    mockApi.mockResolvedValueOnce({ ...baseRouter });
+    await makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api']);
+    const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
+    expect(postCall![2]).not.toHaveProperty('kind');
+    expect(postCall![2]).not.toHaveProperty('candidates');
+  });
+
+  it('exits 1 on invalid --kind value', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api', '--kind', 'bogus'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('--kind must be one of'));
+  });
+
+  it('exits 1 on malformed --candidate spec with no colon', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator', '--candidate', 'r-1'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Invalid --candidate value'));
+  });
+
+  it('exits 1 on malformed --candidate spec with non-numeric weight', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator', '--candidate', 'r-1:abc'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Weight must be a number'));
+  });
+
+  it('surfaces the server EC2 error on stderr when an orchestrator has no candidates', async () => {
+    const { ApiError } = await import('../api.js');
+    mockApi.mockRejectedValueOnce(new ApiError(400, 'An orchestrator needs at least one candidate router'));
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('An orchestrator needs at least one candidate router'));
+  });
 });
 
 // ─── router edit ──────────────────────────────────────────────────────────────
@@ -860,7 +949,7 @@ describe('router edit', () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'router', 'edit', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('at least --name, --timeout, --trace-content, --kind or --candidate'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('at least --name, --timeout, --trace-content or --candidate'));
   });
 
   it('turns trace content capture on and back off', async () => {
@@ -920,6 +1009,31 @@ describe('router edit', () => {
     await expect(makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--name', 'x'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('server error'));
+  });
+
+  it('replaces the whole candidates array when --candidate is given', async () => {
+    const orchestrator = { ...baseRouter, kind: 'orchestrator' as const, candidates: [{ routerId: 'old-1', name: 'old', weight: 5 }] };
+    mockApi.mockResolvedValueOnce([orchestrator]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--candidate', 'new-1:3', '--candidate', 'new-2:1']);
+    const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
+    expect(putCall![2]).toMatchObject({
+      candidates: [{ routerId: 'new-1', weight: 3 }, { routerId: 'new-2', weight: 1 }],
+    });
+  });
+
+  it('does not touch candidates when --candidate is omitted', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--name', 'renamed']);
+    const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
+    expect(putCall![2]).not.toHaveProperty('candidates');
+  });
+
+  it('exits 1 on malformed --candidate spec', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]);
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--candidate', 'no-colon-here'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Invalid --candidate value'));
   });
 });
 

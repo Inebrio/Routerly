@@ -1055,7 +1055,7 @@ Examples:
             console.log(chalk.gray('    (none)'));
           } else {
             for (const c of candidates) {
-              console.log(`    • ${c.name} (weight ${c.weight})`);
+              console.log(`    • ${c.name} (${c.routerId}) — weight ${c.weight}`);
             }
           }
         }
@@ -1171,36 +1171,29 @@ Examples:
   routerly router edit my-api --trace-content
   routerly router edit my-api --no-trace-content
 
-  # Turn an existing router into an orchestrator
-  routerly router edit my-api --kind orchestrator --candidate <router-id-1>:2 --candidate <router-id-2>:1
-
   # Replace an orchestrator's candidates
-  routerly router edit my-api --candidate <router-id-3>:1
+  routerly router edit my-api --candidate <router-id-1>:2 --candidate <router-id-2>:1
 `)
     .option('--name <name>', 'New router name')
     .option('--timeout <ms>', 'New TTFT timeout per model attempt in milliseconds (0 disables it)')
     .option('--trace-content', 'Record prompts and answers in traces (off by default: metadata only)')
     .option('--no-trace-content', 'Record metadata only, no prompts or answers')
-    .option('--kind <kind>', 'Router kind: router | orchestrator | passthrough')
     .option('--candidate <routerId:weight>', "Candidate router for an orchestrator (repeatable); replaces the existing candidate list", (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     // --trace-content declared before --no-trace-content, so an untouched flag stays
     // undefined and leaves the stored value alone.
-    .action(async (nameOrId: string, opts: { name?: string; timeout?: string; traceContent?: boolean; kind?: string; candidate: string[] }) => {
+    .action(async (nameOrId: string, opts: { name?: string; timeout?: string; traceContent?: boolean; candidate: string[] }) => {
       const traceContent = opts.traceContent;
-      if (!opts.name && opts.timeout === undefined && traceContent === undefined && opts.kind === undefined && !opts.candidate.length) {
-        console.error(chalk.red('Provide at least --name, --timeout, --trace-content, --kind or --candidate.'));
+      if (!opts.name && opts.timeout === undefined && traceContent === undefined && !opts.candidate.length) {
+        console.error(chalk.red('Provide at least --name, --timeout, --trace-content or --candidate.'));
         process.exit(1);
       }
       try {
         const router = await resolveRouter(nameOrId);
-        const kind = opts.kind !== undefined ? parseKindOption(opts.kind) : undefined;
-        // Kind and candidates travel together server-side (an orchestrator with no
-        // candidates is rejected on write) — resend the router's existing candidates
-        // when the caller isn't replacing them, so an unrelated edit (e.g. --name)
-        // doesn't wipe an orchestrator's candidate list.
-        const newCandidates = opts.candidate.length ? opts.candidate.map(parseCandidateSpec) : undefined;
-        const existingCandidates = router.candidates?.map(c => ({ routerId: c.routerId, weight: c.weight }));
-        const candidates = newCandidates ?? existingCandidates;
+        // --candidate given → full replace of the router's candidates array (mirrors
+        // --fallback-models' replace semantics elsewhere in this file). Kind is fixed
+        // at creation and not editable here — the server still owns the invariant that
+        // an orchestrator needs at least one candidate.
+        const candidates = opts.candidate.length ? opts.candidate.map(parseCandidateSpec) : undefined;
         await api<void>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, {
           name: opts.name ?? router.name,
           timeoutMs: opts.timeout !== undefined ? parseTimeoutOption(opts.timeout) : router.timeoutMs,
@@ -1210,7 +1203,6 @@ Examples:
           policies: router.policies,
           models: router.models,
           ...(traceContent !== undefined ? { traceContent } : {}),
-          ...(kind !== undefined ? { kind } : {}),
           ...(candidates !== undefined ? { candidates } : {}),
         });
         console.log(chalk.green(`✓ Router "${router.name}" updated.`));
