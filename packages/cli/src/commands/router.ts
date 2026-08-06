@@ -1204,7 +1204,7 @@ Units:    second | minute | hour | day | week | month
         console.log(chalk.gray(`  Set routing:  routerly router routing update "${opts.name}" --routing-model <id>`));
       } catch (err) {
         if (err instanceof ApiError && err.status === 409) {
-          console.error(chalk.red(`A router named "${opts.name}" already exists.`));
+          console.error(chalk.red(err.message));
         } else if (!(err instanceof ApiError)) {
           console.error(chalk.red(`Error: ${(err as Error).message}`));
         } else {
@@ -1285,7 +1285,7 @@ Units:    second | minute | hour | day | week | month
         console.log(chalk.green(`✓ Router "${router.name}" updated.`));
       } catch (err) {
         if (err instanceof ApiError && err.status === 409) {
-          console.error(chalk.red(`A router named "${opts.name}" already exists.`));
+          console.error(chalk.red(err.message));
         } else if (!(err instanceof ApiError)) {
           console.error(chalk.red(`Error: ${(err as Error).message}`));
         } else {
