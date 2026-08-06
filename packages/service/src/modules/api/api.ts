@@ -12,7 +12,8 @@ import { CONFIG_PATHS } from '../../lib/paths.js';
 import { checkPermissions, fixPermissions, isBypassActive } from '../config/permission-guard.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, RouterConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults } from '@routerly/shared';
+import type { ModelConfig, RouterConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef } from '@routerly/shared';
+import { validateOrchestratorCandidates } from '../routing/validate-orchestrator.js';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
 import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, updateChannelDeprecationWarning, UPDATE_CHANNEL_ERROR } from '@routerly/shared';
@@ -226,6 +227,39 @@ function rejectInvalidTimeout(timeoutMs: number | undefined, reply: FastifyReply
   if (timeoutMs === undefined || (Number.isInteger(timeoutMs) && timeoutMs >= 0)) return false;
   reply.status(400).send({ error: 'timeoutMs must be a non-negative integer in milliseconds (0 disables the timeout)' });
   return true;
+}
+
+/**
+ * Resolves an Orchestrator's stored candidates (routerId/weight/limits) to
+ * the wire shape `{routerId, name, weight}` — no other field of the
+ * candidate Router is ever included (AC7).
+ */
+function resolveCandidatesForResponse(
+  candidates: OrchestratorCandidateRef[] | undefined,
+  routers: RouterConfig[],
+): { routerId: string; name: string; weight: number }[] {
+  return (candidates ?? []).map(c => ({
+    routerId: c.routerId,
+    name: routers.find(r => r.id === c.routerId)?.name ?? c.routerId,
+    weight: c.weight,
+  }));
+}
+
+/**
+ * Shapes a router for the wire: strips raw token values, and opacity-limits
+ * an Orchestrator's candidates via {@link resolveCandidatesForResponse}.
+ * Non-orchestrators never expose a raw `candidates` array even if one is
+ * somehow stored.
+ */
+function toRouterResponse(router: RouterConfig, routers: RouterConfig[]): Record<string, unknown> {
+  const { candidates, ...rest } = router;
+  const kind: RouterKind = router.kind ?? 'router';
+  return {
+    ...rest,
+    kind,
+    tokens: router.tokens?.map(t => ({ ...t, token: undefined })) || [],
+    ...(kind === 'orchestrator' ? { candidates: resolveCandidatesForResponse(candidates, routers) } : {}),
+  };
 }
 
 function requirePerm(req: FastifyRequest, perm: Permission, reply: FastifyReply): boolean {
@@ -1040,13 +1074,19 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // ROUTERS
   // ══════════════════════════════════════════════════════════════════════════════
 
+  const routerKindSchema = z.enum(['router', 'orchestrator', 'passthrough']).optional();
+  // Emptiness is rejected by validateOrchestratorCandidates (EC2), not here — that
+  // path also produces the story's exact error message.
+  const orchestratorCandidatesSchema = z.array(z.object({
+    routerId: z.string().min(1),
+    weight: z.number(),
+  })).optional();
+
   fastify.get('/api/routers', async (_req, reply) => {
     const routers = await readConfig('routers');
-    // Strip the full token; clients use tokenSnippet for display
-    return reply.send(routers.map(p => ({
-      ...p,
-      tokens: p.tokens?.map(t => ({ ...t, token: undefined })) || []
-    })));
+    // Strip the full token; clients use tokenSnippet for display. Orchestrators
+    // additionally get their candidates opacity-limited (AC7).
+    return reply.send(routers.map(p => toRouterResponse(p, routers)));
   });
 
   fastify.post<{
@@ -1061,18 +1101,30 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       guardrails?: GuardrailConfig;
       pii?: PiiConfig;
       optimizers?: OptimizerConfig | null;
+      kind?: RouterKind;
+      candidates?: OrchestratorCandidateRef[];
     }
   }>('/api/routers', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
     // Setting the optimizers pipeline is a privileged sub-operation of router write.
     if (req.body.optimizers != null && !requirePerm(req, 'optimizers:manage', reply)) return;
     if (rejectInvalidTimeout(req.body.timeoutMs, reply)) return;
+    const parsedKind = routerKindSchema.safeParse(req.body.kind);
+    if (!parsedKind.success) return reply.status(400).send({ error: 'Invalid kind', details: parsedKind.error.issues });
+    const parsedCandidates = orchestratorCandidatesSchema.safeParse(req.body.candidates);
+    if (!parsedCandidates.success) return reply.status(400).send({ error: 'Invalid candidates', details: parsedCandidates.error.issues });
+    const kind: RouterKind = parsedKind.data ?? 'router';
     const routers = await readConfig('routers');
     const trimmedName = req.body.name.trim();
     if (!trimmedName) return reply.status(400).send({ error: 'Router name cannot be empty' });
     if (routers.some(p => p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
       return reply.status(409).send({ error: `A router named "${trimmedName}" already exists` });
     }
+    // Re-read the router list immediately before validating/writing, so a candidate
+    // created concurrently with this request is seen (EC4).
+    const freshRouters = kind === 'orchestrator' ? await readConfig('routers') : routers;
+    const candidateError = validateOrchestratorCandidates({ kind, candidates: parsedCandidates.data, routers: freshRouters });
+    if (candidateError) return reply.status(400).send({ error: candidateError });
     let guardrails: GuardrailConfig | undefined;
     if (req.body.guardrails !== undefined) {
       const parsed = guardrailConfigSchema.safeParse(req.body.guardrails);
@@ -1117,12 +1169,19 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...(guardrails ? { guardrails } : {}),
       ...(pii ? { pii } : {}),
       ...(optimizers ? { optimizers } : {}),
+      ...(kind !== 'router' ? { kind } : {}),
+      ...(kind === 'orchestrator' && parsedCandidates.data !== undefined ? { candidates: parsedCandidates.data } : {}),
     };
-    routers.push(router);
-    await writeConfig('routers', routers);
+    freshRouters.push(router);
+    await writeConfig('routers', freshRouters);
     void emitEvent('config.router_created', 'info', { routerId: router.id, name: router.name }, { routerId: router.id, log: req.log });
     audit(req, 'router:create', 'success', { id: router.id });
-    return reply.status(201).send({ ...router, token: rawToken });
+    return reply.status(201).send({
+      ...router,
+      kind,
+      ...(kind === 'orchestrator' ? { candidates: resolveCandidatesForResponse(parsedCandidates.data, freshRouters) } : {}),
+      token: rawToken,
+    });
   });
 
   fastify.put<{
@@ -1139,12 +1198,18 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       pii?: PiiConfig | null;
       optimizers?: OptimizerConfig | null;
       traceContent?: boolean;
+      kind?: RouterKind;
+      candidates?: OrchestratorCandidateRef[];
     };
   }>('/api/routers/:id', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
     // Changing the optimizers pipeline (set or clear) is a privileged sub-operation.
     if (req.body.optimizers !== undefined && !requirePerm(req, 'optimizers:manage', reply)) return;
     if (rejectInvalidTimeout(req.body.timeoutMs, reply)) return;
+    const parsedKind = routerKindSchema.safeParse(req.body.kind);
+    if (!parsedKind.success) return reply.status(400).send({ error: 'Invalid kind', details: parsedKind.error.issues });
+    const parsedCandidates = orchestratorCandidatesSchema.safeParse(req.body.candidates);
+    if (!parsedCandidates.success) return reply.status(400).send({ error: 'Invalid candidates', details: parsedCandidates.error.issues });
     const routers = await readConfig('routers');
     const index = routers.findIndex(p => p.id === req.params.id);
     if (index === -1) return reply.status(404).send({ error: 'Not found' });
@@ -1153,6 +1218,18 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (routers.some(p => p.id !== req.params.id && p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
       return reply.status(409).send({ error: `A router named "${trimmedName}" already exists` });
     }
+    // Absent kind = keep the router's existing kind (default 'router'), same fallback
+    // pattern as autoRouting/timeoutMs below — not a reset to plain router on every edit.
+    const kind: RouterKind = parsedKind.data ?? routers[index]!.kind ?? 'router';
+    // Re-read the router list immediately before validating/writing, so a candidate
+    // created concurrently with this request is seen (EC4); recompute index against it.
+    const freshRouters = kind === 'orchestrator' ? await readConfig('routers') : routers;
+    const freshIndex = kind === 'orchestrator' ? freshRouters.findIndex(p => p.id === req.params.id) : index;
+    if (freshIndex === -1) return reply.status(404).send({ error: 'Not found' });
+    const candidateError = validateOrchestratorCandidates({
+      kind, candidates: parsedCandidates.data, routers: freshRouters, selfId: req.params.id,
+    });
+    if (candidateError) return reply.status(400).send({ error: candidateError });
     // Guardrails/PII: undefined = leave unchanged, null = clear, object = validate & set.
     let guardrailsUpdate: { guardrails?: GuardrailConfig } = {};
     if (req.body.guardrails === null) {
@@ -1161,8 +1238,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const parsed = guardrailConfigSchema.safeParse(req.body.guardrails);
       if (!parsed.success) return reply.status(400).send({ error: 'Invalid guardrails config', details: parsed.error.issues });
       guardrailsUpdate = { guardrails: parsed.data as GuardrailConfig };
-    } else if (routers[index]!.guardrails) {
-      guardrailsUpdate = { guardrails: routers[index]!.guardrails };
+    } else if (freshRouters[freshIndex]!.guardrails) {
+      guardrailsUpdate = { guardrails: freshRouters[freshIndex]!.guardrails };
     }
     let piiUpdate: { pii?: PiiConfig } = {};
     if (req.body.pii === null) {
@@ -1171,8 +1248,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const parsed = piiConfigSchema.safeParse(req.body.pii);
       if (!parsed.success) return reply.status(400).send({ error: 'Invalid pii config', details: parsed.error.issues });
       piiUpdate = { pii: parsed.data as PiiConfig };
-    } else if (routers[index]!.pii) {
-      piiUpdate = { pii: routers[index]!.pii };
+    } else if (freshRouters[freshIndex]!.pii) {
+      piiUpdate = { pii: freshRouters[freshIndex]!.pii };
     }
     let optimizersUpdate: { optimizers?: OptimizerConfig } = {};
     if (req.body.optimizers === null) {
@@ -1181,11 +1258,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const parsed = optimizerConfigSchema.safeParse(req.body.optimizers);
       if (!parsed.success) return reply.status(400).send({ error: 'Invalid optimizers config', details: parsed.error.issues });
       optimizersUpdate = { optimizers: parsed.data as OptimizerConfig };
-    } else if (routers[index]!.optimizers) {
-      optimizersUpdate = { optimizers: routers[index]!.optimizers };
+    } else if (freshRouters[freshIndex]!.optimizers) {
+      optimizersUpdate = { optimizers: freshRouters[freshIndex]!.optimizers };
     }
 
-    const { guardrails: _g, pii: _p, optimizers: _o, notifications: _n, ...existing } = routers[index]!;
+    const { guardrails: _g, pii: _p, optimizers: _o, notifications: _n, kind: _k, candidates: _c, ...existing } = freshRouters[freshIndex]!;
     const updated: RouterConfig = {
       ...existing,
       name: trimmedName,
@@ -1203,14 +1280,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...guardrailsUpdate,
       ...piiUpdate,
       ...optimizersUpdate,
+      ...(kind !== 'router' ? { kind } : {}),
+      ...(kind === 'orchestrator' && parsedCandidates.data !== undefined ? { candidates: parsedCandidates.data } : {}),
     };
-    routers[index] = updated;
-    await writeConfig('routers', routers);
+    freshRouters[freshIndex] = updated;
+    await writeConfig('routers', freshRouters);
     audit(req, 'router:update', 'success', { id: req.params.id });
-    return reply.send({
-      ...updated,
-      tokens: updated.tokens?.map(t => ({ ...t, token: undefined })) || []
-    });
+    return reply.send(toRouterResponse(updated, freshRouters));
   });
 
   fastify.patch<{
