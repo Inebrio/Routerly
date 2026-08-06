@@ -3,7 +3,14 @@ import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
 import { DEFAULT_ROUTER_TIMEOUT_MS } from '@routerly/shared';
-import type { RouterConfig, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiConfig, PiiPolicy } from '@routerly/shared';
+import type { RouterConfig, RouterKind, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiConfig, PiiPolicy } from '@routerly/shared';
+
+/**
+ * Wire shape of an Orchestrator's candidate as returned by GET /api/routers —
+ * `name` is resolved server-side, `limits`/other candidate-Router detail is
+ * never included (AC7 opacity). Distinct from the stored `OrchestratorCandidateRef`.
+ */
+type OrchestratorCandidateWire = { routerId: string; name: string; weight: number };
 
 // ─── Helper: TTFT timeout display ────────────────────────────────────────────
 
@@ -21,6 +28,31 @@ function parseTimeoutOption(raw: string): number {
     process.exit(1);
   }
   return ms;
+}
+
+/** Parses --kind, rejecting anything outside the three valid RouterKind values. */
+function parseKindOption(raw: string): RouterKind {
+  if (raw !== 'router' && raw !== 'orchestrator' && raw !== 'passthrough') {
+    console.error(chalk.red(`--kind must be one of: router, orchestrator, passthrough (got "${raw}").`));
+    process.exit(1);
+  }
+  return raw as RouterKind;
+}
+
+/** Parses --candidate <routerId>:<weight>, rejecting a malformed spec before it reaches the API. */
+function parseCandidateSpec(spec: string): { routerId: string; weight: number } {
+  const idx = spec.lastIndexOf(':');
+  if (idx <= 0 || idx === spec.length - 1) {
+    console.error(chalk.red(`Invalid --candidate value "${spec}". Expected format: <routerId>:<weight>`));
+    process.exit(1);
+  }
+  const routerId = spec.slice(0, idx);
+  const weight = Number(spec.slice(idx + 1));
+  if (!Number.isFinite(weight)) {
+    console.error(chalk.red(`Invalid --candidate value "${spec}". Weight must be a number.`));
+    process.exit(1);
+  }
+  return { routerId, weight };
 }
 
 // ─── Helper: resolve router by name or ID ────────────────────────────────────
@@ -972,18 +1004,25 @@ Examples:
   // ── router show ─────────────────────────────────────────────────────────────
   cmd.command('show <router>')
     .description('Show full details of a router')
+    .option('--json', 'Output raw JSON')
     .addHelpText('after', `
 Examples:
   routerly router show my-api
   routerly router show a1b2c3d4-e5f6-7890-abcd-ef1234567890
+  routerly router show my-api --json
 `)
-    .action(async (nameOrId: string) => {
+    .action(async (nameOrId: string, opts: { json?: boolean }) => {
       try {
         const router = await resolveRouter(nameOrId);
+        if (opts.json) {
+          console.log(JSON.stringify(router, null, 2));
+          return;
+        }
         const users = await api<UserConfig[]>('GET', '/api/users');
 
         console.log(chalk.bold(`\n── ${router.name} ──────────────────────────────────`));
         console.log(chalk.gray(`  ID:      `) + router.id);
+        console.log(chalk.gray(`  Kind:    `) + (router.kind ?? 'router'));
         console.log(chalk.gray(`  Timeout: `) + formatTimeout(router.timeoutMs));
         console.log(chalk.gray(`  Traces:  `) + (router.traceContent ? 'metadata + content' : 'metadata only'));
 
@@ -1005,6 +1044,19 @@ Examples:
           for (const m of router.models) {
             const prompt = m.prompt ? chalk.gray(` — "${m.prompt.slice(0, 50)}${m.prompt.length > 50 ? '…' : ''}"`) : '';
             console.log(`    • ${m.modelId}${prompt}`);
+          }
+        }
+
+        // Candidates (orchestrator only)
+        if ((router.kind ?? 'router') === 'orchestrator') {
+          console.log(chalk.bold('\n  Candidates'));
+          const candidates = (router.candidates ?? []) as unknown as OrchestratorCandidateWire[];
+          if (candidates.length === 0) {
+            console.log(chalk.gray('    (none)'));
+          } else {
+            for (const c of candidates) {
+              console.log(`    • ${c.name} (weight ${c.weight})`);
+            }
           }
         }
 
@@ -1055,13 +1107,18 @@ Examples:
 
   # With auto-routing enabled and a routing model
   routerly router create --name "Smart API" --routing-model ollama/qwen3.5:9b --auto-routing
+
+  # An orchestrator, routing to two candidate routers by weight
+  routerly router create --name "Global" --kind orchestrator --candidate <router-id-1>:2 --candidate <router-id-2>:1
 `)
     .requiredOption('--name <name>', 'Router name')
     .option('--timeout <ms>', `TTFT timeout per model attempt in milliseconds (default: ${DEFAULT_ROUTER_TIMEOUT_MS}). Aborts if the first response byte does not arrive in time; 0 disables it.`)
     .option('--routing-model <id>', 'Model ID for routing decisions')
     .option('--auto-routing', 'Enable auto-routing (default: true)')
     .option('--no-auto-routing', 'Disable auto-routing')
-    .action(async (opts: { name: string; timeout?: string; routingModel?: string; autoRouting?: boolean }) => {
+    .option('--kind <kind>', 'Router kind: router | orchestrator | passthrough (default: router)')
+    .option('--candidate <routerId:weight>', 'Candidate router for an orchestrator (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
+    .action(async (opts: { name: string; timeout?: string; routingModel?: string; autoRouting?: boolean; kind?: string; candidate: string[] }) => {
       try {
         const body: Record<string, unknown> = {
           name: opts.name,
@@ -1070,11 +1127,20 @@ Examples:
           models: [],
         };
         if (opts.routingModel) body.routingModelId = opts.routingModel;
+        if (opts.kind !== undefined) body.kind = parseKindOption(opts.kind);
+        if (opts.candidate.length) body.candidates = opts.candidate.map(parseCandidateSpec);
 
         const router = await api<RouterConfig & { token: string }>('POST', '/api/routers', body);
 
         console.log(chalk.green(`✓ Router "${opts.name}" created.`));
         console.log(chalk.gray(`  ID: ${router.id}`));
+        if ((router.kind ?? 'router') !== 'router') {
+          console.log(chalk.gray(`  Kind: ${router.kind}`));
+        }
+        if (router.candidates?.length) {
+          const candidates = router.candidates as unknown as OrchestratorCandidateWire[];
+          console.log(chalk.gray(`  Candidates: ${candidates.map(c => `${c.name} (${c.weight})`).join(', ')}`));
+        }
         if (router.token) {
           console.log(chalk.bold('\nRouter token (save this — shown only once):'));
           console.log(chalk.yellow(router.token));
@@ -1104,21 +1170,37 @@ Examples:
   routerly router edit my-api --timeout 0
   routerly router edit my-api --trace-content
   routerly router edit my-api --no-trace-content
+
+  # Turn an existing router into an orchestrator
+  routerly router edit my-api --kind orchestrator --candidate <router-id-1>:2 --candidate <router-id-2>:1
+
+  # Replace an orchestrator's candidates
+  routerly router edit my-api --candidate <router-id-3>:1
 `)
     .option('--name <name>', 'New router name')
     .option('--timeout <ms>', 'New TTFT timeout per model attempt in milliseconds (0 disables it)')
     .option('--trace-content', 'Record prompts and answers in traces (off by default: metadata only)')
     .option('--no-trace-content', 'Record metadata only, no prompts or answers')
+    .option('--kind <kind>', 'Router kind: router | orchestrator | passthrough')
+    .option('--candidate <routerId:weight>', "Candidate router for an orchestrator (repeatable); replaces the existing candidate list", (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     // --trace-content declared before --no-trace-content, so an untouched flag stays
     // undefined and leaves the stored value alone.
-    .action(async (nameOrId: string, opts: { name?: string; timeout?: string; traceContent?: boolean }) => {
+    .action(async (nameOrId: string, opts: { name?: string; timeout?: string; traceContent?: boolean; kind?: string; candidate: string[] }) => {
       const traceContent = opts.traceContent;
-      if (!opts.name && opts.timeout === undefined && traceContent === undefined) {
-        console.error(chalk.red('Provide at least --name, --timeout or --trace-content.'));
+      if (!opts.name && opts.timeout === undefined && traceContent === undefined && opts.kind === undefined && !opts.candidate.length) {
+        console.error(chalk.red('Provide at least --name, --timeout, --trace-content, --kind or --candidate.'));
         process.exit(1);
       }
       try {
         const router = await resolveRouter(nameOrId);
+        const kind = opts.kind !== undefined ? parseKindOption(opts.kind) : undefined;
+        // Kind and candidates travel together server-side (an orchestrator with no
+        // candidates is rejected on write) — resend the router's existing candidates
+        // when the caller isn't replacing them, so an unrelated edit (e.g. --name)
+        // doesn't wipe an orchestrator's candidate list.
+        const newCandidates = opts.candidate.length ? opts.candidate.map(parseCandidateSpec) : undefined;
+        const existingCandidates = router.candidates?.map(c => ({ routerId: c.routerId, weight: c.weight }));
+        const candidates = newCandidates ?? existingCandidates;
         await api<void>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, {
           name: opts.name ?? router.name,
           timeoutMs: opts.timeout !== undefined ? parseTimeoutOption(opts.timeout) : router.timeoutMs,
@@ -1128,6 +1210,8 @@ Examples:
           policies: router.policies,
           models: router.models,
           ...(traceContent !== undefined ? { traceContent } : {}),
+          ...(kind !== undefined ? { kind } : {}),
+          ...(candidates !== undefined ? { candidates } : {}),
         });
         console.log(chalk.green(`✓ Router "${router.name}" updated.`));
       } catch (err) {
