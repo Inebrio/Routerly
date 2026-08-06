@@ -123,6 +123,47 @@ describe('service status', () => {
     await run('status');
     expect(lines.join('\n')).toContain('disabled');
   });
+
+  it('prints usage retention policy when configured', async () => {
+    mockGetCurrentAccount.mockResolvedValue(account);
+    mockApi
+      .mockResolvedValueOnce(null as unknown as never)
+      .mockResolvedValueOnce({ port: 3000, host: '0.0.0.0', dashboardEnabled: true, logLevel: 'info', usageRetention: { maxAgeDays: 30, maxSizeMb: 500 } })
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+    const lines: string[] = [];
+    vi.mocked(console.log).mockImplementation((...a) => lines.push(a.join(' ')));
+    await run('status');
+    const out = lines.join('\n');
+    expect(out).toContain('30d');
+    expect(out).toContain('500MB');
+  });
+
+  it('prints "not configured" when usageRetention is absent', async () => {
+    mockGetCurrentAccount.mockResolvedValue(account);
+    mockApi
+      .mockResolvedValueOnce(null as unknown as never)
+      .mockResolvedValueOnce({ port: 3000, host: '0.0.0.0', dashboardEnabled: true, logLevel: 'info' })
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+    const lines: string[] = [];
+    vi.mocked(console.log).mockImplementation((...a) => lines.push(a.join(' ')));
+    await run('status');
+    expect(lines.join('\n')).toContain('not configured');
+  });
+
+  it('prints "not configured" when usageRetention sub-fields are both absent', async () => {
+    mockGetCurrentAccount.mockResolvedValue(account);
+    mockApi
+      .mockResolvedValueOnce(null as unknown as never)
+      .mockResolvedValueOnce({ port: 3000, host: '0.0.0.0', dashboardEnabled: true, logLevel: 'info', usageRetention: {} })
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+    const lines: string[] = [];
+    vi.mocked(console.log).mockImplementation((...a) => lines.push(a.join(' ')));
+    await run('status');
+    expect(lines.join('\n')).toContain('not configured');
+  });
 });
 
 // ── service configure ──────────────────────────────────────────────────────────
@@ -208,6 +249,66 @@ describe('service configure', () => {
     mockApi.mockResolvedValueOnce(undefined);
     await run('configure', '--require-mfa', 'false');
     expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', expect.objectContaining({ requireMfa: false }));
+  });
+
+  it('sends usageRetention.maxAgeDays after fetching current settings, when --usage-retention-days provided alone', async () => {
+    mockApi
+      .mockResolvedValueOnce({ port: 3000, host: '0.0.0.0', dashboardEnabled: true, logLevel: 'info', usageRetention: { maxSizeMb: 500 } }) // GET /api/settings
+      .mockResolvedValueOnce(undefined); // PUT
+    await run('configure', '--usage-retention-days', '30');
+    expect(mockApi).toHaveBeenNthCalledWith(1, 'GET', '/api/settings');
+    expect(mockApi).toHaveBeenNthCalledWith(2, 'PUT', '/api/settings', expect.objectContaining({
+      usageRetention: { maxSizeMb: 500, maxAgeDays: 30 },
+    }));
+  });
+
+  it('sends usageRetention.maxSizeMb after fetching current settings, when --usage-retention-max-mb provided alone', async () => {
+    mockApi
+      .mockResolvedValueOnce({ port: 3000, host: '0.0.0.0', dashboardEnabled: true, logLevel: 'info', usageRetention: { maxAgeDays: 30 } }) // GET
+      .mockResolvedValueOnce(undefined); // PUT
+    await run('configure', '--usage-retention-max-mb', '500');
+    expect(mockApi).toHaveBeenNthCalledWith(2, 'PUT', '/api/settings', expect.objectContaining({
+      usageRetention: { maxAgeDays: 30, maxSizeMb: 500 },
+    }));
+  });
+
+  it('sends both usageRetention sub-fields when both flags provided', async () => {
+    mockApi
+      .mockResolvedValueOnce({ port: 3000, host: '0.0.0.0', dashboardEnabled: true, logLevel: 'info' }) // GET, no existing policy
+      .mockResolvedValueOnce(undefined); // PUT
+    await run('configure', '--usage-retention-days', '7', '--usage-retention-max-mb', '100');
+    expect(mockApi).toHaveBeenNthCalledWith(2, 'PUT', '/api/settings', expect.objectContaining({
+      usageRetention: { maxAgeDays: 7, maxSizeMb: 100 },
+    }));
+  });
+
+  it('clears maxAgeDays and keeps maxSizeMb when --usage-retention-days is empty string', async () => {
+    mockApi
+      .mockResolvedValueOnce({ port: 3000, host: '0.0.0.0', dashboardEnabled: true, logLevel: 'info', usageRetention: { maxAgeDays: 30, maxSizeMb: 500 } }) // GET
+      .mockResolvedValueOnce(undefined); // PUT
+    await run('configure', '--usage-retention-days', '');
+    const call = mockApi.mock.calls[1];
+    const patch = call![2] as { usageRetention: Record<string, unknown> };
+    expect(patch.usageRetention).toEqual({ maxSizeMb: 500 });
+    expect(patch.usageRetention.maxAgeDays).toBeUndefined();
+  });
+
+  it('clears maxSizeMb and keeps maxAgeDays when --usage-retention-max-mb is empty string', async () => {
+    mockApi
+      .mockResolvedValueOnce({ port: 3000, host: '0.0.0.0', dashboardEnabled: true, logLevel: 'info', usageRetention: { maxAgeDays: 30, maxSizeMb: 500 } }) // GET
+      .mockResolvedValueOnce(undefined); // PUT
+    await run('configure', '--usage-retention-max-mb', '');
+    const call = mockApi.mock.calls[1];
+    const patch = call![2] as { usageRetention: Record<string, unknown> };
+    expect(patch.usageRetention).toEqual({ maxAgeDays: 30 });
+    expect(patch.usageRetention.maxSizeMb).toBeUndefined();
+  });
+
+  it('does not call GET /api/settings when no usage-retention flags are provided', async () => {
+    mockApi.mockResolvedValueOnce(undefined);
+    await run('configure', '--port', '8080');
+    expect(mockApi).toHaveBeenCalledTimes(1);
+    expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', expect.objectContaining({ port: 8080 }));
   });
 
   it('exits 1 with admin-required message on 401', async () => {

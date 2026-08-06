@@ -13,6 +13,7 @@ import { mcpHttpRoutes } from './modules/mcp/http.js';
 import { apiRoutes } from './modules/api/api.js';
 import { metricsRoutes } from './modules/observability/metrics.js';
 import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage } from './modules/config/loader.js';
+import { migrateUsageToNdjson } from './modules/config/migrate.js';
 import { pingTelemetry } from './modules/telemetry/telemetry.js';
 import { updateChecker } from './modules/update-checker/update-checker.js';
 import { bootstrap } from './bootstrap/index.js';
@@ -120,6 +121,23 @@ export async function buildServer() {
 
 export async function startServer() {
   await initConfigDirs();
+
+  // Runs here, right after initConfigDirs() creates data/, and deliberately
+  // NOT inside configModule.migrate() (which the kernel wraps in a
+  // best-effort try/catch that logs and continues for every other
+  // migration — see core/lifecycle/kernel.ts). A corrupted legacy usage.json
+  // must fail loudly (EC2) and stop the boot, not start the service on
+  // partial/corrupted usage data. Same pattern as migrateRouterStorage()
+  // (see RTR-01, .claude/specs/0.4.1/03-validation/RTR-01.md, B2) and for
+  // the same reason: nothing between here and the top-level
+  // `await startServer()` in index.ts catches this throw, so it propagates
+  // and crashes the process.
+  const migratedUsage = await migrateUsageToNdjson();
+  if (migratedUsage > 0) {
+    // eslint-disable-next-line no-console
+    console.log(`[startup] migrated ${migratedUsage} usage record(s) from usage.json to usage.ndjson`);
+  }
+
   await loadSecret();
   await loadCredentialKey();
   const orphansRemoved = await pruneOrphanUsage();

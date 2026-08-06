@@ -1992,6 +1992,20 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(400).send({ error: parsed.error.issues[0]!.message });
       }
     }
+    // RTR-06: usageRetention — both sub-fields optional/independent; `{}` is
+    // valid and means "clear both" (handled by the generic copy loop below,
+    // not rejected here), each present sub-field must be a positive number.
+    const usageRetentionPatch = (req.body as Partial<Settings>).usageRetention;
+    if (usageRetentionPatch !== undefined) {
+      const usageRetentionSchema = z.object({
+        maxAgeDays: z.number().positive().optional(),
+        maxSizeMb: z.number().positive().optional(),
+      });
+      const parsed = usageRetentionSchema.safeParse(usageRetentionPatch);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: parsed.error.issues[0]!.message });
+      }
+    }
     // RC-3: validate/normalise channel before persisting — aliases (stable/develop)
     // resolve to their canonical name, which is what gets written and what
     // updateChecker.updateChannel() receives below.
@@ -2015,6 +2029,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       'channel',
       'requireMfa',
       'providerRepos',
+      'usageRetention',
     ];
     const updated = { ...current };
     for (const key of allowed) {
