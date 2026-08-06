@@ -61,7 +61,7 @@ function makeCmd() {
 
 const toolRows = [
   { name: 'list_models', description: 'List models', scope: 'read', sourceModule: 'catalog.service', permission: 'model:read' },
-  { name: 'toggle_model', description: 'Toggle a model', scope: 'write', sourceModule: 'config.store', permission: 'project:write' },
+  { name: 'toggle_model', description: 'Toggle a model', scope: 'write', sourceModule: 'config.store', permission: 'router:write' },
 ];
 
 const tokenRow = {
@@ -107,7 +107,7 @@ describe('mcp tools', () => {
     expect(out).toContain('list_models');
     expect(out).toContain('toggle_model');
     expect(out).toContain('model:read');
-    expect(out).toContain('project:write');
+    expect(out).toContain('router:write');
     expect(mockApi).toHaveBeenCalledWith('GET', '/api/me/mcp-tools');
   });
 
@@ -232,13 +232,13 @@ describe('mcp test', () => {
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => ({ result: { isError: true, content: [{ type: 'text', text: "requires the 'project:write' permission" }] } }),
+      json: async () => ({ result: { isError: true, content: [{ type: 'text', text: "requires the 'router:write' permission" }] } }),
     });
     vi.stubGlobal('fetch', fetchSpy);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'mcp', 'test', 'toggle_model'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('project:write'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('router:write'));
     vi.unstubAllGlobals();
   });
 

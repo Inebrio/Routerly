@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { ExperimentConfig, ProjectConfig, UsageRecord } from '@routerly/shared';
+import type { ExperimentConfig, RouterConfig, UsageRecord } from '@routerly/shared';
 import { computeExperimentMetrics } from './metrics.js';
 
 /** `undefined` is allowed per field so a test can drop one from the fixture. */
@@ -9,8 +9,8 @@ function experiment(over: { [K in keyof ExperimentConfig]?: ExperimentConfig[K] 
     name: 'Prompt A vs B',
     rotation: 'round-robin',
     variants: [
-      { id: 'v-a', projectId: 'proj-a' },
-      { id: 'v-b', projectId: 'proj-b', name: 'Cheap arm' },
+      { id: 'v-a', routerId: 'proj-a' },
+      { id: 'v-b', routerId: 'proj-b', name: 'Cheap arm' },
     ],
     tokens: [],
     createdAt: '2026-08-01T00:00:00.000Z',
@@ -24,7 +24,7 @@ function record(over: { [K in keyof UsageRecord]?: UsageRecord[K] | undefined } 
   return {
     id: `u-${seq}`,
     timestamp: '2026-08-01T10:00:00.000Z',
-    projectId: 'proj-a',
+    routerId: 'proj-a',
     modelId: 'm1',
     inputTokens: 100,
     outputTokens: 50,
@@ -65,7 +65,7 @@ describe('computeExperimentMetrics', () => {
     const m = computeExperimentMetrics(experiment(), [
       record(),
       record(),
-      record({ experimentVariantId: 'v-b', projectId: 'proj-b', cost: 0.002 }),
+      record({ experimentVariantId: 'v-b', routerId: 'proj-b', cost: 0.002 }),
     ]);
     expect(m.variants[0]!.calls).toBe(2);
     expect(m.variants[1]!.calls).toBe(1);
@@ -146,18 +146,18 @@ describe('computeExperimentMetrics', () => {
     expect(m.variants[0]).not.toHaveProperty('avgScore');
   });
 
-  it('names the variant, falling back to its project name', () => {
-    const projects: ProjectConfig[] = [
+  it('names the variant, falling back to its router name', () => {
+    const routers: RouterConfig[] = [
       { id: 'proj-a', name: 'Baseline', tokens: [], members: [], models: [] },
       { id: 'proj-b', name: 'Challenger', tokens: [], members: [], models: [] },
     ];
-    const m = computeExperimentMetrics(experiment(), [], projects);
+    const m = computeExperimentMetrics(experiment(), [], routers);
     expect(m.variants[0]!.name).toBe('Baseline');
     expect(m.variants[1]!.name).toBe('Cheap arm');
   });
 
-  it('leaves the name off when neither the variant nor a project supplies one', () => {
-    const m = computeExperimentMetrics(experiment({ variants: [{ id: 'v-a', projectId: 'gone' }] }), []);
+  it('leaves the name off when neither the variant nor a router supplies one', () => {
+    const m = computeExperimentMetrics(experiment({ variants: [{ id: 'v-a', routerId: 'gone' }] }), []);
     expect(m.variants[0]).not.toHaveProperty('name');
   });
 

@@ -1,15 +1,15 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Readable } from 'node:stream';
-import type { ModelConfig, ProjectConfig } from '@routerly/shared';
+import type { ModelConfig, RouterConfig } from '@routerly/shared';
 import { requestTypeFromPath } from '@routerly/shared';
 import { listEffectiveModels } from '../provider/list-effective.js';
-import { resolveProjectByToken, extractProjectToken } from '../auth/auth.js';
+import { resolveRouterByToken, extractRouterToken } from '../auth/auth.js';
 import { trackUsage } from '../usage/tracker.js';
 
 /**
  * Transparent pass-through proxy.
  *
- * Any path Routerly does not explicitly handle is forwarded to the project's
+ * Any path Routerly does not explicitly handle is forwarded to the router's
  * upstream provider with only the API key swapped, making Routerly a drop-in
  * replacement for provider endpoints beyond chat completions (embeddings,
  * audio, files, future APIs). Reserved namespaces (`/`, `/health`, `/api/*`,
@@ -22,15 +22,15 @@ type IncomingBody = { model?: unknown } | Buffer | string | undefined | null;
 /**
  * Choose which configured model (and therefore provider/endpoint/key) to
  * forward to. If the request body names a `model` matching one of the
- * project's models, use it; otherwise fall back to the first configured model.
- * Returns null when the project has no resolvable models.
+ * router's models, use it; otherwise fall back to the first configured model.
+ * Returns null when the router has no resolvable models.
  */
 export function pickUpstreamModel(
-  project: ProjectConfig,
+  router: RouterConfig,
   allModels: ModelConfig[],
   body: IncomingBody,
 ): ModelConfig | null {
-  const resolved = project.models
+  const resolved = router.models
     .map((ref) => allModels.find((m) => m.id === ref.modelId))
     .filter((m): m is ModelConfig => m !== undefined);
 
@@ -112,7 +112,7 @@ const HOP_BY_HOP_RESPONSE = new Set([
  * pass-through embeddings ever matters.
  */
 function trackPassthroughCall(
-  projectId: string,
+  routerId: string,
   model: ModelConfig,
   path: string,
   latencyMs: number,
@@ -123,7 +123,7 @@ function trackPassthroughCall(
   const requestType = requestTypeFromPath(path);
   if (!requestType) return;
   void trackUsage({
-    projectId,
+    routerId,
     model,
     inputTokens: 0,
     outputTokens: 0,
@@ -146,7 +146,7 @@ function isReservedPath(path: string): boolean {
 }
 
 /**
- * Fastify not-found handler that proxies unmatched paths to the project's
+ * Fastify not-found handler that proxies unmatched paths to the router's
  * upstream provider. Authenticates explicitly (never relying solely on the
  * auth preHandler firing for the 404 lifecycle) so the proxy can never run
  * unauthenticated.
@@ -163,33 +163,33 @@ export async function passthroughHandler(
     return reply.code(404).send({ error: 'not_found', message: `Route ${method}:${url} not found` });
   }
 
-  // Authenticate. The auth preHandler usually resolves request.project already;
+  // Authenticate. The auth preHandler usually resolves request.router already;
   // resolve here too as a safeguard for the not-found lifecycle.
-  let project = request.project;
+  let router = request.router;
   let tokenId = request.token?.id;
-  if (!project) {
-    const incomingToken = extractProjectToken(request.headers);
+  if (!router) {
+    const incomingToken = extractRouterToken(request.headers);
     if (!incomingToken) {
       return reply.code(401).send({
         error: 'unauthorized',
-        message: 'Missing or invalid Authorization header. Expected: Bearer <project-token>',
+        message: 'Missing or invalid Authorization header. Expected: Bearer <router-token>',
       });
     }
-    const resolved = await resolveProjectByToken(incomingToken);
+    const resolved = await resolveRouterByToken(incomingToken);
     if (!resolved) {
-      return reply.code(401).send({ error: 'unauthorized', message: 'Invalid project token.' });
+      return reply.code(401).send({ error: 'unauthorized', message: 'Invalid router token.' });
     }
-    project = resolved.project;
+    router = resolved.router;
     tokenId = resolved.token.id;
   }
 
   // execution: only route to models on enabled connections
   const allModels = await listEffectiveModels();
-  const model = pickUpstreamModel(project, allModels, request.body as IncomingBody);
+  const model = pickUpstreamModel(router, allModels, request.body as IncomingBody);
   if (!model || !model.endpoint) {
     return reply.code(502).send({
       error: 'no_upstream',
-      message: 'project has no resolvable models for pass-through',
+      message: 'router has no resolvable models for pass-through',
     });
   }
 
@@ -213,7 +213,7 @@ export async function passthroughHandler(
     } as RequestInit);
   } catch (err) {
     request.log.error({ err, url: targetUrl }, 'pass-through upstream error');
-    trackPassthroughCall(project.id, model, path, Date.now() - startedAt, 'error',
+    trackPassthroughCall(router.id, model, path, Date.now() - startedAt, 'error',
       err instanceof Error ? err.message : 'upstream request failed', tokenId);
     return reply.code(502).send({
       error: 'upstream_error',
@@ -232,13 +232,13 @@ export async function passthroughHandler(
       path,
       upstreamHost: new URL(targetUrl).host,
       status: upstream.status,
-      projectId: project.id,
+      routerId: router.id,
     },
     'pass-through',
   );
 
   // Latency is time to response headers: the body is streamed, not awaited.
-  trackPassthroughCall(project.id, model, path, Date.now() - startedAt,
+  trackPassthroughCall(router.id, model, path, Date.now() - startedAt,
     upstream.status < 400 ? 'success' : 'error',
     upstream.status < 400 ? undefined : `upstream responded ${upstream.status}`,
     tokenId);

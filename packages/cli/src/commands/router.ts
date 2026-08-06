@@ -2,15 +2,15 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import { DEFAULT_PROJECT_TIMEOUT_MS } from '@routerly/shared';
-import type { ProjectConfig, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiConfig, PiiPolicy } from '@routerly/shared';
+import { DEFAULT_ROUTER_TIMEOUT_MS } from '@routerly/shared';
+import type { RouterConfig, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiConfig, PiiPolicy } from '@routerly/shared';
 
 // ─── Helper: TTFT timeout display ────────────────────────────────────────────
 
 /** 0 means "wait as long as the provider takes", which reads better than "0s". */
 function formatTimeout(timeoutMs?: number): string {
   if (timeoutMs === 0) return 'off';
-  return `${(timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS) / 1000}s`;
+  return `${(timeoutMs ?? DEFAULT_ROUTER_TIMEOUT_MS) / 1000}s`;
 }
 
 /** Parses --timeout, rejecting anything that is not a non-negative integer. */
@@ -23,16 +23,16 @@ function parseTimeoutOption(raw: string): number {
   return ms;
 }
 
-// ─── Helper: resolve project by name or ID ────────────────────────────────────
+// ─── Helper: resolve router by name or ID ────────────────────────────────────
 
-async function resolveProject(nameOrId: string): Promise<ProjectConfig> {
-  const projects = await api<ProjectConfig[]>('GET', '/api/projects');
-  const project = projects.find(p => p.id === nameOrId || p.name === nameOrId);
-  if (!project) {
-    console.error(chalk.red(`Project "${nameOrId}" not found. Run \`routerly project list\` to see available projects.`));
+async function resolveRouter(nameOrId: string): Promise<RouterConfig> {
+  const routers = await api<RouterConfig[]>('GET', '/api/routers');
+  const router = routers.find(p => p.id === nameOrId || p.name === nameOrId);
+  if (!router) {
+    console.error(chalk.red(`Router "${nameOrId}" not found. Run \`routerly router list\` to see available routers.`));
     process.exit(1);
   }
-  return project;
+  return router;
 }
 
 // ─── Helper: resolve user email → id ─────────────────────────────────────────
@@ -95,25 +95,25 @@ function parseLimitSpec(spec: string): { modelId: string; limit: Limit } {
 // ─── Routing subcommand group ─────────────────────────────────────────────────
 
 function makeRoutingCommand(): Command {
-  const cmd = new Command('routing').description('Manage project routing configuration');
+  const cmd = new Command('routing').description('Manage router routing configuration');
 
-  // routing show <project>
-  cmd.command('show <project>')
-    .description('Show routing configuration for a project')
+  // routing show <router>
+  cmd.command('show <router>')
+    .description('Show routing configuration for a router')
     .addHelpText('after', `
 Examples:
-  routerly project routing show my-api
+  routerly router routing show my-api
 `)
     .action(async (nameOrId: string) => {
       try {
-        const project = await resolveProject(nameOrId);
-        console.log(chalk.bold(`\nRouting — ${project.name}`));
-        console.log(chalk.gray(`  Auto-routing:    `) + (project.autoRouting ? chalk.green('enabled') : chalk.yellow('disabled')));
-        console.log(chalk.gray(`  Routing model:   `) + (project.routingModelId ?? chalk.gray('(not set)')));
-        const fallbacks = project.fallbackRoutingModelIds ?? [];
+        const router = await resolveRouter(nameOrId);
+        console.log(chalk.bold(`\nRouting — ${router.name}`));
+        console.log(chalk.gray(`  Auto-routing:    `) + (router.autoRouting ? chalk.green('enabled') : chalk.yellow('disabled')));
+        console.log(chalk.gray(`  Routing model:   `) + (router.routingModelId ?? chalk.gray('(not set)')));
+        const fallbacks = router.fallbackRoutingModelIds ?? [];
         console.log(chalk.gray(`  Fallback models: `) + (fallbacks.length ? fallbacks.join(', ') : chalk.gray('(none)')));
 
-        const policies = project.policies ?? [];
+        const policies = router.policies ?? [];
         if (policies.length === 0) {
           console.log(chalk.gray('\n  No routing policies configured.'));
         } else {
@@ -137,19 +137,19 @@ Examples:
       }
     });
 
-  // routing update <project>
-  cmd.command('update <project>')
+  // routing update <router>
+  cmd.command('update <router>')
     .description('Update routing model and auto-routing settings')
     .addHelpText('after', `
 Examples:
   # Enable auto-routing with a specific routing model
-  routerly project routing update my-api --routing-model ollama/qwen3.5:9b --auto-routing
+  routerly router routing update my-api --routing-model ollama/qwen3.5:9b --auto-routing
 
   # Disable auto-routing
-  routerly project routing update my-api --no-auto-routing
+  routerly router routing update my-api --no-auto-routing
 
   # Set fallback routing models
-  routerly project routing update my-api --fallback-models gpt-4o-mini,claude-3-5-haiku
+  routerly router routing update my-api --fallback-models gpt-4o-mini,claude-3-5-haiku
 `)
     .option('--routing-model <id>', 'Model ID to use for routing decisions')
     .option('--fallback-models <ids>', 'Comma-separated fallback routing model IDs')
@@ -157,20 +157,20 @@ Examples:
     .option('--no-auto-routing', 'Disable auto-routing')
     .action(async (nameOrId: string, opts: { routingModel?: string; fallbackModels?: string; autoRouting?: boolean }) => {
       try {
-        const project = await resolveProject(nameOrId);
+        const router = await resolveRouter(nameOrId);
         const body: Record<string, unknown> = {
-          name: project.name,
-          models: project.models,
-          timeoutMs: project.timeoutMs,
-          policies: project.policies,
-          autoRouting: opts.autoRouting !== undefined ? opts.autoRouting : project.autoRouting,
-          routingModelId: opts.routingModel ?? project.routingModelId,
+          name: router.name,
+          models: router.models,
+          timeoutMs: router.timeoutMs,
+          policies: router.policies,
+          autoRouting: opts.autoRouting !== undefined ? opts.autoRouting : router.autoRouting,
+          routingModelId: opts.routingModel ?? router.routingModelId,
           fallbackRoutingModelIds: opts.fallbackModels
             ? opts.fallbackModels.split(',').map(s => s.trim()).filter(Boolean)
-            : project.fallbackRoutingModelIds,
+            : router.fallbackRoutingModelIds,
         };
-        await api<void>('PUT', `/api/projects/${encodeURIComponent(project.id)}`, body);
-        console.log(chalk.green(`✓ Routing updated for "${project.name}".`));
+        await api<void>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, body);
+        console.log(chalk.green(`✓ Routing updated for "${router.name}".`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
         else console.error(chalk.red(`Error: ${err.message}`));
@@ -179,18 +179,18 @@ Examples:
     });
 
   // ── routing policy subgroup ──────────────────────────────────────────────────
-  const policyCmd = new Command('policy').description('Manage routing policies for a project');
+  const policyCmd = new Command('policy').description('Manage routing policies for a router');
 
-  policyCmd.command('list <project>')
+  policyCmd.command('list <router>')
     .description('List all routing policies')
     .addHelpText('after', `
 Examples:
-  routerly project routing policy list my-api
+  routerly router routing policy list my-api
 `)
     .action(async (nameOrId: string) => {
       try {
-        const project = await resolveProject(nameOrId);
-        const policies = project.policies ?? [];
+        const router = await resolveRouter(nameOrId);
+        const policies = router.policies ?? [];
         if (policies.length === 0) {
           console.log(chalk.yellow('No routing policies configured.'));
           return;
@@ -213,22 +213,22 @@ Examples:
       }
     });
 
-  policyCmd.command('enable <project> <type>')
+  policyCmd.command('enable <router> <type>')
     .description('Enable a routing policy (adds it if not present)')
     .addHelpText('after', `
 Policy types: health, context, capability, budget-remaining, rate-limit, llm, performance, fairness, cheapest, semantic-intent, model-preference
 
 Examples:
-  routerly project routing policy enable my-api health
-  routerly project routing policy enable my-api llm --config '{"memoryCount":3}'
-  routerly project routing policy enable my-api model-preference --config '{"bonus":0.8}'
-  routerly project routing policy enable my-api semantic-intent --config '{"embedding_provider":"openai","embedding_model":"text-embedding-3-small","absolute_threshold":0.60,"ambiguity_threshold":0.08,"intents":{"coding":{"examples":["write a python function"],"candidate_models":["qwen-coder"]}}}'
+  routerly router routing policy enable my-api health
+  routerly router routing policy enable my-api llm --config '{"memoryCount":3}'
+  routerly router routing policy enable my-api model-preference --config '{"bonus":0.8}'
+  routerly router routing policy enable my-api semantic-intent --config '{"embedding_provider":"openai","embedding_model":"text-embedding-3-small","absolute_threshold":0.60,"ambiguity_threshold":0.08,"intents":{"coding":{"examples":["write a python function"],"candidate_models":["qwen-coder"]}}}'
 `)
     .option('--config <json>', 'Policy-specific configuration as JSON')
     .action(async (nameOrId: string, type: string, opts: { config?: string }) => {
       try {
-        const project = await resolveProject(nameOrId);
-        const policies: RoutingPolicy[] = project.policies ? [...project.policies] : [];
+        const router = await resolveRouter(nameOrId);
+        const policies: RoutingPolicy[] = router.policies ? [...router.policies] : [];
         const existing = policies.find(p => p.type === type as RoutingPolicyType);
         let parsedConfig: unknown;
         if (opts.config) {
@@ -245,12 +245,12 @@ Examples:
           if (parsedConfig !== undefined) newPolicy.config = parsedConfig;
           policies.push(newPolicy);
         }
-        await api<void>('PUT', `/api/projects/${encodeURIComponent(project.id)}`, {
-          name: project.name, models: project.models, timeoutMs: project.timeoutMs,
-          autoRouting: project.autoRouting, routingModelId: project.routingModelId,
-          fallbackRoutingModelIds: project.fallbackRoutingModelIds, policies,
+        await api<void>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, {
+          name: router.name, models: router.models, timeoutMs: router.timeoutMs,
+          autoRouting: router.autoRouting, routingModelId: router.routingModelId,
+          fallbackRoutingModelIds: router.fallbackRoutingModelIds, policies,
         });
-        console.log(chalk.green(`✓ Policy "${type}" enabled for "${project.name}".`));
+        console.log(chalk.green(`✓ Policy "${type}" enabled for "${router.name}".`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
         else console.error(chalk.red(`Error: ${err.message}`));
@@ -258,28 +258,28 @@ Examples:
       }
     });
 
-  policyCmd.command('disable <project> <type>')
+  policyCmd.command('disable <router> <type>')
     .description('Disable a routing policy')
     .addHelpText('after', `
 Examples:
-  routerly project routing policy disable my-api cheapest
+  routerly router routing policy disable my-api cheapest
 `)
     .action(async (nameOrId: string, type: string) => {
       try {
-        const project = await resolveProject(nameOrId);
-        const policies: RoutingPolicy[] = project.policies ? [...project.policies] : [];
+        const router = await resolveRouter(nameOrId);
+        const policies: RoutingPolicy[] = router.policies ? [...router.policies] : [];
         const existing = policies.find(p => p.type === type as RoutingPolicyType);
         if (!existing) {
-          console.log(chalk.yellow(`Policy "${type}" is not configured for "${project.name}".`));
+          console.log(chalk.yellow(`Policy "${type}" is not configured for "${router.name}".`));
           return;
         }
         existing.enabled = false;
-        await api<void>('PUT', `/api/projects/${encodeURIComponent(project.id)}`, {
-          name: project.name, models: project.models, timeoutMs: project.timeoutMs,
-          autoRouting: project.autoRouting, routingModelId: project.routingModelId,
-          fallbackRoutingModelIds: project.fallbackRoutingModelIds, policies,
+        await api<void>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, {
+          name: router.name, models: router.models, timeoutMs: router.timeoutMs,
+          autoRouting: router.autoRouting, routingModelId: router.routingModelId,
+          fallbackRoutingModelIds: router.fallbackRoutingModelIds, policies,
         });
-        console.log(chalk.green(`✓ Policy "${type}" disabled for "${project.name}".`));
+        console.log(chalk.green(`✓ Policy "${type}" disabled for "${router.name}".`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
         else console.error(chalk.red(`Error: ${err.message}`));
@@ -287,17 +287,17 @@ Examples:
       }
     });
 
-  policyCmd.command('reorder <project> <types>')
+  policyCmd.command('reorder <router> <types>')
     .description('Reorder routing policies (comma-separated list of types in desired order)')
     .addHelpText('after', `
 Examples:
-  routerly project routing policy reorder my-api health,context,budget-remaining,llm,cheapest
+  routerly router routing policy reorder my-api health,context,budget-remaining,llm,cheapest
 `)
     .action(async (nameOrId: string, typesStr: string) => {
       try {
-        const project = await resolveProject(nameOrId);
+        const router = await resolveRouter(nameOrId);
         const order = typesStr.split(',').map(s => s.trim()).filter(Boolean) as RoutingPolicyType[];
-        const existing = project.policies ?? [];
+        const existing = router.policies ?? [];
         // Place policies matching the order first, then append any not mentioned
         const reordered: RoutingPolicy[] = [];
         for (const t of order) {
@@ -307,12 +307,12 @@ Examples:
         for (const p of existing) {
           if (!reordered.includes(p)) reordered.push(p);
         }
-        await api<void>('PUT', `/api/projects/${encodeURIComponent(project.id)}`, {
-          name: project.name, models: project.models, timeoutMs: project.timeoutMs,
-          autoRouting: project.autoRouting, routingModelId: project.routingModelId,
-          fallbackRoutingModelIds: project.fallbackRoutingModelIds, policies: reordered,
+        await api<void>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, {
+          name: router.name, models: router.models, timeoutMs: router.timeoutMs,
+          autoRouting: router.autoRouting, routingModelId: router.routingModelId,
+          fallbackRoutingModelIds: router.fallbackRoutingModelIds, policies: reordered,
         });
-        console.log(chalk.green(`✓ Policies reordered for "${project.name}".`));
+        console.log(chalk.green(`✓ Policies reordered for "${router.name}".`));
         reordered.forEach((p, i) => console.log(chalk.gray(`  ${i + 1}. ${p.type} (${p.enabled ? 'enabled' : 'disabled'})`)));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
@@ -328,25 +328,25 @@ Examples:
 // ─── Model subcommand group ───────────────────────────────────────────────────
 
 function makeModelSubCommand(): Command {
-  const cmd = new Command('model').description('Manage target models for a project');
+  const cmd = new Command('model').description('Manage target models for a router');
 
-  cmd.command('list <project>')
-    .description('List target models in a project')
+  cmd.command('list <router>')
+    .description('List target models in a router')
     .addHelpText('after', `
 Examples:
-  routerly project model list my-api
+  routerly router model list my-api
 `)
     .action(async (nameOrId: string) => {
       try {
-        const project = await resolveProject(nameOrId);
-        if (project.models.length === 0) {
-          console.log(chalk.yellow('No models configured for this project.'));
+        const router = await resolveRouter(nameOrId);
+        if (router.models.length === 0) {
+          console.log(chalk.yellow('No models configured for this router.'));
           return;
         }
         const table = new Table({
           head: ['Model ID', 'Prompt'].map(h => chalk.cyan(h)),
         });
-        for (const m of project.models) {
+        for (const m of router.models) {
           const prompt = m.prompt ? (m.prompt.length > 60 ? m.prompt.slice(0, 57) + '…' : m.prompt) : chalk.gray('—');
           table.push([m.modelId, prompt]);
         }
@@ -357,28 +357,28 @@ Examples:
       }
     });
 
-  cmd.command('add <project> <model-id>')
-    .description('Add a target model to a project')
+  cmd.command('add <router> <model-id>')
+    .description('Add a target model to a router')
     .addHelpText('after', `
 Examples:
-  routerly project model add my-api openai/gpt-5.2
-  routerly project model add my-api anthropic/claude-opus-4-6 --prompt "Use for complex reasoning tasks"
+  routerly router model add my-api openai/gpt-5.2
+  routerly router model add my-api anthropic/claude-opus-4-6 --prompt "Use for complex reasoning tasks"
 `)
     .option('--prompt <text>', 'System prompt hint used when this model is selected')
     .action(async (nameOrId: string, modelId: string, opts: { prompt?: string }) => {
       try {
-        const project = await resolveProject(nameOrId);
-        if (project.models.find(m => m.modelId === modelId)) {
-          console.log(chalk.yellow(`Model "${modelId}" is already in project "${project.name}".`));
+        const router = await resolveRouter(nameOrId);
+        if (router.models.find(m => m.modelId === modelId)) {
+          console.log(chalk.yellow(`Model "${modelId}" is already in router "${router.name}".`));
           return;
         }
-        const updatedModels = [...project.models, opts.prompt ? { modelId, prompt: opts.prompt } : { modelId }];
-        await api<void>('PUT', `/api/projects/${encodeURIComponent(project.id)}`, {
-          name: project.name, timeoutMs: project.timeoutMs, autoRouting: project.autoRouting,
-          routingModelId: project.routingModelId, fallbackRoutingModelIds: project.fallbackRoutingModelIds,
-          policies: project.policies, models: updatedModels,
+        const updatedModels = [...router.models, opts.prompt ? { modelId, prompt: opts.prompt } : { modelId }];
+        await api<void>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, {
+          name: router.name, timeoutMs: router.timeoutMs, autoRouting: router.autoRouting,
+          routingModelId: router.routingModelId, fallbackRoutingModelIds: router.fallbackRoutingModelIds,
+          policies: router.policies, models: updatedModels,
         });
-        console.log(chalk.green(`✓ Model "${modelId}" added to project "${project.name}".`));
+        console.log(chalk.green(`✓ Model "${modelId}" added to router "${router.name}".`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
         else console.error(chalk.red(`Error: ${err.message}`));
@@ -386,26 +386,26 @@ Examples:
       }
     });
 
-  cmd.command('remove <project> <model-id>')
-    .description('Remove a target model from a project')
+  cmd.command('remove <router> <model-id>')
+    .description('Remove a target model from a router')
     .addHelpText('after', `
 Examples:
-  routerly project model remove my-api openai/gpt-5.2
+  routerly router model remove my-api openai/gpt-5.2
 `)
     .action(async (nameOrId: string, modelId: string) => {
       try {
-        const project = await resolveProject(nameOrId);
-        if (!project.models.find(m => m.modelId === modelId)) {
-          console.error(chalk.red(`Model "${modelId}" is not in project "${project.name}".`));
+        const router = await resolveRouter(nameOrId);
+        if (!router.models.find(m => m.modelId === modelId)) {
+          console.error(chalk.red(`Model "${modelId}" is not in router "${router.name}".`));
           process.exit(1);
         }
-        const updatedModels = project.models.filter(m => m.modelId !== modelId);
-        await api<void>('PUT', `/api/projects/${encodeURIComponent(project.id)}`, {
-          name: project.name, timeoutMs: project.timeoutMs, autoRouting: project.autoRouting,
-          routingModelId: project.routingModelId, fallbackRoutingModelIds: project.fallbackRoutingModelIds,
-          policies: project.policies, models: updatedModels,
+        const updatedModels = router.models.filter(m => m.modelId !== modelId);
+        await api<void>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, {
+          name: router.name, timeoutMs: router.timeoutMs, autoRouting: router.autoRouting,
+          routingModelId: router.routingModelId, fallbackRoutingModelIds: router.fallbackRoutingModelIds,
+          policies: router.policies, models: updatedModels,
         });
-        console.log(chalk.green(`✓ Model "${modelId}" removed from project "${project.name}".`));
+        console.log(chalk.green(`✓ Model "${modelId}" removed from router "${router.name}".`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
         else console.error(chalk.red(`Error: ${err.message}`));
@@ -413,35 +413,35 @@ Examples:
       }
     });
 
-  cmd.command('set-prompt <project> <model-id>')
-    .description('Set or update the system prompt hint for a model in a project')
+  cmd.command('set-prompt <router> <model-id>')
+    .description('Set or update the system prompt hint for a model in a router')
     .addHelpText('after', `
 Examples:
-  routerly project model set-prompt my-api openai/gpt-5.2 --prompt "Use for fast, simple tasks"
+  routerly router model set-prompt my-api openai/gpt-5.2 --prompt "Use for fast, simple tasks"
 
   # Clear the prompt
-  routerly project model set-prompt my-api openai/gpt-5.2 --prompt ""
+  routerly router model set-prompt my-api openai/gpt-5.2 --prompt ""
 `)
     .requiredOption('--prompt <text>', 'New prompt text (use empty string to clear)')
     .action(async (nameOrId: string, modelId: string, opts: { prompt: string }) => {
       try {
-        const project = await resolveProject(nameOrId);
-        const entry = project.models.find(m => m.modelId === modelId);
+        const router = await resolveRouter(nameOrId);
+        const entry = router.models.find(m => m.modelId === modelId);
         if (!entry) {
-          console.error(chalk.red(`Model "${modelId}" is not in project "${project.name}".`));
+          console.error(chalk.red(`Model "${modelId}" is not in router "${router.name}".`));
           process.exit(1);
         }
-        const updatedModels = project.models.map(m =>
+        const updatedModels = router.models.map(m =>
           m.modelId === modelId
             ? opts.prompt ? { modelId, prompt: opts.prompt } : { modelId }
             : m
         );
-        await api<void>('PUT', `/api/projects/${encodeURIComponent(project.id)}`, {
-          name: project.name, timeoutMs: project.timeoutMs, autoRouting: project.autoRouting,
-          routingModelId: project.routingModelId, fallbackRoutingModelIds: project.fallbackRoutingModelIds,
-          policies: project.policies, models: updatedModels,
+        await api<void>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, {
+          name: router.name, timeoutMs: router.timeoutMs, autoRouting: router.autoRouting,
+          routingModelId: router.routingModelId, fallbackRoutingModelIds: router.fallbackRoutingModelIds,
+          policies: router.policies, models: updatedModels,
         });
-        console.log(chalk.green(`✓ Prompt updated for "${modelId}" in "${project.name}".`));
+        console.log(chalk.green(`✓ Prompt updated for "${modelId}" in "${router.name}".`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
         else console.error(chalk.red(`Error: ${err.message}`));
@@ -455,20 +455,20 @@ Examples:
 // ─── Token subcommand group ───────────────────────────────────────────────────
 
 function makeTokenSubCommand(): Command {
-  const cmd = new Command('token').description('Manage project tokens');
+  const cmd = new Command('token').description('Manage router tokens');
 
-  cmd.command('list <project>')
-    .description('List all tokens for a project')
+  cmd.command('list <router>')
+    .description('List all tokens for a router')
     .addHelpText('after', `
 Examples:
-  routerly project token list my-api
+  routerly router token list my-api
 `)
     .action(async (nameOrId: string) => {
       try {
-        const project = await resolveProject(nameOrId);
-        const tokens = project.tokens ?? [];
+        const router = await resolveRouter(nameOrId);
+        const tokens = router.tokens ?? [];
         if (tokens.length === 0) {
-          console.log(chalk.yellow('No tokens found for this project.'));
+          console.log(chalk.yellow('No tokens found for this router.'));
           return;
         }
         const table = new Table({
@@ -492,29 +492,29 @@ Examples:
       }
     });
 
-  cmd.command('create <project>')
-    .description('Create a new token for a project (token shown only once)')
+  cmd.command('create <router>')
+    .description('Create a new token for a router (token shown only once)')
     .addHelpText('after', `
 Examples:
-  routerly project token create my-api
-  routerly project token create my-api --labels dev,staging
-  routerly project token create my-api --scopes batch,internal
+  routerly router token create my-api
+  routerly router token create my-api --labels dev,staging
+  routerly router token create my-api --scopes batch,internal
 `)
     .option('--labels <tags>', 'Comma-separated labels for this token')
     .option('--scopes <list>', 'Comma-separated free-form scopes (e.g. batch,internal)')
     .option('--tag <kv>', 'Key=value tag metadata (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .action(async (nameOrId: string, opts: { labels?: string; scopes?: string; tag: string[] }) => {
       try {
-        const project = await resolveProject(nameOrId);
+        const router = await resolveRouter(nameOrId);
         const labels = opts.labels ? opts.labels.split(',').map(s => s.trim()).filter(Boolean) : undefined;
         const scopes = opts.scopes ? opts.scopes.split(',').map(s => s.trim()).filter(Boolean) : undefined;
         const tags = parseTags(opts.tag);
         const res = await api<{ token: string; tokenInfo: { id: string; tokenSnippet: string; createdAt: string } }>(
           'POST',
-          `/api/projects/${encodeURIComponent(project.id)}/tokens`,
+          `/api/routers/${encodeURIComponent(router.id)}/tokens`,
           { ...(labels ? { labels } : {}), ...(scopes ? { scopes } : {}), ...(tags ? { tags } : {}) }
         );
-        console.log(chalk.green(`✓ Token created for project "${project.name}".`));
+        console.log(chalk.green(`✓ Token created for router "${router.name}".`));
         console.log(chalk.bold('\nToken (save this — shown only once):'));
         console.log(chalk.yellow(res.token));
         console.log(chalk.gray(`  ID:      ${res.tokenInfo.id}`));
@@ -529,7 +529,7 @@ Examples:
       }
     });
 
-  cmd.command('edit <project> <token-id>')
+  cmd.command('edit <router> <token-id>')
     .description('Edit labels or per-model limits of a token')
     .addHelpText('after', `
 Limit spec format:
@@ -542,19 +542,19 @@ Units:    second | minute | hour | day | week | month
 
 Examples:
   # Update labels
-  routerly project token edit my-api <token-id> --labels prod,v2
+  routerly router token edit my-api <token-id> --labels prod,v2
 
   # Update access scopes
-  routerly project token edit my-api <token-id> --scopes batch,internal
+  routerly router token edit my-api <token-id> --scopes batch,internal
 
   # Add a cost limit on a specific model
-  routerly project token edit my-api <token-id> --add-limit "openai/gpt-5.2:cost:period:hourly:10"
+  routerly router token edit my-api <token-id> --add-limit "openai/gpt-5.2:cost:period:hourly:10"
 
   # Add a rolling calls limit
-  routerly project token edit my-api <token-id> --add-limit "anthropic/claude-opus-4-6:calls:rolling:1:day:100"
+  routerly router token edit my-api <token-id> --add-limit "anthropic/claude-opus-4-6:calls:rolling:1:day:100"
 
   # Remove a limit
-  routerly project token edit my-api <token-id> --remove-limit "openai/gpt-5.2:cost:period:hourly"
+  routerly router token edit my-api <token-id> --remove-limit "openai/gpt-5.2:cost:period:hourly"
 `)
     .option('--labels <tags>', 'Comma-separated labels (replaces existing labels)')
     .option('--scopes <list>', 'Comma-separated access scopes (replaces existing scopes)')
@@ -563,10 +563,10 @@ Examples:
     .option('--remove-limit <spec>', 'Remove a limit: <model>:<metric>:<windowType> (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .action(async (nameOrId: string, tokenId: string, opts: { labels?: string; scopes?: string; tag: string[]; addLimit: string[]; removeLimit: string[] }) => {
       try {
-        const project = await resolveProject(nameOrId);
-        const token = (project.tokens ?? []).find(t => t.id === tokenId);
+        const router = await resolveRouter(nameOrId);
+        const token = (router.tokens ?? []).find(t => t.id === tokenId);
         if (!token) {
-          console.error(chalk.red(`Token "${tokenId}" not found in project "${project.name}".`));
+          console.error(chalk.red(`Token "${tokenId}" not found in router "${router.name}".`));
           process.exit(1);
         }
 
@@ -599,13 +599,13 @@ Examples:
         const labels = opts.labels ? opts.labels.split(',').map(s => s.trim()).filter(Boolean) : token.labels;
         const scopes = opts.scopes ? opts.scopes.split(',').map(s => s.trim()).filter(Boolean) : token.scopes;
         const tags = opts.tag.length ? parseTags(opts.tag) : token.tags;
-        await api<void>('PUT', `/api/projects/${encodeURIComponent(project.id)}/tokens/${encodeURIComponent(tokenId)}`, {
+        await api<void>('PUT', `/api/routers/${encodeURIComponent(router.id)}/tokens/${encodeURIComponent(tokenId)}`, {
           models,
           ...(labels !== undefined ? { labels } : {}),
           ...(scopes !== undefined ? { scopes } : {}),
           ...(tags !== undefined ? { tags } : {}),
         });
-        console.log(chalk.green(`✓ Token "${tokenId}" updated in project "${project.name}".`));
+        console.log(chalk.green(`✓ Token "${tokenId}" updated in router "${router.name}".`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
         else console.error(chalk.red(`Error: ${err.message}`));
@@ -613,17 +613,17 @@ Examples:
       }
     });
 
-  cmd.command('remove <project> <token-id>')
-    .description('Delete a token from a project')
+  cmd.command('remove <router> <token-id>')
+    .description('Delete a token from a router')
     .addHelpText('after', `
 Examples:
-  routerly project token remove my-api <token-id>
+  routerly router token remove my-api <token-id>
 `)
     .action(async (nameOrId: string, tokenId: string) => {
       try {
-        const project = await resolveProject(nameOrId);
-        await api<void>('DELETE', `/api/projects/${encodeURIComponent(project.id)}/tokens/${encodeURIComponent(tokenId)}`);
-        console.log(chalk.green(`✓ Token removed from project "${project.name}".`));
+        const router = await resolveRouter(nameOrId);
+        await api<void>('DELETE', `/api/routers/${encodeURIComponent(router.id)}/tokens/${encodeURIComponent(tokenId)}`);
+        console.log(chalk.green(`✓ Token removed from router "${router.name}".`));
       } catch (err) {
         if (err instanceof ApiError && err.status === 404) {
           console.error(chalk.red(`Token "${tokenId}" not found.`));
@@ -642,20 +642,20 @@ Examples:
 // ─── Member subcommand group ──────────────────────────────────────────────────
 
 function makeMemberCommand(): Command {
-  const cmd = new Command('member').description('Manage project members');
+  const cmd = new Command('member').description('Manage router members');
 
-  cmd.command('list <project>')
-    .description('List members of a project')
+  cmd.command('list <router>')
+    .description('List members of a router')
     .addHelpText('after', `
 Examples:
-  routerly project member list my-api
+  routerly router member list my-api
 `)
     .action(async (nameOrId: string) => {
       try {
-        const project = await resolveProject(nameOrId);
-        const members = project.members ?? [];
+        const router = await resolveRouter(nameOrId);
+        const members = router.members ?? [];
         if (members.length === 0) {
-          console.log(chalk.yellow('No members in this project.'));
+          console.log(chalk.yellow('No members in this router.'));
           return;
         }
         const users = await api<UserConfig[]>('GET', '/api/users');
@@ -673,31 +673,31 @@ Examples:
       }
     });
 
-  cmd.command('add <project>')
-    .description('Add a user to a project')
+  cmd.command('add <router>')
+    .description('Add a user to a router')
     .addHelpText('after', `
 Roles: viewer | editor | admin
 
 Examples:
-  routerly project member add my-api --email alice@example.com --role editor
-  routerly project member add my-api --email bob@example.com --role viewer
+  routerly router member add my-api --email alice@example.com --role editor
+  routerly router member add my-api --email bob@example.com --role viewer
 `)
     .requiredOption('--email <email>', 'User email')
     .requiredOption('--role <role>', 'Role to assign (viewer, editor, admin)')
     .action(async (nameOrId: string, opts: { email: string; role: string }) => {
       try {
-        const [project, userId] = await Promise.all([
-          resolveProject(nameOrId),
+        const [router, userId] = await Promise.all([
+          resolveRouter(nameOrId),
           resolveUserId(opts.email),
         ]);
-        await api<void>('POST', `/api/projects/${encodeURIComponent(project.id)}/members`, {
+        await api<void>('POST', `/api/routers/${encodeURIComponent(router.id)}/members`, {
           userId,
           role: opts.role,
         });
-        console.log(chalk.green(`✓ "${opts.email}" added to "${project.name}" as ${opts.role}.`));
+        console.log(chalk.green(`✓ "${opts.email}" added to "${router.name}" as ${opts.role}.`));
       } catch (err) {
         if (err instanceof ApiError && err.status === 409) {
-          console.error(chalk.red(`User "${opts.email}" is already a member of this project.`));
+          console.error(chalk.red(`User "${opts.email}" is already a member of this router.`));
         } else if (!(err instanceof ApiError)) {
           console.error(chalk.red(`Error: ${(err as Error).message}`));
         } else {
@@ -707,26 +707,26 @@ Examples:
       }
     });
 
-  cmd.command('set-role <project>')
-    .description('Change the role of a project member')
+  cmd.command('set-role <router>')
+    .description('Change the role of a router member')
     .addHelpText('after', `
 Roles: viewer | editor | admin
 
 Examples:
-  routerly project member set-role my-api --email alice@example.com --role admin
+  routerly router member set-role my-api --email alice@example.com --role admin
 `)
     .requiredOption('--email <email>', 'User email')
     .requiredOption('--role <role>', 'New role (viewer, editor, admin)')
     .action(async (nameOrId: string, opts: { email: string; role: string }) => {
       try {
-        const [project, userId] = await Promise.all([
-          resolveProject(nameOrId),
+        const [router, userId] = await Promise.all([
+          resolveRouter(nameOrId),
           resolveUserId(opts.email),
         ]);
-        await api<void>('PUT', `/api/projects/${encodeURIComponent(project.id)}/members/${encodeURIComponent(userId)}`, {
+        await api<void>('PUT', `/api/routers/${encodeURIComponent(router.id)}/members/${encodeURIComponent(userId)}`, {
           role: opts.role,
         });
-        console.log(chalk.green(`✓ "${opts.email}" role updated to "${opts.role}" in "${project.name}".`));
+        console.log(chalk.green(`✓ "${opts.email}" role updated to "${opts.role}" in "${router.name}".`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
         else console.error(chalk.red(`Error: ${err.message}`));
@@ -734,24 +734,24 @@ Examples:
       }
     });
 
-  cmd.command('remove <project>')
-    .description('Remove a user from a project')
+  cmd.command('remove <router>')
+    .description('Remove a user from a router')
     .addHelpText('after', `
 Examples:
-  routerly project member remove my-api --email alice@example.com
+  routerly router member remove my-api --email alice@example.com
 `)
     .requiredOption('--email <email>', 'User email to remove')
     .action(async (nameOrId: string, opts: { email: string }) => {
       try {
-        const [project, userId] = await Promise.all([
-          resolveProject(nameOrId),
+        const [router, userId] = await Promise.all([
+          resolveRouter(nameOrId),
           resolveUserId(opts.email),
         ]);
-        await api<void>('DELETE', `/api/projects/${encodeURIComponent(project.id)}/members/${encodeURIComponent(userId)}`);
-        console.log(chalk.green(`✓ "${opts.email}" removed from project "${project.name}".`));
+        await api<void>('DELETE', `/api/routers/${encodeURIComponent(router.id)}/members/${encodeURIComponent(userId)}`);
+        console.log(chalk.green(`✓ "${opts.email}" removed from router "${router.name}".`));
       } catch (err) {
         if (err instanceof ApiError && err.status === 404) {
-          console.error(chalk.red(`"${opts.email}" is not a member of this project.`));
+          console.error(chalk.red(`"${opts.email}" is not a member of this router.`));
         } else if (!(err instanceof ApiError)) {
           console.error(chalk.red(`Error: ${(err as Error).message}`));
         } else {
@@ -930,29 +930,29 @@ async function runAddRuleWizard(): Promise<GuardrailRule> {
   return rule;
 }
 
-// ─── Main project command ─────────────────────────────────────────────────────
+// ─── Main router command ─────────────────────────────────────────────────────
 
-export function makeProjectCommand(): Command {
-  const cmd = new Command('project').description('Manage Routerly projects');
+export function makeRouterCommand(): Command {
+  const cmd = new Command('router').description('Manage Routerly routers');
 
-  // ── project list ─────────────────────────────────────────────────────────────
+  // ── router list ─────────────────────────────────────────────────────────────
   cmd.command('list')
-    .description('List all projects')
+    .description('List all routers')
     .addHelpText('after', `
 Examples:
-  routerly project list
+  routerly router list
 `)
     .action(async () => {
       try {
-        const projects = await api<ProjectConfig[]>('GET', '/api/projects');
-        if (projects.length === 0) {
-          console.log(chalk.yellow('No projects yet. Use `routerly project create` to create one.'));
+        const routers = await api<RouterConfig[]>('GET', '/api/routers');
+        if (routers.length === 0) {
+          console.log(chalk.yellow('No routers yet. Use `routerly router create` to create one.'));
           return;
         }
         const table = new Table({
           head: ['ID', 'Name', 'Models', 'Tokens', 'Members', 'Timeout'].map(h => chalk.cyan(h)),
         });
-        for (const p of projects) {
+        for (const p of routers) {
           table.push([
             chalk.gray(p.id.slice(0, 8) + '…'),
             p.name,
@@ -969,40 +969,40 @@ Examples:
       }
     });
 
-  // ── project show ─────────────────────────────────────────────────────────────
-  cmd.command('show <project>')
-    .description('Show full details of a project')
+  // ── router show ─────────────────────────────────────────────────────────────
+  cmd.command('show <router>')
+    .description('Show full details of a router')
     .addHelpText('after', `
 Examples:
-  routerly project show my-api
-  routerly project show a1b2c3d4-e5f6-7890-abcd-ef1234567890
+  routerly router show my-api
+  routerly router show a1b2c3d4-e5f6-7890-abcd-ef1234567890
 `)
     .action(async (nameOrId: string) => {
       try {
-        const project = await resolveProject(nameOrId);
+        const router = await resolveRouter(nameOrId);
         const users = await api<UserConfig[]>('GET', '/api/users');
 
-        console.log(chalk.bold(`\n── ${project.name} ──────────────────────────────────`));
-        console.log(chalk.gray(`  ID:      `) + project.id);
-        console.log(chalk.gray(`  Timeout: `) + formatTimeout(project.timeoutMs));
-        console.log(chalk.gray(`  Traces:  `) + (project.traceContent ? 'metadata + content' : 'metadata only'));
+        console.log(chalk.bold(`\n── ${router.name} ──────────────────────────────────`));
+        console.log(chalk.gray(`  ID:      `) + router.id);
+        console.log(chalk.gray(`  Timeout: `) + formatTimeout(router.timeoutMs));
+        console.log(chalk.gray(`  Traces:  `) + (router.traceContent ? 'metadata + content' : 'metadata only'));
 
         // Routing
         console.log(chalk.bold('\n  Routing'));
-        console.log(chalk.gray(`    Auto-routing:    `) + (project.autoRouting ? chalk.green('enabled') : chalk.yellow('disabled')));
-        console.log(chalk.gray(`    Routing model:   `) + (project.routingModelId ?? chalk.gray('(not set)')));
-        const fallbacks = project.fallbackRoutingModelIds ?? [];
+        console.log(chalk.gray(`    Auto-routing:    `) + (router.autoRouting ? chalk.green('enabled') : chalk.yellow('disabled')));
+        console.log(chalk.gray(`    Routing model:   `) + (router.routingModelId ?? chalk.gray('(not set)')));
+        const fallbacks = router.fallbackRoutingModelIds ?? [];
         console.log(chalk.gray(`    Fallback models: `) + (fallbacks.length ? fallbacks.join(', ') : chalk.gray('(none)')));
-        const policies = project.policies ?? [];
+        const policies = router.policies ?? [];
         const enabledPolicies = policies.filter(p => p.enabled).map(p => p.type);
         console.log(chalk.gray(`    Policies:        `) + (enabledPolicies.length ? enabledPolicies.join(', ') : chalk.gray('(none enabled)')));
 
         // Models
         console.log(chalk.bold('\n  Target Models'));
-        if (project.models.length === 0) {
+        if (router.models.length === 0) {
           console.log(chalk.gray('    (none)'));
         } else {
-          for (const m of project.models) {
+          for (const m of router.models) {
             const prompt = m.prompt ? chalk.gray(` — "${m.prompt.slice(0, 50)}${m.prompt.length > 50 ? '…' : ''}"`) : '';
             console.log(`    • ${m.modelId}${prompt}`);
           }
@@ -1010,7 +1010,7 @@ Examples:
 
         // Tokens
         console.log(chalk.bold('\n  Tokens'));
-        const tokens = project.tokens ?? [];
+        const tokens = router.tokens ?? [];
         if (tokens.length === 0) {
           console.log(chalk.gray('    (none)'));
         } else {
@@ -1023,7 +1023,7 @@ Examples:
 
         // Members
         console.log(chalk.bold('\n  Members'));
-        const members = project.members ?? [];
+        const members = router.members ?? [];
         if (members.length === 0) {
           console.log(chalk.gray('    (none)'));
         } else {
@@ -1039,25 +1039,25 @@ Examples:
       }
     });
 
-  // ── project create ───────────────────────────────────────────────────────────
+  // ── router create ───────────────────────────────────────────────────────────
   cmd.command('create')
-    .description('Create a new project')
+    .description('Create a new router')
     .addHelpText('after', `
 Examples:
-  # Minimal project
-  routerly project create --name "My API"
+  # Minimal router
+  routerly router create --name "My API"
 
   # With a custom TTFT timeout
-  routerly project create --name "Production" --timeout 5000
+  routerly router create --name "Production" --timeout 5000
 
   # No TTFT timeout: wait as long as the provider takes
-  routerly project create --name "Batch jobs" --timeout 0
+  routerly router create --name "Batch jobs" --timeout 0
 
   # With auto-routing enabled and a routing model
-  routerly project create --name "Smart API" --routing-model ollama/qwen3.5:9b --auto-routing
+  routerly router create --name "Smart API" --routing-model ollama/qwen3.5:9b --auto-routing
 `)
-    .requiredOption('--name <name>', 'Project name')
-    .option('--timeout <ms>', `TTFT timeout per model attempt in milliseconds (default: ${DEFAULT_PROJECT_TIMEOUT_MS}). Aborts if the first response byte does not arrive in time; 0 disables it.`)
+    .requiredOption('--name <name>', 'Router name')
+    .option('--timeout <ms>', `TTFT timeout per model attempt in milliseconds (default: ${DEFAULT_ROUTER_TIMEOUT_MS}). Aborts if the first response byte does not arrive in time; 0 disables it.`)
     .option('--routing-model <id>', 'Model ID for routing decisions')
     .option('--auto-routing', 'Enable auto-routing (default: true)')
     .option('--no-auto-routing', 'Disable auto-routing')
@@ -1065,26 +1065,26 @@ Examples:
       try {
         const body: Record<string, unknown> = {
           name: opts.name,
-          timeoutMs: opts.timeout !== undefined ? parseTimeoutOption(opts.timeout) : DEFAULT_PROJECT_TIMEOUT_MS,
+          timeoutMs: opts.timeout !== undefined ? parseTimeoutOption(opts.timeout) : DEFAULT_ROUTER_TIMEOUT_MS,
           autoRouting: opts.autoRouting !== undefined ? opts.autoRouting : true,
           models: [],
         };
         if (opts.routingModel) body.routingModelId = opts.routingModel;
 
-        const project = await api<ProjectConfig & { token: string }>('POST', '/api/projects', body);
+        const router = await api<RouterConfig & { token: string }>('POST', '/api/routers', body);
 
-        console.log(chalk.green(`✓ Project "${opts.name}" created.`));
-        console.log(chalk.gray(`  ID: ${project.id}`));
-        if (project.token) {
-          console.log(chalk.bold('\nProject token (save this — shown only once):'));
-          console.log(chalk.yellow(project.token));
+        console.log(chalk.green(`✓ Router "${opts.name}" created.`));
+        console.log(chalk.gray(`  ID: ${router.id}`));
+        if (router.token) {
+          console.log(chalk.bold('\nRouter token (save this — shown only once):'));
+          console.log(chalk.yellow(router.token));
         }
         console.log(chalk.gray(`\nNext steps:`));
-        console.log(chalk.gray(`  Add models:   routerly project model add "${opts.name}" <model-id>`));
-        console.log(chalk.gray(`  Set routing:  routerly project routing update "${opts.name}" --routing-model <id>`));
+        console.log(chalk.gray(`  Add models:   routerly router model add "${opts.name}" <model-id>`));
+        console.log(chalk.gray(`  Set routing:  routerly router routing update "${opts.name}" --routing-model <id>`));
       } catch (err) {
         if (err instanceof ApiError && err.status === 409) {
-          console.error(chalk.red(`A project named "${opts.name}" already exists.`));
+          console.error(chalk.red(`A router named "${opts.name}" already exists.`));
         } else if (!(err instanceof ApiError)) {
           console.error(chalk.red(`Error: ${(err as Error).message}`));
         } else {
@@ -1094,18 +1094,18 @@ Examples:
       }
     });
 
-  // ── project edit ─────────────────────────────────────────────────────────────
-  cmd.command('edit <project>')
-    .description('Edit project name, timeout or trace content capture')
+  // ── router edit ─────────────────────────────────────────────────────────────
+  cmd.command('edit <router>')
+    .description('Edit router name, timeout or trace content capture')
     .addHelpText('after', `
 Examples:
-  routerly project edit my-api --name "My Production API"
-  routerly project edit my-api --timeout 5000
-  routerly project edit my-api --timeout 0
-  routerly project edit my-api --trace-content
-  routerly project edit my-api --no-trace-content
+  routerly router edit my-api --name "My Production API"
+  routerly router edit my-api --timeout 5000
+  routerly router edit my-api --timeout 0
+  routerly router edit my-api --trace-content
+  routerly router edit my-api --no-trace-content
 `)
-    .option('--name <name>', 'New project name')
+    .option('--name <name>', 'New router name')
     .option('--timeout <ms>', 'New TTFT timeout per model attempt in milliseconds (0 disables it)')
     .option('--trace-content', 'Record prompts and answers in traces (off by default: metadata only)')
     .option('--no-trace-content', 'Record metadata only, no prompts or answers')
@@ -1118,21 +1118,21 @@ Examples:
         process.exit(1);
       }
       try {
-        const project = await resolveProject(nameOrId);
-        await api<void>('PUT', `/api/projects/${encodeURIComponent(project.id)}`, {
-          name: opts.name ?? project.name,
-          timeoutMs: opts.timeout !== undefined ? parseTimeoutOption(opts.timeout) : project.timeoutMs,
-          autoRouting: project.autoRouting,
-          routingModelId: project.routingModelId,
-          fallbackRoutingModelIds: project.fallbackRoutingModelIds,
-          policies: project.policies,
-          models: project.models,
+        const router = await resolveRouter(nameOrId);
+        await api<void>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, {
+          name: opts.name ?? router.name,
+          timeoutMs: opts.timeout !== undefined ? parseTimeoutOption(opts.timeout) : router.timeoutMs,
+          autoRouting: router.autoRouting,
+          routingModelId: router.routingModelId,
+          fallbackRoutingModelIds: router.fallbackRoutingModelIds,
+          policies: router.policies,
+          models: router.models,
           ...(traceContent !== undefined ? { traceContent } : {}),
         });
-        console.log(chalk.green(`✓ Project "${project.name}" updated.`));
+        console.log(chalk.green(`✓ Router "${router.name}" updated.`));
       } catch (err) {
         if (err instanceof ApiError && err.status === 409) {
-          console.error(chalk.red(`A project named "${opts.name}" already exists.`));
+          console.error(chalk.red(`A router named "${opts.name}" already exists.`));
         } else if (!(err instanceof ApiError)) {
           console.error(chalk.red(`Error: ${(err as Error).message}`));
         } else {
@@ -1142,19 +1142,19 @@ Examples:
       }
     });
 
-  // ── project remove ───────────────────────────────────────────────────────────
-  cmd.command('remove <project>')
-    .description('Remove a project by name or ID')
+  // ── router remove ───────────────────────────────────────────────────────────
+  cmd.command('remove <router>')
+    .description('Remove a router by name or ID')
     .addHelpText('after', `
 Examples:
-  routerly project remove my-api
-  routerly project remove a1b2c3d4-e5f6-7890-abcd-ef1234567890
+  routerly router remove my-api
+  routerly router remove a1b2c3d4-e5f6-7890-abcd-ef1234567890
 `)
     .action(async (nameOrId: string) => {
       try {
-        const project = await resolveProject(nameOrId);
-        await api<void>('DELETE', `/api/projects/${encodeURIComponent(project.id)}`);
-        console.log(chalk.green(`✓ Project "${project.name}" removed.`));
+        const router = await resolveRouter(nameOrId);
+        await api<void>('DELETE', `/api/routers/${encodeURIComponent(router.id)}`);
+        console.log(chalk.green(`✓ Router "${router.name}" removed.`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
         else console.error(chalk.red(`Error: ${err.message}`));
@@ -1168,24 +1168,24 @@ Examples:
   cmd.addCommand(makeTokenSubCommand());
   cmd.addCommand(makeMemberCommand());  
 
-  // ── project guardrails <project> ─────────────────────────────────────────────
-  cmd.command('guardrails <project>')
-    .description('Show or update guardrails config for a project')
+  // ── router guardrails <router> ─────────────────────────────────────────────
+  cmd.command('guardrails <router>')
+    .description('Show or update guardrails config for a router')
     .option('--add-rule', 'Add a new rule (interactive wizard)')
     .option('--remove-rule <index>', 'Remove rule by 0-based index')
     .option('--json', 'Output raw JSON (show only)')
     .addHelpText('after', `
 Examples:
-  routerly project guardrails my-api
-  routerly project guardrails my-api --add-rule
-  routerly project guardrails my-api --remove-rule 2
+  routerly router guardrails my-api
+  routerly router guardrails my-api --add-rule
+  routerly router guardrails my-api --remove-rule 2
 `)
     .action(async (nameOrId: string, opts: {
       addRule?: boolean; removeRule?: string; json?: boolean;
     }) => {
       try {
-        const project = await resolveProject(nameOrId);
-        const current: GuardrailConfig = project.guardrails ?? { rules: [] };
+        const router = await resolveRouter(nameOrId);
+        const current: GuardrailConfig = router.guardrails ?? { rules: [] };
 
         const isUpdate = opts.addRule || opts.removeRule !== undefined;
 
@@ -1195,7 +1195,7 @@ Examples:
             console.log(JSON.stringify(current, null, 2));
             return;
           }
-          console.log(chalk.bold(`\nGuardrails — ${project.name}\n`));
+          console.log(chalk.bold(`\nGuardrails — ${router.name}\n`));
 
           if (!current.rules.length) {
             console.log(chalk.dim('  No rules configured.'));
@@ -1236,8 +1236,8 @@ Examples:
           updated.rules.push(newRule);
         }
 
-        await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/guardrails`, { guardrails: updated });
-        console.log(chalk.green(`Guardrails updated for "${project.name}".`));
+        await api<void>('PATCH', `/api/routers/${encodeURIComponent(router.id)}/guardrails`, { guardrails: updated });
+        console.log(chalk.green(`Guardrails updated for "${router.name}".`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
         else console.error(chalk.red(`Error: ${err.message}`));
@@ -1245,27 +1245,27 @@ Examples:
       }
     });
 
-  // ── project pii <project> ────────────────────────────────────────────────────
-  const piiCmd = new Command('pii').description('Manage PII detection policies for a project');
+  // ── router pii <router> ────────────────────────────────────────────────────
+  const piiCmd = new Command('pii').description('Manage PII detection policies for a router');
 
-  piiCmd.command('list <project>')
-    .description('List PII policies for a project')
+  piiCmd.command('list <router>')
+    .description('List PII policies for a router')
     .option('--json', 'Output raw JSON')
     .addHelpText('after', `
 Examples:
-  routerly project pii list my-api
-  routerly project pii list my-api --json
+  routerly router pii list my-api
+  routerly router pii list my-api --json
 `)
     .action(async (nameOrId: string, opts: { json?: boolean }) => {
       try {
-        const project = await resolveProject(nameOrId);
-        const pii = (project as ProjectConfig & { pii?: PiiConfig }).pii ?? { policies: [] };
+        const router = await resolveRouter(nameOrId);
+        const pii = (router as RouterConfig & { pii?: PiiConfig }).pii ?? { policies: [] };
         const policies = pii.policies ?? [];
         if (opts.json) {
           console.log(JSON.stringify(pii, null, 2));
           return;
         }
-        console.log(chalk.bold(`\nPII Policies — ${project.name}`));
+        console.log(chalk.bold(`\nPII Policies — ${router.name}`));
         if (!policies.length) {
           console.log(chalk.dim('  No PII policies configured.'));
           console.log('');
@@ -1289,17 +1289,17 @@ Examples:
       }
     });
 
-  piiCmd.command('add <project>')
-    .description('Add a PII policy to a project (interactive wizard)')
+  piiCmd.command('add <router>')
+    .description('Add a PII policy to a router (interactive wizard)')
     .addHelpText('after', `
 Examples:
-  routerly project pii add my-api
+  routerly router pii add my-api
 `)
     .action(async (nameOrId: string) => {
       try {
         const { default: inquirer } = await import('inquirer');
-        const project = await resolveProject(nameOrId);
-        const pii = (project as ProjectConfig & { pii?: PiiConfig }).pii ?? { policies: [] };
+        const router = await resolveRouter(nameOrId);
+        const pii = (router as RouterConfig & { pii?: PiiConfig }).pii ?? { policies: [] };
         const policies = [...(pii.policies ?? [])];
 
         const ans = await inquirer.prompt([
@@ -1329,8 +1329,8 @@ Examples:
         if (outputBufferSize !== undefined) policy.outputBufferSize = outputBufferSize;
 
         policies.push(policy);
-        await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/guardrails`, { pii: { policies } });
-        console.log(chalk.green(`PII policy added to "${project.name}".`));
+        await api<void>('PATCH', `/api/routers/${encodeURIComponent(router.id)}/guardrails`, { pii: { policies } });
+        console.log(chalk.green(`PII policy added to "${router.name}".`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
         else console.error(chalk.red(`Error: ${err.message}`));
@@ -1338,16 +1338,16 @@ Examples:
       }
     });
 
-  piiCmd.command('remove <project> <index>')
-    .description('Remove a PII policy from a project by its index (see `pii list`)')
+  piiCmd.command('remove <router> <index>')
+    .description('Remove a PII policy from a router by its index (see `pii list`)')
     .addHelpText('after', `
 Examples:
-  routerly project pii remove my-api 0
+  routerly router pii remove my-api 0
 `)
     .action(async (nameOrId: string, indexStr: string) => {
       try {
-        const project = await resolveProject(nameOrId);
-        const pii = (project as ProjectConfig & { pii?: PiiConfig }).pii ?? { policies: [] };
+        const router = await resolveRouter(nameOrId);
+        const pii = (router as RouterConfig & { pii?: PiiConfig }).pii ?? { policies: [] };
         const before = pii.policies ?? [];
         const index = Number(indexStr);
         if (!Number.isInteger(index) || index < 0 || index >= before.length) {
@@ -1355,8 +1355,8 @@ Examples:
           process.exit(1);
         }
         const policies = before.filter((_, i) => i !== index);
-        await api<void>('PATCH', `/api/projects/${encodeURIComponent(project.id)}/guardrails`, { pii: { policies } });
-        console.log(chalk.green(`PII policy #${index} removed from "${project.name}".`));
+        await api<void>('PATCH', `/api/routers/${encodeURIComponent(router.id)}/guardrails`, { pii: { policies } });
+        console.log(chalk.green(`PII policy #${index} removed from "${router.name}".`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
         else console.error(chalk.red(`Error: ${err.message}`));

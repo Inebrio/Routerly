@@ -3,13 +3,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
-import { ProjectSecurityTab } from './ProjectSecurityTab';
+import { RouterSecurityTab } from './RouterSecurityTab';
 
 vi.mock('../../api', () => ({
   getModels: vi.fn(),
-  updateProject: vi.fn(),
+  updateRouter: vi.fn(),
   getProfiles: vi.fn(),
-  assignProjectProfiles: vi.fn(),
+  assignRouterProfiles: vi.fn(),
 }));
 
 // ponytail: mock SearchableSelect as a plain <select> so onChange fires on selectOptions
@@ -66,11 +66,11 @@ vi.mock('../../components/MultiSelect', () => ({
   ),
 }));
 
-import { getModels, updateProject, getProfiles, assignProjectProfiles } from '../../api';
+import { getModels, updateRouter, getProfiles, assignRouterProfiles } from '../../api';
 const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
-const mockUpdateProject = vi.mocked(updateProject as (...args: unknown[]) => Promise<unknown>);
+const mockUpdateRouter = vi.mocked(updateRouter as (...args: unknown[]) => Promise<unknown>);
 const mockGetProfiles = vi.mocked(getProfiles as (...args: unknown[]) => Promise<unknown>);
-const mockAssignProfile = vi.mocked(assignProjectProfiles as (...args: unknown[]) => Promise<unknown>);
+const mockAssignProfile = vi.mocked(assignRouterProfiles as (...args: unknown[]) => Promise<unknown>);
 
 const sampleProfiles = [
   {
@@ -111,8 +111,8 @@ const embeddingModel = makeModel({
   capabilities: { embedding: true },
 });
 
-// New-shape project (no action/fallbackMessage)
-const mockProject = {
+// New-shape router (no action/fallbackMessage)
+const mockRouter = {
   id: 'proj-1',
   name: 'Test',
   models: [],
@@ -120,8 +120,8 @@ const mockProject = {
   pii: { policies: [] },
 };
 
-// Project that already has a response-blocking rule
-const mockProjectWithResponseBlock = {
+// Router that already has a response-blocking rule
+const mockRouterWithResponseBlock = {
   id: 'proj-2',
   name: 'TestBlock',
   models: [],
@@ -133,15 +133,15 @@ const mockProjectWithResponseBlock = {
   pii: { policies: [] },
 };
 
-function renderTab(project: Record<string, unknown> = mockProject) {
+function renderTab(router: Record<string, unknown> = mockRouter) {
   function LayoutWrapper() {
-    return <Outlet context={{ project, setProject: vi.fn() }} />;
+    return <Outlet context={{ router, setRouter: vi.fn() }} />;
   }
   return render(
-    <MemoryRouter initialEntries={['/dashboard/projects/proj-1/security']}>
+    <MemoryRouter initialEntries={['/dashboard/routers/proj-1/security']}>
       <Routes>
-        <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-          <Route path="security" element={<ProjectSecurityTab />} />
+        <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+          <Route path="security" element={<RouterSecurityTab />} />
         </Route>
       </Routes>
     </MemoryRouter>
@@ -151,15 +151,15 @@ function renderTab(project: Record<string, unknown> = mockProject) {
 beforeEach(() => {
   mockGetModels.mockResolvedValue([chatModel, embeddingModel]);
   mockGetProfiles.mockResolvedValue(sampleProfiles);
-  mockAssignProfile.mockResolvedValue({ ...mockProject });
-  mockUpdateProject.mockResolvedValue({ ...mockProject, guardrails: { rules: [] }, pii: { policies: [] } });
+  mockAssignProfile.mockResolvedValue({ ...mockRouter });
+  mockUpdateRouter.mockResolvedValue({ ...mockRouter, guardrails: { rules: [] }, pii: { policies: [] } });
 });
 
 afterEach(() => vi.clearAllMocks());
 
 // ── Judge model options (preserved from prior tests) ─────────────────────────
 
-describe('ProjectSecurityTab — judge model options', () => {
+describe('RouterSecurityTab — judge model options', () => {
   it('topic rule judge dropdown excludes embedding-only model', async () => {
     renderTab();
 
@@ -228,7 +228,7 @@ describe('ProjectSecurityTab — judge model options', () => {
 // block/log are now fixed invariants (judged rules always block+log); only the
 // per-rule Enabled toggle (testid rule-enabled) is user-editable.
 
-describe('ProjectSecurityTab — rule-enabled toggle', () => {
+describe('RouterSecurityTab — rule-enabled toggle', () => {
   it('new regex rule defaults to Enabled=true', async () => {
     renderTab();
 
@@ -279,7 +279,7 @@ describe('ProjectSecurityTab — rule-enabled toggle', () => {
 // ── ScopeSelector (topic/moderation) — three-checkbox model ─────────────────
 // request/inject/response checkboxes replace the old target+enforcement UI.
 
-describe('ProjectSecurityTab — ScopeSelector three-checkbox model', () => {
+describe('RouterSecurityTab — ScopeSelector three-checkbox model', () => {
   it('new topic rule has request and response checked, inject unchecked (default target=both)', async () => {
     renderTab();
 
@@ -390,9 +390,9 @@ describe('ProjectSecurityTab — ScopeSelector three-checkbox model', () => {
 
 // ── Streaming-disabled warning box ───────────────────────────────────────────
 
-describe('ProjectSecurityTab — streaming-disabled warning', () => {
+describe('RouterSecurityTab — streaming-disabled warning', () => {
   it('shows warning when a rule has block=true and target=response', async () => {
-    renderTab(mockProjectWithResponseBlock);
+    renderTab(mockRouterWithResponseBlock);
 
     await waitFor(() => {
       expect(screen.queryByTestId('streaming-disabled-warning')).not.toBeNull();
@@ -433,7 +433,7 @@ describe('ProjectSecurityTab — streaming-disabled warning', () => {
 
   it('warning disappears when response target is unchecked', async () => {
     // Start with a response-blocking moderation rule
-    renderTab(mockProjectWithResponseBlock);
+    renderTab(mockRouterWithResponseBlock);
 
     await waitFor(() => {
       expect(screen.queryByTestId('streaming-disabled-warning')).not.toBeNull();
@@ -456,7 +456,7 @@ describe('ProjectSecurityTab — streaming-disabled warning', () => {
 // ── Injection-warning banner ──────────────────────────────────────────────────
 // Section-level amber banner visible when any rule has inject=true.
 
-describe('ProjectSecurityTab — injection-warning banner', () => {
+describe('RouterSecurityTab — injection-warning banner', () => {
   it('no injection-warning when no rules are configured', async () => {
     renderTab();
     await waitFor(() => screen.getByTestId('searchable-Add a security policy...'));
@@ -475,9 +475,9 @@ describe('ProjectSecurityTab — injection-warning banner', () => {
     expect(screen.queryByTestId('injection-warning')).toBeNull();
   });
 
-  it('injection-warning appears when project loads with inject=true rule', async () => {
+  it('injection-warning appears when router loads with inject=true rule', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       guardrails: {
         rules: [
           { type: 'moderation' as const, inject: true, block: false, log: false, config: { modelId: '', threshold: 0.5 } },
@@ -493,7 +493,7 @@ describe('ProjectSecurityTab — injection-warning banner', () => {
 
 // ── PII policy card: target + outputBufferSize ────────────────────────────────
 
-describe('ProjectSecurityTab — PII policy target and outputBufferSize', () => {
+describe('RouterSecurityTab — PII policy target and outputBufferSize', () => {
   it('new PII policy defaults to target=request and shows no buffer input', async () => {
     renderTab();
 
@@ -536,7 +536,7 @@ describe('ProjectSecurityTab — PII policy target and outputBufferSize', () => 
 
   it('outputBufferSize input hidden when target is request-only', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       pii: {
         policies: [{ enabled: true, target: 'response' as const, entities: [] }],
       },
@@ -567,7 +567,7 @@ describe('ProjectSecurityTab — PII policy target and outputBufferSize', () => 
 
 // ── handleSave payload shape ──────────────────────────────────────────────────
 
-describe('ProjectSecurityTab — save payload', () => {
+describe('RouterSecurityTab — save payload', () => {
   it('saves guardrails without action/fallbackMessage and pii as policies-only', async () => {
     renderTab();
 
@@ -581,9 +581,9 @@ describe('ProjectSecurityTab — save payload', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /save security settings/i }));
 
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
 
-    const call = mockUpdateProject.mock.calls[0]!;
+    const call = mockUpdateRouter.mock.calls[0]!;
     const payload = call[1] as { guardrails?: Record<string, unknown>; pii?: Record<string, unknown> };
 
     // guardrails must NOT have action or fallbackMessage
@@ -602,7 +602,7 @@ describe('ProjectSecurityTab — save payload', () => {
 
 // ── Rule card delete button ───────────────────────────────────────────────────
 
-describe('ProjectSecurityTab — rule card delete', () => {
+describe('RouterSecurityTab — rule card delete', () => {
   it('delete button removes the rule card', async () => {
     renderTab();
 
@@ -643,7 +643,7 @@ describe('ProjectSecurityTab — rule card delete', () => {
 
 // ── PII policy remove button ──────────────────────────────────────────────────
 
-describe('ProjectSecurityTab — PII policy remove', () => {
+describe('RouterSecurityTab — PII policy remove', () => {
   it('remove button deletes the policy card', async () => {
     renderTab();
 
@@ -661,7 +661,7 @@ describe('ProjectSecurityTab — PII policy remove', () => {
 
   it('remove button on a pre-existing policy removes it', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       pii: {
         policies: [
           { enabled: true, target: 'request' as const, entities: [] },
@@ -680,7 +680,7 @@ describe('ProjectSecurityTab — PII policy remove', () => {
 
 // ── PII entity toggles ────────────────────────────────────────────────────────
 
-describe('ProjectSecurityTab — PII entity toggles', () => {
+describe('RouterSecurityTab — PII entity toggles', () => {
   it('clicking an entity checkbox toggles it on (new policy starts with all unchecked)', async () => {
     // New policy has entities:[] -> new Set([]) -> all entity checkboxes unchecked
     renderTab();
@@ -700,7 +700,7 @@ describe('ProjectSecurityTab — PII entity toggles', () => {
   it('clicking a checked entity checkbox toggles it off', async () => {
     // Load a policy that already has EMAIL in its entities
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       pii: {
         policies: [{ enabled: true, target: 'request' as const, entities: ['EMAIL', 'PHONE'] }],
       },
@@ -717,7 +717,7 @@ describe('ProjectSecurityTab — PII entity toggles', () => {
 
 // ── PII policy enabled toggle ─────────────────────────────────────────────────
 
-describe('ProjectSecurityTab — PII policy enabled toggle', () => {
+describe('RouterSecurityTab — PII policy enabled toggle', () => {
   it('toggling Enabled checkbox updates the policy', async () => {
     renderTab();
 
@@ -736,7 +736,7 @@ describe('ProjectSecurityTab — PII policy enabled toggle', () => {
 
 // ── PII policy "Policy N" heading (replaces old name input) ──────────────────
 
-describe('ProjectSecurityTab — PII policy heading', () => {
+describe('RouterSecurityTab — PII policy heading', () => {
   it('new policy card renders "Policy 1" heading (no name input)', async () => {
     renderTab();
 
@@ -750,7 +750,7 @@ describe('ProjectSecurityTab — PII policy heading', () => {
 
   it('two policy cards render "Policy 1" and "Policy 2" headings', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       pii: {
         policies: [
           { enabled: true, target: 'request' as const, entities: [] },
@@ -770,7 +770,7 @@ describe('ProjectSecurityTab — PII policy heading', () => {
 // A policy is a no-op when it has an empty entity array AND no custom patterns.
 // A policy with at least one entity is always kept.
 
-describe('ProjectSecurityTab — save skips no-op PII policies', () => {
+describe('RouterSecurityTab — save skips no-op PII policies', () => {
   it('save skips a freshly-added policy that has no entities and no patterns', async () => {
     renderTab();
 
@@ -781,9 +781,9 @@ describe('ProjectSecurityTab — save skips no-op PII policies', () => {
     await waitFor(() => screen.getByText('Policy 1'));
 
     await userEvent.click(screen.getByRole('button', { name: /save security settings/i }));
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
 
-    const call = mockUpdateProject.mock.calls[0]!;
+    const call = mockUpdateRouter.mock.calls[0]!;
     const payload = call[1] as { pii?: { policies: unknown[] } };
     // No-op policy filtered out
     expect(payload.pii?.policies.length).toBe(0);
@@ -791,7 +791,7 @@ describe('ProjectSecurityTab — save skips no-op PII policies', () => {
 
   it('save keeps a policy that has at least one entity', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       pii: {
         policies: [
           { enabled: true, target: 'request' as const, entities: ['EMAIL'] },
@@ -801,9 +801,9 @@ describe('ProjectSecurityTab — save skips no-op PII policies', () => {
 
     await waitFor(() => screen.getByText('Policy 1'));
     await userEvent.click(screen.getByRole('button', { name: /save security settings/i }));
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
 
-    const call = mockUpdateProject.mock.calls[0]!;
+    const call = mockUpdateRouter.mock.calls[0]!;
     const payload = call[1] as { pii?: { policies: unknown[] } };
     // Policy with EMAIL entity is kept
     expect(payload.pii?.policies.length).toBe(1);
@@ -812,7 +812,7 @@ describe('ProjectSecurityTab — save skips no-op PII policies', () => {
 
 // ── PII custom patterns ───────────────────────────────────────────────────────
 
-describe('ProjectSecurityTab — PII custom patterns', () => {
+describe('RouterSecurityTab — PII custom patterns', () => {
   it('custom patterns textarea is editable', async () => {
     renderTab();
 
@@ -831,7 +831,7 @@ describe('ProjectSecurityTab — PII custom patterns', () => {
 
 // ── RegexFields patterns textarea ─────────────────────────────────────────────
 
-describe('ProjectSecurityTab — RegexFields patterns textarea', () => {
+describe('RouterSecurityTab — RegexFields patterns textarea', () => {
   it('typing into patterns textarea updates the rule', async () => {
     renderTab();
 
@@ -871,7 +871,7 @@ describe('ProjectSecurityTab — RegexFields patterns textarea', () => {
 
 // ── TargetSelector toggle (guardian rule target) ──────────────────────────────
 
-describe('ProjectSecurityTab — TargetSelector toggle', () => {
+describe('RouterSecurityTab — TargetSelector toggle', () => {
   it('toggling both target checkboxes in TargetSelector works for regex rule', async () => {
     renderTab();
 
@@ -916,7 +916,7 @@ describe('ProjectSecurityTab — TargetSelector toggle', () => {
 
 // ── SemanticFields interactions ───────────────────────────────────────────────
 
-describe('ProjectSecurityTab — SemanticFields interactions', () => {
+describe('RouterSecurityTab — SemanticFields interactions', () => {
   it('threshold slider is rendered for semantic rule', async () => {
     renderTab();
 
@@ -949,7 +949,7 @@ describe('ProjectSecurityTab — SemanticFields interactions', () => {
 
 // ── TopicFields interactions ──────────────────────────────────────────────────
 
-describe('ProjectSecurityTab — TopicFields interactions', () => {
+describe('RouterSecurityTab — TopicFields interactions', () => {
   it('allowed topics textarea is rendered and editable for topic rule', async () => {
     renderTab();
 
@@ -981,7 +981,7 @@ describe('ProjectSecurityTab — TopicFields interactions', () => {
 
 // ── ModerationFields interactions ─────────────────────────────────────────────
 
-describe('ProjectSecurityTab — ModerationFields interactions', () => {
+describe('RouterSecurityTab — ModerationFields interactions', () => {
   it('threshold slider is rendered for moderation rule', async () => {
     renderTab();
 
@@ -1050,7 +1050,7 @@ describe('ProjectSecurityTab — ModerationFields interactions', () => {
 // ── Mandatory Custom instructions (moderation) ────────────────────────────────
 // Empty systemPrompt blocks save (saveDisabled=true) and shows error text.
 
-describe('ProjectSecurityTab — mandatory Custom instructions', () => {
+describe('RouterSecurityTab — mandatory Custom instructions', () => {
   it('Save is disabled and shows error when moderation Custom instructions is empty', async () => {
     renderTab();
 
@@ -1092,9 +1092,9 @@ describe('ProjectSecurityTab — mandatory Custom instructions', () => {
 
 // ── Error handling on save ────────────────────────────────────────────────────
 
-describe('ProjectSecurityTab — save error handling', () => {
-  it('shows error message when updateProject rejects', async () => {
-    mockUpdateProject.mockRejectedValueOnce(new Error('Network error'));
+describe('RouterSecurityTab — save error handling', () => {
+  it('shows error message when updateRouter rejects', async () => {
+    mockUpdateRouter.mockRejectedValueOnce(new Error('Network error'));
     renderTab();
 
     await waitFor(() =>
@@ -1107,8 +1107,8 @@ describe('ProjectSecurityTab — save error handling', () => {
     );
   });
 
-  it('shows generic error when updateProject rejects with non-Error', async () => {
-    mockUpdateProject.mockRejectedValueOnce('string error');
+  it('shows generic error when updateRouter rejects with non-Error', async () => {
+    mockUpdateRouter.mockRejectedValueOnce('string error');
     renderTab();
 
     await waitFor(() =>
@@ -1124,8 +1124,8 @@ describe('ProjectSecurityTab — save error handling', () => {
 
 // ── saveDisabled guard (regex error prevents save) ────────────────────────────
 
-describe('ProjectSecurityTab — saveDisabled when regex errors', () => {
-  it('does not call updateProject when there is a regex error', async () => {
+describe('RouterSecurityTab — saveDisabled when regex errors', () => {
+  it('does not call updateRouter when there is a regex error', async () => {
     renderTab();
 
     const addSelect = await waitFor(() =>
@@ -1150,24 +1150,24 @@ describe('ProjectSecurityTab — saveDisabled when regex errors', () => {
 
     // Try to save
     await userEvent.click(screen.getByRole('button', { name: /save security settings/i }));
-    // updateProject should NOT be called (saveDisabled=true)
-    expect(mockUpdateProject).not.toHaveBeenCalled();
+    // updateRouter should NOT be called (saveDisabled=true)
+    expect(mockUpdateRouter).not.toHaveBeenCalled();
   });
 });
 
 // ── Successful save path: setTimeout + models.prompt spread ──────────────────
 
-describe('ProjectSecurityTab — successful save shows saved state', () => {
-  it('shows "Saved!" after successful updateProject and includes model prompt in payload', async () => {
-    const projectWithModels = {
-      ...mockProject,
+describe('RouterSecurityTab — successful save shows saved state', () => {
+  it('shows "Saved!" after successful updateRouter and includes model prompt in payload', async () => {
+    const routerWithModels = {
+      ...mockRouter,
       models: [
         { modelId: 'openai/gpt-4o', prompt: 'system prompt override' },
         { modelId: 'openai/gpt-4o-mini' },
       ],
     };
-    mockUpdateProject.mockResolvedValueOnce({ ...projectWithModels });
-    renderTab(projectWithModels);
+    mockUpdateRouter.mockResolvedValueOnce({ ...routerWithModels });
+    renderTab(routerWithModels);
 
     await waitFor(() =>
       screen.getByRole('button', { name: /save security settings/i })
@@ -1180,7 +1180,7 @@ describe('ProjectSecurityTab — successful save shows saved state', () => {
     { timeout: 3000 });
 
     // Verify models with prompt were included in payload
-    const call = mockUpdateProject.mock.calls[0]!;
+    const call = mockUpdateRouter.mock.calls[0]!;
     const payload = call[1] as { models: Array<{ modelId: string; prompt?: string }> };
     expect(payload.models.find(m => m.modelId === 'openai/gpt-4o')?.prompt).toBe('system prompt override');
     expect(payload.models.find(m => m.modelId === 'openai/gpt-4o-mini')).not.toHaveProperty('prompt');
@@ -1188,10 +1188,10 @@ describe('ProjectSecurityTab — successful save shows saved state', () => {
 
 });
 
-// ── Project missing guardrails/pii keys ──────────────────────────────────────
+// ── Router missing guardrails/pii keys ──────────────────────────────────────
 
-describe('ProjectSecurityTab — project without guardrails or pii keys', () => {
-  it('renders without error when project has no guardrails key', async () => {
+describe('RouterSecurityTab — router without guardrails or pii keys', () => {
+  it('renders without error when router has no guardrails key', async () => {
     renderTab({ id: 'proj-x', name: 'NoPii', models: [] });
     // if(g) is false → no rules set → the add picker should still render
     await waitFor(() =>
@@ -1201,7 +1201,7 @@ describe('ProjectSecurityTab — project without guardrails or pii keys', () => 
     expect(screen.queryByTestId('injection-warning')).toBeNull();
   });
 
-  it('renders without error when project has no pii key', async () => {
+  it('renders without error when router has no pii key', async () => {
     renderTab({ id: 'proj-y', name: 'NoGuard', models: [], guardrails: { rules: [] } });
     // if(p) is false → piiPolicies stays [] → shows "No PII policies configured."
     await waitFor(() =>
@@ -1230,7 +1230,7 @@ describe('ProjectSecurityTab — project without guardrails or pii keys', () => 
 
 // ── updateRule with multiple rules covers r._id !== id arm ────────────────────
 
-describe('ProjectSecurityTab — updateRule with 2 rules covers false arm', () => {
+describe('RouterSecurityTab — updateRule with 2 rules covers false arm', () => {
   it('editing scope on first rule when two rules exist updates only the target rule', async () => {
     renderTab();
 
@@ -1256,10 +1256,10 @@ describe('ProjectSecurityTab — updateRule with 2 rules covers false arm', () =
 
 // ── Threshold ?? fallback: rules loaded with missing threshold ─────────────────
 
-describe('ProjectSecurityTab — threshold ?? fallback for pre-existing rules without threshold', () => {
+describe('RouterSecurityTab — threshold ?? fallback for pre-existing rules without threshold', () => {
   it('SemanticFields renders when config.threshold is undefined', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       guardrails: {
         rules: [
           // threshold deliberately omitted → cfg.threshold ?? 0.82 fires
@@ -1274,7 +1274,7 @@ describe('ProjectSecurityTab — threshold ?? fallback for pre-existing rules wi
 
   it('TopicFields renders when config.threshold is undefined', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       guardrails: {
         rules: [
           { type: 'topic' as const, target: 'both' as const, block: true, config: { modelId: '', allowedTopics: '' } },
@@ -1288,7 +1288,7 @@ describe('ProjectSecurityTab — threshold ?? fallback for pre-existing rules wi
 
   it('ModerationFields renders when config.threshold is undefined', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       guardrails: {
         rules: [
           { type: 'moderation' as const, target: 'both' as const, block: true, config: { modelId: '' } },
@@ -1303,10 +1303,10 @@ describe('ProjectSecurityTab — threshold ?? fallback for pre-existing rules wi
 
 // ── entities ?? ALL_PII_ENTITIES fallback ─────────────────────────────────────
 
-describe('ProjectSecurityTab — PiiPolicyCard entities ?? ALL_PII_ENTITIES fallback', () => {
+describe('RouterSecurityTab — PiiPolicyCard entities ?? ALL_PII_ENTITIES fallback', () => {
   it('policy with null entities renders all entity types as checked via fallback', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       pii: {
         // entities is null → new Set(null ?? ALL_PII_ENTITIES) → all entities checked
         policies: [{ enabled: true, target: 'request' as const, entities: null as unknown as [] }],
@@ -1324,8 +1324,8 @@ describe('ProjectSecurityTab — PiiPolicyCard entities ?? ALL_PII_ENTITIES fall
 
 // ── handleSave early return when saveDisabled=true ───────────────────────────
 
-describe('ProjectSecurityTab — handleSave early return when saveDisabled', () => {
-  it('dispatching form submit while saveDisabled returns early without calling updateProject', async () => {
+describe('RouterSecurityTab — handleSave early return when saveDisabled', () => {
+  it('dispatching form submit while saveDisabled returns early without calling updateRouter', async () => {
     // Simulate saveDisabled via an invalid regex, then dispatch submit via form event
     // (disabled button can't be clicked; form.dispatchEvent bypasses button disabled check)
     renderTab();
@@ -1346,15 +1346,15 @@ describe('ProjectSecurityTab — handleSave early return when saveDisabled', () 
     const form = document.querySelector('form') as HTMLFormElement;
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
 
-    // updateProject must NOT be called
+    // updateRouter must NOT be called
     await new Promise(r => setTimeout(r, 50));
-    expect(mockUpdateProject).not.toHaveBeenCalled();
+    expect(mockUpdateRouter).not.toHaveBeenCalled();
   });
 });
 
 // ── modelOptions fallback: m.id used when m.name is falsy ────────────────────
 
-describe('ProjectSecurityTab — model label fallback to m.id when name is absent', () => {
+describe('RouterSecurityTab — model label fallback to m.id when name is absent', () => {
   it('model without name uses m.id as label in judge dropdown', async () => {
     // Override getModels to return a model with no name (triggers `m.name || m.id`)
     mockGetModels.mockResolvedValueOnce([
@@ -1407,10 +1407,10 @@ describe('ProjectSecurityTab — model label fallback to m.id when name is absen
 
 // ── PiiPolicyCard onChange with 2+ policies (j !== i branch) ─────────────────
 
-describe('ProjectSecurityTab — PII onChange with multiple policies covers j !== i branch', () => {
+describe('RouterSecurityTab — PII onChange with multiple policies covers j !== i branch', () => {
   it('changing one policy when two exist updates only the correct one', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       pii: {
         policies: [
           { enabled: true, target: 'request' as const, entities: [] },
@@ -1441,33 +1441,33 @@ describe('ProjectSecurityTab — PII onChange with multiple policies covers j !=
   });
 });
 
-// ── if (!project) return null (render guard) ─────────────────────────────────
+// ── if (!router) return null (render guard) ─────────────────────────────────
 
-describe('ProjectSecurityTab — renders null when no project', () => {
-  it('returns null (renders nothing) when project is undefined', async () => {
+describe('RouterSecurityTab — renders null when no router', () => {
+  it('returns null (renders nothing) when router is undefined', async () => {
     function NullWrapper() {
       const { Outlet } = require('react-router-dom');
-      return <Outlet context={{ project: undefined, setProject: vi.fn() }} />;
+      return <Outlet context={{ router: undefined, setRouter: vi.fn() }} />;
     }
     const { render: r } = await import('@testing-library/react');
     const { MemoryRouter: MR, Routes: Rs, Route: Rt } = await import('react-router-dom');
     const { container } = r(
-      <MR initialEntries={['/dashboard/projects/proj-1/security']}>
+      <MR initialEntries={['/dashboard/routers/proj-1/security']}>
         <Rs>
-          <Rt path="/dashboard/projects/:id" element={<NullWrapper />}>
-            <Rt path="security" element={<ProjectSecurityTab />} />
+          <Rt path="/dashboard/routers/:id" element={<NullWrapper />}>
+            <Rt path="security" element={<RouterSecurityTab />} />
           </Rt>
         </Rs>
       </MR>
     );
-    // No project → component returns null → nothing rendered inside the outlet
+    // No router → component returns null → nothing rendered inside the outlet
     expect(container.querySelector('form')).toBeNull();
   });
 });
 
 // ── Fallback models MultiSelect ───────────────────────────────────────────────
 
-describe('ProjectSecurityTab — fallback models MultiSelect', () => {
+describe('RouterSecurityTab — fallback models MultiSelect', () => {
   it('SemanticFields renders fallback MultiSelect excluding the primary embedding model', async () => {
     renderTab();
 
@@ -1492,7 +1492,7 @@ describe('ProjectSecurityTab — fallback models MultiSelect', () => {
   it('SemanticFields fallback MultiSelect excludes currently-selected primary model', async () => {
     // Render with a pre-existing semantic rule with embeddingModelId set
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       guardrails: {
         rules: [{
           type: 'semantic' as const,
@@ -1513,7 +1513,7 @@ describe('ProjectSecurityTab — fallback models MultiSelect', () => {
 
   it('SemanticFields fallback MultiSelect calls onChange with updated fallbackModelIds', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       guardrails: {
         rules: [{
           type: 'semantic' as const,
@@ -1535,7 +1535,7 @@ describe('ProjectSecurityTab — fallback models MultiSelect', () => {
 
   it('TopicFields renders fallback MultiSelect excluding the primary judge model', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       guardrails: {
         rules: [{
           type: 'topic' as const,
@@ -1556,7 +1556,7 @@ describe('ProjectSecurityTab — fallback models MultiSelect', () => {
 
   it('TopicFields fallback MultiSelect onChange fires when an option is selected', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       guardrails: {
         rules: [{
           type: 'topic' as const,
@@ -1578,7 +1578,7 @@ describe('ProjectSecurityTab — fallback models MultiSelect', () => {
 
   it('ModerationFields renders fallback MultiSelect excluding the primary judge model', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       guardrails: {
         rules: [{
           type: 'moderation' as const,
@@ -1599,7 +1599,7 @@ describe('ProjectSecurityTab — fallback models MultiSelect', () => {
 
   it('ModerationFields fallback MultiSelect onChange fires when an option is selected', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       guardrails: {
         rules: [{
           type: 'moderation' as const,
@@ -1622,7 +1622,7 @@ describe('ProjectSecurityTab — fallback models MultiSelect', () => {
 
 // ── TargetSelector onChange in SemanticFields / TopicFields / ModerationFields ─
 
-describe('ProjectSecurityTab — TargetSelector onChange in typed rule cards', () => {
+describe('RouterSecurityTab — TargetSelector onChange in typed rule cards', () => {
   it('SemanticFields TargetSelector onChange fires when target is changed', async () => {
     renderTab();
 
@@ -1700,10 +1700,10 @@ describe('ProjectSecurityTab — TargetSelector onChange in typed rule cards', (
 
 // ── PiiPolicyCard outputBufferSize input ──────────────────────────────────────
 
-describe('ProjectSecurityTab — PII outputBufferSize input editing', () => {
+describe('RouterSecurityTab — PII outputBufferSize input editing', () => {
   it('outputBufferSize input is rendered with correct default', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       pii: {
         policies: [{ enabled: true, target: 'response' as const, entities: [], outputBufferSize: 30 }],
       },
@@ -1718,7 +1718,7 @@ describe('ProjectSecurityTab — PII outputBufferSize input editing', () => {
 
   it('outputBufferSize defaults to 30 when not set in policy', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       pii: {
         policies: [{ enabled: true, target: 'response' as const, entities: [] }],
       },
@@ -1730,11 +1730,11 @@ describe('ProjectSecurityTab — PII outputBufferSize input editing', () => {
   });
 });
 
-// ── Pre-existing rules loaded from project ────────────────────────────────────
+// ── Pre-existing rules loaded from router ────────────────────────────────────
 
-describe('ProjectSecurityTab — pre-existing rules from project', () => {
-  it('renders existing moderation rule type badge from project.guardrails', async () => {
-    renderTab(mockProjectWithResponseBlock);
+describe('RouterSecurityTab — pre-existing rules from router', () => {
+  it('renders existing moderation rule type badge from router.guardrails', async () => {
+    renderTab(mockRouterWithResponseBlock);
 
     await waitFor(() => {
       // The rule type badge "Moderation" appears inside the rule card
@@ -1745,7 +1745,7 @@ describe('ProjectSecurityTab — pre-existing rules from project', () => {
   });
 
   it('renders Enabled toggle as checked for loaded blocking rule', async () => {
-    renderTab(mockProjectWithResponseBlock);
+    renderTab(mockRouterWithResponseBlock);
 
     await waitFor(() => {
       const enabledCbs = screen.getAllByTestId('rule-enabled') as HTMLInputElement[];
@@ -1756,11 +1756,11 @@ describe('ProjectSecurityTab — pre-existing rules from project', () => {
 
 // ── handleTargetToggle guard (PiiPolicyCard) ─────────────────────────────────
 
-describe('ProjectSecurityTab — PII target toggle guard', () => {
+describe('RouterSecurityTab — PII target toggle guard', () => {
   it('does not uncheck the only checked PII target (request stays checked)', async () => {
     // Start with target='request' so only request is checked
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       pii: {
         policies: [{ enabled: true, target: 'request' as const, entities: [] }],
       },
@@ -1782,7 +1782,7 @@ describe('ProjectSecurityTab — PII target toggle guard', () => {
   it('switches PII target from both to response-only when request is unchecked', async () => {
     // Start with target='both'
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       pii: {
         policies: [{ enabled: true, target: 'both' as const, entities: [] }],
       },
@@ -1806,7 +1806,7 @@ describe('ProjectSecurityTab — PII target toggle guard', () => {
 
 // ── TargetSelector toggle guard (guardrail rules) ─────────────────────────────
 
-describe('ProjectSecurityTab — TargetSelector guard', () => {
+describe('RouterSecurityTab — TargetSelector guard', () => {
   it('does not uncheck the only checked target in a guardrail rule', async () => {
     renderTab();
 
@@ -1866,7 +1866,7 @@ describe('ProjectSecurityTab — TargetSelector guard', () => {
 
 // ── SemanticFields: threshold + embeddingModel onChange ───────────────────────
 
-describe('ProjectSecurityTab — SemanticFields threshold + embeddingModel', () => {
+describe('RouterSecurityTab — SemanticFields threshold + embeddingModel', () => {
   it('threshold range input changes value', async () => {
     renderTab();
 
@@ -1906,7 +1906,7 @@ describe('ProjectSecurityTab — SemanticFields threshold + embeddingModel', () 
 
 // ── TopicFields: allowedTopics + judge + threshold ────────────────────────────
 
-describe('ProjectSecurityTab — TopicFields interactions', () => {
+describe('RouterSecurityTab — TopicFields interactions', () => {
   it('allowedTopics textarea onChange fires', async () => {
     renderTab();
 
@@ -1964,7 +1964,7 @@ describe('ProjectSecurityTab — TopicFields interactions', () => {
 
 // ── ModerationFields: judge + threshold + systemPrompt onChange ───────────────
 
-describe('ProjectSecurityTab — ModerationFields onChange handlers', () => {
+describe('RouterSecurityTab — ModerationFields onChange handlers', () => {
   it('judge model select in ModerationFields fires onChange', async () => {
     renderTab();
 
@@ -2007,10 +2007,10 @@ describe('ProjectSecurityTab — ModerationFields onChange handlers', () => {
 
 // ── PiiPolicyCard customPatterns textarea onChange ────────────────────────────
 
-describe('ProjectSecurityTab — PII customPatterns onChange', () => {
+describe('RouterSecurityTab — PII customPatterns onChange', () => {
   it('custom patterns textarea fires onChange', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       pii: {
         policies: [{ enabled: true, target: 'request' as const, entities: [] }],
       },
@@ -2030,11 +2030,11 @@ describe('ProjectSecurityTab — PII customPatterns onChange', () => {
 // ── TargetSelector onChange('request') branch (line 234) ─────────────────────
 // Fires when newReq=true, newRes=false — uncheck response while request is checked.
 
-describe('ProjectSecurityTab — TargetSelector onChange request-only branch', () => {
+describe('RouterSecurityTab — TargetSelector onChange request-only branch', () => {
   it('unchecking response while request is checked sets target to request-only', async () => {
     // Load a semantic rule with target='both' so both checkboxes start checked.
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       guardrails: {
         rules: [{
           type: 'semantic' as const,
@@ -2064,11 +2064,11 @@ describe('ProjectSecurityTab — TargetSelector onChange request-only branch', (
 // Guard fires when toggling a flag would leave all three unchecked.
 // The only way to reach it: current state has exactly one flag set and user clicks it.
 
-describe('ProjectSecurityTab — ScopeSelector apply guard all-unchecked', () => {
+describe('RouterSecurityTab — ScopeSelector apply guard all-unchecked', () => {
   it('does not uncheck inject when it is the only flag set', async () => {
     // Load a moderation rule with inject=true and no target (inject-only).
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       guardrails: {
         rules: [{
           type: 'moderation' as const,
@@ -2094,10 +2094,10 @@ describe('ProjectSecurityTab — ScopeSelector apply guard all-unchecked', () =>
 // Line 430 (TopicFields) and line 490 (ModerationFields): cfg.modelId ?? '' fires
 // the '' right side only when modelId is undefined (not '').
 
-describe('ProjectSecurityTab — cfg.modelId undefined fires ?? fallback', () => {
+describe('RouterSecurityTab — cfg.modelId undefined fires ?? fallback', () => {
   it('TopicFields renders when config.modelId is absent (undefined)', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       guardrails: {
         rules: [{
           type: 'topic' as const,
@@ -2116,7 +2116,7 @@ describe('ProjectSecurityTab — cfg.modelId undefined fires ?? fallback', () =>
 
   it('ModerationFields renders when config.modelId is absent (undefined)', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       guardrails: {
         rules: [{
           type: 'moderation' as const,
@@ -2133,20 +2133,20 @@ describe('ProjectSecurityTab — cfg.modelId undefined fires ?? fallback', () =>
 
 // ── detectInjection=true branch in guardrailsPayload (line 758) ───────────────
 // ...(detectInjection ? { detectInjection } : {}) — true branch only fires when
-// the loaded project has detectInjection: true.
+// the loaded router has detectInjection: true.
 
-describe('ProjectSecurityTab — detectInjection=true included in save payload', () => {
-  it('includes detectInjection:true when project.guardrails.detectInjection is set', async () => {
+describe('RouterSecurityTab — detectInjection=true included in save payload', () => {
+  it('includes detectInjection:true when router.guardrails.detectInjection is set', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       guardrails: { detectInjection: true, rules: [] },
     });
 
     await waitFor(() => screen.getByRole('button', { name: /save security settings/i }));
     await userEvent.click(screen.getByRole('button', { name: /save security settings/i }));
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
 
-    const call = mockUpdateProject.mock.calls[0]!;
+    const call = mockUpdateRouter.mock.calls[0]!;
     const payload = call[1] as { guardrails?: { detectInjection?: boolean } };
     expect(payload.guardrails?.detectInjection).toBe(true);
   });
@@ -2154,10 +2154,10 @@ describe('ProjectSecurityTab — detectInjection=true included in save payload',
 
 // ── PiiPolicyCard outputBufferSize onChange ────────────────────────────────────
 
-describe('ProjectSecurityTab — PII outputBufferSize onChange', () => {
+describe('RouterSecurityTab — PII outputBufferSize onChange', () => {
   it('outputBufferSize onChange fires on number input change event', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       pii: {
         policies: [{ enabled: true, target: 'response' as const, entities: [], outputBufferSize: 30 }],
       },
@@ -2175,26 +2175,26 @@ describe('ProjectSecurityTab — PII outputBufferSize onChange', () => {
 
 // ── Profile assignment ───────────────────────────────────────────────────────
 
-const assignedProject = { ...mockProject, securityProfileId: 'security-standard' };
+const assignedRouter = { ...mockRouter, securityProfileId: 'security-standard' };
 
-/** Like renderTab, but keeps the project in state so setProject re-renders the tab. */
+/** Like renderTab, but keeps the router in state so setRouter re-renders the tab. */
 function renderStatefulTab(initial: Record<string, unknown>) {
   function LayoutWrapper() {
-    const [project, setProject] = React.useState(initial);
-    return <Outlet context={{ project, setProject }} />;
+    const [router, setRouter] = React.useState(initial);
+    return <Outlet context={{ router, setRouter }} />;
   }
   return render(
-    <MemoryRouter initialEntries={['/dashboard/projects/proj-1/security']}>
+    <MemoryRouter initialEntries={['/dashboard/routers/proj-1/security']}>
       <Routes>
-        <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-          <Route path="security" element={<ProjectSecurityTab />} />
+        <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+          <Route path="security" element={<RouterSecurityTab />} />
         </Route>
       </Routes>
     </MemoryRouter>
   );
 }
 
-describe('ProjectSecurityTab — security profile assignment', () => {
+describe('RouterSecurityTab — security profile assignment', () => {
   it('starts in custom mode: rules editor and save button visible', async () => {
     renderTab();
     await waitFor(() => expect(screen.getByText('Content Guardrails')).toBeInTheDocument());
@@ -2230,7 +2230,7 @@ describe('ProjectSecurityTab — security profile assignment', () => {
   });
 
   it('while assigned, hides the editor and lists the profile rules and PII policies', async () => {
-    renderTab(assignedProject);
+    renderTab(assignedRouter);
     await waitFor(() => expect(screen.getByLabelText('Security Profile')).toBeInTheDocument());
     expect(screen.queryByText('Content Guardrails')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /save security settings/i })).not.toBeInTheDocument();
@@ -2239,7 +2239,7 @@ describe('ProjectSecurityTab — security profile assignment', () => {
   });
 
   it('lists built-in and user profiles in the select', async () => {
-    renderTab(assignedProject);
+    renderTab(assignedRouter);
     const select = await screen.findByLabelText('Security Profile');
     const values = Array.from(select.querySelectorAll('option')).map(o => o.textContent);
     expect(values).toContain('Standard (built-in)');
@@ -2248,7 +2248,7 @@ describe('ProjectSecurityTab — security profile assignment', () => {
 
   it('selecting another profile reassigns it', async () => {
     const user = userEvent.setup();
-    renderTab(assignedProject);
+    renderTab(assignedRouter);
     const select = await screen.findByLabelText('Security Profile');
     await user.selectOptions(select, 'custom-sec');
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { security: 'custom-sec' }));
@@ -2256,12 +2256,12 @@ describe('ProjectSecurityTab — security profile assignment', () => {
 
   it('switching to Custom clears the profile and prefills its rules', async () => {
     const user = userEvent.setup();
-    mockAssignProfile.mockResolvedValue({ ...mockProject });
-    renderStatefulTab(assignedProject);
+    mockAssignProfile.mockResolvedValue({ ...mockRouter });
+    renderStatefulTab(assignedRouter);
     await waitFor(() => expect(screen.getByLabelText('Security Profile')).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: 'Custom' }));
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { security: null }));
-    // The profile's regex rule is now this project's own editable rule.
+    // The profile's regex rule is now this router's own editable rule.
     await waitFor(() => expect(screen.getByDisplayValue('secret')).toBeInTheDocument());
   });
 
@@ -2284,7 +2284,7 @@ describe('ProjectSecurityTab — security profile assignment', () => {
 
   it('a failed profiles fetch leaves the profile list empty', async () => {
     mockGetProfiles.mockRejectedValue(new Error('nope'));
-    renderTab(assignedProject);
+    renderTab(assignedRouter);
     const select = await screen.findByLabelText('Security Profile');
     expect(Array.from(select.querySelectorAll('option')).map(o => (o as HTMLOptionElement).value)).toEqual(['']);
   });

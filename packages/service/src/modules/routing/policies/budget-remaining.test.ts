@@ -21,17 +21,17 @@ function makeModel(id: string): ModelConfig {
   }
 }
 
-function makeInput(candidates: PolicyInput['candidates'], projectId?: string): PolicyInput {
-  return { request: { model: 'auto', messages: [] }, candidates, projectId } as PolicyInput
+function makeInput(candidates: PolicyInput['candidates'], routerId?: string): PolicyInput {
+  return { request: { model: 'auto', messages: [] }, candidates, routerId } as PolicyInput
 }
 
 describe('budgetRemainingPolicy', () => {
-  it('returns 1.0 for all models when project not found', async () => {
-    mockReadConfig.mockResolvedValue([{ id: 'other-project' }])
+  it('returns 1.0 for all models when router not found', async () => {
+    mockReadConfig.mockResolvedValue([{ id: 'other-router' }])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     const result = await budgetRemainingPolicy(makeInput([
       { model: makeModel('a') },
-    ], 'missing-project'))
+    ], 'missing-router'))
     expect(result.routing[0]!.point).toBe(1.0)
     expect(result.routing[0]!.minHeadroom).toBe(1.0)
     expect(mockGetLimitUsageSnapshot).not.toHaveBeenCalled()

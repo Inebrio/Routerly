@@ -3,8 +3,8 @@ import type {
   ChatCompletionRequest,
   ModelConfig,
   OptimizerCallStat,
-  ProjectConfig,
-  ProjectToken,
+  RouterConfig,
+  RouterToken,
   RoutingCandidate,
   UsageInfo,
 } from '@routerly/shared'
@@ -34,9 +34,9 @@ export interface ProxyContext {
   log: FastifyBaseLogger
 
   // auth (decorated by the existing auth plugin, unchanged)
-  project: ProjectConfig
-  projectId: string
-  token?: ProjectToken
+  router: RouterConfig
+  routerId: string
+  token?: RouterToken
 
   // trace
   traceId: string
@@ -48,7 +48,7 @@ export interface ProxyContext {
   correlationId?: string
   /** Publishes a trace entry on the kernel event bus. Installed by trace.ingress. */
   emit?: (entry: TraceEntry) => void
-  /** Mirror of `project.traceContent`, read once by trace.ingress. */
+  /** Mirror of `router.traceContent`, read once by trace.ingress. */
   captureContent?: boolean
   /** Phase currently being walked, stamped by runProxy so emitters need not repeat it. */
   phase?: string

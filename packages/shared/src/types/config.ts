@@ -228,18 +228,18 @@ export interface ModelConfig {
 /** Effective model computed from ModelInstance + ProviderConnection. Carries connectionId so resilience keys can target the real connection. */
 export type EffectiveModel = ModelConfig & { connectionId: string };
 
-export interface ProjectModelRef {
+export interface RouterModelRef {
   modelId: string;
   prompt?: string;
   /**
-   * Whether this model ref is active for the project. Persisted, but not yet
+   * Whether this model ref is active for the router. Persisted, but not yet
    * consumed by the routing engine (a later plan will wire routing to honor it);
    * toggled today via the MCP `toggle_model` write tool.
    */
   enabled?: boolean;
   /** How these limits interact with the global model limits */
   limitsMode?: LimitsMode;
-  /** Per-project usage limit overrides (take priority over global) */
+  /** Per-router usage limit overrides (take priority over global) */
   limits?: Limit[];
   /** @deprecated use limits instead */
   thresholds?: BudgetThresholds;
@@ -260,7 +260,7 @@ export type SelectorType = 'argmax' | 'weighted-random' | 'round-robin' | 'cheap
 export type FallbackStrategyType = 'next-best' | 'retry-after-cooldown' | 'abort';
 
 /**
- * The three independent kinds of reusable project preset. A project picks a
+ * The three independent kinds of reusable router preset. A router picks a
  * profile or goes custom for each kind separately: routing, optimizers and
  * security are unrelated concerns and share nothing but the envelope.
  */
@@ -291,7 +291,7 @@ export interface OptimizerProfile extends ProfileBase {
 
 /**
  * Guardrails and PII travel together: they are the two halves of what the
- * dashboard already presents as a project's Security tab, and splitting them
+ * dashboard already presents as a router's Security tab, and splitting them
  * into two profile kinds would make the user pick twice for one decision.
  */
 export interface SecurityProfile extends ProfileBase {
@@ -309,7 +309,7 @@ export type ProfileOfKind<K extends ProfileKind> = Extract<Profile, { kind: K }>
 export interface IntentDefinition {
   /** Representative utterances used to compute the intent embedding (centroid). */
   examples: string[];
-  /** Model IDs from the project's candidate pool to route to when this intent is matched. */
+  /** Model IDs from the router's candidate pool to route to when this intent is matched. */
   candidate_models: string[];
 }
 
@@ -374,7 +374,7 @@ export interface RegexGuardConfig {
 }
 
 export interface SemanticGuardConfig {
-  /** Model ID from project's configured models — must be an embedding model. */
+  /** Model ID from router's configured models — must be an embedding model. */
   embeddingModelId: string;
   /** Ordered fallback embedding model IDs, tried in order if the primary fails (not-found or call error). */
   fallbackModelIds?: string[];
@@ -385,7 +385,7 @@ export interface SemanticGuardConfig {
 }
 
 export interface TopicGuardConfig {
-  /** Judge model ID from project's configured models (any LLM provider). Optional only when enforcement is 'inject' (no judge call). */
+  /** Judge model ID from router's configured models (any LLM provider). Optional only when enforcement is 'inject' (no judge call). */
   modelId?: string;
   /** Ordered fallback judge model IDs, tried in order if the primary fails. */
   fallbackModelIds?: string[];
@@ -396,7 +396,7 @@ export interface TopicGuardConfig {
 }
 
 export interface ModerationGuardConfig {
-  /** Judge model ID from project's configured models (any LLM provider). Optional only when enforcement is 'inject' (no judge call). */
+  /** Judge model ID from router's configured models (any LLM provider). Optional only when enforcement is 'inject' (no judge call). */
   modelId?: string;
   /** Ordered fallback judge model IDs, tried in order if the primary fails. */
   fallbackModelIds?: string[];
@@ -439,7 +439,7 @@ export interface GuardrailRule {
   inject?: boolean;
 }
 
-/** Content guardrail configuration for a project (#77). Presence of this config activates guardrails — no separate enabled flag. Each rule carries its own block/log action. */
+/** Content guardrail configuration for a router (#77). Presence of this config activates guardrails — no separate enabled flag. Each rule carries its own block/log action. */
 export interface GuardrailConfig {
   /** When true, run built-in prompt-injection detection on every request (top-level, not a rule). A hit blocks and is logged. */
   detectInjection?: boolean;
@@ -471,7 +471,7 @@ export interface PiiPolicy {
 }
 
 /**
- * PII detection and scrubbing configuration for a project (#76). Just a list of
+ * PII detection and scrubbing configuration for a router (#76). Just a list of
  * policies; the presence of at least one enabled policy activates
  * scrubbing. Each policy controls its own entity set, patterns, and direction.
  */
@@ -480,16 +480,16 @@ export interface PiiConfig {
   policies: PiiPolicy[];
 }
 
-export type ProjectRole = 'viewer' | 'editor' | 'admin';
+export type RouterRole = 'viewer' | 'editor' | 'admin';
 
-export interface ProjectMember {
+export interface RouterMember {
   userId: string;
-  role: ProjectRole;
+  role: RouterRole;
 }
 
 export interface TokenModelRef {
   modelId: string;
-  /** How these limits interact with the project/global limits */
+  /** How these limits interact with the router/global limits */
   limitsMode?: LimitsMode;
   /** Per-token usage limit overrides for this model */
   limits?: Limit[];
@@ -497,9 +497,9 @@ export interface TokenModelRef {
   thresholds?: BudgetThresholds;
 }
 
-export interface ProjectToken {
+export interface RouterToken {
   id: string;
-  /** Project token (stored in plaintext; file permissions protect it) */
+  /** Router token (stored in plaintext; file permissions protect it) */
   token: string;
   /** First 10 characters of the token, for display purposes */
   tokenSnippet?: string;
@@ -527,18 +527,18 @@ export interface PlaygroundPreset {
 }
 
 
-/** Default TTFT timeout per model attempt (ms) for a new project. Low on purpose:
+/** Default TTFT timeout per model attempt (ms) for a new router. Low on purpose:
  *  it is time-to-first-byte, not total duration, so a provider that has not started
  *  answering within two seconds is better replaced by the next candidate. */
-export const DEFAULT_PROJECT_TIMEOUT_MS = 2000;
+export const DEFAULT_ROUTER_TIMEOUT_MS = 2000;
 
-export interface ProjectConfig {
+export interface RouterConfig {
   id: string;
   name: string;
   slug?: string;
   description?: string;
-  tokens: ProjectToken[];
-  members: ProjectMember[];
+  tokens: RouterToken[];
+  members: RouterMember[];
   /** ID of the ModelConfig to use for routing decisions (deprecated, use policies instead) */
   routingModelId?: string;
   /** Whether auto-routing via prompt is enabled. If false, typical load-balancing/fallback logic may apply instead. (deprecated) */
@@ -548,44 +548,44 @@ export interface ProjectConfig {
 
   /** Ordered list of routing policies applied to requests */
   policies?: RoutingPolicy[];
-  models: ProjectModelRef[];
+  models: RouterModelRef[];
   /** TTFT timeout per model attempt (ms). If the first response byte hasn't arrived
    *  within this time, the attempt is aborted and the next candidate is tried.
    *  Does not limit total response duration. `0` disables the timeout: the attempt
-   *  waits as long as the provider takes. Default: DEFAULT_PROJECT_TIMEOUT_MS. */
+   *  waits as long as the provider takes. Default: DEFAULT_ROUTER_TIMEOUT_MS. */
   timeoutMs?: number;
   /** Content guardrails: input blocklist + prompt-injection detection (#77) */
   guardrails?: GuardrailConfig;
   /** PII detection and scrubbing before requests reach the model (#76) */
   pii?: PiiConfig;
-  /** Per-project notification override: channel IDs to dispatch this project's events to (#91) */
+  /** Per-router notification override: channel IDs to dispatch this router's events to (#91) */
   notifications?: { channels: string[] };
   /** Named saved prompts for the playground (#99) */
   playgroundPresets?: PlaygroundPreset[];
   /**
-   * Active routing profile id. Absent means custom: the project's own
+   * Active routing profile id. Absent means custom: the router's own
    * `policies` are used. Same contract for the two ids below.
    */
   routingProfileId?: string;
-  /** Active optimizer profile id. Absent means custom: the project's own `optimizers` are used. */
+  /** Active optimizer profile id. Absent means custom: the router's own `optimizers` are used. */
   optimizerProfileId?: string;
-  /** Active security profile id. Absent means custom: the project's own `guardrails`/`pii` are used. */
+  /** Active security profile id. Absent means custom: the router's own `guardrails`/`pii` are used. */
   securityProfileId?: string;
   /** @deprecated renamed to routingProfileId; migrated at startup. */
   profileId?: string;
   /** Prompt/context optimizer pipeline. Presence activates the subsystem; step order = execution order */
   optimizers?: OptimizerConfig;
   /**
-   * Capture prompts and model answers in this project's traces. Off by default:
+   * Capture prompts and model answers in this router's traces. Off by default:
    * a trace carries metadata only (models, scores, tokens, cost, latency).
    */
   traceContent?: boolean;
 }
 
 /**
- * A named MCP token owned by a user. Unlike ProjectToken (plaintext on disk,
+ * A named MCP token owned by a user. Unlike RouterToken (plaintext on disk,
  * because the proxy must compare it against an incoming Authorization header of
- * unknown project), an MCP token identifies a single user, so it is stored as a
+ * unknown router), an MCP token identifies a single user, so it is stored as a
  * SHA-256 hash and the raw value is shown once, at creation.
  */
 export interface McpToken {
@@ -609,7 +609,7 @@ export interface UserConfig {
   /** bcrypt hash */
   passwordHash: string;
   roleId: string;
-  projectIds: string[];
+  routerIds: string[];
   /** MCP tokens minted by this user. Each grants exactly this user's permissions. */
   mcpTokens?: McpToken[];
   /** SHA-256 hash of the CLI refresh token. Absent means no refresh token issued. */
@@ -634,8 +634,8 @@ export interface ModuleRecord {
 }
 
 export type Permission =
-  | 'project:read'
-  | 'project:write'
+  | 'router:read'
+  | 'router:write'
   | 'model:read'
   | 'model:write'
   | 'user:read'
@@ -901,8 +901,8 @@ interface ChannelBase {
   events?: string[];
   /** Per-channel minimum interval between dispatches in seconds (0 or absent = no cooldown) */
   cooldownSeconds?: number;
-  /** Project IDs this channel applies to; empty/absent = all projects */
-  projects?: string[];
+  /** Router IDs this channel applies to; empty/absent = all routers */
+  routerIds?: string[];
   /** Recipient targeting (U5). Undefined or all-empty = everyone. */
   targets?: ChannelTargets;
 }
@@ -1036,8 +1036,8 @@ export const NOTIFICATION_EVENTS = [
   'auth.token_invalid',
   'config.model_added',
   'config.model_deleted',
-  'config.project_created',
-  'config.project_deleted',
+  'config.router_created',
+  'config.router_deleted',
   'budget.threshold_reached',
   'budget.exceeded',
   'budget.reset',
@@ -1143,7 +1143,7 @@ export function isCompletionCall(callType?: CallType): boolean {
 export interface UsageRecord {
   id: string;
   timestamp: string; // ISO 8601
-  projectId: string;
+  routerId: string;
   modelId: string;
   inputTokens: number;
   outputTokens: number;
@@ -1180,8 +1180,8 @@ export interface UsageRecord {
   /** End-user identifier from the OpenAI `user` field — for per-user cost attribution (#96) */
   endUserId?: string;
   /**
-   * Project token the call authenticated with. A project usually hands out one
-   * token per client, so this narrows a project's traffic down to the caller
+   * Router token the call authenticated with. A router usually hands out one
+   * token per client, so this narrows a router's traffic down to the caller
    * without asking the client for anything: it is read from the bearer token
    * that was presented, never from the payload.
    */

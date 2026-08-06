@@ -1,7 +1,7 @@
 import { defineModule } from '../../core/index.js';
 import { AUTH } from '../../core/tokens.js';
 import { signToken, verifyToken, createSessionToken, generateRawToken } from './jwt.js';
-import { extractProjectToken, resolveProjectByToken } from './auth.js';
+import { extractRouterToken, resolveRouterByToken } from './auth.js';
 import { getEffectiveRoles } from './roles.js';
 
 /**
@@ -18,8 +18,8 @@ export const authModule = defineModule({
       verifyToken,
       createSessionToken,
       generateRawToken,
-      extractProjectToken,
-      resolveProjectByToken,
+      extractRouterToken,
+      resolveRouterByToken,
       getEffectiveRoles,
     });
   },

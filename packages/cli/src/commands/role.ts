@@ -55,12 +55,12 @@ Examples:
   # Create a developer role with multiple permissions
   routerly role add \\
     --id developer --name "Developer" \\
-    --permissions "usage:read,models:read,projects:read"
+    --permissions "usage:read,models:read,routers:read"
 
-  # Create an operator role with full model and project access
+  # Create an operator role with full model and router access
   routerly role add \\
     --id operator --name "Operator" \\
-    --permissions "usage:read,models:read,models:write,projects:read,projects:write"
+    --permissions "usage:read,models:read,models:write,routers:read,routers:write"
 `)
     .requiredOption('--id <id>', 'Role identifier (e.g. operator)')
     .requiredOption('--name <name>', 'Human-readable role name')
@@ -92,7 +92,7 @@ Examples:
 
   # Rename and update permissions at the same time
   routerly role edit developer \\
-    --name "Engineer" --permissions "usage:read,models:read,projects:write"
+    --name "Engineer" --permissions "usage:read,models:read,routers:write"
 `)
     .option('--name <name>', 'New role name')
     .option('--permissions <perms>', 'New comma-separated permissions (replaces existing)')

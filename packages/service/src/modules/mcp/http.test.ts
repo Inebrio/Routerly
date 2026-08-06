@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Fastify, { type FastifyInstance } from 'fastify'
-import type { McpToken, ProjectConfig, UserConfig } from '@routerly/shared'
+import type { McpToken, RouterConfig, UserConfig } from '@routerly/shared'
 
 vi.mock('../config/loader.js', () => ({
   readConfig: vi.fn(),
@@ -25,11 +25,11 @@ import { hashMcpToken } from './tokens.js'
 const mockReadConfig = vi.mocked(readConfig)
 const mockWriteConfig = vi.mocked(writeConfig)
 
-const PROJECT = {
+const ROUTER_CONFIG = {
   id: 'proj-1',
   name: 'Alpha',
   models: [{ modelId: 'openai/gpt-4o' }],
-} as unknown as ProjectConfig
+} as unknown as RouterConfig
 
 const RAW_VIEWER = 'sk-rt-mcp-viewer-token'
 const RAW_ADMIN = 'sk-rt-mcp-admin-token'
@@ -54,7 +54,7 @@ const USERS = [
     email: 'viewer@routerly.ai',
     passwordHash: 'x',
     roleId: 'viewer',
-    projectIds: ['proj-1'],
+    routerIds: ['proj-1'],
     mcpTokens: [
       mcpToken('tok-viewer', RAW_VIEWER),
       mcpToken('tok-expired', RAW_EXPIRED, '2000-01-01T00:00:00.000Z'),
@@ -65,7 +65,7 @@ const USERS = [
     email: 'admin@routerly.ai',
     passwordHash: 'x',
     roleId: 'admin',
-    projectIds: ['proj-1'],
+    routerIds: ['proj-1'],
     mcpTokens: [mcpToken('tok-admin', RAW_ADMIN)],
   },
 ] as unknown as UserConfig[]
@@ -116,7 +116,7 @@ beforeEach(() => {
   mockWriteConfig.mockReset()
   mockWriteConfig.mockResolvedValue(undefined as never)
   mockReadConfig.mockImplementation(async (key: string) => {
-    if (key === 'projects') return [PROJECT] as never
+    if (key === 'routers') return [ROUTER_CONFIG] as never
     if (key === 'users') return USERS as never
     return [] as never
   })
@@ -134,8 +134,8 @@ describe('mcpHttpRoutes auth', () => {
     expect(JSON.parse(res.body).message).toContain('Invalid MCP token')
   })
 
-  it('rejects a project token, which is not an MCP token (401)', async () => {
-    const res = await post('sk-rt-plain-project-token', rpc('tools/list'))
+  it('rejects a router token, which is not an MCP token (401)', async () => {
+    const res = await post('sk-rt-plain-router-token', rpc('tools/list'))
     expect(res.statusCode).toBe(401)
   })
 
@@ -152,16 +152,16 @@ describe('mcpHttpRoutes JSON-RPC', () => {
     expect(res.statusCode).toBe(200)
     const names = JSON.parse(res.body).result.tools.map((t: { name: string }) => t.name)
     expect(names).toContain('list_models')
-    expect(names).toContain('list_projects')
-    // Viewer holds no project:write / token:write, so no write tool is listed.
-    expect(names).not.toContain('create_project_token')
+    expect(names).toContain('list_routers')
+    // Viewer holds no router:write / token:write, so no write tool is listed.
+    expect(names).not.toContain('create_router_token')
     expect(names).not.toContain('toggle_model')
   })
 
   it('lists the write tools for an admin token (200)', async () => {
     const res = await post(RAW_ADMIN, rpc('tools/list'))
     const names = JSON.parse(res.body).result.tools.map((t: { name: string }) => t.name)
-    expect(names).toContain('create_project_token')
+    expect(names).toContain('create_router_token')
     expect(names).toContain('toggle_model')
   })
 
@@ -182,7 +182,7 @@ describe('mcpHttpRoutes JSON-RPC', () => {
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
     expect(body.result.isError).toBe(true)
-    expect(body.result.content[0].text).toContain('project:write')
-    expect(mockWriteConfig).not.toHaveBeenCalledWith('projects', expect.anything())
+    expect(body.result.content[0].text).toContain('router:write')
+    expect(mockWriteConfig).not.toHaveBeenCalledWith('routers', expect.anything())
   })
 })

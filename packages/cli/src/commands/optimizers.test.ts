@@ -41,7 +41,7 @@ const installed = [
   { id: 'ccr', klass: 'recoverable', installed: true },
 ];
 
-const baseProject = {
+const baseRouter = {
   id: 'proj-1',
   name: 'my-api',
   models: [{ modelId: 'gpt-4o' }],
@@ -125,20 +125,20 @@ describe('optimizers config', () => {
   });
 
   it('enables a step and combines with a threshold in one PUT', async () => {
-    const updated = { ...baseProject, optimizers: { steps: [{ id: 'ccr', enabled: true, threshold: 8 }] } };
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(updated);
+    const updated = { ...baseRouter, optimizers: { steps: [{ id: 'ccr', enabled: true, threshold: 8 }] } };
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(updated);
     await makeCmd().parseAsync(['node', 'optimizers', 'config', 'my-api', '--enable', 'ccr', '--threshold', 'ccr=8']);
-    expect(mockApi).toHaveBeenNthCalledWith(1, 'GET', '/api/projects');
+    expect(mockApi).toHaveBeenNthCalledWith(1, 'GET', '/api/routers');
     const putCall = mockApi.mock.calls[1]!;
     expect(putCall[0]).toBe('PUT');
-    expect(putCall[1]).toBe('/api/projects/proj-1');
+    expect(putCall[1]).toBe('/api/routers/proj-1');
     expect(putCall[2].optimizers).toEqual({ steps: [{ id: 'ccr', enabled: true, threshold: 8 }] });
     expect(putCall[2].name).toBe('my-api');
     expect(putCall[2].models).toEqual([{ modelId: 'gpt-4o' }]);
   });
 
   it('merges enable/disable onto existing steps without dropping them', async () => {
-    const existing = { ...baseProject, optimizers: { steps: [{ id: 'ccr', enabled: true }, { id: 'rtk', enabled: true }] } };
+    const existing = { ...baseRouter, optimizers: { steps: [{ id: 'ccr', enabled: true }, { id: 'rtk', enabled: true }] } };
     mockApi.mockResolvedValueOnce([existing]).mockResolvedValueOnce(existing);
     await makeCmd().parseAsync(['node', 'optimizers', 'config', 'my-api', '--disable', 'rtk', '--enable', 'headroom']);
     const body = mockApi.mock.calls[1]![2];
@@ -151,7 +151,7 @@ describe('optimizers config', () => {
 
   it('reorders steps per --order, unmentioned kept at the end in original order', async () => {
     const existing = {
-      ...baseProject,
+      ...baseRouter,
       optimizers: { steps: [{ id: 'ccr', enabled: true }, { id: 'rtk', enabled: true }, { id: 'headroom', enabled: true }] },
     };
     mockApi.mockResolvedValueOnce([existing]).mockResolvedValueOnce(existing);
@@ -161,8 +161,8 @@ describe('optimizers config', () => {
   });
 
   it('outputs valid JSON with --json', async () => {
-    const updated = { ...baseProject, optimizers: { steps: [{ id: 'ccr', enabled: true }] } };
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(updated);
+    const updated = { ...baseRouter, optimizers: { steps: [{ id: 'ccr', enabled: true }] } };
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(updated);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'optimizers', 'config', 'my-api', '--enable', 'ccr', '--json']);
@@ -170,7 +170,7 @@ describe('optimizers config', () => {
   });
 
   it('rejects a malformed --threshold', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+    mockApi.mockResolvedValueOnce([baseRouter]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'optimizers', 'config', 'my-api', '--threshold', 'ccr=notanumber'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
@@ -178,7 +178,7 @@ describe('optimizers config', () => {
   });
 
   it('puts --checkpoint on the llmlingua-2 step, which is the only one that runs on a model', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(baseProject);
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(baseRouter);
     await makeCmd().parseAsync([
       'node', 'optimizers', 'config', 'my-api',
       '--enable', 'llmlingua-2', '--checkpoint', 'xlm-roberta-large-int8',
@@ -189,7 +189,7 @@ describe('optimizers config', () => {
     ]);
   });
 
-  it('exits 1 when project not found', async () => {
+  it('exits 1 when router not found', async () => {
     mockApi.mockResolvedValueOnce([]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'optimizers', 'config', 'no-such', '--enable', 'ccr'])).rejects.toThrow('exit');
@@ -199,7 +199,7 @@ describe('optimizers config', () => {
 
   it('exits 1 on ApiError from PUT', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new ApiError(403, 'optimizers:manage required'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new ApiError(403, 'optimizers:manage required'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'optimizers', 'config', 'my-api', '--enable', 'ccr'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
@@ -350,14 +350,14 @@ describe('optimizers preview', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('sends the project steps + user messages and prints deltas', async () => {
-    const project = { ...baseProject, optimizers: { steps: [{ id: 'ccr', enabled: true }] } };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(previewResult);
+  it('sends the router steps + user messages and prints deltas', async () => {
+    const router = { ...baseRouter, optimizers: { steps: [{ id: 'ccr', enabled: true }] } };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(previewResult);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'optimizers', 'preview', 'my-api', '--message', 'hello', '--message', 'world']);
     expect(mockApi).toHaveBeenNthCalledWith(2, 'POST', '/api/optimizers/preview', {
-      projectId: 'proj-1',
+      routerId: 'proj-1',
       sampleMessages: [
         { role: 'user', content: 'hello' },
         { role: 'user', content: 'world' },
@@ -370,7 +370,7 @@ describe('optimizers preview', () => {
   });
 
   it('outputs valid JSON with --json', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(previewResult);
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(previewResult);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'optimizers', 'preview', 'my-api', '--message', 'hi', '--json']);
@@ -394,8 +394,8 @@ describe('optimizers preview', () => {
   });
 
   it('sends a shipped conversation with --fixture', async () => {
-    const project = { ...baseProject, optimizers: { steps: [{ id: 'ccr', enabled: true }] } };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(previewResult);
+    const router = { ...baseRouter, optimizers: { steps: [{ id: 'ccr', enabled: true }] } };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(previewResult);
     await makeCmd().parseAsync(['node', 'optimizers', 'preview', 'my-api', '--fixture', 'support-chat-en']);
     const body = mockApi.mock.calls[1]![2];
     expect(mockApi.mock.calls[1]![1]).toBe('/api/optimizers/preview');
@@ -415,7 +415,7 @@ describe('optimizers preview', () => {
   });
 
   it('shows what each step saved, flags a rolled-back one and explains a skip', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce({
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce({
       estimatedTokensBefore: 100,
       estimatedTokensAfter: 60,
       perStep: [
@@ -434,7 +434,7 @@ describe('optimizers preview', () => {
     expect(out).toContain('model not installed');
   });
 
-  it('exits 1 when project not found', async () => {
+  it('exits 1 when router not found', async () => {
     mockApi.mockResolvedValueOnce([]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'optimizers', 'preview', 'no-such', '--message', 'hi'])).rejects.toThrow('exit');
@@ -444,7 +444,7 @@ describe('optimizers preview', () => {
 
   it('exits 1 on ApiError from preview', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new ApiError(400, 'bad preview'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new ApiError(400, 'bad preview'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'optimizers', 'preview', 'my-api', '--message', 'hi'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);

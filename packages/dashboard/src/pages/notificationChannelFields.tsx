@@ -7,8 +7,8 @@ import { Bell, Users, FolderOpen } from 'lucide-react';
 import { CHANNEL_SECRET_FIELDS } from '@routerly/shared';
 import { MultiSelect } from '../components/MultiSelect';
 import { SearchableSelect } from '../components/SearchableSelect';
-import { ALL_PERMISSIONS, getProjects } from '../api';
-import type { Permission, Project } from '../api';
+import { ALL_PERMISSIONS, getRouters } from '../api';
+import type { Permission, Router } from '../api';
 import type { Role, User } from '../api';
 
 export type ChannelProvider =
@@ -53,8 +53,8 @@ const EVENT_LABELS: Record<string, string> = {
   'auth.token_invalid':        'Auth – Token Invalid',
   'config.model_added':        'Config – Model Added',
   'config.model_deleted':      'Config – Model Deleted',
-  'config.project_created':    'Config – Project Created',
-  'config.project_deleted':    'Config – Project Deleted',
+  'config.router_created':    'Config – Router Created',
+  'config.router_deleted':    'Config – Router Deleted',
   'budget.threshold_reached':  'Budget – Threshold Reached',
   'budget.exceeded':           'Budget – Exceeded',
   'budget.reset':              'Budget – Reset',
@@ -68,8 +68,8 @@ import { NOTIFICATION_EVENTS } from '@routerly/shared';
 export const EVENT_OPTIONS = NOTIFICATION_EVENTS.map(e => ({ value: e, label: EVENT_LABELS[e] ?? e }));
 
 const PERM_LABELS_LOCAL: Record<Permission, string> = {
-  'project:read':       'Projects – Read',
-  'project:write':      'Projects – Write',
+  'router:read':       'Routers – Read',
+  'router:write':      'Routers – Write',
   'model:read':         'Models – Read',
   'model:write':        'Models – Write',
   'user:read':          'Users – Read',
@@ -335,17 +335,17 @@ type TargetsProps = {
   users: User[];
 };
 
-/** Events + Projects + Cooldown section (Routing tab). */
+/** Events + Routers + Cooldown section (Routing tab). */
 export function RoutingEditFields({
   form, onChange,
 }: Pick<TargetsProps, 'form' | 'onChange'>) {
   const events = (form['events'] as string[] | undefined) ?? [];
   const cooldownSeconds = typeof form['cooldownSeconds'] === 'number' ? form['cooldownSeconds'] : 0;
-  const selectedProjects = (form['projects'] as string[] | undefined) ?? [];
+  const selectedRouters = (form['routers'] as string[] | undefined) ?? [];
 
-  const [allProjects, setAllProjects] = useState<Project[]>([]);
-  useEffect(() => { getProjects().then(setAllProjects).catch(/* v8 ignore next */ () => {}); }, []);
-  const projectOptions = allProjects.map(p => ({ value: p.id, label: p.name }));
+  const [allRouters, setAllRouters] = useState<Router[]>([]);
+  useEffect(() => { getRouters().then(setAllRouters).catch(/* v8 ignore next */ () => {}); }, []);
+  const routerOptions = allRouters.map(p => ({ value: p.id, label: p.name }));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -362,15 +362,15 @@ export function RoutingEditFields({
         </p>
       </div>
       <div>
-        <div style={sectionLabel}><FolderOpen size={11} /> Projects</div>
+        <div style={sectionLabel}><FolderOpen size={11} /> Routers</div>
         <MultiSelect
-          options={projectOptions}
-          value={selectedProjects}
-          onChange={v => onChange('projects', v.length ? v : undefined)}
-          placeholder="All projects (leave empty for all)"
+          options={routerOptions}
+          value={selectedRouters}
+          onChange={v => onChange('routers', v.length ? v : undefined)}
+          placeholder="All routers (leave empty for all)"
         />
         <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '5px 0 0' }}>
-          Leave empty to receive events from all projects.
+          Leave empty to receive events from all routers.
         </p>
       </div>
       <div>

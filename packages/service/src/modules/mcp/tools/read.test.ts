@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { ModelConfig, ProjectConfig } from '@routerly/shared'
+import type { ModelConfig, RouterConfig } from '@routerly/shared'
 
 vi.mock('../../config/loader.js', () => ({
   readConfig: vi.fn(),
@@ -31,11 +31,11 @@ import {
   usageSummaryTool,
   budgetStatusTool,
   metricsSnapshotTool,
-  listProjectsTool,
+  listRoutersTool,
 } from './read.js'
 import { expectNoSecrets } from './expectNoSecrets.js'
 import { splitModelsIntoInstancesConnections } from '../../../test-support/effective-models.js'
-import { mcpAuthContext, TEST_MCP_PROJECT } from '../../../test-support/mcp-auth.js'
+import { mcpAuthContext, TEST_MCP_ROUTER } from '../../../test-support/mcp-auth.js'
 
 const mockReadConfig = vi.mocked(readConfig)
 const mockRouteRequest = vi.mocked(routeRequest)
@@ -60,13 +60,13 @@ function model(overrides: Partial<ModelConfig> = {}): ModelConfig {
   }
 }
 
-const project = TEST_MCP_PROJECT
+const router = TEST_MCP_ROUTER
 
-// Single accessible project: projectId stays optional on every project-scoped tool.
+// Single accessible router: routerId stays optional on every router-scoped tool.
 const authCtx = mcpAuthContext()
 
 // list_models is gateway-wide; the handler ignores authCtx entirely.
-const emptyAuthCtx = mcpAuthContext({ projects: [] })
+const emptyAuthCtx = mcpAuthContext({ routers: [] })
 
 function mockModels(models: ModelConfig[]) {
   const { instances, connections } = splitModelsIntoInstancesConnections(models)
@@ -160,7 +160,7 @@ describe('routePreviewTool', () => {
     expect(routePreviewTool.requires.key).toBe('routing.router')
   })
 
-  it('returns ordered candidate ids/weights and the trace for the auth project', async () => {
+  it('returns ordered candidate ids/weights and the trace for the auth router', async () => {
     mockRouteRequest.mockResolvedValue({
       models: [
         { model: 'openai/gpt-4o', weight: 2 },
@@ -181,41 +181,41 @@ describe('routePreviewTool', () => {
       { model: 'anthropic/claude', weight: 1 },
     ])
     expect(parsed.trace[0].message).toBe('router:result')
-    // routeRequest is called with the resolved project, minimal request.
+    // routeRequest is called with the resolved router, minimal request.
     const call = mockRouteRequest.mock.calls[0]!
-    expect(call[1]).toBe(project)
+    expect(call[1]).toBe(router)
   })
 
-  it('resolves an explicit projectId against the accessible projects only', async () => {
+  it('resolves an explicit routerId against the accessible routers only', async () => {
     mockRouteRequest.mockResolvedValue({ models: [], trace: [] } as never)
-    const beta = { id: 'proj-2', name: 'Beta', models: [] } as unknown as ProjectConfig
-    const ctx = mcpAuthContext({ projects: [project, beta] })
+    const beta = { id: 'proj-2', name: 'Beta', models: [] } as unknown as RouterConfig
+    const ctx = mcpAuthContext({ routers: [router, beta] })
 
-    const ok = await routePreviewTool.handler({ projectId: 'Beta' }, ctx)
+    const ok = await routePreviewTool.handler({ routerId: 'Beta' }, ctx)
     expect(ok.isError).toBeUndefined()
     expect(mockRouteRequest.mock.calls[0]![1]).toBe(beta)
 
-    const denied = await routePreviewTool.handler({ projectId: 'proj-9' }, ctx)
+    const denied = await routePreviewTool.handler({ routerId: 'proj-9' }, ctx)
     expect(denied.isError).toBe(true)
     expect(denied.content[0]!.text).toContain('not accessible')
   })
 
-  it('requires projectId when the token reaches several projects', async () => {
+  it('requires routerId when the token reaches several routers', async () => {
     const ctx = mcpAuthContext({
-      projects: [project, { id: 'proj-2', name: 'Beta', models: [] } as unknown as ProjectConfig],
+      routers: [router, { id: 'proj-2', name: 'Beta', models: [] } as unknown as RouterConfig],
     })
 
     const res = await routePreviewTool.handler({}, ctx)
 
     expect(res.isError).toBe(true)
-    expect(res.content[0]!.text).toContain('projectId is required')
+    expect(res.content[0]!.text).toContain('routerId is required')
   })
 
-  it('reports no accessible project when the token reaches none', async () => {
-    const res = await routePreviewTool.handler({}, mcpAuthContext({ projects: [] }))
+  it('reports no accessible router when the token reaches none', async () => {
+    const res = await routePreviewTool.handler({}, mcpAuthContext({ routers: [] }))
 
     expect(res.isError).toBe(true)
-    expect(res.content[0]!.text).toContain('no project')
+    expect(res.content[0]!.text).toContain('no router')
   })
 
   it('leaks no upstream key in candidates or trace', async () => {
@@ -247,21 +247,21 @@ describe('usageSummaryTool', () => {
     expect(usageSummaryTool.requires.key).toBe('usage.tracker')
   })
 
-  it('aggregates count/cost/tokens for the auth project within the window only', async () => {
+  it('aggregates count/cost/tokens for the auth router within the window only', async () => {
     const now = Date.now()
     mockReadUsageRecords.mockResolvedValue([
-      { projectId: 'proj-1', timestamp: new Date(now - 3_600_000).toISOString(), cost: 0.5, inputTokens: 100, outputTokens: 40 },
-      { projectId: 'proj-1', timestamp: new Date(now - 2 * 3_600_000).toISOString(), cost: 0.25, inputTokens: 50, outputTokens: 10 },
-      // other project: excluded
-      { projectId: 'proj-2', timestamp: new Date(now).toISOString(), cost: 99, inputTokens: 9, outputTokens: 9 },
+      { routerId: 'proj-1', timestamp: new Date(now - 3_600_000).toISOString(), cost: 0.5, inputTokens: 100, outputTokens: 40 },
+      { routerId: 'proj-1', timestamp: new Date(now - 2 * 3_600_000).toISOString(), cost: 0.25, inputTokens: 50, outputTokens: 10 },
+      // other router: excluded
+      { routerId: 'proj-2', timestamp: new Date(now).toISOString(), cost: 99, inputTokens: 9, outputTokens: 9 },
       // out of window: excluded
-      { projectId: 'proj-1', timestamp: new Date(now - 48 * 3_600_000).toISOString(), cost: 9, inputTokens: 9, outputTokens: 9 },
+      { routerId: 'proj-1', timestamp: new Date(now - 48 * 3_600_000).toISOString(), cost: 9, inputTokens: 9, outputTokens: 9 },
     ] as never)
 
     const res = await usageSummaryTool.handler({ windowHours: 24 }, authCtx)
 
     expect(JSON.parse(res.content[0]!.text)).toEqual({
-      projectId: 'proj-1',
+      routerId: 'proj-1',
       windowHours: 24,
       count: 2,
       cost: 0.75,
@@ -292,7 +292,7 @@ describe('budgetStatusTool', () => {
     expect(budgetStatusTool.requires.key).toBe('cost.budget')
   })
 
-  it('reports per-model limit snapshots for the project, no secrets', async () => {
+  it('reports per-model limit snapshots for the router, no secrets', async () => {
     mockModels([model()])
     mockGetLimitUsageSnapshot.mockResolvedValue([
       { metric: 'cost', window: 'daily', value: 10, current: 3, remaining: 7 },
@@ -308,7 +308,7 @@ describe('budgetStatusTool', () => {
     ])
     expect(mockGetLimitUsageSnapshot).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'openai/gpt-4o' }),
-      project,
+      router,
     )
     expectNoSecrets(res.content[0]!.text, [SECRET_KEY, SECRET_CF])
   })
@@ -323,63 +323,63 @@ describe('metricsSnapshotTool', () => {
     expect(metricsSnapshotTool.requires.key).toBe('observability.registry')
   })
 
-  it('returns only the auth project slice, never other projects', async () => {
+  it('returns only the auth router slice, never other routers', async () => {
     mockGetMetricsSnapshot.mockResolvedValue({
       agg: {
         requests: new Map([
-          ['a', { labels: { project: 'Alpha', model: 'openai/gpt-4o', provider: 'openai', status: 'success' }, value: 5 }],
-          ['b', { labels: { project: 'Beta', model: 'x/secret-model', provider: 'openai', status: 'success' }, value: 99 }],
+          ['a', { labels: { router: 'Alpha', model: 'openai/gpt-4o', provider: 'openai', status: 'success' }, value: 5 }],
+          ['b', { labels: { router: 'Beta', model: 'x/secret-model', provider: 'openai', status: 'success' }, value: 99 }],
         ]),
         tokens: new Map([
-          ['c', { labels: { project: 'Alpha', model: 'openai/gpt-4o', type: 'input' }, value: 200 }],
-          ['d', { labels: { project: 'Beta', model: 'x/secret-model', type: 'input' }, value: 999 }],
+          ['c', { labels: { router: 'Alpha', model: 'openai/gpt-4o', type: 'input' }, value: 200 }],
+          ['d', { labels: { router: 'Beta', model: 'x/secret-model', type: 'input' }, value: 999 }],
         ]),
         cost: new Map([
-          ['e', { labels: { project: 'Alpha', model: 'openai/gpt-4o' }, value: 1.5 }],
+          ['e', { labels: { router: 'Alpha', model: 'openai/gpt-4o' }, value: 1.5 }],
         ]),
         durations: new Map([
-          ['f', { labels: { project: 'Alpha', model: 'openai/gpt-4o' }, latencies: [100, 200, 300] }],
-          ['g', { labels: { project: 'Beta', model: 'x/secret-model' }, latencies: [1, 2] }],
+          ['f', { labels: { router: 'Alpha', model: 'openai/gpt-4o' }, latencies: [100, 200, 300] }],
+          ['g', { labels: { router: 'Beta', model: 'x/secret-model' }, latencies: [1, 2] }],
         ]),
       },
-      projectName: (id: string) => id,
+      routerName: (id: string) => id,
       modelInfo: (id: string) => ({ model: id, provider: 'x' }),
-      projects: [],
+      routers: [],
       models: [],
     } as never)
 
     const res = await metricsSnapshotTool.handler({}, authCtx)
     const parsed = JSON.parse(res.content[0]!.text)
 
-    expect(parsed.project).toEqual({ id: 'proj-1', name: 'Alpha' })
+    expect(parsed.router).toEqual({ id: 'proj-1', name: 'Alpha' })
     expect(parsed.requests).toEqual([{ model: 'openai/gpt-4o', provider: 'openai', status: 'success', value: 5 }])
     expect(parsed.tokens).toEqual([{ model: 'openai/gpt-4o', type: 'input', value: 200 }])
     expect(parsed.cost).toEqual([{ model: 'openai/gpt-4o', value: 1.5 }])
     expect(parsed.latency).toEqual([{ model: 'openai/gpt-4o', count: 3, p50: 200, p95: 300 }])
-    // No other project's name/model may appear.
+    // No other router's name/model may appear.
     expect(res.content[0]!.text).not.toContain('Beta')
     expect(res.content[0]!.text).not.toContain('secret-model')
   })
 })
 
-describe('listProjectsTool', () => {
+describe('listRoutersTool', () => {
   beforeEach(() => mockReadConfig.mockReset())
 
   it('is a read-scoped tool gated on the config-store DI token', () => {
-    expect(listProjectsTool.name).toBe('list_projects')
-    expect(listProjectsTool.scope).toBe('read')
-    expect(listProjectsTool.requires.key).toBe('config.store')
+    expect(listRoutersTool.name).toBe('list_routers')
+    expect(listRoutersTool.scope).toBe('read')
+    expect(listRoutersTool.requires.key).toBe('config.store')
   })
 
-  it('returns every accessible project, never one outside the token scope', async () => {
-    // A second project exists in config; it is not in authCtx.projects, so it
+  it('returns every accessible router, never one outside the token scope', async () => {
+    // A second router exists in config; it is not in authCtx.routers, so it
     // must never appear in the output.
     mockReadConfig.mockResolvedValue([
-      project,
+      router,
       { id: 'proj-2', name: 'Beta', models: [] },
     ] as never)
 
-    const res = await listProjectsTool.handler({}, authCtx)
+    const res = await listRoutersTool.handler({}, authCtx)
     const parsed = JSON.parse(res.content[0]!.text)
 
     expect(parsed).toEqual([{ id: 'proj-1', name: 'Alpha', modelCount: 1 }])
@@ -388,15 +388,15 @@ describe('listProjectsTool', () => {
     expectNoSecrets(res.content[0]!.text, [SECRET_KEY, SECRET_CF])
   })
 
-  it('lists all projects the token owner can reach', async () => {
+  it('lists all routers the token owner can reach', async () => {
     const ctx = mcpAuthContext({
-      projects: [
-        project,
-        { id: 'proj-2', name: 'Beta', models: [{ modelId: 'a' }, { modelId: 'b' }] } as unknown as ProjectConfig,
+      routers: [
+        router,
+        { id: 'proj-2', name: 'Beta', models: [{ modelId: 'a' }, { modelId: 'b' }] } as unknown as RouterConfig,
       ],
     })
 
-    const parsed = JSON.parse((await listProjectsTool.handler({}, ctx)).content[0]!.text)
+    const parsed = JSON.parse((await listRoutersTool.handler({}, ctx)).content[0]!.text)
 
     expect(parsed).toEqual([
       { id: 'proj-1', name: 'Alpha', modelCount: 1 },
@@ -409,8 +409,8 @@ describe('tool permissions', () => {
   it('gates every read tool on the matching dashboard permission', () => {
     expect(listModelsTool.permission).toBe('model:read')
     expect(getModelInstanceTool.permission).toBe('model:read')
-    expect(routePreviewTool.permission).toBe('project:read')
-    expect(listProjectsTool.permission).toBe('project:read')
+    expect(routePreviewTool.permission).toBe('router:read')
+    expect(listRoutersTool.permission).toBe('router:read')
     expect(usageSummaryTool.permission).toBe('report:read')
     expect(budgetStatusTool.permission).toBe('report:read')
     expect(metricsSnapshotTool.permission).toBe('report:read')

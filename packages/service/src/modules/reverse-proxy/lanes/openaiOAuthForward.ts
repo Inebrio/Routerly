@@ -236,7 +236,7 @@ export async function* streamOpenAIOAuthChunks(
   body: Record<string, unknown>,
   model: ModelConfig,
   log: FastifyBaseLogger,
-  opts: { traceId: string; projectId: string; pii?: PiiConfig | undefined; tokenId?: string | undefined },
+  opts: { traceId: string; routerId: string; pii?: PiiConfig | undefined; tokenId?: string | undefined },
 ): AsyncGenerator<StreamChunk> {
   const startMs = Date.now();
   const modelId = model.id.includes('/') ? model.id.split('/').slice(1).join('/') : model.id;
@@ -380,9 +380,9 @@ export async function* streamOpenAIOAuthChunks(
     yield chunk({}, sawTool ? 'tool_calls' : 'stop', { prompt_tokens: inputTokens, completion_tokens: outputTokens });
     outcome = 'success';
   } finally {
-    if (opts.projectId) {
+    if (opts.routerId) {
       void trackUsage({
-        projectId: opts.projectId, model, inputTokens, outputTokens,
+        routerId: opts.routerId, model, inputTokens, outputTokens,
         latencyMs: Date.now() - startMs, outcome, callType: 'completion', traceId: opts.traceId,
         ...(opts.tokenId ? { tokenId: opts.tokenId } : {}),
       }).catch(() => {});
@@ -458,12 +458,12 @@ export async function forwardOpenAIOAuthSSE(
   model: ModelConfig,
   log: FastifyBaseLogger,
   traceId: string,
-  projectId: string,
+  routerId: string,
   piiConfig?: PiiConfig,
   tokenId?: string,
 ): Promise<void> {
   try {
-    for await (const chunk of streamOpenAIOAuthChunks(body, model, log, { traceId, projectId, pii: piiConfig, tokenId })) {
+    for await (const chunk of streamOpenAIOAuthChunks(body, model, log, { traceId, routerId, pii: piiConfig, tokenId })) {
       raw.write(`data: ${JSON.stringify(chunk)}\n\n`);
     }
   } catch (err) {

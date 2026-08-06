@@ -24,7 +24,7 @@ const emailPolicy = { target: 'both', entities: ['EMAIL'] }
 function ctxOf(overrides: Partial<ProxyContext>, emit: ReturnType<typeof vi.fn>): ProxyContext {
   return {
     protocol: 'openai',
-    project: { id: 'p1', pii: { policies: [emailPolicy] } },
+    router: { id: 'p1', pii: { policies: [emailPolicy] } },
     request: { model: 'gpt', messages: [] },
     emit,
     ...overrides,
@@ -59,7 +59,7 @@ describe('pii module', () => {
           { role: 'user', content: [{ type: 'image_url' }] },
         ],
       },
-      project: { id: 'p1', pii: { policies: [emailPolicy, { target: 'response', entities: ['SSN'] }] } },
+      router: { id: 'p1', pii: { policies: [emailPolicy, { target: 'response', entities: ['SSN'] }] } },
     } as unknown as Partial<ProxyContext>, emit)
     await proc.run(ctx)
     expect(emit.mock.calls[0]![0]).toMatchObject({

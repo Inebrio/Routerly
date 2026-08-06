@@ -6,7 +6,7 @@ import { MemoryRouter } from 'react-router-dom';
 vi.mock('../../api', () => ({
   createExperiment: vi.fn(),
   updateExperiment: vi.fn(),
-  getProjects: vi.fn(),
+  getRouters: vi.fn(),
   getModels: vi.fn(),
 }));
 
@@ -32,23 +32,23 @@ vi.mock('../../components/SearchableSelect', () => ({
 }));
 
 import { ExperimentConfigTab } from './ExperimentConfigTab';
-import { createExperiment, updateExperiment, getProjects, getModels } from '../../api';
+import { createExperiment, updateExperiment, getRouters, getModels } from '../../api';
 import { useAuth } from '../../AuthContext';
 import { useExperiment } from './ExperimentLayout';
 
 const mockCreate = vi.mocked(createExperiment as (...a: unknown[]) => Promise<unknown>);
 const mockUpdate = vi.mocked(updateExperiment as (...a: unknown[]) => Promise<unknown>);
-const mockGetProjects = vi.mocked(getProjects as () => Promise<unknown>);
+const mockGetRouters = vi.mocked(getRouters as () => Promise<unknown>);
 const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
 const mockUseAuth = vi.mocked(useAuth);
 const mockUseExperiment = vi.mocked(useExperiment);
 
-const projects = [{ id: 'p1', name: 'Cheap' }, { id: 'p2', name: 'Premium' }];
+const routers = [{ id: 'p1', name: 'Cheap' }, { id: 'p2', name: 'Premium' }];
 const models = [{ id: 'gpt-4o', name: 'GPT-4o', provider: 'openai' }];
 
 const existing = {
   id: 'exp-1', name: 'Cheap vs premium', rotation: 'sticky', stickyKey: 'auto',
-  variants: [{ id: 'v1', projectId: 'p1' }, { id: 'v2', projectId: 'p2', name: 'Arm B', weight: 3 }],
+  variants: [{ id: 'v1', routerId: 'p1' }, { id: 'v2', routerId: 'p2', name: 'Arm B', weight: 3 }],
   tokens: [], createdAt: '2026-07-01T00:00:00.000Z',
 };
 
@@ -67,7 +67,7 @@ function renderTab() {
 }
 
 beforeEach(() => {
-  mockGetProjects.mockResolvedValue(projects);
+  mockGetRouters.mockResolvedValue(routers);
   mockGetModels.mockResolvedValue(models);
   mockCreate.mockResolvedValue({ ...existing, token: 'sk-rt-secret' });
   mockUpdate.mockResolvedValue(existing);
@@ -80,25 +80,25 @@ afterEach(() => vi.clearAllMocks());
 describe('ExperimentConfigTab: create', () => {
   it('starts with two empty variant rows', async () => {
     renderTab();
-    await waitFor(() => expect(screen.getByLabelText('Variant 1 project')).toBeInTheDocument());
-    expect(screen.getByLabelText('Variant 2 project')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText('Variant 1 router')).toBeInTheDocument());
+    expect(screen.getByLabelText('Variant 2 router')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /create experiment/i })).toBeInTheDocument();
   });
 
   it('creates the experiment and reveals its token once', async () => {
     const user = userEvent.setup();
     renderTab();
-    await waitFor(() => expect(screen.getByLabelText('Variant 1 project')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText('Variant 1 router')).toBeInTheDocument());
     await user.type(screen.getByLabelText('Name'), 'Cheap vs premium');
-    await user.selectOptions(screen.getByLabelText('Variant 1 project'), 'p1');
-    await user.selectOptions(screen.getByLabelText('Variant 2 project'), 'p2');
+    await user.selectOptions(screen.getByLabelText('Variant 1 router'), 'p1');
+    await user.selectOptions(screen.getByLabelText('Variant 2 router'), 'p2');
     await user.click(screen.getByRole('button', { name: /create experiment/i }));
 
     await waitFor(() => expect(mockCreate).toHaveBeenCalledWith({
       name: 'Cheap vs premium',
       rotation: 'sticky',
       stickyKey: 'auto',
-      variants: [{ projectId: 'p1' }, { projectId: 'p2' }],
+      variants: [{ routerId: 'p1' }, { routerId: 'p2' }],
     }));
     await waitFor(() => expect(screen.getByText('sk-rt-secret')).toBeInTheDocument());
     expect(setExperiment).toHaveBeenCalledWith(expect.objectContaining({ id: 'exp-1' }));
@@ -107,11 +107,11 @@ describe('ExperimentConfigTab: create', () => {
   it('sends weights only under weighted rotation, and shows each share', async () => {
     const user = userEvent.setup();
     renderTab();
-    await waitFor(() => expect(screen.getByLabelText('Variant 1 project')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText('Variant 1 router')).toBeInTheDocument());
     await user.type(screen.getByLabelText('Name'), 'Split');
     await user.selectOptions(screen.getByLabelText('Rotation'), 'weighted');
-    await user.selectOptions(screen.getByLabelText('Variant 1 project'), 'p1');
-    await user.selectOptions(screen.getByLabelText('Variant 2 project'), 'p2');
+    await user.selectOptions(screen.getByLabelText('Variant 1 router'), 'p1');
+    await user.selectOptions(screen.getByLabelText('Variant 2 router'), 'p2');
     await user.type(screen.getByLabelText('Variant 1 weight'), '3');
     await user.type(screen.getByLabelText('Variant 2 weight'), '1');
     expect(screen.getByText('75%')).toBeInTheDocument();
@@ -120,7 +120,7 @@ describe('ExperimentConfigTab: create', () => {
     await user.click(screen.getByRole('button', { name: /create experiment/i }));
     await waitFor(() => expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({
       rotation: 'weighted',
-      variants: [{ projectId: 'p1', weight: 3 }, { projectId: 'p2', weight: 1 }],
+      variants: [{ routerId: 'p1', weight: 3 }, { routerId: 'p2', weight: 1 }],
     })));
     // stickyKey belongs to sticky rotation only
     expect(mockCreate.mock.calls[0]![0]).not.toHaveProperty('stickyKey');
@@ -137,19 +137,19 @@ describe('ExperimentConfigTab: create', () => {
   it('adds and removes variant rows', async () => {
     const user = userEvent.setup();
     renderTab();
-    await waitFor(() => expect(screen.getByLabelText('Variant 1 project')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText('Variant 1 router')).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: /add variant/i }));
-    expect(screen.getByLabelText('Variant 3 project')).toBeInTheDocument();
+    expect(screen.getByLabelText('Variant 3 router')).toBeInTheDocument();
     await user.click(screen.getByTitle('Remove variant 3'));
-    expect(screen.queryByLabelText('Variant 3 project')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Variant 3 router')).not.toBeInTheDocument();
   });
 
   it('sends the judge as a fraction with one criterion per line', async () => {
     const user = userEvent.setup();
     renderTab();
-    await waitFor(() => expect(screen.getByLabelText('Variant 1 project')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText('Variant 1 router')).toBeInTheDocument());
     await user.type(screen.getByLabelText('Name'), 'Judged');
-    await user.selectOptions(screen.getByLabelText('Variant 1 project'), 'p1');
+    await user.selectOptions(screen.getByLabelText('Variant 1 router'), 'p1');
     await user.click(screen.getByRole('checkbox'));
     await user.selectOptions(screen.getByLabelText('Judge model'), 'gpt-4o');
     await user.type(screen.getByLabelText('Criteria'), 'Answers the question\n\nStays factual');
@@ -162,28 +162,28 @@ describe('ExperimentConfigTab: create', () => {
     })));
   });
 
-  it('drops variant rows with no project selected', async () => {
+  it('drops variant rows with no router selected', async () => {
     const user = userEvent.setup();
     renderTab();
-    await waitFor(() => expect(screen.getByLabelText('Variant 1 project')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText('Variant 1 router')).toBeInTheDocument());
     await user.type(screen.getByLabelText('Name'), 'Half filled');
-    await user.selectOptions(screen.getByLabelText('Variant 1 project'), 'p1');
+    await user.selectOptions(screen.getByLabelText('Variant 1 router'), 'p1');
     await user.click(screen.getByRole('button', { name: /create experiment/i }));
-    await waitFor(() => expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ variants: [{ projectId: 'p1' }] })));
+    await waitFor(() => expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ variants: [{ routerId: 'p1' }] })));
   });
 
   it('reports a failed create', async () => {
     mockCreate.mockRejectedValue(new Error('An experiment named "X" already exists'));
     const user = userEvent.setup();
     renderTab();
-    await waitFor(() => expect(screen.getByLabelText('Variant 1 project')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText('Variant 1 router')).toBeInTheDocument());
     await user.type(screen.getByLabelText('Name'), 'X');
     await user.click(screen.getByRole('button', { name: /create experiment/i }));
     await waitFor(() => expect(screen.getByText('An experiment named "X" already exists')).toBeInTheDocument());
   });
 
-  it('reports a failed project load', async () => {
-    mockGetProjects.mockRejectedValue(new Error('offline'));
+  it('reports a failed router load', async () => {
+    mockGetRouters.mockRejectedValue(new Error('offline'));
     renderTab();
     await waitFor(() => expect(screen.getByText('offline')).toBeInTheDocument());
   });
@@ -195,7 +195,7 @@ describe('ExperimentConfigTab: edit', () => {
   it('prefills every field from the experiment', async () => {
     renderTab();
     await waitFor(() => expect(screen.getByLabelText('Name')).toHaveValue('Cheap vs premium'));
-    expect(screen.getByLabelText('Variant 1 project')).toHaveValue('p1');
+    expect(screen.getByLabelText('Variant 1 router')).toHaveValue('p1');
     expect(screen.getByLabelText('Variant 2 label')).toHaveValue('Arm B');
     expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument();
   });
@@ -209,7 +209,7 @@ describe('ExperimentConfigTab: edit', () => {
     await user.click(screen.getByRole('button', { name: /save changes/i }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalledWith('exp-1', expect.objectContaining({
       name: 'Renamed',
-      variants: [{ id: 'v1', projectId: 'p1' }, { id: 'v2', projectId: 'p2', name: 'Arm B' }],
+      variants: [{ id: 'v1', routerId: 'p1' }, { id: 'v2', routerId: 'p2', name: 'Arm B' }],
     })));
     await waitFor(() => expect(screen.getByText('Saved.')).toBeInTheDocument());
   });

@@ -135,7 +135,7 @@ const EMPTY_FORM = {
   awsSecretAccessKey: '',
   awsSessionToken: '',
   // Google Vertex AI
-  vertexProjectId: '',
+  VERTEXROUTERIDPLACEHOLDER: '',
   vertexLocation: '',
   vertexServiceAccountKey: '',
 };
@@ -475,7 +475,7 @@ export function ModelFormPage() {
     const m = model as Model & {
       azureResourceName?: string; azureDeploymentId?: string; azureApiVersion?: string;
       awsRegion?: string; awsAccessKeyId?: string; awsSessionToken?: string;
-      vertexProjectId?: string; vertexLocation?: string; vertexServiceAccountKey?: string;
+      VERTEXROUTERIDPLACEHOLDER?: string; vertexLocation?: string; vertexServiceAccountKey?: string;
     };
 
     setForm(f => ({
@@ -499,7 +499,7 @@ export function ModelFormPage() {
       awsAccessKeyId: m.awsAccessKeyId ?? '',
       awsSecretAccessKey: '',
       awsSessionToken: m.awsSessionToken ?? '',
-      vertexProjectId: m.vertexProjectId ?? '',
+      VERTEXROUTERIDPLACEHOLDER: m.VERTEXROUTERIDPLACEHOLDER ?? '',
       vertexLocation: m.vertexLocation ?? '',
       vertexServiceAccountKey: '',
     }));
@@ -612,7 +612,7 @@ export function ModelFormPage() {
               ...(form.awsSecretAccessKey ? { awsSecretAccessKey: form.awsSecretAccessKey } : {}),
               ...(form.awsSessionToken   ? { awsSessionToken: form.awsSessionToken }     : {}),
               // Google Vertex AI
-              ...(form.vertexProjectId   ? { vertexProjectId: form.vertexProjectId }     : {}),
+              ...(form.VERTEXROUTERIDPLACEHOLDER   ? { VERTEXROUTERIDPLACEHOLDER: form.VERTEXROUTERIDPLACEHOLDER }     : {}),
               ...(form.vertexLocation    ? { vertexLocation: form.vertexLocation }       : {}),
               ...(form.vertexServiceAccountKey ? { vertexServiceAccountKey: form.vertexServiceAccountKey } : {}),
             }),
@@ -793,7 +793,7 @@ export function ModelFormPage() {
                   endpoint: form.endpoint, apiKey: form.apiKey, cfClearance: form.cfClearance,
                   azureResourceName: form.azureResourceName, azureDeploymentId: form.azureDeploymentId, azureApiVersion: form.azureApiVersion,
                   awsRegion: form.awsRegion, awsAccessKeyId: form.awsAccessKeyId, awsSecretAccessKey: form.awsSecretAccessKey, awsSessionToken: form.awsSessionToken,
-                  vertexProjectId: form.vertexProjectId, vertexLocation: form.vertexLocation, vertexServiceAccountKey: form.vertexServiceAccountKey,
+                  VERTEXROUTERIDPLACEHOLDER: form.VERTEXROUTERIDPLACEHOLDER, vertexLocation: form.vertexLocation, vertexServiceAccountKey: form.vertexServiceAccountKey,
                 }}
                 onChange={patch => {
                   setForm(f => ({ ...f, ...patch }));

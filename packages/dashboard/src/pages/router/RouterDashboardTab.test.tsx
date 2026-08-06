@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
-import { ProjectDashboardTab } from './ProjectDashboardTab';
+import { RouterDashboardTab } from './RouterDashboardTab';
 
 vi.mock('../../api', () => ({
   getUsage: vi.fn(),
@@ -72,27 +72,27 @@ function makeStats(overrides: Record<string, unknown> = {}) {
 
 function renderTab() {
   function LayoutWrapper() {
-    return <Outlet context={{ project: { id: 'proj-1', name: 'Test', models: [] }, setProject: vi.fn() }} />;
+    return <Outlet context={{ router: { id: 'proj-1', name: 'Test', models: [] }, setRouter: vi.fn() }} />;
   }
   return render(
-    <MemoryRouter initialEntries={['/dashboard/projects/proj-1/dashboard']}>
+    <MemoryRouter initialEntries={['/dashboard/routers/proj-1/dashboard']}>
       <Routes>
-        <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-          <Route path="dashboard" element={<ProjectDashboardTab />} />
+        <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+          <Route path="dashboard" element={<RouterDashboardTab />} />
         </Route>
       </Routes>
     </MemoryRouter>
   );
 }
 
-describe('ProjectDashboardTab', () => {
+describe('RouterDashboardTab', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
     mockGetUsage.mockResolvedValue(makeStats());
   });
 
-  it('asks the service for the savings block, scoped to the project', async () => {
+  it('asks the service for the savings block, scoped to the router', async () => {
     renderTab();
     await waitFor(() => expect(mockGetUsage).toHaveBeenCalled());
     const args = mockGetUsage.mock.calls[0]!;
@@ -147,20 +147,20 @@ describe('ProjectDashboardTab', () => {
     expect(screen.getByText('20.0%')).toBeInTheDocument();
   });
 
-  it('invites the user to add targets when the project has none', async () => {
+  it('invites the user to add targets when the router has none', async () => {
     mockGetUsage.mockResolvedValue(makeStats({
       savings: { ...makeStats().savings, baselines: [] },
     }));
     renderTab();
-    expect(await screen.findByText('Add target models to this project to see the comparison.')).toBeInTheDocument();
+    expect(await screen.findByText('Add target models to this router to see the comparison.')).toBeInTheDocument();
   });
 
-  it('renders an empty state when the project saw no traffic', async () => {
+  it('renders an empty state when the router saw no traffic', async () => {
     mockGetUsage.mockResolvedValue(makeStats({
       summary: { ...makeStats().summary, totalCalls: 0 },
     }));
     renderTab();
-    expect(await screen.findByText('No traffic for this project in the selected period.')).toBeInTheDocument();
+    expect(await screen.findByText('No traffic for this router in the selected period.')).toBeInTheDocument();
   });
 
   it('refetches when the period changes', async () => {
@@ -181,7 +181,7 @@ describe('ProjectDashboardTab', () => {
 
 // ── Measured optimizer savings (T63) ─────────────────────────────────────────
 
-describe('ProjectDashboardTab — what the optimizers removed', () => {
+describe('RouterDashboardTab — what the optimizers removed', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();

@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Check } from 'lucide-react';
 import {
   getProfiles,
-  assignProjectProfiles,
-  updateProject,
+  assignRouterProfiles,
+  updateRouter,
   type GuardrailConfig,
   type GuardrailRule,
   type PiiConfig,
@@ -18,10 +18,10 @@ import {
   validateSecurityRules,
   type RuleWithId,
 } from '../../components/SecurityRulesEditor';
-import { useProject } from './ProjectLayout';
+import { useRouter } from './RouterLayout';
 
-export function ProjectSecurityTab() {
-  const { project, setProject } = useProject();
+export function RouterSecurityTab() {
+  const { router, setRouter } = useRouter();
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -35,7 +35,7 @@ export function ProjectSecurityTab() {
   // PII state
   const [piiPolicies, setPiiPolicies] = useState<PiiPolicy[]>([]);
 
-  // Rules and policies to install on the next project refresh, used when switching
+  // Rules and policies to install on the next router refresh, used when switching
   // from a profile to custom so the profile config becomes the editable starting point.
   const pending = React.useRef<{ rules: RuleWithId[]; pii: PiiPolicy[] } | null>(null);
 
@@ -46,34 +46,34 @@ export function ProjectSecurityTab() {
   }, []);
 
   useEffect(() => {
-    if (!project) return;
+    if (!router) return;
     if (pending.current) {
       setRules(pending.current.rules);
       setPiiPolicies(pending.current.pii);
       pending.current = null;
       return;
     }
-    const g = project.guardrails;
+    const g = router.guardrails;
     if (g) {
       setDetectInjection(g.detectInjection === true);
       setRules((g.rules ?? []).map(r => normalizeGuardActions({ ...r, _id: crypto.randomUUID() })));
     }
-    const p = project.pii;
+    const p = router.pii;
     if (p) {
       setPiiPolicies(p.policies ?? []);
     }
-  }, [project]);
+  }, [router]);
 
   const { regexErrorsByRule, moderationErrorIds } = validateSecurityRules(rules);
   const saveDisabled = saving || Object.keys(regexErrorsByRule).length > 0 || moderationErrorIds.size > 0;
 
   async function onAssignProfile(profileId: string) {
     /* v8 ignore next */
-    if (!project) return;
+    if (!router) return;
     setErr('');
     try {
-      const updated = await assignProjectProfiles(project.id, { security: profileId === '' ? null : profileId });
-      setProject(updated);
+      const updated = await assignRouterProfiles(router.id, { security: profileId === '' ? null : profileId });
+      setRouter(updated);
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to assign security profile');
     }
@@ -81,7 +81,7 @@ export function ProjectSecurityTab() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!project || saveDisabled) return;
+    if (!router || saveDisabled) return;
     setErr('');
     setSaving(true);
     try {
@@ -96,13 +96,13 @@ export function ProjectSecurityTab() {
       const piiPayload: PiiConfig = {
         policies: validPolicies,
       };
-      const updated = await updateProject(project.id, {
-        name: project.name,
-        models: project.models.map(m => ({ modelId: m.modelId, ...(m.prompt ? { prompt: m.prompt } : {}) })),
+      const updated = await updateRouter(router.id, {
+        name: router.name,
+        models: router.models.map(m => ({ modelId: m.modelId, ...(m.prompt ? { prompt: m.prompt } : {}) })),
         guardrails: guardrailsPayload,
         pii: piiPayload,
       });
-      setProject(updated);
+      setRouter(updated);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
@@ -112,9 +112,9 @@ export function ProjectSecurityTab() {
     }
   }
 
-  if (!project) return null;
+  if (!router) return null;
 
-  const assignedProfileId = project.securityProfileId ?? '';
+  const assignedProfileId = router.securityProfileId ?? '';
   const profileAssigned = assignedProfileId !== '';
   const assignedProfile = profiles.find(p => p.id === assignedProfileId);
   const defaultProfileId = profiles.find(p => p.builtin)?.id ?? profiles[0]?.id ?? '';
@@ -146,7 +146,7 @@ export function ProjectSecurityTab() {
       <div className="form-group">
         <label className="form-label">Security</label>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
-          Use a shared security profile, or define this project's own guardrails and PII policies.
+          Use a shared security profile, or define this router's own guardrails and PII policies.
         </p>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>

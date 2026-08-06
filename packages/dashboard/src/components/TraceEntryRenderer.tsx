@@ -99,7 +99,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
   const labelColor = isError ? 'var(--danger)' : isGuardrailTriggered ? '#ef4444' : isGuardrailEvaluated ? '#fb923c' : isPiiScrubbed ? '#f97316' : isPiiEvaluated ? '#34d399' : isThinking ? '#a78bfa' : isModelPrompt ? '#c4b5fd' : isRecap ? '#34d399' : isCacheEmbedding ? '#38bdf8' : isCacheHit ? '#10b981' : isCacheMiss ? '#f59e0b' : 'var(--accent)';
   const hasDetails = e.details != null && Object.keys(e.details).length > 0;
 
-  // Prompts and answers live in `content` (only present when the project opted in);
+  // Prompts and answers live in `content` (only present when the router opted in);
   // traces recorded before 0.4.0 still carry them inside `details`.
   const { systemPrompt, responseText, responseJSON, ...baseDetails } = { ...(e.details ?? {}), ...(e.content ?? {}) };
   const thinkingText = String(e.content?.text ?? e.details?.text ?? '');
@@ -275,7 +275,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
             <pre style={{ ...preStyle, margin: '4px 0 0' }}>{JSON.stringify({
               model: e.details?.model,
               messageCount: e.details?.messageCount,
-              projectId: e.details?.projectId,
+              routerId: e.details?.routerId,
             }, null, 2)}</pre>
           </details>
           {(e.details?.excludedByLimits ?? []).length > 0 && (
@@ -540,7 +540,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
               ))}
             </div>
           )}
-          {/* The injected text itself is captured only for projects that opted in. */}
+          {/* The injected text itself is captured only for routers that opted in. */}
           {e.content?.injection != null && (
             <details>
               <summary style={{ fontSize: '0.7rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>injected text</summary>

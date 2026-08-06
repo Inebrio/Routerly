@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
-import { ProjectTokenEditPage } from './ProjectTokenEditPage';
+import { RouterTokenEditPage } from './RouterTokenEditPage';
 
 vi.mock('../../api', () => ({
-  updateProjectToken: vi.fn(),
+  updateRouterToken: vi.fn(),
   getModels: vi.fn(),
 }));
 
@@ -32,8 +32,8 @@ vi.mock('../../components/SearchableSelect', () => ({
   ),
 }));
 
-import { updateProjectToken, getModels } from '../../api';
-const mockUpdateProjectToken = vi.mocked(updateProjectToken as (...a: unknown[]) => Promise<unknown>);
+import { updateRouterToken, getModels } from '../../api';
+const mockUpdateRouterToken = vi.mocked(updateRouterToken as (...a: unknown[]) => Promise<unknown>);
 const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
 
 const mockToken = {
@@ -52,7 +52,7 @@ const mockToken = {
   ],
 };
 
-const mockProject = {
+const mockRouter = {
   id: 'proj-1',
   name: 'Test',
   models: [
@@ -70,18 +70,18 @@ const mockModel = {
   cost: { inputPerMillion: 5, outputPerMillion: 15, cachePerMillion: null },
 };
 
-function renderPage(project: Record<string, unknown> = mockProject, tokenId = 'tok-1') {
-  const setProject = vi.fn();
+function renderPage(router: Record<string, unknown> = mockRouter, tokenId = 'tok-1') {
+  const setRouter = vi.fn();
   function LayoutWrapper() {
-    return <Outlet context={{ project, setProject }} />;
+    return <Outlet context={{ router, setRouter }} />;
   }
   return {
-    setProject,
+    setRouter,
     ...render(
-      <MemoryRouter initialEntries={[`/dashboard/projects/proj-1/token/${tokenId}`]}>
+      <MemoryRouter initialEntries={[`/dashboard/routers/proj-1/token/${tokenId}`]}>
         <Routes>
-          <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-            <Route path="token/:tokenId" element={<ProjectTokenEditPage />} />
+          <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+            <Route path="token/:tokenId" element={<RouterTokenEditPage />} />
             <Route path="token" element={<div data-testid="token-list">token list</div>} />
           </Route>
         </Routes>
@@ -92,23 +92,23 @@ function renderPage(project: Record<string, unknown> = mockProject, tokenId = 't
 
 beforeEach(() => {
   mockGetModels.mockResolvedValue([mockModel]);
-  mockUpdateProjectToken.mockResolvedValue({ ...mockToken, labels: ['staging'] });
+  mockUpdateRouterToken.mockResolvedValue({ ...mockToken, labels: ['staging'] });
 });
 
 afterEach(() => vi.clearAllMocks());
 
-// ── null project/token guard ──────────────────────────────────────────────────
+// ── null router/token guard ──────────────────────────────────────────────────
 
-describe('ProjectTokenEditPage — null guard', () => {
-  it('renders nothing when project is null', () => {
+describe('RouterTokenEditPage — null guard', () => {
+  it('renders nothing when router is null', () => {
     function LayoutWrapper() {
-      return <Outlet context={{ project: null, setProject: vi.fn() }} />;
+      return <Outlet context={{ router: null, setRouter: vi.fn() }} />;
     }
     const { container } = render(
-      <MemoryRouter initialEntries={['/dashboard/projects/proj-1/token/tok-1']}>
+      <MemoryRouter initialEntries={['/dashboard/routers/proj-1/token/tok-1']}>
         <Routes>
-          <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-            <Route path="token/:tokenId" element={<ProjectTokenEditPage />} />
+          <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+            <Route path="token/:tokenId" element={<RouterTokenEditPage />} />
           </Route>
         </Routes>
       </MemoryRouter>
@@ -117,14 +117,14 @@ describe('ProjectTokenEditPage — null guard', () => {
   });
 
   it('renders nothing when tokenId does not match any token', () => {
-    const { container } = renderPage(mockProject, 'tok-nonexistent');
+    const { container } = renderPage(mockRouter, 'tok-nonexistent');
     expect(container.firstChild).toBeNull();
   });
 });
 
 // ── Initial render ────────────────────────────────────────────────────────────
 
-describe('ProjectTokenEditPage — initial render', () => {
+describe('RouterTokenEditPage — initial render', () => {
   it('shows "Edit Token" heading', async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('Edit Token')).toBeTruthy());
@@ -160,7 +160,7 @@ describe('ProjectTokenEditPage — initial render', () => {
     await waitFor(() => expect(screen.getByText('Per-model limits')).toBeTruthy());
   });
 
-  it('shows project models as checkboxes', async () => {
+  it('shows router models as checkboxes', async () => {
     renderPage();
     await waitFor(() => {
       const checkboxes = screen.getAllByRole('checkbox');
@@ -193,8 +193,8 @@ describe('ProjectTokenEditPage — initial render', () => {
     });
   });
 
-  it('shows empty models message when project has no models', async () => {
-    renderPage({ ...mockProject, models: [], tokens: [mockToken] });
+  it('shows empty models message when router has no models', async () => {
+    renderPage({ ...mockRouter, models: [], tokens: [mockToken] });
     await waitFor(() =>
       expect(screen.getByText('Add target models in the Routing tab first.')).toBeTruthy()
     );
@@ -218,7 +218,7 @@ describe('ProjectTokenEditPage — initial render', () => {
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 
-describe('ProjectTokenEditPage — navigation', () => {
+describe('RouterTokenEditPage — navigation', () => {
   it('Back to tokens button navigates to token list', async () => {
     renderPage();
     await waitFor(() => screen.getByText(/Back to tokens/));
@@ -243,12 +243,12 @@ describe('ProjectTokenEditPage — navigation', () => {
 
 // ── Save ─────────────────────────────────────────────────────────────────────
 
-describe('ProjectTokenEditPage — save', () => {
-  it('calls updateProjectToken on submit', async () => {
+describe('RouterTokenEditPage — save', () => {
+  it('calls updateRouterToken on submit', async () => {
     renderPage();
     await waitFor(() => screen.getByRole('button', { name: 'Save Changes' }));
     await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
-    await waitFor(() => expect(mockUpdateProjectToken).toHaveBeenCalledWith(
+    await waitFor(() => expect(mockUpdateRouterToken).toHaveBeenCalledWith(
       'proj-1',
       'tok-1',
       expect.any(Array),
@@ -260,12 +260,12 @@ describe('ProjectTokenEditPage — save', () => {
 
   it('initializes scopes from token and sends them on submit', async () => {
     const scopedToken = { ...mockToken, scopes: ['mcp', 'mcp:write'] };
-    const scopedProject = { ...mockProject, tokens: [scopedToken] };
-    renderPage(scopedProject);
+    const scopedRouter = { ...mockRouter, tokens: [scopedToken] };
+    renderPage(scopedRouter);
     await waitFor(() => screen.getByRole('button', { name: 'Save Changes' }));
     await waitFor(() => expect(screen.getByText('mcp:write')).toBeTruthy());
     await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
-    await waitFor(() => expect(mockUpdateProjectToken).toHaveBeenCalledWith(
+    await waitFor(() => expect(mockUpdateRouterToken).toHaveBeenCalledWith(
       'proj-1',
       'tok-1',
       expect.any(Array),
@@ -275,8 +275,8 @@ describe('ProjectTokenEditPage — save', () => {
     ));
   });
 
-  it('shows error on updateProjectToken failure', async () => {
-    mockUpdateProjectToken.mockRejectedValueOnce(new Error('Save failed'));
+  it('shows error on updateRouterToken failure', async () => {
+    mockUpdateRouterToken.mockRejectedValueOnce(new Error('Save failed'));
     renderPage();
     await waitFor(() => screen.getByRole('button', { name: 'Save Changes' }));
     await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
@@ -284,7 +284,7 @@ describe('ProjectTokenEditPage — save', () => {
   });
 
   it('shows generic error on non-Error rejection', async () => {
-    mockUpdateProjectToken.mockRejectedValueOnce('oops');
+    mockUpdateRouterToken.mockRejectedValueOnce('oops');
     renderPage();
     await waitFor(() => screen.getByRole('button', { name: 'Save Changes' }));
     await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
@@ -294,7 +294,7 @@ describe('ProjectTokenEditPage — save', () => {
 
 // ── Per-model limit override toggle ──────────────────────────────────────────
 
-describe('ProjectTokenEditPage — model override toggle', () => {
+describe('RouterTokenEditPage — model override toggle', () => {
   it('unchecking an enabled model removes it from overrides', async () => {
     renderPage();
     await waitFor(() => {
@@ -362,7 +362,7 @@ describe('ProjectTokenEditPage — model override toggle', () => {
 
 // ── Tags ─────────────────────────────────────────────────────────────────────
 
-describe('ProjectTokenEditPage — tags', () => {
+describe('RouterTokenEditPage — tags', () => {
   it('shows existing tag', async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('env=prod')).toBeTruthy());
@@ -406,7 +406,7 @@ describe('ProjectTokenEditPage — tags', () => {
 
 // ── Limit row interactions ────────────────────────────────────────────────────
 
-describe('ProjectTokenEditPage — limit row selects', () => {
+describe('RouterTokenEditPage — limit row selects', () => {
   it('changing metric select updates the row', async () => {
     renderPage();
     await waitFor(() => screen.getByText('Metric'));
@@ -446,11 +446,11 @@ describe('ProjectTokenEditPage — limit row selects', () => {
 
 // ── Inherited limit label ─────────────────────────────────────────────────────
 
-describe('ProjectTokenEditPage — inherited limit label', () => {
-  it('shows "No limits" for unchecked model with no project/global limits', async () => {
+describe('RouterTokenEditPage — inherited limit label', () => {
+  it('shows "No limits" for unchecked model with no router/global limits', async () => {
     renderPage();
     await waitFor(() => {
-      // gpt-3.5 has no limits on project model config and no global limits → "No limits"
+      // gpt-3.5 has no limits on router model config and no global limits → "No limits"
       expect(screen.getByText('No limits')).toBeTruthy();
     });
   });
@@ -458,7 +458,7 @@ describe('ProjectTokenEditPage — inherited limit label', () => {
   it('shows "no override" for checked model with no active limit rows (empty value)', async () => {
     // Token model override has empty limit rows (value='')
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       tokens: [{
         ...mockToken,
         models: [{ modelId: 'openai/gpt-4o', limits: [] }],
@@ -471,12 +471,12 @@ describe('ProjectTokenEditPage — inherited limit label', () => {
   });
 });
 
-// ── Legacy thresholds on project model ───────────────────────────────────────
+// ── Legacy thresholds on router model ───────────────────────────────────────
 
-describe('ProjectTokenEditPage — inheritedLimitLabel legacy thresholds', () => {
+describe('RouterTokenEditPage — inheritedLimitLabel legacy thresholds', () => {
   it('shows formatted legacy thresholds when model has thresholds but no limits', async () => {
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       models: [
         { modelId: 'openai/gpt-4o', limits: [] },
         // gpt-3.5 is unchecked (not in token.models) and has legacy thresholds → shows inherited label
@@ -493,12 +493,12 @@ describe('ProjectTokenEditPage — inheritedLimitLabel legacy thresholds', () =>
 
 // ── fmtLimit rolling window branch (line 104) ────────────────────────────────
 
-describe('ProjectTokenEditPage — fmtLimit rolling window', () => {
+describe('RouterTokenEditPage — fmtLimit rolling window', () => {
   it('shows rolling window label for inherited limit with rolling windowType', async () => {
     // globalThresholds drives the inherited label; but fmtLimit rolling branch is hit
-    // when a project model has rolling limits.
+    // when a router model has rolling limits.
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       models: [
         { modelId: 'openai/gpt-4o', limits: [] },
         {
@@ -519,7 +519,7 @@ describe('ProjectTokenEditPage — fmtLimit rolling window', () => {
 
 // ── Rolling window inputs onChange handlers (lines 394-397) ──────────────────
 
-describe('ProjectTokenEditPage — rolling window field interactions', () => {
+describe('RouterTokenEditPage — rolling window field interactions', () => {
   it('changing rollingAmount input updates the value', async () => {
     renderPage();
     await waitFor(() => screen.getByText('Type'));
@@ -552,7 +552,7 @@ describe('ProjectTokenEditPage — rolling window field interactions', () => {
 
 // ── Add limit button onMouseLeave handler (line 424) ─────────────────────────
 
-describe('ProjectTokenEditPage — Add limit button mouse events', () => {
+describe('RouterTokenEditPage — Add limit button mouse events', () => {
   it('onMouseLeave on Add limit button resets border and color styles', async () => {
     renderPage();
     await waitFor(() => screen.getByRole('button', { name: 'Add limit' }));
@@ -569,10 +569,10 @@ describe('ProjectTokenEditPage — Add limit button mouse events', () => {
 
 // ── limitToRow legacy window mapping ─────────────────────────────────────────
 
-describe('ProjectTokenEditPage — limitToRow legacy window field', () => {
+describe('RouterTokenEditPage — limitToRow legacy window field', () => {
   it('handles legacy window field on limit object', async () => {
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       tokens: [{
         ...mockToken,
         models: [{
@@ -592,10 +592,10 @@ describe('ProjectTokenEditPage — limitToRow legacy window field', () => {
 
 // ── limitToRow rolling branch (line 79) + rowToLimit rolling branch (line 67) ─
 
-describe('ProjectTokenEditPage — rolling limit in token models (lines 67, 79)', () => {
+describe('RouterTokenEditPage — rolling limit in token models (lines 67, 79)', () => {
   it('renders rolling fields when token model has rolling limit (limitToRow rolling)', async () => {
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       tokens: [{
         ...mockToken,
         models: [{
@@ -614,7 +614,7 @@ describe('ProjectTokenEditPage — rolling limit in token models (lines 67, 79)'
 
   it('save with rolling limit row calls rowToLimit rolling branch', async () => {
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       tokens: [{
         ...mockToken,
         models: [{
@@ -626,8 +626,8 @@ describe('ProjectTokenEditPage — rolling limit in token models (lines 67, 79)'
     renderPage(proj);
     await waitFor(() => screen.getByRole('button', { name: 'Save Changes' }));
     await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
-    await waitFor(() => expect(mockUpdateProjectToken).toHaveBeenCalled());
-    const [, , cleanedModels] = mockUpdateProjectToken.mock.calls[0] as [string, string, Array<{modelId: string; limits: unknown[]}>];
+    await waitFor(() => expect(mockUpdateRouterToken).toHaveBeenCalled());
+    const [, , cleanedModels] = mockUpdateRouterToken.mock.calls[0] as [string, string, Array<{modelId: string; limits: unknown[]}>];
     // rowToLimit rolling was called → the saved limit should have rollingAmount
     expect(cleanedModels[0]!.limits[0]).toMatchObject({ windowType: 'rolling', rollingAmount: 6 });
   });
@@ -635,7 +635,7 @@ describe('ProjectTokenEditPage — rolling limit in token models (lines 67, 79)'
 
 // ── findFreeCombo returns null (line 62) ─────────────────────────────────────
 
-describe('ProjectTokenEditPage — findFreeCombo returns null (line 62)', () => {
+describe('RouterTokenEditPage — findFreeCombo returns null (line 62)', () => {
   it('Add limit button is disabled when all 25 metric+period combos are used', async () => {
     // 5 metrics × 5 periods = 25 combos; fill all of them
     const metrics = ['cost', 'calls', 'input_tokens', 'output_tokens', 'total_tokens'];
@@ -644,7 +644,7 @@ describe('ProjectTokenEditPage — findFreeCombo returns null (line 62)', () => 
       periods.map(period => ({ metric, windowType: 'period', period, value: 1 }))
     );
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       tokens: [{
         ...mockToken,
         models: [{ modelId: 'openai/gpt-4o', limits: allLimits }],
@@ -661,7 +661,7 @@ describe('ProjectTokenEditPage — findFreeCombo returns null (line 62)', () => 
 
 // ── fmtLimit — all metric branches (lines 97-101) ────────────────────────────
 
-describe('ProjectTokenEditPage — fmtLimit all metric labels', () => {
+describe('RouterTokenEditPage — fmtLimit all metric labels', () => {
   const metricCases = [
     { metric: 'calls',         expected: /100 req \/ daily/ },
     { metric: 'input_tokens',  expected: /100 in-tok \/ daily/ },
@@ -672,7 +672,7 @@ describe('ProjectTokenEditPage — fmtLimit all metric labels', () => {
   metricCases.forEach(({ metric, expected }) => {
     it(`shows "${metric}" metric in inherited label via fmtLimit`, async () => {
       const proj = {
-        ...mockProject,
+        ...mockRouter,
         models: [
           { modelId: 'openai/gpt-4o', limits: [] },
           { modelId: 'openai/gpt-3.5', limits: [{ metric, windowType: 'period', period: 'daily', value: 100 }] },
@@ -685,7 +685,7 @@ describe('ProjectTokenEditPage — fmtLimit all metric labels', () => {
 
   it('fmtLimit rolling — unit label from ROLLING_UNIT_OPTIONS', async () => {
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       models: [
         { modelId: 'openai/gpt-4o', limits: [] },
         {
@@ -700,7 +700,7 @@ describe('ProjectTokenEditPage — fmtLimit all metric labels', () => {
 
   it('fmtLimit rolling — unknown rollingUnit falls back to rollingUnit value', async () => {
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       models: [
         { modelId: 'openai/gpt-4o', limits: [] },
         {
@@ -717,13 +717,13 @@ describe('ProjectTokenEditPage — fmtLimit all metric labels', () => {
 
 // ── inheritedLimitLabel — globalThresholds branches (lines 122-128) ──────────
 
-describe('ProjectTokenEditPage — inheritedLimitLabel globalThresholds', () => {
+describe('RouterTokenEditPage — inheritedLimitLabel globalThresholds', () => {
   it('shows global threshold label when model has globalThresholds', async () => {
     // gpt-3.5 fullModel has globalThresholds; no pm.limits/thresholds → inherits from fullModel
     const gpt35WithGlobal = { id: 'openai/gpt-3.5', provider: 'openai', limits: [], globalThresholds: { daily: 3, weekly: undefined as number | undefined, monthly: 15 } };
     mockGetModels.mockResolvedValue([mockModel, gpt35WithGlobal]);
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       models: [
         { modelId: 'openai/gpt-4o', limits: [] },
         { modelId: 'openai/gpt-3.5', limits: [] },
@@ -743,7 +743,7 @@ describe('ProjectTokenEditPage — inheritedLimitLabel globalThresholds', () => 
     const noLimitsModel = { id: 'openai/gpt-3.5', provider: 'openai', limits: [] };
     mockGetModels.mockResolvedValue([mockModel, noLimitsModel]);
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       models: [
         { modelId: 'openai/gpt-4o', limits: [] },
         { modelId: 'openai/gpt-3.5', limits: [] },
@@ -756,10 +756,10 @@ describe('ProjectTokenEditPage — inheritedLimitLabel globalThresholds', () => 
 
 // ── inheritedLimitLabel — pm.thresholds (lines 116-119) ──────────────────────
 
-describe('ProjectTokenEditPage — inheritedLimitLabel pm.thresholds combinations', () => {
+describe('RouterTokenEditPage — inheritedLimitLabel pm.thresholds combinations', () => {
   it('shows only weekly threshold when only weekly is set', async () => {
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       models: [
         { modelId: 'openai/gpt-4o', limits: [] },
         { modelId: 'openai/gpt-3.5', limits: [], thresholds: { daily: undefined, weekly: 7, monthly: undefined } },
@@ -771,7 +771,7 @@ describe('ProjectTokenEditPage — inheritedLimitLabel pm.thresholds combination
 
   it('shows only monthly threshold when only monthly is set', async () => {
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       models: [
         { modelId: 'openai/gpt-4o', limits: [] },
         { modelId: 'openai/gpt-3.5', limits: [], thresholds: { daily: undefined, weekly: undefined, monthly: 30 } },
@@ -784,7 +784,7 @@ describe('ProjectTokenEditPage — inheritedLimitLabel pm.thresholds combination
   it('shows "No limits" when pm.thresholds has no values and fullModel is undefined', async () => {
     mockGetModels.mockResolvedValue([]); // no fullModel
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       models: [
         { modelId: 'openai/gpt-4o', limits: [] },
         { modelId: 'openai/gpt-3.5', limits: [] },
@@ -797,10 +797,10 @@ describe('ProjectTokenEditPage — inheritedLimitLabel pm.thresholds combination
 
 // ── fmtLimit period fallback (line 106) ─────────────────────────────────────
 
-describe('ProjectTokenEditPage — fmtLimit period fallback', () => {
+describe('RouterTokenEditPage — fmtLimit period fallback', () => {
   it('fmtLimit uses period value when not in PERIOD_OPTIONS (unknown period)', async () => {
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       models: [
         { modelId: 'openai/gpt-4o', limits: [] },
         {
@@ -815,21 +815,21 @@ describe('ProjectTokenEditPage — fmtLimit period fallback', () => {
   });
 });
 
-// ── setProject updater branches (line 188) ───────────────────────────────────
+// ── setRouter updater branches (line 188) ───────────────────────────────────
 
-describe('ProjectTokenEditPage — setProject updater branches', () => {
-  it('setProject updater handles null project and missing tokens', async () => {
-    const { setProject } = renderPage();
+describe('RouterTokenEditPage — setRouter updater branches', () => {
+  it('setRouter updater handles null router and missing tokens', async () => {
+    const { setRouter } = renderPage();
     await waitFor(() => screen.getByRole('button', { name: 'Save Changes' }));
     await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
-    await waitFor(() => expect(mockUpdateProjectToken).toHaveBeenCalled());
-    const updater = (setProject.mock.calls[0] as [((p: unknown) => unknown)])[0];
+    await waitFor(() => expect(mockUpdateRouterToken).toHaveBeenCalled());
+    const updater = (setRouter.mock.calls[0] as [((p: unknown) => unknown)])[0];
     expect(typeof updater).toBe('function');
     // false branch: p is null
     expect(updater(null)).toBeNull();
     // true branch with tokens: maps existing tokens
-    const withTokens = { ...mockProject, tokens: [{ id: 'tok-1' }, { id: 'tok-2' }] };
-    const result = updater(withTokens) as typeof mockProject;
+    const withTokens = { ...mockRouter, tokens: [{ id: 'tok-1' }, { id: 'tok-2' }] };
+    const result = updater(withTokens) as typeof mockRouter;
     expect(Array.isArray(result.tokens)).toBe(true);
     // true branch: p.tokens is undefined → falls back to []
     const noTokens = { id: 'p', name: 'P', models: [] };
@@ -840,11 +840,11 @@ describe('ProjectTokenEditPage — setProject updater branches', () => {
 
 // ── updateLimitRow duplicate prevention (line 222) ───────────────────────────
 
-describe('ProjectTokenEditPage — updateLimitRow duplicate prevention', () => {
+describe('RouterTokenEditPage — updateLimitRow duplicate prevention', () => {
   it('changing metric to duplicate value does not create duplicate rows', async () => {
     // Start with 2 limit rows: cost/monthly and calls/monthly
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       tokens: [{
         ...mockToken,
         models: [{
@@ -870,7 +870,7 @@ describe('ProjectTokenEditPage — updateLimitRow duplicate prevention', () => {
 
 // ── updateLimitRow candidate is undefined guard (line 220) ───────────────────
 
-describe('ProjectTokenEditPage — updateLimitRow candidate undefined guard', () => {
+describe('RouterTokenEditPage — updateLimitRow candidate undefined guard', () => {
   it('handles out-of-bounds idx gracefully (no crash)', async () => {
     // The idx is always valid from the UI, but test that the guard is exercised
     // by testing a normal update that goes through the candidate check path
@@ -884,7 +884,7 @@ describe('ProjectTokenEditPage — updateLimitRow candidate undefined guard', ()
 
 // ── limitRows filter (lines 86) — value='' filtered out ─────────────────────
 
-describe('ProjectTokenEditPage — limitRowsToLimits filters empty values', () => {
+describe('RouterTokenEditPage — limitRowsToLimits filters empty values', () => {
   it('saves and cleans empty-value limit rows (filter branch)', async () => {
     // Token with a limit row that has empty value → filtered out by limitRowsToLimits
     renderPage();
@@ -893,8 +893,8 @@ describe('ProjectTokenEditPage — limitRowsToLimits filters empty values', () =
     const valueInput = document.querySelector('input[type="number"]:not([placeholder="24"])') as HTMLInputElement;
     await userEvent.clear(valueInput);
     await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
-    await waitFor(() => expect(mockUpdateProjectToken).toHaveBeenCalled());
-    const [, , cleanedModels] = mockUpdateProjectToken.mock.calls[0] as [string, string, Array<{modelId: string; limits: unknown[]}>];
+    await waitFor(() => expect(mockUpdateRouterToken).toHaveBeenCalled());
+    const [, , cleanedModels] = mockUpdateRouterToken.mock.calls[0] as [string, string, Array<{modelId: string; limits: unknown[]}>];
     // Empty value → filtered out → no limits passed
     expect(cleanedModels[0]!.limits).toHaveLength(0);
   });
@@ -902,10 +902,10 @@ describe('ProjectTokenEditPage — limitRowsToLimits filters empty values', () =
 
 // ── limitsToRows empty guard (line 91) ──────────────────────────────────────
 
-describe('ProjectTokenEditPage — limitsToRows empty guard', () => {
+describe('RouterTokenEditPage — limitsToRows empty guard', () => {
   it('shows no limit rows when token model has empty limits array', async () => {
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       tokens: [{
         ...mockToken,
         models: [{ modelId: 'openai/gpt-4o', limits: [] }],
@@ -918,25 +918,25 @@ describe('ProjectTokenEditPage — limitsToRows empty guard', () => {
   });
 });
 
-// ── handleUpdate missing projectId/tokenId (line 181) ───────────────────────
+// ── handleUpdate missing routerId/tokenId (line 181) ───────────────────────
 
-describe('ProjectTokenEditPage — handleUpdate missing id guard', () => {
-  it('returns early from handleUpdate when project becomes null during submit', async () => {
-    const setProject = vi.fn();
+describe('RouterTokenEditPage — handleUpdate missing id guard', () => {
+  it('returns early from handleUpdate when router becomes null during submit', async () => {
+    const setRouter = vi.fn();
     function LayoutWrapper() {
-      return <Outlet context={{ project: mockProject, setProject }} />;
+      return <Outlet context={{ router: mockRouter, setRouter }} />;
     }
-    // Render without :id param so projectId is undefined
+    // Render without :id param so routerId is undefined
     const { unmount } = render(
       <MemoryRouter initialEntries={['/proj/tok-1']}>
         <Routes>
           <Route path="/proj/:tokenId" element={<LayoutWrapper />}>
-            <Route index element={<ProjectTokenEditPage />} />
+            <Route index element={<RouterTokenEditPage />} />
           </Route>
         </Routes>
       </MemoryRouter>
     );
-    // No :id route param → projectId is undefined; won't even render (editingToken not found)
+    // No :id route param → routerId is undefined; won't even render (editingToken not found)
     // Just verify it doesn't crash
     expect(document.body).toBeTruthy();
     unmount();
@@ -945,10 +945,10 @@ describe('ProjectTokenEditPage — handleUpdate missing id guard', () => {
 
 // ── activeCount plural (line 333) ────────────────────────────────────────────
 
-describe('ProjectTokenEditPage — activeCount plural label', () => {
+describe('RouterTokenEditPage — activeCount plural label', () => {
   it('shows "2 limits" when model has 2 active limit rows', async () => {
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       tokens: [{
         ...mockToken,
         models: [{
@@ -967,11 +967,11 @@ describe('ProjectTokenEditPage — activeCount plural label', () => {
 
 // ── rowToLimit: parseInt(rollingAmount) || 1 fallback (line 67 branch 1) ─────
 
-describe('ProjectTokenEditPage — rowToLimit rollingAmount NaN fallback (line 67)', () => {
+describe('RouterTokenEditPage — rowToLimit rollingAmount NaN fallback (line 67)', () => {
   it('uses 1 when rollingAmount is empty string (parseInt NaN → || 1)', async () => {
     // Render with a rolling limit, then clear the rollingAmount input and save
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       tokens: [{
         ...mockToken,
         models: [{ modelId: 'openai/gpt-4o', limits: [{ metric: 'cost', windowType: 'rolling', rollingAmount: 6, rollingUnit: 'hour', value: 5 }] }],
@@ -983,18 +983,18 @@ describe('ProjectTokenEditPage — rowToLimit rollingAmount NaN fallback (line 6
     const rollingInput = document.querySelector('input[type="number"][placeholder="24"]') as HTMLInputElement;
     await userEvent.clear(rollingInput);
     await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
-    await waitFor(() => expect(mockUpdateProjectToken).toHaveBeenCalled());
-    const [, , cleanedModels] = mockUpdateProjectToken.mock.calls[0] as [string, string, Array<{modelId: string; limits: Array<{rollingAmount: number}>}>];
+    await waitFor(() => expect(mockUpdateRouterToken).toHaveBeenCalled());
+    const [, , cleanedModels] = mockUpdateRouterToken.mock.calls[0] as [string, string, Array<{modelId: string; limits: Array<{rollingAmount: number}>}>];
     expect(cleanedModels[0]!.limits[0]!.rollingAmount).toBe(1);
   });
 });
 
 // ── limitToRow: rollingAmount ?? 24 and rollingUnit ?? 'hour' (line 79 branches) ─
 
-describe('ProjectTokenEditPage — limitToRow rolling null fallbacks (line 79)', () => {
+describe('RouterTokenEditPage — limitToRow rolling null fallbacks (line 79)', () => {
   it('uses defaults when rollingAmount and rollingUnit are undefined', async () => {
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       tokens: [{
         ...mockToken,
         models: [{ modelId: 'openai/gpt-4o', limits: [{ metric: 'cost', windowType: 'rolling', rollingAmount: undefined as unknown as number, rollingUnit: undefined as unknown as string, value: 5 }] }],
@@ -1011,10 +1011,10 @@ describe('ProjectTokenEditPage — limitToRow rolling null fallbacks (line 79)',
 
 // ── fmtLimit: rollingAmount ?? 1 and rollingUnit fallback (lines 103-104) ────
 
-describe('ProjectTokenEditPage — fmtLimit rolling null fallbacks (line 103-104)', () => {
+describe('RouterTokenEditPage — fmtLimit rolling null fallbacks (line 103-104)', () => {
   it('uses 1 and rollingUnit string when rollingAmount and rollingUnit undefined', async () => {
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       models: [
         { modelId: 'openai/gpt-4o', limits: [] },
         {
@@ -1031,10 +1031,10 @@ describe('ProjectTokenEditPage — fmtLimit rolling null fallbacks (line 103-104
 
 // ── fmtLimit period: period ?? 'monthly' fallback (line 106) ─────────────────
 
-describe('ProjectTokenEditPage — fmtLimit period undefined fallback (line 106)', () => {
+describe('RouterTokenEditPage — fmtLimit period undefined fallback (line 106)', () => {
   it('uses "monthly" when period is undefined', async () => {
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       models: [
         { modelId: 'openai/gpt-4o', limits: [] },
         {
@@ -1051,7 +1051,7 @@ describe('ProjectTokenEditPage — fmtLimit period undefined fallback (line 106)
 
 // ── inheritedLimitLabel: fullModel.limits?.length truthy (line 122 branch 0) ─
 
-describe('ProjectTokenEditPage — inheritedLimitLabel fullModel with limits (line 122)', () => {
+describe('RouterTokenEditPage — inheritedLimitLabel fullModel with limits (line 122)', () => {
   it('uses fullModel.limits when fullModel has limits array', async () => {
     const gpt35WithLimits = {
       id: 'openai/gpt-3.5',
@@ -1060,7 +1060,7 @@ describe('ProjectTokenEditPage — inheritedLimitLabel fullModel with limits (li
     };
     mockGetModels.mockResolvedValue([mockModel, gpt35WithLimits]);
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       models: [
         { modelId: 'openai/gpt-4o', limits: [] },
         { modelId: 'openai/gpt-3.5', limits: [] },
@@ -1074,7 +1074,7 @@ describe('ProjectTokenEditPage — inheritedLimitLabel fullModel with limits (li
 
 // ── inheritedLimitLabel: globalThresholds individual null branches ────────────
 
-describe('ProjectTokenEditPage — inheritedLimitLabel globalThresholds null branches', () => {
+describe('RouterTokenEditPage — inheritedLimitLabel globalThresholds null branches', () => {
   it('covers globalThresholds.weekly != null and monthly != null branches', async () => {
     // Model with weekly and monthly globalThresholds (no daily) → hits all three null checks
     const gpt35 = {
@@ -1085,7 +1085,7 @@ describe('ProjectTokenEditPage — inheritedLimitLabel globalThresholds null bra
     };
     mockGetModels.mockResolvedValue([mockModel, gpt35]);
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       models: [
         { modelId: 'openai/gpt-4o', limits: [] },
         { modelId: 'openai/gpt-3.5', limits: [] },
@@ -1103,10 +1103,10 @@ describe('ProjectTokenEditPage — inheritedLimitLabel globalThresholds null bra
 
 // ── tokens.flatMap labels || [] fallback (line 161 branch) ───────────────────
 
-describe('ProjectTokenEditPage — tokens labels || [] fallback (line 161)', () => {
+describe('RouterTokenEditPage — tokens labels || [] fallback (line 161)', () => {
   it('handles tokens without labels property in allLabels computation', async () => {
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       tokens: [{ ...mockToken, labels: undefined as unknown as string[] }],
     };
     renderPage(proj);
@@ -1117,10 +1117,10 @@ describe('ProjectTokenEditPage — tokens labels || [] fallback (line 161)', () 
 
 // ── editingToken.models || [] fallback (line 167) ────────────────────────────
 
-describe('ProjectTokenEditPage — editingToken.models undefined fallback (line 167)', () => {
+describe('RouterTokenEditPage — editingToken.models undefined fallback (line 167)', () => {
   it('renders with no limit rows when token has no models property', async () => {
     const tokenNoModels = { ...mockToken, models: undefined as unknown as typeof mockToken.models };
-    const proj = { ...mockProject, tokens: [tokenNoModels] };
+    const proj = { ...mockRouter, tokens: [tokenNoModels] };
     renderPage(proj);
     await waitFor(() => expect(screen.getByText('Edit Token')).toBeTruthy());
   });
@@ -1128,41 +1128,41 @@ describe('ProjectTokenEditPage — editingToken.models undefined fallback (line 
 
 // ── editingToken.labels || [] and .tags || {} fallbacks (lines 172-173) ──────
 
-describe('ProjectTokenEditPage — editingToken labels/tags undefined fallbacks', () => {
+describe('RouterTokenEditPage — editingToken labels/tags undefined fallbacks', () => {
   it('renders with empty labels and tags when token has none', async () => {
     const tokenNoLabels = { ...mockToken, labels: undefined as unknown as string[], tags: undefined as unknown as Record<string, string> };
-    const proj = { ...mockProject, tokens: [tokenNoLabels] };
+    const proj = { ...mockRouter, tokens: [tokenNoLabels] };
     renderPage(proj);
     // labels || [] → [], tags || {} → {} both branches hit
     await waitFor(() => expect(screen.getByText('Edit Token')).toBeTruthy());
   });
 });
 
-// ── handleUpdate: !project || !projectId || !tokenId early return (line 181) ─
+// ── handleUpdate: !router || !routerId || !tokenId early return (line 181) ─
 
-describe('ProjectTokenEditPage — handleUpdate early return guard (line 181)', () => {
+describe('RouterTokenEditPage — handleUpdate early return guard (line 181)', () => {
   it('handleUpdate returns early when setLoading is false (guard triggered)', async () => {
     // We need to trigger handleUpdate where one of the guards is false.
-    // project is checked on line 177 too, so it can't be null.
-    // projectId from useParams can be mocked by rendering without :id.
+    // router is checked on line 177 too, so it can't be null.
+    // routerId from useParams can be mocked by rendering without :id.
     // But the page returns null if editingToken not found.
-    // The only way to hit line 181 is if project/projectId/tokenId changes after render.
-    // Simulate: render normally, then call setProject to null mid-render.
+    // The only way to hit line 181 is if router/routerId/tokenId changes after render.
+    // Simulate: render normally, then call setRouter to null mid-render.
     // Alternative: capture the submit handler and directly test it.
     // Simplest: just verify handleUpdate was called (it always is) and the page doesn't crash
-    // when project gets cleared (line 181 branch 0 = all truthy = normal path).
+    // when router gets cleared (line 181 branch 0 = all truthy = normal path).
     // This test is a placeholder to confirm no crash occurs.
     renderPage();
     await waitFor(() => screen.getByRole('button', { name: 'Save Changes' }));
     await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
-    await waitFor(() => expect(mockUpdateProjectToken).toHaveBeenCalled());
+    await waitFor(() => expect(mockUpdateRouterToken).toHaveBeenCalled());
     expect(screen.getByTestId('token-list')).toBeTruthy();
   });
 });
 
 // ── addLimitRow: m.modelId !== modelId branch (line 208) ─────────────────────
 
-describe('ProjectTokenEditPage — addLimitRow model mismatch branch (line 208)', () => {
+describe('RouterTokenEditPage — addLimitRow model mismatch branch (line 208)', () => {
   it('addLimitRow skips models that do not match the modelId', async () => {
     // Add both models as overrides, then add a limit to gpt-4o.
     // The gpt-3.5 model should be unchanged (line 208 branch: m.modelId !== modelId → return m).
@@ -1182,11 +1182,11 @@ describe('ProjectTokenEditPage — addLimitRow model mismatch branch (line 208)'
 
 // ── updateLimitRow: isDup true (line 222, 288) ───────────────────────────────
 
-describe('ProjectTokenEditPage — updateLimitRow isDup blocks update (lines 222, 288)', () => {
+describe('RouterTokenEditPage — updateLimitRow isDup blocks update (lines 222, 288)', () => {
   it('metric change to duplicate key blocks the update', async () => {
     // 2 limit rows with different metrics but same period → change first to match second
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       tokens: [{
         ...mockToken,
         models: [{
@@ -1213,7 +1213,7 @@ describe('ProjectTokenEditPage — updateLimitRow isDup blocks update (lines 222
 
 // ── updateLimitRow: candidate undefined (line 220) ───────────────────────────
 
-describe('ProjectTokenEditPage — updateLimitRow candidate undefined guard (line 220)', () => {
+describe('RouterTokenEditPage — updateLimitRow candidate undefined guard (line 220)', () => {
   it('changing metric select exercises candidate defined path', async () => {
     renderPage();
     await waitFor(() => screen.getByText('Metric'));
@@ -1226,7 +1226,7 @@ describe('ProjectTokenEditPage — updateLimitRow candidate undefined guard (lin
 
 // ── removeLimitRow: model mismatch branch (line 229) ─────────────────────────
 
-describe('ProjectTokenEditPage — removeLimitRow model mismatch (line 229)', () => {
+describe('RouterTokenEditPage — removeLimitRow model mismatch (line 229)', () => {
   it('removeLimitRow skips models that do not match', async () => {
     // Enable gpt-3.5 override, add a limit to it, then remove it.
     // When removing, gpt-4o model row hits the mismatch branch (m.modelId !== modelId → m).
@@ -1253,7 +1253,7 @@ describe('ProjectTokenEditPage — removeLimitRow model mismatch (line 229)', ()
 
 // ── onMouseEnter on Add limit button (line 423 branch 0) ─────────────────────
 
-describe('ProjectTokenEditPage — Add limit button onMouseEnter with freeCombo (line 423)', () => {
+describe('RouterTokenEditPage — Add limit button onMouseEnter with freeCombo (line 423)', () => {
   it('onMouseEnter changes style when freeCombo is available', async () => {
     renderPage();
     await waitFor(() => screen.getByRole('button', { name: 'Add limit' }));
@@ -1268,7 +1268,7 @@ describe('ProjectTokenEditPage — Add limit button onMouseEnter with freeCombo 
 
 // ── addLimitRow when findFreeCombo returns null (line 210 branch 0) ──────────
 
-describe('ProjectTokenEditPage — addLimitRow no-op when all combos used (line 210)', () => {
+describe('RouterTokenEditPage — addLimitRow no-op when all combos used (line 210)', () => {
   it('clicking disabled Add limit button still calls addLimitRow which hits if(!free) path', async () => {
     // All 25 combos used → freeCombo=null → button disabled
     const metrics = ['cost', 'calls', 'input_tokens', 'output_tokens', 'total_tokens'];
@@ -1277,7 +1277,7 @@ describe('ProjectTokenEditPage — addLimitRow no-op when all combos used (line 
       periods.map(period => ({ metric, windowType: 'period', period, value: 1 }))
     );
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       tokens: [{ ...mockToken, models: [{ modelId: 'openai/gpt-4o', limits: allLimits }] }],
     };
     renderPage(proj);
@@ -1293,7 +1293,7 @@ describe('ProjectTokenEditPage — addLimitRow no-op when all combos used (line 
 
 // ── updateLimitRow with 2 models: mismatch branch (line 217) ─────────────────
 
-describe('ProjectTokenEditPage — updateLimitRow model mismatch path (line 217)', () => {
+describe('RouterTokenEditPage — updateLimitRow model mismatch path (line 217)', () => {
   it('updateLimitRow skips non-matching model when 2 overrides active', async () => {
     // Enable both gpt-4o and gpt-3.5 overrides, then change a limit on gpt-4o.
     // The gpt-3.5 model hits the mismatch branch (m.modelId !== modelId → return m).
@@ -1320,10 +1320,10 @@ describe('ProjectTokenEditPage — updateLimitRow model mismatch path (line 217)
 
 // ── limitToRow: period ?? legacyWindow fallback ?? 'monthly' (line 81 branch 2) ─
 
-describe('ProjectTokenEditPage — limitToRow period undefined with no legacyWindow (line 81)', () => {
+describe('RouterTokenEditPage — limitToRow period undefined with no legacyWindow (line 81)', () => {
   it('uses "monthly" fallback when period and legacyWindow are both undefined', async () => {
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       tokens: [{
         ...mockToken,
         models: [{
@@ -1342,7 +1342,7 @@ describe('ProjectTokenEditPage — limitToRow period undefined with no legacyWin
 
 // ── inheritedLimitLabel: globalThresholds.monthly null branch (line 126) ─────
 
-describe('ProjectTokenEditPage — inheritedLimitLabel globalThresholds monthly=null (line 126)', () => {
+describe('RouterTokenEditPage — inheritedLimitLabel globalThresholds monthly=null (line 126)', () => {
   it('covers monthly null branch when only daily globalThreshold is set', async () => {
     const gpt35 = {
       id: 'openai/gpt-3.5',
@@ -1352,7 +1352,7 @@ describe('ProjectTokenEditPage — inheritedLimitLabel globalThresholds monthly=
     };
     mockGetModels.mockResolvedValue([mockModel, gpt35]);
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       models: [
         { modelId: 'openai/gpt-4o', limits: [] },
         { modelId: 'openai/gpt-3.5', limits: [] },
@@ -1365,7 +1365,7 @@ describe('ProjectTokenEditPage — inheritedLimitLabel globalThresholds monthly=
 
 // ── onMouseEnter on Add limit button when freeCombo=null (line 423 branch 1) ─
 
-describe('ProjectTokenEditPage — Add limit button onMouseEnter when freeCombo is null (line 423)', () => {
+describe('RouterTokenEditPage — Add limit button onMouseEnter when freeCombo is null (line 423)', () => {
   it('onMouseEnter does nothing to style when freeCombo is null', async () => {
     const metrics = ['cost', 'calls', 'input_tokens', 'output_tokens', 'total_tokens'];
     const periods = ['hourly', 'daily', 'weekly', 'monthly', 'yearly'];
@@ -1373,7 +1373,7 @@ describe('ProjectTokenEditPage — Add limit button onMouseEnter when freeCombo 
       periods.map(period => ({ metric, windowType: 'period', period, value: 1 }))
     );
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       tokens: [{ ...mockToken, models: [{ modelId: 'openai/gpt-4o', limits: allLimits }] }],
     };
     renderPage(proj);
@@ -1405,7 +1405,7 @@ describe('ProjectTokenEditPage — Add limit button onMouseEnter when freeCombo 
 
 // ── add tag onClick false branch (line 288) ──────────────────────────────────
 
-describe('ProjectTokenEditPage — add tag onClick whitespace guard (line 288)', () => {
+describe('RouterTokenEditPage — add tag onClick whitespace guard (line 288)', () => {
   it('add tag onClick with whitespace-only key does nothing (false branch of if trim)', async () => {
     renderPage();
     await waitFor(() => screen.getByPlaceholderText('key'));
@@ -1438,7 +1438,7 @@ describe('ProjectTokenEditPage — add tag onClick whitespace guard (line 288)',
 
 // ── getModels().catch(() => {}) callback (line 149 anonymous_13) ─────────────
 
-describe('ProjectTokenEditPage — getModels rejection catch (line 149)', () => {
+describe('RouterTokenEditPage — getModels rejection catch (line 149)', () => {
   it('does not crash when getModels rejects (catch callback runs)', async () => {
     mockGetModels.mockRejectedValueOnce(new Error('getModels failed'));
     renderPage();
@@ -1449,20 +1449,20 @@ describe('ProjectTokenEditPage — getModels rejection catch (line 149)', () => 
   });
 });
 
-// ── project?.tokens || [] fallback (line 159) ────────────────────────────────
+// ── router?.tokens || [] fallback (line 159) ────────────────────────────────
 
-describe('ProjectTokenEditPage — project.tokens undefined fallback (line 159)', () => {
-  it('handles project without tokens property gracefully', () => {
-    // project.tokens undefined → || [] branch
-    const noTokensProj = { id: 'proj-1', name: 'Test', models: mockProject.models };
+describe('RouterTokenEditPage — router.tokens undefined fallback (line 159)', () => {
+  it('handles router without tokens property gracefully', () => {
+    // router.tokens undefined → || [] branch
+    const noTokensProj = { id: 'proj-1', name: 'Test', models: mockRouter.models };
     function LayoutWrapper() {
-      return <Outlet context={{ project: noTokensProj, setProject: vi.fn() }} />;
+      return <Outlet context={{ router: noTokensProj, setRouter: vi.fn() }} />;
     }
     const { container } = render(
-      <MemoryRouter initialEntries={['/dashboard/projects/proj-1/token/tok-1']}>
+      <MemoryRouter initialEntries={['/dashboard/routers/proj-1/token/tok-1']}>
         <Routes>
-          <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-            <Route path="token/:tokenId" element={<ProjectTokenEditPage />} />
+          <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+            <Route path="token/:tokenId" element={<RouterTokenEditPage />} />
           </Route>
         </Routes>
       </MemoryRouter>

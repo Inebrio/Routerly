@@ -27,7 +27,7 @@ const LABEL_PLACEHOLDERS: Record<ProfileKind, string> = {
  * the tab that opened the create page (`?kind=<kind>`), the profile being
  * cloned (`?base=<id>`) or the profile being edited. Nothing on the form asks
  * for it, since the three kinds share no field beyond the label; the config
- * editors are the same ones the project tabs use.
+ * editors are the same ones the router tabs use.
  */
 export function ProfileFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -164,7 +164,7 @@ export function ProfileFormPage() {
         <p>
           {readOnly
             ? 'Built-in profiles cannot be edited. Clone one to customize it.'
-            : `A${kind === 'optimizer' ? 'n' : ''} ${KIND_LABELS[kind].toLowerCase()} profile can be assigned to any number of projects.`}
+            : `A${kind === 'optimizer' ? 'n' : ''} ${KIND_LABELS[kind].toLowerCase()} profile can be assigned to any number of routers.`}
         </p>
       </div>
 

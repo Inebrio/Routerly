@@ -23,7 +23,7 @@ export type TracePanel = 'router-request' | 'router-response' | 'request' | 'res
 export interface TraceEvent {
   traceId: string
   entry: TraceEntry
-  projectId?: string
+  routerId?: string
   /**
    * Id the caller put on the request so it can follow its own trace live. It never
    * reaches the upstream request or the response: it only keys the side channel.
@@ -37,7 +37,7 @@ interface TraceRecord {
   entries: TraceEntry[]
   ts: number
   correlationId?: string
-  projectId?: string
+  routerId?: string
   /** Set at finalize: nothing more will be appended, so readers can snapshot. */
   closed?: boolean
 }
@@ -52,13 +52,13 @@ function cleanup(): void {
 }
 
 /** Start a trace. Nothing is recorded for an id that was never opened. */
-export function openTrace(traceId: string, meta?: { correlationId?: string; projectId?: string }): void {
+export function openTrace(traceId: string, meta?: { correlationId?: string; routerId?: string }): void {
   cleanup()
   store.set(traceId, {
     entries: [],
     ts: Date.now(),
     ...(meta?.correlationId ? { correlationId: meta.correlationId } : {}),
-    ...(meta?.projectId ? { projectId: meta.projectId } : {}),
+    ...(meta?.routerId ? { routerId: meta.routerId } : {}),
   })
 }
 

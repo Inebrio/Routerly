@@ -660,7 +660,7 @@ function StreamingDisabledWarning() {
       <AlertTriangle size={16} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />
       <div>
         <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 600, color: '#b45309' }}>
-          Streaming disabled for this project
+          Streaming disabled for this router
         </p>
         <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
           One or more rules are configured to block responses (target: response or both). Because the entire response must be
@@ -705,7 +705,7 @@ interface SecurityRulesEditorProps {
 }
 
 /**
- * Guardrail rules plus PII policies. Shared by the project security tab and the
+ * Guardrail rules plus PII policies. Shared by the router security tab and the
  * security profile form, so both edit the exact same rule set.
  */
 export function SecurityRulesEditor({ rules, setRules, piiPolicies, setPiiPolicies }: SecurityRulesEditorProps) {

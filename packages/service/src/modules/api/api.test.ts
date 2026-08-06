@@ -99,7 +99,7 @@ afterEach(() => vi.clearAllMocks())
 
 const adminUser: any = {
   id: 'admin-id', email: 'admin@example.com',
-  passwordHash: '$2b$12$hashed', roleId: 'admin', projectIds: [],
+  passwordHash: '$2b$12$hashed', roleId: 'admin', routerIds: [],
 }
 
 async function buildApp() {
@@ -238,7 +238,7 @@ describe('POST /api/auth/login — 2FA required (line 253)', () => {
 // ─── POST /api/auth/2fa/verify ────────────────────────────────────────────────
 
 describe('POST /api/auth/2fa/verify', () => {
-  const mfaUser = { id: 'admin-id', email: 'admin@example.com', roleId: 'admin', projectIds: [], totpEnabled: true, totpSecret: 'MOCK_SECRET', passwordHash: '$2b$12$hashed' }
+  const mfaUser = { id: 'admin-id', email: 'admin@example.com', roleId: 'admin', routerIds: [], totpEnabled: true, totpSecret: 'MOCK_SECRET', passwordHash: '$2b$12$hashed' }
 
   it('returns 400 when userId missing', async () => {
     const app = await buildApp()
@@ -966,7 +966,7 @@ describe('GET /api/models', () => {
       },
       {
         id: 'vertex-conn', providerId: 'vertex', label: 'Vertex', enabled: true,
-        credentials: { vertexProjectId: 'my-project', vertexLocation: 'us-central1', vertexServiceAccountKey: '{"private_key":"vertex-secret-value"}' },
+        credentials: { vertexProjectId: 'my-router', vertexLocation: 'us-central1', vertexServiceAccountKey: '{"private_key":"vertex-secret-value"}' },
       },
     ]
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -992,7 +992,7 @@ describe('GET /api/models', () => {
     // model form needs them to pre-fill the edit view.
     expect(bedrockModel.awsAccessKeyId).toBe('AKIA-not-secret')
     expect(bedrockModel.awsRegion).toBe('us-east-1')
-    expect(vertexModel.vertexProjectId).toBe('my-project')
+    expect(vertexModel.vertexProjectId).toBe('my-router')
     expect(vertexModel.vertexLocation).toBe('us-central1')
     // The raw response text must not contain any secret value either.
     expect(res.body).not.toContain('aws-secret-value')
@@ -1010,7 +1010,7 @@ describe('GET /api/models', () => {
   it('returns 200 for user with model:read', async () => {
     mockVerifyToken.mockReturnValue({ sub: 'reader-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'reader-id', email: 'reader@example.com', passwordHash: 'hashed', roleId: 'reader', projectIds: [] }]
+      if (t === 'users') return [{ id: 'reader-id', email: 'reader@example.com', passwordHash: 'hashed', roleId: 'reader', routerIds: [] }]
       if (t === 'roles') return [{ id: 'reader', name: 'Reader', permissions: ['model:read'] }]
       return []
     })
@@ -1023,7 +1023,7 @@ describe('GET /api/models', () => {
   it('returns 403 for user without model:read', async () => {
     mockVerifyToken.mockReturnValue({ sub: 'noperm-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'noperm-id', email: 'noperm@example.com', passwordHash: 'hashed', roleId: 'noperm', projectIds: [] }]
+      if (t === 'users') return [{ id: 'noperm-id', email: 'noperm@example.com', passwordHash: 'hashed', roleId: 'noperm', routerIds: [] }]
       if (t === 'roles') return [{ id: 'noperm', name: 'NoPerm', permissions: [] }]
       return []
     })
@@ -1254,7 +1254,7 @@ describe('POST /api/models', () => {
   })
 
   it('without model:write returns 403', async () => {
-    const viewerUser = { id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', projectIds: [] }
+    const viewerUser = { id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', routerIds: [] }
     vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [viewerUser]
@@ -1334,21 +1334,21 @@ describe('DELETE /api/models/:id', () => {
   })
 })
 
-// ─── Projects ─────────────────────────────────────────────────────────────────
+// ─── Routers ─────────────────────────────────────────────────────────────────
 
-describe('GET /api/projects', () => {
-  it('returns projects without token values', async () => {
+describe('GET /api/routers', () => {
+  it('returns routers without token values', async () => {
     setupAdminAuth()
-    const projects = [{ id: 'p1', name: 'Test', tokens: [{ id: 't1', token: 'secret', tokenSnippet: 'sk-rt-xxx' }], members: [], models: [] }]
+    const routers = [{ id: 'p1', name: 'Test', tokens: [{ id: 't1', token: 'secret', tokenSnippet: 'sk-rt-xxx' }], members: [], models: [] }]
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return projects
+      if (t === 'routers') return routers
       return []
     })
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/api/projects', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'GET', url: '/api/routers', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
@@ -1356,27 +1356,27 @@ describe('GET /api/projects', () => {
   })
 })
 
-describe('POST /api/projects', () => {
-  it('creates a new project', async () => {
+describe('POST /api/routers', () => {
+  it('creates a new router', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'My Project' }),
+      payload: JSON.stringify({ name: 'My Router' }),
     })
     await app.close()
     expect(res.statusCode).toBe(201)
     const body = JSON.parse(res.body)
-    expect(body.name).toBe('My Project')
+    expect(body.name).toBe('My Router')
     expect(body.token).toBeDefined()
   })
 
@@ -1385,19 +1385,19 @@ describe('POST /api/projects', () => {
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const defaulted = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Defaulted', models: [] }),
     })
     const explicitZero = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'No timeout', models: [], timeoutMs: 0 }),
     })
@@ -1412,18 +1412,18 @@ describe('POST /api/projects', () => {
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
 
     const app = await buildApp()
     const negative = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Bad', models: [], timeoutMs: -1 }),
     })
     const fractional = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Bad', models: [], timeoutMs: 1.5 }),
     })
@@ -1434,20 +1434,20 @@ describe('POST /api/projects', () => {
     expect(fractional.statusCode).toBe(400)
   })
 
-  it('returns 409 for duplicate project name', async () => {
+  it('returns 409 for duplicate router name', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [{ name: 'My Project' }]
+      if (t === 'routers') return [{ name: 'My Router' }]
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'My Project' }),
+      payload: JSON.stringify({ name: 'My Router' }),
     })
     await app.close()
     expect(res.statusCode).toBe(409)
@@ -1458,13 +1458,13 @@ describe('POST /api/projects', () => {
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: '   ' }),
     })
@@ -1479,7 +1479,7 @@ describe('GET /api/usage', () => {
   it('returns usage stats', async () => {
     setupAdminAuth()
     const records = [
-      { id: 'r1', timestamp: new Date().toISOString(), projectId: 'p1', modelId: 'm1', inputTokens: 100, outputTokens: 50, cost: 0.01, outcome: 'success', callType: 'completion', latencyMs: 200 },
+      { id: 'r1', timestamp: new Date().toISOString(), routerId: 'p1', modelId: 'm1', inputTokens: 100, outputTokens: 50, cost: 0.01, outcome: 'success', callType: 'completion', latencyMs: 200 },
     ]
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -1501,10 +1501,10 @@ describe('GET /api/usage', () => {
     setupAdminAuth()
     const now = new Date().toISOString()
     const records = [
-      { id: 'c1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.10, outcome: 'success', callType: 'completion', latencyMs: 100 },
-      { id: 'r1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.02, outcome: 'success', callType: 'routing', latencyMs: 100 },
-      { id: 'g1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 8, outputTokens: 0, cost: 0.01, outcome: 'success', callType: 'guardrail', latencyMs: 50 },
-      { id: 'g2', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 4, outputTokens: 0, cost: 0.005, outcome: 'success', callType: 'guardrail', latencyMs: 50 },
+      { id: 'c1', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.10, outcome: 'success', callType: 'completion', latencyMs: 100 },
+      { id: 'r1', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.02, outcome: 'success', callType: 'routing', latencyMs: 100 },
+      { id: 'g1', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 8, outputTokens: 0, cost: 0.01, outcome: 'success', callType: 'guardrail', latencyMs: 50 },
+      { id: 'g2', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 4, outputTokens: 0, cost: 0.005, outcome: 'success', callType: 'guardrail', latencyMs: 50 },
     ]
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -1528,11 +1528,11 @@ describe('GET /api/usage', () => {
   describe('type counts (T210)', () => {
     const now = new Date().toISOString()
     const records = [
-      { id: 'c1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.1, outcome: 'success', callType: 'completion', requestType: 'chat', latencyMs: 100 },
-      { id: 'c2', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.1, outcome: 'success', callType: 'completion', requestType: 'embedding', latencyMs: 100 },
+      { id: 'c1', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.1, outcome: 'success', callType: 'completion', requestType: 'chat', latencyMs: 100 },
+      { id: 'c2', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.1, outcome: 'success', callType: 'completion', requestType: 'embedding', latencyMs: 100 },
       // No callType and no requestType: a legacy record, a client chat call.
-      { id: 'c3', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.1, outcome: 'error', latencyMs: 100 },
-      { id: 'r1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.02, outcome: 'success', callType: 'routing', requestType: 'chat', latencyMs: 100 },
+      { id: 'c3', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.1, outcome: 'error', latencyMs: 100 },
+      { id: 'r1', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.02, outcome: 'success', callType: 'routing', requestType: 'chat', latencyMs: 100 },
     ]
 
     const get = async (qs: string) => {
@@ -1575,9 +1575,9 @@ describe('GET /api/usage', () => {
     setupAdminAuth()
     const now = new Date().toISOString()
     const records = [
-      { id: 'c1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.10, outcome: 'success', callType: 'completion', latencyMs: 100 },
-      { id: 'e1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 0, outputTokens: 0, cost: 0, outcome: 'error', callType: 'completion', latencyMs: 0 },
-      { id: 'b1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 0, outputTokens: 0, cost: 0, outcome: 'blocked', callType: 'guardrail', latencyMs: 0, blockedBy: 'regex:forbidden' },
+      { id: 'c1', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.10, outcome: 'success', callType: 'completion', latencyMs: 100 },
+      { id: 'e1', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 0, outputTokens: 0, cost: 0, outcome: 'error', callType: 'completion', latencyMs: 0 },
+      { id: 'b1', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 0, outputTokens: 0, cost: 0, outcome: 'blocked', callType: 'guardrail', latencyMs: 0, blockedBy: 'regex:forbidden' },
     ]
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -1604,10 +1604,10 @@ describe('GET /api/usage', () => {
     const now = new Date().toISOString()
     // latencies 100,200,300,400 -> avg 250, p95 (ceil(4*0.95)-1 = idx 3) = 400
     const records = [
-      { id: '1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.01, outcome: 'success', callType: 'completion', latencyMs: 100 },
-      { id: '2', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.01, outcome: 'success', callType: 'completion', latencyMs: 200 },
-      { id: '3', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.01, outcome: 'success', callType: 'completion', latencyMs: 300 },
-      { id: '4', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.01, outcome: 'error', callType: 'completion', latencyMs: 400 },
+      { id: '1', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.01, outcome: 'success', callType: 'completion', latencyMs: 100 },
+      { id: '2', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.01, outcome: 'success', callType: 'completion', latencyMs: 200 },
+      { id: '3', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.01, outcome: 'success', callType: 'completion', latencyMs: 300 },
+      { id: '4', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.01, outcome: 'error', callType: 'completion', latencyMs: 400 },
     ]
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -1629,7 +1629,7 @@ describe('GET /api/usage', () => {
   it('byModel avgLatencyMs/p95LatencyMs are 0 when no record carries a latency', async () => {
     setupAdminAuth()
     const records = [
-      { id: '1', timestamp: new Date().toISOString(), projectId: 'p1', modelId: 'm1', inputTokens: 0, outputTokens: 0, cost: 0, outcome: 'error', callType: 'completion' },
+      { id: '1', timestamp: new Date().toISOString(), routerId: 'p1', modelId: 'm1', inputTokens: 0, outputTokens: 0, cost: 0, outcome: 'error', callType: 'completion' },
     ]
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -1649,10 +1649,10 @@ describe('GET /api/usage', () => {
   describe('requestType filter (T60)', () => {
     const now = new Date().toISOString()
     const records = [
-      { id: 'legacy', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.10, outcome: 'success', latencyMs: 100 }, // written before requestType existed
-      { id: 'chat', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.10, outcome: 'success', latencyMs: 100, requestType: 'chat' },
-      { id: 'emb', timestamp: now, projectId: 'p1', modelId: 'm2', inputTokens: 8, outputTokens: 0, cost: 0.01, outcome: 'success', latencyMs: 50, requestType: 'embedding' },
-      { id: 'img', timestamp: now, projectId: 'p1', modelId: 'm2', inputTokens: 0, outputTokens: 0, cost: 0, outcome: 'error', latencyMs: 20, requestType: 'image' },
+      { id: 'legacy', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.10, outcome: 'success', latencyMs: 100 }, // written before requestType existed
+      { id: 'chat', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.10, outcome: 'success', latencyMs: 100, requestType: 'chat' },
+      { id: 'emb', timestamp: now, routerId: 'p1', modelId: 'm2', inputTokens: 8, outputTokens: 0, cost: 0.01, outcome: 'success', latencyMs: 50, requestType: 'embedding' },
+      { id: 'img', timestamp: now, routerId: 'p1', modelId: 'm2', inputTokens: 0, outputTokens: 0, cost: 0, outcome: 'error', latencyMs: 20, requestType: 'image' },
     ]
     const get = async (qs: string) => {
       setupAdminAuth()
@@ -1697,9 +1697,9 @@ describe('GET /api/usage', () => {
   describe('tokenIds filter (T211)', () => {
     const now = new Date().toISOString()
     const records = [
-      { id: 'a', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.1, outcome: 'success', latencyMs: 100, tokenId: 't1' },
-      { id: 'b', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.1, outcome: 'success', latencyMs: 100, tokenId: 't2' },
-      { id: 'legacy', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.1, outcome: 'success', latencyMs: 100 }, // written before tokenId existed
+      { id: 'a', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.1, outcome: 'success', latencyMs: 100, tokenId: 't1' },
+      { id: 'b', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.1, outcome: 'success', latencyMs: 100, tokenId: 't2' },
+      { id: 'legacy', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.1, outcome: 'success', latencyMs: 100 }, // written before tokenId existed
     ]
     const get = async (qs: string) => {
       setupAdminAuth()
@@ -1744,13 +1744,13 @@ describe('GET /api/usage', () => {
       { id: 'expensive', connectionId: 'c1', upstreamModelId: 'expensive', cost: { inputPerMillion: 10, outputPerMillion: 20 }, contextWindow: 8000 },
     ]
     const connections = [{ id: 'c1', providerId: 'openai', label: 'OpenAI', credentials: { apiKey: 'k' }, endpoint: 'https://api.openai.com/v1', enabled: true }]
-    const projects = [{
+    const routers = [{
       id: 'p1', name: 'P1', tokens: [], members: [],
       models: [{ modelId: 'cheap' }, { modelId: 'expensive' }, { modelId: 'off', enabled: false }],
     }]
     const records = [
-      { id: 'u1', timestamp: now, projectId: 'p1', modelId: 'cheap', inputTokens: 1000, outputTokens: 1000, cost: 0.003, outcome: 'success', callType: 'completion', latencyMs: 1000 },
-      { id: 'u2', timestamp: now, projectId: 'p1', modelId: 'cheap', inputTokens: 0, outputTokens: 0, cost: 0.5, outcome: 'success', callType: 'routing', latencyMs: 50 },
+      { id: 'u1', timestamp: now, routerId: 'p1', modelId: 'cheap', inputTokens: 1000, outputTokens: 1000, cost: 0.003, outcome: 'success', callType: 'completion', latencyMs: 1000 },
+      { id: 'u2', timestamp: now, routerId: 'p1', modelId: 'cheap', inputTokens: 0, outputTokens: 0, cost: 0.5, outcome: 'success', callType: 'routing', latencyMs: 50 },
     ]
     const get = async (qs: string, over: { instances?: any[]; records?: any[] } = {}) => {
       setupAdminAuth()
@@ -1760,7 +1760,7 @@ describe('GET /api/usage', () => {
         if (t === 'usage') return over.records ?? records
         if (t === 'instances') return over.instances ?? instances
         if (t === 'connections') return connections
-        if (t === 'projects') return projects
+        if (t === 'routers') return routers
         return []
       })
       const app = await buildApp()
@@ -1774,7 +1774,7 @@ describe('GET /api/usage', () => {
       expect(b.savings).toBeUndefined()
     })
 
-    it('counterfactuals the target models of the projects in the result', async () => {
+    it('counterfactuals the target models of the routers in the result', async () => {
       const b = await get('savings=1')
       expect(b.savings.comparedCalls).toBe(1) // the routing call is Routerly overhead, not client workload
       expect(b.savings.comparedCost).toBe(0.003)
@@ -1799,14 +1799,14 @@ describe('GET /api/usage', () => {
       }]
       const b = await get('savings=1', {
         instances: withEmbedding,
-        records: [...records, { id: 'u3', timestamp: now, projectId: 'p1', modelId: 'embed', inputTokens: 100, outputTokens: 0, cost: 0.000002, outcome: 'success', callType: 'completion', latencyMs: 40 }],
+        records: [...records, { id: 'u3', timestamp: now, routerId: 'p1', modelId: 'embed', inputTokens: 100, outputTokens: 0, cost: 0.000002, outcome: 'success', callType: 'completion', latencyMs: 40 }],
       })
       expect(b.savings.baselines.some((x: any) => x.modelId === 'embed')).toBe(false)
     })
 
-    it('counterfactuals a model that served traffic even when no project targets it', async () => {
+    it('counterfactuals a model that served traffic even when no router targets it', async () => {
       const b = await get('savings=1', {
-        records: [...records, { id: 'u3', timestamp: now, projectId: 'p1', modelId: 'expensive2', inputTokens: 100, outputTokens: 100, cost: 0.002, outcome: 'success', callType: 'completion', latencyMs: 900 }],
+        records: [...records, { id: 'u3', timestamp: now, routerId: 'p1', modelId: 'expensive2', inputTokens: 100, outputTokens: 100, cost: 0.002, outcome: 'success', callType: 'completion', latencyMs: 900 }],
         instances: [...instances, { id: 'expensive2', connectionId: 'c1', upstreamModelId: 'expensive2', cost: { inputPerMillion: 20, outputPerMillion: 40 }, contextWindow: 8000 }],
       })
       expect(b.savings.baselines.some((x: any) => x.modelId === 'expensive2')).toBe(true)
@@ -1814,7 +1814,7 @@ describe('GET /api/usage', () => {
 
     it('leaves a model that only served the gateway own calls out of the baselines', async () => {
       const b = await get('savings=1', {
-        records: [...records, { id: 'u3', timestamp: now, projectId: 'p1', modelId: 'guard', inputTokens: 100, outputTokens: 10, cost: 0.001, outcome: 'success', callType: 'guardrail', latencyMs: 200 }],
+        records: [...records, { id: 'u3', timestamp: now, routerId: 'p1', modelId: 'guard', inputTokens: 100, outputTokens: 10, cost: 0.001, outcome: 'success', callType: 'guardrail', latencyMs: 200 }],
         instances: [...instances, { id: 'guard', connectionId: 'c1', upstreamModelId: 'guard', cost: { inputPerMillion: 5, outputPerMillion: 10 }, contextWindow: 8000 }],
       })
       expect(b.savings.baselines.some((x: any) => x.modelId === 'guard')).toBe(false)
@@ -1828,15 +1828,15 @@ describe('GET /api/usage', () => {
       expect(b.savings.baselines).toEqual([])
     })
 
-    it('scopes the baselines to the project when one is asked for', async () => {
-      const b = await get('savings=1&projectId=p1')
+    it('scopes the baselines to the router when one is asked for', async () => {
+      const b = await get('savings=1&routerId=p1')
       expect(b.savings.baselines.map((x: any) => x.modelId)).toEqual(['cheap', 'expensive'])
     })
 
     it('requires report:read like the rest of the route', async () => {
       mockVerifyToken.mockReturnValue({ sub: 'noperm-id' } as any)
       mockReadConfig.mockImplementation(async (t: string) => {
-        if (t === 'users') return [{ id: 'noperm-id', email: 'noperm@example.com', passwordHash: 'hashed', roleId: 'noperm', projectIds: [] }]
+        if (t === 'users') return [{ id: 'noperm-id', email: 'noperm@example.com', passwordHash: 'hashed', roleId: 'noperm', routerIds: [] }]
         if (t === 'roles') return [{ id: 'noperm', name: 'NoPerm', permissions: [] }]
         return []
       })
@@ -1887,7 +1887,7 @@ describe('GET /api/usage', () => {
 
   describe('latency and TTFT distribution (T62)', () => {
     const now = new Date().toISOString()
-    const base = { timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.01 }
+    const base = { timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.01 }
     const records = [
       { ...base, id: 'a', outcome: 'success', callType: 'completion', latencyMs: 100, ttftMs: 10 },
       { ...base, id: 'b', outcome: 'success', callType: 'completion', latencyMs: 200, ttftMs: 20 },
@@ -1938,13 +1938,13 @@ describe('GET /api/usage', () => {
     })
   })
 
-  describe('dashboard filters (modelIds / callType / outcome / projectIds)', () => {
+  describe('dashboard filters (modelIds / callType / outcome / routerIds)', () => {
     const now = new Date().toISOString()
     const records = [
-      { id: 'c1', timestamp: now, projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.10, outcome: 'success', latencyMs: 100 }, // legacy: no callType
-      { id: 'r1', timestamp: now, projectId: 'p1', modelId: 'm2', inputTokens: 10, outputTokens: 5, cost: 0.02, outcome: 'success', callType: 'routing', latencyMs: 100 },
-      { id: 'g1', timestamp: now, projectId: 'p2', modelId: 'm2', inputTokens: 8, outputTokens: 0, cost: 0.01, outcome: 'blocked', callType: 'guardrail', latencyMs: 50 },
-      { id: 'e1', timestamp: now, projectId: 'p2', modelId: 'm1', inputTokens: 0, outputTokens: 0, cost: 0, outcome: 'error', callType: 'completion', latencyMs: 0 },
+      { id: 'c1', timestamp: now, routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.10, outcome: 'success', latencyMs: 100 }, // legacy: no callType
+      { id: 'r1', timestamp: now, routerId: 'p1', modelId: 'm2', inputTokens: 10, outputTokens: 5, cost: 0.02, outcome: 'success', callType: 'routing', latencyMs: 100 },
+      { id: 'g1', timestamp: now, routerId: 'p2', modelId: 'm2', inputTokens: 8, outputTokens: 0, cost: 0.01, outcome: 'blocked', callType: 'guardrail', latencyMs: 50 },
+      { id: 'e1', timestamp: now, routerId: 'p2', modelId: 'm1', inputTokens: 0, outputTokens: 0, cost: 0, outcome: 'error', callType: 'completion', latencyMs: 0 },
     ]
     const mount = () => mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -1996,9 +1996,9 @@ describe('GET /api/usage', () => {
       expect(b.records[0].id).toBe('g1')
     })
 
-    it('projectIds (multiselect) keeps records in the set', async () => {
-      const b = await get('projectIds=p2')
-      expect(b.records.every((r: any) => r.projectId === 'p2')).toBe(true)
+    it('routerIds (multiselect) keeps records in the set', async () => {
+      const b = await get('routerIds=p2')
+      expect(b.records.every((r: any) => r.routerId === 'p2')).toBe(true)
       expect(b.summary.totalCalls).toBe(2)
     })
 
@@ -2020,11 +2020,11 @@ describe('GET /api/usage', () => {
     })
   })
 
-  it('filters by projectId', async () => {
+  it('filters by routerId', async () => {
     setupAdminAuth()
     const records = [
-      { id: 'r1', timestamp: new Date().toISOString(), projectId: 'p1', modelId: 'm1', cost: 0.01, outcome: 'success', callType: 'completion', inputTokens: 10, outputTokens: 5, latencyMs: 100 },
-      { id: 'r2', timestamp: new Date().toISOString(), projectId: 'p2', modelId: 'm1', cost: 0.02, outcome: 'success', callType: 'completion', inputTokens: 20, outputTokens: 10, latencyMs: 100 },
+      { id: 'r1', timestamp: new Date().toISOString(), routerId: 'p1', modelId: 'm1', cost: 0.01, outcome: 'success', callType: 'completion', inputTokens: 10, outputTokens: 5, latencyMs: 100 },
+      { id: 'r2', timestamp: new Date().toISOString(), routerId: 'p2', modelId: 'm1', cost: 0.02, outcome: 'success', callType: 'completion', inputTokens: 20, outputTokens: 10, latencyMs: 100 },
     ]
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -2034,10 +2034,10 @@ describe('GET /api/usage', () => {
     })
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/api/usage?projectId=p1', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'GET', url: '/api/usage?routerId=p1', headers: adminAuthHeaders() })
     await app.close()
     const body = JSON.parse(res.body)
-    expect(body.records.every((r: any) => r.projectId === 'p1')).toBe(true)
+    expect(body.records.every((r: any) => r.routerId === 'p1')).toBe(true)
   })
 
   it('supports custom date range', async () => {
@@ -2093,7 +2093,7 @@ describe('GET /api/usage', () => {
 describe('GET /api/usage/:id', () => {
   it('returns a single usage record', async () => {
     setupAdminAuth()
-    const record = { id: 'r1', timestamp: new Date().toISOString(), projectId: 'p1', modelId: 'm1', cost: 0.01, outcome: 'success', callType: 'completion', inputTokens: 10, outputTokens: 5, latencyMs: 100 }
+    const record = { id: 'r1', timestamp: new Date().toISOString(), routerId: 'p1', modelId: 'm1', cost: 0.01, outcome: 'success', callType: 'completion', inputTokens: 10, outputTokens: 5, latencyMs: 100 }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
@@ -2110,7 +2110,7 @@ describe('GET /api/usage/:id', () => {
 
   it('resolves a record by its trace id (T53)', async () => {
     setupAdminAuth()
-    const record = { id: 'r1', traceId: 'trace-9', timestamp: new Date().toISOString(), projectId: 'p1', modelId: 'm1', cost: 0.01, outcome: 'success', callType: 'completion', inputTokens: 10, outputTokens: 5, latencyMs: 100 }
+    const record = { id: 'r1', traceId: 'trace-9', timestamp: new Date().toISOString(), routerId: 'p1', modelId: 'm1', cost: 0.01, outcome: 'success', callType: 'completion', inputTokens: 10, outputTokens: 5, latencyMs: 100 }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
@@ -2174,7 +2174,7 @@ describe('GET /api/roles', () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
-      if (t === 'roles') return [{ id: 'custom-role', name: 'Custom', permissions: ['project:read'] }]
+      if (t === 'roles') return [{ id: 'custom-role', name: 'Custom', permissions: ['router:read'] }]
       return []
     })
 
@@ -2202,7 +2202,7 @@ describe('POST /api/roles', () => {
     const res = await app.inject({
       method: 'POST', url: '/api/roles',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ id: 'dev', name: 'Developer', permissions: ['project:read', 'model:read'] }),
+      payload: JSON.stringify({ id: 'dev', name: 'Developer', permissions: ['router:read', 'model:read'] }),
     })
     await app.close()
     expect(res.statusCode).toBe(201)
@@ -2307,7 +2307,7 @@ describe('POST /api/users', () => {
 
 describe('DELETE /api/users/:id', () => {
   it('deletes a user', async () => {
-    const viewer: any = { id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'x', roleId: 'viewer', projectIds: [] }
+    const viewer: any = { id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'x', roleId: 'viewer', routerIds: [] }
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser, viewer]
@@ -3154,23 +3154,23 @@ describe('GET /api/models/:id/apikey', () => {
   })
 })
 
-// ─── Project sub-resources ────────────────────────────────────────────────────
+// ─── Router sub-resources ────────────────────────────────────────────────────
 
-describe('PUT /api/projects/:id', () => {
-  it('updates project', async () => {
+describe('PUT /api/routers/:id', () => {
+  it('updates router', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Old Name', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Old Name', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'New Name', models: [] }),
     })
@@ -3179,24 +3179,24 @@ describe('PUT /api/projects/:id', () => {
     expect(JSON.parse(res.body).name).toBe('New Name')
   })
 
-  it('redacts tokens in response when project has tokens (line 915 map callback)', async () => {
-    // Project has a token → t => ({ ...t, token: undefined }) map callback is exercised
+  it('redacts tokens in response when router has tokens (line 915 map callback)', async () => {
+    // Router has a token → t => ({ ...t, token: undefined }) map callback is exercised
     setupAdminAuth()
-    const project = {
+    const router = {
       id: 'p1', name: 'Old Name', members: [], models: [],
       tokens: [{ id: 'tok1', name: 'Test', token: 'sk-secret-value', created: '', createdBy: '' }],
     }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'New Name', models: [] }),
     })
@@ -3208,18 +3208,18 @@ describe('PUT /api/projects/:id', () => {
     expect(body.tokens[0].id).toBe('tok1')
   })
 
-  it('returns 404 for unknown project', async () => {
+  it('returns 404 for unknown router', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/nope',
+      method: 'PUT', url: '/api/routers/nope',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'X', models: [] }),
     })
@@ -3229,18 +3229,18 @@ describe('PUT /api/projects/:id', () => {
 
   it('accepts pii config with policies array', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({
         name: 'Test', models: [],
@@ -3260,55 +3260,55 @@ describe('PUT /api/projects/:id', () => {
   })
 })
 
-describe('DELETE /api/projects/:id', () => {
-  it('deletes project', async () => {
+describe('DELETE /api/routers/:id', () => {
+  it('deletes router', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/projects/p1', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'DELETE', url: '/api/routers/p1', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(204)
   })
 
-  it('returns 404 for unknown project', async () => {
+  it('returns 404 for unknown router', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/projects/nope', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'DELETE', url: '/api/routers/nope', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(404)
   })
 })
 
-describe('POST /api/projects/:id/tokens', () => {
-  it('adds a token to project', async () => {
+describe('POST /api/routers/:id/tokens', () => {
+  it('adds a token to router', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/p1/tokens',
+      method: 'POST', url: '/api/routers/p1/tokens',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ labels: ['dev'] }),
     })
@@ -3317,18 +3317,18 @@ describe('POST /api/projects/:id/tokens', () => {
     expect(JSON.parse(res.body).token).toBeDefined()
   })
 
-  it('returns 404 for unknown project', async () => {
+  it('returns 404 for unknown router', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/nope/tokens',
+      method: 'POST', url: '/api/routers/nope/tokens',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({}),
     })
@@ -3338,11 +3338,11 @@ describe('POST /api/projects/:id/tokens', () => {
 
   it('stores expiresAt when provided in future', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -3350,7 +3350,7 @@ describe('POST /api/projects/:id/tokens', () => {
     const future = new Date(Date.now() + 86400000).toISOString()
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/p1/tokens',
+      method: 'POST', url: '/api/routers/p1/tokens',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ expiresAt: future }),
     })
@@ -3361,18 +3361,18 @@ describe('POST /api/projects/:id/tokens', () => {
 
   it('returns 400 when expiresAt is in the past', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const past = new Date(Date.now() - 1000).toISOString()
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/p1/tokens',
+      method: 'POST', url: '/api/routers/p1/tokens',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ expiresAt: past }),
     })
@@ -3382,17 +3382,17 @@ describe('POST /api/projects/:id/tokens', () => {
 
   it('returns 400 when expiresAt is not a valid datetime', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/p1/tokens',
+      method: 'POST', url: '/api/routers/p1/tokens',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ expiresAt: 'not-a-date' }),
     })
@@ -3402,11 +3402,11 @@ describe('POST /api/projects/:id/tokens', () => {
 
   it('persists scopes when provided', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     let written: any
@@ -3414,7 +3414,7 @@ describe('POST /api/projects/:id/tokens', () => {
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/p1/tokens',
+      method: 'POST', url: '/api/routers/p1/tokens',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ scopes: ['mcp', 'mcp:write'] }),
     })
@@ -3425,22 +3425,22 @@ describe('POST /api/projects/:id/tokens', () => {
   })
 })
 
-describe('PUT /api/projects/:id/tokens/:tokenId', () => {
+describe('PUT /api/routers/:id/tokens/:tokenId', () => {
   it('updates token models', async () => {
     setupAdminAuth()
     const token = { id: 'tok-1', token: 'sk-rt-xxx', tokenSnippet: 'sk-rt-xx', createdAt: new Date().toISOString(), models: [] }
-    const project = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1/tokens/tok-1',
+      method: 'PUT', url: '/api/routers/p1/tokens/tok-1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ models: [{ modelId: 'm1' }] }),
     })
@@ -3450,17 +3450,17 @@ describe('PUT /api/projects/:id/tokens/:tokenId', () => {
 
   it('returns 404 for unknown token', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1/tokens/nope',
+      method: 'PUT', url: '/api/routers/p1/tokens/nope',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ models: [] }),
     })
@@ -3471,18 +3471,18 @@ describe('PUT /api/projects/:id/tokens/:tokenId', () => {
   it('sets scopes when provided', async () => {
     setupAdminAuth()
     const token = { id: 'tok-1', token: 'sk-rt-xxx', tokenSnippet: 'sk-rt-xx', createdAt: new Date().toISOString(), models: [] }
-    const project = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1/tokens/tok-1',
+      method: 'PUT', url: '/api/routers/p1/tokens/tok-1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ scopes: ['mcp'] }),
     })
@@ -3494,18 +3494,18 @@ describe('PUT /api/projects/:id/tokens/:tokenId', () => {
   it('leaves existing scopes untouched when scopes omitted', async () => {
     setupAdminAuth()
     const token = { id: 'tok-1', token: 'sk-rt-xxx', tokenSnippet: 'sk-rt-xx', createdAt: new Date().toISOString(), models: [], scopes: ['mcp', 'mcp:write'] }
-    const project = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1/tokens/tok-1',
+      method: 'PUT', url: '/api/routers/p1/tokens/tok-1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ labels: ['prod'] }),
     })
@@ -3515,42 +3515,42 @@ describe('PUT /api/projects/:id/tokens/:tokenId', () => {
   })
 })
 
-describe('DELETE /api/projects/:id/tokens/:tokenId', () => {
+describe('DELETE /api/routers/:id/tokens/:tokenId', () => {
   it('deletes a token', async () => {
     setupAdminAuth()
     const token = { id: 'tok-1', token: 'sk-rt-xxx', tokenSnippet: 'sk-rt-xx', createdAt: new Date().toISOString() }
-    const project = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/projects/p1/tokens/tok-1', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'DELETE', url: '/api/routers/p1/tokens/tok-1', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(204)
   })
 })
 
-describe('POST /api/projects/:id/members', () => {
-  it('adds a member to project', async () => {
+describe('POST /api/routers/:id/members', () => {
+  it('adds a member to router', async () => {
     setupAdminAuth()
     const viewer = { id: 'viewer-id', email: 'viewer@example.com', roleId: 'viewer' }
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser, viewer]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/p1/members',
+      method: 'POST', url: '/api/routers/p1/members',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ userId: 'viewer-id', role: 'viewer' }),
     })
@@ -3561,17 +3561,17 @@ describe('POST /api/projects/:id/members', () => {
   it('returns 409 when user is already a member', async () => {
     setupAdminAuth()
     const viewer = { id: 'viewer-id', email: 'viewer@example.com', roleId: 'viewer' }
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [{ userId: 'viewer-id', role: 'viewer' }], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [{ userId: 'viewer-id', role: 'viewer' }], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser, viewer]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/p1/members',
+      method: 'POST', url: '/api/routers/p1/members',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ userId: 'viewer-id', role: 'viewer' }),
     })
@@ -3580,52 +3580,52 @@ describe('POST /api/projects/:id/members', () => {
   })
 })
 
-describe('DELETE /api/projects/:id/members/:userId', () => {
-  it('removes a member from project', async () => {
+describe('DELETE /api/routers/:id/members/:userId', () => {
+  it('removes a member from router', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [{ userId: 'viewer-id', role: 'viewer' }], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [{ userId: 'viewer-id', role: 'viewer' }], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/projects/p1/members/viewer-id', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'DELETE', url: '/api/routers/p1/members/viewer-id', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(204)
   })
 
-  it('returns 404 when project has no members', async () => {
+  it('returns 404 when router has no members', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], models: [] }  // no members field
+    const router = { id: 'p1', name: 'Test', tokens: [], models: [] }  // no members field
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/projects/p1/members/viewer-id', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'DELETE', url: '/api/routers/p1/members/viewer-id', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(404)
   })
 
   it('returns 404 when member not found', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/projects/p1/members/unknown-id', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'DELETE', url: '/api/routers/p1/members/unknown-id', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(404)
   })
@@ -3750,7 +3750,7 @@ describe('GET /api/clients', () => {
 describe('PUT /api/roles/:id', () => {
   it('updates custom role', async () => {
     setupAdminAuth()
-    const customRole = { id: 'dev', name: 'Developer', permissions: ['project:read'] as any[] }
+    const customRole = { id: 'dev', name: 'Developer', permissions: ['router:read'] as any[] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return [customRole]
@@ -3805,21 +3805,21 @@ describe('PUT /api/roles/:id', () => {
   })
 })
 
-describe('PUT /api/projects/:id/members/:userId', () => {
+describe('PUT /api/routers/:id/members/:userId', () => {
   it('updates member role', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [{ userId: 'viewer-id', role: 'viewer' }], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [{ userId: 'viewer-id', role: 'viewer' }], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1/members/viewer-id',
+      method: 'PUT', url: '/api/routers/p1/members/viewer-id',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ role: 'operator' }),
     })
@@ -3828,18 +3828,18 @@ describe('PUT /api/projects/:id/members/:userId', () => {
     expect(JSON.parse(res.body).role).toBe('operator')
   })
 
-  it('returns 404 for unknown project', async () => {
+  it('returns 404 for unknown router', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/nope/members/viewer-id',
+      method: 'PUT', url: '/api/routers/nope/members/viewer-id',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ role: 'viewer' }),
     })
@@ -3847,19 +3847,19 @@ describe('PUT /api/projects/:id/members/:userId', () => {
     expect(res.statusCode).toBe(404)
   })
 
-  it('returns 404 when project has no members', async () => {
+  it('returns 404 when router has no members', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1/members/viewer-id',
+      method: 'PUT', url: '/api/routers/p1/members/viewer-id',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ role: 'operator' }),
     })
@@ -3869,17 +3869,17 @@ describe('PUT /api/projects/:id/members/:userId', () => {
 
   it('returns 404 when member not found', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1/members/nonexistent-id',
+      method: 'PUT', url: '/api/routers/p1/members/nonexistent-id',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ role: 'operator' }),
     })
@@ -4020,9 +4020,9 @@ describe('GET /api/usage — timeline sort comparator (line 812)', () => {
   it('sorts timeline entries across multiple days', async () => {
     setupAdminAuth()
     const records = [
-      { id: 'r1', projectId: 'p1', modelId: 'gpt4', inputTokens: 10, outputTokens: 5, cachedInputTokens: 0, cost: 0.001, latencyMs: 100, ttftMs: 50, outcome: 'success', callType: 'completion', timestamp: '2024-03-15T10:00:00.000Z' },
-      { id: 'r2', projectId: 'p1', modelId: 'gpt4', inputTokens: 10, outputTokens: 5, cachedInputTokens: 0, cost: 0.001, latencyMs: 100, ttftMs: 50, outcome: 'success', callType: 'completion', timestamp: '2024-03-14T10:00:00.000Z' },
-      { id: 'r3', projectId: 'p1', modelId: 'gpt4', inputTokens: 10, outputTokens: 5, cachedInputTokens: 0, cost: 0.002, latencyMs: 100, ttftMs: 50, outcome: 'success', callType: 'completion', timestamp: '2024-03-13T10:00:00.000Z' },
+      { id: 'r1', routerId: 'p1', modelId: 'gpt4', inputTokens: 10, outputTokens: 5, cachedInputTokens: 0, cost: 0.001, latencyMs: 100, ttftMs: 50, outcome: 'success', callType: 'completion', timestamp: '2024-03-15T10:00:00.000Z' },
+      { id: 'r2', routerId: 'p1', modelId: 'gpt4', inputTokens: 10, outputTokens: 5, cachedInputTokens: 0, cost: 0.001, latencyMs: 100, ttftMs: 50, outcome: 'success', callType: 'completion', timestamp: '2024-03-14T10:00:00.000Z' },
+      { id: 'r3', routerId: 'p1', modelId: 'gpt4', inputTokens: 10, outputTokens: 5, cachedInputTokens: 0, cost: 0.002, latencyMs: 100, ttftMs: 50, outcome: 'success', callType: 'completion', timestamp: '2024-03-13T10:00:00.000Z' },
     ]
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -4044,21 +4044,21 @@ describe('GET /api/usage — timeline sort comparator (line 812)', () => {
   })
 })
 
-describe('POST /api/projects/:id/tokens — without labels (line 517)', () => {
+describe('POST /api/routers/:id/tokens — without labels (line 517)', () => {
   it('creates token without labels', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', models: [] }  // no tokens field → covers line 521
+    const router = { id: 'p1', name: 'Test', models: [] }  // no tokens field → covers line 521
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/p1/tokens',
+      method: 'POST', url: '/api/routers/p1/tokens',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({}),  // no labels → covers {} branch
     })
@@ -4068,56 +4068,56 @@ describe('POST /api/projects/:id/tokens — without labels (line 517)', () => {
   })
 })
 
-describe('DELETE /api/projects/:id/tokens/:tokenId — additional branches', () => {
-  it('returns 404 when project has no tokens', async () => {
+describe('DELETE /api/routers/:id/tokens/:tokenId — additional branches', () => {
+  it('returns 404 when router has no tokens', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', members: [], models: [] }  // no tokens field
+    const router = { id: 'p1', name: 'Test', members: [], models: [] }  // no tokens field
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/projects/p1/tokens/t1', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'DELETE', url: '/api/routers/p1/tokens/t1', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(404)
   })
 
   it('returns 404 for unknown token', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/projects/p1/tokens/nonexistent', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'DELETE', url: '/api/routers/p1/tokens/nonexistent', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(404)
   })
 })
 
-describe('PUT /api/projects/:id/tokens/:tokenId — update labels', () => {
+describe('PUT /api/routers/:id/tokens/:tokenId — update labels', () => {
   it('does not expose plaintext token secret in PUT response', async () => {
     setupAdminAuth()
     const token = { id: 'tok-1', token: 'sk-rt-secret-value', tokenSnippet: 'sk-rt-se', createdAt: new Date().toISOString() }
-    const project = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1/tokens/tok-1',
+      method: 'PUT', url: '/api/routers/p1/tokens/tok-1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ labels: ['prod'] }),
     })
@@ -4129,18 +4129,18 @@ describe('PUT /api/projects/:id/tokens/:tokenId — update labels', () => {
   it('rejects PUT tags exceeding 50 entries', async () => {
     setupAdminAuth()
     const token = { id: 'tok-1', token: 'sk-rt-xxx', tokenSnippet: 'sk-rt-xx', createdAt: new Date().toISOString() }
-    const project = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
     const tooManyTags = Object.fromEntries(Array.from({ length: 51 }, (_, i) => [`k${i}`, 'v']))
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1/tokens/tok-1',
+      method: 'PUT', url: '/api/routers/p1/tokens/tok-1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ tags: tooManyTags }),
     })
@@ -4151,18 +4151,18 @@ describe('PUT /api/projects/:id/tokens/:tokenId — update labels', () => {
   it('updates token labels (covers line 542)', async () => {
     setupAdminAuth()
     const token = { id: 'tok-1', token: 'sk-rt-xxx', tokenSnippet: 'sk-rt-xx', createdAt: new Date().toISOString() }
-    const project = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1/tokens/tok-1',
+      method: 'PUT', url: '/api/routers/p1/tokens/tok-1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ labels: ['prod'] }),
     })
@@ -4170,19 +4170,19 @@ describe('PUT /api/projects/:id/tokens/:tokenId — update labels', () => {
     expect(res.statusCode).toBe(200)
   })
 
-  it('returns 404 when project has no tokens (covers line 536)', async () => {
+  it('returns 404 when router has no tokens (covers line 536)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', members: [], models: [] }  // no tokens
+    const router = { id: 'p1', name: 'Test', members: [], models: [] }  // no tokens
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1/tokens/t1',
+      method: 'PUT', url: '/api/routers/p1/tokens/t1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ labels: ['prod'] }),
     })
@@ -4194,18 +4194,18 @@ describe('PUT /api/projects/:id/tokens/:tokenId — update labels', () => {
 describe('Token tags (#95)', () => {
   it('creates token with tags', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/p1/tokens',
+      method: 'POST', url: '/api/routers/p1/tokens',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ tags: { env: 'production', team: 'backend' } }),
     })
@@ -4218,18 +4218,18 @@ describe('Token tags (#95)', () => {
   it('updates token tags via PUT', async () => {
     setupAdminAuth()
     const token = { id: 'tok-1', token: 'sk-rt-xxx', tokenSnippet: 'sk-rt-xx', createdAt: new Date().toISOString() }
-    const project = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [token], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1/tokens/tok-1',
+      method: 'PUT', url: '/api/routers/p1/tokens/tok-1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ tags: { env: 'staging' } }),
     })
@@ -4240,20 +4240,20 @@ describe('Token tags (#95)', () => {
   })
 })
 
-describe('POST /api/projects/:id/members — additional branches', () => {
+describe('POST /api/routers/:id/members — additional branches', () => {
   it('returns 404 when user not found', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]  // no viewer user
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/p1/members',
+      method: 'POST', url: '/api/routers/p1/members',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ userId: 'nonexistent-user', role: 'viewer' }),
     })
@@ -4261,21 +4261,21 @@ describe('POST /api/projects/:id/members — additional branches', () => {
     expect(res.statusCode).toBe(404)
   })
 
-  it('initializes members array when project has none (covers line 575)', async () => {
+  it('initializes members array when router has none (covers line 575)', async () => {
     setupAdminAuth()
     const viewer = { id: 'viewer-id', email: 'viewer@example.com', roleId: 'viewer' }
-    const project = { id: 'p1', name: 'Test', tokens: [], models: [] }  // no members field
+    const router = { id: 'p1', name: 'Test', tokens: [], models: [] }  // no members field
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser, viewer]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/p1/members',
+      method: 'POST', url: '/api/routers/p1/members',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ userId: 'viewer-id', role: 'viewer' }),
     })
@@ -4285,17 +4285,17 @@ describe('POST /api/projects/:id/members — additional branches', () => {
 })
 
 describe('PUT /api/models/:id — cascade rename (lines 349-370)', () => {
-  it('cascades model rename to project references and renames the dedicated connection', async () => {
+  it('cascades model rename to router references and renames the dedicated connection', async () => {
     setupAdminAuth()
     const existingInstance = { id: 'gpt4', connectionId: 'conn-for-gpt4', upstreamModelId: 'gpt4', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
     const existingConnection = { id: 'conn-for-gpt4', providerId: 'openai', label: 'GPT-4', credentials: {}, endpoint: 'https://api.openai.com/v1', enabled: true }
-    const project = { id: 'p1', name: 'Test', tokens: [{ id: 't1', models: [{ modelId: 'gpt4' }] }], members: [], models: [{ modelId: 'gpt4' }] }
+    const router = { id: 'p1', name: 'Test', tokens: [{ id: 't1', models: [{ modelId: 'gpt4' }] }], members: [], models: [{ modelId: 'gpt4' }] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'instances') return [existingInstance]
       if (t === 'connections') return [existingConnection]
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -4308,9 +4308,9 @@ describe('PUT /api/models/:id — cascade rename (lines 349-370)', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(200)
-    // writeConfig: connections (rename), instances, projects
-    const projectsCall = mockWriteConfig.mock.calls.find(c => c[0] === 'projects')
-    expect(projectsCall?.[1][0].models[0].modelId).toBe('gpt4-renamed')
+    // writeConfig: connections (rename), instances, routers
+    const routersCall = mockWriteConfig.mock.calls.find(c => c[0] === 'routers')
+    expect(routersCall?.[1][0].models[0].modelId).toBe('gpt4-renamed')
     const connectionsCall = mockWriteConfig.mock.calls.find(c => c[0] === 'connections')
     expect(connectionsCall?.[1].find((c: { id: string }) => c.id === 'conn-for-gpt4-renamed')).toBeTruthy()
   })
@@ -4337,20 +4337,20 @@ describe('PUT /api/models/:id — cascade rename (lines 349-370)', () => {
   })
 })
 
-describe('POST /api/projects — without models (line 441 ?? [] branch)', () => {
-  it('creates project without models field', async () => {
+describe('POST /api/routers — without models (line 441 ?? [] branch)', () => {
+  it('creates router without models field', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'NoModels' }),  // no models field
     })
@@ -4358,18 +4358,18 @@ describe('POST /api/projects — without models (line 441 ?? [] branch)', () => 
     expect(res.statusCode).toBe(201)
   })
 
-  it('creates project with guardrails config (line 716 true / line 750 true cond-expr)', async () => {
+  it('creates router with guardrails config (line 716 true / line 750 true cond-expr)', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'WithGuardrails', guardrails: { rules: [] } }),
     })
@@ -4383,7 +4383,7 @@ describe('POST /api/projects — without models (line 441 ?? [] branch)', () => 
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -4396,7 +4396,7 @@ describe('POST /api/projects — without models (line 441 ?? [] branch)', () => 
       ],
     }
     const res = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'FallbackTest', guardrails }),
     })
@@ -4410,17 +4410,17 @@ describe('POST /api/projects — without models (line 441 ?? [] branch)', () => 
     expect(rules[2].config.fallbackModelIds).toEqual(['m2'])
   })
 
-  it('returns 400 for invalid guardrails config in POST /api/projects (line 718)', async () => {
+  it('returns 400 for invalid guardrails config in POST /api/routers (line 718)', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'X', guardrails: { rules: [{ type: 'regex', config: { patterns: ['x'] } }] } }),
     })
@@ -4428,18 +4428,18 @@ describe('POST /api/projects — without models (line 441 ?? [] branch)', () => 
     expect(res.statusCode).toBe(400)
   })
 
-  it('creates project with pii config (line 722 true / line 751 true cond-expr)', async () => {
+  it('creates router with pii config (line 722 true / line 751 true cond-expr)', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'WithPii', pii: { policies: [{ name: 'default', target: 'request', entities: ['EMAIL'] }] } }),
     })
@@ -4448,17 +4448,17 @@ describe('POST /api/projects — without models (line 441 ?? [] branch)', () => 
     expect((res.json() as Record<string, unknown>)['pii']).toBeDefined()
   })
 
-  it('returns 400 for invalid pii config in POST /api/projects (line 724)', async () => {
+  it('returns 400 for invalid pii config in POST /api/routers (line 724)', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'X', pii: { policies: 'not-an-array' } }),
     })
@@ -4467,21 +4467,21 @@ describe('POST /api/projects — without models (line 441 ?? [] branch)', () => 
   })
 })
 
-describe('PUT /api/projects/:id — additional branches (lines 471, 481, 491)', () => {
-  it('returns 409 for duplicate project name (line 471)', async () => {
+describe('PUT /api/routers/:id — additional branches (lines 471, 481, 491)', () => {
+  it('returns 409 for duplicate router name (line 471)', async () => {
     setupAdminAuth()
     const p1 = { id: 'p1', name: 'Alpha', tokens: [], members: [], models: [] }
     const p2 = { id: 'p2', name: 'Beta', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [p1, p2]
+      if (t === 'routers') return [p1, p2]
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Beta', models: [] }),
     })
@@ -4489,20 +4489,20 @@ describe('PUT /api/projects/:id — additional branches (lines 471, 481, 491)', 
     expect(res.statusCode).toBe(409)
   })
 
-  it('updates project with model prompt (line 481-483 prompt branch)', async () => {
+  it('updates router with model prompt (line 481-483 prompt branch)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [{ modelId: 'gpt4', prompt: 'Be concise.' }] }),
     })
@@ -4511,20 +4511,20 @@ describe('PUT /api/projects/:id — additional branches (lines 471, 481, 491)', 
     expect(JSON.parse(res.body).models[0].prompt).toBe('Be concise.')
   })
 
-  it('handles project without tokens field (line 491 || [] branch)', async () => {
+  it('handles router without tokens field (line 491 || [] branch)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', members: [], models: [] }  // no tokens field
+    const router = { id: 'p1', name: 'Test', members: [], models: [] }  // no tokens field
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [] }),
     })
@@ -4533,22 +4533,22 @@ describe('PUT /api/projects/:id — additional branches (lines 471, 481, 491)', 
     expect(JSON.parse(res.body).tokens).toEqual([])
   })
 
-  it('redacts token value from response when project has tokens (line 855 fn)', async () => {
+  it('redacts token value from response when router has tokens (line 855 fn)', async () => {
     setupAdminAuth()
-    const project = {
+    const router = {
       id: 'p1', name: 'Test', members: [], models: [],
       tokens: [{ token: 'secret-abc', name: 'Main', permissions: ['completion'] }],
     }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [] }),
     })
@@ -4560,19 +4560,19 @@ describe('PUT /api/projects/:id — additional branches (lines 471, 481, 491)', 
     expect(body.tokens[0]!.token).toBeUndefined()
   })
 
-  it('returns 400 for empty project name', async () => {
+  it('returns 400 for empty router name', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: '   ', models: [] }),
     })
@@ -4581,20 +4581,20 @@ describe('PUT /api/projects/:id — additional branches (lines 471, 481, 491)', 
   })
 })
 
-describe('PUT /api/projects/:id — guardrails null/preserve branches (lines 785-802)', () => {
+describe('PUT /api/routers/:id — guardrails null/preserve branches (lines 785-802)', () => {
   it('clears guardrails when guardrails:null sent (line 785 true branch)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], guardrails: { rules: [] } }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], guardrails: { rules: [] } }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [], guardrails: null }),
     })
@@ -4606,17 +4606,17 @@ describe('PUT /api/projects/:id — guardrails null/preserve branches (lines 785
 
   it('preserves existing guardrails when not sent (line 791 true branch)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], guardrails: { rules: [] } }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], guardrails: { rules: [] } }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [] }),  // no guardrails key
     })
@@ -4628,17 +4628,17 @@ describe('PUT /api/projects/:id — guardrails null/preserve branches (lines 785
 
   it('clears pii when pii:null sent (line 795 true branch)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], pii: { mode: 'redact', entities: ['EMAIL'] } }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], pii: { mode: 'redact', entities: ['EMAIL'] } }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [], pii: null }),
     })
@@ -4648,17 +4648,17 @@ describe('PUT /api/projects/:id — guardrails null/preserve branches (lines 785
 
   it('preserves existing pii when not sent (line 801 true branch)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], pii: { mode: 'redact', entities: ['EMAIL'] } }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], pii: { mode: 'redact', entities: ['EMAIL'] } }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [] }),
     })
@@ -4668,19 +4668,19 @@ describe('PUT /api/projects/:id — guardrails null/preserve branches (lines 785
     expect(body['pii']).toBeDefined()
   })
 
-  it('updates project guardrails with valid config (line 787 else-if / line 790 set)', async () => {
+  it('updates router guardrails with valid config (line 787 else-if / line 790 set)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [], guardrails: { rules: [{ type: 'regex', target: 'request', block: true, config: { patterns: ['ban'] } }] } }),
     })
@@ -4691,16 +4691,16 @@ describe('PUT /api/projects/:id — guardrails null/preserve branches (lines 785
 
   it('returns 400 for invalid guardrails in PUT (line 789 true branch)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [], guardrails: { rules: [{ type: 'regex', config: { patterns: ['x'] } }] } }),
     })
@@ -4708,19 +4708,19 @@ describe('PUT /api/projects/:id — guardrails null/preserve branches (lines 785
     expect(res.statusCode).toBe(400)
   })
 
-  it('updates project pii with valid config (line 797 else-if)', async () => {
+  it('updates router pii with valid config (line 797 else-if)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [], pii: { policies: [{ name: 'default', target: 'request', entities: ['EMAIL'] }] } }),
     })
@@ -4731,16 +4731,16 @@ describe('PUT /api/projects/:id — guardrails null/preserve branches (lines 785
 
   it('returns 400 for invalid pii in PUT (line 799 true branch)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [], pii: { policies: 'not-an-array' } }),
     })
@@ -4749,20 +4749,20 @@ describe('PUT /api/projects/:id — guardrails null/preserve branches (lines 785
   })
 })
 
-describe('PATCH /api/projects/:id/guardrails — permission + cond-expr branches', () => {
-  it('returns 403 without project:write (line 834 if branch)', async () => {
-    const viewRole = { id: 'view', name: 'View', permissions: ['project:read'] }
-    const viewUser = { id: 'view-id', email: 'v@v.com', passwordHash: '$2b$12$h', roleId: 'view', projectIds: [] }
+describe('PATCH /api/routers/:id/guardrails — permission + cond-expr branches', () => {
+  it('returns 403 without router:write (line 834 if branch)', async () => {
+    const viewRole = { id: 'view', name: 'View', permissions: ['router:read'] }
+    const viewUser = { id: 'view-id', email: 'v@v.com', passwordHash: '$2b$12$h', roleId: 'view', routerIds: [] }
     mockVerifyToken.mockReturnValue({ sub: 'view-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [viewUser]
       if (t === 'roles') return [viewRole]
-      if (t === 'projects') return [{ id: 'p1', name: 'T', tokens: [], members: [], models: [] }]
+      if (t === 'routers') return [{ id: 'p1', name: 'T', tokens: [], members: [], models: [] }]
       return []
     })
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PATCH', url: '/api/projects/p1/guardrails',
+      method: 'PATCH', url: '/api/routers/p1/guardrails',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ guardrails: { rules: [] } }),
     })
@@ -4770,17 +4770,17 @@ describe('PATCH /api/projects/:id/guardrails — permission + cond-expr branches
     expect(res.statusCode).toBe(403)
   })
 
-  it('returns 404 for unknown project (line 837 if branch)', async () => {
+  it('returns 404 for unknown router (line 837 if branch)', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PATCH', url: '/api/projects/nope/guardrails',
+      method: 'PATCH', url: '/api/routers/nope/guardrails',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ guardrails: { rules: [] } }),
     })
@@ -4788,20 +4788,20 @@ describe('PATCH /api/projects/:id/guardrails — permission + cond-expr branches
     expect(res.statusCode).toBe(404)
   })
 
-  it('preserves existing guardrails when project has them (line 839 true cond-expr)', async () => {
+  it('preserves existing guardrails when router has them (line 839 true cond-expr)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'T', tokens: [], members: [], models: [], guardrails: { rules: [] } }
+    const router = { id: 'p1', name: 'T', tokens: [], members: [], models: [], guardrails: { rules: [] } }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     // Patch with pii only (no guardrails) → guardrails preserved
     const res = await app.inject({
-      method: 'PATCH', url: '/api/projects/p1/guardrails',
+      method: 'PATCH', url: '/api/routers/p1/guardrails',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({}),
     })
@@ -4811,19 +4811,19 @@ describe('PATCH /api/projects/:id/guardrails — permission + cond-expr branches
     expect(body['guardrails']).toBeDefined()
   })
 
-  it('preserves existing pii when project has it (line 840 true cond-expr)', async () => {
+  it('preserves existing pii when router has it (line 840 true cond-expr)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'T', tokens: [], members: [], models: [], pii: { mode: 'redact', entities: ['EMAIL'] } }
+    const router = { id: 'p1', name: 'T', tokens: [], members: [], models: [], pii: { mode: 'redact', entities: ['EMAIL'] } }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PATCH', url: '/api/projects/p1/guardrails',
+      method: 'PATCH', url: '/api/routers/p1/guardrails',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({}),
     })
@@ -4835,16 +4835,16 @@ describe('PATCH /api/projects/:id/guardrails — permission + cond-expr branches
 
   it('returns 400 for invalid guardrails config (line 843 true branch)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'T', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'T', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PATCH', url: '/api/projects/p1/guardrails',
+      method: 'PATCH', url: '/api/routers/p1/guardrails',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ guardrails: { rules: [{ type: 'regex', config: { patterns: ['x'] } }] } }),
     })
@@ -4852,24 +4852,24 @@ describe('PATCH /api/projects/:id/guardrails — permission + cond-expr branches
     expect(res.statusCode).toBe(400)
   })
 
-  it('redacts tokens in response when project has tokens (line 915 map callback)', async () => {
-    // Project has tokens → t => ({ ...t, token: undefined }) map callback at line 915 is exercised
+  it('redacts tokens in response when router has tokens (line 915 map callback)', async () => {
+    // Router has tokens → t => ({ ...t, token: undefined }) map callback at line 915 is exercised
     setupAdminAuth()
-    const project = {
+    const router = {
       id: 'p1', name: 'T', members: [], models: [],
       tokens: [{ id: 'tok1', name: 'TestTok', token: 'sk-secret-value', created: '', createdBy: '' }],
     }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PATCH', url: '/api/projects/p1/guardrails',
+      method: 'PATCH', url: '/api/routers/p1/guardrails',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ guardrails: { rules: [] } }),
     })
@@ -5105,18 +5105,18 @@ describe('PUT /api/models/:id — optional fields', () => {
     expect(res.statusCode).toBe(200)
   })
 
-  it('cascade rename when NO project references the old model ID (projectsChanged stays false)', async () => {
+  it('cascade rename when NO router references the old model ID (routersChanged stays false)', async () => {
     setupAdminAuth()
     const existingInstance = { id: 'gpt4', connectionId: 'conn-for-gpt4', upstreamModelId: 'gpt4', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
     const existingConnection = { id: 'conn-for-gpt4', providerId: 'openai', label: 'GPT-4', credentials: {}, endpoint: 'https://api.openai.com/v1', enabled: true }
-    // project does NOT reference gpt4
-    const project = { id: 'p1', name: 'Test', tokens: [{ id: 't1', models: [{ modelId: 'other-model' }] }], members: [], models: [{ modelId: 'other-model' }] }
+    // router does NOT reference gpt4
+    const router = { id: 'p1', name: 'Test', tokens: [{ id: 't1', models: [{ modelId: 'other-model' }] }], members: [], models: [{ modelId: 'other-model' }] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'instances') return [existingInstance]
       if (t === 'connections') return [existingConnection]
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -5134,8 +5134,8 @@ describe('PUT /api/models/:id — optional fields', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(200)
-    // no project reference matched → no projects write
-    expect(mockWriteConfig.mock.calls.some(c => c[0] === 'projects')).toBe(false)
+    // no router reference matched → no routers write
+    expect(mockWriteConfig.mock.calls.some(c => c[0] === 'routers')).toBe(false)
   })
 })
 
@@ -5198,25 +5198,25 @@ describe('POST /api/auth/login — bcrypt hash coverage', () => {
   })
 })
 
-// ─── POST /api/projects — optional routing fields ────────────────────────────
+// ─── POST /api/routers — optional routing fields ────────────────────────────
 
-describe('POST /api/projects — optional routing fields', () => {
-  it('creates project with routingModelId, policies, fallbackRoutingModelIds, timeoutMs', async () => {
+describe('POST /api/routers — optional routing fields', () => {
+  it('creates router with routingModelId, policies, fallbackRoutingModelIds, timeoutMs', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({
-        name: 'Full Project',
+        name: 'Full Router',
         routingModelId: 'gpt4',
         autoRouting: false,
         fallbackRoutingModelIds: ['gpt3'],
@@ -5229,18 +5229,18 @@ describe('POST /api/projects — optional routing fields', () => {
     expect(res.statusCode).toBe(201)
   })
 
-  it('returns 409 for duplicate project name', async () => {
+  it('returns 409 for duplicate router name', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [{ id: 'p1', name: 'Existing' }]
+      if (t === 'routers') return [{ id: 'p1', name: 'Existing' }]
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'existing' }),  // lowercase match
     })
@@ -5248,18 +5248,18 @@ describe('POST /api/projects — optional routing fields', () => {
     expect(res.statusCode).toBe(409)
   })
 
-  it('returns 400 for empty project name', async () => {
+  it('returns 400 for empty router name', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: '  ' }),
     })
@@ -5268,23 +5268,23 @@ describe('POST /api/projects — optional routing fields', () => {
   })
 })
 
-// ─── PUT /api/projects/:id — optional routing fields ──────────────────────────
+// ─── PUT /api/routers/:id — optional routing fields ──────────────────────────
 
-describe('PUT /api/projects/:id — optional routing fields', () => {
-  it('updates project with routingModelId, policies, fallbackRoutingModelIds, timeoutMs', async () => {
+describe('PUT /api/routers/:id — optional routing fields', () => {
+  it('updates router with routingModelId, policies, fallbackRoutingModelIds, timeoutMs', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], routingModelId: 'old-model' }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], routingModelId: 'old-model' }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({
         name: 'Test',
@@ -5302,18 +5302,18 @@ describe('PUT /api/projects/:id — optional routing fields', () => {
 
   it('preserves existing routingModelId when not in body', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], routingModelId: 'preserved-model' }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], routingModelId: 'preserved-model' }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({
         name: 'Test',
@@ -5337,8 +5337,8 @@ describe('GET /api/usage — additional branches', () => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'usage') return [
-        { id: 'r1', timestamp: new Date().toISOString(), projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cachedInputTokens: 2, cost: 0.01, outcome: 'success', callType: 'routing' },
-        { id: 'r2', timestamp: new Date().toISOString(), projectId: 'p1', modelId: 'm1', inputTokens: 20, outputTokens: 10, cost: 0.02, outcome: 'error', callType: 'completion' },
+        { id: 'r1', timestamp: new Date().toISOString(), routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cachedInputTokens: 2, cost: 0.01, outcome: 'success', callType: 'routing' },
+        { id: 'r2', timestamp: new Date().toISOString(), routerId: 'p1', modelId: 'm1', inputTokens: 20, outputTokens: 10, cost: 0.02, outcome: 'error', callType: 'completion' },
       ]
       return []
     })
@@ -5375,7 +5375,7 @@ describe('GET /api/usage — additional branches', () => {
     setupAdminAuth()
     const records = Array.from({ length: 5 }, (_, i) => ({
       id: `r${i}`, timestamp: new Date().toISOString(),
-      projectId: 'p1', modelId: 'm1',
+      routerId: 'p1', modelId: 'm1',
       inputTokens: 10, outputTokens: 5, cost: 0.01,
       outcome: 'success', callType: 'completion', latencyMs: 100,
     }))
@@ -5400,39 +5400,39 @@ describe('GET /api/usage — additional branches', () => {
   })
 })
 
-// ─── GET /api/projects — tokens strip coverage ────────────────────────────────
+// ─── GET /api/routers — tokens strip coverage ────────────────────────────────
 
-describe('GET /api/projects — token stripping', () => {
-  it('strips token from projects that have tokens', async () => {
+describe('GET /api/routers — token stripping', () => {
+  it('strips token from routers that have tokens', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [{ id: 't1', token: 'sk-rt-secret', tokenSnippet: 'sk-rt-secr' }], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [{ id: 't1', token: 'sk-rt-secret', tokenSnippet: 'sk-rt-secr' }], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/api/projects', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'GET', url: '/api/routers', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
     expect(body[0].tokens[0].token).toBeUndefined()
   })
 
-  it('returns empty tokens array for project without tokens', async () => {
+  it('returns empty tokens array for router without tokens', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', members: [], models: [] }  // no tokens field
+    const router = { id: 'p1', name: 'Test', members: [], models: [] }  // no tokens field
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/api/projects', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'GET', url: '/api/routers', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(200)
     expect(JSON.parse(res.body)[0].tokens).toEqual([])
@@ -5512,7 +5512,7 @@ describe('POST /api/setup/first-admin — edge cases', () => {
 
 describe('requirePerm denied branches', () => {
   function setupViewerAuth() {
-    const viewerUser = { id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', projectIds: [] }
+    const viewerUser = { id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', routerIds: [] }
     vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [viewerUser]
@@ -5561,11 +5561,11 @@ describe('requirePerm denied branches', () => {
     expect(res.statusCode).toBe(403)
   })
 
-  it('returns 403 for POST /api/projects without project:write', async () => {
+  it('returns 403 for POST /api/routers without router:write', async () => {
     setupViewerAuth()
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { authorization: 'Bearer tok', 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test' }),
     })
@@ -5573,11 +5573,11 @@ describe('requirePerm denied branches', () => {
     expect(res.statusCode).toBe(403)
   })
 
-  it('returns 403 for PUT /api/projects/:id without project:write', async () => {
+  it('returns 403 for PUT /api/routers/:id without router:write', async () => {
     setupViewerAuth()
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { authorization: 'Bearer tok', 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [] }),
     })
@@ -5585,19 +5585,19 @@ describe('requirePerm denied branches', () => {
     expect(res.statusCode).toBe(403)
   })
 
-  it('returns 403 for DELETE /api/projects/:id without project:write', async () => {
+  it('returns 403 for DELETE /api/routers/:id without router:write', async () => {
     setupViewerAuth()
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/projects/p1', headers: { authorization: 'Bearer tok' } })
+    const res = await app.inject({ method: 'DELETE', url: '/api/routers/p1', headers: { authorization: 'Bearer tok' } })
     await app.close()
     expect(res.statusCode).toBe(403)
   })
 
-  it('returns 403 for POST /api/projects/:id/tokens without project:write', async () => {
+  it('returns 403 for POST /api/routers/:id/tokens without router:write', async () => {
     setupViewerAuth()
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/p1/tokens',
+      method: 'POST', url: '/api/routers/p1/tokens',
       headers: { authorization: 'Bearer tok', 'content-type': 'application/json' },
       payload: JSON.stringify({}),
     })
@@ -5605,19 +5605,19 @@ describe('requirePerm denied branches', () => {
     expect(res.statusCode).toBe(403)
   })
 
-  it('returns 403 for DELETE /api/projects/:id/tokens/:tokenId without project:write', async () => {
+  it('returns 403 for DELETE /api/routers/:id/tokens/:tokenId without router:write', async () => {
     setupViewerAuth()
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/projects/p1/tokens/t1', headers: { authorization: 'Bearer tok' } })
+    const res = await app.inject({ method: 'DELETE', url: '/api/routers/p1/tokens/t1', headers: { authorization: 'Bearer tok' } })
     await app.close()
     expect(res.statusCode).toBe(403)
   })
 
-  it('returns 403 for POST /api/projects/:id/members without project:write', async () => {
+  it('returns 403 for POST /api/routers/:id/members without router:write', async () => {
     setupViewerAuth()
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/p1/members',
+      method: 'POST', url: '/api/routers/p1/members',
       headers: { authorization: 'Bearer tok', 'content-type': 'application/json' },
       payload: JSON.stringify({ userId: 'u1', role: 'viewer' }),
     })
@@ -5625,11 +5625,11 @@ describe('requirePerm denied branches', () => {
     expect(res.statusCode).toBe(403)
   })
 
-  it('returns 403 for PUT /api/projects/:id/members/:userId without project:write', async () => {
+  it('returns 403 for PUT /api/routers/:id/members/:userId without router:write', async () => {
     setupViewerAuth()
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1/members/u1',
+      method: 'PUT', url: '/api/routers/p1/members/u1',
       headers: { authorization: 'Bearer tok', 'content-type': 'application/json' },
       payload: JSON.stringify({ role: 'viewer' }),
     })
@@ -5637,10 +5637,10 @@ describe('requirePerm denied branches', () => {
     expect(res.statusCode).toBe(403)
   })
 
-  it('returns 403 for DELETE /api/projects/:id/members/:userId without project:write', async () => {
+  it('returns 403 for DELETE /api/routers/:id/members/:userId without router:write', async () => {
     setupViewerAuth()
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/projects/p1/members/u1', headers: { authorization: 'Bearer tok' } })
+    const res = await app.inject({ method: 'DELETE', url: '/api/routers/p1/members/u1', headers: { authorization: 'Bearer tok' } })
     await app.close()
     expect(res.statusCode).toBe(403)
   })
@@ -5687,7 +5687,7 @@ describe('requirePerm denied branches', () => {
 
   it('returns 403 for GET /api/usage without report:read', async () => {
     setupViewerAuth()
-    const viewerWithoutReportRead = { id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'noperm-role', projectIds: [] }
+    const viewerWithoutReportRead = { id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'noperm-role', routerIds: [] }
     vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [viewerWithoutReportRead]
@@ -5703,7 +5703,7 @@ describe('requirePerm denied branches', () => {
   it('returns 403 for GET /api/settings without settings:read', async () => {
     vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'no-perms-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'no-perms-id', email: 'noperms@example.com', passwordHash: 'hashed', roleId: 'no-perms', projectIds: [] }]
+      if (t === 'users') return [{ id: 'no-perms-id', email: 'noperms@example.com', passwordHash: 'hashed', roleId: 'no-perms', routerIds: [] }]
       if (t === 'roles') return [{ id: 'no-perms', name: 'No Perms', permissions: [] }]
       return []
     })
@@ -5774,7 +5774,7 @@ describe('requirePerm denied branches', () => {
 
 describe('GET /api/usage/:id — permission denied', () => {
   it('returns 403 without report:read', async () => {
-    const nopermUser = { id: 'np-id', email: 'np@example.com', passwordHash: 'h', roleId: 'noperm', projectIds: [] }
+    const nopermUser = { id: 'np-id', email: 'np@example.com', passwordHash: 'h', roleId: 'noperm', routerIds: [] }
     vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'np-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [nopermUser]
@@ -5789,21 +5789,21 @@ describe('GET /api/usage/:id — permission denied', () => {
   })
 })
 
-// ─── PUT /api/projects/:id/tokens/:tokenId — 404 for unknown project ──────────
+// ─── PUT /api/routers/:id/tokens/:tokenId — 404 for unknown router ──────────
 
-describe('PUT /api/projects/:id/tokens/:tokenId — 404 for unknown project', () => {
-  it('returns 404 for unknown project', async () => {
+describe('PUT /api/routers/:id/tokens/:tokenId — 404 for unknown router', () => {
+  it('returns 404 for unknown router', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/unknown/tokens/t1',
+      method: 'PUT', url: '/api/routers/unknown/tokens/t1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ models: [] }),
     })
@@ -5899,9 +5899,9 @@ describe('PUT /api/models/:id — partial legacy budget', () => {
 
 // ─── Missing 404 branches for token/member routes ─────────────────────────────
 
-describe('PUT /api/projects/:id/tokens/:tokenId — requirePerm denied', () => {
-  it('returns 403 without project:write', async () => {
-    const viewerUser = { id: 'v-id', email: 'v@example.com', passwordHash: 'h', roleId: 'viewer', projectIds: [] }
+describe('PUT /api/routers/:id/tokens/:tokenId — requirePerm denied', () => {
+  it('returns 403 without router:write', async () => {
+    const viewerUser = { id: 'v-id', email: 'v@example.com', passwordHash: 'h', roleId: 'viewer', routerIds: [] }
     vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'v-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [viewerUser]
@@ -5910,7 +5910,7 @@ describe('PUT /api/projects/:id/tokens/:tokenId — requirePerm denied', () => {
     })
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1/tokens/t1',
+      method: 'PUT', url: '/api/routers/p1/tokens/t1',
       headers: { authorization: 'Bearer tok', 'content-type': 'application/json' },
       payload: JSON.stringify({ models: [] }),
     })
@@ -5919,20 +5919,20 @@ describe('PUT /api/projects/:id/tokens/:tokenId — requirePerm denied', () => {
   })
 })
 
-describe('PUT /api/projects/:id/tokens/:tokenId — update models', () => {
+describe('PUT /api/routers/:id/tokens/:tokenId — update models', () => {
   it('updates token models (covers body.models !== undefined branch)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [{ id: 't1', token: 'x', tokenSnippet: 'x', createdAt: new Date().toISOString(), models: [] }], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [{ id: 't1', token: 'x', tokenSnippet: 'x', createdAt: new Date().toISOString(), models: [] }], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1/tokens/t1',
+      method: 'PUT', url: '/api/routers/p1/tokens/t1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ models: [{ modelId: 'gpt4' }] }),
     })
@@ -5941,34 +5941,34 @@ describe('PUT /api/projects/:id/tokens/:tokenId — update models', () => {
   })
 })
 
-describe('DELETE /api/projects/:id/tokens/:tokenId — project not found', () => {
-  it('returns 404 when project does not exist', async () => {
+describe('DELETE /api/routers/:id/tokens/:tokenId — router not found', () => {
+  it('returns 404 when router does not exist', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/projects/unknown/tokens/t1', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'DELETE', url: '/api/routers/unknown/tokens/t1', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(404)
   })
 })
 
-describe('POST /api/projects/:id/members — project not found', () => {
-  it('returns 404 when project does not exist', async () => {
+describe('POST /api/routers/:id/members — router not found', () => {
+  it('returns 404 when router does not exist', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/unknown/members',
+      method: 'POST', url: '/api/routers/unknown/members',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ userId: 'u1', role: 'viewer' }),
     })
@@ -5977,17 +5977,17 @@ describe('POST /api/projects/:id/members — project not found', () => {
   })
 })
 
-describe('DELETE /api/projects/:id/members/:userId — project not found', () => {
-  it('returns 404 when project does not exist', async () => {
+describe('DELETE /api/routers/:id/members/:userId — router not found', () => {
+  it('returns 404 when router does not exist', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/projects/unknown/members/u1', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'DELETE', url: '/api/routers/unknown/members/u1', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(404)
   })
@@ -6007,7 +6007,7 @@ describe('GET /api/me — user not found', () => {
     // The preHandler will find 'ghost-id' in users? No — we need preHandler to succeed but GET /api/me to fail
     // So the user IS in users for auth, but then we modify to simulate missing user in /api/me
     // Actually we need a user with id 'ghost-id' for auth to work
-    const ghostUser = { id: 'ghost-id', email: 'g@example.com', passwordHash: '$2b$10$hash', roleId: 'admin', projectIds: [] }
+    const ghostUser = { id: 'ghost-id', email: 'g@example.com', passwordHash: '$2b$10$hash', roleId: 'admin', routerIds: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [ghostUser]
       if (t === 'roles') return []
@@ -6291,7 +6291,7 @@ describe('PUT /api/roles/:id — additional branches', () => {
     const res = await app.inject({
       method: 'PUT', url: '/api/roles/custom-r',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ permissions: ['project:read'] }),
+      payload: JSON.stringify({ permissions: ['router:read'] }),
     })
     await app.close()
     expect(res.statusCode).toBe(200)
@@ -6304,9 +6304,9 @@ describe('GET /api/usage — routing and outcome combinations', () => {
   it('counts routing success calls for routingCost computation', async () => {
     setupAdminAuth()
     const records = [
-      { id: 'r1', timestamp: new Date().toISOString(), projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.05, outcome: 'success', callType: 'routing' },
-      { id: 'r2', timestamp: new Date().toISOString(), projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.10, outcome: 'success', callType: 'completion' },
-      { id: 'r3', timestamp: new Date().toISOString(), projectId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.02, outcome: 'error', callType: 'routing' },
+      { id: 'r1', timestamp: new Date().toISOString(), routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.05, outcome: 'success', callType: 'routing' },
+      { id: 'r2', timestamp: new Date().toISOString(), routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.10, outcome: 'success', callType: 'completion' },
+      { id: 'r3', timestamp: new Date().toISOString(), routerId: 'p1', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.02, outcome: 'error', callType: 'routing' },
     ]
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -6380,18 +6380,18 @@ describe('GET /api/models/:id/apikey — model without apiKey (line 374)', () =>
 })
 
 describe('PUT /api/models/:id — cascade rename with undefined models/tokens (lines 346, 352, 353)', () => {
-  it('handles project with undefined models and tokens during cascade rename', async () => {
+  it('handles router with undefined models and tokens during cascade rename', async () => {
     setupAdminAuth()
     const existingInstance = { id: 'old', connectionId: 'conn-for-old', upstreamModelId: 'old', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
     const existingConnection = { id: 'conn-for-old', providerId: 'openai', label: 'Old', credentials: {}, endpoint: 'https://api.openai.com/v1', enabled: true }
-    // Project with no models field and no tokens field (covers ?? [] branches)
-    const project = { id: 'p1', name: 'Test', members: [] }
+    // Router with no models field and no tokens field (covers ?? [] branches)
+    const router = { id: 'p1', name: 'Test', members: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'instances') return [existingInstance]
       if (t === 'connections') return [existingConnection]
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -6416,7 +6416,7 @@ describe('PUT /api/models/:id — cascade rename with undefined models/tokens (l
     const existingInstance = { id: 'old', connectionId: 'conn-for-old', upstreamModelId: 'old', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
     const existingConnection = { id: 'conn-for-old', providerId: 'openai', label: 'Old', credentials: {}, endpoint: 'https://api.openai.com/v1', enabled: true }
     // Token has no models field (covers token.models ?? [] branch)
-    const project = {
+    const router = {
       id: 'p1', name: 'Test', members: [],
       models: [],
       tokens: [{ id: 't1', token: 'x', tokenSnippet: 'x', createdAt: '2024-01-01' }],  // no models field
@@ -6426,7 +6426,7 @@ describe('PUT /api/models/:id — cascade rename with undefined models/tokens (l
       if (t === 'roles') return []
       if (t === 'instances') return [existingInstance]
       if (t === 'connections') return [existingConnection]
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -6447,23 +6447,23 @@ describe('PUT /api/models/:id — cascade rename with undefined models/tokens (l
   })
 })
 
-describe('POST /api/projects — model without prompt (line 436 FALSE branch)', () => {
-  it('creates project with model that has no prompt', async () => {
+describe('POST /api/routers — model without prompt (line 436 FALSE branch)', () => {
+  it('creates router with model that has no prompt', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({
-        name: 'Project With Model',
+        name: 'Router With Model',
         models: [{ modelId: 'gpt4' }],  // no prompt → m.prompt is falsy → FALSE branch
       }),
     })
@@ -6472,21 +6472,21 @@ describe('POST /api/projects — model without prompt (line 436 FALSE branch)', 
   })
 })
 
-describe('PUT /api/projects/:id — model without prompt (line 476 FALSE branch)', () => {
-  it('updates project with model that has no prompt', async () => {
+describe('PUT /api/routers/:id — model without prompt (line 476 FALSE branch)', () => {
+  it('updates router with model that has no prompt', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({
         name: 'Test',
@@ -6604,26 +6604,26 @@ describe('GET /api/roles — lists roles', () => {
   })
 })
 
-// ─── PUT /api/projects/:id — non-empty tokens (covers map callback at line 484) ─
+// ─── PUT /api/routers/:id — non-empty tokens (covers map callback at line 484) ─
 
-describe('PUT /api/projects/:id — project with non-empty tokens', () => {
+describe('PUT /api/routers/:id — router with non-empty tokens', () => {
   it('strips token field from non-empty tokens in response (covers map callback)', async () => {
     setupAdminAuth()
-    const project = {
+    const router = {
       id: 'p1', name: 'Test', members: [], models: [],
       tokens: [{ id: 't1', token: 'sk-rt-secret123', tokenSnippet: 'sk-rt-secr', createdAt: new Date().toISOString() }],
     }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [] }),
     })
@@ -6885,11 +6885,11 @@ describe('POST /api/notifications/test — no notifications object (line 929)', 
 
 describe('GET /api/traces/:id — no report:read permission (line 945)', () => {
   it('returns 403 when user lacks report:read', async () => {
-    const limitedUser = { id: 'limited-id', email: 'limited@example.com', passwordHash: '$2b$12$hashed', roleId: 'limited-role', projectIds: [] }
+    const limitedUser = { id: 'limited-id', email: 'limited@example.com', passwordHash: '$2b$12$hashed', roleId: 'limited-role', routerIds: [] }
     mockVerifyToken.mockReturnValue({ sub: 'limited-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [limitedUser]
-      if (t === 'roles') return [{ id: 'limited-role', name: 'Limited', permissions: ['project:read'] }]
+      if (t === 'roles') return [{ id: 'limited-role', name: 'Limited', permissions: ['router:read'] }]
       return []
     })
     const app = await buildApp()
@@ -6903,7 +6903,7 @@ describe('GET /api/traces/:id — no report:read permission (line 945)', () => {
 
 describe('GET /api/roles — no user:read permission (line 956)', () => {
   it('returns 403 for viewer role (lacks user:read)', async () => {
-    const viewerUser = { id: 'viewer2-id', email: 'viewer2@example.com', passwordHash: '$2b$12$hashed', roleId: 'viewer', projectIds: [] }
+    const viewerUser = { id: 'viewer2-id', email: 'viewer2@example.com', passwordHash: '$2b$12$hashed', roleId: 'viewer', routerIds: [] }
     mockVerifyToken.mockReturnValue({ sub: 'viewer2-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [viewerUser]
@@ -7017,7 +7017,7 @@ describe('PUT /api/settings — telemetry re-enabled when already enabled (line 
 describe('GET /api/health/providers', () => {
   const viewerUser: any = {
     id: 'viewer-id', email: 'viewer@example.com',
-    passwordHash: '$2b$12$hashed', roleId: 'viewer', projectIds: [],
+    passwordHash: '$2b$12$hashed', roleId: 'viewer', routerIds: [],
   }
 
   function setupHealth(models: any[], usage: any[]) {
@@ -7037,7 +7037,7 @@ describe('GET /api/health/providers', () => {
     return {
       id: `r-${Math.random()}`,
       timestamp: new Date(Date.now() - ageMs).toISOString(),
-      projectId: 'p1', modelId,
+      routerId: 'p1', modelId,
       inputTokens: 10, outputTokens: 10, cost: 0.01, latencyMs, outcome,
     }
   }
@@ -7359,23 +7359,23 @@ describe('GET /api/notifications/inbox?category', () => {
   })
 })
 
-// ─── Inbox visibility: projects and permissions (T52) ────────────────────────
+// ─── Inbox visibility: routers and permissions (T52) ────────────────────────
 describe('notification inbox visibility', () => {
   const inbox = [
-    { id: 'mine',    event: 'provider.error',      severity: 'critical', timestamp: '2026-01-05T00:00:00.000Z', details: { projectId: 'p1' }, readBy: [] },
-    { id: 'theirs',  event: 'provider.error',      severity: 'critical', timestamp: '2026-01-04T00:00:00.000Z', details: { projectId: 'p2' }, readBy: [] },
-    { id: 'gone',    event: 'config.project_deleted', severity: 'info',  timestamp: '2026-01-03T00:00:00.000Z', details: { projectId: 'p9' }, readBy: [] },
+    { id: 'mine',    event: 'provider.error',      severity: 'critical', timestamp: '2026-01-05T00:00:00.000Z', details: { routerId: 'p1' }, readBy: [] },
+    { id: 'theirs',  event: 'provider.error',      severity: 'critical', timestamp: '2026-01-04T00:00:00.000Z', details: { routerId: 'p2' }, readBy: [] },
+    { id: 'gone',    event: 'config.router_deleted', severity: 'info',  timestamp: '2026-01-03T00:00:00.000Z', details: { routerId: 'p9' }, readBy: [] },
     { id: 'login',   event: 'auth.login_failed',   severity: 'warning',  timestamp: '2026-01-02T00:00:00.000Z', details: { email: 'x@y.z' }, readBy: [] },
     { id: 'startup', event: 'system.startup',      severity: 'info',     timestamp: '2026-01-01T00:00:00.000Z', details: {}, readBy: [] },
   ]
 
-  /** A user in project p1 only, with the permissions listed. */
+  /** A user in router p1 only, with the permissions listed. */
   function setupMember(permissions: string[]) {
     mockVerifyToken.mockReturnValue({ sub: 'member-id' } as any)
     mockReadConfig.mockImplementation(async (type: string) => {
-      if (type === 'users') return [{ id: 'member-id', email: 'member@example.com', passwordHash: 'h', roleId: 'member', projectIds: ['p1'] }]
+      if (type === 'users') return [{ id: 'member-id', email: 'member@example.com', passwordHash: 'h', roleId: 'member', routerIds: ['p1'] }]
       if (type === 'roles') return [{ id: 'member', name: 'Member', permissions }]
-      if (type === 'projects') return [{ id: 'p1', name: 'Mine' }, { id: 'p2', name: 'Theirs' }]
+      if (type === 'routers') return [{ id: 'p1', name: 'Mine' }, { id: 'p2', name: 'Theirs' }]
       if (type === 'notifications') return inbox.map(n => ({ ...n, readBy: [...n.readBy] }))
       return []
     })
@@ -7383,8 +7383,8 @@ describe('notification inbox visibility', () => {
 
   const memberHeaders = { authorization: 'Bearer tok' }
 
-  it('hides events of a project the user cannot reach', async () => {
-    setupMember(['project:read', 'audit:read', 'settings:read'])
+  it('hides events of a router the user cannot reach', async () => {
+    setupMember(['router:read', 'audit:read', 'settings:read'])
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox', headers: memberHeaders })
     await app.close()
@@ -7393,8 +7393,8 @@ describe('notification inbox visibility', () => {
     expect(ids).not.toContain('theirs')
   })
 
-  it('keeps an event about a project that no longer exists', async () => {
-    setupMember(['project:read', 'audit:read', 'settings:read'])
+  it('keeps an event about a router that no longer exists', async () => {
+    setupMember(['router:read', 'audit:read', 'settings:read'])
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox', headers: memberHeaders })
     await app.close()
@@ -7448,9 +7448,9 @@ describe('notification inbox visibility', () => {
   it('unmarks read only what the user can see', async () => {
     mockVerifyToken.mockReturnValue({ sub: 'member-id' } as any)
     mockReadConfig.mockImplementation(async (type: string) => {
-      if (type === 'users') return [{ id: 'member-id', email: 'member@example.com', passwordHash: 'h', roleId: 'member', projectIds: ['p1'] }]
+      if (type === 'users') return [{ id: 'member-id', email: 'member@example.com', passwordHash: 'h', roleId: 'member', routerIds: ['p1'] }]
       if (type === 'roles') return [{ id: 'member', name: 'Member', permissions: [] }]
-      if (type === 'projects') return [{ id: 'p1', name: 'Mine' }, { id: 'p2', name: 'Theirs' }]
+      if (type === 'routers') return [{ id: 'p1', name: 'Mine' }, { id: 'p2', name: 'Theirs' }]
       if (type === 'notifications') return inbox.map(n => ({ ...n, readBy: ['member-id'] }))
       return []
     })
@@ -7464,12 +7464,12 @@ describe('notification inbox visibility', () => {
     expect(JSON.parse(res.body).updated).toBe(1)
   })
 
-  it('shows everything to a user scoped to no project', async () => {
+  it('shows everything to a user scoped to no router', async () => {
     mockVerifyToken.mockReturnValue({ sub: 'member-id' } as any)
     mockReadConfig.mockImplementation(async (type: string) => {
-      if (type === 'users') return [{ id: 'member-id', email: 'member@example.com', passwordHash: 'h', roleId: 'member', projectIds: [] }]
-      if (type === 'roles') return [{ id: 'member', name: 'Member', permissions: ['project:read', 'audit:read', 'settings:read', 'model:read'] }]
-      if (type === 'projects') return [{ id: 'p1', name: 'Mine' }, { id: 'p2', name: 'Theirs' }]
+      if (type === 'users') return [{ id: 'member-id', email: 'member@example.com', passwordHash: 'h', roleId: 'member', routerIds: [] }]
+      if (type === 'roles') return [{ id: 'member', name: 'Member', permissions: ['router:read', 'audit:read', 'settings:read', 'model:read'] }]
+      if (type === 'routers') return [{ id: 'p1', name: 'Mine' }, { id: 'p2', name: 'Theirs' }]
       if (type === 'notifications') return inbox.map(n => ({ ...n, readBy: [...n.readBy] }))
       return []
     })
@@ -8277,19 +8277,19 @@ describe('PUT /api/settings notifications validation (U5)', () => {
 
 // ─── Playground presets (#99) ─────────────────────────────────────────────────
 
-describe('GET /api/projects/:id/playground-presets', () => {
+describe('GET /api/routers/:id/playground-presets', () => {
   it('returns empty array when no presets', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/api/projects/p1/playground-presets', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'GET', url: '/api/routers/p1/playground-presets', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(200)
     expect(JSON.parse(res.body)).toEqual([])
@@ -8298,53 +8298,53 @@ describe('GET /api/projects/:id/playground-presets', () => {
   it('returns existing presets', async () => {
     setupAdminAuth()
     const preset = { id: 'preset-1', name: 'My Preset', systemPrompt: 'You are helpful.' }
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], playgroundPresets: [preset] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], playgroundPresets: [preset] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/api/projects/p1/playground-presets', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'GET', url: '/api/routers/p1/playground-presets', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(200)
     expect(JSON.parse(res.body)).toHaveLength(1)
     expect(JSON.parse(res.body)[0].name).toBe('My Preset')
   })
 
-  it('returns 404 for unknown project', async () => {
+  it('returns 404 for unknown router', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/api/projects/nope/playground-presets', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'GET', url: '/api/routers/nope/playground-presets', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(404)
   })
 })
 
-describe('POST /api/projects/:id/playground-presets', () => {
+describe('POST /api/routers/:id/playground-presets', () => {
   it('creates a new preset', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/p1/playground-presets',
+      method: 'POST', url: '/api/routers/p1/playground-presets',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Helpful Bot', systemPrompt: 'You are a helpful assistant.' }),
     })
@@ -8358,18 +8358,18 @@ describe('POST /api/projects/:id/playground-presets', () => {
 
   it('creates a preset with seed messages', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/p1/playground-presets',
+      method: 'POST', url: '/api/routers/p1/playground-presets',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({
         name: 'QA Preset',
@@ -8384,17 +8384,17 @@ describe('POST /api/projects/:id/playground-presets', () => {
 
   it('returns 400 when name is missing', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/p1/playground-presets',
+      method: 'POST', url: '/api/routers/p1/playground-presets',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ systemPrompt: 'Hello' }),
     })
@@ -8402,18 +8402,18 @@ describe('POST /api/projects/:id/playground-presets', () => {
     expect(res.statusCode).toBe(400)
   })
 
-  it('returns 404 for unknown project', async () => {
+  it('returns 404 for unknown router', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/nope/playground-presets',
+      method: 'POST', url: '/api/routers/nope/playground-presets',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'X', systemPrompt: 'Y' }),
     })
@@ -8422,21 +8422,21 @@ describe('POST /api/projects/:id/playground-presets', () => {
   })
 })
 
-describe('DELETE /api/projects/:id/playground-presets/:presetId', () => {
+describe('DELETE /api/routers/:id/playground-presets/:presetId', () => {
   it('deletes a preset', async () => {
     setupAdminAuth()
     const preset = { id: 'preset-1', name: 'Test', systemPrompt: 'Test' }
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], playgroundPresets: [preset] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], playgroundPresets: [preset] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/projects/p1/playground-presets/preset-1', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'DELETE', url: '/api/routers/p1/playground-presets/preset-1', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(204)
     const written = mockWriteConfig.mock.calls[0]![1] as any[]
@@ -8445,31 +8445,31 @@ describe('DELETE /api/projects/:id/playground-presets/:presetId', () => {
 
   it('returns 404 for unknown preset', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], playgroundPresets: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [], playgroundPresets: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/projects/p1/playground-presets/nope', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'DELETE', url: '/api/routers/p1/playground-presets/nope', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(404)
   })
 
-  it('returns 404 for unknown project', async () => {
+  it('returns 404 for unknown router', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/projects/nope/playground-presets/preset-1', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'DELETE', url: '/api/routers/nope/playground-presets/preset-1', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(404)
   })
@@ -8478,33 +8478,33 @@ describe('DELETE /api/projects/:id/playground-presets/:presetId', () => {
 // ─── Playground presets — permission + missing field branches ─────────────────
 
 describe('playground presets — permission + edge cases', () => {
-  const noProjectRole = { id: 'noproj', name: 'NoProject', permissions: ['model:read'] }
-  const noProjectUser = { id: 'noproj-user', email: 'np@example.com', passwordHash: '$2b$12$h', roleId: 'noproj', projectIds: [] }
-  const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+  const noRouterRole = { id: 'noproj', name: 'NoRouter', permissions: ['model:read'] }
+  const noRouterUser = { id: 'noproj-user', email: 'np@example.com', passwordHash: '$2b$12$h', roleId: 'noproj', routerIds: [] }
+  const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
 
-  function setupNoProjectReadAuth() {
+  function setupNoRouterReadAuth() {
     mockVerifyToken.mockReturnValue({ sub: 'noproj-user' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [noProjectUser]
-      if (t === 'roles') return [noProjectRole]
-      if (t === 'projects') return [project]
+      if (t === 'users') return [noRouterUser]
+      if (t === 'roles') return [noRouterRole]
+      if (t === 'routers') return [router]
       return []
     })
   }
 
-  it('returns 403 for GET playground-presets without project:read (line 1026)', async () => {
-    setupNoProjectReadAuth()
+  it('returns 403 for GET playground-presets without router:read (line 1026)', async () => {
+    setupNoRouterReadAuth()
     const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/api/projects/p1/playground-presets', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'GET', url: '/api/routers/p1/playground-presets', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(403)
   })
 
-  it('returns 403 for POST playground-presets without project:write (line 1037)', async () => {
-    setupNoProjectReadAuth()
+  it('returns 403 for POST playground-presets without router:write (line 1037)', async () => {
+    setupNoRouterReadAuth()
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/p1/playground-presets',
+      method: 'POST', url: '/api/routers/p1/playground-presets',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', systemPrompt: 'Hi' }),
     })
@@ -8512,10 +8512,10 @@ describe('playground presets — permission + edge cases', () => {
     expect(res.statusCode).toBe(403)
   })
 
-  it('returns 403 for DELETE playground-presets without project:write (line 1052)', async () => {
-    setupNoProjectReadAuth()
+  it('returns 403 for DELETE playground-presets without router:write (line 1052)', async () => {
+    setupNoRouterReadAuth()
     const app = await buildApp()
-    const res = await app.inject({ method: 'DELETE', url: '/api/projects/p1/playground-presets/preset-1', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'DELETE', url: '/api/routers/p1/playground-presets/preset-1', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(403)
   })
@@ -8525,12 +8525,12 @@ describe('playground presets — permission + edge cases', () => {
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects/p1/playground-presets',
+      method: 'POST', url: '/api/routers/p1/playground-presets',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test' }), // no systemPrompt
     })
@@ -8539,18 +8539,18 @@ describe('playground presets — permission + edge cases', () => {
     expect((res.json() as { error: string }).error).toMatch(/systemPrompt/)
   })
 
-  it('DELETE works when project has no playgroundPresets field (line 1057/1058 ?? [] fallback)', async () => {
+  it('DELETE works when router has no playgroundPresets field (line 1057/1058 ?? [] fallback)', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [{ ...project }]  // no playgroundPresets
+      if (t === 'routers') return [{ ...router }]  // no playgroundPresets
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'DELETE', url: '/api/projects/p1/playground-presets/nonexistent',
+      method: 'DELETE', url: '/api/routers/p1/playground-presets/nonexistent',
       headers: adminAuthHeaders(),
     })
     await app.close()
@@ -8653,7 +8653,7 @@ describe('GET /api/providers', () => {
   it('returns 403 for user without model:read', async () => {
     mockVerifyToken.mockReturnValue({ sub: 'noperm-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'noperm-id', email: 'noperm@example.com', passwordHash: 'hashed', roleId: 'noperm', projectIds: [] }]
+      if (t === 'users') return [{ id: 'noperm-id', email: 'noperm@example.com', passwordHash: 'hashed', roleId: 'noperm', routerIds: [] }]
       if (t === 'roles') return [{ id: 'noperm', name: 'NoPerm', permissions: [] }]
       return []
     })
@@ -8681,7 +8681,7 @@ describe('POST /api/catalog/refresh', () => {
   it('returns 403 for user without settings:write', async () => {
     mockVerifyToken.mockReturnValue({ sub: 'noperm-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'noperm-id', email: 'noperm@example.com', passwordHash: 'hashed', roleId: 'noperm', projectIds: [] }]
+      if (t === 'users') return [{ id: 'noperm-id', email: 'noperm@example.com', passwordHash: 'hashed', roleId: 'noperm', routerIds: [] }]
       if (t === 'roles') return [{ id: 'noperm', name: 'NoPerm', permissions: ['model:read'] }]
       return []
     })
@@ -8768,8 +8768,8 @@ describe('GET /api/audit', () => {
   })
 
   it('returns 403 for roles without audit:read', async () => {
-    const noAuditRole = { id: 'restricted', name: 'Restricted', permissions: ['project:read'] }
-    const restrictedUser = { id: 'viewer-id', email: 'viewer@example.com', passwordHash: '$2b$12$hashed', roleId: 'restricted', projectIds: [] }
+    const noAuditRole = { id: 'restricted', name: 'Restricted', permissions: ['router:read'] }
+    const restrictedUser = { id: 'viewer-id', email: 'viewer@example.com', passwordHash: '$2b$12$hashed', roleId: 'restricted', routerIds: [] }
     mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [restrictedUser]
@@ -9517,21 +9517,21 @@ describe('POST /api/notifications/inbox/read — ids .max(500)', () => {
   })
 })
 
-describe('PATCH /api/projects/:id/guardrails — per-rule action field', () => {
+describe('PATCH /api/routers/:id/guardrails — per-rule action field', () => {
   it('accepts a guardrail rule with per-rule action', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PATCH', url: '/api/projects/p1/guardrails',
+      method: 'PATCH', url: '/api/routers/p1/guardrails',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({
         guardrails: {
@@ -9564,7 +9564,7 @@ describe('GET /api/leaderboard', () => {
     return {
       id: `r-${Math.random()}`,
       timestamp: new Date().toISOString(),
-      projectId: 'p1', modelId: 'm', inputTokens: 500, outputTokens: 500,
+      routerId: 'p1', modelId: 'm', inputTokens: 500, outputTokens: 500,
       cost: 0.01, latencyMs: 1000, outcome: 'success', ...o,
     }
   }
@@ -9667,13 +9667,13 @@ describe('GET /api/leaderboard', () => {
     expect(body[body.length - 1].successRate).toBe(0)
   })
 
-  it('filters by projectId', async () => {
+  it('filters by routerId', async () => {
     setupLb(
       [{ id: 'm', name: 'M', provider: 'openai' }],
-      [rec({ projectId: 'p1' }), rec({ projectId: 'p2' })],
+      [rec({ routerId: 'p1' }), rec({ routerId: 'p2' })],
     )
     const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/api/leaderboard?projectId=p1', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'GET', url: '/api/leaderboard?routerId=p1', headers: adminAuthHeaders() })
     await app.close()
     expect(res.json()[0].totalRequests).toBe(1)
   })
@@ -9703,7 +9703,7 @@ describe('GET /api/leaderboard', () => {
   it('returns 403 without report:read permission', async () => {
     mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'viewer-id', email: 'v@e.com', roleId: 'no-perms', projectIds: [] }]
+      if (t === 'users') return [{ id: 'viewer-id', email: 'v@e.com', roleId: 'no-perms', routerIds: [] }]
       if (t === 'roles') return [{ id: 'no-perms', name: 'NoPerms', permissions: [] }]
       return []
     })
@@ -10478,7 +10478,7 @@ describe('GET /api/leaderboard — weekly period', () => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'models') return [{ id: 'm', name: 'M', provider: 'openai' }]
-      if (t === 'usage') return [{ id: 'u1', timestamp: new Date().toISOString(), projectId: 'p', modelId: 'm', inputTokens: 10, outputTokens: 5, cost: 0.001, latencyMs: 100, outcome: 'success' }]
+      if (t === 'usage') return [{ id: 'u1', timestamp: new Date().toISOString(), routerId: 'p', modelId: 'm', inputTokens: 10, outputTokens: 5, cost: 0.001, latencyMs: 100, outcome: 'success' }]
       return []
     })
     const app = await buildApp()
@@ -10494,7 +10494,7 @@ describe('GET /api/leaderboard — weekly period', () => {
 describe('POST /api/users/:id/2fa/reset', () => {
   it('resets 2FA and returns ok: true', async () => {
     mockVerifyToken.mockReturnValue({ sub: 'admin-id' } as any)
-    const target = { id: 'user-1', email: 'u@e.com', roleId: 'admin', projectIds: [], totpSecret: 'secret', totpEnabled: true, backupCodes: ['h1'] }
+    const target = { id: 'user-1', email: 'u@e.com', roleId: 'admin', routerIds: [], totpSecret: 'secret', totpEnabled: true, backupCodes: ['h1'] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser, target]
       if (t === 'roles') return []
@@ -10527,7 +10527,7 @@ describe('POST /api/users/:id/2fa/reset', () => {
   it('returns 403 without user:write permission', async () => {
     mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'viewer-id', email: 'v@e.com', roleId: 'no-perms', projectIds: [] }]
+      if (t === 'users') return [{ id: 'viewer-id', email: 'v@e.com', roleId: 'no-perms', routerIds: [] }]
       if (t === 'roles') return [{ id: 'no-perms', name: 'NoPerms', permissions: [] }]
       return []
     })
@@ -10547,8 +10547,8 @@ describe('GET /api/usage — tag filter (line 1242)', () => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'usage') return [
-        { id: 'r1', timestamp: new Date().toISOString(), projectId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0.001, latencyMs: 50, outcome: 'success', tags: { customer: 'acme' } },
-        { id: 'r2', timestamp: new Date().toISOString(), projectId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0.001, latencyMs: 50, outcome: 'success', tags: { customer: 'other' } },
+        { id: 'r1', timestamp: new Date().toISOString(), routerId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0.001, latencyMs: 50, outcome: 'success', tags: { customer: 'acme' } },
+        { id: 'r2', timestamp: new Date().toISOString(), routerId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0.001, latencyMs: 50, outcome: 'success', tags: { customer: 'other' } },
       ]
       return []
     })
@@ -10567,8 +10567,8 @@ describe('GET /api/usage — tag filter (line 1242)', () => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'usage') return [
-        { id: 'r1', timestamp: now, projectId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0.001, latencyMs: 50, outcome: 'success', endUserId: 'user-a' },
-        { id: 'r2', timestamp: now, projectId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0.001, latencyMs: 50, outcome: 'success', endUserId: 'user-b' },
+        { id: 'r1', timestamp: now, routerId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0.001, latencyMs: 50, outcome: 'success', endUserId: 'user-a' },
+        { id: 'r2', timestamp: now, routerId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0.001, latencyMs: 50, outcome: 'success', endUserId: 'user-b' },
       ]
       return []
     })
@@ -10587,8 +10587,8 @@ describe('GET /api/usage — tag filter (line 1242)', () => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'usage') return [
-        { id: 'r1', timestamp: now, projectId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0.001, latencyMs: 50, outcome: 'success', sessionId: 'sess-x' },
-        { id: 'r2', timestamp: now, projectId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0.001, latencyMs: 50, outcome: 'success', sessionId: 'sess-y' },
+        { id: 'r1', timestamp: now, routerId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0.001, latencyMs: 50, outcome: 'success', sessionId: 'sess-x' },
+        { id: 'r2', timestamp: now, routerId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0.001, latencyMs: 50, outcome: 'success', sessionId: 'sess-y' },
       ]
       return []
     })
@@ -10602,8 +10602,8 @@ describe('GET /api/usage — tag filter (line 1242)', () => {
 })
 
 describe('GET /api/sessions (#94)', () => {
-  const makeUsageRecord = (sessionId: string, timestamp: string, projectId = 'p1') => ({
-    id: `r-${sessionId}-${timestamp}`, timestamp, projectId, modelId: 'm1',
+  const makeUsageRecord = (sessionId: string, timestamp: string, routerId = 'p1') => ({
+    id: `r-${sessionId}-${timestamp}`, timestamp, routerId, modelId: 'm1',
     inputTokens: 10, outputTokens: 5, cost: 0.01, latencyMs: 100, outcome: 'success', sessionId,
   })
 
@@ -10660,7 +10660,7 @@ describe('GET /api/sessions (#94)', () => {
     expect(body2.nextCursor).toBeUndefined()
   })
 
-  it('filters sessions by projectId', async () => {
+  it('filters sessions by routerId', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -10672,7 +10672,7 @@ describe('GET /api/sessions (#94)', () => {
       return []
     })
     const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/api/sessions?projectId=proj-1', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'GET', url: '/api/sessions?routerId=proj-1', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(200)
     const body = res.json() as { sessions: Array<{ sessionId: string }> }
@@ -10681,8 +10681,8 @@ describe('GET /api/sessions (#94)', () => {
   })
 
   it('returns 403 without report:read permission', async () => {
-    const noReportRole = { id: 'restricted', name: 'Restricted', permissions: ['project:read'] }
-    const restrictedUser = { id: 'viewer-id', email: 'v@v.com', passwordHash: '$2b$12$h', roleId: 'restricted', projectIds: [] }
+    const noReportRole = { id: 'restricted', name: 'Restricted', permissions: ['router:read'] }
+    const restrictedUser = { id: 'viewer-id', email: 'v@v.com', passwordHash: '$2b$12$h', roleId: 'restricted', routerIds: [] }
     mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [restrictedUser]
@@ -10703,9 +10703,9 @@ describe('GET /api/sessions/:id/requests (#94)', () => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'usage') return [
-        { id: 'r2', timestamp: '2026-01-01T11:00:00.000Z', projectId: 'p', modelId: 'm', inputTokens: 5, outputTokens: 5, cost: 0.005, latencyMs: 50, outcome: 'success', sessionId: 'sess-1' },
-        { id: 'r1', timestamp: '2026-01-01T10:00:00.000Z', projectId: 'p', modelId: 'm', inputTokens: 10, outputTokens: 10, cost: 0.01, latencyMs: 100, outcome: 'success', sessionId: 'sess-1' },
-        { id: 'r3', timestamp: '2026-01-01T12:00:00.000Z', projectId: 'p', modelId: 'm', inputTokens: 3, outputTokens: 3, cost: 0.003, latencyMs: 30, outcome: 'success', sessionId: 'sess-other' },
+        { id: 'r2', timestamp: '2026-01-01T11:00:00.000Z', routerId: 'p', modelId: 'm', inputTokens: 5, outputTokens: 5, cost: 0.005, latencyMs: 50, outcome: 'success', sessionId: 'sess-1' },
+        { id: 'r1', timestamp: '2026-01-01T10:00:00.000Z', routerId: 'p', modelId: 'm', inputTokens: 10, outputTokens: 10, cost: 0.01, latencyMs: 100, outcome: 'success', sessionId: 'sess-1' },
+        { id: 'r3', timestamp: '2026-01-01T12:00:00.000Z', routerId: 'p', modelId: 'm', inputTokens: 3, outputTokens: 3, cost: 0.003, latencyMs: 30, outcome: 'success', sessionId: 'sess-other' },
       ]
       return []
     })
@@ -10928,9 +10928,9 @@ describe('GET /api/sessions — firstSeen update (line 1349)', () => {
       if (t === 'roles') return []
       if (t === 'usage') return [
         // First processed record sets firstSeen = '2026-01-02'
-        { id: 'r1', timestamp: '2026-01-02T10:00:00.000Z', projectId: 'p', modelId: 'm', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', sessionId: 'sess-1' },
+        { id: 'r1', timestamp: '2026-01-02T10:00:00.000Z', routerId: 'p', modelId: 'm', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', sessionId: 'sess-1' },
         // Earlier record → line 1349 true (r.timestamp < s.firstSeen)
-        { id: 'r2', timestamp: '2026-01-01T10:00:00.000Z', projectId: 'p', modelId: 'm', inputTokens: 3, outputTokens: 3, cost: 0.005, latencyMs: 30, outcome: 'success', sessionId: 'sess-1' },
+        { id: 'r2', timestamp: '2026-01-01T10:00:00.000Z', routerId: 'p', modelId: 'm', inputTokens: 3, outputTokens: 3, cost: 0.005, latencyMs: 30, outcome: 'success', sessionId: 'sess-1' },
       ]
       return []
     })
@@ -11043,8 +11043,8 @@ describe('redactChannel edge cases (lines 83-90)', () => {
 
 describe('GET /api/models/catalog — permission checks', () => {
   it('returns 403 when user lacks model:read permission (line 673 if branch=0)', async () => {
-    const noModelRole = { id: 'no-model', name: 'NoModel', permissions: ['project:read'] }
-    const noModelUser = { id: 'nm-id', email: 'nm@nm.com', passwordHash: '$2b$12$h', roleId: 'no-model', projectIds: [] }
+    const noModelRole = { id: 'no-model', name: 'NoModel', permissions: ['router:read'] }
+    const noModelUser = { id: 'nm-id', email: 'nm@nm.com', passwordHash: '$2b$12$h', roleId: 'no-model', routerIds: [] }
     mockVerifyToken.mockReturnValue({ sub: 'nm-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [noModelUser]
@@ -11062,8 +11062,8 @@ describe('GET /api/models/catalog — permission checks', () => {
 
 describe('GET /api/sessions/:id/requests — permission check', () => {
   it('returns 403 without report:read (line 1363 if branch=0)', async () => {
-    const viewRole = { id: 'view', name: 'View', permissions: ['project:read'] }
-    const viewUser = { id: 'view-id', email: 'v@v.com', passwordHash: '$2b$12$h', roleId: 'view', projectIds: [] }
+    const viewRole = { id: 'view', name: 'View', permissions: ['router:read'] }
+    const viewUser = { id: 'view-id', email: 'v@v.com', passwordHash: '$2b$12$h', roleId: 'view', routerIds: [] }
     mockVerifyToken.mockReturnValue({ sub: 'view-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [viewUser]
@@ -11088,7 +11088,7 @@ describe('GET /api/usage — period=daily uses hourly timeline key (line 1298 br
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'usage') return [
-        { id: 'r1', timestamp: todayHour, projectId: 'p', modelId: 'm', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', callType: 'completion' },
+        { id: 'r1', timestamp: todayHour, routerId: 'p', modelId: 'm', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', callType: 'completion' },
       ]
       return []
     })
@@ -11112,7 +11112,7 @@ describe('GET /api/usage — period=custom (line 1222)', () => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'usage') return [
-        { id: 'r1', timestamp: '2026-06-01T10:00:00.000Z', projectId: 'p', modelId: 'm', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', callType: 'completion' },
+        { id: 'r1', timestamp: '2026-06-01T10:00:00.000Z', routerId: 'p', modelId: 'm', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', callType: 'completion' },
       ]
       return []
     })
@@ -11262,7 +11262,7 @@ describe('GET /api/leaderboard — period branches', () => {
 
   it('period=custom with from/to (lines 1780-1782 if branch=0)', async () => {
     setupLeaderboard([
-      { id: 'r1', timestamp: '2026-06-01T10:00:00.000Z', projectId: 'p', modelId: 'm1', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', callType: 'completion' },
+      { id: 'r1', timestamp: '2026-06-01T10:00:00.000Z', routerId: 'p', modelId: 'm1', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', callType: 'completion' },
     ])
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/leaderboard?period=custom&from=2026-06-01&to=2026-06-30', headers: adminAuthHeaders() })
@@ -11284,7 +11284,7 @@ describe('GET /api/leaderboard — period branches', () => {
     // Use this month's timestamp so it falls within the default monthly filter
     const thisMonth = new Date().toISOString().slice(0, 7) + '-01T10:00:00.000Z'
     setupLeaderboard([
-      { id: 'r1', timestamp: thisMonth, projectId: 'p', modelId: 'unknown-model', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', callType: 'completion' },
+      { id: 'r1', timestamp: thisMonth, routerId: 'p', modelId: 'unknown-model', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', callType: 'completion' },
     ])
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/leaderboard', headers: adminAuthHeaders() })
@@ -11298,7 +11298,7 @@ describe('GET /api/leaderboard — period branches', () => {
   it('leaderboard with errorRate >= 0.5 → totalRequests > 0 branch (line 1824/1825)', async () => {
     // All records are errors → errorRate = 1.0, totalRequests > 0 branch fires
     setupLeaderboard([
-      { id: 'r1', timestamp: '2026-07-01T10:00:00.000Z', projectId: 'p', modelId: 'm1', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'error', callType: 'completion' },
+      { id: 'r1', timestamp: '2026-07-01T10:00:00.000Z', routerId: 'p', modelId: 'm1', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'error', callType: 'completion' },
     ])
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/leaderboard?period=custom&from=2026-01-01&to=2027-01-01', headers: adminAuthHeaders() })
@@ -11317,7 +11317,7 @@ describe('GET /api/leaderboard — period branches', () => {
 
   it('period=custom with datetime from/to (no setHours, lines 1781/1782 inner-if branch=1)', async () => {
     setupLeaderboard([
-      { id: 'r1', timestamp: '2026-06-15T10:00:00.000Z', projectId: 'p', modelId: 'm1', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', callType: 'completion' },
+      { id: 'r1', timestamp: '2026-06-15T10:00:00.000Z', routerId: 'p', modelId: 'm1', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 50, outcome: 'success', callType: 'completion' },
     ])
     const app = await buildApp()
     // from/to are full ISO strings (> 10 chars) → no setHours adjustment
@@ -11334,7 +11334,7 @@ describe('GET /api/leaderboard — period branches', () => {
     // latencyMs not a number → latencies[] stays empty, avgLatencyMs=0
     const thisMonth = new Date().toISOString().slice(0, 7) + '-01T10:00:00.000Z'
     setupLeaderboard([
-      { id: 'r1', timestamp: thisMonth, projectId: 'p', modelId: 'm1', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 'not-a-number', outcome: 'success', callType: 'completion' },
+      { id: 'r1', timestamp: thisMonth, routerId: 'p', modelId: 'm1', inputTokens: 5, outputTokens: 5, cost: 0.01, latencyMs: 'not-a-number', outcome: 'success', callType: 'completion' },
     ])
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/leaderboard', headers: adminAuthHeaders() })
@@ -11354,22 +11354,22 @@ describe('GET /api/leaderboard — period branches', () => {
   })
 })
 
-// ─── PATCH /api/projects/:id/guardrails — pii (lines 846-849) ────────────────
+// ─── PATCH /api/routers/:id/guardrails — pii (lines 846-849) ────────────────
 
-describe('PATCH /api/projects/:id/guardrails — pii branches (lines 846-849)', () => {
+describe('PATCH /api/routers/:id/guardrails — pii branches (lines 846-849)', () => {
   it('updates pii when pii body provided (line 846 if branch=0)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PATCH', url: '/api/projects/p1/guardrails',
+      method: 'PATCH', url: '/api/routers/p1/guardrails',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ pii: { policies: [{ name: 'default', target: 'request', entities: ['EMAIL'] }] } }),
     })
@@ -11380,16 +11380,16 @@ describe('PATCH /api/projects/:id/guardrails — pii branches (lines 846-849)', 
 
   it('returns 400 for invalid pii in PATCH /guardrails (line 848 if branch=0)', async () => {
     setupAdminAuth()
-    const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+    const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PATCH', url: '/api/projects/p1/guardrails',
+      method: 'PATCH', url: '/api/routers/p1/guardrails',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ pii: { policies: 'not-an-array' } }),
     })
@@ -11398,22 +11398,22 @@ describe('PATCH /api/projects/:id/guardrails — pii branches (lines 846-849)', 
   })
 })
 
-// ─── DELETE /api/projects/:id — tokens is undefined (line 855 || []) ─────────
+// ─── DELETE /api/routers/:id — tokens is undefined (line 855 || []) ─────────
 
-describe('DELETE /api/projects/:id — tokens undefined branch (line 855)', () => {
-  it('PATCH /api/projects/:id returns [] when tokens is undefined (line 855 || [])', async () => {
+describe('DELETE /api/routers/:id — tokens undefined branch (line 855)', () => {
+  it('PATCH /api/routers/:id returns [] when tokens is undefined (line 855 || [])', async () => {
     setupAdminAuth()
-    const projectNoTokens = { id: 'p1', name: 'Test', members: [], models: [] }  // no tokens field
+    const routerNoTokens = { id: 'p1', name: 'Test', members: [], models: [] }  // no tokens field
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [projectNoTokens]
+      if (t === 'routers') return [routerNoTokens]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PATCH', url: '/api/projects/p1/guardrails',
+      method: 'PATCH', url: '/api/routers/p1/guardrails',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ guardrails: { rules: [] } }),
     })
@@ -11591,7 +11591,7 @@ describe('GET /api/leaderboard — weekly period on Sunday (line 1777 d===0 bran
       if (t === 'usage') return [{
         id: 'u1',
         timestamp: '2024-06-03T12:00:00Z', // Monday June 3, within this week
-        projectId: 'p', modelId: 'm',
+        routerId: 'p', modelId: 'm',
         inputTokens: 10, outputTokens: 5, cost: 0.001, latencyMs: 100, outcome: 'success',
       }]
       return []
@@ -11615,7 +11615,7 @@ describe('POST /api/test/openai-oauth — missing model:read permission (line 16
     mockReadConfig.mockImplementation(async (type: string) => {
       if (type === 'users') return [{ ...adminUser, id: 'limited-id', roleId: 'limited' }]
       // custom role 'limited' has no model:read
-      if (type === 'roles') return [{ id: 'limited', name: 'Limited', permissions: ['project:read'] }]
+      if (type === 'roles') return [{ id: 'limited', name: 'Limited', permissions: ['router:read'] }]
       return []
     })
     const app = await buildApp()
@@ -11790,7 +11790,7 @@ describe('GET /api/catalog/status', () => {
   it('returns 403 without settings:read permission', async () => {
     mockVerifyToken.mockReturnValue({ sub: 'noperm-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'noperm-id', email: 'np@np.com', passwordHash: 'h', roleId: 'noperm', projectIds: [] }]
+      if (t === 'users') return [{ id: 'noperm-id', email: 'np@np.com', passwordHash: 'h', roleId: 'noperm', routerIds: [] }]
       if (t === 'roles') return [{ id: 'noperm', name: 'NoPerm', permissions: [] }]
       return []
     })
@@ -11882,7 +11882,7 @@ describe('GET /api/catalog/probe', () => {
   it('returns 403 without settings:write permission', async () => {
     mockVerifyToken.mockReturnValue({ sub: 'noperm-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'noperm-id', email: 'np@np.com', passwordHash: 'h', roleId: 'noperm', projectIds: [] }]
+      if (t === 'users') return [{ id: 'noperm-id', email: 'np@np.com', passwordHash: 'h', roleId: 'noperm', routerIds: [] }]
       if (t === 'roles') return [{ id: 'noperm', name: 'NoPerm', permissions: ['settings:read'] }]
       return []
     })
@@ -11968,12 +11968,12 @@ describe('POST /api/test/openai-oauth — additional branch coverage (lines 1777
 // ── guardrailRuleSchema superRefine — uncovered branches (lines 191, 197-198, 203) ──
 
 describe('guardrailRuleSchema superRefine — uncovered validation branches', () => {
-  function setupProject(projectId: string) {
+  function setupRouter(routerId: string) {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [{ id: projectId, name: 'P', tokens: [], members: [], models: [] }]
+      if (t === 'routers') return [{ id: routerId, name: 'P', tokens: [], members: [], models: [] }]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -11981,11 +11981,11 @@ describe('guardrailRuleSchema superRefine — uncovered validation branches', ()
 
   // Line 191: inject:true on a regex rule (only valid for topic/moderation)
   it('line 191 — returns 400 when inject:true is set on a regex rule', async () => {
-    setupProject('p-inject-regex')
+    setupRouter('p-inject-regex')
     const app = await buildApp()
     const res = await app.inject({
       method: 'PUT',
-      url: '/api/projects/p-inject-regex',
+      url: '/api/routers/p-inject-regex',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({
         name: 'P', models: [],
@@ -12010,11 +12010,11 @@ describe('guardrailRuleSchema superRefine — uncovered validation branches', ()
 
   // Lines 197-198: topic rule with no target AND inject:false (must judge or inject)
   it('lines 197-198 — returns 400 when topic rule has neither target nor inject', async () => {
-    setupProject('p-no-target-no-inject')
+    setupRouter('p-no-target-no-inject')
     const app = await buildApp()
     const res = await app.inject({
       method: 'PUT',
-      url: '/api/projects/p-no-target-no-inject',
+      url: '/api/routers/p-no-target-no-inject',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({
         name: 'P', models: [],
@@ -12037,11 +12037,11 @@ describe('guardrailRuleSchema superRefine — uncovered validation branches', ()
 
   // Line 203: topic rule with target but no config.modelId
   it('line 203 — returns 400 when topic rule has target but missing config.modelId', async () => {
-    setupProject('p-no-modelid')
+    setupRouter('p-no-modelid')
     const app = await buildApp()
     const res = await app.inject({
       method: 'PUT',
-      url: '/api/projects/p-no-modelid',
+      url: '/api/routers/p-no-modelid',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({
         name: 'P', models: [],
@@ -12080,7 +12080,7 @@ describe('modules endpoints', () => {
   it('GET /api/modules is 403 without permission', async () => {
     vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'no-perms-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'no-perms-id', email: 'noperms@example.com', passwordHash: 'hashed', roleId: 'no-perms', projectIds: [] }]
+      if (t === 'users') return [{ id: 'no-perms-id', email: 'noperms@example.com', passwordHash: 'hashed', roleId: 'no-perms', routerIds: [] }]
       if (t === 'roles') return [{ id: 'no-perms', name: 'No Perms', permissions: [] }]
       return []
     })
@@ -12110,7 +12110,7 @@ describe('modules endpoints', () => {
   it('POST /api/modules/:id/enable is 403 without modules:manage', async () => {
     vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'no-perms-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'no-perms-id', email: 'noperms@example.com', passwordHash: 'hashed', roleId: 'no-perms', projectIds: [] }]
+      if (t === 'users') return [{ id: 'no-perms-id', email: 'noperms@example.com', passwordHash: 'hashed', roleId: 'no-perms', routerIds: [] }]
       if (t === 'roles') return [{ id: 'no-perms', name: 'No Perms', permissions: [] }]
       return []
     })
@@ -12127,7 +12127,7 @@ describe('modules endpoints', () => {
   it('GET /api/modules is 200 for a modules:read-only role (viewer)', async () => {
     vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', projectIds: [] }]
+      if (t === 'users') return [{ id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', routerIds: [] }]
       if (t === 'roles') return []
       return []
     })
@@ -12140,7 +12140,7 @@ describe('modules endpoints', () => {
   it('POST /api/modules/:id/enable is 403 for a modules:read-only role (viewer)', async () => {
     vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', projectIds: [] }]
+      if (t === 'users') return [{ id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', routerIds: [] }]
       if (t === 'roles') return []
       return []
     })
@@ -12153,7 +12153,7 @@ describe('modules endpoints', () => {
   it('POST /api/modules/:id/disable is 403 for a modules:read-only role (viewer)', async () => {
     vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
     mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', projectIds: [] }]
+      if (t === 'users') return [{ id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', routerIds: [] }]
       if (t === 'roles') return []
       return []
     })
@@ -12181,7 +12181,7 @@ describe('modules endpoints', () => {
   })
 })
 
-// ─── Optimizers: project config CRUD + list + preview ────────────────────────────
+// ─── Optimizers: router config CRUD + list + preview ────────────────────────────
 describe('Optimizers API', () => {
   // A real registry with one fake lossless optimizer that drops the last message.
   function fakeOptimizer(): Optimizer {
@@ -12208,7 +12208,7 @@ describe('Optimizers API', () => {
     r.register(fakeOptimizer())
     setOptimizerRegistry(r)
   }
-  const project = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+  const router = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
   const optimizersBody = { steps: [{ id: 'session-dedup', enabled: true }] }
 
   function authAs(user: any, roles: any[] = []) {
@@ -12216,40 +12216,40 @@ describe('Optimizers API', () => {
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [user]
       if (t === 'roles') return roles
-      if (t === 'projects') return [project]
+      if (t === 'routers') return [router]
       return []
     })
   }
 
-  it('PUT /api/projects/:id persists optimizers with optimizers:manage (200)', async () => {
+  it('PUT /api/routers/:id persists optimizers with optimizers:manage (200)', async () => {
     authAs(adminUser)
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [], optimizers: optimizersBody }),
     })
     await app.close()
     expect(res.statusCode).toBe(200)
     expect((res.json() as Record<string, unknown>)['optimizers']).toEqual(optimizersBody)
-    expect(mockWriteConfig).toHaveBeenCalledWith('projects', expect.arrayContaining([
+    expect(mockWriteConfig).toHaveBeenCalledWith('routers', expect.arrayContaining([
       expect.objectContaining({ id: 'p1', optimizers: optimizersBody }),
     ]))
   })
 
-  it('PUT /api/projects/:id clears optimizers when null (200)', async () => {
+  it('PUT /api/routers/:id clears optimizers when null (200)', async () => {
     authAs(adminUser)
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return [{ ...project, optimizers: optimizersBody }]
+      if (t === 'routers') return [{ ...router, optimizers: optimizersBody }]
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [], optimizers: null }),
     })
@@ -12258,13 +12258,13 @@ describe('Optimizers API', () => {
     expect((res.json() as Record<string, unknown>)['optimizers']).toBeUndefined()
   })
 
-  it('PUT /api/projects/:id returns 403 without optimizers:manage', async () => {
-    const pwRole = { id: 'pw', name: 'PW', permissions: ['project:write'] }
-    const pwUser = { id: 'pw-id', email: 'pw@x.com', passwordHash: '$2b$12$h', roleId: 'pw', projectIds: [] }
+  it('PUT /api/routers/:id returns 403 without optimizers:manage', async () => {
+    const pwRole = { id: 'pw', name: 'PW', permissions: ['router:write'] }
+    const pwUser = { id: 'pw-id', email: 'pw@x.com', passwordHash: '$2b$12$h', roleId: 'pw', routerIds: [] }
     authAs(pwUser, [pwRole])
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [], optimizers: optimizersBody }),
     })
@@ -12272,11 +12272,11 @@ describe('Optimizers API', () => {
     expect(res.statusCode).toBe(403)
   })
 
-  it('PUT /api/projects/:id returns 400 for a duplicate optimizer id', async () => {
+  it('PUT /api/routers/:id returns 400 for a duplicate optimizer id', async () => {
     authAs(adminUser)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [], optimizers: { steps: [
         { id: 'ccr', enabled: true }, { id: 'ccr', enabled: false },
@@ -12286,11 +12286,11 @@ describe('Optimizers API', () => {
     expect(res.statusCode).toBe(400)
   })
 
-  it('PUT /api/projects/:id returns 400 for an out-of-range threshold', async () => {
+  it('PUT /api/routers/:id returns 400 for an out-of-range threshold', async () => {
     authAs(adminUser)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [], optimizers: { steps: [
         { id: 'relevance', enabled: true, threshold: 1.5 },
@@ -12300,12 +12300,12 @@ describe('Optimizers API', () => {
     expect(res.statusCode).toBe(400)
   })
 
-  it('PUT /api/projects/:id accepts ccr/headroom thresholds above 1 (their natural unit is turns/tokens, not a ratio)', async () => {
+  it('PUT /api/routers/:id accepts ccr/headroom thresholds above 1 (their natural unit is turns/tokens, not a ratio)', async () => {
     authAs(adminUser)
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'PUT', url: '/api/projects/p1',
+      method: 'PUT', url: '/api/routers/p1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Test', models: [], optimizers: { steps: [
         { id: 'ccr', enabled: true, threshold: 8 },
@@ -12316,18 +12316,18 @@ describe('Optimizers API', () => {
     expect(res.statusCode).toBe(200)
   })
 
-  it('POST /api/projects persists optimizers with optimizers:manage (201)', async () => {
+  it('POST /api/routers persists optimizers with optimizers:manage (201)', async () => {
     authAs(adminUser)
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
-      if (t === 'projects') return []
+      if (t === 'routers') return []
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'POST', url: '/api/projects',
+      method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'New', models: [], optimizers: optimizersBody }),
     })
@@ -12347,8 +12347,8 @@ describe('Optimizers API', () => {
   })
 
   it('GET /api/optimizers returns 403 without optimizers:read', async () => {
-    const roRole = { id: 'ro', name: 'RO', permissions: ['project:read'] }
-    const roUser = { id: 'ro-id', email: 'ro@x.com', passwordHash: '$2b$12$h', roleId: 'ro', projectIds: [] }
+    const roRole = { id: 'ro', name: 'RO', permissions: ['router:read'] }
+    const roUser = { id: 'ro-id', email: 'ro@x.com', passwordHash: '$2b$12$h', roleId: 'ro', routerIds: [] }
     authAs(roUser, [roRole])
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/optimizers', headers: adminAuthHeaders() })
@@ -12392,8 +12392,8 @@ describe('Optimizers API', () => {
   })
 
   it('POST /api/optimizers/preview returns 403 without optimizers:read', async () => {
-    const roRole = { id: 'ro', name: 'RO', permissions: ['project:read'] }
-    const roUser = { id: 'ro-id', email: 'ro@x.com', passwordHash: '$2b$12$h', roleId: 'ro', projectIds: [] }
+    const roRole = { id: 'ro', name: 'RO', permissions: ['router:read'] }
+    const roUser = { id: 'ro-id', email: 'ro@x.com', passwordHash: '$2b$12$h', roleId: 'ro', routerIds: [] }
     authAs(roUser, [roRole])
     const app = await buildApp()
     const res = await app.inject({
@@ -12409,7 +12409,7 @@ describe('Optimizers API', () => {
     authAs(adminUser)
     const app = await buildApp()
     const res = await app.inject({
-      method: 'GET', url: '/api/projects/p1/optimizers/samples', headers: adminAuthHeaders(),
+      method: 'GET', url: '/api/routers/p1/optimizers/samples', headers: adminAuthHeaders(),
     })
     await app.close()
     expect(res.statusCode).toBe(404)
@@ -12431,8 +12431,8 @@ describe('Optimizers API', () => {
   })
 
   it('refuses status without optimizers:read (403)', async () => {
-    const roRole = { id: 'ro', name: 'RO', permissions: ['project:read'] }
-    const roUser = { id: 'ro-id', email: 'ro@x.com', passwordHash: '$2b$12$h', roleId: 'ro', projectIds: [] }
+    const roRole = { id: 'ro', name: 'RO', permissions: ['router:read'] }
+    const roUser = { id: 'ro-id', email: 'ro@x.com', passwordHash: '$2b$12$h', roleId: 'ro', routerIds: [] }
     authAs(roUser, [roRole])
     const app = await buildApp()
     const res = await app.inject({
@@ -12485,7 +12485,7 @@ describe('Optimizers API', () => {
 
   it('refuses a download request without optimizers:manage (403)', async () => {
     const roRole = { id: 'ro', name: 'RO', permissions: ['optimizers:read'] }
-    const roUser = { id: 'ro-id', email: 'ro@x.com', passwordHash: '$2b$12$h', roleId: 'ro', projectIds: [] }
+    const roUser = { id: 'ro-id', email: 'ro@x.com', passwordHash: '$2b$12$h', roleId: 'ro', routerIds: [] }
     authAs(roUser, [roRole])
     const app = await buildApp()
     const res = await app.inject({

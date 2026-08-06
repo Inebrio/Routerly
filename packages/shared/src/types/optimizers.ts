@@ -34,7 +34,7 @@ export interface OptimizerResult {
 }
 
 /**
- * One optimizer in a project's pipeline. Array order = execution order.
+ * One optimizer in a router's pipeline. Array order = execution order.
  */
 export interface OptimizerStep {
   id: OptimizerId;
@@ -46,7 +46,7 @@ export interface OptimizerStep {
    * default checkpoint.
    *
    * The choice is per step, the download is per host: the checkpoints live in
-   * one shared cache, so two projects picking the same one pay for it once.
+   * one shared cache, so two routers picking the same one pay for it once.
    */
   model?: string;
 }
@@ -127,7 +127,7 @@ export function llmLinguaCheckpoint(key: string): LlmLinguaCheckpoint | undefine
 }
 
 /**
- * Per-project optimizer config. Presence of `optimizers` on a `ProjectConfig`
+ * Per-router optimizer config. Presence of `optimizers` on a `RouterConfig`
  * activates the subsystem; `steps` order is the execution order.
  */
 export interface OptimizerConfig {

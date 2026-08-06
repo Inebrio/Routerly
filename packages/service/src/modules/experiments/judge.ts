@@ -105,7 +105,7 @@ async function recordScore(experimentId: string, variantId: string, score: numbe
  * score a fraction of calls would tax every call that is not sampled.
  *
  * Never throws: a judge that fails is one missing data point, not a failed
- * client request. The call is billed to the variant's own project, so the extra
+ * client request. The call is billed to the variant's own router, so the extra
  * cost shows up where the operator can see it.
  */
 export async function judgeExperimentCall(ctx: ProxyContext): Promise<void> {
@@ -146,8 +146,8 @@ export async function judgeExperimentCall(ctx: ProxyContext): Promise<void> {
     },
     model,
     {
-      projectId: ctx.project.id,
-      project: ctx.project,
+      routerId: ctx.router.id,
+      router: ctx.router,
       callType: 'judge',
       experiment: routed,
       ...(ctx.token ? { token: ctx.token } : {}),

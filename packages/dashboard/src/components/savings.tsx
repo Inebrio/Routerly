@@ -61,7 +61,7 @@ export const paidBaselines = (savings?: SavingsSummary): SavingsBaseline[] =>
 /**
  * The savings layer over time (T81): what the routed traffic cost and moved,
  * against what the same calls would have cost on every single model the
- * projects allow.
+ * routers allow.
  *
  * The counterfactual is drawn dashed because it never happened. Tokens have no
  * counterfactual at all: the same conversation is assumed to produce the same
@@ -179,7 +179,7 @@ function SplitBar({ segments }: { segments: Array<{ value: number; color: string
 
 /**
  * What the traffic cost, against what it would have cost had every call gone to
- * the costliest single model the projects allow (T201). The bar is the whole
+ * the costliest single model the routers allow (T201). The bar is the whole
  * counterfactual bill, the coloured part is the bill that was actually paid, so
  * the gap between them is the saving without a second number to read.
  *

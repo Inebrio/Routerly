@@ -24,7 +24,7 @@ function makeRecord(modelId: string, minutesAgo: number, latencyMs: number, outc
   return {
     id: `r-${modelId}-${minutesAgo}`,
     timestamp: new Date(Date.now() - minutesAgo * 60_000).toISOString(),
-    projectId: 'p1', modelId,
+    routerId: 'p1', modelId,
     inputTokens: 100, outputTokens: 50, cost: 0.01,
     latencyMs, outcome, callType: 'completion',
     costInput: 0.005, costOutput: 0.005, priceInput: 1, priceOutput: 3,

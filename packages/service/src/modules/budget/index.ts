@@ -14,10 +14,10 @@ const upstream: Processor<ProxyContext> = {
     // stays the authoritative recorder of budget-exceeded events + usage; this guard only
     // decides whether the candidate is attempted, mirroring routeRequest's existing pre-filter.
     const startedAt = Date.now()
-    const allowed = await isAllowed(attempt.model, ctx.project, ctx.token)
+    const allowed = await isAllowed(attempt.model, ctx.router, ctx.token)
     // A candidate silently dropped here looks, from the trace, like a routing
     // decision nobody made. Say which limit dropped it and by how much.
-    const violated = allowed ? [] : await getViolatedLimits(attempt.model, ctx.project, ctx.token)
+    const violated = allowed ? [] : await getViolatedLimits(attempt.model, ctx.router, ctx.token)
     ctx.emit?.({
       panel: 'request',
       message: 'budget:checked',

@@ -15,8 +15,8 @@ import { CONFIG_PATHS } from '../../../lib/paths.js'
  *
  *   <ROUTERLY_HOME>/models/<repo>/onnx/model_quantized.onnx
  *
- * One cache for the whole host: the checkpoint a step names is a per-project
- * choice, but the bytes are downloaded once and shared by every project that
+ * One cache for the whole host: the checkpoint a step names is a per-router
+ * choice, but the bytes are downloaded once and shared by every router that
  * names the same one.
  */
 export const MODEL_CACHE_DIR = join(CONFIG_PATHS.base, 'models')
@@ -47,7 +47,7 @@ function onnxFile(dtype: string): string {
 /**
  * Escape hatch for a checkpoint the curated list does not carry. Deployment
  * configuration, so it stays env-only and out of the dashboard: it names files
- * that get written to the service host's disk, which is not a per-project
+ * that get written to the service host's disk, which is not a per-router
  * decision. When set, it becomes the default the pipeline falls back to.
  */
 function envCheckpoint(): LlmLinguaCheckpoint | undefined {
@@ -72,7 +72,7 @@ export function checkpoints(): LlmLinguaCheckpoint[] {
 
 /**
  * Resolve the checkpoint a step runs on. An unknown key falls back to the
- * default rather than throwing: a project keeps working when an operator
+ * default rather than throwing: a router keeps working when an operator
  * removes the env override or the build stops publishing a checkpoint.
  */
 export function checkpointFor(key?: string): LlmLinguaCheckpoint {

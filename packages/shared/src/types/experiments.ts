@@ -1,18 +1,18 @@
 /**
- * Experiments (T70): an A/B test that sits above projects.
+ * Experiments (T70): an A/B test that sits above routers.
  *
- * A client points at the experiment's own token instead of a project token.
+ * A client points at the experiment's own token instead of a router token.
  * The experiment picks one of its variants per request, each variant being an
- * existing project with its whole configuration, and the rest of the pipeline
- * runs exactly as if the client had used that project's token. Cost and usage
- * stay attributed to the chosen project; the usage record additionally carries
+ * existing router with its whole configuration, and the rest of the pipeline
+ * runs exactly as if the client had used that router's token. Cost and usage
+ * stay attributed to the chosen router; the usage record additionally carries
  * the experiment and variant it came from.
  *
  * Nothing here touches the wire: no header selects a variant and no payload
  * field is added, so a client only ever changes its base URL and key.
  */
 
-import type { ProjectToken } from './config.js';
+import type { RouterToken } from './config.js';
 
 /** How the experiment picks a variant for a request. */
 export const EXPERIMENT_ROTATIONS = ['sticky', 'weighted', 'round-robin'] as const;
@@ -86,12 +86,12 @@ export function rotationDescription(rotation: ExperimentRotation): string {
   return ROTATION_CATALOG[rotation].description;
 }
 
-/** One arm of the test: an existing project, taken whole. */
+/** One arm of the test: an existing router, taken whole. */
 export interface ExperimentVariant {
   id: string;
-  /** The project this variant routes to. */
-  projectId: string;
-  /** Display name for the arm. Absent means the project's own name is shown. */
+  /** The router this variant routes to. */
+  routerId: string;
+  /** Display name for the arm. Absent means the router's own name is shown. */
   name?: string;
   /**
    * Share of traffic for `weighted` rotation. Any positive numbers work: they
@@ -143,11 +143,11 @@ export interface ExperimentConfig {
   variants: ExperimentVariant[];
   /**
    * The experiment's own tokens, same shape and same plaintext storage as a
-   * project's: the proxy compares an incoming bearer against both sets, so a
-   * client cannot tell the difference between calling a project and calling a
+   * router's: the proxy compares an incoming bearer against both sets, so a
+   * client cannot tell the difference between calling a router and calling a
    * test.
    */
-  tokens: ProjectToken[];
+  tokens: RouterToken[];
   /** Quality scoring, off when absent. */
   judge?: ExperimentJudge;
   /** Judge verdicts accumulated per variant id. Absent until the judge scores its first answer. */
@@ -176,8 +176,8 @@ export function variantShares(variants: ExperimentVariant[]): number[] {
 /** What one arm of the experiment cost, how fast it was, and how good it looked. */
 export interface ExperimentVariantMetrics {
   variantId: string;
-  projectId: string;
-  /** The variant's display name, or the project's when the variant has none. */
+  routerId: string;
+  /** The variant's display name, or the router's when the variant has none. */
   name?: string;
   calls: number;
   errors: number;

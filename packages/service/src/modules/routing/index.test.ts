@@ -26,8 +26,8 @@ function baseCtx(overrides: Partial<ProxyContext> = {}): ProxyContext {
     req: {} as any,
     reply: {} as any,
     log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } as any,
-    project: { id: 'p1', policies: [] } as any,
-    projectId: 'p1',
+    router: { id: 'p1', policies: [] } as any,
+    routerId: 'p1',
     traceId: 't1',
     emit: vi.fn(),
     original: { model: 'gpt', messages: [] },
@@ -76,7 +76,7 @@ describe('routing module', () => {
       const ctx = baseCtx()
       await proc.run(ctx)
       expect(routeRequestMock).toHaveBeenCalledWith(
-        ctx.request, ctx.project, ctx.log, expect.any(Function), ctx.token, ctx.traceId, ctx.conversationId, undefined,
+        ctx.request, ctx.router, ctx.log, expect.any(Function), ctx.token, ctx.traceId, ctx.conversationId, undefined,
       )
       expect(ctx.candidates).toEqual([{ model: 'm1', weight: 1 }])
     })
@@ -91,7 +91,7 @@ describe('routing module', () => {
       const ctx = baseCtx()
       await proc.run(ctx)
       expect(routeRequestMock).toHaveBeenCalledWith(
-        ctx.request, ctx.project, ctx.log, expect.any(Function), ctx.token, ctx.traceId, ctx.conversationId, fakeStore,
+        ctx.request, ctx.router, ctx.log, expect.any(Function), ctx.token, ctx.traceId, ctx.conversationId, fakeStore,
       )
     })
   })
@@ -123,7 +123,7 @@ describe('routing module', () => {
       expect(() => proc.run(ctx)).not.toThrow()
     })
 
-    it('does nothing when project.policies is undefined', async () => {
+    it('does nothing when router.policies is undefined', async () => {
       const { container, events, pipeline } = harness()
       await routingModule.register({ container, events })
       const proc = pipeline.orderedFor('routing.prepare').find((p) => p.id === 'routing.memory')!
@@ -131,7 +131,7 @@ describe('routing module', () => {
         protocol: 'openai',
         conversationId: 'c1',
         candidates: [{ model: 'm1', weight: 1 }],
-        project: { id: 'p1' } as any,
+        router: { id: 'p1' } as any,
       })
       expect(() => proc.run(ctx)).not.toThrow()
     })
@@ -144,7 +144,7 @@ describe('routing module', () => {
         protocol: 'openai',
         conversationId: 'c1',
         candidates: [{ model: 'm1', weight: 1 }],
-        project: { id: 'p1', policies: [{ type: 'llm', enabled: true, config: {} }] } as any,
+        router: { id: 'p1', policies: [{ type: 'llm', enabled: true, config: {} }] } as any,
       })
       expect(() => proc.run(ctx)).not.toThrow()
     })
@@ -157,7 +157,7 @@ describe('routing module', () => {
         protocol: 'openai',
         conversationId: 'c1',
         candidates: [{ model: 'm1', weight: 1 }],
-        project: { id: 'p1', policies: [{ type: 'llm', enabled: true, config: { memory: true } }] } as any,
+        router: { id: 'p1', policies: [{ type: 'llm', enabled: true, config: { memory: true } }] } as any,
       })
       expect(() => proc.run(ctx)).not.toThrow()
     })

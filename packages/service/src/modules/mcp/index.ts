@@ -10,9 +10,9 @@ import {
   usageSummaryTool,
   budgetStatusTool,
   metricsSnapshotTool,
-  listProjectsTool,
+  listRoutersTool,
 } from './tools/read.js'
-import { createProjectTokenTool, toggleModelTool } from './tools/write.js'
+import { createRouterTokenTool, toggleModelTool } from './tools/write.js'
 
 /** Built-in tools, each carrying the DI token its backing module registers. */
 const BUILT_IN_TOOLS: McpToolEntry[] = [
@@ -22,8 +22,8 @@ const BUILT_IN_TOOLS: McpToolEntry[] = [
   usageSummaryTool,
   budgetStatusTool,
   metricsSnapshotTool,
-  listProjectsTool,
-  createProjectTokenTool,
+  listRoutersTool,
+  createRouterTokenTool,
   toggleModelTool,
 ]
 

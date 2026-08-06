@@ -13,7 +13,7 @@ const DEFAULT_RESERVED = 1024
 
 /** Reserved completion headroom (tokens) for this context, from the step's threshold or the default. */
 function reservedOf(ctx: ProxyContext): number {
-  const step = ctx.project.optimizers?.steps.find((s) => s.id === 'headroom')
+  const step = ctx.router.optimizers?.steps.find((s) => s.id === 'headroom')
   return typeof step?.threshold === 'number' && step.threshold > 0 ? step.threshold : DEFAULT_RESERVED
 }
 

@@ -23,8 +23,8 @@ function ctxWith(messages: Message[], threshold?: number, modelKey?: string): Pr
     req: { headers: {} } as any,
     reply: {} as any,
     log: { warn: vi.fn(), error: vi.fn() } as any,
-    project: { id: 'p1', optimizers: { steps: [step] } } as any,
-    projectId: 'p1',
+    router: { id: 'p1', optimizers: { steps: [step] } } as any,
+    routerId: 'p1',
     traceId: 't1',
     original: request,
     request,
@@ -60,7 +60,7 @@ describe('llmlingua-2 optimizer', () => {
   it('supports() is false when the step is disabled even if model+runtime present', () => {
     makeAvailable()
     const ctx = ctxWith([{ role: 'user', content: 'x y z' }])
-    ;(ctx.project as any).optimizers.steps[0].enabled = false
+    ;(ctx.router as any).optimizers.steps[0].enabled = false
     expect(llmlingua2Optimizer.supports(ctx)).toBe(false)
   })
 
