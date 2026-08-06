@@ -1,3 +1,6 @@
+import type { PermissionCheckStatus } from '@routerly/shared';
+export type { PermissionCheckStatus } from '@routerly/shared';
+
 const BASE = '/api';
 
 function authHeaders(): Record<string, string> {
@@ -63,6 +66,11 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       ...(init.headers as Record<string, string> ?? {}),
     },
   });
+
+  if (res.status === 423) {
+    const detail = await res.clone().json().catch(() => null);
+    window.dispatchEvent(new CustomEvent('lr-permission-blocked', { detail }));
+  }
 
   if (res.status === 401 && path !== '/auth/login') {
     // Try refresh once, then retry the original request
@@ -739,6 +747,12 @@ export interface SystemInfo {
 }
 
 export const getSystemInfo = () => request<SystemInfo>('/system/info');
+
+// ── Permission guard (RTR-04) ─────────────────────────────────────────────
+export const getPermissionStatus = () => request<PermissionCheckStatus>('/system/permissions');
+export const fixPermissions = () =>
+  request<{ fixed: string[] }>('/system/permissions/fix', { method: 'POST', body: JSON.stringify({ confirm: true }) });
+
 export const checkForUpdates = () => request<UpdateInfo>('/system/update-check');
 export const triggerUpdate = () => request<{ message: string }>('/system/update', { method: 'POST' });
 

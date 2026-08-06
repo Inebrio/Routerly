@@ -2,8 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createBrowserRouter, RouterProvider, NavLink, Navigate, useNavigate, useLocation, Outlet, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { ThemeProvider, useTheme, type Theme } from './ThemeContext';
-import { checkSetupStatus, getSystemInfo, getSettings, updateSettings } from './api';
+import { checkSetupStatus, getSystemInfo, getSettings, updateSettings, getPermissionStatus } from './api';
 import type { UpdateInfo } from './api';
+import { PermissionGuardModal, type PermissionBlockedDetail } from './components/PermissionGuardModal';
 import { LoginPage } from './pages/LoginPage';
 import { SetupPage } from './pages/SetupPage';
 import { OverviewPage } from './pages/OverviewPage';
@@ -206,6 +207,18 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
   );
 }
 
+// Permission warning banner is checked once per session, not once per page instance:
+// a module-level flag survives navigation (component remounts) but resets on full reload,
+// which is fine — a fresh reload is a fresh session-level check (EC4: no re-prompt storm).
+let permissionCheckDone = false;
+let permissionWarningFiles: string[] = [];
+
+/** Test-only: clears the module-level "checked this session" flag between test cases. */
+export function __resetPermissionCheckForTests() {
+  permissionCheckDone = false;
+  permissionWarningFiles = [];
+}
+
 function ProtectedLayout() {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -218,6 +231,9 @@ function ProtectedLayout() {
   });
   const [telemetryUndecided, setTelemetryUndecided] = useState(false);
   const [requireMfa, setRequireMfa] = useState(false);
+  const [permissionWarning, setPermissionWarning] = useState<string[]>(permissionWarningFiles);
+  const [permissionWarningDismissed, setPermissionWarningDismissed] = useState(false);
+  const [permissionBlockedDetail, setPermissionBlockedDetail] = useState<PermissionBlockedDetail | null>(null);
 
   useEffect(() => {
     getSystemInfo()
@@ -227,6 +243,39 @@ function ProtectedLayout() {
       })
       .catch(/* v8 ignore next */ () => { /* non-critical */ });
   }, []);
+
+  // AC6/AC8/EC4: fetch permission status once per session (module-level flag), show a
+  // warning banner if any general-severity file is unsafe, never block on it.
+  useEffect(() => {
+    if (permissionCheckDone) {
+      setPermissionWarning(permissionWarningFiles);
+      return;
+    }
+    permissionCheckDone = true;
+    getPermissionStatus()
+      .then(status => {
+        const warnings = status.unsafe.filter(u => u.severity === 'general').map(u => u.file);
+        permissionWarningFiles = warnings;
+        setPermissionWarning(warnings);
+      })
+      .catch(/* v8 ignore next */ () => { /* non-critical: hard block, if any, surfaces via the 423 event */ });
+  }, []);
+
+  // AC6: any 423 from api.ts surfaces here as a blocking modal.
+  useEffect(() => {
+    function onBlocked(e: Event) {
+      const detail = (e as CustomEvent<PermissionBlockedDetail>).detail;
+      if (detail) setPermissionBlockedDetail(detail);
+    }
+    window.addEventListener('lr-permission-blocked', onBlocked);
+    return () => window.removeEventListener('lr-permission-blocked', onBlocked);
+  }, []);
+
+  function handlePermissionFixed() {
+    setPermissionBlockedDetail(null);
+    permissionWarningFiles = [];
+    setPermissionWarning([]);
+  }
 
   useEffect(() => {
     getSettings()
@@ -263,6 +312,7 @@ function ProtectedLayout() {
   }
 
   const showUpdateBanner = !bannerDismissed && !isDocker && user?.role === 'admin' && updateInfo?.available;
+  const showPermissionWarning = !permissionWarningDismissed && permissionWarning.length > 0;
 
   if (isLoading) return <div className="loading-center"><div className="spinner" /></div>;
   /* v8 ignore next */
@@ -271,6 +321,36 @@ function ProtectedLayout() {
     <div className={`app-shell${collapsed ? ' sidebar-collapsed' : ''}`}>
       <Sidebar collapsed={collapsed} onToggle={handleToggle} />
       <main className="main-content">
+        {showPermissionWarning && (
+          <div style={{
+            background: 'var(--warning-bg, #fffbeb)',
+            borderBottom: '1px solid var(--warning-border, #f6e05e)',
+            padding: '10px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            fontSize: '0.85rem',
+            color: 'var(--warning-text, #744210)',
+          }}>
+            <span>
+              Some configuration files have permissive access ({permissionWarning.join(', ')}). Startup and requests still work, but fix this from the host filesystem when convenient.
+            </span>
+            <button
+              onClick={() => setPermissionWarningDismissed(true)}
+              style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, color: 'inherit', opacity: 0.7 }}
+              title="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        )}
+        {permissionBlockedDetail && (
+          <PermissionGuardModal
+            detail={permissionBlockedDetail}
+            onFixed={handlePermissionFixed}
+            onCancel={() => setPermissionBlockedDetail(null)}
+          />
+        )}
         {showUpdateBanner && (
           <div style={{
             background: 'var(--warning-bg, #fffbeb)',

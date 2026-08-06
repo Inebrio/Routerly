@@ -28,6 +28,7 @@ vi.mock('./modules/config/migrate.js', () => ({
   migrateProjectConfigs: vi.fn(async () => 0),
   migrateRouterStorage: vi.fn(async () => undefined as number | undefined),
 }))
+vi.mock('./modules/config/permission-guard.js', () => ({ enforceStartupGuard: vi.fn() }))
 
 import { buildServer, startServer } from './server.js'
 import { readConfig, writeConfig } from './modules/config/loader.js'
