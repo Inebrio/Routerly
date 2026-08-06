@@ -52,6 +52,13 @@ Also update what the change invalidated: pages that describe the old
 behaviour, examples that no longer run, tables missing the new value. A
 stale page is worse than a missing one, because it is believed.
 
+`CHANGELOG.md`'s `## [Unreleased]` section is one of the surfaces you own.
+Add an entry there for every feature/fix the story shipped — bold name plus
+1-3 sentences for a feature, one bullet for a fix, a dedicated line under
+Breaking changes for anything touching the wire format, CLI surface, or
+management API contract. Match the style of the entries already in the
+file. See `CLAUDE.md`'s Changelog section.
+
 ## Rules of engagement
 
 1. Conventions are binding and live outside this file: the project

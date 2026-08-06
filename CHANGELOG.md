@@ -1,24 +1,110 @@
 # Changelog
 
-All notable changes to Routerly are documented in this file.
+All notable changes to Routerly are documented in this file. Format:
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+Every feature or bug fix lands an entry under **[Unreleased]** as part of
+the change itself — never reconstructed after the fact. See
+`CLAUDE.md`'s Changelog section.
 
 ---
 
-## [0.4.0] — 2026-07-28
+## [Unreleased]
 
-### Internal
+### New features
 
-**Modular kernel architecture**
-The service core has been reorganized from inline route handlers into a dependency-injection container with a modular, phase-based pipeline. This enables extensibility without touching core code: new security rules, routing policies, or provider adapters are registered as independently testable modules contributing processors to a shared pipeline. The refactor preserves wire-format transparency absolutely — all request and response payloads are byte-for-byte identical to previous versions. The architecture is: a frozen `ServiceContainer` housing DI tokens; a `ProcessorRegistry` that chains `Processor<ProxyContext>` objects across a frozen, ordered phase list (ingress, protocol.decode, request.preprocess, routing.prepare, routing.execute, upstream.prepare, upstream.execute, response.postprocess, protocol.encode, egress, finalize); bootstrap assembly in `modules/` where each subsystem (auth, routing, guardrails, budget, usage, logging, pii, notifications, observability, reverse-proxy, and others) registers its own processors behind a module token; and an atomic phase-scoped runner that executes the pipeline while honouring short-circuit guards (block, error, early-exit). Concerns are now decoupled: the guardrail module no longer knows about PII scrubbing, the routing engine no longer duplicates budget checks, and the reverse-proxy lanes (openai, anthropic) are isolated transport processors that delegate all policy logic to the phase pipeline. The routes layer (`modules/api-reverse-proxy/`) delegates to `runProxy(pipeline)` without inline handler logic. This is a major internal refactor with no new user-facing features from the restructuring itself, but it enables future work on composability and operator-written extensions.
-
-### Fixes
-
-**Guardrail steering injection regression**
-When the modular pipeline was activated (atomic route flip from inline handlers to runproxy), the request-injection merge logic that applies inject-only guardrail instructions to the outgoing request system prompt was deleted without being reimplemented in the new pipeline. This caused content guardrails configured with `inject: true` but without a block/log `target` (inject-only steering rules) to silently drop their steering instructions and have no effect on the model. The regression affected topic and moderation rules used only for soft steering, not blocking or logging. The fix adds dedicated upstream.prepare-phase processors `openai:inject` and `anthropic:inject` that merge steering instructions from the guardrail module into the correct system-message field for each provider, matching the previous behavior exactly. Inject-only guardrails (topic and moderation rules with no request/response/both target) are now restored and functional.
+### Bug fixes
 
 ### Breaking changes
 
-None. The OpenAI and Anthropic wire formats are unchanged.
+---
+
+## [0.4.0] — 2026-08-06
+
+### New features
+
+**Content guardrails and PII scrubbing**
+A guardrail layer intercepts every request and response. Rules can block or log based on keyword, regex, or semantic judge scoring, and can inject a soft steering instruction into the system prompt. PII scrubbing runs before guardrails on the request side, so the judge never sees raw PII. Judge rules score on a 0–10 anchored rubric with a reason-first response, evaluated against the full conversation history so a rephrased or softened follow-up is still caught. Guardrail and PII events appear as dedicated trace entries; blocked requests are counted separately in usage reports.
+
+**Notification system**
+Notification channels (Slack, Teams, PagerDuty, Discord, email, in-app) can be scoped to specific projects and events, with per-channel routing rules and cooldowns. An in-app inbox in the dashboard groups events from the same trace into one incident and shows a user only the items their role can reach. Budget events and update-available events both trigger notifications. Full CLI support via `routerly notifications channels` and `routerly notifications inbox`.
+
+**2FA / TOTP**
+Users enroll a TOTP authenticator from the dashboard, with a scannable QR code during setup. Login enforces 2FA when enabled. Admins can require 2FA for all users from Settings and reset any user's enrollment from the Users list.
+
+**Prompt playground**
+A dashboard playground supports single and compare modes, with compare mode running the same prompt against two models in parallel with per-panel parameters and debug traces. A preset library is included; each turn renders as its own card, newest first.
+
+**Dynamic model catalog**
+The model and provider catalog loads at runtime from configurable git repositories (default: the official Inebrio catalog), resolved by channel, semver range, or fallback, and cached 6 hours with checksum verification. The dashboard's Model Discovery page lists available models with provider and capability filters; `routerly models discover` and `routerly catalog refresh` cover the CLI side.
+
+**Enterprise and native providers**
+Native adapters for AWS Bedrock (Converse Stream binary parser), Azure OpenAI, and Google Vertex AI, alongside `openai-web`/`anthropic-web` browser-session adapters and `anthropic-oauth`/`openai-oauth` subscription adapters for users with an active Claude/ChatGPT subscription. All follow the same wire-format transparency rules as the built-in providers, and connection credentials are handled with provider-aware parity across the service, CLI, and dashboard.
+
+**Connections and model instances**
+Provider configuration is split into two concerns: a **connection** (credentials and endpoint, created once) and a **model instance** (a model bound to a connection, with its own pricing and capability overrides). Existing `models.json` entries migrate to this shape automatically and idempotently on first start. The dashboard gets dedicated connection create/edit pages and a filtered model list per connection; the CLI adds `routerly connections list|add|remove`, with credentials always stripped from `--json` output.
+
+**Client integrations and the Connect page**
+A client registry with guided setup for Claude Code, Codex, OpenCode, Cline, Continue, Cursor, and any other OpenAI/Anthropic-SDK client. The dashboard's Connect section groups clients by brand with connect-mode badges and MCP snippets where relevant. `routerly clients list|inspect|configure|doctor|undo|launch` writes and repairs a client's local config file directly from the CLI, backed by an atomic backup-and-checksum file-transaction helper; `configure` mints a project token unless `--token` is passed.
+
+**Routing profiles (routing, optimizer, security)**
+Profiles generalize routing configuration into three kinds — routing, optimizer, and security — each assignable to a project independently, with built-in presets, cloning, a from-scratch creation flow, and a simulate/preview endpoint. Selector strategies (`argmax`, `weighted-random`, `round-robin`, `cheapest`, `lowest-latency`) and fallback strategies (`next-best`, `retry-after-cooldown`, `abort`) are pluggable per profile. `routerly profiles list|show|clone|set` and a project-level profile-vs-custom switch cover the CLI and dashboard.
+
+**Resilience (circuit breaker)**
+A 3-level in-memory resilience store (model, connection, provider) classifies upstream faults, including TTFT timeouts, and acts as a hard pre-filter on routing so a degraded upstream is skipped automatically. `routerly resilience status|reset` and `GET/POST /api/resilience` expose the state; the dashboard surfaces it inline on the project's routing tab rather than as a separate page.
+
+**Optimizers**
+Eight built-in, per-project, opt-in optimizers reduce a request's token footprint before it reaches the provider: `session-dedup` (exact-match dedup, lossless), `ccr` (conversation context reduction, recoverable), `rtk` (redundant token killer, recoverable), `headroom` (context-window trimming, lossless), `relevance` (semantic near-duplicate removal, lossy, opt-in), `llmlingua-2` (ONNX-backed compression with an installable checkpoint, lossy, off by default), and `caveman` (English-only lexical compression, lossy). Every `lossy` result passes a shared safety gate before being accepted; `recoverable` steps roll back on a failed validation. The dashboard's per-project optimizer tab previews each step against real traffic samples and explains why a step did or didn't fire; `routerly optimizers list|config|preview` covers the CLI.
+
+**MCP server**
+Routerly's own management API is exposed as MCP tools over two transports: streamable HTTP at `POST /mcp` and a local `routerly mcp serve` stdio wrapper. Authentication moved from project-token scopes to a personal MCP token (`sk-rt-mcp-…`, prefix distinct from project tokens) that carries every permission of its owner's role; six read tools and two gated write tools (`create_project_token`, `toggle_model`) are scope-filtered per token. The dashboard adds a tool-browser page and a dedicated token page on the user's profile; `routerly mcp tools|test|serve` and `routerly mcp token` cover the CLI.
+
+**Experiments**
+An experiment sits above projects as an A/B test: a client points at the experiment's own token, and each request is routed to one of the experiment's variants, each variant an existing project taken whole. Rotation is `sticky` (default, session-stable), `weighted`, or `round-robin`; a judge model scores each variant. Nothing about variant selection reaches the wire. The dashboard adds an experiments section with metrics and a shared date-range picker; the CLI adds a `routerly experiments` command group.
+
+**Trace, usage, and savings**
+The request trace is now an event-driven module with a live SSE channel and export, tracing every stage of a request on two levels (summary and full log) and storing the whole trace on the usage record. The usage table adds a readable call log with caller and request-type filters, and usage/overview pages add a savings and counterfactual layer: what routing actually saved against running the same traffic on a single fixed model, broken down per optimizer and shown over time on the overview page.
+
+**Update notifications**
+The service checks for newer releases and emits a deduplicated `system.update_available` notification event; the dashboard shows an update-available label and the CLI surfaces it too. Update channels are named `current` and `next` (deprecated aliases for the old names are still accepted).
+
+**Provider-native prompt caching, TTFT timeout, and pass-through proxy**
+Anthropic prompt caching headers are forwarded as-is, with cache read/write costs recorded per request. A configurable time-to-first-token timeout (default 2s, 0 disables it) is enforced per model attempt with fallback to the next provider on expiry. Unhandled provider endpoints, including `/v1/responses` and Anthropic tool calling, are forwarded transparently with no payload or header modification; clients can suppress SSE trace events with `x-routerly-no-trace: 1`.
+
+**Dashboard-wide UX pass**
+Every native `<select>` in the dashboard (provider, model, connection, and other dropdowns) is now a searchable select. The overview page was rebuilt around a single chart system, remembers the period picked, and adds a connect shortcut card; the sidebar nav was flattened and renamed after what each section holds; primary actions open by clicking a table row.
+
+**Modular kernel architecture** (internal)
+The service core has been reorganized from inline route handlers into a dependency-injection container with a modular, phase-based pipeline: a frozen `ServiceContainer` housing DI tokens, a `ProcessorRegistry` chaining `Processor<ProxyContext>` objects across a frozen, ordered phase list, and bootstrap assembly in `modules/` where each subsystem registers its own processors behind a module token. Preserves wire-format transparency absolutely. No new user-facing behavior from the restructuring itself, but every feature above is built on it.
+
+### Bug fixes
+
+- Fixed `updatedAt` in the model catalog always equalling `lastChecked` on first fetch, and the last repo in the list silently overriding earlier ones on a key conflict
+- Fixed "Unrecognized keys: notificationRules, cooldowns" error when saving notification settings, and email provider parity with the dashboard
+- Fixed Gemini adapter stripping the provider prefix from the model ID before the upstream call
+- Fixed login redirect loop and double-encoded `to` parameter in the dashboard
+- Fixed playground SSE buffering across chunk boundaries
+- Fixed usage provider column resolution, null-cost guard in the usage page and CLI report, and blocked records leaking into the model leaderboard and routing health
+- Fixed config writes to be atomic, widened the write-lock retry budget, and defaulted new config files to `0600` instead of `0644`
+- Fixed p95 latency window (1h instead of 5m) and semantic-intent routing's embedding credentials lookup
+- Fixed telemetry ping to be async with retry, and deduplicated install events
+- Fixed notification channel SSRF hardening and permission enforcement, and dashboard 2FA QR UX / notification dropdown z-index
+- Fixed custom providers to use raw fetch instead of the OpenAI SDK for wire-format transparency
+- Fixed the model form not prefilling from discovery provider/model-ID params, and connection credentials leaking into model API responses
+- Fixed OAuth: static bearer resolution for legacy migrated connections, refresh guarded against unknown expiry/malformed credentials, credentials encrypted on connection create/update, and a body-parse crash on token exchange
+- Fixed resilience: connection breaker keyed on the real connection ID, partial level/id reset payloads rejected, an incorrect half-open recovery heuristic removed
+- Fixed optimizers: `ccr` keeping Anthropic tool-use/tool-result pairs atomic, `caveman` no longer eating file paths and dotted identifiers, `headroom` actually firing, `llmlingua-2` scored in encoder windows instead of one throwing pass, threshold ranges made per-optimizer instead of a uniform 0–1, and a single shared token estimator used across all steps
+- Fixed the MCP tool registry to drop a fabricated `enabled` field and gate tools on the owning module being enabled, so a disabled module removes its tool from the list
+- Fixed npm audit high-severity advisories, including an authorization-bypass fix in the dashboard's static-file plugin (`@fastify/static` 9 → 10.1.2; verified no traversal shape escapes the dist root)
+- Fixed searchable-select dropdowns to restore accessible naming and keyboard operation
+- Fixed docs-versioning to track live `docs/` content instead of freezing an unstable snapshot ahead of its real release
+- Fixed the guardrail steering-injection regression from the modular pipeline cutover: `inject: true` rules without a block/log target silently dropped their steering instruction; restored via dedicated `openai:inject`/`anthropic:inject` upstream.prepare processors
+
+### Breaking changes
+
+None on the wire. The OpenAI and Anthropic proxy formats (`/v1/*`, `/anthropic/*`) are unchanged: no header or payload added, removed, or renamed on request or response.
+
+One breaking change on the management surface: **MCP authentication moved from project tokens to personal user tokens.** The `mcp` and `mcp:write` project-token scopes and the `mcp:read`/`mcp:manage` permissions no longer exist and are dropped from roles and tokens automatically on first start after the upgrade. A client still authenticating `/mcp` with a project token now gets `401` and must be re-pointed at a personal MCP token, created from the dashboard's Profile > MCP tab or `routerly mcp token`.
 
 ---
 
