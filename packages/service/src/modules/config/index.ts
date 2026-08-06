@@ -62,6 +62,12 @@ export const configModule = defineModule({
       // eslint-disable-next-line no-console
       console.log(`[startup] dropped removed setting(s) from settings.json: ${dropped.join(', ')}`)
     }
+    // migrateUsageToNdjson() deliberately does NOT run here: this migrate()
+    // is wrapped by the kernel in a best-effort try/catch that logs and
+    // continues startup on failure (kernel.ts), but a corrupted legacy
+    // usage.json must fail loudly and stop the boot (EC2). It runs instead
+    // as its own step in server.ts's startServer(), outside that catch —
+    // same reasoning as migrateRouterStorage (RTR-01, B2).
   },
   register({ container }) {
     container.register(CONFIG_STORE, { readConfig, writeConfig, appendUsageRecord })

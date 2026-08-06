@@ -4,6 +4,7 @@ import { randomBytes } from 'node:crypto';
 import lockfile from 'proper-lockfile';
 import type { ModelConfig, RouterConfig, UserConfig, RoleConfig, Settings, UsageRecord, NotificationInboxItem, ModuleRecord, ProviderConnection, ModelInstance, Profile, ExperimentConfig } from '@routerly/shared';
 import { CONFIG_PATHS } from '../../lib/paths.js';
+import { readUsageNdjson, writeUsageNdjson, appendUsageRecordsNdjson } from './usageNdjson.js';
 
 /** Mirrors audit/logger.ts AuditEntry — defined here to avoid circular import */
 export interface AuditEntry {
@@ -97,6 +98,11 @@ export async function initConfigDirs(): Promise<void> {
 export async function readConfig<K extends keyof StoredTypeMap>(
   key: K,
 ): Promise<StoredTypeMap[K]> {
+  // Usage history lives in append-only NDJSON (RTR-06), not a JSON array file —
+  // delegate to its own reader instead of the generic read-modify-write path below.
+  if (key === 'usage') {
+    return (await readUsageNdjson()) as StoredTypeMap[K];
+  }
   const filePath = CONFIG_PATHS[key];
   try {
     let raw = await readFile(filePath, 'utf-8');
@@ -145,6 +151,13 @@ export async function writeConfig<K extends keyof StoredTypeMap>(
   key: K,
   data: StoredTypeMap[K],
 ): Promise<void> {
+  // Usage history: same NDJSON delegation as readConfig above. Still a full
+  // atomic rewrite (used by pruneOrphanUsage and the retention sweep — both
+  // occasional, off the per-request hot path), just via the NDJSON writer.
+  if (key === 'usage') {
+    await writeUsageNdjson(data as UsageRecord[]);
+    return;
+  }
   const filePath = CONFIG_PATHS[key];
 
   // Ensure parent dir exists
@@ -162,12 +175,13 @@ export async function writeConfig<K extends keyof StoredTypeMap>(
   const tmpPath = `${filePath}.tmp-${process.pid}-${tmpCounter++}`;
   let release: (() => Promise<void>) | undefined;
   try {
-    // ponytail: whole-file read-modify-write per usage append under this global
-    // lock is O(n) per record; if write throughput ever demands it the upgrade is
-    // append-only usage writes (NDJSON append), not a bigger retry budget. Budget
-    // bumped (5→10 retries, capped 500ms backoff) so transient contention — e.g.
-    // appendUsageRecord on the request hot path — rides out instead of throwing a
-    // dropped write; kept modest so a real deadlock still surfaces.
+    // Budget bumped (5→10 retries, capped 500ms backoff) so transient lock
+    // contention on any config key rides out instead of throwing a dropped
+    // write; kept modest so a real deadlock still surfaces. Usage records no
+    // longer go through this path per-write (RTR-06: append-only NDJSON,
+    // usageNdjson.ts) — this write path is now only the occasional full
+    // rewrite (settings/projects/etc., plus usage's pruneOrphanUsage/retention
+    // sweep via writeUsageNdjson's own identical lock).
     release = await lockfile.lock(filePath, {
       retries: { retries: 10, minTimeout: 50, maxTimeout: 500 },
     });
@@ -190,13 +204,14 @@ export async function appendUsageRecord(record: UsageRecord): Promise<void> {
   await appendUsageRecords([record]);
 }
 
-/** Same, for records that finish together: one read-modify-write for all of them. */
+/**
+ * Same, for records that finish together. Appends without reading or parsing
+ * any existing content (RTR-06/AC2) — cost does not grow as the history grows.
+ */
 export async function appendUsageRecords(records: UsageRecord[]): Promise<void> {
   if (process.env['ROUTERLY_SKIP_TRACKING']) return; // ponytail: env guard, skips write in e2e/test runs
   if (records.length === 0) return;
-  const existing = await readConfig('usage');
-  existing.push(...records);
-  await writeConfig('usage', existing);
+  await appendUsageRecordsNdjson(records);
 }
 
 /**

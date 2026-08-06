@@ -54,7 +54,9 @@ vi.mock('./modules/api-reverse-proxy/anthropic.js', () => ({ anthropicRoutes: vi
 vi.mock('./modules/config/migrate.js', () => ({
   migrateProjectConfigs: vi.fn(async () => 0),
   migrateRouterStorage: vi.fn(async () => undefined as number | undefined),
+  migrateUsageToNdjson: vi.fn(async () => 0),
 }));
+vi.mock('./modules/config/permission-guard.js', () => ({ enforceStartupGuard: vi.fn() }));
 
 import { startServer } from './server.js';
 

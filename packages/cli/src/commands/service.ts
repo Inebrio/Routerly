@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
 import { getCurrentAccount, requireAccount } from '../store.js';
-import type { Settings } from '@routerly/shared';
+import type { Settings, UsageRetentionConfig } from '@routerly/shared';
 
 interface SystemInfo {
   version: string;
@@ -46,6 +46,11 @@ Examples:
         console.log(`  ${chalk.cyan('Host:')}          ${settings.host}`);
         console.log(`  ${chalk.cyan('Dashboard:')}     ${settings.dashboardEnabled ? chalk.green('enabled') : chalk.gray('disabled')}`);
         console.log(`  ${chalk.cyan('Log level:')}     ${settings.logLevel}`);
+        const retention = settings.usageRetention;
+        const retentionParts: string[] = [];
+        if (retention?.maxAgeDays !== undefined) retentionParts.push(`${retention.maxAgeDays}d`);
+        if (retention?.maxSizeMb !== undefined) retentionParts.push(`${retention.maxSizeMb}MB`);
+        console.log(`  ${chalk.cyan('Usage retention:')} ${retentionParts.length > 0 ? retentionParts.join(', ') : chalk.gray('not configured')}`);
         console.log(`  ${chalk.cyan('Models:')}        ${models.length}`);
         console.log(`  ${chalk.cyan('Routers:')}      ${routers.length}`);
         for (const address of settings.listeningAddresses ?? []) {
@@ -86,6 +91,15 @@ Examples:
 
   # Publish the URL clients should use, and require 2FA for every user
   routerly service configure --public-url https://routerly.example.com --require-mfa true
+
+  # Drop usage history older than 30 days
+  routerly service configure --usage-retention-days 30
+
+  # Cap usage history at 500MB, dropping oldest records first
+  routerly service configure --usage-retention-max-mb 500
+
+  # Clear the age limit, keeping the size cap (empty string clears, same convention as --metrics-token)
+  routerly service configure --usage-retention-days ""
 `)
     .option('--port <port>', 'HTTP port to listen on')
     .option('--host <host>', 'Host to bind to')
@@ -95,10 +109,13 @@ Examples:
     .option('--metrics-token <token>', 'Optional Bearer token to protect /metrics (empty string removes it)')
     .option('--public-url <url>', 'External URL clients use to reach the service')
     .option('--require-mfa <bool>', 'Require two-factor authentication for all users (true|false)')
+    .option('--usage-retention-days <n>', 'Drop usage history records older than N days (empty string clears it)')
+    .option('--usage-retention-max-mb <n>', 'Cap usage history file size in MB, dropping oldest records first (empty string clears it)')
     .action(async (opts: {
       port?: string; host?: string; dashboard?: string;
       logLevel?: string; metrics?: string; metricsToken?: string;
       publicUrl?: string; requireMfa?: string;
+      usageRetentionDays?: string; usageRetentionMaxMb?: string;
     }) => {
       const patch: Partial<Settings> = {};
       if (opts.port) patch.port = parseInt(opts.port, 10);
@@ -110,12 +127,28 @@ Examples:
       if (opts.publicUrl !== undefined) patch.publicUrl = opts.publicUrl;
       if (opts.requireMfa !== undefined) patch.requireMfa = opts.requireMfa === 'true';
 
-      if (Object.keys(patch).length === 0) {
-        console.log(chalk.yellow('No settings provided. Use --port, --host, --dashboard, --log-level, --metrics, --metrics-token, --public-url, or --require-mfa.'));
-        return;
-      }
-
       try {
+        if (opts.usageRetentionDays !== undefined || opts.usageRetentionMaxMb !== undefined) {
+          // Sub-fields are independent; merge over the current policy so setting
+          // one flag doesn't wipe out the other.
+          const current = await api<Settings>('GET', '/api/settings');
+          const usageRetention: UsageRetentionConfig = { ...(current.usageRetention ?? {}) };
+          if (opts.usageRetentionDays !== undefined) {
+            if (opts.usageRetentionDays === '') delete usageRetention.maxAgeDays;
+            else usageRetention.maxAgeDays = parseInt(opts.usageRetentionDays, 10);
+          }
+          if (opts.usageRetentionMaxMb !== undefined) {
+            if (opts.usageRetentionMaxMb === '') delete usageRetention.maxSizeMb;
+            else usageRetention.maxSizeMb = parseInt(opts.usageRetentionMaxMb, 10);
+          }
+          patch.usageRetention = usageRetention;
+        }
+
+        if (Object.keys(patch).length === 0) {
+          console.log(chalk.yellow('No settings provided. Use --port, --host, --dashboard, --log-level, --metrics, --metrics-token, --public-url, --require-mfa, --usage-retention-days, or --usage-retention-max-mb.'));
+          return;
+        }
+
         await api<void>('PUT', '/api/settings', patch);
         console.log(chalk.green('✓ Settings updated.'));
       } catch (err) {

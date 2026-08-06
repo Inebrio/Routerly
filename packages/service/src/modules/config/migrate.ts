@@ -9,11 +9,11 @@
  *
  * Runs once per startup on every stored router. Idempotent.
  */
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile, rename, unlink, access } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { RouterConfig, GuardrailConfig, PiiConfig, GuardrailRule, PiiPolicy, Settings } from '@routerly/shared';
-import { CONFIG_PATHS } from '../../lib/paths.js';
+import type { RouterConfig, GuardrailConfig, PiiConfig, GuardrailRule, PiiPolicy, Settings, UsageRecord } from '@routerly/shared';
 import { readConfig, writeConfig } from './loader.js';
+import { CONFIG_PATHS } from '../../lib/paths.js';
 
 function isEnoent(err: unknown): boolean {
   return err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT';
@@ -284,4 +284,70 @@ export async function migrateProjectConfigs(): Promise<number> {
     await writeConfig('routers', updated);
   }
   return count;
+}
+
+function isNodeError(err: unknown): err is NodeJS.ErrnoException {
+  return err instanceof Error && 'code' in err;
+}
+
+/**
+ * One-time migration: legacy usage.json (a single JSON array) -> usage.ndjson
+ * (one JSON object per line). RTR-06.
+ *
+ * Idempotent (EC4: usage.ndjson already present -> no-op). Count-verified
+ * (AC5: the written NDJSON is read back and its line count compared against
+ * the source array length before it is ever published). Throws loudly on a
+ * corrupted legacy file (EC2) instead of silently discarding data — and the
+ * legacy file is only ever renamed to `.migrated`, never deleted, so a
+ * migration that never completes always leaves the original data recoverable
+ * on disk.
+ */
+export async function migrateUsageToNdjson(): Promise<number> {
+  // EC4: NDJSON already present -> already migrated.
+  try {
+    await access(CONFIG_PATHS.usage);
+    return 0;
+  } catch {
+    // ENOENT (or any stat failure) -> proceed, ndjson not present yet.
+  }
+
+  let raw: string;
+  try {
+    raw = await readFile(CONFIG_PATHS.usageLegacyJson, 'utf-8');
+  } catch (err) {
+    if (isNodeError(err) && err.code === 'ENOENT') return 0; // fresh install, nothing to migrate
+    throw err;
+  }
+
+  const trimmed = raw.trim();
+  // EC1: empty legacy file -> zero records, no error.
+  // EC2: malformed JSON throws here (SyntaxError) and propagates to the caller.
+  const records = (trimmed ? JSON.parse(trimmed) : []) as unknown;
+  if (!Array.isArray(records)) {
+    throw new Error('usage.json is corrupted: expected a JSON array of usage records');
+  }
+  const usageRecords = records as UsageRecord[];
+
+  const tmpPath = `${CONFIG_PATHS.usage}.migrate-tmp`;
+  const content = usageRecords.length
+    ? usageRecords.map((r) => JSON.stringify(r)).join('\n') + '\n'
+    : '';
+  await writeFile(tmpPath, content, 'utf-8');
+
+  // AC5: read the just-written file back and verify the line count matches
+  // the source array length exactly before publishing over the target.
+  const writtenRaw = await readFile(tmpPath, 'utf-8');
+  const writtenLineCount = writtenRaw.split('\n').filter((l) => l.length > 0).length;
+  if (writtenLineCount !== usageRecords.length) {
+    await unlink(tmpPath).catch(() => {});
+    throw new Error(
+      `usage migration line-count mismatch: expected ${usageRecords.length}, wrote ${writtenLineCount}`,
+    );
+  }
+
+  await rename(tmpPath, CONFIG_PATHS.usage);
+  // Safety net: retire the old file, never delete it outright.
+  await rename(CONFIG_PATHS.usageLegacyJson, `${CONFIG_PATHS.usageLegacyJson}.migrated`);
+
+  return usageRecords.length;
 }

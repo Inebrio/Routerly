@@ -3,8 +3,28 @@ import { USAGE_TRACKER, PROXY_PIPELINE } from '../../core/tokens.js'
 import type { ProxyContext } from '../reverse-proxy/context.js'
 import { listEffectiveModelsIncludingDisabled } from '../provider/list-effective.js'
 import { TRACE_COMPLETED_TOPIC, type TraceCompletedEvent } from '../trace/publish.js'
+import { readConfig } from '../config/loader.js'
+import { applyUsageRetention } from '../config/usageNdjson.js'
 import { flushTrace } from './pending.js'
 import { trackUsage } from './tracker.js'
+
+// Same shape as observability/index.ts's runner: a module-level unref'd
+// setInterval, cleared on stop(). Same 60s cadence as
+// observability/runner.ts's integration push — one existing precedent in
+// this codebase for "periodic background sweep interval", reused rather than
+// invented (RTR-06/AC3).
+let sweepTimer: NodeJS.Timeout | null = null
+
+async function runRetentionSweep(): Promise<void> {
+  try {
+    const { usageRetention } = await readConfig('settings')
+    if (!usageRetention) return
+    await applyUsageRetention(usageRetention)
+  } catch (_) {
+    // ponytail: sweep failures must not crash the server — same discipline as
+    // observability/runner.ts's silent catch around its periodic push.
+  }
+}
 
 export const usageModule: RouterlyModule = defineModule({
   manifest: { id: 'usage', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0', config: '^0.4.0' } },
@@ -47,5 +67,19 @@ export const usageModule: RouterlyModule = defineModule({
     }
 
     container.resolve(PROXY_PIPELINE).contribute(finalize)
+  },
+
+  // The retention sweep runs for as long as this module does: one immediate
+  // run on start (so a freshly-configured policy takes effect without
+  // waiting a full interval), then on the interval until stop().
+  async start() {
+    await runRetentionSweep()
+    // ponytail: unref'd — the listening socket is what keeps the process alive.
+    sweepTimer ??= setInterval(() => { void runRetentionSweep() }, 60_000).unref()
+  },
+
+  stop() {
+    if (sweepTimer) clearInterval(sweepTimer)
+    sweepTimer = null
   },
 })
